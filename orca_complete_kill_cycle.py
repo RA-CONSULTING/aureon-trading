@@ -3968,14 +3968,7 @@ class OrcaKillCycle:
             except Exception as e:
                 _safe_print(f"   Queen Volume Hunter: {e}")
         
-        # 6. Movers & Shakers Scanner - SKIP (circular import with Orca)
-        self.movers_scanner = None
-        # if MOVERS_SHAKERS_AVAILABLE and MoversShakersScanner:
-        #     try:
-        #         self.movers_scanner = MoversShakersScanner()
-        #         print("  Movers & Shakers Scanner: WIRED!")
-        #     except Exception as e:
-        #         print(f"  Movers & Shakers Scanner: {e}")
+        # 6. Movers & Shakers Scanner — now instantiated later with other dead imports
         
         # 7. Whale Intelligence Tracker (firm tracking)
         self.whale_tracker = None
@@ -4739,10 +4732,28 @@ class OrcaKillCycle:
         
         #   Multiverse Live Engine - Commando unified trading
         self.multiverse_live = None
-        if MULTIVERSE_LIVE_AVAILABLE:
+        if MULTIVERSE_LIVE_AVAILABLE and MultiverseLiveEngine:
             try:
-                self.multiverse_live = True  # Module available, mark as ready
-                print("  Multiverse Live Engine: WIRED!")
+                self.multiverse_live = MultiverseLiveEngine()
+                print("  Multiverse Live Engine: WIRED! (signal generation active)")
+            except Exception:
+                self.multiverse_live = None
+
+        #   Bot Shape Scanner - Detect algorithmic actors & threats
+        self.bot_shape_scanner = None
+        if BOT_SCANNER_AVAILABLE and BotShapeScanner:
+            try:
+                self.bot_shape_scanner = BotShapeScanner()
+                print("  Bot Shape Scanner: WIRED! (algorithmic threat detection)")
+            except Exception:
+                pass
+
+        #   Movers & Shakers Scanner - Hot movers with trading signals
+        self.movers_scanner = None
+        if MoversShakersScanner:
+            try:
+                self.movers_scanner = MoversShakersScanner()
+                print("  Movers & Shakers Scanner: WIRED! (hot mover signals)")
             except Exception:
                 pass
         
@@ -9520,7 +9531,119 @@ class OrcaKillCycle:
         
         print(f"   QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
 
-        #                                                                    
+        #
+        #     MULTI-BRAIN VALIDATION GATE (consensus from all intelligence)
+        #     Opportunity must be confirmed by at least 2 independent systems
+        #
+        _validation_votes = 0
+        _validation_total = 0
+        _validation_details = []
+        try:
+            # Vote 1: Probability Nexus
+            try:
+                from aureon_probability_nexus import make_predictions as _nexus_predict_buy
+                _np = _nexus_predict_buy()
+                if _np:
+                    _validation_total += 1
+                    for pred in _np:
+                        if isinstance(pred, dict) and pred.get('symbol', '') in (symbol, symbol.replace('/', '')):
+                            sig = str(pred.get('signal', 'HOLD')).upper()
+                            conf = float(pred.get('confidence', 0))
+                            if sig == 'BUY' and conf >= 0.4:
+                                _validation_votes += 1
+                                _validation_details.append(f"Nexus:BUY({conf:.0%})")
+                            elif sig == 'SELL':
+                                _validation_details.append(f"Nexus:SELL({conf:.0%})")
+                            else:
+                                _validation_details.append(f"Nexus:{sig}({conf:.0%})")
+                            break
+            except ImportError:
+                pass
+
+            # Vote 2: Miner Brain
+            if self.miner_brain:
+                try:
+                    _mb_recs = self.miner_brain.get_recommendations({symbol: price}) or []
+                    _validation_total += 1
+                    for rec in _mb_recs:
+                        if rec.get('symbol', '') in (symbol, symbol.replace('/', '')) and rec.get('direction') == 'BUY':
+                            conf = float(rec.get('confidence', 0))
+                            if conf >= 0.4:
+                                _validation_votes += 1
+                                _validation_details.append(f"Miner:BUY({conf:.0%})")
+                            break
+                except Exception:
+                    pass
+
+            # Vote 3: Whale Tracker (are whales buying this symbol?)
+            if self.whale_tracker:
+                try:
+                    _wt_activity = getattr(self.whale_tracker, 'recent_whale_activity', {}) or {}
+                    _validation_total += 1
+                    sym_activity = _wt_activity.get(symbol, _wt_activity.get(symbol.replace('/', ''), None))
+                    if sym_activity and isinstance(sym_activity, dict):
+                        direction = str(sym_activity.get('direction', '')).upper()
+                        if direction in ('BUY', 'LONG', 'ACCUMULATE'):
+                            _validation_votes += 1
+                            _validation_details.append(f"Whale:{direction}")
+                except Exception:
+                    pass
+
+            # Vote 4: Ultimate Intelligence
+            if self.ultimate_intel and hasattr(self.ultimate_intel, 'get_prediction'):
+                try:
+                    _ui_pred = self.ultimate_intel.get_prediction(symbol)
+                    _validation_total += 1
+                    if _ui_pred and isinstance(_ui_pred, dict):
+                        action = str(_ui_pred.get('action', 'HOLD')).upper()
+                        conf = float(_ui_pred.get('confidence', 0))
+                        if action == 'BUY' and conf >= 0.5:
+                            _validation_votes += 1
+                            _validation_details.append(f"UltIntel:BUY({conf:.0%})")
+                        else:
+                            _validation_details.append(f"UltIntel:{action}({conf:.0%})")
+                except Exception:
+                    pass
+
+            # Vote 5: Elephant Learning (historical pattern memory)
+            if self.elephant:
+                try:
+                    _el_score = None
+                    if hasattr(self.elephant, 'get_symbol_score'):
+                        _el_score = self.elephant.get_symbol_score(symbol)
+                    elif hasattr(self.elephant, 'recall'):
+                        _el_score = self.elephant.recall(symbol)
+                    _validation_total += 1
+                    if _el_score is not None:
+                        score_val = float(_el_score) if isinstance(_el_score, (int, float)) else float(_el_score.get('score', _el_score.get('confidence', 0)) if isinstance(_el_score, dict) else 0)
+                        if score_val >= 0.5:
+                            _validation_votes += 1
+                            _validation_details.append(f"Elephant:{score_val:.0%}")
+                except Exception:
+                    pass
+
+            detail_str = " | ".join(_validation_details) if _validation_details else "no signals"
+            print(f"   MULTI-BRAIN VALIDATION: {_validation_votes}/{_validation_total} brains confirm BUY ({detail_str})")
+
+            # Gate: require at least 2 independent confirmations if 3+ systems available
+            if _validation_total >= 3 and _validation_votes < 2:
+                print(f"   MULTI-BRAIN GATE BLOCKED: {symbol} [{context}] - only {_validation_votes}/{_validation_total} confirmations")
+                return {
+                    'status': 'blocked',
+                    'reason': f'Multi-brain validation: only {_validation_votes}/{_validation_total} brains confirm',
+                    'blocked_by': 'MULTI_BRAIN_VALIDATION_GATE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'validation_votes': _validation_votes,
+                    'validation_total': _validation_total,
+                    'validation_details': _validation_details,
+                    'rejected': True
+                }
+        except Exception as e:
+            print(f"     Multi-brain validation error (non-blocking): {e}")
+
+        #
         #     REQUIRE 30s VALIDATED PREDICTION WINDOW (configurable)
         #                                                                    
         if self.require_prediction_window:
@@ -13645,11 +13768,23 @@ class OrcaKillCycle:
                     #                                                            
                     #   PHASE 0.9: OCEAN + ANIMAL SCANNERS (Wave & trend analysis)
                     #                                                            
+                    _ocean_wave_syms = {}   # {symbol: wave_state} from ocean scanner
                     if self.ocean_scanner:
                         try:
                             wave_data = self.ocean_scanner.scan_waves(batch_prices)
                             if wave_data:
-                                print(f"     OCEAN SCANNER: Wave analysis complete")
+                                # Extract per-symbol wave states for scoring
+                                if isinstance(wave_data, dict):
+                                    for sym, wd in wave_data.items():
+                                        state = wd.get('wave_state', wd.get('state', '')) if isinstance(wd, dict) else str(wd)
+                                        _ocean_wave_syms[sym] = state
+                                elif isinstance(wave_data, list):
+                                    for wd in wave_data:
+                                        sym = getattr(wd, 'symbol', '') if hasattr(wd, 'symbol') else (wd.get('symbol', '') if isinstance(wd, dict) else '')
+                                        state = getattr(wd, 'wave_state', '') if hasattr(wd, 'wave_state') else (wd.get('wave_state', '') if isinstance(wd, dict) else '')
+                                        if sym:
+                                            _ocean_wave_syms[sym] = state
+                                print(f"     OCEAN SCANNER: {len(_ocean_wave_syms)} wave states -> scoring")
                         except Exception as e:
                             print(f"      Ocean Scanner error: {e}")
 
@@ -13688,11 +13823,25 @@ class OrcaKillCycle:
                             except Exception as e:
                                 print(f"      Enigma scan error: {e}")
 
+                    _animal_trend_syms = {}  # {symbol: trend_strength} from animal scanner
                     if self.animal_scanner:
                         try:
-                            trend_data = self.animal_scanner.scan_trends(batch_prices)
+                            trend_data = self.animal_scanner.scan_trends(batch_prices) if hasattr(self.animal_scanner, 'scan_trends') else None
+                            if not trend_data and hasattr(self.animal_scanner, 'hunt'):
+                                trend_data = self.animal_scanner.hunt(limit=20)
                             if trend_data:
-                                print(f"     ANIMAL SCANNER: Trend analysis complete")
+                                if isinstance(trend_data, list):
+                                    for td in trend_data:
+                                        sym = getattr(td, 'symbol', '') if hasattr(td, 'symbol') else (td.get('symbol', '') if isinstance(td, dict) else '')
+                                        side = getattr(td, 'side', '') if hasattr(td, 'side') else (td.get('side', td.get('direction', '')) if isinstance(td, dict) else '')
+                                        move = float(getattr(td, 'move_pct', 0) if hasattr(td, 'move_pct') else (td.get('move_pct', td.get('strength', 0)) if isinstance(td, dict) else 0))
+                                        if sym:
+                                            _animal_trend_syms[sym] = (str(side).lower(), move)
+                                elif isinstance(trend_data, dict):
+                                    for sym, td in trend_data.items():
+                                        strength = float(td.get('strength', td.get('move_pct', 0))) if isinstance(td, dict) else float(td)
+                                        _animal_trend_syms[sym] = ('buy', strength)
+                                print(f"     ANIMAL SCANNER: {len(_animal_trend_syms)} trend signals -> scoring")
                         except Exception as e:
                             print(f"      Animal Scanner error: {e}")
 
@@ -14217,6 +14366,118 @@ class OrcaKillCycle:
                                 except Exception as e:
                                     print(f"      Neural Revenue error: {e}")
 
+                            # Movers & Shakers Scanner → inject hot movers as opportunities
+                            if self.movers_scanner:
+                                try:
+                                    _ms_report = self.movers_scanner.scan() if hasattr(self.movers_scanner, 'scan') else None
+                                    _movers_list = []
+                                    if _ms_report:
+                                        # scan() may return a WaveReport or list of MoverShaker
+                                        if hasattr(_ms_report, 'movers'):
+                                            _movers_list = _ms_report.movers or []
+                                        elif isinstance(_ms_report, list):
+                                            _movers_list = _ms_report
+                                    if _movers_list:
+                                        _intel_active += 1
+                                        _ms_buy = 0
+                                        for ms in _movers_list:
+                                            sym = getattr(ms, 'symbol', '') if hasattr(ms, 'symbol') else (ms.get('symbol', '') if isinstance(ms, dict) else '')
+                                            opp_signal = getattr(ms, 'trading_opportunity', 'NEUTRAL') if hasattr(ms, 'trading_opportunity') else (ms.get('trading_opportunity', 'NEUTRAL') if isinstance(ms, dict) else 'NEUTRAL')
+                                            exchange = getattr(ms, 'exchange', 'binance') if hasattr(ms, 'exchange') else (ms.get('exchange', 'binance') if isinstance(ms, dict) else 'binance')
+                                            side = getattr(ms, 'side', '') if hasattr(ms, 'side') else (ms.get('side', '') if isinstance(ms, dict) else '')
+                                            vol_usd = float(getattr(ms, 'volume_usd', 0) if hasattr(ms, 'volume_usd') else (ms.get('volume_usd', 0) if isinstance(ms, dict) else 0))
+                                            threat = getattr(ms, 'threat_level', 'LOW') if hasattr(ms, 'threat_level') else (ms.get('threat_level', 'LOW') if isinstance(ms, dict) else 'LOW')
+                                            if sym and str(opp_signal).upper() == 'BUY':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * 1.25
+                                                _ms_buy += 1
+                                                # Inject as opportunity if large volume
+                                                if vol_usd >= 50000:
+                                                    _intel_inject.append(MarketOpportunity(
+                                                        symbol=sym.replace('/', ''),
+                                                        exchange=exchange,
+                                                        price=0.0,
+                                                        change_pct=3.0,
+                                                        volume=vol_usd,
+                                                        momentum_score=12.0,
+                                                        fee_rate=self.fee_rates.get(exchange, 0.0025)
+                                                    ))
+                                            elif sym and str(opp_signal).upper() == 'SELL':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * 0.7
+                                            elif sym and str(threat).upper() in ('HIGH', 'CRITICAL'):
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * 0.6
+                                        print(f"     MOVERS & SHAKERS: {len(_movers_list)} movers ({_ms_buy} BUY) → scoring")
+                                except Exception as e:
+                                    print(f"      Movers & Shakers error: {e}")
+
+                            # Bot Shape Scanner → penalize symbols under algorithmic attack
+                            if self.bot_shape_scanner:
+                                try:
+                                    _bss_results = None
+                                    if hasattr(self.bot_shape_scanner, 'scan'):
+                                        _bss_results = self.bot_shape_scanner.scan()
+                                    elif hasattr(self.bot_shape_scanner, '_scan_all_shapes'):
+                                        _bss_results = self.bot_shape_scanner._scan_all_shapes()
+                                    if _bss_results:
+                                        _intel_active += 1
+                                        _bss_threats = 0
+                                        for fp in (_bss_results if isinstance(_bss_results, list) else []):
+                                            sym = getattr(fp, 'symbol', '') if hasattr(fp, 'symbol') else (fp.get('symbol', '') if isinstance(fp, dict) else '')
+                                            threat = getattr(fp, 'threat_level', 'LOW') if hasattr(fp, 'threat_level') else (fp.get('threat_level', 'LOW') if isinstance(fp, dict) else 'LOW')
+                                            if sym and str(threat).upper() in ('HIGH', 'CRITICAL'):
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * 0.65
+                                                _bss_threats += 1
+                                        if _bss_threats:
+                                            print(f"     BOT SHAPE SCANNER: {_bss_threats} symbols under bot attack → penalized")
+                                except Exception as e:
+                                    print(f"      Bot Shape Scanner error: {e}")
+
+                            # Harmonic Momentum Wave Scanner → boost actionable harmonic signals
+                            if self.harmonic_momentum:
+                                try:
+                                    _hmw_signals = self.harmonic_momentum.scan_all() if hasattr(self.harmonic_momentum, 'scan_all') else []
+                                    if _hmw_signals:
+                                        _intel_active += 1
+                                        _hmw_boosted = 0
+                                        for sig in _hmw_signals:
+                                            sym = getattr(sig, 'symbol', '')
+                                            direction = getattr(sig, 'direction', 'HOLD')
+                                            conf = float(getattr(sig, 'confidence', 0))
+                                            actionable = sig.is_actionable() if hasattr(sig, 'is_actionable') else conf >= 0.5
+                                            if sym and actionable and str(direction).upper() == 'LONG':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.3)
+                                                _hmw_boosted += 1
+                                            elif sym and str(direction).upper() == 'SHORT':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * max(0.6, 1.0 - conf * 0.3)
+                                        print(f"     HARMONIC MOMENTUM: {len(_hmw_signals)} signals ({_hmw_boosted} LONG boosted) → scoring")
+                                except Exception as e:
+                                    print(f"      Harmonic Momentum Wave error: {e}")
+
+                            # Aureon Miner Quantum Brain → global trading signal (direction + confidence)
+                            if self.aureon_miner and hasattr(self.aureon_miner, 'brain'):
+                                try:
+                                    _qb_signal = self.aureon_miner.brain.get_trading_signal()
+                                    if _qb_signal and isinstance(_qb_signal, dict):
+                                        _intel_active += 1
+                                        direction = str(_qb_signal.get('direction', 'NEUTRAL')).upper()
+                                        conf = float(_qb_signal.get('confidence', 0.5))
+                                        timing = _qb_signal.get('timing', 'NORMAL')
+                                        if direction == 'LONG' and conf >= 0.55:
+                                            # Global boost — quantum brain says market is favorable
+                                            _qb_boost = 1.0 + (conf - 0.5) * 0.4
+                                            if timing == 'LIGHTHOUSE':
+                                                _qb_boost *= 1.1  # Extra boost for optimal window
+                                            for opp in opportunities if opportunities else []:
+                                                pass  # Boost will be applied below via _timeline_multiplier
+                                            _timeline_multiplier = max(_timeline_multiplier, _qb_boost)
+                                            print(f"     QUANTUM BRAIN: LONG (conf={conf:.0%}, timing={timing}) → {_qb_boost:.2f}x global")
+                                        elif direction == 'SHORT':
+                                            _timeline_multiplier = min(_timeline_multiplier, max(0.7, 1.0 - conf * 0.3))
+                                            print(f"     QUANTUM BRAIN: SHORT (conf={conf:.0%}) → dampen {_timeline_multiplier:.2f}x")
+                                        else:
+                                            print(f"     QUANTUM BRAIN: NEUTRAL (conf={conf:.0%})")
+                                except Exception as e:
+                                    print(f"      Quantum Brain signal error: {e}")
+
                             if _intel_boosts:
                                 print(f"     INTELLIGENCE MAP: {len(_intel_boosts)} symbols boosted by {_intel_active} systems")
 
@@ -14281,11 +14542,150 @@ class OrcaKillCycle:
                                 print(f"      Rising Stars scan error: {e}")
 
                             #
-                            #   APPLY PRE-SCAN INTELLIGENCE TO OPPORTUNITIES
-                            #   All 8 brains now feed into scoring instead of being discarded
+                            #   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            #   APPLY ALL INTELLIGENCE TO OPPORTUNITIES
+                            #   Phase 0.7 validated signals + whale predictions
+                            #   Phase 0.8 harmonic direction + coherence
+                            #   Phase 0.9 ocean waves + animal trends (via scan)
+                            #   Pre-scan: 8 brain boosts + timeline + injections
+                            #   Probability Nexus: per-symbol BUY/SELL signals
+                            #   Predator Detector: penalize hunted symbols
+                            #   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                             #
-                            if opportunities and (_intel_boosts or _intel_inject or _timeline_multiplier != 1.0):
-                                # 1. Inject Volume Hunter / Orca Intel opportunities
+                            if opportunities:
+                                # ── A. Phase 0.7: validated signals boost matching symbols ──
+                                _p07_boosted = 0
+                                for sig in _phase07_validated:
+                                    if isinstance(sig, dict):
+                                        sym = sig.get('symbol', '')
+                                        action = str(sig.get('action', '')).upper()
+                                        conf = float(sig.get('confidence', 0))
+                                        if sym and 'BUY' in action and conf >= 0.5:
+                                            _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.3)
+                                            _p07_boosted += 1
+                                # Phase 0.7: whale predictions boost matching symbols
+                                for wp in _phase07_whales:
+                                    if isinstance(wp, dict):
+                                        sym = wp.get('symbol', '')
+                                        action = str(wp.get('action', wp.get('direction', ''))).upper()
+                                        value = float(wp.get('value_usd', wp.get('value', 0)))
+                                        if sym and action in ('BUY', 'LONG', 'ACCUMULATE') and value > 0:
+                                            # Large whale buys get stronger boost
+                                            whale_mult = min(1.3, 1.0 + (value / 1_000_000) * 0.1) if value > 10000 else 1.1
+                                            _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * whale_mult
+                                            _p07_boosted += 1
+                                if _p07_boosted:
+                                    print(f"     PHASE 0.7 INTEL: {_p07_boosted} validated/whale signals applied")
+
+                                # ── B. Phase 0.8: harmonic chain direction gates ──
+                                if _harmonic_direction and _harmonic_coherence > 0.3:
+                                    if _harmonic_direction == 'UP':
+                                        # Harmonics say UP → boost all opportunities
+                                        _hc_boost = 1.0 + _harmonic_coherence * 0.2
+                                        for opp in opportunities:
+                                            opp.momentum_score = opp.momentum_score * _hc_boost
+                                        print(f"     HARMONIC CHAIN: UP ({_harmonic_coherence:.2f} coherence) → {_hc_boost:.2f}x global boost")
+                                    elif _harmonic_direction == 'DOWN':
+                                        # Harmonics say DOWN → dampen enthusiasm (but don't block)
+                                        _hc_dampen = max(0.7, 1.0 - _harmonic_coherence * 0.3)
+                                        for opp in opportunities:
+                                            opp.momentum_score = opp.momentum_score * _hc_dampen
+                                        print(f"     HARMONIC CHAIN: DOWN ({_harmonic_coherence:.2f} coherence) → {_hc_dampen:.2f}x dampen")
+
+                                # ── B2. Phase 0.9: ocean wave states boost/dampen ──
+                                _ocean_applied = 0
+                                for opp in opportunities:
+                                    wave_state = _ocean_wave_syms.get(opp.symbol, _ocean_wave_syms.get(opp.symbol.replace('/', ''), ''))
+                                    ws_upper = str(wave_state).upper()
+                                    if ws_upper in ('BREAKOUT', 'RISING', 'SURGE'):
+                                        opp.momentum_score = opp.momentum_score * 1.25
+                                        _ocean_applied += 1
+                                    elif ws_upper in ('CRASHING', 'FALLING', 'COLLAPSE'):
+                                        opp.momentum_score = opp.momentum_score * 0.7
+                                        _ocean_applied += 1
+                                if _ocean_applied:
+                                    print(f"     OCEAN WAVES: {_ocean_applied} symbols adjusted by wave state")
+
+                                # ── B3. Phase 0.9: animal trend momentum ──
+                                _animal_applied = 0
+                                for opp in opportunities:
+                                    trend = _animal_trend_syms.get(opp.symbol, _animal_trend_syms.get(opp.symbol.replace('/', ''), None))
+                                    if trend:
+                                        side, move = trend
+                                        if side in ('buy', 'long', 'bull') and move > 0:
+                                            opp.momentum_score = opp.momentum_score * min(1.4, 1.0 + abs(move) / 100 * 0.5)
+                                            _animal_applied += 1
+                                        elif side in ('sell', 'short', 'bear') and move != 0:
+                                            opp.momentum_score = opp.momentum_score * max(0.6, 1.0 - abs(move) / 100 * 0.4)
+                                            _animal_applied += 1
+                                if _animal_applied:
+                                    print(f"     ANIMAL TRENDS: {_animal_applied} symbols adjusted by pack momentum")
+
+                                # ── C. Probability Nexus: per-symbol BUY/SELL/HOLD signals ──
+                                _nexus_applied = 0
+                                try:
+                                    from aureon_probability_nexus import make_predictions as _nexus_predict
+                                    _nexus_preds = _nexus_predict()
+                                    if _nexus_preds:
+                                        _nexus_map = {}
+                                        for np in _nexus_preds:
+                                            if isinstance(np, dict):
+                                                sym = np.get('symbol', '')
+                                                signal = str(np.get('signal', 'HOLD')).upper()
+                                                conf = float(np.get('confidence', 0))
+                                                clarity = float(np.get('clarity', 0))
+                                                if sym:
+                                                    _nexus_map[sym] = (signal, conf, clarity)
+                                        for opp in opportunities:
+                                            entry = _nexus_map.get(opp.symbol, _nexus_map.get(opp.symbol.replace('/', ''), None))
+                                            if entry:
+                                                signal, conf, clarity = entry
+                                                if signal == 'BUY' and conf >= 0.5:
+                                                    opp.momentum_score = opp.momentum_score * (1.0 + conf * clarity * 0.4)
+                                                    _nexus_applied += 1
+                                                elif signal == 'SELL' and conf >= 0.6:
+                                                    opp.momentum_score = opp.momentum_score * max(0.5, 1.0 - conf * 0.4)
+                                                    _nexus_applied += 1
+                                        if _nexus_applied:
+                                            print(f"     PROBABILITY NEXUS: {_nexus_applied} symbols scored (from {len(_nexus_preds)} predictions)")
+                                except ImportError:
+                                    pass
+                                except Exception as e:
+                                    print(f"      Probability Nexus scoring error: {e}")
+
+                                # ── D. Predator Detector: penalize hunted symbols ──
+                                _pred_penalized = 0
+                                try:
+                                    if self.predator_detector and hasattr(self, '_last_predator_report'):
+                                        _pred_report = getattr(self, '_last_predator_report', None)
+                                    elif self.predator_detector:
+                                        try:
+                                            _pred_report = self.predator_detector.generate_hunting_report()
+                                        except Exception:
+                                            _pred_report = None
+                                    else:
+                                        _pred_report = None
+                                    if _pred_report:
+                                        self._last_predator_report = _pred_report
+                                        _hunted_syms = set()
+                                        for pred in (getattr(_pred_report, 'top_predators', None) or []):
+                                            sym = getattr(pred, 'symbol', '') if hasattr(pred, 'symbol') else ''
+                                            if sym:
+                                                _hunted_syms.add(sym)
+                                        front_run_rate = getattr(_pred_report, 'front_run_rate', 0)
+                                        if _hunted_syms or front_run_rate > 0.1:
+                                            for opp in opportunities:
+                                                if opp.symbol in _hunted_syms:
+                                                    opp.momentum_score = opp.momentum_score * 0.6  # Penalize hunted
+                                                    _pred_penalized += 1
+                                                elif front_run_rate > 0.2:
+                                                    opp.momentum_score = opp.momentum_score * 0.9  # Slight global caution
+                                        if _pred_penalized:
+                                            print(f"     PREDATOR DEFENSE: {_pred_penalized} hunted symbols penalized (front-run rate: {front_run_rate:.0%})")
+                                except Exception as e:
+                                    print(f"      Predator scoring error: {e}")
+
+                                # ── E. Inject Volume Hunter / Orca Intel opportunities ──
                                 if _intel_inject:
                                     existing_syms = {o.symbol for o in opportunities}
                                     injected = 0
@@ -14297,24 +14697,24 @@ class OrcaKillCycle:
                                     if injected:
                                         print(f"     INTEL INJECT: {injected} new opportunities from Volume Hunter/Orca Intel")
 
-                                # 2. Apply per-symbol boosts from Miner Brain, Quantum Telescope,
-                                #    Volume Hunter, Enigma, Orca Intel, Neural Revenue
+                                # ── F. Apply per-symbol boosts from all 8 pre-scan brains ──
                                 boosted_count = 0
                                 for opp in opportunities:
                                     sym = opp.symbol
-                                    # Check with and without slash variants
                                     boost = _intel_boosts.get(sym, _intel_boosts.get(sym.replace('/', ''), _intel_boosts.get(f"{sym}/USD", 1.0)))
                                     if boost > 1.0:
                                         opp.momentum_score = opp.momentum_score * boost
                                         boosted_count += 1
 
-                                # 3. Apply Timeline Oracle global timing multiplier
+                                # ── G. Apply Timeline Oracle global timing multiplier ──
                                 if _timeline_multiplier > 1.0:
                                     for opp in opportunities:
                                         opp.momentum_score = opp.momentum_score * _timeline_multiplier
 
-                                if boosted_count > 0 or _timeline_multiplier > 1.0:
-                                    print(f"     INTEL APPLIED: {boosted_count} symbols boosted | Timeline: {_timeline_multiplier:.2f}x | {_intel_active} brains active")
+                                _total_systems = _intel_active + (_p07_boosted > 0) + (_harmonic_direction is not None) + (_ocean_applied > 0) + (_animal_applied > 0) + (_nexus_applied > 0) + (_pred_penalized > 0)
+                                if boosted_count > 0 or _timeline_multiplier > 1.0 or _total_systems > 0:
+                                    print(f"     FULL INTEL APPLIED: {boosted_count} boosted | {_pred_penalized} penalized | "
+                                          f"Timeline {_timeline_multiplier:.2f}x | {_total_systems} systems active")
 
                             if opportunities:
                                 #    Apply quantum pattern recognition boost to scoring
