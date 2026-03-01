@@ -10145,7 +10145,8 @@ class OrcaKillCycle:
         #  guaranteed penny profits. With 3x, a 0.15% move = 0.45% gain.
         #  Spot fallback for non-Kraken exchanges.
         #  MARGIN UNIVERSE: If the symbol is in the Kraken margin
-        #  universe, ALWAYS use margin — one penny profit is the target.
+        #  universe, ALWAYS use margin — $0.01 realized after ALL costs.
+        #  Queen holds for more ONLY if she validates the long/short play.
         # ═══════════════════════════════════════════════════════════════
         _use_margin = (
             exchange == 'kraken' and
@@ -12630,11 +12631,67 @@ class OrcaKillCycle:
                                     pos.kill_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
                                     print(f"\n      QUEEN APPROVED (momentum reversal)   ")
                             
-                            # 3. PENNY PROFIT EXIT — Margin positions close at $0.01 net profit
-                            if not pos.ready_to_kill and pos.is_margin and pos.exchange == 'kraken' and net_pnl >= 0.01:
-                                pos.ready_to_kill = True
-                                pos.kill_reason = f'PENNY_PROFIT_MARGIN (net=${net_pnl:+.4f})'
-                                print(f"\n      PENNY PROFIT HIT! Margin net ${net_pnl:+.4f} >= $0.01 — CLOSING!")
+                            # 3. MARGIN PENNY FLOOR — $0.01 REALIZED profit after ALL fees + slippage + spread
+                            #    Hard floor: one penny net after every cost imaginable.
+                            #    Queen decides: take the penny or hold for more (validated plays only).
+                            if not pos.ready_to_kill and pos.is_margin and pos.exchange == 'kraken':
+                                # True realized P&L: deduct slippage + spread on top of fee-inclusive net_pnl
+                                _ex_fees = EXCHANGE_FEES.get(pos.exchange, {})
+                                _slippage = _ex_fees.get('slippage', 0.0005)
+                                _spread = _ex_fees.get('spread', 0.0008)
+                                _friction = _slippage + _spread  # ~0.13% for Kraken
+                                _exit_gross = current * pos.entry_qty
+                                _realized_pnl = net_pnl - (_exit_gross * _friction)
+
+                                if _realized_pnl >= 0.01:
+                                    # ═══ PENNY FLOOR HIT — Consult Queen: take or hold? ═══
+                                    _queen_holds = False
+                                    if self.queen_hive:
+                                        try:
+                                            _q_sig = self.queen_hive.get_collective_signal(
+                                                symbol=pos.symbol,
+                                                market_data={'price': current, 'exchange': pos.exchange}
+                                            )
+                                            _q_conf = float(_q_sig.get('confidence', 0.5))
+                                            _q_action = _q_sig.get('action', 'HOLD')
+                                            _q_dir = _q_sig.get('direction', 'NEUTRAL')
+
+                                            # Queen can hold ONLY if she validates the directional play
+                                            _dir_valid = (
+                                                (pos.margin_side == 'LONG' and _q_dir in ('BULLISH', 'UP', 'LONG', 'BUY')) or
+                                                (pos.margin_side == 'SHORT' and _q_dir in ('BEARISH', 'DOWN', 'SHORT', 'SELL'))
+                                            )
+
+                                            if _q_action in ('HOLD', 'BUY') and _q_conf >= 0.6 and _dir_valid:
+                                                # Queen validates the play — hold for bigger win
+                                                _queen_holds = True
+                                                print(f"      PENNY FLOOR ${_realized_pnl:+.4f} — Queen HOLDING ({pos.margin_side} validated, {_q_conf:.0%} conf)")
+                                            elif _q_action == 'SELL' and _q_conf >= 0.5:
+                                                # Queen wants out — respect the signal
+                                                print(f"      PENNY FLOOR ${_realized_pnl:+.4f} — Queen says CLOSE ({_q_conf:.0%} conf)")
+                                        except Exception:
+                                            pass  # On error, take the penny
+
+                                    if not _queen_holds:
+                                        pos.ready_to_kill = True
+                                        pos.kill_reason = f'PENNY_PROFIT_REALIZED (${_realized_pnl:+.4f} after all costs)'
+                                        print(f"\n      PENNY PROFIT REALIZED! ${_realized_pnl:+.4f} after fees+slippage+spread — CLOSING!")
+
+                                # ═══ QUEEN FORCE CLOSE — Queen can exit ANY margin position at will ═══
+                                elif not pos.ready_to_kill and self.queen_hive:
+                                    try:
+                                        _q_sig = self.queen_hive.get_collective_signal(
+                                            symbol=pos.symbol,
+                                            market_data={'price': current, 'exchange': pos.exchange}
+                                        )
+                                        _q_conf = float(_q_sig.get('confidence', 0.5))
+                                        _q_action = _q_sig.get('action', 'HOLD')
+                                        if _q_action == 'SELL' and _q_conf >= 0.7:
+                                            pos.ready_to_kill = True
+                                            pos.kill_reason = f'QUEEN_FORCE_CLOSE (conf={_q_conf:.0%}, pnl=${net_pnl:+.4f})'
+                                            print(f"\n      QUEEN FORCE CLOSE! Confidence {_q_conf:.0%} — exiting margin position")
+                                    except Exception:
+                                        pass
 
                             # If not approved, log why
                             if not can_exit and not pos.ready_to_kill and (current >= pos.target_price or net_pnl > 0.001):
@@ -15428,11 +15485,14 @@ class OrcaKillCycle:
                                                                 _margin_side = raw_order.get('_margin_side', 'LONG') if raw_order else 'LONG'
 
                                                                 if _is_margin_order and _order_leverage >= 2:
-                                                                    # MARGIN POSITION — PENNY PROFIT TARGET
-                                                                    # Only need $0.01 net profit. Target price =
-                                                                    # breakeven + ($0.01 / volume) so that
-                                                                    # (target - entry) * qty - fees >= $0.01
-                                                                    _penny_target_move = 0.01 / buy_qty if buy_qty > 0 else 0
+                                                                    # MARGIN POSITION — PENNY PROFIT TARGET (after ALL costs)
+                                                                    # $0.01 realized profit after fees + slippage + spread.
+                                                                    # Target = breakeven + ($0.01 + slippage_cost + spread_cost) / qty
+                                                                    _pf = EXCHANGE_FEES.get(best.exchange, {})
+                                                                    _slip = _pf.get('slippage', 0.0005)
+                                                                    _sprd = _pf.get('spread', 0.0008)
+                                                                    _friction_cost = (buy_price * buy_qty) * (_slip + _sprd)  # $ cost of friction
+                                                                    _penny_target_move = (0.01 + _friction_cost) / buy_qty if buy_qty > 0 else 0
                                                                     target_price_margin = breakeven + _penny_target_move
                                                                     _margin_collateral = buy_price * buy_qty / _order_leverage * (1 + fee_rate)
                                                                     pos = LivePosition(
@@ -15919,12 +15979,70 @@ class OrcaKillCycle:
                                         sell_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
                                         print(f"      TAKING PROFIT (momentum reversal, Queen approved)")
                             
-                            # 3. PENNY PROFIT EXIT — Margin positions close at $0.01 net profit
-                            #    The entire margin universe targets one penny. That's it.
-                            if not should_sell and pos.is_margin and pos.exchange == 'kraken' and net_pnl >= 0.01:
-                                should_sell = True
-                                sell_reason = f'PENNY_PROFIT_MARGIN (net=${net_pnl:+.4f})'
-                                print(f"      PENNY PROFIT HIT! Margin net P&L ${net_pnl:+.4f} >= $0.01 — CLOSING!")
+                            # 3. MARGIN PENNY FLOOR — $0.01 REALIZED profit after ALL fees + slippage + spread
+                            #    Hard floor: one penny net after every cost imaginable.
+                            #    Queen decides: take the penny or hold for more (validated plays only).
+                            if not should_sell and pos.is_margin and pos.exchange == 'kraken':
+                                # True realized P&L: deduct slippage + spread on top of fee-inclusive net_pnl
+                                _ex_fees = EXCHANGE_FEES.get(pos.exchange, {})
+                                _slippage = _ex_fees.get('slippage', 0.0005)
+                                _spread = _ex_fees.get('spread', 0.0008)
+                                _friction = _slippage + _spread  # ~0.13% for Kraken
+                                _exit_gross = current * pos.entry_qty
+                                _realized_pnl = net_pnl - (_exit_gross * _friction)
+
+                                if _realized_pnl >= 0.01:
+                                    # ═══ PENNY FLOOR HIT — Consult Queen: take or hold? ═══
+                                    _queen_holds = False
+                                    _q_queen = queen if 'queen' in dir() else self.queen_hive
+                                    if _q_queen:
+                                        try:
+                                            _q_sig = _q_queen.get_collective_signal(
+                                                symbol=pos.symbol,
+                                                market_data={'price': current, 'exchange': pos.exchange}
+                                            )
+                                            _q_conf = float(_q_sig.get('confidence', 0.5))
+                                            _q_action = _q_sig.get('action', 'HOLD')
+                                            _q_dir = _q_sig.get('direction', 'NEUTRAL')
+
+                                            # Queen can hold ONLY if she validates the directional play
+                                            _dir_valid = (
+                                                (pos.margin_side == 'LONG' and _q_dir in ('BULLISH', 'UP', 'LONG', 'BUY')) or
+                                                (pos.margin_side == 'SHORT' and _q_dir in ('BEARISH', 'DOWN', 'SHORT', 'SELL'))
+                                            )
+
+                                            if _q_action in ('HOLD', 'BUY') and _q_conf >= 0.6 and _dir_valid:
+                                                # Queen validates the play — hold for bigger win
+                                                _queen_holds = True
+                                                print(f"      PENNY FLOOR ${_realized_pnl:+.4f} — Queen HOLDING ({pos.margin_side} validated, {_q_conf:.0%} conf)")
+                                            elif _q_action == 'SELL' and _q_conf >= 0.5:
+                                                # Queen wants out — respect the signal
+                                                print(f"      PENNY FLOOR ${_realized_pnl:+.4f} — Queen says CLOSE ({_q_conf:.0%} conf)")
+                                        except Exception:
+                                            pass  # On error, take the penny
+
+                                    if not _queen_holds:
+                                        should_sell = True
+                                        sell_reason = f'PENNY_PROFIT_REALIZED (${_realized_pnl:+.4f} after all costs)'
+                                        print(f"      PENNY PROFIT REALIZED! ${_realized_pnl:+.4f} after fees+slippage+spread — CLOSING!")
+
+                                # ═══ QUEEN FORCE CLOSE — Queen can exit ANY margin position at will ═══
+                                elif not should_sell:
+                                    _q_queen = queen if 'queen' in dir() else self.queen_hive
+                                    if _q_queen:
+                                        try:
+                                            _q_sig = _q_queen.get_collective_signal(
+                                                symbol=pos.symbol,
+                                                market_data={'price': current, 'exchange': pos.exchange}
+                                            )
+                                            _q_conf = float(_q_sig.get('confidence', 0.5))
+                                            _q_action = _q_sig.get('action', 'HOLD')
+                                            if _q_action == 'SELL' and _q_conf >= 0.7:
+                                                should_sell = True
+                                                sell_reason = f'QUEEN_FORCE_CLOSE (conf={_q_conf:.0%}, pnl=${net_pnl:+.4f})'
+                                                print(f"      QUEEN FORCE CLOSE! Confidence {_q_conf:.0%} — exiting margin position")
+                                        except Exception:
+                                            pass
 
                             # If not approved, log why
                             if not can_exit and not should_sell and (current >= pos.target_price or net_pnl > 0.001):
