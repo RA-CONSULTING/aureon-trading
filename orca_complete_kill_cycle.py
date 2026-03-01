@@ -8980,20 +8980,23 @@ class OrcaKillCycle:
     def queen_profit_gate(self, symbol: str, exchange: str, current_price: float,
                             momentum_pct: float = 0, expected_move_pct: float = 0) -> Tuple[bool, str]:
         """
-           THE QUEEN'S SACRED PROFIT GATE - NOTHING GETS BOUGHT WITHOUT IT!   
-        
+           THE QUEEN'S SACRED PROFIT GATE - NOTHING GETS BOUGHT WITHOUT IT!
+
         Before ANY buy, this gate checks:
         1. Can the opportunity realistically achieve the target profit?
         2. Is momentum strong enough to reach the target?
         3. Will fees/slippage eat the expected profit?
-        
+
+        LEVERAGE-AWARE: On Kraken, margin leverage divides the required
+        price move. With 3x: a 0.37% price move = 1.12% gain.
+
         Args:
             symbol: Trading symbol
             exchange: Exchange name
             current_price: Current price
             momentum_pct: Current momentum (24h change %)
             expected_move_pct: Expected price move %
-            
+
         Returns:
             (approved, reason) - True if opportunity can achieve target
         """
@@ -9001,34 +9004,52 @@ class OrcaKillCycle:
         # Uses: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT (defined at module level)
         MIN_COP_SACRED = QUEEN_MIN_COP
         MIN_PROFIT_PCT = QUEEN_MIN_PROFIT_PCT
-        
+
         # Get fee rate for exchange
         fee_rate = self.fee_rates.get(exchange, 0.0026)
-        
+
         # Calculate total round-trip costs
         # 2 * taker_fee (entry + exit) + spread + slippage
         total_cost_pct = (2 * fee_rate * 100) + 0.20  # ~0.72% for Kraken worst case
-        
-        # Required GROSS price move to net target profit
-        required_move_pct = MIN_PROFIT_PCT + total_cost_pct  # ~2.60% for Kraken
-        
+
+        # Required GROSS price move to net target profit (spot)
+        required_move_pct_spot = MIN_PROFIT_PCT + total_cost_pct  # ~1.12% for Kraken
+
+        # LEVERAGE AWARENESS: On Kraken, margin divides required price move
+        # With 3x leverage: need only 1.12% / 3 = 0.37% price move
+        # The leverage effectively amplifies any price move by the multiplier
+        _margin_leverage = 1
+        if exchange == 'kraken':
+            # Check if margin will be used (same logic as queen_gated_buy)
+            quad_data = getattr(self, '_last_quad_result', None)
+            if quad_data and quad_data.get('margin_leverage', 0) >= 2:
+                _margin_leverage = min(quad_data.get('margin_leverage', 3), 5)
+            elif hasattr(getattr(self, 'kraken_client', None) or '', 'place_margin_order'):
+                _margin_leverage = 3  # Default leverage on Kraken margin-first mode
+
+        required_move_pct = required_move_pct_spot / _margin_leverage if _margin_leverage > 1 else required_move_pct_spot
+
         # Use the larger of momentum or expected move
         potential_move = max(abs(momentum_pct), abs(expected_move_pct))
-        
+
+        _lev_tag = f" [{_margin_leverage}x margin]" if _margin_leverage > 1 else ""
+
         # CHECK 1: Is the potential move >= required move?
         if potential_move >= required_move_pct:
-            return True, f"  CAN hit {MIN_PROFIT_PCT}%: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
-        
+            return True, f"  CAN hit {MIN_PROFIT_PCT}%{_lev_tag}: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
+
         # CHECK 2: Is momentum at least 50% of required? (trending toward target)
         if potential_move >= required_move_pct * 0.5:
-            return True, f"  TRENDING to {MIN_PROFIT_PCT}%: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
-        
+            return True, f"  TRENDING to {MIN_PROFIT_PCT}%{_lev_tag}: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
+
         # CHECK 3: High momentum assets might reach target even with low current move
-        if abs(momentum_pct) >= 1.5:  # Strong momentum
-            return True, f"  STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
-        
+        # With margin, lower momentum threshold is fine since leverage amplifies
+        _momentum_threshold = 1.5 / _margin_leverage if _margin_leverage > 1 else 1.5
+        if abs(momentum_pct) >= _momentum_threshold:
+            return True, f"  STRONG MOMENTUM{_lev_tag}: {momentum_pct:+.2f}% suggests target achievable"
+
         # BLOCKED - Cannot achieve target
-        return False, f"  BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for {MIN_PROFIT_PCT}%"
+        return False, f"  BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for {MIN_PROFIT_PCT}%{_lev_tag}"
     
     # ════════════════════════════════════════════════════════════════════════════
     #  🌱 ENIGMA NEW-LISTING SNIPER
@@ -10039,12 +10060,64 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   ⚠️ Soul Shield check warning: {e}")
 
-        #                                                                    
+        #
         #     EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
-        #                                                                    
-        
+        #
+
         # ═══════════════════════════════════════════════════════════════
-        #  ALWAYS EXECUTE SPOT ORDER - This is the primary trading path
+        #  MARGIN-FIRST on Kraken: Leverage amplifies micro-moves into
+        #  guaranteed penny profits. With 3x, a 0.15% move = 0.45% gain.
+        #  Spot fallback for non-Kraken exchanges.
+        # ═══════════════════════════════════════════════════════════════
+        _use_margin = (
+            exchange == 'kraken' and
+            hasattr(client, 'place_margin_order') and
+            margin_leverage >= 2 and
+            margin_conviction >= 0.3
+        )
+
+        # Even if quadrumvirate didn't give explicit margin signal, default
+        # to margin on Kraken when intelligence confidence is high enough
+        if (exchange == 'kraken' and
+            hasattr(client, 'place_margin_order') and
+            not _use_margin and
+            queen_confidence >= 0.6):
+            _use_margin = True
+            margin_leverage = 3   # Conservative default leverage
+            margin_recommendation = 'LONG'
+            margin_conviction = queen_confidence
+
+        if _use_margin:
+            _m_leverage = min(max(margin_leverage, 2), 5)
+            _m_side = 'buy' if margin_recommendation in ('LONG', 'NONE', '') else 'sell'
+            _m_qty = 0.0
+
+            if quote_qty and quote_qty > 0 and price and price > 0:
+                # Convert quote amount to base quantity for margin order
+                _m_qty = quote_qty / price
+            elif quantity and quantity > 0:
+                _m_qty = quantity
+
+            if _m_qty > 0:
+                print(f"   MARGIN-FIRST: {_m_side.upper()} {symbol} @ {_m_leverage}x leverage (conviction {margin_conviction:.0%})")
+                try:
+                    result = client.place_margin_order(
+                        symbol=symbol,
+                        side=_m_side,
+                        quantity=_m_qty,
+                        leverage=_m_leverage,
+                    )
+                    if result:
+                        result['_margin_order'] = True
+                        result['_leverage'] = _m_leverage
+                        result['_margin_side'] = margin_recommendation if margin_recommendation in ('LONG', 'SHORT') else 'LONG'
+                        return result
+                except Exception as e:
+                    print(f"      Margin order failed ({e}), falling back to spot...")
+                    # Fall through to spot
+
+        # ═══════════════════════════════════════════════════════════════
+        #  SPOT FALLBACK - Non-Kraken or margin unavailable
         # ═══════════════════════════════════════════════════════════════
         if quote_qty and quote_qty > 0:
             return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
@@ -15211,25 +15284,57 @@ class OrcaKillCycle:
                                                                 )
                                                                 
                                                                 # ═══════════════════════════════════════════════
-                                                                #  SPOT POSITION - Always created
+                                                                #  DETECT MARGIN vs SPOT from queen_gated_buy
                                                                 # ═══════════════════════════════════════════════
-                                                                pos = LivePosition(
-                                                                    symbol=symbol_clean,
-                                                                    exchange=best.exchange,
-                                                                    entry_price=buy_price,
-                                                                    entry_qty=buy_qty,
-                                                                    entry_cost=buy_price * buy_qty * (1 + fee_rate),
-                                                                    breakeven_price=breakeven,
-                                                                    target_price=target_price,
-                                                                    client=client,
-                                                                    stop_price=0.0,  # NO STOP LOSS!
-                                                                    # Spot position - no margin
-                                                                    is_margin=False,
-                                                                    leverage=1,
-                                                                    margin_amount=0.0,
-                                                                )
+                                                                _is_margin_order = raw_order.get('_margin_order', False) if raw_order else False
+                                                                _order_leverage = raw_order.get('_leverage', 1) if raw_order else 1
+                                                                _margin_side = raw_order.get('_margin_side', 'LONG') if raw_order else 'LONG'
+
+                                                                if _is_margin_order and _order_leverage >= 2:
+                                                                    # MARGIN POSITION — leverage amplifies the target
+                                                                    # With 3x: breakeven gap shrinks by 3x, target reached 3x faster
+                                                                    target_price_margin = breakeven * (1 + target_pct_current / (100 * _order_leverage))
+                                                                    _margin_collateral = buy_price * buy_qty / _order_leverage * (1 + fee_rate)
+                                                                    pos = LivePosition(
+                                                                        symbol=symbol_clean,
+                                                                        exchange=best.exchange,
+                                                                        entry_price=buy_price,
+                                                                        entry_qty=buy_qty,
+                                                                        entry_cost=buy_price * buy_qty * (1 + fee_rate),
+                                                                        breakeven_price=breakeven,
+                                                                        target_price=target_price_margin,
+                                                                        client=client,
+                                                                        stop_price=0.0,  # NO STOP LOSS!
+                                                                        is_margin=True,
+                                                                        leverage=_order_leverage,
+                                                                        margin_amount=_margin_collateral,
+                                                                        margin_side=_margin_side,
+                                                                    )
+                                                                    print(f"     MARGIN BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f} ({_order_leverage}x {_margin_side})")
+                                                                    print(f"        Target: ${target_price_margin:,.4f} (only {target_pct_current/_order_leverage:.2f}% price move needed!)")
+                                                                    print(f"        Margin: ${_margin_collateral:.2f} | NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                else:
+                                                                    # SPOT POSITION — classic path
+                                                                    pos = LivePosition(
+                                                                        symbol=symbol_clean,
+                                                                        exchange=best.exchange,
+                                                                        entry_price=buy_price,
+                                                                        entry_qty=buy_qty,
+                                                                        entry_cost=buy_price * buy_qty * (1 + fee_rate),
+                                                                        breakeven_price=breakeven,
+                                                                        target_price=target_price,
+                                                                        client=client,
+                                                                        stop_price=0.0,  # NO STOP LOSS!
+                                                                        is_margin=False,
+                                                                        leverage=1,
+                                                                        margin_amount=0.0,
+                                                                    )
+                                                                    print(f"     SPOT BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
+                                                                    print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
+                                                                    print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
+
                                                                 positions.append(pos)
-                                                                
+
                                                                 # Track the buy order
                                                                 self.track_buy_order(symbol_clean, buy_order, best.exchange)
                                                                 self._record_action_cop(cop_actual, 'BUY', best.exchange, symbol_clean)
@@ -15239,73 +15344,12 @@ class OrcaKillCycle:
                                                                     meta={"symbol": symbol_clean, "exchange": best.exchange},
                                                                 )
                                                                 
-                                                                print(f"     SPOT BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
-                                                                print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
-                                                                print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
-                                                                
                                                                 session_stats['total_trades'] += 1
                                                                 
                                                                 # ═══════════════════════════════════════════════
-                                                                #  MARGIN POSITION - Simultaneous, Kraken only
-                                                                #  Fires ALONGSIDE spot, never instead of it
+                                                                #  MARGIN is now PRIMARY (via queen_gated_buy).
+                                                                #  No need for separate simultaneous margin fire.
                                                                 # ═══════════════════════════════════════════════
-                                                                if (best.exchange == "kraken" and
-                                                                    margin_rec in ("LONG", "SHORT") and
-                                                                    margin_lev >= 2 and
-                                                                    margin_conv >= 0.4 and
-                                                                    hasattr(client, 'place_margin_order')):
-                                                                    
-                                                                    m_leverage = min(margin_lev, 5)
-                                                                    print(f"   💰 MARGIN TRADE (SIMULTANEOUS): {margin_rec} at {m_leverage}x leverage (conviction {margin_conv:.0%})")
-                                                                    try:
-                                                                        m_side = 'buy' if margin_rec == "LONG" else 'sell'
-                                                                        # Convert quote amount (USD) to base asset quantity
-                                                                        m_base_qty = buy_amount / best.price if best.price > 0 else 0.0
-                                                                        m_raw = client.place_margin_order(
-                                                                            symbol=symbol_clean,
-                                                                            side=m_side,
-                                                                            quantity=m_base_qty,
-                                                                            leverage=m_leverage
-                                                                        )
-                                                                        m_order = self.normalize_order_response(m_raw, best.exchange) if m_raw else None
-                                                                        if m_order and m_order.get('status') != 'rejected':
-                                                                            m_qty = m_order.get('filled_qty', 0)
-                                                                            m_price = m_order.get('filled_avg_price', buy_price)
-                                                                            if m_qty > 0 and m_price > 0:
-                                                                                if margin_rec == 'LONG':
-                                                                                    # LONG: target ABOVE entry (price must rise)
-                                                                                    m_breakeven = m_price * (1 + fee_rate) / (1 - fee_rate)
-                                                                                    m_target = m_breakeven * (1 + target_pct_current / 100)
-                                                                                else:
-                                                                                    # SHORT: target BELOW entry (price must fall)
-                                                                                    m_breakeven = m_price * (1 - fee_rate) / (1 + fee_rate)
-                                                                                    m_target = m_breakeven * (1 - target_pct_current / 100)
-                                                                                margin_pos = LivePosition(
-                                                                                    symbol=symbol_clean,
-                                                                                    exchange=best.exchange,
-                                                                                    entry_price=m_price,
-                                                                                    entry_qty=m_qty,
-                                                                                    entry_cost=m_price * m_qty * (1 + fee_rate),
-                                                                                    breakeven_price=m_breakeven,
-                                                                                    target_price=m_target,
-                                                                                    client=client,
-                                                                                    stop_price=0.0,
-                                                                                    is_margin=True,
-                                                                                    leverage=m_leverage,
-                                                                                    margin_amount=buy_amount,
-                                                                                    margin_side=margin_rec,  # 'LONG' or 'SHORT'
-                                                                                )
-                                                                                positions.append(margin_pos)
-                                                                                session_stats['total_trades'] += 1
-                                                                                print(f"     MARGIN BOUGHT: {m_qty:.6f} @ ${m_price:,.4f} ({m_leverage}x leverage)")
-                                                                                print(f"        Margin Target: ${m_target:,.4f} | Collateral: ${buy_amount:.2f}")
-                                                                            else:
-                                                                                print(f"      Margin order filled but zero qty/price")
-                                                                        else:
-                                                                            print(f"      Margin order not filled: {m_order}")
-                                                                    except Exception as margin_err:
-                                                                        print(f"      ⚠️ Margin order failed (spot still good): {margin_err}")
-                                                                        # Spot position is already created - margin failure is non-fatal
                                                 else:
                                                     print(f"      BUY SKIPPED: insufficient funded quote amount on {best.exchange.upper()} (buy_amount={buy_amount:.4f})")
                                         except Exception as e:
