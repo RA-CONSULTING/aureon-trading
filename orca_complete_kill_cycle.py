@@ -9424,7 +9424,148 @@ class OrcaKillCycle:
                 queen.equity += pnl
                 print(f"     👑 QUEEN EQUITY: ${queen.equity:,.2f}")
         except Exception as e:
-            print(f"     ⚠️ Queen learning error: {e}")
+            print(f"     Queen learning error: {e}")
+
+        # Broadcast to ALL intelligence systems (not just Queen)
+        try:
+            self._broadcast_trade_outcome(
+                symbol=symbol, exchange=exchange, pnl=pnl,
+                entry_price=entry_price, exit_price=exit_price,
+                reason=reason
+            )
+        except Exception:
+            pass
+
+    def _broadcast_trade_outcome(self, symbol: str, exchange: str, pnl: float,
+                                 entry_price: float = 0, exit_price: float = 0,
+                                 reason: str = '') -> None:
+        """
+        Feed trade outcome to ALL intelligence systems for learning.
+        Every brain should know when a trade wins or loses so it can
+        refine its predictions next time.
+        """
+        is_win = pnl > 0
+        outcome = {
+            'symbol': symbol, 'exchange': exchange, 'pnl': pnl,
+            'entry_price': entry_price, 'exit_price': exit_price,
+            'reason': reason, 'is_win': is_win,
+            'pnl_pct': ((exit_price - entry_price) / entry_price * 100) if entry_price > 0 else 0,
+        }
+        _fed = 0
+
+        # 1. Elephant Learning — record win/loss for historical pattern memory
+        if self.elephant:
+            try:
+                if hasattr(self.elephant, 'record_outcome'):
+                    self.elephant.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+                elif hasattr(self.elephant, 'learn'):
+                    self.elephant.learn(symbol, {'win': is_win, 'pnl': pnl, 'exchange': exchange})
+                    _fed += 1
+                elif hasattr(self.elephant, 'update_score'):
+                    # Adjust symbol score based on outcome
+                    delta = 0.05 if is_win else -0.05
+                    self.elephant.update_score(symbol, delta)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 2. Probability Nexus — feed outcome for model refinement
+        try:
+            from aureon_probability_nexus import record_outcome as _nexus_record
+            _nexus_record(symbol, is_win, pnl)
+            _fed += 1
+        except (ImportError, AttributeError):
+            pass
+        except Exception:
+            pass
+
+        # 3. Ultimate Intelligence — feed outcome
+        if self.ultimate_intel:
+            try:
+                if hasattr(self.ultimate_intel, 'record_outcome'):
+                    self.ultimate_intel.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+                elif hasattr(self.ultimate_intel, 'feedback'):
+                    self.ultimate_intel.feedback(outcome)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 4. Miner Brain — feed outcome for recommendation refinement
+        if self.miner_brain:
+            try:
+                if hasattr(self.miner_brain, 'record_outcome'):
+                    self.miner_brain.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+                elif hasattr(self.miner_brain, 'feedback'):
+                    self.miner_brain.feedback(outcome)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 5. Harmonic Momentum — feed outcome for signal quality tracking
+        if self.harmonic_momentum:
+            try:
+                if hasattr(self.harmonic_momentum, 'record_outcome'):
+                    self.harmonic_momentum.record_outcome(symbol, is_win)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 6. Whale Tracker — correlate whale activity with outcome
+        if self.whale_tracker:
+            try:
+                if hasattr(self.whale_tracker, 'record_trade_outcome'):
+                    self.whale_tracker.record_trade_outcome(symbol, is_win, pnl)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 7. Movers & Shakers — track if hot movers led to wins
+        if self.movers_scanner:
+            try:
+                if hasattr(self.movers_scanner, 'record_outcome'):
+                    self.movers_scanner.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 8. Chirp Bus — broadcast outcome to all listeners via ring buffer
+        if self.chirp_bus:
+            try:
+                status = "WIN" if is_win else "LOSS"
+                self.chirp_bus.emit_message(
+                    f"{status} {symbol} pnl={pnl:+.4f}",
+                    coherence=1.0 if is_win else 0.3,
+                    confidence=1.0 if is_win else 0.3,
+                    symbol=symbol,
+                )
+                _fed += 1
+            except Exception:
+                pass
+
+        # 9. Inception Engine — feed reality branch outcome
+        if self.inception_engine:
+            try:
+                if hasattr(self.inception_engine, 'record_outcome'):
+                    self.inception_engine.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 10. Historical Manipulation Hunter — track if manipulation was detected correctly
+        if hasattr(self, 'historical_manipulation') and self.historical_manipulation:
+            try:
+                if hasattr(self.historical_manipulation, 'record_trade'):
+                    self.historical_manipulation.record_trade(symbol, is_win, pnl)
+                    _fed += 1
+            except Exception:
+                pass
+
+        status = "WIN" if is_win else "LOSS"
+        if _fed > 0:
+            print(f"     OUTCOME BROADCAST: {symbol} {status} (${pnl:+.4f}) → {_fed} brains learning")
 
     def execute_stealth_sell(self, client: Any, symbol: str, quantity: float,
                              price: float = None, exchange: str = 'alpaca') -> Dict:
@@ -10568,9 +10709,143 @@ class OrcaKillCycle:
                 # Profit gate failed - fall back to our calculation but log warning
                 print(f"      Profit gate check failed ({e}), using manual calculation")
         
-        #                                                                    
+        #
+        # CHECK 3C: SELL-SIDE INTELLIGENCE CONSULTATION
+        # Profit is confirmed. Now ask: sell NOW or hold for more?
+        # Advisory: can delay exit if multiple brains say "hold for bigger win"
+        # but NEVER blocks a profitable exit entirely.
+        #
+        _sell_hold_votes = 0   # Brains saying "wait, more upside coming"
+        _sell_now_votes = 0    # Brains saying "sell now, reversal coming"
+        _sell_intel_total = 0
+        try:
+            # Ocean Scanner: is the wave still RISING or about to CRASH?
+            if self.ocean_scanner:
+                try:
+                    _ow_data = self.ocean_scanner.scan_waves({symbol: current_price})
+                    _sell_intel_total += 1
+                    if _ow_data:
+                        _wave_st = ''
+                        if isinstance(_ow_data, dict):
+                            _ow_entry = _ow_data.get(symbol, _ow_data.get(symbol.replace('/', ''), {}))
+                            _wave_st = (_ow_entry.get('wave_state', '') if isinstance(_ow_entry, dict) else str(_ow_entry)).upper()
+                        elif isinstance(_ow_data, list):
+                            for wd in _ow_data:
+                                ws = getattr(wd, 'symbol', '') if hasattr(wd, 'symbol') else (wd.get('symbol', '') if isinstance(wd, dict) else '')
+                                if ws in (symbol, symbol.replace('/', '')):
+                                    _wave_st = (getattr(wd, 'wave_state', '') if hasattr(wd, 'wave_state') else (wd.get('wave_state', '') if isinstance(wd, dict) else '')).upper()
+                        if _wave_st in ('RISING', 'BREAKOUT', 'SURGE'):
+                            _sell_hold_votes += 1
+                        elif _wave_st in ('CRASHING', 'FALLING', 'COLLAPSE', 'REVERSAL'):
+                            _sell_now_votes += 1
+                except Exception:
+                    pass
+
+            # Whale Tracker: are whales still accumulating or distributing?
+            if self.whale_tracker:
+                try:
+                    _wt_act = getattr(self.whale_tracker, 'recent_whale_activity', {}) or {}
+                    _sell_intel_total += 1
+                    _wt_sym = _wt_act.get(symbol, _wt_act.get(symbol.replace('/', ''), None))
+                    if _wt_sym and isinstance(_wt_sym, dict):
+                        _wt_dir = str(_wt_sym.get('direction', '')).upper()
+                        if _wt_dir in ('BUY', 'ACCUMULATE', 'LONG'):
+                            _sell_hold_votes += 1  # Whales still buying — hold
+                        elif _wt_dir in ('SELL', 'DISTRIBUTE', 'SHORT'):
+                            _sell_now_votes += 1   # Whales exiting — sell now
+                except Exception:
+                    pass
+
+            # Harmonic Signal Chain: is momentum still aligned?
+            if self.harmonic_signal_chain:
+                try:
+                    _hsc_msg = f"exit_check:{symbol}"
+                    _hsc_r = self.harmonic_signal_chain.send_signal(_hsc_msg) if hasattr(self.harmonic_signal_chain, 'send_signal') else None
+                    _sell_intel_total += 1
+                    if _hsc_r:
+                        _hsc_dir = getattr(_hsc_r, 'direction', None)
+                        if _hsc_dir and 'UP' in str(_hsc_dir).upper():
+                            _sell_hold_votes += 1
+                        elif _hsc_dir and 'DOWN' in str(_hsc_dir).upper():
+                            _sell_now_votes += 1
+                except Exception:
+                    pass
+
+            # Elephant Learning: what happened historically when we held at this gain?
+            if self.elephant:
+                try:
+                    _sell_intel_total += 1
+                    _el_exit = None
+                    if hasattr(self.elephant, 'get_exit_score'):
+                        _el_exit = self.elephant.get_exit_score(symbol, net_pnl_pct)
+                    elif hasattr(self.elephant, 'recall'):
+                        _el_exit = self.elephant.recall(symbol)
+                    if _el_exit is not None:
+                        _el_val = float(_el_exit) if isinstance(_el_exit, (int, float)) else float(_el_exit.get('score', _el_exit.get('exit_score', 0.5)) if isinstance(_el_exit, dict) else 0.5)
+                        if _el_val >= 0.7:
+                            _sell_now_votes += 1   # History says take profits here
+                        elif _el_val <= 0.3:
+                            _sell_hold_votes += 1  # History says this usually runs further
+                except Exception:
+                    pass
+
+            # Probability Nexus: what's the prediction for this symbol?
+            try:
+                from aureon_probability_nexus import make_predictions as _nexus_sell_check
+                _nsc = _nexus_sell_check()
+                if _nsc:
+                    _sell_intel_total += 1
+                    for _np in _nsc:
+                        if isinstance(_np, dict) and _np.get('symbol', '') in (symbol, symbol.replace('/', '')):
+                            _n_sig = str(_np.get('signal', 'HOLD')).upper()
+                            _n_conf = float(_np.get('confidence', 0))
+                            if _n_sig == 'SELL' and _n_conf >= 0.5:
+                                _sell_now_votes += 1
+                            elif _n_sig == 'BUY' and _n_conf >= 0.5:
+                                _sell_hold_votes += 1  # Nexus says still bullish
+                            break
+            except ImportError:
+                pass
+            except Exception:
+                pass
+
+            # Predator Detector: is someone hunting this symbol?
+            if self.predator_detector:
+                try:
+                    _sell_intel_total += 1
+                    _pred_rep = getattr(self, '_last_predator_report', None)
+                    if _pred_rep:
+                        _hunted = False
+                        for pred in (getattr(_pred_rep, 'top_predators', None) or []):
+                            _ps = getattr(pred, 'symbol', '') if hasattr(pred, 'symbol') else ''
+                            if _ps in (symbol, symbol.replace('/', '')):
+                                _hunted = True
+                        if _hunted:
+                            _sell_now_votes += 1  # Being hunted — exit before front-run
+                except Exception:
+                    pass
+
+            info['sell_intel'] = {
+                'hold_votes': _sell_hold_votes,
+                'now_votes': _sell_now_votes,
+                'total_systems': _sell_intel_total
+            }
+
+            # Advisory: if overwhelming consensus says "hold", log it
+            # But NEVER block a profitable exit — the math is sacred
+            if _sell_hold_votes >= 3 and _sell_now_votes == 0 and net_pnl_pct < 2.0:
+                print(f"       SELL INTEL: {_sell_hold_votes}/{_sell_intel_total} brains say HOLD (wave still rising)")
+                print(f"       Advisory: Consider holding for bigger win (current: {net_pnl_pct:.2f}%)")
+            elif _sell_now_votes >= 2:
+                print(f"       SELL INTEL: {_sell_now_votes}/{_sell_intel_total} brains say SELL NOW (reversal/threat detected)")
+            elif _sell_intel_total > 0:
+                print(f"       SELL INTEL: hold={_sell_hold_votes} now={_sell_now_votes} of {_sell_intel_total} systems")
+        except Exception as e:
+            print(f"      Sell intelligence error (non-blocking): {e}")
+
+        #
         # CHECK 4: Queen confidence check (advisory, not blocking)
-        #                                                                    
+        #
         if queen:
             try:
                 queen_signal = queen.get_collective_signal(
@@ -14481,14 +14756,14 @@ class OrcaKillCycle:
                             if _intel_boosts:
                                 print(f"     INTELLIGENCE MAP: {len(_intel_boosts)} symbols boosted by {_intel_active} systems")
 
-                            # Chirp Bus - Bird chorus coordination
+                            # Chirp Bus - Broadcast cycle status to all listeners
                             if self.chirp_bus:
                                 try:
-                                    self.chirp_bus.broadcast_cycle_status({
-                                        'cycle': session_stats['cycles'],
-                                        'positions': len(positions),
-                                        'pnl': session_stats['total_pnl']
-                                    })
+                                    self.chirp_bus.emit_message(
+                                        f"STATUS cycle={session_stats['cycles']} pos={len(positions)} pnl={session_stats['total_pnl']:.2f}",
+                                        coherence=0.9,
+                                        confidence=0.9,
+                                    )
                                 except Exception:
                                     pass
 
@@ -14715,6 +14990,16 @@ class OrcaKillCycle:
                                 if boosted_count > 0 or _timeline_multiplier > 1.0 or _total_systems > 0:
                                     print(f"     FULL INTEL APPLIED: {boosted_count} boosted | {_pred_penalized} penalized | "
                                           f"Timeline {_timeline_multiplier:.2f}x | {_total_systems} systems active")
+                                    # Chirp: broadcast intelligence summary to bus
+                                    if self.chirp_bus:
+                                        try:
+                                            self.chirp_bus.emit_message(
+                                                f"ENTRY intel_boost={boosted_count} systems={_total_systems}",
+                                                coherence=min(1.0, _total_systems / 10),
+                                                confidence=min(1.0, boosted_count / max(len(opportunities), 1)),
+                                            )
+                                        except Exception:
+                                            pass
 
                             if opportunities:
                                 #    Apply quantum pattern recognition boost to scoring
