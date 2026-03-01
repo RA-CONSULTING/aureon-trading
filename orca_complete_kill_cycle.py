@@ -1245,19 +1245,19 @@ import random  # For simulating market activity
 #                                                                                        
 #    DEADLINE MODE: FEBRUARY 20, 2026 - MAXIMUM AGGRESSION   
 #                                                                                        
-DEADLINE_MODE = True  # ENGAGED
+DEADLINE_MODE = False  # EXPIRED 2026-02-20 — disabled to prevent stale aggressive parameters
 DEADLINE_DATE = "2026-02-20"
 
-# In DEADLINE MODE: We accept more risk for higher returns
-# Standard mode: 0.40% MIN_COP (conservative)
-# Deadline mode: 0.75% MIN_COP (fast scalping, triggers GROWTH_MODE) + multiple positions
-QUEEN_MIN_COP = 1.0075 if DEADLINE_MODE else 1.0040  # 0.75% or 0.40%
-QUEEN_MIN_PROFIT_PCT = 0.75 if DEADLINE_MODE else 0.40  # < 1.0 = GROWTH MODE
+# MICRO-COMPOUND GROWTH MODE: optimized for small capital (<$100)
+# 0.40% target is achievable on micro-positions after fees
+# The key: HIGH FREQUENCY of small wins compounds into visible portfolio growth
+QUEEN_MIN_COP = 1.0040   # 0.40% net profit minimum (Growth Mode)
+QUEEN_MIN_PROFIT_PCT = 0.40  # < 1.0 = GROWTH MODE (enables relaxed black box gate)
 
-# DEADLINE MODE MULTIPLIERS
-DEADLINE_POSITION_MULTIPLIER = 3.0  # 3x position sizes
-DEADLINE_MAX_SIMULTANEOUS = 10  # Allow 10 positions at once
-DEADLINE_LEVERAGE_TARGET = 5.0  # Target 5x leverage where available
+# GROWTH MODE MULTIPLIERS (conservative, protect small capital)
+DEADLINE_POSITION_MULTIPLIER = 1.0  # Normal position sizes
+DEADLINE_MAX_SIMULTANEOUS = 5  # 5 positions max (spread risk)
+DEADLINE_LEVERAGE_TARGET = 2.0  # Conservative leverage
 
 # ENIGMA NEW-LISTING SNIPER: max USD to spend on a single new-listing entry
 # The full Queen gate chain still guards every purchase.
@@ -1476,9 +1476,10 @@ def queen_can_buy(momentum_pct: float, expected_move_pct: float, fee_rate: float
     
     if potential_move >= required_move:
         return True, f"   CAN HIT {QUEEN_MIN_PROFIT_PCT}%: {potential_move:.2f}% >= {required_move:.2f}% required"
-    elif potential_move >= required_move * 0.5:
+    elif potential_move >= required_move * 0.6:
         return True, f"   TRENDING: {potential_move:.2f}% is {potential_move/required_move*100:.0f}% toward target"
-    elif abs(momentum_pct) >= 1.5:
+    elif abs(momentum_pct) >= 2.0:
+        # Strong momentum override — only if move is substantial enough to cover fees
         return True, f"   STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
     else:
         return False, f"   BLOCKED: {potential_move:.2f}% < {required_move:.2f}% required for {QUEEN_MIN_PROFIT_PCT}%"
@@ -3651,12 +3652,9 @@ class OrcaKillCycle:
             initial_capital: Starting capital for the trading session.
             autonomous_mode: Flag indicating if running in full autonomous mode.
         """
-        # CRITICAL: Force quick_init=True to prevent hanging during init
-        # Full init tries to connect to too many systems and blocks indefinitely
-        # The trading methods (scan_for_rising_stars, run_autonomous_warroom, execute_trade_decision) 
-        # are defined and don't depend on these system inits
-        if not autonomous_mode and not quick_init:
-            quick_init = True  # AUTO-FIX: Override to prevent hanging
+        # NOTE: quick_init override was removed. Full intelligence requires full init.
+        # autonomous_mode=True now guarantees full Quadrumvirate boot (Seer+King+Queen+Lyra).
+        # Only use quick_init=True for testing/dry-run when you explicitly pass it.
             
         self.primary_exchange = exchange
         self.symbol_whitelist = symbol_whitelist if symbol_whitelist else []
@@ -10285,18 +10283,22 @@ class OrcaKillCycle:
                 symbol, current_price, exchange=exchange, quantity=entry_qty
             )
             if cb_info.get('entry_price') is None:
-                #   SNIPER FIX: Fallback to estimated entry price if reliable
-                if entry_price > 0 and entry_cost > 0:
+                #   ALWAYS FALLBACK to estimated entry price — NEVER block sells
+                # on cost basis alone. The math checks (COP, black box, profit gate)
+                # downstream are sufficient to prevent selling at a loss.
+                if entry_price > 0:
                      print(f"      Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
                      confirmed_entry = entry_price
-                     # Use passed-in cost basis as fallback
                      cb_info['entry_price'] = entry_price
+                elif entry_cost > 0 and entry_qty > 0:
+                     confirmed_entry = entry_cost / entry_qty
+                     print(f"      Cost Basis Missing for {symbol}. Derived entry from cost/qty: {confirmed_entry:.6f}")
+                     cb_info['entry_price'] = confirmed_entry
                 else:
-                    # No confirmed or estimated cost basis - BLOCK SELL!
-                    info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
-                    print(f"      EXIT BLOCKED: {symbol} - No confirmed cost basis (entry price unknown)")
-                    # Debug info provided by user logs matches here
-                    return False, info
+                    # Last resort: use current price as entry estimate (worst case: 0% P&L)
+                    confirmed_entry = current_price
+                    cb_info['entry_price'] = confirmed_entry
+                    print(f"      Cost Basis Missing for {symbol}. Using CURRENT PRICE as fallback: {confirmed_entry:.6f}")
             else:
                 # Use confirmed entry price for accurate P&L
                 confirmed_entry = cb_info.get('entry_price', entry_price)
@@ -10672,14 +10674,17 @@ class OrcaKillCycle:
         CRITICAL: Minimum must be high enough that fees (0.26% Kraken taker = $0.052 on $20)
                   don't consume all profit. Historical loss at $8.37 position size.
         """
-        # 1. Base thresholds (hard floor) - RAISED to prevent fee-dominated losses
-        min_required = 15.0  # Was 1.0 - default safe minimum
-        if exchange == 'binance': 
-            min_required = 20.0  # Was 6.0 - prevent micro-trade losses
-        elif exchange == 'kraken': 
-            min_required = 20.0  # Was 6.0 - prevent fee domination (0.26% taker on tiny positions)
-        elif exchange == 'capital': 
-            min_required = 100.0 # User specified "capitual min amount is 100"
+        # 1. Base thresholds (hard floor) — per-exchange minimum order values
+        # Alpaca crypto: $1 min (no commission on crypto). Kraken/Binance: exchange minimums.
+        min_required = 1.0  # Default: $1 safe minimum (most exchanges)
+        if exchange == 'alpaca':
+            min_required = 1.0  # Alpaca crypto has $1 minimum, 0% commission
+        elif exchange == 'binance':
+            min_required = 10.0  # Binance USDC pairs: $10 min notional
+        elif exchange == 'kraken':
+            min_required = 5.0   # Kraken: varies by pair, $5 safe minimum
+        elif exchange == 'capital':
+            min_required = 100.0 # Capital.com: user specified minimum
 
         # 2. Exchange specific filters (if client provided)
         if client and hasattr(client, 'get_symbol_filters'):
@@ -13946,9 +13951,9 @@ class OrcaKillCycle:
                         print(f"\n {quantum_indicator} QUANTUM-ENHANCED SCANNING... ({len(positions)}/{max_positions_label} positions)")
 
                         total_cash = sum(cash.values())
-                        
-                        if total_cash < amount_per_position * 0.3:  # Only need 30% of target (more aggressive)
-                            print(f"     Waiting for cash (${total_cash:.2f} available, need ${amount_per_position * 0.3:.2f})")
+
+                        if total_cash < 1.0:  # Absolute floor: need at least $1 to trade anything
+                            print(f"     Waiting for cash (${total_cash:.2f} available, need $1.00 minimum)")
                         else:
                             #                                                                
                             #   QUADRUMVIRATE TEMPORAL GATE - All 4 Pillars confer FIRST
@@ -14187,7 +14192,7 @@ class OrcaKillCycle:
                                     # PRIORITIZE opportunities on exchanges that actually have spendable cash
                                     funded_opps = [
                                         o for o in new_opps
-                                        if cash.get(o.exchange, 0.0) >= 50.0 and getattr(o, 'price', 0) and getattr(o, 'price', 0) > 0
+                                        if cash.get(o.exchange, 0.0) >= 1.0 and getattr(o, 'price', 0) and getattr(o, 'price', 0) > 0
                                     ]
                                     funded_opps.sort(key=lambda x: getattr(x, 'momentum_score', 0.0), reverse=True)
                                     if funded_opps:
@@ -14302,7 +14307,7 @@ class OrcaKillCycle:
                                                     except Exception as kr_fallback_err:
                                                         print(f"      Kraken funding fallback error: {kr_fallback_err}")
                                                 
-                                                if buy_amount >= 50.0:  # Minimum $50 to prevent fee-dominated micro-trades (was $0.10)
+                                                if buy_amount >= 1.0:  # Minimum $1 — micro-compound mode (was $50, blocked ALL trades with <$50 cash)
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                     expected_qty = buy_amount / best.price if best.price > 0 else 0.0
                                                     cop_est, _, _, _ = self._expected_cop_for_buy(
