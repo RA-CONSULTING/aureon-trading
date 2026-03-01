@@ -14026,82 +14026,182 @@ class OrcaKillCycle:
                                     quad_go = True
                                     quad_sizing = 1.0
 
-                            #                                                    
+                            #
                             #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
-                            #                                                    
-                            # Miner Brain - Timeline oracle mining
+                            #   Results collected into intel maps → applied to scoring after scan
+                            #
+                            _intel_boosts = {}      # {symbol: cumulative_boost} from all brains
+                            _intel_inject = []      # Extra MarketOpportunity objects to inject
+                            _intel_active = 0       # Count of systems that produced signals
+
+                            # Miner Brain - Timeline oracle mining → boost matching opportunities
+                            miner_recs = []
                             if self.miner_brain:
                                 try:
-                                    miner_recs = self.miner_brain.get_recommendations(batch_prices if batch_prices else {})
+                                    miner_recs = self.miner_brain.get_recommendations(batch_prices if batch_prices else {}) or []
                                     if miner_recs:
-                                        print(f"     MINER BRAIN: {len(miner_recs)} recommendations")
+                                        _intel_active += 1
+                                        for rec in miner_recs:
+                                            sym = rec.get('symbol', '')
+                                            direction = rec.get('direction', 'HOLD')
+                                            conf = float(rec.get('confidence', 0))
+                                            if direction == 'BUY' and conf >= 0.5:
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.3)
+                                        buy_count = sum(1 for r in miner_recs if r.get('direction') == 'BUY')
+                                        print(f"     MINER BRAIN: {len(miner_recs)} recs ({buy_count} BUY) → scoring")
                                 except Exception as e:
                                     print(f"      Miner Brain error: {e}")
 
-                            # Quantum Telescope - Enhanced deep scanning
+                            # Quantum Telescope - Deep scan → boost high-probability symbols
+                            qt_scan = {}
                             if self.quantum_telescope:
                                 try:
-                                    qt_scan = self.quantum_telescope.deep_scan(batch_prices if batch_prices else {})
+                                    qt_scan = self.quantum_telescope.deep_scan(batch_prices if batch_prices else {}) or {}
                                     if qt_scan:
-                                        print(f"     QUANTUM TELESCOPE: Deep scan complete")
+                                        _intel_active += 1
+                                        for sym, obs in qt_scan.items():
+                                            if isinstance(obs, dict):
+                                                prob = float(obs.get('probability_spectrum', obs.get('beam_energy', 0)))
+                                                if prob > 0.6:
+                                                    _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + prob * 0.2)
+                                        print(f"     QUANTUM TELESCOPE: {len(qt_scan)} observations → scoring")
                                 except Exception as e:
                                     print(f"      Quantum Telescope error: {e}")
 
-                            # Timeline Oracle - 7-day planner guidance
+                            # Timeline Oracle - 7-day guidance → global timing multiplier
+                            _timeline_multiplier = 1.0
                             if self.timeline_oracle:
                                 try:
                                     tl_guidance = self.timeline_oracle.get_current_guidance()
-                                    if tl_guidance:
-                                        print(f"     TIMELINE ORACLE: Guidance active")
+                                    if tl_guidance and tl_guidance.get('phase'):
+                                        _intel_active += 1
+                                        progress = float(tl_guidance.get('progress', 0))
+                                        # Active ceremony phase = timing is good → slight global boost
+                                        _timeline_multiplier = 1.0 + progress * 0.15
+                                        print(f"     TIMELINE ORACLE: {tl_guidance['phase']} ({progress:.0%}) → {_timeline_multiplier:.2f}x timing")
+                                    else:
+                                        print(f"     TIMELINE ORACLE: No active phase")
                                 except Exception as e:
                                     print(f"      Timeline Oracle error: {e}")
 
-                            # Volume Hunter - Breakout detection
+                            # Volume Hunter - Breakout detection → INJECT as opportunities
+                            vol_breakouts = []
                             if self.volume_hunter:
                                 try:
-                                    vol_breakouts = self.volume_hunter.scan_breakouts()
+                                    vol_breakouts = self.volume_hunter.scan_breakouts() or []
                                     if vol_breakouts:
-                                        print(f"     VOLUME HUNTER: {len(vol_breakouts)} breakout signals")
+                                        _intel_active += 1
+                                        for vb in vol_breakouts:
+                                            sym = getattr(vb, 'symbol', '') if hasattr(vb, 'symbol') else vb.get('symbol', '')
+                                            exchange = getattr(vb, 'exchange', 'binance') if hasattr(vb, 'exchange') else vb.get('exchange', 'binance')
+                                            strength = float(getattr(vb, 'signal_strength', 0) if hasattr(vb, 'signal_strength') else vb.get('signal_strength', 0))
+                                            vol_ratio = float(getattr(vb, 'volume_ratio', 1) if hasattr(vb, 'volume_ratio') else vb.get('volume_ratio', 1))
+                                            change_5m = float(getattr(vb, 'price_change_5m', 0) if hasattr(vb, 'price_change_5m') else vb.get('price_change_5m', 0))
+                                            if strength >= 0.5 and sym:
+                                                # Boost existing + inject if truly strong
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + strength * 0.4)
+                                                if strength >= 0.7 and vol_ratio >= 2.0:
+                                                    _intel_inject.append(MarketOpportunity(
+                                                        symbol=sym.replace('/', ''),
+                                                        exchange=exchange,
+                                                        price=0.0,
+                                                        change_pct=change_5m if change_5m else strength * 3,
+                                                        volume=vol_ratio * 10000,
+                                                        momentum_score=strength * 15,
+                                                        fee_rate=self.fee_rates.get(exchange, 0.0025)
+                                                    ))
+                                        inject_count = len([v for v in vol_breakouts if (getattr(v, 'signal_strength', 0) if hasattr(v, 'signal_strength') else v.get('signal_strength', 0)) >= 0.7])
+                                        print(f"     VOLUME HUNTER: {len(vol_breakouts)} breakouts ({inject_count} injected) → scoring")
                                 except Exception as e:
                                     print(f"      Volume Hunter error: {e}")
 
-                            # Enigma - Pattern decoding
+                            # Enigma - Pattern decoding → boost pattern-matched symbols
                             if self.enigma:
                                 try:
                                     enigma_decode = self.enigma.decode_patterns(batch_prices if batch_prices else {})
                                     if enigma_decode:
-                                        print(f"     ENIGMA: Pattern decoded")
+                                        _intel_active += 1
+                                        if isinstance(enigma_decode, dict):
+                                            action = enigma_decode.get('action', '')
+                                            conf = float(enigma_decode.get('confidence', 0))
+                                            sym = enigma_decode.get('symbol', '')
+                                            if action and 'BUY' in str(action).upper() and conf >= 0.5 and sym:
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.25)
+                                        elif isinstance(enigma_decode, list):
+                                            for ed in enigma_decode:
+                                                if isinstance(ed, dict):
+                                                    sym = ed.get('symbol', '')
+                                                    conf = float(ed.get('confidence', 0))
+                                                    if sym and conf >= 0.5:
+                                                        _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.25)
+                                        print(f"     ENIGMA: Pattern decoded → scoring")
                                 except Exception as e:
                                     print(f"      Enigma error: {e}")
 
-                            # Ultimate Intelligence - 95% accuracy system
+                            # Ultimate Intelligence - 95% accuracy → boost high-confidence patterns
                             if self.ultimate_intel:
                                 try:
-                                    ui_predictions = self.ultimate_intel.get_predictions(limit=5)
+                                    ui_predictions = self.ultimate_intel.get_predictions(limit=10) or []
                                     if ui_predictions:
-                                        print(f"     ULTIMATE INTEL: {len(ui_predictions)} predictions")
+                                        _intel_active += 1
+                                        for pred in ui_predictions:
+                                            if isinstance(pred, dict) and pred.get('should_trade', False):
+                                                conf = float(pred.get('confidence', 0))
+                                                win_rate = float(pred.get('win_rate', 0))
+                                                pattern_key = pred.get('pattern_key', '')
+                                                # Pattern keys often encode symbol info — boost broadly
+                                                if conf >= 0.7 and win_rate >= 0.6:
+                                                    # Apply a global confidence boost for high-quality signal environment
+                                                    _timeline_multiplier = max(_timeline_multiplier, 1.0 + conf * 0.1)
+                                        print(f"     ULTIMATE INTEL: {len(ui_predictions)} predictions (high-conf env: {_timeline_multiplier:.2f}x) → scoring")
                                 except Exception as e:
                                     print(f"      Ultimate Intelligence error: {e}")
 
-                            # Orca Intelligence - Full scanning
+                            # Orca Intelligence - Full scan → INJECT high-confidence opportunities
                             if self.orca_intel:
                                 try:
-                                    orca_scan = self.orca_intel.full_scan()
-                                    if orca_scan:
-                                        print(f"     ORCA INTEL: Full scan complete")
+                                    orca_opps = None
+                                    if hasattr(self.orca_intel, 'scan_for_opportunities'):
+                                        orca_opps = self.orca_intel.scan_for_opportunities()
+                                    elif hasattr(self.orca_intel, 'full_scan'):
+                                        orca_opps = self.orca_intel.full_scan()
+                                    if orca_opps:
+                                        _intel_active += 1
+                                        injected = 0
+                                        for opp in (orca_opps if isinstance(orca_opps, list) else []):
+                                            sym = getattr(opp, 'symbol', '') if hasattr(opp, 'symbol') else (opp.get('symbol', '') if isinstance(opp, dict) else '')
+                                            conf = float(getattr(opp, 'confidence', 0) if hasattr(opp, 'confidence') else (opp.get('confidence', 0) if isinstance(opp, dict) else 0))
+                                            action = getattr(opp, 'action', '') if hasattr(opp, 'action') else (opp.get('action', '') if isinstance(opp, dict) else '')
+                                            if sym and conf >= 0.65 and str(action).lower() == 'buy':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.35)
+                                                injected += 1
+                                        count = len(orca_opps) if isinstance(orca_opps, list) else 1
+                                        print(f"     ORCA INTEL: {count} opportunities ({injected} boosted) → scoring")
                                 except Exception as e:
                                     print(f"      Orca Intelligence error: {e}")
 
-                            # Neural Revenue Orchestrator - Revenue generation
+                            # Neural Revenue Orchestrator - Revenue opportunities → boost matching
                             if self.neural_revenue:
                                 try:
                                     revenue_status = self.neural_revenue.check_opportunities()
-                                    if revenue_status:
-                                        print(f"     NEURAL REVENUE: Opportunities checked")
+                                    if revenue_status and isinstance(revenue_status, dict):
+                                        rev_opps = revenue_status.get('opportunities', [])
+                                        if rev_opps:
+                                            _intel_active += 1
+                                            for ro in rev_opps:
+                                                if isinstance(ro, dict):
+                                                    sym = ro.get('symbol', '')
+                                                    conf = float(ro.get('confidence', ro.get('score', 0)))
+                                                    if sym and conf >= 0.5:
+                                                        _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.2)
+                                        print(f"     NEURAL REVENUE: {len(rev_opps)} revenue opportunities → scoring")
                                 except Exception as e:
                                     print(f"      Neural Revenue error: {e}")
 
-                            # Chirp Bus - Bird chorus coordination 
+                            if _intel_boosts:
+                                print(f"     INTELLIGENCE MAP: {len(_intel_boosts)} symbols boosted by {_intel_active} systems")
+
+                            # Chirp Bus - Bird chorus coordination
                             if self.chirp_bus:
                                 try:
                                     self.chirp_bus.broadcast_cycle_status({
@@ -14160,7 +14260,43 @@ class OrcaKillCycle:
                                                 pass
                             except Exception as e:
                                 print(f"      Rising Stars scan error: {e}")
-                            
+
+                            #
+                            #   APPLY PRE-SCAN INTELLIGENCE TO OPPORTUNITIES
+                            #   All 8 brains now feed into scoring instead of being discarded
+                            #
+                            if opportunities and (_intel_boosts or _intel_inject or _timeline_multiplier != 1.0):
+                                # 1. Inject Volume Hunter / Orca Intel opportunities
+                                if _intel_inject:
+                                    existing_syms = {o.symbol for o in opportunities}
+                                    injected = 0
+                                    for inj_opp in _intel_inject:
+                                        if inj_opp.symbol not in existing_syms:
+                                            opportunities.append(inj_opp)
+                                            existing_syms.add(inj_opp.symbol)
+                                            injected += 1
+                                    if injected:
+                                        print(f"     INTEL INJECT: {injected} new opportunities from Volume Hunter/Orca Intel")
+
+                                # 2. Apply per-symbol boosts from Miner Brain, Quantum Telescope,
+                                #    Volume Hunter, Enigma, Orca Intel, Neural Revenue
+                                boosted_count = 0
+                                for opp in opportunities:
+                                    sym = opp.symbol
+                                    # Check with and without slash variants
+                                    boost = _intel_boosts.get(sym, _intel_boosts.get(sym.replace('/', ''), _intel_boosts.get(f"{sym}/USD", 1.0)))
+                                    if boost > 1.0:
+                                        opp.momentum_score = opp.momentum_score * boost
+                                        boosted_count += 1
+
+                                # 3. Apply Timeline Oracle global timing multiplier
+                                if _timeline_multiplier > 1.0:
+                                    for opp in opportunities:
+                                        opp.momentum_score = opp.momentum_score * _timeline_multiplier
+
+                                if boosted_count > 0 or _timeline_multiplier > 1.0:
+                                    print(f"     INTEL APPLIED: {boosted_count} symbols boosted | Timeline: {_timeline_multiplier:.2f}x | {_intel_active} brains active")
+
                             if opportunities:
                                 #    Apply quantum pattern recognition boost to scoring
                                 if quantum_cognition and quantum_stats['amplification'] > 1.0:
