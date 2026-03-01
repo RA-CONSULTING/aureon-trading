@@ -510,6 +510,16 @@ except ImportError:
     WinConfig = None
     print("   Unified Kill Chain: MISSING")
 
+#   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
+MARGIN_PENNY_AVAILABLE = False
+try:
+    from kraken_margin_penny_trader import KrakenMarginPennyTrader
+    MARGIN_PENNY_AVAILABLE = True
+    print("  Kraken Margin Penny Trader: AVAILABLE")
+except ImportError:
+    KrakenMarginPennyTrader = None
+    print("   Kraken Margin Penny Trader: MISSING")
+
 #    Movers & Shakers Scanner
 try:
     from aureon_movers_shakers_scanner import MoversShakersScanner, MoverShaker
@@ -3801,6 +3811,20 @@ class OrcaKillCycle:
         else:
             self.unified_kill_chain = None
 
+        #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
+        self.margin_penny_trader = None
+        self.kraken_margin_pairs = {}
+        if MARGIN_PENNY_AVAILABLE and 'kraken' in self.clients and self.clients['kraken']:
+            try:
+                self.margin_penny_trader = KrakenMarginPennyTrader(
+                    dry_run=self.clients['kraken'].dry_run
+                )
+                # Discover the entire margin universe at startup
+                self.kraken_margin_pairs = self.margin_penny_trader.discover_margin_universe()
+                _safe_print(f"  Kraken Margin Penny Trader: INTEGRATED ({len(self.kraken_margin_pairs)} margin pairs)")
+            except Exception as e:
+                _safe_print(f"   Kraken Margin Penny Trader init failed: {e}")
+
         #    SNOWBALL LEAN INTEGRATION (Arbitrage/Momentum)
         try:
             from orca_snowball_lean import OrcaSnowballLean
@@ -3810,6 +3834,20 @@ class OrcaKillCycle:
         except Exception as e:
             self.snowball = None
             _safe_print(f"   Orca Snowball missing: {e}")
+
+        #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
+        # Scans ALL margin-eligible USD pairs on Kraken, trades at $0.01 profit
+        self.margin_penny_trader = None
+        self._margin_universe_pairs = {}  # Cache of margin-eligible pairs
+        if MARGIN_PENNY_AVAILABLE and 'kraken' in self.clients and self.clients['kraken']:
+            try:
+                self.margin_penny_trader = KrakenMarginPennyTrader()
+                self.margin_penny_trader.discover_margin_universe()
+                self._margin_universe_pairs = self.margin_penny_trader.margin_pairs
+                _safe_print(f"  Kraken Margin Penny Trader: INTEGRATED ({len(self._margin_universe_pairs)} margin pairs)")
+            except Exception as e:
+                _safe_print(f"   Margin Penny Trader init failed: {e}")
+                self.margin_penny_trader = None
 
         #    QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps + Breadcrumb Portfolio
         # ROCK SOLID MATH: Only leaps when value preserved AFTER fees!
@@ -7375,9 +7413,47 @@ class OrcaKillCycle:
                     pass
         except Exception as e:
             print(f"   Kraken scan error (fallback API): {e}")
-        
+
+        # ═══════════════════════════════════════════════════════════════
+        #  MARGIN UNIVERSE INJECTION — Add ALL margin-eligible pairs
+        #  that weren't already found by the spot scan. These get
+        #  priority margin treatment in queen_gated_buy.
+        # ═══════════════════════════════════════════════════════════════
+        if self.margin_penny_trader and self.kraken_margin_pairs:
+            existing_symbols = {o.symbol.replace('/', '') for o in opportunities}
+            margin_injected = 0
+            for pair_name, minfo in self.kraken_margin_pairs.items():
+                clean = pair_name.replace('/', '')
+                if clean in existing_symbols:
+                    continue
+                if minfo.last_price <= 0:
+                    # Try to get a price
+                    try:
+                        ticker = client.get_ticker(pair_name) if client else None
+                        if ticker and ticker.get('price', 0) > 0:
+                            minfo.last_price = ticker['price']
+                            minfo.bid = ticker.get('bid', ticker['price'])
+                            minfo.ask = ticker.get('ask', ticker['price'])
+                        else:
+                            continue
+                    except Exception:
+                        continue
+                norm_symbol = pair_name if '/' in pair_name else pair_name.replace('USD', '/USD')
+                opportunities.append(MarketOpportunity(
+                    symbol=norm_symbol,
+                    exchange='kraken',
+                    price=minfo.last_price,
+                    change_pct=minfo.momentum,
+                    volume=minfo.volume_24h,
+                    momentum_score=abs(minfo.momentum) * (1 + min(minfo.volume_24h / 100000, 1)),
+                    fee_rate=self.fee_rates['kraken']
+                ))
+                margin_injected += 1
+            if margin_injected > 0:
+                print(f"     Margin universe: injected {margin_injected} additional margin-eligible pairs")
+
         return opportunities
-    
+
     def _scan_binance_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
         """Scan ALL Binance pairs for momentum (UK-compliant - scans ALL non-restricted markets)."""
         opportunities = []
@@ -10068,6 +10144,8 @@ class OrcaKillCycle:
         #  MARGIN-FIRST on Kraken: Leverage amplifies micro-moves into
         #  guaranteed penny profits. With 3x, a 0.15% move = 0.45% gain.
         #  Spot fallback for non-Kraken exchanges.
+        #  MARGIN UNIVERSE: If the symbol is in the Kraken margin
+        #  universe, ALWAYS use margin — one penny profit is the target.
         # ═══════════════════════════════════════════════════════════════
         _use_margin = (
             exchange == 'kraken' and
@@ -10075,6 +10153,26 @@ class OrcaKillCycle:
             margin_leverage >= 2 and
             margin_conviction >= 0.3
         )
+
+        # Check if this symbol is in the margin universe
+        _sym_clean = symbol.replace('/', '')
+        _in_margin_universe = (
+            hasattr(self, 'kraken_margin_pairs') and
+            (_sym_clean in self.kraken_margin_pairs or symbol in self.kraken_margin_pairs)
+        )
+
+        # If it's a margin-eligible pair, ALWAYS use margin for penny profit
+        if (exchange == 'kraken' and
+            hasattr(client, 'place_margin_order') and
+            not _use_margin and
+            _in_margin_universe):
+            _minfo = self.kraken_margin_pairs.get(_sym_clean) or self.kraken_margin_pairs.get(symbol)
+            if _minfo and _minfo.leverage_buy:
+                _use_margin = True
+                margin_leverage = min(_minfo.leverage_buy)  # Lowest leverage for safety
+                margin_recommendation = 'LONG' if momentum_pct >= 0 else 'SHORT'
+                margin_conviction = max(queen_confidence, 0.5)
+                print(f"   MARGIN UNIVERSE: {symbol} is margin-eligible, using {margin_leverage}x")
 
         # Even if quadrumvirate didn't give explicit margin signal, default
         # to margin on Kraken when intelligence confidence is high enough
@@ -12532,12 +12630,18 @@ class OrcaKillCycle:
                                     pos.kill_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
                                     print(f"\n      QUEEN APPROVED (momentum reversal)   ")
                             
+                            # 3. PENNY PROFIT EXIT — Margin positions close at $0.01 net profit
+                            if not pos.ready_to_kill and pos.is_margin and pos.exchange == 'kraken' and net_pnl >= 0.01:
+                                pos.ready_to_kill = True
+                                pos.kill_reason = f'PENNY_PROFIT_MARGIN (net=${net_pnl:+.4f})'
+                                print(f"\n      PENNY PROFIT HIT! Margin net ${net_pnl:+.4f} >= $0.01 — CLOSING!")
+
                             # If not approved, log why
-                            if not can_exit and (current >= pos.target_price or net_pnl > 0.001):
+                            if not can_exit and not pos.ready_to_kill and (current >= pos.target_price or net_pnl > 0.001):
                                 blocked_reason = exit_info.get('blocked_reason', 'unknown')
                                 print(f"      Exit blocked: {blocked_reason}")
-                            
-                            #                                                      
+
+                            #
                             #    HNC SURGE HOLD - RIDE THE HARMONIC WAVE!
                             # If surge is active and we're in profit, EXTEND target!
                             #                                                      
@@ -12552,17 +12656,31 @@ class OrcaKillCycle:
                             
                             # EXIT if ready (Queen already approved)
                             if pos.ready_to_kill:
-                                print(f"\n      QUEEN APPROVED SELL EXECUTING   ")
-                                sell_order = pos.client.place_market_order(
-                                    symbol=pos.symbol,
-                                    side='sell',
-                                    quantity=pos.entry_qty
-                                )
+                                print(f"\n      SELL EXECUTING ({pos.kill_reason})   ")
+                                if pos.is_margin and pos.exchange == 'kraken':
+                                    # Close margin position — side depends on LONG vs SHORT
+                                    close_side = 'sell' if pos.margin_side == 'LONG' else 'buy'
+                                    print(f"      Closing margin {pos.margin_side} ({pos.leverage}x)")
+                                    sell_order = pos.client.close_margin_position(
+                                        symbol=pos.symbol,
+                                        side=close_side,
+                                        volume=pos.entry_qty,
+                                        leverage=pos.leverage
+                                    )
+                                else:
+                                    sell_order = pos.client.place_market_order(
+                                        symbol=pos.symbol,
+                                        side='sell',
+                                        quantity=pos.entry_qty
+                                    )
                                 if sell_order:
                                     sell_price = float(sell_order.get('filled_avg_price', current))
                                     # Recalculate final P&L
                                     final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
                                     final_pnl = final_exit - entry_cost
+                                    # For margin, use Kraken's reported unrealized P&L if available
+                                    if pos.is_margin and pos.unrealized_pnl_margin != 0:
+                                        final_pnl = pos.unrealized_pnl_margin
                                     results.append({
                                         'symbol': pos.symbol,
                                         'exchange': pos.exchange,
@@ -12570,7 +12688,6 @@ class OrcaKillCycle:
                                         'net_pnl': final_pnl
                                     })
                                     print(f"      SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
-                                    # 👑 QUEEN LEARNS FROM THIS TRADE
                                     self._queen_learn_from_sell(
                                         queen=queen if 'queen' in dir() else self.queen_hive,
                                         symbol=pos.symbol, exchange=pos.exchange,
@@ -12578,7 +12695,7 @@ class OrcaKillCycle:
                                         entry_price=pos.entry_price, exit_price=sell_price,
                                         reason=f'pack_hunt_{pos.kill_reason}'
                                     )
-                                    
+
                                     #     IMMEDIATE RE-SCAN & RE-BUY AFTER PROFITABLE SELL!    
                                     print(f"\n       IMMEDIATE RE-SCAN - AGGRESSIVE MODE!    ")
                                     # Force immediate market scan
@@ -14542,6 +14659,26 @@ class OrcaKillCycle:
                                     quad_go = True
                                     quad_sizing = 1.0
 
+                            # Refresh margin universe prices (every ~10 cycles)
+                            if self.margin_penny_trader and session_stats.get('cycles', 0) % 10 == 0:
+                                try:
+                                    self.margin_penny_trader.refresh_prices()
+                                except Exception:
+                                    pass
+
+                            # Also monitor any margin penny trader active positions
+                            if self.margin_penny_trader:
+                                try:
+                                    penny_closed = self.margin_penny_trader.monitor_positions()
+                                    for pc in penny_closed:
+                                        _pnl = pc.get('net_pnl', 0)
+                                        if _pnl > 0:
+                                            session_stats['total_pnl'] = session_stats.get('total_pnl', 0) + _pnl
+                                            session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
+                                            print(f"     MARGIN PENNY CLOSED: {pc['pair']} +${_pnl:.4f}")
+                                except Exception:
+                                    pass
+
                             #
                             #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
                             #   Results collected into intel maps → applied to scoring after scan
@@ -15291,9 +15428,12 @@ class OrcaKillCycle:
                                                                 _margin_side = raw_order.get('_margin_side', 'LONG') if raw_order else 'LONG'
 
                                                                 if _is_margin_order and _order_leverage >= 2:
-                                                                    # MARGIN POSITION — leverage amplifies the target
-                                                                    # With 3x: breakeven gap shrinks by 3x, target reached 3x faster
-                                                                    target_price_margin = breakeven * (1 + target_pct_current / (100 * _order_leverage))
+                                                                    # MARGIN POSITION — PENNY PROFIT TARGET
+                                                                    # Only need $0.01 net profit. Target price =
+                                                                    # breakeven + ($0.01 / volume) so that
+                                                                    # (target - entry) * qty - fees >= $0.01
+                                                                    _penny_target_move = 0.01 / buy_qty if buy_qty > 0 else 0
+                                                                    target_price_margin = breakeven + _penny_target_move
                                                                     _margin_collateral = buy_price * buy_qty / _order_leverage * (1 + fee_rate)
                                                                     pos = LivePosition(
                                                                         symbol=symbol_clean,
@@ -15779,16 +15919,23 @@ class OrcaKillCycle:
                                         sell_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
                                         print(f"      TAKING PROFIT (momentum reversal, Queen approved)")
                             
+                            # 3. PENNY PROFIT EXIT — Margin positions close at $0.01 net profit
+                            #    The entire margin universe targets one penny. That's it.
+                            if not should_sell and pos.is_margin and pos.exchange == 'kraken' and net_pnl >= 0.01:
+                                should_sell = True
+                                sell_reason = f'PENNY_PROFIT_MARGIN (net=${net_pnl:+.4f})'
+                                print(f"      PENNY PROFIT HIT! Margin net P&L ${net_pnl:+.4f} >= $0.01 — CLOSING!")
+
                             # If not approved, log why
-                            if not can_exit and (current >= pos.target_price or net_pnl > 0.001):
+                            if not can_exit and not should_sell and (current >= pos.target_price or net_pnl > 0.001):
                                 blocked_reason = exit_info.get('blocked_reason', 'unknown')
                                 print(f"      Exit blocked: {blocked_reason}")
-                            
+
                             # Track price history
                             pos.price_history.append(current)
                             if len(pos.price_history) > 50:
                                 pos.price_history.pop(0)
-                            
+
                             # Execute sell if ready
                             if should_sell:
                                 if pos.is_margin and pos.exchange == 'kraken':
