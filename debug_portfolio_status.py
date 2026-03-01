@@ -140,10 +140,20 @@ def main():
     try:
         with open('live_profit_state.json', 'r') as f:
             live = json.load(f)
-        print(f"  Total portfolio: ${live.get('total_portfolio_usd', 0):.2f}")
-        print(f"  Total P&L: ${live.get('total_pnl_usd', 0):.2f}")
-        print(f"  Total positions: {live.get('total_positions', 0)}")
-        print(f"  Profitable: {live.get('profitable_positions', 0)}")
+        totals = live.get('totals', {})
+        ts = live.get('timestamp', 0)
+        snap_time = datetime.fromtimestamp(ts).isoformat() if ts else 'unknown'
+        print(f"  Snapshot from: {snap_time}")
+        print(f"  Total portfolio: ${totals.get('total_value_usd', 0):.2f}")
+        print(f"  Total P&L: ${totals.get('total_pnl_usd', 0):.2f}")
+        print(f"  Total positions: {totals.get('positions_count', 0)}")
+        print(f"  Profitable: {totals.get('profitable_count', 0)}")
+        # Per-exchange breakdown
+        for ex, data in live.get('exchanges', {}).items():
+            ex_val = data.get('total_value', data.get('total_value_usd', 0))
+            ex_pnl = data.get('total_pnl', data.get('total_pnl_usd', 0))
+            ex_cnt = data.get('count', 0)
+            print(f"    {ex.upper()}: ${ex_val:.2f} value, ${ex_pnl:+.2f} P&L, {ex_cnt} positions")
     except FileNotFoundError:
         print("  No live profit state found")
     except Exception as e:
@@ -161,21 +171,26 @@ def main():
     except Exception as e:
         print(f"  Error: {e}")
 
+    # 7. Check missing dependencies
+    print("\n--- DEPENDENCY STATUS ---")
+    critical_deps = {
+        'dotenv': 'python-dotenv',
+        'numpy': 'numpy',
+        'psutil': 'psutil',
+        'aiohttp': 'aiohttp',
+    }
+    for mod, pkg in critical_deps.items():
+        try:
+            __import__(mod)
+            print(f"  {pkg}: INSTALLED")
+        except ImportError:
+            print(f"  {pkg}: MISSING (pip install {pkg})")
+
     # Summary
     print("\n" + "=" * 70)
     print("  DIAGNOSIS SUMMARY")
     print("=" * 70)
     print("""
-  KEY FIXES APPLIED:
-  1. Buy gate lowered from $50 to $1 (was blocking ALL trades)
-  2. Funded filter lowered from $50 to $1 (was filtering ALL opportunities)
-  3. quick_init auto-override REMOVED (was killing intelligence systems)
-  4. DEADLINE_MODE disabled (was expired, causing stale parameters)
-  5. Cost basis fallback strengthened (was blocking sells on unknown entries)
-  6. Min trade sizes adjusted per exchange (Alpaca $1, Kraken $5, Binance $10)
-  7. Cash threshold lowered to $1 (was blocking scan with <$3 total)
-  8. QUEEN_MIN_PROFIT_PCT set to 0.40% (achievable on micro-positions)
-
   FOR 100% OPERATIONAL COGNITION:
   - Run with: python orca_complete_kill_cycle.py --autonomous --live
   - Seer, King, Queen, Lyra all wire up in run_autonomous()

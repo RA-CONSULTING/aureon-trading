@@ -1,33 +1,7 @@
 {
   "starting_capital": 78.51,
-  "last_update": 1772213733.675453,
+  "last_update": 1772367924.9854743,
   "history": [
-    {
-      "timestamp": 1771684085.0936224,
-      "total_usd": 29.283729630000003,
-      "alpaca_usd": 6.92,
-      "kraken_usd": 22.36372963,
-      "binance_usd": 0.0,
-      "capital_usd": 0.0,
-      "starting_capital": 78.51,
-      "cumulative_net_pnl": -49.22627037,
-      "floating_pnl": 0.0,
-      "lifetime_realized_pnl": -49.22627037,
-      "kraken_realized_pnl": 0.0,
-      "realized_pnl": -49.22627037,
-      "unrealized_pnl": 0.0,
-      "total_fees_paid": 0.0,
-      "total_trades": 94,
-      "winning_trades": 0,
-      "losing_trades": 0,
-      "win_rate": 0.0,
-      "dream_target": 1000000000.0,
-      "dream_progress_pct": 2.9283729630000005e-06,
-      "treasury_usd": 0.32817895467479996,
-      "harvest_reserve_breakdown": {
-        "USDC": 0.32817895467479996
-      }
-    },
     {
       "timestamp": 1771684164.5340009,
       "total_usd": 29.283729630000003,
@@ -25997,6 +25971,32 @@
       "win_rate": 0.0,
       "dream_target": 1000000000.0,
       "dream_progress_pct": 4.305530379733608e-05,
+      "treasury_usd": 0.3745337832522808,
+      "harvest_reserve_breakdown": {
+        "USDC": 0.3745337832522808
+      }
+    },
+    {
+      "timestamp": 1772367924.9854379,
+      "total_usd": 58.38839548,
+      "alpaca_usd": 6.66,
+      "kraken_usd": 51.72839548,
+      "binance_usd": 0.0,
+      "capital_usd": 0.0,
+      "starting_capital": 78.51,
+      "cumulative_net_pnl": -20.121604520000005,
+      "floating_pnl": -89.39041217710799,
+      "lifetime_realized_pnl": 69.26880765710798,
+      "kraken_realized_pnl": 69.26880765710798,
+      "realized_pnl": -20.121604520000005,
+      "unrealized_pnl": -89.39041217710799,
+      "total_fees_paid": 0.0,
+      "total_trades": 0,
+      "winning_trades": 0,
+      "losing_trades": 0,
+      "win_rate": 0.0,
+      "dream_target": 1000000000.0,
+      "dream_progress_pct": 5.838839548000001e-06,
       "treasury_usd": 0.3745337832522808,
       "harvest_reserve_breakdown": {
         "USDC": 0.3745337832522808
