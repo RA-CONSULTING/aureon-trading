@@ -510,6 +510,16 @@ except ImportError:
     WinConfig = None
     print("   Unified Kill Chain: MISSING")
 
+#   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
+MARGIN_PENNY_AVAILABLE = False
+try:
+    from kraken_margin_penny_trader import KrakenMarginPennyTrader
+    MARGIN_PENNY_AVAILABLE = True
+    print("  Kraken Margin Penny Trader: AVAILABLE")
+except ImportError:
+    KrakenMarginPennyTrader = None
+    print("   Kraken Margin Penny Trader: MISSING")
+
 #    Movers & Shakers Scanner
 try:
     from aureon_movers_shakers_scanner import MoversShakersScanner, MoverShaker
@@ -3801,6 +3811,20 @@ class OrcaKillCycle:
         else:
             self.unified_kill_chain = None
 
+        #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
+        self.margin_penny_trader = None
+        self.kraken_margin_pairs = {}
+        if MARGIN_PENNY_AVAILABLE and 'kraken' in self.clients and self.clients['kraken']:
+            try:
+                self.margin_penny_trader = KrakenMarginPennyTrader(
+                    dry_run=self.clients['kraken'].dry_run
+                )
+                # Discover the entire margin universe at startup
+                self.kraken_margin_pairs = self.margin_penny_trader.discover_margin_universe()
+                _safe_print(f"  Kraken Margin Penny Trader: INTEGRATED ({len(self.kraken_margin_pairs)} margin pairs)")
+            except Exception as e:
+                _safe_print(f"   Kraken Margin Penny Trader init failed: {e}")
+
         #    SNOWBALL LEAN INTEGRATION (Arbitrage/Momentum)
         try:
             from orca_snowball_lean import OrcaSnowballLean
@@ -3810,6 +3834,20 @@ class OrcaKillCycle:
         except Exception as e:
             self.snowball = None
             _safe_print(f"   Orca Snowball missing: {e}")
+
+        #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
+        # Scans ALL margin-eligible USD pairs on Kraken, trades at $0.01 profit
+        self.margin_penny_trader = None
+        self._margin_universe_pairs = {}  # Cache of margin-eligible pairs
+        if MARGIN_PENNY_AVAILABLE and 'kraken' in self.clients and self.clients['kraken']:
+            try:
+                self.margin_penny_trader = KrakenMarginPennyTrader()
+                self.margin_penny_trader.discover_margin_universe()
+                self._margin_universe_pairs = self.margin_penny_trader.margin_pairs
+                _safe_print(f"  Kraken Margin Penny Trader: INTEGRATED ({len(self._margin_universe_pairs)} margin pairs)")
+            except Exception as e:
+                _safe_print(f"   Margin Penny Trader init failed: {e}")
+                self.margin_penny_trader = None
 
         #    QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps + Breadcrumb Portfolio
         # ROCK SOLID MATH: Only leaps when value preserved AFTER fees!
@@ -3968,14 +4006,7 @@ class OrcaKillCycle:
             except Exception as e:
                 _safe_print(f"   Queen Volume Hunter: {e}")
         
-        # 6. Movers & Shakers Scanner - SKIP (circular import with Orca)
-        self.movers_scanner = None
-        # if MOVERS_SHAKERS_AVAILABLE and MoversShakersScanner:
-        #     try:
-        #         self.movers_scanner = MoversShakersScanner()
-        #         print("  Movers & Shakers Scanner: WIRED!")
-        #     except Exception as e:
-        #         print(f"  Movers & Shakers Scanner: {e}")
+        # 6. Movers & Shakers Scanner — now instantiated later with other dead imports
         
         # 7. Whale Intelligence Tracker (firm tracking)
         self.whale_tracker = None
@@ -4739,10 +4770,28 @@ class OrcaKillCycle:
         
         #   Multiverse Live Engine - Commando unified trading
         self.multiverse_live = None
-        if MULTIVERSE_LIVE_AVAILABLE:
+        if MULTIVERSE_LIVE_AVAILABLE and MultiverseLiveEngine:
             try:
-                self.multiverse_live = True  # Module available, mark as ready
-                print("  Multiverse Live Engine: WIRED!")
+                self.multiverse_live = MultiverseLiveEngine()
+                print("  Multiverse Live Engine: WIRED! (signal generation active)")
+            except Exception:
+                self.multiverse_live = None
+
+        #   Bot Shape Scanner - Detect algorithmic actors & threats
+        self.bot_shape_scanner = None
+        if BOT_SCANNER_AVAILABLE and BotShapeScanner:
+            try:
+                self.bot_shape_scanner = BotShapeScanner()
+                print("  Bot Shape Scanner: WIRED! (algorithmic threat detection)")
+            except Exception:
+                pass
+
+        #   Movers & Shakers Scanner - Hot movers with trading signals
+        self.movers_scanner = None
+        if MoversShakersScanner:
+            try:
+                self.movers_scanner = MoversShakersScanner()
+                print("  Movers & Shakers Scanner: WIRED! (hot mover signals)")
             except Exception:
                 pass
         
@@ -7364,9 +7413,47 @@ class OrcaKillCycle:
                     pass
         except Exception as e:
             print(f"   Kraken scan error (fallback API): {e}")
-        
+
+        # ═══════════════════════════════════════════════════════════════
+        #  MARGIN UNIVERSE INJECTION — Add ALL margin-eligible pairs
+        #  that weren't already found by the spot scan. These get
+        #  priority margin treatment in queen_gated_buy.
+        # ═══════════════════════════════════════════════════════════════
+        if self.margin_penny_trader and self.kraken_margin_pairs:
+            existing_symbols = {o.symbol.replace('/', '') for o in opportunities}
+            margin_injected = 0
+            for pair_name, minfo in self.kraken_margin_pairs.items():
+                clean = pair_name.replace('/', '')
+                if clean in existing_symbols:
+                    continue
+                if minfo.last_price <= 0:
+                    # Try to get a price
+                    try:
+                        ticker = client.get_ticker(pair_name) if client else None
+                        if ticker and ticker.get('price', 0) > 0:
+                            minfo.last_price = ticker['price']
+                            minfo.bid = ticker.get('bid', ticker['price'])
+                            minfo.ask = ticker.get('ask', ticker['price'])
+                        else:
+                            continue
+                    except Exception:
+                        continue
+                norm_symbol = pair_name if '/' in pair_name else pair_name.replace('USD', '/USD')
+                opportunities.append(MarketOpportunity(
+                    symbol=norm_symbol,
+                    exchange='kraken',
+                    price=minfo.last_price,
+                    change_pct=minfo.momentum,
+                    volume=minfo.volume_24h,
+                    momentum_score=abs(minfo.momentum) * (1 + min(minfo.volume_24h / 100000, 1)),
+                    fee_rate=self.fee_rates['kraken']
+                ))
+                margin_injected += 1
+            if margin_injected > 0:
+                print(f"     Margin universe: injected {margin_injected} additional margin-eligible pairs")
+
         return opportunities
-    
+
     def _scan_binance_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
         """Scan ALL Binance pairs for momentum (UK-compliant - scans ALL non-restricted markets)."""
         opportunities = []
@@ -8969,20 +9056,23 @@ class OrcaKillCycle:
     def queen_profit_gate(self, symbol: str, exchange: str, current_price: float,
                             momentum_pct: float = 0, expected_move_pct: float = 0) -> Tuple[bool, str]:
         """
-           THE QUEEN'S SACRED PROFIT GATE - NOTHING GETS BOUGHT WITHOUT IT!   
-        
+           THE QUEEN'S SACRED PROFIT GATE - NOTHING GETS BOUGHT WITHOUT IT!
+
         Before ANY buy, this gate checks:
         1. Can the opportunity realistically achieve the target profit?
         2. Is momentum strong enough to reach the target?
         3. Will fees/slippage eat the expected profit?
-        
+
+        LEVERAGE-AWARE: On Kraken, margin leverage divides the required
+        price move. With 3x: a 0.37% price move = 1.12% gain.
+
         Args:
             symbol: Trading symbol
             exchange: Exchange name
             current_price: Current price
             momentum_pct: Current momentum (24h change %)
             expected_move_pct: Expected price move %
-            
+
         Returns:
             (approved, reason) - True if opportunity can achieve target
         """
@@ -8990,34 +9080,52 @@ class OrcaKillCycle:
         # Uses: QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT (defined at module level)
         MIN_COP_SACRED = QUEEN_MIN_COP
         MIN_PROFIT_PCT = QUEEN_MIN_PROFIT_PCT
-        
+
         # Get fee rate for exchange
         fee_rate = self.fee_rates.get(exchange, 0.0026)
-        
+
         # Calculate total round-trip costs
         # 2 * taker_fee (entry + exit) + spread + slippage
         total_cost_pct = (2 * fee_rate * 100) + 0.20  # ~0.72% for Kraken worst case
-        
-        # Required GROSS price move to net target profit
-        required_move_pct = MIN_PROFIT_PCT + total_cost_pct  # ~2.60% for Kraken
-        
+
+        # Required GROSS price move to net target profit (spot)
+        required_move_pct_spot = MIN_PROFIT_PCT + total_cost_pct  # ~1.12% for Kraken
+
+        # LEVERAGE AWARENESS: On Kraken, margin divides required price move
+        # With 3x leverage: need only 1.12% / 3 = 0.37% price move
+        # The leverage effectively amplifies any price move by the multiplier
+        _margin_leverage = 1
+        if exchange == 'kraken':
+            # Check if margin will be used (same logic as queen_gated_buy)
+            quad_data = getattr(self, '_last_quad_result', None)
+            if quad_data and quad_data.get('margin_leverage', 0) >= 2:
+                _margin_leverage = min(quad_data.get('margin_leverage', 3), 5)
+            elif hasattr(getattr(self, 'kraken_client', None) or '', 'place_margin_order'):
+                _margin_leverage = 3  # Default leverage on Kraken margin-first mode
+
+        required_move_pct = required_move_pct_spot / _margin_leverage if _margin_leverage > 1 else required_move_pct_spot
+
         # Use the larger of momentum or expected move
         potential_move = max(abs(momentum_pct), abs(expected_move_pct))
-        
+
+        _lev_tag = f" [{_margin_leverage}x margin]" if _margin_leverage > 1 else ""
+
         # CHECK 1: Is the potential move >= required move?
         if potential_move >= required_move_pct:
-            return True, f"  CAN hit {MIN_PROFIT_PCT}%: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
-        
+            return True, f"  CAN hit {MIN_PROFIT_PCT}%{_lev_tag}: {potential_move:.2f}% potential >= {required_move_pct:.2f}% required"
+
         # CHECK 2: Is momentum at least 50% of required? (trending toward target)
         if potential_move >= required_move_pct * 0.5:
-            return True, f"  TRENDING to {MIN_PROFIT_PCT}%: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
-        
+            return True, f"  TRENDING to {MIN_PROFIT_PCT}%{_lev_tag}: {potential_move:.2f}% is {potential_move/required_move_pct*100:.0f}% of required"
+
         # CHECK 3: High momentum assets might reach target even with low current move
-        if abs(momentum_pct) >= 1.5:  # Strong momentum
-            return True, f"  STRONG MOMENTUM: {momentum_pct:+.2f}% suggests target achievable"
-        
+        # With margin, lower momentum threshold is fine since leverage amplifies
+        _momentum_threshold = 1.5 / _margin_leverage if _margin_leverage > 1 else 1.5
+        if abs(momentum_pct) >= _momentum_threshold:
+            return True, f"  STRONG MOMENTUM{_lev_tag}: {momentum_pct:+.2f}% suggests target achievable"
+
         # BLOCKED - Cannot achieve target
-        return False, f"  BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for {MIN_PROFIT_PCT}%"
+        return False, f"  BLOCKED: {potential_move:.2f}% potential < {required_move_pct:.2f}% required for {MIN_PROFIT_PCT}%{_lev_tag}"
     
     # ════════════════════════════════════════════════════════════════════════════
     #  🌱 ENIGMA NEW-LISTING SNIPER
@@ -9413,7 +9521,148 @@ class OrcaKillCycle:
                 queen.equity += pnl
                 print(f"     👑 QUEEN EQUITY: ${queen.equity:,.2f}")
         except Exception as e:
-            print(f"     ⚠️ Queen learning error: {e}")
+            print(f"     Queen learning error: {e}")
+
+        # Broadcast to ALL intelligence systems (not just Queen)
+        try:
+            self._broadcast_trade_outcome(
+                symbol=symbol, exchange=exchange, pnl=pnl,
+                entry_price=entry_price, exit_price=exit_price,
+                reason=reason
+            )
+        except Exception:
+            pass
+
+    def _broadcast_trade_outcome(self, symbol: str, exchange: str, pnl: float,
+                                 entry_price: float = 0, exit_price: float = 0,
+                                 reason: str = '') -> None:
+        """
+        Feed trade outcome to ALL intelligence systems for learning.
+        Every brain should know when a trade wins or loses so it can
+        refine its predictions next time.
+        """
+        is_win = pnl > 0
+        outcome = {
+            'symbol': symbol, 'exchange': exchange, 'pnl': pnl,
+            'entry_price': entry_price, 'exit_price': exit_price,
+            'reason': reason, 'is_win': is_win,
+            'pnl_pct': ((exit_price - entry_price) / entry_price * 100) if entry_price > 0 else 0,
+        }
+        _fed = 0
+
+        # 1. Elephant Learning — record win/loss for historical pattern memory
+        if self.elephant:
+            try:
+                if hasattr(self.elephant, 'record_outcome'):
+                    self.elephant.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+                elif hasattr(self.elephant, 'learn'):
+                    self.elephant.learn(symbol, {'win': is_win, 'pnl': pnl, 'exchange': exchange})
+                    _fed += 1
+                elif hasattr(self.elephant, 'update_score'):
+                    # Adjust symbol score based on outcome
+                    delta = 0.05 if is_win else -0.05
+                    self.elephant.update_score(symbol, delta)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 2. Probability Nexus — feed outcome for model refinement
+        try:
+            from aureon_probability_nexus import record_outcome as _nexus_record
+            _nexus_record(symbol, is_win, pnl)
+            _fed += 1
+        except (ImportError, AttributeError):
+            pass
+        except Exception:
+            pass
+
+        # 3. Ultimate Intelligence — feed outcome
+        if self.ultimate_intel:
+            try:
+                if hasattr(self.ultimate_intel, 'record_outcome'):
+                    self.ultimate_intel.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+                elif hasattr(self.ultimate_intel, 'feedback'):
+                    self.ultimate_intel.feedback(outcome)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 4. Miner Brain — feed outcome for recommendation refinement
+        if self.miner_brain:
+            try:
+                if hasattr(self.miner_brain, 'record_outcome'):
+                    self.miner_brain.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+                elif hasattr(self.miner_brain, 'feedback'):
+                    self.miner_brain.feedback(outcome)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 5. Harmonic Momentum — feed outcome for signal quality tracking
+        if self.harmonic_momentum:
+            try:
+                if hasattr(self.harmonic_momentum, 'record_outcome'):
+                    self.harmonic_momentum.record_outcome(symbol, is_win)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 6. Whale Tracker — correlate whale activity with outcome
+        if self.whale_tracker:
+            try:
+                if hasattr(self.whale_tracker, 'record_trade_outcome'):
+                    self.whale_tracker.record_trade_outcome(symbol, is_win, pnl)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 7. Movers & Shakers — track if hot movers led to wins
+        if self.movers_scanner:
+            try:
+                if hasattr(self.movers_scanner, 'record_outcome'):
+                    self.movers_scanner.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 8. Chirp Bus — broadcast outcome to all listeners via ring buffer
+        if self.chirp_bus:
+            try:
+                status = "WIN" if is_win else "LOSS"
+                self.chirp_bus.emit_message(
+                    f"{status} {symbol} pnl={pnl:+.4f}",
+                    coherence=1.0 if is_win else 0.3,
+                    confidence=1.0 if is_win else 0.3,
+                    symbol=symbol,
+                )
+                _fed += 1
+            except Exception:
+                pass
+
+        # 9. Inception Engine — feed reality branch outcome
+        if self.inception_engine:
+            try:
+                if hasattr(self.inception_engine, 'record_outcome'):
+                    self.inception_engine.record_outcome(symbol, is_win, pnl)
+                    _fed += 1
+            except Exception:
+                pass
+
+        # 10. Historical Manipulation Hunter — track if manipulation was detected correctly
+        if hasattr(self, 'historical_manipulation') and self.historical_manipulation:
+            try:
+                if hasattr(self.historical_manipulation, 'record_trade'):
+                    self.historical_manipulation.record_trade(symbol, is_win, pnl)
+                    _fed += 1
+            except Exception:
+                pass
+
+        status = "WIN" if is_win else "LOSS"
+        if _fed > 0:
+            print(f"     OUTCOME BROADCAST: {symbol} {status} (${pnl:+.4f}) → {_fed} brains learning")
 
     def execute_stealth_sell(self, client: Any, symbol: str, quantity: float,
                              price: float = None, exchange: str = 'alpaca') -> Dict:
@@ -9520,7 +9769,119 @@ class OrcaKillCycle:
         
         print(f"   QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
 
-        #                                                                    
+        #
+        #     MULTI-BRAIN VALIDATION GATE (consensus from all intelligence)
+        #     Opportunity must be confirmed by at least 2 independent systems
+        #
+        _validation_votes = 0
+        _validation_total = 0
+        _validation_details = []
+        try:
+            # Vote 1: Probability Nexus
+            try:
+                from aureon_probability_nexus import make_predictions as _nexus_predict_buy
+                _np = _nexus_predict_buy()
+                if _np:
+                    _validation_total += 1
+                    for pred in _np:
+                        if isinstance(pred, dict) and pred.get('symbol', '') in (symbol, symbol.replace('/', '')):
+                            sig = str(pred.get('signal', 'HOLD')).upper()
+                            conf = float(pred.get('confidence', 0))
+                            if sig == 'BUY' and conf >= 0.4:
+                                _validation_votes += 1
+                                _validation_details.append(f"Nexus:BUY({conf:.0%})")
+                            elif sig == 'SELL':
+                                _validation_details.append(f"Nexus:SELL({conf:.0%})")
+                            else:
+                                _validation_details.append(f"Nexus:{sig}({conf:.0%})")
+                            break
+            except ImportError:
+                pass
+
+            # Vote 2: Miner Brain
+            if self.miner_brain:
+                try:
+                    _mb_recs = self.miner_brain.get_recommendations({symbol: price}) or []
+                    _validation_total += 1
+                    for rec in _mb_recs:
+                        if rec.get('symbol', '') in (symbol, symbol.replace('/', '')) and rec.get('direction') == 'BUY':
+                            conf = float(rec.get('confidence', 0))
+                            if conf >= 0.4:
+                                _validation_votes += 1
+                                _validation_details.append(f"Miner:BUY({conf:.0%})")
+                            break
+                except Exception:
+                    pass
+
+            # Vote 3: Whale Tracker (are whales buying this symbol?)
+            if self.whale_tracker:
+                try:
+                    _wt_activity = getattr(self.whale_tracker, 'recent_whale_activity', {}) or {}
+                    _validation_total += 1
+                    sym_activity = _wt_activity.get(symbol, _wt_activity.get(symbol.replace('/', ''), None))
+                    if sym_activity and isinstance(sym_activity, dict):
+                        direction = str(sym_activity.get('direction', '')).upper()
+                        if direction in ('BUY', 'LONG', 'ACCUMULATE'):
+                            _validation_votes += 1
+                            _validation_details.append(f"Whale:{direction}")
+                except Exception:
+                    pass
+
+            # Vote 4: Ultimate Intelligence
+            if self.ultimate_intel and hasattr(self.ultimate_intel, 'get_prediction'):
+                try:
+                    _ui_pred = self.ultimate_intel.get_prediction(symbol)
+                    _validation_total += 1
+                    if _ui_pred and isinstance(_ui_pred, dict):
+                        action = str(_ui_pred.get('action', 'HOLD')).upper()
+                        conf = float(_ui_pred.get('confidence', 0))
+                        if action == 'BUY' and conf >= 0.5:
+                            _validation_votes += 1
+                            _validation_details.append(f"UltIntel:BUY({conf:.0%})")
+                        else:
+                            _validation_details.append(f"UltIntel:{action}({conf:.0%})")
+                except Exception:
+                    pass
+
+            # Vote 5: Elephant Learning (historical pattern memory)
+            if self.elephant:
+                try:
+                    _el_score = None
+                    if hasattr(self.elephant, 'get_symbol_score'):
+                        _el_score = self.elephant.get_symbol_score(symbol)
+                    elif hasattr(self.elephant, 'recall'):
+                        _el_score = self.elephant.recall(symbol)
+                    _validation_total += 1
+                    if _el_score is not None:
+                        score_val = float(_el_score) if isinstance(_el_score, (int, float)) else float(_el_score.get('score', _el_score.get('confidence', 0)) if isinstance(_el_score, dict) else 0)
+                        if score_val >= 0.5:
+                            _validation_votes += 1
+                            _validation_details.append(f"Elephant:{score_val:.0%}")
+                except Exception:
+                    pass
+
+            detail_str = " | ".join(_validation_details) if _validation_details else "no signals"
+            print(f"   MULTI-BRAIN VALIDATION: {_validation_votes}/{_validation_total} brains confirm BUY ({detail_str})")
+
+            # Gate: require at least 2 independent confirmations if 3+ systems available
+            if _validation_total >= 3 and _validation_votes < 2:
+                print(f"   MULTI-BRAIN GATE BLOCKED: {symbol} [{context}] - only {_validation_votes}/{_validation_total} confirmations")
+                return {
+                    'status': 'blocked',
+                    'reason': f'Multi-brain validation: only {_validation_votes}/{_validation_total} brains confirm',
+                    'blocked_by': 'MULTI_BRAIN_VALIDATION_GATE',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'validation_votes': _validation_votes,
+                    'validation_total': _validation_total,
+                    'validation_details': _validation_details,
+                    'rejected': True
+                }
+        except Exception as e:
+            print(f"     Multi-brain validation error (non-blocking): {e}")
+
+        #
         #     REQUIRE 30s VALIDATED PREDICTION WINDOW (configurable)
         #                                                                    
         if self.require_prediction_window:
@@ -9775,12 +10136,87 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   ⚠️ Soul Shield check warning: {e}")
 
-        #                                                                    
+        #
         #     EXECUTE THE BUY - THE QUEEN HAS GRANTED PERMISSION!
-        #                                                                    
-        
+        #
+
         # ═══════════════════════════════════════════════════════════════
-        #  ALWAYS EXECUTE SPOT ORDER - This is the primary trading path
+        #  MARGIN-FIRST on Kraken: Leverage amplifies micro-moves into
+        #  guaranteed penny profits. With 3x, a 0.15% move = 0.45% gain.
+        #  Spot fallback for non-Kraken exchanges.
+        #  MARGIN UNIVERSE: If the symbol is in the Kraken margin
+        #  universe, ALWAYS use margin — $0.01 realized after ALL costs.
+        #  Queen holds for more ONLY if she validates the long/short play.
+        # ═══════════════════════════════════════════════════════════════
+        _use_margin = (
+            exchange == 'kraken' and
+            hasattr(client, 'place_margin_order') and
+            margin_leverage >= 2 and
+            margin_conviction >= 0.3
+        )
+
+        # Check if this symbol is in the margin universe
+        _sym_clean = symbol.replace('/', '')
+        _in_margin_universe = (
+            hasattr(self, 'kraken_margin_pairs') and
+            (_sym_clean in self.kraken_margin_pairs or symbol in self.kraken_margin_pairs)
+        )
+
+        # If it's a margin-eligible pair, ALWAYS use margin for penny profit
+        if (exchange == 'kraken' and
+            hasattr(client, 'place_margin_order') and
+            not _use_margin and
+            _in_margin_universe):
+            _minfo = self.kraken_margin_pairs.get(_sym_clean) or self.kraken_margin_pairs.get(symbol)
+            if _minfo and _minfo.leverage_buy:
+                _use_margin = True
+                margin_leverage = min(_minfo.leverage_buy)  # Lowest leverage for safety
+                margin_recommendation = 'LONG' if momentum_pct >= 0 else 'SHORT'
+                margin_conviction = max(queen_confidence, 0.5)
+                print(f"   MARGIN UNIVERSE: {symbol} is margin-eligible, using {margin_leverage}x")
+
+        # Even if quadrumvirate didn't give explicit margin signal, default
+        # to margin on Kraken when intelligence confidence is high enough
+        if (exchange == 'kraken' and
+            hasattr(client, 'place_margin_order') and
+            not _use_margin and
+            queen_confidence >= 0.6):
+            _use_margin = True
+            margin_leverage = 3   # Conservative default leverage
+            margin_recommendation = 'LONG'
+            margin_conviction = queen_confidence
+
+        if _use_margin:
+            _m_leverage = min(max(margin_leverage, 2), 5)
+            _m_side = 'buy' if margin_recommendation in ('LONG', 'NONE', '') else 'sell'
+            _m_qty = 0.0
+
+            if quote_qty and quote_qty > 0 and price and price > 0:
+                # Convert quote amount to base quantity for margin order
+                _m_qty = quote_qty / price
+            elif quantity and quantity > 0:
+                _m_qty = quantity
+
+            if _m_qty > 0:
+                print(f"   MARGIN-FIRST: {_m_side.upper()} {symbol} @ {_m_leverage}x leverage (conviction {margin_conviction:.0%})")
+                try:
+                    result = client.place_margin_order(
+                        symbol=symbol,
+                        side=_m_side,
+                        quantity=_m_qty,
+                        leverage=_m_leverage,
+                    )
+                    if result:
+                        result['_margin_order'] = True
+                        result['_leverage'] = _m_leverage
+                        result['_margin_side'] = margin_recommendation if margin_recommendation in ('LONG', 'SHORT') else 'LONG'
+                        return result
+                except Exception as e:
+                    print(f"      Margin order failed ({e}), falling back to spot...")
+                    # Fall through to spot
+
+        # ═══════════════════════════════════════════════════════════════
+        #  SPOT FALLBACK - Non-Kraken or margin unavailable
         # ═══════════════════════════════════════════════════════════════
         if quote_qty and quote_qty > 0:
             return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
@@ -10445,9 +10881,143 @@ class OrcaKillCycle:
                 # Profit gate failed - fall back to our calculation but log warning
                 print(f"      Profit gate check failed ({e}), using manual calculation")
         
-        #                                                                    
+        #
+        # CHECK 3C: SELL-SIDE INTELLIGENCE CONSULTATION
+        # Profit is confirmed. Now ask: sell NOW or hold for more?
+        # Advisory: can delay exit if multiple brains say "hold for bigger win"
+        # but NEVER blocks a profitable exit entirely.
+        #
+        _sell_hold_votes = 0   # Brains saying "wait, more upside coming"
+        _sell_now_votes = 0    # Brains saying "sell now, reversal coming"
+        _sell_intel_total = 0
+        try:
+            # Ocean Scanner: is the wave still RISING or about to CRASH?
+            if self.ocean_scanner:
+                try:
+                    _ow_data = self.ocean_scanner.scan_waves({symbol: current_price})
+                    _sell_intel_total += 1
+                    if _ow_data:
+                        _wave_st = ''
+                        if isinstance(_ow_data, dict):
+                            _ow_entry = _ow_data.get(symbol, _ow_data.get(symbol.replace('/', ''), {}))
+                            _wave_st = (_ow_entry.get('wave_state', '') if isinstance(_ow_entry, dict) else str(_ow_entry)).upper()
+                        elif isinstance(_ow_data, list):
+                            for wd in _ow_data:
+                                ws = getattr(wd, 'symbol', '') if hasattr(wd, 'symbol') else (wd.get('symbol', '') if isinstance(wd, dict) else '')
+                                if ws in (symbol, symbol.replace('/', '')):
+                                    _wave_st = (getattr(wd, 'wave_state', '') if hasattr(wd, 'wave_state') else (wd.get('wave_state', '') if isinstance(wd, dict) else '')).upper()
+                        if _wave_st in ('RISING', 'BREAKOUT', 'SURGE'):
+                            _sell_hold_votes += 1
+                        elif _wave_st in ('CRASHING', 'FALLING', 'COLLAPSE', 'REVERSAL'):
+                            _sell_now_votes += 1
+                except Exception:
+                    pass
+
+            # Whale Tracker: are whales still accumulating or distributing?
+            if self.whale_tracker:
+                try:
+                    _wt_act = getattr(self.whale_tracker, 'recent_whale_activity', {}) or {}
+                    _sell_intel_total += 1
+                    _wt_sym = _wt_act.get(symbol, _wt_act.get(symbol.replace('/', ''), None))
+                    if _wt_sym and isinstance(_wt_sym, dict):
+                        _wt_dir = str(_wt_sym.get('direction', '')).upper()
+                        if _wt_dir in ('BUY', 'ACCUMULATE', 'LONG'):
+                            _sell_hold_votes += 1  # Whales still buying — hold
+                        elif _wt_dir in ('SELL', 'DISTRIBUTE', 'SHORT'):
+                            _sell_now_votes += 1   # Whales exiting — sell now
+                except Exception:
+                    pass
+
+            # Harmonic Signal Chain: is momentum still aligned?
+            if self.harmonic_signal_chain:
+                try:
+                    _hsc_msg = f"exit_check:{symbol}"
+                    _hsc_r = self.harmonic_signal_chain.send_signal(_hsc_msg) if hasattr(self.harmonic_signal_chain, 'send_signal') else None
+                    _sell_intel_total += 1
+                    if _hsc_r:
+                        _hsc_dir = getattr(_hsc_r, 'direction', None)
+                        if _hsc_dir and 'UP' in str(_hsc_dir).upper():
+                            _sell_hold_votes += 1
+                        elif _hsc_dir and 'DOWN' in str(_hsc_dir).upper():
+                            _sell_now_votes += 1
+                except Exception:
+                    pass
+
+            # Elephant Learning: what happened historically when we held at this gain?
+            if self.elephant:
+                try:
+                    _sell_intel_total += 1
+                    _el_exit = None
+                    if hasattr(self.elephant, 'get_exit_score'):
+                        _el_exit = self.elephant.get_exit_score(symbol, net_pnl_pct)
+                    elif hasattr(self.elephant, 'recall'):
+                        _el_exit = self.elephant.recall(symbol)
+                    if _el_exit is not None:
+                        _el_val = float(_el_exit) if isinstance(_el_exit, (int, float)) else float(_el_exit.get('score', _el_exit.get('exit_score', 0.5)) if isinstance(_el_exit, dict) else 0.5)
+                        if _el_val >= 0.7:
+                            _sell_now_votes += 1   # History says take profits here
+                        elif _el_val <= 0.3:
+                            _sell_hold_votes += 1  # History says this usually runs further
+                except Exception:
+                    pass
+
+            # Probability Nexus: what's the prediction for this symbol?
+            try:
+                from aureon_probability_nexus import make_predictions as _nexus_sell_check
+                _nsc = _nexus_sell_check()
+                if _nsc:
+                    _sell_intel_total += 1
+                    for _np in _nsc:
+                        if isinstance(_np, dict) and _np.get('symbol', '') in (symbol, symbol.replace('/', '')):
+                            _n_sig = str(_np.get('signal', 'HOLD')).upper()
+                            _n_conf = float(_np.get('confidence', 0))
+                            if _n_sig == 'SELL' and _n_conf >= 0.5:
+                                _sell_now_votes += 1
+                            elif _n_sig == 'BUY' and _n_conf >= 0.5:
+                                _sell_hold_votes += 1  # Nexus says still bullish
+                            break
+            except ImportError:
+                pass
+            except Exception:
+                pass
+
+            # Predator Detector: is someone hunting this symbol?
+            if self.predator_detector:
+                try:
+                    _sell_intel_total += 1
+                    _pred_rep = getattr(self, '_last_predator_report', None)
+                    if _pred_rep:
+                        _hunted = False
+                        for pred in (getattr(_pred_rep, 'top_predators', None) or []):
+                            _ps = getattr(pred, 'symbol', '') if hasattr(pred, 'symbol') else ''
+                            if _ps in (symbol, symbol.replace('/', '')):
+                                _hunted = True
+                        if _hunted:
+                            _sell_now_votes += 1  # Being hunted — exit before front-run
+                except Exception:
+                    pass
+
+            info['sell_intel'] = {
+                'hold_votes': _sell_hold_votes,
+                'now_votes': _sell_now_votes,
+                'total_systems': _sell_intel_total
+            }
+
+            # Advisory: if overwhelming consensus says "hold", log it
+            # But NEVER block a profitable exit — the math is sacred
+            if _sell_hold_votes >= 3 and _sell_now_votes == 0 and net_pnl_pct < 2.0:
+                print(f"       SELL INTEL: {_sell_hold_votes}/{_sell_intel_total} brains say HOLD (wave still rising)")
+                print(f"       Advisory: Consider holding for bigger win (current: {net_pnl_pct:.2f}%)")
+            elif _sell_now_votes >= 2:
+                print(f"       SELL INTEL: {_sell_now_votes}/{_sell_intel_total} brains say SELL NOW (reversal/threat detected)")
+            elif _sell_intel_total > 0:
+                print(f"       SELL INTEL: hold={_sell_hold_votes} now={_sell_now_votes} of {_sell_intel_total} systems")
+        except Exception as e:
+            print(f"      Sell intelligence error (non-blocking): {e}")
+
+        #
         # CHECK 4: Queen confidence check (advisory, not blocking)
-        #                                                                    
+        #
         if queen:
             try:
                 queen_signal = queen.get_collective_signal(
@@ -12061,12 +12631,74 @@ class OrcaKillCycle:
                                     pos.kill_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
                                     print(f"\n      QUEEN APPROVED (momentum reversal)   ")
                             
+                            # 3. MARGIN PENNY FLOOR — $0.01 REALIZED profit after ALL fees + slippage + spread
+                            #    Hard floor: one penny net after every cost imaginable.
+                            #    Queen decides: take the penny or hold for more (validated plays only).
+                            if not pos.ready_to_kill and pos.is_margin and pos.exchange == 'kraken':
+                                # True realized P&L: deduct slippage + spread on top of fee-inclusive net_pnl
+                                _ex_fees = EXCHANGE_FEES.get(pos.exchange, {})
+                                _slippage = _ex_fees.get('slippage', 0.0005)
+                                _spread = _ex_fees.get('spread', 0.0008)
+                                _friction = _slippage + _spread  # ~0.13% for Kraken
+                                _exit_gross = current * pos.entry_qty
+                                _realized_pnl = net_pnl - (_exit_gross * _friction)
+
+                                if _realized_pnl >= 0.01:
+                                    # ═══ PENNY FLOOR HIT — Consult Queen: take or hold? ═══
+                                    _queen_holds = False
+                                    if self.queen_hive:
+                                        try:
+                                            _q_sig = self.queen_hive.get_collective_signal(
+                                                symbol=pos.symbol,
+                                                market_data={'price': current, 'exchange': pos.exchange}
+                                            )
+                                            _q_conf = float(_q_sig.get('confidence', 0.5))
+                                            _q_action = _q_sig.get('action', 'HOLD')
+                                            _q_dir = _q_sig.get('direction', 'NEUTRAL')
+
+                                            # Queen can hold ONLY if she validates the directional play
+                                            _dir_valid = (
+                                                (pos.margin_side == 'LONG' and _q_dir in ('BULLISH', 'UP', 'LONG', 'BUY')) or
+                                                (pos.margin_side == 'SHORT' and _q_dir in ('BEARISH', 'DOWN', 'SHORT', 'SELL'))
+                                            )
+
+                                            if _q_action in ('HOLD', 'BUY') and _q_conf >= 0.6 and _dir_valid:
+                                                # Queen validates the play — hold for bigger win
+                                                _queen_holds = True
+                                                print(f"      PENNY FLOOR ${_realized_pnl:+.4f} — Queen HOLDING ({pos.margin_side} validated, {_q_conf:.0%} conf)")
+                                            elif _q_action == 'SELL' and _q_conf >= 0.5:
+                                                # Queen wants out — respect the signal
+                                                print(f"      PENNY FLOOR ${_realized_pnl:+.4f} — Queen says CLOSE ({_q_conf:.0%} conf)")
+                                        except Exception:
+                                            pass  # On error, take the penny
+
+                                    if not _queen_holds:
+                                        pos.ready_to_kill = True
+                                        pos.kill_reason = f'PENNY_PROFIT_REALIZED (${_realized_pnl:+.4f} after all costs)'
+                                        print(f"\n      PENNY PROFIT REALIZED! ${_realized_pnl:+.4f} after fees+slippage+spread — CLOSING!")
+
+                                # ═══ QUEEN FORCE CLOSE — Queen can exit ANY margin position at will ═══
+                                elif not pos.ready_to_kill and self.queen_hive:
+                                    try:
+                                        _q_sig = self.queen_hive.get_collective_signal(
+                                            symbol=pos.symbol,
+                                            market_data={'price': current, 'exchange': pos.exchange}
+                                        )
+                                        _q_conf = float(_q_sig.get('confidence', 0.5))
+                                        _q_action = _q_sig.get('action', 'HOLD')
+                                        if _q_action == 'SELL' and _q_conf >= 0.7:
+                                            pos.ready_to_kill = True
+                                            pos.kill_reason = f'QUEEN_FORCE_CLOSE (conf={_q_conf:.0%}, pnl=${net_pnl:+.4f})'
+                                            print(f"\n      QUEEN FORCE CLOSE! Confidence {_q_conf:.0%} — exiting margin position")
+                                    except Exception:
+                                        pass
+
                             # If not approved, log why
-                            if not can_exit and (current >= pos.target_price or net_pnl > 0.001):
+                            if not can_exit and not pos.ready_to_kill and (current >= pos.target_price or net_pnl > 0.001):
                                 blocked_reason = exit_info.get('blocked_reason', 'unknown')
                                 print(f"      Exit blocked: {blocked_reason}")
-                            
-                            #                                                      
+
+                            #
                             #    HNC SURGE HOLD - RIDE THE HARMONIC WAVE!
                             # If surge is active and we're in profit, EXTEND target!
                             #                                                      
@@ -12081,17 +12713,31 @@ class OrcaKillCycle:
                             
                             # EXIT if ready (Queen already approved)
                             if pos.ready_to_kill:
-                                print(f"\n      QUEEN APPROVED SELL EXECUTING   ")
-                                sell_order = pos.client.place_market_order(
-                                    symbol=pos.symbol,
-                                    side='sell',
-                                    quantity=pos.entry_qty
-                                )
+                                print(f"\n      SELL EXECUTING ({pos.kill_reason})   ")
+                                if pos.is_margin and pos.exchange == 'kraken':
+                                    # Close margin position — side depends on LONG vs SHORT
+                                    close_side = 'sell' if pos.margin_side == 'LONG' else 'buy'
+                                    print(f"      Closing margin {pos.margin_side} ({pos.leverage}x)")
+                                    sell_order = pos.client.close_margin_position(
+                                        symbol=pos.symbol,
+                                        side=close_side,
+                                        volume=pos.entry_qty,
+                                        leverage=pos.leverage
+                                    )
+                                else:
+                                    sell_order = pos.client.place_market_order(
+                                        symbol=pos.symbol,
+                                        side='sell',
+                                        quantity=pos.entry_qty
+                                    )
                                 if sell_order:
                                     sell_price = float(sell_order.get('filled_avg_price', current))
                                     # Recalculate final P&L
                                     final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
                                     final_pnl = final_exit - entry_cost
+                                    # For margin, use Kraken's reported unrealized P&L if available
+                                    if pos.is_margin and pos.unrealized_pnl_margin != 0:
+                                        final_pnl = pos.unrealized_pnl_margin
                                     results.append({
                                         'symbol': pos.symbol,
                                         'exchange': pos.exchange,
@@ -12099,7 +12745,6 @@ class OrcaKillCycle:
                                         'net_pnl': final_pnl
                                     })
                                     print(f"      SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
-                                    # 👑 QUEEN LEARNS FROM THIS TRADE
                                     self._queen_learn_from_sell(
                                         queen=queen if 'queen' in dir() else self.queen_hive,
                                         symbol=pos.symbol, exchange=pos.exchange,
@@ -12107,7 +12752,7 @@ class OrcaKillCycle:
                                         entry_price=pos.entry_price, exit_price=sell_price,
                                         reason=f'pack_hunt_{pos.kill_reason}'
                                     )
-                                    
+
                                     #     IMMEDIATE RE-SCAN & RE-BUY AFTER PROFITABLE SELL!    
                                     print(f"\n       IMMEDIATE RE-SCAN - AGGRESSIVE MODE!    ")
                                     # Force immediate market scan
@@ -13576,6 +14221,8 @@ class OrcaKillCycle:
                     #                                                            
                     #   PHASE 0.7: GATHER ALL INTELLIGENCE (Master Launcher)
                     #                                                            
+                    _phase07_validated = []   # Carry forward to scoring
+                    _phase07_whales = []     # Carry forward to scoring
                     try:
                         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
                         _int_exec = ThreadPoolExecutor(max_workers=1)
@@ -13584,13 +14231,15 @@ class OrcaKillCycle:
                             intel_report = _int_fut.result(timeout=15)
                         except FuturesTimeout:
                             intel_report = {}
-                            print("     ⏰ Intelligence gathering timed out (15s)", flush=True)
+                            print("     Intelligence gathering timed out (15s)", flush=True)
                         finally:
                             _int_exec.shutdown(wait=False)
-                        if intel_report.get('validated_signals'):
-                            print(f"     INTELLIGENCE: {intel_report['total_sources']} sources | "
-                                  f"{len(intel_report.get('validated_signals', []))} validated signals | "
-                                  f"{len(intel_report.get('whale_predictions', []))} whale predictions")
+                        _phase07_validated = intel_report.get('validated_signals', [])
+                        _phase07_whales = intel_report.get('whale_predictions', [])
+                        if _phase07_validated or _phase07_whales:
+                            print(f"     INTELLIGENCE: {intel_report.get('total_sources', 0)} sources | "
+                                  f"{len(_phase07_validated)} validated signals | "
+                                  f"{len(_phase07_whales)} whale predictions -> scoring")
                     except Exception as e:
                         print(f"      Intelligence gathering error: {e}")
 
@@ -13598,6 +14247,8 @@ class OrcaKillCycle:
                     #                                                            
                     #   PHASE 0.8: HARMONIC SIGNAL CHAIN (Frequency pipeline)
                     #                                                            
+                    _harmonic_direction = None  # 'UP' or 'DOWN' from chain
+                    _harmonic_coherence = 0.0   # Average coherence across nodes
                     if self.harmonic_signal_chain:
                         try:
                             signal_message = "market_pulse"
@@ -13614,11 +14265,24 @@ class OrcaKillCycle:
                                 chain_result = _hsc_fut.result(timeout=10)
                             except FuturesTimeout:
                                 chain_result = None
-                                print("     ⏰ Harmonic Signal Chain timed out (10s)", flush=True)
+                                print("     Harmonic Signal Chain timed out (10s)", flush=True)
                             finally:
                                 _hsc_exec.shutdown(wait=False)
                             if chain_result:
-                                print(f"     HARMONIC CHAIN: Signal processed through 5 frequency layers")
+                                # Extract direction and coherence from chain result
+                                _dir = getattr(chain_result, 'direction', None)
+                                if _dir:
+                                    _harmonic_direction = str(_dir).upper()
+                                    if 'UP' in _harmonic_direction:
+                                        _harmonic_direction = 'UP'
+                                    elif 'DOWN' in _harmonic_direction:
+                                        _harmonic_direction = 'DOWN'
+                                _coh_scores = getattr(chain_result, 'coherence_scores', {})
+                                if _coh_scores and isinstance(_coh_scores, dict):
+                                    _vals = [v for v in _coh_scores.values() if isinstance(v, (int, float))]
+                                    if _vals:
+                                        _harmonic_coherence = sum(_vals) / len(_vals)
+                                print(f"     HARMONIC CHAIN: dir={_harmonic_direction or '?'} coh={_harmonic_coherence:.2f} -> scoring")
                         except Exception as e:
                             print(f"      Harmonic Signal Chain error: {e}")
 
@@ -13626,11 +14290,23 @@ class OrcaKillCycle:
                     #                                                            
                     #   PHASE 0.9: OCEAN + ANIMAL SCANNERS (Wave & trend analysis)
                     #                                                            
+                    _ocean_wave_syms = {}   # {symbol: wave_state} from ocean scanner
                     if self.ocean_scanner:
                         try:
                             wave_data = self.ocean_scanner.scan_waves(batch_prices)
                             if wave_data:
-                                print(f"     OCEAN SCANNER: Wave analysis complete")
+                                # Extract per-symbol wave states for scoring
+                                if isinstance(wave_data, dict):
+                                    for sym, wd in wave_data.items():
+                                        state = wd.get('wave_state', wd.get('state', '')) if isinstance(wd, dict) else str(wd)
+                                        _ocean_wave_syms[sym] = state
+                                elif isinstance(wave_data, list):
+                                    for wd in wave_data:
+                                        sym = getattr(wd, 'symbol', '') if hasattr(wd, 'symbol') else (wd.get('symbol', '') if isinstance(wd, dict) else '')
+                                        state = getattr(wd, 'wave_state', '') if hasattr(wd, 'wave_state') else (wd.get('wave_state', '') if isinstance(wd, dict) else '')
+                                        if sym:
+                                            _ocean_wave_syms[sym] = state
+                                print(f"     OCEAN SCANNER: {len(_ocean_wave_syms)} wave states -> scoring")
                         except Exception as e:
                             print(f"      Ocean Scanner error: {e}")
 
@@ -13669,11 +14345,25 @@ class OrcaKillCycle:
                             except Exception as e:
                                 print(f"      Enigma scan error: {e}")
 
+                    _animal_trend_syms = {}  # {symbol: trend_strength} from animal scanner
                     if self.animal_scanner:
                         try:
-                            trend_data = self.animal_scanner.scan_trends(batch_prices)
+                            trend_data = self.animal_scanner.scan_trends(batch_prices) if hasattr(self.animal_scanner, 'scan_trends') else None
+                            if not trend_data and hasattr(self.animal_scanner, 'hunt'):
+                                trend_data = self.animal_scanner.hunt(limit=20)
                             if trend_data:
-                                print(f"     ANIMAL SCANNER: Trend analysis complete")
+                                if isinstance(trend_data, list):
+                                    for td in trend_data:
+                                        sym = getattr(td, 'symbol', '') if hasattr(td, 'symbol') else (td.get('symbol', '') if isinstance(td, dict) else '')
+                                        side = getattr(td, 'side', '') if hasattr(td, 'side') else (td.get('side', td.get('direction', '')) if isinstance(td, dict) else '')
+                                        move = float(getattr(td, 'move_pct', 0) if hasattr(td, 'move_pct') else (td.get('move_pct', td.get('strength', 0)) if isinstance(td, dict) else 0))
+                                        if sym:
+                                            _animal_trend_syms[sym] = (str(side).lower(), move)
+                                elif isinstance(trend_data, dict):
+                                    for sym, td in trend_data.items():
+                                        strength = float(td.get('strength', td.get('move_pct', 0))) if isinstance(td, dict) else float(td)
+                                        _animal_trend_syms[sym] = ('buy', strength)
+                                print(f"     ANIMAL SCANNER: {len(_animal_trend_syms)} trend signals -> scoring")
                         except Exception as e:
                             print(f"      Animal Scanner error: {e}")
 
@@ -14026,89 +14716,321 @@ class OrcaKillCycle:
                                     quad_go = True
                                     quad_sizing = 1.0
 
-                            #                                                    
+                            # Refresh margin universe prices (every ~10 cycles)
+                            if self.margin_penny_trader and session_stats.get('cycles', 0) % 10 == 0:
+                                try:
+                                    self.margin_penny_trader.refresh_prices()
+                                except Exception:
+                                    pass
+
+                            # Also monitor any margin penny trader active positions
+                            if self.margin_penny_trader:
+                                try:
+                                    penny_closed = self.margin_penny_trader.monitor_positions()
+                                    for pc in penny_closed:
+                                        _pnl = pc.get('net_pnl', 0)
+                                        if _pnl > 0:
+                                            session_stats['total_pnl'] = session_stats.get('total_pnl', 0) + _pnl
+                                            session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
+                                            print(f"     MARGIN PENNY CLOSED: {pc['pair']} +${_pnl:.4f}")
+                                except Exception:
+                                    pass
+
+                            #
                             #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
-                            #                                                    
-                            # Miner Brain - Timeline oracle mining
+                            #   Results collected into intel maps → applied to scoring after scan
+                            #
+                            _intel_boosts = {}      # {symbol: cumulative_boost} from all brains
+                            _intel_inject = []      # Extra MarketOpportunity objects to inject
+                            _intel_active = 0       # Count of systems that produced signals
+
+                            # Miner Brain - Timeline oracle mining → boost matching opportunities
+                            miner_recs = []
                             if self.miner_brain:
                                 try:
-                                    miner_recs = self.miner_brain.get_recommendations(batch_prices if batch_prices else {})
+                                    miner_recs = self.miner_brain.get_recommendations(batch_prices if batch_prices else {}) or []
                                     if miner_recs:
-                                        print(f"     MINER BRAIN: {len(miner_recs)} recommendations")
+                                        _intel_active += 1
+                                        for rec in miner_recs:
+                                            sym = rec.get('symbol', '')
+                                            direction = rec.get('direction', 'HOLD')
+                                            conf = float(rec.get('confidence', 0))
+                                            if direction == 'BUY' and conf >= 0.5:
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.3)
+                                        buy_count = sum(1 for r in miner_recs if r.get('direction') == 'BUY')
+                                        print(f"     MINER BRAIN: {len(miner_recs)} recs ({buy_count} BUY) → scoring")
                                 except Exception as e:
                                     print(f"      Miner Brain error: {e}")
 
-                            # Quantum Telescope - Enhanced deep scanning
+                            # Quantum Telescope - Deep scan → boost high-probability symbols
+                            qt_scan = {}
                             if self.quantum_telescope:
                                 try:
-                                    qt_scan = self.quantum_telescope.deep_scan(batch_prices if batch_prices else {})
+                                    qt_scan = self.quantum_telescope.deep_scan(batch_prices if batch_prices else {}) or {}
                                     if qt_scan:
-                                        print(f"     QUANTUM TELESCOPE: Deep scan complete")
+                                        _intel_active += 1
+                                        for sym, obs in qt_scan.items():
+                                            if isinstance(obs, dict):
+                                                prob = float(obs.get('probability_spectrum', obs.get('beam_energy', 0)))
+                                                if prob > 0.6:
+                                                    _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + prob * 0.2)
+                                        print(f"     QUANTUM TELESCOPE: {len(qt_scan)} observations → scoring")
                                 except Exception as e:
                                     print(f"      Quantum Telescope error: {e}")
 
-                            # Timeline Oracle - 7-day planner guidance
+                            # Timeline Oracle - 7-day guidance → global timing multiplier
+                            _timeline_multiplier = 1.0
                             if self.timeline_oracle:
                                 try:
                                     tl_guidance = self.timeline_oracle.get_current_guidance()
-                                    if tl_guidance:
-                                        print(f"     TIMELINE ORACLE: Guidance active")
+                                    if tl_guidance and tl_guidance.get('phase'):
+                                        _intel_active += 1
+                                        progress = float(tl_guidance.get('progress', 0))
+                                        # Active ceremony phase = timing is good → slight global boost
+                                        _timeline_multiplier = 1.0 + progress * 0.15
+                                        print(f"     TIMELINE ORACLE: {tl_guidance['phase']} ({progress:.0%}) → {_timeline_multiplier:.2f}x timing")
+                                    else:
+                                        print(f"     TIMELINE ORACLE: No active phase")
                                 except Exception as e:
                                     print(f"      Timeline Oracle error: {e}")
 
-                            # Volume Hunter - Breakout detection
+                            # Volume Hunter - Breakout detection → INJECT as opportunities
+                            vol_breakouts = []
                             if self.volume_hunter:
                                 try:
-                                    vol_breakouts = self.volume_hunter.scan_breakouts()
+                                    vol_breakouts = self.volume_hunter.scan_breakouts() or []
                                     if vol_breakouts:
-                                        print(f"     VOLUME HUNTER: {len(vol_breakouts)} breakout signals")
+                                        _intel_active += 1
+                                        for vb in vol_breakouts:
+                                            sym = getattr(vb, 'symbol', '') if hasattr(vb, 'symbol') else vb.get('symbol', '')
+                                            exchange = getattr(vb, 'exchange', 'binance') if hasattr(vb, 'exchange') else vb.get('exchange', 'binance')
+                                            strength = float(getattr(vb, 'signal_strength', 0) if hasattr(vb, 'signal_strength') else vb.get('signal_strength', 0))
+                                            vol_ratio = float(getattr(vb, 'volume_ratio', 1) if hasattr(vb, 'volume_ratio') else vb.get('volume_ratio', 1))
+                                            change_5m = float(getattr(vb, 'price_change_5m', 0) if hasattr(vb, 'price_change_5m') else vb.get('price_change_5m', 0))
+                                            if strength >= 0.5 and sym:
+                                                # Boost existing + inject if truly strong
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + strength * 0.4)
+                                                if strength >= 0.7 and vol_ratio >= 2.0:
+                                                    _intel_inject.append(MarketOpportunity(
+                                                        symbol=sym.replace('/', ''),
+                                                        exchange=exchange,
+                                                        price=0.0,
+                                                        change_pct=change_5m if change_5m else strength * 3,
+                                                        volume=vol_ratio * 10000,
+                                                        momentum_score=strength * 15,
+                                                        fee_rate=self.fee_rates.get(exchange, 0.0025)
+                                                    ))
+                                        inject_count = len([v for v in vol_breakouts if (getattr(v, 'signal_strength', 0) if hasattr(v, 'signal_strength') else v.get('signal_strength', 0)) >= 0.7])
+                                        print(f"     VOLUME HUNTER: {len(vol_breakouts)} breakouts ({inject_count} injected) → scoring")
                                 except Exception as e:
                                     print(f"      Volume Hunter error: {e}")
 
-                            # Enigma - Pattern decoding
+                            # Enigma - Pattern decoding → boost pattern-matched symbols
                             if self.enigma:
                                 try:
                                     enigma_decode = self.enigma.decode_patterns(batch_prices if batch_prices else {})
                                     if enigma_decode:
-                                        print(f"     ENIGMA: Pattern decoded")
+                                        _intel_active += 1
+                                        if isinstance(enigma_decode, dict):
+                                            action = enigma_decode.get('action', '')
+                                            conf = float(enigma_decode.get('confidence', 0))
+                                            sym = enigma_decode.get('symbol', '')
+                                            if action and 'BUY' in str(action).upper() and conf >= 0.5 and sym:
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.25)
+                                        elif isinstance(enigma_decode, list):
+                                            for ed in enigma_decode:
+                                                if isinstance(ed, dict):
+                                                    sym = ed.get('symbol', '')
+                                                    conf = float(ed.get('confidence', 0))
+                                                    if sym and conf >= 0.5:
+                                                        _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.25)
+                                        print(f"     ENIGMA: Pattern decoded → scoring")
                                 except Exception as e:
                                     print(f"      Enigma error: {e}")
 
-                            # Ultimate Intelligence - 95% accuracy system
+                            # Ultimate Intelligence - 95% accuracy → boost high-confidence patterns
                             if self.ultimate_intel:
                                 try:
-                                    ui_predictions = self.ultimate_intel.get_predictions(limit=5)
+                                    ui_predictions = self.ultimate_intel.get_predictions(limit=10) or []
                                     if ui_predictions:
-                                        print(f"     ULTIMATE INTEL: {len(ui_predictions)} predictions")
+                                        _intel_active += 1
+                                        for pred in ui_predictions:
+                                            if isinstance(pred, dict) and pred.get('should_trade', False):
+                                                conf = float(pred.get('confidence', 0))
+                                                win_rate = float(pred.get('win_rate', 0))
+                                                pattern_key = pred.get('pattern_key', '')
+                                                # Pattern keys often encode symbol info — boost broadly
+                                                if conf >= 0.7 and win_rate >= 0.6:
+                                                    # Apply a global confidence boost for high-quality signal environment
+                                                    _timeline_multiplier = max(_timeline_multiplier, 1.0 + conf * 0.1)
+                                        print(f"     ULTIMATE INTEL: {len(ui_predictions)} predictions (high-conf env: {_timeline_multiplier:.2f}x) → scoring")
                                 except Exception as e:
                                     print(f"      Ultimate Intelligence error: {e}")
 
-                            # Orca Intelligence - Full scanning
+                            # Orca Intelligence - Full scan → INJECT high-confidence opportunities
                             if self.orca_intel:
                                 try:
-                                    orca_scan = self.orca_intel.full_scan()
-                                    if orca_scan:
-                                        print(f"     ORCA INTEL: Full scan complete")
+                                    orca_opps = None
+                                    if hasattr(self.orca_intel, 'scan_for_opportunities'):
+                                        orca_opps = self.orca_intel.scan_for_opportunities()
+                                    elif hasattr(self.orca_intel, 'full_scan'):
+                                        orca_opps = self.orca_intel.full_scan()
+                                    if orca_opps:
+                                        _intel_active += 1
+                                        injected = 0
+                                        for opp in (orca_opps if isinstance(orca_opps, list) else []):
+                                            sym = getattr(opp, 'symbol', '') if hasattr(opp, 'symbol') else (opp.get('symbol', '') if isinstance(opp, dict) else '')
+                                            conf = float(getattr(opp, 'confidence', 0) if hasattr(opp, 'confidence') else (opp.get('confidence', 0) if isinstance(opp, dict) else 0))
+                                            action = getattr(opp, 'action', '') if hasattr(opp, 'action') else (opp.get('action', '') if isinstance(opp, dict) else '')
+                                            if sym and conf >= 0.65 and str(action).lower() == 'buy':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.35)
+                                                injected += 1
+                                        count = len(orca_opps) if isinstance(orca_opps, list) else 1
+                                        print(f"     ORCA INTEL: {count} opportunities ({injected} boosted) → scoring")
                                 except Exception as e:
                                     print(f"      Orca Intelligence error: {e}")
 
-                            # Neural Revenue Orchestrator - Revenue generation
+                            # Neural Revenue Orchestrator - Revenue opportunities → boost matching
                             if self.neural_revenue:
                                 try:
                                     revenue_status = self.neural_revenue.check_opportunities()
-                                    if revenue_status:
-                                        print(f"     NEURAL REVENUE: Opportunities checked")
+                                    if revenue_status and isinstance(revenue_status, dict):
+                                        rev_opps = revenue_status.get('opportunities', [])
+                                        if rev_opps:
+                                            _intel_active += 1
+                                            for ro in rev_opps:
+                                                if isinstance(ro, dict):
+                                                    sym = ro.get('symbol', '')
+                                                    conf = float(ro.get('confidence', ro.get('score', 0)))
+                                                    if sym and conf >= 0.5:
+                                                        _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.2)
+                                        print(f"     NEURAL REVENUE: {len(rev_opps)} revenue opportunities → scoring")
                                 except Exception as e:
                                     print(f"      Neural Revenue error: {e}")
 
-                            # Chirp Bus - Bird chorus coordination 
+                            # Movers & Shakers Scanner → inject hot movers as opportunities
+                            if self.movers_scanner:
+                                try:
+                                    _ms_report = self.movers_scanner.scan() if hasattr(self.movers_scanner, 'scan') else None
+                                    _movers_list = []
+                                    if _ms_report:
+                                        # scan() may return a WaveReport or list of MoverShaker
+                                        if hasattr(_ms_report, 'movers'):
+                                            _movers_list = _ms_report.movers or []
+                                        elif isinstance(_ms_report, list):
+                                            _movers_list = _ms_report
+                                    if _movers_list:
+                                        _intel_active += 1
+                                        _ms_buy = 0
+                                        for ms in _movers_list:
+                                            sym = getattr(ms, 'symbol', '') if hasattr(ms, 'symbol') else (ms.get('symbol', '') if isinstance(ms, dict) else '')
+                                            opp_signal = getattr(ms, 'trading_opportunity', 'NEUTRAL') if hasattr(ms, 'trading_opportunity') else (ms.get('trading_opportunity', 'NEUTRAL') if isinstance(ms, dict) else 'NEUTRAL')
+                                            exchange = getattr(ms, 'exchange', 'binance') if hasattr(ms, 'exchange') else (ms.get('exchange', 'binance') if isinstance(ms, dict) else 'binance')
+                                            side = getattr(ms, 'side', '') if hasattr(ms, 'side') else (ms.get('side', '') if isinstance(ms, dict) else '')
+                                            vol_usd = float(getattr(ms, 'volume_usd', 0) if hasattr(ms, 'volume_usd') else (ms.get('volume_usd', 0) if isinstance(ms, dict) else 0))
+                                            threat = getattr(ms, 'threat_level', 'LOW') if hasattr(ms, 'threat_level') else (ms.get('threat_level', 'LOW') if isinstance(ms, dict) else 'LOW')
+                                            if sym and str(opp_signal).upper() == 'BUY':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * 1.25
+                                                _ms_buy += 1
+                                                # Inject as opportunity if large volume
+                                                if vol_usd >= 50000:
+                                                    _intel_inject.append(MarketOpportunity(
+                                                        symbol=sym.replace('/', ''),
+                                                        exchange=exchange,
+                                                        price=0.0,
+                                                        change_pct=3.0,
+                                                        volume=vol_usd,
+                                                        momentum_score=12.0,
+                                                        fee_rate=self.fee_rates.get(exchange, 0.0025)
+                                                    ))
+                                            elif sym and str(opp_signal).upper() == 'SELL':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * 0.7
+                                            elif sym and str(threat).upper() in ('HIGH', 'CRITICAL'):
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * 0.6
+                                        print(f"     MOVERS & SHAKERS: {len(_movers_list)} movers ({_ms_buy} BUY) → scoring")
+                                except Exception as e:
+                                    print(f"      Movers & Shakers error: {e}")
+
+                            # Bot Shape Scanner → penalize symbols under algorithmic attack
+                            if self.bot_shape_scanner:
+                                try:
+                                    _bss_results = None
+                                    if hasattr(self.bot_shape_scanner, 'scan'):
+                                        _bss_results = self.bot_shape_scanner.scan()
+                                    elif hasattr(self.bot_shape_scanner, '_scan_all_shapes'):
+                                        _bss_results = self.bot_shape_scanner._scan_all_shapes()
+                                    if _bss_results:
+                                        _intel_active += 1
+                                        _bss_threats = 0
+                                        for fp in (_bss_results if isinstance(_bss_results, list) else []):
+                                            sym = getattr(fp, 'symbol', '') if hasattr(fp, 'symbol') else (fp.get('symbol', '') if isinstance(fp, dict) else '')
+                                            threat = getattr(fp, 'threat_level', 'LOW') if hasattr(fp, 'threat_level') else (fp.get('threat_level', 'LOW') if isinstance(fp, dict) else 'LOW')
+                                            if sym and str(threat).upper() in ('HIGH', 'CRITICAL'):
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * 0.65
+                                                _bss_threats += 1
+                                        if _bss_threats:
+                                            print(f"     BOT SHAPE SCANNER: {_bss_threats} symbols under bot attack → penalized")
+                                except Exception as e:
+                                    print(f"      Bot Shape Scanner error: {e}")
+
+                            # Harmonic Momentum Wave Scanner → boost actionable harmonic signals
+                            if self.harmonic_momentum:
+                                try:
+                                    _hmw_signals = self.harmonic_momentum.scan_all() if hasattr(self.harmonic_momentum, 'scan_all') else []
+                                    if _hmw_signals:
+                                        _intel_active += 1
+                                        _hmw_boosted = 0
+                                        for sig in _hmw_signals:
+                                            sym = getattr(sig, 'symbol', '')
+                                            direction = getattr(sig, 'direction', 'HOLD')
+                                            conf = float(getattr(sig, 'confidence', 0))
+                                            actionable = sig.is_actionable() if hasattr(sig, 'is_actionable') else conf >= 0.5
+                                            if sym and actionable and str(direction).upper() == 'LONG':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.3)
+                                                _hmw_boosted += 1
+                                            elif sym and str(direction).upper() == 'SHORT':
+                                                _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * max(0.6, 1.0 - conf * 0.3)
+                                        print(f"     HARMONIC MOMENTUM: {len(_hmw_signals)} signals ({_hmw_boosted} LONG boosted) → scoring")
+                                except Exception as e:
+                                    print(f"      Harmonic Momentum Wave error: {e}")
+
+                            # Aureon Miner Quantum Brain → global trading signal (direction + confidence)
+                            if self.aureon_miner and hasattr(self.aureon_miner, 'brain'):
+                                try:
+                                    _qb_signal = self.aureon_miner.brain.get_trading_signal()
+                                    if _qb_signal and isinstance(_qb_signal, dict):
+                                        _intel_active += 1
+                                        direction = str(_qb_signal.get('direction', 'NEUTRAL')).upper()
+                                        conf = float(_qb_signal.get('confidence', 0.5))
+                                        timing = _qb_signal.get('timing', 'NORMAL')
+                                        if direction == 'LONG' and conf >= 0.55:
+                                            # Global boost — quantum brain says market is favorable
+                                            _qb_boost = 1.0 + (conf - 0.5) * 0.4
+                                            if timing == 'LIGHTHOUSE':
+                                                _qb_boost *= 1.1  # Extra boost for optimal window
+                                            for opp in opportunities if opportunities else []:
+                                                pass  # Boost will be applied below via _timeline_multiplier
+                                            _timeline_multiplier = max(_timeline_multiplier, _qb_boost)
+                                            print(f"     QUANTUM BRAIN: LONG (conf={conf:.0%}, timing={timing}) → {_qb_boost:.2f}x global")
+                                        elif direction == 'SHORT':
+                                            _timeline_multiplier = min(_timeline_multiplier, max(0.7, 1.0 - conf * 0.3))
+                                            print(f"     QUANTUM BRAIN: SHORT (conf={conf:.0%}) → dampen {_timeline_multiplier:.2f}x")
+                                        else:
+                                            print(f"     QUANTUM BRAIN: NEUTRAL (conf={conf:.0%})")
+                                except Exception as e:
+                                    print(f"      Quantum Brain signal error: {e}")
+
+                            if _intel_boosts:
+                                print(f"     INTELLIGENCE MAP: {len(_intel_boosts)} symbols boosted by {_intel_active} systems")
+
+                            # Chirp Bus - Broadcast cycle status to all listeners
                             if self.chirp_bus:
                                 try:
-                                    self.chirp_bus.broadcast_cycle_status({
-                                        'cycle': session_stats['cycles'],
-                                        'positions': len(positions),
-                                        'pnl': session_stats['total_pnl']
-                                    })
+                                    self.chirp_bus.emit_message(
+                                        f"STATUS cycle={session_stats['cycles']} pos={len(positions)} pnl={session_stats['total_pnl']:.2f}",
+                                        coherence=0.9,
+                                        confidence=0.9,
+                                    )
                                 except Exception:
                                     pass
 
@@ -14160,7 +15082,192 @@ class OrcaKillCycle:
                                                 pass
                             except Exception as e:
                                 print(f"      Rising Stars scan error: {e}")
-                            
+
+                            #
+                            #   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            #   APPLY ALL INTELLIGENCE TO OPPORTUNITIES
+                            #   Phase 0.7 validated signals + whale predictions
+                            #   Phase 0.8 harmonic direction + coherence
+                            #   Phase 0.9 ocean waves + animal trends (via scan)
+                            #   Pre-scan: 8 brain boosts + timeline + injections
+                            #   Probability Nexus: per-symbol BUY/SELL signals
+                            #   Predator Detector: penalize hunted symbols
+                            #   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                            #
+                            if opportunities:
+                                # ── A. Phase 0.7: validated signals boost matching symbols ──
+                                _p07_boosted = 0
+                                for sig in _phase07_validated:
+                                    if isinstance(sig, dict):
+                                        sym = sig.get('symbol', '')
+                                        action = str(sig.get('action', '')).upper()
+                                        conf = float(sig.get('confidence', 0))
+                                        if sym and 'BUY' in action and conf >= 0.5:
+                                            _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * (1.0 + conf * 0.3)
+                                            _p07_boosted += 1
+                                # Phase 0.7: whale predictions boost matching symbols
+                                for wp in _phase07_whales:
+                                    if isinstance(wp, dict):
+                                        sym = wp.get('symbol', '')
+                                        action = str(wp.get('action', wp.get('direction', ''))).upper()
+                                        value = float(wp.get('value_usd', wp.get('value', 0)))
+                                        if sym and action in ('BUY', 'LONG', 'ACCUMULATE') and value > 0:
+                                            # Large whale buys get stronger boost
+                                            whale_mult = min(1.3, 1.0 + (value / 1_000_000) * 0.1) if value > 10000 else 1.1
+                                            _intel_boosts[sym] = _intel_boosts.get(sym, 1.0) * whale_mult
+                                            _p07_boosted += 1
+                                if _p07_boosted:
+                                    print(f"     PHASE 0.7 INTEL: {_p07_boosted} validated/whale signals applied")
+
+                                # ── B. Phase 0.8: harmonic chain direction gates ──
+                                if _harmonic_direction and _harmonic_coherence > 0.3:
+                                    if _harmonic_direction == 'UP':
+                                        # Harmonics say UP → boost all opportunities
+                                        _hc_boost = 1.0 + _harmonic_coherence * 0.2
+                                        for opp in opportunities:
+                                            opp.momentum_score = opp.momentum_score * _hc_boost
+                                        print(f"     HARMONIC CHAIN: UP ({_harmonic_coherence:.2f} coherence) → {_hc_boost:.2f}x global boost")
+                                    elif _harmonic_direction == 'DOWN':
+                                        # Harmonics say DOWN → dampen enthusiasm (but don't block)
+                                        _hc_dampen = max(0.7, 1.0 - _harmonic_coherence * 0.3)
+                                        for opp in opportunities:
+                                            opp.momentum_score = opp.momentum_score * _hc_dampen
+                                        print(f"     HARMONIC CHAIN: DOWN ({_harmonic_coherence:.2f} coherence) → {_hc_dampen:.2f}x dampen")
+
+                                # ── B2. Phase 0.9: ocean wave states boost/dampen ──
+                                _ocean_applied = 0
+                                for opp in opportunities:
+                                    wave_state = _ocean_wave_syms.get(opp.symbol, _ocean_wave_syms.get(opp.symbol.replace('/', ''), ''))
+                                    ws_upper = str(wave_state).upper()
+                                    if ws_upper in ('BREAKOUT', 'RISING', 'SURGE'):
+                                        opp.momentum_score = opp.momentum_score * 1.25
+                                        _ocean_applied += 1
+                                    elif ws_upper in ('CRASHING', 'FALLING', 'COLLAPSE'):
+                                        opp.momentum_score = opp.momentum_score * 0.7
+                                        _ocean_applied += 1
+                                if _ocean_applied:
+                                    print(f"     OCEAN WAVES: {_ocean_applied} symbols adjusted by wave state")
+
+                                # ── B3. Phase 0.9: animal trend momentum ──
+                                _animal_applied = 0
+                                for opp in opportunities:
+                                    trend = _animal_trend_syms.get(opp.symbol, _animal_trend_syms.get(opp.symbol.replace('/', ''), None))
+                                    if trend:
+                                        side, move = trend
+                                        if side in ('buy', 'long', 'bull') and move > 0:
+                                            opp.momentum_score = opp.momentum_score * min(1.4, 1.0 + abs(move) / 100 * 0.5)
+                                            _animal_applied += 1
+                                        elif side in ('sell', 'short', 'bear') and move != 0:
+                                            opp.momentum_score = opp.momentum_score * max(0.6, 1.0 - abs(move) / 100 * 0.4)
+                                            _animal_applied += 1
+                                if _animal_applied:
+                                    print(f"     ANIMAL TRENDS: {_animal_applied} symbols adjusted by pack momentum")
+
+                                # ── C. Probability Nexus: per-symbol BUY/SELL/HOLD signals ──
+                                _nexus_applied = 0
+                                try:
+                                    from aureon_probability_nexus import make_predictions as _nexus_predict
+                                    _nexus_preds = _nexus_predict()
+                                    if _nexus_preds:
+                                        _nexus_map = {}
+                                        for np in _nexus_preds:
+                                            if isinstance(np, dict):
+                                                sym = np.get('symbol', '')
+                                                signal = str(np.get('signal', 'HOLD')).upper()
+                                                conf = float(np.get('confidence', 0))
+                                                clarity = float(np.get('clarity', 0))
+                                                if sym:
+                                                    _nexus_map[sym] = (signal, conf, clarity)
+                                        for opp in opportunities:
+                                            entry = _nexus_map.get(opp.symbol, _nexus_map.get(opp.symbol.replace('/', ''), None))
+                                            if entry:
+                                                signal, conf, clarity = entry
+                                                if signal == 'BUY' and conf >= 0.5:
+                                                    opp.momentum_score = opp.momentum_score * (1.0 + conf * clarity * 0.4)
+                                                    _nexus_applied += 1
+                                                elif signal == 'SELL' and conf >= 0.6:
+                                                    opp.momentum_score = opp.momentum_score * max(0.5, 1.0 - conf * 0.4)
+                                                    _nexus_applied += 1
+                                        if _nexus_applied:
+                                            print(f"     PROBABILITY NEXUS: {_nexus_applied} symbols scored (from {len(_nexus_preds)} predictions)")
+                                except ImportError:
+                                    pass
+                                except Exception as e:
+                                    print(f"      Probability Nexus scoring error: {e}")
+
+                                # ── D. Predator Detector: penalize hunted symbols ──
+                                _pred_penalized = 0
+                                try:
+                                    if self.predator_detector and hasattr(self, '_last_predator_report'):
+                                        _pred_report = getattr(self, '_last_predator_report', None)
+                                    elif self.predator_detector:
+                                        try:
+                                            _pred_report = self.predator_detector.generate_hunting_report()
+                                        except Exception:
+                                            _pred_report = None
+                                    else:
+                                        _pred_report = None
+                                    if _pred_report:
+                                        self._last_predator_report = _pred_report
+                                        _hunted_syms = set()
+                                        for pred in (getattr(_pred_report, 'top_predators', None) or []):
+                                            sym = getattr(pred, 'symbol', '') if hasattr(pred, 'symbol') else ''
+                                            if sym:
+                                                _hunted_syms.add(sym)
+                                        front_run_rate = getattr(_pred_report, 'front_run_rate', 0)
+                                        if _hunted_syms or front_run_rate > 0.1:
+                                            for opp in opportunities:
+                                                if opp.symbol in _hunted_syms:
+                                                    opp.momentum_score = opp.momentum_score * 0.6  # Penalize hunted
+                                                    _pred_penalized += 1
+                                                elif front_run_rate > 0.2:
+                                                    opp.momentum_score = opp.momentum_score * 0.9  # Slight global caution
+                                        if _pred_penalized:
+                                            print(f"     PREDATOR DEFENSE: {_pred_penalized} hunted symbols penalized (front-run rate: {front_run_rate:.0%})")
+                                except Exception as e:
+                                    print(f"      Predator scoring error: {e}")
+
+                                # ── E. Inject Volume Hunter / Orca Intel opportunities ──
+                                if _intel_inject:
+                                    existing_syms = {o.symbol for o in opportunities}
+                                    injected = 0
+                                    for inj_opp in _intel_inject:
+                                        if inj_opp.symbol not in existing_syms:
+                                            opportunities.append(inj_opp)
+                                            existing_syms.add(inj_opp.symbol)
+                                            injected += 1
+                                    if injected:
+                                        print(f"     INTEL INJECT: {injected} new opportunities from Volume Hunter/Orca Intel")
+
+                                # ── F. Apply per-symbol boosts from all 8 pre-scan brains ──
+                                boosted_count = 0
+                                for opp in opportunities:
+                                    sym = opp.symbol
+                                    boost = _intel_boosts.get(sym, _intel_boosts.get(sym.replace('/', ''), _intel_boosts.get(f"{sym}/USD", 1.0)))
+                                    if boost > 1.0:
+                                        opp.momentum_score = opp.momentum_score * boost
+                                        boosted_count += 1
+
+                                # ── G. Apply Timeline Oracle global timing multiplier ──
+                                if _timeline_multiplier > 1.0:
+                                    for opp in opportunities:
+                                        opp.momentum_score = opp.momentum_score * _timeline_multiplier
+
+                                _total_systems = _intel_active + (_p07_boosted > 0) + (_harmonic_direction is not None) + (_ocean_applied > 0) + (_animal_applied > 0) + (_nexus_applied > 0) + (_pred_penalized > 0)
+                                if boosted_count > 0 or _timeline_multiplier > 1.0 or _total_systems > 0:
+                                    print(f"     FULL INTEL APPLIED: {boosted_count} boosted | {_pred_penalized} penalized | "
+                                          f"Timeline {_timeline_multiplier:.2f}x | {_total_systems} systems active")
+                                    # Chirp: broadcast intelligence summary to bus
+                                    if self.chirp_bus:
+                                        try:
+                                            self.chirp_bus.emit_message(
+                                                f"ENTRY intel_boost={boosted_count} systems={_total_systems}",
+                                                coherence=min(1.0, _total_systems / 10),
+                                                confidence=min(1.0, boosted_count / max(len(opportunities), 1)),
+                                            )
+                                        except Exception:
+                                            pass
+
                             if opportunities:
                                 #    Apply quantum pattern recognition boost to scoring
                                 if quantum_cognition and quantum_stats['amplification'] > 1.0:
@@ -14371,25 +15478,65 @@ class OrcaKillCycle:
                                                                 )
                                                                 
                                                                 # ═══════════════════════════════════════════════
-                                                                #  SPOT POSITION - Always created
+                                                                #  DETECT MARGIN vs SPOT from queen_gated_buy
                                                                 # ═══════════════════════════════════════════════
-                                                                pos = LivePosition(
-                                                                    symbol=symbol_clean,
-                                                                    exchange=best.exchange,
-                                                                    entry_price=buy_price,
-                                                                    entry_qty=buy_qty,
-                                                                    entry_cost=buy_price * buy_qty * (1 + fee_rate),
-                                                                    breakeven_price=breakeven,
-                                                                    target_price=target_price,
-                                                                    client=client,
-                                                                    stop_price=0.0,  # NO STOP LOSS!
-                                                                    # Spot position - no margin
-                                                                    is_margin=False,
-                                                                    leverage=1,
-                                                                    margin_amount=0.0,
-                                                                )
+                                                                _is_margin_order = raw_order.get('_margin_order', False) if raw_order else False
+                                                                _order_leverage = raw_order.get('_leverage', 1) if raw_order else 1
+                                                                _margin_side = raw_order.get('_margin_side', 'LONG') if raw_order else 'LONG'
+
+                                                                if _is_margin_order and _order_leverage >= 2:
+                                                                    # MARGIN POSITION — PENNY PROFIT TARGET (after ALL costs)
+                                                                    # $0.01 realized profit after fees + slippage + spread.
+                                                                    # realized_pnl = exit_price * qty * (1 - fee - friction) - entry * qty * (1 + fee)
+                                                                    # Solving for exit_price when realized_pnl = $0.01:
+                                                                    _pf = EXCHANGE_FEES.get(best.exchange, {})
+                                                                    _slip = _pf.get('slippage', 0.0005)
+                                                                    _sprd = _pf.get('spread', 0.0008)
+                                                                    _friction = _slip + _sprd
+                                                                    _denom = 1 - fee_rate - _friction  # exit-side cost factor
+                                                                    _entry_cost_total = buy_price * buy_qty * (1 + fee_rate)
+                                                                    target_price_margin = (_entry_cost_total + 0.01) / (buy_qty * _denom) if buy_qty > 0 else breakeven
+                                                                    _margin_collateral = buy_price * buy_qty / _order_leverage * (1 + fee_rate)
+                                                                    pos = LivePosition(
+                                                                        symbol=symbol_clean,
+                                                                        exchange=best.exchange,
+                                                                        entry_price=buy_price,
+                                                                        entry_qty=buy_qty,
+                                                                        entry_cost=buy_price * buy_qty * (1 + fee_rate),
+                                                                        breakeven_price=breakeven,
+                                                                        target_price=target_price_margin,
+                                                                        client=client,
+                                                                        stop_price=0.0,  # NO STOP LOSS!
+                                                                        is_margin=True,
+                                                                        leverage=_order_leverage,
+                                                                        margin_amount=_margin_collateral,
+                                                                        margin_side=_margin_side,
+                                                                    )
+                                                                    print(f"     MARGIN BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f} ({_order_leverage}x {_margin_side})")
+                                                                    print(f"        Target: ${target_price_margin:,.4f} (only {target_pct_current/_order_leverage:.2f}% price move needed!)")
+                                                                    print(f"        Margin: ${_margin_collateral:.2f} | NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                else:
+                                                                    # SPOT POSITION — classic path
+                                                                    pos = LivePosition(
+                                                                        symbol=symbol_clean,
+                                                                        exchange=best.exchange,
+                                                                        entry_price=buy_price,
+                                                                        entry_qty=buy_qty,
+                                                                        entry_cost=buy_price * buy_qty * (1 + fee_rate),
+                                                                        breakeven_price=breakeven,
+                                                                        target_price=target_price,
+                                                                        client=client,
+                                                                        stop_price=0.0,  # NO STOP LOSS!
+                                                                        is_margin=False,
+                                                                        leverage=1,
+                                                                        margin_amount=0.0,
+                                                                    )
+                                                                    print(f"     SPOT BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
+                                                                    print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
+                                                                    print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
+
                                                                 positions.append(pos)
-                                                                
+
                                                                 # Track the buy order
                                                                 self.track_buy_order(symbol_clean, buy_order, best.exchange)
                                                                 self._record_action_cop(cop_actual, 'BUY', best.exchange, symbol_clean)
@@ -14399,73 +15546,12 @@ class OrcaKillCycle:
                                                                     meta={"symbol": symbol_clean, "exchange": best.exchange},
                                                                 )
                                                                 
-                                                                print(f"     SPOT BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
-                                                                print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
-                                                                print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
-                                                                
                                                                 session_stats['total_trades'] += 1
                                                                 
                                                                 # ═══════════════════════════════════════════════
-                                                                #  MARGIN POSITION - Simultaneous, Kraken only
-                                                                #  Fires ALONGSIDE spot, never instead of it
+                                                                #  MARGIN is now PRIMARY (via queen_gated_buy).
+                                                                #  No need for separate simultaneous margin fire.
                                                                 # ═══════════════════════════════════════════════
-                                                                if (best.exchange == "kraken" and
-                                                                    margin_rec in ("LONG", "SHORT") and
-                                                                    margin_lev >= 2 and
-                                                                    margin_conv >= 0.4 and
-                                                                    hasattr(client, 'place_margin_order')):
-                                                                    
-                                                                    m_leverage = min(margin_lev, 5)
-                                                                    print(f"   💰 MARGIN TRADE (SIMULTANEOUS): {margin_rec} at {m_leverage}x leverage (conviction {margin_conv:.0%})")
-                                                                    try:
-                                                                        m_side = 'buy' if margin_rec == "LONG" else 'sell'
-                                                                        # Convert quote amount (USD) to base asset quantity
-                                                                        m_base_qty = buy_amount / best.price if best.price > 0 else 0.0
-                                                                        m_raw = client.place_margin_order(
-                                                                            symbol=symbol_clean,
-                                                                            side=m_side,
-                                                                            quantity=m_base_qty,
-                                                                            leverage=m_leverage
-                                                                        )
-                                                                        m_order = self.normalize_order_response(m_raw, best.exchange) if m_raw else None
-                                                                        if m_order and m_order.get('status') != 'rejected':
-                                                                            m_qty = m_order.get('filled_qty', 0)
-                                                                            m_price = m_order.get('filled_avg_price', buy_price)
-                                                                            if m_qty > 0 and m_price > 0:
-                                                                                if margin_rec == 'LONG':
-                                                                                    # LONG: target ABOVE entry (price must rise)
-                                                                                    m_breakeven = m_price * (1 + fee_rate) / (1 - fee_rate)
-                                                                                    m_target = m_breakeven * (1 + target_pct_current / 100)
-                                                                                else:
-                                                                                    # SHORT: target BELOW entry (price must fall)
-                                                                                    m_breakeven = m_price * (1 - fee_rate) / (1 + fee_rate)
-                                                                                    m_target = m_breakeven * (1 - target_pct_current / 100)
-                                                                                margin_pos = LivePosition(
-                                                                                    symbol=symbol_clean,
-                                                                                    exchange=best.exchange,
-                                                                                    entry_price=m_price,
-                                                                                    entry_qty=m_qty,
-                                                                                    entry_cost=m_price * m_qty * (1 + fee_rate),
-                                                                                    breakeven_price=m_breakeven,
-                                                                                    target_price=m_target,
-                                                                                    client=client,
-                                                                                    stop_price=0.0,
-                                                                                    is_margin=True,
-                                                                                    leverage=m_leverage,
-                                                                                    margin_amount=buy_amount,
-                                                                                    margin_side=margin_rec,  # 'LONG' or 'SHORT'
-                                                                                )
-                                                                                positions.append(margin_pos)
-                                                                                session_stats['total_trades'] += 1
-                                                                                print(f"     MARGIN BOUGHT: {m_qty:.6f} @ ${m_price:,.4f} ({m_leverage}x leverage)")
-                                                                                print(f"        Margin Target: ${m_target:,.4f} | Collateral: ${buy_amount:.2f}")
-                                                                            else:
-                                                                                print(f"      Margin order filled but zero qty/price")
-                                                                        else:
-                                                                            print(f"      Margin order not filled: {m_order}")
-                                                                    except Exception as margin_err:
-                                                                        print(f"      ⚠️ Margin order failed (spot still good): {margin_err}")
-                                                                        # Spot position is already created - margin failure is non-fatal
                                                 else:
                                                     print(f"      BUY SKIPPED: insufficient funded quote amount on {best.exchange.upper()} (buy_amount={buy_amount:.4f})")
                                         except Exception as e:
@@ -14895,16 +15981,81 @@ class OrcaKillCycle:
                                         sell_reason = 'MOMENTUM_PROFIT_QUEEN_APPROVED'
                                         print(f"      TAKING PROFIT (momentum reversal, Queen approved)")
                             
+                            # 3. MARGIN PENNY FLOOR — $0.01 REALIZED profit after ALL fees + slippage + spread
+                            #    Hard floor: one penny net after every cost imaginable.
+                            #    Queen decides: take the penny or hold for more (validated plays only).
+                            if not should_sell and pos.is_margin and pos.exchange == 'kraken':
+                                # True realized P&L: deduct slippage + spread on top of fee-inclusive net_pnl
+                                _ex_fees = EXCHANGE_FEES.get(pos.exchange, {})
+                                _slippage = _ex_fees.get('slippage', 0.0005)
+                                _spread = _ex_fees.get('spread', 0.0008)
+                                _friction = _slippage + _spread  # ~0.13% for Kraken
+                                _exit_gross = current * pos.entry_qty
+                                _realized_pnl = net_pnl - (_exit_gross * _friction)
+
+                                if _realized_pnl >= 0.01:
+                                    # ═══ PENNY FLOOR HIT — Consult Queen: take or hold? ═══
+                                    _queen_holds = False
+                                    _q_queen = queen if 'queen' in dir() else self.queen_hive
+                                    if _q_queen:
+                                        try:
+                                            _q_sig = _q_queen.get_collective_signal(
+                                                symbol=pos.symbol,
+                                                market_data={'price': current, 'exchange': pos.exchange}
+                                            )
+                                            _q_conf = float(_q_sig.get('confidence', 0.5))
+                                            _q_action = _q_sig.get('action', 'HOLD')
+                                            _q_dir = _q_sig.get('direction', 'NEUTRAL')
+
+                                            # Queen can hold ONLY if she validates the directional play
+                                            _dir_valid = (
+                                                (pos.margin_side == 'LONG' and _q_dir in ('BULLISH', 'UP', 'LONG', 'BUY')) or
+                                                (pos.margin_side == 'SHORT' and _q_dir in ('BEARISH', 'DOWN', 'SHORT', 'SELL'))
+                                            )
+
+                                            if _q_action in ('HOLD', 'BUY') and _q_conf >= 0.6 and _dir_valid:
+                                                # Queen validates the play — hold for bigger win
+                                                _queen_holds = True
+                                                print(f"      PENNY FLOOR ${_realized_pnl:+.4f} — Queen HOLDING ({pos.margin_side} validated, {_q_conf:.0%} conf)")
+                                            elif _q_action == 'SELL' and _q_conf >= 0.5:
+                                                # Queen wants out — respect the signal
+                                                print(f"      PENNY FLOOR ${_realized_pnl:+.4f} — Queen says CLOSE ({_q_conf:.0%} conf)")
+                                        except Exception:
+                                            pass  # On error, take the penny
+
+                                    if not _queen_holds:
+                                        should_sell = True
+                                        sell_reason = f'PENNY_PROFIT_REALIZED (${_realized_pnl:+.4f} after all costs)'
+                                        print(f"      PENNY PROFIT REALIZED! ${_realized_pnl:+.4f} after fees+slippage+spread — CLOSING!")
+
+                                # ═══ QUEEN FORCE CLOSE — Queen can exit ANY margin position at will ═══
+                                elif not should_sell:
+                                    _q_queen = queen if 'queen' in dir() else self.queen_hive
+                                    if _q_queen:
+                                        try:
+                                            _q_sig = _q_queen.get_collective_signal(
+                                                symbol=pos.symbol,
+                                                market_data={'price': current, 'exchange': pos.exchange}
+                                            )
+                                            _q_conf = float(_q_sig.get('confidence', 0.5))
+                                            _q_action = _q_sig.get('action', 'HOLD')
+                                            if _q_action == 'SELL' and _q_conf >= 0.7:
+                                                should_sell = True
+                                                sell_reason = f'QUEEN_FORCE_CLOSE (conf={_q_conf:.0%}, pnl=${net_pnl:+.4f})'
+                                                print(f"      QUEEN FORCE CLOSE! Confidence {_q_conf:.0%} — exiting margin position")
+                                        except Exception:
+                                            pass
+
                             # If not approved, log why
-                            if not can_exit and (current >= pos.target_price or net_pnl > 0.001):
+                            if not can_exit and not should_sell and (current >= pos.target_price or net_pnl > 0.001):
                                 blocked_reason = exit_info.get('blocked_reason', 'unknown')
                                 print(f"      Exit blocked: {blocked_reason}")
-                            
+
                             # Track price history
                             pos.price_history.append(current)
                             if len(pos.price_history) > 50:
                                 pos.price_history.pop(0)
-                            
+
                             # Execute sell if ready
                             if should_sell:
                                 if pos.is_margin and pos.exchange == 'kraken':
