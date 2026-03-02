@@ -628,5 +628,15 @@
     "stablecoin": "USDC",
     "received_amount": 0.001372440206704749,
     "profit_pct": 1.4973408353318014
+  },
+  {
+    "timestamp": 1772471326.7044728,
+    "exchange": "alpaca",
+    "asset": "AAVEUSD",
+    "harvest_qty": 1.60617e-05,
+    "harvest_value_usd": 0.00203514267126,
+    "stablecoin": "USDC",
+    "received_amount": 0.00203514267126,
+    "profit_pct": 3.0756245756693485
   }
 ]

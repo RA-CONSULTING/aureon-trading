@@ -1,0 +1,44 @@
+{
+  "active_trades": {
+    "AAVEUSD": {
+      "pair": "AAVEUSD",
+      "side": "buy",
+      "volume": 0.62667505,
+      "entry_price": 124.19,
+      "leverage": 3,
+      "entry_fee": 0.2023496135947,
+      "entry_time": 1772475481.946318,
+      "order_id": "OMFCNQ-4KH4D-CGFT55",
+      "cost": 77.8267744595,
+      "breakeven_price": 125.63364966690376
+    },
+    "ADAUSD": {
+      "pair": "ADAUSD",
+      "side": "buy",
+      "volume": 920.6830479,
+      "entry_price": 0.281899,
+      "leverage": 10,
+      "entry_fee": 0.6748030393519014,
+      "entry_time": 1772475483.9719708,
+      "order_id": "OUT65R-B4HGI-UFFWOF",
+      "cost": 259.5396305199621,
+      "breakeven_price": 0.2839079498583933
+    },
+    "ALGOUSD": {
+      "pair": "ALGOUSD",
+      "side": "buy",
+      "volume": 580.70906515,
+      "entry_price": 0.08938,
+      "leverage": 2,
+      "entry_fee": 0.13494981823207822,
+      "entry_time": 1772475486.004617,
+      "order_id": "OEESON-NSTVS-XKR5IW",
+      "cost": 51.903776243107,
+      "breakeven_price": 0.09070579235053837
+    }
+  },
+  "total_profit": 0,
+  "total_trades": 0,
+  "winning_trades": 0,
+  "last_updated": "2026-03-02T18:18:06.004648"
+}

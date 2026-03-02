@@ -290,7 +290,7 @@ class KrakenClient:
         sigdigest = base64.b64encode(mac.digest()).decode()
         return sigdigest
 
-    def _private(self, path: str, data: Dict[str, Any], _cost: float = 1.0) -> Dict[str, Any]:
+    def _private(self, path: str, data: Dict[str, Any] = None, _cost: float = 1.0) -> Dict[str, Any]:
         """Execute a private (authenticated) Kraken API call with production-grade rate limiting.
         
         Args:

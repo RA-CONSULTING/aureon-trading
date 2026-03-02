@@ -6,7 +6,6 @@ Provides:
 
 These are intentionally dependency-free and simple for easy testing.
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import threading
 from typing import Any, Dict, Optional

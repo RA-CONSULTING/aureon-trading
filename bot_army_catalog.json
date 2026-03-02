@@ -1,0 +1,1270 @@
+{
+  "54eae549b166": {
+    "bot_id": "54eae549b166",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772489893.7673483,
+    "last_seen": 1772489893.7673483,
+    "first_symbol": "SUIUSDT",
+    "last_symbol": "SUIUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 0.3979,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 10.5,
+    "last_bsr": 0.72,
+    "action_history": [
+      {
+        "ts": 1772489894,
+        "action": "SELLING",
+        "bsr": 0.72,
+        "power": 10.5,
+        "symbol": "SUIUSDT"
+      }
+    ]
+  },
+  "7c73a48784d0": {
+    "bot_id": "7c73a48784d0",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772489893.7673483,
+    "last_seen": 1772489893.7673483,
+    "first_symbol": "SUIUSDT",
+    "last_symbol": "SUIUSDT",
+    "sighting_count": 1,
+    "confidence": 0.91,
+    "frequency": 3.4558,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 89.2,
+    "last_bsr": 0.68,
+    "action_history": [
+      {
+        "ts": 1772489894,
+        "action": "SELLING",
+        "bsr": 0.68,
+        "power": 89.2,
+        "symbol": "SUIUSDT"
+      }
+    ]
+  },
+  "8aa47941bc96": {
+    "bot_id": "8aa47941bc96",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772489894.001782,
+    "last_seen": 1772492379.7016606,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 2,
+    "confidence": 0.8,
+    "frequency": 0.3526,
+    "shape": "taper",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 10.23110023718317,
+    "last_bsr": 1.03,
+    "action_history": [
+      {
+        "ts": 1772489894,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 9.6,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1772492380,
+        "action": "NEUTRAL",
+        "bsr": 1.03,
+        "power": 10.2,
+        "symbol": "BTCUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "fb81c3aedaaa": {
+    "bot_id": "fb81c3aedaaa",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772489894.001782,
+    "last_seen": 1772489894.001782,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 5.0,
+    "shape": "taper",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 90.3,
+    "last_bsr": 0.82,
+    "action_history": [
+      {
+        "ts": 1772489894,
+        "action": "NEUTRAL",
+        "bsr": 0.82,
+        "power": 90.3,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "808849c8ec06": {
+    "bot_id": "808849c8ec06",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772489894.2361376,
+    "last_seen": 1772493385.8862746,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 5,
+    "confidence": 0.8,
+    "frequency": 0.4657,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 12.181203532339694,
+    "last_bsr": 0.58,
+    "action_history": [
+      {
+        "ts": 1772489894,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 10.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490345,
+        "action": "NEUTRAL",
+        "bsr": 1.08,
+        "power": 10.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490425,
+        "action": "NEUTRAL",
+        "bsr": 1.11,
+        "power": 11.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772491924,
+        "action": "NEUTRAL",
+        "bsr": 1.11,
+        "power": 11.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493386,
+        "action": "SELLING",
+        "bsr": 0.58,
+        "power": 12.2,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "f57eddb13486": {
+    "bot_id": "f57eddb13486",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772489894.2361376,
+    "last_seen": 1772493023.6456733,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 4,
+    "confidence": 0.91,
+    "frequency": 1.6081,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 88.11362138165238,
+    "last_bsr": 0.42,
+    "action_history": [
+      {
+        "ts": 1772489894,
+        "action": "SELLING",
+        "bsr": 0.39,
+        "power": 89.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490248,
+        "action": "NEUTRAL",
+        "bsr": 1.02,
+        "power": 86.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490393,
+        "action": "NEUTRAL",
+        "bsr": 0.97,
+        "power": 90.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493024,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 88.1,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "d1c9604e1f9f": {
+    "bot_id": "d1c9604e1f9f",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772489894.4807773,
+    "last_seen": 1772489894.4807773,
+    "first_symbol": "SOLUSDT",
+    "last_symbol": "SOLUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 0.4578,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 11.6,
+    "last_bsr": 0.61,
+    "action_history": [
+      {
+        "ts": 1772489894,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 11.6,
+        "symbol": "SOLUSDT"
+      }
+    ]
+  },
+  "ef8ea38d133f": {
+    "bot_id": "ef8ea38d133f",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772489894.4807773,
+    "last_seen": 1772489894.4807773,
+    "first_symbol": "SOLUSDT",
+    "last_symbol": "SOLUSDT",
+    "sighting_count": 1,
+    "confidence": 0.91,
+    "frequency": 0.8508,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 88.1,
+    "last_bsr": 0.53,
+    "action_history": [
+      {
+        "ts": 1772489894,
+        "action": "SELLING",
+        "bsr": 0.53,
+        "power": 88.1,
+        "symbol": "SOLUSDT"
+      }
+    ]
+  },
+  "c21697329642": {
+    "bot_id": "c21697329642",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772489894.7246962,
+    "last_seen": 1772489894.7246962,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 0.184,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 11.6,
+    "last_bsr": 0.55,
+    "action_history": [
+      {
+        "ts": 1772489895,
+        "action": "SELLING",
+        "bsr": 0.55,
+        "power": 11.6,
+        "symbol": "XRPUSDT"
+      }
+    ]
+  },
+  "07dd4ef664b5": {
+    "bot_id": "07dd4ef664b5",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772489894.7246962,
+    "last_seen": 1772489894.7246962,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 1,
+    "confidence": 0.91,
+    "frequency": 0.5979,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 88.2,
+    "last_bsr": 0.51,
+    "action_history": [
+      {
+        "ts": 1772489895,
+        "action": "SELLING",
+        "bsr": 0.51,
+        "power": 88.2,
+        "symbol": "XRPUSDT"
+      }
+    ]
+  },
+  "c36dca10793e": {
+    "bot_id": "c36dca10793e",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772490247.55221,
+    "last_seen": 1772493402.12725,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 20,
+    "confidence": 0.8,
+    "frequency": 0.0148,
+    "shape": "spiral",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 12.061631471355884,
+    "last_bsr": 0.83,
+    "action_history": [
+      {
+        "ts": 1772490248,
+        "action": "SELLING",
+        "bsr": 0.54,
+        "power": 13.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490263,
+        "action": "SELLING",
+        "bsr": 0.54,
+        "power": 13.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490280,
+        "action": "SELLING",
+        "bsr": 0.58,
+        "power": 13.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490296,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 12.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490328,
+        "action": "BUYING",
+        "bsr": 1.39,
+        "power": 10.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490377,
+        "action": "SELLING",
+        "bsr": 0.58,
+        "power": 9.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490393,
+        "action": "NEUTRAL",
+        "bsr": 0.93,
+        "power": 9.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490409,
+        "action": "NEUTRAL",
+        "bsr": 1.06,
+        "power": 9.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772491806,
+        "action": "SELLING",
+        "bsr": 0.35,
+        "power": 13.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772491822,
+        "action": "SELLING",
+        "bsr": 0.26,
+        "power": 13.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772492871,
+        "action": "SELLING",
+        "bsr": 0.43,
+        "power": 11.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772492885,
+        "action": "SELLING",
+        "bsr": 0.68,
+        "power": 10.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493024,
+        "action": "SELLING",
+        "bsr": 0.52,
+        "power": 11.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493089,
+        "action": "BUYING",
+        "bsr": 2.53,
+        "power": 14.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493105,
+        "action": "BUYING",
+        "bsr": 2.26,
+        "power": 14.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493170,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 12.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493236,
+        "action": "SELLING",
+        "bsr": 0.62,
+        "power": 9.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493253,
+        "action": "NEUTRAL",
+        "bsr": 0.96,
+        "power": 9.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493269,
+        "action": "BUYING",
+        "bsr": 1.48,
+        "power": 9.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493402,
+        "action": "NEUTRAL",
+        "bsr": 0.83,
+        "power": 12.1,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "1db5e81984b0": {
+    "bot_id": "1db5e81984b0",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772490263.39003,
+    "last_seen": 1772493169.7730472,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 3,
+    "confidence": 0.91,
+    "frequency": 3.6728,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 86.58168059654213,
+    "last_bsr": 0.5,
+    "action_history": [
+      {
+        "ts": 1772490263,
+        "action": "NEUTRAL",
+        "bsr": 1.02,
+        "power": 85.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490280,
+        "action": "NEUTRAL",
+        "bsr": 1.12,
+        "power": 86.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493170,
+        "action": "SELLING",
+        "bsr": 0.5,
+        "power": 86.6,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "759bcadb77f0": {
+    "bot_id": "759bcadb77f0",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772490295.711263,
+    "last_seen": 1772490295.711263,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 1,
+    "confidence": 0.91,
+    "frequency": 3.0265,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 87.8,
+    "last_bsr": 1.46,
+    "action_history": [
+      {
+        "ts": 1772490296,
+        "action": "BUYING",
+        "bsr": 1.46,
+        "power": 87.8,
+        "symbol": "ETHUSDT"
+      }
+    ]
+  },
+  "6b0f467d1764": {
+    "bot_id": "6b0f467d1764",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772490328.045283,
+    "last_seen": 1772493402.12725,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 5,
+    "confidence": 0.91,
+    "frequency": 1.9979,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 87.88998546808403,
+    "last_bsr": 1.44,
+    "action_history": [
+      {
+        "ts": 1772490328,
+        "action": "BUYING",
+        "bsr": 1.94,
+        "power": 89.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772490425,
+        "action": "NEUTRAL",
+        "bsr": 1.1,
+        "power": 88.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493236,
+        "action": "SELLING",
+        "bsr": 0.58,
+        "power": 90.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493253,
+        "action": "NEUTRAL",
+        "bsr": 0.83,
+        "power": 90.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493402,
+        "action": "BUYING",
+        "bsr": 1.44,
+        "power": 87.9,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "78af7397c6b0": {
+    "bot_id": "78af7397c6b0",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772490344.7428725,
+    "last_seen": 1772491822.425292,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 3,
+    "confidence": 0.91,
+    "frequency": 0.6646,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 86.37283747170711,
+    "last_bsr": 0.3,
+    "action_history": [
+      {
+        "ts": 1772490345,
+        "action": "NEUTRAL",
+        "bsr": 1.1,
+        "power": 89.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772491806,
+        "action": "SELLING",
+        "bsr": 0.33,
+        "power": 86.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772491822,
+        "action": "SELLING",
+        "bsr": 0.3,
+        "power": 86.4,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "f0e90c2d55fc": {
+    "bot_id": "f0e90c2d55fc",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772490376.9125519,
+    "last_seen": 1772493269.2541919,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 3,
+    "confidence": 0.91,
+    "frequency": 3.7741,
+    "shape": "spiral",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 90.34020800115916,
+    "last_bsr": 1.28,
+    "action_history": [
+      {
+        "ts": 1772490377,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 90.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493089,
+        "action": "BUYING",
+        "bsr": 1.34,
+        "power": 84.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493269,
+        "action": "NEUTRAL",
+        "bsr": 1.28,
+        "power": 90.3,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "721e1c393e7e": {
+    "bot_id": "721e1c393e7e",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772490409.2544363,
+    "last_seen": 1772493105.04104,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 3,
+    "confidence": 0.91,
+    "frequency": 2.4711,
+    "shape": "spiral",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 85.61967998267575,
+    "last_bsr": 1.19,
+    "action_history": [
+      {
+        "ts": 1772490409,
+        "action": "NEUTRAL",
+        "bsr": 1.1,
+        "power": 90.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772491924,
+        "action": "NEUTRAL",
+        "bsr": 0.99,
+        "power": 88.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493105,
+        "action": "NEUTRAL",
+        "bsr": 1.19,
+        "power": 85.6,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "66d713d4723e": {
+    "bot_id": "66d713d4723e",
+    "firm_id": "retail_swarm",
+    "firm_name": "Retail Swarm",
+    "animal": "\ud83d\udc1c Ants",
+    "band": "market_maker",
+    "first_seen": 1772492023.9750812,
+    "last_seen": 1772492615.7148194,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 2,
+    "confidence": 0.8,
+    "frequency": 0.024,
+    "shape": "surge",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 12.176533202370456,
+    "last_bsr": 0.31,
+    "action_history": [
+      {
+        "ts": 1772492024,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 11.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772492616,
+        "action": "SELLING",
+        "bsr": 0.31,
+        "power": 12.2,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "surge"
+  },
+  "00e73a247389": {
+    "bot_id": "00e73a247389",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772492023.9750812,
+    "last_seen": 1772492615.7148194,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 2,
+    "confidence": 0.81,
+    "frequency": 2.056,
+    "shape": "surge",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 86.75439069761165,
+    "last_bsr": 0.26,
+    "action_history": [
+      {
+        "ts": 1772492024,
+        "action": "SELLING",
+        "bsr": 0.69,
+        "power": 88.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772492616,
+        "action": "SELLING",
+        "bsr": 0.26,
+        "power": 86.8,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "surge"
+  },
+  "8359dfa3424b": {
+    "bot_id": "8359dfa3424b",
+    "firm_id": "retail_swarm",
+    "firm_name": "Retail Swarm",
+    "animal": "\ud83d\udc1c Ants",
+    "band": "market_maker",
+    "first_seen": 1772492282.8398077,
+    "last_seen": 1772492395.756022,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 2,
+    "confidence": 0.8,
+    "frequency": 0.0104,
+    "shape": "surge",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 10.79483157704273,
+    "last_bsr": 5.0,
+    "action_history": [
+      {
+        "ts": 1772492283,
+        "action": "BUYING",
+        "bsr": 1.62,
+        "power": 8.0,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1772492396,
+        "action": "BUYING",
+        "bsr": 5.0,
+        "power": 10.8,
+        "symbol": "BTCUSDT"
+      }
+    ],
+    "last_shape": "surge"
+  },
+  "02660bed4f07": {
+    "bot_id": "02660bed4f07",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772492282.8398077,
+    "last_seen": 1772492282.8398077,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 1.0062,
+    "shape": "surge",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 90.0,
+    "last_bsr": 1.14,
+    "action_history": [
+      {
+        "ts": 1772492283,
+        "action": "NEUTRAL",
+        "bsr": 1.14,
+        "power": 90.0,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "f5a6ffce223d": {
+    "bot_id": "f5a6ffce223d",
+    "firm_id": "retail_swarm",
+    "firm_name": "Retail Swarm",
+    "animal": "\ud83d\udc1c Ants",
+    "band": "market_maker",
+    "first_seen": 1772492298.6690667,
+    "last_seen": 1772492298.6690667,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.69,
+    "frequency": 0.0114,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 9.8,
+    "last_bsr": 8.33,
+    "action_history": [
+      {
+        "ts": 1772492299,
+        "action": "BUYING",
+        "bsr": 8.33,
+        "power": 9.8,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "a542a09a51c0": {
+    "bot_id": "a542a09a51c0",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772492298.6690667,
+    "last_seen": 1772492298.6690667,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.92,
+    "frequency": 4.0888,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.9,
+    "last_bsr": 8.56,
+    "action_history": [
+      {
+        "ts": 1772492299,
+        "action": "BUYING",
+        "bsr": 8.56,
+        "power": 89.9,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "eead66abf944": {
+    "bot_id": "eead66abf944",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772492347.3790202,
+    "last_seen": 1772492411.9110665,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 2,
+    "confidence": 0.8,
+    "frequency": 0.0133,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 16.093089234527756,
+    "last_bsr": 0.35,
+    "action_history": [
+      {
+        "ts": 1772492347,
+        "action": "SELLING",
+        "bsr": 0.51,
+        "power": 12.0,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1772492412,
+        "action": "SELLING",
+        "bsr": 0.35,
+        "power": 16.1,
+        "symbol": "BTCUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "3a1d39a6c04a": {
+    "bot_id": "3a1d39a6c04a",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772492347.3790202,
+    "last_seen": 1772492347.3790202,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 2.0772,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 86.7,
+    "last_bsr": 0.58,
+    "action_history": [
+      {
+        "ts": 1772492347,
+        "action": "SELLING",
+        "bsr": 0.58,
+        "power": 86.7,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "7ec53e8d5856": {
+    "bot_id": "7ec53e8d5856",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772492379.7016606,
+    "last_seen": 1772492379.7016606,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 1.2,
+    "shape": "taper",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 89.5,
+    "last_bsr": 1.03,
+    "action_history": [
+      {
+        "ts": 1772492380,
+        "action": "NEUTRAL",
+        "bsr": 1.03,
+        "power": 89.5,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "459ca5ecbb62": {
+    "bot_id": "459ca5ecbb62",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772492395.756022,
+    "last_seen": 1772492395.756022,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 1.5385,
+    "shape": "surge",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 86.5,
+    "last_bsr": 4.76,
+    "action_history": [
+      {
+        "ts": 1772492396,
+        "action": "BUYING",
+        "bsr": 4.76,
+        "power": 86.5,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "2637c0079214": {
+    "bot_id": "2637c0079214",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772492411.9110665,
+    "last_seen": 1772492411.9110665,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 0.5446,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 83.8,
+    "last_bsr": 0.56,
+    "action_history": [
+      {
+        "ts": 1772492412,
+        "action": "SELLING",
+        "bsr": 0.56,
+        "power": 83.8,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "c2a6adac578f": {
+    "bot_id": "c2a6adac578f",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772492631.9609318,
+    "last_seen": 1772493335.604681,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 3,
+    "confidence": 0.8,
+    "frequency": 0.061,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 14.255822344483137,
+    "last_bsr": 0.12,
+    "action_history": [
+      {
+        "ts": 1772492632,
+        "action": "SELLING",
+        "bsr": 0.69,
+        "power": 11.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772492649,
+        "action": "NEUTRAL",
+        "bsr": 1.25,
+        "power": 8.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493336,
+        "action": "SELLING",
+        "bsr": 0.12,
+        "power": 14.3,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "a9625a570319": {
+    "bot_id": "a9625a570319",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772492631.9609318,
+    "last_seen": 1772492631.9609318,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 1.2805,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 88.0,
+    "last_bsr": 0.52,
+    "action_history": [
+      {
+        "ts": 1772492632,
+        "action": "SELLING",
+        "bsr": 0.52,
+        "power": 88.0,
+        "symbol": "ETHUSDT"
+      }
+    ]
+  },
+  "273109636874": {
+    "bot_id": "273109636874",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772492649.094476,
+    "last_seen": 1772492649.094476,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 0.8943,
+    "shape": "taper",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 88.2,
+    "last_bsr": 1.63,
+    "action_history": [
+      {
+        "ts": 1772492649,
+        "action": "BUYING",
+        "bsr": 1.63,
+        "power": 88.2,
+        "symbol": "ETHUSDT"
+      }
+    ]
+  },
+  "7cbc29805435": {
+    "bot_id": "7cbc29805435",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772492870.712615,
+    "last_seen": 1772493385.8862746,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 3,
+    "confidence": 0.91,
+    "frequency": 1.2016,
+    "shape": "spiral",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 87.71258044682655,
+    "last_bsr": 0.89,
+    "action_history": [
+      {
+        "ts": 1772492871,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 88.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772492885,
+        "action": "SELLING",
+        "bsr": 0.65,
+        "power": 89.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772493386,
+        "action": "NEUTRAL",
+        "bsr": 0.89,
+        "power": 87.7,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "4b93a1a2455d": {
+    "bot_id": "4b93a1a2455d",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772493335.604681,
+    "last_seen": 1772493335.604681,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 0.6738,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 85.5,
+    "last_bsr": 0.18,
+    "action_history": [
+      {
+        "ts": 1772493336,
+        "action": "SELLING",
+        "bsr": 0.18,
+        "power": 85.5,
+        "symbol": "ETHUSDT"
+      }
+    ]
+  }
+}
