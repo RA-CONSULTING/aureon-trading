@@ -2551,6 +2551,10 @@ class LiveBarterMatrix:
         self.total_realized_profit: float = 0.0
         self.conversion_count: int = 0
         
+        # 💷⚡ UNIFIED PROFIT GOAL TRACKER — £1/min target
+        self.profit_goal = UnifiedProfitGoalTracker(target_gbp_per_min=1.0)
+        safe_print("💷⚡ PROFIT GOAL: £1.00/min target ACTIVE — self-monitoring enabled")
+        
         # 👑 QUEEN'S BLOCKED PATHS - Mycelium broadcasts this to all systems
         self.blocked_paths: Dict[Tuple[str, str], str] = {}  # path -> reason
         self.queen_signals: List[Dict] = []  # Signals to broadcast via mycelium
@@ -4250,7 +4254,400 @@ class ProfitHarvester:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# 🔬 MICRO PROFIT LABYRINTH ENGINE
+# �⚡ UNIFIED PROFIT GOAL TRACKER — £1/min REALIZED PROFIT TARGET
+# ════════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class ProfitGoalSnapshot:
+    """A point-in-time snapshot of profit goal performance."""
+    timestamp: float
+    elapsed_minutes: float
+    total_realized_usd: float
+    target_usd_per_min: float
+    actual_usd_per_min: float
+    goal_ratio: float              # actual / target (1.0 = on target)
+    aggressiveness: float          # multiplier for sizing / frequency
+    trades_count: int
+    portfolio_value_usd: float
+    portfolio_start_usd: float
+    margin_positions_open: int
+    exchanges_active: List[str] = field(default_factory=list)
+    validation_status: str = "OK"  # OK | DRAIN_DETECTED | GHOST_PROFIT
+
+
+class UnifiedProfitGoalTracker:
+    """
+    💷⚡ Tracks realized profit across ALL exchanges against a £1/min target.
+    
+    Self-monitors, self-validates, and adjusts aggressiveness.
+    Converts GBP target to USD using live market data.
+    
+    Goal hierarchy:
+    1. SURVIVE — never let portfolio drain (validated via balance checks)
+    2. EARN   — realize £1/min (≈$1.27/min at current FX)
+    3. GROW   — compound profits, scale aggressiveness with balance
+    """
+
+    # GBP→USD fallback rate (updated at runtime from market data)
+    GBP_USD_RATE = 1.27
+
+    # Aggressiveness bounds
+    MIN_AGGRESSION = 0.5    # Floor: don't go below half-size
+    MAX_AGGRESSION = 3.0    # Ceiling: don't go above 3x
+    RAMP_SPEED = 0.15       # How fast aggression changes per minute
+
+    # Self-validation thresholds
+    GHOST_PROFIT_WARN_USD = 0.50     # Warn if reported > actual by this much
+    DRAIN_ALERT_USD = -2.00          # Alert if portfolio drops by this much
+
+    # State file for persistence across restarts
+    STATE_FILE = "profit_goal_state.json"
+
+    def __init__(self, target_gbp_per_min: float = 1.0):
+        self.target_gbp_per_min = target_gbp_per_min
+        self.start_time = time.time()
+        self.total_realized_usd = 0.0
+        self.trade_count = 0
+        self.trade_ledger: List[Dict] = []     # per-trade records
+        self.snapshots: List[ProfitGoalSnapshot] = []
+        self.last_snapshot_time = 0.0
+        self.snapshot_interval = 60.0           # snapshot every 60s
+
+        # Aggressiveness state
+        self.aggressiveness = 1.0               # current multiplier
+
+        # Portfolio validation
+        self.portfolio_start_usd = 0.0
+        self.last_portfolio_value = 0.0
+        self.validation_status = "OK"
+
+        # Margin awareness
+        self.margin_positions_open = 0
+
+        # Per-exchange profit tracking
+        self.exchange_profit: Dict[str, float] = defaultdict(float)
+        self.exchange_trades: Dict[str, int] = defaultdict(int)
+
+        # GBP rate update
+        self.last_gbp_update = 0.0
+        self.gbp_update_interval = 300.0        # refresh GBP rate every 5 min
+
+        # Load persisted state if available
+        self._load_state()
+
+    @property
+    def target_usd_per_min(self) -> float:
+        return self.target_gbp_per_min * self.GBP_USD_RATE
+
+    @property
+    def elapsed_minutes(self) -> float:
+        return max(0.0167, (time.time() - self.start_time) / 60.0)  # min 1 second
+
+    @property
+    def actual_usd_per_min(self) -> float:
+        return self.total_realized_usd / self.elapsed_minutes
+
+    @property
+    def goal_ratio(self) -> float:
+        target = self.target_usd_per_min
+        if target <= 0:
+            return 1.0
+        return self.actual_usd_per_min / target
+
+    # ── Recording ──
+
+    def record_trade(self, profit_usd: float, exchange: str, symbol: str = "",
+                     margin: bool = False, leverage: float = 1.0):
+        """Record a realized trade and update all tracking."""
+        self.total_realized_usd += profit_usd
+        self.trade_count += 1
+        self.exchange_profit[exchange] += profit_usd
+        self.exchange_trades[exchange] += 1
+
+        self.trade_ledger.append({
+            'timestamp': time.time(),
+            'profit_usd': profit_usd,
+            'exchange': exchange,
+            'symbol': symbol,
+            'margin': margin,
+            'leverage': leverage,
+            'cumulative_usd': self.total_realized_usd,
+            'profit_rate': self.actual_usd_per_min,
+        })
+
+        # Keep ledger bounded (last 5000 trades)
+        if len(self.trade_ledger) > 5000:
+            self.trade_ledger = self.trade_ledger[-5000:]
+
+        # Update aggressiveness after every trade
+        self._update_aggressiveness()
+
+    def set_portfolio_start(self, value_usd: float):
+        """Set the starting portfolio value for validation."""
+        self.portfolio_start_usd = value_usd
+        self.last_portfolio_value = value_usd
+
+    # ── Aggressiveness Scaling ──
+
+    def _update_aggressiveness(self):
+        """
+        Scale aggressiveness based on how far we are from the goal.
+        
+        Below target  → ramp UP (trade more, bigger sizes, more margin)
+        At target     → hold steady
+        Above target  → ease off slightly (protect gains)
+        """
+        ratio = self.goal_ratio
+
+        if ratio < 0.1:
+            # Way below target — max aggression
+            target_aggression = self.MAX_AGGRESSION
+        elif ratio < 0.5:
+            # Significantly below — high aggression
+            target_aggression = 2.0 + (0.5 - ratio) * 2.0
+        elif ratio < 0.9:
+            # Close but not there — moderate boost
+            target_aggression = 1.0 + (0.9 - ratio) * 1.5
+        elif ratio < 1.1:
+            # On target — steady
+            target_aggression = 1.0
+        elif ratio < 2.0:
+            # Above target — ease off slightly
+            target_aggression = max(0.7, 1.0 - (ratio - 1.1) * 0.3)
+        else:
+            # Way above — cruise
+            target_aggression = self.MIN_AGGRESSION
+
+        # Smooth approach (don't jump instantly)
+        diff = target_aggression - self.aggressiveness
+        self.aggressiveness += diff * self.RAMP_SPEED
+        self.aggressiveness = max(self.MIN_AGGRESSION, min(self.MAX_AGGRESSION, self.aggressiveness))
+
+    def get_position_size_multiplier(self) -> float:
+        """How much to scale position sizes (1.0 = normal)."""
+        return self.aggressiveness
+
+    def get_margin_leverage_boost(self) -> int:
+        """Suggested margin leverage (2-5x based on aggressiveness)."""
+        if self.aggressiveness >= 2.5:
+            return 5
+        elif self.aggressiveness >= 2.0:
+            return 4
+        elif self.aggressiveness >= 1.5:
+            return 3
+        else:
+            return 2
+
+    def should_use_margin(self) -> bool:
+        """Whether margin should be actively pursued (aggressive mode)."""
+        return self.aggressiveness >= 1.3
+
+    # ── Self-Monitoring & Validation ──
+
+    def validate(self, current_portfolio_usd: float) -> Dict[str, Any]:
+        """
+        Self-validate: compare reported profit vs actual portfolio change.
+        Detects ghost profits and portfolio drain.
+        """
+        actual_change = current_portfolio_usd - self.portfolio_start_usd
+        reported = self.total_realized_usd
+        ghost = reported - actual_change
+
+        result = {
+            'valid': True,
+            'status': 'OK',
+            'portfolio_start': self.portfolio_start_usd,
+            'portfolio_now': current_portfolio_usd,
+            'actual_change': actual_change,
+            'reported_profit': reported,
+            'ghost_profit': ghost,
+            'drain_amount': 0.0,
+        }
+
+        if ghost > self.GHOST_PROFIT_WARN_USD:
+            result['valid'] = False
+            result['status'] = 'GHOST_PROFIT'
+            self.validation_status = "GHOST_PROFIT"
+
+        if actual_change < self.DRAIN_ALERT_USD:
+            result['valid'] = False
+            result['status'] = 'DRAIN_DETECTED'
+            result['drain_amount'] = actual_change
+            self.validation_status = "DRAIN_DETECTED"
+
+        if result['valid']:
+            self.validation_status = "OK"
+
+        self.last_portfolio_value = current_portfolio_usd
+        return result
+
+    def take_snapshot(self, portfolio_value: float, exchanges_active: List[str] = None):
+        """Take a periodic performance snapshot."""
+        now = time.time()
+        if now - self.last_snapshot_time < self.snapshot_interval:
+            return None
+
+        snap = ProfitGoalSnapshot(
+            timestamp=now,
+            elapsed_minutes=self.elapsed_minutes,
+            total_realized_usd=self.total_realized_usd,
+            target_usd_per_min=self.target_usd_per_min,
+            actual_usd_per_min=self.actual_usd_per_min,
+            goal_ratio=self.goal_ratio,
+            aggressiveness=self.aggressiveness,
+            trades_count=self.trade_count,
+            portfolio_value_usd=portfolio_value,
+            portfolio_start_usd=self.portfolio_start_usd,
+            margin_positions_open=self.margin_positions_open,
+            exchanges_active=exchanges_active or [],
+            validation_status=self.validation_status,
+        )
+        self.snapshots.append(snap)
+        self.last_snapshot_time = now
+
+        # Keep last 1440 snapshots (~24 hours at 1/min)
+        if len(self.snapshots) > 1440:
+            self.snapshots = self.snapshots[-1440:]
+
+        return snap
+
+    # ── GBP Rate ──
+
+    def update_gbp_rate(self, prices: Dict[str, float] = None):
+        """Update GBP→USD rate from market data or API."""
+        now = time.time()
+        if now - self.last_gbp_update < self.gbp_update_interval:
+            return
+
+        # Try to get from prices dict (some exchanges have GBP pairs)
+        if prices:
+            # Check for GBP/USD or GBPUSD in price data
+            for key in ['GBP', 'GBPUSD', 'GBP/USD']:
+                if key in prices and prices[key] > 0:
+                    self.GBP_USD_RATE = prices[key]
+                    self.last_gbp_update = now
+                    return
+
+        # Fallback: try CoinGecko for GBP rate
+        try:
+            import requests as _req
+            resp = _req.get(
+                "https://api.coingecko.com/api/v3/simple/price",
+                params={"ids": "usd", "vs_currencies": "gbp"},
+                timeout=5
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                gbp_per_usd = data.get('usd', {}).get('gbp', 0)
+                if gbp_per_usd > 0:
+                    self.GBP_USD_RATE = 1.0 / gbp_per_usd
+                    self.last_gbp_update = now
+        except Exception:
+            pass  # Keep existing rate
+
+    # ── Dashboard ──
+
+    def get_dashboard(self) -> str:
+        """Return a formatted dashboard string for the main loop."""
+        elapsed = self.elapsed_minutes
+        rate = self.actual_usd_per_min
+        target = self.target_usd_per_min
+        ratio = self.goal_ratio
+
+        # Goal status icon
+        if ratio >= 1.0:
+            icon = "🟢"
+            status = "ON TARGET"
+        elif ratio >= 0.5:
+            icon = "🟡"
+            status = "BELOW TARGET"
+        elif ratio >= 0.1:
+            icon = "🟠"
+            status = "RAMPING UP"
+        else:
+            icon = "🔴"
+            status = "HUNTING"
+
+        # Aggression indicator
+        if self.aggressiveness >= 2.5:
+            agg_icon = "🔥🔥🔥"
+        elif self.aggressiveness >= 1.8:
+            agg_icon = "🔥🔥"
+        elif self.aggressiveness >= 1.2:
+            agg_icon = "🔥"
+        else:
+            agg_icon = "⚖️"
+
+        lines = [
+            f"\n{'═' * 70}",
+            f"💷⚡ PROFIT GOAL: £{self.target_gbp_per_min:.2f}/min (${target:.2f}/min) | {icon} {status}",
+            f"{'═' * 70}",
+            f"   ⏱️  Elapsed: {elapsed:.1f} min | Trades: {self.trade_count}",
+            f"   💰 Realized: ${self.total_realized_usd:+.4f} | Rate: ${rate:.4f}/min",
+            f"   🎯 Target:   ${target * elapsed:.2f} needed | Got: ${self.total_realized_usd:.2f}",
+            f"   📊 Goal:     {ratio:.0%} {agg_icon} Aggression: {self.aggressiveness:.2f}x",
+            f"   ✅ Status:   {self.validation_status}",
+        ]
+
+        # Per-exchange breakdown
+        if self.exchange_profit:
+            ex_parts = []
+            for ex, profit in sorted(self.exchange_profit.items()):
+                trades = self.exchange_trades.get(ex, 0)
+                ex_parts.append(f"{ex}:${profit:+.3f}({trades})")
+            lines.append(f"   🏦 Exchanges: {' | '.join(ex_parts)}")
+
+        # Margin status
+        if self.margin_positions_open > 0:
+            lines.append(f"   🐙 Margin: {self.margin_positions_open} open positions")
+
+        lines.append(f"{'═' * 70}")
+        return "\n".join(lines)
+
+    # ── Persistence ──
+
+    def _save_state(self):
+        """Save state to JSON for persistence across restarts."""
+        try:
+            state = {
+                'target_gbp_per_min': self.target_gbp_per_min,
+                'total_realized_usd': self.total_realized_usd,
+                'trade_count': self.trade_count,
+                'aggressiveness': self.aggressiveness,
+                'portfolio_start_usd': self.portfolio_start_usd,
+                'gbp_usd_rate': self.GBP_USD_RATE,
+                'exchange_profit': dict(self.exchange_profit),
+                'exchange_trades': dict(self.exchange_trades),
+                'validation_status': self.validation_status,
+                'start_time': self.start_time,
+                'saved_at': time.time(),
+                'last_10_trades': self.trade_ledger[-10:] if self.trade_ledger else [],
+            }
+            tmp = self.STATE_FILE + '.tmp'
+            with open(tmp, 'w') as f:
+                json.dump(state, f, indent=2)
+            os.replace(tmp, self.STATE_FILE)
+        except Exception as e:
+            logger.debug(f"Profit goal state save error: {e}")
+
+    def _load_state(self):
+        """Load persisted state from previous session."""
+        try:
+            if os.path.exists(self.STATE_FILE):
+                with open(self.STATE_FILE, 'r') as f:
+                    state = json.load(f)
+                # Only restore if saved recently (within 1 day)
+                saved_at = state.get('saved_at', 0)
+                if time.time() - saved_at < 86400:
+                    self.GBP_USD_RATE = state.get('gbp_usd_rate', self.GBP_USD_RATE)
+                    logger.info(f"💷 Loaded GBP/USD rate: {self.GBP_USD_RATE:.4f}")
+                # Always start fresh tracking for new session
+        except Exception as e:
+            logger.debug(f"Profit goal state load error: {e}")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# �🔬 MICRO PROFIT LABYRINTH ENGINE
 # ════════════════════════════════════════════════════════════════════════════
 
 class MicroProfitLabyrinth:
@@ -17314,34 +17711,47 @@ if __name__ == "__main__":
                 # ══════════════════════════════════════════════════════════════
                 use_margin = False
                 margin_leverage = 2  # Conservative 2x default
+                
+                # 💷⚡ PROFIT GOAL: Boost leverage based on aggressiveness
+                goal_leverage_boost = 2
+                goal_wants_margin = False
+                if hasattr(self, 'profit_goal') and self.profit_goal:
+                    goal_leverage_boost = self.profit_goal.get_margin_leverage_boost()
+                    goal_wants_margin = self.profit_goal.should_use_margin()
+                
                 try:
                     pair_lev = client.get_pair_leverage(symbol)
                     if pair_lev.get('margin_supported'):
-                        # Check available leverage (use 2x if available, never more than 3x)
+                        # Check available leverage — use goal-driven target
                         avail_buy = pair_lev.get('leverage_buy', [])
                         avail_sell = pair_lev.get('leverage_sell', [])
                         avail = avail_sell if opp.from_asset != 'USD' else avail_buy
-                        if 2 in avail:
-                            margin_leverage = 2
-                        elif 3 in avail:
-                            margin_leverage = 3  # Only if 2x not available
-                        else:
-                            avail = []  # Don't use margin if only high leverage
                         
-                        if avail:
+                        # Pick best leverage up to goal target
+                        best_lev = 0
+                        for lev in sorted(avail):
+                            if lev <= goal_leverage_boost:
+                                best_lev = lev
+                        if best_lev >= 2:
+                            margin_leverage = best_lev
+                        
+                        if best_lev >= 2 or (goal_wants_margin and avail):
                             # Check free margin on account
                             trade_bal = client.get_trade_balance()
                             free_margin = trade_bal.get('free_margin', 0)
                             required_margin = opp.from_value_usd / margin_leverage
                             
-                            if free_margin >= required_margin * 1.2:  # 20% buffer
+                            # 💷⚡ Relax buffer when aggressiveness is high
+                            margin_buffer = 1.2 if not goal_wants_margin else 1.05
+                            
+                            if free_margin >= required_margin * margin_buffer:
                                 use_margin = True
-                                safe_print(f"   🐙💪 KRAKEN MARGIN: {margin_leverage}x leverage")
+                                safe_print(f"   🐙💪 KRAKEN MARGIN: {margin_leverage}x leverage (goal-driven)")
                                 safe_print(f"      Free margin: ${free_margin:.2f}")
                                 safe_print(f"      Required: ${required_margin:.2f}")
                                 safe_print(f"      Effective position: ${opp.from_value_usd * margin_leverage:.2f}")
                             else:
-                                safe_print(f"   🐙 Margin available but insufficient ({free_margin:.2f} < {required_margin*1.2:.2f})")
+                                safe_print(f"   🐙 Margin available but insufficient ({free_margin:.2f} < {required_margin*margin_buffer:.2f})")
                 except Exception as e:
                     logger.debug(f"Kraken margin check: {e}")
                 
@@ -18248,6 +18658,20 @@ if __name__ == "__main__":
         # Update total_profit_usd to match barter matrix
         self.total_profit_usd = self.barter_matrix.total_realized_profit
         
+        # 💷⚡ UNIFIED PROFIT GOAL — Record trade for goal tracking
+        if hasattr(self, 'profit_goal') and self.profit_goal:
+            exchange = getattr(opp, 'source_exchange', None) or 'unknown'
+            symbol = f"{opp.from_asset}/{opp.to_asset}"
+            is_margin = getattr(opp, 'margin_used', False)
+            leverage = getattr(opp, 'leverage', 1.0)
+            self.profit_goal.record_trade(
+                profit_usd=actual_pnl,
+                exchange=exchange,
+                symbol=symbol,
+                margin=is_margin,
+                leverage=leverage,
+            )
+        
         # 🪙⚡ PENNY TURBO: Record trade for compound learning
         if self.penny_turbo:
             try:
@@ -18947,6 +19371,7 @@ if __name__ == "__main__":
         
         start_time = time.time()
         scan_interval = 5.0  # 🛡️ RATE LIMIT SAFE: Every 5 seconds to avoid API hammering (was 2s)
+        base_scan_interval = scan_interval  # Save base for dynamic adjustment
         
         # ════════════════════════════════════════════════════════════════════════════
         # 🎯 EXECUTION STRATEGY SELECTION
@@ -19297,6 +19722,39 @@ if __name__ == "__main__":
                 
                 safe_print(f"🔬 {mode} | {elapsed:.0f}s | Turn:{turn_display} | {neural_str}{cosmic_status}{autonomous_status} | Conv:{self.conversions_made} | Actual:${actual_pnl:+.2f}{drain_warning}{queen_status}{research_status}")
                 
+                # ════════════════════════════════════════════════════════════════
+                # 💷⚡ UNIFIED PROFIT GOAL — Self-monitoring & validation
+                # ════════════════════════════════════════════════════════════════
+                if hasattr(self, 'profit_goal') and self.profit_goal:
+                    try:
+                        # Set portfolio start on first pass
+                        if self.profit_goal.portfolio_start_usd == 0 and self.start_value_usd > 0:
+                            self.profit_goal.set_portfolio_start(self.start_value_usd)
+
+                        # Update GBP rate from market data
+                        self.profit_goal.update_gbp_rate(self.prices)
+
+                        # Self-validate: reported profit vs actual portfolio change
+                        goal_validation = self.profit_goal.validate(current_value)
+                        if not goal_validation['valid']:
+                            safe_print(f"   ⚠️ GOAL VALIDATION: {goal_validation['status']} | Ghost:${goal_validation['ghost_profit']:+.2f}")
+
+                        # Take periodic snapshot & display dashboard
+                        active_exchanges = [ex for ex in self.exchange_order
+                                            if self.exchange_data.get(ex, {}).get('connected')]
+                        snap = self.profit_goal.take_snapshot(current_value, active_exchanges)
+                        if snap:
+                            safe_print(self.profit_goal.get_dashboard())
+                            # Persist state atomically
+                            self.profit_goal._save_state()
+
+                        # Compact single-line profit rate on every tick
+                        goal_r = self.profit_goal.goal_ratio
+                        goal_icon = "🟢" if goal_r >= 1.0 else "🟡" if goal_r >= 0.5 else "🔴"
+                        safe_print(f"   {goal_icon} £/min: ${self.profit_goal.actual_usd_per_min:.4f} / ${self.profit_goal.target_usd_per_min:.2f} ({goal_r:.0%}) | Agg:{self.profit_goal.aggressiveness:.2f}x")
+                    except Exception as e:
+                        logger.debug(f"Profit goal monitoring error: {e}")
+                
                 # 🐝 UPDATE HIVE STATE (live status file + Queen's voice)
                 # Use turn counter (integer) not turn_display (string) for modulo
                 turn_count = getattr(self.barter_matrix, 'current_turn', 0) if self.barter_matrix else 0
@@ -19330,6 +19788,12 @@ if __name__ == "__main__":
                         
                     except Exception as e:
                         logger.debug(f"Hive state update error: {e}")
+                
+                # 💷⚡ DYNAMIC SCAN INTERVAL — faster when behind goal
+                if hasattr(self, 'profit_goal') and self.profit_goal:
+                    agg = self.profit_goal.aggressiveness
+                    # High aggression → faster scanning (min 2s), low → slower (max 8s)
+                    scan_interval = max(2.0, base_scan_interval / agg)
                 
                 await asyncio.sleep(scan_interval)
         
@@ -19519,6 +19983,22 @@ if __name__ == "__main__":
             pnl_symbol = "+" if session_pnl >= 0 else ""
             safe_print(f"📈 SESSION P/L (Unrealized): ${pnl_symbol}{session_pnl:.4f}")
             safe_print(f"🎯 REALIZED TRADES P/L: ${self.barter_matrix.total_realized_profit:+.4f} ({self.conversions_made} conversions)")
+            
+            # ════════════════════════════════════════════════════════════════════
+            # 💷⚡ UNIFIED PROFIT GOAL FINAL REPORT
+            # ════════════════════════════════════════════════════════════════════
+            if hasattr(self, 'profit_goal') and self.profit_goal:
+                safe_print(self.profit_goal.get_dashboard())
+                self.profit_goal._save_state()
+                pg = self.profit_goal
+                safe_print(f"   📈 Profit Rate: ${pg.actual_usd_per_min:.4f}/min (target: ${pg.target_usd_per_min:.2f}/min)")
+                safe_print(f"   📊 Goal Achievement: {pg.goal_ratio:.0%}")
+                safe_print(f"   🔥 Final Aggressiveness: {pg.aggressiveness:.2f}x")
+                safe_print(f"   ✅ Validation: {pg.validation_status}")
+                if pg.exchange_profit:
+                    for ex, profit in sorted(pg.exchange_profit.items()):
+                        trades = pg.exchange_trades.get(ex, 0)
+                        safe_print(f"      {ex}: ${profit:+.4f} from {trades} trades")
             
             # ════════════════════════════════════════════════════════════════════
             # 🚨 GHOST PROFIT DETECTOR - Validate we're not draining portfolio

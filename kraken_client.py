@@ -2306,6 +2306,25 @@ class KrakenClient:
                 "margin": True
             }
 
+        # ═══ SAFETY NET: $5 minimum margin trade value (last-resort gate) ═══
+        # Note: For market orders (price=None), skip this gate — the ecosystem
+        # already validates margin_budget in USD before calling place_margin_order.
+        MIN_TRADE_USD = 5.0
+        if side.lower() == "buy" and price is not None:
+            usd_value = float(quantity) * float(price)
+            if usd_value < MIN_TRADE_USD:
+                import logging as _logging
+                _logging.getLogger(__name__).error(
+                    f"MARGIN SAFETY NET: Buy ${usd_value:.2f} < ${MIN_TRADE_USD} for {symbol} — BLOCKED"
+                )
+                return {
+                    "error": "below_minimum_trade_value",
+                    "symbol": symbol,
+                    "usd_value": usd_value,
+                    "minimum": MIN_TRADE_USD,
+                    "margin": True,
+                }
+
         # Resolve pair and validate
         pair, pair_info = self._resolve_pair(symbol)
         if not pair or not pair_info:
