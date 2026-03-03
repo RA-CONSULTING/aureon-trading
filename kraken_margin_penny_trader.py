@@ -3505,6 +3505,439 @@ class KrakenMarginArmyTrader:
         print()
 
     # ----------------------------------------------------------
+    #  1-MINUTE MISSION HUNT: SELECT WINNER → OPEN → CLOSE IN 60s
+    # ----------------------------------------------------------
+    def mission_hunt(self) -> None:
+        """
+        1-MINUTE MISSION HUNT — Full profitable cycle within 60 seconds.
+
+        DISCIPLINE:
+          Selection IS the gate. Only open a trade when ALL signals align for
+          a completion within 60 seconds. No stop loss needed because we only
+          trade confirmed momentum breakouts with volume surge confirmation.
+
+        ENTRY CRITERIA (all must pass):
+          ✓ 3+ consecutive 1-minute candles in same direction (streak)
+          ✓ Last candle volume >= 1.5× average of previous 5 candles (surge)
+          ✓ Momentum score > 0.3% net move on last 3 candles
+          ✓ Spread < 0.3%
+          ✓ Leverage >= 3×
+          ✓ Required breakeven move <= 1-minute ATR (achievable in 1 minute)
+
+        EXECUTION:
+          → Open market order (Kraken margin)
+          → Monitor every 2 seconds for 60 seconds
+          → Close immediately when net_pnl > any positive profit
+          → Close at deadline (60s) at best available market price
+        """
+        MISSION_WINDOW_SEC   = 60      # Full cycle must complete within 60s
+        MONITOR_POLL_SEC     = 2       # Price check interval
+        MIN_STREAK           = 3       # Consecutive same-direction candles
+        MIN_VOLUME_SURGE     = 1.2     # Last candle vol / avg(prev 5) — 1.2× = meaningful surge
+        MIN_MOM_PCT          = 0.75    # >= round-trip fee (0.73%) — only enter genuine surges
+        MIN_LAST_CANDLE_PCT  = 0.25    # Last individual candle must move > 0.25% (current impulse)
+        MAX_SPREAD_PCT       = 0.30    # Max allowed spread
+        MIN_LEVERAGE         = 3       # Minimum leverage to bother
+        MISSION_PROFIT_MIN   = 0.01    # Close at ANY positive net P&L
+        SCAN_INTERVAL_SEC    = 10      # Seconds between re-scans when hunting
+        HUNT_TIMEOUT_SEC     = 300     # Give up after 5 minutes of scanning
+
+        mode_tag = "DRY RUN" if self.dry_run else "LIVE"
+        print("=" * 70)
+        print(f"  🎯 1-MINUTE MISSION HUNT  |  Mode: {mode_tag}")
+        print("  Discipline: SELECT WINNER → OPEN → CLOSE IN 60s")
+        print("  Signal: streak + volume surge + momentum + spread + leverage")
+        print("  Entry gate: ALL criteria must pass – no exceptions")
+        print("=" * 70)
+
+        # ── Step 1: Discover universe and live prices ──────────────────────
+        self.discover_margin_universe()
+        self.update_prices_free()
+
+        # ── Step 2: Check available capital ───────────────────────────────
+        try:
+            tb    = self.client.get_trade_balance()
+            free_margin = tb.get("free_margin", 0.0)
+            equity      = tb.get("equity", 0.0)
+        except Exception as e:
+            logger.error(f"MISSION: Cannot get trade balance: {e}")
+            return
+
+        margin_budget = free_margin * MARGIN_BUFFER
+        print(f"\n💰 Capital: ${equity:.2f} equity  |  ${free_margin:.2f} free"
+              f"  |  Budget: ${margin_budget:.2f}")
+
+        if free_margin < 5.0:
+            print("❌ MISSION ABORTED: Insufficient free margin (need $5+)")
+            return
+
+        # ── Step 3: Scan 1-minute Binance klines for momentum signals ─────
+        print("\n🔍 Scanning 1-minute momentum signals across margin universe...")
+        candidates = []
+
+        valid_pairs = [
+            (pair, info) for pair, info in self.margin_pairs.items()
+            if (info.binance_symbol
+                and info.last_price > 0
+                and info.spread_pct <= MAX_SPREAD_PCT
+                and (max(info.leverage_buy or [0]) >= MIN_LEVERAGE or
+                     max(info.leverage_sell or [0]) >= MIN_LEVERAGE))
+        ]
+
+        print(f"   Universe: {len(valid_pairs)} pairs with Binance symbol, spread"
+              f" ≤{MAX_SPREAD_PCT}%, leverage ≥{MIN_LEVERAGE}×")
+
+        for pair_name, info in valid_pairs:
+            bsym = info.binance_symbol
+            try:
+                url = (f"{BINANCE_KLINES_URL}?symbol={bsym}"
+                       f"&interval=1m&limit=10")
+                req = urllib.request.Request(
+                    url, headers={"User-Agent": "MissionHunt/1.0"})
+                with urllib.request.urlopen(req, timeout=5) as r:
+                    klines = json.loads(r.read().decode())
+            except Exception:
+                continue
+
+            if len(klines) < 6:
+                continue
+
+            # kline layout: [open_time, open, high, low, close, volume, ...]
+            closes  = [float(k[4]) for k in klines]
+            volumes = [float(k[5]) for k in klines]
+
+            # ── Candle direction streak (last MIN_STREAK candles) ──────────
+            # Work from the most-recent complete candle backwards (skip last
+            # partially-formed candle by analysing klines[-2] as "last closed")
+            # Use closes[-6] .. closes[-1] for analysis (6 complete candles)
+            c = closes[-7:]   # 7 values → 6 candle bodies
+            v = volumes[-7:]
+
+            directions = []
+            for i in range(1, len(c)):
+                if c[i] > c[i - 1]:
+                    directions.append(1)     # bullish
+                elif c[i] < c[i - 1]:
+                    directions.append(-1)    # bearish
+                else:
+                    directions.append(0)     # doji
+
+            # Streak: count consecutive matching direction at the end
+            streak_dir   = directions[-1]    # direction of most recent candle
+            streak_count = 0
+            for d in reversed(directions):
+                if d == streak_dir:
+                    streak_count += 1
+                else:
+                    break
+
+            if streak_count < MIN_STREAK or streak_dir == 0:
+                continue   # Streak gate
+
+            # ── Volume surge: last vs avg of prior 5 ──────────────────────
+            last_vol = v[-1]
+            avg_vol  = sum(v[-6:-1]) / 5 if len(v) >= 6 else last_vol
+            vol_surge = last_vol / avg_vol if avg_vol > 0 else 1.0
+
+            if vol_surge < MIN_VOLUME_SURGE:
+                continue   # Volume surge gate
+
+            # ── 3-candle momentum ──────────────────────────────────────────
+            mom_3c = abs(c[-1] - c[-4]) / c[-4] * 100 if c[-4] > 0 else 0.0
+            if mom_3c < MIN_MOM_PCT:
+                continue   # Momentum gate
+
+            # ── Current candle impulse check (last closed candle) ─────────
+            last_candle_pct = abs(c[-1] - c[-2]) / c[-2] * 100 if c[-2] > 0 else 0.0
+            if last_candle_pct < MIN_LAST_CANDLE_PCT:
+                continue   # Current impulse gate
+
+            # ── Side from streak direction ─────────────────────────────────
+            side = "buy" if streak_dir == 1 else "sell"
+
+            # ── Leverage available for this side ──────────────────────────
+            levs = info.leverage_buy if side == "buy" else info.leverage_sell
+            if not levs:
+                continue
+            max_lev = max(levs)
+            if max_lev < MIN_LEVERAGE:
+                continue
+
+            # ── Position size ──────────────────────────────────────────────
+            notional = margin_budget * max_lev
+            if notional < MIN_TRADE_USD:
+                continue
+            vol_qty  = notional / info.last_price
+            vol_qty  = max(vol_qty, info.ordermin)
+            vol_qty  = round(vol_qty, info.lot_decimals)
+            if vol_qty < info.ordermin:
+                continue
+            trade_val = vol_qty * info.last_price
+
+            # ── Check achievability: can it move enough in 1 minute? ───────
+            # Use 1-min ATR (average of high-low range of last 5 candles)
+            atr_1m_pct = (
+                sum(abs(float(k[2]) - float(k[3])) / float(k[4]) * 100
+                    for k in klines[-6:-1]) / 5
+            ) if len(klines) >= 6 else 0.5
+            round_trip_fee = trade_val * (KRAKEN_OPEN_FEE + KRAKEN_CLOSE_FEE)
+            required_pct   = (round_trip_fee + MISSION_PROFIT_MIN) / trade_val * 100
+            # ATR gate: hard reject only if 1m ATR is basically zero (ultra-frozen market)
+            # During momentum surges, price can move 5-10× normal ATR in a single minute
+            if atr_1m_pct < 0.02:   # Completely frozen — skip
+                continue
+
+            # ── Mission score ──────────────────────────────────────────────
+            streak_score  = min(streak_count / 5, 1.0)        # 0-1
+            surge_score   = min((vol_surge - 1) / 2, 1.0)     # 0-1
+            mom_score     = min(mom_3c / 2.0, 1.0)            # 0-1
+            lev_score     = min(max_lev / 10.0, 1.0)          # 0-1
+            spread_score  = max(0, 1.0 - info.spread_pct / MAX_SPREAD_PCT)
+            atr_ease      = max(0, 1.0 - required_pct / atr_1m_pct) if atr_1m_pct else 0
+            mission_score = (streak_score * 3 + surge_score * 2.5 + mom_score * 2
+                             + atr_ease * 2 + lev_score + spread_score)
+
+            candidates.append({
+                "info":         info,
+                "side":         side,
+                "vol":          vol_qty,
+                "trade_val":    trade_val,
+                "leverage":     max_lev,
+                "streak":       streak_count,
+                "vol_surge":    vol_surge,
+                "mom_3c_pct":   mom_3c,
+                "last_c_pct":   last_candle_pct,
+                "atr_1m_pct":   atr_1m_pct,
+                "required_pct": required_pct,
+                "score":        mission_score,
+            })
+
+        if not candidates:
+            print(f"\n⏳ No targets qualifying right now. Continuous scanning every {SCAN_INTERVAL_SEC}s...")
+            print(f"   Will hunt for up to {HUNT_TIMEOUT_SEC//60} minutes. Ctrl+C to abort.")
+            hunt_start = time.time()
+            while time.time() - hunt_start < HUNT_TIMEOUT_SEC:
+                elapsed_hunt = int(time.time() - hunt_start)
+                remaining_hunt = HUNT_TIMEOUT_SEC - elapsed_hunt
+                print(f"   [{elapsed_hunt:>3}s] Rescanning... ({remaining_hunt}s remaining)", end="\r")
+                time.sleep(SCAN_INTERVAL_SEC)
+                # Re-fetch prices
+                self.update_prices_free()
+                candidates = []
+                for pair_name2, info2 in valid_pairs:
+                    bsym2 = info2.binance_symbol
+                    try:
+                        url2 = (f"{BINANCE_KLINES_URL}?symbol={bsym2}"
+                                f"&interval=1m&limit=10")
+                        req2 = urllib.request.Request(url2, headers={"User-Agent": "MissionHunt/1.0"})
+                        with urllib.request.urlopen(req2, timeout=5) as r2:
+                            klines2 = json.loads(r2.read().decode())
+                    except Exception:
+                        continue
+                    if len(klines2) < 6:
+                        continue
+                    c2 = [float(k[4]) for k in klines2[-7:]]
+                    v2 = [float(k[5]) for k in klines2[-7:]]
+                    dirs2 = [1 if c2[i]>c2[i-1] else (-1 if c2[i]<c2[i-1] else 0)
+                             for i in range(1, len(c2))]
+                    sd2 = dirs2[-1]
+                    sc2 = 0
+                    for d2 in reversed(dirs2):
+                        if d2 == sd2: sc2 += 1
+                        else: break
+                    if sc2 < MIN_STREAK or sd2 == 0:
+                        continue
+                    lv2 = v2[-1]; av2 = sum(v2[-6:-1])/5 if len(v2)>=6 else lv2
+                    vs2 = lv2/av2 if av2>0 else 1.0
+                    if vs2 < MIN_VOLUME_SURGE:
+                        continue
+                    m2 = abs(c2[-1]-c2[-4])/c2[-4]*100 if c2[-4]>0 else 0
+                    if m2 < MIN_MOM_PCT:
+                        continue
+                    m2_last = abs(c2[-1]-c2[-2])/c2[-2]*100 if c2[-2]>0 else 0
+                    if m2_last < MIN_LAST_CANDLE_PCT:
+                        continue
+                    side2 = "buy" if sd2==1 else "sell"
+                    levs2 = info2.leverage_buy if side2=="buy" else info2.leverage_sell
+                    if not levs2 or max(levs2)<MIN_LEVERAGE:
+                        continue
+                    lev2 = max(levs2)
+                    notional2 = margin_budget * lev2
+                    if notional2 < MIN_TRADE_USD:
+                        continue
+                    vq2 = max(round(notional2/info2.last_price, info2.lot_decimals), info2.ordermin)
+                    tv2 = vq2 * info2.last_price
+                    atr2 = (sum(abs(float(k[2])-float(k[3]))/float(k[4])*100
+                                for k in klines2[-6:-1])/5) if len(klines2)>=6 else 0.5
+                    if atr2 < 0.02:
+                        continue
+                    rt2 = tv2*(KRAKEN_OPEN_FEE+KRAKEN_CLOSE_FEE)
+                    rp2 = (rt2+MISSION_PROFIT_MIN)/tv2*100
+                    ss2 = min(sc2/5,1.0); sg2 = min((vs2-1)/2,1.0)
+                    ms2 = min(m2/2,1.0); ls2 = min(lev2/10,1.0)
+                    sprd2 = max(0,1.0-info2.spread_pct/MAX_SPREAD_PCT)
+                    ae2 = max(0,1.0-rp2/atr2) if atr2>0 else 0
+                    sc_total = ss2*3+sg2*2.5+ms2*2+ae2*2+ls2+sprd2
+                    candidates.append({
+                        "info": info2, "side": side2, "vol": vq2,
+                        "trade_val": tv2, "leverage": lev2,
+                        "streak": sc2, "vol_surge": vs2, "mom_3c_pct": m2,
+                        "last_c_pct": m2_last,
+                        "atr_1m_pct": atr2, "required_pct": rp2, "score": sc_total
+                    })
+                if candidates:
+                    print()
+                    print(f"\n🚨 SIGNAL LOCKED after {elapsed_hunt}s scanning!")
+                    break
+
+        if not candidates:
+            print()
+            print(f"\n⏸️  MISSION ABORTED: No qualifying signal found in {HUNT_TIMEOUT_SEC//60} minutes.")
+            print("   Market is ranging/consolidating. Try again during a trend impulse.")
+            return
+
+        # Sort by mission score descending
+        candidates.sort(key=lambda x: x["score"], reverse=True)
+
+        print(f"\n🏆 TOP MISSION CANDIDATES (passed all gates):")
+        print(f"{'#':<3} {'PAIR':<12} {'SIDE':<5} {'LEV':>4} {'STREAK':>7}"
+              f" {'SURGE':>6} {'3cMOM%':>7} {'1cMOM%':>7} {'SCORE':>6}")
+        print("-" * 70)
+        for i, c_ in enumerate(candidates[:5]):
+            print(
+                f"{i+1:<3} {c_['info'].pair:<12} {c_['side'].upper():<5}"
+                f" {c_['leverage']:>3}×"
+                f" {c_['streak']:>6}c"
+                f" {c_['vol_surge']:>5.1f}×"
+                f" {c_['mom_3c_pct']:>+6.3f}%"
+                f" {c_['last_c_pct']:>+6.3f}%"
+                f" {c_['score']:>6.2f}"
+            )
+
+        best = candidates[0]
+        info_b   = best["info"]
+        side_b   = best["side"]
+        vol_b    = best["vol"]
+        lev_b    = best["leverage"]
+        tv_b     = best["trade_val"]
+
+        print(f"\n🎯 MISSION TARGET: {info_b.pair} {side_b.upper()} {lev_b}×")
+        print(f"   Streak          : {best['streak']} consecutive 1m candles")
+        print(f"   Volume surge    : {best['vol_surge']:.1f}× normal")
+        print(f"   3-candle mom    : {best['mom_3c_pct']:+.3f}%  (need ≥{0.75:.2f}%)")
+        print(f"   Last candle     : {best['last_c_pct']:+.3f}%  (current impulse)")
+        print(f"   1m ATR          : {best['atr_1m_pct']:.3f}%  |  Round-trip fee: {best['required_pct']:.3f}%")
+        print(f"   Notional        : ${tv_b:.2f}  |  Volume: {vol_b}")
+
+        # ── Step 4: Open the position ──────────────────────────────────────
+        print(f"\n⚡ Opening {side_b.upper()} position...")
+        trade = self.open_position(info_b, side_b, vol_b, lev_b)
+        if not trade:
+            print("❌ MISSION FAILED: Order rejected by Kraken. Aborting.")
+            return
+
+        print(f"✅ POSITION OPEN: {trade.pair} {trade.side.upper()}"
+              f" @ ${trade.entry_price:,.4f}  |  Breakeven: ${trade.breakeven_price:,.4f}")
+
+        # ── Step 5: Monitor for 60 seconds, close at profit or deadline ────
+        mission_start  = time.time()
+        deadline       = mission_start + MISSION_WINDOW_SEC
+        poll           = 0
+        max_net_pnl    = -9999.0
+        closed_result  = None
+
+        print(f"\n⏱️  MONITORING MISSION (max {MISSION_WINDOW_SEC}s)")
+        print(f"   Close trigger: net_pnl > ${MISSION_PROFIT_MIN:.2f} OR 60s deadline")
+        print("-" * 55)
+
+        while time.time() < deadline:
+            poll += 1
+            elapsed = time.time() - mission_start
+            remaining = deadline - time.time()
+
+            # Get live price
+            current = 0.0
+            if self.stream and self.stream.is_alive():
+                current = self.stream.get_live_price(trade.binance_symbol)
+            if current <= 0:
+                current = self.market.get_single_price(trade.binance_symbol)
+            if current <= 0:
+                time.sleep(MONITOR_POLL_SEC)
+                continue
+
+            # Calculate net P&L
+            if trade.side == "buy":
+                gross = (current - trade.entry_price) * trade.volume
+            else:
+                gross = (trade.entry_price - current) * trade.volume
+
+            exit_fee_est = current * trade.volume * KRAKEN_CLOSE_FEE
+            net_pnl = gross - trade.entry_fee - exit_fee_est
+            max_net_pnl = max(max_net_pnl, net_pnl)
+
+            # Progress bar
+            progress = int((elapsed / MISSION_WINDOW_SEC) * 20)
+            bar = "█" * progress + "░" * (20 - progress)
+
+            print(f"  [{bar}] {elapsed:4.0f}s left={remaining:4.0f}s"
+                  f" | ${trade.entry_price:,.4f}→${current:,.4f}"
+                  f" | Net: ${net_pnl:+.4f}  peak=${max_net_pnl:+.4f}",
+                  end="\r", flush=True)
+
+            # CLOSE: profit hit
+            if net_pnl >= MISSION_PROFIT_MIN:
+                print()
+                print(f"\n💰 PROFIT TARGET HIT! Net: ${net_pnl:+.4f}  Closing...")
+                closed_result = self.close_position(
+                    reason=f"MISSION_PROFIT (${net_pnl:+.4f})",
+                    trade=trade
+                )
+                break
+
+            time.sleep(MONITOR_POLL_SEC)
+
+        # ── Deadline close ─────────────────────────────────────────────────
+        if closed_result is None:
+            print()
+            current = self.market.get_single_price(trade.binance_symbol) or trade.entry_price
+            if trade.side == "buy":
+                gross = (current - trade.entry_price) * trade.volume
+            else:
+                gross = (trade.entry_price - current) * trade.volume
+            exit_fee_est = current * trade.volume * KRAKEN_CLOSE_FEE
+            net_pnl = gross - trade.entry_fee - exit_fee_est
+
+            print(f"\n⏰ MISSION WINDOW CLOSED (60s elapsed)")
+            print(f"   Final price: ${current:,.4f}  |  Net PnL: ${net_pnl:+.4f}")
+            closed_result = self.close_position(
+                reason="MISSION_TIMEOUT_60S",
+                trade=trade
+            )
+
+        # ── Mission report ─────────────────────────────────────────────────
+        print("\n" + "=" * 70)
+        print("  🏁  MISSION COMPLETE")
+        if closed_result:
+            final_pnl = closed_result.get("net_pnl", 0.0)
+            hold_s    = closed_result.get("hold_seconds", 0.0)
+            reason    = closed_result.get("reason", "?")
+            print(f"  Pair     : {trade.pair}")
+            print(f"  Side     : {trade.side.upper()}  {lev_b}× leverage")
+            print(f"  Entry    : ${trade.entry_price:,.4f}")
+            print(f"  Exit     : ${closed_result.get('exit_price', 0):,.4f}")
+            print(f"  Hold     : {hold_s:.1f}s")
+            print(f"  Net P&L  : ${final_pnl:+.4f}")
+            print(f"  Reason   : {reason}")
+            if final_pnl > 0:
+                print(f"  Result   : ✅  PROFITABLE MISSION")
+            else:
+                print(f"  Result   : ⚠️  MISSION CLOSED (market did not cooperate)")
+        else:
+            print("  Position close failed — check Kraken dashboard manually!")
+        print("=" * 70)
+        self._save_results()
+
+    # ----------------------------------------------------------
     #  MAIN LOOP - THE ARMY CYCLE (DUAL POSITIONS + SHADOW VALIDATION)
     # ----------------------------------------------------------
     def run(self, scan_only: bool = False):
@@ -3678,6 +4111,10 @@ def main():
         "--target", type=float, default=PROFIT_TARGET_USD,
         help=f"Profit target in USD (default: {PROFIT_TARGET_USD})"
     )
+    parser.add_argument(
+        "--mission-hunt", action="store_true",
+        help="1-minute mission: scan for winner, open, close within 60s"
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Debug logging")
     args = parser.parse_args()
 
@@ -3688,7 +4125,11 @@ def main():
     MIN_PROFIT_USD = args.target
 
     trader = KrakenMarginArmyTrader(dry_run=args.dry_run)
-    trader.run(scan_only=args.scan_only)
+
+    if args.mission_hunt:
+        trader.mission_hunt()
+    else:
+        trader.run(scan_only=args.scan_only)
 
 
 if __name__ == "__main__":
