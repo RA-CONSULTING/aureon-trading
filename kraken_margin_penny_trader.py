@@ -3507,7 +3507,7 @@ class KrakenMarginArmyTrader:
     # ----------------------------------------------------------
     #  1-MINUTE MISSION HUNT: SELECT WINNER → OPEN → CLOSE IN 60s
     # ----------------------------------------------------------
-    def mission_hunt(self, side_filter: str = None) -> None:
+    def mission_hunt(self, side_filter: str = None) -> dict:
         """
         1-MINUTE MISSION HUNT — Full profitable cycle within 60 seconds.
 
@@ -3557,7 +3557,9 @@ class KrakenMarginArmyTrader:
         print("=" * 70)
 
         # ── Step 1: Discover universe and live prices ──────────────────────
-        self.discover_margin_universe()
+        # Skip re-discovery if already loaded (pride mode calls hunt repeatedly)
+        if not self.margin_pairs:
+            self.discover_margin_universe()
         self.update_prices_free()
 
         # ── Step 2: Check available capital ───────────────────────────────
@@ -3567,7 +3569,8 @@ class KrakenMarginArmyTrader:
             equity      = tb.get("equity", 0.0)
         except Exception as e:
             logger.error(f"MISSION: Cannot get trade balance: {e}")
-            return
+            return {'traded': False, 'reason': 'balance_error', 'net_pnl': 0.0,
+                    'pair': None, 'side': None}
 
         margin_budget = free_margin * MARGIN_BUFFER
         print(f"\n💰 Capital: ${equity:.2f} equity  |  ${free_margin:.2f} free"
@@ -3732,8 +3735,8 @@ class KrakenMarginArmyTrader:
                 remaining_hunt = HUNT_TIMEOUT_SEC - elapsed_hunt
                 print(f"   [{elapsed_hunt:>3}s] Rescanning... ({remaining_hunt}s remaining)", end="\r")
                 time.sleep(SCAN_INTERVAL_SEC)
-                # Re-fetch prices
-                self.update_prices_free()
+                # Skip update_prices_free() here — the kline scan below fetches
+                # fresh data per-pair already. The bulk price call adds 30s delay.
                 candidates = []
                 for pair_name2, info2 in valid_pairs:
                     bsym2 = info2.binance_symbol
