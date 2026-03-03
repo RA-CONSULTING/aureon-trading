@@ -3856,21 +3856,21 @@ class KrakenMarginArmyTrader:
         print(f"✅ POSITION OPEN: {trade.pair} {trade.side.upper()}"
               f" @ ${trade.entry_price:,.4f}  |  Breakeven: ${trade.breakeven_price:,.4f}")
 
-        # ── Step 5: Monitor for 60 seconds, close at profit or deadline ────
+        # ── Step 5: Monitor until profit — NEVER close at a loss ────────────
+        # SINGLE EXIT RULE: net_pnl > 0 only. Entry gates guarantee recovery.
+        # We hold as long as needed. No stop loss. No time deadline.
         mission_start  = time.time()
-        deadline       = mission_start + MISSION_WINDOW_SEC
         poll           = 0
         max_net_pnl    = -9999.0
         closed_result  = None
 
-        print(f"\n⏱️  MONITORING MISSION (max {MISSION_WINDOW_SEC}s)")
-        print(f"   Close trigger: net_pnl > ${MISSION_PROFIT_MIN:.2f} OR 60s deadline")
+        print(f"\n⏱️  MONITORING POSITION — HOLD UNTIL PROFIT")
+        print(f"   ONLY exit: net_pnl > $0.00  |  No stop loss  |  No time limit")
         print("-" * 55)
 
-        while time.time() < deadline:
+        while True:  # Hold until profitable — no deadline
             poll += 1
             elapsed = time.time() - mission_start
-            remaining = deadline - time.time()
 
             # Get live price
             current = 0.0
@@ -3892,19 +3892,15 @@ class KrakenMarginArmyTrader:
             net_pnl = gross - trade.entry_fee - exit_fee_est
             max_net_pnl = max(max_net_pnl, net_pnl)
 
-            # Progress bar
-            progress = int((elapsed / MISSION_WINDOW_SEC) * 20)
-            bar = "█" * progress + "░" * (20 - progress)
-
-            print(f"  [{bar}] {elapsed:4.0f}s left={remaining:4.0f}s"
-                  f" | ${trade.entry_price:,.4f}→${current:,.4f}"
+            status_icon = "📈" if net_pnl > 0 else "⏳"
+            print(f"  {status_icon} {elapsed:6.0f}s | ${trade.entry_price:,.4f}→${current:,.4f}"
                   f" | Net: ${net_pnl:+.4f}  peak=${max_net_pnl:+.4f}",
                   end="\r", flush=True)
 
-            # CLOSE: profit hit
-            if net_pnl >= MISSION_PROFIT_MIN:
+            # ONLY exit condition: any positive net profit
+            if net_pnl > 0:
                 print()
-                print(f"\n💰 PROFIT TARGET HIT! Net: ${net_pnl:+.4f}  Closing...")
+                print(f"\n💰 PROFIT! Net: ${net_pnl:+.4f}  Closing...")
                 closed_result = self.close_position(
                     reason=f"MISSION_PROFIT (${net_pnl:+.4f})",
                     trade=trade
@@ -3912,24 +3908,6 @@ class KrakenMarginArmyTrader:
                 break
 
             time.sleep(MONITOR_POLL_SEC)
-
-        # ── Deadline close ─────────────────────────────────────────────────
-        if closed_result is None:
-            print()
-            current = self.market.get_single_price(trade.binance_symbol) or trade.entry_price
-            if trade.side == "buy":
-                gross = (current - trade.entry_price) * trade.volume
-            else:
-                gross = (trade.entry_price - current) * trade.volume
-            exit_fee_est = current * trade.volume * KRAKEN_CLOSE_FEE
-            net_pnl = gross - trade.entry_fee - exit_fee_est
-
-            print(f"\n⏰ MISSION WINDOW CLOSED (60s elapsed)")
-            print(f"   Final price: ${current:,.4f}  |  Net PnL: ${net_pnl:+.4f}")
-            closed_result = self.close_position(
-                reason="MISSION_TIMEOUT_60S",
-                trade=trade
-            )
 
         # ── Mission report ─────────────────────────────────────────────────
         print("\n" + "=" * 70)
