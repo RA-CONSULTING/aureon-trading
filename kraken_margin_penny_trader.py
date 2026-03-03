@@ -3507,7 +3507,7 @@ class KrakenMarginArmyTrader:
     # ----------------------------------------------------------
     #  1-MINUTE MISSION HUNT: SELECT WINNER → OPEN → CLOSE IN 60s
     # ----------------------------------------------------------
-    def mission_hunt(self) -> None:
+    def mission_hunt(self, side_filter: str = None) -> None:
         """
         1-MINUTE MISSION HUNT — Full profitable cycle within 60 seconds.
 
@@ -3518,8 +3518,8 @@ class KrakenMarginArmyTrader:
 
         ENTRY CRITERIA (all must pass):
           ✓ 3+ consecutive 1-minute candles in same direction (streak)
-          ✓ Last candle volume >= 1.5× average of previous 5 candles (surge)
-          ✓ Momentum score > 0.3% net move on last 3 candles
+          ✓ Last candle volume >= 1.2× average of previous 5 candles (surge)
+          ✓ Momentum score > 0.75% net move on last 3 candles
           ✓ Spread < 0.3%
           ✓ Leverage >= 3×
           ✓ Required breakeven move <= 1-minute ATR (achievable in 1 minute)
@@ -3529,6 +3529,9 @@ class KrakenMarginArmyTrader:
           → Monitor every 2 seconds for 60 seconds
           → Close immediately when net_pnl > any positive profit
           → Close at deadline (60s) at best available market price
+
+        ARGS:
+          side_filter : 'buy' | 'sell' | None (None = hunt both directions)
         """
         MISSION_WINDOW_SEC   = 60      # Full cycle must complete within 60s
         MONITOR_POLL_SEC     = 2       # Price check interval
@@ -3543,8 +3546,11 @@ class KrakenMarginArmyTrader:
         HUNT_TIMEOUT_SEC     = 300     # Give up after 5 minutes of scanning
 
         mode_tag = "DRY RUN" if self.dry_run else "LIVE"
+        direction_tag = ("SHORT ONLY ↓" if side_filter == "sell"
+                         else "LONG ONLY ↑" if side_filter == "buy"
+                         else "LONG + SHORT")
         print("=" * 70)
-        print(f"  🎯 1-MINUTE MISSION HUNT  |  Mode: {mode_tag}")
+        print(f"  🎯 1-MINUTE MISSION HUNT  |  Mode: {mode_tag}  |  Direction: {direction_tag}")
         print("  Discipline: SELECT WINNER → OPEN → CLOSE IN 60s")
         print("  Signal: streak + volume surge + momentum + spread + leverage")
         print("  Entry gate: ALL criteria must pass – no exceptions")
@@ -3655,6 +3661,10 @@ class KrakenMarginArmyTrader:
             # ── Side from streak direction ─────────────────────────────────
             side = "buy" if streak_dir == 1 else "sell"
 
+            # ── Direction filter (--side long/short) ──────────────────────
+            if side_filter and side != side_filter:
+                continue
+
             # ── Leverage available for this side ──────────────────────────
             levs = info.leverage_buy if side == "buy" else info.leverage_sell
             if not levs:
@@ -3758,6 +3768,8 @@ class KrakenMarginArmyTrader:
                     if m2_last < MIN_LAST_CANDLE_PCT:
                         continue
                     side2 = "buy" if sd2==1 else "sell"
+                    if side_filter and side2 != side_filter:
+                        continue
                     levs2 = info2.leverage_buy if side2=="buy" else info2.leverage_sell
                     if not levs2 or max(levs2)<MIN_LEVERAGE:
                         continue
@@ -4115,6 +4127,10 @@ def main():
         "--mission-hunt", action="store_true",
         help="1-minute mission: scan for winner, open, close within 60s"
     )
+    parser.add_argument(
+        "--side", choices=["long", "short"], default=None,
+        help="Force mission-hunt direction: 'long' (buy) or 'short' (sell). Default: hunt both."
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Debug logging")
     args = parser.parse_args()
 
@@ -4127,7 +4143,13 @@ def main():
     trader = KrakenMarginArmyTrader(dry_run=args.dry_run)
 
     if args.mission_hunt:
-        trader.mission_hunt()
+        # Map CLI --side (long/short) → internal side filter (buy/sell)
+        side_filter = None
+        if args.side == "long":
+            side_filter = "buy"
+        elif args.side == "short":
+            side_filter = "sell"
+        trader.mission_hunt(side_filter=side_filter)
     else:
         trader.run(scan_only=args.scan_only)
 
