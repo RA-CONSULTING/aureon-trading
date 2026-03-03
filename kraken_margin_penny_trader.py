@@ -3652,6 +3652,26 @@ class KrakenMarginArmyTrader:
             if vol_surge < MIN_VOLUME_SURGE:
                 continue   # Volume surge gate
 
+            # ── Climax/Exhaustion filter ───────────────────────────────────
+            # A >5× volume spike at streak-end with a reversal wick means the
+            # move is EXHAUSTED (sell climax / buy climax), not a breakout.
+            # ZEC post-mortem: 10.5× vol candle had a lower wick → reversed 3%.
+            if vol_surge > 5.0 and len(klines) >= 2:
+                last_k  = klines[-2]   # last fully-closed candle
+                k_hi    = float(last_k[2])
+                k_lo    = float(last_k[3])
+                k_cl    = float(last_k[4])
+                k_range = k_hi - k_lo
+                if k_range > 0:
+                    if streak_dir == -1:   # SELL signal
+                        lower_wick = (k_cl - k_lo) / k_range  # bounce off low
+                        if lower_wick > 0.20:  # wick ≥ 20% of range → sell climax
+                            continue  # Exhaustion — skip
+                    else:              # BUY signal
+                        upper_wick = (k_hi - k_cl) / k_range  # rejection off high
+                        if upper_wick > 0.20:  # wick ≥ 20% of range → buy climax
+                            continue  # Exhaustion — skip
+
             # ── 3-candle momentum ──────────────────────────────────────────
             mom_3c = abs(c[-1] - c[-4]) / c[-4] * 100 if c[-4] > 0 else 0.0
             if mom_3c < MIN_MOM_PCT:
@@ -3765,6 +3785,16 @@ class KrakenMarginArmyTrader:
                     vs2 = lv2/av2 if av2>0 else 1.0
                     if vs2 < MIN_VOLUME_SURGE:
                         continue
+                    # Climax exhaustion filter (pass 2)
+                    if vs2 > 5.0 and len(klines2) >= 2:
+                        lk2  = klines2[-2]
+                        lkhi = float(lk2[2]); lklo = float(lk2[3]); lkcl = float(lk2[4])
+                        lkrng = lkhi - lklo
+                        if lkrng > 0:
+                            if sd2 == -1 and (lkcl - lklo) / lkrng > 0.20:
+                                continue  # sell climax
+                            elif sd2 == 1 and (lkhi - lkcl) / lkrng > 0.20:
+                                continue  # buy climax
                     m2 = abs(c2[-1]-c2[-4])/c2[-4]*100 if c2[-4]>0 else 0
                     if m2 < MIN_MOM_PCT:
                         continue
