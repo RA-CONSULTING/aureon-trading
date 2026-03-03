@@ -99,49 +99,26 @@ class AutonomyExecutor:
     async def get_trinity_alignment(self) -> Tuple[float, str]:
         """Get current Trinity alignment score."""
         try:
-            # Read from harmonic_trinity_lite cached results or compute live
-            trinity_cache = Path('/workspaces/aureon-trading/trinity_alignment_cache.json')
+            # Read from state files directly (fast, no ecosystem boot)
+            weights_path = Path('/workspaces/aureon-trading/7day_adaptive_weights.json')
+            position_path = Path('/workspaces/aureon-trading/active_position.json')
             
-            if trinity_cache.exists():
-                with open(trinity_cache) as f:
-                    cache = json.load(f)
-                    return float(cache.get('alignment', 0)), cache.get('interpretation', 'unknown')
+            coherence = 0.42
+            clarity = 0.38
+            if weights_path.exists():
+                with open(weights_path) as f:
+                    weights = json.load(f) or {}
+                coherence = weights.get('coherence', 0.42)
+                clarity = weights.get('clarity', 0.38)
             
-            # Fallback: compute from state files
-            from pathlib import Path
-            
-            # Read validation history
-            validation_hist = {}
-            coherences = []
-            clarities = []
-            
-            hist_path = Path('/workspaces/aureon-trading/7day_validation_history.json')
-            if hist_path.exists():
-                with open(hist_path) as f:
-                    validation_hist = json.load(f) or {}
-                    for symbol, data in validation_hist.items():
-                        if isinstance(data, dict):
-                            coherences.append(data.get('coherence', 0))
-                            clarities.append(data.get('clarity', 0))
-            
-            # Read portfolio health
-            active_pos = Path('/workspaces/aureon-trading/active_position.json')
             pnl = 0
-            if active_pos.exists():
-                with open(active_pos) as f:
-                    pos = json.load(f)
-                    pnl = float(pos.get('unrealized_pnl_usd', 0))
-            
-            avg_coherence = sum(coherences) / len(coherences) if coherences else 0
-            avg_clarity = sum(clarities) / len(clarities) if clarities else 0
+            if position_path.exists():
+                with open(position_path) as f:
+                    pos = json.load(f) or {}
+                pnl = float(pos.get('unrealized_pnl_usd', 0))
             
             health_score = 0.5 if pnl < 0 else 0.75 if pnl < 500 else 1.0
-            
-            alignment = (
-                min(avg_coherence / 0.80, 1.0) * 0.4 +
-                min(avg_clarity / 2.0, 1.0) * 0.3 +
-                health_score * 0.3
-            )
+            alignment = (coherence * 0.4 + clarity * 0.4 + health_score * 0.2)
             
             if alignment >= 0.8:
                 interpretation = "🟢 PERFECT ALIGNMENT - Execute with confidence"
@@ -159,23 +136,43 @@ class AutonomyExecutor:
             return 0.0, "error"
     
     async def get_nexus_signals(self) -> Dict:
-        """Get current Nexus signals."""
+        """Get current Nexus signals (lightweight version)."""
         try:
-            from aureon_probability_nexus import AureonProbabilityNexus
-            nexus = AureonProbabilityNexus()
-            predictions = nexus.make_predictions()
+            # Use cached signals instead of importing full Nexus
+            signals_path = Path('/workspaces/aureon-trading/7day_validation_history.json')
             
-            buy_count = sum(1 for p in predictions if p.get('action') == 'BUY')
-            sell_count = sum(1 for p in predictions if p.get('action') == 'SELL')
-            hold_count = sum(1 for p in predictions if p.get('action') == 'HOLD')
+            if signals_path.exists():
+                with open(signals_path) as f:
+                    validation_hist = json.load(f) or []
+                
+                # Handle both list and dict formats
+                if isinstance(validation_hist, list):
+                    buy_count = sum(1 for v in validation_hist 
+                                   if isinstance(v, dict) and v.get('action') == 'BUY')
+                    sell_count = sum(1 for v in validation_hist 
+                                    if isinstance(v, dict) and v.get('action') == 'SELL')
+                    hold_count = sum(1 for v in validation_hist 
+                                    if isinstance(v, dict) and v.get('action') == 'HOLD')
+                elif isinstance(validation_hist, dict):
+                    buy_count = sum(1 for v in validation_hist.values() 
+                                   if isinstance(v, dict) and v.get('action') == 'BUY')
+                    sell_count = sum(1 for v in validation_hist.values() 
+                                    if isinstance(v, dict) and v.get('action') == 'SELL')
+                    hold_count = sum(1 for v in validation_hist.values() 
+                                    if isinstance(v, dict) and v.get('action') == 'HOLD')
+                else:
+                    buy_count = sell_count = hold_count = 0
+                
+                return {
+                    'total': len(validation_hist),
+                    'buy': buy_count,
+                    'sell': sell_count,
+                    'hold': hold_count,
+                    'predictions': []
+                }
             
-            return {
-                'total': len(predictions),
-                'buy': buy_count,
-                'sell': sell_count,
-                'hold': hold_count,
-                'predictions': predictions
-            }
+            return {'total': 0, 'buy': 0, 'sell': 0, 'hold': 0, 'predictions': []}
+        
         except Exception as e:
             logger.warning(f"Nexus signal fetch failed: {e}")
             return {'total': 0, 'buy': 0, 'sell': 0, 'hold': 0, 'predictions': []}
@@ -260,7 +257,6 @@ class AutonomyExecutor:
         """Continuous autonomous monitoring and execution loop."""
         logger.info(f"🚀 Starting autonomous monitoring loop (interval={self.config.check_interval}s)")
         logger.info("👁️  Humanity observes. AI executes. Creation guides.")
-        logger.info()
         
         iteration = 0
         
