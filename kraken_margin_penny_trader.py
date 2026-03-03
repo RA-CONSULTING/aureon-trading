@@ -1249,7 +1249,7 @@ class BattlefieldIntel:
                     shape = wave.get('shape', 'unknown')
                     flow_pred = wave.get('flow_prediction', 'neutral')
                     _ = wave.get('energy_trend', 0)
-                    _ = wave.get('spectrum_shifted', False)
+                    shifted = wave.get('spectrum_shifted', False)
 
                     # Strong dissonance = bots moving against us
                     if res_label == 'dissonance' and res_score < -0.4:

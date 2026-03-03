@@ -14,9 +14,14 @@ except Exception:  # pragma: no cover - Windows
     except Exception:  # pragma: no cover
         msvcrt = None  # type: ignore
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+except ImportError:
+    requests = None  # type: ignore
+    HTTPAdapter = None  # type: ignore
+    Retry = None  # type: ignore
 
 # Load environment variables from .env file
 try:

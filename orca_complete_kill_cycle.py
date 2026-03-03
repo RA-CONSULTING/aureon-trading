@@ -219,9 +219,10 @@ for mod in NOISY_MODULES:
 
 # import sys
 import os
+import argparse
 # import time
 # import asyncio
-import threadingimport argparse
+import threading
 from typing import List, Dict, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -1994,7 +1995,7 @@ class WarRoomDisplay:
             # Use tracked session start if available, else 0
             daily_change_pct = 0.0
             if self.portfolio_start_value > 0:
-                 daily_change_pct = ((total_portfolio - self.portfolio_start_value) / self.portfolio_start_value) * 100
+                daily_change_pct = ((total_portfolio - self.portfolio_start_value) / self.portfolio_start_value) * 100
             
             daily_color = "green" if daily_change_pct >= 0 else "red"
             
@@ -8149,17 +8150,17 @@ class OrcaKillCycle:
         # 0.40% profit on 0.52% fees is a Ratio of ~0.76. The 3x rule required 3.0.
         
         if QUEEN_MIN_PROFIT_PCT < 1.0: # Growth Mode (e.g. 0.40%)
-             # Just ensure positive PnL that isn't microscopic noise
-             required_pnl = total_costs_value * 0.1 # Minimal hurdle
-             
-             # Also ensure it hits the configured target percentage OR 1 penny — whichever is higher
-             target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7¢ guaranteed net
-             if net_pnl >= target_pnl:
-                 approved = True
-                 reason = f"GROWTH_MODE PASS: net_pnl=${net_pnl:.4f} >= target=${target_pnl:.4f}"
-             else:
-                 approved = False
-                 reason = f"GROWTH_MODE BLOCK: net_pnl=${net_pnl:.4f} < target=${target_pnl:.4f}"
+            # Just ensure positive PnL that isn't microscopic noise
+            required_pnl = total_costs_value * 0.1 # Minimal hurdle
+            
+            # Also ensure it hits the configured target percentage OR 1 penny — whichever is higher
+            target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7¢ guaranteed net
+            if net_pnl >= target_pnl:
+                approved = True
+                reason = f"GROWTH_MODE PASS: net_pnl=${net_pnl:.4f} >= target=${target_pnl:.4f}"
+            else:
+                approved = False
+                reason = f"GROWTH_MODE BLOCK: net_pnl=${net_pnl:.4f} < target=${target_pnl:.4f}"
                  
         else:
             # Standard Mode: Strict 3x Cost Rule
@@ -10701,13 +10702,13 @@ class OrcaKillCycle:
                 # on cost basis alone. The math checks (COP, black box, profit gate)
                 # downstream are sufficient to prevent selling at a loss.
                 if entry_price > 0:
-                     print(f"      Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
-                     confirmed_entry = entry_price
-                     cb_info['entry_price'] = entry_price
+                            print(f"      Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
+                    confirmed_entry = entry_price
+                    cb_info['entry_price'] = entry_price
                 elif entry_cost > 0 and entry_qty > 0:
-                     confirmed_entry = entry_cost / entry_qty
-                     print(f"      Cost Basis Missing for {symbol}. Derived entry from cost/qty: {confirmed_entry:.6f}")
-                     cb_info['entry_price'] = confirmed_entry
+                    confirmed_entry = entry_cost / entry_qty
+                    print(f"      Cost Basis Missing for {symbol}. Derived entry from cost/qty: {confirmed_entry:.6f}")
+                    cb_info['entry_price'] = confirmed_entry
                 else:
                     # Last resort: use current price as entry estimate (worst case: 0% P&L)
                     confirmed_entry = current_price
@@ -10730,10 +10731,10 @@ class OrcaKillCycle:
         hit_target_profit = False
         target_pnl_amt = 0.0
         if QUEEN_MIN_PROFIT_PCT < 1.0: # Growth Mode
-             _cost_basis = confirmed_cost if 'confirmed_cost' in locals() else entry_cost
-             target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7c guaranteed net
-             if net_pnl >= target_pnl_amt:
-                 hit_target_profit = True
+            _cost_basis = confirmed_cost if 'confirmed_cost' in locals() else entry_cost
+            target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7c guaranteed net
+            if net_pnl >= target_pnl_amt:
+                hit_target_profit = True
 
         #                                                                    
         # CHECK 1A: REQUIRE 30s VALIDATED PREDICTION WINDOW
@@ -10750,8 +10751,8 @@ class OrcaKillCycle:
                 print(f"      EXIT BLOCKED: {symbol} - {pred_info.get('reason')}")
                 return False, info
             elif not pred_ok and skip_prediction:
-                 # Log that we are bypassing
-                 print(f"      IRA SNIPER BYPASS: {symbol} hit ${net_pnl:.4f} (Target ${target_pnl_amt:.4f}) - IGNORING Prediction Window!")
+                # Log that we are bypassing
+                print(f"      IRA SNIPER BYPASS: {symbol} hit ${net_pnl:.4f} (Target ${target_pnl_amt:.4f}) - IGNORING Prediction Window!")
         else:
             info['prediction_window'] = {'reason': 'PREDICTION_WINDOW_DISABLED'}
 
@@ -11250,7 +11251,7 @@ class OrcaKillCycle:
 
         # 3. Adjust
         if amount < min_required:
-             return min_required, f"Bumped to {exchange} min ${min_required:.2f}"
+            return min_required, f"Bumped to {exchange} min ${min_required:.2f}"
         
         return amount, "OK"
 
@@ -11463,7 +11464,7 @@ class OrcaKillCycle:
                     if query_sym in ['BTC', 'ETH', 'SOL', 'DOGE', 'SHIB', 'TRX', 'LTC', 'PHA']:
                         query_sym = f"{query_sym}/USD"
                     elif 'USD' in query_sym and not query_sym.endswith('/USD'):
-                         query_sym = query_sym.replace('USD', '/USD')
+                        query_sym = query_sym.replace('USD', '/USD')
                 
                 # Fetch 60 minutes of data for lively quantum calculation
                 bars_map = alpaca.get_crypto_bars([query_sym], timeframe='1Min', limit=60)
@@ -16485,7 +16486,7 @@ class OrcaKillCycle:
         if self.wave_scanner:
             momentum_plays = self.wave_scanner.find_momentum_plays(top_n=top_n)
             for play in momentum_plays:
-                 add_candidate(play.get('symbol'), play.get('confidence', 0), play.get('reason', 'Wave Scanner'), 'WaveScanner', play)
+                add_candidate(play.get('symbol'), play.get('confidence', 0), play.get('reason', 'Wave Scanner'), 'WaveScanner', play)
 
         if self.whale_tracker:
             whale_signals = self.whale_tracker.get_all_whale_signals()

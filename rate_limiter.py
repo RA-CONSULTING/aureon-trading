@@ -66,10 +66,8 @@ class TokenBucket:
                     self._tokens -= tokens
                     # update tokens gauge
                     try:
-                        from metrics import rate_limiter_tokens, rate_limiter_waits
+                        from metrics import rate_limiter_tokens
                         rate_limiter_tokens.set(self._tokens, exchange=self.name)
-                        if waited and start_wait is not None:
-                            rate_limiter_waits.inc(1, exchange=self.name)
                     except Exception:
                         pass
                     return
@@ -109,8 +107,8 @@ class TTLCache:
             if time.time() > expires:
                 del self._store[key]
                 try:
-                    from metrics import cache_miss_counter
-                    cache_miss_counter.inc(1, cache=self.name)
+                    from metrics import cache_miss_counter as _cache_miss_counter
+                    _cache_miss_counter.inc(1, cache=self.name)
                 except Exception:
                     pass
                 return None
