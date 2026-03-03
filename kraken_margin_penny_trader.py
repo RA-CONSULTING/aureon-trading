@@ -36,6 +36,15 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from collections import deque
 
+# Import ETA predictor for margin positions
+try:
+    from margin_eta_predictor import MarginETAPredictor
+    HAS_ETA_PREDICTOR = True
+except ImportError:
+    HAS_ETA_PREDICTOR = False
+    logger_temp = logging.getLogger("margin_army")
+    logger_temp.warning("ETA predictor not available - install margin_eta_predictor.py")
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2360,7 +2369,54 @@ class KrakenMarginArmyTrader:
         self._last_danger_check = 0
         self._danger_check_interval = 15  # Check danger every 15s
         self._consecutive_danger = 0       # Track consecutive danger signals
+        # ETA predictor for margin time-to-profit estimates
+        self.eta_predictor = MarginETAPredictor() if HAS_ETA_PREDICTOR else None
+        self._last_eta_report = 0        # Track ETA report frequency
+        self._eta_report_interval = 300  # Report ETA every 300s (5 min)
         self._load_state()
+
+    # ----------------------------------------------------------
+    #  ETA PREDICTION: Estimate time to profitability
+    # ----------------------------------------------------------
+    def _report_margin_eta(self) -> None:
+        """Calculate and log ETA for margin positions (every 5 mins)."""
+        if not HAS_ETA_PREDICTOR or not self.eta_predictor:
+            return
+        
+        try:
+            now = time.time()
+            if now - self._last_eta_report < self._eta_report_interval:
+                return  # Not time yet
+            
+            self._last_eta_report = now
+            etas = self.eta_predictor.predict_all()
+            
+            if not etas:
+                return
+            
+            # Log ETA summary
+            logger.info("="*80)
+            logger.info("MARGIN ETA ANALYSIS - TIME-TO-PROFITABILITY")
+            logger.info("="*80)
+            
+            for eta in etas:
+                logger.info(
+                    f"{eta.symbol}: Entry={eta.entry_price:.6f} | Current={eta.current_price:.6f} | "
+                    f"Breakeven={eta.breakeven_price:.6f} | Distance={eta.pct_to_breakeven:+.2f}%"
+                )
+                
+                if eta.eta_minutes == 0:
+                    logger.info(f"  ✅ PROFITABLE - Position is now profitable!")
+                else:
+                    logger.info(
+                        f"  ⏱️  ETA: {eta.eta_minutes:.0f}m ({eta.eta_minutes/60:.1f}h) | "
+                        f"Bullish: {eta.bullish_eta:.0f}m | Bearish: {eta.bearish_eta:.0f}m | "
+                        f"Confidence: {eta.confidence*100:.0f}%"
+                    )
+            
+            logger.info("="*80)
+        except Exception as e:
+            logger.debug(f"ETA report failed: {e}")
 
     # ----------------------------------------------------------
     #  STARTUP: Discover margin pairs (ONE Kraken API batch)
@@ -3499,6 +3555,11 @@ class KrakenMarginArmyTrader:
             while True:
                 cycle += 1
                 now = time.time()
+
+                # ============================
+                # PHASE 0: ETA REPORTING (every 5 mins)
+                # ============================
+                self._report_margin_eta()
 
                 # ============================
                 # PHASE 1: Monitor active positions
