@@ -126,17 +126,17 @@
     "animal": "\ud83e\udd16 Robot",
     "band": "market_maker",
     "first_seen": 1772489894.2361376,
-    "last_seen": 1772493385.8862746,
+    "last_seen": 1772500962.2817779,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 5,
+    "sighting_count": 23,
     "confidence": 0.8,
     "frequency": 0.4657,
     "shape": "spiral",
     "last_action": "SELLING",
     "last_direction": "bearish",
-    "last_power_pct": 12.181203532339694,
-    "last_bsr": 0.58,
+    "last_power_pct": 9.747259520754465,
+    "last_bsr": 0.16,
     "action_history": [
       {
         "ts": 1772489894,
@@ -172,6 +172,132 @@
         "bsr": 0.58,
         "power": 12.2,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494113,
+        "action": "NEUTRAL",
+        "bsr": 0.93,
+        "power": 11.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495552,
+        "action": "SELLING",
+        "bsr": 0.4,
+        "power": 9.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495860,
+        "action": "SELLING",
+        "bsr": 0.74,
+        "power": 10.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496182,
+        "action": "BUYING",
+        "bsr": 11.67,
+        "power": 10.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496457,
+        "action": "SELLING",
+        "bsr": 0.66,
+        "power": 10.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496556,
+        "action": "SELLING",
+        "bsr": 0.21,
+        "power": 11.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497745,
+        "action": "BUYING",
+        "bsr": 2.22,
+        "power": 10.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497975,
+        "action": "SELLING",
+        "bsr": 0.33,
+        "power": 10.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498007,
+        "action": "BUYING",
+        "bsr": 9.8,
+        "power": 9.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498072,
+        "action": "BUYING",
+        "bsr": 1.7,
+        "power": 12.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498473,
+        "action": "SELLING",
+        "bsr": 0.53,
+        "power": 9.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499059,
+        "action": "NEUTRAL",
+        "bsr": 0.82,
+        "power": 12.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499512,
+        "action": "BUYING",
+        "bsr": 1.32,
+        "power": 14.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499527,
+        "action": "BUYING",
+        "bsr": 1.41,
+        "power": 17.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499900,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 9.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500692,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 9.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500818,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 9.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500962,
+        "action": "SELLING",
+        "bsr": 0.16,
+        "power": 9.7,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -183,17 +309,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1772489894.2361376,
-    "last_seen": 1772493023.6456733,
+    "last_seen": 1772500817.6959383,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 4,
+    "sighting_count": 16,
     "confidence": 0.91,
     "frequency": 1.6081,
     "shape": "spiral",
     "last_action": "SELLING",
     "last_direction": "bearish",
-    "last_power_pct": 88.11362138165238,
-    "last_bsr": 0.42,
+    "last_power_pct": 90.25953431797747,
+    "last_bsr": 0.66,
     "action_history": [
       {
         "ts": 1772489894,
@@ -221,6 +347,90 @@
         "action": "SELLING",
         "bsr": 0.42,
         "power": 88.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494161,
+        "action": "SELLING",
+        "bsr": 0.68,
+        "power": 87.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494790,
+        "action": "SELLING",
+        "bsr": 0.39,
+        "power": 90.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495860,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 89.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496457,
+        "action": "SELLING",
+        "bsr": 0.71,
+        "power": 89.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496556,
+        "action": "SELLING",
+        "bsr": 0.23,
+        "power": 88.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497225,
+        "action": "SELLING",
+        "bsr": 0.36,
+        "power": 88.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497975,
+        "action": "SELLING",
+        "bsr": 0.31,
+        "power": 88.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498473,
+        "action": "SELLING",
+        "bsr": 0.48,
+        "power": 89.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498489,
+        "action": "SELLING",
+        "bsr": 0.32,
+        "power": 90.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499205,
+        "action": "SELLING",
+        "bsr": 0.44,
+        "power": 90.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500724,
+        "action": "SELLING",
+        "bsr": 0.38,
+        "power": 87.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500818,
+        "action": "SELLING",
+        "bsr": 0.66,
+        "power": 90.3,
         "symbol": "ETHUSDT"
       }
     ],
@@ -345,144 +555,18 @@
     "animal": "\ud83e\udd16 Robot",
     "band": "market_maker",
     "first_seen": 1772490247.55221,
-    "last_seen": 1772493402.12725,
+    "last_seen": 1772500947.0865834,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 20,
+    "sighting_count": 68,
     "confidence": 0.8,
     "frequency": 0.0148,
     "shape": "spiral",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 12.061631471355884,
-    "last_bsr": 0.83,
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 9.58489414325186,
+    "last_bsr": 0.47,
     "action_history": [
-      {
-        "ts": 1772490248,
-        "action": "SELLING",
-        "bsr": 0.54,
-        "power": 13.8,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772490263,
-        "action": "SELLING",
-        "bsr": 0.54,
-        "power": 13.9,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772490280,
-        "action": "SELLING",
-        "bsr": 0.58,
-        "power": 13.6,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772490296,
-        "action": "NEUTRAL",
-        "bsr": 0.81,
-        "power": 12.1,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772490328,
-        "action": "BUYING",
-        "bsr": 1.39,
-        "power": 10.9,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772490377,
-        "action": "SELLING",
-        "bsr": 0.58,
-        "power": 9.6,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772490393,
-        "action": "NEUTRAL",
-        "bsr": 0.93,
-        "power": 9.4,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772490409,
-        "action": "NEUTRAL",
-        "bsr": 1.06,
-        "power": 9.6,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772491806,
-        "action": "SELLING",
-        "bsr": 0.35,
-        "power": 13.4,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772491822,
-        "action": "SELLING",
-        "bsr": 0.26,
-        "power": 13.3,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772492871,
-        "action": "SELLING",
-        "bsr": 0.43,
-        "power": 11.5,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772492885,
-        "action": "SELLING",
-        "bsr": 0.68,
-        "power": 10.8,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772493024,
-        "action": "SELLING",
-        "bsr": 0.52,
-        "power": 11.8,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772493089,
-        "action": "BUYING",
-        "bsr": 2.53,
-        "power": 14.7,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772493105,
-        "action": "BUYING",
-        "bsr": 2.26,
-        "power": 14.2,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772493170,
-        "action": "SELLING",
-        "bsr": 0.37,
-        "power": 12.0,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772493236,
-        "action": "SELLING",
-        "bsr": 0.62,
-        "power": 9.2,
-        "symbol": "ETHUSDT"
-      },
-      {
-        "ts": 1772493253,
-        "action": "NEUTRAL",
-        "bsr": 0.96,
-        "power": 9.2,
-        "symbol": "ETHUSDT"
-      },
       {
         "ts": 1772493269,
         "action": "BUYING",
@@ -496,6 +580,342 @@
         "bsr": 0.83,
         "power": 12.1,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494000,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 9.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494161,
+        "action": "SELLING",
+        "bsr": 0.75,
+        "power": 12.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494225,
+        "action": "SELLING",
+        "bsr": 0.31,
+        "power": 9.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494242,
+        "action": "SELLING",
+        "bsr": 0.27,
+        "power": 14.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494341,
+        "action": "SELLING",
+        "bsr": 0.66,
+        "power": 9.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494374,
+        "action": "BUYING",
+        "bsr": 1.45,
+        "power": 10.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494790,
+        "action": "SELLING",
+        "bsr": 0.4,
+        "power": 9.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495033,
+        "action": "SELLING",
+        "bsr": 0.13,
+        "power": 10.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495214,
+        "action": "NEUTRAL",
+        "bsr": 1.04,
+        "power": 9.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495230,
+        "action": "BUYING",
+        "bsr": 3.19,
+        "power": 12.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495470,
+        "action": "NEUTRAL",
+        "bsr": 1.17,
+        "power": 9.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495487,
+        "action": "NEUTRAL",
+        "bsr": 1.18,
+        "power": 9.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495519,
+        "action": "NEUTRAL",
+        "bsr": 0.77,
+        "power": 9.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495535,
+        "action": "SELLING",
+        "bsr": 0.54,
+        "power": 9.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496102,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 10.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496231,
+        "action": "SELLING",
+        "bsr": 0.24,
+        "power": 13.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496392,
+        "action": "NEUTRAL",
+        "bsr": 0.89,
+        "power": 10.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496473,
+        "action": "SELLING",
+        "bsr": 0.35,
+        "power": 10.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496490,
+        "action": "SELLING",
+        "bsr": 0.32,
+        "power": 10.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497225,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 10.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497241,
+        "action": "BUYING",
+        "bsr": 1.41,
+        "power": 10.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497355,
+        "action": "SELLING",
+        "bsr": 0.19,
+        "power": 12.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498439,
+        "action": "BUYING",
+        "bsr": 2.65,
+        "power": 10.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498489,
+        "action": "SELLING",
+        "bsr": 0.35,
+        "power": 9.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498602,
+        "action": "NEUTRAL",
+        "bsr": 1.28,
+        "power": 11.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498994,
+        "action": "SELLING",
+        "bsr": 0.1,
+        "power": 15.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499205,
+        "action": "SELLING",
+        "bsr": 0.53,
+        "power": 9.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499220,
+        "action": "NEUTRAL",
+        "bsr": 1.01,
+        "power": 10.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499383,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 10.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499399,
+        "action": "SELLING",
+        "bsr": 0.53,
+        "power": 11.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499416,
+        "action": "SELLING",
+        "bsr": 0.46,
+        "power": 11.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499448,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 12.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499495,
+        "action": "SELLING",
+        "bsr": 0.69,
+        "power": 13.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499690,
+        "action": "NEUTRAL",
+        "bsr": 1.05,
+        "power": 9.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499707,
+        "action": "SELLING",
+        "bsr": 0.47,
+        "power": 13.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499723,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 14.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499739,
+        "action": "SELLING",
+        "bsr": 0.49,
+        "power": 12.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500192,
+        "action": "NEUTRAL",
+        "bsr": 0.78,
+        "power": 9.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500579,
+        "action": "SELLING",
+        "bsr": 0.75,
+        "power": 10.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500594,
+        "action": "NEUTRAL",
+        "bsr": 0.77,
+        "power": 10.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500610,
+        "action": "SELLING",
+        "bsr": 0.55,
+        "power": 12.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500627,
+        "action": "NEUTRAL",
+        "bsr": 0.78,
+        "power": 11.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500642,
+        "action": "BUYING",
+        "bsr": 3.51,
+        "power": 10.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500707,
+        "action": "NEUTRAL",
+        "bsr": 0.94,
+        "power": 13.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500724,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 12.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500739,
+        "action": "SELLING",
+        "bsr": 0.38,
+        "power": 12.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500756,
+        "action": "BUYING",
+        "bsr": 1.48,
+        "power": 11.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500947,
+        "action": "SELLING",
+        "bsr": 0.47,
+        "power": 9.6,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -507,17 +927,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1772490263.39003,
-    "last_seen": 1772493169.7730472,
+    "last_seen": 1772500756.109649,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 3,
+    "sighting_count": 8,
     "confidence": 0.91,
     "frequency": 3.6728,
     "shape": "spiral",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 86.58168059654213,
-    "last_bsr": 0.5,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 87.17770438948881,
+    "last_bsr": 1.59,
     "action_history": [
       {
         "ts": 1772490263,
@@ -539,6 +959,41 @@
         "bsr": 0.5,
         "power": 86.6,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494374,
+        "action": "BUYING",
+        "bsr": 1.31,
+        "power": 89.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495535,
+        "action": "SELLING",
+        "bsr": 0.57,
+        "power": 90.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495552,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 90.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500739,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 87.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500756,
+        "action": "BUYING",
+        "bsr": 1.59,
+        "power": 87.2,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -550,17 +1005,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1772490295.711263,
-    "last_seen": 1772490295.711263,
+    "last_seen": 1772499738.6587062,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 1,
+    "sighting_count": 7,
     "confidence": 0.91,
     "frequency": 3.0265,
     "shape": "spiral",
-    "last_action": "BUYING",
-    "last_direction": "bullish",
-    "last_power_pct": 87.8,
-    "last_bsr": 1.46,
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 87.07347341032126,
+    "last_bsr": 0.68,
     "action_history": [
       {
         "ts": 1772490296,
@@ -568,8 +1023,51 @@
         "bsr": 1.46,
         "power": 87.8,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494113,
+        "action": "NEUTRAL",
+        "bsr": 1.02,
+        "power": 87.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498439,
+        "action": "BUYING",
+        "bsr": 2.82,
+        "power": 89.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498994,
+        "action": "SELLING",
+        "bsr": 0.15,
+        "power": 83.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499399,
+        "action": "SELLING",
+        "bsr": 0.66,
+        "power": 88.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499495,
+        "action": "NEUTRAL",
+        "bsr": 0.86,
+        "power": 86.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499739,
+        "action": "SELLING",
+        "bsr": 0.68,
+        "power": 87.1,
+        "symbol": "ETHUSDT"
       }
-    ]
+    ],
+    "last_shape": "spiral"
   },
   "6b0f467d1764": {
     "bot_id": "6b0f467d1764",
@@ -578,17 +1076,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1772490328.045283,
-    "last_seen": 1772493402.12725,
+    "last_seen": 1772496473.297927,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 5,
+    "sighting_count": 11,
     "confidence": 0.91,
     "frequency": 1.9979,
     "shape": "spiral",
-    "last_action": "BUYING",
-    "last_direction": "bullish",
-    "last_power_pct": 87.88998546808403,
-    "last_bsr": 1.44,
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 89.29418369526404,
+    "last_bsr": 0.37,
     "action_history": [
       {
         "ts": 1772490328,
@@ -624,6 +1122,48 @@
         "bsr": 1.44,
         "power": 87.9,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494225,
+        "action": "SELLING",
+        "bsr": 0.31,
+        "power": 89.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495470,
+        "action": "NEUTRAL",
+        "bsr": 1.01,
+        "power": 90.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495487,
+        "action": "NEUTRAL",
+        "bsr": 1.06,
+        "power": 90.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495519,
+        "action": "SELLING",
+        "bsr": 0.76,
+        "power": 90.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496182,
+        "action": "BUYING",
+        "bsr": 11.38,
+        "power": 89.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496473,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 89.3,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -635,17 +1175,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1772490344.7428725,
-    "last_seen": 1772491822.425292,
+    "last_seen": 1772500610.0379157,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 3,
+    "sighting_count": 12,
     "confidence": 0.91,
     "frequency": 0.6646,
     "shape": "spiral",
     "last_action": "SELLING",
     "last_direction": "bearish",
-    "last_power_pct": 86.37283747170711,
-    "last_bsr": 0.3,
+    "last_power_pct": 86.96980988374953,
+    "last_bsr": 0.68,
     "action_history": [
       {
         "ts": 1772490345,
@@ -667,6 +1207,69 @@
         "bsr": 0.3,
         "power": 86.4,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494242,
+        "action": "SELLING",
+        "bsr": 0.2,
+        "power": 85.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494341,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 90.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495214,
+        "action": "NEUTRAL",
+        "bsr": 1.14,
+        "power": 89.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497355,
+        "action": "SELLING",
+        "bsr": 0.2,
+        "power": 87.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498072,
+        "action": "BUYING",
+        "bsr": 1.34,
+        "power": 87.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499059,
+        "action": "NEUTRAL",
+        "bsr": 0.86,
+        "power": 87.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499512,
+        "action": "BUYING",
+        "bsr": 1.62,
+        "power": 85.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499527,
+        "action": "NEUTRAL",
+        "bsr": 1.24,
+        "power": 82.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500610,
+        "action": "SELLING",
+        "bsr": 0.68,
+        "power": 87.0,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -678,17 +1281,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1772490376.9125519,
-    "last_seen": 1772493269.2541919,
+    "last_seen": 1772500706.9850018,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 3,
+    "sighting_count": 7,
     "confidence": 0.91,
     "frequency": 3.7741,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 90.34020800115916,
-    "last_bsr": 1.28,
+    "last_power_pct": 85.41954134567835,
+    "last_bsr": 0.91,
     "action_history": [
       {
         "ts": 1772490377,
@@ -710,6 +1313,34 @@
         "bsr": 1.28,
         "power": 90.3,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497241,
+        "action": "BUYING",
+        "bsr": 1.5,
+        "power": 89.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497745,
+        "action": "BUYING",
+        "bsr": 2.3,
+        "power": 89.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500642,
+        "action": "BUYING",
+        "bsr": 3.53,
+        "power": 89.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500707,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 85.4,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -721,17 +1352,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1772490409.2544363,
-    "last_seen": 1772493105.04104,
+    "last_seen": 1772500962.2817779,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 3,
+    "sighting_count": 10,
     "confidence": 0.91,
     "frequency": 2.4711,
     "shape": "spiral",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 85.61967998267575,
-    "last_bsr": 1.19,
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 89.71474205463771,
+    "last_bsr": 0.12,
     "action_history": [
       {
         "ts": 1772490409,
@@ -753,6 +1384,55 @@
         "bsr": 1.19,
         "power": 85.6,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496231,
+        "action": "SELLING",
+        "bsr": 0.24,
+        "power": 85.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498007,
+        "action": "BUYING",
+        "bsr": 10.05,
+        "power": 90.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772498602,
+        "action": "NEUTRAL",
+        "bsr": 0.89,
+        "power": 87.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499416,
+        "action": "SELLING",
+        "bsr": 0.57,
+        "power": 88.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500579,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 89.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500594,
+        "action": "SELLING",
+        "bsr": 0.74,
+        "power": 89.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500962,
+        "action": "SELLING",
+        "bsr": 0.12,
+        "power": 89.7,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -764,17 +1444,17 @@
     "animal": "\ud83d\udc1c Ants",
     "band": "market_maker",
     "first_seen": 1772492023.9750812,
-    "last_seen": 1772492615.7148194,
+    "last_seen": 1772496036.640516,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 2,
+    "sighting_count": 3,
     "confidence": 0.8,
     "frequency": 0.024,
     "shape": "surge",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 12.176533202370456,
-    "last_bsr": 0.31,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 9.623273767164916,
+    "last_bsr": 1.41,
     "action_history": [
       {
         "ts": 1772492024,
@@ -789,6 +1469,13 @@
         "bsr": 0.31,
         "power": 12.2,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496037,
+        "action": "BUYING",
+        "bsr": 1.41,
+        "power": 9.6,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "surge"
@@ -800,17 +1487,17 @@
     "animal": "\ud83d\udc27 Penguin",
     "band": "scalper",
     "first_seen": 1772492023.9750812,
-    "last_seen": 1772492615.7148194,
+    "last_seen": 1772496036.640516,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 2,
+    "sighting_count": 3,
     "confidence": 0.81,
     "frequency": 2.056,
     "shape": "surge",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 86.75439069761165,
-    "last_bsr": 0.26,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 90.24659049205142,
+    "last_bsr": 1.32,
     "action_history": [
       {
         "ts": 1772492024,
@@ -824,6 +1511,13 @@
         "action": "SELLING",
         "bsr": 0.26,
         "power": 86.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496037,
+        "action": "BUYING",
+        "bsr": 1.32,
+        "power": 90.2,
         "symbol": "ETHUSDT"
       }
     ],
@@ -1104,17 +1798,17 @@
     "animal": "\ud83e\udd16 Robot",
     "band": "market_maker",
     "first_seen": 1772492631.9609318,
-    "last_seen": 1772493335.604681,
+    "last_seen": 1772500321.538546,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 3,
+    "sighting_count": 10,
     "confidence": 0.8,
     "frequency": 0.061,
     "shape": "taper",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 14.255822344483137,
-    "last_bsr": 0.12,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 10.824260753685444,
+    "last_bsr": 1.53,
     "action_history": [
       {
         "ts": 1772492632,
@@ -1136,6 +1830,55 @@
         "bsr": 0.12,
         "power": 14.3,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495246,
+        "action": "BUYING",
+        "bsr": 4.1,
+        "power": 13.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495262,
+        "action": "BUYING",
+        "bsr": 1.62,
+        "power": 12.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495780,
+        "action": "BUYING",
+        "bsr": 4.16,
+        "power": 11.1,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496085,
+        "action": "SELLING",
+        "bsr": 0.48,
+        "power": 11.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772497991,
+        "action": "BUYING",
+        "bsr": 2.21,
+        "power": 9.5,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500079,
+        "action": "SELLING",
+        "bsr": 0.19,
+        "power": 10.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500322,
+        "action": "BUYING",
+        "bsr": 1.53,
+        "power": 10.8,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "taper"
@@ -1147,17 +1890,17 @@
     "animal": "\ud83d\udc27 Penguin",
     "band": "scalper",
     "first_seen": 1772492631.9609318,
-    "last_seen": 1772492631.9609318,
+    "last_seen": 1772495779.7993813,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 1,
-    "confidence": 0.8,
+    "sighting_count": 3,
+    "confidence": 0.81,
     "frequency": 1.2805,
     "shape": "taper",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 88.0,
-    "last_bsr": 0.52,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 88.84279193648557,
+    "last_bsr": 4.01,
     "action_history": [
       {
         "ts": 1772492632,
@@ -1165,8 +1908,23 @@
         "bsr": 0.52,
         "power": 88.0,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495246,
+        "action": "BUYING",
+        "bsr": 3.91,
+        "power": 86.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495780,
+        "action": "BUYING",
+        "bsr": 4.01,
+        "power": 88.8,
+        "symbol": "ETHUSDT"
       }
-    ]
+    ],
+    "last_shape": "taper"
   },
   "273109636874": {
     "bot_id": "273109636874",
@@ -1175,17 +1933,17 @@
     "animal": "\ud83d\udc27 Penguin",
     "band": "scalper",
     "first_seen": 1772492649.094476,
-    "last_seen": 1772492649.094476,
+    "last_seen": 1772500321.538546,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 1,
-    "confidence": 0.8,
+    "sighting_count": 2,
+    "confidence": 0.81,
     "frequency": 0.8943,
     "shape": "taper",
-    "last_action": "BUYING",
-    "last_direction": "bullish",
-    "last_power_pct": 88.2,
-    "last_bsr": 1.63,
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 86.96978833208713,
+    "last_bsr": 1.17,
     "action_history": [
       {
         "ts": 1772492649,
@@ -1193,8 +1951,16 @@
         "bsr": 1.63,
         "power": 88.2,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500322,
+        "action": "NEUTRAL",
+        "bsr": 1.17,
+        "power": 87.0,
+        "symbol": "ETHUSDT"
       }
-    ]
+    ],
+    "last_shape": "taper"
   },
   "7cbc29805435": {
     "bot_id": "7cbc29805435",
@@ -1203,17 +1969,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1772492870.712615,
-    "last_seen": 1772493385.8862746,
+    "last_seen": 1772500691.565917,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 3,
+    "sighting_count": 16,
     "confidence": 0.91,
     "frequency": 1.2016,
     "shape": "spiral",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 87.71258044682655,
-    "last_bsr": 0.89,
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 90.03784164012909,
+    "last_bsr": 0.63,
     "action_history": [
       {
         "ts": 1772492871,
@@ -1235,6 +2001,97 @@
         "bsr": 0.89,
         "power": 87.7,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772494000,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 89.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495033,
+        "action": "SELLING",
+        "bsr": 0.12,
+        "power": 89.0,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772495230,
+        "action": "BUYING",
+        "bsr": 2.8,
+        "power": 87.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496392,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 88.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496490,
+        "action": "SELLING",
+        "bsr": 0.35,
+        "power": 89.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499220,
+        "action": "NEUTRAL",
+        "bsr": 1.02,
+        "power": 89.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499383,
+        "action": "SELLING",
+        "bsr": 0.74,
+        "power": 89.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499448,
+        "action": "SELLING",
+        "bsr": 0.45,
+        "power": 86.8,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499707,
+        "action": "SELLING",
+        "bsr": 0.73,
+        "power": 86.6,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499723,
+        "action": "SELLING",
+        "bsr": 0.47,
+        "power": 85.3,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772499900,
+        "action": "SELLING",
+        "bsr": 0.58,
+        "power": 89.9,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500192,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 90.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500692,
+        "action": "SELLING",
+        "bsr": 0.63,
+        "power": 90.0,
+        "symbol": "ETHUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -1246,17 +2103,17 @@
     "animal": "\ud83d\udc27 Penguin",
     "band": "scalper",
     "first_seen": 1772493335.604681,
-    "last_seen": 1772493335.604681,
+    "last_seen": 1772500078.644586,
     "first_symbol": "ETHUSDT",
     "last_symbol": "ETHUSDT",
-    "sighting_count": 1,
+    "sighting_count": 2,
     "confidence": 0.8,
     "frequency": 0.6738,
     "shape": "taper",
     "last_action": "SELLING",
     "last_direction": "bearish",
-    "last_power_pct": 85.5,
-    "last_bsr": 0.18,
+    "last_power_pct": 89.43452619449963,
+    "last_bsr": 0.16,
     "action_history": [
       {
         "ts": 1772493336,
@@ -1264,7 +2121,207 @@
         "bsr": 0.18,
         "power": 85.5,
         "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500079,
+        "action": "SELLING",
+        "bsr": 0.16,
+        "power": 89.4,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "b57fffbbc9cb": {
+    "bot_id": "b57fffbbc9cb",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772495262.356975,
+    "last_seen": 1772495262.356975,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 4.9298,
+    "shape": "taper",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 87.3,
+    "last_bsr": 1.81,
+    "action_history": [
+      {
+        "ts": 1772495262,
+        "action": "BUYING",
+        "bsr": 1.81,
+        "power": 87.3,
+        "symbol": "ETHUSDT"
       }
     ]
+  },
+  "d96e6e2a3b81": {
+    "bot_id": "d96e6e2a3b81",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1772495988.161046,
+    "last_seen": 1772495988.161046,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 0.3941,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 10.4,
+    "last_bsr": 0.2,
+    "action_history": [
+      {
+        "ts": 1772495988,
+        "action": "SELLING",
+        "bsr": 0.2,
+        "power": 10.4,
+        "symbol": "ETHUSDT"
+      }
+    ]
+  },
+  "54b8a26b7dc9": {
+    "bot_id": "54b8a26b7dc9",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772495988.161046,
+    "last_seen": 1772496085.2796006,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 2,
+    "confidence": 0.81,
+    "frequency": 2.8625,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 87.69324429930481,
+    "last_bsr": 0.61,
+    "action_history": [
+      {
+        "ts": 1772495988,
+        "action": "SELLING",
+        "bsr": 0.22,
+        "power": 89.4,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772496085,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 87.7,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "7e12f9746d1e": {
+    "bot_id": "7e12f9746d1e",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772496101.9915817,
+    "last_seen": 1772500626.5508034,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 2,
+    "confidence": 0.91,
+    "frequency": 4.2739,
+    "shape": "spiral",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 88.3554268269485,
+    "last_bsr": 0.9,
+    "action_history": [
+      {
+        "ts": 1772496102,
+        "action": "NEUTRAL",
+        "bsr": 0.94,
+        "power": 89.7,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500627,
+        "action": "NEUTRAL",
+        "bsr": 0.9,
+        "power": 88.4,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "247d364404e6": {
+    "bot_id": "247d364404e6",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1772497990.755862,
+    "last_seen": 1772497990.755862,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 1.8711,
+    "shape": "taper",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.1,
+    "last_bsr": 2.64,
+    "action_history": [
+      {
+        "ts": 1772497991,
+        "action": "BUYING",
+        "bsr": 2.64,
+        "power": 89.1,
+        "symbol": "ETHUSDT"
+      }
+    ]
+  },
+  "75ed7664a7e4": {
+    "bot_id": "75ed7664a7e4",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1772499690.0139787,
+    "last_seen": 1772500947.0865834,
+    "first_symbol": "ETHUSDT",
+    "last_symbol": "ETHUSDT",
+    "sighting_count": 2,
+    "confidence": 0.91,
+    "frequency": 4.9787,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 90.00279533219644,
+    "last_bsr": 0.39,
+    "action_history": [
+      {
+        "ts": 1772499690,
+        "action": "NEUTRAL",
+        "bsr": 1.13,
+        "power": 90.2,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "ts": 1772500947,
+        "action": "SELLING",
+        "bsr": 0.39,
+        "power": 90.0,
+        "symbol": "ETHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
   }
 }

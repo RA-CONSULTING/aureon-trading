@@ -24,19 +24,16 @@ Usage:
 """
 
 import os
-import sys
 import json
 import time
-import math
 import hashlib
 import logging
 import argparse
 import threading
 import urllib.request
-import urllib.error
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from collections import deque
 
 try:
@@ -46,7 +43,7 @@ except ImportError:
     HAS_WEBSOCKET = False
 
 try:
-    import numpy as np
+    import numpy as np # type: ignore
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
@@ -368,8 +365,8 @@ class LiveStream:
         while buf and buf[0][0] < cutoff:
             buf.popleft()
         
-        bp = sum(v for t, v, b in buf if b)
-        sp = sum(v for t, v, b in buf if not b)
+        bp = sum(v for _, v, b in buf if b)
+        sp = sum(v for _, v, b in buf if not b)
         self.buy_pressure[sym] = bp
         self.sell_pressure[sym] = sp
         
@@ -1031,10 +1028,10 @@ class BattlefieldIntel:
         flow_str = trade_flow.get('flow_strength', 0)
 
         if side == "buy" and flow == "buying":
-            reasons.append(f"GOOD: Aggressive buying flow ({trade_flow['buy_volume_pct']:.0f}% buy)")
+            reasons.append(f"GOOD: Aggressive buying flow (strength={flow_str:.2f}, {trade_flow['buy_volume_pct']:.0f}% buy)")
             score += 2
         elif side == "sell" and flow == "selling":
-            reasons.append(f"GOOD: Aggressive selling flow ({trade_flow['sell_volume_pct']:.0f}% sell)")
+            reasons.append(f"GOOD: Aggressive selling flow (strength={flow_str:.2f}, {trade_flow['sell_volume_pct']:.0f}% sell)")
             score += 2
         elif (side == "buy" and flow == "selling") or (side == "sell" and flow == "buying"):
             reasons.append(f"BAD: Flow is AGAINST our {side} ({flow} detected)")
@@ -1071,7 +1068,7 @@ class BattlefieldIntel:
                 reasons.append(f"WARN: 1h vol {vol_1h:.2f}% may not cover {required_move_pct:.2f}% needed")
 
         # === VERDICT ===
-        confidence = max(0, min(1, (score + max_score) / (2 * max_score)))
+        _ = max(0, min(1, (score + max_score) / (2 * max_score)))
 
         if score >= 3:
             verdict = "GO"
@@ -1085,7 +1082,7 @@ class BattlefieldIntel:
             wall_dist = orderbook.get('wall_distance_pct', 99)
             if wall_dist < required_move_pct:
                 verdict = "ABORT"
-                confidence = 0.1
+                _ = 0.1
 
         # === WAVEFORM ANALYSIS (See bot moves BEFORE they happen) ===
         waveform_result = {}
@@ -1251,8 +1248,8 @@ class BattlefieldIntel:
                     res_label = wave.get('resonance_label', 'neutral')
                     shape = wave.get('shape', 'unknown')
                     flow_pred = wave.get('flow_prediction', 'neutral')
-                    energy = wave.get('energy_trend', 0)
-                    shifted = wave.get('spectrum_shifted', False)
+                    _ = wave.get('energy_trend', 0)
+                    _ = wave.get('spectrum_shifted', False)
 
                     # Strong dissonance = bots moving against us
                     if res_label == 'dissonance' and res_score < -0.4:
@@ -2044,8 +2041,8 @@ class BotCatalog:
         flow = wave_result.get('flow', {})
         bands = spectrum.get('bands', {})
 
-        dominant_freq = spectrum.get('dominant_freq', 0)
-        dominant_band = spectrum.get('dominant_band', 'organic')
+        _ = spectrum.get('dominant_freq', 0)
+        _ = spectrum.get('dominant_band', 'organic')
         shape = spectrogram.get('shape', 'unknown')
         n_trades = spectrum.get('n_trades', 0)
 
@@ -2065,7 +2062,7 @@ class BotCatalog:
 
             band_freq = band_data.get('dominant_freq', 0)
             bsr = band_data.get('buy_sell_ratio', 1.0)
-            band_power = band_data.get('peak_amplitude', 0)
+            _ = band_data.get('peak_amplitude', 0)
 
             # Generate bot ID for this band's actor
             bot_id = self._generate_bot_id(symbol, band_freq, band_name, shape)
@@ -2199,7 +2196,7 @@ class BotCatalog:
         recent = history[-10:]  # Last 10 sightings
         buy_count = sum(1 for h in recent if h['action'] == 'BUYING')
         sell_count = sum(1 for h in recent if h['action'] == 'SELLING')
-        neutral_count = sum(1 for h in recent if h['action'] == 'NEUTRAL')
+        _ = sum(1 for h in recent if h['action'] == 'NEUTRAL')
 
         # Power trend
         powers = [h['power'] for h in recent]
@@ -2418,7 +2415,7 @@ class KrakenMarginArmyTrader:
         prices = self.market.fetch_all_binance_prices()
         stats = self.market.fetch_binance_24h()
         matched = 0
-        for pair_name, info in self.margin_pairs.items():
+        for _, info in self.margin_pairs.items():
             bsym = info.binance_symbol
             price = prices.get(bsym, 0)
             if price > 0:
@@ -2460,7 +2457,7 @@ class KrakenMarginArmyTrader:
         logger.info(f"ARMY: ${equity:.2f} equity, ${free_margin:.2f} free -> ${margin_budget:.2f} budget")
 
         candidates = []
-        for pair_name, info in self.margin_pairs.items():
+        for _, info in self.margin_pairs.items():
             if info.last_price <= 0:
                 continue
             if info.spread_pct > 0.5:
@@ -3574,7 +3571,7 @@ class KrakenMarginArmyTrader:
                             if opp_need and hasattr(self, '_last_candidates'):
                                 # Find a good candidate for the opposite direction
                                 for cand in self._last_candidates:
-                                    ci, cs, cv, ctv, cl = cand[0], cand[1], cand[2], cand[3], cand[4]
+                                    ci, _, cv, ctv, _ = cand[0], cand[1], cand[2], cand[3], cand[4]
                                     # Try flipping this candidate
                                     flip_levs = ci.leverage_sell if opp_side == "sell" else ci.leverage_buy
                                     if flip_levs and ci.pair != info.pair:
