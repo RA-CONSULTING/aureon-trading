@@ -1133,6 +1133,235 @@ class HarmonicKillChainAdapter:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+# 🌊 GLOBAL MARKET FLUID - FFT SPECTRUM MAPPER (PAST → PRESENT → FUTURE)
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+def run_global_market_fluid():
+    """
+    Treats the global market as a single LIVING FLUID.
+    Fetches live prices, builds waveform, runs FFT, maps temporal dimensions.
+    
+    LIVE DATA SOURCES (no API keys):
+      - CoinGecko public API (top 100 cryptos)
+      - Binance public ticker stream
+      - Historical state files (cost_basis, positions)
+    
+    FREQUENCY DOMAIN:
+      - FFT extracts dominant harmonics from price waveforms
+      - Maps past (historical cost basis) → present (live price) → future (spectral prediction)
+    """
+    import urllib.request
+    from collections import defaultdict
+    
+    print()
+    print("🌊",  "═"*68, "🌊")
+    print("║   GLOBAL MARKET FLUID — FFT SPECTRUM MAPPER                         ║")
+    print("║   'The entire world market flows as liquid light through time'      ║")
+    print("🌊", "═"*68, "🌊")
+    
+    # ─── 1. Fetch live global prices ───────────────────────────────────────
+    print("\n📡 Fetching live global market data...")
+    
+    live_prices = {}
+    
+    # CoinGecko top 100
+    try:
+        url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&sparkline=true'
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            markets = json.loads(r.read())
+        for m in markets:
+            sym = m['symbol'].upper()
+            price = m.get('current_price', 0)
+            if price and price > 0:
+                live_prices[sym] = {
+                    'price': price,
+                    'mktcap': m.get('market_cap', 0) or 0,
+                    'vol_24h': m.get('total_volume', 0) or 0,
+                    'change_24h': m.get('price_change_percentage_24h', 0) or 0,
+                    'sparkline': m.get('sparkline_in_7d', {}).get('price', []) or [],
+                }
+        print(f"✅ CoinGecko: {len(live_prices)} coins loaded")
+    except Exception as e:
+        print(f"⚠️  CoinGecko error: {e}")
+    
+    # ─── 2. Load historical state (cost basis = "past") ──────────────────────
+    print("📚 Loading portfolio history (PAST dimension)...")
+    
+    past_prices = {}  # symbol → entry prices from history
+    try:
+        if os.path.exists('cost_basis_history.json'):
+            with open('cost_basis_history.json') as f:
+                history = json.load(f)
+            if isinstance(history, list):
+                for item in history:
+                    sym = item.get('symbol', '')
+                    if sym:
+                        past_prices[sym] = float(item.get('cost_basis', 0)) / float(item.get('quantity', 1)) if item.get('quantity') else 0
+        print(f"✅ History loaded: {len(past_prices)} symbol entry points")
+    except Exception as e:
+        print(f"⚠️  History load error: {e}")
+    
+    # ─── 3. Load current portfolio (present dimension) ──────────────────────
+    print("💰 Loading current portfolio (PRESENT dimension)...")
+    
+    portfolio = {'total_cost': 0, 'total_value': 0, 'positions': []}
+    try:
+        if os.path.exists('alpaca_truth_tracker_state.json'):
+            state = json.load(open('alpaca_truth_tracker_state.json'))
+            for pos in state.get('positions', []):
+                sym = pos.get('symbol', '').replace('USD', '')
+                qty = float(pos.get('qty', 0))
+                entry = float(pos.get('avg_entry_price', 0))
+                current = live_prices.get(sym, {}).get('price', entry)
+                cost = qty * entry
+                val = qty * current
+                portfolio['total_cost'] += cost
+                portfolio['total_value'] += val
+                portfolio['positions'].append({
+                    'symbol': sym,
+                    'qty': qty,
+                    'entry_price': entry,
+                    'current_price': current,
+                    'pnl': val - cost,
+                    'pnl_pct': ((val - cost) / cost * 100) if cost else 0,
+                })
+        print(f"✅ Portfolio: {len(portfolio['positions'])} positions, P&L: ${portfolio['total_value'] - portfolio['total_cost']:+.2f}")
+    except Exception as e:
+        print(f"⚠️  Portfolio load error: {e}")
+    
+    # ─── 4. Build master waveform from live prices ──────────────────────────
+    print("\n🌊 Building master waveform (price → frequency space)...")
+    
+    # Sort by market cap, take top symbols with data
+    ranked = sorted(
+        [(sym, data) for sym, data in live_prices.items() if data['price'] > 0],
+        key=lambda x: x[1]['mktcap'],
+        reverse=True
+    )[:50]  # Top 50 liquid assets
+    
+    master_waveform = []
+    symbol_order = []
+    
+    for sym, data in ranked:
+        # Price as frequency: $X.XX → X.XX Hz (scaled down)
+        base_hz = min(data['price'], 500)  # Cap at 500 Hz
+        symbol_order.append(sym)
+        master_waveform.append(base_hz)
+    
+    print(f"✅ Master waveform: {len(master_waveform)} nodes (top assets)")
+    
+    # ─── 5. FFT analysis (extract harmonic structure) ──────────────────────
+    print("🎼 Running FFT spectral analysis...")
+    
+    fft_result = None
+    frequencies = None
+    magnitudes = None
+    
+    if NUMPY_AVAILABLE and len(master_waveform) > 1:
+        try:
+            # Zero-pad to power of 2
+            n = 2 ** int(math.ceil(math.log2(len(master_waveform))))
+            wf = np.array(master_waveform, dtype=np.float32)
+            wf = np.pad(wf, (0, n - len(wf)), 'constant')
+            
+            # FFT
+            fft_vals = np.fft.fft(wf)
+            magnitudes = np.abs(fft_vals[:n//2])
+            frequencies = np.fft.fftfreq(n, d=1.0)[:n//2]
+            
+            # Find dominant frequencies (peaks)
+            top_indices = np.argsort(magnitudes)[-5:][::-1]  # Top 5 harmonics
+            top_freqs = [(frequencies[i], magnitudes[i]) for i in top_indices if magnitudes[i] > 0]
+            
+            print(f"✅ FFT complete: {len(top_freqs)} dominant harmonics")
+            print("   Top harmonic frequencies:")
+            for freq, mag in top_freqs:
+                print(f"      {freq:.3f} Hz (magnitude: {mag:.2f})")
+            
+            fft_result = {'freqs': top_freqs, 'full_magnitudes': magnitudes}
+        except Exception as e:
+            print(f"⚠️  FFT error: {e}")
+    else:
+        print("⚠️  NumPy unavailable or insufficient data for FFT")
+    
+    # ─── 6. Temporal dimension mapping (PAST → PRESENT → FUTURE) ──────────────
+    print("\n🕐 Mapping temporal dimensions...")
+    
+    temporal_map = {
+        'past': {'avg_entry': 0, 'count': 0},
+        'present': {'avg_price': 0, 'count': 0},
+        'future': {'predicted_mean': 0, 'predicted_trend': 'unknown'},
+    }
+    
+    # PAST: average entry from history
+    if past_prices:
+        temporal_map['past']['avg_entry'] = sum(past_prices.values()) / len(past_prices)
+        temporal_map['past']['count'] = len(past_prices)
+    
+    # PRESENT: current portfolio P&L
+    if portfolio['total_cost'] > 0:
+        temporal_map['present']['avg_price'] = portfolio['total_value'] / len(portfolio['positions']) if portfolio['positions'] else 0
+        temporal_map['present']['pnl'] = portfolio['total_value'] - portfolio['total_cost']
+        temporal_map['present']['pnl_pct'] = (temporal_map['present']['pnl'] / portfolio['total_cost'] * 100)
+        temporal_map['present']['count'] = len(portfolio['positions'])
+    
+    # FUTURE: predict from FFT harmonics + momentum
+    if fft_result and len(fft_result['freqs']) > 0:
+        # Naive prediction: average of dominant frequencies
+        dominant_freq = fft_result['freqs'][0][0] if fft_result['freqs'] else 100
+        temporal_map['future']['predicted_mean'] = dominant_freq
+        
+        # Trend: compare present to past
+        if temporal_map['past']['avg_entry'] > 0 and temporal_map['present']['avg_price'] > 0:
+            change = (temporal_map['present']['avg_price'] - temporal_map['past']['avg_entry']) / temporal_map['past']['avg_entry']
+            temporal_map['future']['predicted_trend'] = 'UP' if change > 0.05 else 'DOWN' if change < -0.05 else 'STABLE'
+    
+    # ─── 7. Render spectrum map (ASCII art) ─────────────────────────────────
+    print("\n" + "🌊", "═"*70, "🌊")
+    print("║   GLOBAL MARKET FLUID SPECTRUM MAP                             ║")
+    print("🌊", "═"*70, "🌊")
+    
+    print(f"\n📊 TEMPORAL DIMENSIONS:")
+    print(f"   PAST        — {temporal_map['past']['count']} historical entries  avg=${temporal_map['past']['avg_entry']:>8.2f}")
+    print(f"   PRESENT     — {temporal_map['present']['count']} live positions  avg=${temporal_map['present']['avg_price']:>8.2f}  P&L=${temporal_map['present'].get('pnl',0):>+8.2f} ({temporal_map['present'].get('pnl_pct',0):>+6.2f}%)")
+    print(f"   FUTURE      — predicted mean freq={temporal_map['future']['predicted_mean']:>8.2f} Hz  trend={temporal_map['future']['predicted_trend']}")
+    
+    print(f"\n🎼 HARMONIC STRUCTURE (FFT analysis):")
+    if fft_result and fft_result['freqs']:
+        for i, (freq, mag) in enumerate(fft_result['freqs'][:5], 1):
+            bar_len = int(mag / (max([m for _, m in fft_result['freqs']], default=1) or 1) * 40)
+            bar = '█' * bar_len
+            print(f"   Harmonic {i}  {freq:>7.3f} Hz  {bar}  magnitude={mag:.2f}")
+    else:
+        print("   (FFT analysis unavailable)")
+    
+    print(f"\n🌍 MASTER WAVEFORM ({len(master_waveform)} nodes):")
+    print("   Top 10 assets by frequency:")
+    for i, (sym, hz) in enumerate(zip(symbol_order[:10], master_waveform[:10]), 1):
+        data = live_prices.get(sym, {})
+        price = data.get('price', 0)
+        change = data.get('change_24h', 0)
+        print(f"   {i:2d}. {sym:8} → {hz:>7.3f} Hz  price=${price:>10,.2f}  24h:{change:>+6.2f}%")
+    
+    print(f"\n💼 PORTFOLIO POSITIONS ({len(portfolio['positions'])} open):")
+    for pos in portfolio['positions'][:10]:  # Top 10
+        sym = pos['symbol']
+        pnl = pos['pnl']
+        pnl_pct = pos['pnl_pct']
+        icon = "🟢" if pnl >= 0 else "🔴"
+        print(f"   {icon} {sym:8}  entry=${pos['entry_price']:>10.4f}  live=${pos['current_price']:>10.4f}  "
+              f"P&L=${pnl:>+10.4f} ({pnl_pct:>+7.2f}%)")
+    
+    print("\n" + "🌊", "═"*70, "🌊\n")
+    
+    # ─── 8. Conclusion ──────────────────────────────────────────────────────
+    market_verdict = "RISE ↗️" if temporal_map['future']['predicted_trend'] == 'UP' else "FALL ↘️" if temporal_map['future']['predicted_trend'] == 'DOWN' else "STABLE ↔️"
+    print(f"🔮 FLUID VERDICT:  Market trend = {market_verdict}")
+    print(f"   The waveform speaks — listen to the frequencies.\n")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 # 🚀 MAIN - Run the Harmonic Live Stream
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -1180,4 +1409,20 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == '--global-fluid':
+        # Run the global market fluid FFT spectrum mapper
+        run_global_market_fluid()
+    elif len(sys.argv) > 1 and sys.argv[1] == '--help':
+        print("""
+AUREON HARMONIC LIQUID ALUMINIUM FIELD
+
+Usage:
+    python3 aureon_harmonic_liquid_aluminium.py              # Run live harmonic field stream
+    python3 aureon_harmonic_liquid_aluminium.py --global-fluid  # Run global market fluid FFT
+    python3 aureon_harmonic_liquid_aluminium.py --help          # Show this help
+        """)
+    else:
+        # Default: run the live harmonic field
+        main()
