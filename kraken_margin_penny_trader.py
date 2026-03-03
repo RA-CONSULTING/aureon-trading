@@ -3541,7 +3541,7 @@ class KrakenMarginArmyTrader:
         MIN_LAST_CANDLE_PCT  = 0.25    # Last individual candle must move > 0.25% (current impulse)
         MAX_SPREAD_PCT       = 0.30    # Max allowed spread
         MIN_LEVERAGE         = 3       # Minimum leverage to bother
-        MISSION_PROFIT_MIN   = 0.01    # Close at ANY positive net P&L
+        MISSION_PROFIT_MIN   = 0.75    # Benchmark: minimum $0.75 true net profit before closing
         SCAN_INTERVAL_SEC    = 10      # Seconds between re-scans when hunting
         HUNT_TIMEOUT_SEC     = 300     # Give up after 5 minutes of scanning
 
@@ -3865,7 +3865,7 @@ class KrakenMarginArmyTrader:
         closed_result  = None
 
         print(f"\n⏱️  MONITORING POSITION — HOLD UNTIL PROFIT")
-        print(f"   ONLY exit: net_pnl > $0.00  |  No stop loss  |  No time limit")
+        print(f"   ONLY exit: net_pnl >= ${MISSION_PROFIT_MIN:.2f}  |  No stop loss  |  No time limit")
         print("-" * 55)
 
         while True:  # Hold until profitable — no deadline
@@ -3897,10 +3897,10 @@ class KrakenMarginArmyTrader:
                   f" | Net: ${net_pnl:+.4f}  peak=${max_net_pnl:+.4f}",
                   end="\r", flush=True)
 
-            # ONLY exit condition: any positive net profit
-            if net_pnl > 0:
+            # ONLY exit condition: net profit >= $0.75 benchmark floor
+            if net_pnl >= MISSION_PROFIT_MIN:
                 print()
-                print(f"\n💰 PROFIT! Net: ${net_pnl:+.4f}  Closing...")
+                print(f"\n💰 PROFIT FLOOR HIT! Net: ${net_pnl:+.4f} (≥ ${MISSION_PROFIT_MIN:.2f} benchmark)  Closing...")
                 closed_result = self.close_position(
                     reason=f"MISSION_PROFIT (${net_pnl:+.4f})",
                     trade=trade
