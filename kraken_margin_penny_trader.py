@@ -3575,7 +3575,8 @@ class KrakenMarginArmyTrader:
 
         if free_margin < 5.0:
             print("❌ MISSION ABORTED: Insufficient free margin (need $5+)")
-            return
+            return {'traded': False, 'reason': 'insufficient_margin', 'net_pnl': 0.0,
+                    'pair': None, 'side': None}
 
         # ── Step 3: Scan 1-minute Binance klines for momentum signals ─────
         print("\n🔍 Scanning 1-minute momentum signals across margin universe...")
@@ -3804,9 +3805,9 @@ class KrakenMarginArmyTrader:
 
         if not candidates:
             print()
-            print(f"\n⏸️  MISSION ABORTED: No qualifying signal found in {HUNT_TIMEOUT_SEC//60} minutes.")
-            print("   Market is ranging/consolidating. Try again during a trend impulse.")
-            return
+            print(f"\n⏸️  No qualifying signal this patrol ({HUNT_TIMEOUT_SEC//60}m window). Resuming hunt...")
+            return {'traded': False, 'reason': 'no_signal', 'net_pnl': 0.0,
+                    'pair': None, 'side': None}
 
         # Sort by mission score descending
         candidates.sort(key=lambda x: x["score"], reverse=True)
@@ -3846,7 +3847,8 @@ class KrakenMarginArmyTrader:
         trade = self.open_position(info_b, side_b, vol_b, lev_b)
         if not trade:
             print("❌ MISSION FAILED: Order rejected by Kraken. Aborting.")
-            return
+            return {'traded': False, 'reason': 'order_rejected', 'net_pnl': 0.0,
+                    'pair': info_b.pair, 'side': side_b}
 
         print(f"✅ POSITION OPEN: {trade.pair} {trade.side.upper()}"
               f" @ ${trade.entry_price:,.4f}  |  Breakeven: ${trade.breakeven_price:,.4f}")
@@ -3948,6 +3950,102 @@ class KrakenMarginArmyTrader:
             print("  Position close failed — check Kraken dashboard manually!")
         print("=" * 70)
         self._save_results()
+
+        final_pnl = closed_result.get("net_pnl", 0.0) if closed_result else 0.0
+        return {
+            'traded':   True,
+            'reason':   closed_result.get('reason', '?') if closed_result else 'close_failed',
+            'net_pnl':  final_pnl,
+            'pair':     trade.pair,
+            'side':     trade.side,
+        }
+
+    # ----------------------------------------------------------
+    #  PRIDE HUNT — Infinite patrol loop (lion never stops hunting)
+    # ----------------------------------------------------------
+    def pride_hunt(self, side_filter: str = None) -> None:
+        """
+        PRIDE MODE — Continuous mission hunt loop.
+        The lion does not eat once and sleep. It patrols, strikes, feeds,
+        rests briefly, then resumes the patrol. Runs until Ctrl+C.
+
+        After each hunt cycle (trade or no-trade), rest briefly then scan again.
+        Tracks all kills (profits) and displays pride stats.
+        """
+        REST_AFTER_TRADE_SEC   = 30   # Digest after a kill — brief rest
+        REST_AFTER_NO_SIGNAL   = 15   # Resume quickly when no signal found
+        REST_AFTER_REJECTION   = 20   # Brief pause after rejected order
+
+        direction_tag = ("SHORT ONLY ↓" if side_filter == "sell"
+                         else "LONG ONLY ↑" if side_filter == "buy"
+                         else "LONG + SHORT")
+        mode_tag = "DRY RUN" if self.dry_run else "LIVE"
+
+        print("\n" + "▓" * 70)
+        print("  🦁  PRIDE MODE — THE HUNT NEVER ENDS")
+        print(f"  Mode: {mode_tag}  |  Direction: {direction_tag}")
+        print("  The pride patrols the Serengeti. The meal comes to those who wait.")
+        print("  Ctrl+C to end the patrol.")
+        print("▓" * 70 + "\n")
+
+        patrol     = 0
+        kills      = 0
+        total_pnl  = 0.0
+        no_signal_streak = 0
+
+        try:
+            while True:
+                patrol += 1
+                print(f"\n{'─'*70}")
+                print(f"  🐾  PATROL #{patrol}  |  Kills: {kills}  |  "
+                      f"Cumulative P&L: ${total_pnl:+.4f}")
+                print(f"{'─'*70}")
+
+                result = self.mission_hunt(side_filter=side_filter)
+
+                if result is None:
+                    result = {'traded': False, 'reason': 'unknown', 'net_pnl': 0.0,
+                              'pair': None, 'side': None}
+
+                traded  = result.get('traded', False)
+                net_pnl = result.get('net_pnl', 0.0)
+                reason  = result.get('reason', '?')
+                pair    = result.get('pair')
+
+                if traded:
+                    total_pnl += net_pnl
+                    if net_pnl > 0:
+                        kills += 1
+                        print(f"\n🥩 KILL #{kills}!  {pair}  P&L: ${net_pnl:+.4f}")
+                        print(f"   Total kills: {kills}  |  Total P&L: ${total_pnl:+.4f}")
+                    else:
+                        print(f"\n⚔️  Traded but market moved against us: ${net_pnl:+.4f}")
+                    no_signal_streak = 0
+                    rest = REST_AFTER_TRADE_SEC
+
+                elif reason == 'insufficient_margin':
+                    print("\n❌ Insufficient margin. Waiting 60s before re-check...")
+                    rest = 60
+
+                elif reason == 'order_rejected':
+                    rest = REST_AFTER_REJECTION
+                    no_signal_streak = 0
+
+                else:  # no_signal
+                    no_signal_streak += 1
+                    rest = REST_AFTER_NO_SIGNAL
+
+                print(f"\n💤  Resting {rest}s before next patrol...  "
+                      f"(Press Ctrl+C to end hunt)")
+                time.sleep(rest)
+
+        except KeyboardInterrupt:
+            print("\n\n" + "▓" * 70)
+            print("  🦁  PRIDE PATROL ENDED  — The pride rests.")
+            print(f"  Patrols   : {patrol}")
+            print(f"  Kills     : {kills}")
+            print(f"  Total P&L : ${total_pnl:+.4f}")
+            print("▓" * 70 + "\n")
 
     # ----------------------------------------------------------
     #  MAIN LOOP - THE ARMY CYCLE (DUAL POSITIONS + SHADOW VALIDATION)
@@ -4128,8 +4226,12 @@ def main():
         help="1-minute mission: scan for winner, open, close within 60s"
     )
     parser.add_argument(
+        "--pride", action="store_true",
+        help="Pride mode: continuous hunt loop — patrol, strike, feed, repeat until Ctrl+C"
+    )
+    parser.add_argument(
         "--side", choices=["long", "short"], default=None,
-        help="Force mission-hunt direction: 'long' (buy) or 'short' (sell). Default: hunt both."
+        help="Force mission/pride direction: 'long' (buy) or 'short' (sell). Default: hunt both."
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Debug logging")
     args = parser.parse_args()
@@ -4142,14 +4244,18 @@ def main():
 
     trader = KrakenMarginArmyTrader(dry_run=args.dry_run)
 
-    if args.mission_hunt:
+    if args.mission_hunt or args.pride:
         # Map CLI --side (long/short) → internal side filter (buy/sell)
         side_filter = None
         if args.side == "long":
             side_filter = "buy"
         elif args.side == "short":
             side_filter = "sell"
-        trader.mission_hunt(side_filter=side_filter)
+
+        if args.pride:
+            trader.pride_hunt(side_filter=side_filter)
+        else:
+            trader.mission_hunt(side_filter=side_filter)
     else:
         trader.run(scan_only=args.scan_only)
 
