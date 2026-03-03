@@ -232,6 +232,227 @@ MARKET_SNAPSHOTS = []  # List[Dict]: stores processed/filtered market snapshots
 # Subsystem state storage (Batten Matrix: Coherence × Lambda × Probability)
 SUBSYSTEM_STATE = {}  # Dict[str, Dict]: symbol -> {avg_coherence, avg_clarity, chaos_trend, etc.}
 
+# ══════════════════════════════════════════════════════════════════════════════
+# UNIFIED INTELLIGENCE LAYER
+# ══════════════════════════════════════════════════════════════════════════════
+# Reads live state from Seer (8 Oracles + WarCounsel), Lyra (6 Chambers),
+# and the StrategicWarPlanner (OODA chess engine) — all via sys.modules so
+# zero overhead when the ecosystem is cold.  When the full system is running
+# every one of these feeds gives real-time planetary, geomagnetic, rune
+# convergence, war-tactical and emotional-frequency intelligence into the
+# confidence score of every trade prediction.
+# ══════════════════════════════════════════════════════════════════════════════
+
+_UNIFIED_INTEL_CACHE: dict = {}  # {data: dict, expires: float}
+_UNIFIED_INTEL_TTL = 60.0        # refresh every 60 seconds (one per labyrinth cycle)
+
+import time as _time_mod
+
+def _get_unified_intelligence() -> dict:
+    """
+    Collect live intelligence from every monitoring system that is already
+    running in this process.  Returns a dict with:
+      seer_grade      — VisionGrade string (DIVINE_CLARITY…BLIND / UNKNOWN)
+      seer_score      — float 0-1
+      seer_action     — str (BUY_BIAS / HOLD / SELL_BIAS / DEFEND)
+      seer_risk_mod   — float (Seer's own risk multiplier after WarCounsel)
+      war_mode        — tactical mode string (COORDINATED_STRIKE…RETREAT)
+      war_sources     — int (how many war systems were queried)
+      war_rune_active — int (number of active rune symbols this cycle)
+      war_rune_dom    — str (dominant rune name)
+      lyra_action     — str (BUY_BIAS / HOLD / SELL_BIAS / DEFEND)
+      lyra_score      — float 0-1
+      lyra_urgency    — str (none / low / medium / high / critical)
+      planner_stance  — str (tactical stance from WarPlanner, "" if cold)
+      planner_agree   — float (0-1 consensus agreement across subsystems)
+      intel_sources   — int (how many live sources contributed)
+    """
+    import sys
+    now = _time_mod.time()
+    cached = _UNIFIED_INTEL_CACHE.get('data')
+    if cached and now < _UNIFIED_INTEL_CACHE.get('expires', 0):
+        return cached
+
+    intel = {
+        'seer_grade':      'UNKNOWN',
+        'seer_score':      0.5,
+        'seer_action':     'HOLD',
+        'seer_risk_mod':   1.0,
+        'war_mode':        'STANDARD',
+        'war_sources':     0,
+        'war_rune_active': 0,
+        'war_rune_dom':    '',
+        'lyra_action':     'HOLD',
+        'lyra_score':      0.5,
+        'lyra_urgency':    'none',
+        'planner_stance':  '',
+        'planner_agree':   0.5,
+        'intel_sources':   0,
+    }
+
+    # ── Seer (8 Oracles + WarCounsel) ──────────────────────────────────────
+    seer_mod = sys.modules.get('aureon_seer')
+    if seer_mod:
+        try:
+            get_seer_fn = getattr(seer_mod, 'get_seer', None)
+            AureonTheSeer = getattr(seer_mod, 'AureonTheSeer', None)
+            seer_inst = get_seer_fn() if callable(get_seer_fn) else None
+            if seer_inst is None and AureonTheSeer:
+                seer_inst = AureonTheSeer()
+            if seer_inst:
+                vision = getattr(seer_inst, 'latest_vision', None)
+                if vision is None:
+                    vision = seer_inst.see()
+                if vision:
+                    intel['seer_grade']    = str(getattr(vision, 'grade',         'UNKNOWN'))
+                    intel['seer_score']    = float(getattr(vision, 'unified_score', 0.5))
+                    intel['seer_action']   = str(getattr(vision, 'action',         'HOLD'))
+                    intel['seer_risk_mod'] = float(getattr(vision, 'risk_modifier', 1.0))
+                    intel['war_mode']      = str(getattr(vision, 'tactical_mode',  'STANDARD'))
+                    intel['war_sources']  += 1
+                    intel['intel_sources'] += 1
+                    # Rune Oracle details (inside vision if available)
+                    runes_reading = getattr(vision, 'runes', None)
+                    if runes_reading and hasattr(runes_reading, 'details'):
+                        rd = runes_reading.details or {}
+                        intel['war_rune_active'] = int(rd.get('total_active', 0))
+                        intel['war_rune_dom']    = str(rd.get('dominant_rune', ''))
+        except Exception as _e:
+            pass  # Seer cold or error — defaults remain
+
+    # ── Lyra (6 Chambers — emotional frequency / Hz) ───────────────────────
+    lyra_mod = sys.modules.get('aureon_lyra')
+    if lyra_mod:
+        try:
+            get_lyra_fn = getattr(lyra_mod, 'get_lyra', None)
+            AureonLyra  = getattr(lyra_mod, 'AureonLyra', None)
+            lyra_inst   = get_lyra_fn() if callable(get_lyra_fn) else None
+            if lyra_inst is None and AureonLyra:
+                lyra_inst = AureonLyra()
+            if lyra_inst:
+                res = getattr(lyra_inst, 'latest_resonance', None)
+                if res is None:
+                    res = lyra_inst.feel()
+                if res:
+                    intel['lyra_action']  = str(getattr(res, 'action',        'HOLD'))
+                    intel['lyra_score']   = float(getattr(res, 'unified_score', 0.5))
+                    intel['lyra_urgency'] = str(getattr(res, 'exit_urgency',  'none'))
+                    intel['intel_sources'] += 1
+        except Exception:
+            pass
+
+    # ── Strategic War Planner (OODA chess engine) ──────────────────────────
+    swp_mod = sys.modules.get('aureon_strategic_war_planner')
+    if swp_mod:
+        try:
+            get_planner_fn = getattr(swp_mod, 'get_war_planner', None)
+            if callable(get_planner_fn):
+                planner = get_planner_fn()
+                if planner:
+                    status = planner.get_status() if hasattr(planner, 'get_status') else {}
+                    if isinstance(status, dict):
+                        intel['planner_stance'] = str(status.get('stance', ''))
+                        intel['planner_agree']  = float(status.get('consensus_agreement', 0.5))
+                        intel['intel_sources'] += 1
+        except Exception:
+            pass
+
+    _UNIFIED_INTEL_CACHE['data']    = intel
+    _UNIFIED_INTEL_CACHE['expires'] = now + _UNIFIED_INTEL_TTL
+    return intel
+
+
+def _compute_confidence_multiplier(intel: dict) -> float:
+    """
+    Convert unified intelligence into a single confidence multiplier.
+
+    The multiplier is applied to the raw (clarity/coherence) confidence before
+    it reaches the trade decision threshold.  It reflects:
+
+      Seer Grade          → cosmic/planetary/geomagnetic/rune alignment
+      WarCounsel Mode     → tactical stance (IRA + Guerrilla + War Strategy)
+      Lyra Action         → emotional frequency state (Fear/Greed Hz + Earth)
+      Rune Convergence    → multiple ancient traditions seeing the same pattern
+      War Planner Stance  → OODA chess-engine adversarial assessment
+
+    ALL THAT IS — ALL THAT WAS — ALL THAT SHALL BE.
+    """
+    mult = 1.0
+
+    # ── Seer Grade  (cosmic coherence — 8 Oracles speaking as ONE) ─────────
+    seer_map = {
+        'DIVINE_CLARITY':  1.30,   # All 8 Oracles aligned. Full power.
+        'CLEAR_SIGHT':     1.15,   # Strong alignment. Trade with confidence.
+        'PARTIAL_VISION':  1.00,   # Mixed signals. Neutral.
+        'PARTIAL_SIGHT':   1.00,
+        'FOG':             0.80,   # Oracles contradict. Reduce exposure.
+        'BLIND':           0.50,   # No coherence. Heavy suppression.
+        'UNKNOWN':         0.95,   # Ecosystem cold. Slight caution.
+    }
+    mult *= seer_map.get(intel.get('seer_grade', 'UNKNOWN'), 0.95)
+
+    # ── WarCounsel Tactical Mode (embedded inside Seer's AllSeeingEye) ──────
+    war_map = {
+        'COORDINATED_STRIKE': 1.20,  # IRA + Guerrilla + War all agree: attack
+        'AMBUSH':             1.10,  # Patient engagement — conditions good
+        'FLYING_COLUMN':      1.00,  # Quick in/out — neutral
+        'STANDARD':           1.00,
+        'SIEGE':              0.90,  # Grinding market — reduce sizing
+        'RETREAT':            0.60,  # Market hostile — live to fight another day
+    }
+    mult *= war_map.get(intel.get('war_mode', 'STANDARD'), 1.00)
+
+    # ── Lyra Action (emotional frequency / Fear-Greed Hz / Earth resonance) ─
+    lyra_map = {
+        'BUY_BIAS':  1.10,   # Emotional alignment with longs
+        'HOLD':      1.00,
+        'SELL_BIAS': 0.85,   # Emotion pushing against longs
+        'DEFEND':    0.70,   # Protect capital — sharp reduction
+    }
+    mult *= lyra_map.get(intel.get('lyra_action', 'HOLD'), 1.00)
+
+    # Lyra exit urgency — independent of action signal
+    urgency_map = {'none': 1.00, 'low': 0.95, 'medium': 0.85, 'high': 0.70, 'critical': 0.50}
+    mult *= urgency_map.get(intel.get('lyra_urgency', 'none'), 1.00)
+
+    # ── Ancient Rune Convergence (6 traditions all see the same pattern) ─────
+    rune_active = int(intel.get('war_rune_active', 0))
+    if rune_active >= 5:
+        mult *= 1.10   # 5+ traditions converging — strong signal
+    elif rune_active >= 2:
+        mult *= 1.05   # 2-4 traditions converging — mild boost
+
+    # ── Strategic War Planner Stance (adversarial chess / OODA) ─────────────
+    planner_map = {
+        'BLITZ':         1.15,  # Full offence
+        'SIEGE':         1.05,  # Methodical pressure
+        'AMBUSH':        1.05,  # Wait, then strike
+        'FLYING_COLUMN': 1.00,  # Quick tactical
+        'RETREAT':       0.70,  # Pull back
+        '':              1.00,  # Planner cold
+    }
+    mult *= planner_map.get(intel.get('planner_stance', ''), 1.00)
+
+    # Cap: never exceed 2× raw or fall below 0.1
+    return round(max(0.10, min(2.0, mult)), 4)
+
+
+def _log_unified_intelligence(intel: dict, conf_mult: float) -> None:
+    """Print the unified intelligence banner once per prediction cycle."""
+    src = intel.get('intel_sources', 0)
+    if src == 0:
+        return  # Ecosystem cold — don't clutter output
+    grade   = intel.get('seer_grade', 'UNKNOWN')
+    war     = intel.get('war_mode', 'STANDARD')
+    lyra    = intel.get('lyra_action', 'HOLD')
+    runes   = intel.get('war_rune_active', 0)
+    stance  = intel.get('planner_stance', '')
+    dom     = intel.get('war_rune_dom', '')
+    print(f"🌌 UNIFIED INTELLIGENCE ({src} live sources) | "
+          f"Seer: {grade} | War: {war} | Lyra: {lyra} | "
+          f"Runes: {runes} active ({dom}) | OODA stance: {stance} | "
+          f"Conf ×{conf_mult:.3f}")
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # INITIALIZATION - SETUP AND WARMUP
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -491,58 +712,111 @@ def _apply_sero_validations(predictions: List[Dict]) -> None:
             pred.update(result)
 
 def make_predictions():
-    """Make market predictions using filtered subsystem state.
-    
-    Signal logic:
-      - HIGH clarity (>2) + HIGH coherence (>0.7) + falling chaos => BUY
-      - LOW clarity (<1) + LOW coherence (<0.4) + rising chaos => SELL
-      - Otherwise => HOLD
+    """
+    Make market predictions using the FULL monitoring array:
+
+      Raw signal              — clarity × coherence × chaos_trend
+      × Seer (8 Oracles)     — Gaia, Cosmos, Harmony, Spirits, Time,
+                                Runes (191 ancient symbols / 6 traditions),
+                                Sentiment, Margin
+      × WarCounsel            — IRA zero-loss, Guerrilla, War Strategy
+      × Lyra (6 Chambers)    — Fear/Greed Hz, Earth, Solfeggio, Voice, Spirit
+      × War Planner (OODA)   — adversarial chess, Sun Tzu + IRA + Boyd
+      × Ancient Rune Conv.   — cross-tradition planetary convergence count
+
+    ALL THAT IS · ALL THAT WAS · ALL THAT SHALL BE
     """
     predictions = []
+
+    # ── Pull unified intelligence ONCE per cycle ──────────────────────────
+    intel      = _get_unified_intelligence()
+    conf_mult  = _compute_confidence_multiplier(intel)
+    _log_unified_intelligence(intel, conf_mult)
+
+    seer_grade  = intel.get('seer_grade', 'UNKNOWN')
+    war_mode    = intel.get('war_mode', 'STANDARD')
+    lyra_action = intel.get('lyra_action', 'HOLD')
+    rune_active = intel.get('war_rune_active', 0)
+    planner_st  = intel.get('planner_stance', '')
+
+    # Seer BLIND = hard veto on ALL new BUY signals (cosmic non-coherence)
+    seer_vetoes_buy  = seer_grade == 'BLIND'
+    # Lyra DEFEND or high urgency = veto on BUY
+    lyra_vetoes_buy  = lyra_action == 'DEFEND' or intel.get('lyra_urgency') in ('high', 'critical')
+    # War RETREAT = veto on BUY
+    war_vetoes_buy   = war_mode == 'RETREAT' or planner_st == 'RETREAT'
+
+    # COORDINATED_STRIKE: war planner sees full alignment — widen BUY window
+    strike_mode = (war_mode == 'COORDINATED_STRIKE')
+    # Lower BUY coherence threshold to 0.70 (from 0.80) in strike mode
+    effective_coherence_threshold = max(0.70, COHERENCE_THRESHOLD - (0.10 if strike_mode else 0.0))
+
     state = globals().get('SUBSYSTEM_STATE', {})
     for symbol, metrics in state.items():
-        clarity = metrics.get('avg_clarity', 1.0)
-        coherence = metrics.get('avg_coherence', 0.5)
+        clarity    = metrics.get('avg_clarity', 1.0)
+        coherence  = metrics.get('avg_coherence', 0.5)
         chaos_trend = metrics.get('chaos_trend', 'stable')
-        price = metrics.get('latest_price', 0)
+        price      = metrics.get('latest_price', 0)
 
-        # Compute confidence from clarity and coherence
-        confidence = (clarity / 5.0) * 0.5 + coherence * 0.5  # normalized blend
+        # Raw base confidence (clarity + coherence blend)
+        base_conf  = (clarity / 5.0) * 0.5 + coherence * 0.5
 
-        if clarity > 2.0 and coherence > COHERENCE_THRESHOLD and chaos_trend == 'falling':
+        # Apply unified intelligence multiplier — THIS is the missing tandem
+        confidence = min(1.0, base_conf * conf_mult)
+
+        # ── Signal logic ──────────────────────────────────────────────────
+        if (clarity > 2.0
+                and coherence > effective_coherence_threshold
+                and chaos_trend == 'falling'
+                and not seer_vetoes_buy
+                and not lyra_vetoes_buy
+                and not war_vetoes_buy):
             signal = 'BUY'
         elif clarity < 1.0 and coherence < 0.4 and chaos_trend == 'rising':
+            # SELL: allow even with vetos (protecting against downside)
             signal = 'SELL'
         else:
             signal = 'HOLD'
 
         predictions.append({
-            'symbol': symbol,
-            'signal': signal,
-            'confidence': round(confidence, 4),
-            'clarity': round(clarity, 4),
-            'coherence': round(coherence, 4),
-            'chaos_trend': chaos_trend,
-            'price': price,
+            'symbol':       symbol,
+            'signal':       signal,
+            'confidence':   round(confidence, 4),
+            'base_conf':    round(base_conf, 4),
+            'conf_mult':    conf_mult,
+            'clarity':      round(clarity, 4),
+            'coherence':    round(coherence, 4),
+            'chaos_trend':  chaos_trend,
+            'price':        price,
+            # ── Unified intelligence fields ──
+            'seer_grade':   seer_grade,
+            'seer_score':   round(intel.get('seer_score', 0.5), 4),
+            'seer_action':  intel.get('seer_action', 'HOLD'),
+            'war_mode':     war_mode,
+            'lyra_action':  lyra_action,
+            'rune_active':  rune_active,
+            'rune_dominant': intel.get('war_rune_dom', ''),
+            'planner_stance': planner_st,
+            'intel_sources': intel.get('intel_sources', 0),
         })
 
     # Sort by confidence descending
     predictions.sort(key=lambda p: p['confidence'], reverse=True)
 
-    # ── Cost-viability filter (additive safety net, does not replace signal logic) ──
-    # Demote BUY/SELL signals where confidence is too low relative to estimated costs
+    # ── Cost-viability filter (additive safety net) ───────────────────────
     _estimated_roundtrip_cost_pct = 0.007  # 70 bps conservative (fees + spread both legs)
     for pred in predictions:
         if pred['signal'] in ('BUY', 'SELL') and pred.get('price', 0) > 0:
             pred['cost_viability'] = round(pred['confidence'] / max(_estimated_roundtrip_cost_pct, 0.001), 4)
             if pred['cost_viability'] < MIN_COST_VIABILITY_RATIO:
-                pred['original_signal'] = pred['signal']  # preserve for debugging
+                pred['original_signal'] = pred['signal']
                 pred['signal'] = 'HOLD'
                 pred['cost_filtered'] = True
 
     # Optional Dr Auris Throne harmonic nexus validation (real data only)
     _apply_sero_validations(predictions)
-    print(f"🎯 Generated {len(predictions)} predictions.")
+    print(f"🎯 Generated {len(predictions)} predictions. Unified ×{conf_mult:.3f} "
+          f"[Seer:{seer_grade} War:{war_mode} Lyra:{lyra_action} Runes:{rune_active}]")
     return predictions
 
 def execute_trades(predictions):
