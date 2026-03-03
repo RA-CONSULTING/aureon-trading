@@ -51,6 +51,17 @@ class PositionETA:
     bullish_eta_minutes: float
     bearish_eta_minutes: float
     confidence: float
+    # ── Unified system metrics (Nexus / Seer / Lyra) ──────────────────────
+    coherence: float = 0.5
+    clarity: float = 1.0
+    chaos_trend: str = "stable"
+    seer_grade: str = "UNKNOWN"
+    seer_score: float = 0.5
+    seer_action: str = "HOLD"
+    lyra_action: str = "HOLD"
+    lyra_score: float = 0.5
+    lyra_exit_urgency: str = "none"
+    eta_multiplier: float = 1.0   # how system alignment shifted raw ETA
     source: str = "unknown"
     timestamp: str = ""
 
@@ -200,6 +211,179 @@ def load_from_state_files() -> List[dict]:
     return results
 
 
+# ── Aureon system metric helpers ───────────────────────────────────────────
+
+def get_nexus_metrics(symbol: str) -> dict:
+    """
+    Pull coherence / clarity / chaos_trend from SUBSYSTEM_STATE in
+    aureon_probability_nexus.
+
+    Uses sys.modules so this ONLY reads live data when the nexus is already
+    imported (i.e. we are running inside the full ecosystem).  Standalone runs
+    receive sane defaults without triggering a heavy boot sequence.
+    """
+    import sys
+    defaults = {"coherence": 0.5, "clarity": 1.0, "chaos_trend": "stable"}
+    try:
+        mod = sys.modules.get("aureon_probability_nexus")
+        if mod is None:
+            return defaults
+        SUBSYSTEM_STATE = getattr(mod, "SUBSYSTEM_STATE", {})
+        for key in [
+            symbol,
+            symbol.upper(),
+            symbol.upper().replace("USD", "USDT"),
+            symbol[:3].upper() + "USD",
+            symbol[:3].upper(),
+        ]:
+            if key in SUBSYSTEM_STATE:
+                s = SUBSYSTEM_STATE[key]
+                return {
+                    "coherence":   float(s.get("avg_coherence", 0.5)),
+                    "clarity":     float(s.get("avg_clarity",   1.0)),
+                    "chaos_trend": str(s.get("chaos_trend",     "stable")),
+                }
+    except Exception as e:
+        logger.debug(f"Nexus metrics unavailable for {symbol}: {e}")
+    return defaults
+
+
+# Shared per-run cache so Seer/Lyra are called only once
+_seer_cache: dict = {}
+_lyra_cache: dict = {}
+
+
+def get_seer_vision() -> dict:
+    """
+    Get Seer's current vision grade + action.
+
+    Reads from an already-running AureonTheSeer instance if 'aureon_seer'
+    is in sys.modules (ecosystem running).  Returns neutral defaults for
+    standalone runs — no ecosystem boot triggered.
+    Caches result for 5 minutes.
+    """
+    import sys
+    global _seer_cache
+    now = time.time()
+    if _seer_cache and (now - _seer_cache.get("_ts", 0)) < 300:
+        return _seer_cache
+    defaults = {"grade": "UNKNOWN", "score": 0.5, "action": "HOLD"}
+    try:
+        mod = sys.modules.get("aureon_seer")
+        if mod is None:
+            return defaults
+        AureonTheSeer = getattr(mod, "AureonTheSeer", None)
+        if AureonTheSeer is None:
+            return defaults
+        seer = AureonTheSeer()
+        vision = seer.see()
+        result = {
+            "grade":  str(getattr(vision, "grade",         "UNKNOWN")),
+            "score":  float(getattr(vision, "unified_score", 0.5)),
+            "action": str(getattr(vision, "action",         "HOLD")),
+            "_ts":    now,
+        }
+        _seer_cache = result
+        return result
+    except Exception as e:
+        logger.debug(f"Seer unavailable: {e}")
+    return defaults
+
+
+def get_lyra_resonance() -> dict:
+    """
+    Get Lyra's current action + score + exit_urgency.
+
+    Reads from an already-running AureonLyra instance if 'aureon_lyra'
+    is in sys.modules (ecosystem running).  Returns neutral defaults for
+    standalone runs.  Caches for 5 minutes.
+    """
+    import sys
+    global _lyra_cache
+    now = time.time()
+    if _lyra_cache and (now - _lyra_cache.get("_ts", 0)) < 300:
+        return _lyra_cache
+    defaults = {"action": "HOLD", "score": 0.5, "exit_urgency": "none"}
+    try:
+        mod = sys.modules.get("aureon_lyra")
+        if mod is None:
+            return defaults
+        AureonLyra = getattr(mod, "AureonLyra", None)
+        if AureonLyra is None:
+            return defaults
+        lyra = AureonLyra()
+        resonance = lyra.feel()
+        result = {
+            "action":       str(getattr(resonance, "action",        "HOLD")),
+            "score":        float(getattr(resonance, "unified_score", 0.5)),
+            "exit_urgency": str(getattr(resonance, "exit_urgency",  "none")),
+            "_ts":          now,
+        }
+        _lyra_cache = result
+        return result
+    except Exception as e:
+        logger.debug(f"Lyra unavailable: {e}")
+    return defaults
+
+
+def compute_eta_multiplier(
+    seer_grade: str,
+    coherence: float,
+    chaos_trend: str,
+    lyra_action: str,
+    lyra_exit_urgency: str,
+) -> float:
+    """
+    Convert unified system state into an ETA multiplier.
+
+    < 1.0  → system alignment says move will happen FASTER than raw vol implies
+    > 1.0  → system misalignment / fog says SLOWER / less certain
+
+    Grid:
+      Seer DIVINE_CLARITY  → × 0.60  (strong tailwind)
+      Seer CLEAR_SIGHT     → × 0.75
+      Seer PARTIAL_VISION  → × 1.00  (neutral)
+      Seer FOG             → × 1.40
+      Seer BLIND           → × 1.80  (heavy headwind / uncertainty)
+
+      Nexus coherence ≥ 0.80 + chaos falling → additional × 0.85
+      Nexus coherence < 0.40               → additional × 1.50
+
+      Lyra SELL_BIAS / DEFEND while holding long → × 1.25 (resistance)
+      Lyra BUY_BIAS while holding long       → × 0.90  (tailwind)
+      Lyra exit_urgency high/critical        → × 1.50  (danger zone)
+    """
+    mult = 1.0
+
+    # Seer grade component
+    seer_map = {
+        "DIVINE_CLARITY":  0.60,
+        "CLEAR_SIGHT":     0.75,
+        "PARTIAL_VISION":  1.00,
+        "PARTIAL_SIGHT":   1.00,
+        "FOG":             1.40,
+        "BLIND":           1.80,
+        "UNKNOWN":         1.10,
+    }
+    mult *= seer_map.get(seer_grade, 1.10)
+
+    # Nexus coherence + chaos component
+    if coherence >= 0.80 and chaos_trend.lower() == "falling":
+        mult *= 0.85
+    elif coherence < 0.40:
+        mult *= 1.50
+
+    # Lyra component (long bias)
+    if lyra_exit_urgency in ("high", "critical"):
+        mult *= 1.50
+    elif lyra_action == "BUY_BIAS":
+        mult *= 0.90
+    elif lyra_action in ("SELL_BIAS", "DEFEND"):
+        mult *= 1.25
+
+    return round(max(0.1, min(10.0, mult)), 3)
+
+
 # ── ETA calculation ─────────────────────────────────────────────────────────
 
 def calculate_eta(pos: dict) -> Optional[PositionETA]:
@@ -216,6 +400,23 @@ def calculate_eta(pos: dict) -> Optional[PositionETA]:
 
         hourly_vol_pct = get_hourly_vol(symbol)
 
+        # ── Pull unified system metrics ────────────────────────────────────
+        nm        = get_nexus_metrics(symbol)
+        coherence = nm["coherence"]
+        clarity   = nm["clarity"]
+        chaos     = nm["chaos_trend"]
+
+        seer  = get_seer_vision()
+        lyra  = get_lyra_resonance()
+
+        eta_mult = compute_eta_multiplier(
+            seer_grade       = seer["grade"],
+            coherence        = coherence,
+            chaos_trend      = chaos,
+            lyra_action      = lyra["action"],
+            lyra_exit_urgency= lyra["exit_urgency"],
+        )
+
         if current >= breakeven:
             return PositionETA(
                 symbol=symbol, side=pos.get("side", "buy"), leverage=pos["leverage"],
@@ -225,7 +426,13 @@ def calculate_eta(pos: dict) -> Optional[PositionETA]:
                 pct_to_breakeven=pct_to_breakeven, pct_from_entry=pct_from_entry,
                 hourly_volatility_pct=hourly_vol_pct,
                 eta_minutes=0, bullish_eta_minutes=0, bearish_eta_minutes=0,
-                confidence=1.0, source=pos.get("source", "unknown"),
+                confidence=1.0,
+                coherence=coherence, clarity=clarity, chaos_trend=chaos,
+                seer_grade=seer["grade"], seer_score=seer["score"], seer_action=seer["action"],
+                lyra_action=lyra["action"], lyra_score=lyra["score"],
+                lyra_exit_urgency=lyra["exit_urgency"],
+                eta_multiplier=eta_mult,
+                source=pos.get("source", "unknown"),
             )
 
         required = abs(pct_to_breakeven) / 100.0
@@ -235,11 +442,14 @@ def calculate_eta(pos: dict) -> Optional[PositionETA]:
         bull_h    = max(0, (required - hv) / hv) if hv > 0 else 999
         bear_h    = min((required + hv) / hv, 999) if hv > 0 else 999
 
-        eta_min   = base_h * 60 * 0.5
-        bull_min  = bull_h * 60 * 0.5
-        bear_min  = bear_h * 60 * 0.5
+        # Apply system-alignment multiplier to raw volatility-based ETA
+        eta_min   = base_h * 60 * 0.5 * eta_mult
+        bull_min  = bull_h * 60 * 0.5 * eta_mult
+        bear_min  = bear_h * 60 * 0.5 * eta_mult
 
-        confidence = min(1.0, (hourly_vol_pct / max(abs(pct_to_breakeven), 0.01)) * 0.5)
+        # Confidence blends raw vol ratio with system coherence
+        raw_conf   = min(1.0, (hourly_vol_pct / max(abs(pct_to_breakeven), 0.01)) * 0.5)
+        confidence = min(1.0, raw_conf * 0.6 + coherence * 0.4)
 
         return PositionETA(
             symbol=symbol, side=pos.get("side", "buy"), leverage=pos["leverage"],
@@ -249,7 +459,13 @@ def calculate_eta(pos: dict) -> Optional[PositionETA]:
             pct_to_breakeven=pct_to_breakeven, pct_from_entry=pct_from_entry,
             hourly_volatility_pct=hourly_vol_pct,
             eta_minutes=eta_min, bullish_eta_minutes=bull_min, bearish_eta_minutes=bear_min,
-            confidence=confidence, source=pos.get("source", "unknown"),
+            confidence=confidence,
+            coherence=coherence, clarity=clarity, chaos_trend=chaos,
+            seer_grade=seer["grade"], seer_score=seer["score"], seer_action=seer["action"],
+            lyra_action=lyra["action"], lyra_score=lyra["score"],
+            lyra_exit_urgency=lyra["exit_urgency"],
+            eta_multiplier=eta_mult,
+            source=pos.get("source", "unknown"),
         )
     except Exception as e:
         logger.error(f"ETA calc {pos.get('symbol','?')}: {e}")
@@ -271,13 +487,30 @@ class MarginETAPredictor:
 
     def print_report(self, etas: List[PositionETA]) -> None:
         print("\n" + "=" * 90)
-        print("  MARGIN ETA REPORT — TIME-TO-PROFITABILITY")
+        print("  MARGIN ETA REPORT — TIME-TO-PROFITABILITY  [UNIFIED AUREON METRICS]")
         print("=" * 90)
         print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
         if not etas:
             print("  No active margin positions.\n")
             return
+
+        # Print system-wide header once (same for all positions)
+        first = etas[0]
+        seer_icon = {
+            "DIVINE_CLARITY": "🌟", "CLEAR_SIGHT": "👁",
+            "PARTIAL_VISION": "🌤", "PARTIAL_SIGHT": "🌤",
+            "FOG": "🌫", "BLIND": "🚫", "UNKNOWN": "❓",
+        }.get(first.seer_grade, "❓")
+        lyra_icon = {"BUY_BIAS": "🟢", "SELL_BIAS": "🔴", "DEFEND": "🛡", "HOLD": "🟡"}.get(first.lyra_action, "🟡")
+        chaos_icon = {"falling": "📉", "rising": "📈", "stable": "➡"}.get(first.chaos_trend.lower(), "➡")
+
+        print(f"  ╔══ SYSTEM ALIGNMENT ════════════════════════════════════════════════╗")
+        print(f"  ║  Seer:    {seer_icon} {first.seer_grade:<18} (score {first.seer_score:.3f})  action: {first.seer_action}")
+        print(f"  ║  Lyra:    {lyra_icon} {first.lyra_action:<18} (score {first.lyra_score:.3f})  urgency: {first.lyra_exit_urgency}")
+        print(f"  ║  Nexus:   coherence {first.coherence:.3f}  clarity {first.clarity:.2f}  chaos {chaos_icon} {first.chaos_trend}")
+        print(f"  ║  ETA mult: ×{first.eta_multiplier:.3f}  {'(tailwind — faster)' if first.eta_multiplier < 1.0 else '(headwind — slower)' if first.eta_multiplier > 1.0 else '(neutral)'}")
+        print(f"  ╚═════════════════════════════════════════════════════════════════════╝\n")
 
         for eta in etas:
             src = "LIVE API" if eta.source == "kraken_api" else "STATE FILE"
@@ -291,11 +524,11 @@ class MarginETAPredictor:
             if eta.eta_minutes == 0:
                 print("    ✅  PROFITABLE NOW")
             else:
-                print(f"    📊  Hourly vol: {eta.hourly_volatility_pct:.2f}%")
-                print(f"    ⏱   ETA base:   {eta.eta_minutes:.0f}m  ({eta.eta_minutes/60:.1f}h)")
-                print(f"        Bullish:    {eta.bullish_eta_minutes:.0f}m  ({eta.bullish_eta_minutes/60:.1f}h)")
-                print(f"        Bearish:    {eta.bearish_eta_minutes:.0f}m  ({eta.bearish_eta_minutes/60:.1f}h)")
-                print(f"    🎯  Confidence: {eta.confidence*100:.0f}%")
+                print(f"    📊  Hourly vol:  {eta.hourly_volatility_pct:.2f}%")
+                print(f"    ⏱   ETA (adj):   {eta.eta_minutes:.0f}m  ({eta.eta_minutes/60:.1f}h)  [×{eta.eta_multiplier:.2f}]")
+                print(f"        Bullish:     {eta.bullish_eta_minutes:.0f}m  ({eta.bullish_eta_minutes/60:.1f}h)")
+                print(f"        Bearish:     {eta.bearish_eta_minutes:.0f}m  ({eta.bearish_eta_minutes/60:.1f}h)")
+                print(f"    🎯  Confidence:  {eta.confidence*100:.0f}%  (nexus coherence {eta.coherence:.2f})")
             print()
 
         tc  = sum(e.cost_basis for e in etas)
