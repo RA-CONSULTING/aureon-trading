@@ -3,348 +3,335 @@
 MARGIN ETA PREDICTOR - TIME-TO-PROFIT CALCULATOR
 ================================================
 
-Estimates when margin positions will reach profitability based on:
-1. Current position cost basis and breakeven
-2. Real-time market prices from Binance/Kraken
-3. Historical volatility analysis
-4. Confidence scoring for ETA reliability
+Reads YOUR REAL open Kraken margin positions (SOL, ETH - whatever is actually
+live on Kraken) and estimates when each will turn profitable.
+
+Data source priority:
+  1. Kraken API -> /0/private/OpenPositions  (live, authoritative)
+  2. kraken_margin_army_state.json           (local cache fallback)
 
 Usage:
-    python margin_eta_predictor.py          # Analyze active margin positions
-    python margin_eta_predictor.py --watch  # 60-second live update loop
+    python margin_eta_predictor.py          # Single snapshot
+    python margin_eta_predictor.py --watch  # Live 60-second loop
 """
 
+import os
 import json
 import time
 import urllib.request
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
-from collections import deque
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-# Binance free API endpoints (no auth)
 BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
 BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
-KRAKEN_PUBLIC_URL = "https://api.kraken.com/0/public"
+KRAKEN_TICKER_URL  = "https://api.kraken.com/0/public/Ticker"
+ARMY_STATE_FILE    = "kraken_margin_army_state.json"
+
 
 @dataclass
 class PositionETA:
-    """ETA estimate for a single position."""
     symbol: str
-    exchange: str
+    side: str
     leverage: float
     entry_price: float
     current_price: float
     breakeven_price: float
     volume: float
     cost_basis: float
-    
-    # Distance metrics
+    unrealized_pnl: float
     pct_to_breakeven: float
     pct_from_entry: float
-    
-    # Volatility & prediction
-    hourly_volatility: float
-    sessions_to_breakeven: float  # Based on hourly wins
+    hourly_volatility_pct: float
     eta_minutes: float
-    confidence: float  # 0.0-1.0
-    
-    # Scenario analysis
-    bullish_eta: float  # Time if +1σ move
-    bearish_eta: float  # Time if -1σ move
-    
+    bullish_eta_minutes: float
+    bearish_eta_minutes: float
+    confidence: float
+    source: str = "unknown"
     timestamp: str = ""
-    
+
     def __post_init__(self):
         if not self.timestamp:
             self.timestamp = datetime.now().isoformat()
 
 
-class MarginETAPredictor:
-    """Real-time ETA calculator for margin positions."""
-    
-    def __init__(self):
-        self.margin_state_path = '/workspaces/aureon-trading/kraken_margin_penny_state.json'
-        self.positions: Dict = {}
-        self.price_cache: Dict[str, float] = {}
-        self.volatility_cache: Dict[str, deque] = {}
-        self._load_positions()
-    
-    def _load_positions(self) -> None:
-        """Load current margin positions from state file."""
-        try:
-            with open(self.margin_state_path, 'r') as f:
-                state = json.load(f)
-                self.positions = state.get('active_trades', {})
-                logger.info(f"Loaded {len(self.positions)} active margin positions")
-        except Exception as e:
-            logger.error(f"Failed to load margin state: {e}")
-            self.positions = {}
-    
-    def _get_binance_price(self, symbol: str) -> Optional[float]:
-        """Fetch current price from Binance (free, no auth required)."""
-        try:
-            # Convert symbol: AAVEUSD -> AAVEUSDT (Binance uses USDT)
-            binance_symbol = symbol.replace('USD', 'USDT')
-            url = f"{BINANCE_TICKER_URL}?symbol={binance_symbol}"
-            
-            req = urllib.request.Request(url)
-            req.add_header('User-Agent', 'MarginETA/1.0')
-            
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                data = json.loads(resp.read().decode())
-                price = float(data['price'])
-                self.price_cache[symbol] = price
-                return price
-        except Exception as e:
-            logger.debug(f"Failed to fetch {symbol} from Binance: {e}")
-            return None
-    
-    def _get_kraken_price(self, symbol: str) -> Optional[float]:
-        """Fetch current price from Kraken public API."""
-        try:
-            # Use Kraken's public ticker
-            url = f"{KRAKEN_PUBLIC_URL}/Ticker?pair={symbol}"
-            
-            req = urllib.request.Request(url)
-            req.add_header('User-Agent', 'MarginETA/1.0')
-            
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                data = json.loads(resp.read().decode())
-                result = data.get('result', {})
-                if symbol in result:
-                    ticker = result[symbol]
-                    # c = [close_price, num_trades]
-                    price = float(ticker['c'][0])
-                    self.price_cache[symbol] = price
-                    return price
-        except Exception as e:
-            logger.debug(f"Failed to fetch {symbol} from Kraken: {e}")
-            return None
-    
-    def _get_current_price(self, symbol: str, exchange: str) -> Optional[float]:
-        """Get current price from cache or API."""
-        if symbol in self.price_cache:
-            return self.price_cache[symbol]
-        
-        # Try exchange-specific API
-        if exchange.lower() == 'kraken':
-            return self._get_kraken_price(symbol)
-        else:
-            return self._get_binance_price(symbol)
-    
-    def _estimate_hourly_volatility(self, symbol: str) -> float:
-        """
-        Estimate hourly volatility from recent price history.
-        Returns std dev of hourly percentage changes.
-        """
-        try:
-            # Try to get 24 hours of 1h candles from Binance
-            binance_symbol = symbol.replace('USD', 'USDT')
-            url = f"{BINANCE_KLINES_URL}?symbol={binance_symbol}&interval=1h&limit=24"
-            
-            req = urllib.request.Request(url)
-            req.add_header('User-Agent', 'MarginETA/1.0')
-            
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                candles = json.loads(resp.read().decode())
-                
-            if len(candles) < 2:
-                return 0.02  # Default 2% hourly
-            
-            # Calculate hourly returns
-            closes = [float(c[4]) for c in candles]  # Close price
-            returns = []
-            for i in range(1, len(closes)):
-                ret = (closes[i] - closes[i-1]) / closes[i-1]
-                returns.append(abs(ret))
-            
-            # Average absolute hourly return as volatility metric
-            hourly_vol = sum(returns) / len(returns) if returns else 0.02
-            return max(hourly_vol, 0.001)  # Floor at 0.1%
-        except Exception as e:
-            logger.debug(f"Failed to estimate volatility for {symbol}: {e}")
-            return 0.02  # Default 2% hourly volatility
-    
-    def calculate_eta(self, symbol: str, trade_data: Dict) -> Optional[PositionETA]:
-        """Calculate ETA for a single margin position."""
-        try:
-            entry_price = trade_data['entry_price']
-            breakeven_price = trade_data['breakeven_price']
-            volume = trade_data['volume']
-            cost = trade_data['cost']
-            leverage = trade_data['leverage']
-            exchange = 'kraken'  # From margin penny trader
-            
-            # Get current price
-            current_price = self._get_current_price(symbol, exchange)
-            if current_price is None:
-                logger.warning(f"Could not fetch price for {symbol}, using entry price")
-                current_price = entry_price
-            
-            # Calculate distances
-            pct_to_breakeven = ((breakeven_price - current_price) / current_price) * 100
-            pct_from_entry = ((current_price - entry_price) / entry_price) * 100
-            
-            # If already at breakeven or past it
-            if current_price >= breakeven_price:
-                return PositionETA(
-                    symbol=symbol,
-                    exchange=exchange,
-                    leverage=leverage,
-                    entry_price=entry_price,
-                    current_price=current_price,
-                    breakeven_price=breakeven_price,
-                    volume=volume,
-                    cost_basis=cost,
-                    pct_to_breakeven=pct_to_breakeven,
-                    pct_from_entry=pct_from_entry,
-                    hourly_volatility=0,
-                    sessions_to_breakeven=0,
-                    eta_minutes=0,
-                    confidence=1.0,
-                    bullish_eta=0,
-                    bearish_eta=0,
-                )
-            
-            # Estimate hourly volatility
-            hourly_volatility = self._estimate_hourly_volatility(symbol)
-            
-            # Scenarios: How many hourly moves to reach breakeven?
-            required_move = abs(pct_to_breakeven) / 100.0
-            sessions_to_breakeven = required_move / hourly_volatility if hourly_volatility > 0 else 999
-            
-            # ETA in minutes (assume 1 session = 60 mins, but trading happens 24/7)
-            # More conservative: assume 2-4 moves per day for alts
-            eta_minutes = sessions_to_breakeven * 60 * 0.5  # 50% of expected sessions
-            
-            # Confidence decreases with:
-            # - Smaller volatility (harder to predict)
-            # - Larger required move
-            # - Short history
-            confidence = min(1.0, hourly_volatility * 15) * (1.0 - min(required_move / 0.1, 1.0))
-            
-            # Scenario analysis (±1σ volatility)
-            bullish_move = hourly_volatility
-            bearish_move = hourly_volatility
-            
-            bullish_sessions = max(0, (required_move - bullish_move) / hourly_volatility) if hourly_volatility > 0 else 999
-            bearish_sessions = (required_move + bearish_move) / hourly_volatility if hourly_volatility > 0 else 999
-            
-            bullish_eta = bullish_sessions * 60 * 0.5
-            bearish_eta = bearish_sessions * 60 * 0.5
-            
-            return PositionETA(
-                symbol=symbol,
-                exchange=exchange,
-                leverage=leverage,
-                entry_price=entry_price,
-                current_price=current_price,
-                breakeven_price=breakeven_price,
-                volume=volume,
-                cost_basis=cost,
-                pct_to_breakeven=pct_to_breakeven,
-                pct_from_entry=pct_from_entry,
-                hourly_volatility=hourly_volatility * 100,  # As percentage
-                sessions_to_breakeven=sessions_to_breakeven,
-                eta_minutes=eta_minutes,
-                confidence=confidence,
-                bullish_eta=bullish_eta,
-                bearish_eta=bearish_eta,
-            )
-        except Exception as e:
-            logger.error(f"Failed to calculate ETA for {symbol}: {e}")
-            return None
-    
-    def predict_all(self) -> List[PositionETA]:
-        """Calculate ETA for all active margin positions."""
-        self._load_positions()
-        results = []
-        
-        for symbol, trade_data in self.positions.items():
-            eta = self.calculate_eta(symbol, trade_data)
-            if eta:
-                results.append(eta)
-        
-        return results
-    
-    def print_report(self, etas: List[PositionETA]) -> None:
-        """Print formatted ETA report."""
-        print("\n" + "="*100)
-        print("MARGIN ETA PREDICTION REPORT")
-        print("="*100)
-        print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-        print()
-        
-        if not etas:
-            print("No active margin positions to analyze.")
-            return
-        
-        for eta in etas:
-            print(f"Symbol: {eta.symbol} | Exchange: {eta.exchange.upper()} | Leverage: {eta.leverage}x")
-            print(f"  Entry Price: {eta.entry_price:.6f} | Current: {eta.current_price:.6f} | Breakeven: {eta.breakeven_price:.6f}")
-            print(f"  Change from Entry: {eta.pct_from_entry:+.2f}% | Distance to Breakeven: {eta.pct_to_breakeven:+.2f}%")
-            print()
-            
-            if eta.eta_minutes == 0:
-                print(f"  ✅ AT PROFITABILITY: Position is already profitable!")
-            else:
-                print(f"  📊 Hourly Volatility: {eta.hourly_volatility:.2f}%")
-                print(f"  ⏱️  ESTIMATED TIME-TO-PROFIT:")
-                print(f"     Base Estimate:  {eta.eta_minutes:.0f} minutes ({eta.eta_minutes/60:.1f} hours)")
-                print(f"     Bullish Case:   {eta.bullish_eta:.0f} minutes ({eta.bullish_eta/60:.1f} hours)")
-                print(f"     Bearish Case:   {eta.bearish_eta:.0f} minutes ({eta.bearish_eta/60:.1f} hours)")
-                print(f"  🎯 Confidence Score: {eta.confidence*100:.0f}%")
-            
-            print()
-        
-        # Summary
-        total_cost = sum(e.cost_basis for e in etas)
-        profitable = sum(1 for e in etas if e.eta_minutes == 0)
-        avg_confidence = sum(e.confidence for e in etas) / len(etas) if etas else 0
-        
-        print("="*100)
-        print(f"SUMMARY: {len(etas)} positions | {profitable} profitable | Total cost: ${total_cost:.2f}")
-        print(f"Average ETA Confidence: {avg_confidence*100:.0f}%")
-        print("="*100 + "\n")
+# ── helpers ────────────────────────────────────────────────────────────────
 
+def _fetch(url: str) -> Optional[dict]:
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "MarginETA/2.0"})
+        with urllib.request.urlopen(req, timeout=6) as r:
+            return json.loads(r.read().decode())
+    except Exception as e:
+        logger.debug(f"HTTP {url}: {e}")
+        return None
+
+
+def get_current_price(symbol: str) -> Optional[float]:
+    """Try Binance (USDT pair), then Kraken public ticker."""
+    b_sym = symbol.upper().replace("USD", "USDT")
+    d = _fetch(f"{BINANCE_TICKER_URL}?symbol={b_sym}")
+    if d and "price" in d:
+        return float(d["price"])
+    # Kraken public fallback
+    d = _fetch(f"{KRAKEN_TICKER_URL}?pair={symbol}")
+    if d and d.get("result"):
+        for ticker in d["result"].values():
+            return float(ticker["c"][0])
+    return None
+
+
+def get_hourly_vol(symbol: str) -> float:
+    """Average absolute hourly return (%) over last 24 candles."""
+    b_sym = symbol.upper().replace("USD", "USDT")
+    data = _fetch(f"{BINANCE_KLINES_URL}?symbol={b_sym}&interval=1h&limit=24")
+    if not data or len(data) < 2:
+        return 2.0
+    closes = [float(c[4]) for c in data]
+    returns = [abs((closes[i] - closes[i-1]) / closes[i-1]) * 100 for i in range(1, len(closes))]
+    return max(sum(returns) / len(returns), 0.1) if returns else 2.0
+
+
+def calc_breakeven(entry: float, open_fee: float = 0.00376, close_fee: float = 0.0035) -> float:
+    return entry * (1 + open_fee + close_fee + 0.0001)
+
+
+def normalise_pair(pair: str) -> str:
+    MAP = {
+        "XETHZUSD": "ETHUSD", "XBTZUSD": "XBTUSD", "XXBTZUSD": "XBTUSD",
+        "XSOLUSD":  "SOLUSD", "XLTCZUSD": "LTCUSD", "XXRPZUSD": "XRPUSD",
+    }
+    if pair in MAP:
+        return MAP[pair]
+    p = pair
+    if p.startswith("X") and len(p) > 4 and p[1:4].isupper():
+        p = p[1:]
+    if p.endswith("ZUSD"):
+        p = p[:-4] + "USD"
+    return p
+
+
+# ── position loaders ────────────────────────────────────────────────────────
+
+def load_from_kraken_api() -> List[dict]:
+    """Fetch ALL live open margin positions via Kraken private API."""
+    try:
+        from kraken_client import KrakenClient
+        client = KrakenClient()
+        if client.dry_run:
+            return []
+        raw = client.get_open_margin_positions(do_calcs=True)
+        if not raw:
+            return []
+        results = []
+        for pos in raw:
+            symbol  = normalise_pair(pos.get("pair", ""))
+            vol     = float(pos.get("volume", 0))
+            cost    = float(pos.get("cost", 0))
+            fee     = float(pos.get("fee", 0))
+            ep      = cost / vol if vol > 0 else 0
+            lev_raw = pos.get("leverage", "1")
+            lev     = float(lev_raw) if lev_raw else 1.0
+            results.append({
+                "symbol":          symbol,
+                "side":            pos.get("side", "buy"),
+                "volume":          vol,
+                "cost":            cost,
+                "fee":             fee,
+                "entry_price":     ep,
+                "leverage":        lev,
+                "unrealized_pnl":  float(pos.get("unrealized_pnl", 0)),
+                "breakeven_price": calc_breakeven(ep, fee / cost if cost > 0 else 0.00376),
+                "source":          "kraken_api",
+            })
+        logger.info(f"Loaded {len(results)} live positions from Kraken API")
+        return results
+    except Exception as e:
+        logger.warning(f"Kraken API unavailable ({e}), falling back to state file")
+        return []
+
+
+def load_from_state_files() -> List[dict]:
+    """Read active positions from kraken_margin_army_state.json."""
+    results = []
+    try:
+        with open(ARMY_STATE_FILE) as f:
+            state = json.load(f)
+
+        # Single active_trade field (army trader)
+        trade = state.get("active_trade")
+        if trade and trade.get("pair"):
+            ep = float(trade.get("entry_price", 0))
+            results.append({
+                "symbol":          trade["pair"],
+                "side":            trade.get("side", "buy"),
+                "volume":          float(trade.get("volume", 0)),
+                "cost":            float(trade.get("cost", 0)),
+                "fee":             float(trade.get("entry_fee", 0)),
+                "entry_price":     ep,
+                "leverage":        float(trade.get("leverage", 1)),
+                "unrealized_pnl":  0.0,
+                "breakeven_price": float(trade.get("breakeven_price") or calc_breakeven(ep)),
+                "source":          "army_state",
+            })
+
+        # active_trades dict (penny trader)
+        for sym, t in state.get("active_trades", {}).items():
+            ep = float(t.get("entry_price", 0))
+            results.append({
+                "symbol":          sym,
+                "side":            t.get("side", "buy"),
+                "volume":          float(t.get("volume", 0)),
+                "cost":            float(t.get("cost", 0)),
+                "fee":             float(t.get("entry_fee", 0)),
+                "entry_price":     ep,
+                "leverage":        float(t.get("leverage", 1)),
+                "unrealized_pnl":  0.0,
+                "breakeven_price": float(t.get("breakeven_price") or calc_breakeven(ep)),
+                "source":          "army_state",
+            })
+    except Exception as e:
+        logger.debug(f"State file load: {e}")
+
+    return results
+
+
+# ── ETA calculation ─────────────────────────────────────────────────────────
+
+def calculate_eta(pos: dict) -> Optional[PositionETA]:
+    try:
+        symbol    = pos["symbol"]
+        ep        = pos["entry_price"]
+        breakeven = pos["breakeven_price"]
+        if ep <= 0:
+            return None
+
+        current = get_current_price(symbol) or ep
+        pct_from_entry   = ((current - ep) / ep) * 100
+        pct_to_breakeven = ((breakeven - current) / current) * 100
+
+        hourly_vol_pct = get_hourly_vol(symbol)
+
+        if current >= breakeven:
+            return PositionETA(
+                symbol=symbol, side=pos.get("side", "buy"), leverage=pos["leverage"],
+                entry_price=ep, current_price=current, breakeven_price=breakeven,
+                volume=pos["volume"], cost_basis=pos["cost"],
+                unrealized_pnl=pos.get("unrealized_pnl", 0),
+                pct_to_breakeven=pct_to_breakeven, pct_from_entry=pct_from_entry,
+                hourly_volatility_pct=hourly_vol_pct,
+                eta_minutes=0, bullish_eta_minutes=0, bearish_eta_minutes=0,
+                confidence=1.0, source=pos.get("source", "unknown"),
+            )
+
+        required = abs(pct_to_breakeven) / 100.0
+        hv       = hourly_vol_pct / 100.0
+
+        base_h    = min(required / hv, 999) if hv > 0 else 999
+        bull_h    = max(0, (required - hv) / hv) if hv > 0 else 999
+        bear_h    = min((required + hv) / hv, 999) if hv > 0 else 999
+
+        eta_min   = base_h * 60 * 0.5
+        bull_min  = bull_h * 60 * 0.5
+        bear_min  = bear_h * 60 * 0.5
+
+        confidence = min(1.0, (hourly_vol_pct / max(abs(pct_to_breakeven), 0.01)) * 0.5)
+
+        return PositionETA(
+            symbol=symbol, side=pos.get("side", "buy"), leverage=pos["leverage"],
+            entry_price=ep, current_price=current, breakeven_price=breakeven,
+            volume=pos["volume"], cost_basis=pos["cost"],
+            unrealized_pnl=pos.get("unrealized_pnl", 0),
+            pct_to_breakeven=pct_to_breakeven, pct_from_entry=pct_from_entry,
+            hourly_volatility_pct=hourly_vol_pct,
+            eta_minutes=eta_min, bullish_eta_minutes=bull_min, bearish_eta_minutes=bear_min,
+            confidence=confidence, source=pos.get("source", "unknown"),
+        )
+    except Exception as e:
+        logger.error(f"ETA calc {pos.get('symbol','?')}: {e}")
+        return None
+
+
+# ── main class ──────────────────────────────────────────────────────────────
+
+class MarginETAPredictor:
+
+    def predict_all(self) -> List[PositionETA]:
+        raw = load_from_kraken_api()
+        if not raw:
+            raw = load_from_state_files()
+        if not raw:
+            logger.warning("No open margin positions found in any source")
+            return []
+        return [eta for pos in raw if (eta := calculate_eta(pos))]
+
+    def print_report(self, etas: List[PositionETA]) -> None:
+        print("\n" + "=" * 90)
+        print("  MARGIN ETA REPORT — TIME-TO-PROFITABILITY")
+        print("=" * 90)
+        print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+        if not etas:
+            print("  No active margin positions.\n")
+            return
+
+        for eta in etas:
+            src = "LIVE API" if eta.source == "kraken_api" else "STATE FILE"
+            print(f"  [{src}] {eta.symbol}  |  {eta.side.upper()}  |  {eta.leverage:.0f}x leverage")
+            print(f"    Entry:      {eta.entry_price:.4f}")
+            print(f"    Current:    {eta.current_price:.4f}  ({eta.pct_from_entry:+.2f}%)")
+            print(f"    Breakeven:  {eta.breakeven_price:.4f}  ({eta.pct_to_breakeven:+.2f}% to go)")
+            if eta.unrealized_pnl:
+                print(f"    Live P&L:   ${eta.unrealized_pnl:+.2f}")
+            print()
+            if eta.eta_minutes == 0:
+                print("    ✅  PROFITABLE NOW")
+            else:
+                print(f"    📊  Hourly vol: {eta.hourly_volatility_pct:.2f}%")
+                print(f"    ⏱   ETA base:   {eta.eta_minutes:.0f}m  ({eta.eta_minutes/60:.1f}h)")
+                print(f"        Bullish:    {eta.bullish_eta_minutes:.0f}m  ({eta.bullish_eta_minutes/60:.1f}h)")
+                print(f"        Bearish:    {eta.bearish_eta_minutes:.0f}m  ({eta.bearish_eta_minutes/60:.1f}h)")
+                print(f"    🎯  Confidence: {eta.confidence*100:.0f}%")
+            print()
+
+        tc  = sum(e.cost_basis for e in etas)
+        tp  = sum(e.unrealized_pnl for e in etas)
+        ok  = sum(1 for e in etas if e.eta_minutes == 0)
+        print("=" * 90)
+        line = f"  {len(etas)} position(s)  |  {ok} profitable  |  Total cost: ${tc:.2f}"
+        if tp:
+            line += f"  |  Live P&L: ${tp:+.2f}"
+        print(line)
+        print("=" * 90 + "\n")
+
+
+# ── entry point ─────────────────────────────────────────────────────────────
 
 def main():
-    """Run margin ETA predictor."""
     import sys
-    
-    predictor = MarginETAPredictor()
-    etas = predictor.predict_all()
-    predictor.print_report(etas)
-    
-    # Optional: Save report to JSON
+    p = MarginETAPredictor()
+    etas = p.predict_all()
+    p.print_report(etas)
     try:
-        report_data = {
-            'timestamp': datetime.now().isoformat(),
-            'positions': [asdict(eta) for eta in etas],
-        }
-        with open('/workspaces/aureon-trading/margin_eta_report.json', 'w') as f:
-            json.dump(report_data, f, indent=2)
-        logger.info("ETA report saved to margin_eta_report.json")
-    except Exception as e:
-        logger.error(f"Failed to save report: {e}")
-    
-    # Watch mode (continuous monitoring)
-    if '--watch' in sys.argv:
-        print("\n📡 WATCH MODE - Updating every 60 seconds (Ctrl+C to exit)")
+        with open("margin_eta_report.json", "w") as f:
+            json.dump({"timestamp": datetime.now().isoformat(),
+                       "positions": [asdict(e) for e in etas]}, f, indent=2)
+    except Exception:
+        pass
+    if "--watch" in sys.argv:
+        print("📡 WATCH MODE — updating every 60s (Ctrl+C to stop)\n")
         try:
             while True:
                 time.sleep(60)
-                predictor = MarginETAPredictor()
-                etas = predictor.predict_all()
-                predictor.print_report(etas)
+                etas = p.predict_all()
+                p.print_report(etas)
         except KeyboardInterrupt:
-            print("\n✋ Watch mode stopped.")
+            print("\nStopped.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
