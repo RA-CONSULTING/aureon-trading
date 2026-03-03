@@ -63,7 +63,9 @@ if sys.platform == 'win32':
 import http.server
 import socketserver
 import threading
+# import json
 import json as _json
+# import time
 import time as _time
 
 # Use port 8080 for Orca health checks (matches app.yaml deployment config)
@@ -110,7 +112,7 @@ class _ReuseAddrTCPServer(socketserver.TCPServer):
 
 def _start_health_server():
     """Start health check HTTP server in background thread."""
-    import sys
+    # import sys
     # Deduplicate & always exclude 8080 (reserved for dashboard)
     ports_to_try = list(dict.fromkeys([_HEALTH_PORT, 8081, 8888, 9999]))
     ports_to_try = [p for p in ports_to_try if p != 8080]
@@ -215,13 +217,11 @@ NOISY_MODULES = [
 for mod in NOISY_MODULES:
     logging.getLogger(mod).setLevel(logging.ERROR)
 
-import sys
+# import sys
 import os
-import time
-import asyncio
-import threading
-import json
-import argparse
+# import time
+# import asyncio
+import threadingimport argparse
 from typing import List, Dict, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -1125,7 +1125,7 @@ try:
     from queen_asset_command_center import (
         get_asset_command_center,
         get_asset_monitor,
-        get_ocean_view,
+        # get_ocean_view,
         QueenAssetCommandCenter,
         QueenAssetMonitor,
         QueenOceanView
@@ -1136,7 +1136,7 @@ except ImportError:
     ASSET_COMMAND_CENTER_AVAILABLE = False
     get_asset_command_center = None
     get_asset_monitor = None
-    get_ocean_view = None
+    # get_ocean_view = None
     QueenAssetCommandCenter = None
     QueenAssetMonitor = None
     QueenOceanView = None
@@ -4130,7 +4130,7 @@ class OrcaKillCycle:
                 self.avalanche = AvalancheHarvester(
                     min_profit_pct=0.5,
                     harvest_pct=30.0,
-                    scan_interval=30.0
+                    # scan_interval=30.0
                 )
                 print("   Avalanche Harvester: WIRED! (Continuous Profit Scraping)")
             except Exception as e:
@@ -4844,7 +4844,7 @@ class OrcaKillCycle:
         
         self.asset_command_center = None
         self.asset_monitor = None
-        self.ocean_view = None
+        # self.ocean_view = None
         if ASSET_COMMAND_CENTER_AVAILABLE:
             try:
                 # Initialize Asset Command Center
@@ -6231,7 +6231,7 @@ class OrcaKillCycle:
         if self.luck_mapper:
             try:
                 # Calculate volatility proxy from change
-                volatility = min(1.0, abs(change_pct) / 10.0)
+                _ = min(1.0, abs(change_pct) / 10.0)
                 luck_reading = self.luck_mapper.read_field(
                     price=price,
                     volatility=volatility,
@@ -7286,28 +7286,6 @@ class OrcaKillCycle:
             print(f"   Alpaca scan error: {e}")
         
         return opportunities
-    
-    def _load_kraken_assets_for_monitoring(self) -> List[str]:
-        """Auto-discover all tradeable Kraken assets for comprehensive market monitoring."""
-        try:
-            kraken_client = self.clients.get('kraken')
-            if not kraken_client:
-                return []
-            
-            tradeable_pairs = kraken_client.get_available_pairs()
-            if not tradeable_pairs:
-                return []
-            
-            filtered = []
-            major_quotes = ['USD', 'USDT', 'EUR', 'GBP']
-            major_alts = ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'AVAX', 'MATIC', 'ARB', 'OP']
-            
-            for pair in tradeable_pairs:
-                symbol = pair.get('symbol') or pair.get('pair', '')
-                quote = pair.get('quote', '')
-                base = pair.get('base', '')
-                
-                if not symbol or symbol.startswith('F') or symbol.startswith('D'):
                     continue
                 
                 if any(q in quote for q in major_quotes):
@@ -7422,7 +7400,7 @@ class OrcaKillCycle:
         if self.margin_penny_trader and self.kraken_margin_pairs:
             existing_symbols = {o.symbol.replace('/', '') for o in opportunities}
             margin_injected = 0
-            for pair_name, minfo in self.kraken_margin_pairs.items():
+            for _, minfo in self.kraken_margin_pairs.items():
                 clean = pair_name.replace('/', '')
                 if clean in existing_symbols:
                     continue
@@ -11118,7 +11096,7 @@ class OrcaKillCycle:
         """Compute cash/assets energy per exchange with momentum tracking."""
         live_prices = self._get_live_crypto_prices()
         gbp_usd_rate = live_prices.get('GBPUSD', 1.27)
-        energy = {
+        _ = {
             "exchanges": {},
             "total": {"cash": 0.0, "assets": 0.0, "total": 0.0}
         }
@@ -11518,9 +11496,9 @@ class OrcaKillCycle:
                         avg_price = sum(closes) / len(closes)
                         variance = sum((x - avg_price) ** 2 for x in closes) / len(closes)
                         std_dev = variance ** 0.5
-                        volatility = std_dev / avg_price # normalized
+                        _ = std_dev / avg_price # normalized
                     else:
-                        volatility = 0.0
+                        _ = 0.0
                     
                     # Enhanced Momentum Calculation
                     # Base 0.5
@@ -12746,7 +12724,7 @@ class OrcaKillCycle:
                                     })
                                     print(f"      SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
                                     self._queen_learn_from_sell(
-                                        queen=queen if 'queen' in dir() else self.queen_hive,
+                                        queen=self.queen_hive,
                                         symbol=pos.symbol, exchange=pos.exchange,
                                         pnl=final_pnl,
                                         entry_price=pos.entry_price, exit_price=sell_price,
@@ -13344,7 +13322,7 @@ class OrcaKillCycle:
         #     ASSET COMMAND CENTER + OCEAN VIEW - Full visibility of ALL assets
         asset_command_center = None
         asset_monitor = None
-        ocean_view = None
+        # ocean_view = None
         last_asset_scan = 0
         asset_scan_interval = 20.0  # Full asset scan every 20 seconds (penny speed)
         
@@ -13352,7 +13330,7 @@ class OrcaKillCycle:
             try:
                 asset_command_center = get_asset_command_center()
                 asset_monitor = get_asset_monitor()
-                ocean_view = get_ocean_view()
+                # ocean_view = get_ocean_view()
                 print("    ASSET COMMAND CENTER: WIRED!")
                 print("      Full visibility of ALL positions across ALL exchanges")
                 print("      Ocean View: WHAT WE HAVE + WHAT WE CAN BUY")
@@ -15008,7 +14986,7 @@ class OrcaKillCycle:
                                             _qb_boost = 1.0 + (conf - 0.5) * 0.4
                                             if timing == 'LIGHTHOUSE':
                                                 _qb_boost *= 1.1  # Extra boost for optimal window
-                                            for opp in opportunities if opportunities else []:
+                                            for opp in opportunities:
                                                 pass  # Boost will be applied below via _timeline_multiplier
                                             _timeline_multiplier = max(_timeline_multiplier, _qb_boost)
                                             print(f"     QUANTUM BRAIN: LONG (conf={conf:.0%}, timing={timing}) → {_qb_boost:.2f}x global")
@@ -16428,26 +16406,6 @@ class OrcaKillCycle:
             # Log state dump errors to help debugging
             print(f"   Dashboard state dump failed: {e}")
             pass
-
-    def _load_kraken_assets_for_monitoring(self) -> List[str]:
-        """
-        Auto-discover all tradeable Kraken assets and return as symbols for monitoring/trading.
-        This enables comprehensive market coverage instead of hardcoded asset lists.
-        
-        Returns:
-            List of tradeable symbol pairs (e.g., ['BTC/USD', 'ETH/USD', ...])
-        """
-        try:
-            kraken_client = self.clients.get('kraken')
-            if not kraken_client:
-                _safe_print("   Kraken client not initialized - cannot discover assets")
-                return []
-            
-            # Get all tradeable pairs from Kraken
-            _safe_print("  Discovering all Kraken tradeable assets...")
-            tradeable_pairs = kraken_client.get_available_pairs()
-            
-            if not tradeable_pairs:
                 _safe_print("   No tradeable pairs found from Kraken")
                 return []
             
@@ -16607,7 +16565,24 @@ class OrcaKillCycle:
         
         return final_list
 
-    def scan_for_rising_stars(self, top_n: int = 10, min_confidence: float = 0.75, symbol_whitelist=None):
+    # def scan_for_rising_stars(self, top_n: int = 10, min_confidence: float = 0.75, symbol_whitelist=None):
+    #     """
+    #     Scan all available intelligence systems for the highest-probability trading candidates.
+    #     Uses: Quantum scoring, Probability predictions, Wave scanner, Firm intel, Whale signals
+    #     """
+    #     candidates = []
+        
+    #     try:
+    #         # Get symbols to scan (use whitelist if provided)
+    #         if symbol_whitelist:
+    #             symbols_to_scan = symbol_whitelist
+    #         else:
+    #             # Default set if no whitelist
+    #             symbols_to_scan = ['BTC/USD', 'ETH/USD', 'AAPL', 'TSLA', 'NVDA', 'SPY', 'QQQ', 'GME', 'AMC']
+                
+    #         # Scan each symbol and score it
+    #         for symbol in symbols_to_scan:
+    #             try:
         """
         Scan all available intelligence systems for the highest-probability trading candidates.
         Uses: Quantum scoring, Probability predictions, Wave scanner, Firm intel, Whale signals
@@ -16631,7 +16606,7 @@ class OrcaKillCycle:
                     # 1. Get current price and momentum
                     ticker = None
                     for client_name in ['kraken', 'binance', 'alpaca']:
-                        cl = getattr(self, client_name, None) or self.clients.get(client_name)
+                        _ = getattr(self, client_name, None) or self.clients.get(client_name)
                         if not cl:
                             continue
                         try:
@@ -16988,7 +16963,7 @@ def _acquire_orca_singleton_lock(lock_name: str = "orca_autonomous_live.lock") -
         try:
             if sys.platform == 'win32':
                 import msvcrt
-                msvcrt.locking(lock_f.fileno(), msvcrt.LK_NBLCK, 1)
+                msvcrt.locking(lock_f.fileno(), msvcrt.LK_NBLCK, 1)  # type: ignore
             else:
                 import fcntl
                 fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
