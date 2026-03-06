@@ -24,36 +24,44 @@ Usage:
 Gary Leckey & GitHub Copilot | November 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from importlib import import_module
+
 __version__ = "1.0.0"
 __author__ = "Gary Leckey & GitHub Copilot"
 
-# Core exports
-from aureon_nexus import (
-    AureonNexus,
-    MasterEquation,
-    QueenHive,
-    NexusBus,
-    NEXUS,
-    ModuleState,
-    
-    # Constants
-    PHI,
-    LOVE_FREQUENCY,
-    SCHUMANN_BASE,
-    FIBONACCI,
-    PRIMES,
-    SOLFEGGIO,
-    AURIS_NODES,
-    RAINBOW_STATES,
-    LADDER_LEVELS,
-    
-    # Functions
-    kelly_fraction,
-    get_ladder_level,
-)
+_NEXUS_EXPORTS = {
+    "AureonNexus",
+    "MasterEquation",
+    "QueenHive",
+    "NexusBus",
+    "NEXUS",
+    "ModuleState",
+    "PHI",
+    "LOVE_FREQUENCY",
+    "SCHUMANN_BASE",
+    "FIBONACCI",
+    "PRIMES",
+    "SOLFEGGIO",
+    "AURIS_NODES",
+    "RAINBOW_STATES",
+    "LADDER_LEVELS",
+    "kelly_fraction",
+    "get_ladder_level",
+}
 
-from binance_client import BinanceClient
+
+def __getattr__(name: str):
+    if name in _NEXUS_EXPORTS:
+        module = import_module("aureon_nexus")
+        return getattr(module, name)
+    if name == "BinanceClient":
+        module = import_module("binance_client")
+        return getattr(module, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | _NEXUS_EXPORTS | {"BinanceClient"})
 
 # Convenience function for quick start
 def start_trading(cycles: int = 100, interval: float = 5.0, symbol: str = "BTCUSDT"):
@@ -65,6 +73,7 @@ def start_trading(cycles: int = 100, interval: float = 5.0, symbol: str = "BTCUS
         interval: Seconds between cycles
         symbol: Trading symbol (default BTCUSDT)
     """
+    AureonNexus = __getattr__("AureonNexus")
     nexus = AureonNexus()
     nexus.run(cycles=cycles, interval=interval)
     return nexus

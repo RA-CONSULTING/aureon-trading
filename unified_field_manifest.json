@@ -1,0 +1,386 @@
+{
+  "manifest_version": "2026-03-06.unified-field.v1",
+  "title": "Aureon Unified Field Manifest",
+  "generated_on": "2026-03-06",
+  "scope": "Machine-readable companion for the Unified Field README section and the HNC unified white paper appendix.",
+  "documentation_surfaces": {
+    "readme": "README.md",
+    "white_paper": "docs/HNC_UNIFIED_WHITE_PAPER.md"
+  },
+  "identity_anchor": {
+    "prime_sentinel_name": "Gary Leckey",
+    "dob_iso": "1991-02-11",
+    "dob_hash_numeric": 2111991,
+    "dob_hash_string": "02111991",
+    "prime_sentinel_hz": 2.111991,
+    "gary_hz": 528.422,
+    "atlas_key_decimal": 15354,
+    "atlas_key_binary": "0011101111111010",
+    "glyph_sequence": "KKBGGICHHGKE",
+    "source_files": [
+      "prime_sentinel_decree.py",
+      "aureon_seer.py",
+      "aureon_temporal_biometric_link.py",
+      "aureon_self_awareness.py",
+      "docs/PRIMELINES_IDENTITY.md",
+      "docs/PRIMELINES_PROTOCOL_GATEWAY.md"
+    ]
+  },
+  "sacred_constants": {
+    "phi": 1.618033988749895,
+    "schumann_fundamental_hz": 7.83,
+    "love_frequency_hz": 528.0,
+    "rf_carrier_hz": 13560000.0,
+    "philosophers_stone_threshold_lt": 2.8,
+    "golden_gate_threshold_lt": 4.5305
+  },
+  "chronology": [
+    {
+      "date": "1991-02-11",
+      "layer": "identity_anchor",
+      "artifact": "Prime Sentinel temporal seed",
+      "details": [
+        "DOB_HASH = 2111991",
+        "PRIME_SENTINEL_HZ = 2.111991"
+      ],
+      "files": [
+        "prime_sentinel_decree.py",
+        "aureon_seer.py",
+        "aureon_temporal_biometric_link.py"
+      ]
+    },
+    {
+      "date": "2025-11",
+      "layer": "identity_formalization",
+      "artifact": "Self-awareness and Primelines identity surfaces consolidated",
+      "files": [
+        "aureon_self_awareness.py",
+        "docs/PRIMELINES_IDENTITY.md",
+        "aureon/__init__.py"
+      ]
+    },
+    {
+      "date": "2026-02-28",
+      "layer": "event_anchor",
+      "artifact": "EPIC-FURY public-record timing reference",
+      "files": [
+        "aureon/geopolitical_forensics.py"
+      ]
+    },
+    {
+      "date": "2026-03-03",
+      "layer": "autonomy_runtime",
+      "artifact": "Full autonomy loop around live prices, Trinity alignment, and Nexus signals",
+      "files": [
+        "aureon_full_autonomy.py",
+        "INTEGRATION_TEST_STATUS.md"
+      ]
+    },
+    {
+      "date": "2026-03-06",
+      "layer": "unified_research_layer",
+      "artifact": "Decoder, forensics, bridge, tests, README, and white paper aligned",
+      "files": [
+        "aureon/decoders/emerald_spec.py",
+        "aureon/geopolitical_forensics.py",
+        "aureon/harmonic_nexus_bridge.py",
+        "README.md",
+        "docs/HNC_UNIFIED_WHITE_PAPER.md"
+      ]
+    }
+  ],
+  "research_modules": [
+    {
+      "path": "aureon/decoders/emerald_spec.py",
+      "role": "Hermetic-to-computational translation layer",
+      "counts": {
+        "verses": 22,
+        "alchemical_stages": 7
+      }
+    },
+    {
+      "path": "aureon/geopolitical_forensics.py",
+      "role": "Neutral public-record L(t) anomaly scoring, stake concentration, and report generation",
+      "case_catalog_size": 2
+    },
+    {
+      "path": "aureon/harmonic_nexus_bridge.py",
+      "role": "Cross-domain temporal clustering and planetary network injection",
+      "demo_mix": {
+        "public_record_anomalies": 1,
+        "synthetic_plasma_anomalies": 1
+      }
+    },
+    {
+      "path": "aureon_full_autonomy.py",
+      "role": "Live market ingestion, Trinity alignment, Nexus routing, execution gating, atomic state logging"
+    }
+  ],
+  "forensics_cases": [
+    {
+      "cluster_id": "MAGAMYMAN-001",
+      "lt_score": 12.85,
+      "severity": "EXTREME",
+      "classification": "PHILOSOPHERS_STONE",
+      "summary": "Public-record wallet activity timing-correlated with a geopolitical event window",
+      "source_module": "aureon/geopolitical_forensics.py"
+    },
+    {
+      "cluster_id": "BUBBLEMAPS-6",
+      "lt_score": 13.03,
+      "severity": "EXTREME",
+      "classification": "PHILOSOPHERS_STONE",
+      "summary": "Public-record coordinated-wallet cluster with concentration and timing anomalies",
+      "source_module": "aureon/geopolitical_forensics.py"
+    }
+  ],
+  "bridge_demo": {
+    "public_record_anomalies": 1,
+    "synthetic_plasma_anomalies": 1,
+    "temporal_proximity_seconds": 1560,
+    "temporal_proximity_minutes": 26,
+    "clustering_score": 2.77,
+    "assessment": "CORRELATED",
+    "network_injection_target": "planetary_harmonic_network.json"
+  },
+  "runtime_configuration": {
+    "tracked_symbols": [
+      "BTCUSDC",
+      "ETHUSDC",
+      "DOGEUSDC",
+      "SOLUSDC",
+      "LINKUSDC",
+      "UNIUSDC",
+      "LTCUSDC",
+      "ADAUSDC",
+      "AVAXUSDC",
+      "XRPUSDC"
+    ],
+    "check_interval_seconds_default": 10,
+    "execution_threshold": 0.8,
+    "max_concurrent_trades": 3,
+    "execution_decision": "alignment >= 0.80 and buy > 0",
+    "state_log": {
+      "path": "autonomy_execution_state.json",
+      "exists_in_snapshot": false,
+      "write_mode": "atomic temp-rename"
+    }
+  },
+  "runtime_cycle": [
+    {
+      "step": 1,
+      "operation": "fetch_live_prices",
+      "inputs": [
+        "Binance /ticker/price",
+        "Binance /ticker/24hr"
+      ],
+      "output": "_latest_prices cache"
+    },
+    {
+      "step": 2,
+      "operation": "learning_pillar",
+      "inputs": [
+        "7day_adaptive_weights.json"
+      ],
+      "output": "learning_score"
+    },
+    {
+      "step": 3,
+      "operation": "health_pillar",
+      "inputs": [
+        "active_position.json"
+      ],
+      "output": "health_score"
+    },
+    {
+      "step": 4,
+      "operation": "plan_pillar",
+      "inputs": [
+        "7day_current_plan.json"
+      ],
+      "output": "plan_score"
+    },
+    {
+      "step": 5,
+      "operation": "trinity_alignment",
+      "formula": "learning*0.35 + health*0.25 + plan*0.40",
+      "output": "alignment"
+    },
+    {
+      "step": 6,
+      "operation": "nexus_routing",
+      "inputs": [
+        "aureon_probability_nexus.py",
+        "7day_current_plan.json",
+        "7day_validation_history.json"
+      ],
+      "output": "BUY/SELL/HOLD signals"
+    },
+    {
+      "step": 7,
+      "operation": "execution_gate",
+      "formula": "alignment >= 0.80 and buy > 0",
+      "output": "ready or wait"
+    },
+    {
+      "step": 8,
+      "operation": "atomic_state_log",
+      "output": "autonomy_execution_state.json"
+    }
+  ],
+  "provenance_boundaries": [
+    {
+      "surface": "geopolitical_forensics",
+      "mode": "public_record",
+      "source": "aureon/geopolitical_forensics.py",
+      "boundary": "Neutral and pseudonymous only; no KYC or real-world identity attribution"
+    },
+    {
+      "surface": "harmonic_bridge_plasma_event",
+      "mode": "synthetic_demo",
+      "source": "aureon/harmonic_nexus_bridge.py",
+      "boundary": "Synthetic plasma analogue used to validate cross-domain clustering logic"
+    },
+    {
+      "surface": "emerald_decoder",
+      "mode": "research_mapping",
+      "source": "aureon/decoders/emerald_spec.py",
+      "boundary": "Structural translation layer, not a historical proof engine"
+    },
+    {
+      "surface": "autonomy_market_feed",
+      "mode": "live_external_data",
+      "source": "aureon_full_autonomy.py",
+      "boundary": "Real Binance public REST data, no simulated prices"
+    },
+    {
+      "surface": "autonomy_state_surfaces",
+      "mode": "local_persisted_state",
+      "source": "repo root JSON state files",
+      "boundary": "File-backed operational memory for alignment and signal fallbacks"
+    }
+  ],
+  "state_surfaces": [
+    {
+      "path": "7day_adaptive_weights.json",
+      "exists": true,
+      "role": "learning pillar"
+    },
+    {
+      "path": "7day_current_plan.json",
+      "exists": true,
+      "role": "plan pillar and Nexus fallback"
+    },
+    {
+      "path": "7day_validation_history.json",
+      "exists": true,
+      "role": "secondary signal fallback"
+    },
+    {
+      "path": "7day_pending_validations.json",
+      "exists": true,
+      "role": "Batten Matrix persistence surface"
+    },
+    {
+      "path": "active_position.json",
+      "exists": true,
+      "role": "position health pillar"
+    },
+    {
+      "path": "autonomy_execution_state.json",
+      "exists": false,
+      "role": "cycle log artifact written on first logged execution cycle"
+    }
+  ],
+  "planetary_network_snapshot": {
+    "path": "planetary_harmonic_network.json",
+    "total_entities": 25,
+    "total_signatures": 125
+  },
+  "formulas": [
+    {
+      "name": "stone_threshold",
+      "expression": "L(t) > 2.8",
+      "source": "aureon/decoders/emerald_spec.py",
+      "role": "Base anomaly gate"
+    },
+    {
+      "name": "golden_gate",
+      "expression": "L(t) > phi * 2.8 = 4.5305",
+      "source": "aureon/decoders/emerald_spec.py",
+      "role": "Harmonic escalation gate"
+    },
+    {
+      "name": "learning_score",
+      "expression": "acc7d*0.4 + acc30d*0.3 + weight_quality*0.2 + maturity*0.1",
+      "source": "aureon_full_autonomy.py",
+      "role": "Adaptive learning quality compression"
+    },
+    {
+      "name": "trinity_alignment",
+      "expression": "learning*0.35 + health*0.25 + plan*0.40",
+      "source": "aureon_full_autonomy.py",
+      "role": "Main execution readiness scalar"
+    },
+    {
+      "name": "execution_decision",
+      "expression": "alignment >= 0.80 and buy > 0",
+      "source": "aureon_full_autonomy.py",
+      "role": "Opens autonomy execution window"
+    },
+    {
+      "name": "profit_gate",
+      "expression": "r = (V+G+P)/[V*(1-c)^2] - 1",
+      "source": "adaptive_prime_profit_gate.py",
+      "role": "Return and position-quality filter"
+    }
+  ],
+  "diagram_inventory": [
+    {
+      "name": "unified_field_chronology",
+      "type": "mermaid_timeline",
+      "surfaces": [
+        "README.md",
+        "docs/HNC_UNIFIED_WHITE_PAPER.md"
+      ]
+    },
+    {
+      "name": "autonomy_cycle_flow",
+      "type": "mermaid_flowchart",
+      "surfaces": [
+        "README.md",
+        "docs/HNC_UNIFIED_WHITE_PAPER.md"
+      ]
+    },
+    {
+      "name": "unified_field_architecture",
+      "type": "mermaid_graph",
+      "surfaces": [
+        "README.md",
+        "docs/HNC_UNIFIED_WHITE_PAPER.md"
+      ]
+    }
+  ],
+  "test_snapshot": {
+    "total_passing": 50,
+    "suites": [
+      {
+        "path": "tests/test_emerald_spec.py",
+        "passing": 35
+      },
+      {
+        "path": "tests/test_geopolitical_forensics.py",
+        "passing": 10
+      },
+      {
+        "path": "tests/test_harmonic_nexus_bridge.py",
+        "passing": 5
+      }
+    ]
+  },
+  "notes": [
+    "The bridge demo intentionally mixes public-record geopolitical data with a synthetic plasma anomaly to keep cross-domain clustering explicit and testable.",
+    "The autonomy loop uses real public Binance prices and file-backed state surfaces; it does not invent synthetic market prices.",
+    "Counts in this manifest reflect the repository snapshot at documentation time and may change as the network and state files evolve."
+  ]
+}

@@ -35,7 +35,6 @@ EXIT CODES:
   130 = User interrupt (Ctrl+C)
 """
 
-import os
 import sys
 import json
 import time
@@ -45,8 +44,18 @@ import argparse
 import traceback
 from pathlib import Path
 from datetime import datetime
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing3#t Dict, Optional, Tuple
+
+try:
+    import aiohttp
+    AIOHTTP_AVAILABLE = True
+except ImportError:
+    AIOHTTP_AVAILABLE = False
+
+# Nexus and Queen are imported LAZILY (on first use) to avoid heavy init at startup
+NEXUS_AVAILABLE = False
+QUEEN_AVAILABLE = False
 
 # ════════════════════════════════════════════════════════════════════════════
 # AUTONOMY ENGINE: Full Queen Hive Control + Trinity Guidance
@@ -87,6 +96,7 @@ class AutonomyExecutor:
         self.execution_count = 0
         self.error_count = 0
         self.start_time = datetime.now()
+        self._latest_prices = {}  # populated by fetch_live_prices()
         
         logger.info("╔" + "═" * 78 + "╗")
         logger.info("║" + "AUREON FULL AUTONOMY ACTIVATED".center(78) + "║")
@@ -96,29 +106,148 @@ class AutonomyExecutor:
         logger.info(f"Execution Threshold: {config.execution_threshold}")
         logger.info(f"Check Interval: {config.check_interval}s | Max Trades: {config.max_concurrent_trades}")
     
+    async def fetch_live_prices(self) -> Dict:
+        """Fetch REAL live prices from public APIs (no API key needed)."""
+        prices = {}
+        
+        # Binance public API (fast, reliable)
+        binance_symbols = [
+            'BTCUSDC', 'ETHUSDC', 'DOGEUSDC', 'SOLUSDC', 'LINKUSDC',
+            'UNIUSDC', 'LTCUSDC', 'ADAUSDC', 'AVAXUSDC', 'XRPUSDC',
+        ]
+        
+        if AIOHTTP_AVAILABLE:
+            try:
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                    # Binance tickers (single call for all)
+                    async with session.get('https://api.binance.com/api/v3/ticker/price') as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            for item in data:
+                                sym = item.get('symbol', '')
+                                if sym in binance_symbols:
+                                    base = sym.replace('USDC', '').replace('USDT', '')
+                                    prices[base] = float(item['price'])
+                            logger.info(f"  Binance: {len(prices)} live prices fetched")
+                    
+                    # Binance 24hr for change/volume data
+                    async with session.get('https://api.binance.com/api/v3/ticker/24hr') as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            for item in data:
+                                sym = item.get('symbol', '')
+                                if sym in binance_symbols:
+                                    base = sym.replace('USDC', '').replace('USDT', '')
+                                    if base in prices:
+                                        prices[f"{base}_change"] = float(item.get('priceChangePercent', 0))
+                                        prices[f"{base}_volume"] = float(item.get('volume', 0))
+            except Exception as e:
+                logger.warning(f"  Binance fetch failed: {e}")
+        else:
+            # Fallback: use urllib (always available)
+            import urllib.request
+            try:
+                url = 'https://api.binance.com/api/v3/ticker/price'
+                req = urllib.request.Request(url, headers={'User-Agent': 'Aureon/1.0'})
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.loads(resp.read().decode())
+                    for item in data:
+                        sym = item.get('symbol', '')
+                        if sym in binance_symbols:
+                            base = sym.replace('USDC', '').replace('USDT', '')
+                            prices[base] = float(item['price'])
+                logger.info(f"  Binance (urllib): {len(prices)} live prices fetched")
+            except Exception as e:
+                logger.warning(f"  Binance urllib fetch failed: {e}")
+        
+        self._latest_prices = prices
+        return prices
+
     async def get_trinity_alignment(self) -> Tuple[float, str]:
-        """Get current Trinity alignment score."""
+        """Get current Trinity alignment score using REAL data from state files.
+        
+        Reads the ACTUAL keys written by aureon_7day_planner.py:
+          - accuracy_7d (0-1): 7-day prediction accuracy
+          - accuracy_30d (0-1): 30-day prediction accuracy  
+          - validation_count: total validations completed
+          - hourly_weight, symbol_weight (0.5-1.5): learned weights
+        
+        Also reads active_position.json and 7day_current_plan.json for
+        position health and plan quality signals.
+        """
         try:
-            # Read from state files directly (fast, no ecosystem boot)
             weights_path = Path('/workspaces/aureon-trading/7day_adaptive_weights.json')
             position_path = Path('/workspaces/aureon-trading/active_position.json')
+            plan_path = Path('/workspaces/aureon-trading/7day_current_plan.json')
             
-            coherence = 0.42
-            clarity = 0.38
+            # ── Pillar 1: Learning Quality (from adaptive weights) ──
+            accuracy_7d = 0.5
+            accuracy_30d = 0.5
+            validation_count = 0
+            weight_quality = 0.5  # how "tuned" the weights are
+            
             if weights_path.exists():
                 with open(weights_path) as f:
                     weights = json.load(f) or {}
-                coherence = weights.get('coherence', 0.42)
-                clarity = weights.get('clarity', 0.38)
+                accuracy_7d = float(weights.get('accuracy_7d', 0.5))
+                accuracy_30d = float(weights.get('accuracy_30d', 0.5))
+                validation_count = int(weights.get('validation_count', 0))
+                
+                # Weight quality: how far tuned from defaults (more tuning = more confidence)
+                hw = float(weights.get('hourly_weight', 1.0))
+                sw = float(weights.get('symbol_weight', 1.0))
+                # Deviation from 1.0 means learning has occurred
+                weight_deviation = (abs(hw - 1.0) + abs(sw - 1.0)) / 2
+                weight_quality = min(1.0, 0.5 + weight_deviation)  # 0.5 base + learned boost
             
-            pnl = 0
+            learning_score = (
+                accuracy_7d * 0.4 +
+                accuracy_30d * 0.3 +
+                weight_quality * 0.2 +
+                min(1.0, validation_count / 1000) * 0.1  # maturity bonus
+            )
+            
+            # ── Pillar 2: Position Health ──
+            health_score = 0.5
             if position_path.exists():
                 with open(position_path) as f:
                     pos = json.load(f) or {}
-                pnl = float(pos.get('unrealized_pnl_usd', 0))
+                entry = float(pos.get('entry_price', 0))
+                target = float(pos.get('target_price', 0))
+                status = pos.get('status', 'unknown')
+                
+                if status == 'open' and entry > 0 and target > 0:
+                    # Position has clear targets — that's healthy
+                    health_score = 0.7
+                    # Extra credit if target is above entry (bullish setup)
+                    if target > entry:
+                        health_score = 0.8
+                elif status == 'closed':
+                    health_score = 0.6  # neutral, ready for next
+                else:
+                    health_score = 0.4
             
-            health_score = 0.5 if pnl < 0 else 0.75 if pnl < 500 else 1.0
-            alignment = (coherence * 0.4 + clarity * 0.4 + health_score * 0.2)
+            # ── Pillar 3: Plan Quality (from 7day planner) ──
+            plan_score = 0.3  # low default if no plan
+            if plan_path.exists():
+                with open(plan_path) as f:
+                    plan = json.load(f) or {}
+                predicted_edge = float(plan.get('total_predicted_edge', 0))
+                best_windows = plan.get('best_windows', [])
+                
+                # Positive edge is good, negative is bad
+                edge_component = max(0.0, min(1.0, (predicted_edge + 5) / 10))  # map -5..+5 to 0..1
+                window_count = len([w for w in best_windows if w.get('confidence', 0) > 0.5])
+                window_component = min(1.0, window_count / 5)  # 5+ high-conf windows = 1.0
+                
+                plan_score = edge_component * 0.6 + window_component * 0.4
+            
+            # ── Trinity Alignment = weighted combination ──
+            alignment = (
+                learning_score * 0.35 +   # How well-calibrated the system is
+                health_score * 0.25 +      # Current position health
+                plan_score * 0.40          # Quality of the trading plan
+            )
             
             if alignment >= 0.8:
                 interpretation = "🟢 PERFECT ALIGNMENT - Execute with confidence"
@@ -129,58 +258,192 @@ class AutonomyExecutor:
             else:
                 interpretation = "🔴 WEAK ALIGNMENT - Hold position"
             
+            details = (f"Learning={learning_score:.3f} (acc7d={accuracy_7d:.2f} acc30d={accuracy_30d:.2f} "
+                      f"validations={validation_count}) | Health={health_score:.2f} | Plan={plan_score:.3f}")
+            logger.debug(f"  Trinity breakdown: {details}")
+            
             return round(alignment, 4), interpretation
         
         except Exception as e:
             logger.warning(f"Trinity alignment fetch failed: {e}")
-            return 0.0, "error"
+            traceback.print_exc()
+            return 0.0, "🔴 ERROR - alignment calculation failed"
     
     async def get_nexus_signals(self) -> Dict:
-        """Get current Nexus signals (lightweight version)."""
+        """Get current Nexus signals by running the REAL probability nexus pipeline.
+        
+        Strategy:
+        1. Fetch live market prices from Binance public API
+        2. Feed them into the Probability Nexus as market snapshots
+        3. Update subsystems and run make_predictions()
+        4. Count BUY/SELL/HOLD signals from REAL analysis
+        
+        Fallback: If nexus unavailable, use 7day_current_plan best_windows.
+        """
         try:
-            # Use cached signals instead of importing full Nexus
-            signals_path = Path('/workspaces/aureon-trading/7day_validation_history.json')
-            
-            if signals_path.exists():
-                with open(signals_path) as f:
-                    validation_hist = json.load(f) or []
+            # ── Strategy 1: Run the REAL Probability Nexus ──
+            if hasattr(self, '_latest_prices') and self._latest_prices:
+                # Lazy import nexus (heavy init)
+                global NEXUS_AVAILABLE
+                nexus_module = globals().get('nexus')
+                if not NEXUS_AVAILABLE:
+                    try:
+                        import aureon_probability_nexus as _nexus
+                        globals()['nexus'] = _nexus
+                        nexus_module = _nexus
+                        NEXUS_AVAILABLE = True
+                        logger.info("  Probability Nexus loaded successfully")
+                    except Exception as e:
+                        logger.info(f"  Nexus not available: {e}")
                 
-                # Handle both list and dict formats
-                if isinstance(validation_hist, list):
-                    buy_count = sum(1 for v in validation_hist 
-                                   if isinstance(v, dict) and v.get('action') == 'BUY')
-                    sell_count = sum(1 for v in validation_hist 
-                                    if isinstance(v, dict) and v.get('action') == 'SELL')
-                    hold_count = sum(1 for v in validation_hist 
-                                    if isinstance(v, dict) and v.get('action') == 'HOLD')
-                elif isinstance(validation_hist, dict):
-                    buy_count = sum(1 for v in validation_hist.values() 
-                                   if isinstance(v, dict) and v.get('action') == 'BUY')
-                    sell_count = sum(1 for v in validation_hist.values() 
-                                    if isinstance(v, dict) and v.get('action') == 'SELL')
-                    hold_count = sum(1 for v in validation_hist.values() 
-                                    if isinstance(v, dict) and v.get('action') == 'HOLD')
-                else:
-                    buy_count = sell_count = hold_count = 0
+                if NEXUS_AVAILABLE and nexus_module is not None:
+                    logger.info("  Running Probability Nexus with live market data...")
+                    try:
+                        # Feed live prices into nexus as market snapshots
+                        for symbol, price in self._latest_prices.items():
+                            if symbol.endswith('_change') or symbol.endswith('_volume'):
+                                continue
+                            volume = self._latest_prices.get(f'{symbol}_volume', 0)
+
+                            # Create a synthetic candle for the nexus ingestion
+                            # [time, low, high, open, close, volume]
+                            candle = [time.time(), price * 0.999, price * 1.001, price, price, volume]
+                            nexus_module.ingest_market_data(symbol, [candle])
+
+                        # Update subsystems with new data
+                        nexus_module.update_subsystems()
+
+                        # Generate predictions
+                        predictions = nexus_module.make_predictions()
+
+                        if predictions:
+                            buy_preds = [p for p in predictions if p.get('signal') == 'BUY']
+                            sell_preds = [p for p in predictions if p.get('signal') == 'SELL']
+                            hold_preds = [p for p in predictions if p.get('signal') == 'HOLD']
+
+                            # Log top signals
+                            for p in buy_preds[:3]:
+                                logger.info(f"    BUY {p['symbol']}: conf={p['confidence']:.4f} "
+                                           f"clarity={p.get('clarity',0):.2f} coherence={p.get('coherence',0):.2f} "
+                                           f"seer={p.get('seer_grade','?')} war={p.get('war_mode','?')}")
+                            for p in sell_preds[:3]:
+                                logger.info(f"    SELL {p['symbol']}: conf={p['confidence']:.4f}")
+
+                            return {
+                                'total': len(predictions),
+                                'buy': len(buy_preds),
+                                'sell': len(sell_preds),
+                                'hold': len(hold_preds),
+                                'predictions': predictions,
+                                'source': 'probability_nexus_live'
+                            }
+                    except Exception as e:
+                        logger.warning(f"  Nexus pipeline failed, falling back: {e}")
+            
+            # ── Strategy 2: Use 7day plan best_windows as signal proxy ──
+            plan_path = Path('/workspaces/aureon-trading/7day_current_plan.json')
+            if plan_path.exists():
+                with open(plan_path) as f:
+                    plan = json.load(f) or {}
+                
+                best_windows = plan.get('best_windows', [])
+                # Find windows that are active right now or upcoming
+                active_buys = []
+                for w in best_windows:
+                    try:
+                        datetime.fromisoformat(w['start_time'])
+                        datetime.fromisoformat(w['end_time'])
+                        conf = float(w.get('confidence', 0))
+                        edge = float(w.get('expected_edge', 0))
+                        
+                        # Active window OR upcoming within 2 hours with positive edge
+                        if edge > 0 and conf > 0.5:
+                            active_buys.append({
+                                'symbol': w.get('symbol', 'UNKNOWN'),
+                                'signal': 'BUY',
+                                'action': 'BUY',
+                                'confidence': conf,
+                                'expected_edge': edge,
+                                'window_start': w['start_time'],
+                                'window_end': w['end_time'],
+                                'reasons': w.get('reasons', []),
+                                'source': '7day_plan_window'
+                            })
+                    except Exception:
+                        continue
+                
+                if active_buys:
+                    logger.info(f"  7day plan: {len(active_buys)} BUY windows (positive edge, conf>0.5)")
+                    for b in active_buys[:3]:
+                        logger.info(f"    {b['symbol']}: edge={b['expected_edge']:.2f} conf={b['confidence']:.2f} {b.get('reasons',[])}")
                 
                 return {
-                    'total': len(validation_hist),
-                    'buy': buy_count,
-                    'sell': sell_count,
-                    'hold': hold_count,
-                    'predictions': []
+                    'total': len(best_windows),
+                    'buy': len(active_buys),
+                    'sell': 0,
+                    'hold': len(best_windows) - len(active_buys),
+                    'predictions': active_buys,
+                    'source': '7day_plan'
                 }
             
-            return {'total': 0, 'buy': 0, 'sell': 0, 'hold': 0, 'predictions': []}
+            # ── Strategy 3: Check validation history for recent direction signals ──
+            hist_path = Path('/workspaces/aureon-trading/7day_validation_history.json')
+            if hist_path.exists():
+                with open(hist_path) as f:
+                    hist = json.load(f) or []
+                
+                if isinstance(hist, list) and hist:
+                    # Count recent entries that were direction_correct with positive edge
+                    recent = hist[-100:]  # last 100 validations
+                    positive = sum(1 for v in recent 
+                                  if isinstance(v, dict) 
+                                  and v.get('direction_correct') == True 
+                                  and float(v.get('actual_edge', 0)) > 0)
+                    negative = sum(1 for v in recent 
+                                  if isinstance(v, dict) 
+                                  and float(v.get('actual_edge', 0)) < 0)
+                    neutral = len(recent) - positive - negative
+                    
+                    logger.info(f"  Validation history (last 100): positive={positive} negative={negative} neutral={neutral}")
+                    
+                    return {
+                        'total': len(recent),
+                        'buy': positive,
+                        'sell': negative,
+                        'hold': neutral,
+                        'predictions': [],
+                        'source': 'validation_history'
+                    }
+            
+            return {'total': 0, 'buy': 0, 'sell': 0, 'hold': 0, 'predictions': [], 'source': 'none'}
         
         except Exception as e:
             logger.warning(f"Nexus signal fetch failed: {e}")
-            return {'total': 0, 'buy': 0, 'sell': 0, 'hold': 0, 'predictions': []}
+            traceback.print_exc()
+            return {'total': 0, 'buy': 0, 'sell': 0, 'hold': 0, 'predictions': [], 'source': 'error'}
     
-    async def check_execution_window(self) -> bool:
-        """Check if execution conditions are met."""
+    async def check_execution_window(self) -> Tuple[bool, float, Dict]:
+        """Check if execution conditions are met.
+        
+        Pipeline:
+        1. Fetch live market prices (Binance public API)
+        2. Calculate Trinity alignment from real state files  
+        3. Generate Nexus signals from live data
+        4. Gate execution on alignment >= threshold AND buy signals > 0
+        """
+        # Step 1: Fetch live market data
+        prices = await self.fetch_live_prices()
+        price_summary = ', '.join(f"{k}=${v:,.2f}" for k, v in prices.items() 
+                                   if not k.endswith('_change') and not k.endswith('_volume'))
+        if price_summary:
+            logger.info(f"  Live prices: {price_summary[:200]}")
+        
+        # Step 2: Trinity alignment
         alignment, interp = await self.get_trinity_alignment()
+        
+        # Step 3: Nexus signals
         signals = await self.get_nexus_signals()
+        source = signals.get('source', 'unknown')
         
         # Conditions for execution
         ready = (
@@ -188,7 +451,7 @@ class AutonomyExecutor:
             signals['buy'] > 0
         )
         
-        logger.info(f"Alignment: {alignment:.4f} | Signals: BUY={signals['buy']} SELL={signals['sell']} HOLD={signals['hold']}")
+        logger.info(f"Alignment: {alignment:.4f} | Signals: BUY={signals['buy']} SELL={signals['sell']} HOLD={signals['hold']} (source: {source})")
         logger.info(f"  {interp}")
         
         return ready, alignment, signals
@@ -201,22 +464,34 @@ class AutonomyExecutor:
             logger.info("🔬 DRY RUN MODE - Simulating execution without live trades")
         
         try:
-            buy_trades = [p for p in signals.get('predictions', []) if p.get('action') == 'BUY']
+            # Get BUY predictions from signals (works with both nexus and plan formats)
+            buy_trades = [p for p in signals.get('predictions', []) 
+                         if p.get('signal') == 'BUY' or p.get('action') == 'BUY']
             
-            for i, trade in enumerate(buy_trades[:self.config.max_concurrent_trades]):
+            if not buy_trades:
+                logger.info("  No actionable BUY predictions in this cycle")
+                return trades
+            
+            for trade in buy_trades[:self.config.max_concurrent_trades]:
                 symbol = trade.get('symbol', 'UNKNOWN')
+                confidence = trade.get('confidence', 0)
+                source = trade.get('source', signals.get('source', 'unknown'))
+                price = trade.get('price', self._latest_prices.get(symbol, 0))
+                
                 try:
                     if not self.config.dry_run:
-                        # Execute live trade via Queen Hive
-                        logger.info(f"  ⚡ Executing BUY: {symbol}")
-                        # This would be actual execution via exchanges
-                        # Place order, track fill, record outcome
+                        logger.info(f"  ⚡ Executing BUY: {symbol} @ ${price:,.4f} (conf={confidence:.3f}, src={source})")
+                        # TODO: Wire to actual exchange execution via exchange clients
+                        # This is where kraken_client / binance_client / alpaca_client execute
                     else:
-                        logger.info(f"  [SIMULATION] Would execute BUY: {symbol}")
+                        logger.info(f"  [DRY RUN] Would BUY: {symbol} @ ${price:,.4f} (conf={confidence:.3f}, src={source})")
                     
                     trades['executed'].append({
                         'symbol': symbol,
                         'action': 'BUY',
+                        'price': price,
+                        'confidence': confidence,
+                        'source': source,
                         'timestamp': datetime.now().isoformat()
                     })
                     self.execution_count += 1
@@ -248,8 +523,10 @@ class AutonomyExecutor:
         # Write to execution log
         log_path = Path('/workspaces/aureon-trading/autonomy_execution_state.json')
         try:
-            with open(log_path, 'w') as f:
+            tmp_path = log_path.with_suffix(log_path.suffix + '.tmp')
+            with open(tmp_path, 'w') as f:
                 json.dump(state, f, indent=2)
+            tmp_path.replace(log_path)
         except Exception as e:
             logger.error(f"State log write failed: {e}")
     

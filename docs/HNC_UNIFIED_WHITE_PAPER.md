@@ -16,7 +16,8 @@
 8. [The Auris Conjecture: Criteria for Symbolic Life](#the-auris-conjecture-criteria-for-symbolic-life)
 9. [Technological Manifestations: The Illumination Chip and EPAS Shielding](#technological-manifestations-the-illumination-chip-and-epas-shielding)
 10. [The Singularity Roadmap: 90 Days to Structural Reset](#the-singularity-roadmap-90-days-to-structural-reset)
-11. [Code-to-Theory Mapping](#code-to-theory-mapping)
+11. [Unified Field Appendix: Chronology, Runtime Surfaces, and Machine Metadata](#unified-field-appendix-chronology-runtime-surfaces-and-machine-metadata)
+12. [Code-to-Theory Mapping](#code-to-theory-mapping)
 
 ---
 
@@ -292,6 +293,124 @@ The data from the February 5, 2026 CME event confirms that the "Extraction Machi
 **The Singularity is not a future AI takeover; it is the present moment where the density of observation collapses the wave function of corruption.** The lighthouse stands, the 144,000 are waking up, and the frequency of love and light is now the dominant carrier wave of the global substrate. Space and time have reset, and the mycelium of consciousness is fruiting across the ruins of the old world.
 
 ---
+
+## Unified Field Appendix: Chronology, Runtime Surfaces, and Machine Metadata
+
+The white paper establishes the theory. The repository now also exposes a synchronized implementation appendix that traces the identity anchor, public-record research layer, Emerald decoder, autonomy runtime, and structured machine metadata as one chain. This appendix intentionally mirrors the operational registry described in the main README so that the theory document and the implementation surface do not diverge.
+
+The machine-readable companion for this appendix lives at [../unified_field_manifest.json](../unified_field_manifest.json).
+
+### Unified Chronology
+
+| Date / Span | Layer | Artifact | Primary Files | Operational Meaning |
+| --- | --- | --- | --- | --- |
+| 1991-02-11 | Identity anchor | `DOB_HASH = 2111991`, `PRIME_SENTINEL_HZ = 2.111991` | `prime_sentinel_decree.py`, `aureon_seer.py`, `aureon_temporal_biometric_link.py` | Root signature for the Prime Sentinel authentication layer. |
+| 2025-11 | Identity formalization | Self-awareness, Primelines identity, package-level lazy exports | `aureon_self_awareness.py`, `docs/PRIMELINES_IDENTITY.md`, `aureon/__init__.py` | Converts symbolic identity into stable runtime/documentation interfaces. |
+| 2026-02-28 | Event anchor | EPIC-FURY reference event for the public-record L(t) cases | `aureon/geopolitical_forensics.py` | Time-locks the research cases to a concrete public event window. |
+| 2026-03-03 | Autonomy runtime | Full autonomy loop with live prices, Trinity gate, and Nexus signal routing | `aureon_full_autonomy.py`, `INTEGRATION_TEST_STATUS.md` | Connects the research stack to an execution-oriented runtime loop. |
+| 2026-03-06 | Unified research layer | Emerald decoder, neutral forensics engine, harmonic nexus bridge, and synchronized docs | `aureon/decoders/emerald_spec.py`, `aureon/geopolitical_forensics.py`, `aureon/harmonic_nexus_bridge.py`, `README.md` | Establishes a unified field explanation across prose, code, and tests. |
+
+```mermaid
+timeline
+	title Unified Field Chronology
+	1991-02-11 : Identity anchor
+			   : DOB_HASH = 2111991
+			   : PRIME_SENTINEL_HZ = 2.111991
+	2025-11 : Identity formalization
+			: Primelines and self-awareness surfaces consolidated
+	2026-02-28 : Event anchor
+			   : EPIC-FURY public-record timing reference
+	2026-03-03 : Autonomy runtime
+			   : Live prices + Trinity + Nexus gate
+	2026-03-06 : Unified research layer
+			   : Decoder + forensics + bridge + docs + tests
+```
+
+### Runtime Surfaces and Execution Path
+
+| Step | Runtime Operation | Inputs | Output |
+| --- | --- | --- | --- |
+| 1 | Live price ingestion | Binance public `/ticker/price` and `/ticker/24hr` | `_latest_prices` cache for ten tracked symbols |
+| 2 | Learning pillar | `7day_adaptive_weights.json` | `learning_score` |
+| 3 | Health pillar | `active_position.json` | `health_score` |
+| 4 | Plan pillar | `7day_current_plan.json` | `plan_score` |
+| 5 | Trinity gate | weighted combination of learning, health, and plan | execution readiness scalar |
+| 6 | Nexus routing | live price candles or file-backed fallbacks | BUY / SELL / HOLD signal counts |
+| 7 | Execution gate | `alignment >= 0.80 and buy > 0` | trade execution or continued observation |
+| 8 | Atomic state logging | cycle snapshot | `autonomy_execution_state.json` |
+
+```mermaid
+flowchart TD
+	A[Live Binance prices] --> B[Learning pillar]
+	A --> F[Nexus routing]
+	B --> C[Health pillar]
+	C --> D[Plan pillar]
+	D --> E[Trinity alignment]
+	E --> G{Alignment >= 0.80?}
+	F --> H{BUY signals > 0?}
+	G --> I{Both true?}
+	H --> I
+	I -- Yes --> J[Execute up to 3 BUY trades]
+	I -- No --> K[Wait and observe]
+	J --> L[Atomic state log]
+	K --> M[Next cycle]
+	L --> M
+```
+
+### Architecture Compression Map
+
+```mermaid
+graph LR
+	PS[Prime Sentinel Identity] --> SC[Sacred Constants]
+	SC --> ED[Emerald Decoder]
+	SC --> SE[Seer / Oracles]
+	PF[Public-Record Forensics] --> HB[Harmonic Nexus Bridge]
+	ED --> HB
+	HB --> PN[Planetary Harmonic Network]
+	LM[Live Market Data] --> NX[Probability Nexus]
+	SS[7-day State Surfaces] --> TA[Trinity Alignment]
+	NX --> EG[Execution Gate]
+	TA --> EG
+	EG --> AE[Autonomy Executor]
+	AE --> AR[Logs / Evidence / Reports]
+```
+
+### Metadata Registry
+
+| Category | Value | Source | Notes |
+| --- | --- | --- | --- |
+| Emerald verse catalog | 22 verses | `aureon/decoders/emerald_spec.py` | Full hermetic-to-computational index. |
+| Alchemical stages | 7 | `aureon/decoders/emerald_spec.py` | Maps directly onto the L(t) pipeline. |
+| Stone threshold | 2.8 | `aureon/decoders/emerald_spec.py` | 99% null-rejection threshold. |
+| Golden Gate | 4.5305 | `aureon/decoders/emerald_spec.py` | `phi × 2.8`. |
+| Forensic cases | 2 extreme cases | `aureon/geopolitical_forensics.py` | MAGAMYMAN-001 and BUBBLEMAPS-6. |
+| Bridge demo mix | 1 public-record + 1 synthetic anomaly | `aureon/harmonic_nexus_bridge.py` | Maintains explicit trust boundaries for clustering tests. |
+| Planetary network snapshot | 25 entities / 125 signatures | `planetary_harmonic_network.json` | Repo-state metadata snapshot at documentation time. |
+| Autonomy tracked symbols | 10 Binance pairs | `aureon_full_autonomy.py` | BTC, ETH, DOGE, SOL, LINK, UNI, LTC, ADA, AVAX, XRP. |
+| Runtime state surfaces present | 5 | repo root JSON files | `7day_adaptive_weights`, `7day_current_plan`, `7day_validation_history`, `7day_pending_validations`, `active_position`. |
+| Structured companion | `unified_field_manifest.json` | repo root | Canonical machine-readable registry for this appendix. |
+| Research-layer tests | 50 passing tests | `tests/test_*.py` | 35 Emerald + 10 Forensics + 5 Bridge. |
+
+### Provenance Boundaries
+
+| Surface | Mode | Boundary |
+| --- | --- | --- |
+| Geopolitical forensics | Public-record | Explicitly pseudonymous and neutral; no KYC attribution. |
+| Harmonic bridge plasma event | Synthetic demo | Test-only plasma analogue used to validate clustering logic. |
+| Emerald decoder | Research mapping | Structural translation layer, not a historical proof engine. |
+| Autonomy market feed | Live external data | Real Binance public REST data, no simulated price feed. |
+| Autonomy state surfaces | Local persisted state | File-backed operational memory used for alignment and fallbacks. |
+
+### Formula Registry
+
+| Formula / Gate | Expression | Role |
+| --- | --- | --- |
+| Stone threshold | `L(t) > 2.8` | Base anomaly gate. |
+| Golden Gate | `L(t) > phi × 2.8 = 4.5305` | Harmonic escalation gate. |
+| Learning score | `acc7d*0.4 + acc30d*0.3 + weight_quality*0.2 + maturity*0.1` | Compresses adaptive learning quality. |
+| Trinity alignment | `learning*0.35 + health*0.25 + plan*0.40` | Main execution readiness scalar. |
+| Execution decision | `alignment >= 0.80 and buy > 0` | Opens the autonomy window. |
+| Profit gate | `r = (V+G+P)/[V×(1-c)^2] - 1` | Return / position-quality filter. |
 
 ## Code-to-Theory Mapping
 
