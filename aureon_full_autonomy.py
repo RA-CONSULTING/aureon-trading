@@ -195,7 +195,10 @@ class AutonomyExecutor:
         self.execution_count = 0
         self.error_count = 0
         self.start_time = datetime.now()
-        self._latest_prices = {}  # populated by fetch_live_prices()
+        self._latest_prices = {}      # populated by fetch_live_prices()
+        self._surge_profiles: list = []   # updated by scan_all_coins() each cycle
+        self._last_alignment: float = 0.0  # updated by get_trinity_alignment() each cycle
+        self._last_plan_score: float = 0.5  # updated by get_trinity_alignment() each cycle
         
         logger.info("╔" + "═" * 78 + "╗")
         logger.info("║" + "AUREON FULL AUTONOMY ACTIVATED".center(78) + "║")
@@ -333,6 +336,224 @@ class AutonomyExecutor:
         logger.info(f"  INTENT:    {m['intent'][:120]}...")
         logger.info("  ──────────────────────────────────────────────────────────────────────")
         logger.info("")
+
+    # ════════════════════════════════════════════════════════════════════════════
+    # INTENT-COHERENCE FEEDBACK LOOP
+    # "The system learns what THIS human's successful intent looks like."
+    # ════════════════════════════════════════════════════════════════════════════
+
+    def _snapshot_neural_input(self, confidence: float, strong_buy_count: int) -> Dict:
+        """Capture the market state at the moment of a trade decision.
+
+        Returns a NeuralInput-compatible dict that will be stored alongside
+        the trade and fed to QueenNeuron when the outcome is known.  The Queen
+        then learns which input patterns correlate with wins for THIS human's
+        intent — not generic patterns, but the specific signature of decisions
+        that worked inside this portfolio's risk envelope.
+        """
+        quantum_signal  = self._surge_profiles[0].total_score if self._surge_profiles else 0.5
+        schumann_boost  = 0.059   # Schumann resonance contribution (sacred constant)
+        mycelium_signal = min(1.0, strong_buy_count / 10.0)
+        return {
+            'probability_score':  float(self._last_alignment),
+            'wisdom_score':        float(self._last_plan_score),
+            'quantum_signal':      float(quantum_signal),
+            'gaia_resonance':      float(schumann_boost),
+            'emotional_coherence': float(confidence),
+            'mycelium_signal':     float(mycelium_signal),
+        }
+
+    def _enqueue_intent_snapshot(
+        self,
+        symbol: str,
+        entry_price: float,
+        target_price: float,
+        stop_price: float,
+        net_pnl_at_target: float,
+        neural_input: Dict,
+    ) -> None:
+        """Append a pending trade to the intent feedback queue.
+
+        When price later resolves (hits target or stop), _check_outcome_queue()
+        detects it and calls feed_outcome_to_queen() with the original snapshot.
+        This creates the closed loop: decision → outcome → weight update.
+        """
+        queue_path = Path('/workspaces/aureon-trading/intent_feedback_queue.json')
+        queue: list = []
+        if queue_path.exists():
+            try:
+                with open(queue_path) as fq:
+                    queue = json.load(fq)
+            except Exception:
+                queue = []
+        queue.append({
+            'queued_at':        datetime.now().isoformat(),
+            'symbol':           symbol,
+            'entry_price':      entry_price,
+            'target_price':     target_price,
+            'stop_price':       stop_price,
+            'net_pnl_at_target': net_pnl_at_target,
+            'neural_input':     neural_input,
+            'status':           'pending',
+        })
+        tmp = queue_path.with_suffix('.tmp')
+        with open(tmp, 'w') as fq:
+            json.dump(queue, fq, indent=2)
+        tmp.replace(queue_path)
+        logger.info(f"  🧠 Neural snapshot queued for {symbol} — Queen will learn when outcome resolves")
+
+    async def _check_outcome_queue(self) -> None:
+        """Check the intent feedback queue against live prices each cycle.
+
+        Resolution rules:
+          • price >= target_price  →  WIN  (feed positive outcome to Queen)
+          • price <= stop_price    →  STOP (feed negative outcome to Queen)
+          • otherwise              →  still pending, skip
+
+        After a resolution the item is marked and Queen's weights are updated,
+        closing the feedback loop so every real trade teaches the system
+        what *this human's winning decision* looks like.
+        """
+        queue_path = Path('/workspaces/aureon-trading/intent_feedback_queue.json')
+        if not queue_path.exists():
+            return
+        try:
+            with open(queue_path) as fq:
+                queue = json.load(fq)
+        except Exception:
+            return
+
+        pending = [item for item in queue if item.get('status') == 'pending']
+        if not pending:
+            return
+
+        updated = False
+        for item in queue:
+            if item.get('status') != 'pending':
+                continue
+
+            symbol       = item.get('symbol', '')
+            base         = symbol.replace('/USD', '').replace('USDT', '').replace('USDC', '')
+            current_price = self._latest_prices.get(base, 0.0)
+            if current_price == 0.0:
+                continue
+
+            target_price  = float(item.get('target_price', 0))
+            stop_price    = float(item.get('stop_price', 0))
+            entry_price   = float(item.get('entry_price', current_price))
+            net_pnl       = float(item.get('net_pnl_at_target', 0))
+
+            outcome = None
+            if target_price > 0 and current_price >= target_price:
+                outcome = {'is_win': True, 'net_profit_usd': net_pnl}
+                item['status']      = 'win'
+                item['exit_price']  = current_price
+                item['resolved_at'] = datetime.now().isoformat()
+            elif stop_price > 0 and current_price <= stop_price:
+                loss_pct = (current_price - entry_price) / max(entry_price, 0.00001)
+                loss_usd = loss_pct * 100.0   # $100 notional (10x on $10 margin)
+                outcome = {'is_win': False, 'net_profit_usd': loss_usd}
+                item['status']      = 'stop'
+                item['exit_price']  = current_price
+                item['resolved_at'] = datetime.now().isoformat()
+
+            if outcome is not None:
+                await self.feed_outcome_to_queen(item['neural_input'], outcome, symbol)
+                updated = True
+
+        if updated:
+            tmp = queue_path.with_suffix('.tmp')
+            with open(tmp, 'w') as fq:
+                json.dump(queue, fq, indent=2)
+            tmp.replace(queue_path)
+
+    async def feed_outcome_to_queen(
+        self,
+        neural_input_dict: Dict,
+        outcome: Dict,
+        symbol: str = '?',
+    ) -> None:
+        """Feed a resolved trade outcome to QueenNeuron.
+
+        This is the intent-coherence feedback loop closure:
+          entry snapshot  →  Queen predicts confidence  →  market decides winner
+          →  Queen trains on the real result  →  weights drift toward this human's
+             winning pattern  →  next cycle Queen is slightly more calibrated
+
+        The Queen does not learn general market rules — she learns what SUCCESS
+        looks like for the specific intent that built this system.
+        """
+        global QUEEN_AVAILABLE
+        try:
+            if not QUEEN_AVAILABLE:
+                try:
+                    import queen_neuron as _qn
+                    globals()['_queen_module'] = _qn
+                    QUEEN_AVAILABLE = True
+                    logger.info("  👑🧠 QueenNeuron loaded for intent-coherence feedback")
+                except Exception as e:
+                    logger.warning(f"  QueenNeuron unavailable for feedback: {e}")
+                    return
+
+            qn_module = globals().get('_queen_module')
+            if qn_module is None:
+                return
+
+            queen = qn_module.QueenNeuron(
+                weights_path='/workspaces/aureon-trading/queen_neuron_weights.json'
+            )
+            loss = queen.train_on_example(neural_input_dict, outcome)
+            queen.save_weights()
+
+            is_win = outcome.get('is_win', False)
+            pnl    = outcome.get('net_profit_usd', 0.0)
+            icon   = '✅' if is_win else '❌'
+            logger.info(
+                f"  {icon} Queen learned from {symbol}: "
+                f"{'WIN' if is_win else 'LOSS'} ${pnl:+.2f} | "
+                f"train_loss={loss:.4f} | weights saved"
+            )
+
+            # Self-coherence drift: low loss → system learning correctly → nudge up
+            # High loss → Queen is confused → nudge down (signal to human)
+            recent_losses = queen.epoch_losses[-10:] if queen.epoch_losses else []
+            if recent_losses:
+                avg_loss = sum(recent_losses) / len(recent_losses)
+                sc = float(self._self_model.get('self_coherence_score', 1.0))
+                if avg_loss < 0.25:
+                    sc = min(1.0, sc + 0.01)
+                elif avg_loss > 0.40:
+                    sc = max(0.5, sc - 0.02)
+                self._self_model['self_coherence_score'] = sc
+                logger.info(f"  Self-coherence → {sc:.3f} (Queen avg_loss={avg_loss:.3f})")
+
+            # Persist rolling win stats for Trinity to read next cycle
+            stats_path = Path('/workspaces/aureon-trading/queen_feedback_stats.json')
+            stats: Dict = {}
+            if stats_path.exists():
+                try:
+                    with open(stats_path) as fs:
+                        stats = json.load(fs)
+                except Exception:
+                    stats = {}
+            total = stats.get('total_examples', 0) + 1
+            wins  = stats.get('wins', 0) + (1 if is_win else 0)
+            stats.update({
+                'total_examples': total,
+                'wins':           wins,
+                'win_rate':       wins / total,
+                'last_trained':   datetime.now().isoformat(),
+                'last_loss':      float(loss),
+                'last_symbol':    symbol,
+                'last_outcome':   'WIN' if is_win else 'LOSS',
+            })
+            tmp_s = stats_path.with_suffix('.tmp')
+            with open(tmp_s, 'w') as fs:
+                json.dump(stats, fs, indent=2)
+            tmp_s.replace(stats_path)
+
+        except Exception as e:
+            logger.warning(f"  Queen feedback training failed: {e}")
 
     async def fetch_live_prices(self) -> Dict:
         """Fetch REAL live prices from public APIs (no API key needed)."""
@@ -694,6 +915,26 @@ class AutonomyExecutor:
                 weight_quality * 0.2 +
                 min(1.0, validation_count / 1000) * 0.1  # maturity bonus
             )
+
+            # ── Queen Neural Accuracy (from real trade outcomes via feedback loop) ──
+            # As real trades resolve (target/stop hit), QueenNeuron trains on their
+            # entry snapshots.  Her rolling win rate flows back here to adjust
+            # learning_score: accurate Queen → higher learning pillar → stronger Trinity.
+            queen_bonus = 0.0
+            queen_stats_path = Path('/workspaces/aureon-trading/queen_feedback_stats.json')
+            if queen_stats_path.exists():
+                try:
+                    with open(queen_stats_path) as fqs:
+                        qs = json.load(fqs)
+                    queen_total    = int(qs.get('total_examples', 0))
+                    queen_win_rate = float(qs.get('win_rate', 0.5))
+                    # Maturity: full effect only after 50 resolved outcomes
+                    queen_maturity = min(1.0, queen_total / 50.0)
+                    # Bonus / penalty centred on 0.5: max ±0.10 at full maturity
+                    queen_bonus = (queen_win_rate - 0.5) * 0.20 * queen_maturity
+                except Exception:
+                    queen_bonus = 0.0
+            learning_score = min(1.0, max(0.0, learning_score + queen_bonus))
             
             # ── Pillar 2: Position Health ──
             health_score = 0.5
@@ -729,6 +970,9 @@ class AutonomyExecutor:
                 window_component = min(1.0, window_count / 5)  # 5+ high-conf windows = 1.0
                 
                 plan_score = edge_component * 0.6 + window_component * 0.4
+
+            # Cache for neural snapshots (used in _snapshot_neural_input)
+            self._last_plan_score = plan_score
             
             # ── Pillar 4: Self-coherence (does the system know what it is?) ──
             # A system that understands its own purpose makes better decisions.
@@ -755,10 +999,13 @@ class AutonomyExecutor:
                 interpretation = "🔴 WEAK ALIGNMENT - Hold position"
             
             details = (f"Learning={learning_score:.3f} (acc7d={accuracy_7d:.2f} acc30d={accuracy_30d:.2f} "
-                      f"validations={validation_count}) | Health={health_score:.2f} | "
-                      f"Plan={plan_score:.3f} | Self={self_score:.2f}")
+                      f"validations={validation_count} queen_bonus={queen_bonus:+.3f}) | "
+                      f"Health={health_score:.2f} | Plan={plan_score:.3f} | Self={self_score:.2f}")
             logger.debug(f"  Trinity breakdown: {details}")
-            
+
+            # Cache alignment for neural snapshot (used in _snapshot_neural_input)
+            self._last_alignment = round(alignment, 4)
+
             return round(alignment, 4), interpretation
         
         except Exception as e:
@@ -1011,6 +1258,7 @@ class AutonomyExecutor:
         logger.info("")
         logger.info("  ── ALL-COIN SURGE SCAN ───────────────────────────────────────────────")
         surge_profiles = self.scan_all_coins(prices, health=None)   # health filled below
+        self._surge_profiles = surge_profiles   # cache for neural snapshots
         map_result['surge_profiles'] = surge_profiles
 
         # ── Step 2: Full position survivability — the book FIRST ──
@@ -1626,6 +1874,27 @@ class AutonomyExecutor:
                     })
                     self.execution_count += 1
 
+                    # ── Intent-coherence snapshot ──────────────────────────────────────────
+                    # Capture the full market state at the moment of this decision.
+                    # When the outcome is known (price hits target or stop), the Queen
+                    # trains on this snapshot so her weights evolve toward THIS human's
+                    # winning pattern — not generic market rules.
+                    strong_buy_cnt = len([p for p in self._surge_profiles if p.signal in ('STRONG_BUY', 'BUY')])
+                    neural_snap = self._snapshot_neural_input(
+                        confidence=confidence,
+                        strong_buy_count=strong_buy_cnt,
+                    )
+                    target_px = price * (1.0 + predicted_pct / 100.0)
+                    stop_px   = price * 0.95   # default 5% stop
+                    self._enqueue_intent_snapshot(
+                        symbol=symbol,
+                        entry_price=price,
+                        target_price=target_px,
+                        stop_price=stop_px,
+                        net_pnl_at_target=play_map['net_pnl_at_target'],
+                        neural_input=neural_snap,
+                    )
+
                 except Exception as e:
                     logger.error(f"  ❌ Execution failed for {symbol}: {e}")
                     trades['failed'].append({'symbol': symbol, 'error': str(e)})
@@ -1671,6 +1940,13 @@ class AutonomyExecutor:
             while self.config.continuous:
                 iteration += 1
                 logger.info(f"[AUTONOMY CYCLE {iteration}]")
+
+                # ── OUTCOME CHECK: did any queued trades resolve? ──────────────────────
+                # Before mapping new opportunities, check whether any previously
+                # entered positions have hit their target or stop.  When they have,
+                # the Queen trains on the original entry snapshot so her weights
+                # drift toward THIS human's winning context — closed-loop learning.
+                await self._check_outcome_queue()
 
                 # ── PRE-PLAY MAP: full loop sweep BEFORE any new entry decision ──
                 # The system sees WHERE IT IS, WHERE IT IS GOING, and WHETHER
