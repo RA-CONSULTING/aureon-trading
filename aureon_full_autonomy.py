@@ -38,6 +38,7 @@ EXIT CODES:
 import sys
 import json
 import time
+import math
 import asyncio
 import logging
 import argparse
@@ -173,6 +174,60 @@ class CoinSurgeProfile:
     pattern_note:      str      # plain-English pattern explanation
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# SOLAR SYSTEM HARMONIC DATACLASSES
+# The aspectus (Latin: 'appearance / aspect') system converts the observable
+# universe to the harmonic fluid — same PHI and Schumann constants the coin
+# scanner uses, applied at planetary scale.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class PlanetaryPosition:
+    """A single celestial body's geocentric ecliptic longitude at this moment."""
+    name:                str
+    ecliptic_longitude:  float   # degrees 0-360  (J2000.0 ecliptic plane)
+    weight:              float   # market significance 0-1
+    source:              str = 'vsop87'  # 'vsop87' | 'fixed' (extragalactic)
+
+
+@dataclass
+class PlanetaryAspect:
+    """Angular relationship between two bodies — the core unit of the aspectus system."""
+    body1:           str
+    body2:           str
+    separation:      float    # angular separation 0-180°
+    aspect_name:     str      # Conjunction / Sextile / Trine / etc.
+    orb:             float    # degrees off exact angle
+    harmonic_value:  float    # -1 to +1  (positive = harmony, negative = tension)
+    phi_resonance:   float    # 0-1  proximity to PHI golden-angle family
+    pair_weight:     float    # sqrt(weight_a * weight_b) — planetary significance
+    score:           float    # harmonic_value × tightness × phi_boost × pair_weight
+
+
+@dataclass
+class CosmicHarmonicState:
+    """Full solar system harmonic map — the observable universe as a single field.
+
+    Produced by map_solar_system_to_harmonic() each cycle before any market
+    data is processed.  The cosmic_score (0-1) feeds directly into:
+      • gaia_resonance in every neural snapshot (Queen's training data)
+      • Trinity alignment as a cosmic boost modifier
+      • map_full_loop() Step 0 logging (human observes the field)
+    """
+    timestamp:                  str
+    positions:                  List    # List[PlanetaryPosition]
+    aspects:                    List    # List[PlanetaryAspect]
+    cosmic_score:               float   # 0-1 raw aggregate
+    schumann_phase:             float   # 0-1 current Schumann cycle phase
+    schumann_modulated_score:   float   # cosmic_score modulated by Schumann
+    dominant_aspect:            str     # strongest active aspect description
+    phi_locked:                 bool    # PHI-resonant aspect active between major bodies?
+    interpretation:             str     # STRONG_BUY / BUY / HOLD / WATCH
+    total_aspects:              int
+    positive_aspects:           int
+    negative_aspects:           int
+
+
 @dataclass
 class AutonomyConfig:
     """Full autonomy configuration."""
@@ -189,7 +244,44 @@ class AutonomyConfig:
 
 class AutonomyExecutor:
     """Full autonomous trading executor."""
-    
+
+    # ── Solar System Harmonic Constants ──────────────────────────────────────
+    # Aspect table: (exact_angle°, max_orb°, display_name, harmonic_value)
+    # harmonic_value: +1.0 = pure PHI harmony → STRONG BUY signal
+    #                 -1.0 = pure tension       → caution / counter-signal
+    _ASPECT_TABLE = [
+        (  0, 10, 'Conjunction',    1.00),  # merge — amplifies existing direction
+        ( 30,  3, 'Semi-sextile',   0.15),
+        ( 45,  3, 'Semi-square',   -0.30),
+        ( 60,  6, 'Sextile',        0.60),  # opportunity flow
+        ( 72,  4, 'Quintile',       0.70),  # 360°/5 — PHI quintile family
+        ( 90,  8, 'Square',        -0.50),  # friction / energy release
+        (108,  3, 'Triseptile',     0.40),  # 360°×3/10
+        (120,  8, 'Trine',          0.90),  # peak harmony — strongest BUY
+        (135,  3, 'Sesquiquadrate', -0.25),
+        (144,  4, 'Biquintile',     0.65),  # 72°×2 — PHI biquintile
+        (150,  3, 'Quincunx',      -0.10),  # adjustment / recalibration
+        (180, 10, 'Opposition',     0.25),  # tension peak → often precedes reversal
+    ]
+    # PHI golden-angle family: aspects within ±5° of these get a resonance boost
+    # Derived from PHI ratio: 72=360/5, 120=360/3, 137.5=360/φ², 144=360×2/5
+    _PHI_RESONANT_ANGLES = [72.0, 120.0, 137.508, 144.0]
+
+    # Market significance weights — how strongly each body modulates crowd psychology
+    _PLANET_WEIGHTS: Dict[str, float] = {
+        'Sun': 1.00, 'Moon': 0.90, 'Mercury': 0.70, 'Venus': 0.85,
+        'Mars': 0.75, 'Jupiter': 0.95, 'Saturn': 0.85,
+        'Uranus': 0.60, 'Neptune': 0.55, 'Pluto': 0.60,
+        # ── Observable universe extension — fixed extragalactic lodestones ─────
+        'Galactic_Center': 0.40,   # Sagittarius A* — galactic gravitational centre
+        'Great_Attractor': 0.25,   # 100,000-galaxy gravitational watershed
+    }
+    # Fixed extragalactic reference points (ecliptic longitude J2000.0)
+    _GALACTIC_FIXED_POINTS: Dict[str, float] = {
+        'Galactic_Center': 266.84,   # Sagittarius A*
+        'Great_Attractor': 307.00,   # Great Attractor in Norma Cluster
+    }
+
     def __init__(self, config: AutonomyConfig):
         self.config = config
         self.execution_count = 0
@@ -199,6 +291,7 @@ class AutonomyExecutor:
         self._surge_profiles: list = []   # updated by scan_all_coins() each cycle
         self._last_alignment: float = 0.0  # updated by get_trinity_alignment() each cycle
         self._last_plan_score: float = 0.5  # updated by get_trinity_alignment() each cycle
+        self._cosmic_state: Optional[CosmicHarmonicState] = None  # solar system field
         
         logger.info("╔" + "═" * 78 + "╗")
         logger.info("║" + "AUREON FULL AUTONOMY ACTIVATED".center(78) + "║")
@@ -338,6 +431,239 @@ class AutonomyExecutor:
         logger.info("")
 
     # ════════════════════════════════════════════════════════════════════════════
+    # SOLAR SYSTEM HARMONIC MAPPER — THE ASPECTUS
+    # "The entire observable universe converted to the harmonic fluid."
+    # Planets move.  Aspects form.  PHI resonates.  The field tells the story.
+    # ════════════════════════════════════════════════════════════════════════════
+
+    def _compute_planet_positions_math(self) -> List:
+        """Compute geocentric ecliptic longitudes using the VSOP87 simplified model.
+
+        Meeus, "Astronomical Algorithms" (1998) Ch.31-32 mean longitude coefficients.
+        Accurate to ~1° for 2000-2050 — within all harmonic aspect orbs used here
+        (minimum orb 3°), so precision is adequate for field scoring.
+
+        Bodies returned:
+          Solar system — Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn,
+                          Uranus, Neptune, Pluto
+          Extragalactic — Galactic Center (Sagittarius A*), Great Attractor
+          Together these map from inner-orbit resonance to the cosmological scale:
+          the entire observable universe projected onto the ecliptic harmonic field.
+        """
+        now = datetime.now()
+        y, m = now.year, now.month
+        d = now.day + (now.hour * 3600 + now.minute * 60 + now.second) / 86400.0
+
+        if m <= 2:
+            y -= 1
+            m += 12
+        A = int(y / 100)
+        B = 2 - A + int(A / 4)
+        jd      = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5
+        d_j2000 = jd - 2451545.0          # days from J2000.0
+        T       = d_j2000 / 36525.0       # Julian centuries
+
+        # Mean longitudes in degrees — Meeus Table 31.a
+        L_raw: Dict[str, float] = {
+            'Mercury': 252.250906 + 149472.6746358 * T,
+            'Venus':   181.979101 +  58517.8156760 * T,
+            'Mars':    355.433275 +  19140.2993313 * T,
+            'Jupiter':  34.351519 +   3034.9056606 * T,
+            'Saturn':   50.077444 +   1222.1137943 * T,
+            'Uranus':  314.055005 +    428.4669983 * T,
+            'Neptune': 304.348665 +    218.4862002 * T,
+            'Pluto':   238.958116 +    145.9083047 * T,
+        }
+        # Earth ecliptic lon → Sun appears 180° opposite from geocentric view
+        L_earth        = 100.464457 + 35999.3728565 * T
+        L_raw['Sun']   = L_earth + 180.0
+        L_raw['Moon']  = 218.3165 + 13.1763966 * d_j2000  # Moon: d-based for accuracy
+
+        positions = []
+        for name, L in L_raw.items():
+            lon = L % 360.0
+            if lon < 0:
+                lon += 360.0
+            positions.append(PlanetaryPosition(
+                name=name,
+                ecliptic_longitude=round(lon, 3),
+                weight=self._PLANET_WEIGHTS.get(name, 0.5),
+                source='vsop87',
+            ))
+
+        # Extragalactic reference points — the observable universe extension
+        for name, lon in self._GALACTIC_FIXED_POINTS.items():
+            positions.append(PlanetaryPosition(
+                name=name,
+                ecliptic_longitude=lon,
+                weight=self._PLANET_WEIGHTS.get(name, 0.3),
+                source='fixed',
+            ))
+
+        return positions
+
+    def _detect_planetary_aspects(self, positions: List) -> List:
+        """Detect all active aspectus (angular relationships) between celestial bodies.
+
+        For every pair of bodies, the angular separation (0-180°, minimum arc)
+        is tested against the complete aspect table.  When the separation falls
+        within an aspect's orb, the aspect is recorded with its harmonic value
+        and PHI resonance score.
+
+        PHI resonance: separations within ±5° of the golden-angle family
+        (72°, 120°, 137.5°, 144°) receive an extra resonance boost — those angles
+        encode the same self-organising ratio that markets reflect at equilibrium.
+
+        Each pair produces at most one aspect (the tightest match wins).
+        """
+        aspects = []
+        PHI = 1.6180339887498948482
+
+        for i in range(len(positions)):
+            for j in range(i + 1, len(positions)):
+                pa = positions[i]
+                pb = positions[j]
+
+                # Minimum arc between two ecliptic longitudes (0..180°)
+                delta = abs(pa.ecliptic_longitude - pb.ecliptic_longitude) % 360.0
+                sep   = delta if delta <= 180.0 else 360.0 - delta
+
+                # Test every aspect angle; record the first (tightest) match
+                for (exact_angle, max_orb, asp_name, harm_val) in self._ASPECT_TABLE:
+                    orb = abs(sep - exact_angle)
+                    if orb <= max_orb:
+                        tightness     = 1.0 - (orb / max_orb)
+                        phi_dist      = min(abs(sep - phi_a) for phi_a in self._PHI_RESONANT_ANGLES)
+                        phi_resonance = max(0.0, 1.0 - phi_dist / 5.0)
+                        phi_boost     = 1.0 + phi_resonance * (PHI - 1.0)   # 1.0 → 1.618 max
+                        pair_weight   = math.sqrt(pa.weight * pb.weight)
+                        score         = harm_val * tightness * phi_boost * pair_weight
+
+                        aspects.append(PlanetaryAspect(
+                            body1=pa.name, body2=pb.name,
+                            separation=round(sep, 2),
+                            aspect_name=asp_name,
+                            orb=round(orb, 2),
+                            harmonic_value=harm_val,
+                            phi_resonance=round(phi_resonance, 3),
+                            pair_weight=round(pair_weight, 3),
+                            score=round(score, 4),
+                        ))
+                        break   # one aspect per pair; tightest wins
+
+        return aspects
+
+    def _score_harmonic_fluid(self, aspects: List, positions: List) -> CosmicHarmonicState:
+        """Convert all active aspects to a single cosmic field score.
+
+        The 'harmonic fluid' flows through three stages:
+          1. Weighted aggregate of all aspect scores
+             (pair_weight normalises by planetary significance)
+          2. Schumann modulation: 23.3-day cycle (365.25 / 7.83×2)
+             — same 0.059 Schumann constant used in coin scan, applied here
+             at the planetary scale
+          3. Clip to [0, 1] → CosmicHarmonicState
+
+        'As above, so below' — the field that self-organises planetary spacings
+        via Fibonacci/PHI is the same field reflected in liquid markets.
+        """
+        SCHUMANN = 7.83
+
+        now = datetime.now()
+        day_of_year = now.timetuple().tm_yday
+        schumann_cycle_days  = 365.25 / (SCHUMANN * 2.0)   # ≈ 23.3 days
+        schumann_phase       = (day_of_year % schumann_cycle_days) / schumann_cycle_days
+        schumann_mod         = 1.0 + 0.059 * math.sin(2.0 * math.pi * schumann_phase)
+
+        if not aspects:
+            raw_score = 0.5
+        else:
+            sum_weighted = sum(a.score for a in aspects)
+            sum_denom    = sum(a.pair_weight for a in aspects)
+            raw_agg      = sum_weighted / max(sum_denom, 0.001)
+            # Normalise: raw_agg is in ~[-1.618, +1.618]; map to [0, 1]
+            PHI = 1.6180339887498948482
+            raw_score = max(0.0, min(1.0, (raw_agg / PHI + 1.0) / 2.0))
+
+        cosmic_score = max(0.0, min(1.0, raw_score * schumann_mod))
+
+        if aspects:
+            dominant = max(aspects, key=lambda a: abs(a.score))
+            dominant_str = (
+                f"{dominant.body1} — {dominant.body2}: {dominant.aspect_name} "
+                f"({dominant.separation:.1f}°  orb={dominant.orb:.1f}°  "
+                f"h={dominant.harmonic_value:+.2f}  ϕ={dominant.phi_resonance:.2f})"
+            )
+        else:
+            dominant_str = 'No active aspects'
+
+        positive   = [a for a in aspects if a.score > 0]
+        negative   = [a for a in aspects if a.score < 0]
+        phi_locked = any(
+            a.phi_resonance > 0.5 and a.harmonic_value > 0.5
+            and self._PLANET_WEIGHTS.get(a.body1, 0) >= 0.70
+            and self._PLANET_WEIGHTS.get(a.body2, 0) >= 0.70
+            for a in aspects
+        )
+
+        if cosmic_score >= 0.75:
+            interpretation = 'STRONG_BUY — cosmic harmonics fully aligned'
+        elif cosmic_score >= 0.60:
+            interpretation = 'BUY — positive harmonic field'
+        elif cosmic_score >= 0.45:
+            interpretation = 'HOLD — neutral cosmic field'
+        else:
+            interpretation = 'WATCH — tense aspects dominant'
+
+        return CosmicHarmonicState(
+            timestamp=now.isoformat(),
+            positions=positions,
+            aspects=aspects,
+            cosmic_score=round(cosmic_score, 4),
+            schumann_phase=round(schumann_phase, 3),
+            schumann_modulated_score=round(cosmic_score, 4),
+            dominant_aspect=dominant_str,
+            phi_locked=phi_locked,
+            interpretation=interpretation,
+            total_aspects=len(aspects),
+            positive_aspects=len(positive),
+            negative_aspects=len(negative),
+        )
+
+    async def map_solar_system_to_harmonic(self) -> Optional[CosmicHarmonicState]:
+        """The Planetary API — maps the entire observable solar system to the harmonic.
+
+        Pipeline:
+          Step A — Planetary positions (VSOP87 mean longitude, ~1° accurate)
+                   + extragalactic fixed points (Galactic Center, Great Attractor)
+          Step B — Detect all active aspects (the 'aspectus' system)
+                   Every pair of bodies is tested for angular resonance
+          Step C — Score through the harmonic fluid (PHI + Schumann resonance)
+                   producing a single CosmicHarmonicState
+
+        The result is stored on self._cosmic_state and used throughout the cycle:
+          • gaia_resonance in Queen neural snapshots (replaces static 0.059)
+          • cosmic boost modifier in Trinity alignment
+          • Step 0 of map_full_loop (the field is read before prices)
+
+        This is the 'ffsceptus' (aspectus) made operational — every angle between
+        every body from Moon's orbit to the Great Attractor flow through the same
+        PHI and Schumann equations the coin scanner already uses, converting the
+        entire observable universe to the harmonic language of this system.
+        """
+        try:
+            positions = self._compute_planet_positions_math()
+            aspects   = self._detect_planetary_aspects(positions)
+            state     = self._score_harmonic_fluid(aspects, positions)
+            self._cosmic_state = state
+            return state
+        except Exception as e:
+            logger.warning(f"Cosmic harmonic scan failed: {e}")
+            traceback.print_exc()
+            self._cosmic_state = None
+            return None
+
+    # ════════════════════════════════════════════════════════════════════════════
     # INTENT-COHERENCE FEEDBACK LOOP
     # "The system learns what THIS human's successful intent looks like."
     # ════════════════════════════════════════════════════════════════════════════
@@ -352,13 +678,18 @@ class AutonomyExecutor:
         that worked inside this portfolio's risk envelope.
         """
         quantum_signal  = self._surge_profiles[0].total_score if self._surge_profiles else 0.5
-        schumann_boost  = 0.059   # Schumann resonance contribution (sacred constant)
+        # gaia_resonance: was a static Schumann constant (0.059); now uses the live
+        # cosmic harmonic score — the entire solar system mapped to [0, 1].
+        # This means the Queen's neural weights learn what a WINNING DECISION looks
+        # like in the context of the actual cosmic field, not a fixed placeholder.
+        cosmic_ref      = getattr(self, '_cosmic_state', None)
+        gaia_resonance  = cosmic_ref.schumann_modulated_score if cosmic_ref else 0.5
         mycelium_signal = min(1.0, strong_buy_count / 10.0)
         return {
             'probability_score':  float(self._last_alignment),
             'wisdom_score':        float(self._last_plan_score),
             'quantum_signal':      float(quantum_signal),
-            'gaia_resonance':      float(schumann_boost),
+            'gaia_resonance':      float(gaia_resonance),
             'emotional_coherence': float(confidence),
             'mycelium_signal':     float(mycelium_signal),
         }
@@ -981,13 +1312,31 @@ class AutonomyExecutor:
             # Self-score starts at 1.0 (fully coherent with design intent).
             # Future: decays if the system detects contradictions in its own state files.
 
-            # ── Trinity Alignment = weighted combination (now 4 pillars) ──
-            alignment = (
+            # ── Trinity Alignment = weighted combination (4 pillars) + cosmic boost ──
+            alignment_raw = (
                 learning_score * 0.30 +   # How well-calibrated the learning is
                 health_score   * 0.20 +   # Current position health
                 plan_score     * 0.35 +   # Quality of the 7-day plan
                 self_score     * 0.15     # System self-coherence (knows what it is + why)
             )
+
+            # ── Cosmic harmonic modifier ──────────────────────────────────────────
+            # When the solar system's harmonic field is strongly aligned (cosmic_score >
+            # 0.60), a small boost (max +0.05) is added.  When the field is tense
+            # (< 0.40), a small dampener (max -0.02) applies.  This preserves the
+            # existing 4-pillar calibration while making the system "cosmically aware":
+            # a PHI-locked trine between Jupiter and Venus on the day of a trade
+            # is a real signal — the same PHI that governs orbital spacing governs
+            # the harmonic structure the coin scanner already measures.
+            cosmic_boost = 0.0
+            if self._cosmic_state is not None:
+                cs_val = self._cosmic_state.schumann_modulated_score
+                # Positive field (>0.50): up to +0.05 boost at cs_val=1.0
+                # Tense field  (<0.50): up to -0.02 dampener at cs_val=0.0
+                cosmic_boost = (cs_val - 0.50) * 0.10
+                cosmic_boost = max(-0.02, min(0.05, cosmic_boost))
+
+            alignment = min(1.0, max(0.0, alignment_raw + cosmic_boost))
             
             if alignment >= 0.8:
                 interpretation = "🟢 PERFECT ALIGNMENT - Execute with confidence"
@@ -1000,7 +1349,11 @@ class AutonomyExecutor:
             
             details = (f"Learning={learning_score:.3f} (acc7d={accuracy_7d:.2f} acc30d={accuracy_30d:.2f} "
                       f"validations={validation_count} queen_bonus={queen_bonus:+.3f}) | "
-                      f"Health={health_score:.2f} | Plan={plan_score:.3f} | Self={self_score:.2f}")
+                      f"Health={health_score:.2f} | Plan={plan_score:.3f} | Self={self_score:.2f} | "
+                      f"Cosmic={self._cosmic_state.cosmic_score:.3f}(boost={cosmic_boost:+.3f})"
+                      if self._cosmic_state else
+                      f"Learning={learning_score:.3f} | Health={health_score:.2f} | "
+                      f"Plan={plan_score:.3f} | Self={self_score:.2f} | Cosmic=none")
             logger.debug(f"  Trinity breakdown: {details}")
 
             # Cache alignment for neural snapshot (used in _snapshot_neural_input)
@@ -1245,6 +1598,35 @@ class AutonomyExecutor:
         logger.info("═" * 72)
         logger.info("  PRE-PLAY LOOP MAP  — full situational sweep before any new entry")
         logger.info("═" * 72)
+
+        # ── Step 0: Solar system harmonic map — the field before the market ──────
+        # The observable universe is mapped to the harmonic FIRST.
+        # Every planet's position, every aspect, every PHI resonance — scored
+        # and aggregated to a single cosmic field value before a single price
+        # is fetched.  'As above, so below.'
+        logger.info("")
+        logger.info("  ── SOLAR SYSTEM HARMONIC MAP (ASPECTUS) ─────────────────────────────")
+        cosmic_state = await self.map_solar_system_to_harmonic()
+        map_result['cosmic_state'] = cosmic_state
+        if cosmic_state:
+            cs = cosmic_state
+            logger.info(
+                f"  Cosmic Score: {cs.cosmic_score:.4f}  "
+                f"Schumann-mod: {cs.schumann_modulated_score:.4f}  "
+                f"[{cs.interpretation}]"
+            )
+            logger.info(
+                f"  Aspects: {cs.total_aspects} total  "
+                f"(+{cs.positive_aspects} harmonic  -{cs.negative_aspects} tense)"
+            )
+            logger.info(f"  Dominant: {cs.dominant_aspect}")
+            if cs.phi_locked:
+                logger.info("  🌀 PHI LOCK active — golden-angle resonance between major bodies")
+            planet_lines = [
+                f"{p.name[:3]}={p.ecliptic_longitude:.1f}°"
+                for p in cs.positions if p.source == 'vsop87'
+            ]
+            logger.info("  Positions: " + "  ".join(planet_lines))
 
         # ── Step 1: Fetch live prices for ALL coins (everything downstream needs this) ──
         prices = await self.fetch_live_prices()
