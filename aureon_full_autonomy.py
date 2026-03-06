@@ -229,6 +229,57 @@ class CosmicHarmonicState:
 
 
 @dataclass
+class RadarEvent:
+    """A single detected incoming event from the solar radar ping.
+
+    The radar scans forward in time at +1d / +3d / +7d / +14d horizons.
+    Each event is a phenomenon the system detected APPROACHING — an aspect
+    forming, a lunar phase crossing, or a planet crossing a zodiac cusp.
+    """
+    days_away:        float        # how many days until the event peaks / is exact
+    event_type:       str          # 'aspect_forming' | 'lunar_phase' | 'ingress'
+    description:      str          # human-readable: "Jupiter TRINE Venus exact in 3.2d"
+    body1:            str
+    body2:            str          # same as body1 for non-pair events
+    aspect_name:      str
+    harmonic_value:   float        # -1 to +1 (positive = bullish harmonic)
+    phi_resonance:    float        # 0-1
+    pair_weight:      float        # planetary significance
+    urgency:          float        # 0-1: 1 = exact today, 0 = 14 days away
+    radar_signal:     str          # 'BULLISH_INCOMING' | 'TENSE_INCOMING' | 'NEUTRAL'
+
+
+@dataclass
+class SolarRadarReport:
+    """The complete forward-scan of the solar system — the harmonic radar.
+
+    Produced by scan_solar_radar() each cycle and logged in Step 0b of
+    map_full_loop().  The radar_score (0-1) supplements map_full_loop()'s
+    cosmic_state: where cosmic_state tells you WHERE the field IS NOW,
+    the radar tells you WHERE it is GOING.
+
+    Together:
+      cosmic_state.cosmic_score → current harmonic environment
+      radar_report.radar_score  → approaching harmonic tide
+    """
+    scan_timestamp:     str
+    scan_horizon_days:  int            # how far forward the radar looked
+    events:             List           # List[RadarEvent], sorted by days_away
+    events_1d:          List           # events within 1 day
+    events_3d:          List           # events within 3 days
+    events_7d:          List           # events within 7 days
+    radar_score:        float          # 0-1: momentum of incoming harmonics
+    incoming_positive:  int            # count of bullish events within 7 days
+    incoming_negative:  int            # count of tense events within 7 days
+    nearest_event:      str            # description of the closest incoming event
+    dominant_incoming:  str            # highest-significance event within 7 days
+    lunar_phase_now:    str            # New / Waxing Crescent / First Quarter / etc.
+    lunar_phase_next:   str            # next major lunar phase and days until it
+    phi_event_incoming: bool           # is a PHI-resonant aspect forming within 7d?
+    interpretation:     str            # RADAR_BULLISH | RADAR_TENSE | RADAR_NEUTRAL
+
+
+@dataclass
 class AutonomyConfig:
     """Full autonomy configuration."""
     mode: str = 'autonomous'  # autonomous | supervised | headless
@@ -292,6 +343,7 @@ class AutonomyExecutor:
         self._last_alignment: float = 0.0  # updated by get_trinity_alignment() each cycle
         self._last_plan_score: float = 0.5  # updated by get_trinity_alignment() each cycle
         self._cosmic_state: Optional[CosmicHarmonicState] = None  # solar system field
+        self._radar_state: Optional[SolarRadarReport] = None       # harmonic radar — the field approaching
         
         logger.info("╔" + "═" * 78 + "╗")
         logger.info("║" + "AUREON FULL AUTONOMY ACTIVATED".center(78) + "║")
@@ -436,12 +488,18 @@ class AutonomyExecutor:
     # Planets move.  Aspects form.  PHI resonates.  The field tells the story.
     # ════════════════════════════════════════════════════════════════════════════
 
-    def _compute_planet_positions_math(self) -> List:
+    def _compute_planet_positions_math(self, days_offset: float = 0.0) -> List:
         """Compute geocentric ecliptic longitudes using the VSOP87 simplified model.
 
         Meeus, "Astronomical Algorithms" (1998) Ch.31-32 mean longitude coefficients.
         Accurate to ~1° for 2000-2050 — within all harmonic aspect orbs used here
         (minimum orb 3°), so precision is adequate for field scoring.
+
+        Args:
+            days_offset: Days from now to compute positions for.
+                         0.0 = current moment (default).
+                         Positive values project into the future (used by the
+                         solar radar to detect incoming harmonic events).
 
         Bodies returned:
           Solar system — Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn,
@@ -460,8 +518,9 @@ class AutonomyExecutor:
         A = int(y / 100)
         B = 2 - A + int(A / 4)
         jd      = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5
-        d_j2000 = jd - 2451545.0          # days from J2000.0
-        T       = d_j2000 / 36525.0       # Julian centuries
+        # Apply time offset: the radar pings forward by adding days to JD
+        d_j2000 = (jd - 2451545.0) + days_offset   # days from J2000.0
+        T       = d_j2000 / 36525.0                 # Julian centuries
 
         # Mean longitudes in degrees — Meeus Table 31.a
         L_raw: Dict[str, float] = {
@@ -661,6 +720,329 @@ class AutonomyExecutor:
             logger.warning(f"Cosmic harmonic scan failed: {e}")
             traceback.print_exc()
             self._cosmic_state = None
+            return None
+
+    # ════════════════════════════════════════════════════════════════════════════
+    # SOLAR HARMONIC RADAR
+    # "We ping outward through time — and the solar system pings back."
+    #
+    # Where map_solar_system_to_harmonic() reads the field AS IT IS NOW,
+    # scan_solar_radar() reads the field AS IT IS APPROACHING.
+    # Together: PRESENT STATE + INCOMING TIDE = full harmonic situation awareness.
+    # ════════════════════════════════════════════════════════════════════════════
+
+    async def scan_solar_radar(self, horizon_days: int = 14) -> Optional[SolarRadarReport]:
+        """Scan forward in time to detect incoming harmonic events in the solar system.
+
+        Uses the same VSOP87 mean longitude engine but projects positions at
+        +1d / +3d / +7d / +14d to detect:
+
+          1. FORMING ASPECTS:  Active aspects with decreasing orb (closing to exact).
+          2. INCOMING ASPECTS: Body pairs outside orb now but entering within 14 days.
+          3. LUNAR PHASES:     Moon-Sun elongation crossing 0°/90°/180°/270° milestones.
+          4. INGRESSES:        Planets crossing zodiac sign boundaries (multiples of 30°).
+
+        The resulting SolarRadarReport is stored on self._radar_state.
+        Its radar_score (0-1) supplements the Trinity cosmic_boost as a
+        forward-looking  signal: where cosmic_score reads the current field,
+        radar_score reads the approaching tide.
+        """
+        try:
+            events: List[RadarEvent] = []
+
+            # ── Compute positions at multiple time horizons ──────────────────
+            pos_0  = self._compute_planet_positions_math(days_offset=0.0)
+            pos_1  = self._compute_planet_positions_math(days_offset=1.0)
+
+            def pos_dict(pos_list: List) -> Dict[str, float]:
+                return {p.name: p.ecliptic_longitude for p in pos_list}
+
+            lon_0 = pos_dict(pos_0)
+            lon_1 = pos_dict(pos_1)
+
+            def min_arc(a: float, b: float) -> float:
+                """Minimum angular arc between two ecliptic longitudes — 0 to 180°."""
+                diff = abs(a - b) % 360.0
+                return min(diff, 360.0 - diff)
+
+            # ── 1. Aspect scanning — forming (active, closing orb) + incoming ─
+            names    = [p.name for p in pos_0]
+            pair_seen: set = set()
+
+            for i, n1 in enumerate(names):
+                for j, n2 in enumerate(names):
+                    if j <= i:
+                        continue
+                    pair_key = f"{n1}-{n2}"
+                    if pair_key in pair_seen:
+                        continue
+                    pair_seen.add(pair_key)
+
+                    w1 = self._PLANET_WEIGHTS.get(n1, 0.3)
+                    w2 = self._PLANET_WEIGHTS.get(n2, 0.3)
+                    pair_weight = math.sqrt(w1 * w2)
+
+                    s0 = min_arc(lon_0[n1], lon_0[n2])
+                    s1 = min_arc(lon_1[n1], lon_1[n2])
+
+                    # Daily rate at which the angular separation changes
+                    # Negative: bodies converging toward same angle
+                    # Positive: bodies pulling apart
+                    sep_rate = s1 - s0
+
+                    for asp_angle, asp_orb, asp_name, asp_value in self._ASPECT_TABLE:
+                        orb_0 = s0 - asp_angle   # signed: positive = outside on approach side
+                        orb_1 = s1 - asp_angle
+
+                        abs_orb_0 = abs(orb_0)
+                        abs_orb_1 = abs(orb_1)
+
+                        # PHI resonance weighting for this aspect angle
+                        phi_dist = min(abs(asp_angle - a) for a in self._PHI_RESONANT_ANGLES)
+                        phi_res  = math.exp(-phi_dist / 8.0)
+
+                        if abs_orb_0 <= asp_orb:
+                            # Active aspect — is the orb shrinking (forming) or growing (separating)?
+                            forming = abs_orb_1 < abs_orb_0
+                            if not forming:
+                                continue   # already past peak, radar ignores separating aspects
+
+                            daily_closure = (abs_orb_0 - abs_orb_1)   # °/day closing rate
+                            if daily_closure < 0.0001:
+                                days_to_exact = 30.0
+                            else:
+                                days_to_exact = abs_orb_0 / daily_closure
+                            days_to_exact = min(days_to_exact, float(horizon_days))
+
+                            urgency = max(0.0, 1.0 - (days_to_exact / 7.0))
+                            signal  = ('BULLISH_INCOMING' if asp_value > 0
+                                       else 'TENSE_INCOMING' if asp_value < 0
+                                       else 'NEUTRAL')
+                            desc = (f"{n1} {asp_name.upper()} {n2}  "
+                                    f"[forming — exact ~{days_to_exact:.1f}d  orb {abs_orb_0:.1f}°]")
+
+                            events.append(RadarEvent(
+                                days_away=max(0.0, days_to_exact),
+                                event_type='aspect_forming',
+                                description=desc,
+                                body1=n1, body2=n2,
+                                aspect_name=asp_name,
+                                harmonic_value=asp_value,
+                                phi_resonance=phi_res,
+                                pair_weight=pair_weight,
+                                urgency=urgency,
+                                radar_signal=signal,
+                            ))
+
+                        elif abs_orb_0 > asp_orb:
+                            # Outside orb — check if converging fast enough to enter within horizon
+                            if abs_orb_1 >= abs_orb_0:
+                                continue   # diverging — not incoming
+                            if abs(sep_rate) < 0.0003:
+                                continue   # negligible relative motion
+
+                            gap_to_orb   = abs_orb_0 - asp_orb
+                            daily_approach = abs_orb_0 - abs_orb_1   # °/day closing
+                            if daily_approach <= 0:
+                                continue
+                            days_to_orb   = gap_to_orb / daily_approach
+                            days_to_exact = abs_orb_0 / daily_approach
+
+                            if days_to_orb > float(horizon_days):
+                                continue
+
+                            urgency = max(0.0, 1.0 - (days_to_exact / float(horizon_days)))
+                            signal  = ('BULLISH_INCOMING' if asp_value > 0
+                                       else 'TENSE_INCOMING' if asp_value < 0
+                                       else 'NEUTRAL')
+                            desc = (f"{n1} {asp_name.upper()} {n2}  "
+                                    f"[incoming — orb entry {days_to_orb:.1f}d  exact {days_to_exact:.1f}d]")
+
+                            events.append(RadarEvent(
+                                days_away=days_to_orb,
+                                event_type='aspect_incoming',
+                                description=desc,
+                                body1=n1, body2=n2,
+                                aspect_name=asp_name,
+                                harmonic_value=asp_value,
+                                phi_resonance=phi_res,
+                                pair_weight=pair_weight,
+                                urgency=urgency,
+                                radar_signal=signal,
+                            ))
+
+            # ── 2. Lunar phase scanning ──────────────────────────────────────
+            LUNAR_PHASES = [
+                (0.0,   'New Moon',      0.6),
+                (90.0,  'First Quarter', 0.35),
+                (180.0, 'Full Moon',     0.55),
+                (270.0, 'Last Quarter',  0.35),
+            ]
+            moon_0 = lon_0.get('Moon', 0.0)
+            sun_0  = lon_0.get('Sun',  0.0)
+            moon_1 = lon_1.get('Moon', 0.0)
+            sun_1  = lon_1.get('Sun',  0.0)
+
+            elong_0    = (moon_0 - sun_0) % 360.0
+            elong_1    = (moon_1 - sun_1) % 360.0
+            elong_rate = (elong_1 - elong_0) % 360.0     # always positive for Moon advancing
+            if elong_rate < 0.5:
+                elong_rate = 12.19   # fallback: Moon ~13.18 - Sun ~0.99
+
+            # Identify current phase
+            lunar_phase_now = "Waning Crescent"
+            if elong_0 < 22.5 or elong_0 >= 337.5:
+                lunar_phase_now = "New Moon"
+            elif elong_0 < 90.0:
+                lunar_phase_now = "Waxing Crescent"
+            elif elong_0 < 112.5:
+                lunar_phase_now = "First Quarter"
+            elif elong_0 < 180.0:
+                lunar_phase_now = "Waxing Gibbous"
+            elif elong_0 < 202.5:
+                lunar_phase_now = "Full Moon"
+            elif elong_0 < 270.0:
+                lunar_phase_now = "Waning Gibbous"
+            elif elong_0 < 292.5:
+                lunar_phase_now = "Last Quarter"
+
+            # Find next major lunar phase within horizon
+            next_lunar_label = "none within horizon"
+            best_lunar_days  = float(horizon_days) + 1.0
+            for phase_angle, phase_name, phase_hv in LUNAR_PHASES:
+                gap = (phase_angle - elong_0) % 360.0
+                if gap < 0.5:
+                    gap += 360.0   # we're at this phase — look for the next occurrence
+                days_to_phase = gap / elong_rate
+                if 0.2 < days_to_phase < float(horizon_days):
+                    if days_to_phase < best_lunar_days:
+                        best_lunar_days  = days_to_phase
+                        next_lunar_label = f"{phase_name} in {days_to_phase:.1f}d"
+                    events.append(RadarEvent(
+                        days_away=days_to_phase,
+                        event_type='lunar_phase',
+                        description=f"☽ {phase_name}  [{days_to_phase:.1f}d]",
+                        body1='Moon', body2='Sun',
+                        aspect_name=phase_name,
+                        harmonic_value=phase_hv,
+                        phi_resonance=0.5,
+                        pair_weight=math.sqrt(
+                            self._PLANET_WEIGHTS['Moon'] * self._PLANET_WEIGHTS['Sun']
+                        ),
+                        urgency=max(0.0, 1.0 - (days_to_phase / 7.0)),
+                        radar_signal='BULLISH_INCOMING',
+                    ))
+
+            # ── 3. Ingress scanning — planets entering new zodiac signs ──────
+            ZODIAC_SIGNS = [
+                "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+                "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+            ]
+            primary_scan_bodies = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars',
+                                    'Jupiter', 'Saturn']
+            for body in primary_scan_bodies:
+                l0 = lon_0.get(body, 0.0)
+                l1 = lon_1.get(body, 0.0)
+                # Geocentric daily motion — handle wrap-around
+                daily_motion = (l1 - l0) % 360.0
+                if daily_motion > 180:
+                    daily_motion -= 360.0   # retrograde planets
+                if abs(daily_motion) < 0.001:
+                    continue
+
+                # Distance to next zodiac cusp (next multiple of 30°)
+                next_cusp_idx = int(l0 / 30.0) + 1
+                next_cusp_deg = (next_cusp_idx % 12) * 30.0
+                gap_deg = (next_cusp_deg - l0) % 360.0
+                if gap_deg < 0.01:
+                    gap_deg = 30.0   # standing on a cusp — look for the one ahead
+
+                days_to_ingress = gap_deg / abs(daily_motion)
+                if days_to_ingress > float(horizon_days):
+                    continue
+
+                next_sign = ZODIAC_SIGNS[next_cusp_idx % 12]
+                events.append(RadarEvent(
+                    days_away=days_to_ingress,
+                    event_type='ingress',
+                    description=f"♓ {body} ↣ {next_sign}  [{days_to_ingress:.1f}d]",
+                    body1=body, body2=body,
+                    aspect_name=f"Ingress {next_sign}",
+                    harmonic_value=0.20,
+                    phi_resonance=0.30,
+                    pair_weight=self._PLANET_WEIGHTS.get(body, 0.5),
+                    urgency=max(0.0, 1.0 - (days_to_ingress / float(horizon_days))),
+                    radar_signal='NEUTRAL',
+                ))
+
+            # ── 4. Sort by proximity ─────────────────────────────────────────
+            events.sort(key=lambda e: e.days_away)
+
+            # ── 5. Compute radar_score from forming events within 7 days ─────
+            # Score = weighted sum of harmonic_value × urgency × phi_resonance
+            # for all events within 7 days.  Normalise to 0-1 centred at 0.5.
+            radar_raw   = 0.0
+            norm_total  = 0.0
+            for ev in events:
+                if ev.days_away > 7.0:
+                    break
+                weight     = ev.pair_weight * max(ev.phi_resonance, 0.1) * max(ev.urgency, 0.05)
+                radar_raw  += ev.harmonic_value * weight
+                norm_total += weight
+
+            if norm_total > 0:
+                radar_score = (radar_raw / norm_total)   # −1 to +1 range
+                radar_score = (radar_score + 1.0) / 2.0  # map to 0-1
+            else:
+                radar_score = 0.5
+            radar_score = round(max(0.0, min(1.0, radar_score)), 4)
+
+            # ── 6. Build category lists and summary fields ───────────────────
+            events_1d   = [e for e in events if e.days_away <= 1.0]
+            events_3d   = [e for e in events if e.days_away <= 3.0]
+            events_7d   = [e for e in events if e.days_away <= 7.0]
+
+            incoming_pos = sum(1 for e in events_7d if e.harmonic_value > 0)
+            incoming_neg = sum(1 for e in events_7d if e.harmonic_value < 0)
+            phi_incoming = any(e.phi_resonance > 0.70 and e.days_away <= 7.0 for e in events)
+
+            nearest  = events[0].description if events else "No events within horizon"
+            best_7d  = max(events_7d,
+                           key=lambda e: abs(e.harmonic_value) * e.pair_weight * e.urgency,
+                           default=None)
+            dominant = best_7d.description if best_7d else "No dominant event"
+
+            if radar_score >= 0.65 and incoming_pos > incoming_neg:
+                interpretation = "RADAR_BULLISH"
+            elif radar_score <= 0.38 or incoming_neg > incoming_pos + 1:
+                interpretation = "RADAR_TENSE"
+            else:
+                interpretation = "RADAR_NEUTRAL"
+
+            report = SolarRadarReport(
+                scan_timestamp=datetime.now().isoformat(),
+                scan_horizon_days=horizon_days,
+                events=events,
+                events_1d=events_1d,
+                events_3d=events_3d,
+                events_7d=events_7d,
+                radar_score=radar_score,
+                incoming_positive=incoming_pos,
+                incoming_negative=incoming_neg,
+                nearest_event=nearest,
+                dominant_incoming=dominant,
+                lunar_phase_now=lunar_phase_now,
+                lunar_phase_next=next_lunar_label,
+                phi_event_incoming=phi_incoming,
+                interpretation=interpretation,
+            )
+            self._radar_state = report
+            return report
+
+        except Exception as e:
+            logger.warning(f"Solar radar scan failed: {e}")
+            traceback.print_exc()
+            self._radar_state = None
             return None
 
     # ════════════════════════════════════════════════════════════════════════════
@@ -1328,12 +1710,19 @@ class AutonomyExecutor:
             # a PHI-locked trine between Jupiter and Venus on the day of a trade
             # is a real signal — the same PHI that governs orbital spacing governs
             # the harmonic structure the coin scanner already measures.
+            #
+            # The boost is now split:
+            #   0.07 × (current field − 0.5) … present harmonic state
+            #   0.06 × (radar score   − 0.5) … approaching harmonic tide
+            # Total maximum effect unchanged: ≈ ±0.065 → capped to [−0.02, +0.05]
             cosmic_boost = 0.0
             if self._cosmic_state is not None:
                 cs_val = self._cosmic_state.schumann_modulated_score
-                # Positive field (>0.50): up to +0.05 boost at cs_val=1.0
-                # Tense field  (<0.50): up to -0.02 dampener at cs_val=0.0
-                cosmic_boost = (cs_val - 0.50) * 0.10
+                # Forward-looking radar component (0.5 = neutral if radar unavailable)
+                radar_val = self._radar_state.radar_score if self._radar_state is not None else 0.5
+                # Present-state contribution:  0.07 × (cs_val  − 0.5)
+                # Incoming tide contribution:  0.06 × (radar_val − 0.5)
+                cosmic_boost = (cs_val - 0.50) * 0.07 + (radar_val - 0.50) * 0.06
                 cosmic_boost = max(-0.02, min(0.05, cosmic_boost))
 
             alignment = min(1.0, max(0.0, alignment_raw + cosmic_boost))
@@ -1350,10 +1739,12 @@ class AutonomyExecutor:
             details = (f"Learning={learning_score:.3f} (acc7d={accuracy_7d:.2f} acc30d={accuracy_30d:.2f} "
                       f"validations={validation_count} queen_bonus={queen_bonus:+.3f}) | "
                       f"Health={health_score:.2f} | Plan={plan_score:.3f} | Self={self_score:.2f} | "
-                      f"Cosmic={self._cosmic_state.cosmic_score:.3f}(boost={cosmic_boost:+.3f})"
+                      f"Cosmic={self._cosmic_state.cosmic_score:.3f}"
+                      f" Radar={self._radar_state.radar_score:.3f}({self._radar_state.interpretation})"
+                      f"(boost={cosmic_boost:+.3f})"
                       if self._cosmic_state else
                       f"Learning={learning_score:.3f} | Health={health_score:.2f} | "
-                      f"Plan={plan_score:.3f} | Self={self_score:.2f} | Cosmic=none")
+                      f"Plan={plan_score:.3f} | Self={self_score:.2f} | Cosmic=none | Radar=none")
             logger.debug(f"  Trinity breakdown: {details}")
 
             # Cache alignment for neural snapshot (used in _snapshot_neural_input)
@@ -1627,6 +2018,30 @@ class AutonomyExecutor:
                 for p in cs.positions if p.source == 'vsop87'
             ]
             logger.info("  Positions: " + "  ".join(planet_lines))
+
+        # ── Step 0b: Solar harmonic radar — ping outward, detect incoming ─────────
+        # Where Step 0 reads the field AS IT IS NOW, the radar reads WHERE IT IS GOING.
+        # The system now has full temporal awareness: present state + incoming tide.
+        logger.info("")
+        logger.info("  ── SOLAR HARMONIC RADAR (OUTBOUND PING) ─────────────────────────────")
+        radar = await self.scan_solar_radar()
+        map_result['radar_state'] = radar
+        if radar:
+            r = radar
+            logger.info(
+                f"  Radar Score: {r.radar_score:.4f}  [{r.interpretation}]  "
+                f"Lunar: {r.lunar_phase_now}"
+            )
+            logger.info(
+                f"  Incoming 7d: +{r.incoming_positive} bullish  -{r.incoming_negative} tense  "
+                f"| PHI event: {'YES 🌀' if r.phi_event_incoming else 'no'}"
+            )
+            logger.info(f"  Nearest:  {r.nearest_event}")
+            if r.dominant_incoming != r.nearest_event:
+                logger.info(f"  Dominant: {r.dominant_incoming}")
+            logger.info(f"  Next lunar phase: {r.lunar_phase_next}")
+            if r.events_1d:
+                logger.info(f"  ⚡ WITHIN 24h: {r.events_1d[0].description}")
 
         # ── Step 1: Fetch live prices for ALL coins (everything downstream needs this) ──
         prices = await self.fetch_live_prices()
