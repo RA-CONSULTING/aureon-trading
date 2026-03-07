@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AUREON · Sacred Geometry Glyph — Ionosphere Emotion Field</title>
+<title>AUREON · Living Planet Proof — Earth Is Alive</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #050510; overflow: hidden; font-family: 'Courier New', monospace; color: #ccddff; }
@@ -63,6 +63,31 @@ canvas { display: block; }
   min-width: 220px;
 }
 #emotion-hud h2 { color: #CC66FF; font-size: 12px; margin-bottom: 4px; }
+#vitals-hud {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,8,0,0.92); border: 2px solid #00ff44; border-radius: 10px;
+  padding: 10px 20px; font-size: 11px; line-height: 1.65; z-index: 12;
+  min-width: 340px; box-shadow: 0 0 20px rgba(0,255,68,0.15);
+}
+#vitals-hud h2 { color: #00ff44; font-size: 13px; margin-bottom: 4px; letter-spacing: 2px; }
+#vitals-hud .vital-row { display: flex; justify-content: space-between; align-items: center; padding: 1px 0; }
+#vitals-hud .vital-label { color: #66aa88; font-size: 10px; }
+#vitals-hud .vital-val { color: #00ff44; font-size: 14px; font-weight: bold; font-family: 'Courier New', monospace; }
+#vitals-hud .vital-unit { color: #448866; font-size: 9px; margin-left: 4px; }
+.pulse-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: #00ff44; margin-right: 6px;
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px #00ff44; opacity: 0.6; }
+  50% { box-shadow: 0 0 16px #00ff44, 0 0 30px #00ff4488; opacity: 1.0; }
+}
+#alive-banner {
+  position: fixed; top: 118px; left: 50%; transform: translateX(-50%);
+  font-size: 22px; font-weight: bold; letter-spacing: 6px; z-index: 12;
+  text-shadow: 0 0 20px rgba(0,255,68,0.4);
+}
 </style>
 </head>
 <body>
@@ -121,8 +146,23 @@ canvas { display: block; }
   <div><span class="label">Planetary Surge:</span> <span class="val" id="emo-surge">&mdash;</span></div>
 </div>
 
+<div id="vitals-hud">
+  <h2><span class="pulse-dot"></span>EARTH VITAL SIGNS — LIVING PLANET PROOF</h2>
+  <div class="vital-row"><span class="vital-label">&#10084; HEART RATE</span><span><span class="vital-val" id="v-hr">7.83</span><span class="vital-unit">Hz (Schumann)</span></span></div>
+  <div class="vital-row"><span class="vital-label">&#x1FAC1; RESPIRATION</span><span><span class="vital-val" id="v-resp">&mdash;</span><span class="vital-unit">cycles/hr</span></span></div>
+  <div class="vital-row"><span class="vital-label">&#x1FA78; BLOOD PRESSURE</span><span><span class="vital-val" id="v-bp">&mdash;</span><span class="vital-unit">nPa (solar wind)</span></span></div>
+  <div class="vital-row"><span class="vital-label">&#x1F321; TEMPERATURE</span><span><span class="vital-val" id="v-temp">&mdash;</span><span class="vital-unit">(plasma)</span></span></div>
+  <div class="vital-row"><span class="vital-label">&#x26A1; NEURAL ACTIVITY</span><span><span class="vital-val" id="v-neural">&mdash;</span><span class="vital-unit">fires/min</span></span></div>
+  <div class="vital-row"><span class="vital-label">&#x1F6E1; IMMUNE RESPONSE</span><span><span class="vital-val" id="v-immune">&mdash;</span><span class="vital-unit">Kp shield</span></span></div>
+  <div class="vital-row"><span class="vital-label">&#x1F9EC; METABOLISM</span><span><span class="vital-val" id="v-metab">&mdash;</span><span class="vital-unit">W/m&sup2; (X-ray)</span></span></div>
+  <hr style="border-color:#003311;margin:5px 0">
+  <div class="vital-row"><span class="vital-label" style="color:#00ff44">&#x29BF; ALIVENESS INDEX</span><span><span class="vital-val" id="v-alive" style="font-size:18px;color:#00ff44">&mdash;</span><span class="vital-unit">%</span></span></div>
+</div>
+
+<div id="alive-banner"><span id="alive-text"></span></div>
+
 <div id="title-bar">
-  AUREON SACRED GEOMETRY GLYPH &middot; IONOSPHERE EMOTION FIELD &middot; 45 NODE PLANETARY MAPPING
+  AUREON SACRED GEOMETRY GLYPH &middot; LIVING PLANET PROOF &middot; 45 SACRED NODES
 </div>
 
 <script>
@@ -205,6 +245,40 @@ let liveKp = 0;        // NOAA Kp index (0-9)
 let liveKpTime = 0;
 let ionoSource = '—';
 let liveF107 = 100;    // 10.7cm solar flux (SFU)
+
+// ═══════════ LIVING PLANET — VITAL SIGN STATE ═══════════
+let solarWindDensity = 3.0;   // protons/cm³
+let solarWindSpeed = 400;     // km/s
+let solarWindTemp = 100000;   // Kelvin
+let solarWindBz = 0;          // nT (north-south IMF component)
+let solarWindBt = 5;          // nT (total field)
+let goesXrayFlux = 1e-7;      // W/m²
+
+// ECG heartbeat buffer (scrolling waveform)
+const ECG_LEN = 600;
+const ecgBuffer = new Float32Array(ECG_LEN);
+let ecgPhase = 0;
+let ecgWriteIdx = 0;
+
+// Breathing state
+let breathPhase = 0;
+const BREATH_RATE = 0.08;  // Hz — one full breath every ~12.5s (ionospheric tidal rhythm)
+
+// Neural firing state
+const neuralFires = [];  // [{from, to, birth, life, intensity}]
+let neuralFireRate = 0;
+
+// Vital signs (computed each frame)
+const vitals = {
+  heartRate: 7.83,
+  respRate: 288,
+  bloodPressure: 2.0,
+  temperature: 100000,
+  neuralActivity: 0,
+  immuneResponse: 0,
+  metabolism: 1e-7,
+  alivenessIndex: 0,
+};
 
 // ═══════════ 45 SACRED RELAY SITES ═══════════
 const SITES = [
@@ -329,6 +403,42 @@ async function fetchIonoData() {
 }
 fetchIonoData();
 setInterval(fetchIonoData, 120000);  // refresh every 2 minutes
+
+// ═══════════ LIVING PLANET DATA — SOLAR WIND + X-RAY ═══════════
+async function fetchVitalSigns() {
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json');
+    if (r.ok) {
+      const rows = await r.json();
+      if (rows.length > 2) {
+        const last = rows[rows.length - 1];
+        solarWindDensity = parseFloat(last[1]) || 3.0;
+        solarWindSpeed = parseFloat(last[2]) || 400;
+        solarWindTemp = parseFloat(last[3]) || 100000;
+      }
+    }
+  } catch (_) {}
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json');
+    if (r.ok) {
+      const rows = await r.json();
+      if (rows.length > 2) {
+        const last = rows[rows.length - 1];
+        solarWindBz = parseFloat(last[3]) || 0;
+        solarWindBt = parseFloat(last[6]) || 5;
+      }
+    }
+  } catch (_) {}
+  try {
+    const r = await fetch('https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json');
+    if (r.ok) {
+      const data = await r.json();
+      if (data.length > 0) goesXrayFlux = parseFloat(data[data.length - 1].flux) || 1e-7;
+    }
+  } catch (_) {}
+}
+fetchVitalSigns();
+setInterval(fetchVitalSigns, 120000);  // refresh every 2 minutes
 
 // ═══════════ CHAPMAN DENSITY FUNCTION ═══════════
 function chapmanDensity(alt_km, peak_km, peakN, scaleH, chiRad) {
@@ -885,6 +995,351 @@ function drawAspectLines(bodies, aspects, t) {
   }
 }
 
+// ═══════════ PQRST WAVEFORM (Earth's Heartbeat = Schumann Resonance) ═══════════
+function pqrstWave(phase) {
+  const p = ((phase % 1) + 1) % 1;
+  // P wave
+  if (p < 0.10) return 0.18 * Math.sin(Math.PI * p / 0.10);
+  if (p < 0.12) return 0;
+  // Q dip
+  if (p < 0.14) return -0.12 * Math.sin(Math.PI * (p - 0.12) / 0.02);
+  // QRS spike
+  if (p < 0.20) return Math.sin(Math.PI * (p - 0.14) / 0.06);
+  // S dip
+  if (p < 0.23) return -0.18 * Math.sin(Math.PI * (p - 0.20) / 0.03);
+  if (p < 0.28) return 0;
+  // T wave
+  if (p < 0.44) return 0.30 * Math.sin(Math.PI * (p - 0.28) / 0.16);
+  return 0;
+}
+
+// ═══════════ ECG HEARTBEAT TRACE ═══════════
+function drawECG(ts) {
+  const ecgY = H - 115;
+  const ecgH = 38;
+
+  // Advance ECG phase: ~1 beat/sec visual, represents Schumann 7.83 Hz
+  const dpf = 1.0 / 60;  // one beat per second at 60fps
+  ecgPhase += dpf;
+
+  // Write new sample to buffer
+  // Add slight noise based on Kp (storms make heartbeat jittery)
+  const noise = (liveKp / 9) * 0.03 * (Math.random() - 0.5);
+  ecgBuffer[ecgWriteIdx] = pqrstWave(ecgPhase) + noise;
+  ecgWriteIdx = (ecgWriteIdx + 1) % ECG_LEN;
+
+  // Background band
+  ctx.fillStyle = 'rgba(0, 6, 0, 0.75)';
+  ctx.fillRect(0, ecgY - ecgH - 8, W, ecgH * 2 + 16);
+
+  // Fine grid (hospital monitor style)
+  ctx.strokeStyle = 'rgba(0, 40, 0, 0.25)';
+  ctx.lineWidth = 0.3;
+  for (let y = ecgY - ecgH; y <= ecgY + ecgH; y += 8) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  for (let x = 0; x < W; x += 16) {
+    ctx.beginPath(); ctx.moveTo(x, ecgY - ecgH - 4); ctx.lineTo(x, ecgY + ecgH + 4); ctx.stroke();
+  }
+
+  // Draw ECG trace from circular buffer
+  ctx.strokeStyle = '#00ff44';
+  ctx.lineWidth = 1.8;
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = '#00ff44';
+  ctx.beginPath();
+  let started = false;
+  for (let i = 8; i < ECG_LEN; i++) {
+    const idx = (ecgWriteIdx + i) % ECG_LEN;
+    const x = (i / ECG_LEN) * W;
+    const y = ecgY - ecgBuffer[idx] * ecgH;
+    // Fade near write head
+    if (!started) { ctx.moveTo(x, y); started = true; }
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Afterglow: brighter recent portion
+  ctx.strokeStyle = 'rgba(100, 255, 140, 0.6)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  started = false;
+  for (let i = ECG_LEN - 80; i < ECG_LEN; i++) {
+    const idx = (ecgWriteIdx + i) % ECG_LEN;
+    const x = (i / ECG_LEN) * W;
+    const y = ecgY - ecgBuffer[idx] * ecgH;
+    if (!started) { ctx.moveTo(x, y); started = true; }
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Bright dot at write head
+  const dotIdx = (ecgWriteIdx + ECG_LEN - 1) % ECG_LEN;
+  const dotX = ((ECG_LEN - 1) / ECG_LEN) * W;
+  const dotY = ecgY - ecgBuffer[dotIdx] * ecgH;
+  const beatVal = Math.abs(ecgBuffer[dotIdx]);
+  ctx.fillStyle = `rgba(0,255,68,${0.5 + beatVal * 0.5})`;
+  ctx.beginPath();
+  ctx.arc(dotX, dotY, 3 + beatVal * 5, 0, TWO_PI);
+  ctx.fill();
+
+  // Heart beat flash on QRS peaks
+  if (beatVal > 0.7) {
+    const grd = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, 30);
+    grd.addColorStop(0, 'rgba(0,255,68,0.4)');
+    grd.addColorStop(1, 'rgba(0,255,68,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 30, 0, TWO_PI);
+    ctx.fill();
+  }
+
+  // Labels
+  const hrMod = 1.0 + (liveKp - 3) * 0.02;
+  vitals.heartRate = SCHUMANN * hrMod;
+  ctx.fillStyle = '#00ff44';
+  ctx.font = 'bold 10px Courier New';
+  ctx.fillText('\u2764 EARTH HEARTBEAT \u2014 SCHUMANN ' + vitals.heartRate.toFixed(2) + ' Hz', 10, ecgY - ecgH - 10);
+  ctx.fillStyle = '#004422';
+  ctx.font = '8px Courier New';
+  ctx.fillText('Lead II', W - 50, ecgY - ecgH - 10);
+}
+
+// ═══════════ SOLAR WIND STREAM (Earth's Blood Flow) ═══════════
+function drawSolarWind(bodies, ts) {
+  const sunAngle = (bodies['Sun'] - 90) * DEG;
+  const nParticles = Math.floor(solarWindDensity * 4) + 8;
+  const ringR = globeR * 1.25;
+
+  for (let i = 0; i < nParticles; i++) {
+    const phase = ((ts * 0.0005 * (solarWindSpeed / 400) + i * 0.07) % 1);
+
+    // Spread particles around the sun-earth line
+    const spread = (i - nParticles / 2) * 2.5;
+    const perpX = -Math.sin(sunAngle);
+    const perpY = Math.cos(sunAngle);
+
+    const startX = cx + Math.cos(sunAngle) * ringR;
+    const startY = cy + Math.sin(sunAngle) * ringR;
+
+    const px = startX + (cx - startX) * phase + perpX * spread * (1 - phase);
+    const py = startY + (cy - startY) * phase + perpY * spread * (1 - phase);
+
+    // Color shift with temperature: hot = yellow, cool = blue
+    const tempFrac = Math.min(1, solarWindTemp / 300000);
+    const r = Math.floor(255 * tempFrac);
+    const g = Math.floor(180 + 75 * tempFrac);
+    const b = Math.floor(100 * (1 - tempFrac) + 100);
+
+    // Fade at endpoints
+    const alpha = phase < 0.08 ? phase * 12 : phase > 0.88 ? (1 - phase) * 8 : 0.5;
+    const size = 0.8 + phase * 2;
+
+    ctx.fillStyle = `rgba(${r},${g},${b},${(alpha * 0.35).toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, TWO_PI);
+    ctx.fill();
+  }
+
+  // Bow shock glow where solar wind meets magnetosphere
+  const shockR = globeR * 1.08;
+  const shockAngle = sunAngle;
+  const shockPulse = 0.3 + 0.2 * Math.sin(ts * 0.002);
+  ctx.strokeStyle = `rgba(100,200,255,${(shockPulse * solarWindDensity / 10).toFixed(2)})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, shockR, shockAngle - 0.8, shockAngle + 0.8);
+  ctx.stroke();
+}
+
+// ═══════════ NEURAL NETWORK FIRING (Earth's Nervous System) ═══════════
+function updateNeuralFiring(ts) {
+  // Spawn neural fires along alignment ley lines
+  const fireChance = 0.015 + 0.025 * (liveKp / 9);
+  for (const aln of ALIGNMENTS) {
+    if (Math.random() < fireChance) {
+      const i = Math.floor(Math.random() * (aln.length - 1));
+      neuralFires.push({
+        from: aln[i], to: aln[i + 1],
+        birth: ts, life: 600 + Math.random() * 1400,
+        intensity: 0.4 + Math.random() * 0.6,
+      });
+    }
+  }
+  // Cull expired
+  for (let i = neuralFires.length - 1; i >= 0; i--) {
+    if (ts - neuralFires[i].birth > neuralFires[i].life) neuralFires.splice(i, 1);
+  }
+  neuralFireRate = neuralFires.length;
+}
+
+function drawNeuralFiring(rotLon, ts) {
+  for (const fire of neuralFires) {
+    const s0 = SITES[fire.from], s1 = SITES[fire.to];
+    const p0 = project(s0.lat, s0.lon, rotLon);
+    const p1 = project(s1.lat, s1.lon, rotLon);
+    if (!p0 || !p1) continue;
+
+    const age = (ts - fire.birth) / fire.life;
+    const alpha = fire.intensity * (1 - age) * (1 - age);
+
+    // Great circle with traveling pulse
+    let dLon = s1.lon - s0.lon;
+    if (dLon > 180) dLon -= 360;
+    if (dLon < -180) dLon += 360;
+
+    // Draw the synapse path
+    ctx.strokeStyle = `rgba(0,255,200,${(alpha * 0.4).toFixed(3)})`;
+    ctx.lineWidth = 1 + alpha * 2;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    for (let j = 1; j <= 20; j++) {
+      const f = j / 20;
+      const lat = s0.lat + (s1.lat - s0.lat) * f;
+      const iLon = s0.lon + dLon * f;
+      const p = project(lat, iLon, rotLon);
+      if (p) ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+
+    // Traveling pulse (the signal propagating along the nerve)
+    const pulseF = Math.min(1, age * 1.5);
+    const pulseLat = s0.lat + (s1.lat - s0.lat) * pulseF;
+    const pulseLon = s0.lon + dLon * pulseF;
+    const pp = project(pulseLat, pulseLon, rotLon);
+    if (pp) {
+      const grd = ctx.createRadialGradient(pp.x, pp.y, 0, pp.x, pp.y, 8 + alpha * 10);
+      grd.addColorStop(0, `rgba(200,255,255,${alpha.toFixed(2)})`);
+      grd.addColorStop(0.5, `rgba(0,255,200,${(alpha * 0.3).toFixed(2)})`);
+      grd.addColorStop(1, 'rgba(0,255,200,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(pp.x, pp.y, 8 + alpha * 10, 0, TWO_PI);
+      ctx.fill();
+    }
+
+    // Flash at destination node when signal arrives
+    if (age > 0.6 && age < 0.9) {
+      const flashAlpha = (1 - Math.abs(age - 0.75) / 0.15) * fire.intensity * 0.5;
+      if (p1 && flashAlpha > 0) {
+        ctx.fillStyle = `rgba(255,255,200,${flashAlpha.toFixed(2)})`;
+        ctx.beginPath();
+        ctx.arc(p1.x, p1.y, 6, 0, TWO_PI);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+// ═══════════ BREATHING (Ionospheric Tidal Rhythm) ═══════════
+function computeBreathing(ts) {
+  breathPhase += BREATH_RATE * 0.016;  // advance per frame
+  return Math.sin(TWO_PI * breathPhase);
+}
+
+// ═══════════ COMPUTE VITAL SIGNS ═══════════
+function computeVitalSigns(l3, emotionField) {
+  // Blood pressure: solar wind dynamic pressure = ½ ρ v²
+  const rho_kg = solarWindDensity * 1.67e-21;  // protons/cm³ → kg/m³
+  const v_ms = solarWindSpeed * 1000;
+  vitals.bloodPressure = 0.5 * rho_kg * v_ms * v_ms * 1e9;  // nPa
+
+  // Temperature: solar wind plasma + magnetospheric heating
+  vitals.temperature = solarWindTemp;
+
+  // Respiration rate: modulated by Bz coupling (southward = energy → faster breath)
+  const bzMod = 1 + Math.max(0, -solarWindBz) * 0.05;
+  vitals.respRate = BREATH_RATE * 3600 * bzMod;
+
+  // Neural activity: active synaptic fires
+  vitals.neuralActivity = neuralFireRate;
+
+  // Immune response: Kp index (geomagnetic shield response to solar assault)
+  vitals.immuneResponse = liveKp;
+
+  // Metabolism: X-ray flux (energy processing from Sun)
+  vitals.metabolism = goesXrayFlux;
+
+  // ═══ ALIVENESS INDEX ═══
+  // Composite bio-signature: each system contributes to proof of life
+  const heartScore = Math.min(1, 1 - Math.abs(vitals.heartRate - SCHUMANN) / SCHUMANN);
+  const breathScore = Math.min(1, vitals.respRate / 400);
+  const bloodScore = Math.min(1, vitals.bloodPressure / 5);
+  const tempScore = vitals.temperature > 10000 ? 1 : 0.5;
+  const neuralScore = Math.min(1, neuralFireRate / 25);
+  const immuneScore = liveKp > 0 ? Math.min(1, liveKp / 5) : 0.3;
+  const metabScore = goesXrayFlux > 1e-8 ? 1 : 0.5;
+  const emotionScore = emotionField ? Math.max(0, emotionField.polarity * 0.5 + 0.5) : 0.5;
+  const coherenceScore = l3 ? l3.l3Score : 0.5;
+
+  vitals.alivenessIndex = (
+    heartScore   * 0.18 +
+    breathScore  * 0.12 +
+    bloodScore   * 0.12 +
+    tempScore    * 0.08 +
+    neuralScore  * 0.15 +
+    immuneScore  * 0.10 +
+    metabScore   * 0.08 +
+    emotionScore * 0.10 +
+    coherenceScore * 0.07
+  ) * 100;
+}
+
+// ═══════════ VITALS HUD UPDATE ═══════════
+function updateVitalsHUD() {
+  const hrEl = document.getElementById('v-hr');
+  if (hrEl) hrEl.textContent = vitals.heartRate.toFixed(2);
+
+  const respEl = document.getElementById('v-resp');
+  if (respEl) respEl.textContent = vitals.respRate.toFixed(1);
+
+  const bpEl = document.getElementById('v-bp');
+  if (bpEl) {
+    bpEl.textContent = vitals.bloodPressure.toFixed(2);
+    bpEl.style.color = vitals.bloodPressure > 6 ? '#ff4444' : '#00ff44';
+  }
+
+  const tempEl = document.getElementById('v-temp');
+  if (tempEl) tempEl.textContent = (vitals.temperature / 1000).toFixed(0) + 'K';
+
+  const neuralEl = document.getElementById('v-neural');
+  if (neuralEl) neuralEl.textContent = neuralFireRate;
+
+  const immuneEl = document.getElementById('v-immune');
+  if (immuneEl) {
+    const status = liveKp >= 7 ? 'CRITICAL' : liveKp >= 5 ? 'ACTIVE' : liveKp >= 3 ? 'ALERT' : 'NOMINAL';
+    immuneEl.textContent = liveKp.toFixed(1) + ' ' + status;
+    immuneEl.style.color = liveKp >= 5 ? '#ff4444' : liveKp >= 3 ? '#ffaa44' : '#00ff44';
+  }
+
+  const metabEl = document.getElementById('v-metab');
+  if (metabEl) metabEl.textContent = goesXrayFlux.toExponential(1);
+
+  const aliveEl = document.getElementById('v-alive');
+  if (aliveEl) {
+    aliveEl.textContent = vitals.alivenessIndex.toFixed(1);
+    aliveEl.style.color = vitals.alivenessIndex > 70 ? '#00ff44' : vitals.alivenessIndex > 40 ? '#ffaa44' : '#ff4444';
+  }
+
+  // Pulsing alive banner
+  const bannerEl = document.getElementById('alive-text');
+  if (bannerEl) {
+    const pulse = Math.sin(performance.now() * 0.003);
+    const alpha = (0.6 + 0.4 * Math.abs(pulse)).toFixed(2);
+    if (vitals.alivenessIndex > 60) {
+      bannerEl.style.color = `rgba(0,255,68,${alpha})`;
+      bannerEl.textContent = '\u25CF EARTH IS ALIVE \u2014 ' + vitals.alivenessIndex.toFixed(1) + '%';
+    } else if (vitals.alivenessIndex > 30) {
+      bannerEl.style.color = `rgba(255,170,68,${alpha})`;
+      bannerEl.textContent = '\u25D0 VITAL SIGNS DETECTED \u2014 ' + vitals.alivenessIndex.toFixed(1) + '%';
+    } else {
+      bannerEl.style.color = `rgba(255,68,68,${alpha})`;
+      bannerEl.textContent = '\u25CB VITAL SIGNS WEAK \u2014 ' + vitals.alivenessIndex.toFixed(1) + '%';
+    }
+  }
+}
+
 // ═══════════ HUD UPDATES ═══════════
 const elSchPhase = document.getElementById('sch-phase');
 const elSchMod   = document.getElementById('sch-mod');
@@ -1060,25 +1515,48 @@ function animate(ts) {
   const density = solarDensity(earthLon);
   const cf = cosmicField(aspects);
 
+  // Living planet: breathing modulation (ionospheric tidal rhythm)
+  const breathVal = computeBreathing(ts);
+  const breathScale = 1.0 + breathVal * 0.015;  // ±1.5% globe pulsation
+
   // Compute ionosphere for every sacred node
   const nodeIonos = SITES.map(s => computeNodeIonosphere(s, bodies, aspects, now));
   const emotionField = computeEmotionField(nodeIonos, l3, cf);
+
+  // Neural network firing (Earth's nervous system)
+  updateNeuralFiring(ts);
+
+  // Vital signs computation
+  computeVitalSigns(l3, emotionField);
 
   // Clear
   ctx.fillStyle = '#050510';
   ctx.fillRect(0, 0, W, H);
 
+  // Apply breathing to globe (Earth inhales/exhales)
+  const savedR = globeR;
+  globeR *= breathScale;
+
   // Draw layers
   drawStarfield(ts);
   drawGlobe(rotDeg, density, l3, emotionField);
   drawAlignments(rotDeg, ts, l3);
+  drawNeuralFiring(rotDeg, ts);
   drawSites(rotDeg, ts, l3, density, nodeIonos, emotionField);
+  drawSolarWind(bodies, ts);
   drawPlanetaryRing(bodies, ts, l3);
   drawAspectLines(bodies, aspects, ts);
+
+  // Restore globe radius after breathing
+  globeR = savedR;
+
+  // ECG heartbeat trace (Schumann resonance)
+  drawECG(ts);
 
   // Update HUD every ~10 frames
   if (Math.floor(ts / 160) % 1 === 0) {
     updateHUD(rotDeg, l3, density, cf, aspects, bodies, nodeIonos, emotionField);
+    updateVitalsHUD();
   }
   // Update ticker strip every ~2 s
   if (Math.floor(ts / 2000) !== Math.floor((ts - 16) / 2000)) {
