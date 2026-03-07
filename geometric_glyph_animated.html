@@ -31,6 +31,30 @@ canvas { display: block; }
   padding: 8px 24px; font-size: 14px; color: #FFD700; font-weight: bold;
   text-align: center; z-index: 10; letter-spacing: 2px;
 }
+#ticker-strip {
+  position: fixed; bottom: 48px; left: 0; right: 0;
+  background: rgba(8,8,30,0.92); border-top: 1px solid #223355; border-bottom: 1px solid #223355;
+  overflow: hidden; white-space: nowrap; height: 26px; line-height: 26px;
+  font-size: 11px; z-index: 10;
+}
+#ticker-strip .inner {
+  display: inline-block; animation: scroll-left 40s linear infinite;
+}
+@keyframes scroll-left {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+#ticker-strip .tick-item { display: inline-block; margin-right: 36px; }
+#ticker-strip .up   { color: #44ff88; }
+#ticker-strip .down { color: #ff4466; }
+#ticker-strip .sym  { color: #FFD700; font-weight: bold; }
+#market-summary {
+  position: fixed; bottom: 82px; left: 12px;
+  background: rgba(8,8,30,0.85); border: 1px solid #333366; border-radius: 8px;
+  padding: 8px 14px; font-size: 10px; line-height: 1.7; z-index: 10;
+  min-width: 210px;
+}
+#market-summary h2 { color: #FFD700; font-size: 12px; margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -61,8 +85,19 @@ canvas { display: block; }
   <div id="planet-list"></div>
 </div>
 
+<div id="ticker-strip"><div class="inner" id="ticker-inner">&#x1F4E1; Loading live market data ...</div></div>
+
+<div id="market-summary">
+  <h2>&#x1F4E1; LIVE MARKET FEED</h2>
+  <div><span class="label">Source:</span> <span class="val" id="feed-source">&mdash;</span></div>
+  <div><span class="label">Last Update:</span> <span class="val" id="feed-time">&mdash;</span></div>
+  <div><span class="label">BTC Vol Share:</span> <span class="val" id="btc-dom">&mdash;</span></div>
+  <div><span class="label">Market Mood:</span> <span class="val" id="market-mood">&mdash;</span></div>
+  <div><span class="label">PHI Resonance:</span> <span class="phi" id="phi-res">&mdash;</span></div>
+</div>
+
 <div id="title-bar">
-  AUREON SACRED GEOMETRY GLYPH · PHI-ALIGNED GEODESIC GRID · EPAS L3 ACOUSTIC PHASE
+  AUREON SACRED GEOMETRY GLYPH &middot; PHI-ALIGNED GEODESIC GRID &middot; LIVE MARKET HARMONICS
 </div>
 
 <script>
@@ -114,6 +149,23 @@ const PLANET_WEIGHTS = {
 };
 
 const PHI_RESONANT = [72, 120, 137.5, 144];
+
+// ═══════════ LIVE TICKER — PLANET-TO-COIN MAP ═══════════
+const COIN_MAP = {
+  'Sun':     { id: 'bitcoin',      symbol: 'BTC',  binance: 'BTCUSDT'  },
+  'Moon':    { id: 'ethereum',     symbol: 'ETH',  binance: 'ETHUSDT'  },
+  'Mercury': { id: 'ripple',       symbol: 'XRP',  binance: 'XRPUSDT'  },
+  'Venus':   { id: 'solana',       symbol: 'SOL',  binance: 'SOLUSDT'  },
+  'Mars':    { id: 'dogecoin',     symbol: 'DOGE', binance: 'DOGEUSDT' },
+  'Jupiter': { id: 'binancecoin',  symbol: 'BNB',  binance: 'BNBUSDT'  },
+  'Saturn':  { id: 'cardano',      symbol: 'ADA',  binance: 'ADAUSDT'  },
+  'Uranus':  { id: 'avalanche-2',  symbol: 'AVAX', binance: 'AVAXUSDT' },
+  'Neptune': { id: 'polkadot',     symbol: 'DOT',  binance: 'DOTUSDT'  },
+};
+let tickerData = {};   // { planetName: { price, change24h, volume, symbol } }
+let tickerLastUpdate = 0;
+let tickerSource = '—';
+const TICKER_INTERVAL_MS = 30000;  // 30 s
 
 // ═══════════ 45 SACRED RELAY SITES ═══════════
 const SITES = [
@@ -209,6 +261,49 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 resize();
+
+// ═══════════ LIVE TICKER FETCH (CoinGecko primary, Binance fallback) ═══════════
+async function fetchTickers() {
+  const ids = Object.values(COIN_MAP).map(c => c.id).join(',');
+  try {
+    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids
+      + '&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true';
+    const resp = await fetch(url);
+    if (resp.ok) {
+      const data = await resp.json();
+      for (const [planet, coin] of Object.entries(COIN_MAP)) {
+        const d = data[coin.id];
+        if (d) tickerData[planet] = {
+          price: d.usd || 0, change24h: d.usd_24h_change || 0,
+          volume: d.usd_24h_vol || 0, symbol: coin.symbol,
+        };
+      }
+      tickerLastUpdate = Date.now();
+      tickerSource = 'CoinGecko';
+      return;
+    }
+  } catch (_) { /* fall through to Binance */ }
+
+  try {
+    const syms = Object.values(COIN_MAP).map(c => '"' + c.binance + '"').join(',');
+    const resp = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=[' + syms + ']');
+    if (resp.ok) {
+      const data = await resp.json();
+      const byS = {}; for (const d of data) byS[d.symbol] = d;
+      for (const [planet, coin] of Object.entries(COIN_MAP)) {
+        const d = byS[coin.binance];
+        if (d) tickerData[planet] = {
+          price: parseFloat(d.lastPrice) || 0, change24h: parseFloat(d.priceChangePercent) || 0,
+          volume: parseFloat(d.quoteVolume) || 0, symbol: coin.symbol,
+        };
+      }
+      tickerLastUpdate = Date.now();
+      tickerSource = 'Binance';
+    }
+  } catch (_) { tickerSource = 'OFFLINE'; }
+}
+fetchTickers();
+setInterval(fetchTickers, TICKER_INTERVAL_MS);
 
 // ═══════════ PROJECTION (rotating orthographic) ═══════════
 function project(lat, lon, rotLon) {
@@ -510,6 +605,14 @@ function drawPlanetaryRing(bodies, t, l3) {
   ctx.fillStyle = '#FFDD00';
   ctx.font = '14px serif';
   ctx.fillText('☉', sunX - 5, sunY + 5);
+  // BTC ticker under Sun
+  const sunTd = tickerData['Sun'];
+  if (sunTd) {
+    ctx.font = '8px Courier New';
+    ctx.fillStyle = sunTd.change24h >= 0 ? '#44ff88' : '#ff4466';
+    const sf = sunTd.price >= 100 ? '$' + sunTd.price.toFixed(0) : '$' + sunTd.price.toFixed(2);
+    ctx.fillText('BTC ' + sf, sunX - 18, sunY + 22);
+  }
 
   // Moon
   const moonAngle = (bodies['Moon'] - 90) * DEG;
@@ -521,6 +624,14 @@ function drawPlanetaryRing(bodies, t, l3) {
   ctx.fill();
   ctx.font = '10px serif';
   ctx.fillText('☽', moonX - 4, moonY + 4);
+  // ETH ticker under Moon
+  const moonTd = tickerData['Moon'];
+  if (moonTd) {
+    ctx.font = '8px Courier New';
+    ctx.fillStyle = moonTd.change24h >= 0 ? '#44ff88' : '#ff4466';
+    const mf = moonTd.price >= 100 ? '$' + moonTd.price.toFixed(0) : '$' + moonTd.price.toFixed(2);
+    ctx.fillText('ETH ' + mf, moonX - 14, moonY + 16);
+  }
 
   // Planets
   for (const [name, p] of Object.entries(PLANETS)) {
@@ -529,11 +640,23 @@ function drawPlanetaryRing(bodies, t, l3) {
     const px = cx + Math.cos(angle) * r;
     const py = cy + Math.sin(angle) * r;
 
-    // Glow
+    // Momentum glow (price-driven when live)
+    const td = tickerData[name];
+    const momentum = td ? Math.min(1, Math.abs(td.change24h) / 10) : 0;
+    const momRGB = td ? (td.change24h >= 0 ? [68,255,136] : [255,68,102]) : null;
     const pulse = 0.6 + 0.4 * Math.sin(t * 0.003 + bodies[name] * DEG);
-    ctx.fillStyle = p.color + Math.floor(pulse * 100).toString(16).padStart(2, '0');
+    const glowSz = (8 + momentum * 8) * pulse;
+    if (momRGB) {
+      const grd = ctx.createRadialGradient(px, py, 0, px, py, glowSz);
+      grd.addColorStop(0, 'rgba(' + momRGB.join(',') + ',' + (0.55 * pulse) + ')');
+      grd.addColorStop(0.6, 'rgba(' + momRGB.join(',') + ',' + (0.15 * pulse) + ')');
+      grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grd;
+    } else {
+      ctx.fillStyle = p.color + Math.floor(pulse * 100).toString(16).padStart(2, '0');
+    }
     ctx.beginPath();
-    ctx.arc(px, py, 8 * pulse, 0, TWO_PI);
+    ctx.arc(px, py, glowSz, 0, TWO_PI);
     ctx.fill();
 
     // Dot
@@ -542,10 +665,16 @@ function drawPlanetaryRing(bodies, t, l3) {
     ctx.arc(px, py, 3.5, 0, TWO_PI);
     ctx.fill();
 
-    // Symbol
+    // Symbol + live price
     ctx.fillStyle = p.color;
     ctx.font = '10px serif';
     ctx.fillText(p.symbol, px + 6, py + 4);
+    if (td) {
+      ctx.font = '8px Courier New';
+      ctx.fillStyle = td.change24h >= 0 ? '#44ff88' : '#ff4466';
+      const pf = td.price >= 100 ? '$' + td.price.toFixed(0) : '$' + td.price.toFixed(2);
+      ctx.fillText(td.symbol + ' ' + pf, px + 6, py + 14);
+    }
   }
 }
 
@@ -615,9 +744,72 @@ function updateHUD(rotDeg, l3, density, cf, aspects, bodies) {
       (PLANETS[name] ? PLANETS[name].symbol : '?');
     const color = name === 'Sun' ? '#FFD700' : name === 'Moon' ? '#CCCCDD' :
       (PLANETS[name] ? PLANETS[name].color : '#888');
-    html += `<div><span style="color:${color}">${symbol} ${name}</span>: <span class="val">${lon.toFixed(1)}°</span></div>`;
+    const td = tickerData[name];
+    let priceStr = '';
+    if (td) {
+      const chgC = td.change24h >= 0 ? '#44ff88' : '#ff4466';
+      const sg = td.change24h >= 0 ? '+' : '';
+      const pf = td.price >= 100 ? td.price.toFixed(0) : (td.price >= 1 ? td.price.toFixed(2) : td.price.toFixed(4));
+      priceStr = ` <span style="color:${chgC};font-size:10px">${td.symbol} $${pf} ${sg}${td.change24h.toFixed(1)}%</span>`;
+    }
+    html += `<div><span style="color:${color}">${symbol} ${name}</span>: <span class="val">${lon.toFixed(1)}°</span>${priceStr}</div>`;
   }
   elPlanets.innerHTML = html;
+}
+
+// ═══════════ TICKER STRIP + MARKET SUMMARY ═══════════
+function updateTickerStrip() {
+  const el = document.getElementById('ticker-inner');
+  if (!el || Object.keys(tickerData).length === 0) return;
+  let html = '';
+  for (const [planet, td] of Object.entries(tickerData)) {
+    const cls = td.change24h >= 0 ? 'up' : 'down';
+    const arrow = td.change24h >= 0 ? '▲' : '▼';
+    const pf = td.price >= 100 ? td.price.toLocaleString('en-US',{maximumFractionDigits:0})
+             : (td.price >= 1 ? td.price.toFixed(2) : td.price.toFixed(4));
+    html += '<span class="tick-item"><span class="sym">' + td.symbol
+          + '</span> $' + pf + ' <span class="' + cls + '">' + arrow
+          + ' ' + Math.abs(td.change24h).toFixed(1) + '%</span></span>';
+  }
+  el.innerHTML = html + html;  // duplicate for seamless scroll
+}
+
+function updateMarketSummary() {
+  const elS = document.getElementById('feed-source');
+  if (elS) elS.textContent = tickerSource;
+  const elT = document.getElementById('feed-time');
+  if (elT && tickerLastUpdate > 0) {
+    const ago = Math.floor((Date.now() - tickerLastUpdate) / 1000);
+    elT.textContent = ago < 60 ? ago + 's ago' : Math.floor(ago / 60) + 'm ago';
+  }
+  const tds = Object.values(tickerData);
+  if (tds.length === 0) return;
+  // BTC volume share among tracked coins
+  const btcVol = (tickerData['Sun'] || {}).volume || 0;
+  const totVol = tds.reduce((s, t) => s + (t.volume || 0), 0);
+  const elD = document.getElementById('btc-dom');
+  if (elD) elD.textContent = (totVol > 0 ? (btcVol / totVol * 100).toFixed(1) : '0.0') + '%';
+  // Mood: volume-weighted average 24h change
+  let wS = 0, wT = 0;
+  for (const t of tds) { const w = Math.sqrt(t.volume || 1); wS += t.change24h * w; wT += w; }
+  const mood = wT > 0 ? wS / wT : 0;
+  const elM = document.getElementById('market-mood');
+  if (elM) {
+    const label = mood > 3 ? 'EUPHORIC' : mood > 1 ? 'BULLISH' : mood > -1 ? 'NEUTRAL'
+                : mood > -3 ? 'BEARISH' : 'FEARFUL';
+    elM.textContent = label + ' (' + (mood >= 0 ? '+' : '') + mood.toFixed(1) + '%)';
+    elM.style.color = mood > 1 ? '#44ff88' : mood > -1 ? '#ccddff' : '#ff4466';
+  }
+  // PHI resonance: BTC/ETH price ratio closeness to PHI^N
+  const bp = (tickerData['Sun'] || {}).price || 0;
+  const ep = (tickerData['Moon'] || {}).price || 0;
+  if (bp > 0 && ep > 0) {
+    const ratio = bp / ep;
+    const logPhi = Math.log(ratio) / Math.log(PHI);
+    const phiDist = Math.abs(logPhi - Math.round(logPhi));
+    const elP = document.getElementById('phi-res');
+    if (elP) elP.textContent = (1 - phiDist).toFixed(4);
+  }
 }
 
 // ═══════════ MAIN ANIMATION LOOP ═══════════
@@ -650,6 +842,11 @@ function animate(ts) {
   // Update HUD every ~10 frames
   if (Math.floor(ts / 160) % 1 === 0) {
     updateHUD(rotDeg, l3, density, cf, aspects, bodies);
+  }
+  // Update ticker strip + market summary every ~2 s
+  if (Math.floor(ts / 2000) !== Math.floor((ts - 16) / 2000)) {
+    updateTickerStrip();
+    updateMarketSummary();
   }
 
   requestAnimationFrame(animate);
