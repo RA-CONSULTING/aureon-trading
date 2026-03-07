@@ -347,6 +347,46 @@ body {
 /* ── Responsive ───────────────────────── */
 @media (max-width: 1100px) { .grid { grid-template-columns: 1fr 1fr; } .span-3 { grid-column: span 2; } }
 @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } .span-2, .span-3 { grid-column: span 1; } }
+
+/* ── Relay world map ──────────────── */
+.relay-map {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.relay-map svg { position: absolute; top:0; left:0; width:100%; height:100%; }
+#relayDots {
+  position: absolute; top:0; left:0; width:100%; height:100%; z-index:2;
+}
+.relay-dot {
+  position: absolute;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.5s ease;
+}
+.relay-dot:hover { transform: translate(-50%, -50%) scale(1.6); z-index: 10; }
+.relay-dot.active    { background: var(--glow-green); box-shadow: 0 0 12px var(--glow-green); }
+.relay-dot.resonating { background: var(--glow-cyan); box-shadow: 0 0 12px var(--glow-cyan); }
+.relay-dot.dormant   { background: var(--glow-amber); box-shadow: 0 0 8px var(--glow-amber); opacity: 0.7; }
+.relay-dot.offline   { background: var(--glow-red); box-shadow: 0 0 6px var(--glow-red); opacity: 0.4; }
+
+/* ── Relay table ──────────────────── */
+.relay-table { width: 100%; border-collapse: collapse; font-size: 0.7em; }
+.relay-table th {
+  text-align: left; color: var(--text-dim); padding: 4px 8px;
+  border-bottom: 1px solid var(--border); font-weight: 600; letter-spacing: 0.05em;
+}
+.relay-table td { padding: 3px 8px; border-bottom: 1px solid rgba(51,65,85,0.3); }
+.relay-civ {
+  font-size: 0.85em; padding: 1px 6px; border-radius: 3px; letter-spacing: 0.03em;
+}
 </style>
 </head>
 <body>
@@ -465,6 +505,37 @@ body {
     <div id="verdictText" style="font-size:0.78em;line-height:1.6;word-break:break-word"></div>
   </div>
 
+  <!-- ─── Relay World Map ─────────────────── -->
+  <div class="panel panel-blue span-3">
+    <h2>Historical Relay Network — Sacred Site Ground Transducers</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:0.7em;color:var(--text-dim)" id="relayNetSummary"></span>
+      <span style="font-size:0.7em" id="relayNetCoverage"></span>
+    </div>
+    <div class="relay-map" id="relayMap">
+      <svg viewBox="0 0 360 180" preserveAspectRatio="none">
+        <line x1="0" y1="90" x2="360" y2="90" stroke="rgba(51,65,85,0.6)" stroke-width="0.5" stroke-dasharray="4,4"/>
+        <line x1="0" y1="66.5" x2="360" y2="66.5" stroke="rgba(51,65,85,0.3)" stroke-width="0.3" stroke-dasharray="2,4"/>
+        <line x1="0" y1="113.5" x2="360" y2="113.5" stroke="rgba(51,65,85,0.3)" stroke-width="0.3" stroke-dasharray="2,4"/>
+        <line x1="180" y1="0" x2="180" y2="180" stroke="rgba(51,65,85,0.4)" stroke-width="0.3" stroke-dasharray="4,4"/>
+        <line x1="0" y1="45" x2="360" y2="45" stroke="rgba(51,65,85,0.15)" stroke-width="0.3" stroke-dasharray="2,6"/>
+        <line x1="0" y1="135" x2="360" y2="135" stroke="rgba(51,65,85,0.15)" stroke-width="0.3" stroke-dasharray="2,6"/>
+        <line x1="90" y1="0" x2="90" y2="180" stroke="rgba(51,65,85,0.2)" stroke-width="0.3" stroke-dasharray="2,6"/>
+        <line x1="270" y1="0" x2="270" y2="180" stroke="rgba(51,65,85,0.2)" stroke-width="0.3" stroke-dasharray="2,6"/>
+        <text x="2" y="88" fill="rgba(148,163,184,0.5)" font-size="4">Equator</text>
+        <text x="2" y="64" fill="rgba(148,163,184,0.3)" font-size="3">Tropic of Cancer</text>
+        <text x="2" y="116" fill="rgba(148,163,184,0.3)" font-size="3">Tropic of Capricorn</text>
+      </svg>
+      <div id="relayDots"></div>
+    </div>
+  </div>
+
+  <!-- ─── Relay Table ─────────────────────── -->
+  <div class="panel panel-cyan span-3">
+    <h2>Relay Site Status — Live Metrics</h2>
+    <div style="max-height:400px;overflow-y:auto" id="relayTableContainer"></div>
+  </div>
+
 </div>
 
 <div class="footer">
@@ -568,6 +639,59 @@ function renderAspects(aspects) {
   }).join('');
 }
 
+const CIV_COLORS = {
+  'Egyptian':'#fbbf24', 'Maya':'#22c55e', 'Celtic':'#3b82f6', 'Mogollon':'#f97316',
+  'Khmer':'#a855f7', 'Javanese':'#ec4899', 'Neolithic':'#94a3b8', 'Inca':'#14b8a6',
+  'Nazca':'#f43f5e', 'Tiwanaku':'#06b6d4', 'Micronesian':'#10b981',
+  'Rapa Nui':'#e879f9', 'Shona':'#fb923c', 'Aboriginal':'#ef4444'
+};
+
+function renderRelayMap(sites) {
+  const container = document.getElementById('relayDots');
+  container.innerHTML = '';
+  if (!sites) return;
+  sites.forEach(s => {
+    const x = ((s.longitude + 180) / 360) * 100;
+    const y = ((90 - s.latitude) / 180) * 100;
+    const dot = document.createElement('div');
+    dot.className = 'relay-dot ' + s.relay_status.toLowerCase();
+    dot.style.left = x + '%';
+    dot.style.top = y + '%';
+    const civClr = CIV_COLORS[s.civilisation] || '#94a3b8';
+    dot.style.border = '2px solid ' + civClr;
+    dot.title = s.name + ' (' + s.civilisation + ')\n'
+      + s.harmonic_role + '\n'
+      + 'Status: ' + s.relay_status + '\n'
+      + 'Strength: ' + (s.relay_strength * 100).toFixed(1) + '%\n'
+      + 'Geo-coupling: ' + s.geomagnetic_coupling.toFixed(4) + '\n'
+      + 'Power: ' + sci(s.power_share_w, 2) + ' W';
+    container.appendChild(dot);
+  });
+}
+
+function renderRelayTable(sites) {
+  const c = document.getElementById('relayTableContainer');
+  if (!sites || !sites.length) { c.innerHTML = '<div style="color:var(--text-dim);font-size:0.75em">No relay data</div>'; return; }
+  const rows = sites.map(s => {
+    const sc = s.relay_status==='ACTIVE'||s.relay_status==='RESONATING' ? 'status-good' :
+               s.relay_status==='DORMANT' ? 'status-warn' : 'status-danger';
+    const cc = CIV_COLORS[s.civilisation] || '#94a3b8';
+    return '<tr>'
+      + '<td style="font-weight:600">' + s.name + '</td>'
+      + '<td><span class="relay-civ" style="background:'+cc+'22;color:'+cc+'">' + s.civilisation + '</span></td>'
+      + '<td>' + s.harmonic_role + '</td>'
+      + '<td>' + s.latitude.toFixed(2) + '\u00b0, ' + s.longitude.toFixed(2) + '\u00b0</td>'
+      + '<td>' + s.geomagnetic_coupling.toFixed(4) + '</td>'
+      + '<td style="font-weight:700;color:' + phaseBarColor(s.relay_strength) + '">' + (s.relay_strength*100).toFixed(1) + '%</td>'
+      + '<td><span class="layer-status '+sc+'" style="font-size:0.85em">' + s.relay_status + '</span></td>'
+      + '<td>' + sci(s.power_share_w, 2) + ' W</td>'
+      + '</tr>';
+  }).join('');
+  c.innerHTML = '<table class="relay-table">'
+    + '<thead><tr><th>Site</th><th>Civilisation</th><th>Role</th><th>Coordinates</th><th>Geo-Coupling</th><th>Strength</th><th>Status</th><th>Power</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody></table>';
+}
+
 function renderPhases(phases) {
   const container = document.getElementById('phaseContainer');
   if (!phases) return;
@@ -664,6 +788,20 @@ async function refresh() {
 
     // Verdict
     document.getElementById('verdictText').textContent = d.planetary_summary;
+
+    // Relay Network
+    if (d.relay_network) {
+      const rn = d.relay_network;
+      document.getElementById('relayNetSummary').textContent =
+        rn.active_count + '/' + rn.total_count + ' relays active';
+      const covPct = (rn.network_coverage * 100).toFixed(1);
+      const covEl = document.getElementById('relayNetCoverage');
+      covEl.textContent = 'Network coverage: ' + covPct + '%';
+      covEl.style.color = rn.network_coverage >= 0.35 ? 'var(--glow-green)' :
+                           rn.network_coverage >= 0.20 ? 'var(--glow-amber)' : 'var(--glow-red)';
+      renderRelayMap(rn.sites);
+      renderRelayTable(rn.sites);
+    }
 
     // Footer
     document.getElementById('footerTs').textContent =

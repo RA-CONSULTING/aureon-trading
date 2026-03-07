@@ -809,5 +809,142 @@ class TestEarthEPASSimulation(unittest.TestCase):
         self.assertIsInstance(result, em.EarthEPASSimulation)
 
 
+class TestRelayNetwork(unittest.TestCase):
+    """Validate the historical relay site network."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sim = em.simulate_earth_epas()
+        cls.relays, cls.coverage, cls.active, cls.total = em.compute_relay_network(
+            cosmic_field=0.6,
+            shield_coherence=0.7,
+            earth_rf_power_w=1e12,
+        )
+
+    # ── Relay site constant ────────────────────────────────────────────────
+
+    def test_historical_sites_tuple_exists(self):
+        self.assertIsInstance(em._HISTORICAL_RELAY_SITES, tuple)
+        self.assertGreater(len(em._HISTORICAL_RELAY_SITES), 20)
+
+    def test_site_tuple_has_five_fields(self):
+        for site in em._HISTORICAL_RELAY_SITES:
+            self.assertEqual(len(site), 5, f'Site {site[0]} wrong length')
+
+    def test_all_latitudes_valid(self):
+        for name, _, lat, _, _ in em._HISTORICAL_RELAY_SITES:
+            self.assertGreaterEqual(lat, -90.0, f'{name} lat < -90')
+            self.assertLessEqual(lat, 90.0, f'{name} lat > 90')
+
+    def test_all_longitudes_valid(self):
+        for name, _, _, lon, _ in em._HISTORICAL_RELAY_SITES:
+            self.assertGreaterEqual(lon, -180.0, f'{name} lon < -180')
+            self.assertLessEqual(lon, 180.0, f'{name} lon > 180')
+
+    def test_sites_have_unique_names(self):
+        names = [s[0] for s in em._HISTORICAL_RELAY_SITES]
+        self.assertEqual(len(names), len(set(names)))
+
+    def test_civilisations_include_core_four(self):
+        civs = {s[1] for s in em._HISTORICAL_RELAY_SITES}
+        for c in ('Egyptian', 'Maya', 'Celtic', 'Mogollon'):
+            self.assertIn(c, civs)
+
+    # ── RelaySite dataclass ────────────────────────────────────────────────
+
+    def test_relay_site_is_frozen(self):
+        r = self.relays[0]
+        with self.assertRaises(AttributeError):
+            r.name = 'hacked'  # type: ignore[misc]
+
+    def test_relay_to_dict_has_all_keys(self):
+        d = self.relays[0].to_dict()
+        for k in ('name', 'civilisation', 'latitude', 'longitude',
+                   'harmonic_role', 'geomagnetic_coupling', 'relay_strength',
+                   'relay_status', 'power_share_w'):
+            self.assertIn(k, d)
+
+    # ── compute_relay_network ──────────────────────────────────────────────
+
+    def test_returns_all_sites(self):
+        self.assertEqual(self.total, len(em._HISTORICAL_RELAY_SITES))
+        self.assertEqual(len(self.relays), self.total)
+
+    def test_active_count_within_range(self):
+        self.assertGreaterEqual(self.active, 0)
+        self.assertLessEqual(self.active, self.total)
+
+    def test_coverage_in_unit_interval(self):
+        self.assertGreaterEqual(self.coverage, 0.0)
+        self.assertLessEqual(self.coverage, 1.0)
+
+    def test_geomag_coupling_in_unit(self):
+        for r in self.relays:
+            self.assertGreaterEqual(r.geomagnetic_coupling, 0.0)
+            self.assertLessEqual(r.geomagnetic_coupling, 1.0)
+
+    def test_relay_strength_in_unit(self):
+        for r in self.relays:
+            self.assertGreaterEqual(r.relay_strength, 0.0)
+            self.assertLessEqual(r.relay_strength, 1.0)
+
+    def test_relay_status_valid(self):
+        valid = {'ACTIVE', 'RESONATING', 'DORMANT', 'OFFLINE'}
+        for r in self.relays:
+            self.assertIn(r.relay_status, valid, f'{r.name}: {r.relay_status}')
+
+    def test_power_shares_sum_roughly_to_total(self):
+        total_share = sum(r.power_share_w for r in self.relays)
+        self.assertAlmostEqual(total_share, 1e12, delta=1e6)
+
+    def test_equatorial_sites_have_higher_coupling(self):
+        giza = next(r for r in self.relays if 'Giza' in r.name)
+        brodgar = next(r for r in self.relays if 'Brodgar' in r.name)
+        self.assertGreater(giza.geomagnetic_coupling, brodgar.geomagnetic_coupling)
+
+    def test_zero_cosmic_field_produces_offline(self):
+        relays, cov, active, total = em.compute_relay_network(0.0, 0.0, 1e12)
+        for r in relays:
+            self.assertEqual(r.relay_status, 'OFFLINE', f'{r.name} not offline')
+        self.assertEqual(active, 0)
+
+    # ── Integration with EarthEPASSimulation ───────────────────────────────
+
+    def test_simulation_has_relay_sites(self):
+        self.assertIsInstance(self.sim.relay_sites, tuple)
+        self.assertGreater(len(self.sim.relay_sites), 0)
+
+    def test_simulation_relay_fields(self):
+        self.assertGreaterEqual(self.sim.relay_network_coverage, 0.0)
+        self.assertLessEqual(self.sim.relay_network_coverage, 1.0)
+        self.assertGreaterEqual(self.sim.relay_active_count, 0)
+        self.assertEqual(self.sim.relay_total_count, len(em._HISTORICAL_RELAY_SITES))
+
+    def test_simulation_to_dict_has_relay_network(self):
+        d = self.sim.to_dict()
+        self.assertIn('relay_network', d)
+        rn = d['relay_network']
+        self.assertIn('sites', rn)
+        self.assertIn('network_coverage', rn)
+        self.assertIn('active_count', rn)
+        self.assertIn('total_count', rn)
+        self.assertEqual(len(rn['sites']), rn['total_count'])
+
+    def test_simulation_summary_includes_relays(self):
+        self.assertIn('relays=', self.sim.planetary_summary)
+
+    def test_relay_json_serialisable(self):
+        d = self.sim.to_dict()
+        payload = json.dumps(d)
+        self.assertIn('relay_network', payload)
+        self.assertIn('Great Pyramid of Giza', payload)
+
+    def test_specific_sites_present(self):
+        names = [s['name'] for s in self.sim.to_dict()['relay_network']['sites']]
+        for expected in ('Great Pyramid of Giza', 'Stonehenge', 'Chaco Canyon',
+                         'Chichen Itza', 'Machu Picchu', 'Angkor Wat', 'Uluru'):
+            self.assertIn(expected, names)
+
+
 if __name__ == '__main__':
     unittest.main()

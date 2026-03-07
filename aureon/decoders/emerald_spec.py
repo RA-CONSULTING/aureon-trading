@@ -726,6 +726,173 @@ _PLANET_WEIGHTS: Dict[str, float] = {
 _PHI_RESONANT_ANGLES: Tuple[float, ...] = (72.0, 120.0, 137.5, 144.0)
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# HISTORICAL RELAY SITES — ground transducers for the planetary EPAS shell
+#
+# Each site is a sacred/historical location whose geometry couples into the
+# F-region ionosphere via Schumann cavity standing waves.  The relay strength
+# is modulated by:
+#   (a) latitude → geomagnetic dipole coupling cos²(λ)
+#   (b) civilisation harmonic signature (from the unified crosswalk)
+#   (c) live cosmic field score × shield coherence
+#
+# GPS coordinates are real-world values (WGS84).
+# ════════════════════════════════════════════════════════════════════════════
+
+_HISTORICAL_RELAY_SITES: Tuple[Tuple[str, str, float, float, str], ...] = (
+    # (name, civilisation, latitude, longitude, harmonic_role)
+    # ── Egyptian ──────────────────────────────────────────────────────────
+    ('Great Pyramid of Giza',    'Egyptian',  29.9792,  31.1342, 'Prime Anchor'),
+    ('Temple of Karnak',         'Egyptian',  25.7188,  32.6573, 'Resonance Hub'),
+    ('Valley of the Kings',      'Egyptian',  25.7402,  32.6014, 'Memory Vault'),
+    ('Abu Simbel',               'Egyptian',  22.3369,  31.6256, 'Southern Gate'),
+    # ── Mesoamerican ──────────────────────────────────────────────────────
+    ('Teotihuacan',              'Maya',      19.6925, -98.8438, 'Solar Axis'),
+    ('Chichen Itza',             'Maya',      20.6843, -88.5678, 'Equinox Beacon'),
+    ('Tikal',                    'Maya',      17.2220, -89.6237, 'Jungle Pulse'),
+    ('Palenque',                 'Maya',      17.4838, -92.0461, 'Calendar Node'),
+    # ── Celtic / European ─────────────────────────────────────────────────
+    ('Stonehenge',               'Celtic',    51.1789,  -1.8262, 'Solstice Ring'),
+    ('Newgrange',                'Celtic',    53.6947,  -6.4754, 'Passage Gate'),
+    ('Carnac Stones',            'Celtic',    47.5840,  -3.0744, 'Alignment Row'),
+    ('Ring of Brodgar',          'Celtic',    59.0015,  -3.2295, 'Northern Anchor'),
+    # ── Mogollon / SW American ────────────────────────────────────────────
+    ('Chaco Canyon',             'Mogollon',  36.0604, -107.9584, 'Sun Dagger'),
+    ('Mesa Verde',               'Mogollon',  37.1838, -108.4887, 'Cliff Refuge'),
+    ('Bandelier',                'Mogollon',  35.7785, -106.2689, 'Valley Node'),
+    # ── Asian / Indic ─────────────────────────────────────────────────────
+    ('Angkor Wat',               'Khmer',     13.4125, 103.8670, 'Celestial Mirror'),
+    ('Borobudur',                'Javanese',  -7.6079, 110.2038, 'Mandala Core'),
+    ('Göbekli Tepe',             'Neolithic', 37.2231,  38.9225, 'Origin Point'),
+    # ── South American ────────────────────────────────────────────────────
+    ('Machu Picchu',             'Inca',     -13.1631, -72.5450, 'Cloud Citadel'),
+    ('Nazca Lines',              'Nazca',    -14.7350, -75.1300, 'Geoglyph Beacon'),
+    ('Tiwanaku',                 'Tiwanaku', -16.5544, -68.6733, 'Gateway of Sun'),
+    # ── Polynesian ────────────────────────────────────────────────────────
+    ('Nan Madol',                'Micronesian', 6.8446, 158.3350, 'Pacific Relay'),
+    ('Easter Island (Ahu Tongariki)', 'Rapa Nui', -27.1258, -109.2770, 'Moai Beacon'),
+    # ── African ───────────────────────────────────────────────────────────
+    ('Great Zimbabwe',           'Shona',    -20.2674,  30.9338, 'Southern Pillar'),
+    # ── Australian ────────────────────────────────────────────────────────
+    ('Uluru',                    'Aboriginal', -25.3444, 131.0369, 'Dreamtime Core'),
+)
+
+
+@dataclass(frozen=True)
+class RelaySite:
+    """A historical site acting as ground relay in the planetary EPAS network."""
+
+    name: str
+    civilisation: str
+    latitude: float
+    longitude: float
+    harmonic_role: str
+    geomagnetic_coupling: float      # cos²(lat) dipole coupling [0-1]
+    relay_strength: float            # overall relay contribution [0-1]
+    relay_status: str                # ACTIVE | RESONATING | DORMANT | OFFLINE
+    power_share_w: float             # share of Earth RF power routed through this relay
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            'name': self.name,
+            'civilisation': self.civilisation,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'harmonic_role': self.harmonic_role,
+            'geomagnetic_coupling': self.geomagnetic_coupling,
+            'relay_strength': self.relay_strength,
+            'relay_status': self.relay_status,
+            'power_share_w': self.power_share_w,
+        }
+
+
+def compute_relay_network(
+    cosmic_field: float,
+    shield_coherence: float,
+    earth_rf_power_w: float,
+) -> Tuple[list, float, int, int]:
+    """Compute the relay state of every historical site.
+
+    Each site's contribution depends on:
+      1. Geomagnetic coupling: cos²(latitude) — equatorial sites couple best
+         to the Schumann cavity fundamental; high-latitude sites get the
+         harmonic overtones.
+      2. Cosmic field modulation: the live VSOP87 harmonic score.
+      3. Shield coherence: phases must be stable for relays to lock.
+
+    Returns:
+        (relay_list, network_coverage, active_count, total_count)
+    """
+    relays = []
+    total_coupling = 0.0
+
+    for name, civ, lat, lon, role in _HISTORICAL_RELAY_SITES:
+        # 1. Geomagnetic dipole coupling: cos²(λ)
+        lat_rad = math.radians(lat)
+        geo_coupling = math.cos(lat_rad) ** 2
+
+        # 2. Relay strength = geo_coupling × cosmic × coherence
+        raw_strength = geo_coupling * cosmic_field * shield_coherence
+        # Boost: equatorial sites (|lat| < 25°) get Schumann fundamental lock
+        if abs(lat) < 25.0:
+            raw_strength *= 1.0 + 0.1 * PHI  # ~+16% Schumann lock bonus
+        strength = max(0.0, min(1.0, raw_strength))
+
+        # 3. Status thresholds
+        if strength >= 0.35:
+            status = 'ACTIVE'
+        elif strength >= 0.20:
+            status = 'RESONATING'
+        elif strength >= 0.08:
+            status = 'DORMANT'
+        else:
+            status = 'OFFLINE'
+
+        total_coupling += geo_coupling
+
+        relays.append(RelaySite(
+            name=name,
+            civilisation=civ,
+            latitude=lat,
+            longitude=lon,
+            harmonic_role=role,
+            geomagnetic_coupling=round(geo_coupling, 4),
+            relay_strength=round(strength, 4),
+            relay_status=status,
+            power_share_w=0.0,  # computed below
+        ))
+
+    # Distribute power proportionally to relay strength
+    total_strength = sum(r.relay_strength for r in relays) or 1.0
+    relays_with_power = []
+    for r in relays:
+        share = earth_rf_power_w * (r.relay_strength / total_strength)
+        relays_with_power.append(RelaySite(
+            name=r.name,
+            civilisation=r.civilisation,
+            latitude=r.latitude,
+            longitude=r.longitude,
+            harmonic_role=r.harmonic_role,
+            geomagnetic_coupling=r.geomagnetic_coupling,
+            relay_strength=r.relay_strength,
+            relay_status=r.relay_status,
+            power_share_w=round(share, 1),
+        ))
+
+    active_count = sum(1 for r in relays_with_power if r.relay_status in ('ACTIVE', 'RESONATING'))
+    total_count = len(relays_with_power)
+    # Network coverage: weighted average of active relay strengths
+    if active_count > 0:
+        network_coverage = sum(
+            r.relay_strength for r in relays_with_power
+            if r.relay_status in ('ACTIVE', 'RESONATING')
+        ) / active_count
+    else:
+        network_coverage = 0.0
+
+    return relays_with_power, round(network_coverage, 4), active_count, total_count
+
+
 @dataclass(frozen=True)
 class ProjectDruidManifest:
     """Physical EPAS device specification — Project Druid.
@@ -1112,6 +1279,12 @@ class EarthEPASSimulation:
     earth_power_density_w_m3: float
     earth_output_voltage_v: float                      # scaled from EPOS VDC
 
+    # ── Relay network (historical sites) ─────────────────────────────────
+    relay_sites: Tuple[dict, ...]                      # per-site RelaySite.to_dict()
+    relay_network_coverage: float                      # mean active strength [0-1]
+    relay_active_count: int
+    relay_total_count: int
+
     # ── Shield status ──────────────────────────────────────────────────────
     shield_status: str                                 # SHIELDS_UP | STRESSED | FAILING
     shield_coverage_pct: float                         # Γ × 100
@@ -1167,6 +1340,12 @@ class EarthEPASSimulation:
                 'earth_rf_power_w': self.earth_rf_power_w,
                 'earth_power_density_w_m3': self.earth_power_density_w_m3,
                 'earth_output_voltage_v': self.earth_output_voltage_v,
+            },
+            'relay_network': {
+                'sites': list(self.relay_sites),
+                'network_coverage': self.relay_network_coverage,
+                'active_count': self.relay_active_count,
+                'total_count': self.relay_total_count,
             },
             'planetary_summary': self.planetary_summary,
             'active_aspects': self.active_aspects,
@@ -1302,6 +1481,14 @@ def simulate_earth_epas() -> EarthEPASSimulation:
 
     coverage_pct = round(shield_coherence * 100, 1)
 
+    # ── 7. Relay network from historical sites ──────────────────────────
+    relay_list, relay_coverage, relay_active, relay_total = compute_relay_network(
+        cosmic_field=cosmic,
+        shield_coherence=shield_coherence,
+        earth_rf_power_w=earth_rf,
+    )
+    relay_dicts = tuple(r.to_dict() for r in relay_list)
+
     # Planetary summary
     planetary_summary = (
         f'{shield_status}  Γ={shield_coherence:.4f}  '
@@ -1310,6 +1497,7 @@ def simulate_earth_epas() -> EarthEPASSimulation:
         f'L2={l2_status}(n_e={live_density:.2e})  '
         f'L3={l3_status}({l3_score:.3f})  '
         f'aspects={len(aspects)}(+{len(positive)}/−{len(negative)})  '
+        f'relays={relay_active}/{relay_total}(net={relay_coverage:.3f})  '
         f'dominant={dominant_str}'
     )
 
@@ -1346,6 +1534,10 @@ def simulate_earth_epas() -> EarthEPASSimulation:
         shield_status=shield_status,
         shield_coverage_pct=coverage_pct,
         planetary_summary=planetary_summary,
+        relay_sites=relay_dicts,
+        relay_network_coverage=relay_coverage,
+        relay_active_count=relay_active,
+        relay_total_count=relay_total,
     )
 
 
