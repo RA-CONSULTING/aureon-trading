@@ -893,6 +893,598 @@ def compute_relay_network(
     return relays_with_power, round(network_coverage, 4), active_count, total_count
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# NATURAL IONOSPHERE PROFILER — "Know our own before we could make a new"
+#
+# Models Earth's real ionosphere through four integrated systems:
+#   1. Chapman Layer Model — altitude-resolved electron density N(h)
+#   2. Aluminum Harmonic Fluid — Drude conductive-plasma analogy
+#   3. FFS Spectral Analysis — full frequency sweep (ELF → HF)
+#   4. Lighthouse Mapping — relay sites probe upward to reconstruct density
+#
+# All physics constants are real (SI units unless noted).
+# ════════════════════════════════════════════════════════════════════════════
+
+# ── Fundamental constants (SI) ─────────────────────────────────────────────
+_ELECTRON_MASS_KG = 9.10938e-31
+_ELECTRON_CHARGE_C = 1.602176e-19
+_VACUUM_PERMITTIVITY = 8.854188e-12         # ε₀  (F/m)
+_PROTON_MASS_KG = 1.672621e-27
+_SPEED_OF_LIGHT = 2.99792458e8              # m/s
+_BOLTZMANN_K = 1.380649e-23                 # J/K
+
+# ── Ionospheric layer reference data ──────────────────────────────────────
+# (name, base_alt_km, peak_alt_km, top_alt_km, peak_density_day_m3,
+#  peak_density_night_m3, scale_height_km, collision_freq_hz, temperature_K)
+_IONO_LAYER_TABLE: Tuple[Tuple[str, float, float, float, float,
+                                float, float, float, float], ...] = (
+    ('D',       60,   80,   90,  1e9,    0.0,     10,  1e6,   200),
+    ('E',       90,  110,  120,  1e11,   5e9,     10,  1e4,   250),
+    ('F1',     120,  180,  200,  3e11,   0.0,     30,  1e3,   800),
+    ('F2',     200,  300,  400,  1e12,   1e11,    60,  1e2,  1200),
+    ('Topside', 400,  600, 1000,  1e10,   5e9,    100,  10,   2000),
+)
+
+# ── Aluminum harmonic fluid reference ─────────────────────────────────────
+# Aluminum plasma frequency ωp_Al ≈ 2.4e16 rad/s → fp_Al ≈ 3.57 PHz
+# We use this as the "metallic ceiling" — ionospheric plasma is a weaker
+# version of the same conductive-fluid physics (Drude model).
+_ALUMINUM_PLASMA_FREQ_RAD = 2.4e16          # rad/s
+_ALUMINUM_PLASMA_FREQ_HZ = _ALUMINUM_PLASMA_FREQ_RAD / (2.0 * math.pi)
+
+# ── FFS spectral sweep bands ─────────────────────────────────────────────
+# (band_name, freq_low_hz, freq_high_hz, n_samples)
+_FFS_BANDS: Tuple[Tuple[str, float, float, int], ...] = (
+    ('ELF',    3.0,        30.0,         6),   # Schumann domain
+    ('SLF',   30.0,       300.0,         6),
+    ('ULF',  300.0,      3000.0,         6),
+    ('VLF', 3000.0,     30000.0,         8),
+    ('LF',  30000.0,   300000.0,         8),
+    ('MF', 300000.0,  3000000.0,         8),
+    ('HF', 3000000.0, 30000000.0,       10),   # ionosonde domain
+)
+
+# ── IGRF dipole model (simplified) ───────────────────────────────────────
+_IGRF_B0_TESLA = 3.12e-5                    # equatorial surface dipole
+
+
+@dataclass(frozen=True)
+class IonosphericLayer:
+    """One layer of Earth's natural ionosphere."""
+    name: str
+    base_alt_km: float
+    peak_alt_km: float
+    top_alt_km: float
+    peak_density_m3: float        # live (day/night adjusted)
+    scale_height_km: float
+    collision_freq_hz: float
+    temperature_k: float
+    plasma_freq_hz: float         # fp = 9 √N
+    critical_freq_hz: float       # foLayer = fp at peak
+    conductivity_s_m: float       # σ = Ne²/(me·ν)
+    drude_epsilon_real: float     # Re(ε) at Schumann fundamental
+    drude_epsilon_imag: float     # Im(ε) at Schumann fundamental
+    skin_depth_m: float           # δ = c / (ω·√(-ε)) at plasma freq
+    harmonic_fluid_ratio: float   # fp / fp_aluminum — how "metallic"
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            'name': self.name,
+            'base_alt_km': self.base_alt_km,
+            'peak_alt_km': self.peak_alt_km,
+            'top_alt_km': self.top_alt_km,
+            'peak_density_m3': self.peak_density_m3,
+            'scale_height_km': self.scale_height_km,
+            'collision_freq_hz': self.collision_freq_hz,
+            'temperature_k': self.temperature_k,
+            'plasma_freq_hz': round(self.plasma_freq_hz, 2),
+            'critical_freq_hz': round(self.critical_freq_hz, 2),
+            'conductivity_s_m': self.conductivity_s_m,
+            'drude_epsilon_real': round(self.drude_epsilon_real, 6),
+            'drude_epsilon_imag': round(self.drude_epsilon_imag, 6),
+            'skin_depth_m': round(self.skin_depth_m, 1),
+            'harmonic_fluid_ratio': self.harmonic_fluid_ratio,
+        }
+
+
+@dataclass(frozen=True)
+class FFSSpectralBand:
+    """One frequency band from the Full Frequency Spectrum analysis."""
+    band_name: str
+    freq_hz: float
+    reflection_alt_km: float     # height where fp(h) ≥ freq (or -1 if transparent)
+    absorption_db_km: float      # absorption rate in dB/km
+    phase_velocity_ratio: float  # v_phase / c  (refractive index effect)
+    penetrates: bool             # True if wave punches through all layers
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            'band_name': self.band_name,
+            'freq_hz': self.freq_hz,
+            'reflection_alt_km': round(self.reflection_alt_km, 1),
+            'absorption_db_km': round(self.absorption_db_km, 4),
+            'phase_velocity_ratio': round(self.phase_velocity_ratio, 6),
+            'penetrates': self.penetrates,
+        }
+
+
+@dataclass(frozen=True)
+class LighthouseProbe:
+    """A single relay site's upward ionospheric probe result."""
+    site_name: str
+    latitude: float
+    longitude: float
+    local_b_field_tesla: float           # IGRF dipole at this latitude
+    electron_gyrofreq_hz: float          # fce = eB/(2πme)
+    upper_hybrid_freq_hz: float          # fUH = √(fp² + fce²)  at F2 peak
+    lower_hybrid_freq_hz: float          # fLH ≈ √(fci·fce)
+    local_fof2_hz: float                 # critical freq foF2 at this location
+    tec_tecu: float                      # total electron content (1 TECU = 1e16 m⁻²)
+    density_profile_km: Tuple[Tuple[float, float], ...]  # (alt_km, N_m3) samples
+    probe_status: str                    # LOCKED | PARTIAL | NO_RETURN
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            'site_name': self.site_name,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'local_b_field_tesla': self.local_b_field_tesla,
+            'electron_gyrofreq_hz': round(self.electron_gyrofreq_hz, 1),
+            'upper_hybrid_freq_hz': round(self.upper_hybrid_freq_hz, 1),
+            'lower_hybrid_freq_hz': round(self.lower_hybrid_freq_hz, 2),
+            'local_fof2_hz': round(self.local_fof2_hz, 1),
+            'tec_tecu': round(self.tec_tecu, 2),
+            'density_profile': [
+                {'alt_km': round(a, 1), 'density_m3': round(n, 1)}
+                for a, n in self.density_profile_km
+            ],
+            'probe_status': self.probe_status,
+        }
+
+
+@dataclass(frozen=True)
+class NaturalIonosphereProfile:
+    """Complete characterisation of Earth's real ionosphere.
+
+    Systems:
+      1. Chapman layers (D / E / F1 / F2 / Topside)
+      2. Aluminum harmonic fluid model (Drude analogy)
+      3. FFS Full Frequency Spectrum analysis
+      4. Lighthouse mapping from relay ground stations
+    """
+    timestamp: str
+    solar_zenith_deg: float          # χ — drives day/night density
+    is_daytime: bool
+
+    # ── Layer model ─────────────────────────────────────────────────────
+    layers: Tuple[IonosphericLayer, ...]
+    f2_peak_density_m3: float        # NmF2 — the main number
+    f2_peak_alt_km: float            # hmF2
+    f2_critical_freq_hz: float       # foF2 = 9√NmF2
+    total_electron_content_tecu: float  # TEC in TECU (1e16 m⁻²)
+
+    # ── Aluminum harmonic fluid summary ─────────────────────────────────
+    mean_harmonic_fluid_ratio: float     # how "metallic" is our ionosphere
+    peak_harmonic_fluid_ratio: float     # F2 peak metallic ratio
+    fluid_classification: str            # DIELECTRIC | WEAK_CONDUCTOR | CONDUCTOR
+
+    # ── FFS spectral analysis ───────────────────────────────────────────
+    ffs_bands: Tuple[FFSSpectralBand, ...]
+    ffs_opaque_below_hz: float       # below this freq, ionosphere reflects
+    ffs_transparent_above_hz: float  # above this freq, waves escape
+
+    # ── Lighthouse mapping ──────────────────────────────────────────────
+    lighthouse_probes: Tuple[LighthouseProbe, ...]
+    lighthouse_locked_count: int
+    lighthouse_mean_fof2_hz: float
+    lighthouse_mean_tec_tecu: float
+
+    # ── Assessment ──────────────────────────────────────────────────────
+    ionosphere_health: str           # ROBUST | MODERATE | DEPLETED | STORM
+    readiness_for_epas: float        # 0-1: how suitable for artificial overlay
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            'timestamp': self.timestamp,
+            'solar_zenith_deg': round(self.solar_zenith_deg, 2),
+            'is_daytime': self.is_daytime,
+            'layers': [ly.to_dict() for ly in self.layers],
+            'f2_peak': {
+                'density_m3': self.f2_peak_density_m3,
+                'alt_km': self.f2_peak_alt_km,
+                'critical_freq_hz': round(self.f2_critical_freq_hz, 2),
+                'total_electron_content_tecu': round(self.total_electron_content_tecu, 2),
+            },
+            'aluminum_harmonic_fluid': {
+                'mean_ratio': round(self.mean_harmonic_fluid_ratio, 12),
+                'peak_ratio': round(self.peak_harmonic_fluid_ratio, 12),
+                'classification': self.fluid_classification,
+            },
+            'ffs_spectral': {
+                'bands': [b.to_dict() for b in self.ffs_bands],
+                'opaque_below_hz': round(self.ffs_opaque_below_hz, 1),
+                'transparent_above_hz': round(self.ffs_transparent_above_hz, 1),
+            },
+            'lighthouse_mapping': {
+                'probes': [p.to_dict() for p in self.lighthouse_probes],
+                'locked_count': self.lighthouse_locked_count,
+                'mean_fof2_hz': round(self.lighthouse_mean_fof2_hz, 1),
+                'mean_tec_tecu': round(self.lighthouse_mean_tec_tecu, 2),
+            },
+            'assessment': {
+                'ionosphere_health': self.ionosphere_health,
+                'readiness_for_epas': round(self.readiness_for_epas, 4),
+            },
+        }
+
+
+# ── Chapman profile helper ─────────────────────────────────────────────────
+
+def _chapman_density(alt_km: float, peak_alt_km: float,
+                     peak_density: float, scale_h_km: float,
+                     chi_rad: float) -> float:
+    """Compute electron density at altitude h using Chapman function.
+
+    N(h) = NmF2 · exp(0.5 · (1 − z − sec(χ) · e^(−z)))
+    where z = (h − hm) / H
+    """
+    z = (alt_km - peak_alt_km) / max(scale_h_km, 1.0)
+    # sec(χ) capped to avoid singularity near χ=90°
+    sec_chi = 1.0 / max(math.cos(chi_rad), 0.05)
+    exponent = 0.5 * (1.0 - z - sec_chi * math.exp(-z))
+    # Clamp exponent to avoid overflow
+    exponent = max(-50.0, min(20.0, exponent))
+    return peak_density * math.exp(exponent)
+
+
+def _drude_permittivity(freq_hz: float, plasma_freq_hz: float,
+                        collision_freq_hz: float) -> Tuple[float, float]:
+    """Drude model complex permittivity of ionospheric plasma.
+
+    ε(ω) = 1 − ωp² / (ω² + iγω)
+    Returns (Re(ε), Im(ε)).
+    """
+    omega = 2.0 * math.pi * max(freq_hz, 1e-3)
+    omega_p = 2.0 * math.pi * plasma_freq_hz
+    gamma = 2.0 * math.pi * collision_freq_hz
+
+    denom = omega ** 2 + gamma ** 2
+    if denom < 1e-30:
+        return 1.0, 0.0
+    eps_real = 1.0 - (omega_p ** 2 * omega ** 2) / (omega ** 2 * denom)
+    # Simplify: Re(ε) = 1 − ωp²/(ω² + γ²)
+    eps_real = 1.0 - omega_p ** 2 / denom
+    eps_imag = omega_p ** 2 * gamma / (omega * denom)
+    return eps_real, eps_imag
+
+
+def _solar_zenith_angle() -> float:
+    """Approximate solar zenith angle for the sub-solar point (degrees).
+
+    Uses day-of-year and hour to estimate; simplified model
+    (assumes sub-observer at prime meridian for generality).
+    """
+    now = datetime.now(timezone.utc)
+    doy = now.timetuple().tm_yday
+    hour_frac = now.hour + now.minute / 60.0
+    # Solar declination (Spencer approximation)
+    B = 2.0 * math.pi * (doy - 1) / 365.0
+    decl = (0.006918 - 0.399912 * math.cos(B) + 0.070257 * math.sin(B)
+            - 0.006758 * math.cos(2 * B) + 0.000907 * math.sin(2 * B))
+    # Hour angle (prime meridian observer)
+    hour_angle = math.radians(15.0 * (hour_frac - 12.0))
+    # Zenith = based on latitude 0° (equator) for global average
+    cos_z = (math.sin(decl) * math.sin(0) +
+             math.cos(decl) * math.cos(0) * math.cos(hour_angle))
+    cos_z = max(-1.0, min(1.0, cos_z))
+    return math.degrees(math.acos(cos_z))
+
+
+def _compute_iono_layers(chi_deg: float, is_daytime: bool,
+                         cosmic_field: float) -> list:
+    """Compute all ionospheric layers with live modulation."""
+    chi_rad = math.radians(min(chi_deg, 89.0))
+    layers = []
+    for name, base, peak, top, nm_day, nm_night, sh, coll, temp in _IONO_LAYER_TABLE:
+        # Day/night selection
+        if is_daytime:
+            nm = nm_day
+        else:
+            nm = nm_night
+        # Skip layers that disappear at night (D and F1)
+        if nm <= 0:
+            nm = 1e6  # residual minimum
+
+        # Cosmic field modulates density ±15%
+        nm *= (0.85 + 0.30 * cosmic_field)
+
+        # Plasma frequency fp = 9 √N  (Hz, N in m⁻³)
+        fp = 9.0 * math.sqrt(nm)
+        # Conductivity σ = N·e²/(me·ν)
+        sigma = (nm * _ELECTRON_CHARGE_C ** 2) / (_ELECTRON_MASS_KG * max(coll, 1.0))
+        # Drude permittivity at Schumann fundamental (7.83 Hz)
+        eps_r, eps_i = _drude_permittivity(SCHUMANN_FUNDAMENTAL, fp, coll)
+        # Skin depth: δ = 1 / (ω · √(μ₀ · σ / 2))  — simplified
+        omega_s = 2.0 * math.pi * SCHUMANN_FUNDAMENTAL
+        if sigma > 0:
+            skin = 1.0 / max(omega_s * math.sqrt(4e-7 * math.pi * sigma / 2.0), 1e-30)
+        else:
+            skin = 1e12  # effectively infinite
+        # Harmonic fluid ratio: how "metallic" vs aluminum
+        fluid_ratio = fp / _ALUMINUM_PLASMA_FREQ_HZ if _ALUMINUM_PLASMA_FREQ_HZ > 0 else 0
+
+        layers.append(IonosphericLayer(
+            name=name,
+            base_alt_km=base,
+            peak_alt_km=peak,
+            top_alt_km=top,
+            peak_density_m3=round(nm, 1),
+            scale_height_km=sh,
+            collision_freq_hz=coll,
+            temperature_k=temp,
+            plasma_freq_hz=fp,
+            critical_freq_hz=fp,
+            conductivity_s_m=sigma,
+            drude_epsilon_real=eps_r,
+            drude_epsilon_imag=eps_i,
+            skin_depth_m=skin,
+            harmonic_fluid_ratio=fluid_ratio,
+        ))
+    return layers
+
+
+def _run_ffs_spectral(layers: list) -> Tuple[list, float, float]:
+    """Full Frequency Spectrum sweep.
+
+    For each frequency, determine:
+      - Does it reflect? At what altitude?
+      - Absorption rate (collisional damping)?
+      - Phase velocity modification (refractive index)?
+    """
+    bands = []
+    opaque_below = 0.0
+    transparent_above = 0.0
+
+    # Build altitude→plasma_freq lookup from layers
+    layer_lookup = [(ly.peak_alt_km, ly.plasma_freq_hz, ly.collision_freq_hz)
+                    for ly in layers]
+    max_fp = max(ly.plasma_freq_hz for ly in layers)
+
+    for band_name, f_low, f_high, n_samples in _FFS_BANDS:
+        step = (f_high - f_low) / max(n_samples - 1, 1)
+        for i in range(n_samples):
+            freq = f_low + i * step
+            # Does this frequency reflect?
+            reflection_alt = -1.0
+            penetrates = True
+            for alt, fp, coll in sorted(layer_lookup, key=lambda x: x[0]):
+                if fp >= freq:
+                    reflection_alt = alt
+                    penetrates = False
+                    break
+
+            # Absorption: D-region absorption ∝ ν·N / (ν² + ω²)
+            d_layer = layers[0]  # D region
+            omega = 2.0 * math.pi * freq
+            nu_d = d_layer.collision_freq_hz
+            n_d = d_layer.peak_density_m3
+            if omega > 0 and (nu_d ** 2 + omega ** 2) > 0:
+                absorption = (1.15e-3 * nu_d * n_d /
+                              (nu_d ** 2 + omega ** 2))
+            else:
+                absorption = 0.0
+
+            # Phase velocity: n_r² = 1 − fp²/f² (no collisions, O-mode)
+            if freq > 0:
+                nr_sq = 1.0 - (max_fp / freq) ** 2
+            else:
+                nr_sq = 1.0
+            if nr_sq > 0:
+                phase_v_ratio = 1.0 / math.sqrt(nr_sq)
+            else:
+                phase_v_ratio = 0.0  # evanescent
+
+            bands.append(FFSSpectralBand(
+                band_name=band_name,
+                freq_hz=round(freq, 2),
+                reflection_alt_km=reflection_alt,
+                absorption_db_km=absorption,
+                phase_velocity_ratio=phase_v_ratio,
+                penetrates=penetrates,
+            ))
+
+    # Determine opacity / transparency thresholds
+    reflecting = [b for b in bands if not b.penetrates]
+    passing = [b for b in bands if b.penetrates]
+    opaque_below = max(b.freq_hz for b in reflecting) if reflecting else 0.0
+    transparent_above = min(b.freq_hz for b in passing) if passing else 0.0
+
+    return bands, opaque_below, transparent_above
+
+
+def _lighthouse_mapping(relay_sites_data: list, layers: list,
+                        chi_rad: float, cosmic_field: float) -> list:
+    """Run lighthouse probes from each relay site.
+
+    Each site acts as a ground-based ionosonde, probing upward with
+    multiple frequencies.  The geomagnetic field at each location
+    determines the O/X mode splitting and electron gyrofrequency.
+    """
+    f2 = None
+    for ly in layers:
+        if ly.name == 'F2':
+            f2 = ly
+            break
+    if f2 is None:
+        f2 = layers[-1]
+
+    probes = []
+    for site in relay_sites_data:
+        lat = site['latitude']
+        lon = site['longitude']
+        lat_rad = math.radians(lat)
+
+        # IGRF dipole at surface: B = B0 √(1 + 3sin²λ)
+        b_local = _IGRF_B0_TESLA * math.sqrt(1.0 + 3.0 * math.sin(lat_rad) ** 2)
+        # Electron gyrofrequency: fce = eB / (2πme)
+        fce = _ELECTRON_CHARGE_C * b_local / (2.0 * math.pi * _ELECTRON_MASS_KG)
+        # Ion gyrofrequency (O⁺ dominant): fci = eB / (2πmi)
+        fci = _ELECTRON_CHARGE_C * b_local / (2.0 * math.pi * 16.0 * _PROTON_MASS_KG)
+
+        # Local foF2 modulated by latitude and cosmic field
+        # Equatorial anomaly gives higher NmF2 at ±15° magnetic latitude
+        lat_factor = 1.0 + 0.3 * math.exp(-((abs(lat) - 15.0) ** 2) / 200.0)
+        local_nm = f2.peak_density_m3 * lat_factor * (0.8 + 0.4 * cosmic_field)
+        local_fof2 = 9.0 * math.sqrt(max(local_nm, 1.0))
+
+        # Upper hybrid: fUH = √(fp² + fce²)
+        f_uh = math.sqrt(local_fof2 ** 2 + fce ** 2)
+        # Lower hybrid: fLH = √(fci · fce)
+        f_lh = math.sqrt(fci * fce)
+
+        # Total Electron Content: simplified Chapman integral
+        # TEC ≈ NmF2 · H · √(2π)  (in m⁻², convert to TECU: 1 TECU = 1e16 m⁻²)
+        tec_raw = local_nm * f2.scale_height_km * 1e3 * math.sqrt(2 * math.pi)
+        tec_tecu = tec_raw / 1e16
+
+        # Build density profile (sample every 25 km from 60 to 800 km)
+        profile = []
+        for alt in range(60, 825, 25):
+            # Sum Chapman contributions from all layers
+            total_n = 0.0
+            for ly in layers:
+                total_n += _chapman_density(alt, ly.peak_alt_km,
+                                            ly.peak_density_m3 * lat_factor,
+                                            ly.scale_height_km, chi_rad)
+            profile.append((float(alt), round(total_n, 1)))
+
+        # Probe status
+        if local_fof2 > 3e6:
+            status = 'LOCKED'
+        elif local_fof2 > 1e6:
+            status = 'PARTIAL'
+        else:
+            status = 'NO_RETURN'
+
+        probes.append(LighthouseProbe(
+            site_name=site['name'],
+            latitude=lat,
+            longitude=lon,
+            local_b_field_tesla=round(b_local, 8),
+            electron_gyrofreq_hz=fce,
+            upper_hybrid_freq_hz=f_uh,
+            lower_hybrid_freq_hz=f_lh,
+            local_fof2_hz=local_fof2,
+            tec_tecu=tec_tecu,
+            density_profile_km=tuple(profile),
+            probe_status=status,
+        ))
+
+    return probes
+
+
+def profile_natural_ionosphere(
+    relay_sites_data: list,
+    cosmic_field: float = 0.5,
+) -> NaturalIonosphereProfile:
+    """Profile Earth's natural ionosphere using all four systems.
+
+    This must run BEFORE designing any artificial EPAS overlay.
+
+    Args:
+        relay_sites_data: list of relay site dicts (from compute_relay_network)
+        cosmic_field: live cosmic field score [0-1]
+
+    Returns:
+        NaturalIonosphereProfile with complete characterisation.
+    """
+    # Solar zenith angle
+    chi_deg = _solar_zenith_angle()
+    is_daytime = chi_deg < 90.0
+    chi_rad = math.radians(min(chi_deg, 89.0))
+
+    # ── 1. Chapman layer model ──────────────────────────────────────────
+    layers = _compute_iono_layers(chi_deg, is_daytime, cosmic_field)
+
+    # F2 peak extraction
+    f2 = next((ly for ly in layers if ly.name == 'F2'), layers[-1])
+    f2_critical = 9.0 * math.sqrt(f2.peak_density_m3)
+
+    # TEC from all layers (column integral approximation)
+    total_tec = 0.0
+    for ly in layers:
+        # TEC contribution ≈ Nm · H · √(2π)
+        total_tec += ly.peak_density_m3 * ly.scale_height_km * 1e3 * math.sqrt(2.0 * math.pi)
+    tec_tecu = total_tec / 1e16
+
+    # ── 2. Aluminum harmonic fluid model ────────────────────────────────
+    fluid_ratios = [ly.harmonic_fluid_ratio for ly in layers]
+    mean_fluid = sum(fluid_ratios) / len(fluid_ratios) if fluid_ratios else 0.0
+    peak_fluid = max(fluid_ratios) if fluid_ratios else 0.0
+
+    # Classification: compare to aluminum
+    if peak_fluid > 1e-4:
+        fluid_class = 'CONDUCTOR'       # extremely unlikely for ionosphere
+    elif peak_fluid > 1e-8:
+        fluid_class = 'WEAK_CONDUCTOR'  # typical F2 peak
+    else:
+        fluid_class = 'DIELECTRIC'
+
+    # ── 3. FFS spectral analysis ────────────────────────────────────────
+    ffs_bands, opaque_below, transparent_above = _run_ffs_spectral(layers)
+
+    # ── 4. Lighthouse mapping ───────────────────────────────────────────
+    probes = _lighthouse_mapping(relay_sites_data, layers, chi_rad, cosmic_field)
+    locked_probes = [p for p in probes if p.probe_status == 'LOCKED']
+    if probes:
+        mean_fof2 = sum(p.local_fof2_hz for p in probes) / len(probes)
+        mean_tec = sum(p.tec_tecu for p in probes) / len(probes)
+    else:
+        mean_fof2 = 0.0
+        mean_tec = 0.0
+
+    # ── Assessment ──────────────────────────────────────────────────────
+    # Ionosphere health based on F2 peak density
+    if f2.peak_density_m3 >= 5e11:
+        health = 'ROBUST'
+    elif f2.peak_density_m3 >= 1e11:
+        health = 'MODERATE'
+    elif f2.peak_density_m3 >= 1e10:
+        health = 'DEPLETED'
+    else:
+        health = 'STORM'
+
+    # EPAS readiness: combination of density, stability, relay coverage
+    locked_frac = len(locked_probes) / max(len(probes), 1)
+    density_score = min(1.0, f2.peak_density_m3 / 1e12)
+    readiness = (0.4 * density_score + 0.3 * locked_frac +
+                 0.2 * cosmic_field + 0.1 * (1.0 if is_daytime else 0.5))
+    readiness = max(0.0, min(1.0, readiness))
+
+    return NaturalIonosphereProfile(
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        solar_zenith_deg=chi_deg,
+        is_daytime=is_daytime,
+        layers=tuple(layers),
+        f2_peak_density_m3=f2.peak_density_m3,
+        f2_peak_alt_km=f2.peak_alt_km,
+        f2_critical_freq_hz=f2_critical,
+        total_electron_content_tecu=tec_tecu,
+        mean_harmonic_fluid_ratio=mean_fluid,
+        peak_harmonic_fluid_ratio=peak_fluid,
+        fluid_classification=fluid_class,
+        ffs_bands=tuple(ffs_bands),
+        ffs_opaque_below_hz=opaque_below,
+        ffs_transparent_above_hz=transparent_above,
+        lighthouse_probes=tuple(probes),
+        lighthouse_locked_count=len(locked_probes),
+        lighthouse_mean_fof2_hz=mean_fof2,
+        lighthouse_mean_tec_tecu=mean_tec,
+        ionosphere_health=health,
+        readiness_for_epas=readiness,
+    )
+
+
 @dataclass(frozen=True)
 class ProjectDruidManifest:
     """Physical EPAS device specification — Project Druid.
@@ -1285,6 +1877,9 @@ class EarthEPASSimulation:
     relay_active_count: int
     relay_total_count: int
 
+    # ── Natural ionosphere profile ─────────────────────────────────────────
+    ionosphere_profile: Dict[str, object]              # NaturalIonosphereProfile.to_dict()
+
     # ── Shield status ──────────────────────────────────────────────────────
     shield_status: str                                 # SHIELDS_UP | STRESSED | FAILING
     shield_coverage_pct: float                         # Γ × 100
@@ -1347,6 +1942,7 @@ class EarthEPASSimulation:
                 'active_count': self.relay_active_count,
                 'total_count': self.relay_total_count,
             },
+            'natural_ionosphere': self.ionosphere_profile,
             'planetary_summary': self.planetary_summary,
             'active_aspects': self.active_aspects,
         }
@@ -1489,6 +2085,13 @@ def simulate_earth_epas() -> EarthEPASSimulation:
     )
     relay_dicts = tuple(r.to_dict() for r in relay_list)
 
+    # ── 8. Profile the natural ionosphere ──────────────────────────────
+    iono_profile = profile_natural_ionosphere(
+        relay_sites_data=list(relay_dicts),
+        cosmic_field=cosmic,
+    )
+    iono_dict = iono_profile.to_dict()
+
     # Planetary summary
     planetary_summary = (
         f'{shield_status}  Γ={shield_coherence:.4f}  '
@@ -1498,6 +2101,9 @@ def simulate_earth_epas() -> EarthEPASSimulation:
         f'L3={l3_status}({l3_score:.3f})  '
         f'aspects={len(aspects)}(+{len(positive)}/−{len(negative)})  '
         f'relays={relay_active}/{relay_total}(net={relay_coverage:.3f})  '
+        f'iono={iono_profile.ionosphere_health}(foF2={iono_profile.f2_critical_freq_hz:.0f}Hz '
+        f'TEC={iono_profile.total_electron_content_tecu:.1f}TECU '
+        f'EPAS_ready={iono_profile.readiness_for_epas:.3f})  '
         f'dominant={dominant_str}'
     )
 
@@ -1538,6 +2144,7 @@ def simulate_earth_epas() -> EarthEPASSimulation:
         relay_network_coverage=relay_coverage,
         relay_active_count=relay_active,
         relay_total_count=relay_total,
+        ionosphere_profile=iono_dict,
     )
 
 

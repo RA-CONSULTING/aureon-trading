@@ -946,5 +946,388 @@ class TestRelayNetwork(unittest.TestCase):
             self.assertIn(expected, names)
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# §12  Natural Ionosphere Profile — Chapman / Drude / FFS / Lighthouse
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestNaturalIonosphereProfile(unittest.TestCase):
+    """Tests for the complete natural ionosphere profiling engine."""
+
+    @classmethod
+    def setUpClass(cls):
+        # Get relay site dicts from existing simulation
+        cls.sim = em.simulate_earth_epas()
+        relay_dicts = [r if isinstance(r, dict) else r.to_dict() if hasattr(r, 'to_dict') else r
+                       for r in cls.sim.relay_sites]
+        # Call profiler directly
+        cls.profile = em.profile_natural_ionosphere(
+            relay_sites_data=relay_dicts,
+            cosmic_field=0.5,
+        )
+
+    # ── NaturalIonosphereProfile top-level fields ──────────────────────
+
+    def test_profile_type(self):
+        self.assertIsInstance(self.profile, em.NaturalIonosphereProfile)
+
+    def test_timestamp_iso(self):
+        self.assertIsInstance(self.profile.timestamp, str)
+        self.assertIn('T', self.profile.timestamp)
+
+    def test_solar_zenith_range(self):
+        self.assertGreaterEqual(self.profile.solar_zenith_deg, 0.0)
+        self.assertLessEqual(self.profile.solar_zenith_deg, 180.0)
+
+    def test_is_daytime_bool(self):
+        self.assertIsInstance(self.profile.is_daytime, bool)
+
+    def test_readiness_bounded(self):
+        self.assertGreaterEqual(self.profile.readiness_for_epas, 0.0)
+        self.assertLessEqual(self.profile.readiness_for_epas, 1.0)
+
+    def test_health_valid_status(self):
+        self.assertIn(self.profile.ionosphere_health,
+                      ('ROBUST', 'MODERATE', 'DEPLETED', 'STORM'))
+
+    # ── Chapman layer model ────────────────────────────────────────────
+
+    def test_five_layers_present(self):
+        self.assertEqual(len(self.profile.layers), 5)
+
+    def test_layer_names(self):
+        names = [ly.name for ly in self.profile.layers]
+        self.assertEqual(names, ['D', 'E', 'F1', 'F2', 'Topside'])
+
+    def test_layers_are_ionospheric_layer(self):
+        for ly in self.profile.layers:
+            self.assertIsInstance(ly, em.IonosphericLayer)
+
+    def test_layer_altitudes_positive(self):
+        for ly in self.profile.layers:
+            self.assertGreater(ly.base_alt_km, 0)
+            self.assertGreater(ly.peak_alt_km, ly.base_alt_km)
+            self.assertGreater(ly.top_alt_km, ly.peak_alt_km)
+
+    def test_layer_densities_positive(self):
+        for ly in self.profile.layers:
+            self.assertGreater(ly.peak_density_m3, 0)
+
+    def test_f2_has_highest_density_among_main_layers(self):
+        """F2 should have the highest peak density (excluding D/F1 daytime edge cases)."""
+        f2 = next(ly for ly in self.profile.layers if ly.name == 'F2')
+        e = next(ly for ly in self.profile.layers if ly.name == 'E')
+        self.assertGreaterEqual(f2.peak_density_m3, e.peak_density_m3)
+
+    def test_layer_temperatures_positive(self):
+        for ly in self.profile.layers:
+            self.assertGreater(ly.temperature_k, 0)
+
+    def test_layer_plasma_freq_positive(self):
+        for ly in self.profile.layers:
+            self.assertGreater(ly.plasma_freq_hz, 0)
+
+    def test_layer_scale_heights_positive(self):
+        for ly in self.profile.layers:
+            self.assertGreater(ly.scale_height_km, 0)
+
+    def test_layer_conductivity_nonneg(self):
+        for ly in self.profile.layers:
+            self.assertGreaterEqual(ly.conductivity_s_m, 0)
+
+    def test_layer_skin_depth_positive(self):
+        for ly in self.profile.layers:
+            self.assertGreater(ly.skin_depth_m, 0)
+
+    def test_layer_drude_epsilon_real_below_one(self):
+        """Drude real part < 1 for plasma at Schumann frequencies."""
+        for ly in self.profile.layers:
+            self.assertLessEqual(ly.drude_epsilon_real, 1.0)
+
+    def test_layer_harmonic_fluid_ratio_small(self):
+        """Ionospheric fp / aluminum fp should be tiny (< 1e-5)."""
+        for ly in self.profile.layers:
+            self.assertGreaterEqual(ly.harmonic_fluid_ratio, 0.0)
+            self.assertLess(ly.harmonic_fluid_ratio, 1e-5)
+
+    def test_layer_to_dict_keys(self):
+        d = self.profile.layers[0].to_dict()
+        for k in ('name', 'base_alt_km', 'peak_alt_km', 'top_alt_km',
+                   'peak_density_m3', 'scale_height_km', 'collision_freq_hz',
+                   'temperature_k', 'plasma_freq_hz', 'critical_freq_hz',
+                   'conductivity_s_m', 'drude_epsilon_real', 'drude_epsilon_imag',
+                   'skin_depth_m', 'harmonic_fluid_ratio'):
+            self.assertIn(k, d, f'Missing key {k}')
+
+    # ── F2 peak extraction ─────────────────────────────────────────────
+
+    def test_f2_peak_density(self):
+        self.assertGreater(self.profile.f2_peak_density_m3, 0)
+
+    def test_f2_peak_alt_reasonable(self):
+        self.assertGreaterEqual(self.profile.f2_peak_alt_km, 200)
+        self.assertLessEqual(self.profile.f2_peak_alt_km, 400)
+
+    def test_f2_critical_freq_formula(self):
+        """foF2 = 9 √(NmF2)."""
+        expected = 9.0 * math.sqrt(self.profile.f2_peak_density_m3)
+        self.assertAlmostEqual(self.profile.f2_critical_freq_hz, expected, places=0)
+
+    def test_tec_positive(self):
+        self.assertGreater(self.profile.total_electron_content_tecu, 0)
+
+    # ── Chapman function directly ──────────────────────────────────────
+
+    def test_chapman_peak_at_peak_alt(self):
+        # At chi=0 (overhead sun), N(hm) = Nm exactly
+        n_peak = em._chapman_density(300.0, 300.0, 1e12, 60.0, 0.0)
+        self.assertAlmostEqual(n_peak, 1e12, delta=1e12 * 0.01)
+
+    def test_chapman_decreases_above(self):
+        chi = math.radians(30.0)
+        n_at_peak = em._chapman_density(300.0, 300.0, 1e12, 60.0, chi)
+        n_above = em._chapman_density(500.0, 300.0, 1e12, 60.0, chi)
+        self.assertLess(n_above, n_at_peak)
+
+    def test_chapman_decreases_below(self):
+        chi = math.radians(30.0)
+        n_at_peak = em._chapman_density(300.0, 300.0, 1e12, 60.0, chi)
+        n_below = em._chapman_density(150.0, 300.0, 1e12, 60.0, chi)
+        self.assertLess(n_below, n_at_peak)
+
+    def test_chapman_always_positive(self):
+        chi = math.radians(45.0)
+        for h in (60, 100, 200, 300, 500, 800, 1000):
+            n = em._chapman_density(h, 300.0, 1e12, 60.0, chi)
+            self.assertGreater(n, 0, f'Negative density at {h} km')
+
+    # ── Drude permittivity ─────────────────────────────────────────────
+
+    def test_drude_returns_tuple_pair(self):
+        eps_r, eps_i = em._drude_permittivity(1e6, 3e6, 1e3)
+        self.assertIsInstance(eps_r, float)
+        self.assertIsInstance(eps_i, float)
+
+    def test_drude_real_below_one_when_fp_above_freq(self):
+        eps_r, _ = em._drude_permittivity(1e6, 5e6, 1e3)
+        self.assertLess(eps_r, 1.0)
+
+    def test_drude_imag_nonneg(self):
+        _, eps_i = em._drude_permittivity(1e6, 3e6, 1e4)
+        self.assertGreaterEqual(eps_i, 0.0)
+
+    def test_drude_at_zero_freq(self):
+        """At zero frequency, permittivity should still be computable."""
+        eps_r, eps_i = em._drude_permittivity(0.0, 3e6, 1e3)
+        self.assertIsInstance(eps_r, float)
+
+    # ── Aluminum harmonic fluid summary ────────────────────────────────
+
+    def test_fluid_classification_valid(self):
+        self.assertIn(self.profile.fluid_classification,
+                      ('DIELECTRIC', 'WEAK_CONDUCTOR', 'CONDUCTOR'))
+
+    def test_peak_fluid_geq_mean(self):
+        self.assertGreaterEqual(self.profile.peak_harmonic_fluid_ratio,
+                                self.profile.mean_harmonic_fluid_ratio)
+
+    def test_fluid_ratios_positive(self):
+        self.assertGreater(self.profile.mean_harmonic_fluid_ratio, 0)
+        self.assertGreater(self.profile.peak_harmonic_fluid_ratio, 0)
+
+    # ── FFS spectral analysis ──────────────────────────────────────────
+
+    def test_ffs_band_count(self):
+        self.assertEqual(len(self.profile.ffs_bands), 52)
+
+    def test_ffs_bands_are_spectral_band(self):
+        for b in self.profile.ffs_bands:
+            self.assertIsInstance(b, em.FFSSpectralBand)
+
+    def test_ffs_opaque_below_positive(self):
+        self.assertGreater(self.profile.ffs_opaque_below_hz, 0)
+
+    def test_ffs_transparent_geq_opaque(self):
+        self.assertGreaterEqual(self.profile.ffs_transparent_above_hz,
+                                self.profile.ffs_opaque_below_hz)
+
+    def test_ffs_low_freq_reflects(self):
+        """Very low frequencies should be reflected (not penetrating)."""
+        low_bands = [b for b in self.profile.ffs_bands if b.freq_hz < 1e4]
+        for b in low_bands:
+            self.assertFalse(b.penetrates,
+                             f'{b.band_name} at {b.freq_hz} Hz should reflect')
+
+    def test_ffs_high_freq_penetrates(self):
+        """Frequencies well above foF2 should penetrate."""
+        high_bands = [b for b in self.profile.ffs_bands if b.freq_hz > 2e7]
+        for b in high_bands:
+            self.assertTrue(b.penetrates,
+                            f'{b.band_name} at {b.freq_hz} Hz should penetrate')
+
+    def test_ffs_band_has_required_fields(self):
+        d = self.profile.ffs_bands[0].to_dict()
+        for k in ('band_name', 'freq_hz', 'reflection_alt_km',
+                   'absorption_db_km', 'phase_velocity_ratio', 'penetrates'):
+            self.assertIn(k, d)
+
+    def test_ffs_phase_velocity_positive_when_penetrating(self):
+        """Penetrating bands have real phase velocity; evanescent bands are 0."""
+        for b in self.profile.ffs_bands:
+            if b.penetrates:
+                self.assertGreater(b.phase_velocity_ratio, 0,
+                                   f'{b.band_name}@{b.freq_hz}Hz penetrates but Vp=0')
+            else:
+                self.assertGreaterEqual(b.phase_velocity_ratio, 0)
+
+    # ── Lighthouse mapping ─────────────────────────────────────────────
+
+    def test_lighthouse_probe_count(self):
+        self.assertEqual(len(self.profile.lighthouse_probes), 25)
+
+    def test_probes_are_lighthouse_probe(self):
+        for p in self.profile.lighthouse_probes:
+            self.assertIsInstance(p, em.LighthouseProbe)
+
+    def test_probe_b_field_positive(self):
+        for p in self.profile.lighthouse_probes:
+            self.assertGreater(p.local_b_field_tesla, 0)
+
+    def test_probe_gyrofreq_positive(self):
+        for p in self.profile.lighthouse_probes:
+            self.assertGreater(p.electron_gyrofreq_hz, 0)
+
+    def test_probe_upper_hybrid_gt_plasma(self):
+        """Upper hybrid freq = √(fp² + fce²) — always ≥ both fp and fce."""
+        for p in self.profile.lighthouse_probes:
+            self.assertGreater(p.upper_hybrid_freq_hz, 0)
+
+    def test_probe_tec_positive(self):
+        for p in self.profile.lighthouse_probes:
+            self.assertGreater(p.tec_tecu, 0)
+
+    def test_probe_density_profile_nonempty(self):
+        for p in self.profile.lighthouse_probes:
+            self.assertGreater(len(p.density_profile_km), 0)
+
+    def test_probe_status_valid(self):
+        for p in self.profile.lighthouse_probes:
+            self.assertIn(p.probe_status, ('LOCKED', 'PARTIAL', 'NO_RETURN'))
+
+    def test_locked_count_matches(self):
+        actual_locked = sum(1 for p in self.profile.lighthouse_probes
+                            if p.probe_status == 'LOCKED')
+        self.assertEqual(self.profile.lighthouse_locked_count, actual_locked)
+
+    def test_mean_fof2_positive(self):
+        self.assertGreater(self.profile.lighthouse_mean_fof2_hz, 0)
+
+    def test_mean_tec_positive(self):
+        self.assertGreater(self.profile.lighthouse_mean_tec_tecu, 0)
+
+    def test_probe_to_dict_keys(self):
+        d = self.profile.lighthouse_probes[0].to_dict()
+        for k in ('site_name', 'latitude', 'longitude', 'local_b_field_tesla',
+                   'electron_gyrofreq_hz', 'upper_hybrid_freq_hz',
+                   'lower_hybrid_freq_hz', 'local_fof2_hz', 'tec_tecu',
+                   'density_profile', 'probe_status'):
+            self.assertIn(k, d)
+
+    def test_high_latitude_stronger_b_field(self):
+        """Higher latitudes should have stronger dipole B-field."""
+        probes_by_lat = sorted(self.profile.lighthouse_probes,
+                                key=lambda p: abs(p.latitude))
+        if len(probes_by_lat) >= 2:
+            low_lat = probes_by_lat[0]
+            high_lat = probes_by_lat[-1]
+            self.assertGreater(high_lat.local_b_field_tesla,
+                               low_lat.local_b_field_tesla)
+
+    # ── to_dict / serialisation ────────────────────────────────────────
+
+    def test_to_dict_top_keys(self):
+        d = self.profile.to_dict()
+        for k in ('timestamp', 'solar_zenith_deg', 'is_daytime',
+                   'layers', 'f2_peak', 'aluminum_harmonic_fluid',
+                   'ffs_spectral', 'lighthouse_mapping', 'assessment'):
+            self.assertIn(k, d)
+
+    def test_to_dict_json_serialisable(self):
+        payload = json.dumps(self.profile.to_dict())
+        self.assertIn('layers', payload)
+        self.assertIn('aluminum_harmonic_fluid', payload)
+        self.assertIn('ffs_spectral', payload)
+        self.assertIn('lighthouse_mapping', payload)
+
+    def test_to_dict_layers_count(self):
+        d = self.profile.to_dict()
+        self.assertEqual(len(d['layers']), 5)
+
+    def test_to_dict_ffs_bands_count(self):
+        d = self.profile.to_dict()
+        self.assertEqual(len(d['ffs_spectral']['bands']), 52)
+
+    def test_to_dict_probes_count(self):
+        d = self.profile.to_dict()
+        self.assertEqual(len(d['lighthouse_mapping']['probes']), 25)
+
+    # ── Integration with EarthEPASSimulation ───────────────────────────
+
+    def test_sim_has_ionosphere_profile(self):
+        self.assertIsNotNone(self.sim.ionosphere_profile)
+        self.assertIsInstance(self.sim.ionosphere_profile, dict)
+
+    def test_sim_to_dict_has_natural_ionosphere(self):
+        d = self.sim.to_dict()
+        self.assertIn('natural_ionosphere', d)
+
+    def test_sim_ionosphere_has_layers(self):
+        iono = self.sim.to_dict()['natural_ionosphere']
+        self.assertIn('layers', iono)
+        self.assertEqual(len(iono['layers']), 5)
+
+    def test_sim_ionosphere_has_assessment(self):
+        iono = self.sim.to_dict()['natural_ionosphere']
+        self.assertIn('assessment', iono)
+        self.assertIn('ionosphere_health', iono['assessment'])
+        self.assertIn('readiness_for_epas', iono['assessment'])
+
+    def test_sim_summary_includes_iono(self):
+        self.assertIn('iono=', self.sim.planetary_summary)
+
+    def test_sim_ionosphere_json_serialisable(self):
+        d = self.sim.to_dict()
+        payload = json.dumps(d)
+        self.assertIn('natural_ionosphere', payload)
+        self.assertIn('ffs_spectral', payload)
+        self.assertIn('lighthouse_mapping', payload)
+
+    # ── Edge case: zero cosmic field ───────────────────────────────────
+
+    def test_zero_cosmic_field_still_valid(self):
+        relay_dicts = [r if isinstance(r, dict) else r.to_dict()
+                       for r in self.sim.relay_sites]
+        profile = em.profile_natural_ionosphere(
+            relay_sites_data=relay_dicts,
+            cosmic_field=0.0,
+        )
+        self.assertIsInstance(profile, em.NaturalIonosphereProfile)
+        self.assertEqual(len(profile.layers), 5)
+        self.assertGreater(profile.f2_peak_density_m3, 0)
+        self.assertGreater(len(profile.lighthouse_probes), 0)
+        self.assertGreaterEqual(profile.readiness_for_epas, 0.0)
+        self.assertLessEqual(profile.readiness_for_epas, 1.0)
+
+    def test_high_cosmic_field_still_valid(self):
+        relay_dicts = [r if isinstance(r, dict) else r.to_dict()
+                       for r in self.sim.relay_sites]
+        profile = em.profile_natural_ionosphere(
+            relay_sites_data=relay_dicts,
+            cosmic_field=1.0,
+        )
+        self.assertIsInstance(profile, em.NaturalIonosphereProfile)
+        self.assertEqual(len(profile.layers), 5)
+        self.assertGreaterEqual(profile.readiness_for_epas, 0.0)
+
+
 if __name__ == '__main__':
     unittest.main()

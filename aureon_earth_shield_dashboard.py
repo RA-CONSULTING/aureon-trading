@@ -536,6 +536,82 @@ body {
     <div style="max-height:400px;overflow-y:auto" id="relayTableContainer"></div>
   </div>
 
+  <!-- ═══ NATURAL IONOSPHERE PROFILER ═══════════════════════════════ -->
+
+  <!-- ─── Ionosphere Header Banner ────────── -->
+  <div class="panel panel-blue span-3">
+    <h2>Natural Ionosphere &mdash; &ldquo;Know Our Own Before We Make a New&rdquo;</h2>
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <span style="font-size:0.7em;color:var(--text-dim)">Solar Zenith:</span>
+        <span style="font-size:0.85em;font-weight:700" id="ionoZenith">—</span>
+        &nbsp;&nbsp;
+        <span style="font-size:0.7em;color:var(--text-dim)">Day/Night:</span>
+        <span style="font-size:0.85em;font-weight:700" id="ionoDayNight">—</span>
+      </div>
+      <div>
+        <span style="font-size:0.7em;color:var(--text-dim)">Health:</span>
+        <span class="layer-status" id="ionoHealth" style="font-size:0.85em"></span>
+        &nbsp;&nbsp;
+        <span style="font-size:0.7em;color:var(--text-dim)">EPAS Readiness:</span>
+        <span style="font-size:0.85em;font-weight:700" id="ionoReady">—</span>
+      </div>
+      <div>
+        <span style="font-size:0.7em;color:var(--text-dim)">foF2:</span>
+        <span style="font-size:0.85em;font-weight:700;color:var(--glow-cyan)" id="ionoFoF2">—</span>
+        &nbsp;&nbsp;
+        <span style="font-size:0.7em;color:var(--text-dim)">TEC:</span>
+        <span style="font-size:0.85em;font-weight:700;color:var(--glow-purple)" id="ionoTEC">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Chapman Layers ──────────────────── -->
+  <div class="panel panel-cyan span-2">
+    <h2>Chapman Layer Model &mdash; Altitude Density Profile</h2>
+    <div id="ionoLayerBars"></div>
+  </div>
+
+  <!-- ─── Aluminum Harmonic Fluid ─────────── -->
+  <div class="panel panel-purple">
+    <h2>Aluminum Harmonic Fluid</h2>
+    <div style="text-align:center;margin:12px 0">
+      <div style="font-size:0.65em;color:var(--text-dim)">Ionosphere &rarr; Aluminum metallicity ratio</div>
+      <div class="power-value" id="fluidPeak" style="font-size:1.3em">—</div>
+      <div class="power-unit">peak harmonic fluid ratio</div>
+    </div>
+    <div class="metric-row"><span class="metric-label">Mean ratio</span><span class="metric-value" id="fluidMean">—</span></div>
+    <div class="metric-row"><span class="metric-label">Classification</span><span class="metric-value" id="fluidClass">—</span></div>
+    <div style="margin-top:10px;font-size:0.6em;color:var(--text-dim);text-align:center">
+      Drude model: &epsilon;(&omega;) = 1 &minus; &omega;<sub>p</sub>&sup2; / (&omega;&sup2; + i&gamma;&omega;)<br>
+      Aluminum &omega;<sub>p</sub> = 3.57 PHz &bull; Ionosphere &omega;<sub>p</sub> &asymp; 3&ndash;9 MHz
+    </div>
+  </div>
+
+  <!-- ─── FFS Spectral Analysis ───────────── -->
+  <div class="panel panel-amber span-2">
+    <h2>FFS Full Frequency Spectrum &mdash; Spectral Analysis</h2>
+    <div style="display:flex;gap:16px;margin-bottom:8px">
+      <div><span style="font-size:0.7em;color:var(--text-dim)">Opaque below:</span>
+        <span style="font-size:0.8em;font-weight:700;color:var(--glow-red)" id="ffsOpaque">—</span></div>
+      <div><span style="font-size:0.7em;color:var(--text-dim)">Transparent above:</span>
+        <span style="font-size:0.8em;font-weight:700;color:var(--glow-green)" id="ffsTransparent">—</span></div>
+    </div>
+    <div style="max-height:280px;overflow-y:auto" id="ffsTable"></div>
+  </div>
+
+  <!-- ─── Lighthouse Mapping ──────────────── -->
+  <div class="panel panel-green">
+    <h2>Lighthouse Mapping</h2>
+    <div style="text-align:center;margin:8px 0">
+      <div style="font-size:2em;font-weight:700;color:var(--glow-green)" id="lhLocked">—</div>
+      <div style="font-size:0.7em;color:var(--text-dim)">probes LOCKED</div>
+    </div>
+    <div class="metric-row"><span class="metric-label">Mean foF2</span><span class="metric-value" id="lhMeanFoF2">—</span></div>
+    <div class="metric-row"><span class="metric-label">Mean TEC</span><span class="metric-value" id="lhMeanTEC">—</span></div>
+    <div style="margin-top:8px;max-height:180px;overflow-y:auto" id="lhProbeList"></div>
+  </div>
+
 </div>
 
 <div class="footer">
@@ -709,6 +785,76 @@ function renderPhases(phases) {
   }).join('');
 }
 
+const LAYER_COLORS = {
+  'D':'#ef4444', 'E':'#f59e0b', 'F1':'#22c55e', 'F2':'#06b6d4', 'Topside':'#a855f7'
+};
+
+function fmtFreq(hz) {
+  if (hz >= 1e9) return (hz/1e9).toFixed(2) + ' GHz';
+  if (hz >= 1e6) return (hz/1e6).toFixed(2) + ' MHz';
+  if (hz >= 1e3) return (hz/1e3).toFixed(2) + ' kHz';
+  return hz.toFixed(1) + ' Hz';
+}
+
+function renderIonoLayers(layers) {
+  const c = document.getElementById('ionoLayerBars');
+  if (!layers || !layers.length) { c.innerHTML = '<div style="color:var(--text-dim)">No layer data</div>'; return; }
+  const maxN = Math.max(...layers.map(l => l.peak_density_m3));
+  c.innerHTML = layers.map(l => {
+    const pct = maxN > 0 ? (l.peak_density_m3 / maxN * 100).toFixed(1) : 0;
+    const clr = LAYER_COLORS[l.name] || '#94a3b8';
+    return '<div style="margin-bottom:6px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:0.72em">'
+      + '<span style="color:'+clr+';font-weight:700">'+l.name+' ('+l.base_alt_km+'-'+l.top_alt_km+' km)</span>'
+      + '<span style="color:var(--text-bright)">N<sub>m</sub>='+sci(l.peak_density_m3)+' m<sup>-3</sup></span>'
+      + '</div>'
+      + '<div class="phase-bar-bg" style="height:14px">'
+      + '<div class="phase-bar-fill" style="width:'+pct+'%;background:'+clr+'"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:0.6em;color:var(--text-dim)">'
+      + '<span>f<sub>p</sub>='+fmtFreq(l.plasma_freq_hz)+'</span>'
+      + '<span>&sigma;='+sci(l.conductivity_s_m,2)+' S/m</span>'
+      + '<span>&delta;='+Number(l.skin_depth_m).toLocaleString()+' m</span>'
+      + '<span>&epsilon;\'='+l.drude_epsilon_real.toFixed(4)+'</span>'
+      + '</div></div>';
+  }).join('');
+}
+
+function renderFFSTable(bands) {
+  const c = document.getElementById('ffsTable');
+  if (!bands || !bands.length) { c.innerHTML = '<div style="color:var(--text-dim)">No FFS data</div>'; return; }
+  const show = bands.filter((b,i) => i % 2 === 0 || !b.penetrates);
+  const rows = show.map(b => {
+    const reflect = b.penetrates ? '<span style="color:var(--glow-green)">TRANSPARENT</span>'
+      : '<span style="color:var(--glow-red)">REFLECTS @ '+b.reflection_alt_km+' km</span>';
+    return '<tr>'
+      + '<td style="color:var(--glow-amber)">'+b.band_name+'</td>'
+      + '<td>'+fmtFreq(b.freq_hz)+'</td>'
+      + '<td>'+reflect+'</td>'
+      + '<td>'+b.absorption_db_km.toFixed(4)+' dB/km</td>'
+      + '<td>'+b.phase_velocity_ratio.toFixed(4)+'c</td>'
+      + '</tr>';
+  }).join('');
+  c.innerHTML = '<table class="relay-table"><thead><tr>'
+    + '<th>Band</th><th>Freq</th><th>Propagation</th><th>Absorption</th><th>V<sub>phase</sub></th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function renderLHProbes(probes) {
+  const c = document.getElementById('lhProbeList');
+  if (!probes) return;
+  c.innerHTML = probes.map(p => {
+    const sc = p.probe_status==='LOCKED' ? 'status-good' :
+               p.probe_status==='PARTIAL' ? 'status-warn' : 'status-danger';
+    return '<div style="display:flex;justify-content:space-between;font-size:0.65em;padding:2px 0;border-bottom:1px solid rgba(51,65,85,0.3)">'
+      + '<span style="min-width:120px">'+p.site_name.substring(0,18)+'</span>'
+      + '<span class="layer-status '+sc+'" style="font-size:0.9em">'+p.probe_status+'</span>'
+      + '<span>foF2='+fmtFreq(p.local_fof2_hz)+'</span>'
+      + '<span>TEC='+p.tec_tecu.toFixed(1)+'</span>'
+      + '</div>';
+  }).join('');
+}
+
 function updateGauge(gamma, pct) {
   const circumference = 534;
   const offset = circumference * (1 - gamma);
@@ -801,6 +947,41 @@ async function refresh() {
                            rn.network_coverage >= 0.20 ? 'var(--glow-amber)' : 'var(--glow-red)';
       renderRelayMap(rn.sites);
       renderRelayTable(rn.sites);
+    }
+
+    // Natural Ionosphere Profile
+    if (d.natural_ionosphere) {
+      const ni = d.natural_ionosphere;
+      document.getElementById('ionoZenith').textContent = ni.solar_zenith_deg.toFixed(1) + '\u00b0';
+      const dn = document.getElementById('ionoDayNight');
+      dn.textContent = ni.is_daytime ? '\u2600 DAYTIME' : '\u263e NIGHTTIME';
+      dn.style.color = ni.is_daytime ? 'var(--glow-amber)' : 'var(--glow-blue)';
+      const hEl = document.getElementById('ionoHealth');
+      const hMap = {'ROBUST':'status-good','MODERATE':'status-warn','DEPLETED':'status-danger','STORM':'status-danger'};
+      hEl.textContent = ni.assessment.ionosphere_health;
+      hEl.className = 'layer-status ' + (hMap[ni.assessment.ionosphere_health] || 'status-warn');
+      const rdyPct = (ni.assessment.readiness_for_epas * 100).toFixed(1);
+      const rdyEl = document.getElementById('ionoReady');
+      rdyEl.textContent = rdyPct + '%';
+      rdyEl.style.color = ni.assessment.readiness_for_epas >= 0.6 ? 'var(--glow-green)' :
+                           ni.assessment.readiness_for_epas >= 0.3 ? 'var(--glow-amber)' : 'var(--glow-red)';
+      document.getElementById('ionoFoF2').textContent = fmtFreq(ni.f2_peak.critical_freq_hz);
+      document.getElementById('ionoTEC').textContent = ni.f2_peak.total_electron_content_tecu.toFixed(2) + ' TECU';
+      renderIonoLayers(ni.layers);
+      // Fluid
+      document.getElementById('fluidPeak').textContent = ni.aluminum_harmonic_fluid.peak_ratio.toExponential(4);
+      document.getElementById('fluidMean').textContent = ni.aluminum_harmonic_fluid.mean_ratio.toExponential(4);
+      document.getElementById('fluidClass').textContent = ni.aluminum_harmonic_fluid.classification;
+      // FFS
+      document.getElementById('ffsOpaque').textContent = fmtFreq(ni.ffs_spectral.opaque_below_hz);
+      document.getElementById('ffsTransparent').textContent = fmtFreq(ni.ffs_spectral.transparent_above_hz);
+      renderFFSTable(ni.ffs_spectral.bands);
+      // Lighthouse
+      const lm = ni.lighthouse_mapping;
+      document.getElementById('lhLocked').textContent = lm.locked_count + '/' + lm.probes.length;
+      document.getElementById('lhMeanFoF2').textContent = fmtFreq(lm.mean_fof2_hz);
+      document.getElementById('lhMeanTEC').textContent = lm.mean_tec_tecu.toFixed(2) + ' TECU';
+      renderLHProbes(lm.probes);
     }
 
     // Footer
