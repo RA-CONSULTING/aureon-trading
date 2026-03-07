@@ -614,5 +614,200 @@ class TestProjectDruidManifest(unittest.TestCase):
         self.assertEqual(rc, 0)
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# EARTH-SCALE EPAS SECOND IONOSPHERE TESTS
+# ════════════════════════════════════════════════════════════════════════════
+
+class TestEarthEPASSimulation(unittest.TestCase):
+    """Validate the Earth-scale EPAS second-ionosphere simulation."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.seer = em.EmeraldSeer()
+        cls.sim = cls.seer.earth_shield_simulation()
+
+    # ── Dataclass integrity ────────────────────────────────────────────────
+
+    def test_returns_earth_epas_dataclass(self):
+        self.assertIsInstance(self.sim, em.EarthEPASSimulation)
+
+    def test_is_frozen(self):
+        with self.assertRaises(AttributeError):
+            self.sim.shield_status = 'HACKED'  # type: ignore[misc]
+
+    def test_timestamp_is_utc_iso(self):
+        self.assertIn('T', self.sim.timestamp)  # ISO 8601
+
+    # ── Live VSOP87 positions ──────────────────────────────────────────────
+
+    def test_planet_positions_has_all_bodies(self):
+        required = {'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn',
+                     'Uranus', 'Neptune', 'Pluto', 'Sun', 'Moon'}
+        self.assertTrue(required.issubset(set(self.sim.planet_positions.keys())))
+
+    def test_all_longitudes_in_range(self):
+        for body, lon in self.sim.planet_positions.items():
+            self.assertGreaterEqual(lon, 0.0, f'{body} longitude < 0')
+            self.assertLess(lon, 360.0, f'{body} longitude >= 360')
+
+    def test_positions_are_distinct(self):
+        lons = list(self.sim.planet_positions.values())
+        self.assertGreater(len(set(lons)), 5, 'Too many identical longitudes')
+
+    # ── Aspects ────────────────────────────────────────────────────────────
+
+    def test_aspects_non_negative(self):
+        self.assertGreaterEqual(self.sim.total_aspects, 0)
+
+    def test_aspects_have_structure(self):
+        if self.sim.active_aspects:
+            a = self.sim.active_aspects[0]
+            for k in ('body1', 'body2', 'aspect', 'separation', 'orb',
+                       'harmonic_value', 'pair_weight', 'phi_resonance', 'score'):
+                self.assertIn(k, a, f'Missing key: {k}')
+
+    def test_positive_negative_sum_equals_total(self):
+        self.assertEqual(
+            self.sim.positive_aspects + self.sim.negative_aspects,
+            self.sim.total_aspects,
+        )
+
+    def test_dominant_aspect_string_non_empty(self):
+        self.assertTrue(len(self.sim.dominant_aspect) > 0)
+
+    # ── Cosmic field ───────────────────────────────────────────────────────
+
+    def test_cosmic_field_in_unit_interval(self):
+        self.assertGreaterEqual(self.sim.cosmic_field_score, 0.0)
+        self.assertLessEqual(self.sim.cosmic_field_score, 1.0)
+
+    def test_schumann_modulated_in_unit_interval(self):
+        self.assertGreaterEqual(self.sim.schumann_modulated_score, 0.0)
+        self.assertLessEqual(self.sim.schumann_modulated_score, 1.0)
+
+    # ── Layer 1: EM Deflection ─────────────────────────────────────────────
+
+    def test_l1_score_in_unit_interval(self):
+        self.assertGreaterEqual(self.sim.l1_field_score, 0.0)
+        self.assertLessEqual(self.sim.l1_field_score, 1.0)
+
+    def test_l1_status_valid(self):
+        self.assertIn(self.sim.l1_status, ('CLEAR', 'DEFLECTING', 'OVERLOADED'))
+
+    # ── Layer 2: Plasma Ablation ───────────────────────────────────────────
+
+    def test_l2_electron_density_physical(self):
+        self.assertGreater(self.sim.l2_electron_density_m3, 0)
+        self.assertLessEqual(self.sim.l2_electron_density_m3, em.F_REGION_ELECTRON_DENSITY)
+
+    def test_l2_shell_volume_matches_constant(self):
+        self.assertAlmostEqual(self.sim.l2_shell_volume_m3, em.F_REGION_SHELL_VOLUME_M3)
+
+    def test_l2_total_electrons_physical(self):
+        self.assertGreater(self.sim.l2_total_electrons, 0)
+
+    def test_l2_plasma_frequency_physical(self):
+        expected_max = 9.0 * (em.F_REGION_ELECTRON_DENSITY ** 0.5)
+        self.assertGreater(self.sim.l2_plasma_frequency_hz, 0)
+        self.assertLessEqual(self.sim.l2_plasma_frequency_hz, expected_max * 1.01)
+
+    def test_l2_status_valid(self):
+        self.assertIn(self.sim.l2_status, ('INTACT', 'ABLATING', 'CRITICAL', 'TERMINAL'))
+
+    # ── Layer 3: Shield Phased Harmonics ───────────────────────────────────
+
+    def test_l3_schumann_phase_in_unit(self):
+        self.assertGreaterEqual(self.sim.l3_schumann_phase, 0.0)
+        self.assertLess(self.sim.l3_schumann_phase, 1.0)
+
+    def test_l3_schumann_modulator_near_unity(self):
+        self.assertAlmostEqual(self.sim.l3_schumann_modulator, 1.0, delta=0.10)
+
+    def test_l3_harmonic_coherence_in_unit(self):
+        self.assertGreaterEqual(self.sim.l3_harmonic_coherence, 0.0)
+        self.assertLessEqual(self.sim.l3_harmonic_coherence, 1.0)
+
+    def test_l3_status_valid(self):
+        self.assertIn(self.sim.l3_status, ('COHERENT', 'CRACKING', 'FRAGMENTED'))
+
+    # ── Six Illumination Phases ────────────────────────────────────────────
+
+    def test_six_phase_scores(self):
+        self.assertEqual(len(self.sim.phase_scores), 6)
+
+    def test_all_phase_scores_in_unit(self):
+        for i, sc in enumerate(self.sim.phase_scores):
+            self.assertGreaterEqual(sc, 0.0, f'Phase {i+1} score < 0')
+            self.assertLessEqual(sc, 1.0, f'Phase {i+1} score > 1')
+
+    def test_six_phase_statuses(self):
+        self.assertEqual(len(self.sim.phase_statuses), 6)
+
+    def test_shield_coherence_is_mean_of_phases(self):
+        expected = sum(self.sim.phase_scores) / 6
+        self.assertAlmostEqual(self.sim.shield_coherence, expected, places=3)
+
+    # ── Power budget ───────────────────────────────────────────────────────
+
+    def test_earth_rf_power_matches_epos_times_concentration(self):
+        expected = em.EPOS_RF_POWER_W * em.VOLUMETRIC_CONCENTRATION_FACTOR
+        self.assertAlmostEqual(self.sim.earth_rf_power_w, expected, places=0)
+
+    def test_earth_power_density_positive(self):
+        self.assertGreater(self.sim.earth_power_density_w_m3, 0)
+
+    def test_earth_output_voltage_large(self):
+        self.assertGreater(self.sim.earth_output_voltage_v, 1e3)
+
+    # ── Shield verdict ─────────────────────────────────────────────────────
+
+    def test_shield_status_valid(self):
+        self.assertIn(self.sim.shield_status,
+                       ('SHIELDS_UP', 'SHIELDS_STRESSED', 'SHIELDS_FAILING'))
+
+    def test_coverage_pct_matches_coherence(self):
+        expected = round(self.sim.shield_coherence * 100, 1)
+        self.assertAlmostEqual(self.sim.shield_coverage_pct, expected, places=1)
+
+    def test_planetary_summary_contains_shield_status(self):
+        self.assertIn(self.sim.shield_status, self.sim.planetary_summary)
+
+    # ── Serialisation ──────────────────────────────────────────────────────
+
+    def test_to_dict_json_serialisable(self):
+        d = self.sim.to_dict()
+        payload = json.dumps(d)
+        self.assertIn('solar_system', payload)
+        self.assertIn('layer1_em_deflection', payload)
+        self.assertIn('layer2_plasma_ablation', payload)
+        self.assertIn('layer3_shield_phased_harmonics', payload)
+        self.assertIn('illumination_phases', payload)
+
+    def test_to_dict_has_six_phases(self):
+        d = self.sim.to_dict()
+        self.assertEqual(len(d['illumination_phases']), 6)
+
+    def test_to_dict_planet_positions(self):
+        d = self.sim.to_dict()
+        self.assertIn('positions', d['solar_system'])
+        self.assertGreaterEqual(len(d['solar_system']['positions']), 10)
+
+    # ── CLI ────────────────────────────────────────────────────────────────
+
+    def test_cli_earth_shield_returns_zero(self):
+        rc = em.main(['--earth-shield'])
+        self.assertEqual(rc, 0)
+
+    def test_cli_earth_shield_json_returns_zero(self):
+        rc = em.main(['--earth-shield', '--json'])
+        self.assertEqual(rc, 0)
+
+    # ── EmeraldSeer integration ────────────────────────────────────────────
+
+    def test_seer_method_returns_simulation(self):
+        result = self.seer.earth_shield_simulation()
+        self.assertIsInstance(result, em.EarthEPASSimulation)
+
+
 if __name__ == '__main__':
     unittest.main()

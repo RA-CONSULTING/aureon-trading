@@ -671,6 +671,60 @@ _SIGMA_COHERENCE_TARGET = 0.945    # Γ ≥ 0.945 for stable P5 — white paper 
 _AUXILIARY_POWER_W = 12.0          # control electronics + Schumann modulation overhead
 _OUTPUT_VOLTAGE_VDC = 375.0        # mid-point of 350–400 VDC delivery band
 
+# ════════════════════════════════════════════════════════════════════════════
+# EARTH-SCALE IONOSPHERIC CONSTANTS  (second ionosphere — EPAS planetary shield)
+# ════════════════════════════════════════════════════════════════════════════
+
+EARTH_RADIUS_M = 6.371e6                       # 6,371 km
+F_REGION_ALT_M = 7.0e4                         # 70 km (F-region base)
+F_REGION_SHELL_RADIUS_M = EARTH_RADIUS_M + F_REGION_ALT_M
+F_REGION_SHELL_THICKNESS_M = 2.0e5             # ~200 km F-layer + topside
+# Effective shell volume (spherical shell): V = 4/3 π ((R+h+δ)³ − (R+h)³)
+_R_outer = F_REGION_SHELL_RADIUS_M + F_REGION_SHELL_THICKNESS_M
+_R_inner = F_REGION_SHELL_RADIUS_M
+F_REGION_SHELL_VOLUME_M3 = (4 / 3) * math.pi * (_R_outer ** 3 - _R_inner ** 3)
+F_REGION_SHELL_AREA_M2 = 4 * math.pi * F_REGION_SHELL_RADIUS_M ** 2
+F_REGION_ELECTRON_DENSITY = 1e11                # m⁻³ (F-region nominal)
+SOLAR_WIND_PRESSURE_NPA = 2.0                   # nPa typical dynamic pressure
+EARTH_B_FIELD_GAUSS = 0.305                     # equatorial surface dipole ~0.305 G
+EARTH_B_FIELD_TESLA = EARTH_B_FIELD_GAUSS * 1e-4
+
+# VSOP87 coefficients — Meeus "Astronomical Algorithms" Ch.31-32
+# Duplicated here for standalone use (no dependency on aureon_full_autonomy)
+_MEEUS_MEAN_LONGITUDES: Dict[str, Tuple[float, float]] = {
+    'Mercury': (252.250906, 149472.6746358),
+    'Venus':   (181.979101,  58517.8156760),
+    'Mars':    (355.433275,  19140.2993313),
+    'Jupiter': ( 34.351519,   3034.9056606),
+    'Saturn':  ( 50.077444,   1222.1137943),
+    'Uranus':  (314.055005,    428.4669983),
+    'Neptune': (304.348665,    218.4862002),
+    'Pluto':   (238.958116,    145.9083047),
+}
+_EARTH_L0, _EARTH_L1 = 100.464457, 35999.3728565
+_MOON_L0, _MOON_RATE = 218.3165, 13.1763966
+
+# Aspect table (degrees, orb, name, harmonic_value)
+_EARTH_ASPECT_TABLE: Tuple[Tuple[float, float, str, float], ...] = (
+    (  0.0, 10.0, 'CONJUNCTION',   +1.00),
+    (120.0,  8.0, 'TRINE',         +0.80),
+    ( 60.0,  6.0, 'SEXTILE',       +0.60),
+    (180.0, 10.0, 'OPPOSITION',    -0.80),
+    ( 90.0,  8.0, 'SQUARE',        -0.60),
+    (150.0,  3.0, 'QUINCUNX',      -0.30),
+    ( 45.0,  3.0, 'SEMI-SQUARE',   -0.20),
+    (135.0,  3.0, 'SESQUI-SQUARE', -0.20),
+    ( 72.0,  3.0, 'QUINTILE',      +0.40),
+    (144.0,  3.0, 'BI-QUINTILE',   +0.40),
+    ( 30.0,  2.0, 'SEMI-SEXTILE',  +0.10),
+)
+_PLANET_WEIGHTS: Dict[str, float] = {
+    'Sun': 1.0, 'Moon': 0.85, 'Mercury': 0.5, 'Venus': 0.65,
+    'Mars': 0.7, 'Jupiter': 0.90, 'Saturn': 0.80, 'Uranus': 0.6,
+    'Neptune': 0.55, 'Pluto': 0.45,
+}
+_PHI_RESONANT_ANGLES: Tuple[float, ...] = (72.0, 120.0, 137.5, 144.0)
+
 
 @dataclass(frozen=True)
 class ProjectDruidManifest:
@@ -898,6 +952,400 @@ def compute_project_druid_manifest(
         shield_coherence=round(shield_coherence, 4),
         device_ready=device_ready,
         druid_summary=druid_summary,
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# EARTH-SCALE EPAS SIMULATION — "Second Ionosphere"
+# Live VSOP87 solar system data → shield phased harmonics → plasma density
+# across a planetary-scale EPAS shell covering Earth's F-region.
+# ════════════════════════════════════════════════════════════════════════════
+
+
+def _compute_vsop87_positions_standalone() -> Dict[str, float]:
+    """Compute live ecliptic longitudes for all solar system bodies (VSOP87).
+
+    Standalone version — no dependency on aureon_full_autonomy.  Uses the same
+    Meeus Ch.31-32 coefficients duplicated in the constants block above.
+
+    Returns dict of {body_name: ecliptic_longitude_degrees}.
+    """
+    now = datetime.now()
+    y, mo = now.year, now.month
+    d = now.day + (now.hour * 3600 + now.minute * 60 + now.second) / 86400.0
+    if mo <= 2:
+        y -= 1
+        mo += 12
+    A = int(y / 100)
+    B = 2 - A + int(A / 4)
+    jd = int(365.25 * (y + 4716)) + int(30.6001 * (mo + 1)) + d + B - 1524.5
+    d_j2000 = jd - 2451545.0
+    T = d_j2000 / 36525.0
+
+    positions: Dict[str, float] = {}
+    for name, (L0, L1) in _MEEUS_MEAN_LONGITUDES.items():
+        lon = (L0 + L1 * T) % 360.0
+        if lon < 0:
+            lon += 360.0
+        positions[name] = round(lon, 3)
+
+    # Sun = Earth + 180° (geocentric view)
+    L_earth = _EARTH_L0 + _EARTH_L1 * T
+    positions['Sun'] = round((L_earth + 180.0) % 360.0, 3)
+    # Moon
+    positions['Moon'] = round((_MOON_L0 + _MOON_RATE * d_j2000) % 360.0, 3)
+
+    return positions
+
+
+def _detect_aspects_standalone(
+    positions: Dict[str, float],
+) -> list:
+    """Detect all active aspects between live bodies.
+
+    Returns list of dicts: {body1, body2, aspect, separation, orb, harmonic_value,
+    pair_weight, phi_resonance, score}.
+    """
+    bodies = list(positions.keys())
+    aspects = []
+    for i in range(len(bodies)):
+        for j in range(i + 1, len(bodies)):
+            b1, b2 = bodies[i], bodies[j]
+            delta = abs(positions[b1] - positions[b2]) % 360.0
+            sep = delta if delta <= 180.0 else 360.0 - delta
+            for exact, max_orb, asp_name, h_val in _EARTH_ASPECT_TABLE:
+                orb = abs(sep - exact)
+                if orb <= max_orb:
+                    tightness = 1.0 - (orb / max_orb)
+                    phi_dist = min(abs(sep - pa) for pa in _PHI_RESONANT_ANGLES)
+                    phi_res = max(0.0, 1.0 - phi_dist / 5.0)
+                    phi_boost = 1.0 + phi_res * (PHI - 1.0)
+                    pw = math.sqrt(
+                        _PLANET_WEIGHTS.get(b1, 0.5)
+                        * _PLANET_WEIGHTS.get(b2, 0.5)
+                    )
+                    score = h_val * tightness * phi_boost * pw
+                    aspects.append({
+                        'body1': b1,
+                        'body2': b2,
+                        'aspect': asp_name,
+                        'separation': round(sep, 2),
+                        'orb': round(orb, 2),
+                        'harmonic_value': h_val,
+                        'pair_weight': round(pw, 3),
+                        'phi_resonance': round(phi_res, 3),
+                        'score': round(score, 4),
+                    })
+                    break  # first match wins per pair
+
+    return aspects
+
+
+def _score_cosmic_field(aspects: list) -> float:
+    """Aggregate aspects into a single cosmic field score [0, 1]."""
+    if not aspects:
+        return 0.5
+    total_w = sum(a['score'] for a in aspects)
+    total_d = sum(a['pair_weight'] for a in aspects)
+    raw = total_w / max(total_d, 0.001)
+    return max(0.0, min(1.0, (raw / PHI + 1.0) / 2.0))
+
+
+def _schumann_modulator() -> float:
+    """Schumann-cycle modulation amplitude for the current day-of-year."""
+    doy = datetime.now().timetuple().tm_yday
+    period = 365.25 / (SCHUMANN_FUNDAMENTAL * 2.0)    # ~23.3 days
+    phase = (doy % period) / period
+    return 1.0 + 0.059 * math.sin(2.0 * math.pi * phase)
+
+
+@dataclass(frozen=True)
+class EarthEPASSimulation:
+    """Complete simulation of a planetary-scale EPAS covering Earth's F-region.
+
+    Sources:
+      - Live VSOP87 planetary positions (computed at invocation time)
+      - Schumann resonance phase modulation
+      - F-region ionospheric physics (electron density, shell geometry)
+      - HAARP→Earth power scaling (reverse of EPOS chamber scaling)
+    """
+
+    timestamp: str
+
+    # ── Live solar system snapshot ──────────────────────────────────────────
+    planet_positions: Dict[str, float]              # body → ecliptic lon°
+    active_aspects: list                             # list-of-aspect-dicts
+    total_aspects: int
+    positive_aspects: int
+    negative_aspects: int
+    dominant_aspect: str                              # human-readable top aspect
+    cosmic_field_score: float                         # 0–1 (raw aggregate)
+    schumann_modulated_score: float                   # cosmic × Schumann amplitude
+
+    # ── EPAS Layer 1: EM Deflection (Harmonic Field Filter) ────────────────
+    l1_incoming_threats: int                           # tense aspects (h ≤ −0.25)
+    l1_field_score: float
+    l1_status: str                                     # CLEAR | DEFLECTING | OVERLOADED
+
+    # ── EPAS Layer 2: Plasma Ablation (Ionospheric Density Guard) ──────────
+    l2_electron_density_m3: float
+    l2_shell_volume_m3: float
+    l2_total_electrons: float                          # n_e × V
+    l2_plasma_frequency_hz: float                      # f_pe = 9 √n_e
+    l2_score: float
+    l2_status: str                                     # INTACT | ABLATING | CRITICAL | TERMINAL
+
+    # ── EPAS Layer 3: Acoustic Fragmentation (Shield Phased Harmonics) ────
+    l3_schumann_phase: float                           # 0–1 Schumann cycle position
+    l3_schumann_modulator: float                       # amplitude multiplier
+    l3_harmonic_coherence: float                       # positive fraction of active aspects
+    l3_score: float
+    l3_status: str                                     # COHERENT | CRACKING | FRAGMENTED
+
+    # ── Six Illumination Phases (Earth-scale) ──────────────────────────────
+    phase_scores: Tuple[float, ...]
+    phase_statuses: Tuple[str, ...]
+    shield_coherence: float                            # Γ = mean(phases)
+
+    # ── Power requirements (Earth-scale) ───────────────────────────────────
+    earth_rf_power_w: float                            # EPOS 50W × concentration_factor
+    earth_power_density_w_m3: float
+    earth_output_voltage_v: float                      # scaled from EPOS VDC
+
+    # ── Shield status ──────────────────────────────────────────────────────
+    shield_status: str                                 # SHIELDS_UP | STRESSED | FAILING
+    shield_coverage_pct: float                         # Γ × 100
+    planetary_summary: str
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            'timestamp': self.timestamp,
+            'solar_system': {
+                'positions': self.planet_positions,
+                'total_aspects': self.total_aspects,
+                'positive_aspects': self.positive_aspects,
+                'negative_aspects': self.negative_aspects,
+                'dominant_aspect': self.dominant_aspect,
+                'cosmic_field_score': self.cosmic_field_score,
+                'schumann_modulated_score': self.schumann_modulated_score,
+            },
+            'layer1_em_deflection': {
+                'incoming_threats': self.l1_incoming_threats,
+                'field_score': self.l1_field_score,
+                'status': self.l1_status,
+            },
+            'layer2_plasma_ablation': {
+                'electron_density_m3': self.l2_electron_density_m3,
+                'shell_volume_m3': self.l2_shell_volume_m3,
+                'total_electrons': self.l2_total_electrons,
+                'plasma_frequency_hz': self.l2_plasma_frequency_hz,
+                'score': self.l2_score,
+                'status': self.l2_status,
+            },
+            'layer3_shield_phased_harmonics': {
+                'schumann_phase': self.l3_schumann_phase,
+                'schumann_modulator': self.l3_schumann_modulator,
+                'harmonic_coherence': self.l3_harmonic_coherence,
+                'score': self.l3_score,
+                'status': self.l3_status,
+            },
+            'illumination_phases': [
+                {
+                    'phase': _PHASE_LABELS[i],
+                    'score': round(self.phase_scores[i], 4),
+                    'status': self.phase_statuses[i],
+                }
+                for i in range(6)
+            ],
+            'shield': {
+                'coherence': self.shield_coherence,
+                'sigma_target': _SIGMA_COHERENCE_TARGET,
+                'status': self.shield_status,
+                'coverage_pct': self.shield_coverage_pct,
+            },
+            'power': {
+                'earth_rf_power_w': self.earth_rf_power_w,
+                'earth_power_density_w_m3': self.earth_power_density_w_m3,
+                'earth_output_voltage_v': self.earth_output_voltage_v,
+            },
+            'planetary_summary': self.planetary_summary,
+            'active_aspects': self.active_aspects,
+        }
+
+
+def simulate_earth_epas() -> EarthEPASSimulation:
+    """Run a live simulation of an Earth-scale EPAS second ionosphere.
+
+    Pipeline:
+      1. Compute live VSOP87 planetary positions (standalone)
+      2. Detect all active aspects between all bodies
+      3. Score the cosmic harmonic field × Schumann modulation
+      4. Map to three EPAS layers at F-region scale:
+         L1 EM Deflection   — harmonic threats in the incoming field
+         L2 Plasma Ablation — F-region ionospheric density as the ablation layer
+         L3 Acoustic Frag   — shield phased harmonics (Schumann + aspect coherence)
+      5. Map to six Illumination Phases at Earth power scale
+      6. Compute shield coherence Γ and overall planetary verdict
+
+    All data is LIVE — positions are computed from the current UTC timestamp
+    using the VSOP87 mean longitude model (Meeus 1998).
+    """
+    # ── 1. Live planetary positions ────────────────────────────────────────
+    positions = _compute_vsop87_positions_standalone()
+
+    # ── 2. Detect aspects ──────────────────────────────────────────────────
+    aspects = _detect_aspects_standalone(positions)
+    positive = [a for a in aspects if a['score'] > 0]
+    negative = [a for a in aspects if a['score'] < 0]
+    if aspects:
+        dom = max(aspects, key=lambda a: abs(a['score']))
+        dominant_str = (
+            f"{dom['body1']}—{dom['body2']}: {dom['aspect']} "
+            f"({dom['separation']:.1f}° orb={dom['orb']:.1f}° "
+            f"h={dom['harmonic_value']:+.2f} ϕ={dom['phi_resonance']:.2f})"
+        )
+    else:
+        dominant_str = 'No active aspects'
+
+    # ── 3. Cosmic field + Schumann ─────────────────────────────────────────
+    cosmic = _score_cosmic_field(aspects)
+    sch_mod = _schumann_modulator()
+    modulated = max(0.0, min(1.0, cosmic * sch_mod))
+
+    doy = datetime.now().timetuple().tm_yday
+    period = 365.25 / (SCHUMANN_FUNDAMENTAL * 2.0)
+    sch_phase = (doy % period) / period
+
+    # ── 4a. Layer 1 — EM Deflection ───────────────────────────────────────
+    tense = [a for a in aspects if a['harmonic_value'] <= -0.25 and a['pair_weight'] >= 0.50]
+    l1_score = modulated
+    if l1_score >= 0.62:
+        l1_status = 'CLEAR'
+    elif l1_score >= 0.42:
+        l1_status = 'DEFLECTING'
+    else:
+        l1_status = 'OVERLOADED'
+
+    # ── 4b. Layer 2 — Plasma Ablation (F-region density) ──────────────────
+    # Electron density modulated by cosmic field: calm field = high density shield,
+    # tense field = density depletion (ionospheric storms reduce F-region density)
+    density_factor = 0.4 + 0.6 * modulated  # [0.4, 1.0] — never fully depleted
+    live_density = F_REGION_ELECTRON_DENSITY * density_factor
+    total_electrons = live_density * F_REGION_SHELL_VOLUME_M3
+    # Plasma frequency: f_pe = 9 √n_e  (Hz, with n_e in m⁻³)
+    plasma_freq = 9.0 * math.sqrt(live_density)
+    l2_score = max(0.0, min(1.0, density_factor))
+    if l2_score >= 0.80:
+        l2_status = 'INTACT'
+    elif l2_score >= 0.50:
+        l2_status = 'ABLATING'
+    elif l2_score >= 0.20:
+        l2_status = 'CRITICAL'
+    else:
+        l2_status = 'TERMINAL'
+
+    # ── 4c. Layer 3 — Shield Phased Harmonics (acoustic) ──────────────────
+    # Harmonic coherence = fraction of aspects with positive contribution
+    if aspects:
+        harm_coherence = len(positive) / len(aspects)
+    else:
+        harm_coherence = 0.5
+    # L3 score: coherence × Schumann amplitude boost
+    l3_score = max(0.0, min(1.0, harm_coherence * sch_mod))
+    if l3_score >= 0.65:
+        l3_status = 'COHERENT'
+    elif l3_score >= 0.38:
+        l3_status = 'CRACKING'
+    else:
+        l3_status = 'FRAGMENTED'
+
+    # ── 5. Six Illumination Phases (Earth-scale) ──────────────────────────
+    # Same mapping as Project Druid but fed from real planetary data
+    p1 = min(1.0, max(0.0, l1_score))
+    p2 = min(1.0, max(0.0, (l1_score + l3_score) / 2.0))
+    p3 = min(1.0, max(0.0, l3_score))
+    # P4 FWM: modulated score × PHI / 2 (radar-equivalent at planet scale)
+    p4 = min(1.0, max(0.0, modulated * PHI / 2.0))
+    p5 = min(1.0, max(0.0, (l1_score * 0.30 + l2_score * 0.50 + l3_score * 0.20)))
+    p6 = min(1.0, max(0.0, l2_score))
+
+    phase_scores: Tuple[float, ...] = (p1, p2, p3, p4, p5, p6)
+    _status_tables = (
+        [('PRIMED',      0.62), ('SPARKING',    0.42), ('COLD',       0.0)],
+        [('RESONANT',    0.65), ('COUPLING',    0.42), ('DISPERSED',  0.0)],
+        [('ACTIVE',      0.65), ('FLUCTUATING', 0.38), ('COLLAPSED',  0.0)],
+        [('AMPLIFYING',  0.62), ('MIXING',      0.42), ('DAMPED',     0.0)],
+        [('STABLE',      0.70), ('STABILIZING', 0.42), ('UNSTABLE',   0.0)],
+        [('DELIVERING',  0.70), ('CHARGING',    0.50), ('OFFLINE',    0.0)],
+    )
+    phase_statuses: Tuple[str, ...] = tuple(
+        next((lbl for lbl, thr in _status_tables[i] if phase_scores[i] >= thr), 'OFFLINE')
+        for i in range(6)
+    )
+
+    shield_coherence = round(sum(phase_scores) / len(phase_scores), 4)
+
+    # ── 6. Power at Earth scale ───────────────────────────────────────────
+    # Reverse the EPOS→HAARP concentration: P_earth = P_epos × VOLUMETRIC_CONCENTRATION_FACTOR
+    earth_rf = EPOS_RF_POWER_W * VOLUMETRIC_CONCENTRATION_FACTOR  # Watts
+    earth_pd = earth_rf / F_REGION_SHELL_VOLUME_M3
+    # Output voltage scales linearly with concentration^(1/3)
+    earth_voltage = _OUTPUT_VOLTAGE_VDC * (VOLUMETRIC_CONCENTRATION_FACTOR ** (1.0 / 3.0))
+
+    # ── Shield verdict ────────────────────────────────────────────────────
+    if shield_coherence >= 0.70:
+        shield_status = 'SHIELDS_UP'
+    elif shield_coherence >= 0.42:
+        shield_status = 'SHIELDS_STRESSED'
+    else:
+        shield_status = 'SHIELDS_FAILING'
+
+    coverage_pct = round(shield_coherence * 100, 1)
+
+    # Planetary summary
+    planetary_summary = (
+        f'{shield_status}  Γ={shield_coherence:.4f}  '
+        f'coverage={coverage_pct}%  '
+        f'L1={l1_status}({l1_score:.3f})  '
+        f'L2={l2_status}(n_e={live_density:.2e})  '
+        f'L3={l3_status}({l3_score:.3f})  '
+        f'aspects={len(aspects)}(+{len(positive)}/−{len(negative)})  '
+        f'dominant={dominant_str}'
+    )
+
+    return EarthEPASSimulation(
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        planet_positions=positions,
+        active_aspects=aspects,
+        total_aspects=len(aspects),
+        positive_aspects=len(positive),
+        negative_aspects=len(negative),
+        dominant_aspect=dominant_str,
+        cosmic_field_score=round(cosmic, 4),
+        schumann_modulated_score=round(modulated, 4),
+        l1_incoming_threats=len(tense),
+        l1_field_score=round(l1_score, 4),
+        l1_status=l1_status,
+        l2_electron_density_m3=round(live_density, 2),
+        l2_shell_volume_m3=F_REGION_SHELL_VOLUME_M3,
+        l2_total_electrons=total_electrons,
+        l2_plasma_frequency_hz=round(plasma_freq, 2),
+        l2_score=round(l2_score, 4),
+        l2_status=l2_status,
+        l3_schumann_phase=round(sch_phase, 4),
+        l3_schumann_modulator=round(sch_mod, 6),
+        l3_harmonic_coherence=round(harm_coherence, 4),
+        l3_score=round(l3_score, 4),
+        l3_status=l3_status,
+        phase_scores=phase_scores,
+        phase_statuses=phase_statuses,
+        shield_coherence=shield_coherence,
+        earth_rf_power_w=earth_rf,
+        earth_power_density_w_m3=earth_pd,
+        earth_output_voltage_v=round(earth_voltage, 1),
+        shield_status=shield_status,
+        shield_coverage_pct=coverage_pct,
+        planetary_summary=planetary_summary,
     )
 
 
@@ -1762,6 +2210,16 @@ class EmeraldSeer:
         """
         return compute_project_druid_manifest(epas_state)
 
+    # ── Earth EPAS Simulation ──────────────────────────────────────────────
+
+    def earth_shield_simulation(self) -> EarthEPASSimulation:
+        """Run a live Earth-scale EPAS second-ionosphere simulation.
+
+        Uses real-time VSOP87 planetary positions → cosmic field score →
+        three shield layers at ionospheric scale → six Illumination Phases.
+        """
+        return simulate_earth_epas()
+
     # ── verification ─────────────────────────────────────────────────────
 
     def verify_philosophers_stone(self, l_score: float) -> bool:
@@ -1917,6 +2375,91 @@ def _format_console_druid(manifest: ProjectDruidManifest) -> str:
         f'(target ≥ {_SIGMA_COHERENCE_TARGET})',
         f'  Device ready:    {"YES — shields manifested" if manifest.device_ready else "NO  — coherence below PHI gate"}',
         '=' * 72,
+    ])
+    return '\n'.join(lines)
+
+
+def _format_console_earth_shield(sim: EarthEPASSimulation) -> str:
+    """Rich console readout for the Earth-scale EPAS simulation."""
+    w = 78
+    lines = [
+        '═' * w,
+        '  EARTH EPAS SECOND IONOSPHERE — LIVE PLANETARY SHIELD SIMULATION',
+        '  Powered by Aureon VSOP87 Engine  ·  F-Region Ionospheric Scale',
+        '═' * w,
+        '',
+        f'  Timestamp (UTC):  {sim.timestamp}',
+        '',
+        '─── SOLAR SYSTEM — LIVE ECLIPTIC LONGITUDES ─────────────────────────────',
+    ]
+    for body, lon in sorted(sim.planet_positions.items(), key=lambda kv: kv[1]):
+        # Simple zodiac sign label
+        sign_idx = int(lon / 30.0) % 12
+        signs = ['Ari', 'Tau', 'Gem', 'Can', 'Leo', 'Vir',
+                 'Lib', 'Sco', 'Sag', 'Cap', 'Aqu', 'Pis']
+        deg_in_sign = lon - sign_idx * 30.0
+        lines.append(
+            f'  {body:<10s}  {lon:7.2f}°  '
+            f'({signs[sign_idx]} {deg_in_sign:5.2f}°)'
+        )
+
+    lines.extend([
+        '',
+        f'  Active aspects:  {sim.total_aspects}  '
+        f'(+{sim.positive_aspects} supportive  / −{sim.negative_aspects} tense)',
+        f'  Dominant:        {sim.dominant_aspect}',
+        f'  Cosmic field:    {sim.cosmic_field_score:.4f}  '
+        f'→ Schumann-modulated: {sim.schumann_modulated_score:.4f}',
+        '',
+        '─── EPAS LAYER 1: EM DEFLECTION (Harmonic Field Filter) ─────────────────',
+        f'  Incoming threats:    {sim.l1_incoming_threats} tense aspects '
+        f'(h ≤ −0.25, w ≥ 0.50)',
+        f'  Field score:         {sim.l1_field_score:.4f}',
+        f'  STATUS:              {sim.l1_status}',
+        '',
+        '─── EPAS LAYER 2: PLASMA ABLATION (F-Region Density Guard) ──────────────',
+        f'  Shell volume:        {sim.l2_shell_volume_m3:.3e} m³',
+        f'  Electron density:    {sim.l2_electron_density_m3:.3e} m⁻³',
+        f'  Total electrons:     {sim.l2_total_electrons:.3e}',
+        f'  Plasma frequency:    {sim.l2_plasma_frequency_hz:.2f} Hz  '
+        f'(f_pe = 9·√n_e)',
+        f'  Density score:       {sim.l2_score:.4f}',
+        f'  STATUS:              {sim.l2_status}',
+        '',
+        '─── EPAS LAYER 3: SHIELD PHASED HARMONICS (Acoustic Fragmentation) ─────',
+        f'  Schumann phase:      {sim.l3_schumann_phase:.4f}  '
+        f'(modulator: {sim.l3_schumann_modulator:.6f})',
+        f'  Harmonic coherence:  {sim.l3_harmonic_coherence:.4f}  '
+        f'(positive fraction)',
+        f'  L3 score:            {sim.l3_score:.4f}',
+        f'  STATUS:              {sim.l3_status}',
+        '',
+        '─── SIX ILLUMINATION PHASES (Earth Scale) ──────────────────────────────',
+    ])
+    for i, lbl in enumerate(_PHASE_LABELS):
+        sc = sim.phase_scores[i]
+        st = sim.phase_statuses[i]
+        bar = '█' * int(sc * 24) + '░' * (24 - int(sc * 24))
+        lines.append(f'  {lbl:<20s}  [{bar}]  {sc:.4f}  {st}')
+
+    lines.extend([
+        '',
+        f'  Shield coherence Γ = {sim.shield_coherence:.4f}  '
+        f'(target ≥ {_SIGMA_COHERENCE_TARGET})',
+        '',
+        '─── EARTH POWER BUDGET ──────────────────────────────────────────────────',
+        f'  Earth RF power:      {sim.earth_rf_power_w:.3e} W  '
+        f'(EPOS 50 W × {VOLUMETRIC_CONCENTRATION_FACTOR:,.0f})',
+        f'  Power density:       {sim.earth_power_density_w_m3:.3e} W/m³',
+        f'  Output voltage:      {sim.earth_output_voltage_v:,.0f} V',
+        '',
+        '─── PLANETARY VERDICT ───────────────────────────────────────────────────',
+        f'  {sim.shield_status}   '
+        f'coverage: {sim.shield_coverage_pct:.1f}%  '
+        f'Γ = {sim.shield_coherence:.4f}',
+        '',
+        f'  {sim.planetary_summary}',
+        '═' * w,
     ])
     return '\n'.join(lines)
 
@@ -2191,6 +2734,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         action='store_true',
         help='Compute Project Druid: physical EPOS device manifest from EPAS shield state.',
     )
+    parser.add_argument(
+        '--earth-shield',
+        action='store_true',
+        help='Simulate a planetary-scale EPAS second ionosphere using live VSOP87 data.',
+    )
     args = parser.parse_args(argv)
 
     seer = EmeraldSeer()
@@ -2253,6 +2801,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(manifest.to_dict(), indent=2))
         else:
             print(_format_console_druid(manifest))
+        return 0
+
+    if args.earth_shield:
+        sim = seer.earth_shield_simulation()
+        if args.json:
+            print(json.dumps(sim.to_dict(), indent=2))
+        else:
+            print(_format_console_earth_shield(sim))
         return 0
 
     if args.ancient:
