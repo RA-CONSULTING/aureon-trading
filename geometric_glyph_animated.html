@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AUREON · Sacred Geometry Glyph — Animated EPAS Harmonic Phase</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #050510; overflow: hidden; font-family: 'Courier New', monospace; color: #ccddff; }
+canvas { display: block; }
+#hud {
+  position: fixed; top: 12px; left: 12px;
+  background: rgba(8,8,30,0.85); border: 1px solid #333366; border-radius: 8px;
+  padding: 12px 16px; font-size: 11px; line-height: 1.7; z-index: 10;
+  min-width: 280px;
+}
+#hud h2 { color: #FFD700; font-size: 13px; margin-bottom: 6px; }
+#hud .label { color: #8899bb; }
+#hud .val { color: #44ffaa; }
+#hud .warn { color: #ff8844; }
+#hud .phi { color: #FFD700; }
+#planets-hud {
+  position: fixed; top: 12px; right: 12px;
+  background: rgba(8,8,30,0.85); border: 1px solid #333366; border-radius: 8px;
+  padding: 12px 16px; font-size: 11px; line-height: 1.6; z-index: 10;
+  min-width: 220px;
+}
+#planets-hud h2 { color: #FFD700; font-size: 13px; margin-bottom: 6px; }
+#title-bar {
+  position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+  background: rgba(8,8,30,0.8); border: 1px solid #FFD700; border-radius: 6px;
+  padding: 8px 24px; font-size: 14px; color: #FFD700; font-weight: bold;
+  text-align: center; z-index: 10; letter-spacing: 2px;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <h2>⬡ EPAS LAYER 3 — ACOUSTIC PHASE</h2>
+  <div><span class="label">Schumann Phase:</span> <span class="val" id="sch-phase">0.000</span></div>
+  <div><span class="label">Schumann Mod:</span> <span class="val" id="sch-mod">1.000</span></div>
+  <div><span class="label">Harmonic Coherence:</span> <span class="val" id="harm-coh">0.000</span></div>
+  <div><span class="label">L3 Score:</span> <span class="val" id="l3-score">0.000</span></div>
+  <div><span class="label">L3 Status:</span> <span class="val" id="l3-status">—</span></div>
+  <hr style="border-color:#222244;margin:6px 0">
+  <div><span class="label">Earth Rotation:</span> <span class="val" id="rot-deg">0.0°</span></div>
+  <div><span class="label">Solar Longitude:</span> <span class="phi" id="solar-lon">0.0°</span></div>
+  <div><span class="label">Orbital Density:</span> <span class="val" id="orb-density">0.000</span></div>
+  <div><span class="label">PHI Grid Score:</span> <span class="phi" id="phi-score">0.0227</span></div>
+  <div><span class="label">Cosmic Field:</span> <span class="val" id="cosmic-field">0.000</span></div>
+  <hr style="border-color:#222244;margin:6px 0">
+  <div><span class="label">Active Aspects:</span> <span class="val" id="n-aspects">0</span></div>
+  <div><span class="label">Positive Aspects:</span> <span class="val" id="n-pos">0</span></div>
+  <div><span class="label">Sites:</span> <span class="val">45</span></div>
+  <div><span class="label">Alignments:</span> <span class="val">188</span></div>
+</div>
+
+<div id="planets-hud">
+  <h2>☉ PLANETARY HARMONICS</h2>
+  <div id="planet-list"></div>
+</div>
+
+<div id="title-bar">
+  AUREON SACRED GEOMETRY GLYPH · PHI-ALIGNED GEODESIC GRID · EPAS L3 ACOUSTIC PHASE
+</div>
+
+<script>
+"use strict";
+
+// ═══════════ CONSTANTS ═══════════
+const PHI = (1 + Math.sqrt(5)) / 2;
+const SCHUMANN = 7.83;
+const LOVE_FREQ = 528.0;
+const EARTH_R_KM = 6371.0;
+const DEG = Math.PI / 180;
+const TWO_PI = Math.PI * 2;
+
+// Earth sidereal rotation: 360° in 23h 56m 4s = 86164s
+const EARTH_ROT_RAD_PER_SEC = TWO_PI / 86164.0;
+// Schumann modulation period (days)
+const SCHUMANN_PERIOD_DAYS = 365.25 / (SCHUMANN * 2.0);  // ~23.3 days
+
+// Animation speed multiplier (1 = real-time, 360 = 1° per second visual)
+const SPEED = 120;  // 120x → full rotation in ~12 min
+
+// ═══════════ MEEUS MEAN LONGITUDES (J2000) ═══════════
+const PLANETS = {
+  'Mercury': {L0: 252.250906, L1: 149472.6746358, color: '#AAAACC', r: 0.12, symbol: '☿'},
+  'Venus':   {L0: 181.979101, L1:  58517.8156760, color: '#FFCC44', r: 0.16, symbol: '♀'},
+  'Mars':    {L0: 355.433275, L1:  19140.2993313, color: '#FF4422', r: 0.22, symbol: '♂'},
+  'Jupiter': {L0:  34.351519, L1:   3034.9056606, color: '#FFAA44', r: 0.28, symbol: '♃'},
+  'Saturn':  {L0:  50.077444, L1:   1222.1137943, color: '#CCAA66', r: 0.34, symbol: '♄'},
+  'Uranus':  {L0: 314.055005, L1:    428.4669983, color: '#44DDFF', r: 0.39, symbol: '♅'},
+  'Neptune': {L0: 304.348665, L1:    218.4862002, color: '#4466FF', r: 0.43, symbol: '♆'},
+};
+const EARTH_L0 = 100.464457, EARTH_L1 = 35999.3728565;
+const MOON_L0 = 218.3165, MOON_RATE = 13.1763966;
+
+// Aspect table: [angle, orb, name, harmonic_value]
+const ASPECTS = [
+  [  0, 10, 'CONJUNCTION',   +1.00],
+  [120,  8, 'TRINE',         +0.80],
+  [ 60,  6, 'SEXTILE',       +0.60],
+  [180, 10, 'OPPOSITION',    -0.80],
+  [ 90,  8, 'SQUARE',        -0.60],
+  [ 72,  3, 'QUINTILE',      +0.40],
+  [144,  3, 'BI-QUINTILE',   +0.40],
+];
+
+const PLANET_WEIGHTS = {
+  'Sun': 1.0, 'Moon': 0.85, 'Mercury': 0.5, 'Venus': 0.65,
+  'Mars': 0.7, 'Jupiter': 0.90, 'Saturn': 0.80, 'Uranus': 0.6, 'Neptune': 0.55,
+};
+
+const PHI_RESONANT = [72, 120, 137.5, 144];
+
+// ═══════════ 45 SACRED RELAY SITES ═══════════
+const SITES = [
+  {n:'Great Pyramid of Giza',   c:'Egyptian',     lat:29.9792, lon:31.1342,  r:'Prime Anchor'},
+  {n:'Temple of Karnak',        c:'Egyptian',     lat:25.7188, lon:32.6573,  r:'Resonance Hub'},
+  {n:'Valley of the Kings',     c:'Egyptian',     lat:25.7402, lon:32.6014,  r:'Memory Vault'},
+  {n:'Abu Simbel',              c:'Egyptian',     lat:22.3369, lon:31.6256,  r:'Southern Gate'},
+  {n:'Teotihuacan',             c:'Maya',         lat:19.6925, lon:-98.8438, r:'Solar Axis'},
+  {n:'Chichen Itza',            c:'Maya',         lat:20.6843, lon:-88.5678, r:'Equinox Beacon'},
+  {n:'Tikal',                   c:'Maya',         lat:17.2220, lon:-89.6237, r:'Jungle Pulse'},
+  {n:'Palenque',                c:'Maya',         lat:17.4838, lon:-92.0461, r:'Calendar Node'},
+  {n:'Stonehenge',              c:'Celtic',       lat:51.1789, lon:-1.8262,  r:'Solstice Ring'},
+  {n:'Newgrange',               c:'Celtic',       lat:53.6947, lon:-6.4754,  r:'Passage Gate'},
+  {n:'Carnac Stones',           c:'Celtic',       lat:47.5840, lon:-3.0744,  r:'Alignment Row'},
+  {n:'Ring of Brodgar',         c:'Celtic',       lat:59.0015, lon:-3.2295,  r:'Northern Anchor'},
+  {n:'Chaco Canyon',            c:'Mogollon',     lat:36.0604, lon:-107.9584,r:'Sun Dagger'},
+  {n:'Mesa Verde',              c:'Mogollon',     lat:37.1838, lon:-108.4887,r:'Cliff Refuge'},
+  {n:'Bandelier',               c:'Mogollon',     lat:35.7785, lon:-106.2689,r:'Valley Node'},
+  {n:'Angkor Wat',              c:'Khmer',        lat:13.4125, lon:103.8670, r:'Celestial Mirror'},
+  {n:'Borobudur',               c:'Javanese',     lat:-7.6079, lon:110.2038, r:'Mandala Core'},
+  {n:'Göbekli Tepe',            c:'Neolithic',    lat:37.2231, lon:38.9225,  r:'Origin Point'},
+  {n:'Machu Picchu',            c:'Inca',         lat:-13.1631,lon:-72.5450, r:'Cloud Citadel'},
+  {n:'Nazca Lines',             c:'Nazca',        lat:-14.7350,lon:-75.1300, r:'Geoglyph Beacon'},
+  {n:'Tiwanaku',                c:'Tiwanaku',     lat:-16.5544,lon:-68.6733, r:'Gateway of Sun'},
+  {n:'Nan Madol',               c:'Micronesian',  lat:6.8446,  lon:158.3350, r:'Pacific Relay'},
+  {n:'Easter Island',           c:'Rapa Nui',     lat:-27.1258,lon:-109.2770,r:'Moai Beacon'},
+  {n:'Temple of Heaven',        c:'Chinese',      lat:39.8822, lon:116.4066, r:'Celestial Altar'},
+  {n:'Terracotta Army',         c:'Chinese',      lat:34.3842, lon:109.2785, r:'Emperor Guard'},
+  {n:'Sanxingdui',              c:'Chinese',      lat:31.0023, lon:104.2044, r:'Bronze Oracle'},
+  {n:'Mohenjo-Daro',            c:'Indus',        lat:27.3242, lon:68.1357,  r:'Indus Nexus'},
+  {n:'Konark Sun Temple',       c:'Indian',       lat:19.8876, lon:86.0945,  r:'Solar Wheel'},
+  {n:'Hampi',                   c:'Indian',       lat:15.3350, lon:76.4600,  r:'Temple Grid'},
+  {n:'Ise Grand Shrine',        c:'Japanese',     lat:34.4553, lon:136.7256, r:'Shinto Gate'},
+  {n:'Persepolis',              c:'Persian',      lat:29.9352, lon:52.8914,  r:'Imperial Axis'},
+  {n:'Ziggurat of Ur',          c:'Sumerian',     lat:30.9628, lon:46.1031,  r:'Ziggurat Root'},
+  {n:'Delphi',                  c:'Greek',        lat:38.4824, lon:22.5010,  r:'Omphalos'},
+  {n:'Knossos',                 c:'Minoan',       lat:35.2980, lon:25.1632,  r:'Labyrinth Heart'},
+  {n:'Petra',                   c:'Nabataean',    lat:30.3285, lon:35.4444,  r:'Rose Gate'},
+  {n:'Baalbek',                 c:'Phoenician',   lat:34.0069, lon:36.2039,  r:'Trilithon Base'},
+  {n:'Lalibela',                c:'Ethiopian',    lat:12.0319, lon:39.0472,  r:'Rock Hewn Pulse'},
+  {n:'Axum Obelisks',           c:'Aksumite',     lat:14.1310, lon:38.7189,  r:'Stele Beacon'},
+  {n:'Bagan',                   c:'Burmese',      lat:21.1717, lon:94.8585,  r:'Pagoda Field'},
+  {n:'Sigiriya',                c:'Sinhalese',    lat:7.9570,  lon:80.7603,  r:'Lion Rock'},
+  {n:'Old Uppsala',             c:'Norse',        lat:59.8979, lon:17.6365,  r:'Viking Crown'},
+  {n:'Ggantija',                c:'Maltese',      lat:36.0475, lon:14.2688,  r:'Megalithic Lens'},
+  {n:'Cahokia Mounds',          c:'Mississippian',lat:38.6553, lon:-90.0627, r:'Mound Nexus'},
+  {n:'Great Zimbabwe',          c:'Shona',        lat:-20.2674,lon:30.9338,  r:'Southern Pillar'},
+  {n:'Uluru',                   c:'Aboriginal',   lat:-25.3444,lon:131.0369, r:'Dreamtime Core'},
+];
+
+// Civilisation colours
+const CIV_COLORS = {
+  'Egyptian':'#FFD700','Maya':'#00CC44','Celtic':'#44AAFF','Mogollon':'#CC6600',
+  'Khmer':'#FF4444','Javanese':'#FF8844','Neolithic':'#AAAAAA','Inca':'#CC44FF',
+  'Nazca':'#FF66FF','Tiwanaku':'#8844FF','Micronesian':'#00CCCC','Rapa Nui':'#FF0000',
+  'Chinese':'#FF2200','Indus':'#BB8800','Indian':'#FF8800','Japanese':'#FF4466',
+  'Persian':'#8888FF','Sumerian':'#CCAA44','Greek':'#4488FF','Minoan':'#44CCAA',
+  'Nabataean':'#DD6666','Phoenician':'#AA44FF','Ethiopian':'#44BB44','Aksumite':'#66DD66',
+  'Burmese':'#DDAA00','Sinhalese':'#00AADD','Norse':'#6688CC','Maltese':'#CC88FF',
+  'Mississippian':'#886644','Shona':'#44AA88','Aboriginal':'#DD4400',
+};
+
+// Major alignments (top 10 by site count from our analysis)
+const ALIGNMENTS = [
+  [26,31,32,34,0,15,18,19,22],  // MEGA: Mohenjo→Persep→Ur→Petra→Giza→Angkor→Machu→Nazca→Easter
+  [15,43,22,19],                  // Angkor→Zimbabwe→Tiwanaku→Nazca
+  [15,24,42,19],                  // Angkor→Terracotta→Cahokia→Nazca
+  [15,28,36,18],                  // Angkor→Hampi→Lalibela→Machu
+  [22,37,25,26],                  // Easter→Axum→Sanxingdui→Mohenjo
+  [22,32,17,26],                  // Easter→Delphi→Gobekli→Mohenjo
+  [0,1,2,26,38],                  // Giza→Karnak→Valley→Mohenjo→Bagan
+  [8,9,32,33],                    // Stonehenge→Newgrange→Delphi→Knossos
+  [4,5,6,7],                      // Teotihuacan→ChichenItza→Tikal→Palenque
+  [12,13,14,22],                  // Chaco→Mesa→Bandelier→Easter
+  [11,17,42,9],                   // Brodgar→Gobekli→Cahokia→Newgrange
+  [23,24,25,29],                  // TempleHeaven→Terracotta→Sanxingdui→Ise
+  [0,34,35,17],                   // Giza→Petra→Baalbek→Gobekli
+  [16,44,26,27],                  // Borobudur→Uluru→Mohenjo→Konark
+  [36,37,43,40],                  // Lalibela→Axum→Zimbabwe→Uppsala
+];
+
+// ═══════════ CANVAS SETUP ═══════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, globeR;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2;
+  cy = H / 2;
+  globeR = Math.min(W, H) * 0.38;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ═══════════ PROJECTION (rotating orthographic) ═══════════
+function project(lat, lon, rotLon) {
+  const phi = lat * DEG;
+  const lam = (lon - rotLon) * DEG;
+  const cosPhi = Math.cos(phi);
+  const x = cosPhi * Math.sin(lam);
+  const y = -Math.sin(phi);
+  const z = cosPhi * Math.cos(lam);
+  // visible if facing us
+  if (z < -0.05) return null;
+  return { x: cx + x * globeR, y: cy + y * globeR, z: z };
+}
+
+// ═══════════ VSOP87 POSITIONS ═══════════
+function julianDate(d) {
+  return d.getTime() / 86400000 + 2440587.5;
+}
+
+function computePlanets(now) {
+  const JD = julianDate(now);
+  const T = (JD - 2451545.0) / 36525.0;
+  const earthLon = (EARTH_L0 + EARTH_L1 * T) % 360;
+  const sunLon = (earthLon + 180) % 360;
+  const daysSinceJ2000 = JD - 2451545.0;
+  const moonLon = (MOON_L0 + MOON_RATE * daysSinceJ2000) % 360;
+
+  const bodies = { 'Sun': sunLon, 'Moon': ((moonLon % 360) + 360) % 360 };
+  for (const [name, p] of Object.entries(PLANETS)) {
+    bodies[name] = ((p.L0 + p.L1 * T) % 360 + 360) % 360;
+  }
+  return { bodies, earthLon, T };
+}
+
+function detectAspects(bodies) {
+  const names = Object.keys(bodies);
+  const aspects = [];
+  for (let i = 0; i < names.length; i++) {
+    for (let j = i + 1; j < names.length; j++) {
+      let sep = Math.abs(bodies[names[i]] - bodies[names[j]]);
+      if (sep > 180) sep = 360 - sep;
+      for (const [angle, orb, aspName, hVal] of ASPECTS) {
+        if (Math.abs(sep - angle) <= orb) {
+          const tightness = 1 - Math.abs(sep - angle) / orb;
+          const phiRes = PHI_RESONANT.some(a => Math.abs(angle - a) < 1) ? 1 : 0;
+          const phiBoost = 1 + phiRes * (PHI - 1);
+          const w1 = PLANET_WEIGHTS[names[i]] || 0.5;
+          const w2 = PLANET_WEIGHTS[names[j]] || 0.5;
+          const score = hVal * tightness * phiBoost * (w1 + w2) / 2;
+          aspects.push({
+            p1: names[i], p2: names[j], aspect: aspName,
+            sep: sep, hVal, score, tightness
+          });
+          break;
+        }
+      }
+    }
+  }
+  return aspects;
+}
+
+// ═══════════ EPAS LAYER 3 COMPUTATION ═══════════
+function computeEPASL3(now, aspects) {
+  const doy = (now - new Date(now.getFullYear(), 0, 0)) / 86400000;
+  const period = 365.25 / (SCHUMANN * 2.0);
+  const phase = (doy % period) / period;
+  const schMod = 1.0 + 0.059 * Math.sin(TWO_PI * phase);
+
+  const positive = aspects.filter(a => a.hVal > 0).length;
+  const harmCoherence = aspects.length > 0 ? positive / aspects.length : 0.5;
+  const l3Score = Math.min(1, Math.max(0, harmCoherence * schMod));
+  let status = 'FRAGMENTED';
+  if (l3Score >= 0.65) status = 'COHERENT';
+  else if (l3Score >= 0.38) status = 'CRACKING';
+
+  return { phase, schMod, harmCoherence, l3Score, status };
+}
+
+// ═══════════ COSMIC FIELD ═══════════
+function cosmicField(aspects) {
+  let totalS = 0, totalW = 0;
+  for (const a of aspects) {
+    const w = Math.abs(a.score);
+    totalS += a.score;
+    totalW += w;
+  }
+  if (totalW < 1e-9) return 0.5;
+  const raw = totalS / totalW;
+  return Math.min(1, Math.max(0, (raw / PHI + 1.0) / 2.0));
+}
+
+// ═══════════ SOLAR ORBITAL DENSITY ═══════════
+function solarDensity(earthLon) {
+  // Perihelion ~103° ecliptic longitude (early January)
+  // Density peaks at perihelion, modulated by PHI
+  const angle = (earthLon - 103) * DEG;
+  return 0.5 + 0.5 * Math.cos(angle) * (1 / PHI);
+}
+
+// ═══════════ DRAWING FUNCTIONS ═══════════
+
+function drawStarfield(t) {
+  if (!drawStarfield._stars) {
+    drawStarfield._stars = [];
+    for (let i = 0; i < 300; i++) {
+      drawStarfield._stars.push({
+        x: Math.random() * 4000 - 2000,
+        y: Math.random() * 4000 - 2000,
+        s: Math.random() * 1.5 + 0.3,
+        p: Math.random() * TWO_PI,
+      });
+    }
+  }
+  for (const s of drawStarfield._stars) {
+    const flicker = 0.5 + 0.5 * Math.sin(t * 0.001 + s.p);
+    ctx.fillStyle = `rgba(200,210,255,${0.15 + 0.35 * flicker})`;
+    const sx = ((s.x + W / 2) % W + W) % W;
+    const sy = ((s.y + H / 2) % H + H) % H;
+    ctx.fillRect(sx, sy, s.s, s.s);
+  }
+}
+
+function drawGlobe(rotLon, density, l3) {
+  // Atmospheric glow
+  const grad = ctx.createRadialGradient(cx, cy, globeR * 0.8, cx, cy, globeR * 1.15);
+  const glowAlpha = 0.08 + 0.12 * density;
+  grad.addColorStop(0, `rgba(30,60,180,${glowAlpha})`);
+  grad.addColorStop(0.5, `rgba(0,255,120,${glowAlpha * 0.4})`);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, globeR * 1.15, 0, TWO_PI);
+  ctx.fill();
+
+  // Globe body
+  const gd = ctx.createRadialGradient(cx - globeR * 0.2, cy - globeR * 0.2, globeR * 0.1, cx, cy, globeR);
+  gd.addColorStop(0, `rgba(15,25,${Math.floor(60 + 40 * l3.l3Score)},0.95)`);
+  gd.addColorStop(0.7, `rgba(8,12,${Math.floor(30 + 20 * l3.l3Score)},0.9)`);
+  gd.addColorStop(1, 'rgba(4,4,12,0.85)');
+  ctx.fillStyle = gd;
+  ctx.beginPath();
+  ctx.arc(cx, cy, globeR, 0, TWO_PI);
+  ctx.fill();
+
+  // Grid lines
+  ctx.strokeStyle = `rgba(40,60,120,${0.15 + 0.1 * l3.l3Score})`;
+  ctx.lineWidth = 0.4;
+  // Latitude circles
+  for (let lat = -60; lat <= 60; lat += 30) {
+    ctx.beginPath();
+    for (let lon = -180; lon <= 180; lon += 2) {
+      const p = project(lat, lon, rotLon);
+      if (p) {
+        if (lon === -180 || !project(lat, lon - 2, rotLon)) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+    }
+    ctx.stroke();
+  }
+  // Longitude lines
+  for (let lon = -180; lon < 180; lon += 30) {
+    ctx.beginPath();
+    for (let lat = -90; lat <= 90; lat += 2) {
+      const p = project(lat, lon, rotLon);
+      if (p) {
+        if (lat === -90 || !project(lat - 2, lon, rotLon)) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+    }
+    ctx.stroke();
+  }
+
+  // EPAS L3 acoustic resonance rings (Schumann standing waves)
+  const nRings = 7;
+  for (let i = 1; i <= nRings; i++) {
+    const ringLat = -60 + (120 / (nRings + 1)) * i;
+    const pulse = Math.sin(TWO_PI * l3.phase * i + performance.now() * 0.002 * l3.schMod);
+    const alpha = 0.04 + 0.08 * Math.abs(pulse) * l3.l3Score;
+    ctx.strokeStyle = `rgba(100,255,200,${alpha})`;
+    ctx.lineWidth = 1 + Math.abs(pulse) * 1.5;
+    ctx.beginPath();
+    for (let lon = -180; lon <= 180; lon += 2) {
+      const p = project(ringLat, lon, rotLon);
+      if (p) {
+        if (lon === -180 || !project(ringLat, lon - 2, rotLon)) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+    }
+    ctx.stroke();
+  }
+}
+
+function drawAlignments(rotLon, t, l3) {
+  const pulse = Math.sin(t * 0.003 * l3.schMod);
+  for (let ai = 0; ai < ALIGNMENTS.length; ai++) {
+    const aln = ALIGNMENTS[ai];
+    const hue = (ai / ALIGNMENTS.length) * 280 + 20;
+    const phase = Math.sin(t * 0.002 + ai * 0.7) * 0.5 + 0.5;
+    const baseAlpha = (0.15 + 0.25 * l3.l3Score) * (0.5 + 0.5 * phase);
+
+    // Draw great circle segments between consecutive sites
+    for (let i = 0; i < aln.length - 1; i++) {
+      const s0 = SITES[aln[i]], s1 = SITES[aln[i + 1]];
+      const p0 = project(s0.lat, s0.lon, rotLon);
+      const p1 = project(s1.lat, s1.lon, rotLon);
+      if (!p0 || !p1) continue;
+
+      // Great circle interpolation
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      const steps = 30;
+      let visible = true;
+      for (let j = 1; j <= steps; j++) {
+        const f = j / steps;
+        const lat = s0.lat + (s1.lat - s0.lat) * f;
+        const lon = s0.lon + (s1.lon - s0.lon) * f;
+        // Handle wrap-around
+        let dLon = s1.lon - s0.lon;
+        if (dLon > 180) dLon -= 360;
+        if (dLon < -180) dLon += 360;
+        const iLon = s0.lon + dLon * f;
+        const p = project(lat, iLon, rotLon);
+        if (p) ctx.lineTo(p.x, p.y);
+      }
+
+      const isMega = ai === 0;
+      ctx.strokeStyle = isMega
+        ? `hsla(45, 100%, 65%, ${baseAlpha * 1.5})`
+        : `hsla(${hue}, 80%, 55%, ${baseAlpha})`;
+      ctx.lineWidth = isMega ? 2.5 + pulse : 1.0 + 0.5 * phase;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawSites(rotLon, t, l3, density) {
+  for (let i = 0; i < SITES.length; i++) {
+    const s = SITES[i];
+    const p = project(s.lat, s.lon, rotLon);
+    if (!p) continue;
+
+    const col = CIV_COLORS[s.c] || '#FFFFFF';
+    const pulse = Math.sin(t * 0.004 + i * 0.3) * 0.3 + 0.7;
+    const sz = (s.r.includes('Prime') || s.r.includes('Anchor')) ? 7 : 4.5;
+    const glowSz = sz * (2 + density + l3.l3Score * 1.5) * pulse;
+
+    // Glow
+    const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSz);
+    grd.addColorStop(0, col + 'AA');
+    grd.addColorStop(0.5, col + '33');
+    grd.addColorStop(1, col + '00');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, glowSz, 0, TWO_PI);
+    ctx.fill();
+
+    // Core dot
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, sz * (0.6 + 0.4 * p.z), 0, TWO_PI);
+    ctx.fill();
+
+    // Label (only for closer sites)
+    if (p.z > 0.3 && sz > 4) {
+      ctx.fillStyle = `rgba(200,210,240,${0.4 + 0.4 * p.z})`;
+      ctx.font = '8px Courier New';
+      ctx.fillText(s.n.substring(0, 16), p.x + sz + 3, p.y + 3);
+    }
+  }
+}
+
+function drawPlanetaryRing(bodies, t, l3) {
+  // Outer ring showing planetary positions
+  const ringR = globeR * 1.25;
+  const ringR2 = globeR * 1.45;
+
+  // Ring track
+  ctx.strokeStyle = 'rgba(60,60,120,0.25)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringR, 0, TWO_PI);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringR2, 0, TWO_PI);
+  ctx.stroke();
+
+  // Sun at the appropriate angle
+  const sunAngle = (bodies['Sun'] - 90) * DEG;
+  const sunX = cx + Math.cos(sunAngle) * ringR;
+  const sunY = cy + Math.sin(sunAngle) * ringR;
+  const sunGrd = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 18);
+  sunGrd.addColorStop(0, '#FFEE44');
+  sunGrd.addColorStop(0.5, '#FFAA2288');
+  sunGrd.addColorStop(1, '#FF660000');
+  ctx.fillStyle = sunGrd;
+  ctx.beginPath();
+  ctx.arc(sunX, sunY, 18, 0, TWO_PI);
+  ctx.fill();
+  ctx.fillStyle = '#FFDD00';
+  ctx.font = '14px serif';
+  ctx.fillText('☉', sunX - 5, sunY + 5);
+
+  // Moon
+  const moonAngle = (bodies['Moon'] - 90) * DEG;
+  const moonX = cx + Math.cos(moonAngle) * (ringR * 1.08);
+  const moonY = cy + Math.sin(moonAngle) * (ringR * 1.08);
+  ctx.fillStyle = '#CCCCDD';
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, 5, 0, TWO_PI);
+  ctx.fill();
+  ctx.font = '10px serif';
+  ctx.fillText('☽', moonX - 4, moonY + 4);
+
+  // Planets
+  for (const [name, p] of Object.entries(PLANETS)) {
+    const angle = (bodies[name] - 90) * DEG;
+    const r = ringR + (ringR2 - ringR) * p.r / 0.5;
+    const px = cx + Math.cos(angle) * r;
+    const py = cy + Math.sin(angle) * r;
+
+    // Glow
+    const pulse = 0.6 + 0.4 * Math.sin(t * 0.003 + bodies[name] * DEG);
+    ctx.fillStyle = p.color + Math.floor(pulse * 100).toString(16).padStart(2, '0');
+    ctx.beginPath();
+    ctx.arc(px, py, 8 * pulse, 0, TWO_PI);
+    ctx.fill();
+
+    // Dot
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(px, py, 3.5, 0, TWO_PI);
+    ctx.fill();
+
+    // Symbol
+    ctx.fillStyle = p.color;
+    ctx.font = '10px serif';
+    ctx.fillText(p.symbol, px + 6, py + 4);
+  }
+}
+
+function drawAspectLines(bodies, aspects, t) {
+  const ringR = globeR * 1.25;
+  for (const asp of aspects) {
+    if (Math.abs(asp.hVal) < 0.3) continue;
+    const a1 = (bodies[asp.p1] - 90) * DEG;
+    const a2 = (bodies[asp.p2] - 90) * DEG;
+
+    let r1 = ringR;
+    if (PLANETS[asp.p1]) r1 = ringR + (globeR * 0.2) * (PLANETS[asp.p1].r / 0.5);
+    let r2 = ringR;
+    if (PLANETS[asp.p2]) r2 = ringR + (globeR * 0.2) * (PLANETS[asp.p2].r / 0.5);
+
+    const x1 = cx + Math.cos(a1) * r1;
+    const y1 = cy + Math.sin(a1) * r1;
+    const x2 = cx + Math.cos(a2) * r2;
+    const y2 = cy + Math.sin(a2) * r2;
+
+    const positive = asp.hVal > 0;
+    const pulse = 0.4 + 0.6 * Math.abs(Math.sin(t * 0.002 + asp.sep * DEG));
+    ctx.strokeStyle = positive
+      ? `rgba(100,255,180,${0.12 * pulse * Math.abs(asp.tightness)})`
+      : `rgba(255,80,80,${0.10 * pulse * Math.abs(asp.tightness)})`;
+    ctx.lineWidth = 0.8;
+    ctx.setLineDash(positive ? [] : [4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ═══════════ HUD UPDATES ═══════════
+const elSchPhase = document.getElementById('sch-phase');
+const elSchMod   = document.getElementById('sch-mod');
+const elHarmCoh  = document.getElementById('harm-coh');
+const elL3Score  = document.getElementById('l3-score');
+const elL3Status = document.getElementById('l3-status');
+const elRotDeg   = document.getElementById('rot-deg');
+const elSolarLon = document.getElementById('solar-lon');
+const elOrbDens  = document.getElementById('orb-density');
+const elCosmic   = document.getElementById('cosmic-field');
+const elNAspects = document.getElementById('n-aspects');
+const elNPos     = document.getElementById('n-pos');
+const elPlanets  = document.getElementById('planet-list');
+
+function updateHUD(rotDeg, l3, density, cf, aspects, bodies) {
+  elSchPhase.textContent = l3.phase.toFixed(4);
+  elSchMod.textContent   = l3.schMod.toFixed(4);
+  elHarmCoh.textContent  = l3.harmCoherence.toFixed(4);
+  elL3Score.textContent  = l3.l3Score.toFixed(4);
+  elL3Status.textContent = l3.status;
+  elL3Status.style.color = l3.status === 'COHERENT' ? '#44ffaa' : (l3.status === 'CRACKING' ? '#ff8844' : '#ff4444');
+  elRotDeg.textContent   = (rotDeg % 360).toFixed(1) + '°';
+  elSolarLon.textContent = bodies['Sun'].toFixed(1) + '°';
+  elOrbDens.textContent  = density.toFixed(4);
+  elCosmic.textContent   = cf.toFixed(4);
+  elNAspects.textContent = aspects.length;
+  elNPos.textContent     = aspects.filter(a => a.hVal > 0).length;
+
+  let html = '';
+  for (const [name, lon] of Object.entries(bodies)) {
+    const symbol = name === 'Sun' ? '☉' : name === 'Moon' ? '☽' :
+      (PLANETS[name] ? PLANETS[name].symbol : '?');
+    const color = name === 'Sun' ? '#FFD700' : name === 'Moon' ? '#CCCCDD' :
+      (PLANETS[name] ? PLANETS[name].color : '#888');
+    html += `<div><span style="color:${color}">${symbol} ${name}</span>: <span class="val">${lon.toFixed(1)}°</span></div>`;
+  }
+  elPlanets.innerHTML = html;
+}
+
+// ═══════════ MAIN ANIMATION LOOP ═══════════
+let startTime = performance.now();
+let rotationOffset = 0;
+
+function animate(ts) {
+  const dt = (ts - startTime) * 0.001 * SPEED;  // seconds of simulated time
+  const rotDeg = (dt * EARTH_ROT_RAD_PER_SEC / DEG) % 360;
+
+  const now = new Date();
+  const { bodies, earthLon } = computePlanets(now);
+  const aspects = detectAspects(bodies);
+  const l3 = computeEPASL3(now, aspects);
+  const density = solarDensity(earthLon);
+  const cf = cosmicField(aspects);
+
+  // Clear
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw layers
+  drawStarfield(ts);
+  drawGlobe(rotDeg, density, l3);
+  drawAlignments(rotDeg, ts, l3);
+  drawSites(rotDeg, ts, l3, density);
+  drawPlanetaryRing(bodies, ts, l3);
+  drawAspectLines(bodies, aspects, ts);
+
+  // Update HUD every ~10 frames
+  if (Math.floor(ts / 160) % 1 === 0) {
+    updateHUD(rotDeg, l3, density, cf, aspects, bodies);
+  }
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
