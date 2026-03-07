@@ -3342,6 +3342,297 @@ def _format_console_geometric_map(result: GeometricMapResult) -> str:
     return '\n'.join(parts)
 
 
+# ── Matplotlib visual renderer ───────────────────────────────────────────
+
+# Civilisation → (colour, marker)
+_CIV_STYLE: Dict[str, tuple] = {
+    'Egyptian':       ('#FFD700', '^'),  # gold up-triangle
+    'Maya':           ('#00CC44', 's'),  # green square
+    'Celtic':         ('#44AAFF', 'D'),  # blue diamond
+    'Mogollon':       ('#CC6600', 'p'),  # brown pentagon
+    'Khmer':          ('#FF4444', '*'),  # red star
+    'Javanese':       ('#FF8844', 'h'),  # orange hexagon
+    'Neolithic':      ('#AAAAAA', 'v'),  # grey down-triangle
+    'Inca':           ('#CC44FF', '^'),  # purple up-triangle
+    'Nazca':          ('#FF66FF', 'P'),  # pink plus
+    'Tiwanaku':       ('#8844FF', 'X'),  # violet X
+    'Micronesian':    ('#00CCCC', 'o'),  # teal circle
+    'Rapa Nui':       ('#FF0000', '*'),  # red star
+    'Chinese':        ('#FF2200', 's'),  # scarlet square
+    'Indus':          ('#BB8800', 'D'),  # amber diamond
+    'Indian':         ('#FF8800', 'o'),  # orange circle
+    'Japanese':       ('#FF4466', 'h'),  # pink hexagon
+    'Persian':        ('#8888FF', 'p'),  # lavender pentagon
+    'Sumerian':       ('#CCAA44', 'v'),  # tan down-triangle
+    'Greek':          ('#4488FF', '^'),  # blue up-triangle
+    'Minoan':         ('#44CCAA', 'D'),  # seafoam diamond
+    'Nabataean':      ('#DD6666', 's'),  # salmon square
+    'Phoenician':     ('#AA44FF', 'o'),  # purple circle
+    'Ethiopian':      ('#44BB44', 'h'),  # green hexagon
+    'Aksumite':       ('#66DD66', 'p'),  # light green pentagon
+    'Burmese':        ('#DDAA00', '^'),  # gold up-triangle
+    'Sinhalese':      ('#00AADD', '*'),  # cyan star
+    'Norse':          ('#6688CC', 'D'),  # steel diamond
+    'Maltese':        ('#CC88FF', 'o'),  # lilac circle
+    'Mississippian':  ('#886644', 'P'),  # brown plus
+    'Shona':          ('#44AA88', 'X'),  # teal X
+    'Aboriginal':     ('#DD4400', 'v'),  # ochre down-triangle
+}
+
+
+def _great_circle_points(
+    lat1: float, lon1: float, lat2: float, lon2: float, n: int = 80,
+) -> tuple:
+    """Return n (lat, lon) points along the great circle from P1 to P2."""
+    p1, l1 = math.radians(lat1), math.radians(lon1)
+    p2, l2 = math.radians(lat2), math.radians(lon2)
+    d = 2 * math.asin(math.sqrt(
+        math.sin((p2 - p1) / 2) ** 2 +
+        math.cos(p1) * math.cos(p2) * math.sin((l2 - l1) / 2) ** 2
+    ))
+    if d < 1e-12:
+        return ([lat1] * n, [lon1] * n)
+    lats, lons = [], []
+    for i in range(n):
+        f = i / (n - 1)
+        a = math.sin((1 - f) * d) / math.sin(d)
+        b = math.sin(f * d) / math.sin(d)
+        x = a * math.cos(p1) * math.cos(l1) + b * math.cos(p2) * math.cos(l2)
+        y = a * math.cos(p1) * math.sin(l1) + b * math.cos(p2) * math.sin(l2)
+        z = a * math.sin(p1) + b * math.sin(p2)
+        lats.append(math.degrees(math.atan2(z, math.sqrt(x * x + y * y))))
+        lons.append(math.degrees(math.atan2(y, x)))
+    return (lats, lons)
+
+
+def render_geometric_visual(
+    result: GeometricMapResult,
+    out_path: str = 'geometric_glyph.png',
+) -> str:
+    """Render a multi-panel matplotlib figure of the sacred geometry grid.
+
+    Panel 1 (main):  World map with sites, alignment arcs, PHI links
+    Panel 2 (right): Latitude-band histogram
+    Panel 3 (bottom-right): Triangle pattern counts
+    Returns the path to the saved PNG.
+    """
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import FancyArrowPatch
+    import numpy as np
+
+    # ── Site lookup ──────────────────────────────────────────────────
+    site_map: Dict[str, tuple] = {}
+    for name, civ, lat, lon, role in _HISTORICAL_RELAY_SITES:
+        site_map[name] = (lat, lon, civ, role)
+
+    # ── Figure layout ────────────────────────────────────────────────
+    fig = plt.figure(figsize=(22, 14), facecolor='#0a0a1a')
+    gs = fig.add_gridspec(
+        2, 3, width_ratios=[4, 4, 2], height_ratios=[3, 1],
+        hspace=0.25, wspace=0.2,
+    )
+    ax_map = fig.add_subplot(gs[0, :2])          # main world map
+    ax_lat = fig.add_subplot(gs[0, 2])            # latitude bands
+    ax_tri = fig.add_subplot(gs[1, 2])            # triangle types
+    ax_info = fig.add_subplot(gs[1, :2])          # info / stats
+
+    for ax in (ax_map, ax_lat, ax_tri, ax_info):
+        ax.set_facecolor('#0a0a1a')
+        for spine in ax.spines.values():
+            spine.set_color('#333355')
+
+    # ── Main map: coastline grid ─────────────────────────────────────
+    ax_map.set_xlim(-180, 180)
+    ax_map.set_ylim(-70, 75)
+    ax_map.set_aspect('auto')
+    for lat_g in range(-60, 80, 30):
+        ax_map.axhline(lat_g, color='#1a1a33', lw=0.4, ls=':')
+    for lon_g in range(-150, 180, 30):
+        ax_map.axvline(lon_g, color='#1a1a33', lw=0.4, ls=':')
+    ax_map.axhline(0, color='#222244', lw=0.6)
+    ax_map.axvline(0, color='#222244', lw=0.6)
+
+    # Sacred latitude bands (shaded)
+    for band in result.latitude_bands:
+        sn = band.sacred_number if band.sacred_number else 0
+        for sign in (1, -1):
+            lat_c = sign * sn
+            if -70 <= lat_c <= 75:
+                ax_map.axhspan(
+                    lat_c - band.width_deg, lat_c + band.width_deg,
+                    alpha=0.08, color='#FFD700', zorder=0,
+                )
+
+    # ── Alignment arcs (top 30 by site count, then arc length) ───────
+    top_align = sorted(
+        result.alignments,
+        key=lambda a: (len(a.sites), a.total_arc_km),
+        reverse=True,
+    )[:30]
+    arc_colours = plt.cm.plasma(np.linspace(0.2, 0.9, len(top_align)))
+    for idx, aln in enumerate(top_align):
+        if len(aln.sites) < 2:
+            continue
+        s0 = aln.sites[0]
+        s1 = aln.sites[-1]
+        if s0 not in site_map or s1 not in site_map:
+            continue
+        lat0, lon0 = site_map[s0][0], site_map[s0][1]
+        lat1, lon1 = site_map[s1][0], site_map[s1][1]
+        gc_lats, gc_lons = _great_circle_points(lat0, lon0, lat1, lon1, 100)
+        # Split at antimeridian
+        segs_lon: list = [[]]
+        segs_lat: list = [[]]
+        for i in range(len(gc_lons)):
+            if i > 0 and abs(gc_lons[i] - gc_lons[i - 1]) > 180:
+                segs_lon.append([])
+                segs_lat.append([])
+            segs_lon[-1].append(gc_lons[i])
+            segs_lat[-1].append(gc_lats[i])
+        lw = 1.8 if len(aln.sites) >= 6 else (1.2 if len(aln.sites) >= 4 else 0.6)
+        alpha = 0.9 if len(aln.sites) >= 6 else (0.6 if len(aln.sites) >= 4 else 0.3)
+        for sl, slo in zip(segs_lat, segs_lon):
+            ax_map.plot(slo, sl, color=arc_colours[idx], lw=lw, alpha=alpha, zorder=1)
+
+    # ── PHI-ratio links (dashed golden) ──────────────────────────────
+    for phi in result.phi_ratios[:15]:
+        for pair in (phi.pair_short, phi.pair_long):
+            if pair[0] in site_map and pair[1] in site_map:
+                la0, lo0 = site_map[pair[0]][0], site_map[pair[0]][1]
+                la1, lo1 = site_map[pair[1]][0], site_map[pair[1]][1]
+                ax_map.plot(
+                    [lo0, lo1], [la0, la1],
+                    color='#FFD700', lw=0.5, ls='--', alpha=0.25, zorder=1,
+                )
+
+    # ── Site scatter ─────────────────────────────────────────────────
+    for name, (lat, lon, civ, role) in site_map.items():
+        clr, mkr = _CIV_STYLE.get(civ, ('#FFFFFF', 'o'))
+        sz = 120 if 'Prime' in role or 'Anchor' in role else 70
+        ax_map.scatter(
+            lon, lat, c=clr, marker=mkr, s=sz, edgecolors='white',
+            linewidths=0.4, zorder=3,
+        )
+        ax_map.annotate(
+            name.split('(')[0].strip()[:14],
+            (lon, lat), textcoords='offset points', xytext=(5, 4),
+            fontsize=4.5, color='#ccccdd', zorder=4,
+        )
+
+    # Centroid marker
+    cx, cy = result.network_centroid
+    ax_map.scatter(
+        cy, cx, c='#00FF88', marker='+', s=200, linewidths=2, zorder=5,
+    )
+    ax_map.annotate(
+        f'CENTROID {cx:.1f}°N {cy:.1f}°E',
+        (cy, cx), textcoords='offset points', xytext=(8, -10),
+        fontsize=6, color='#00FF88', weight='bold', zorder=5,
+    )
+
+    ax_map.set_title(
+        f'PHI-ALIGNED GEODESIC GRID  —  {result.total_sites} Sacred Sites  ·  '
+        f'{len(result.alignments)} Alignments  ·  {len(result.phi_ratios)} φ-Pairs',
+        color='#FFD700', fontsize=13, weight='bold', pad=12,
+    )
+    ax_map.tick_params(colors='#555577', labelsize=7)
+
+    # ── Latitude band chart ──────────────────────────────────────────
+    bands_sorted = sorted(result.latitude_bands, key=lambda b: -len(b.sites))
+    labels = [b.label[:18] for b in bands_sorted]
+    counts = [len(b.sites) for b in bands_sorted]
+    colours = plt.cm.magma(np.linspace(0.3, 0.85, len(bands_sorted)))
+    y_pos = np.arange(len(labels))
+    ax_lat.barh(y_pos, counts, color=colours, edgecolor='#333355', height=0.6)
+    ax_lat.set_yticks(y_pos)
+    ax_lat.set_yticklabels(labels, fontsize=6, color='#bbbbdd')
+    ax_lat.invert_yaxis()
+    ax_lat.set_xlabel('Sites in band', color='#888899', fontsize=7)
+    ax_lat.set_title('Sacred Latitude Bands', color='#FFD700', fontsize=10, weight='bold')
+    ax_lat.tick_params(colors='#555577', labelsize=6)
+
+    # ── Triangle pattern pie ─────────────────────────────────────────
+    tri_counts: Dict[str, int] = {}
+    for t in result.sacred_triangles:
+        tri_counts[t.pattern] = tri_counts.get(t.pattern, 0) + 1
+    if tri_counts:
+        tri_labels = list(tri_counts.keys())
+        tri_vals = list(tri_counts.values())
+        tri_clrs = ['#44AAFF', '#FFD700', '#FF4444', '#44FF88', '#FF88FF'][:len(tri_labels)]
+        wedges, texts, autotexts = ax_tri.pie(
+            tri_vals, labels=tri_labels, colors=tri_clrs,
+            autopct='%1.0f%%', textprops={'color': '#ccccdd', 'fontsize': 7},
+            pctdistance=0.7, startangle=90,
+        )
+        for t in autotexts:
+            t.set_fontsize(6)
+            t.set_color('#ffffff')
+        ax_tri.set_title('Sacred Triangles', color='#FFD700', fontsize=10, weight='bold')
+    else:
+        ax_tri.text(0.5, 0.5, 'No triangles', ha='center', va='center', color='#555577')
+
+    # ── Info panel ───────────────────────────────────────────────────
+    ax_info.axis('off')
+    n_maj = sum(1 for a in result.alignments if len(a.sites) >= 4)
+    mega = max(result.alignments, key=lambda a: len(a.sites)) if result.alignments else None
+    info_lines = [
+        f'DOMINANT PATTERN: {result.dominant_pattern}',
+        f'Total alignments: {len(result.alignments)}  ({n_maj} major with 4+ sites)',
+        f'PHI-ratio pairs: {len(result.phi_ratios)}  '
+        f'(best error: {result.phi_ratios[0].phi_error_pct:.2f}%)' if result.phi_ratios else '',
+        f'Sacred triangles: {len(result.sacred_triangles)}',
+        f'Max span: {result.max_span_km:,.0f} km  '
+        f'({result.max_span_pair[0]} → {result.max_span_pair[1]})',
+        f'Mean nearest neighbour: {result.mean_nearest_km:,.0f} km',
+        f'Centroid: {cx:.2f}°N, {cy:.2f}°E',
+        f'PHI-grid score: {result.phi_grid_score:.4f}',
+    ]
+    if mega:
+        info_lines.append(
+            f'MEGA ALIGNMENT: {" → ".join(mega.sites[:6])}{"…" if len(mega.sites) > 6 else ""}'
+            f'  ({len(mega.sites)} sites, {len(mega.civilisations)} civs, '
+            f'{mega.total_arc_km:,.0f} km)',
+        )
+    info_lines.append('')
+    info_lines.append('"This is not random scatter. This is a deliberate grid."')
+
+    info_text = '\n'.join(info_lines)
+    ax_info.text(
+        0.02, 0.95, info_text,
+        transform=ax_info.transAxes,
+        fontsize=8, color='#ccddff', family='monospace',
+        va='top', ha='left',
+        bbox=dict(boxstyle='round,pad=0.5', facecolor='#111133', edgecolor='#333366'),
+    )
+
+    # ── Legend (civilisations) ───────────────────────────────────────
+    from matplotlib.lines import Line2D
+    civs_present = sorted(set(s[1] for s in _HISTORICAL_RELAY_SITES))
+    handles = []
+    for civ in civs_present:
+        clr, mkr = _CIV_STYLE.get(civ, ('#FFFFFF', 'o'))
+        handles.append(Line2D(
+            [0], [0], marker=mkr, color='none', markerfacecolor=clr,
+            markeredgecolor='white', markersize=6, label=civ,
+        ))
+    ax_map.legend(
+        handles=handles, loc='lower left', fontsize=5,
+        framealpha=0.6, facecolor='#111133', edgecolor='#333366',
+        labelcolor='#ccccdd', ncol=4,
+    )
+
+    fig.suptitle(
+        'AUREON EMERALD SPEC  ·  SACRED GEOMETRY GLYPH',
+        color='#FFD700', fontsize=16, weight='bold', y=0.98,
+    )
+
+    plt.savefig(out_path, dpi=180, bbox_inches='tight', facecolor=fig.get_facecolor())
+    plt.close(fig)
+    return out_path
+
+
 def _interpret_pattern(result: GeometricMapResult) -> list:
     """Build a few narrative lines describing what the geometry reveals."""
     lines: list = []
@@ -4212,6 +4503,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         action='store_true',
         help='Run the geometric pattern mapper on the 45-site relay network.',
     )
+    parser.add_argument(
+        '--visual',
+        action='store_true',
+        help='Render a full matplotlib sacred-geometry glyph PNG (implies --geometry).',
+    )
     args = parser.parse_args(argv)
 
     seer = EmeraldSeer()
@@ -4284,8 +4580,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(_format_console_earth_shield(sim))
         return 0
 
-    if args.geometry:
+    if args.visual or args.geometry:
         gmap = seer.geometric_map()
+        if args.visual:
+            out = render_geometric_visual(gmap)
+            print(f'Sacred geometry glyph saved → {out}')
+            return 0
         if args.json:
             print(json.dumps(gmap.to_dict(), indent=2))
         else:
