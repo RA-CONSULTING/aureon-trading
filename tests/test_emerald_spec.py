@@ -1338,5 +1338,204 @@ class TestNaturalIonosphereProfile(unittest.TestCase):
         self.assertGreaterEqual(profile.readiness_for_epas, 0.0)
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# GEOMETRIC PATTERN MAPPER TESTS
+# ════════════════════════════════════════════════════════════════════════════
+
+
+class TestHaversine(unittest.TestCase):
+    """Verify great-circle distance helper."""
+
+    def test_same_point_zero(self):
+        self.assertAlmostEqual(em._haversine_km(0, 0, 0, 0), 0.0, places=3)
+
+    def test_equator_to_pole(self):
+        # ~10,000 km quarter-circumference
+        d = em._haversine_km(0, 0, 90, 0)
+        self.assertAlmostEqual(d, 10007.5, delta=10)
+
+    def test_known_pair_giza_stonehenge(self):
+        d = em._haversine_km(29.9792, 31.1342, 51.1789, -1.8262)
+        self.assertGreater(d, 3500)
+        self.assertLess(d, 4000)
+
+    def test_symmetry(self):
+        d1 = em._haversine_km(10, 20, 30, 40)
+        d2 = em._haversine_km(30, 40, 10, 20)
+        self.assertAlmostEqual(d1, d2, places=3)
+
+
+class TestInitialBearing(unittest.TestCase):
+    """Verify bearing calculation."""
+
+    def test_due_north(self):
+        brg = em._initial_bearing_deg(0, 0, 10, 0)
+        self.assertAlmostEqual(brg, 0.0, delta=0.5)
+
+    def test_due_east(self):
+        brg = em._initial_bearing_deg(0, 0, 0, 10)
+        self.assertAlmostEqual(brg, 90.0, delta=0.5)
+
+    def test_due_south(self):
+        brg = em._initial_bearing_deg(10, 0, 0, 0)
+        self.assertAlmostEqual(brg, 180.0, delta=0.5)
+
+    def test_bearing_range(self):
+        brg = em._initial_bearing_deg(29.9, 31.1, 51.2, -1.8)
+        self.assertGreaterEqual(brg, 0)
+        self.assertLess(brg, 360)
+
+
+class TestCrossTrack(unittest.TestCase):
+    """Verify cross-track distance."""
+
+    def test_point_on_great_circle_zero(self):
+        # Midpoint of equator from lon 0 to lon 20 should be ~0
+        xt = em._cross_track_km(0, 0, 0, 20, 0, 10)
+        self.assertLess(xt, 1.0)  # within 1 km
+
+    def test_off_equator(self):
+        # 10°N from equatorial great circle should be significant
+        xt = em._cross_track_km(0, 0, 0, 90, 10, 45)
+        self.assertGreater(xt, 500)
+
+
+class TestGeometricMapResult(unittest.TestCase):
+    """Verify the full geometric pattern mapper."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = em.map_geometric_pattern()
+
+    def test_returns_correct_type(self):
+        self.assertIsInstance(self.result, em.GeometricMapResult)
+
+    def test_total_sites_45(self):
+        self.assertEqual(self.result.total_sites, 45)
+
+    def test_total_links_990(self):
+        self.assertEqual(self.result.total_links, 990)
+
+    def test_alignments_found(self):
+        self.assertGreater(len(self.result.alignments), 0)
+        for al in self.result.alignments:
+            self.assertIsInstance(al, em.SacredAlignment)
+            self.assertGreaterEqual(len(al.sites), 3)
+            self.assertGreaterEqual(al.total_arc_km, 0)
+
+    def test_major_alignments_exist(self):
+        major = [a for a in self.result.alignments if len(a.sites) >= 4]
+        self.assertGreater(len(major), 0, 'Expected at least one 4+ site alignment')
+
+    def test_mega_alignment_spans_globe(self):
+        longest = max(self.result.alignments, key=lambda a: a.total_arc_km)
+        self.assertGreater(longest.total_arc_km, 15000)
+
+    def test_phi_ratios_found(self):
+        self.assertGreater(len(self.result.phi_ratios), 0)
+        for p in self.result.phi_ratios:
+            self.assertIsInstance(p, em.PhiRatioLink)
+            self.assertLess(p.phi_error_pct, 3.0)
+            self.assertGreater(p.ratio, 1.5)
+            self.assertLess(p.ratio, 1.7)
+
+    def test_phi_ratio_best_precision(self):
+        best = self.result.phi_ratios[0]
+        self.assertLess(best.phi_error_pct, 0.1, 'Best PHI ratio should be < 0.1% error')
+
+    def test_sacred_triangles_found(self):
+        self.assertGreater(len(self.result.sacred_triangles), 0)
+        patterns = {t.pattern for t in self.result.sacred_triangles}
+        self.assertTrue(len(patterns) >= 1)
+        for t in self.result.sacred_triangles:
+            self.assertIsInstance(t, em.SacredTriangle)
+            self.assertIn(t.pattern, ('golden', 'equilateral', 'right', 'phi-sided', 'isosceles'))
+            self.assertGreaterEqual(t.symmetry_score, 0)
+            self.assertLessEqual(t.symmetry_score, 1.01)
+
+    def test_latitude_bands_found(self):
+        self.assertGreater(len(self.result.latitude_bands), 0)
+        for b in self.result.latitude_bands:
+            self.assertIsInstance(b, em.LatitudeBand)
+            self.assertGreaterEqual(len(b.sites), 2)
+
+    def test_holy_30th_parallel(self):
+        band_labels = [b.label for b in self.result.latitude_bands]
+        self.assertIn('Holy 30th Parallel', band_labels)
+
+    def test_network_centroid_plausible(self):
+        lat, lon = self.result.network_centroid
+        self.assertGreater(lat, -90)
+        self.assertLess(lat, 90)
+        self.assertGreater(lon, -180)
+        self.assertLess(lon, 180)
+
+    def test_max_span_plausible(self):
+        self.assertGreater(self.result.max_span_km, 15000)
+        self.assertLess(self.result.max_span_km, 21000)
+
+    def test_mean_nearest_neighbour(self):
+        self.assertGreater(self.result.mean_nearest_km, 0)
+        self.assertLess(self.result.mean_nearest_km, 5000)
+
+    def test_phi_grid_score_range(self):
+        self.assertGreaterEqual(self.result.phi_grid_score, 0)
+        self.assertLessEqual(self.result.phi_grid_score, 1.0)
+
+    def test_dominant_pattern_nonempty(self):
+        self.assertTrue(self.result.dominant_pattern)
+
+    def test_to_dict_serialisable(self):
+        d = self.result.to_dict()
+        self.assertIsInstance(d, dict)
+        s = json.dumps(d)
+        self.assertIsInstance(s, str)
+        parsed = json.loads(s)
+        self.assertEqual(parsed['total_sites'], 45)
+        self.assertEqual(parsed['total_links'], 990)
+
+    def test_to_dict_contains_all_fields(self):
+        d = self.result.to_dict()
+        for key in ('alignments', 'phi_ratios', 'sacred_triangles',
+                     'latitude_bands', 'network_centroid', 'mean_nearest_km',
+                     'max_span_km', 'max_span_pair', 'phi_grid_score',
+                     'dominant_pattern'):
+            self.assertIn(key, d)
+
+
+class TestGeometricMapASCII(unittest.TestCase):
+    """Verify the ASCII renderer and console formatter."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = em.map_geometric_pattern()
+
+    def test_ascii_map_renders(self):
+        text = em._render_ascii_world_map(self.result)
+        self.assertIn('┌', text)
+        self.assertIn('┘', text)
+        self.assertIn('180W', text)
+
+    def test_console_formatter(self):
+        text = em._format_console_geometric_map(self.result)
+        self.assertIn('GEOMETRIC PATTERN MAPPER', text)
+        self.assertIn('DOMINANT PATTERN', text)
+        self.assertIn('GREAT CIRCLE ALIGNMENTS', text)
+        self.assertIn('PHI-RATIO', text)
+        self.assertIn('SACRED TRIANGLES', text)
+        self.assertIn('LATITUDE BANDS', text)
+        self.assertIn('NETWORK GEOMETRY', text)
+
+
+class TestSeerGeometricMap(unittest.TestCase):
+    """Verify EmeraldSeer.geometric_map() integration."""
+
+    def test_seer_geometric_map(self):
+        seer = em.EmeraldSeer()
+        result = seer.geometric_map()
+        self.assertIsInstance(result, em.GeometricMapResult)
+        self.assertEqual(result.total_sites, 45)
+
+
 if __name__ == '__main__':
     unittest.main()

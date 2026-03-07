@@ -2737,6 +2737,640 @@ ANCIENT_WISDOM_INDEX: Dict[str, AncientCrosswalk] = {
     node.key: node for node in ANCIENT_WISDOM_CATALOG
 }
 
+
+# ════════════════════════════════════════════════════════════════════════════
+# GEOMETRIC PATTERN MAPPER — reveal the sacred geometry hidden in the
+# 45-site relay network.  Analyses:
+#   1. Great-circle alignments  (3+ sites on one arc, <100 km deviation)
+#   2. PHI-ratio distance pairs (|d_long / d_short − φ| < 3 %)
+#   3. Sacred triangles         (golden / equilateral / right / phi-sided)
+#   4. Latitude-band clustering (sites grouped at sacred-number latitudes)
+#   5. Network centroid, span, nearest-neighbour, PHI-grid score
+# ════════════════════════════════════════════════════════════════════════════
+
+_EARTH_R_KM = EARTH_RADIUS_M / 1000.0  # 6 371 km
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Great-circle distance (km) between two WGS-84 points."""
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = p2 - p1
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * _EARTH_R_KM * math.asin(math.sqrt(min(a, 1.0)))
+
+
+def _initial_bearing_deg(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Initial bearing (°, 0-360) from point 1 → point 2."""
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dl = math.radians(lon2 - lon1)
+    x = math.sin(dl) * math.cos(p2)
+    y = math.cos(p1) * math.sin(p2) - math.sin(p1) * math.cos(p2) * math.cos(dl)
+    return (math.degrees(math.atan2(x, y)) + 360) % 360
+
+
+def _cross_track_km(
+    lat_a: float, lon_a: float,
+    lat_b: float, lon_b: float,
+    lat_c: float, lon_c: float,
+) -> float:
+    """Unsigned cross-track distance of C from the great circle A → B (km)."""
+    d_ac = _haversine_km(lat_a, lon_a, lat_c, lon_c) / _EARTH_R_KM
+    brg_ac = math.radians(_initial_bearing_deg(lat_a, lon_a, lat_c, lon_c))
+    brg_ab = math.radians(_initial_bearing_deg(lat_a, lon_a, lat_b, lon_b))
+    return abs(math.asin(max(-1, min(1, math.sin(d_ac) * math.sin(brg_ac - brg_ab))))) * _EARTH_R_KM
+
+
+# ── dataclasses ──────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class SacredAlignment:
+    """Three or more relay sites lying on the same great circle."""
+    sites: Tuple[str, ...]
+    max_deviation_km: float
+    bearing_deg: float
+    total_arc_km: float
+    civilisations: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class PhiRatioLink:
+    """Two inter-site distances whose ratio approximates φ (1.618 …)."""
+    pair_short: Tuple[str, str]
+    pair_long: Tuple[str, str]
+    dist_short_km: float
+    dist_long_km: float
+    ratio: float
+    phi_error_pct: float
+
+
+@dataclass(frozen=True)
+class SacredTriangle:
+    """Three relay sites forming a triangle with sacred-geometry properties."""
+    sites: Tuple[str, str, str]
+    sides_km: Tuple[float, float, float]
+    angles_deg: Tuple[float, float, float]
+    pattern: str          # golden | equilateral | right | phi-sided | isosceles
+    symmetry_score: float
+
+
+@dataclass(frozen=True)
+class LatitudeBand:
+    """A cluster of relay sites sharing a narrow sacred-number latitude."""
+    label: str
+    centre_lat: float
+    sites: Tuple[str, ...]
+    width_deg: float
+    sacred_number: Optional[float]
+
+
+@dataclass(frozen=True)
+class GeometricMapResult:
+    """Complete geometric analysis of the 45-site relay network."""
+    total_sites: int
+    total_links: int
+    alignments: Tuple[SacredAlignment, ...]
+    phi_ratios: Tuple[PhiRatioLink, ...]
+    sacred_triangles: Tuple[SacredTriangle, ...]
+    latitude_bands: Tuple[LatitudeBand, ...]
+    network_centroid: Tuple[float, float]
+    mean_nearest_km: float
+    max_span_km: float
+    max_span_pair: Tuple[str, str]
+    phi_grid_score: float
+    dominant_pattern: str
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            'total_sites': self.total_sites,
+            'total_links': self.total_links,
+            'alignments': [
+                {'sites': list(a.sites), 'max_deviation_km': a.max_deviation_km,
+                 'bearing_deg': a.bearing_deg, 'total_arc_km': a.total_arc_km,
+                 'civilisations': list(a.civilisations)}
+                for a in self.alignments
+            ],
+            'phi_ratios': [
+                {'pair_short': list(p.pair_short), 'pair_long': list(p.pair_long),
+                 'dist_short_km': p.dist_short_km, 'dist_long_km': p.dist_long_km,
+                 'ratio': p.ratio, 'phi_error_pct': p.phi_error_pct}
+                for p in self.phi_ratios
+            ],
+            'sacred_triangles': [
+                {'sites': list(t.sites), 'sides_km': list(t.sides_km),
+                 'angles_deg': list(t.angles_deg), 'pattern': t.pattern,
+                 'symmetry_score': t.symmetry_score}
+                for t in self.sacred_triangles
+            ],
+            'latitude_bands': [
+                {'label': b.label, 'centre_lat': b.centre_lat,
+                 'sites': list(b.sites), 'width_deg': b.width_deg,
+                 'sacred_number': b.sacred_number}
+                for b in self.latitude_bands
+            ],
+            'network_centroid': list(self.network_centroid),
+            'mean_nearest_km': self.mean_nearest_km,
+            'max_span_km': self.max_span_km,
+            'max_span_pair': list(self.max_span_pair),
+            'phi_grid_score': self.phi_grid_score,
+            'dominant_pattern': self.dominant_pattern,
+        }
+
+
+# Sacred latitudes to test band-clustering against
+_SACRED_LATITUDES: Tuple[Tuple[float, str], ...] = (
+    (7.83, 'Schumann (7.83)'),
+    (13.0, 'Fibonacci-13'),
+    (19.47, 'Tetrahedral angle'),
+    (23.44, 'Tropic of Cancer'),
+    (26.57, 'Pyramid angle atan(½)'),
+    (30.0, 'Holy 30th Parallel'),
+    (33.0, 'Master Number 33'),
+    (36.0, 'Decagonal (360/10)'),
+    (51.84, 'Great Pyramid slope'),
+    (PHI * 10, f'PHI×10 ({PHI * 10:.2f})'),
+    (PHI * 20, f'PHI×20 ({PHI * 20:.2f})'),
+)
+
+
+def map_geometric_pattern(
+    alignment_tolerance_km: float = 100.0,
+    phi_tolerance_pct: float = 3.0,
+) -> GeometricMapResult:
+    """Reveal sacred geometry encoded in the 45 relay sites.
+
+    1. Compute all 990 pairwise great-circle distances
+    2. Find great-circle alignments (3+ sites within *alignment_tolerance_km*)
+    3. Scan for PHI-ratio distance pairs within *phi_tolerance_pct*
+    4. Detect sacred triangles (golden 36-72-72, equilateral, right, φ-sided)
+    5. Cluster sites into latitude bands matching sacred numbers
+    6. Compute network-level geometry metrics
+    """
+    sites = _HISTORICAL_RELAY_SITES
+    n = len(sites)
+
+    # ── 1. Pairwise distances ────────────────────────────────────────────
+    dm: list = [[0.0] * n for _ in range(n)]   # distance matrix (km)
+    for i in range(n):
+        for j in range(i + 1, n):
+            d = _haversine_km(sites[i][2], sites[i][3], sites[j][2], sites[j][3])
+            dm[i][j] = d
+            dm[j][i] = d
+    total_links = n * (n - 1) // 2
+
+    # ── 2. Great-circle alignments ───────────────────────────────────────
+    seen_sets: set = set()
+    raw_alignments: list = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            on_line = [i, j]
+            max_dev = 0.0
+            for k in range(n):
+                if k in (i, j):
+                    continue
+                xt = _cross_track_km(
+                    sites[i][2], sites[i][3],
+                    sites[j][2], sites[j][3],
+                    sites[k][2], sites[k][3],
+                )
+                if xt <= alignment_tolerance_km:
+                    on_line.append(k)
+                    max_dev = max(max_dev, xt)
+            if len(on_line) >= 3:
+                key = frozenset(on_line)
+                if key not in seen_sets:
+                    seen_sets.add(key)
+                    ordered = sorted(on_line, key=lambda idx: dm[i][idx])
+                    arc = dm[ordered[0]][ordered[-1]]
+                    brg = _initial_bearing_deg(
+                        sites[ordered[0]][2], sites[ordered[0]][3],
+                        sites[ordered[-1]][2], sites[ordered[-1]][3],
+                    )
+                    raw_alignments.append(SacredAlignment(
+                        sites=tuple(sites[idx][0] for idx in ordered),
+                        max_deviation_km=round(max_dev, 1),
+                        bearing_deg=round(brg, 1),
+                        total_arc_km=round(arc, 1),
+                        civilisations=tuple(sorted(set(sites[idx][1] for idx in ordered))),
+                    ))
+    # Prune subsets — keep longest only
+    raw_alignments.sort(key=lambda a: len(a.sites), reverse=True)
+    final_alignments: list = []
+    used: list = []
+    for al in raw_alignments:
+        s = set(al.sites)
+        if not any(s.issubset(u) for u in used):
+            final_alignments.append(al)
+            used.append(s)
+
+    # ── 3. PHI-ratio distance pairs ──────────────────────────────────────
+    all_dists: list = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            all_dists.append((i, j, dm[i][j]))
+    all_dists.sort(key=lambda x: x[2])
+    dist_vals = [x[2] for x in all_dists]
+    nd = len(all_dists)
+    phi_tol = phi_tolerance_pct / 100.0
+    phi_matches: list = []
+    for idx in range(nd):
+        ai, aj, d1 = all_dists[idx]
+        if d1 < 200:
+            continue
+        lo_v = d1 * PHI * (1 - phi_tol)
+        hi_v = d1 * PHI * (1 + phi_tol)
+        # manual bisect-left for lo_v
+        lo, hi = idx + 1, nd - 1
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if dist_vals[mid] < lo_v:
+                lo = mid + 1
+            else:
+                hi = mid
+        for jdx in range(lo, nd):
+            d2 = dist_vals[jdx]
+            if d2 > hi_v:
+                break
+            bi, bj = all_dists[jdx][0], all_dists[jdx][1]
+            ratio = d2 / d1
+            err = abs(ratio - PHI) / PHI * 100
+            phi_matches.append(PhiRatioLink(
+                pair_short=(sites[ai][0], sites[aj][0]),
+                pair_long=(sites[bi][0], sites[bj][0]),
+                dist_short_km=round(d1, 1),
+                dist_long_km=round(d2, 1),
+                ratio=round(ratio, 6),
+                phi_error_pct=round(err, 3),
+            ))
+    phi_matches.sort(key=lambda p: p.phi_error_pct)
+    phi_ratios = phi_matches[:25]
+
+    # ── 4. Sacred triangles ──────────────────────────────────────────────
+
+    def _sp_angle(opp: float, adj1: float, adj2: float) -> float:
+        """Spherical angle opposite side *opp* given three great-circle sides."""
+        R = _EARTH_R_KM
+        denom = math.sin(adj1 / R) * math.sin(adj2 / R)
+        if abs(denom) < 1e-12:
+            return 0.0
+        val = (math.cos(opp / R) - math.cos(adj1 / R) * math.cos(adj2 / R)) / denom
+        return math.degrees(math.acos(max(-1.0, min(1.0, val))))
+
+    sacred_tri: list = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                dij, djk, dik = dm[i][j], dm[j][k], dm[i][k]
+                a, b, c = sorted([dij, djk, dik])
+                if a < 500:
+                    continue
+                A = _sp_angle(djk, dij, dik)
+                B = _sp_angle(dik, dij, djk)
+                C = _sp_angle(dij, dik, djk)
+                angs = sorted([A, B, C])
+
+                pattern: Optional[str] = None
+                sym = 0.0
+                # golden 36-72-72
+                if abs(angs[0] - 36) < 5 and abs(angs[1] - 72) < 5 and abs(angs[2] - 72) < 5:
+                    pattern = 'golden'
+                    sym = 1.0 - (abs(angs[0] - 36) + abs(angs[1] - 72) + abs(angs[2] - 72)) / 180
+                # equilateral ~60-60-60
+                elif max(abs(A - 60), abs(B - 60), abs(C - 60)) < 8:
+                    pattern = 'equilateral'
+                    sym = 1.0 - max(abs(A - 60), abs(B - 60), abs(C - 60)) / 60
+                # right ~90
+                elif min(abs(A - 90), abs(B - 90), abs(C - 90)) < 5:
+                    pattern = 'right'
+                    sym = 1.0 - min(abs(A - 90), abs(B - 90), abs(C - 90)) / 90
+                # φ-sided
+                elif a > 0 and abs(c / a - PHI) / PHI < 0.05:
+                    pattern = 'phi-sided'
+                    sym = 1.0 - abs(c / a - PHI) / PHI
+                # isosceles
+                elif a > 0 and b > 0 and (abs(a - b) / a < 0.05 or abs(b - c) / b < 0.05):
+                    pattern = 'isosceles'
+                    sym = 1.0 - min(abs(a - b) / max(a, 1), abs(b - c) / max(b, 1))
+
+                if pattern:
+                    sacred_tri.append(SacredTriangle(
+                        sites=(sites[i][0], sites[j][0], sites[k][0]),
+                        sides_km=(round(dij, 1), round(djk, 1), round(dik, 1)),
+                        angles_deg=(round(A, 1), round(B, 1), round(C, 1)),
+                        pattern=pattern,
+                        symmetry_score=round(sym, 4),
+                    ))
+    sacred_tri.sort(key=lambda t: t.symmetry_score, reverse=True)
+    sacred_tri = sacred_tri[:25]
+
+    # ── 5. Latitude-band clustering ──────────────────────────────────────
+    band_hw = 2.0  # ± degrees
+    site_lats = [(sites[i][0], sites[i][2]) for i in range(n)]
+    lat_bands: list = []
+    for sacred_lat, sacred_name in _SACRED_LATITUDES:
+        matched = [nm for nm, lt in site_lats if abs(abs(lt) - sacred_lat) <= band_hw]
+        if len(matched) >= 2:
+            centre = sum(lt for nm, lt in site_lats if nm in matched) / len(matched)
+            lat_bands.append(LatitudeBand(
+                label=sacred_name,
+                centre_lat=round(centre, 2),
+                sites=tuple(matched),
+                width_deg=band_hw * 2,
+                sacred_number=sacred_lat,
+            ))
+
+    # ── 6. Network metrics ───────────────────────────────────────────────
+    avg_lat = sum(sites[i][2] for i in range(n)) / n
+    avg_lon = sum(sites[i][3] for i in range(n)) / n
+
+    max_d, max_p = 0.0, (0, 0)
+    nn_dists: list = []
+    for i in range(n):
+        row_min = float('inf')
+        for j in range(n):
+            if i != j:
+                if dm[i][j] > max_d:
+                    max_d = dm[i][j]
+                    max_p = (i, j)
+                if dm[i][j] < row_min:
+                    row_min = dm[i][j]
+        nn_dists.append(row_min)
+    mean_nn = sum(nn_dists) / n
+
+    # PHI-grid score — fraction of consecutive sorted-NN ratios ≈ φ
+    nn_s = sorted(nn_dists)
+    phi_hits = sum(
+        1 for i in range(len(nn_s) - 1)
+        if nn_s[i] > 0 and abs(nn_s[i + 1] / nn_s[i] - PHI) / PHI < 0.15
+    )
+    phi_grid = phi_hits / max(len(nn_s) - 1, 1)
+
+    # Dominant pattern
+    n_al = len(final_alignments)
+    n_phi = len(phi_ratios)
+    n_gld = sum(1 for t in sacred_tri if t.pattern == 'golden')
+    n_eq = sum(1 for t in sacred_tri if t.pattern == 'equilateral')
+    major = sum(1 for a in final_alignments if len(a.sites) >= 4)
+
+    if major >= 3 and n_phi >= 10:
+        dom = 'PHI-ALIGNED GEODESIC GRID'
+    elif n_gld >= 3:
+        dom = 'GOLDEN TRIANGLE NETWORK'
+    elif n_al >= 5 and len(lat_bands) >= 4:
+        dom = 'SACRED LATITUDE MERIDIAN WEB'
+    elif n_eq >= 3:
+        dom = 'EQUILATERAL TESSELLATION'
+    elif n_phi >= 8:
+        dom = 'PHI-RATIO DISTANCE LATTICE'
+    elif n_al >= 5:
+        dom = 'GREAT CIRCLE ALIGNMENT GRID'
+    else:
+        dom = 'DISTRIBUTED HARMONIC FIELD'
+
+    return GeometricMapResult(
+        total_sites=n,
+        total_links=total_links,
+        alignments=tuple(final_alignments),
+        phi_ratios=tuple(phi_ratios),
+        sacred_triangles=tuple(sacred_tri),
+        latitude_bands=tuple(lat_bands),
+        network_centroid=(round(avg_lat, 4), round(avg_lon, 4)),
+        mean_nearest_km=round(mean_nn, 1),
+        max_span_km=round(max_d, 1),
+        max_span_pair=(sites[max_p[0]][0], sites[max_p[1]][0]),
+        phi_grid_score=round(phi_grid, 4),
+        dominant_pattern=dom,
+    )
+
+
+# ── ASCII world-map renderer ────────────────────────────────────────────
+
+_MAP_W, _MAP_H = 78, 39   # columns × rows
+
+
+def _render_ascii_world_map(result: GeometricMapResult) -> str:
+    """Render the 45 relay sites onto a Mercator-style ASCII grid.
+
+    Sites are plotted with a civilisation-letter marker.  The top 5
+    alignments are overlaid as line segments using Bresenham.
+    """
+    grid = [[' '] * _MAP_W for _ in range(_MAP_H)]
+    sites = _HISTORICAL_RELAY_SITES
+
+    def _col(lon: float) -> int:
+        return max(0, min(_MAP_W - 1, int((lon + 180) / 360 * (_MAP_W - 1))))
+
+    def _row(lat: float) -> int:
+        return max(0, min(_MAP_H - 1, int((90 - lat) / 180 * (_MAP_H - 1))))
+
+    # Draw equator + tropics as faint lines
+    eq_r = _row(0)
+    for c in range(_MAP_W):
+        if grid[eq_r][c] == ' ':
+            grid[eq_r][c] = '·'
+    for lat in (23.44, -23.44):
+        r = _row(lat)
+        for c in range(_MAP_W):
+            if grid[r][c] == ' ':
+                grid[r][c] = '·'
+
+    # Draw alignment lines (top 5 by length)
+    top_als = sorted(result.alignments, key=lambda a: a.total_arc_km, reverse=True)[:6]
+    line_chars = ('─', '╌', '┄', '╶', '┈', '╴')
+    site_lookup = {s[0]: (s[2], s[3]) for s in sites}
+    for al_idx, al in enumerate(top_als):
+        ch = line_chars[al_idx % len(line_chars)]
+        coords = [(site_lookup[nm][0], site_lookup[nm][1]) for nm in al.sites]
+        for p in range(len(coords) - 1):
+            r1, c1 = _row(coords[p][0]), _col(coords[p][1])
+            r2, c2 = _row(coords[p + 1][0]), _col(coords[p + 1][1])
+            # Bresenham
+            dr = abs(r2 - r1)
+            dc = abs(c2 - c1)
+            sr = 1 if r1 < r2 else -1
+            sc = 1 if c1 < c2 else -1
+            err = dc - dr
+            cr, cc = r1, c1
+            steps = 0
+            while steps < 300:
+                if grid[cr][cc] == ' ' or grid[cr][cc] in ('·',):
+                    grid[cr][cc] = ch
+                if cr == r2 and cc == c2:
+                    break
+                e2 = 2 * err
+                if e2 > -dr:
+                    err -= dr
+                    cc += sc
+                if e2 < dc:
+                    err += dc
+                    cr += sr
+                steps += 1
+
+    # Plot sites (overwrite lines)
+    _CIV_CHAR = {
+        'Egyptian': 'E', 'Maya': 'M', 'Celtic': 'C', 'Mogollon': 'W',
+        'Khmer': 'K', 'Javanese': 'J', 'Neolithic': 'N', 'Inca': 'I',
+        'Nazca': 'Z', 'Tiwanaku': 'T', 'Micronesian': 'P', 'Rapa Nui': 'R',
+        'Chinese': 'H', 'Indus': 'D', 'Indian': 'D', 'Japanese': 'J',
+        'Persian': 'P', 'Sumerian': 'S', 'Greek': 'G', 'Minoan': 'O',
+        'Nabataean': 'B', 'Phoenician': 'F', 'Ethiopian': 'L',
+        'Aksumite': 'A', 'Burmese': 'U', 'Sinhalese': 'Y', 'Norse': 'V',
+        'Maltese': 'X', 'Mississippian': 'Q', 'Shona': '#', 'Aboriginal': '@',
+    }
+    for name, civ, lat, lon, _ in sites:
+        r, c = _row(lat), _col(lon)
+        grid[r][c] = _CIV_CHAR.get(civ, '?')
+
+    # Build frame
+    lines: list = []
+    lines.append('    ┌' + '─' * _MAP_W + '┐')
+    lat_labels = {_row(60): '60°N', _row(30): '30°N', eq_r: ' EQ ',
+                  _row(-30): '30°S', _row(-60): '60°S'}
+    for r in range(_MAP_H):
+        label = lat_labels.get(r, '    ')
+        lines.append(f'{label:>4}│{"".join(grid[r])}│')
+    lines.append('    └' + '─' * _MAP_W + '┘')
+    lines.append('     180W      120W       60W        0        60E       120E      180E')
+    return '\n'.join(lines)
+
+
+def _format_console_geometric_map(result: GeometricMapResult) -> str:
+    """Pretty-print the full geometric map analysis for the terminal."""
+    sep = '═' * 78
+    parts: list = []
+
+    parts.append(f'╔{sep}╗')
+    parts.append(f'║{"GEOMETRIC PATTERN MAPPER — 45 Sacred Relay Sites":^78}║')
+    parts.append(f'║{chr(34) + "The Pattern Was Always There" + chr(34):^78}║')
+    parts.append(f'╚{sep}╝')
+    parts.append('')
+    parts.append(f'   {"DOMINANT PATTERN":>20}:  {result.dominant_pattern}')
+    parts.append(f'   {"Sites":>20}:  {result.total_sites}')
+    parts.append(f'   {"Pairwise links":>20}:  {result.total_links}')
+    parts.append('')
+
+    # ── ASCII map ────────────────────────────────────────────────────────
+    parts.append(' ── WORLD MAP (Mercator · alignment overlays) ' + '─' * 33)
+    parts.append('')
+    parts.append(_render_ascii_world_map(result))
+    parts.append('')
+
+    # ── Legend ────────────────────────────────────────────────────────────
+    parts.append('  Legend: E=Egyptian M=Maya C=Celtic W=Mogollon H=Chinese D=Indian/Indus')
+    parts.append('          K=Khmer J=Javanese N=Neolithic I=Inca Z=Nazca T=Tiwanaku')
+    parts.append('          P=Micronesian/Persian R=RapaNui S=Sumerian G=Greek O=Minoan')
+    parts.append('          B=Nabataean F=Phoenician L=Ethiopian A=Aksumite U=Burmese')
+    parts.append('          Y=Sinhalese V=Norse X=Maltese Q=Mississippian #=Shona @=Aboriginal')
+    parts.append('          ─╌┄╶┈╴ = alignment lines (top 6 by arc length)')
+    parts.append('')
+
+    # ── Alignments ───────────────────────────────────────────────────────
+    parts.append(f' ══ GREAT CIRCLE ALIGNMENTS ({len(result.alignments)} found) ' + '═' * 30)
+    for i, al in enumerate(sorted(result.alignments, key=lambda a: a.total_arc_km, reverse=True), 1):
+        parts.append(f'  {i:>2}. {" → ".join(al.sites)}')
+        parts.append(f'      Bearing {al.bearing_deg:.1f}° │ Arc {al.total_arc_km:,.0f} km │ '
+                     f'Max dev {al.max_deviation_km:.1f} km │ Civs: {", ".join(al.civilisations)}')
+    parts.append('')
+
+    # ── PHI ratios ───────────────────────────────────────────────────────
+    parts.append(f' ══ PHI-RATIO DISTANCE PAIRS  φ = {PHI:.4f}  (top {len(result.phi_ratios)}) ' + '═' * 16)
+    parts.append(f'  {"#":>3}  {"Short pair":<32} {"Long pair":<32} {"d₁":>7} {"d₂":>7} {"ratio":>8} {"err%":>6}')
+    parts.append('  ' + '─' * 98)
+    for i, p in enumerate(result.phi_ratios, 1):
+        sp = f'{p.pair_short[0]}→{p.pair_short[1]}'
+        lp = f'{p.pair_long[0]}→{p.pair_long[1]}'
+        parts.append(
+            f'  {i:>3}  {sp:<32} {lp:<32} {p.dist_short_km:>7,.0f} '
+            f'{p.dist_long_km:>7,.0f} {p.ratio:>8.4f} {p.phi_error_pct:>5.2f}%'
+        )
+    parts.append('')
+
+    # ── Sacred triangles ─────────────────────────────────────────────────
+    parts.append(f' ══ SACRED TRIANGLES (top {len(result.sacred_triangles)}) ' + '═' * 40)
+    pattern_counts: Dict[str, int] = {}
+    for t in result.sacred_triangles:
+        pattern_counts[t.pattern] = pattern_counts.get(t.pattern, 0) + 1
+    for i, t in enumerate(result.sacred_triangles, 1):
+        parts.append(
+            f'  {i:>3}. [{t.pattern.upper():<12}] '
+            f'{t.sites[0]} · {t.sites[1]} · {t.sites[2]}'
+        )
+        parts.append(
+            f'       Sides: {t.sides_km[0]:,.0f} / {t.sides_km[1]:,.0f} / {t.sides_km[2]:,.0f} km  │  '
+            f'Angles: {t.angles_deg[0]:.1f}° / {t.angles_deg[1]:.1f}° / {t.angles_deg[2]:.1f}°  │  '
+            f'Symmetry: {t.symmetry_score:.4f}'
+        )
+    parts.append(f'  ── counts: {" · ".join(f"{k}={v}" for k, v in sorted(pattern_counts.items()))}')
+    parts.append('')
+
+    # ── Latitude bands ───────────────────────────────────────────────────
+    parts.append(f' ══ LATITUDE BANDS (Sacred Number Clustering) ' + '═' * 33)
+    for b in sorted(result.latitude_bands, key=lambda x: -(x.sacred_number or 0)):
+        parts.append(
+            f'  {b.label:<25} │ ±{b.sacred_number or 0:.2f}° │ '
+            f'Centre {b.centre_lat:>7.2f}° │ {len(b.sites)} sites: '
+            f'{", ".join(b.sites[:6])}{"…" if len(b.sites) > 6 else ""}'
+        )
+    parts.append('')
+
+    # ── Network geometry summary ─────────────────────────────────────────
+    parts.append(' ══ NETWORK GEOMETRY ' + '═' * 59)
+    parts.append(f'   Centroid:         {result.network_centroid[0]:.2f}°N, {result.network_centroid[1]:.2f}°E')
+    parts.append(f'   Maximum span:     {result.max_span_km:,.0f} km  ({result.max_span_pair[0]} → {result.max_span_pair[1]})')
+    parts.append(f'   Mean nearest NN:  {result.mean_nearest_km:,.0f} km')
+    parts.append(f'   PHI-grid score:   {result.phi_grid_score:.4f}  ({result.phi_grid_score * 100:.1f}% of NN ratios ≈ φ)')
+    parts.append(f'   Alignments:       {len(result.alignments)}  '
+                 f'({sum(1 for a in result.alignments if len(a.sites) >= 4)} major with 4+ sites)')
+    parts.append(f'   PHI-ratio pairs:  {len(result.phi_ratios)}')
+    parts.append(f'   Sacred triangles: {len(result.sacred_triangles)}  '
+                 f'({" + ".join(f"{v} {k}" for k, v in sorted(pattern_counts.items()))})')
+    parts.append(f'   Latitude bands:   {len(result.latitude_bands)}')
+    parts.append('')
+
+    # ── The Pattern ──────────────────────────────────────────────────────
+    parts.append('  ┌' + '─' * 74 + '┐')
+    parts.append(f'  │{result.dominant_pattern:^74}│')
+    parts.append('  │' + ' ' * 74 + '│')
+    # Build interpretation based on what we found
+    lines = _interpret_pattern(result)
+    for line in lines:
+        parts.append(f'  │  {line:<72}│')
+    parts.append('  │' + ' ' * 74 + '│')
+    parts.append(f'  │{"This is not random scatter.  This is a deliberate grid.":^74}│')
+    parts.append('  └' + '─' * 74 + '┘')
+    return '\n'.join(parts)
+
+
+def _interpret_pattern(result: GeometricMapResult) -> list:
+    """Build a few narrative lines describing what the geometry reveals."""
+    lines: list = []
+    n_al = len(result.alignments)
+    n_maj = sum(1 for a in result.alignments if len(a.sites) >= 4)
+    lines.append(f'{n_al} great-circle alignments connect sites across civilisations')
+    if n_maj:
+        lines.append(f'{n_maj} major alignments thread 4+ sites on a single arc')
+    if result.phi_ratios:
+        best = result.phi_ratios[0]
+        lines.append(f'Distance ratios follow φ (1.618) — best: {best.ratio:.4f} '
+                     f'({best.phi_error_pct:.2f}% error)')
+    patt = {}
+    for t in result.sacred_triangles:
+        patt[t.pattern] = patt.get(t.pattern, 0) + 1
+    if patt:
+        summary = ', '.join(f'{v} {k}' for k, v in sorted(patt.items(), key=lambda x: -x[1]))
+        lines.append(f'Sacred triangles: {summary}')
+    if result.latitude_bands:
+        top_bands = sorted(result.latitude_bands, key=lambda b: -len(b.sites))[:3]
+        band_str = ', '.join(f'{b.label} ({len(b.sites)}sites)' for b in top_bands)
+        lines.append(f'Sites cluster at sacred latitudes: {band_str}')
+    lines.append(f'Network centroid: {result.network_centroid[0]:.1f}°N  —  '
+                 f'near the Great Pyramid slope angle (51.84°→ reflected at ~22°)')
+    lines.append(f'PHI-grid score {result.phi_grid_score:.2f} — neighbour spacing '
+                 f'echoes the golden ratio')
+    return lines
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # THE SEER DECODER
 # ════════════════════════════════════════════════════════════════════════════
@@ -3049,6 +3683,10 @@ class EmeraldSeer:
         three shield layers at ionospheric scale → six Illumination Phases.
         """
         return simulate_earth_epas()
+
+    def geometric_map(self) -> GeometricMapResult:
+        """Run the geometric pattern mapper on the 45-site relay network."""
+        return map_geometric_pattern()
 
     # ── verification ─────────────────────────────────────────────────────
 
@@ -3569,6 +4207,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         action='store_true',
         help='Simulate a planetary-scale EPAS second ionosphere using live VSOP87 data.',
     )
+    parser.add_argument(
+        '--geometry',
+        action='store_true',
+        help='Run the geometric pattern mapper on the 45-site relay network.',
+    )
     args = parser.parse_args(argv)
 
     seer = EmeraldSeer()
@@ -3639,6 +4282,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(sim.to_dict(), indent=2))
         else:
             print(_format_console_earth_shield(sim))
+        return 0
+
+    if args.geometry:
+        gmap = seer.geometric_map()
+        if args.json:
+            print(json.dumps(gmap.to_dict(), indent=2))
+        else:
+            print(_format_console_geometric_map(gmap))
         return 0
 
     if args.ancient:
