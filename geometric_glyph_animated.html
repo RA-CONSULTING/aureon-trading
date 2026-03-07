@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AUREON · Sacred Geometry Glyph — Animated EPAS Harmonic Phase</title>
+<title>AUREON · Sacred Geometry Glyph — Ionosphere Emotion Field</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #050510; overflow: hidden; font-family: 'Courier New', monospace; color: #ccddff; }
@@ -48,13 +48,21 @@ canvas { display: block; }
 #ticker-strip .up   { color: #44ff88; }
 #ticker-strip .down { color: #ff4466; }
 #ticker-strip .sym  { color: #FFD700; font-weight: bold; }
-#market-summary {
+#iono-hud {
   position: fixed; bottom: 82px; left: 12px;
-  background: rgba(8,8,30,0.85); border: 1px solid #333366; border-radius: 8px;
-  padding: 8px 14px; font-size: 10px; line-height: 1.7; z-index: 10;
-  min-width: 210px;
+  background: rgba(8,8,30,0.88); border: 1px solid #335566; border-radius: 8px;
+  padding: 10px 14px; font-size: 10px; line-height: 1.7; z-index: 10;
+  min-width: 240px;
 }
-#market-summary h2 { color: #FFD700; font-size: 12px; margin-bottom: 4px; }
+#iono-hud h2 { color: #44DDFF; font-size: 12px; margin-bottom: 4px; }
+#iono-hud .layer-bar { display: inline-block; height: 8px; border-radius: 3px; margin-right: 2px; vertical-align: middle; }
+#emotion-hud {
+  position: fixed; bottom: 82px; right: 12px;
+  background: rgba(8,8,30,0.88); border: 1px solid #553366; border-radius: 8px;
+  padding: 10px 14px; font-size: 10px; line-height: 1.7; z-index: 10;
+  min-width: 220px;
+}
+#emotion-hud h2 { color: #CC66FF; font-size: 12px; margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -85,19 +93,36 @@ canvas { display: block; }
   <div id="planet-list"></div>
 </div>
 
-<div id="ticker-strip"><div class="inner" id="ticker-inner">&#x1F4E1; Loading live market data ...</div></div>
+<div id="ticker-strip"><div class="inner" id="ticker-inner">&#x1F30D; Computing ionosphere field across 45 sacred nodes ...</div></div>
 
-<div id="market-summary">
-  <h2>&#x1F4E1; LIVE MARKET FEED</h2>
-  <div><span class="label">Source:</span> <span class="val" id="feed-source">&mdash;</span></div>
-  <div><span class="label">Last Update:</span> <span class="val" id="feed-time">&mdash;</span></div>
-  <div><span class="label">BTC Vol Share:</span> <span class="val" id="btc-dom">&mdash;</span></div>
-  <div><span class="label">Market Mood:</span> <span class="val" id="market-mood">&mdash;</span></div>
-  <div><span class="label">PHI Resonance:</span> <span class="phi" id="phi-res">&mdash;</span></div>
+<div id="iono-hud">
+  <h2>&#x26A1; IONOSPHERE FIELD</h2>
+  <div><span class="label">Solar Zenith:</span> <span class="val" id="solar-zen">&mdash;</span></div>
+  <div><span class="label">D Layer (60-90km):</span> <span id="d-bar"></span> <span class="val" id="d-dens">&mdash;</span></div>
+  <div><span class="label">E Layer (90-120km):</span> <span id="e-bar"></span> <span class="val" id="e-dens">&mdash;</span></div>
+  <div><span class="label">F1 Layer (120-200km):</span> <span id="f1-bar"></span> <span class="val" id="f1-dens">&mdash;</span></div>
+  <div><span class="label">F2 Layer (200-400km):</span> <span id="f2-bar"></span> <span class="val" id="f2-dens">&mdash;</span></div>
+  <div><span class="label">fₒF2 Critical:</span> <span class="phi" id="fof2">&mdash;</span></div>
+  <div><span class="label">TEC:</span> <span class="val" id="tec-val">&mdash;</span></div>
+  <div><span class="label">Field Health:</span> <span class="val" id="iono-health">&mdash;</span></div>
+  <div><span class="label">NOAA Kp Index:</span> <span class="val" id="kp-index">&mdash;</span></div>
+  <div><span class="label">Data Source:</span> <span class="val" id="iono-source">&mdash;</span></div>
+</div>
+
+<div id="emotion-hud">
+  <h2>&#x1F49C; EMOTION FIELD BUFFER</h2>
+  <div><span class="label">Dominant Emotion:</span> <span id="emo-name" style="font-weight:bold">&mdash;</span></div>
+  <div><span class="label">Frequency:</span> <span class="val" id="emo-freq">&mdash;</span></div>
+  <div><span class="label">Coherence:</span> <span class="val" id="emo-coh">&mdash;</span></div>
+  <div><span class="label">Distortion:</span> <span class="warn" id="emo-dist">&mdash;</span></div>
+  <div><span class="label">Field Polarity:</span> <span class="val" id="emo-pol">&mdash;</span></div>
+  <div><span class="label">Rainbow State:</span> <span class="phi" id="emo-rainbow">&mdash;</span></div>
+  <div><span class="label">Active Nodes:</span> <span class="val" id="emo-nodes">&mdash;</span></div>
+  <div><span class="label">Planetary Surge:</span> <span class="val" id="emo-surge">&mdash;</span></div>
 </div>
 
 <div id="title-bar">
-  AUREON SACRED GEOMETRY GLYPH &middot; PHI-ALIGNED GEODESIC GRID &middot; LIVE MARKET HARMONICS
+  AUREON SACRED GEOMETRY GLYPH &middot; IONOSPHERE EMOTION FIELD &middot; 45 NODE PLANETARY MAPPING
 </div>
 
 <script>
@@ -150,22 +175,36 @@ const PLANET_WEIGHTS = {
 
 const PHI_RESONANT = [72, 120, 137.5, 144];
 
-// ═══════════ LIVE TICKER — PLANET-TO-COIN MAP ═══════════
-const COIN_MAP = {
-  'Sun':     { id: 'bitcoin',      symbol: 'BTC',  binance: 'BTCUSDT'  },
-  'Moon':    { id: 'ethereum',     symbol: 'ETH',  binance: 'ETHUSDT'  },
-  'Mercury': { id: 'ripple',       symbol: 'XRP',  binance: 'XRPUSDT'  },
-  'Venus':   { id: 'solana',       symbol: 'SOL',  binance: 'SOLUSDT'  },
-  'Mars':    { id: 'dogecoin',     symbol: 'DOGE', binance: 'DOGEUSDT' },
-  'Jupiter': { id: 'binancecoin',  symbol: 'BNB',  binance: 'BNBUSDT'  },
-  'Saturn':  { id: 'cardano',      symbol: 'ADA',  binance: 'ADAUSDT'  },
-  'Uranus':  { id: 'avalanche-2',  symbol: 'AVAX', binance: 'AVAXUSDT' },
-  'Neptune': { id: 'polkadot',     symbol: 'DOT',  binance: 'DOTUSDT'  },
-};
-let tickerData = {};   // { planetName: { price, change24h, volume, symbol } }
-let tickerLastUpdate = 0;
-let tickerSource = '—';
-const TICKER_INTERVAL_MS = 30000;  // 30 s
+// ═══════════ IONOSPHERE LAYER MODEL (Chapman) ═══════════
+// (name, base_km, peak_km, top_km, Nm_day_m3, Nm_night_m3, scaleH_km, collision_hz)
+const IONO_LAYERS = [
+  {name:'D',  base:60,  peak:80,  top:90,  nmDay:1e9,  nmNight:0,    sh:10, coll:1e6},
+  {name:'E',  base:90,  peak:110, top:120, nmDay:1e11, nmNight:5e9,  sh:10, coll:1e4},
+  {name:'F1', base:120, peak:180, top:200, nmDay:3e11, nmNight:0,    sh:30, coll:1e3},
+  {name:'F2', base:200, peak:300, top:400, nmDay:1e12, nmNight:1e11, sh:60, coll:1e2},
+];
+
+// ═══════════ EMOTION FIELD MAPPING ═══════════
+// Emotion ladder: frequency zones (Hz) → emotion → color → polarity
+const EMOTION_ZONES = [
+  {name:'ANGER',     minHz:0,    maxHz:174,  color:'#FF2200', polarity:-0.8},
+  {name:'FEAR',      minHz:174,  maxHz:285,  color:'#FF6600', polarity:-0.5},
+  {name:'GRIEF',     minHz:285,  maxHz:396,  color:'#CC8800', polarity:-0.3},
+  {name:'NEUTRAL',   minHz:396,  maxHz:417,  color:'#CCCC44', polarity: 0.0},
+  {name:'GRATITUDE', minHz:417,  maxHz:528,  color:'#44CC44', polarity:+0.4},
+  {name:'LOVE',      minHz:528,  maxHz:639,  color:'#4488FF', polarity:+0.8},
+  {name:'AWE',       minHz:639,  maxHz:963,  color:'#AA44FF', polarity:+1.0},
+  {name:'UNITY',     minHz:963,  maxHz:9999, color:'#FFD700', polarity:+1.0},
+];
+
+const RAINBOW_STATES = ['FEAR','FORMING','RESONANCE','LOVE','AWE','UNITY'];
+const RAINBOW_MODS   = {FEAR:-0.10, FORMING:0.0, RESONANCE:+0.05, LOVE:+0.10, AWE:+0.15, UNITY:+0.20};
+
+// ═══════════ LIVE IONOSPHERIC DATA ═══════════
+let liveKp = 0;        // NOAA Kp index (0-9)
+let liveKpTime = 0;
+let ionoSource = '—';
+let liveF107 = 100;    // 10.7cm solar flux (SFU)
 
 // ═══════════ 45 SACRED RELAY SITES ═══════════
 const SITES = [
@@ -262,48 +301,166 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// ═══════════ LIVE TICKER FETCH (CoinGecko primary, Binance fallback) ═══════════
-async function fetchTickers() {
-  const ids = Object.values(COIN_MAP).map(c => c.id).join(',');
+// ═══════════ LIVE IONOSPHERIC DATA FETCH ═══════════
+// NOAA SWPC planetary Kp index — real geomagnetic activity
+async function fetchIonoData() {
   try {
-    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids
-      + '&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true';
-    const resp = await fetch(url);
+    // NOAA Wing-Kp (JSON) — 1-minute planetary Kp estimates
+    const resp = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
     if (resp.ok) {
-      const data = await resp.json();
-      for (const [planet, coin] of Object.entries(COIN_MAP)) {
-        const d = data[coin.id];
-        if (d) tickerData[planet] = {
-          price: d.usd || 0, change24h: d.usd_24h_change || 0,
-          volume: d.usd_24h_vol || 0, symbol: coin.symbol,
-        };
+      const rows = await resp.json();
+      // rows: [["time_tag","Kp","Kp_fraction",...], [data rows...]]
+      if (rows.length > 1) {
+        const last = rows[rows.length - 1];
+        liveKp = parseFloat(last[1]) || 0;
+        liveKpTime = Date.now();
+        ionoSource = 'NOAA SWPC';
       }
-      tickerLastUpdate = Date.now();
-      tickerSource = 'CoinGecko';
-      return;
     }
-  } catch (_) { /* fall through to Binance */ }
-
+  } catch (_) { ionoSource = 'MODEL'; }
   try {
-    const syms = Object.values(COIN_MAP).map(c => '"' + c.binance + '"').join(',');
-    const resp = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=[' + syms + ']');
-    if (resp.ok) {
-      const data = await resp.json();
-      const byS = {}; for (const d of data) byS[d.symbol] = d;
-      for (const [planet, coin] of Object.entries(COIN_MAP)) {
-        const d = byS[coin.binance];
-        if (d) tickerData[planet] = {
-          price: parseFloat(d.lastPrice) || 0, change24h: parseFloat(d.priceChangePercent) || 0,
-          volume: parseFloat(d.quoteVolume) || 0, symbol: coin.symbol,
-        };
-      }
-      tickerLastUpdate = Date.now();
-      tickerSource = 'Binance';
+    // NOAA F10.7 solar flux
+    const r2 = await fetch('https://services.swpc.noaa.gov/json/f107_cm_flux.json');
+    if (r2.ok) {
+      const data = await r2.json();
+      if (data.length > 0) liveF107 = parseFloat(data[data.length - 1].flux) || 100;
     }
-  } catch (_) { tickerSource = 'OFFLINE'; }
+  } catch (_) { /* use default */ }
 }
-fetchTickers();
-setInterval(fetchTickers, TICKER_INTERVAL_MS);
+fetchIonoData();
+setInterval(fetchIonoData, 120000);  // refresh every 2 minutes
+
+// ═══════════ CHAPMAN DENSITY FUNCTION ═══════════
+function chapmanDensity(alt_km, peak_km, peakN, scaleH, chiRad) {
+  const z = (alt_km - peak_km) / Math.max(scaleH, 1);
+  const secChi = 1.0 / Math.max(Math.cos(chiRad), 0.05);
+  let expo = 0.5 * (1.0 - z - secChi * Math.exp(-z));
+  expo = Math.max(-50, Math.min(20, expo));
+  return peakN * Math.exp(expo);
+}
+
+// ═══════════ NODE IONOSPHERE COMPUTATION ═══════════
+// For each sacred site: compute solar zenith, Chapman layers, planetary influence
+function computeNodeIonosphere(site, bodies, aspects, now) {
+  // Approximate solar zenith angle from latitude + solar declination + hour angle
+  const doy = (now - new Date(now.getFullYear(), 0, 0)) / 86400000;
+  const decl = 23.44 * Math.sin(TWO_PI * (284 + doy) / 365.25) * DEG;  // solar declination
+  const utcHours = now.getUTCHours() + now.getUTCMinutes() / 60;
+  const hourAngle = (utcHours / 24 * 360 + site.lon - 180) * DEG;  // solar hour angle
+  const latRad = site.lat * DEG;
+  const cosZen = Math.sin(latRad) * Math.sin(decl) + Math.cos(latRad) * Math.cos(decl) * Math.cos(hourAngle);
+  const chiRad = Math.acos(Math.max(-1, Math.min(1, cosZen)));
+  const isDaytime = cosZen > 0;
+
+  // Kp storm factor: higher Kp → enhanced E and F layers, depleted F2
+  const kpFactor = 1 + (liveKp - 3) * 0.05;  // neutral at Kp=3
+  // F10.7 flux modulation (higher flux → denser ionosphere)
+  const fluxMod = 0.7 + 0.6 * (liveF107 / 200);  // normalized
+
+  // Compute each layer's peak density at this site
+  const layers = IONO_LAYERS.map(ly => {
+    let nm = isDaytime ? ly.nmDay : ly.nmNight;
+    nm *= fluxMod * Math.max(0.3, kpFactor);
+    // Cosmic field modulation from planetary aspects
+    const aspectMod = 0.85 + 0.30 * cosmicField(aspects);
+    nm *= aspectMod;
+    // Latitude dip effect: cos²(lat) scaling for equatorial enhancement
+    nm *= (0.5 + 0.5 * Math.cos(latRad) * Math.cos(latRad));
+    const fp = 9.0 * Math.sqrt(Math.max(nm, 0));  // plasma frequency
+    return { name: ly.name, density: nm, fp: fp, peak: ly.peak, sh: ly.sh, chiRad };
+  });
+
+  // foF2 = plasma frequency of F2 layer peak
+  const f2 = layers.find(l => l.name === 'F2');
+  const foF2 = f2 ? f2.fp : 0;
+
+  // TEC: integrate density across altitude (simplified)
+  let tec = 0;
+  for (const ly of layers) {
+    // Integrate chapman density from base to top of each layer (trapezoidal)
+    const parent = IONO_LAYERS.find(l => l.name === ly.name);
+    for (let h = parent.base; h <= parent.top; h += 10) {
+      const n = chapmanDensity(h, ly.peak, ly.density, ly.sh, ly.chiRad);
+      tec += n * 10000;  // 10 km slabs in meters
+    }
+  }
+  tec /= 1e16;  // convert to TECU
+
+  // Planetary influence on this node:
+  // Each planet's angular distance to the node's local zenith creates tidal pull
+  let planetInfluence = 0;
+  let planetCount = 0;
+  for (const [name, lon] of Object.entries(bodies)) {
+    // Angular distance between planet ecliptic longitude and site's sub-solar point
+    let sep = Math.abs(lon - ((site.lon + 180) % 360));
+    if (sep > 180) sep = 360 - sep;
+    const w = PLANET_WEIGHTS[name] || 0.5;
+    // Closer planets have stronger tidal influence
+    const influence = w * Math.cos(sep * DEG);
+    planetInfluence += influence;
+    planetCount++;
+  }
+  planetInfluence /= Math.max(planetCount, 1);
+
+  return {
+    chi: chiRad / DEG, isDaytime, layers, foF2, tec,
+    planetInfluence,  // -1 to +1
+    kpEffect: liveKp,
+  };
+}
+
+// ═══════════ EMOTION FIELD FROM IONOSPHERE ═══════════
+function computeEmotionField(nodeIonos, l3, cf) {
+  // Aggregate emotion frequency from all node ionosphere states
+  // Base frequency: Schumann × PHI scaling based on planetary influence
+  let totalFreq = 0, totalWeight = 0;
+  let activeNodes = 0;
+  let maxInfluence = -1, maxSite = '';
+
+  for (const ni of nodeIonos) {
+    if (!ni) continue;
+    activeNodes++;
+    // Node frequency = 285 Hz (flow) × (1 + planetary influence) × F2 density factor
+    const f2fac = Math.min(ni.foF2 / 5e6, 2.0);  // normalize foF2
+    const freq = 285 * (1 + ni.planetInfluence * 0.5) * (0.5 + f2fac * 0.5);
+    const w = Math.abs(ni.planetInfluence) + 0.1;
+    totalFreq += freq * w;
+    totalWeight += w;
+    if (ni.planetInfluence > maxInfluence) {
+      maxInfluence = ni.planetInfluence;
+    }
+  }
+
+  const meanFreq = totalWeight > 0 ? totalFreq / totalWeight : 396;
+
+  // Map frequency to emotion zone
+  let emotion = EMOTION_ZONES[3];  // default NEUTRAL
+  for (const ez of EMOTION_ZONES) {
+    if (meanFreq >= ez.minHz && meanFreq < ez.maxHz) { emotion = ez; break; }
+  }
+
+  // Coherence: how aligned nodes are
+  const coherence = l3.harmCoherence;
+  // Distortion: Kp-driven (high Kp = geomagnetic storm = distortion)
+  const distortion = Math.min(1, liveKp / 9);
+  // Rainbow state: based on coherence + cosmic field + L3 score
+  const rainbowScore = (coherence * 0.4 + cf * 0.3 + l3.l3Score * 0.3);
+  let rainbow = 'FEAR';
+  if (rainbowScore > 0.85) rainbow = 'UNITY';
+  else if (rainbowScore > 0.72) rainbow = 'AWE';
+  else if (rainbowScore > 0.60) rainbow = 'LOVE';
+  else if (rainbowScore > 0.45) rainbow = 'RESONANCE';
+  else if (rainbowScore > 0.30) rainbow = 'FORMING';
+
+  // Planetary surge = strongest node influence
+  const surge = maxInfluence;
+
+  return {
+    freq: meanFreq, emotion, coherence, distortion,
+    rainbow, surge, activeNodes,
+    polarity: emotion.polarity,
+  };
+}
 
 // ═══════════ PROJECTION (rotating orthographic) ═══════════
 function project(lat, lon, rotLon) {
@@ -426,12 +583,16 @@ function drawStarfield(t) {
   }
 }
 
-function drawGlobe(rotLon, density, l3) {
-  // Atmospheric glow
+function drawGlobe(rotLon, density, l3, emotionField) {
+  // Atmospheric glow — modulated by emotion color
+  const eColor = emotionField ? emotionField.emotion.color : '#1E3CB4';
+  const er = parseInt(eColor.slice(1,3),16) || 30;
+  const eg = parseInt(eColor.slice(3,5),16) || 60;
+  const eb = parseInt(eColor.slice(5,7),16) || 180;
   const grad = ctx.createRadialGradient(cx, cy, globeR * 0.8, cx, cy, globeR * 1.15);
   const glowAlpha = 0.08 + 0.12 * density;
-  grad.addColorStop(0, `rgba(30,60,180,${glowAlpha})`);
-  grad.addColorStop(0.5, `rgba(0,255,120,${glowAlpha * 0.4})`);
+  grad.addColorStop(0, `rgba(${er},${eg},${eb},${glowAlpha})`);
+  grad.addColorStop(0.5, `rgba(${er>>1},${eg},${eb>>1},${glowAlpha * 0.4})`);
   grad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = grad;
   ctx.beginPath();
@@ -474,6 +635,28 @@ function drawGlobe(rotLon, density, l3) {
       }
     }
     ctx.stroke();
+  }
+
+  // IONOSPHERE SHELLS — D, E, F1, F2 as translucent concentric arcs
+  const IONO_SHELL_R = [
+    {layer:'D',  altFrac:0.010, color:'rgba(255,100,60,'},
+    {layer:'E',  altFrac:0.018, color:'rgba(100,255,100,'},
+    {layer:'F1', altFrac:0.028, color:'rgba(60,180,255,'},
+    {layer:'F2', altFrac:0.048, color:'rgba(180,80,255,'},
+  ];
+  for (const shell of IONO_SHELL_R) {
+    const shellR = globeR * (1.0 + shell.altFrac);
+    const pulse = Math.sin(performance.now() * 0.001 * l3.schMod + shell.altFrac * 20);
+    const alpha = (0.04 + 0.06 * Math.abs(pulse)) * l3.l3Score;
+    ctx.strokeStyle = shell.color + alpha.toFixed(2) + ')';
+    ctx.lineWidth = 2 + Math.abs(pulse) * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, shellR, 0, TWO_PI);
+    ctx.stroke();
+    // Label
+    ctx.fillStyle = shell.color + '0.5)';
+    ctx.font = '7px Courier New';
+    ctx.fillText(shell.layer, cx + shellR + 3, cy - 2);
   }
 
   // EPAS L3 acoustic resonance rings (Schumann standing waves)
@@ -539,26 +722,50 @@ function drawAlignments(rotLon, t, l3) {
   }
 }
 
-function drawSites(rotLon, t, l3, density) {
+function drawSites(rotLon, t, l3, density, nodeIonos, emotionField) {
   for (let i = 0; i < SITES.length; i++) {
     const s = SITES[i];
     const p = project(s.lat, s.lon, rotLon);
     if (!p) continue;
 
     const col = CIV_COLORS[s.c] || '#FFFFFF';
+    const ni = nodeIonos[i];
     const pulse = Math.sin(t * 0.004 + i * 0.3) * 0.3 + 0.7;
     const sz = (s.r.includes('Prime') || s.r.includes('Anchor')) ? 7 : 4.5;
-    const glowSz = sz * (2 + density + l3.l3Score * 1.5) * pulse;
+
+    // Node glow colored by ionosphere emotion state
+    let glowCol = col;
+    let glowIntensity = 1.0;
+    if (ni) {
+      // Intensity from F2 density (higher = brighter)
+      glowIntensity = 0.5 + 0.5 * Math.min(1, ni.foF2 / 8e6);
+      // Color shift by planetary influence: positive → blue/love, negative → red/fear
+      if (ni.planetInfluence > 0.1) {
+        glowCol = emotionField && emotionField.emotion ? emotionField.emotion.color : '#4488FF';
+      } else if (ni.planetInfluence < -0.1) {
+        glowCol = '#FF4422';
+      }
+    }
+    const glowSz = sz * (2 + density + l3.l3Score * 1.5) * pulse * glowIntensity;
 
     // Glow
     const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSz);
-    grd.addColorStop(0, col + 'AA');
-    grd.addColorStop(0.5, col + '33');
-    grd.addColorStop(1, col + '00');
+    grd.addColorStop(0, glowCol + 'AA');
+    grd.addColorStop(0.5, glowCol + '33');
+    grd.addColorStop(1, glowCol + '00');
     ctx.fillStyle = grd;
     ctx.beginPath();
     ctx.arc(p.x, p.y, glowSz, 0, TWO_PI);
     ctx.fill();
+
+    // Day/night indicator ring
+    if (ni) {
+      ctx.strokeStyle = ni.isDaytime ? 'rgba(255,220,80,0.4)' : 'rgba(40,40,120,0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, sz * 1.6, 0, TWO_PI);
+      ctx.stroke();
+    }
 
     // Core dot
     ctx.fillStyle = col;
@@ -566,11 +773,13 @@ function drawSites(rotLon, t, l3, density) {
     ctx.arc(p.x, p.y, sz * (0.6 + 0.4 * p.z), 0, TWO_PI);
     ctx.fill();
 
-    // Label (only for closer sites)
+    // Label + ionosphere info
     if (p.z > 0.3 && sz > 4) {
       ctx.fillStyle = `rgba(200,210,240,${0.4 + 0.4 * p.z})`;
       ctx.font = '8px Courier New';
-      ctx.fillText(s.n.substring(0, 16), p.x + sz + 3, p.y + 3);
+      let label = s.n.substring(0, 16);
+      if (ni) label += ni.isDaytime ? ' ☀' : ' ☾';
+      ctx.fillText(label, p.x + sz + 3, p.y + 3);
     }
   }
 }
@@ -605,14 +814,6 @@ function drawPlanetaryRing(bodies, t, l3) {
   ctx.fillStyle = '#FFDD00';
   ctx.font = '14px serif';
   ctx.fillText('☉', sunX - 5, sunY + 5);
-  // BTC ticker under Sun
-  const sunTd = tickerData['Sun'];
-  if (sunTd) {
-    ctx.font = '8px Courier New';
-    ctx.fillStyle = sunTd.change24h >= 0 ? '#44ff88' : '#ff4466';
-    const sf = sunTd.price >= 100 ? '$' + sunTd.price.toFixed(0) : '$' + sunTd.price.toFixed(2);
-    ctx.fillText('BTC ' + sf, sunX - 18, sunY + 22);
-  }
 
   // Moon
   const moonAngle = (bodies['Moon'] - 90) * DEG;
@@ -624,14 +825,6 @@ function drawPlanetaryRing(bodies, t, l3) {
   ctx.fill();
   ctx.font = '10px serif';
   ctx.fillText('☽', moonX - 4, moonY + 4);
-  // ETH ticker under Moon
-  const moonTd = tickerData['Moon'];
-  if (moonTd) {
-    ctx.font = '8px Courier New';
-    ctx.fillStyle = moonTd.change24h >= 0 ? '#44ff88' : '#ff4466';
-    const mf = moonTd.price >= 100 ? '$' + moonTd.price.toFixed(0) : '$' + moonTd.price.toFixed(2);
-    ctx.fillText('ETH ' + mf, moonX - 14, moonY + 16);
-  }
 
   // Planets
   for (const [name, p] of Object.entries(PLANETS)) {
@@ -640,23 +833,11 @@ function drawPlanetaryRing(bodies, t, l3) {
     const px = cx + Math.cos(angle) * r;
     const py = cy + Math.sin(angle) * r;
 
-    // Momentum glow (price-driven when live)
-    const td = tickerData[name];
-    const momentum = td ? Math.min(1, Math.abs(td.change24h) / 10) : 0;
-    const momRGB = td ? (td.change24h >= 0 ? [68,255,136] : [255,68,102]) : null;
+    // Glow — planetary magnitude
     const pulse = 0.6 + 0.4 * Math.sin(t * 0.003 + bodies[name] * DEG);
-    const glowSz = (8 + momentum * 8) * pulse;
-    if (momRGB) {
-      const grd = ctx.createRadialGradient(px, py, 0, px, py, glowSz);
-      grd.addColorStop(0, 'rgba(' + momRGB.join(',') + ',' + (0.55 * pulse) + ')');
-      grd.addColorStop(0.6, 'rgba(' + momRGB.join(',') + ',' + (0.15 * pulse) + ')');
-      grd.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grd;
-    } else {
-      ctx.fillStyle = p.color + Math.floor(pulse * 100).toString(16).padStart(2, '0');
-    }
+    ctx.fillStyle = p.color + Math.floor(pulse * 100).toString(16).padStart(2, '0');
     ctx.beginPath();
-    ctx.arc(px, py, glowSz, 0, TWO_PI);
+    ctx.arc(px, py, 8 * pulse, 0, TWO_PI);
     ctx.fill();
 
     // Dot
@@ -665,16 +846,10 @@ function drawPlanetaryRing(bodies, t, l3) {
     ctx.arc(px, py, 3.5, 0, TWO_PI);
     ctx.fill();
 
-    // Symbol + live price
+    // Symbol
     ctx.fillStyle = p.color;
     ctx.font = '10px serif';
     ctx.fillText(p.symbol, px + 6, py + 4);
-    if (td) {
-      ctx.font = '8px Courier New';
-      ctx.fillStyle = td.change24h >= 0 ? '#44ff88' : '#ff4466';
-      const pf = td.price >= 100 ? '$' + td.price.toFixed(0) : '$' + td.price.toFixed(2);
-      ctx.fillText(td.symbol + ' ' + pf, px + 6, py + 14);
-    }
   }
 }
 
@@ -724,7 +899,7 @@ const elNAspects = document.getElementById('n-aspects');
 const elNPos     = document.getElementById('n-pos');
 const elPlanets  = document.getElementById('planet-list');
 
-function updateHUD(rotDeg, l3, density, cf, aspects, bodies) {
+function updateHUD(rotDeg, l3, density, cf, aspects, bodies, nodeIonos, emotionField) {
   elSchPhase.textContent = l3.phase.toFixed(4);
   elSchMod.textContent   = l3.schMod.toFixed(4);
   elHarmCoh.textContent  = l3.harmCoherence.toFixed(4);
@@ -744,72 +919,130 @@ function updateHUD(rotDeg, l3, density, cf, aspects, bodies) {
       (PLANETS[name] ? PLANETS[name].symbol : '?');
     const color = name === 'Sun' ? '#FFD700' : name === 'Moon' ? '#CCCCDD' :
       (PLANETS[name] ? PLANETS[name].color : '#888');
-    const td = tickerData[name];
-    let priceStr = '';
-    if (td) {
-      const chgC = td.change24h >= 0 ? '#44ff88' : '#ff4466';
-      const sg = td.change24h >= 0 ? '+' : '';
-      const pf = td.price >= 100 ? td.price.toFixed(0) : (td.price >= 1 ? td.price.toFixed(2) : td.price.toFixed(4));
-      priceStr = ` <span style="color:${chgC};font-size:10px">${td.symbol} $${pf} ${sg}${td.change24h.toFixed(1)}%</span>`;
-    }
-    html += `<div><span style="color:${color}">${symbol} ${name}</span>: <span class="val">${lon.toFixed(1)}°</span>${priceStr}</div>`;
+    html += `<div><span style="color:${color}">${symbol} ${name}</span>: <span class="val">${lon.toFixed(1)}°</span></div>`;
   }
   elPlanets.innerHTML = html;
+
+  // ── IONOSPHERE HUD ──
+  if (nodeIonos && nodeIonos.length > 0) {
+    // Average across all 45 nodes
+    let avgChi = 0, dayCount = 0, avgFoF2 = 0, avgTEC = 0;
+    const avgDens = [0,0,0,0];  // D,E,F1,F2
+    let nValid = 0;
+    for (const ni of nodeIonos) {
+      if (!ni) continue;
+      nValid++;
+      avgChi += ni.chi;
+      if (ni.isDaytime) dayCount++;
+      avgFoF2 += ni.foF2;
+      avgTEC += ni.tec;
+      ni.layers.forEach((ly, idx) => { if (idx < 4) avgDens[idx] += ly.density; });
+    }
+    if (nValid > 0) {
+      avgChi /= nValid; avgFoF2 /= nValid; avgTEC /= nValid;
+      avgDens.forEach((_, i) => avgDens[i] /= nValid);
+    }
+    const zenEl = document.getElementById('solar-zen');
+    if (zenEl) zenEl.textContent = avgChi.toFixed(1) + '° (' + dayCount + '/' + nValid + ' day)';
+    // Density bars
+    const layerEls = [['d-bar','d-dens'],['e-bar','e-dens'],['f1-bar','f1-dens'],['f2-bar','f2-dens']];
+    const layerColors = ['#FF6644','#66FF66','#44BBFF','#BB66FF'];
+    const maxN = 1e12;
+    layerEls.forEach(([barId, densId], i) => {
+      const barEl = document.getElementById(barId);
+      const densEl = document.getElementById(densId);
+      if (barEl) {
+        const w = Math.min(80, Math.max(4, (Math.log10(Math.max(avgDens[i],1)) / 12) * 80));
+        barEl.innerHTML = '<span class="layer-bar" style="width:' + w + 'px;background:' + layerColors[i] + '"></span>';
+      }
+      if (densEl) densEl.textContent = avgDens[i].toExponential(1) + ' m⁻³';
+    });
+    const fof2El = document.getElementById('fof2');
+    if (fof2El) fof2El.textContent = (avgFoF2 / 1e6).toFixed(2) + ' MHz';
+    const tecEl = document.getElementById('tec-val');
+    if (tecEl) tecEl.textContent = avgTEC.toFixed(1) + ' TECU';
+    const healthEl = document.getElementById('iono-health');
+    if (healthEl) {
+      const health = liveKp >= 7 ? 'STORM' : liveKp >= 5 ? 'DISTURBED' : avgFoF2 > 3e6 ? 'ROBUST' : 'MODERATE';
+      healthEl.textContent = health;
+      healthEl.style.color = health === 'ROBUST' ? '#44ff88' : health === 'MODERATE' ? '#ccddff' : '#ff4466';
+    }
+    const kpEl = document.getElementById('kp-index');
+    if (kpEl) {
+      kpEl.textContent = liveKp.toFixed(1) + (liveKp >= 5 ? ' ⚠ STORM' : '');
+      kpEl.style.color = liveKp >= 5 ? '#ff4466' : liveKp >= 3 ? '#ff8844' : '#44ff88';
+    }
+    const srcEl = document.getElementById('iono-source');
+    if (srcEl) srcEl.textContent = ionoSource;
+  }
+
+  // ── EMOTION FIELD HUD ──
+  if (emotionField) {
+    const emoNameEl = document.getElementById('emo-name');
+    if (emoNameEl) {
+      emoNameEl.textContent = emotionField.emotion.name;
+      emoNameEl.style.color = emotionField.emotion.color;
+    }
+    const emoFreqEl = document.getElementById('emo-freq');
+    if (emoFreqEl) emoFreqEl.textContent = emotionField.freq.toFixed(1) + ' Hz';
+    const emoCohEl = document.getElementById('emo-coh');
+    if (emoCohEl) emoCohEl.textContent = emotionField.coherence.toFixed(4);
+    const emoDistEl = document.getElementById('emo-dist');
+    if (emoDistEl) {
+      emoDistEl.textContent = emotionField.distortion.toFixed(3);
+      emoDistEl.style.color = emotionField.distortion > 0.5 ? '#ff4466' : '#ff8844';
+    }
+    const emoPolEl = document.getElementById('emo-pol');
+    if (emoPolEl) {
+      const pol = emotionField.polarity;
+      emoPolEl.textContent = (pol >= 0 ? '+' : '') + pol.toFixed(2) + (pol > 0.5 ? ' POSITIVE' : pol < -0.3 ? ' NEGATIVE' : ' NEUTRAL');
+      emoPolEl.style.color = pol > 0.3 ? '#44ff88' : pol < -0.3 ? '#ff4466' : '#ccddff';
+    }
+    const emoRbEl = document.getElementById('emo-rainbow');
+    if (emoRbEl) {
+      emoRbEl.textContent = emotionField.rainbow;
+      const rbColors = {FEAR:'#ff4466',FORMING:'#cccc44',RESONANCE:'#44cc44',LOVE:'#4488ff',AWE:'#aa44ff',UNITY:'#FFD700'};
+      emoRbEl.style.color = rbColors[emotionField.rainbow] || '#ccddff';
+    }
+    const emoNodesEl = document.getElementById('emo-nodes');
+    if (emoNodesEl) emoNodesEl.textContent = emotionField.activeNodes + ' / 45';
+    const emoSurgeEl = document.getElementById('emo-surge');
+    if (emoSurgeEl) {
+      emoSurgeEl.textContent = (emotionField.surge >= 0 ? '+' : '') + emotionField.surge.toFixed(3);
+      emoSurgeEl.style.color = emotionField.surge > 0 ? '#44ff88' : '#ff8844';
+    }
+  }
 }
 
-// ═══════════ TICKER STRIP + MARKET SUMMARY ═══════════
-function updateTickerStrip() {
+// ═══════════ IONOSPHERE TICKER STRIP ═══════════
+function updateTickerStrip(nodeIonos, emotionField) {
   const el = document.getElementById('ticker-inner');
-  if (!el || Object.keys(tickerData).length === 0) return;
+  if (!el || !nodeIonos || nodeIonos.length === 0) return;
   let html = '';
-  for (const [planet, td] of Object.entries(tickerData)) {
-    const cls = td.change24h >= 0 ? 'up' : 'down';
-    const arrow = td.change24h >= 0 ? '▲' : '▼';
-    const pf = td.price >= 100 ? td.price.toLocaleString('en-US',{maximumFractionDigits:0})
-             : (td.price >= 1 ? td.price.toFixed(2) : td.price.toFixed(4));
-    html += '<span class="tick-item"><span class="sym">' + td.symbol
-          + '</span> $' + pf + ' <span class="' + cls + '">' + arrow
-          + ' ' + Math.abs(td.change24h).toFixed(1) + '%</span></span>';
+  // Show each node's ionospheric state in the scrolling strip
+  for (let i = 0; i < SITES.length; i++) {
+    const ni = nodeIonos[i];
+    if (!ni) continue;
+    const s = SITES[i];
+    const dayNight = ni.isDaytime ? '☀' : '☾';
+    const foF2m = (ni.foF2 / 1e6).toFixed(1);
+    const cls = ni.planetInfluence >= 0 ? 'up' : 'down';
+    const arrow = ni.planetInfluence >= 0 ? '▲' : '▼';
+    html += '<span class="tick-item"><span class="sym">' + s.n.substring(0,12)
+          + '</span> ' + dayNight + ' fₒF2:' + foF2m + 'MHz '
+          + '<span class="' + cls + '">' + arrow + ' '
+          + (ni.planetInfluence >= 0 ? '+' : '') + ni.planetInfluence.toFixed(2)
+          + '</span></span>';
+  }
+  // Append emotion summary
+  if (emotionField) {
+    html += '<span class="tick-item" style="color:' + emotionField.emotion.color
+          + ';font-weight:bold">🜃 EMOTION: ' + emotionField.emotion.name
+          + ' @ ' + emotionField.freq.toFixed(0) + 'Hz'
+          + ' · RAINBOW: ' + emotionField.rainbow
+          + ' · Kp=' + liveKp.toFixed(1) + '</span>';
   }
   el.innerHTML = html + html;  // duplicate for seamless scroll
-}
-
-function updateMarketSummary() {
-  const elS = document.getElementById('feed-source');
-  if (elS) elS.textContent = tickerSource;
-  const elT = document.getElementById('feed-time');
-  if (elT && tickerLastUpdate > 0) {
-    const ago = Math.floor((Date.now() - tickerLastUpdate) / 1000);
-    elT.textContent = ago < 60 ? ago + 's ago' : Math.floor(ago / 60) + 'm ago';
-  }
-  const tds = Object.values(tickerData);
-  if (tds.length === 0) return;
-  // BTC volume share among tracked coins
-  const btcVol = (tickerData['Sun'] || {}).volume || 0;
-  const totVol = tds.reduce((s, t) => s + (t.volume || 0), 0);
-  const elD = document.getElementById('btc-dom');
-  if (elD) elD.textContent = (totVol > 0 ? (btcVol / totVol * 100).toFixed(1) : '0.0') + '%';
-  // Mood: volume-weighted average 24h change
-  let wS = 0, wT = 0;
-  for (const t of tds) { const w = Math.sqrt(t.volume || 1); wS += t.change24h * w; wT += w; }
-  const mood = wT > 0 ? wS / wT : 0;
-  const elM = document.getElementById('market-mood');
-  if (elM) {
-    const label = mood > 3 ? 'EUPHORIC' : mood > 1 ? 'BULLISH' : mood > -1 ? 'NEUTRAL'
-                : mood > -3 ? 'BEARISH' : 'FEARFUL';
-    elM.textContent = label + ' (' + (mood >= 0 ? '+' : '') + mood.toFixed(1) + '%)';
-    elM.style.color = mood > 1 ? '#44ff88' : mood > -1 ? '#ccddff' : '#ff4466';
-  }
-  // PHI resonance: BTC/ETH price ratio closeness to PHI^N
-  const bp = (tickerData['Sun'] || {}).price || 0;
-  const ep = (tickerData['Moon'] || {}).price || 0;
-  if (bp > 0 && ep > 0) {
-    const ratio = bp / ep;
-    const logPhi = Math.log(ratio) / Math.log(PHI);
-    const phiDist = Math.abs(logPhi - Math.round(logPhi));
-    const elP = document.getElementById('phi-res');
-    if (elP) elP.textContent = (1 - phiDist).toFixed(4);
-  }
 }
 
 // ═══════════ MAIN ANIMATION LOOP ═══════════
@@ -827,26 +1060,29 @@ function animate(ts) {
   const density = solarDensity(earthLon);
   const cf = cosmicField(aspects);
 
+  // Compute ionosphere for every sacred node
+  const nodeIonos = SITES.map(s => computeNodeIonosphere(s, bodies, aspects, now));
+  const emotionField = computeEmotionField(nodeIonos, l3, cf);
+
   // Clear
   ctx.fillStyle = '#050510';
   ctx.fillRect(0, 0, W, H);
 
   // Draw layers
   drawStarfield(ts);
-  drawGlobe(rotDeg, density, l3);
+  drawGlobe(rotDeg, density, l3, emotionField);
   drawAlignments(rotDeg, ts, l3);
-  drawSites(rotDeg, ts, l3, density);
+  drawSites(rotDeg, ts, l3, density, nodeIonos, emotionField);
   drawPlanetaryRing(bodies, ts, l3);
   drawAspectLines(bodies, aspects, ts);
 
   // Update HUD every ~10 frames
   if (Math.floor(ts / 160) % 1 === 0) {
-    updateHUD(rotDeg, l3, density, cf, aspects, bodies);
+    updateHUD(rotDeg, l3, density, cf, aspects, bodies, nodeIonos, emotionField);
   }
-  // Update ticker strip + market summary every ~2 s
+  // Update ticker strip every ~2 s
   if (Math.floor(ts / 2000) !== Math.floor((ts - 16) / 2000)) {
-    updateTickerStrip();
-    updateMarketSummary();
+    updateTickerStrip(nodeIonos, emotionField);
   }
 
   requestAnimationFrame(animate);
