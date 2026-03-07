@@ -771,6 +771,37 @@ _HISTORICAL_RELAY_SITES: Tuple[Tuple[str, str, float, float, str], ...] = (
     # ── Polynesian ────────────────────────────────────────────────────────
     ('Nan Madol',                'Micronesian', 6.8446, 158.3350, 'Pacific Relay'),
     ('Easter Island (Ahu Tongariki)', 'Rapa Nui', -27.1258, -109.2770, 'Moai Beacon'),
+    # ── Chinese ────────────────────────────────────────────────────────────
+    ('Temple of Heaven',         'Chinese',   39.8822, 116.4066, 'Celestial Altar'),
+    ('Terracotta Army',          'Chinese',   34.3842, 109.2785, 'Emperor Guard'),
+    ('Sanxingdui',               'Chinese',   31.0023, 104.2044, 'Bronze Oracle'),
+    # ── Indian / Indus Valley ─────────────────────────────────────────────
+    ('Mohenjo-Daro',             'Indus',     27.3242,  68.1357, 'Indus Nexus'),
+    ('Konark Sun Temple',        'Indian',    19.8876,  86.0945, 'Solar Wheel'),
+    ('Hampi',                    'Indian',    15.3350,  76.4600, 'Temple Grid'),
+    # ── Japanese ──────────────────────────────────────────────────────────
+    ('Ise Grand Shrine',         'Japanese',  34.4553, 136.7256, 'Shinto Gate'),
+    # ── Mesopotamian / Persian ────────────────────────────────────────────
+    ('Persepolis',               'Persian',   29.9352,  52.8914, 'Imperial Axis'),
+    ('Ziggurat of Ur',           'Sumerian',  30.9628,  46.1031, 'Ziggurat Root'),
+    # ── Classical Mediterranean ───────────────────────────────────────────
+    ('Delphi',                   'Greek',     38.4824,  22.5010, 'Omphalos'),
+    ('Knossos',                  'Minoan',    35.2980,  25.1632, 'Labyrinth Heart'),
+    # ── Middle East / Levant ──────────────────────────────────────────────
+    ('Petra',                    'Nabataean', 30.3285,  35.4444, 'Rose Gate'),
+    ('Baalbek',                  'Phoenician', 34.0069, 36.2039, 'Trilithon Base'),
+    # ── East African ──────────────────────────────────────────────────────
+    ('Lalibela',                 'Ethiopian', 12.0319,  39.0472, 'Rock Hewn Pulse'),
+    ('Axum Obelisks',            'Aksumite',  14.1310,  38.7189, 'Stele Beacon'),
+    # ── SE Asian Mainland ─────────────────────────────────────────────────
+    ('Bagan',                    'Burmese',   21.1717,  94.8585, 'Pagoda Field'),
+    ('Sigiriya',                 'Sinhalese',  7.9570,  80.7603, 'Lion Rock'),
+    # ── Nordic / Scandinavian ─────────────────────────────────────────────
+    ('Old Uppsala',              'Norse',     59.8979,  17.6365, 'Viking Crown'),
+    # ── Maltese Megaliths ─────────────────────────────────────────────────
+    ('Ggantija',                 'Maltese',   36.0475,  14.2688, 'Megalithic Lens'),
+    # ── Eastern North American ────────────────────────────────────────────
+    ('Cahokia Mounds',           'Mississippian', 38.6553, -90.0627, 'Mound Nexus'),
     # ── African ───────────────────────────────────────────────────────────
     ('Great Zimbabwe',           'Shona',    -20.2674,  30.9338, 'Southern Pillar'),
     # ── Australian ────────────────────────────────────────────────────────

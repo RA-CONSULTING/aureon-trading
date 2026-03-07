@@ -845,10 +845,13 @@ class TestRelayNetwork(unittest.TestCase):
         names = [s[0] for s in em._HISTORICAL_RELAY_SITES]
         self.assertEqual(len(names), len(set(names)))
 
-    def test_civilisations_include_core_four(self):
+    def test_civilisations_include_core_groups(self):
         civs = {s[1] for s in em._HISTORICAL_RELAY_SITES}
-        for c in ('Egyptian', 'Maya', 'Celtic', 'Mogollon'):
-            self.assertIn(c, civs)
+        for c in ('Egyptian', 'Maya', 'Celtic', 'Mogollon', 'Chinese',
+                  'Indian', 'Indus', 'Japanese', 'Persian', 'Sumerian',
+                  'Greek', 'Minoan', 'Nabataean', 'Ethiopian', 'Norse',
+                  'Mississippian', 'Burmese', 'Sinhalese', 'Maltese'):
+            self.assertIn(c, civs, f'{c} missing from relay civilisations')
 
     # ── RelaySite dataclass ────────────────────────────────────────────────
 
@@ -942,8 +945,12 @@ class TestRelayNetwork(unittest.TestCase):
     def test_specific_sites_present(self):
         names = [s['name'] for s in self.sim.to_dict()['relay_network']['sites']]
         for expected in ('Great Pyramid of Giza', 'Stonehenge', 'Chaco Canyon',
-                         'Chichen Itza', 'Machu Picchu', 'Angkor Wat', 'Uluru'):
-            self.assertIn(expected, names)
+                         'Chichen Itza', 'Machu Picchu', 'Angkor Wat', 'Uluru',
+                         'Temple of Heaven', 'Mohenjo-Daro', 'Konark Sun Temple',
+                         'Ise Grand Shrine', 'Persepolis', 'Delphi', 'Petra',
+                         'Lalibela', 'Bagan', 'Old Uppsala', 'Cahokia Mounds',
+                         'Ggantija', 'Sigiriya', 'Knossos', 'Baalbek'):
+            self.assertIn(expected, names, f'{expected} missing from relay network')
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1182,7 +1189,8 @@ class TestNaturalIonosphereProfile(unittest.TestCase):
     # ── Lighthouse mapping ─────────────────────────────────────────────
 
     def test_lighthouse_probe_count(self):
-        self.assertEqual(len(self.profile.lighthouse_probes), 25)
+        self.assertEqual(len(self.profile.lighthouse_probes),
+                         len(em._HISTORICAL_RELAY_SITES))
 
     def test_probes_are_lighthouse_probe(self):
         for p in self.profile.lighthouse_probes:
@@ -1268,7 +1276,8 @@ class TestNaturalIonosphereProfile(unittest.TestCase):
 
     def test_to_dict_probes_count(self):
         d = self.profile.to_dict()
-        self.assertEqual(len(d['lighthouse_mapping']['probes']), 25)
+        self.assertEqual(len(d['lighthouse_mapping']['probes']),
+                         len(em._HISTORICAL_RELAY_SITES))
 
     # ── Integration with EarthEPASSimulation ───────────────────────────
 
