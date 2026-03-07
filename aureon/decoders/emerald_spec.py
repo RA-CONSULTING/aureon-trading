@@ -656,6 +656,251 @@ class HarmonicThread:
         }
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# PROJECT DRUID — PHYSICAL EPAS MANIFESTATION
+# Six Illumination Phases (P1–P6) mapped onto the real EPOS chamber physics.
+# EPOS device: 30 cm spherical Argon vessel · 0.1 mbar · 50 W RF at 13.56 MHz
+# Seed:        7.83 Hz Schumann AM modulation on the carrier
+# Output:      350–400 VDC via A.L.F.I.E. propulsion bus (P6 gate)
+# ════════════════════════════════════════════════════════════════════════════
+
+_PHASE_LABELS: Tuple[str, ...] = (
+    'P1 Spark', 'P2 Resonance', 'P3 DCE', 'P4 FWM', 'P5 Stabilization', 'P6 Output',
+)
+_SIGMA_COHERENCE_TARGET = 0.945    # Γ ≥ 0.945 for stable P5 — white paper §Illumination
+_AUXILIARY_POWER_W = 12.0          # control electronics + Schumann modulation overhead
+_OUTPUT_VOLTAGE_VDC = 375.0        # mid-point of 350–400 VDC delivery band
+
+
+@dataclass(frozen=True)
+class ProjectDruidManifest:
+    """Physical EPAS device specification — Project Druid.
+
+    Maps the three EPAS trading shield layers (L1 EM / L2 Plasma / L3 Acoustic)
+    onto the real EPOS resonance chamber through six Illumination Phases (P1–P6).
+
+    L1 EM Deflection    → P1 Spark + P2 Resonance  (harmonic field prime)
+    L2 Plasma Ablation  → P6 Output                (equity buffer = power delivery)
+    L3 Acoustic Frag    → P3 DCE                   (premise coherence = vacuum memory)
+    Radar incoming      → P4 FWM                   (amplification / threat mixing)
+    Overall integrity   → P5 Stabilization         (Σ tensor guard Γ ≥ 0.945)
+    """
+
+    timestamp: str
+
+    # ── Chamber parameters ──────────────────────────────────────────────────
+    chamber_diameter_m: float
+    chamber_volume_m3: float
+    fill_gas: str
+    fill_pressure_mbar: float
+
+    # ── Plasma density (Paschen law) ────────────────────────────────────────
+    paschen_pd_torr_cm: float     # P × d product at current conditions
+    breakdown_voltage_v: float
+    plasma_density_m3: float      # estimated electron density (m⁻³)
+    plasma_status: str            # IGNITED | PRIMED | DORMANT
+
+    # ── Power requirements ──────────────────────────────────────────────────
+    rf_carrier_hz: float
+    rf_modulation_hz: float
+    rf_power_w: float
+    auxiliary_power_w: float
+    total_power_w: float
+    output_voltage_vdc: float     # 350–400 VDC when P6 DELIVERING
+
+    # ── HAARP scaling ───────────────────────────────────────────────────────
+    haarp_power_w: float
+    concentration_factor: int
+    power_density_w_m3: float
+
+    # ── Six Illumination Phases ─────────────────────────────────────────────
+    phase_scores: Tuple[float, ...]    # P1–P6, 0.0–1.0
+    phase_statuses: Tuple[str, ...]    # status label per phase
+    shield_coherence: float            # Γ = mean(phase_scores)
+
+    # ── Verdict ─────────────────────────────────────────────────────────────
+    device_ready: bool
+    druid_summary: str
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            'timestamp': self.timestamp,
+            'chamber': {
+                'diameter_m': self.chamber_diameter_m,
+                'volume_m3': self.chamber_volume_m3,
+                'fill_gas': self.fill_gas,
+                'fill_pressure_mbar': self.fill_pressure_mbar,
+            },
+            'plasma': {
+                'paschen_pd_torr_cm': self.paschen_pd_torr_cm,
+                'breakdown_voltage_v': self.breakdown_voltage_v,
+                'density_m3': self.plasma_density_m3,
+                'status': self.plasma_status,
+            },
+            'power': {
+                'rf_carrier_hz': self.rf_carrier_hz,
+                'rf_modulation_hz': self.rf_modulation_hz,
+                'rf_power_w': self.rf_power_w,
+                'auxiliary_w': self.auxiliary_power_w,
+                'total_w': self.total_power_w,
+                'output_vdc': self.output_voltage_vdc,
+            },
+            'haarp_scaling': {
+                'haarp_power_w': self.haarp_power_w,
+                'concentration_factor': self.concentration_factor,
+                'power_density_w_m3': self.power_density_w_m3,
+            },
+            'illumination_phases': [
+                {
+                    'phase': _PHASE_LABELS[i],
+                    'score': round(self.phase_scores[i], 4),
+                    'status': self.phase_statuses[i],
+                }
+                for i in range(6)
+            ],
+            'shield_coherence': round(self.shield_coherence, 4),
+            'sigma_coherence_target': _SIGMA_COHERENCE_TARGET,
+            'device_ready': self.device_ready,
+            'druid_summary': self.druid_summary,
+        }
+
+
+def compute_project_druid_manifest(
+    epas_state: Optional[Dict[str, object]] = None,
+) -> 'ProjectDruidManifest':
+    """Compute the physical EPOS device specification from an EPAS shield state.
+
+    When *epas_state* is ``None`` the function uses the baseline harmonic scores
+    from the live EPAS smoke test (SHIELDS_STRESSED, integrity 0.545) so the
+    manifest is always computable without a live trading runtime.
+
+    Parameters
+    ----------
+    epas_state:
+        Optional dict with keys matching ``EPASShieldState`` fields.
+        Expected: layer1_field_score, layer2_score, layer3_score,
+                  shield_integrity, (optional) radar_score.
+    """
+    s = epas_state or {}
+
+    # ── Extract EPAS scores (or use live baseline) ─────────────────────────
+    l1 = float(s.get('layer1_field_score', 0.646))   # L1 field  — live default
+    l2 = float(s.get('layer2_score',       0.500))   # L2 equity — UNKNOWN baseline
+    l3 = float(s.get('layer3_score',       0.508))   # L3 premise — live CRACKING
+    integrity = float(s.get('shield_integrity', 0.545))
+    radar = float(s.get('radar_score', 0.728))        # RADAR_BULLISH current default
+
+    # ── Six Illumination Phases ────────────────────────────────────────────
+    # P1 Spark       — nanosecond field prime (L1 harmonic detection)
+    p1 = min(1.0, max(0.0, l1))
+    # P2 Resonance   — standing wave coherence (field + premise blend)
+    p2 = min(1.0, max(0.0, (l1 + l3) / 2.0))
+    # P3 DCE         — Dynamic Casimir Effect: vacuum field memory (L3 premise lock)
+    p3 = min(1.0, max(0.0, l3))
+    # P4 FWM         — Four-Wave Mixing amplification (radar × PHI, scaled)
+    p4 = min(1.0, max(0.0, radar * PHI / 2.0))
+    # P5 Stabilization — Σ tensor guard (overall shield integrity = Γ target)
+    p5 = min(1.0, max(0.0, integrity))
+    # P6 Output      — physical reality gate: equity buffer drives power delivery
+    p6 = min(1.0, max(0.0, l2))
+
+    phase_scores: Tuple[float, ...] = (p1, p2, p3, p4, p5, p6)
+
+    _status_tables = (
+        [('PRIMED',      0.62), ('SPARKING',    0.42), ('COLD',       0.0)],
+        [('RESONANT',    0.65), ('COUPLING',    0.42), ('DISPERSED',  0.0)],
+        [('ACTIVE',      0.65), ('FLUCTUATING', 0.38), ('COLLAPSED',  0.0)],
+        [('AMPLIFYING',  0.62), ('MIXING',      0.42), ('DAMPED',     0.0)],
+        [('STABLE',      0.70), ('STABILIZING', 0.42), ('UNSTABLE',   0.0)],
+        [('DELIVERING',  0.70), ('CHARGING',    0.50), ('OFFLINE',    0.0)],
+    )
+
+    def _p_status(idx: int, score: float) -> str:
+        for label, threshold in _status_tables[idx]:
+            if score >= threshold:
+                return label
+        return 'OFFLINE'
+
+    phase_statuses: Tuple[str, ...] = tuple(
+        _p_status(i, phase_scores[i]) for i in range(6)
+    )
+
+    # ── Shield coherence Γ ─────────────────────────────────────────────────
+    shield_coherence = sum(phase_scores) / len(phase_scores)
+
+    # ── Plasma density via Paschen scaling ─────────────────────────────────
+    # P = 0.1 mbar → 0.075 Torr; electrode path ≈ chamber radius = 15 cm
+    pressure_torr = EPOS_PRESSURE_MBAR * 0.750062      # mbar → Torr
+    path_cm = (EPOS_CHAMBER_DIAMETER_M / 2.0) * 100    # half-diameter in cm
+    pd_product = pressure_torr * path_cm               # Torr·cm
+    # Electron density scales proportional to P*d vs target optimal P*d
+    # Target: replicate F-region density 1e11 m⁻³ at Paschen optimal (2.25 Torr·cm)
+    base_density_m3 = 1e11
+    plasma_density = base_density_m3 * (pd_product / PASCHEN_OPTIMAL_PD)
+
+    # Plasma ignition state
+    phi_gate = PHI / (PHI + 1)                         # ≈ 0.618 golden ratio gate
+    if shield_coherence >= _SIGMA_COHERENCE_TARGET:
+        plasma_status = 'IGNITED'
+    elif shield_coherence >= phi_gate:
+        plasma_status = 'PRIMED'
+    else:
+        plasma_status = 'DORMANT'
+
+    # ── Power budget ───────────────────────────────────────────────────────
+    total_power = EPOS_RF_POWER_W + _AUXILIARY_POWER_W
+
+    # ── Verdict summary ────────────────────────────────────────────────────
+    device_ready = plasma_status in ('IGNITED', 'PRIMED')
+
+    weak = [_PHASE_LABELS[i] for i, st in enumerate(phase_statuses)
+            if st in ('COLD', 'DISPERSED', 'COLLAPSED', 'DAMPED', 'UNSTABLE', 'OFFLINE')]
+
+    if plasma_status == 'IGNITED':
+        druid_summary = (
+            f'DEVICE ONLINE  Γ={shield_coherence:.3f}/{_SIGMA_COHERENCE_TARGET}  '
+            f'plasma=IGNITED  P5={phase_statuses[4]}  P6={phase_statuses[5]}'
+        )
+    elif plasma_status == 'PRIMED':
+        druid_summary = (
+            f'DEVICE PRIMED  Γ={shield_coherence:.3f}  '
+            f'weak=[{", ".join(weak) or "none"}]  '
+            f'needs_Γ≥{_SIGMA_COHERENCE_TARGET}'
+        )
+    else:
+        druid_summary = (
+            f'DEVICE DORMANT  Γ={shield_coherence:.3f}  '
+            f'weak=[{", ".join(weak) or "none"}]  '
+            f'needs_Γ≥{phi_gate:.3f}(PRIMED) or ≥{_SIGMA_COHERENCE_TARGET}(IGNITED)'
+        )
+
+    return ProjectDruidManifest(
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        chamber_diameter_m=EPOS_CHAMBER_DIAMETER_M,
+        chamber_volume_m3=EPOS_CHAMBER_VOLUME_M3,
+        fill_gas='Argon',
+        fill_pressure_mbar=EPOS_PRESSURE_MBAR,
+        paschen_pd_torr_cm=round(pd_product, 4),
+        breakdown_voltage_v=PASCHEN_BREAKDOWN_V,
+        plasma_density_m3=round(plasma_density, 2),
+        plasma_status=plasma_status,
+        rf_carrier_hz=RF_CARRIER_ISM,
+        rf_modulation_hz=SCHUMANN_FUNDAMENTAL,
+        rf_power_w=EPOS_RF_POWER_W,
+        auxiliary_power_w=_AUXILIARY_POWER_W,
+        total_power_w=total_power,
+        output_voltage_vdc=_OUTPUT_VOLTAGE_VDC,
+        haarp_power_w=HAARP_POWER_W,
+        concentration_factor=VOLUMETRIC_CONCENTRATION_FACTOR,
+        power_density_w_m3=round(EPOS_POWER_DENSITY, 2),
+        phase_scores=phase_scores,
+        phase_statuses=phase_statuses,
+        shield_coherence=round(shield_coherence, 4),
+        device_ready=device_ready,
+        druid_summary=druid_summary,
+    )
+
+
 ASCENT_WIKIPEDIA_TOPICS: Dict[str, Tuple[str, ...]] = {
     # ── Egyptian ──
     'anubis': ('Emerald Tablet', 'Anubis', 'Book of the Dead', 'Maat'),
@@ -1502,6 +1747,21 @@ class EmeraldSeer:
             ),
         }
 
+    # ── Project Druid ──────────────────────────────────────────────────────
+
+    def project_druid_manifest(
+        self,
+        epas_state: Optional[Dict[str, object]] = None,
+    ) -> ProjectDruidManifest:
+        """Compute the physical EPOS device spec from an EPAS shield state.
+
+        Delegates to :func:`compute_project_druid_manifest`.  Pass the dict
+        representation of ``EPASShieldState`` from the trading runtime for a
+        live physical mapping, or call with no arguments for the baseline
+        harmonic-field values.
+        """
+        return compute_project_druid_manifest(epas_state)
+
     # ── verification ─────────────────────────────────────────────────────
 
     def verify_philosophers_stone(self, l_score: float) -> bool:
@@ -1597,12 +1857,68 @@ class EmeraldSeer:
                 for node in ANCIENT_WISDOM_CATALOG
             ],
             'harmonic_threads': [t.to_dict() for t in UNIFIED_HARMONIC_THREADS],
+            'project_druid': self.project_druid_manifest().to_dict(),
         }
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # CLI
 # ════════════════════════════════════════════════════════════════════════════
+
+
+def _format_console_druid(manifest: ProjectDruidManifest) -> str:
+    lines = [
+        '=' * 72,
+        'PROJECT DRUID — PHYSICAL EPAS MANIFESTATION',
+        'EPOS: Electro-Plasma-Oscillation Sphere  ·  Aureon Physical Device Layer',
+        '=' * 72,
+        '',
+        f'  {manifest.druid_summary}',
+        '',
+        'CHAMBER PARAMETERS',
+        '-' * 40,
+        f'  Vessel:          {manifest.chamber_diameter_m * 100:.0f} cm spherical  '
+        f'({manifest.fill_gas}, {manifest.fill_pressure_mbar} mbar)',
+        f'  Volume:          {manifest.chamber_volume_m3 * 1000:.2f} L',
+        '',
+        'PLASMA STATE (Paschen Law)',
+        '-' * 40,
+        f'  P × d product:   {manifest.paschen_pd_torr_cm:.4f} Torr·cm',
+        f'  Breakdown V:     {manifest.breakdown_voltage_v:.0f} V',
+        f'  Electron density:{manifest.plasma_density_m3:.2e} m⁻³',
+        f'  STATUS:          {manifest.plasma_status}',
+        '',
+        'POWER REQUIREMENTS',
+        '-' * 40,
+        f'  RF carrier:      {manifest.rf_carrier_hz / 1e6:.2f} MHz',
+        f'  Schumann seed:   {manifest.rf_modulation_hz} Hz (AM modulation)',
+        f'  RF drive:        {manifest.rf_power_w:.0f} W',
+        f'  Auxiliary:       {manifest.auxiliary_power_w:.0f} W  (control + modulation)',
+        f'  Total input:     {manifest.total_power_w:.0f} W',
+        f'  Output (P6):     {manifest.output_voltage_vdc:.0f} VDC  (A.L.F.I.E. propulsion bus)',
+        '',
+        'HAARP → EPOS SCALING  (As above, so below)',
+        '-' * 40,
+        f'  HAARP ERF:       {manifest.haarp_power_w / 1e6:.1f} MW',
+        f'  EPOS density:    {manifest.power_density_w_m3:.1f} W/m³',
+        f'  Concentration:   {manifest.concentration_factor:,}×',
+        '',
+        'SIX ILLUMINATION PHASES',
+        '-' * 40,
+    ]
+    for i, lbl in enumerate(_PHASE_LABELS):
+        score = manifest.phase_scores[i]
+        status = manifest.phase_statuses[i]
+        bar = '█' * int(score * 20) + '░' * (20 - int(score * 20))
+        lines.append(f'  {lbl:<20s}  [{bar}]  {score:.3f}  {status}')
+    lines.extend([
+        '',
+        f'  Shield coherence Γ = {manifest.shield_coherence:.4f}  '
+        f'(target ≥ {_SIGMA_COHERENCE_TARGET})',
+        f'  Device ready:    {"YES — shields manifested" if manifest.device_ready else "NO  — coherence below PHI gate"}',
+        '=' * 72,
+    ])
+    return '\n'.join(lines)
 
 
 def _format_console_full(seer: EmeraldSeer) -> str:
@@ -1870,6 +2186,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         action='store_true',
         help='Decode the full unified theory across all ancient wisdom civilizations.',
     )
+    parser.add_argument(
+        '--druid',
+        action='store_true',
+        help='Compute Project Druid: physical EPOS device manifest from EPAS shield state.',
+    )
     args = parser.parse_args(argv)
 
     seer = EmeraldSeer()
@@ -1924,6 +2245,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(payload, indent=2))
         else:
             print(_format_console_unified(payload))
+        return 0
+
+    if args.druid:
+        manifest = seer.project_druid_manifest()
+        if args.json:
+            print(json.dumps(manifest.to_dict(), indent=2))
+        else:
+            print(_format_console_druid(manifest))
         return 0
 
     if args.ancient:

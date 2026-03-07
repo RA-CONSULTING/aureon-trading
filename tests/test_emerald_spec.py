@@ -462,5 +462,157 @@ class TestDecodeUnifiedTheory(unittest.TestCase):
         self.assertEqual(len(decoded['harmonic_threads']), 5)
 
 
+class TestProjectDruidManifest(unittest.TestCase):
+    """Project Druid — physical EPAS manifestation via EPOS device spec."""
+
+    def setUp(self):
+        self.seer = em.EmeraldSeer()
+        self.manifest = self.seer.project_druid_manifest()
+
+    # ── Dataclass surface ──────────────────────────────────────────────────
+
+    def test_manifest_has_six_phases(self):
+        self.assertEqual(len(self.manifest.phase_scores), 6)
+        self.assertEqual(len(self.manifest.phase_statuses), 6)
+
+    def test_phase_scores_bounded(self):
+        for score in self.manifest.phase_scores:
+            self.assertGreaterEqual(score, 0.0)
+            self.assertLessEqual(score, 1.0)
+
+    def test_shield_coherence_is_mean_of_phases(self):
+        expected = round(sum(self.manifest.phase_scores) / 6, 4)
+        self.assertAlmostEqual(self.manifest.shield_coherence, expected, places=4)
+
+    # ── Chamber / power specs ──────────────────────────────────────────────
+
+    def test_chamber_diameter_matches_epos_constant(self):
+        self.assertAlmostEqual(
+            self.manifest.chamber_diameter_m, em.EPOS_CHAMBER_DIAMETER_M, places=6
+        )
+
+    def test_fill_gas_is_argon(self):
+        self.assertEqual(self.manifest.fill_gas, 'Argon')
+
+    def test_rf_carrier_is_ism_band(self):
+        self.assertAlmostEqual(self.manifest.rf_carrier_hz, em.RF_CARRIER_ISM, places=0)
+
+    def test_rf_modulation_is_schumann(self):
+        self.assertEqual(self.manifest.rf_modulation_hz, em.SCHUMANN_FUNDAMENTAL)
+
+    def test_total_power_exceeds_rf_drive(self):
+        self.assertGreater(self.manifest.total_power_w, em.EPOS_RF_POWER_W)
+
+    def test_output_voltage_in_350_400_range(self):
+        self.assertGreaterEqual(self.manifest.output_voltage_vdc, 350.0)
+        self.assertLessEqual(self.manifest.output_voltage_vdc, 400.0)
+
+    # ── Plasma density (Paschen law) ───────────────────────────────────────
+
+    def test_paschen_pd_product_positive(self):
+        self.assertGreater(self.manifest.paschen_pd_torr_cm, 0.0)
+
+    def test_plasma_density_positive(self):
+        self.assertGreater(self.manifest.plasma_density_m3, 0.0)
+
+    def test_plasma_status_valid(self):
+        self.assertIn(self.manifest.plasma_status, ('IGNITED', 'PRIMED', 'DORMANT'))
+
+    # ── HAARP scaling ──────────────────────────────────────────────────────
+
+    def test_concentration_factor_matches_constant(self):
+        self.assertEqual(
+            self.manifest.concentration_factor, em.VOLUMETRIC_CONCENTRATION_FACTOR
+        )
+
+    def test_haarp_power_matches_constant(self):
+        self.assertAlmostEqual(self.manifest.haarp_power_w, em.HAARP_POWER_W, places=0)
+
+    # ── EPAS state injection ───────────────────────────────────────────────
+
+    def test_with_high_epas_scores_reaches_ignited(self):
+        """IGNITED requires Γ ≥ 0.945 — inject perfect scores to verify."""
+        perfect = {
+            'layer1_field_score': 1.0,
+            'layer2_score': 1.0,
+            'layer3_score': 1.0,
+            'shield_integrity': 1.0,
+            'radar_score': 1.0,
+        }
+        m = self.seer.project_druid_manifest(perfect)
+        self.assertEqual(m.plasma_status, 'IGNITED')
+        self.assertTrue(m.device_ready)
+
+    def test_with_zero_epas_scores_is_dormant(self):
+        """DORMANT — all shield layers at floor."""
+        zeroed = {
+            'layer1_field_score': 0.0,
+            'layer2_score': 0.0,
+            'layer3_score': 0.0,
+            'shield_integrity': 0.0,
+            'radar_score': 0.0,
+        }
+        m = self.seer.project_druid_manifest(zeroed)
+        self.assertEqual(m.plasma_status, 'DORMANT')
+        self.assertFalse(m.device_ready)
+
+    def test_default_baseline_dormant_without_live_health(self):
+        """Baseline has no live equity data (L2=0.50) → Γ < PHI gate → DORMANT.
+
+        This is correct and intentional: the device needs real exchange data
+        (L2 equity buffer) to achieve PRIMED status.  The test documents this
+        boundary so any regression is caught.
+        """
+        # Baseline: smoke test defaults — no Kraken credentials → L2 unknown
+        self.assertAlmostEqual(self.manifest.phase_scores[5], 0.500, places=3)  # P6 = L2
+        self.assertLess(self.manifest.shield_coherence, 0.618)  # below PHI gate
+        self.assertEqual(self.manifest.plasma_status, 'DORMANT')
+        self.assertFalse(self.manifest.device_ready)
+
+    def test_with_live_equity_reaches_primed(self):
+        """Injecting real L2 equity score (≥0.85) lifts Γ past the PHI gate → PRIMED."""
+        live = {
+            'layer1_field_score': 0.646,
+            'layer2_score': 0.90,      # strong L2: position well above liq floor
+            'layer3_score': 0.508,
+            'shield_integrity': 0.545,
+            'radar_score': 0.728,
+        }
+        m = self.seer.project_druid_manifest(live)
+        self.assertIn(m.plasma_status, ('PRIMED', 'IGNITED'))
+        self.assertTrue(m.device_ready)
+
+    # ── Serialisation ──────────────────────────────────────────────────────
+
+    def test_to_dict_json_serialisable(self):
+        d = self.manifest.to_dict()
+        payload = json.dumps(d)
+        self.assertIn('illumination_phases', payload)
+        self.assertIn('plasma', payload)
+        self.assertIn('power', payload)
+
+    def test_to_dict_has_six_phases(self):
+        d = self.manifest.to_dict()
+        self.assertEqual(len(d['illumination_phases']), 6)
+        self.assertEqual(d['illumination_phases'][0]['phase'], 'P1 Spark')
+        self.assertEqual(d['illumination_phases'][5]['phase'], 'P6 Output')
+
+    def test_full_decode_includes_project_druid(self):
+        decoded = self.seer.full_decode()
+        self.assertIn('project_druid', decoded)
+        self.assertIn('illumination_phases', decoded['project_druid'])
+        self.assertEqual(len(decoded['project_druid']['illumination_phases']), 6)
+
+    # ── CLI ────────────────────────────────────────────────────────────────
+
+    def test_cli_druid_mode_returns_zero(self):
+        rc = em.main(['--druid'])
+        self.assertEqual(rc, 0)
+
+    def test_cli_druid_json_mode_returns_zero(self):
+        rc = em.main(['--druid', '--json'])
+        self.assertEqual(rc, 0)
+
+
 if __name__ == '__main__':
     unittest.main()
