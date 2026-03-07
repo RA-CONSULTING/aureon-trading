@@ -280,6 +280,67 @@ class SolarRadarReport:
 
 
 @dataclass
+class EPASShieldState:
+    """Live 3-layer defensive shield assessment — the EPAS running on the portfolio.
+
+    EPAS = Electro-Plasma-Acoustic Shield (from the Aureon harmonic architecture).
+    In production trading this maps to three orthogonal defensive layers:
+
+      Layer 1 — EM Deflection  (Harmonic Field Noise Filter)
+        Reads the cosmic field NOW and INCOMING.  When the solar system is
+        flooding the field with tense aspects  the shield deflects those
+        frequencies from influencing execution decisions.
+
+      Layer 2 — Plasma Ablation  (Equity Buffer Guard)
+        Monitors real-time equity erosion vs the liquidation floor.  As
+        rollover costs ablate the equity buffer each day, layer 2 reads
+        how many days of protection remain and grades the structural
+        integrity of the position.
+
+      Layer 3 — Acoustic Fragmentation  (Harmonic Premise Coherence Lock)
+        Every trade was entered with a specific cosmic harmonic premise
+        (recorded via gaia_resonance in the neural snapshot).  Layer 3
+        re-computes the VSOP87 field at the entry timestamp and compares
+        it to the current field — when the harmonic premise has
+        'fragmented' (field collapsed from entry state), it signals that
+        the original reason for the trade no longer holds.
+
+    Produced by run_epas_shield() each cycle.  Stored on self._epas_state.
+    """
+    timestamp:              str
+
+    # ── Layer 1: EM Deflection ──────────────────────────────────────────────────
+    layer1_field_score:     float   # 0-1: blended cosmic (now) + radar (incoming)
+    layer1_status:          str     # CLEAR | DEFLECTING | OVERLOADED
+    layer1_threat_count:    int     # tense aspects incoming within 7d
+    layer1_threats:         List    # List[str] — top threat descriptions
+    layer1_recommendation:  str
+
+    # ── Layer 2: Plasma Ablation ────────────────────────────────────────────────
+    layer2_buffer_pct:      float   # % drop-to-liquidation (positive = safe room)
+    layer2_days_protected:  float   # days equity buffer survives at rollover burn rate
+    layer2_daily_burn:      float   # $/day rollover cost
+    layer2_score:           float   # 0-1: structural integrity of equity buffer
+    layer2_status:          str     # INTACT | ABLATING | CRITICAL | TERMINAL
+    layer2_recommendation:  str
+
+    # ── Layer 3: Acoustic Fragmentation ────────────────────────────────────────
+    layer3_entry_cosmic:    float   # cosmic field score at entry (VSOP87 reconstructed)
+    layer3_now_cosmic:      float   # cosmic field score now
+    layer3_premise_delta:   float   # now − entry: negative = field degraded since entry
+    layer3_score:           float   # 0-1: how coherent is the harmonic premise
+    layer3_status:          str     # COHERENT | CRACKING | FRAGMENTED
+    layer3_recommendation:  str
+
+    # ── Overall shield ──────────────────────────────────────────────────────────
+    shield_integrity:       float   # 0-1 weighted composite (L2 × 0.50, L1 × 0.30, L3 × 0.20)
+    shield_status:          str     # SHIELDS_UP | SHIELDS_STRESSED | SHIELDS_FAILING
+    priority_action:        str     # highest-urgency recommendation across all layers
+    new_entry_blocked:      bool    # True if shield status prohibits opening new positions
+    epas_summary:           str     # human-readable one-line shield assessment
+
+
+@dataclass
 class AutonomyConfig:
     """Full autonomy configuration."""
     mode: str = 'autonomous'  # autonomous | supervised | headless
@@ -344,6 +405,7 @@ class AutonomyExecutor:
         self._last_plan_score: float = 0.5  # updated by get_trinity_alignment() each cycle
         self._cosmic_state: Optional[CosmicHarmonicState] = None  # solar system field
         self._radar_state: Optional[SolarRadarReport] = None       # harmonic radar — the field approaching
+        self._epas_state:  Optional[EPASShieldState]  = None       # live 3-layer shield assessment
         
         logger.info("╔" + "═" * 78 + "╗")
         logger.info("║" + "AUREON FULL AUTONOMY ACTIVATED".center(78) + "║")
@@ -1044,6 +1106,247 @@ class AutonomyExecutor:
             traceback.print_exc()
             self._radar_state = None
             return None
+
+    # ════════════════════════════════════════════════════════════════════════════
+    # EPAS SHIELD  (Electro-Plasma-Acoustic Shield)
+    # "Three layers between the portfolio and destruction."
+    #
+    #   Layer 1 — EM Deflection     : harmonic field noise filter
+    #   Layer 2 — Plasma Ablation   : equity buffer / rollover guard
+    #   Layer 3 — Acoustic Frag.    : harmonic premise coherence lock
+    # ════════════════════════════════════════════════════════════════════════════
+
+    async def run_epas_shield(
+        self,
+        health: Optional['PositionHealthReport'] = None,
+    ) -> 'EPASShieldState':
+        """Run the live 3-layer EPAS defensive shield assessment.
+
+        Args:
+            health: pre-computed PositionHealthReport from Step 2.  If None,
+                    Layer 2 runs in a degraded mode with only the cosmic field.
+
+        Returns:
+            EPASShieldState with per-layer scores, statuses, and the composite
+            shield integrity score.  Stored on self._epas_state each cycle.
+        """
+        try:
+            # ── LAYER 1: EM Deflection — Harmonic Field Noise Filter ──────────
+            cosmic_ref = self._cosmic_state
+            radar_ref  = self._radar_state
+
+            if cosmic_ref is not None:
+                cs  = cosmic_ref.schumann_modulated_score
+            else:
+                cs  = 0.5
+
+            if radar_ref is not None:
+                rs  = radar_ref.radar_score
+            else:
+                rs  = 0.5
+
+            # Incoming field weighted slightly more — what's arriving matters most
+            l1_score = cs * 0.45 + rs * 0.55
+
+            # Identify tense incoming aspects within 7 days
+            tense_threats: List[str] = []
+            if radar_ref is not None:
+                for ev in radar_ref.events_7d:
+                    if ev.harmonic_value <= -0.25 and ev.pair_weight >= 0.50:
+                        tense_threats.append(ev.description)
+
+            if l1_score >= 0.62:
+                l1_status = 'CLEAR'
+                l1_rec    = 'Harmonic field clear — no EM interference'
+            elif l1_score >= 0.42:
+                l1_status = 'DEFLECTING'
+                l1_rec    = 'Field partially tense — monitor, reduce size if < 0.45'
+            else:
+                l1_status = 'OVERLOADED'
+                l1_rec    = 'HOSTILE FIELD — defer new entries, tighten stops'
+
+            # ── LAYER 2: Plasma Ablation — Equity Buffer Guard ───────────────
+            if health is not None:
+                buffer_pct     = abs(health.pct_drop_to_liq_at_target)  # positive = room to fall
+                daily_burn     = max(health.rollover_per_day, 0.001)
+                days_protected = health.equity_buffer / daily_burn
+
+                # Composite score: 70% distance to liq, 30% days remaining
+                dist_score = min(buffer_pct / 10.0, 1.0)
+                time_score = min(days_protected / 14.0, 1.0)
+                l2_score   = dist_score * 0.70 + time_score * 0.30
+
+                if l2_score >= 0.80:
+                    l2_status = 'INTACT'
+                    l2_rec    = 'Buffer healthy — ride to target'
+                elif l2_score >= 0.50:
+                    l2_status = 'ABLATING'
+                    l2_rec    = 'Buffer eroding — consider adding free margin'
+                elif l2_score >= 0.20:
+                    l2_status = 'CRITICAL'
+                    l2_rec    = 'CRITICAL — add margin or partial close NOW'
+                else:
+                    l2_status = 'TERMINAL'
+                    l2_rec    = 'EMERGENCY — liquidation imminent, close position'
+            else:
+                # No health data — degraded mode; assume moderate risk
+                buffer_pct     = 0.0
+                daily_burn     = 0.0
+                days_protected = 0.0
+                l2_score       = 0.5
+                l2_status      = 'UNKNOWN'
+                l2_rec         = 'No position health data — fetch balance to assess'
+
+            # ── LAYER 3: Acoustic Fragmentation — Premise Coherence Lock ─────
+            # Reconstruct the cosmic field at the entry timestamp of any live
+            # position using VSOP87 time-offset engine.  Compare entry field
+            # to current field — a large drop = harmonic premise has fragmented.
+            entry_cosmic = 0.5  # default: unknown entry state
+
+            # Try intent_feedback_queue.json first (most precise — has gaia at BUY)
+            queue_path = Path('/workspaces/aureon-trading/intent_feedback_queue.json')
+            if queue_path.exists():
+                try:
+                    with open(queue_path) as fq:
+                        queue = json.load(fq)
+                    pending = [q for q in queue if q.get('status') == 'pending']
+                    if pending:
+                        # Use the most recent pending trade's gaia_resonance
+                        last_snap = pending[-1].get('neural_input', {})
+                        entry_cosmic = float(last_snap.get('gaia_resonance', 0.5))
+                except Exception:
+                    pass
+
+            # If no queue entry, reconstruct from active_position.json entry timestamp
+            if entry_cosmic == 0.5:
+                ap_path = Path('/workspaces/aureon-trading/active_position.json')
+                if ap_path.exists():
+                    try:
+                        with open(ap_path) as f:
+                            ap = json.load(f)
+                        entry_ts_str = ap.get('timestamp', '')
+                        if entry_ts_str:
+                            from datetime import timezone
+                            entry_dt  = datetime.fromisoformat(
+                                entry_ts_str.replace('Z', '+00:00')
+                            )
+                            now_dt    = datetime.now(timezone.utc)
+                            days_since = (now_dt - entry_dt).total_seconds() / 86400.0
+                            # Ping backward in time to the entry moment
+                            entry_pos  = self._compute_planet_positions_math(
+                                days_offset=-days_since
+                            )
+                            entry_asp  = self._detect_planetary_aspects(entry_pos)
+                            entry_state = self._score_harmonic_fluid(entry_asp, entry_pos)
+                            entry_cosmic = entry_state.schumann_modulated_score
+                    except Exception:
+                        pass
+
+            now_cosmic    = cs  # current schumann-modulated score from Layer 1
+            premise_delta = now_cosmic - entry_cosmic  # negative = field degraded
+
+            # Score: 1.0 when premise is fully intact, 0.0 when fully fragmented
+            # Capped: premise improvement doesn't raise score above 1.0
+            l3_raw_score  = 0.5 + premise_delta  # delta of -0.5 → score 0.0
+            l3_score      = max(0.0, min(1.0, l3_raw_score))
+
+            # Also penalise if radar is RADAR_TENSE (incoming field hostile)
+            if radar_ref is not None and radar_ref.interpretation == 'RADAR_TENSE':
+                l3_score = max(0.0, l3_score - 0.15)   # incoming headwind
+
+            if l3_score >= 0.65:
+                l3_status = 'COHERENT'
+                l3_rec    = 'Harmonic premise intact — entry thesis holds'
+            elif l3_score >= 0.38:
+                l3_status = 'CRACKING'
+                l3_rec    = 'Field shifted since entry — reassess position rationale'
+            else:
+                l3_status = 'FRAGMENTED'
+                l3_rec    = 'ENTRY PREMISE DISSOLVED — original harmonic no longer present'
+
+            # ── OVERALL SHIELD ────────────────────────────────────────────────
+            # Layer 2 (equity) carries most weight — physical reality trumps harmonics
+            shield_integrity = l2_score * 0.50 + l1_score * 0.30 + l3_score * 0.20
+            shield_integrity = round(max(0.0, min(1.0, shield_integrity)), 4)
+
+            if shield_integrity >= 0.70:
+                shield_status    = 'SHIELDS_UP'
+                new_entry_blocked = False
+            elif shield_integrity >= 0.42:
+                shield_status    = 'SHIELDS_STRESSED'
+                new_entry_blocked = False   # stressed but not blocked
+            else:
+                shield_status    = 'SHIELDS_FAILING'
+                new_entry_blocked = True    # do NOT open new positions
+
+            # Priority action = most critical layer's recommendation
+            layer_priorities = [
+                (l2_score, l2_rec),
+                (l1_score, l1_rec),
+                (l3_score, l3_rec),
+            ]
+            priority_action = min(layer_priorities, key=lambda x: x[0])[1]
+
+            epas_summary = (
+                f"{shield_status}  integrity={shield_integrity:.3f}  "
+                f"L1={l1_status}({l1_score:.2f})  "
+                f"L2={l2_status}({l2_score:.2f})  "
+                f"L3={l3_status}({l3_score:.2f})"
+            )
+
+            state = EPASShieldState(
+                timestamp=datetime.now().isoformat(),
+                layer1_field_score=round(l1_score, 4),
+                layer1_status=l1_status,
+                layer1_threat_count=len(tense_threats),
+                layer1_threats=tense_threats[:5],
+                layer1_recommendation=l1_rec,
+                layer2_buffer_pct=round(buffer_pct, 3),
+                layer2_days_protected=round(days_protected, 1),
+                layer2_daily_burn=round(daily_burn, 4),
+                layer2_score=round(l2_score, 4),
+                layer2_status=l2_status,
+                layer2_recommendation=l2_rec,
+                layer3_entry_cosmic=round(entry_cosmic, 4),
+                layer3_now_cosmic=round(now_cosmic, 4),
+                layer3_premise_delta=round(premise_delta, 4),
+                layer3_score=round(l3_score, 4),
+                layer3_status=l3_status,
+                layer3_recommendation=l3_rec,
+                shield_integrity=shield_integrity,
+                shield_status=shield_status,
+                priority_action=priority_action,
+                new_entry_blocked=new_entry_blocked,
+                epas_summary=epas_summary,
+            )
+            self._epas_state = state
+            return state
+
+        except Exception as e:
+            logger.warning(f"EPAS shield assessment failed: {e}")
+            traceback.print_exc()
+            self._epas_state = None
+            # Return a max-safe fallback — do not block on EPAS failure
+            fallback = EPASShieldState(
+                timestamp=datetime.now().isoformat(),
+                layer1_field_score=0.5, layer1_status='UNKNOWN',
+                layer1_threat_count=0, layer1_threats=[],
+                layer1_recommendation='EPAS Layer 1 unavailable',
+                layer2_buffer_pct=0.0, layer2_days_protected=0.0,
+                layer2_daily_burn=0.0, layer2_score=0.5,
+                layer2_status='UNKNOWN',
+                layer2_recommendation='EPAS Layer 2 unavailable',
+                layer3_entry_cosmic=0.5, layer3_now_cosmic=0.5,
+                layer3_premise_delta=0.0, layer3_score=0.5,
+                layer3_status='UNKNOWN',
+                layer3_recommendation='EPAS Layer 3 unavailable',
+                shield_integrity=0.5,
+                shield_status='SHIELDS_STRESSED',
+                priority_action='EPAS offline — manual assessment required',
+                new_entry_blocked=False,
+                epas_summary='EPAS OFFLINE — fallback state',
+            )
+            return fallback
 
     # ════════════════════════════════════════════════════════════════════════════
     # INTENT-COHERENCE FEEDBACK LOOP
@@ -2141,6 +2444,49 @@ class AutonomyExecutor:
         else:
             logger.info("  No open margin positions — book is clear")
 
+        # ── Step 2b: EPAS Shield — 3-layer defensive assessment ─────────────────────
+        # Three layers between the portfolio and destruction:
+        #   L1 EM Deflection:   harmonic field integrity (cosmic NOW + incoming)
+        #   L2 Plasma Ablation: equity buffer guard (liq floor + rollover burn)
+        #   L3 Acoustic Frag:   premise coherence (entry harmonic still intact?)
+        logger.info("")
+        logger.info("  ── EPAS SHIELD (3-LAYER DEFENSIVE ASSESSMENT) ───────────────────")
+        epas = await self.run_epas_shield(health)
+        map_result['epas'] = epas
+
+        # Shield status icon
+        epas_icon = (
+            '🛡️  SHIELDS UP   '
+            if epas.shield_status == 'SHIELDS_UP' else
+            '⚡  SHIELDS STRESSED'
+            if epas.shield_status == 'SHIELDS_STRESSED' else
+            '🚨  SHIELDS FAILING'
+        )
+        logger.info(f"  {epas_icon}  integrity={epas.shield_integrity:.3f}")
+        logger.info(
+            f"  L1 EM-Deflection:  {epas.layer1_status:<12}  "
+            f"field={epas.layer1_field_score:.3f}  threats={epas.layer1_threat_count}"
+        )
+        logger.info(
+            f"  L2 Plasma-Ablation:{epas.layer2_status:<12}  "
+            f"score={epas.layer2_score:.3f}  "
+            f"buffer={epas.layer2_buffer_pct:.1f}%  "
+            f"days={epas.layer2_days_protected:.1f}  "
+            f"burn=${epas.layer2_daily_burn:.2f}/d"
+        )
+        logger.info(
+            f"  L3 Acoustic-Frag:  {epas.layer3_status:<12}  "
+            f"score={epas.layer3_score:.3f}  "
+            f"premise_delta={epas.layer3_premise_delta:+.4f}  "
+            f"(entry={epas.layer3_entry_cosmic:.3f} → now={epas.layer3_now_cosmic:.3f})"
+        )
+        if epas.layer1_threats:
+            logger.info(f"  L1 threats: {epas.layer1_threats[0][:70]}")
+        logger.info(f"  Priority action: {epas.priority_action}")
+        if epas.new_entry_blocked and not map_result['block_reason']:
+            map_result['block_reason'] = f'EPAS shield failing — {epas.shield_status}'
+            logger.warning(f"  🚨 EPAS BLOCK: new entries suppressed (shield integrity {epas.shield_integrity:.3f})")
+
         # ── Step 3: Trinity alignment ──
         logger.info("")
         logger.info("  ── TRINITY ALIGNMENT ─────────────────────────────────────────────")
@@ -2170,9 +2516,11 @@ class AutonomyExecutor:
         book_ok    = map_result['existing_positions_clear']
         align_ok   = alignment >= self.config.execution_threshold
         signals_ok = signals['buy'] > 0
+        epas_ok    = not (epas.new_entry_blocked if epas else False)
 
         gates = [
             (book_ok,    "Existing book safe",        "PASS ✅", "BLOCK ❌ — fix existing positions first"),
+            (epas_ok,    "EPAS shield not failing",   "PASS ✅", "BLOCK 🛡 — shield integrity critical"),
             (align_ok,   "Trinity alignment",          "PASS ✅", "WAIT  ⏸ — await alignment"),
             (signals_ok, "Nexus BUY signals present",  "PASS ✅", "WAIT  ⏸ — no buy signals"),
         ]
