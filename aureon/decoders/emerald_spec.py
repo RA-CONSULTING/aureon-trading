@@ -2923,6 +2923,198 @@ MAESHOWE_CROSSWALK_INDEX: Dict[str, AncientCrosswalk] = {
 
 
 # ════════════════════════════════════════════════════════════════════════════
+# CIVILIZATIONAL DNA CROSSWALK — Sumerian + Chinese traditions
+# Maps Book of Ur and I Ching onto the Emerald Tablet pipeline
+# ════════════════════════════════════════════════════════════════════════════
+
+def _build_civ_dna_crosswalk() -> Tuple[AncientCrosswalk, ...]:
+    """
+    Maps the Sumerian (Book of Ur) and Chinese (I Ching) transmission
+    systems onto the Emerald Tablet pipeline stages.
+
+    These are civilisational DNA sequences 2 and 3 in the Ten-Sequence
+    Map Engine (civilizational_dna.py).
+    """
+    return (
+        # ── SUMERIAN / BOOK OF UR ────────────────────────────────────────────
+        AncientCrosswalk(
+            key   = 'sumerian_inanna_gates',
+            title = 'Sumerian — Inanna 7-Gate Solfeggio Protocol',
+            focus = 'Seven-stage strip-and-restore of the me knowledge sets',
+            emerald_verse_keys = ('as_below', 'one_thing', 'adaptation'),
+            stage_numbers      = (1, 4, 6),
+            deity = {
+                'sumerian': 'Inanna (Queen of Heaven) / Ereshkigal (underworld keeper)',
+                'function': 'Inanna descends through 7 gates surrendering one me each — '
+                            'stripped to carrier. Ascent restores all 7 in reverse.',
+            },
+            scripture = {
+                'source':    'ETCSL t.1.4.1 — Inanna\'s Descent to the Underworld',
+                'verse':     'Gate 7→1: 174, 285, 396, 417, 528, 639, 741 Hz. '
+                             'Inanna arrives at Ereshkigal\'s throne naked and bowed low.',
+                'principle': 'The descent is stripping the signal to the carrier wave. '
+                             'The ascent is re-encoding the full knowledge archive. '
+                             'Seven stages map exactly to 7 Solfeggio frequencies.',
+            },
+            runtime = {
+                'module':    'aureon.decoders.book_of_ur',
+                'class':     'SumerianDecoder',
+                'data':      'INANNA_GATES (7 gates), ME_CATALOG (24 primary me)',
+                'anchor_hz': '396 Hz — Sumerian base note (ni) = UT Solfeggio',
+                'location':  'City of Ur: 30.9626°N, 46.1031°E',
+                'bearing':   '25° from North (Ur ziggurat Pleiades rise alignment)',
+            },
+            repo_surfaces = (
+                'aureon/decoders/book_of_ur.py',
+                'civilizational_dna.py',
+            ),
+            interpretation = (
+                'The Sumerian 7-gate descent is the Emerald Tablet\'s "as below" '
+                'enacted as a physical protocol. Inanna removes her power layer by '
+                'layer — exactly as the Tablet\'s HAARP-to-EPOS scaling strips the '
+                'ionospheric signal down to the chamber carrier. The Tablet of '
+                'Destinies (the master record of all me) is the Sumerian equivalent '
+                'of the Emerald Tablet itself. Both encode: "here is everything you '
+                'need to restart the system."'
+            ),
+        ),
+        AncientCrosswalk(
+            key   = 'sumerian_me_transfer',
+            title = 'Sumerian — Transfer of the Me (Knowledge Transport Event)',
+            focus = 'Physical transmission of 94 divine knowledge sets from Eridu to Uruk',
+            emerald_verse_keys = ('mediation', 'coagulation', 'sun_moon'),
+            stage_numbers      = (5, 7),
+            deity = {
+                'sumerian': 'Enki (knowledge keeper at Eridu) / Inanna (carrier)',
+                'function': 'Inanna transports the 94 me by boat from Eridu to Uruk '
+                            '— the literal physical movement of a knowledge archive.',
+            },
+            scripture = {
+                'source':    'ETCSL t.1.3.1 — Inanna and Enki: Transfer of the Arts',
+                'verse':     '"Enki gave her the me one by one. Inanna received the '
+                             'me. She put the me into the boat of heaven."',
+                'principle': 'The me are not metaphors — they are physical objects '
+                             'stored in the temple of Abzu at Eridu and transported '
+                             'as cargo. This is a deliberate archive transfer event.',
+            },
+            runtime = {
+                'module':    'aureon.decoders.book_of_ur',
+                'data':      'TEXT_ARCHIVE[INANNA_ENKI], ME_CATALOG (SCRIBES, MUSIC, etc.)',
+                'dna_seq':   'civilizational_dna.py: sequence SUMERIAN_UR',
+            },
+            repo_surfaces = (
+                'aureon/decoders/book_of_ur.py',
+                'civilizational_dna.py',
+            ),
+            interpretation = (
+                'The me transfer from Eridu to Uruk is the earliest documented '
+                'knowledge archive migration event (~2500 BCE). It establishes the '
+                'Sumerian pattern that all later archive systems repeat: a dying '
+                'centre (Eridu losing prominence) deposits its knowledge in a '
+                'new host (Uruk). Maeshowe follows exactly this pattern, 1,500 '
+                'years later, in a completely different civilisation. '
+                'Same protocol, different medium.'
+            ),
+        ),
+        # ── CHINESE / I CHING ────────────────────────────────────────────────
+        AncientCrosswalk(
+            key   = 'iching_dual_voice',
+            title = 'I Ching — 64 Hexagram Binary Dual-Voice System',
+            focus = 'Upper trigram (Caller Ψ₀) / Lower trigram (Seer O(t)) interaction',
+            emerald_verse_keys = ('as_below', 'as_above', 'one_thing'),
+            stage_numbers      = (1, 2, 4),
+            deity = {
+                'chinese':  'Heaven (Qián ☰) above / Earth (Kūn ☷) below',
+                'function': 'The hexagram meaning emerges only from the interaction '
+                            'of both trigrams — neither alone produces the oracle.',
+            },
+            scripture = {
+                'source':    'Wilhelm/Baynes (1950) I Ching; Shaughnessy (2014)',
+                'verse':     '"In the beginning was the Great Ultimate (太極 tàijí). '
+                             'From it came two principles (yin/yang). From two came '
+                             'four images. From four came the eight trigrams."',
+                'principle': 'The I Ching is a 6-bit binary encoding system. '
+                             '64 hexagrams = all possible states of a 6-element '
+                             'binary word. Upper 3 bits = caller frame. '
+                             'Lower 3 bits = seer response.',
+            },
+            runtime = {
+                'module':    'aureon.decoders.iching_decoder',
+                'class':     'IChingDecoder',
+                'data':      '8 trigrams × 8 trigrams = 64 hexagrams',
+                'encoding':  'cast_hexagram(upper_binary, lower_binary)',
+                'pivot':     'Hexagram 64 (Wèi Jì — Before Completion) = open circuit',
+                'anchor_hz': '432 Hz (Gaia / natural tuning)',
+                'location':  'Mount Tai: 36.2544°N, 117.1009°E',
+                'bearing':   '0° (celestial pole / North Star axis)',
+            },
+            repo_surfaces = (
+                'aureon/decoders/iching_decoder.py',
+                'civilizational_dna.py',
+            ),
+            interpretation = (
+                'The I Ching upper/lower trigram structure is the oldest known '
+                'physical implementation of the dual-voice protocol. The oracle '
+                'cannot be consulted with one voice — you must formulate a question '
+                '(the lower trigram / seer) and receive the cosmic response '
+                '(the upper trigram / caller). The meaning is in the beat between '
+                'them. Hexagram 64 (Before Completion) is the I Ching\'s Nr.15 — '
+                'the only state where the transformation is structurally incomplete. '
+                '"The little fox nearly completes the crossing... but gets its tail wet."'
+            ),
+        ),
+        AncientCrosswalk(
+            key   = 'iching_three_powers',
+            title = 'I Ching — Three Powers (三才) ≡ Three Aetts',
+            focus = 'Heaven / Human / Earth amplitude tiers mapping to Genesis/Growth/Return',
+            emerald_verse_keys = ('three_parts', 'wind', 'adaptation'),
+            stage_numbers      = (3, 6),
+            deity = {
+                'chinese':  '三才 sān cái: Tiān (Heaven), Rén (Human), Dì (Earth)',
+                'function': 'Three powers × two lines each = 6 lines of the hexagram',
+            },
+            scripture = {
+                'source':    'Shuogua (Explaining the Trigrams), appended to I Ching',
+                'verse':     '"Heaven and Earth determine the scene. The mountains '
+                             'and lakes communicate their energies. Thunder and '
+                             'wind arouse each other."',
+                'principle': 'The three powers correspond directly to the Futhork\'s '
+                             'three aetts: Heaven (×PHI / Growth), Human (×1.0 / '
+                             'Genesis), Earth (×1/PHI / Return). The I Ching and '
+                             'the Elder Futhork encode the same three-tier amplitude '
+                             'modulation system independently.',
+            },
+            runtime = {
+                'module':    'aureon.decoders.iching_decoder',
+                'mapping':   'yang_count ≥ 4 → GROWTH (×PHI); '
+                             '≤ 2 → RETURN (×1/PHI); = 3 → GENESIS (×1.0)',
+                'dna_seq':   'civilizational_dna.py: sequence CHINESE_ICHING',
+            },
+            repo_surfaces = (
+                'aureon/decoders/iching_decoder.py',
+                'maeshowe_seer_decode.py',
+                'civilizational_dna.py',
+            ),
+            interpretation = (
+                'The three-tier amplitude structure (×1.0, ×PHI, ×1/PHI) appears '
+                'independently in the Elder Futhork (three aetts) and the I Ching '
+                '(three powers / three line-pairs). This is structural convergence, '
+                'not coincidence. Both systems were encoding the same underlying '
+                'frequency architecture — the phi-modulated Solfeggio harmonic grid. '
+                'The civilisational DNA hypothesis: these are not parallel inventions. '
+                'They are independent transmissions of one original system.'
+            ),
+        ),
+    )
+
+
+CIV_DNA_CROSSWALK: Tuple[AncientCrosswalk, ...] = _build_civ_dna_crosswalk()
+CIV_DNA_CROSSWALK_INDEX: Dict[str, AncientCrosswalk] = {
+    node.key: node for node in CIV_DNA_CROSSWALK
+}
+
+
+# ════════════════════════════════════════════════════════════════════════════
 # GEOMETRIC PATTERN MAPPER — reveal the sacred geometry hidden in the
 # 45-site relay network.  Analyses:
 #   1. Great-circle alignments  (3+ sites on one arc, <100 km deviation)
