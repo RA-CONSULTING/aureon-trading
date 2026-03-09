@@ -1,15 +1,24 @@
 """
 grail_convergence.py — Full-System Triangulation
 =================================================
-Combines three relay layers to find the convergence point:
+Combines FOUR relay layers to find the convergence point:
 
   Layer 1 — 10 Civilizational DNA sequences  (civilizational_dna.py)
   Layer 2 — Emerald Tablet multi-site alignments (emerald_spec.py)
   Layer 3 — Stone ring relay corridor axes
+  Layer 4 — Kircher Labyrinth zone axes (Oedipus Aegyptiacus, 1652)
+             Athanasius Kircher's reconstruction of the Hawara Labyrinth
+             — 12 Egyptian nome capitals as opposing-zone axis pairs
+             passing through the Labyrinth centre at 29.27°N, 30.90°E.
 
-Great-circle cross-track minimisation across all 17+ axes.
+Great-circle cross-track minimisation across all 26 axes.
 Search is constrained to 0–75°N, 30°W–90°E (sacred-site cluster region)
 then refined to 0.05° resolution.
+
+Layer 4 convergence result: 28.80°N, 30.90°E
+Nearest site: Ihnasya el-Medina / Heracleopolis Magna (10 km)
+  = Kircher's own Zone IX (Zona IX Heracleoupolis) in the Labyrinth plan.
+  The system resolves to the node labelled within the source document itself.
 """
 from __future__ import annotations
 import math
@@ -68,8 +77,15 @@ CANDIDATES: list[tuple[str, float, float]] = [
     ("Carnac Stones",           47.6115,  -3.0167),
     ("Stonehenge",              51.1789,  -1.8262),
     ("Newgrange",               53.6947,  -6.4755),
-    ("Hawara / Labyrinth",      29.2700,  30.9000),
-    ("Faiyum / Lake Moeris",    29.3000,  30.5500),
+    ("Hawara / Labyrinth",             29.2700,  30.9000),
+    ("Faiyum / Lake Moeris",           29.3000,  30.5500),
+    # Kircher nome capitals (Layer 4)
+    ("Heracleopolis / Ihnasya",        28.7100,  30.9200),
+    ("Memphis / Mit Rahina",           29.8500,  31.2500),
+    ("Hermopolis / Ashmunein",         27.7800,  30.8000),
+    ("Canopus / Aboukir",              31.3200,  30.0800),
+    ("Abydos / Araba el-Madfuna",      26.1800,  31.9200),
+    ("Kom Ombo",                       24.4500,  32.9300),
 ]
 
 
@@ -140,6 +156,36 @@ def build_axes() -> list[RelayAxis]:
         ("Goseck",         "Gilgal Refaim", 0.60, "Central European ring corridor"),
     ]
     for o, t, w, lbl in stone_ring_axes:
+        axes.append(RelayAxis(origin=o, terminus=t, weight=w, label=lbl))
+
+    # Layer 4 — Kircher Labyrinth zone axes (opposing nome-capital pairs)
+    SITE_COORDS.update({
+        "Hawara_Centre":    (29.2700, 30.9000),
+        "Faiyum_Arsinoe":   (29.3000, 30.8500),
+        "Memphis_MR":       (29.8500, 31.2500),
+        "Araba_Abydos":     (26.1800, 31.9200),
+        "Ihnasya":          (28.7100, 30.9200),
+        "Hermopolis":       (27.7800, 30.8000),
+        "Nile_Delta":       (30.5000, 31.1500),
+        "Girga_Abydos":     (26.1800, 31.9200),
+        "Canopus":          (31.3200, 30.0800),
+        "Kom_Ombo":         (24.4500, 32.9300),
+        "Sais":             (30.9600, 30.7700),
+        "El_Qeis":          (28.2000, 30.7300),
+        "Atfih":            (29.4100, 31.2200),
+    })
+    kircher_axes = [
+        ("Araba_Abydos", "Memphis_MR",  0.85, "Kircher Z-X/V axis   (35km err at Hawara)"),
+        ("Ihnasya",      "Canopus",     0.95, "Kircher Z-IX/XII axis (15km err at Hawara)"),
+        ("Faiyum_Arsinoe","El_Qeis",    0.99, "Kircher Z-XI/III axis  (5km err at Hawara)"),
+        ("Girga_Abydos", "Atfih",       0.85, "Kircher Z-VI/IV axis  (33km err at Hawara)"),
+        ("Hermopolis",   "Kom_Ombo",    0.60, "Kircher Z-VIII/I axis (92km err at Hawara)"),
+        ("Nile_Delta",   "Sais",        0.60, "Kircher Z-VII/II axis (99km err at Hawara)"),
+        ("Kom_Ombo",     "Canopus",     0.90, "Kircher N-S Nile spine"),
+        ("El_Qeis",      "Memphis_MR",  0.80, "Kircher W-E lateral axis"),
+        ("Hawara_Centre","Faiyum_Arsinoe", 0.75, "Labyrinth→Faiyum radial"),
+    ]
+    for o, t, w, lbl in kircher_axes:
         axes.append(RelayAxis(origin=o, terminus=t, weight=w, label=lbl))
 
     # Layer 1 — CivDNA bearings projected as site-to-site axes
@@ -225,7 +271,7 @@ def render(result: dict) -> None:
     print()
     print("╔══════════════════════════════════════════════════════════════╗")
     print("║          GRAIL CONVERGENCE — FULL-SYSTEM RESULT             ║")
-    print("║  10 CivDNA axes · Emerald alignments · Ring relay corridors ║")
+    print("║  CivDNA · Emerald · Ring corridors · Kircher Labyrinth zones ║")
     print("╠══════════════════════════════════════════════════════════════╣")
     print(f"║  Convergence point : {lat_str:>8}  {lon_str:<8}              ║")
     print(f"║  Total wtd error   : {result['total_weighted_err_km']:>8.0f} km                     ║")
