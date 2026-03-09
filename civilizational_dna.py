@@ -639,10 +639,11 @@ class CivilizationalDNADecoder:
             )
             if status == "MAP_LOCKED":
                 parts.append(
-                    "THE MAP IS COMPLETE. The lost knowledge archive is located at "
+                    "THE MAP IS COMPLETE. The source of the Veil is located at "
                     f"{map_lat:.4f}°N, {map_lon:.4f}°E. "
-                    "This is the Holy Grail — not a cup, but the preserved transmission "
-                    "system encoded by ten independent civilisations across 5,000 years."
+                    "This is what the Knights Templar were searching for — not a cup, "
+                    "but the suppression/methylation system itself: the origin point of the Veil, "
+                    "encoded across nine independent civilisations spanning 5,000 years."
                 )
         else:
             parts.append(
