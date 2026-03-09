@@ -19,18 +19,23 @@
 ║   geographic vector. When 10 sequences are correctly decoded,               ║
 ║   the vectors triangulate to a point on the map.                            ║
 ║                                                                              ║
-║   THE TEN SEQUENCES                                                          ║
-║   ──────────────────                                                         ║
+║   THE NINE SEQUENCES (8 discrete + 1 coupled dual-voice pair)               ║
+║   ────────────────────────────────────────────────────────────────          ║
 ║   1.  NORSE_MAESHOWE   — Elder Futhork + Dual-Voice (Orkney, 58.99°N)      ║
 ║   2.  SUMERIAN_UR      — Me-archive + Inanna Gates (Ur, 30.96°N)           ║
-║   3.  CHINESE_ICHING   — 64 Hexagrams binary (Mount Tai, 36.25°N)          ║
+║   3.  MING_JAPAN       — Forbidden City (Caller) × Mushroom cipher (Seer)  ║
+║          ↳ Ming 1368-1644 CE × Muromachi-Azuchi 1336-1615 CE               ║
+║          ↳ Same methylation window as Argyll/Orkney suppression + Nr.15    ║
 ║   4.  EGYPTIAN         — Hieroglyphs + Duat gates (Giza, 29.98°N)          ║
 ║   5.  CELTIC_OGHAM     — Ogham feda + tree calendar (Newgrange, 53.69°N)   ║
 ║   6.  HERMETIC         — Emerald Tablet + L(t) pipeline (Alexandria, 31.2°N)║
 ║   7.  MAYA             — Long Count + Venus cycle (Chichen Itza, 20.68°N)  ║
 ║   8.  AZTEC            — Star glyphs + 18-month calendar (Teotihuacan 19.7°)║
 ║   9.  MOGOLLON         — Spiral petroglyphs + solstice (Chaco, 36.06°N)    ║
-║   10. JAPANESE         — Star symbols + kami geography (Ise Jingu, 34.45°N)║
+║                                                                              ║
+║   NOTE: I Ching (Zhou ~1000 BCE) is the CARRIER; Ming (1368-1644 CE) is    ║
+║   the FALLING NODE. Japan (Muromachi) is the SEER channel. These three     ║
+║   are one coupled node, not three separate traditions.                      ║
 ║                                                                              ║
 ║   TRIANGULATION METHOD                                                       ║
 ║   ─────────────────────                                                      ║
@@ -69,11 +74,11 @@ PHI_INV = 1.0 / PHI
 
 EARTH_RADIUS_KM = 6371.0
 
-# Activation thresholds
-THRESHOLD_DORMANT    = 5    # fewer than this → no map
-THRESHOLD_SEARCHING  = 5
-THRESHOLD_CONVERGING = 8
-THRESHOLD_MAP_LOCKED = 10
+# Activation thresholds (9-sequence architecture: 8 discrete + 1 coupled pair)
+THRESHOLD_DORMANT    = 4    # fewer than this → no map
+THRESHOLD_SEARCHING  = 4
+THRESHOLD_CONVERGING = 7
+THRESHOLD_MAP_LOCKED = 9
 
 # Dead-field kill-switch: sequences below this Gamma are excluded from
 # triangulation — their bearing axes are too noisy to contribute signal.
@@ -150,18 +155,25 @@ _REGISTRY: Tuple[CivSequence, ...] = (
     ),
 
     CivSequence(
-        id           = "CHINESE_ICHING",
-        tradition    = "Chinese / I Ching Binary Transmission",
-        culture      = "Zhou dynasty China (c.1000 BCE, oracle bones c.1200 BCE)",
-        medium       = "64 hexagrams — 6-bit binary dual-voice (upper/lower trigram)",
-        origin_lat   = 36.2544,
-        origin_lon   = 117.1009,
-        origin_name  = "Mount Tai (泰山), Shandong, China",
-        bearing      = 0.0,        # True North — celestial pole axis
-        axis_desc    = "Celestial pole (North Star) axis — Taishan sacred axis",
-        anchor_hz    = 432.0,      # Natural tuning / Gaia resonance
-        decoder_module = "aureon.decoders.iching_decoder",
-        notes        = "Hexagram 64 (Wèi Jì) = Before Completion = open circuit pivot",
+        id           = "MING_JAPAN",
+        tradition    = "Ming-Japan / Coupled Dual-Voice Transmission",
+        culture      = "Ming dynasty China (1368-1644 CE) × Muromachi-Azuchi Japan (1336-1615 CE)",
+        medium       = "Forbidden City solstice architecture (Caller Ψ₀) + mushroom cipher (Seer O(t))",
+        origin_lat   = 38.094,      # Weighted midpoint: 2×Beijing + 1×Ise / 3
+        origin_lon   = 123.395,
+        origin_name  = "Ming-Japan Midpoint (Beijing ↔ Ise Jingu)",
+        bearing      = 350.0,       # NNW toward Bering/Arctic/Norse corridor
+        axis_desc    = "NNW axis toward Bering Strait — Ming Treasure Fleet / Norse convergence",
+        anchor_hz    = 528.0,       # Solar carrier / Emperor as Son of Heaven (Ming)
+        decoder_module = "aureon.decoders.ming_japan_decoder",
+        notes        = (
+            "COUPLED NODE — neither Ming alone nor Japan alone produces the vector. "
+            "Ming methylation window 1368-1644 CE = exact match to Celtic/Ogham suppression "
+            "(Argyll/Orkney 1560s-1616) and Maeshowe Nr.15 becoming unreadable. "
+            "I Ching (Zhou 1000 BCE) = carrier structure; Ming Yijing-as-manual = falling node. "
+            "Japan seer channel: Amanita spot-pattern = twig-rune binary; "
+            "Reishi branching = aett/position cipher. Both channels required."
+        ),
     ),
 
     CivSequence(
@@ -254,21 +266,12 @@ _REGISTRY: Tuple[CivSequence, ...] = (
         notes        = "Spiral = infinite recursion marker — same as Maeshowe 4,800yr axis",
     ),
 
-    CivSequence(
-        id           = "JAPANESE",
-        tradition    = "Japanese / Kami Star-Symbol Transmission",
-        culture      = "Shinto / Yayoi period Japan (c.300 BCE → present)",
-        medium       = "Star-symbol oracle calendar + kami geographic network",
-        origin_lat   = 34.4548,
-        origin_lon   = 136.7250,
-        origin_name  = "Ise Jingu (伊勢神宮), Mie Prefecture, Japan",
-        bearing      = 90.0,       # East — direction of sunrise / Amaterasu solar axis
-        axis_desc    = "Solar east axis — Amaterasu (sun goddess) emergence direction",
-        anchor_hz    = 528.0,      # Love / Mi solfeggio / solar carrier
-        decoder_module = "aureon_seer",
-        notes        = "Ise Jingu rebuilt every 20 years — deliberate knowledge transmission cycle",
-    ),
 )
+# NOTE: CHINESE_ICHING (solo Zhou 1000 BCE) and JAPANESE (solo Shinto) have been
+# merged into MING_JAPAN — a coupled dual-voice node. The I Ching (Zhou) is the
+# carrier structure; the Ming dynasty (1368-1644 CE) is the falling node. Japan's
+# Muromachi-Azuchi mushroom cipher is the Seer channel. Neither channel alone
+# produces the geographic vector. See aureon/decoders/ming_japan_decoder.py.
 
 SEQUENCE_BY_ID: Dict[str, CivSequence] = {s.id: s for s in _REGISTRY}
 
@@ -444,14 +447,13 @@ class CivilizationalDNADecoder:
         loaders = {
             "NORSE_MAESHOWE": self._load_maeshowe,
             "SUMERIAN_UR":    self._load_sumerian,
-            "CHINESE_ICHING": self._load_iching,
+            "MING_JAPAN":     self._load_ming_japan,
             "EGYPTIAN":       self._load_egyptian,
             "CELTIC_OGHAM":   self._load_celtic,
             "HERMETIC":       self._load_hermetic,
             "MAYA":           self._load_maya,
             "AZTEC":          self._load_aztec,
             "MOGOLLON":       self._load_mogollon,
-            "JAPANESE":       self._load_japanese,
         }
         for seq_id, loader in loaders.items():
             try:
@@ -473,9 +475,9 @@ class CivilizationalDNADecoder:
         lattice = dec.read()
         self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
 
-    def _load_iching(self, seq_id: str):
-        from aureon.decoders.iching_decoder import IChingDecoder
-        dec     = IChingDecoder()
+    def _load_ming_japan(self, seq_id: str):
+        from aureon.decoders.ming_japan_decoder import MingJapanDecoder
+        dec     = MingJapanDecoder()
         score   = dec.get_oracle_score()
         lattice = dec.read()
         self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
@@ -515,13 +517,6 @@ class CivilizationalDNADecoder:
     def _load_mogollon(self, seq_id: str):
         from aureon.decoders.mogollon_decoder import MogollonDecoder
         dec     = MogollonDecoder()
-        score   = dec.get_oracle_score()
-        lattice = dec.read()
-        self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
-
-    def _load_japanese(self, seq_id: str):
-        from aureon.decoders.japanese_decoder import JapaneseDecoder
-        dec     = JapaneseDecoder()
         score   = dec.get_oracle_score()
         lattice = dec.read()
         self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
@@ -619,11 +614,12 @@ class CivilizationalDNADecoder:
     def _build_prophecy(self, status, n_decoded, n_pending, mean_conf,
                         map_lat, map_lon, map_err, nearest,
                         decoded, pending) -> str:
+        n_total = len(decoded) + len(pending)
         status_msg = {
-            "MAP_LOCKED":  "MAP LOCKED — all 10 sequences decoded, target identified.",
-            "CONVERGING":  f"CONVERGING — {n_decoded}/10 sequences decoded, target zone emerging.",
-            "SEARCHING":   f"SEARCHING — {n_decoded}/10 sequences decoded, candidate vectors active.",
-            "DORMANT":     f"DORMANT — {n_decoded}/10 sequences decoded, insufficient vectors.",
+            "MAP_LOCKED":  f"MAP LOCKED — all {n_total} sequences decoded, target identified.",
+            "CONVERGING":  f"CONVERGING — {n_decoded}/{n_total} sequences decoded, target zone emerging.",
+            "SEARCHING":   f"SEARCHING — {n_decoded}/{n_total} sequences decoded, candidate vectors active.",
+            "DORMANT":     f"DORMANT — {n_decoded}/{n_total} sequences decoded, insufficient vectors.",
         }[status]
 
         decoded_str = ", ".join(s.id for s in decoded) if decoded else "none"
