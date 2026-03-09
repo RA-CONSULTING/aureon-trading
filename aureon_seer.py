@@ -121,8 +121,9 @@ SEER_CONFIG = {
     "WEIGHT_HARMONY": 0.17,    # Harmonic field
     "WEIGHT_SPIRITS": 0.10,    # Auris nodes
     "WEIGHT_TIME": 0.10,       # Timeline
-    "WEIGHT_RUNES": 0.16,      # Star-chart rune geometry
-    "WEIGHT_SENTIMENT": 0.15,  # Fear/Greed + News + Velocity + Lyra
+    "WEIGHT_RUNES": 0.14,      # Star-chart rune geometry
+    "WEIGHT_SENTIMENT": 0.13,  # Fear/Greed + News + Velocity + Lyra
+    "WEIGHT_MAESHOWE": 0.08,   # Maeshowe transmission lattice coherence (Γ)
 
     # Vision grade thresholds
     "DIVINE_CLARITY_THRESHOLD": 0.85,
@@ -162,6 +163,7 @@ class SeerVision:
     runes: Optional[OracleReading] = None
     sentiment: Optional[OracleReading] = None  # 7th Oracle: Fear/Greed + News + Velocity
     margin: Optional[OracleReading] = None     # 8th Oracle: Kraken margin opportunity
+    maeshowe: Optional[OracleReading] = None   # 9th Oracle: Maeshowe transmission lattice Γ
     prophecy: str = ""         # The Seer's proclamation
     action: str = "HOLD"       # BUY_BIAS / SELL_BIAS / HOLD / DEFEND
     risk_modifier: float = 1.0 # Multiplier for position sizing
@@ -2377,16 +2379,92 @@ class OracleOfMargin:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ORACLE OF MAESHOWE - Runic Transmission Lattice Coherence
+# ═══════════════════════════════════════════════════════════════════════════
+
+class OracleOfMaeshowe:
+    """
+    The 9th Oracle: Maeshowe Transmission Lattice Coherence.
+
+    Reads the lattice coherence Γ of the 12th-century Maeshowe runic
+    transmission archive, decoded through the Aureon HNC architecture.
+
+    The Dual-Voice Protocol:
+      Caller (Ψ₀)   = Wall Auris node frequency (12th-century anchor)
+      Seer   (O(t)) = Rune effective frequency  (present observation)
+      Beat          = |Caller - Seer| → master beat → Schumann proximity
+
+    Chamber wall → Auris node mapping:
+      NE (solstice terminus) => OWL      528 Hz  Wisdom/Pattern
+      NW (treasure pointer)  => DEER     396 Hz  Grace/Stability
+      SW (seed bank)         => CARGOSHIP 174 Hz  Persistence
+      SE (master carver)     => FALCON   210 Hz  Precision
+
+    Lattice coherence thresholds:
+      Γ < 0.35           → DEAD_FIELD  (kill-switch)
+      0.35 ≤ Γ < 0.945   → ACTIVE_FIELD (transmission in progress)
+      Γ ≥ 0.945          → LIGHTHOUSE  (circuit closed)
+
+    Primary Investigator: Gary Leckey, Aureon Institute, March 2026
+    Source: Barnes (1994), Smith et al. (2018), Orkneyinga Saga
+    """
+
+    def __init__(self):
+        self._oracle = None
+
+    def _load(self):
+        if self._oracle is None:
+            try:
+                from maeshowe_seer_decode import OracleMaeshowe as _OM
+                self._oracle = _OM()
+            except ImportError:
+                pass
+
+    def set_pivot_rune(self, left_twigs: int, right_twigs: int):
+        """
+        Supply the Nr.15 pivot twig counts to close the lattice circuit.
+        left_twigs (1-3) = aett, right_twigs (1-8) = position within aett.
+        Requires RTI archive access (Smith et al. 2018, ADS York) or
+        direct field inspection (Historic Environment Scotland).
+        """
+        self._load()
+        if self._oracle:
+            return self._oracle.set_pivot_rune(left_twigs, right_twigs)
+        return None
+
+    def read(self) -> OracleReading:
+        """Take a Maeshowe lattice reading and return an OracleReading."""
+        self._load()
+        if self._oracle:
+            try:
+                return self._oracle.read()
+            except Exception as e:
+                logger.debug(f"OracleOfMaeshowe read error: {e}")
+
+        # Fallback: neutral reading when module unavailable
+        return OracleReading(
+            oracle          = "MAESHOWE",
+            timestamp       = time.time(),
+            score           = 0.5,
+            phase           = "ACTIVE_FIELD",
+            dominant_signal = "Maeshowe lattice unavailable — using neutral baseline",
+            details         = {"gamma": 0.5, "gamma_status": "ACTIVE_FIELD"},
+            confidence      = 0.2,
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # THE ALL-SEEING EYE - Unified Vision
 # ═══════════════════════════════════════════════════════════════════════════
 
 class AllSeeingEye:
     """
-    Combines all 7 Oracle readings into a single unified vision.
+    Combines all Oracle readings into a single unified vision.
     Each Oracle's score is weighted and combined. The result is a
     complete picture of reality as the Seer perceives it.
 
-    NOW ENHANCED with OracleOfSentiment (7th Oracle) and WarCounsel.
+    NOW ENHANCED with OracleOfSentiment (7th Oracle), WarCounsel,
+    OracleOfMargin (8th Oracle), and OracleOfMaeshowe (9th Oracle).
     """
 
     def __init__(self):
@@ -2397,10 +2475,11 @@ class AllSeeingEye:
                 timeline: OracleReading,
                 runes: OracleReading = None,
                 sentiment: OracleReading = None,
-                margin: OracleReading = None) -> SeerVision:
-        """Combine all 8 Oracle readings into unified vision, then apply War Counsel."""
+                margin: OracleReading = None,
+                maeshowe: OracleReading = None) -> SeerVision:
+        """Combine all 9 Oracle readings into unified vision, then apply War Counsel."""
 
-        # Weighted combination
+        # Weighted combination (weights sum to 1.0)
         w = SEER_CONFIG
         unified = (
             gaia.score * w["WEIGHT_GAIA"] +
@@ -2409,7 +2488,8 @@ class AllSeeingEye:
             spirits.score * w["WEIGHT_SPIRITS"] +
             timeline.score * w["WEIGHT_TIME"] +
             (runes.score if runes else 0.5) * w["WEIGHT_RUNES"] +
-            (sentiment.score if sentiment else 0.5) * w["WEIGHT_SENTIMENT"]
+            (sentiment.score if sentiment else 0.5) * w["WEIGHT_SENTIMENT"] +
+            (maeshowe.score if maeshowe else 0.5) * w["WEIGHT_MAESHOWE"]
         )
 
         # Confidence-weighted adjustment
@@ -2420,7 +2500,8 @@ class AllSeeingEye:
             spirits.confidence * w["WEIGHT_SPIRITS"] +
             timeline.confidence * w["WEIGHT_TIME"] +
             (runes.confidence if runes else 0.3) * w["WEIGHT_RUNES"] +
-            (sentiment.confidence if sentiment else 0.3) * w["WEIGHT_SENTIMENT"]
+            (sentiment.confidence if sentiment else 0.3) * w["WEIGHT_SENTIMENT"] +
+            (maeshowe.confidence if maeshowe else 0.3) * w["WEIGHT_MAESHOWE"]
         )
         # Pull toward 0.5 when confidence is low
         unified = unified * total_confidence + 0.5 * (1 - total_confidence)
@@ -2459,13 +2540,29 @@ class AllSeeingEye:
 
         # Generate prophecy
         prophecy = self._prophecy(unified, grade, gaia, cosmos, harmony,
-                                  spirits, timeline, runes, sentiment, war_says)
+                                  spirits, timeline, runes, sentiment, war_says,
+                                  maeshowe)
 
         # Add margin insight to prophecy
         if margin_lev >= 2 and margin_rec != "NONE":
             prophecy += (f" MARGIN ORACLE: {margin_rec} at {margin_lev}x leverage "
                          f"(conviction {margin_conv:.0%}). "
                          f"Account health: {margin.phase if margin else 'unknown'}.")
+
+        # Add Maeshowe lattice status to prophecy when in special states
+        if maeshowe and maeshowe.details:
+            gamma = maeshowe.details.get("gamma", 0.5)
+            g_status = maeshowe.details.get("gamma_status", "ACTIVE_FIELD")
+            if g_status == "LIGHTHOUSE":
+                prophecy += (
+                    f" MAESHOWE LIGHTHOUSE: Runic lattice Γ={gamma:.4f} — "
+                    "circuit closed, dual-voice transmission complete."
+                )
+            elif g_status == "DEAD_FIELD":
+                prophecy += (
+                    f" MAESHOWE DEAD FIELD: Runic lattice Γ={gamma:.4f} — "
+                    "below kill-switch threshold."
+                )
 
         return SeerVision(
             timestamp=time.time(),
@@ -2479,6 +2576,7 @@ class AllSeeingEye:
             runes=runes,
             sentiment=sentiment,
             margin=margin,
+            maeshowe=maeshowe,
             prophecy=prophecy,
             action=action,
             risk_modifier=risk_mod,
@@ -2521,7 +2619,8 @@ class AllSeeingEye:
                   timeline: OracleReading,
                   runes: OracleReading = None,
                   sentiment: OracleReading = None,
-                  war_says: str = "") -> str:
+                  war_says: str = "",
+                  maeshowe: OracleReading = None) -> str:
         """Generate the Seer's prophecy."""
         parts = []
 
@@ -2578,6 +2677,32 @@ class AllSeeingEye:
                 parts.append(f"Order flow: {flow_intent}.")
             if news_count > 0 and news_bearish > 0:
                 parts.append(f"Geopolitics: {news_bearish}/{news_count} headlines bearish.")
+
+        # Add Maeshowe runic lattice status
+        if maeshowe and maeshowe.details:
+            gamma      = maeshowe.details.get("gamma", 0.5)
+            g_status   = maeshowe.details.get("gamma_status", "ACTIVE_FIELD")
+            n_complete = maeshowe.details.get("n_complete", 0)
+            n_total    = maeshowe.details.get("n_total", 13)
+            mbeat      = maeshowe.details.get("master_beat_hz", 0.0)
+            sch_mode   = maeshowe.details.get("schumann_mode", 4)
+            sch_delta  = maeshowe.details.get("schumann_delta", 0.0)
+            if g_status == "LIGHTHOUSE":
+                parts.append(
+                    f"Maeshowe LIGHTHOUSE (Γ={gamma:.4f}): the 4,800-year runic circuit "
+                    f"is closed — {n_complete}/{n_total} inscriptions transmitting."
+                )
+            elif g_status == "ACTIVE_FIELD":
+                parts.append(
+                    f"Maeshowe ACTIVE FIELD (Γ={gamma:.4f}): "
+                    f"{n_complete}/{n_total} runic voices transmitting. "
+                    f"Master beat {mbeat:.2f} Hz — Schumann M{sch_mode} "
+                    f"Δ{sch_delta:.2f} Hz. Nr.15 pivot: bring two voices."
+                )
+            else:
+                parts.append(
+                    f"Maeshowe DEAD FIELD (Γ={gamma:.4f}): lattice below kill-switch."
+                )
 
         # Add war counsel
         if war_says:
@@ -2674,6 +2799,7 @@ class AureonTheSeer:
         self.oracle_runes = OracleOfRunes()
         self.oracle_sentiment = OracleOfSentiment()  # 7th Oracle: Fear/Greed + News + Velocity
         self.oracle_margin = OracleOfMargin()        # 8th Oracle: Kraken margin opportunity
+        self.oracle_maeshowe = OracleOfMaeshowe()    # 9th Oracle: Maeshowe transmission lattice
 
         # The All-Seeing Eye
         self.eye = AllSeeingEye()
@@ -2696,7 +2822,7 @@ class AureonTheSeer:
         self._market_data: Dict = {}
         self._trade_history: List = []
 
-        logger.info("Aureon the Seer has awakened. The Third Pillar stands. 8 Oracles active.")
+        logger.info("Aureon the Seer has awakened. The Third Pillar stands. 9 Oracles active.")
 
     # ─────────────────────────────────────────────────────────
     # Perception - The Seer Sees
@@ -2704,7 +2830,7 @@ class AureonTheSeer:
 
     def see(self) -> SeerVision:
         """
-        Take a complete reading from all 8 Oracles and combine
+        Take a complete reading from all 9 Oracles and combine
         into a unified vision. This is the Seer's primary method.
         """
         with self._lock:
@@ -2715,9 +2841,10 @@ class AureonTheSeer:
             timeline = self.oracle_time.read(self._trade_history)
             runes = self.oracle_runes.read()
             sentiment = self.oracle_sentiment.read(self._market_data)
+            maeshowe = self.oracle_maeshowe.read()  # 9th Oracle: Maeshowe lattice Γ
 
             # 8th Oracle: Margin — needs current vision score + trend
-            # Use a preliminary score from the first 7 oracles
+            # Use a preliminary score from the first 8 oracles (excl. margin)
             w = SEER_CONFIG
             _prelim_score = (
                 gaia.score * w["WEIGHT_GAIA"] +
@@ -2726,7 +2853,8 @@ class AureonTheSeer:
                 spirits.score * w["WEIGHT_SPIRITS"] +
                 timeline.score * w["WEIGHT_TIME"] +
                 (runes.score if runes else 0.5) * w["WEIGHT_RUNES"] +
-                (sentiment.score if sentiment else 0.5) * w["WEIGHT_SENTIMENT"]
+                (sentiment.score if sentiment else 0.5) * w["WEIGHT_SENTIMENT"] +
+                (maeshowe.score if maeshowe else 0.5) * w["WEIGHT_MAESHOWE"]
             )
             _trend_info = self.get_trend()
             _trend = _trend_info.get('trend', 'STABLE')
@@ -2737,7 +2865,7 @@ class AureonTheSeer:
             )
 
             vision = self.eye.combine(gaia, cosmos, harmony, spirits, timeline,
-                                      runes, sentiment, margin)
+                                      runes, sentiment, margin, maeshowe)
             self.latest_vision = vision
             self.vision_history.append(vision)
 
@@ -3226,6 +3354,7 @@ class AureonTheSeer:
                 "runes": _oracle_dict(v.runes) if hasattr(v, 'runes') else None,
                 "sentiment": _oracle_dict(v.sentiment) if hasattr(v, 'sentiment') else None,
                 "margin": _oracle_dict(v.margin) if hasattr(v, 'margin') else None,
+                "maeshowe": _oracle_dict(v.maeshowe) if hasattr(v, 'maeshowe') else None,
             },
             "margin_recommendation": getattr(v, 'margin_recommendation', 'NONE'),
             "margin_leverage": getattr(v, 'margin_leverage', 0),
