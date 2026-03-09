@@ -350,6 +350,9 @@ def triangulate(sequences: List[CivSequence],
         axes.append((s.origin_lat, s.origin_lon, dest_lat, dest_lon, s.confidence))
 
     # Grid search: find point minimising weighted cross-track error
+    # Weight by confidence directly: higher confidence = more influence on result.
+    # A sequence we trust more (high Γ) should pull the candidate point closer
+    # to its axis; a low-confidence sequence contributes proportionally less.
     best_lat, best_lon = 0.0, 0.0
     best_error = float("inf")
 
@@ -357,7 +360,7 @@ def triangulate(sequences: List[CivSequence],
         for lon in range(-180, 181, int(grid_step_deg)):
             total_error = sum(
                 _cross_track_km(a[0], a[1], a[2], a[3], lat, lon) *
-                (1.0 / max(a[4], 0.01))    # weight by inverse confidence (better = less error)
+                max(a[4], 0.01)    # weight by confidence (higher = more influence)
                 for a in axes
             )
             if total_error < best_error:
@@ -370,7 +373,7 @@ def triangulate(sequences: List[CivSequence],
             lat2, lon2 = best_lat + dlat, best_lon + dlon
             total_error = sum(
                 _cross_track_km(a[0], a[1], a[2], a[3], lat2, lon2) *
-                (1.0 / max(a[4], 0.01))
+                max(a[4], 0.01)
                 for a in axes
             )
             if total_error < best_error:
@@ -434,7 +437,13 @@ class CivilizationalDNADecoder:
             "NORSE_MAESHOWE": self._load_maeshowe,
             "SUMERIAN_UR":    self._load_sumerian,
             "CHINESE_ICHING": self._load_iching,
+            "EGYPTIAN":       self._load_egyptian,
+            "CELTIC_OGHAM":   self._load_celtic,
             "HERMETIC":       self._load_hermetic,
+            "MAYA":           self._load_maya,
+            "AZTEC":          self._load_aztec,
+            "MOGOLLON":       self._load_mogollon,
+            "JAPANESE":       self._load_japanese,
         }
         for seq_id, loader in loaders.items():
             try:
@@ -463,9 +472,51 @@ class CivilizationalDNADecoder:
         lattice = dec.read()
         self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
 
+    def _load_egyptian(self, seq_id: str):
+        from aureon.decoders.egyptian_decoder import EgyptianDecoder
+        dec     = EgyptianDecoder()
+        score   = dec.get_oracle_score()
+        lattice = dec.read()
+        self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
+
+    def _load_celtic(self, seq_id: str):
+        from aureon.decoders.celtic_ogham import CelticOghamDecoder
+        dec     = CelticOghamDecoder()
+        score   = dec.get_oracle_score()
+        lattice = dec.read()
+        self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
+
     def _load_hermetic(self, seq_id: str):
         # Hermetic is always treated as decoded (emerald_spec.py fully mapped)
         self.update_sequence(seq_id, decoded=True, confidence=0.85, gamma=0.92)
+
+    def _load_maya(self, seq_id: str):
+        from aureon.decoders.maya_decoder import MayaDecoder
+        dec     = MayaDecoder()
+        score   = dec.get_oracle_score()
+        lattice = dec.read()
+        self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
+
+    def _load_aztec(self, seq_id: str):
+        from aureon.decoders.aztec_decoder import AztecDecoder
+        dec     = AztecDecoder()
+        score   = dec.get_oracle_score()
+        lattice = dec.read()
+        self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
+
+    def _load_mogollon(self, seq_id: str):
+        from aureon.decoders.mogollon_decoder import MogollonDecoder
+        dec     = MogollonDecoder()
+        score   = dec.get_oracle_score()
+        lattice = dec.read()
+        self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
+
+    def _load_japanese(self, seq_id: str):
+        from aureon.decoders.japanese_decoder import JapaneseDecoder
+        dec     = JapaneseDecoder()
+        score   = dec.get_oracle_score()
+        lattice = dec.read()
+        self.update_sequence(seq_id, decoded=True, confidence=score, gamma=lattice.gamma)
 
     def update_sequence(self, seq_id: str, decoded: bool = True,
                         confidence: float = 0.5, gamma: float = 0.5,
