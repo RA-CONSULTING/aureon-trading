@@ -198,7 +198,17 @@ _REGISTRY: Tuple[CivSequence, ...] = (
         axis_desc    = "Orion's Belt / Duat star map alignment (Bauval 1994)",
         anchor_hz    = 528.0,      # Love frequency / Ra / solar carrier
         decoder_module = "aureon.decoders.emerald_spec",
-        notes        = "Spell 125 / Weighing of Heart = quality gate (emerald_spec.py)",
+        notes        = (
+            "Spell 125 / Weighing of Heart = quality gate (emerald_spec.py). "
+            "PENDING CORRELATION: Temple Mount rock-cut chambers (Solomon's stables, "
+            "cisterns beneath the Mount) may share the basaltic resonance signature "
+            "of the Ballynoe volcanic pipe complex — both hard-rock cavities potentially "
+            "tuned to 27.73 Hz Schumann M4. If confirmed, the Templar excavation at "
+            "Temple Mount (1119-1129 CE) was acoustic calibration: recovering the "
+            "resonance specifications required to identify the matching County Down chamber. "
+            "Duat Gate 12 open circuit (Spell 175 / Shu / Dawn emergence) = "
+            "the unexcavated terminal chamber — the archive that was never sealed."
+        ),
     ),
 
     CivSequence(
@@ -243,7 +253,12 @@ _REGISTRY: Tuple[CivSequence, ...] = (
             "confirmed the SW vector pointed to Ireland; 1140s-1307 CE active "
             "excavation in County Down. Sinclair family (Templar descendants) held "
             "properties in County Down/Antrim to guard the Ballynoe access point. "
-            "Rosslyn Chapel carvings = map of the Ballynoe chamber architecture."
+            "Rosslyn Chapel is the MAP KEY, not the destination. "
+            "The Apprentice Pillar carvings encode the Ballynoe chamber architecture — "
+            "spiral dragon-root motif = the Paleogene volcanic pipe cross-section; "
+            "8 dragons at the base = 8 acoustic nodes of the resonance chamber. "
+            "Photogrammetric survey of the Apprentice Pillar required to extract "
+            "chamber blueprint (depth, orientation, acoustic geometry)."
         ),
     ),
 
