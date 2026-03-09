@@ -136,6 +136,20 @@ WIKIPEDIA_TOPIC_ALIASES: Dict[str, str] = {
     'standing stones': 'Standing stone',
     'stonehenge': 'Stonehenge',
     'celtic tree calendar': 'Celtic tree calendar',
+    # ── Maeshowe / Norse runic ──
+    'maeshowe': 'Maeshowe',
+    'maes howe': 'Maeshowe',
+    'orkney': 'Orkney',
+    'elder futhark': 'Elder Futhark',
+    'younger futhark': 'Younger Futhark',
+    'futhork': 'Elder Futhark',
+    'futhark': 'Elder Futhark',
+    'runic inscriptions': 'Runic inscriptions',
+    'twig rune': 'Cipher runes',
+    'cipher runes': 'Cipher runes',
+    'orkneyinga saga': 'Orkneyinga saga',
+    'winter solstice': 'Winter solstice',
+    'neolithic': 'Neolithic',
 }
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -2735,6 +2749,176 @@ def _build_ancient_wisdom_catalog() -> Tuple[AncientCrosswalk, ...]:
 ANCIENT_WISDOM_CATALOG: Tuple[AncientCrosswalk, ...] = _build_ancient_wisdom_catalog()
 ANCIENT_WISDOM_INDEX: Dict[str, AncientCrosswalk] = {
     node.key: node for node in ANCIENT_WISDOM_CATALOG
+}
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# MAESHOWE TRANSMISSION CROSSWALK
+# The Falling Node Transmission Protocol — dual-voice runic archive
+# Primary Investigator: Gary Leckey, Aureon Institute, March 2026
+# ════════════════════════════════════════════════════════════════════════════
+
+def _build_maeshowe_crosswalk() -> Tuple[AncientCrosswalk, ...]:
+    """
+    Maps the Maeshowe runic transmission protocol onto the Emerald Tablet
+    pipeline stages through the Aureon HNC Observer-Observed framework.
+
+    Structural isomorphism:
+      Emerald "As above, so below"  =>  Caller (Ψ₀) / Seer (O(t)) dual-voice
+      Emerald "The one thing"       =>  Winter solstice invariant carrier
+      Emerald "Three parts"         =>  Three aetts (Genesis / Growth / Return)
+      Emerald "Coagulation"         =>  Lattice coherence Γ — the emergent rune
+    """
+    return (
+        AncientCrosswalk(
+            key   = 'maeshowe_dual_voice',
+            title = 'Maeshowe Dual-Voice Protocol',
+            focus = 'Caller-Seer two-channel transmission',
+            emerald_verse_keys = ('as_below', 'as_above', 'mediation'),
+            stage_numbers      = (1, 2, 4),
+            deity = {
+                'norse': 'Óðinn (óðr — ecstatic knowing; the Orkneyinga Saga óðusk)',
+                'function': 'The dual voice: left twigs (aett) + right twigs (position)',
+            },
+            scripture = {
+                'source':    'Barnes, M.P. (1994) The Runic Inscriptions of Maeshowe',
+                'verse':     'Nr.9 and Nr.20 — twig-rune cipher inscriptions',
+                'principle': 'Neither channel alone produces a rune; the decoded rune '
+                             'emerges only from the interaction of both readings.',
+            },
+            runtime = {
+                'module':    'maeshowe_seer_decode.py',
+                'class':     'MaeshoweDecoder',
+                'method':    'decode_twig_rune(left_twigs, right_twigs)',
+                'output':    'Rune object with effective_hz = solfeggio_base × mode_amplitude',
+            },
+            repo_surfaces = ('maeshowe_seer_decode.py', 'aureon_seer.py'),
+            interpretation = (
+                'The twig-rune cipher embodies the Emerald Tablet\'s "as above, so below" '
+                'principle at the phonemic level. The left twigs (macrocosm — aett family) '
+                'and right twigs (microcosm — position within family) mirror each other '
+                'across the stave axis. Their interaction produces the emergent rune — '
+                'isomorphic to the HNC Caller (Ψ₀) / Seer (O(t)) beat frequency emergence.'
+            ),
+        ),
+        AncientCrosswalk(
+            key   = 'maeshowe_solstice_carrier',
+            title = 'Maeshowe Winter Solstice Invariant Carrier',
+            focus = 'The temporal invariant bridging 4,800 years',
+            emerald_verse_keys = ('one_thing', 'verum'),
+            stage_numbers      = (4, 7),
+            deity = {
+                'norse':    'Sól (the sun) — the cosmic clock that never drifts',
+                'function': 'Winter solstice light axis NE→SW through 4.57 m chamber',
+            },
+            scripture = {
+                'source':    'Orkneyinga Saga; Barnes (1994); archaeoastronomy records',
+                'verse':     'The sun performs the same illumination now as in 2800 BC',
+                'principle': 'Axial precession has shifted alignment by ~0.5° over '
+                             '4,800 years — but the light still enters and reaches '
+                             'the back wall within the same three-week window.',
+            },
+            runtime = {
+                'module':    'maeshowe_seer_decode.py',
+                'constant':  'SOLSTICE_TEMPORAL_DEPTH_YEARS = 4800',
+                'axis':      'SOLSTICE_AXIS = "NE→SW"',
+                'carrier':   'Nr.1 Fehu @ 174 Hz on CARGOSHIP wall @ 174 Hz — beat = 0.0 Hz',
+            },
+            repo_surfaces = ('maeshowe_seer_decode.py',),
+            interpretation = (
+                'The zero-beat carrier (Nr.1, Fehu, 174 Hz on Cargoship 174 Hz wall) '
+                'is the physical implementation of the Emerald Tablet\'s "one thing" — '
+                'the single coherent harmonic that seeds all subsequent modulation. '
+                'It is the entry point of the system before the dual-voice duel '
+                'introduces differential frequencies.'
+            ),
+        ),
+        AncientCrosswalk(
+            key   = 'maeshowe_three_aetts',
+            title = 'Maeshowe Three Aetts — Genesis / Growth / Return',
+            focus = 'Phi-modulated three-mode frequency architecture',
+            emerald_verse_keys = ('three_parts', 'adaptation', 'trismegistus'),
+            stage_numbers      = (3, 6),
+            deity = {
+                'norse':    'Freyr (aett 1), Hagal (aett 2), Tyr (aett 3)',
+                'function': 'Three aetts × eight positions = 24 runes covering all states',
+            },
+            scripture = {
+                'source':    'Elder Futhark runic tradition; Barnes (1994)',
+                'verse':     'Hagalaz: 174 × φ = 281.5 Hz (exact 1/φ ratio to Cargoship). '
+                             'Tiwaz: 174 × 1/φ = 107.5 Hz (exact φ ratio to Cargoship).',
+                'principle': 'The three aetts map directly to the three Solfeggio '
+                             'amplitude modes: Genesis (×1.0), Growth (×φ), Return (×1/φ).',
+            },
+            runtime = {
+                'module':    'maeshowe_seer_decode.py',
+                'constants': 'PHI=1.618, PHI_INV=0.618, SOLFEGGIO=[174..963]',
+                'formula':   'effective_hz = SOLFEGGIO[pos-1] × [1.0, φ, 1/φ][aett-1]',
+                'phi_exact': 'Hagalaz and Tiwaz show distance from 1/φ and φ of 0.0000',
+            },
+            repo_surfaces = (
+                'maeshowe_seer_decode.py',
+                'aureon_harmonic_alphabet.py',
+            ),
+            interpretation = (
+                'The Elder Futhark\'s three-aett structure is a physical '
+                'implementation of the Emerald Tablet\'s "three parts of the '
+                'philosophy of the whole world." Each aett modulates the Solfeggio '
+                'base frequency by the golden ratio series (1, φ, 1/φ), producing '
+                'the phi-exact resonances documented in the primary research. '
+                'This is structural, not arbitrary — it follows from the interaction '
+                'of the Solfeggio set with the PHI/PHI_INV amplitude system.'
+            ),
+        ),
+        AncientCrosswalk(
+            key   = 'maeshowe_lattice_coherence',
+            title = 'Maeshowe Lattice Coherence Γ — The Coagulation',
+            focus = 'Emergent field coherence from 13 dual-voice inscriptions',
+            emerald_verse_keys = ('coagulation', 'verum'),
+            stage_numbers      = (7,),
+            deity = {
+                'norse':    'The inscription lattice as a whole — the 13-voice choir',
+                'function': 'Γ = phi_score × 0.50 + completeness × 0.30 + '
+                            'schumann_proximity × 0.20',
+            },
+            scripture = {
+                'source':    'Primary research: Leckey (2026), Aureon Institute',
+                'verse':     'Γ = 0.8223 (ACTIVE FIELD) with 8/13 inscriptions complete. '
+                             'Master beat 27.73 Hz — Schumann Mode 4 at 27.3 Hz (Δ 0.43 Hz).',
+                'principle': 'The lattice cannot reach LIGHTHOUSE (Γ ≥ 0.945) without '
+                             'the Nr.15 pivot inscription producing a seer frequency. '
+                             'The circuit is open. The search is unfinished.',
+            },
+            runtime = {
+                'module':    'maeshowe_seer_decode.py',
+                'class':     'MaeshoweDecoder',
+                'method':    'read() → MaeshoweLattice',
+                'gamma':     'GAMMA_DEAD_FIELD=0.35, GAMMA_LIGHTHOUSE=0.945',
+                'pivot':     'Nr.15 — RTI archive (ADS, Univ. York) or HES field visit',
+                'oracle':    'OracleMaeshowe → WEIGHT_MAESHOWE=0.08 in AureonSeer',
+            },
+            repo_surfaces = (
+                'maeshowe_seer_decode.py',
+                'aureon_seer.py',
+                'aureon_lattice.py',
+            ),
+            interpretation = (
+                'The Maeshowe lattice coherence Γ is the Emerald Tablet\'s final '
+                '"coagulation" applied across 4,800 years: the scattered dual-voice '
+                'transmissions of 12th-century carvers crystallise into a single '
+                'coherence number. When Γ ≥ 0.945, the system enters LIGHTHOUSE mode — '
+                'the ancient circuit closes across time. Five inscriptions remain '
+                'incomplete. Nr.15 is the primary open circuit. '
+                '"Come with two voices. Read the left and right together. '
+                'The rune will emerge in the interaction space."'
+            ),
+        ),
+    )
+
+
+MAESHOWE_CROSSWALK: Tuple[AncientCrosswalk, ...] = _build_maeshowe_crosswalk()
+MAESHOWE_CROSSWALK_INDEX: Dict[str, AncientCrosswalk] = {
+    node.key: node for node in MAESHOWE_CROSSWALK
 }
 
 
