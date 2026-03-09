@@ -75,6 +75,11 @@ THRESHOLD_SEARCHING  = 5
 THRESHOLD_CONVERGING = 8
 THRESHOLD_MAP_LOCKED = 10
 
+# Dead-field kill-switch: sequences below this Gamma are excluded from
+# triangulation — their bearing axes are too noisy to contribute signal.
+# Matches the DEAD_FIELD threshold used in all individual decoders.
+GAMMA_DEAD_FIELD = 0.35
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # CIVILIZATIONAL SEQUENCE REGISTRY
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -337,7 +342,10 @@ def triangulate(sequences: List[CivSequence],
 
     Returns (best_lat, best_lon, total_error_km) or None if < 2 sequences.
     """
-    decoded = [s for s in sequences if s.decoded and s.confidence > 0.1]
+    # Exclude DEAD_FIELD sequences (Γ < 0.35) — their axes are noise.
+    # Only ACTIVE_FIELD and LIGHTHOUSE sequences contribute geographic signal.
+    decoded = [s for s in sequences
+               if s.decoded and s.confidence > 0.1 and s.gamma >= GAMMA_DEAD_FIELD]
     if len(decoded) < 2:
         return None
 
@@ -673,9 +681,14 @@ class CivilizationalDNADecoder:
         print("─" * 90)
 
         for i, s in enumerate(state.sequences, 1):
-            status_flag = "DECODED" if s.decoded else "PENDING"
-            conf_str    = f"{s.confidence:.3f}" if s.decoded else "  ---"
-            gamma_str   = f"{s.gamma:.3f}"      if s.decoded else "  ---"
+            if not s.decoded:
+                status_flag = "PENDING"
+            elif s.gamma < GAMMA_DEAD_FIELD:
+                status_flag = "DEAD_FIELD"
+            else:
+                status_flag = "DECODED"
+            conf_str  = f"{s.confidence:.3f}" if s.decoded else "  ---"
+            gamma_str = f"{s.gamma:.3f}"      if s.decoded else "  ---"
             print(
                 f"{i:<3} {s.id:<20} {s.origin_name[:27]:<28} {s.bearing:<7.1f} "
                 f"{conf_str:<7} {gamma_str:<7} {status_flag}"

@@ -215,58 +215,106 @@ class Hexagram:
         return round((math.degrees(math.atan2(s, c)) + 360) % 360, 2)
 
 
-# The 64 hexagrams — King Wen sequence (partial, covering key transmission nodes)
-# Full set: 64 hexagrams. We implement the 24 most significant for the
-# civilizational DNA framework (matching the 24-rune Futhork structure).
+# The complete 64 hexagrams — King Wen sequence
+# All 64 nodes of the binary transmission lattice.
+# Upper trigram = Caller (Ψ₀) / structural frame
+# Lower trigram = Seer  (O(t)) / response field
 
 _HEXAGRAM_CATALOG: Tuple[Hexagram, ...] = (
     # ── The 8 "pure" hexagrams (same trigram doubled — zero-beat carriers) ───
-    Hexagram(1,  "䷀","Qián",  "The Creative",     "Qián","Qián", "pure yang force",     "Supreme success."),
-    Hexagram(2,  "䷁","Kūn",   "The Receptive",    "Kūn", "Kūn",  "pure yin field",      "Supreme success. The mare's perseverance."),
-    Hexagram(29, "䷜","Kǎn",   "The Abysmal",      "Kǎn", "Kǎn",  "double depth",        "There is danger. Sincerity in the heart."),
-    Hexagram(30, "䷝","Lí",    "The Clinging",     "Lí",  "Lí",   "double fire/clarity", "Perseverance furthers. Success."),
-    Hexagram(51, "䷲","Zhèn",  "The Arousing",     "Zhèn","Zhèn", "double thunder",      "Success. Shock comes — then laughter."),
-    Hexagram(52, "䷳","Gèn",   "Keeping Still",    "Gèn", "Gèn",  "double mountain",     "Keeping his back still. No blame."),
-    Hexagram(57, "䷸","Xùn",   "The Gentle",       "Xùn", "Xùn",  "double wind",         "The gentle. Success through small things."),
-    Hexagram(58, "䷹","Duì",   "The Joyous",       "Duì", "Duì",  "double lake",         "Success. Perseverance is favourable."),
+    Hexagram(1,  "䷀","Qián",    "The Creative",       "Qián","Qián","pure yang force",         "Supreme success."),
+    Hexagram(2,  "䷁","Kūn",     "The Receptive",      "Kūn", "Kūn", "pure yin field",           "Supreme success. The mare's perseverance."),
+    Hexagram(29, "䷜","Kǎn",     "The Abysmal",        "Kǎn", "Kǎn", "double depth",             "There is danger. Sincerity in the heart."),
+    Hexagram(30, "䷝","Lí",      "The Clinging",       "Lí",  "Lí",  "double fire/clarity",      "Perseverance furthers. Success."),
+    Hexagram(51, "䷲","Zhèn",    "The Arousing",       "Zhèn","Zhèn","double thunder",           "Success. Shock comes — then laughter."),
+    Hexagram(52, "䷳","Gèn",     "Keeping Still",      "Gèn", "Gèn", "double mountain",          "Keeping his back still. No blame."),
+    Hexagram(57, "䷸","Xùn",     "The Gentle",         "Xùn", "Xùn", "double wind",              "Success through small things."),
+    Hexagram(58, "䷹","Duì",     "The Joyous",         "Duì", "Duì", "double lake",              "Success. Perseverance is favourable."),
 
-    # ── Heaven-Earth axis (fundamental transmission pair) ────────────────────
-    Hexagram(11, "䷊","Tài",   "Peace",            "Kūn", "Qián", "heaven meets earth",   "The small departs, the great approaches."),
-    Hexagram(12, "䷋","Pǐ",    "Standstill",       "Qián","Kūn",  "separation / blockage","Evil people do not further the perseverance of the superior man."),
+    # ── Heaven-Earth / Earth-Heaven axis ─────────────────────────────────────
+    Hexagram(11, "䷊","Tài",     "Peace",              "Kūn", "Qián","heaven meets earth",       "The small departs, the great approaches."),
+    Hexagram(12, "䷋","Pǐ",      "Standstill",         "Qián","Kūn", "separation / blockage",    "Evil people do not further the superior man."),
 
-    # ── Water-Fire (the Seer-Caller inversion pair) ───────────────────────────
-    Hexagram(63, "䷾","Jì Jì", "After Completion", "Kǎn", "Lí",   "complete transmission","Success in small matters. Perseverance furthers."),
-    Hexagram(64, "䷿","Wèi Jì","Before Completion","Lí",  "Kǎn",  "circuit open",         "Success. The little fox nearly completes the crossing."),
+    # ── Water-Fire inversion pair ─────────────────────────────────────────────
+    Hexagram(63, "䷾","Jì Jì",   "After Completion",   "Kǎn", "Lí",  "complete transmission",    "Success in small matters. Perseverance furthers."),
+    Hexagram(64, "䷿","Wèi Jì",  "Before Completion",  "Lí",  "Kǎn", "circuit open — Nr.15",     "Success. The little fox nearly completes the crossing."),
 
-    # ── Thunder-Mountain (action and stillness — dual-voice anchor) ──────────
-    Hexagram(27, "䷚","Yí",    "Nourishment",      "Gèn", "Zhèn", "nourishing the seed",  "Perseverance brings good fortune. Attend to nourishment."),
-    Hexagram(28, "䷛","Dà Guò","Preponderance",    "Duì", "Xùn",  "excess of the great",  "The ridgepole sags to the breaking point."),
+    # ── Nourishment and Excess ────────────────────────────────────────────────
+    Hexagram(27, "䷚","Yí",      "Nourishment",        "Gèn", "Zhèn","nourishing the seed",      "Perseverance brings good fortune."),
+    Hexagram(28, "䷛","Dà Guò",  "Great Preponderance","Duì", "Xùn", "excess of the great",      "The ridgepole sags to the breaking point."),
 
-    # ── The knowledge transmission hexagrams ─────────────────────────────────
-    Hexagram(4,  "䷃","Méng",  "Youthful Folly",   "Gèn", "Kǎn",  "seeking the teacher",  "It is not I who seek the young fool; the young fool seeks me."),
-    Hexagram(48, "䷯","Jǐng",  "The Well",         "Kǎn", "Xùn",  "inexhaustible source", "The town may be changed, but the well cannot."),
-    Hexagram(50, "䷱","Dǐng",  "The Cauldron",     "Lí",  "Xùn",  "transformation vessel","Supreme good fortune. Success."),
-    Hexagram(3,  "䷂","Zhūn",  "Difficulty",       "Kǎn", "Zhèn", "initial breakthrough", "It furthers to appoint helpers."),
+    # ── Knowledge transmission core ───────────────────────────────────────────
+    Hexagram(3,  "䷂","Zhūn",    "Difficulty at Start","Kǎn", "Zhèn","initial breakthrough",     "It furthers to appoint helpers."),
+    Hexagram(4,  "䷃","Méng",    "Youthful Folly",     "Gèn", "Kǎn", "seeking the teacher",      "It is not I who seek the young fool; the young fool seeks me."),
+    Hexagram(5,  "䷄","Xū",      "Waiting",            "Kǎn", "Qián","waiting with certainty",   "Sincerity. Light and success."),
+    Hexagram(6,  "䷅","Sòng",    "Conflict",           "Qián","Kǎn", "dual-voice tension",       "Sincerity is obstructed. Cautious halt."),
+    Hexagram(15, "䷎","Qiān",    "Modesty",            "Kūn", "Gèn", "the mountain within",      "Success. The superior man carries things through."),
+    Hexagram(18, "䷑","Gǔ",      "Work on Decay",      "Gèn", "Xùn", "repairing the archive",    "Supreme success. Before the starting point, three days."),
+    Hexagram(46, "䷭","Shēng",   "Pushing Upward",     "Kūn", "Xùn", "upward emergence",         "Supreme success. Seek out the great man."),
+    Hexagram(48, "䷯","Jǐng",    "The Well",           "Kǎn", "Xùn", "inexhaustible source",     "The town may be changed, but the well cannot."),
+    Hexagram(50, "䷱","Dǐng",    "The Cauldron",       "Lí",  "Xùn", "transformation vessel",    "Supreme good fortune. Success."),
 
-    # ── The sacred geography hexagrams ───────────────────────────────────────
-    Hexagram(15, "䷎","Qiān",  "Modesty",          "Kūn", "Gèn",  "the mountain within",  "Success. The superior man carries things through."),
-    Hexagram(46, "䷭","Shēng", "Pushing Upward",   "Kūn", "Xùn",  "upward emergence",     "Supreme success. Seek out the great man."),
-    Hexagram(18, "䷑","Gǔ",    "Work on the Decay", "Gèn","Xùn",  "repairing the archive","Supreme success. Before the starting point, three days."),
-    Hexagram(57, "䷸","Xùn",   "Gentle Wind",      "Xùn", "Xùn",  "persistent penetration","Success through small things."),
+    # ── Army, Holding Together ────────────────────────────────────────────────
+    Hexagram(7,  "䷆","Shī",     "The Army",           "Kūn", "Kǎn", "organised force",          "Perseverance of a strong man. Good fortune. No blame."),
+    Hexagram(8,  "䷇","Bǐ",      "Holding Together",   "Kǎn", "Kūn", "unity / bonding",          "Good fortune. Inquire of the oracle once more."),
 
-    # ── Heaven-Water (the deep knowledge hex) ────────────────────────────────
-    Hexagram(5,  "䷄","Xū",    "Waiting",          "Kǎn", "Qián", "waiting with certainty","Sincerity. Light and success."),
-    Hexagram(6,  "䷅","Sòng",  "Conflict",         "Qián","Kǎn",  "the dual-voice tension","Sincerity is obstructed. Cautious halt."),
+    # ── Heaven in action ──────────────────────────────────────────────────────
+    Hexagram(9,  "䷈","Xiǎo Xù", "Small Taming",       "Xùn", "Qián","gentle restraint",         "Success. Dense clouds, no rain."),
+    Hexagram(10, "䷉","Lǚ",      "Treading",           "Qián","Duì", "careful conduct",          "Treading on the tail of the tiger. It does not bite."),
+    Hexagram(13, "䷌","Tóng Rén","Fellowship",         "Qián","Lí",  "community / solidarity",   "Fellowship with men in the open. Success."),
+    Hexagram(14, "䷍","Dà Yǒu",  "Great Possession",   "Lí",  "Qián","abundance / harvest",      "Supreme success."),
+
+    # ── Enthusiasm, Following, Decay ─────────────────────────────────────────
+    Hexagram(16, "䷏","Yù",      "Enthusiasm",         "Zhèn","Kūn", "joyful momentum",          "Appoint helpers. Set armies marching."),
+    Hexagram(17, "䷐","Suí",     "Following",          "Duì", "Zhèn","alignment / compliance",   "Supreme success. Perseverance furthers."),
+    Hexagram(19, "䷒","Lín",     "Approach",           "Kūn", "Duì", "drawing near",             "Supreme success. Perseverance furthers."),
+    Hexagram(20, "䷓","Guān",    "Contemplation",      "Xùn", "Kūn", "the observation tower",    "The ablution has been made. The offering is about to begin."),
+
+    # ── Fire and Action ───────────────────────────────────────────────────────
+    Hexagram(21, "䷔","Shì Kè",  "Biting Through",     "Lí",  "Zhèn","decisive action",          "Success. It furthers to let justice be administered."),
+    Hexagram(22, "䷕","Bì",      "Grace",              "Gèn", "Lí",  "adornment / beauty",       "Success in small matters. Perseverance furthers."),
+    Hexagram(23, "䷖","Bō",      "Splitting Apart",    "Gèn", "Kūn", "dissolution / stripping",  "It does not further to go anywhere."),
+    Hexagram(24, "䷗","Fù",      "Return",             "Kūn", "Zhèn","the turning point",        "Success. Going in and coming out without error."),
+    Hexagram(25, "䷘","Wú Wàng", "Innocence",          "Qián","Zhèn","spontaneous action",       "Supreme success. If not correct, there will be misfortune."),
+    Hexagram(26, "䷙","Dà Xù",   "Great Taming",       "Gèn", "Qián","storing great energy",     "Perseverance furthers. Not eating at home brings good fortune."),
+
+    # ── Influence and Duration ────────────────────────────────────────────────
+    Hexagram(31, "䷞","Xián",    "Influence",          "Duì", "Gèn", "mutual resonance",         "Success. Perseverance furthers. Taking a maiden to wife."),
+    Hexagram(32, "䷟","Héng",    "Duration",           "Zhèn","Xùn", "endurance / continuity",   "Success. No blame. Perseverance furthers."),
+    Hexagram(33, "䷠","Dùn",     "Retreat",            "Qián","Gèn", "strategic withdrawal",     "Success. In small matters, perseverance furthers."),
+    Hexagram(34, "䷡","Dà Zhuàng","Great Power",       "Zhèn","Qián","force / vigour",           "Perseverance furthers."),
+
+    # ── Progress, Darkening, Family ──────────────────────────────────────────
+    Hexagram(35, "䷢","Jìn",     "Progress",           "Lí",  "Kūn", "advancing / sunrise",      "The powerful prince is honoured with horses."),
+    Hexagram(36, "䷣","Míng Yí", "Darkening of Light", "Kūn", "Lí",  "concealment / resistance", "In adversity it furthers to be persevering."),
+    Hexagram(37, "䷤","Jiā Rén", "The Family",         "Xùn", "Lí",  "household / network",      "The perseverance of the woman furthers."),
+    Hexagram(38, "䷥","Kuí",     "Opposition",         "Lí",  "Duì", "polarity / contrast",      "In small matters, good fortune."),
+
+    # ── Obstruction, Deliverance ──────────────────────────────────────────────
+    Hexagram(39, "䷦","Jiǎn",    "Obstruction",        "Kǎn", "Gèn", "blockage / difficulty",    "The southwest furthers. The northeast does not further."),
+    Hexagram(40, "䷧","Jiě",     "Deliverance",        "Zhèn","Kǎn", "release / resolution",     "The southwest furthers. Return brings good fortune."),
+    Hexagram(41, "䷨","Sǔn",     "Decrease",           "Gèn", "Duì", "contraction / offering",   "Supreme good fortune. No blame. Perseverance furthers."),
+    Hexagram(42, "䷩","Yì",      "Increase",           "Xùn", "Zhèn","expansion / benefit",      "It furthers to undertake something."),
+
+    # ── Breakthrough, Coming to Meet ──────────────────────────────────────────
+    Hexagram(43, "䷪","Guài",    "Breakthrough",       "Duì", "Qián","decisive break",           "One must resolutely make the matter known at the court of the king."),
+    Hexagram(44, "䷫","Gòu",     "Coming to Meet",     "Qián","Xùn", "unexpected encounter",     "The woman is powerful. One should not marry such a woman."),
+    Hexagram(45, "䷬","Cuì",     "Gathering Together", "Duì", "Kūn", "assembly / congregation",  "Success. The king approaches his temple."),
+    Hexagram(47, "䷮","Kùn",     "Oppression",         "Duì", "Kǎn", "exhaustion / constriction","Success. Perseverance. The great man brings about good fortune."),
+    Hexagram(49, "䷰","Gé",      "Revolution",         "Duì", "Lí",  "radical change / shedding","On your own day you are believed. Supreme success."),
+
+    # ── Gradual Progress, Marrying Maiden ────────────────────────────────────
+    Hexagram(53, "䷴","Jiàn",    "Gradual Progress",   "Xùn", "Gèn", "gentle advance",           "The maiden is given in marriage. Good fortune. Perseverance furthers."),
+    Hexagram(54, "䷵","Guī Mèi", "Marrying Maiden",    "Zhèn","Duì", "transition / subordinate", "Undertakings bring misfortune. Nothing that would further."),
+    Hexagram(55, "䷶","Fēng",    "Abundance",          "Zhèn","Lí",  "fullness / peak",          "Success. The king attains abundance. Be not sad."),
+    Hexagram(56, "䷷","Lǚ",      "The Wanderer",       "Lí",  "Gèn", "journeying / transient",   "The wanderer has success. Perseverance of the wanderer."),
+
+    # ── Dispersion, Limitation, Inner Truth, Small Preponderance ─────────────
+    Hexagram(59, "䷺","Huàn",    "Dispersion",         "Xùn", "Kǎn", "dissolution / scattering", "Success. The king approaches his temple. Perseverance furthers."),
+    Hexagram(60, "䷻","Jié",     "Limitation",         "Kǎn", "Duì", "measure / moderation",     "Success. Galling limitation must not be persevered in."),
+    Hexagram(61, "䷼","Zhōng Fú","Inner Truth",        "Xùn", "Duì", "sincerity / core signal",  "Pigs and fishes. Good fortune. Great rivers may be crossed."),
+    Hexagram(62, "䷽","Xiǎo Guò","Small Preponderance","Zhèn","Gèn", "minor excess",             "Success. Perseverance furthers. Small things may be done."),
 )
-
-# Remove duplicate entry (hexagram 57 appears twice in catalog above — remove latter)
-_seen = set()
-_unique_hexagrams = []
-for h in _HEXAGRAM_CATALOG:
-    if h.number not in _seen:
-        _seen.add(h.number)
-        _unique_hexagrams.append(h)
-_HEXAGRAM_CATALOG = tuple(_unique_hexagrams)
 
 HEXAGRAM_BY_NUMBER: Dict[int, Hexagram] = {h.number: h for h in _HEXAGRAM_CATALOG}
 
@@ -313,14 +361,27 @@ class IChingDecoder:
     """
 
     def _test_phi(self, eff_hz: float) -> Tuple[float, bool]:
+        """
+        Test phi-resonance against the full solfeggio basis set.
+        The I Ching trigrams are solfeggio-encoded, so resonance must be
+        measured across the solfeggio frequency space, not just the 432 Hz
+        Gaia base. A hexagram is phi-resonant if its effective_hz has a
+        PHI or PHI_INV ratio to ANY solfeggio frequency in the basis set.
+        """
         if eff_hz == 0:
             return 999.0, False
-        ratio_fwd = ICHING_BASE_HZ / eff_hz
-        ratio_inv = eff_hz / ICHING_BASE_HZ
-        best_dist = min(
-            abs(ratio_fwd - PHI), abs(ratio_fwd - PHI_INV),
-            abs(ratio_inv - PHI), abs(ratio_inv - PHI_INV),
-        )
+        best_dist = 999.0
+        for sol in SOLFEGGIO:
+            if sol <= 0:
+                continue
+            r1 = eff_hz / sol
+            r2 = sol / eff_hz
+            d = min(
+                abs(r1 - PHI), abs(r1 - PHI_INV), abs(r1 - 1.0),
+                abs(r2 - PHI), abs(r2 - PHI_INV), abs(r2 - 1.0),
+            )
+            if d < best_dist:
+                best_dist = d
         return round(best_dist, 6), best_dist < PHI_TOLERANCE
 
     def _schumann_proximity(self, beat_hz: float) -> Tuple[int, float, float]:
@@ -350,7 +411,7 @@ class IChingDecoder:
 
         # Gamma
         phi_score    = n_phi / len(hexagrams)
-        completeness = len(hexagrams) / 24.0   # targeting 24 nodes (like Futhork)
+        completeness = len(hexagrams) / 64.0   # full 64-hexagram lattice
         completeness = min(1.0, completeness)
         gamma = phi_score * 0.50 + completeness * 0.30 + sch_proximity * 0.20
         gamma = min(1.0, gamma)
@@ -370,7 +431,7 @@ class IChingDecoder:
 
         prophecy = (
             f"I Ching Γ={gamma:.4f} ({status}). "
-            f"{len(hexagrams)}/64 hexagrams decoded. "
+            f"{len(hexagrams)}/64 hexagrams catalogued. "
             f"Zero-beat pure hexagrams: {n_zero}. "
             f"Phi-resonant: {n_phi}. "
             f"Mode split: GROWTH={n_growth} GENESIS={n_genesis} RETURN={n_return}. "
