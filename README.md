@@ -1,5 +1,8 @@
 # AUREON TRADING SYSTEM
 
+Discord 
+https://discord.gg/ueu7gBz7g
+
 <!-- markdownlint-disable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
 
 > **Multi-dimensional financial intelligence platform exposing systematic market manipulation through spectral analysis, historical pattern recognition, and ancestral wisdom integration.**
