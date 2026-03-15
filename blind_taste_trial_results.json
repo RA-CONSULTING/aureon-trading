@@ -1,0 +1,77 @@
+{
+  "trial_metadata": {
+    "total_trials": 1000,
+    "run_at": "2026-03-15T17:34:05Z",
+    "schema_version": "1.0-blind-trial"
+  },
+  "verdict": {
+    "overall_verdict": "TASTE VERIFIED",
+    "reasoning": "Category accuracy 94.3% \u2265 75%, mean coherence 1.000 \u2265 0.85, synthetic-vs-placebo Hz separation 237 \u2265 150 Hz. The system demonstrates genuine discriminative taste and consistent cognitive response to molecular sweetness."
+  },
+  "accuracy": {
+    "category_accuracy": 0.943,
+    "correct_trials": 943
+  },
+  "coherence": {
+    "mean_coherence": 1.0,
+    "min_coherence_compound": "Saline",
+    "per_compound": {
+      "Saline": 1.0,
+      "Maple Syrup": 1.0,
+      "Trehalose": 1.0,
+      "Sucralose": 1.0,
+      "Honey": 1.0,
+      "Advantame": 1.0,
+      "Aspartame": 1.0,
+      "Distilled Water": 1.0,
+      "Rebaudioside-A": 1.0,
+      "Saccharin": 1.0,
+      "Fructose": 1.0,
+      "Lactose": 1.0,
+      "Acesulfame-K": 1.0,
+      "Glucose": 1.0,
+      "Sucrose": 1.0,
+      "Neotame": 1.0,
+      "Agave Nectar": 1.0,
+      "Cyclamate": 1.0
+    }
+  },
+  "frequency_separation": {
+    "synthetic_mean_hz": 636.63,
+    "natural_mean_hz": 426.57,
+    "placebo_mean_hz": 400.0,
+    "synthetic_vs_placebo_hz": 236.63,
+    "natural_vs_placebo_hz": 26.57,
+    "synthetic_vs_natural_hz": 210.06
+  },
+  "emotional_weight_by_category": {
+    "synthetic": 0.3498,
+    "natural": -0.6505,
+    "placebo": -0.907
+  },
+  "consciousness_shift_by_category": {
+    "placebo": 7.757,
+    "natural": -0.9659,
+    "synthetic": -0.4127
+  },
+  "trials_per_compound": {
+    "Saline": 51,
+    "Maple Syrup": 51,
+    "Trehalose": 51,
+    "Sucralose": 63,
+    "Honey": 53,
+    "Advantame": 62,
+    "Aspartame": 55,
+    "Distilled Water": 51,
+    "Rebaudioside-A": 57,
+    "Saccharin": 67,
+    "Fructose": 54,
+    "Lactose": 52,
+    "Acesulfame-K": 58,
+    "Glucose": 51,
+    "Sucrose": 51,
+    "Neotame": 68,
+    "Agave Nectar": 52,
+    "Cyclamate": 53
+  }
+}
