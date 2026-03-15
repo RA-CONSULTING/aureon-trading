@@ -173,10 +173,12 @@ class BlindTasteTrialEngine:
 
         samples = []
         for i, mol in enumerate(draws):
+            # Normalise origin tag: "natural-derived" → "natural"
+            category = mol.origin if mol.origin in CATEGORY_HZ_RANGES else "natural"
             samples.append(BlindSample(
                 sample_id=i + 1,
                 mol=mol,
-                true_category=mol.origin,
+                true_category=category,
                 true_name=mol.name,
             ))
         return samples
