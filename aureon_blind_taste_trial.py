@@ -392,10 +392,20 @@ def _compute_verdict(accuracy: float, coherence: float,
 # ═════════════════════════════════════════════════════════════════════════════
 
 class BlindTasteReport:
-    """Formats and saves TrialStatistics."""
+    """Formats and saves TrialStatistics, and wires results into Queen's mind."""
 
-    def __init__(self, stats: TrialStatistics):
+    def __init__(self, stats: TrialStatistics, auto_wire: bool = True):
         self.stats = stats
+        if auto_wire:
+            self._wire_to_queen()
+
+    def _wire_to_queen(self) -> None:
+        """Push trial statistics into all Queen Sero learning subsystems."""
+        try:
+            from aureon_taste_learning_integration import TasteTrialIntegration
+            TasteTrialIntegration().wire(self.stats)
+        except Exception as exc:
+            logger.warning(f"[BlindTasteReport] Queen integration skipped: {exc}")
 
     def print_summary(self) -> None:
         s = self.stats
