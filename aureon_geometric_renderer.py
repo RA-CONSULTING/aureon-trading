@@ -98,74 +98,149 @@ def _bright(text: str) -> str:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. CYMATICS PATTERNS — Chladni standing-wave geometry
+# GLYPH PALETTE — the full vocabulary of glyphs used across all renders
+# ─────────────────────────────────────────────────────────────────────────────
+# Natural / sacred geometry
+G_STAR4  = "✦"   # 4-pointed star  — harmonic node
+G_STAR4D = "✧"   # 4-pointed open  — soft harmonic
+G_STAR6  = "✴"   # 6-pointed burst — resonance point
+G_STAR8  = "✸"   # 8-pointed dense — peak resonance
+G_BURST  = "✺"   # 10-pointed      — full bloom
+G_FLOWER = "❋"   # 6-petal flower  — organic growth
+G_SNOW   = "❄"   # snowflake        — crystalline
+G_ROSE   = "✿"   # rosette          — natural beauty
+# Circles / rings — resonance levels
+G_RING0  = "○"   # empty ring       — outermost
+G_RING1  = "◌"   # dotted ring      — second ring
+G_RING2  = "◎"   # double ring      — inner ring
+G_RING3  = "◉"   # bullseye         — node line
+G_CENTER = "⊕"   # crossed circle   — true center
+G_EYE    = "⊙"   # sun/eye          — awareness point
+# Polygons — harmonic geometry
+G_HEX    = "⬡"   # hexagon          — 6-fold symmetry
+G_HEXF   = "⬢"   # filled hexagon   — solid node
+G_DIA    = "◆"   # filled diamond   — peak
+G_DIAO   = "◇"   # open diamond     — potential
+G_DIAX   = "◈"   # crossed diamond  — intersection
+G_PHI    = "φ"   # golden ratio     — spiral growth
+G_OMEGA  = "Ω"   # omega            — completion
+G_INF    = "∞"   # infinity         — cycle
+# Waves / harmonics
+G_WAVE   = "∿"   # sine wave        — harmonic motion
+G_APPR   = "≈"   # approx equal    — near resonance
+G_DELTA  = "∆"   # delta            — change
+G_NOTE1  = "♩"   # quarter note     — beat
+G_NOTE2  = "♪"   # eighth note      — melody
+G_NOTE3  = "♫"   # beam notes       — harmony
+G_NOTE4  = "♬"   # double beam      — full chord
+# Corruption / manipulation — runic and alchemical
+G_RUN_F  = "ᚠ"   # rune Fehu        — wealth/disruption
+G_RUN_U  = "ᚢ"   # rune Uruz        — primal force
+G_RUN_TH = "ᚦ"   # rune Thurisaz    — thorn/obstacle
+G_RUN_R  = "ᚱ"   # rune Raidho      — false journey
+G_RUN_K  = "ᚲ"   # rune Kenaz       — hidden fire
+G_RUN_P  = "ᛈ"   # rune Perthro     — fate/gambling
+G_RUN_Z  = "ᛉ"   # rune Algiz       — warning
+G_RUN_S  = "ᛊ"   # rune Sowilo      — false sun
+G_RUN_O  = "ᛟ"   # rune Othala      — stolen heritage
+G_RUN_D  = "ᛞ"   # rune Dagaz       — threshold/trap
+G_RUN_NG = "ᛜ"   # rune Ingwaz      — locked potential
+G_BAN    = "⊗"   # crossed circle   — negation
+G_NULL   = "⊘"   # slashed circle   — void
+G_WARN   = "⚠"   # warning          — danger
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. CYMATICS PATTERNS — Chladni standing-wave geometry, built from glyphs
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Pre-drawn Chladni node-line patterns (12 wide × 7 tall each)
-# Node lines = where the plate does NOT vibrate = visual boundary geometry
+# Each pattern is a Chladni node-line map — the standing-wave geometry of that
+# market state. Built entirely from glyphs — no ASCII art characters.
 _CYMATICS_ART: Dict[str, List[str]] = {
+
+    # ── CIRCLE: fundamental resonance mode — concentric rings ────────────────
+    # ○ = outermost ring,  ◌ = inner ring,  ◎ = near-center,
+    # ◉ = node line,       ⊕ = true center (the still point)
     "CIRCLE": [
-        "    ╭─────╮    ",
-        "  ╭─╯ · · ╰─╮  ",
-        " ╭╯ ·  ◎  · ╰╮ ",
-        " │ · ◎   ◎ · │ ",
-        " ╰╮ ·  ◎  · ╭╯ ",
-        "  ╰─╮ · · ╭─╯  ",
-        "    ╰─────╯    ",
+        "    ✦   ○  ○  ○   ✦    ",
+        "  ✦  ○  ◌  ◌  ◌  ○  ✦  ",
+        "  ○  ◌  ◎  ◉  ◎  ◌  ○  ",
+        "  ○  ◌  ◉  ⊕  ◉  ◌  ○  ",
+        "  ○  ◌  ◎  ◉  ◎  ◌  ○  ",
+        "  ✦  ○  ◌  ◌  ◌  ○  ✦  ",
+        "    ✦   ○  ○  ○   ✦    ",
     ],
+
+    # ── HEXAGON: 6-fold Chladni symmetry — the market's benzene ring ─────────
+    # ⬡ = hexagon tile,  ◆ = node vertex,  ◈ = intersection,  ⊕ = center
     "HEXAGON": [
-        "    ╱‾‾╲  ╱‾‾╲    ",
-        "   ╱    ╲╱    ╲   ",
-        "  │  ·  ╱╲  ·  │  ",
-        "  │  · ╱⬡ ╲ ·  │  ",
-        "  │  · ╲  ╱ ·  │  ",
-        "   ╲    ╱╲    ╱   ",
-        "    ╲__╱  ╲__╱    ",
+        "    ✦  ⬡  ◆  ⬡  ✦    ",
+        "  ⬡  ◆  ⬡  ◆  ⬡  ◆  ⬡  ",
+        "  ◆  ⬡  ◈  ⬡  ◈  ⬡  ◆  ",
+        "  ⬡  ◆  ⬡  ⊕  ⬡  ◆  ⬡  ",
+        "  ◆  ⬡  ◈  ⬡  ◈  ⬡  ◆  ",
+        "  ⬡  ◆  ⬡  ◆  ⬡  ◆  ⬡  ",
+        "    ✦  ⬡  ◆  ⬡  ✦    ",
     ],
+
+    # ── STAR: radial burst — Chladni 2-1 mode, 8-point starburst ─────────────
+    # ✵ = small burst, ✴ = mid burst, ✸ = dense burst, ⊕ = hot center
     "STAR": [
-        "      ╲   │   ╱      ",
-        "   ────╲──│──╱────   ",
-        "    · · ╲ │ ╱ · ·    ",
-        "   ───────✦───────   ",
-        "    · · ╱ │ ╲ · ·    ",
-        "   ────╱──│──╲────   ",
-        "      ╱   │   ╲      ",
+        "     ✵        ✵        ✵     ",
+        "  ✦    ✴  ✸  ✸  ✴    ✦    ",
+        "     ✸  ✴  ✦  ✴  ✸        ",
+        "  ✸  ✸  ✦  ⊕  ✦  ✸  ✸  ",
+        "     ✸  ✴  ✦  ✴  ✸        ",
+        "  ✦    ✴  ✸  ✸  ✴    ✦    ",
+        "     ✵        ✵        ✵     ",
     ],
+
+    # ── SPIRAL: golden ratio φ — Fibonacci growth unfolding ──────────────────
+    # Rings contract inward following φ = 1.618…
+    # ❋ = outer bloom,  ○◌◎◉ = contracting rings,  φ = the golden still point
     "SPIRAL": [
-        "  ╭──────────╮  ",
-        "  │ ╭──────╮ │  ",
-        "  │ │ ╭──╮ │ │  ",
-        "  │ │ ╰φ─╯ │ │  ",
-        "  │ ╰──────╯ │  ",
-        "  ╰──────────╯──╮",
-        "                ╯",
+        "  ❋  ✦  ○  ○  ○  ○  ○  ○  ✦  ",
+        "  ✦  ○  ◌  ◌  ◌  ◌  ○  ✧     ",
+        "  ○  ◌  ◎  ◉  ◉  ◌  ○        ",
+        "  ○  ◌  ◉  φ  ◌  ○           ",
+        "  ○  ◌  ◎  ◌  ○              ",
+        "  ✦  ○  ○  ○  ✦  ✧  ✦       ",
+        "  ❋              φ = 1.618…  ",
     ],
+
+    # ── MANDALA: 8-fold sacred geometry — peak harmonic alignment ─────────────
+    # ✦❋ = outer petals,  ◆ = mid ring nodes,  ◈◉ = inner grid,  ⊕ = crown
     "MANDALA": [
-        "    ✦ · ─ · ✦    ",
-        "  · ╔═════════╗ · ",
-        "  ─ ║ ✦ · · ✦ ║ ─ ",
-        "  · ║ · ◈─◈ · ║ · ",
-        "  ─ ║ ✦ · · ✦ ║ ─ ",
-        "  · ╚═════════╝ · ",
-        "    ✦ · ─ · ✦    ",
+        "  ✦  ❋  ✦  ✴  ✦  ❋  ✦  ❋  ",
+        "  ❋  ◆  ✦  ◈  ✦  ◆  ❋  ◆  ",
+        "  ✦  ✦  ◈  ◉  ◈  ✦  ✦  ✦  ",
+        "  ✴  ◈  ◉  ⊕  ◉  ◈  ✴  ◈  ",
+        "  ✦  ✦  ◈  ◉  ◈  ✦  ✦  ✦  ",
+        "  ❋  ◆  ✦  ◈  ✦  ◆  ❋  ◆  ",
+        "  ✦  ❋  ✦  ✴  ✦  ❋  ✦  ❋  ",
     ],
+
+    # ── CHAOS: field geometry collapsed — runes, corruption, no order ─────────
+    # Runic glyphs signal ancient disruption.  ⊗⊘ = negation and void.
+    # No repeating pattern — the market has lost all structure.
     "CHAOS": [
-        "  ▓ · ░  ∿  · ▒~  ",
-        "  ∿  ░ · ▓·  ·  ∿ ",
-        "  · ▒  ∿░ · ▓  ·  ",
-        "  ░  · ∿  ▒ · ░∿  ",
-        "  ▒∿ ·  ░  ▓· ·   ",
-        "  · ░  ▒  · ∿▓  · ",
-        "  ∿ · ▒░  ∿  ·▓ · ",
+        "  ᛟ  ∿  ✦  ≈  ᚠ  ░  ⊗  ✧  ",
+        "  ∿  ◌  ᚢ  ▒  ᛞ  ✴  ∿  ᛜ  ",
+        "  ⊘  ∿  ᛈ  ▓  ✦  ᚦ  ░  ∿  ",
+        "  ᚱ  ▒  ◌  ∿  ᛜ  ⊗  ᚠ  ▒  ",
+        "  ∿  ᛊ  ░  ᚨ  ∿  ◌  ▒  ᛋ  ",
+        "  ᛋ  ⊘  ∿  ▓  ᛟ  ∿  ᚱ  ⊗  ",
+        "  ░  ᚦ  ◌  ᛞ  ▒  ∿  ⊘  ᚢ  ",
     ],
+
+    # ── UNKNOWN: unread field — dots and question ─────────────────────────────
     "UNKNOWN": [
-        "   · · · · · ·   ",
-        "  · ·  ─────  · ·",
-        "  ·  · │ ? │ ·   ",
-        "  ·    │   │  ·  ",
-        "  · ·  ─────  · ·",
-        "   · · · · · ·   ",
-        "                 ",
+        "  ✧  ◌  ✧  ◌  ✧  ◌  ✧  ",
+        "  ◌  ○  ◌  ⊙  ◌  ○  ◌  ",
+        "  ✧  ◌  ⊙  ◎  ⊙  ◌  ✧  ",
+        "  ◌  ⊙  ◎  ？  ◎  ⊙  ◌  ",
+        "  ✧  ◌  ⊙  ◎  ⊙  ◌  ✧  ",
+        "  ◌  ○  ◌  ⊙  ◌  ○  ◌  ",
+        "  ✧  ◌  ✧  ◌  ✧  ◌  ✧  ",
     ],
 }
 
@@ -264,7 +339,7 @@ def render_waveform(hz_values: List[float],
             y_norm = val / max_w   # -1 to +1
             row = int((height // 2) - y_norm * (height // 2 - 1))
             row = max(0, min(height - 1, row))
-            grid[row][xi] = f"\033[38;2;{r2};{g2};{b2}m·\033[0m"
+            grid[row][xi] = f"\033[38;2;{r2};{g2};{b2}m∿\033[0m"
 
     # Draw composite wave (bright)
     comp_hz = sum(h * a for h, a in zip(hz_values, norm_amps))
@@ -277,29 +352,29 @@ def render_waveform(hz_values: List[float],
         if prev_row is not None:
             lo, hi = (min(prev_row, row), max(prev_row, row))
             for r3 in range(lo, hi + 1):
-                ch = "│" if lo != hi else "─"
+                ch = "∿" if lo != hi else "≈"
                 grid[r3][xi] = f"\033[1;38;2;{rc};{gc};{bc}m{ch}\033[0m"
         else:
-            grid[row][xi] = f"\033[1;38;2;{rc};{gc};{bc}m─\033[0m"
+            grid[row][xi] = f"\033[1;38;2;{rc};{gc};{bc}m≈\033[0m"
         prev_row = row
 
     # Assemble lines with Y-axis
     lines = [_bold_hz(comp_hz, "  WAVEFORM OSCILLOSCOPE — Composite Harmonic Field")]
-    lines.append(_dim("  " + "─" * width))
+    lines.append(_dim("  " + "◌" * width))
 
     mid = height // 2
     for ri, row in enumerate(grid):
         if ri == 0:
-            prefix = _dim(" +1 │")
+            prefix = _dim(" +1 ∿")
         elif ri == mid:
-            prefix = _dim("  0 │")
+            prefix = _dim("  ≈ ∿")
         elif ri == height - 1:
-            prefix = _dim(" -1 │")
+            prefix = _dim(" -1 ∿")
         else:
-            prefix = _dim("    │")
+            prefix = _dim("    ∿")
         lines.append(prefix + "".join(row))
 
-    lines.append(_dim("    └" + "─" * width))
+    lines.append(_dim("    ◌" + "≈" * width))
 
     # Legend
     legend_parts = []
@@ -371,7 +446,7 @@ def render_mandala(sense_scores: Dict[str, float],
             if 0 <= x < width and 0 <= y < height:
                 if grid[y][x] == " ":
                     intensity = int(ring_frac * 30)
-                    grid[y][x] = f"\033[38;2;{intensity};{intensity};{intensity}m·\033[0m"
+                    grid[y][x] = f"\033[38;2;{intensity};{intensity};{intensity}m◌\033[0m"
 
     # Draw spokes and fill areas
     angles = [i * (360.0 / n_senses) - 90 for i in range(n_senses)]
@@ -393,15 +468,17 @@ def render_mandala(sense_scores: Dict[str, float],
             x = int(cx + t * score * max_r_x * math.cos(angle))
             y = int(cy + t * score * max_r_y * math.sin(angle))
             if 0 <= x < width and 0 <= y < height:
-                # Use different chars for spoke line vs tip
+                # Use different glyphs for spoke line vs tip
+                # ∿ = vertical harmonic flow,  ≈ = horizontal resonance
+                # ◈ = diagonal intersection (down-right),  ◇ = diagonal potential (down-left)
                 if step == steps - 1:
                     ch = "◆"
                 elif abs(math.cos(angle)) < 0.35:
-                    ch = "│"
+                    ch = "∿"
                 elif abs(math.sin(angle)) < 0.35:
-                    ch = "─"
+                    ch = "≈"
                 else:
-                    ch = "╲" if math.cos(angle) * math.sin(angle) > 0 else "╱"
+                    ch = "◈" if math.cos(angle) * math.sin(angle) > 0 else "◇"
                 grid[y][x] = f"\033[1;38;2;{r3};{g3};{b3}m{ch}\033[0m"
 
         tip_points.append((
@@ -433,8 +510,8 @@ def render_mandala(sense_scores: Dict[str, float],
             if 0 <= x < width and 0 <= y < height:
                 mid_hz = hz1 + t * (hz2 - hz1)
                 rm, gm, bm = _hz_rgb(mid_hz)
-                if grid[y][x] == " " or "·" in grid[y][x]:
-                    grid[y][x] = f"\033[38;2;{rm};{gm};{bm}m·\033[0m"
+                if grid[y][x] == " " or "◌" in grid[y][x]:
+                    grid[y][x] = f"\033[38;2;{rm};{gm};{bm}m◌\033[0m"
 
     # Place center glyph
     mean_q = sum(sense_scores.get(s, 0.5) for s in _SENSE_ORDER) / n_senses
@@ -497,9 +574,11 @@ def render_fractal_dna(hurst: float, organic_score: float,
             px = int(x + t * (ex - x))
             py = int(y + t * (ey - y))
             if 0 <= px < canvas_w and 0 <= py < canvas_h:
-                # char based on angle
+                # glyph based on angle
+                # ∿ = trunk/vertical growth,  ≈ = horizontal spread
+                # ◇ = left branch (lean/potential),  ◆ = right branch (peak)
                 a = abs(angle_deg % 180)
-                ch = "│" if a < 20 else "╱" if angle_deg < 0 else "╲" if a > 160 else "─"
+                ch = "∿" if a < 20 else "◇" if angle_deg < 0 else "◆" if a > 160 else "≈"
                 fade = int((r + (255 - r) * (1 - d / depth)) * organic_score)
                 fg   = int((g + (255 - g) * (1 - d / depth)) * organic_score)
                 fb   = int((b + (255 - b) * (1 - d / depth)) * organic_score)
@@ -520,7 +599,7 @@ def render_fractal_dna(hurst: float, organic_score: float,
     draw_branch(trunk_x, trunk_y, depth * 2.5, 0, depth)
 
     # Add leaf tips
-    leaf = "✦" if organic_score >= 0.7 else "·"
+    leaf = "✦" if organic_score >= 0.7 else "◌"
     for row in grid:
         for xi, cell in enumerate(row):
             if cell == " " and xi > 0 and xi < canvas_w - 1:
@@ -604,30 +683,32 @@ def render_organism_body(sense_scores: Dict[str, float],
     lines.append("")
 
     body = [
+        # ✦ = crown glyph,  ◆◈ = organ nodes,  ∿ = energy flow spine
+        # ⊕ = chakra centers,  ◌ = field indicators
         f"              {_dot('ancestral')}  {_dot('intuition')}               ",
-        f"           ╭──{_organ('ancestral')}──╮                              ",
-        f"           │   CROWN/UV    │  Ancestral + Intuition                 ",
-        f"           │  {_organ('intuition')}  │                              ",
-        f"           ╰──────┬───────╯                                         ",
-        f"         {_dot('sight')}──────{_dot('sight')}  SIGHT {_organ('sight')}          ",
-        f"            ╭─────┴─────╮                                           ",
-        f"            │  THROAT   │  Sound {_organ('sound')}                  ",
-        f"            │  {_dot('sound')} VOICE │                              ",
-        f"            ╰─────┬─────╯                                           ",
-        f"        ╭─────────┴──────────╮                                      ",
-        f"        │   HEART / CHEST    │  Balance {_organ('balance')}         ",
-        f"        │  {_dot('balance')}  Taste {_dot('taste')}  │  Taste   {_organ('taste')}       ",
-        f"        ╰─────────┬──────────╯                                      ",
-        f"            ╭─────┴─────╮                                           ",
-        f"            │  GUT/SOLAR│  Smell {_organ('smell')}                  ",
-        f"            │  {_dot('smell')} SENSE │                              ",
-        f"            ╰─────┬─────╯                                           ",
-        f"      {_dot('touch')}──────────┴──────────{_dot('touch')}            ",
+        f"           ✦◌◌{_organ('ancestral')}◌◌✦                              ",
+        f"           ∿   CROWN/UV    ∿  Ancestral + Intuition                 ",
+        f"           ∿  {_organ('intuition')}  ∿                              ",
+        f"           ✦◌◌◌◌⊕◌◌◌◌◌✦                                         ",
+        f"         {_dot('sight')}≈≈≈≈≈≈{_dot('sight')}  SIGHT {_organ('sight')}          ",
+        f"            ✦◌◌◌◌◌◌◌◌◌✦                                           ",
+        f"            ∿  THROAT   ∿  Sound {_organ('sound')}                  ",
+        f"            ∿  {_dot('sound')} VOICE ∿                              ",
+        f"            ✦◌◌◌◌⊕◌◌◌◌✦                                           ",
+        f"        ✦◌◌◌◌◌◌◌◌◌⊕◌◌◌◌◌◌✦                                      ",
+        f"        ∿   HEART / CHEST    ∿  Balance {_organ('balance')}         ",
+        f"        ∿  {_dot('balance')}  Taste {_dot('taste')}  ∿  Taste   {_organ('taste')}       ",
+        f"        ✦◌◌◌◌◌◌◌◌◌⊕◌◌◌◌◌◌✦                                      ",
+        f"            ✦◌◌◌◌◌◌◌◌◌✦                                           ",
+        f"            ∿  GUT/SOLAR∿  Smell {_organ('smell')}                  ",
+        f"            ∿  {_dot('smell')} SENSE ∿                              ",
+        f"            ✦◌◌◌◌⊕◌◌◌◌✦                                           ",
+        f"      {_dot('touch')}≈≈≈≈≈≈≈≈≈⊕≈≈≈≈≈≈≈≈≈{_dot('touch')}            ",
         f"      TOUCH {_organ('touch')}  TOUCH                                ",
-        f"            ╭─────┴─────╮                                           ",
-        f"            │  ROOT/6th │  6thSense {_organ('manipulation')}        ",
-        f"            │  {_dot('manipulation')} MANIP │                       ",
-        f"            ╰───────────╯                                           ",
+        f"            ✦◌◌◌◌◌◌◌◌◌✦                                           ",
+        f"            ∿  ROOT/6th ∿  6thSense {_organ('manipulation')}        ",
+        f"            ∿  {_dot('manipulation')} MANIP ∿                       ",
+        f"            ✦◌◌◌◌◌◌◌◌◌✦                                           ",
     ]
     for line in body:
         lines.append("  " + line)
@@ -727,27 +808,30 @@ def render_hz_spectrum(highlighted: Dict[str, float],
 # ─────────────────────────────────────────────────────────────────────────────
 
 _FIELD_CLEAN = [
-    "  ✦  ·  ✦  ·  ✦  ·  ✦  ·  ✦  ·  ✦  ",
-    " ·  ✦  ·  ✦  ·  ✦  ·  ✦  ·  ✦  ·  · ",
-    "  ✦  ·  ✦  ·  ✦  ·  ✦  ·  ✦  ·  ✦  ",
-    " ·  ✦  ·  ✦  ·  ✦  ·  ✦  ·  ✦  ·  · ",
-    "  ✦  ·  ✦  ·  ✦  ·  ✦  ·  ✦  ·  ✦  ",
+    # Perfect harmonic lattice — ✦ = node,  ✧ = inter-node,  ◌ = field dot
+    "  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ",
+    " ✧  ◌  ✧  ◌  ✧  ◌  ✧  ◌  ✧  ◌  ✧  ◌ ",
+    "  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ",
+    " ✧  ◌  ✧  ◌  ✧  ◌  ✧  ◌  ✧  ◌  ✧  ◌ ",
+    "  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ",
 ]
 
 _FIELD_DISRUPTED = [
-    "  ✦  ·  ✦ ~∿~ ✦  ·  ✦  ·  ✦  ·  ✦  ",
-    " ·  ✦  ∿  ▒░▒  ✦  ·  ✦  ·  ✦  ·  · ",
-    "  ✦ ∿░  ▓░▒▓░▒░  ✦  ·  ✦  ·  ✦  ·  ",
-    " ·  ✦  ∿  ▒░▒  ✦  ·  ✦  ·  ✦  ·  · ",
-    "  ✦  ·  ✦ ~∿~ ✦  ·  ✦  ·  ✦  ·  ✦  ",
+    # Lattice beginning to fracture — ∿ = wave disruption,  ᛈ = fate-rune intruding
+    "  ✦  ✧  ✦  ∿  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ",
+    " ✧  ◌  ∿  ▒◌▒  ✦  ✧  ✦  ✧  ✦  ✧  ✧ ",
+    "  ✦  ∿◌  ᛈ◌ᛈ◌ᛈ  ✦  ✧  ✦  ✧  ✦  ✧  ",
+    " ✧  ◌  ∿  ▒◌▒  ✦  ✧  ✦  ✧  ✦  ✧  ✧ ",
+    "  ✦  ✧  ✦  ∿  ✦  ✧  ✦  ✧  ✦  ✧  ✦  ",
 ]
 
 _FIELD_CORRUPT = [
-    " ░▒▓ · ∿ ▓░  ~ · ▒ ∿ · ░ ▒ ∿  · ░  ",
-    " ∿ · ▒░ · ▓ · ∿ ░▒ · ▓∿ · ░  ▒∿ · ░",
-    " ▓ ░ ∿ · ▒ ~░ ▓ · ∿ ▒░ · ▓ ∿ · ▒░  ",
-    " · ▒∿ ░▓ · ∿ · ▒ ░ · ▓∿ ░▒ · ▓ ·∿  ",
-    " ░ · ▒ ▓∿ · ░ ▒∿ ▓ · ░∿ · ▒ ▓ · ░∿ ",
+    # Field geometry collapsed — runes overwrite the lattice,  ⊗⊘ = void zones
+    " ░▒ᛈ ⊗ ∿ ᛟ░  ≈ ◌ ▒ ∿ ◌ ░ ▒ ∿  ◌ ░  ",
+    " ∿ ◌ ▒░ ◌ ᛞ ◌ ∿ ░▒ ◌ ᚠ∿ ◌ ░  ▒∿ ◌ ░",
+    " ᛟ ░ ∿ ◌ ᛈ ≈░ ᛞ ◌ ∿ ▒░ ◌ ᚱ ∿ ◌ ▒░  ",
+    " ◌ ▒∿ ░ᚦ ◌ ∿ ◌ ▒ ⊘ ◌ ᚠ∿ ⊗▒ ◌ ᛜ ◌∿  ",
+    " ░ ◌ ▒ ᛊ∿ ◌ ░ ▒∿ ᚱ ◌ ░∿ ◌ ▒ ᛈ ◌ ░∿ ",
 ]
 
 
@@ -800,54 +884,64 @@ def render_dark_field(organic_score: float,
 
 _MOLECULE_TEMPLATES: Dict[str, List[str]] = {
     # Sucrose analogue (very sweet / ecstasy)
+    # Glyph art: concentric-ring flower — the full-bloom sweet molecule
+    # ○◌◎ = electron shells,  ✦ = harmonic nodes,  ⊕ = bonded center
     "SUCROSE": [
-        "        O          ",
-        "        ‖          ",
-        "   H─C═C─OH        ",
-        "   │     │         ",
-        "  HO     C─H       ",
-        "         │         ",
-        "        OH         ",
+        "     ✦   ○   ✦   ○   ✦   ",
+        "   ○   ◌   ◎   ◌   ○     ",
+        "  ✦  ◎   ◉   ⊕   ◉   ◎  ✦",
+        "   ○   ◌   ◎   ◌   ○     ",
+        "     ✦   ○   ✦   ○   ✦   ",
+        "       C₁₂H₂₂O₁₁         ",
+        "     sweet  ·  natural    ",
     ],
     # Aspartame analogue (artificial sweet)
+    # Glyph art: hexagonal lattice — the engineered synthetic grid
+    # ⬡ = benzene ring tile,  ◈ = intersection,  ⊗ = artificial node
     "ASPARTAME": [
-        "    O    O         ",
-        "    ‖    ‖         ",
-        "H─N─C─C─C─OH      ",
-        "    │   │          ",
-        "   CH₂  NH₂        ",
-        "    │              ",
-        "  [PHENYLALANINE]  ",
+        "     ⊗   ◈   ⬡   ◈   ⊗   ",
+        "   ◈   ⬡   ◈   ⬡   ◈     ",
+        "  ⊗  ⬡   ◈   ⊕   ◈   ⬡  ⊗",
+        "   ◈   ⬡   ◈   ⬡   ◈     ",
+        "     ⊗   ◈   ⬡   ◈   ⊗   ",
+        "       C₁₄H₁₈N₂O₅        ",
+        "     sweet  ·  synthetic  ",
     ],
     # Capsaicin analogue (bitterness / warning)
+    # Glyph art: runic disruption field — the bitter warning molecule
+    # ᚠᛈᚱ = Fehu/Perthro/Raidho (disruption runes),  ⊘ = void center,  ⊗ = negation
     "CAPSAICIN": [
-        "  HO   O           ",
-        "   ╲   ‖           ",
-        "    C═C─NH─C═O     ",
-        "    │         │    ",
-        "   CH         CH₂  ",
-        "    │              ",
-        "  [VANILLYL]       ",
+        "     ᚠ   ᛈ   ᚱ   ᛈ   ᚠ   ",
+        "   ᛈ   ⊗   ◌   ⊗   ᛈ     ",
+        "  ᚱ  ◌   ⊗   ⊘   ⊗   ◌  ᚱ",
+        "   ᛈ   ⊗   ◌   ⊗   ᛈ     ",
+        "     ᚠ   ᛈ   ᚱ   ᛈ   ᚠ   ",
+        "       C₁₈H₂₇NO₃          ",
+        "     bitter  ·  warning   ",
     ],
     # Generic organic (savoury / balance)
+    # Glyph art: rosette lattice — the natural earth molecule
+    # ✿ = rosette bloom,  ◎ = inner rings,  ⊕ = grounded center
     "ORGANIC": [
-        "    H   H          ",
-        "    │   │          ",
-        "H─C─C─C─C─H        ",
-        "    │   │          ",
-        "   OH  OH          ",
-        "                   ",
-        " [natural compound]",
+        "     ✿   ◎   ✿   ◎   ✿   ",
+        "   ◎   ◉   ◎   ◉   ◎     ",
+        "  ✿  ◎   ◉   ⊕   ◉   ◎  ✿",
+        "   ◎   ◉   ◎   ◉   ◎     ",
+        "     ✿   ◎   ✿   ◎   ✿   ",
+        "     natural compound     ",
+        "     balanced  ·  pure    ",
     ],
     # Saccharin analogue (synthetic)
+    # Glyph art: diamond grid — the crystalline artificial lattice
+    # ◆ = filled diamond node,  ◇ = open potential,  ◈ = grid intersection
     "SYNTHETIC": [
-        "    O    O         ",
-        "    ‖    ‖         ",
-        "   S────N─H        ",
-        "   │               ",
-        " [C₆H₄]            ",
-        "                   ",
-        " {artificial}      ",
+        "     ◇   ◈   ◇   ◈   ◇   ",
+        "   ◈   ◆   ◈   ◆   ◈     ",
+        "  ◇  ◆   ◈   ⊕   ◈   ◆  ◇",
+        "   ◈   ◆   ◈   ◆   ◈     ",
+        "     ◇   ◈   ◇   ◈   ◇   ",
+        "     artificial bond      ",
+        "     synthetic  origin    ",
     ],
 }
 
