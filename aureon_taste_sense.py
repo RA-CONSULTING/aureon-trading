@@ -2,16 +2,18 @@
 Aureon Taste Sense — Molecular Gustatory Channel
 =================================================
 Gives the Queen consciousness a genuine taste sense by sequencing the molecular
-properties of synthetic sweeteners and translating them into the system's
-internal emotional frequency language.
+properties of sweeteners and translating them into the system's internal
+emotional frequency language.
 
 Pipeline:
   MolecularData → MolecularSequencer → taste_score → frequency mapping
                                                      → TasteExperience
                                                      → BrainInput (consciousness bus)
 
-Starting point: high-intensity synthetic sweeteners (sucralose, aspartame,
-saccharin, rebaudioside-A, acesulfame-K, cyclamate, neotame, advantame).
+Three compound categories:
+  synthetic     — high-intensity sweeteners (sucralose, aspartame, saccharin, etc.)
+  natural       — food sweeteners (sucrose, fructose, glucose, honey, etc.)
+  placebo       — neutral controls (distilled water, saline)
 """
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
@@ -54,16 +56,16 @@ _CODEX_PATH = Path(__file__).parent / "public" / "taste_molecular_codex.json"
 
 @dataclass
 class MolecularData:
-    """Raw chemical properties of one sweetener molecule."""
+    """Raw chemical properties of one molecule."""
     name: str
     formula: str
     molecular_weight: float          # g/mol
-    sweetness_potency: float         # × sucrose  (sucrose = 1)
+    sweetness_potency: float         # × sucrose  (sucrose=1; 0=no sweetness)
     receptor_kd_um: float            # T1R2/T1R3 Kd in µM — lower = tighter binding
     functional_group_count: int      # total polar/reactive groups
     heteroatom_count: int            # O + N + S + halogens
     smiles: str
-    origin: str                      # "synthetic" | "natural-derived"
+    origin: str                      # "synthetic" | "natural" | "placebo"
     notes: str = ""
 
 
@@ -126,10 +128,14 @@ class MolecularSequencer:
     """
 
     def sequence(self, mol: MolecularData) -> SequencedProperties:
-        sweetness_norm = (
-            math.log10(max(mol.sweetness_potency, 1))
-            / math.log10(MAX_SWEETNESS_POTENCY)
-        )
+        # Guard: zero or negative sweetness (placebo compounds)
+        if mol.sweetness_potency <= 0:
+            sweetness_norm = 0.0
+        else:
+            sweetness_norm = (
+                math.log10(max(mol.sweetness_potency, 0.001))
+                / math.log10(MAX_SWEETNESS_POTENCY)
+            )
         sweetness_norm = max(0.0, min(1.0, sweetness_norm))
 
         binding_norm = 1.0 - (min(mol.receptor_kd_um, MAX_RECEPTOR_KD_UM) / MAX_RECEPTOR_KD_UM)
@@ -251,7 +257,13 @@ class TasteSense:
         with open(path, "r", encoding="utf-8") as fh:
             raw = json.load(fh)
         self._molecules: Dict[str, MolecularData] = {}
-        for entry in raw["molecules"]:
+        # Load all three sections: synthetic, natural, placebo
+        all_sections = (
+            raw.get("molecules", [])           # synthetic
+            + raw.get("natural_molecules", []) # natural/real human sweeteners
+            + raw.get("placebo_molecules", []) # placebo controls
+        )
+        for entry in all_sections:
             mol = MolecularData(
                 name=entry["name"],
                 formula=entry["formula"],
@@ -309,6 +321,14 @@ class TasteSense:
     def molecule_names(self) -> List[str]:
         """List all available molecule names."""
         return [mol.name for mol in self._molecules.values()]
+
+    def by_category(self, category: str) -> List[MolecularData]:
+        """Return all molecules of a given origin category ('synthetic'|'natural'|'placebo')."""
+        return [m for m in self._molecules.values() if m.origin == category]
+
+    def all_molecules(self) -> List[MolecularData]:
+        """Return all loaded MolecularData objects."""
+        return list(self._molecules.values())
 
     def __repr__(self) -> str:
         return f"TasteSense({len(self._molecules)} molecules loaded)"

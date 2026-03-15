@@ -112,6 +112,130 @@
       "notes": "Aspartame-vanillin derivative; highest known potency at ~20,000× sucrose; FDA approved 2014; ultra-trace usage"
     }
   ],
+  "natural_molecules": [
+    {
+      "name": "Sucrose",
+      "formula": "C12H22O11",
+      "molecular_weight": 342.30,
+      "sweetness_potency": 1.0,
+      "receptor_kd_um": 10.0,
+      "functional_group_count": 8,
+      "heteroatom_count": 11,
+      "smiles": "OC[C@H]1O[C@@H](O[C@]2(CO)O[C@H](CO)[C@@H](O)[C@@H]2O)[C@@H](O)[C@@H](O)[C@@H]1O",
+      "origin": "natural",
+      "notes": "Table sugar; disaccharide of glucose + fructose; universal reference sweetener"
+    },
+    {
+      "name": "Fructose",
+      "formula": "C6H12O6",
+      "molecular_weight": 180.16,
+      "sweetness_potency": 1.2,
+      "receptor_kd_um": 9.0,
+      "functional_group_count": 5,
+      "heteroatom_count": 6,
+      "smiles": "OC[C@@H]1OC(O)(CO)[C@@H](O)[C@@H]1O",
+      "origin": "natural",
+      "notes": "Fruit sugar; monosaccharide; sweeter than sucrose; present in honey and fruit"
+    },
+    {
+      "name": "Glucose",
+      "formula": "C6H12O6",
+      "molecular_weight": 180.16,
+      "sweetness_potency": 0.7,
+      "receptor_kd_um": 12.0,
+      "functional_group_count": 5,
+      "heteroatom_count": 6,
+      "smiles": "OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O",
+      "origin": "natural",
+      "notes": "Blood sugar; monosaccharide; less sweet than sucrose; principal metabolic fuel"
+    },
+    {
+      "name": "Honey",
+      "formula": "C12H22O11",
+      "molecular_weight": 342.30,
+      "sweetness_potency": 1.1,
+      "receptor_kd_um": 9.5,
+      "functional_group_count": 8,
+      "heteroatom_count": 11,
+      "smiles": "OC[C@H]1O[C@@H](O[C@]2(CO)O[C@H](CO)[C@@H](O)[C@@H]2O)[C@@H](O)[C@@H](O)[C@@H]1O",
+      "origin": "natural",
+      "notes": "Primarily fructose + glucose; modelled as sucrose proxy with slight potency uplift; complex floral aromatics not captured"
+    },
+    {
+      "name": "Maple Syrup",
+      "formula": "C12H22O11",
+      "molecular_weight": 342.30,
+      "sweetness_potency": 0.65,
+      "receptor_kd_um": 11.0,
+      "functional_group_count": 8,
+      "heteroatom_count": 11,
+      "smiles": "OC[C@H]1O[C@@H](O[C@]2(CO)O[C@H](CO)[C@@H](O)[C@@H]2O)[C@@H](O)[C@@H](O)[C@@H]1O",
+      "origin": "natural",
+      "notes": "Sucrose-dominant; trace maple compounds (furaneol, vanillin) not modelled; slightly lower perceived sweetness than sucrose"
+    },
+    {
+      "name": "Agave Nectar",
+      "formula": "C6H12O6",
+      "molecular_weight": 180.16,
+      "sweetness_potency": 1.4,
+      "receptor_kd_um": 8.5,
+      "functional_group_count": 5,
+      "heteroatom_count": 6,
+      "smiles": "OC[C@@H]1OC(O)(CO)[C@@H](O)[C@@H]1O",
+      "origin": "natural",
+      "notes": "High-fructose agave syrup; modelled as fructose proxy with higher potency; popular sugar substitute"
+    },
+    {
+      "name": "Lactose",
+      "formula": "C12H22O11",
+      "molecular_weight": 342.30,
+      "sweetness_potency": 0.2,
+      "receptor_kd_um": 18.0,
+      "functional_group_count": 8,
+      "heteroatom_count": 11,
+      "smiles": "OC[C@H]1O[C@@H](O[C@@H]2[C@H](O)[C@@H](O)[C@H](O)[C@@H](CO)O2)[C@H](O)[C@@H](O)[C@@H]1O",
+      "origin": "natural",
+      "notes": "Milk sugar; disaccharide of glucose + galactose; weakest sweetener in natural set; low T1R2/T1R3 affinity"
+    },
+    {
+      "name": "Trehalose",
+      "formula": "C12H22O11",
+      "molecular_weight": 342.30,
+      "sweetness_potency": 0.45,
+      "receptor_kd_um": 15.0,
+      "functional_group_count": 8,
+      "heteroatom_count": 11,
+      "smiles": "OC[C@H]1O[C@@H](O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@@H]2O)[C@@H](O)[C@@H](O)[C@@H]1O",
+      "origin": "natural",
+      "notes": "Mushroom and insect sugar; disaccharide of two glucose units; mildly sweet; anhydrobiosis protectant"
+    }
+  ],
+  "placebo_molecules": [
+    {
+      "name": "Distilled Water",
+      "formula": "H2O",
+      "molecular_weight": 18.02,
+      "sweetness_potency": 0.0,
+      "receptor_kd_um": 999.0,
+      "functional_group_count": 1,
+      "heteroatom_count": 1,
+      "smiles": "O",
+      "origin": "placebo",
+      "notes": "Control baseline; zero sweetness; no T1R2/T1R3 binding; pure solvent reference"
+    },
+    {
+      "name": "Saline",
+      "formula": "NaCl",
+      "molecular_weight": 58.44,
+      "sweetness_potency": 0.0,
+      "receptor_kd_um": 999.0,
+      "functional_group_count": 0,
+      "heteroatom_count": 2,
+      "smiles": "[Na+].[Cl-]",
+      "origin": "placebo",
+      "notes": "0.9% NaCl physiological saline; salty not sweet; activates ENaC not T1R2/T1R3; true blind trial negative control"
+    }
+  ],
   "frequency_map": {
     "description": "Maps composite taste_score [0.0–1.0] to emotional frequency spectrum",
     "taste_score_bands": [
