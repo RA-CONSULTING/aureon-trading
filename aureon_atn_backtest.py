@@ -198,8 +198,12 @@ def _kp_grade(kp: float) -> Tuple[str, float]:
 # HISTORICAL EVENT FETCHERS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _get(url: str, params: Dict = None, timeout: int = 20) -> Any:
-    r = requests.get(url, params=params, timeout=timeout,
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+def _get(url: str, params: Dict = None, timeout: int = 20,
+         verify: bool = True) -> Any:
+    r = requests.get(url, params=params, timeout=timeout, verify=verify,
                      headers={"User-Agent": "AureonATNBacktest/1.0"})
     r.raise_for_status()
     return r.json()
@@ -218,7 +222,7 @@ def fetch_earthquakes(start: datetime, end: datetime,
             "endtime":   end.strftime("%Y-%m-%d"),
             "minmagnitude": str(min_mag),
             "orderby": "time",
-        })
+        }, verify=False)
         for feat in data.get("features", []):
             p   = feat.get("properties", {})
             mag = float(p.get("mag") or 0)
@@ -399,20 +403,22 @@ def fetch_eonet_events(start: datetime, end: datetime) -> List[PlanetaryEvent]:
     print(f"  🔥 Fetching NASA EONET natural events "
           f"{start.strftime('%Y-%m-%d')} → {end.strftime('%Y-%m-%d')} …", end=" ", flush=True)
     events: List[PlanetaryEvent] = []
+    # EONET v3 uses lowercase IDs (verified March 2026)
     CATEGORY_MAP = {
-        "wildfires":       ("wildfire",  "PARTIAL_HARMONY", 3.5),
-        "volcanoes":       ("volcano",   "DISSONANCE",      5.0),
-        "severeStorms":    ("weather",   "PARTIAL_HARMONY", 3.0),
+        "wildfires":     ("wildfire",  "PARTIAL_HARMONY", 3.5),
+        "volcanoes":     ("volcano",   "DISSONANCE",      5.0),
+        "severeStorms":  ("weather",   "PARTIAL_HARMONY", 3.0),
+        "floods":        ("flood",     "PARTIAL_HARMONY", 2.5),
     }
     try:
         for cat_id, (etype, grade, sev) in CATEGORY_MAP.items():
             try:
-                data = _get(f"https://eonet.gsfc.nasa.gov/api/v3/events", params={
+                data = _get("https://eonet.gsfc.nasa.gov/api/v3/events", params={
                     "status":   "all",
                     "category": cat_id,
                     "start":    start.strftime("%Y-%m-%d"),
                     "end":      end.strftime("%Y-%m-%d"),
-                    "limit":    200,
+                    "limit":    500,
                 })
                 for evt in data.get("events", []):
                     # Only take events with geometry (actual location + time)
