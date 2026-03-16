@@ -97,6 +97,10 @@ class CognitiveState:
     exit_urgency: str
     position_multiplier: float
     painting: Optional[List[str]] = None  # rendered canvas lines (not yet printed)
+    earth_risk_factor: float = 1.0        # ATN Monitor composite (0=danger, 1=clear)
+    earth_veto: bool = False              # Hard stop from Earth hazard stream
+    earth_reason: str = ""               # ATN Monitor status string
+    earth_alerts: List[str] = field(default_factory=list)  # Active alert descriptions
 
 
 @dataclass
@@ -296,6 +300,27 @@ class CognitiveCycle:
             position_multiplier=pos_mult,
         )
 
+        # ── ATN Monitor: Earth hazard field ─────────────────────────────────
+        # Pulls from cache (7 streams, TTL per stream).  Never blocks.
+        try:
+            from aureon_atn_monitor import get_atn_monitor
+            earth = get_atn_monitor().get_state()
+            state.earth_risk_factor = earth.risk_factor
+            state.earth_veto        = earth.veto
+            state.earth_reason      = earth.reason
+            state.earth_alerts      = earth.active_alerts[:5]
+
+            # Earth veto escalates exit_urgency
+            if earth.veto and state.exit_urgency not in ("critical",):
+                state.exit_urgency = "high"
+            # Earth risk depresses position_multiplier
+            if earth.risk_factor < 0.5:
+                state.position_multiplier = _clamp(
+                    state.position_multiplier * earth.risk_factor * 1.5, 0.1, 1.0
+                )
+        except Exception as _e:
+            logger.debug(f"ATN Monitor unavailable: {_e}")
+
         self._last_state = state
         return state
 
@@ -389,6 +414,16 @@ class CognitiveCycle:
                 sizing_modifier=0.0,
                 avoided_symbols=[],
                 reason=f"EXIT URGENCY = {state.exit_urgency} — field demands exit, not entry",
+                cognitive_state=state,
+            )
+
+        # ATN Monitor Earth veto
+        if state.earth_veto:
+            return TradePlan(
+                allowed=False,
+                sizing_modifier=0.0,
+                avoided_symbols=[],
+                reason=f"EARTH VETO — {state.earth_reason}",
                 cognitive_state=state,
             )
 
