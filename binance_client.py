@@ -1442,7 +1442,7 @@ class BinanceClient:
                 })
             return results
         except Exception as e:
-            logger.warning(f"BinanceClient.get_margin_pairs error: {e}")
+            import logging; logging.getLogger(__name__).warning(f"BinanceClient.get_margin_pairs error: {e}")
             return []
 
     def get_margin_pair_info(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -1511,7 +1511,7 @@ class BinanceClient:
                     })
             return positions
         except Exception as e:
-            logger.warning(f"BinanceClient.get_open_margin_positions error: {e}")
+            import logging; logging.getLogger(__name__).warning(f"BinanceClient.get_open_margin_positions error: {e}")
             return []
 
     def place_margin_order(
@@ -1586,6 +1586,7 @@ class BinanceClient:
                 "status": "FILLED", "margin": True,
                 "sideEffectType": side_effect,
                 "isIsolated": self._margin_isolated(),
+                "exchange": "binance",
                 "dry_run": True,
             }
 
@@ -1705,7 +1706,7 @@ class BinanceClient:
                 {"asset": asset, "limit": 24}
             )
         except Exception as e:
-            logger.warning(f"BinanceClient.get_margin_interest_rates error: {e}")
+            import logging; logging.getLogger(__name__).warning(f"BinanceClient.get_margin_interest_rates error: {e}")
             return []
 
     def borrow_margin(self, asset: str, amount: float) -> Dict[str, Any]:
