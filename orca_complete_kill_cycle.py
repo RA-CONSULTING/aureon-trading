@@ -3860,6 +3860,26 @@ class OrcaKillCycle:
                 _safe_print(f"   Margin Penny Trader init failed: {e}")
                 self.margin_penny_trader = None
 
+        # ── BINANCE CROSS MARGIN UNIVERSE ─────────────────────────────────────
+        # Discover all Binance cross-margin eligible pairs at startup so that
+        # OrcaKillCycle can detect and use place_margin_order() on Binance the
+        # same way it does on Kraken (duck-typing via hasattr).
+        self.binance_margin_pairs = {}  # {symbol: {"pair":…, "leverage_buy":[3], …}}
+        _binance_client = self.clients.get('binance')
+        if _binance_client and hasattr(_binance_client, 'place_margin_order'):
+            try:
+                _bm_pairs = _binance_client.get_margin_pairs()
+                for _p in _bm_pairs:
+                    sym = _p.get("pair", "")
+                    if sym:
+                        self.binance_margin_pairs[sym] = _p
+                if self.binance_margin_pairs:
+                    _safe_print(f"  Binance Cross Margin: ONLINE ({len(self.binance_margin_pairs)} pairs)")
+                else:
+                    _safe_print("  Binance Cross Margin: connected (no pairs returned — dry-run or BINANCE_MARGIN_ENABLED=false)")
+            except Exception as e:
+                _safe_print(f"   Binance margin universe init failed: {e}")
+
         #    QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps + Breadcrumb Portfolio
         # ROCK SOLID MATH: Only leaps when value preserved AFTER fees!
         self.queen_eternal_machine = None
@@ -10152,31 +10172,51 @@ class OrcaKillCycle:
         #  Queen holds for more ONLY if she validates the long/short play.
         # ═══════════════════════════════════════════════════════════════
         _use_margin = (
-            exchange == 'kraken' and
+            exchange in ('kraken', 'binance') and
             hasattr(client, 'place_margin_order') and
             margin_leverage >= 2 and
             margin_conviction >= 0.3
         )
 
-        # Check if this symbol is in the margin universe
+        # Check if this symbol is in the margin universe (Kraken or Binance)
         _sym_clean = symbol.replace('/', '')
-        _in_margin_universe = (
+        _in_kraken_margin = (
             hasattr(self, 'kraken_margin_pairs') and
             (_sym_clean in self.kraken_margin_pairs or symbol in self.kraken_margin_pairs)
         )
+        _in_binance_margin = (
+            hasattr(self, 'binance_margin_pairs') and
+            (_sym_clean in self.binance_margin_pairs or symbol in self.binance_margin_pairs)
+        )
+        _in_margin_universe = _in_kraken_margin or (exchange == 'binance' and _in_binance_margin)
 
-        # If it's a margin-eligible pair, ALWAYS use margin for penny profit
+        # If it's a Kraken margin-eligible pair, ALWAYS use margin for penny profit
         if (exchange == 'kraken' and
             hasattr(client, 'place_margin_order') and
             not _use_margin and
-            _in_margin_universe):
+            _in_kraken_margin):
             _minfo = self.kraken_margin_pairs.get(_sym_clean) or self.kraken_margin_pairs.get(symbol)
             if _minfo and _minfo.leverage_buy:
                 _use_margin = True
                 margin_leverage = min(_minfo.leverage_buy)  # Lowest leverage for safety
                 margin_recommendation = 'LONG' if momentum_pct >= 0 else 'SHORT'
                 margin_conviction = max(queen_confidence, 0.5)
-                print(f"   MARGIN UNIVERSE: {symbol} is margin-eligible, using {margin_leverage}x")
+                print(f"   MARGIN UNIVERSE: {symbol} is Kraken margin-eligible, using {margin_leverage}x")
+
+        # If it's a Binance cross-margin eligible pair, use margin when conviction is high
+        if (exchange == 'binance' and
+            hasattr(client, 'place_margin_order') and
+            not _use_margin and
+            _in_binance_margin and
+            queen_confidence >= 0.55):
+            _bm_info = self.binance_margin_pairs.get(_sym_clean) or self.binance_margin_pairs.get(symbol, {})
+            _bm_lev_list = _bm_info.get("leverage_buy", [3])
+            _bm_lev = min(_bm_lev_list) if _bm_lev_list else 3
+            _use_margin = True
+            margin_leverage = _bm_lev
+            margin_recommendation = 'LONG' if momentum_pct >= 0 else 'SHORT'
+            margin_conviction = max(queen_confidence, 0.5)
+            print(f"   BINANCE MARGIN UNIVERSE: {symbol} is cross-margin eligible, using {margin_leverage}x")
 
         # Even if quadrumvirate didn't give explicit margin signal, default
         # to margin on Kraken when intelligence confidence is high enough
