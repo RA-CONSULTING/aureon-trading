@@ -331,6 +331,16 @@ except ImportError as e:
     _lyra_get_exit_urgency = None
     print(f"   Lyra integration not available: {e}")
 
+# ── COGNITIVE CYCLE: Think→Feel→Plan→Act→Reflect→Validate→Move ────────────
+COGNITIVE_CYCLE_AVAILABLE = False
+try:
+    from aureon_cognitive_cycle import CognitiveCycle
+    COGNITIVE_CYCLE_AVAILABLE = True
+    print("  COGNITIVE CYCLE WIRED! (Think→Feel→Plan→Act→Reflect→Validate→Move)")
+except ImportError as e:
+    CognitiveCycle = None
+    print(f"   Cognitive cycle not available: {e}")
+
 # Load environment variables from .env file (CRITICAL for API keys!)
 try:
     from dotenv import load_dotenv
@@ -4460,6 +4470,9 @@ class OrcaKillCycle:
         except Exception as e:
             pass
         
+        # ── COGNITIVE CYCLE — background nervous system (initialised in run_autonomous)
+        self._cognitive_cycle = None
+
         #    QUEEN SENTIENCE ENGINE - TRUE CONSCIOUSNESS FOR TRADING!
         self.sentience_engine = None
         self.sentience_validator = None
@@ -8962,7 +8975,18 @@ class OrcaKillCycle:
                 )
             except Exception as e:
                 print(f"   👑 King accounting (buy): {e}")
-        
+
+        # ── COGNITIVE CYCLE: REFLECT on buy ──────────────────────────────────
+        if self._cognitive_cycle:
+            try:
+                _note = self._cognitive_cycle.reflect(
+                    'BUY', symbol,
+                    {'price': fill_price, 'qty': fill_qty, 'exchange': exchange}
+                )
+                self._cognitive_cycle.validate(_note)
+            except Exception:
+                pass
+
         # Log to trade logger if available
         if self.trade_logger and TradeEntry:
             try:
@@ -10383,7 +10407,18 @@ class OrcaKillCycle:
                     )
                 except Exception as e:
                     print(f"   👑 King accounting (sell): {e}")
-            
+
+            # ── COGNITIVE CYCLE: REFLECT on sell ─────────────────────────────
+            if self._cognitive_cycle:
+                try:
+                    _note = self._cognitive_cycle.reflect(
+                        'SELL', symbol,
+                        {'pnl': net_pnl, 'price': fill_price, 'exchange': exchange}
+                    )
+                    self._cognitive_cycle.validate(_note)
+                except Exception:
+                    pass
+
             #   Position Removal & Save
             if symbol in self.tracked_positions:
                 del self.tracked_positions[symbol]
@@ -13225,6 +13260,15 @@ class OrcaKillCycle:
                 print("  LYRA: The Fourth Pillar STANDS (6 Chambers online)")
             except Exception as e:
                 print(f"   Lyra startup failed: {e}")
+
+        # ── COGNITIVE CYCLE: boot the background nervous system ───────────────
+        if COGNITIVE_CYCLE_AVAILABLE:
+            try:
+                self._cognitive_cycle = CognitiveCycle()
+                print("  COGNITIVE CYCLE: Background nervous system ONLINE")
+            except Exception as e:
+                print(f"   Cognitive cycle init failed: {e}")
+
         if QUADRUMVIRATE_AVAILABLE:
             try:
                 temporal = get_temporal_consensus()
@@ -14624,9 +14668,28 @@ class OrcaKillCycle:
                         if total_cash < 1.0:  # Absolute floor: need at least $1 to trade anything
                             print(f"     Waiting for cash (${total_cash:.2f} available, need $1.00 minimum)")
                         else:
-                            #                                                                
+                            # ── COGNITIVE CYCLE: THINK + FEEL ─────────────────────────────
+                            # The organism reads all 9 senses and paints its own picture
+                            # BEFORE consulting the Quadrumvirate.  All background — never blocks.
+                            _cog_state = None
+                            if self._cognitive_cycle:
+                                try:
+                                    _cog_state = self._cognitive_cycle.think_and_feel(
+                                        market_data={
+                                            'prices': batch_prices or {},
+                                            'cycle': session_stats['cycles'],
+                                            'positions': len(positions),
+                                            'pnl': session_stats['total_pnl'],
+                                        },
+                                        positions=positions,
+                                    )
+                                    self._cognitive_cycle.move()
+                                except Exception:
+                                    pass
+
+                            #
                             #   QUADRUMVIRATE TEMPORAL GATE - All 4 Pillars confer FIRST
-                            #                                                                
+                            #
                             quad_sizing = 1.0
                             quad_go = True
                             if QUADRUMVIRATE_AVAILABLE:
@@ -14646,6 +14709,20 @@ class OrcaKillCycle:
                                         print(f"     💰 MARGIN SIGNAL: {_m_rec} {_m_lev}x leverage (conviction {_m_conv:.0%})")
                                     else:
                                         print(f"     📊 MARGIN: {_m_rec} (lev={_m_lev}, conv={_m_conv:.0%})")
+                                    # ── COGNITIVE CYCLE: PLAN — apply sizing from the field ──────────
+                                    if _cog_state and self._cognitive_cycle:
+                                        try:
+                                            _cog_plan = self._cognitive_cycle.plan(
+                                                _cog_state, batch_prices or {}
+                                            )
+                                            quad_sizing *= _cog_plan.sizing_modifier
+                                            if not _cog_plan.allowed:
+                                                quad_go = False
+                                                print(f"     COGNITIVE VETO: {_cog_plan.reason}")
+                                            else:
+                                                print(f"     COGNITIVE: {_cog_plan.reason}")
+                                        except Exception:
+                                            pass
                                     # ── Pillar-nominated new-listing snipes ───────────────────────────────
                                     if self.enigma_machine:
                                         try:
