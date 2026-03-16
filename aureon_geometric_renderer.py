@@ -984,6 +984,206 @@ def render_molecular(molecule_name: str,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 9. COGNITIVE PAINTING — The Queen paints her own picture of reality
+#    Every cell is computed live from the Chladni standing-wave equation.
+#    The painting IS the cognitive state — a visual anchor for the organism.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _chladni_v(pat: str, nx: float, ny: float) -> float:
+    """
+    Compute the Chladni standing-wave field value at normalised coords.
+    nx, ny in [-1, +1] with (0,0) at canvas centre.
+    Returns v in [-1, 1].
+    """
+    r = math.sqrt(nx * nx + ny * ny)
+    theta = math.atan2(ny, nx)
+    p = pat.upper()
+    if p == "MANDALA":
+        v = (math.sin(math.pi * 2.5 * r) * math.cos(4.0 * theta) +
+             math.sin(math.pi * 5.0 * r) * math.cos(8.0 * theta) * 0.4)
+        return max(-1.0, min(1.0, v / 1.4))
+    elif p == "HEXAGON":
+        f = math.pi * 1.8
+        return (math.cos(f * nx) +
+                math.cos(f * (nx * 0.5 + ny * 0.866)) +
+                math.cos(f * (nx * 0.5 - ny * 0.866))) / 3.0
+    elif p == "STAR":
+        return math.sin(math.pi * 2.5 * r) * math.cos(4.0 * theta)
+    elif p == "CIRCLE":
+        return math.sin(math.pi * 3.5 * r)
+    elif p == "SPIRAL":
+        return math.sin(math.pi * 3.0 * r - theta * PHI)
+    elif p == "CHAOS":
+        noise = (math.sin(nx * 19.3 + ny * 13.7) +
+                 math.sin(nx * 7.1  - ny * 17.3) +
+                 math.sin((nx + ny) * 11.1)) / 3.0
+        return max(-1.0, min(1.0, math.sin(math.pi * 2.0 * r) * 0.25 + noise * 0.75))
+    else:  # UNKNOWN / default
+        return math.sin(math.pi * 2.5 * r) * math.cos(2.0 * theta)
+
+
+def _v_to_glyph(abs_v: float, organic: float,
+                col: int = 0, row: int = 0) -> str:
+    """Map |chladni_v| and organic purity to a display glyph."""
+    if organic < 0.30:
+        # Corrupted field — runic disruption pattern
+        _CORRUPT = [G_CENTER, G_WAVE, G_RUN_F, G_APPR, G_RUN_O,
+                    G_NULL, G_RUN_D, G_BAN, G_RUN_P, G_RUN_TH]
+        # Deterministic positional hash keeps the pattern stable between frames
+        h = (col * 7 + row * 13) % len(_CORRUPT)
+        idx = int(abs_v * (len(_CORRUPT) - 1))
+        return _CORRUPT[(idx + h) % len(_CORRUPT)]
+    # Clean / organic field — sacred geometry palette
+    # Node lines (low abs_v) = brightest; antinodes (high abs_v) = dim/stars
+    if   abs_v < 0.06: return G_CENTER   # ⊕  true still-point
+    elif abs_v < 0.14: return G_RING3    # ◉  node line
+    elif abs_v < 0.24: return G_RING2    # ◎  inner ring
+    elif abs_v < 0.36: return G_DIAX     # ◈  intersection
+    elif abs_v < 0.48: return G_RING1    # ◌  field dot
+    elif abs_v < 0.60: return G_RING0    # ○  outer ring
+    elif abs_v < 0.72: return G_STAR4D   # ✧  soft star
+    elif abs_v < 0.84: return G_STAR4    # ✦  harmonic node
+    elif abs_v < 0.93: return G_STAR6    # ✴  resonance burst
+    else:              return G_STAR8    # ✸  peak antinode energy
+
+
+def render_painting(
+    cymatics_pattern: str = "CIRCLE",
+    dominant_hz: float = 528.0,
+    organic_score: float = 0.80,
+    asset_nodes: Optional[Dict[str, Tuple[float, float]]] = None,
+    sense_scores: Optional[Dict[str, float]] = None,
+    sense_hz_map: Optional[Dict[str, float]] = None,
+    title: str = "",
+    width: int = 68,
+    height: int = 26,
+) -> List[str]:
+    """
+    THE QUEEN PAINTS HER OWN PICTURE.
+
+    Generates a full-canvas mathematical Chladni painting.  Every cell is
+    computed from the standing-wave field equation for the current cymatics
+    pattern.  Asset nodes are plotted at their (Hz × organic) coordinates.
+    The result IS the cognitive state — a consistent visual anchor the
+    operator can learn to read in real time.
+
+    Visual anchor map (always fixed):
+      Left   = low Hz  (foundation)       Right  = high Hz  (crown)
+      Top    = clean / organic field       Bottom = corrupt / manipulated
+      Centre = ⊕  the organism / NOW
+    """
+    cx = (width  - 1) / 2.0
+    cy = (height - 1) / 2.0
+    # Aspect-ratio compensation: terminal chars are ~2× taller than wide
+    ax = 1.0 / (cx + 1e-9)
+    ay = 1.0 / (cy * 0.5 + 1e-9)   # y compressed to balance circles
+
+    # ── Layer 0: Chladni field ────────────────────────────────────────────
+    field: List[List[str]] = [[""] * width for _ in range(height)]
+
+    for row in range(height):
+        for col in range(width):
+            nx = (col - cx) * ax
+            ny = (row - cy) * ay
+            v  = _chladni_v(cymatics_pattern, nx, ny)
+            av = abs(v)
+            g  = _v_to_glyph(av, organic_score, col, row)
+
+            # Hz varies across the canvas — rainbow sweep left→right
+            hz_cell = max(33.0, min(1200.0, dominant_hz + nx * 180.0))
+            rc, gc, bc = _hz_rgb(hz_cell)
+
+            if av > 0.72:
+                # Antinode zone — dim
+                field[row][col] = (f"\033[38;2;{rc//3};{gc//3};{bc//3}m"
+                                   f"{g}\033[0m")
+            elif av < 0.24:
+                # Node line — bold / bright
+                field[row][col] = f"\033[1;38;2;{rc};{gc};{bc}m{g}\033[0m"
+            else:
+                field[row][col] = f"\033[38;2;{rc};{gc};{bc}m{g}\033[0m"
+
+    # ── Layer 1: Visual anchor — concentric Hz rings at centre ───────────
+    icx, icy = int(cx), int(cy)
+    for ring_r in (2, 4, 7):
+        for step in range(0, 360, 5):
+            rad = math.radians(step)
+            rx  = int(cx + ring_r * 2.0 * math.cos(rad))
+            ry  = int(cy + ring_r * 0.5 * math.sin(rad))
+            if 1 <= rx < width - 1 and 1 <= ry < height - 1:
+                ring_hz = max(33.0, min(1200.0,
+                              dominant_hz + (ring_r / 7.0) * 120.0))
+                ch = G_RING1 if ring_r < 7 else G_RING0
+                field[ry][rx] = _hz(ring_hz, ch)
+    # True centre glyph — the organism itself
+    field[icy][icx] = _bold_hz(dominant_hz, G_CENTER)
+
+    # ── Layer 2: Sense organ spokes (inner mandala) ───────────────────────
+    if sense_scores and sense_hz_map:
+        n = len(_SENSE_ORDER)
+        for i, sense in enumerate(_SENSE_ORDER):
+            angle_rad = math.radians(i * (360.0 / n) - 90.0)
+            score     = sense_scores.get(sense, 0.5)
+            s_hz      = sense_hz_map.get(sense, _SENSE_HZ_BASE.get(sense, 528.0))
+            max_spoke = min(cx * 0.45, cy * 0.45)
+            spoke_len = score * max_spoke
+            steps     = max(1, int(spoke_len * 2))
+            for step in range(steps):
+                t  = step / steps
+                sx = int(cx + t * spoke_len * 2.0 * math.cos(angle_rad))
+                sy = int(cy + t * spoke_len * 0.5 * math.sin(angle_rad))
+                if 0 <= sx < width and 0 <= sy < height:
+                    tip_g = G_DIAX if step == steps - 1 else G_RING1
+                    field[sy][sx] = _bold_hz(s_hz, tip_g)
+
+    # ── Layer 3: Asset nodes — positioned by Hz × organic score ──────────
+    if asset_nodes:
+        for symbol, (a_hz, a_org) in asset_nodes.items():
+            ax_pos = int((a_hz - 33.0) / (1200.0 - 33.0) * (width  - 1))
+            ay_pos = int((1.0 - a_org) * (height - 1))
+            ax_pos = max(1, min(width  - 2, ax_pos))
+            ay_pos = max(1, min(height - 2, ay_pos))
+
+            # Corruption halo for low-organic nodes
+            if a_org < 0.40:
+                for dr in (-1, 0, 1):
+                    for dc in (-1, 0, 1):
+                        zr, zc = ay_pos + dr, ax_pos + dc
+                        if (0 <= zr < height and 0 <= zc < width
+                                and (dr, dc) != (0, 0)):
+                            field[zr][zc] = _hz(111.0, G_NULL)
+
+            field[ay_pos][ax_pos] = _bold_hz(a_hz, G_DIA)
+            for ci, ch in enumerate(symbol[:4]):
+                lx = ax_pos + 1 + ci
+                if lx < width:
+                    field[ay_pos][lx] = _hz(a_hz, ch)
+
+    # ── Assemble output lines ─────────────────────────────────────────────
+    pat_lbl = cymatics_pattern.upper()
+    hz_lbl  = f"{dominant_hz:.0f}Hz"
+    org_lbl = f"org={organic_score:.2f}"
+    hdr     = title or f"COGNITIVE PAINTING  {pat_lbl} · {hz_lbl} · {org_lbl}"
+
+    lines = [
+        _bold_hz(dominant_hz, f"  {hdr}"),
+        _dim("  visual anchor: ⊕=centre  ← low Hz · high Hz →"
+             "  top=clean · bottom=corrupt"),
+        "",
+        "  " + _hz(dominant_hz, "◈" + "≈" * (width - 2) + "◈"),
+    ]
+    for row in range(height):
+        side_hz = max(33.0, min(1200.0,
+                  dominant_hz + (row / height - 0.5) * 100.0))
+        lines.append("  " + _hz(side_hz, "∿") +
+                     "".join(field[row]) +
+                     _hz(side_hz, "∿"))
+    lines.append("  " + _hz(dominant_hz, "◈" + "≈" * (width - 2) + "◈"))
+    lines.append("")
+    return lines
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # THE EAGLE BRIDGE — The aware link between data and human vision
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1017,7 +1217,7 @@ class EagleBridge:
             body   = world_state.bodies[symbol]
 
         lines = self._header(symbol, body, world_state)
-        view  = self._tick % 6   # Cycle through 6 render modes
+        view  = self._tick % 7   # Cycle through 7 render modes
 
         if view == 0:
             # Full mandala
@@ -1062,7 +1262,7 @@ class EagleBridge:
                 world_state.sense_hz,
                 world_state.organism_health,
             )
-        else:
+        elif view == 5:
             # Hz spectrum with all senses marked
             highlighted = {
                 s[:3].upper(): world_state.sense_hz.get(s, 528)
@@ -1071,6 +1271,31 @@ class EagleBridge:
             if symbol in world_state.bodies:
                 highlighted[symbol] = world_state.bodies[symbol].hz
             lines += render_hz_spectrum(highlighted, width=60)
+        else:
+            # view == 6: Full cognitive painting
+            asset_nodes = {
+                sym: (b.hz, b.organic_score)
+                for sym, b in list(world_state.bodies.items())[:8]
+            }
+            sight_q = world_state.sense_scores.get("sight", 0.5)
+            cymatic_map = {
+                (0.85, 1.01): "MANDALA", (0.70, 0.85): "HEXAGON",
+                (0.55, 0.70): "STAR",    (0.40, 0.55): "CIRCLE",
+                (0.20, 0.40): "SPIRAL",  (0.00, 0.20): "CHAOS",
+            }
+            p = "CIRCLE"
+            for (lo, hi), pat in cymatic_map.items():
+                if lo <= sight_q < hi:
+                    p = pat
+                    break
+            lines += render_painting(
+                cymatics_pattern=p,
+                dominant_hz=world_state.organism_hz,
+                organic_score=world_state.organism_health,
+                asset_nodes=asset_nodes,
+                sense_scores=world_state.sense_scores,
+                sense_hz_map=world_state.sense_hz,
+            )
 
         # Dark field if manipulation detected
         if body and body.organic_score < 0.65:
