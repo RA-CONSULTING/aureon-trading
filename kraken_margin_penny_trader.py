@@ -63,6 +63,15 @@ except ImportError:
     MarginWaveRider = None
     WAVE_CONFIG = {'entry_min_margin_pct': 250.0, 'danger_margin_pct': 110.0}
 
+# Stallion Tracker - Apache phase intelligence (ROPING→BUCKING→TIRING→TAMED)
+try:
+    from stallion_tracker import classify_phase, StallionPhase
+    HAS_STALLION = True
+except ImportError:
+    HAS_STALLION = False
+    classify_phase = None
+    StallionPhase = None
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -3109,6 +3118,36 @@ class KrakenMarginArmyTrader:
                     trade=trade
                 )
 
+        # ── STALLION PHASE ────────────────────────────────────────────────────
+        stallion_str = ""
+        if HAS_STALLION and classify_phase is not None:
+            # Pull live margin level for wave capacity (best-effort)
+            _ml = 0.0
+            try:
+                _tb = self.client.get_trade_balance()
+                _ml = float(_tb.get("margin_level", 0) or 0)
+            except Exception:
+                pass
+            _dtp_activated  = dtp_state.activated  if HAS_DTP and 'dtp_state' in dir() else False
+            _dtp_triggers   = dtp_state.trigger_count if _dtp_activated else 0
+            _dtp_floor_gbp  = dtp_state.floor_gbp    if _dtp_activated else 0.0
+            _dtp_peak_gbp   = dtp_state.peak_profit_gbp if _dtp_activated else 0.0
+
+            snap = classify_phase(
+                hold_seconds    = hold_time,
+                entry_price     = trade.entry_price,
+                current_price   = current_price,
+                net_pnl         = net_pnl,
+                trade_side      = trade.side,
+                dtp_activated   = _dtp_activated,
+                dtp_trigger_count = _dtp_triggers,
+                dtp_floor_gbp   = _dtp_floor_gbp,
+                dtp_peak_gbp    = _dtp_peak_gbp,
+                margin_level    = _ml,
+                leverage        = float(trade.leverage),
+            )
+            stallion_str = f" | STALLION:{snap.phase.value}"
+
         if net_pnl >= PROFIT_TARGET_USD:
             status = f"TARGET HIT +${net_pnl:.2f} - CLOSING!"
         elif net_pnl > 0:
@@ -3124,6 +3163,7 @@ class KrakenMarginArmyTrader:
             f"Net: ${net_pnl:+.2f} (fees:${total_fees:.2f}) | {status}"
             f"{' [LIVE]' if stream_live else ' [REST]'}"
             f"{dtp_status_str}"
+            f"{stallion_str}"
         )
 
         # === THE GBP1 PROFIT GATE - close immediately ===
@@ -3616,8 +3656,22 @@ class KrakenMarginArmyTrader:
                     age_str = f"{age/60:.1f}m"
                 else:
                     age_str = f"{age/3600:.1f}h"
+                # Stallion phase for status display
+                phase_str = ""
+                if HAS_STALLION and classify_phase is not None:
+                    try:
+                        _snap = classify_phase(
+                            hold_seconds=age,
+                            entry_price=trade.entry_price,
+                            current_price=getattr(trade, 'last_price', trade.entry_price),
+                            net_pnl=0.0,
+                            trade_side=trade.side,
+                        )
+                        phase_str = f" | {_snap.phase.value}"
+                    except Exception:
+                        pass
                 print(f"  {label}: {trade.pair} {trade.side.upper()} {trade.leverage}x | "
-                      f"${trade.entry_price:,.4f} | age={age_str}")
+                      f"${trade.entry_price:,.4f} | age={age_str}{phase_str}")
             else:
                 print(f"  {label}: EMPTY (scanning)")
 

@@ -48,6 +48,13 @@ except ImportError:
     _wave_rider = None
     WAVE_CONFIG = {'entry_min_margin_pct': 250.0, 'danger_margin_pct': 110.0}
 
+try:
+    from stallion_tracker import classify_phase as _classify_phase
+    _STALLION_AVAILABLE = True
+except ImportError:
+    _STALLION_AVAILABLE = False
+    _classify_phase = None
+
 def main():
     from kraken_client import KrakenClient
     client = KrakenClient()
@@ -160,16 +167,62 @@ def main():
 
                 # Wave capacity for this position (how far price can fall before danger)
                 wave_cap_str = ""
+                wave_cap_val = 0.0
                 if _WAVE_RIDER_AVAILABLE and _wave_rider and margin_level > 0:
-                    wave_cap = _wave_rider.wave_capacity_pct(margin_level, lev_int)
-                    wave_cap_str = f" | Wave cap: {wave_cap:.1f}% cushion"
+                    wave_cap_val = _wave_rider.wave_capacity_pct(margin_level, lev_int)
+                    wave_cap_str = f" | Wave cap: {wave_cap_val:.1f}% cushion"
+
+                # ════════════════════════════════════════════════════════
+                #  STALLION PHASE — classify where this trade is in the
+                #  breaking process (ROPING → … → TAMED)
+                # ════════════════════════════════════════════════════════
+                stallion_str = ""
+                if _STALLION_AVAILABLE and _classify_phase is not None:
+                    # Position open time (best estimate: use rollover timestamp or 0)
+                    _open_ts = float(pos.get('opentm', 0) or 0)
+                    _hold_secs = (time.time() - _open_ts) if _open_ts > 0 else 0.0
+                    # Peek at DTP state for this position (may not exist yet)
+                    _pos_key = pos.get('position_id', pair)
+                    _dtp_snap = dtp_trackers.get(_pos_key)
+                    _dtp_activated = False
+                    _dtp_triggers  = 0
+                    _dtp_floor_gbp = 0.0
+                    _dtp_peak_gbp  = 0.0
+                    if _dtp_snap is not None:
+                        try:
+                            _s = _dtp_snap._state  # access internal state
+                            _dtp_activated = _s.activated
+                            _dtp_triggers  = _s.trigger_count
+                            _dtp_floor_gbp = _s.floor_gbp
+                            _dtp_peak_gbp  = _s.peak_profit_gbp
+                        except Exception:
+                            pass
+                    try:
+                        _snap = _classify_phase(
+                            hold_seconds=_hold_secs,
+                            entry_price=entry_price,
+                            current_price=current_bid,
+                            net_pnl=net_pnl,
+                            trade_side=pos_type if pos_type in ('buy', 'sell') else 'buy',
+                            dtp_activated=_dtp_activated,
+                            dtp_trigger_count=_dtp_triggers,
+                            dtp_floor_gbp=_dtp_floor_gbp,
+                            dtp_peak_gbp=_dtp_peak_gbp,
+                            margin_level=margin_level,
+                            leverage=float(lev_int),
+                        )
+                        stallion_str = f"  [STALLION:{_snap.phase.value}] {_snap.description}"
+                    except Exception:
+                        pass
 
                 print(f"  [{i}] {pair} LONG {remaining:.6f} ETH (lev={lev_int}x)")
                 print(f"      Entry: ${entry_price:,.2f} | Breakeven: ${breakeven:,.2f} | Current: ${current_bid:,.2f}")
                 print(f"      Gross PnL: ${gross_pnl:+.4f} | Fees: ${total_fees:.4f} | Net PnL: ${net_pnl:+.4f} ({pnl_pct:+.3f}%)")
                 print(f"      To breakeven: ${to_breakeven:+.2f} ({to_breakeven_pct:+.3f}%){wave_cap_str}")
                 print(f"      Status: [{icon}] {status}")
-                
+                if stallion_str:
+                    print(f"      {stallion_str}")
+
                 # ════════════════════════════════════════════════════════
                 #  DEAD MAN'S SWITCH — feed net_pnl into DTP engine
                 # ════════════════════════════════════════════════════════
