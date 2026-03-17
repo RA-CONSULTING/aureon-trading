@@ -25,6 +25,17 @@ MIN_PROFIT_PCT = 0.10     # Minimum % above breakeven to close (0.10%)
 LIQUIDATION_WARN = 120    # Margin level % warning threshold
 LIQUIDATION_FORCE = 110   # Margin level % force-close threshold
 
+# ══════════════════════════════════════════════════════════════
+#  DEAD MAN'S SWITCH IMPORT
+# ══════════════════════════════════════════════════════════════
+try:
+    from dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
+    _DTP_AVAILABLE = True
+except ImportError:
+    _DTP_AVAILABLE = False
+    DynamicTakeProfit = None
+    DTP_CONFIG = {'activation_threshold': 15.0, 'trailing_distance_pct': 0.02, 'gbp_usd_rate': 1.27}
+
 def main():
     from kraken_client import KrakenClient
     client = KrakenClient()
@@ -41,7 +52,10 @@ def main():
     
     closed_positions = []
     cycle = 0
-    
+    # Dead Man's Switch trackers — persisted across cycles, keyed by position_id
+    # (or pair as fallback).  Each tracker holds its own floor/peak state.
+    dtp_trackers: dict = {}
+
     while True:
         cycle += 1
         try:
@@ -136,12 +150,48 @@ def main():
                 print(f"      Status: [{icon}] {status}")
                 
                 # ════════════════════════════════════════════════════════
-                #  CLOSE DECISION: Only when NET PROFIT is confirmed
+                #  DEAD MAN'S SWITCH — feed net_pnl into DTP engine
+                # ════════════════════════════════════════════════════════
+                dtp_close = False
+                dtp_reason_str = ""
+                dtp_state_str = ""
+                if _DTP_AVAILABLE and DynamicTakeProfit is not None:
+                    pos_key = pos.get('position_id', pair)
+                    if pos_key not in dtp_trackers:
+                        dtp_trackers[pos_key] = DynamicTakeProfit(
+                            activation_threshold_gbp=DTP_CONFIG['activation_threshold'],
+                            gbp_usd_rate=DTP_CONFIG['gbp_usd_rate'],
+                            trailing_distance_pct=DTP_CONFIG['trailing_distance_pct'],
+                        )
+                        print(
+                            f"      [DTP] Dead Man's Switch armed: activates at "
+                            f"£{DTP_CONFIG['activation_threshold']:.2f} net profit"
+                        )
+                    dtp = dtp_trackers[pos_key]
+                    dtp_triggered, dtp_reason_str, dtp_state = dtp.update(net_pnl)
+                    if dtp_state.activated:
+                        dtp_state_str = (
+                            f"  [DTP] floor=£{dtp_state.floor_gbp:.2f} "
+                            f"peak=£{dtp_state.peak_profit_gbp:.2f} "
+                            f"ratchets={dtp_state.trigger_count}"
+                        )
+                    if dtp_triggered:
+                        dtp_close = True
+                        print(f"      [DTP] DEAD MAN TRIGGERED: {dtp_reason_str}")
+
+                if dtp_state_str:
+                    print(f"      {dtp_state_str}")
+
+                # ════════════════════════════════════════════════════════
+                #  CLOSE DECISION: DTP floor hit, or standard profit gate
                 # ════════════════════════════════════════════════════════
                 should_close = False
                 close_reason = ""
-                
-                if net_pnl >= MIN_PROFIT_USD and to_breakeven_pct >= MIN_PROFIT_PCT:
+
+                if dtp_close:
+                    should_close = True
+                    close_reason = f"DTP_DEAD_MAN ({dtp_reason_str})"
+                elif net_pnl >= MIN_PROFIT_USD and to_breakeven_pct >= MIN_PROFIT_PCT:
                     should_close = True
                     close_reason = f"PROFIT_TARGET (net=${net_pnl:+.4f}, {to_breakeven_pct:+.3f}% above breakeven)"
                 

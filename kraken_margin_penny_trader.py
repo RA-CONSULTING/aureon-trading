@@ -45,6 +45,15 @@ except ImportError:
     logger_temp = logging.getLogger("margin_army")
     logger_temp.warning("ETA predictor not available - install margin_eta_predictor.py")
 
+# Dead Man's Switch - Dynamic Take Profit
+try:
+    from dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
+    HAS_DTP = True
+except ImportError:
+    HAS_DTP = False
+    DynamicTakeProfit = None
+    DTP_CONFIG = {'activation_threshold': 15.0, 'trailing_distance_pct': 0.02, 'gbp_usd_rate': 1.27}
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2373,6 +2382,11 @@ class KrakenMarginArmyTrader:
         self.eta_predictor = MarginETAPredictor() if HAS_ETA_PREDICTOR else None
         self._last_eta_report = 0        # Track ETA report frequency
         self._eta_report_interval = 300  # Report ETA every 300s (5 min)
+        # Dead Man's Switch trackers - one DTP instance per active margin trade.
+        # Keyed by trade.order_id so they survive across monitoring cycles.
+        # The DTP receives the pre-calculated net_pnl (USD) directly so all
+        # rollover/fee math already done by the existing pipeline feeds straight in.
+        self.dtp_trackers: dict = {}
         self._load_state()
 
     # ----------------------------------------------------------
@@ -3010,6 +3024,38 @@ class KrakenMarginArmyTrader:
         need_to_target = trade.breakeven_price - current_price if trade.side == "buy" else current_price - trade.breakeven_price
         need_pct = need_to_target / current_price * 100 if current_price > 0 else 0
 
+        # ── DEAD MAN'S SWITCH ─────────────────────────────────────────────────
+        # Feed the fully-calculated net P&L (includes entry fee + exit fee est +
+        # rollover) straight into the DTP engine.  Keyed by order_id so the
+        # floor survives across monitoring cycles.
+        dtp_status_str = ""
+        if HAS_DTP and DynamicTakeProfit is not None:
+            trade_key = getattr(trade, 'order_id', trade.pair)
+            if trade_key not in self.dtp_trackers:
+                self.dtp_trackers[trade_key] = DynamicTakeProfit(
+                    activation_threshold_gbp=DTP_CONFIG['activation_threshold'],
+                    gbp_usd_rate=DTP_CONFIG['gbp_usd_rate'],
+                    trailing_distance_pct=DTP_CONFIG['trailing_distance_pct'],
+                )
+                logger.info(
+                    f"[DTP] Armed Dead Man's Switch for {trade.pair} "
+                    f"(activates at £{DTP_CONFIG['activation_threshold']:.2f} net profit)"
+                )
+            dtp = self.dtp_trackers[trade_key]
+            dtp_triggered, dtp_reason, dtp_state = dtp.update(net_pnl)
+            if dtp_state.activated:
+                net_gbp = net_pnl / DTP_CONFIG['gbp_usd_rate']
+                dtp_status_str = (
+                    f" | DTP: floor=£{dtp_state.floor_gbp:.2f} "
+                    f"peak=£{dtp_state.peak_profit_gbp:.2f}"
+                )
+            if dtp_triggered:
+                logger.info(f"[DTP] DEAD MAN TRIGGERED: {dtp_reason}")
+                return self.close_position(
+                    reason=f"DTP_DEAD_MAN (floor=£{dtp_state.floor_gbp:.2f})",
+                    trade=trade
+                )
+
         if net_pnl >= PROFIT_TARGET_USD:
             status = f"TARGET HIT +${net_pnl:.2f} - CLOSING!"
         elif net_pnl > 0:
@@ -3024,6 +3070,7 @@ class KrakenMarginArmyTrader:
             f"${trade.entry_price:,.4f} -> ${current_price:,.4f} | "
             f"Net: ${net_pnl:+.2f} (fees:${total_fees:.2f}) | {status}"
             f"{' [LIVE]' if stream_live else ' [REST]'}"
+            f"{dtp_status_str}"
         )
 
         # === THE GBP1 PROFIT GATE - close immediately ===
