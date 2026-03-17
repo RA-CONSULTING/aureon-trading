@@ -252,11 +252,21 @@ def fetch_solar_flares(start: datetime, end: datetime) -> List[PlanetaryEvent]:
         chunk_start = start
         while chunk_start < end:
             chunk_end = min(chunk_start + timedelta(days=365), end)
-            data = _get("https://api.nasa.gov/DONKI/FLR", params={
-                "startDate": chunk_start.strftime("%Y-%m-%d"),
-                "endDate":   chunk_end.strftime("%Y-%m-%d"),
-                "api_key":   key,
-            })
+            for _attempt in range(3):
+                try:
+                    data = _get("https://api.nasa.gov/DONKI/FLR", params={
+                        "startDate": chunk_start.strftime("%Y-%m-%d"),
+                        "endDate":   chunk_end.strftime("%Y-%m-%d"),
+                        "api_key":   key,
+                    })
+                    break
+                except Exception as _e:
+                    if "429" in str(_e):
+                        time.sleep(2 * (_attempt + 1))
+                        data = []
+                    else:
+                        data = []
+                        break
             for flare in (data if isinstance(data, list) else []):
                 cls  = (flare.get("classType") or "C1.0").strip()
                 peak = flare.get("peakTime") or flare.get("beginTime") or ""
