@@ -531,6 +531,17 @@ except ImportError:
     KrakenMarginPennyTrader = None
     print("   Kraken Margin Penny Trader: MISSING")
 
+#   DEAD MAN'S SWITCH - Dynamic Take Profit
+DTP_AVAILABLE = False
+try:
+    from dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
+    DTP_AVAILABLE = True
+    print("  Dead Man's Switch (DTP): ARMED")
+except ImportError:
+    DynamicTakeProfit = None
+    DTP_CONFIG = {'activation_threshold': 15.0, 'trailing_distance_pct': 0.02, 'gbp_usd_rate': 1.27}
+    print("   Dead Man's Switch (DTP): MISSING")
+
 #    Movers & Shakers Scanner
 try:
     from aureon_movers_shakers_scanner import MoversShakersScanner, MoverShaker
@@ -7300,21 +7311,7 @@ class OrcaKillCycle:
             print(f"   Alpaca scan error: {e}")
         
         return opportunities
-                    continue
-                
-                if any(q in quote for q in major_quotes):
-                    filtered.append(symbol)
-                elif any(a in base for a in major_alts) and quote in ['USDC', 'DAI', 'BUSD']:
-                    filtered.append(symbol)
-            
-            filtered = sorted(list(set(filtered)))
-            _safe_print(f"  Discovered {len(filtered)} Kraken trading pairs")
-            return filtered
-            
-        except Exception as e:
-            _safe_print(f"   Kraken asset discovery failed: {e}")
-            return []
-    
+
     def _scan_kraken_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
         """
         Scan Kraken pairs for momentum.
@@ -10737,7 +10734,7 @@ class OrcaKillCycle:
                 # on cost basis alone. The math checks (COP, black box, profit gate)
                 # downstream are sufficient to prevent selling at a loss.
                 if entry_price > 0:
-                            print(f"      Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
+                    print(f"      Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
                     confirmed_entry = entry_price
                     cb_info['entry_price'] = entry_price
                 elif entry_cost > 0 and entry_qty > 0:
@@ -11719,7 +11716,21 @@ class OrcaKillCycle:
             breakeven_price=self.calculate_breakeven_price(buy_price),
             target_price=self.calculate_target_price(buy_price, target_pct)
         )
-        
+
+        # Arm Dead Man's Switch for this position
+        _hunt_dtp = None
+        if DTP_AVAILABLE and DynamicTakeProfit is not None:
+            _hunt_dtp = DynamicTakeProfit(
+                activation_threshold_gbp=DTP_CONFIG['activation_threshold'],
+                gbp_usd_rate=DTP_CONFIG['gbp_usd_rate'],
+                trailing_distance_pct=DTP_CONFIG['trailing_distance_pct'],
+            )
+            print(
+                f"  Dead Man's Switch armed: activates at "
+                f"£{DTP_CONFIG['activation_threshold']:.2f} net profit "
+                f"| trails 2% below peak"
+            )
+
         # Step 2: LIVE STREAM until exit condition
         print(f"\n  STEP 2: LIVE STREAMING (100ms updates)")
         print(f"   Target: ${position.target_price:,.2f} | Stop: ${stop_price:,.2f}")
@@ -11770,14 +11781,31 @@ class OrcaKillCycle:
                     position.current_pnl_pct = pnl_est['net_pnl_pct']
                     position.whale_activity = self.whale_signal
                     
+                    # ── DEAD MAN'S SWITCH CHECK ──────────────────────────
+                    _dtp_floor_str = ""
+                    if _hunt_dtp is not None:
+                        _dtp_exit, _dtp_reason, _dtp_state = _hunt_dtp.update(pnl_est['net_pnl'])
+                        if _dtp_state.activated:
+                            _dtp_floor_str = (
+                                f" | DTP floor=£{_dtp_state.floor_gbp:.2f}"
+                                f"/peak=£{_dtp_state.peak_profit_gbp:.2f}"
+                            )
+                        if _dtp_exit:
+                            position.ready_to_kill = True
+                            position.kill_reason = 'DTP_DEAD_MAN'
+                            print(
+                                f"\n\n  DEAD MAN TRIGGERED: {_dtp_reason}"
+                            )
+                            break
+
                     # Live display
                     whale_icon = ' ' if self.whale_signal == 'buying' else (' ' if self.whale_signal == 'selling' else '  ')
-                    print(f"\r   ${current:,.2f} | P&L: ${pnl_est['net_pnl']:+.4f} ({pnl_est['net_pnl_pct']:+.3f}%) | Mom: {momentum_direction:+.2f}% {whale_icon}", end='', flush=True)
-                    
-                    #                                                        
+                    print(f"\r   ${current:,.2f} | P&L: ${pnl_est['net_pnl']:+.4f} ({pnl_est['net_pnl_pct']:+.3f}%) | Mom: {momentum_direction:+.2f}% {whale_icon}{_dtp_floor_str}", end='', flush=True)
+
+                    #
                     # SMART EXIT CONDITIONS (don't pull out too early!)
-                    #                                                        
-                    
+                    #
+
                     # 1. HIT TARGET - perfect exit!
                     if current >= position.target_price:
                         position.hit_target = True
@@ -16484,49 +16512,6 @@ class OrcaKillCycle:
             # Log state dump errors to help debugging
             print(f"   Dashboard state dump failed: {e}")
             pass
-                _safe_print("   No tradeable pairs found from Kraken")
-                return []
-            
-            # Filter for liquid, main trading pairs
-            # Prioritize major pairs with USD/USDT/EUR quotes
-            filtered_symbols = []
-            major_quote_currencies = ['USD', 'USDT', 'EUR', 'GBP']
-            
-            for pair_info in tradeable_pairs:
-                symbol = pair_info.get('symbol') or pair_info.get('pair')
-                wsname = pair_info.get('wsname', '')
-                base = pair_info.get('base', '')
-                quote = pair_info.get('quote', '')
-                
-                # Filter criteria:
-                # 1. Must have a symbol/pair
-                # 2. Quote must be a major currency or stable
-                # 3. Exclude F-prefixed pairs (fiat-only) and D-prefixed pairs (disabled)
-                if not symbol or symbol.startswith('F') or symbol.startswith('D'):
-                    continue
-                
-                # Check quote currency for major pairs
-                if quote and quote in major_quote_currencies:
-                    filtered_symbols.append(symbol)
-                elif quote and quote in ['USDC', 'DAI', 'BUSD', 'TUSD']:  # Stablecoins
-                    filtered_symbols.append(symbol)
-                elif quote and len(quote) <= 4:  # Crypto symbols are typically short
-                    # For crypto pairs, be selective - major alts only
-                    if base in ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'AVAX', 'MATIC', 'ARB', 'OP']:
-                        filtered_symbols.append(symbol)
-            
-            _safe_print(f"  Kraken Discovery: Found {len(filtered_symbols)} tradeable asset pairs")
-            
-            # Sort for consistent ordering
-            filtered_symbols = sorted(list(set(filtered_symbols)))
-            
-            return filtered_symbols
-            
-        except Exception as e:
-            _safe_print(f"  Error discovering Kraken assets: {e}")
-            import traceback
-            traceback.print_exc()
-            return []
 
     def scan_for_rising_stars(self, top_n: int = 10, min_confidence: float = 0.75, symbol_whitelist: Optional[List[str]] = None) -> List[Dict]:
         """

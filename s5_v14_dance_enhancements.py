@@ -29,6 +29,8 @@ from datetime import datetime
 from collections import deque
 import numpy as np
 
+from dynamic_take_profit import DynamicTakeProfit, create_dtp_for_position, DTP_CONFIG
+
 # ═══════════════════════════════════════════════════════════════════════════════════
 # V14 PROVEN PARAMETERS - 100% WIN RATE
 # ═══════════════════════════════════════════════════════════════════════════════════
@@ -85,7 +87,7 @@ class V14Score:
 
 @dataclass
 class V14Position:
-    """V14 Position with INFINITE patience"""
+    """V14 Position with INFINITE patience + Dead Man's Switch take profit"""
     symbol: str
     entry_price: float
     entry_time: datetime
@@ -94,20 +96,40 @@ class V14Position:
     current_price: float = 0.0
     current_pnl_pct: float = 0.0
     status: str = 'OPEN'
-    
+
+    # Dynamic Take Profit - Dead Man's Switch (set after __init__ via open_position)
+    dtp: Optional[DynamicTakeProfit] = field(default=None, repr=False)
+    # Last DTP reason string for logging
+    dtp_reason: str = ''
+
     def update(self, current_price: float) -> Tuple[bool, float]:
         """
-        Update position and check exit condition.
-        V14 RULE: ONLY exit at 1.52%+ profit. NEVER at loss.
+        Update position and check exit conditions.
+
+        Exit hierarchy (first match wins):
+        1. Dead Man's Switch triggered  - DTP floor was hit after activation
+        2. V14 profit target hit        - 1.52% gross price move (fast scalp exit)
+
+        NO STOP LOSS - hold forever until one of the above fires.
         """
         self.current_price = current_price
         self.current_pnl_pct = ((current_price - self.entry_price) / self.entry_price) * 100
-        
-        # V14 EXIT RULE: ONLY at profit target, NEVER at loss
+
+        # ── 1. DEAD MAN'S SWITCH CHECK ────────────────────────────────
+        if self.dtp is not None:
+            should_exit, reason, _state = self.dtp.update_from_price(
+                self.entry_price, current_price, self.quantity
+            )
+            self.dtp_reason = reason
+            if should_exit:
+                self.status = 'DTP_TRIGGERED'
+                return True, self.current_pnl_pct
+
+        # ── 2. V14 PERCENTAGE PROFIT TARGET ──────────────────────────
         if self.current_pnl_pct >= V14_CONFIG['profit_target_pct']:
             self.status = 'PROFITABLE'
             return True, self.current_pnl_pct
-        
+
         # NO STOP LOSS - hold forever until profitable
         return False, self.current_pnl_pct
 
@@ -415,8 +437,26 @@ class V14DanceEnhancer:
         
         return result
     
-    def open_position(self, symbol: str, price: float, quantity: float, score: int) -> V14Position:
-        """Open a V14-approved position"""
+    def open_position(
+        self,
+        symbol: str,
+        price: float,
+        quantity: float,
+        score: int,
+        fee_rate: float = None,
+        gbp_usd_rate: float = None,
+        activation_threshold_gbp: float = None,
+    ) -> V14Position:
+        """
+        Open a V14-approved position and attach a Dead Man's Switch DTP.
+
+        Parameters
+        ----------
+        fee_rate:                 per-side taker fee (e.g. 0.0025).  Defaults to
+                                  DTP_CONFIG['fallback_fee_rate'] / 2.
+        gbp_usd_rate:             live GBP/USD FX rate.  Defaults to DTP_CONFIG value.
+        activation_threshold_gbp: override the £15 dead man activation floor.
+        """
         position = V14Position(
             symbol=symbol,
             entry_price=price,
@@ -424,20 +464,35 @@ class V14DanceEnhancer:
             quantity=quantity,
             entry_score=score,
         )
+
+        # Attach Dead Man's Switch
+        position.dtp = create_dtp_for_position(
+            entry_price=price,
+            quantity=quantity,
+            fee_rate=fee_rate,
+            gbp_usd_rate=gbp_usd_rate,
+            activation_threshold_gbp=activation_threshold_gbp,
+        )
+
         self.positions[symbol] = position
+        print(
+            f"   💣 Dead Man's Switch armed for {symbol}: "
+            f"activates at £{position.dtp.activation_threshold_gbp:.2f} net profit | "
+            f"trailing {position.dtp.trailing_distance_pct * 100:.0f}% below peak"
+        )
         return position
     
     def check_exit(self, symbol: str, current_price: float) -> Dict:
         """
-        V14 Exit Check - ONLY exit at profit target
-        NO STOP LOSS - hold forever until profitable
+        V14 Exit Check - ONLY exit at profit target or DTP floor hit.
+        NO STOP LOSS - hold forever until profitable.
         """
         if symbol not in self.positions:
             return {'should_exit': False, 'reason': 'No position'}
-        
+
         position = self.positions[symbol]
         should_exit, pnl_pct = position.update(current_price)
-        
+
         result = {
             'symbol': symbol,
             'entry_price': position.entry_price,
@@ -445,27 +500,42 @@ class V14DanceEnhancer:
             'pnl_pct': pnl_pct,
             'should_exit': should_exit,
             'profit_target': V14_CONFIG['profit_target_pct'],
+            'exit_trigger': position.status,
             'reason': '',
+            'dtp_status': position.dtp.get_status() if position.dtp else None,
         }
-        
+
         if should_exit:
-            result['reason'] = f"🎯 PROFIT TARGET HIT: {pnl_pct:.2f}% >= {V14_CONFIG['profit_target_pct']}%"
+            if position.status == 'DTP_TRIGGERED':
+                result['reason'] = f"💣 DEAD MAN TRIGGERED: {position.dtp_reason}"
+            else:
+                result['reason'] = f"🎯 PROFIT TARGET HIT: {pnl_pct:.2f}% >= {V14_CONFIG['profit_target_pct']}%"
         elif pnl_pct < 0:
             result['reason'] = f"⏳ HOLDING (no stop loss): {pnl_pct:.2f}% - waiting for profit"
         else:
-            result['reason'] = f"📈 PROFITABLE but below target: {pnl_pct:.2f}% < {V14_CONFIG['profit_target_pct']}%"
-        
+            dtp_info = f" | DTP: {position.dtp_reason}" if position.dtp_reason else ""
+            result['reason'] = f"📈 PROFITABLE but below target: {pnl_pct:.2f}% < {V14_CONFIG['profit_target_pct']}%{dtp_info}"
+
         return result
     
     def close_position(self, symbol: str, exit_price: float) -> Dict:
-        """Close a position at profit target"""
+        """Close a position and record full DTP details."""
         if symbol not in self.positions:
             return None
-        
+
         position = self.positions[symbol]
         pnl_pct = ((exit_price - position.entry_price) / position.entry_price) * 100
         pnl_usd = position.quantity * exit_price - position.quantity * position.entry_price
-        
+
+        # Net P&L after fees (using DTP's calculation if available)
+        net_pnl_usd = pnl_usd
+        dtp_snapshot = None
+        if position.dtp is not None:
+            net_pnl_usd = position.dtp.calc_net_profit_usd(
+                position.entry_price, exit_price, position.quantity
+            )
+            dtp_snapshot = position.dtp.get_status()
+
         trade = {
             'symbol': symbol,
             'entry_price': position.entry_price,
@@ -474,39 +544,54 @@ class V14DanceEnhancer:
             'entry_score': position.entry_score,
             'pnl_pct': pnl_pct,
             'pnl_usd': pnl_usd,
+            'net_pnl_usd': net_pnl_usd,
+            'net_pnl_gbp': round(net_pnl_usd / (position.dtp.gbp_usd_rate if position.dtp else 1.27), 4),
+            'exit_trigger': position.status,  # 'PROFITABLE' or 'DTP_TRIGGERED'
+            'dtp_snapshot': dtp_snapshot,
             'entry_time': position.entry_time.isoformat(),
             'exit_time': datetime.now().isoformat(),
-            'hold_duration': (datetime.now() - position.entry_time).total_seconds() / 3600,  # hours
+            'hold_duration': (datetime.now() - position.entry_time).total_seconds() / 3600,
         }
-        
+
         self.closed_trades.append(trade)
         del self.positions[symbol]
-        
+
         # Update stats
         if pnl_pct > 0:
             self.stats['winning_exits'] += 1
         self.stats['total_profit'] += pnl_usd
-        
+
         total_trades = len(self.closed_trades)
         self.stats['current_win_rate'] = self.stats['winning_exits'] / total_trades if total_trades > 0 else 1.0
-        
+
         return trade
     
     def get_status(self) -> Dict:
-        """Get V14 enhancer status"""
+        """Get V14 enhancer status including Dead Man's Switch state per position."""
+        positions_info = {}
+        for k, v in self.positions.items():
+            pos_data = {
+                'entry_price': v.entry_price,
+                'current_pnl_pct': v.current_pnl_pct,
+                'entry_score': v.entry_score,
+                'status': v.status,
+            }
+            if v.dtp is not None:
+                pos_data['dtp'] = v.dtp.get_status()
+                pos_data['dtp_reason'] = v.dtp_reason
+            positions_info[k] = pos_data
+
         return {
             'v14_config': V14_CONFIG,
+            'dtp_config': {
+                'activation_threshold_gbp': DTP_CONFIG['activation_threshold'],
+                'trailing_distance_pct': DTP_CONFIG['trailing_distance_pct'] * 100,
+                'currency': DTP_CONFIG['activation_currency'],
+            },
             'open_positions': len(self.positions),
             'closed_trades': len(self.closed_trades),
             'stats': self.stats,
-            'positions': {
-                k: {
-                    'entry_price': v.entry_price,
-                    'current_pnl_pct': v.current_pnl_pct,
-                    'entry_score': v.entry_score,
-                }
-                for k, v in self.positions.items()
-            }
+            'positions': positions_info,
         }
     
     def enhance_dance_decision(self, dance_decision: Dict, symbol: str, 
