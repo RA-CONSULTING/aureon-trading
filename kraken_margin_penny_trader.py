@@ -72,6 +72,15 @@ except ImportError:
     classify_phase = None
     StallionPhase = None
 
+# Stallion Multiverse - parallel shadow rides + 1-hour rotation
+try:
+    from stallion_multiverse import StallionMultiverse, MULTIVERSE_CONFIG
+    HAS_MULTIVERSE = True
+except ImportError:
+    HAS_MULTIVERSE = False
+    StallionMultiverse = None
+    MULTIVERSE_CONFIG = {'real_ride_limit_secs': 3600, 'max_shadows': 10}
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2412,6 +2421,9 @@ class KrakenMarginArmyTrader:
             entry_min_margin_pct=MARGIN_WAVE_ENTRY_PCT,
             danger_margin_pct=LIQUIDATION_FORCE,
         ) if HAS_WAVE_RIDER else None
+        # Stallion Multiverse - 1-hour ride limit + parallel shadow rides
+        self.multiverse: object = StallionMultiverse() if HAS_MULTIVERSE else None
+        self._multiverse_ride_registered = False
         self._load_state()
 
     # ----------------------------------------------------------
@@ -2655,6 +2667,25 @@ class KrakenMarginArmyTrader:
         if not candidates:
             logger.info("No valid candidates found")
             return None
+
+        # Multiverse scout boost: if the multiverse already knows the next
+        # stallion, give that pair a +2 score bonus so it wins the selection.
+        _mv_next = (
+            self.multiverse.get_next_stallion()
+            if self.multiverse is not None else None
+        )
+        if _mv_next:
+            boosted = []
+            for item in candidates:
+                info_obj, side, vol, tv, lev, score, req, fees = item
+                bonus = 2.0 if info_obj.pair == _mv_next else 0.0
+                if bonus:
+                    logger.info(
+                        f"[Multiverse] Boosting {info_obj.pair} score by +{bonus:.1f} "
+                        f"(scouted as next stallion)"
+                    )
+                boosted.append((info_obj, side, vol, tv, lev, score + bonus, req, fees))
+            candidates = boosted
 
         candidates.sort(key=lambda x: x[5], reverse=True)
 
@@ -3165,6 +3196,31 @@ class KrakenMarginArmyTrader:
             f"{dtp_status_str}"
             f"{stallion_str}"
         )
+
+        # === MULTIVERSE: register real ride on first monitor call ===
+        if self.multiverse is not None and not self._multiverse_ride_registered:
+            self.multiverse.start_real_ride(
+                pair       = trade.pair,
+                entry_time = trade.entry_time,
+            )
+            self._multiverse_ride_registered = True
+
+        # === 1-HOUR ROTATION CHECK — time to move to the next stallion ===
+        if self.multiverse is not None and self.multiverse.is_rotation_due():
+            _next = self.multiverse.get_next_stallion()
+            logger.info(
+                f"[Multiverse] 1-hour ride limit reached on {trade.pair} "
+                f"— rotating to next stallion: {_next or '?'}"
+            )
+            result = self.close_position(
+                reason = f"ROTATION_DUE (1h limit | next→{_next or '?'})",
+                trade  = trade,
+            )
+            # Advance the multiverse clock to the new pair
+            if _next and self.multiverse is not None:
+                self.multiverse.start_real_ride(_next, time.time())
+                self._multiverse_ride_registered = False  # reset for next trade
+            return result
 
         # === THE GBP1 PROFIT GATE - close immediately ===
         if net_pnl >= PROFIT_TARGET_USD:
@@ -3683,6 +3739,11 @@ class KrakenMarginArmyTrader:
                 print(f"    {s.pair} {s.side.upper()} | {v} | age={s.age_seconds:.0f}s")
         else:
             print(f"  Shadows: none (will create on next scan)")
+
+        # Multiverse status
+        if self.multiverse is not None:
+            for mv_line in self.multiverse.status_lines():
+                print(mv_line)
 
         print()
         print(f"  Trades: {self.total_trades} ({self.winning_trades} wins)")
