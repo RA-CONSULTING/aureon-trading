@@ -36,6 +36,18 @@ except ImportError:
     DynamicTakeProfit = None
     DTP_CONFIG = {'activation_threshold': 15.0, 'trailing_distance_pct': 0.02, 'gbp_usd_rate': 1.27}
 
+# ══════════════════════════════════════════════════════════════
+#  MARGIN WAVE RIDER IMPORT
+# ══════════════════════════════════════════════════════════════
+try:
+    from margin_wave_rider import MarginWaveRider, WAVE_CONFIG
+    _WAVE_RIDER_AVAILABLE = True
+    _wave_rider = MarginWaveRider()
+except ImportError:
+    _WAVE_RIDER_AVAILABLE = False
+    _wave_rider = None
+    WAVE_CONFIG = {'entry_min_margin_pct': 250.0, 'danger_margin_pct': 110.0}
+
 def main():
     from kraken_client import KrakenClient
     client = KrakenClient()
@@ -48,6 +60,7 @@ def main():
     print(f"  Check interval: {CHECK_INTERVAL}s")
     print(f"  Min profit to close: ${MIN_PROFIT_USD} or {MIN_PROFIT_PCT}%")
     print(f"  Stop loss: NONE (patience mode)")
+    print(f"  Wave Rider: entry gate {WAVE_CONFIG['entry_min_margin_pct']:.0f}% margin")
     print("=" * 70)
     
     closed_positions = []
@@ -143,10 +156,18 @@ def main():
                     status = f"UNDERWATER (-{underwater_pct:.2f}%)"
                     icon = "-"
                 
-                print(f"  [{i}] {pair} LONG {remaining:.6f} ETH (lev={leverage}x)")
+                lev_int = int(leverage) if str(leverage).isdigit() else 1
+
+                # Wave capacity for this position (how far price can fall before danger)
+                wave_cap_str = ""
+                if _WAVE_RIDER_AVAILABLE and _wave_rider and margin_level > 0:
+                    wave_cap = _wave_rider.wave_capacity_pct(margin_level, lev_int)
+                    wave_cap_str = f" | Wave cap: {wave_cap:.1f}% cushion"
+
+                print(f"  [{i}] {pair} LONG {remaining:.6f} ETH (lev={lev_int}x)")
                 print(f"      Entry: ${entry_price:,.2f} | Breakeven: ${breakeven:,.2f} | Current: ${current_bid:,.2f}")
                 print(f"      Gross PnL: ${gross_pnl:+.4f} | Fees: ${total_fees:.4f} | Net PnL: ${net_pnl:+.4f} ({pnl_pct:+.3f}%)")
-                print(f"      To breakeven: ${to_breakeven:+.2f} ({to_breakeven_pct:+.3f}%)")
+                print(f"      To breakeven: ${to_breakeven:+.2f} ({to_breakeven_pct:+.3f}%){wave_cap_str}")
                 print(f"      Status: [{icon}] {status}")
                 
                 # ════════════════════════════════════════════════════════

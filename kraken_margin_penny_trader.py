@@ -54,6 +54,15 @@ except ImportError:
     DynamicTakeProfit = None
     DTP_CONFIG = {'activation_threshold': 15.0, 'trailing_distance_pct': 0.02, 'gbp_usd_rate': 1.27}
 
+# Margin Wave Rider - pre-entry 250% margin safety gate
+try:
+    from margin_wave_rider import MarginWaveRider, WAVE_CONFIG
+    HAS_WAVE_RIDER = True
+except ImportError:
+    HAS_WAVE_RIDER = False
+    MarginWaveRider = None
+    WAVE_CONFIG = {'entry_min_margin_pct': 250.0, 'danger_margin_pct': 110.0}
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -81,6 +90,8 @@ MONITOR_INTERVAL = 2          # Seconds between FREE API price checks
 ENTRY_SCAN_INTERVAL = 30      # Seconds between scanning for new entry
 LIQUIDATION_WARN = 150        # Margin level % warning
 LIQUIDATION_FORCE = 110       # Margin level % force-close (Kraken liquidates at ~40%)
+MARGIN_WAVE_ENTRY_PCT = 250.0 # Minimum PROJECTED margin % before entering any position
+                              # Gives ~28% wave cushion at 5x, ~47% at 3x, ~14% at 10x
 MIN_TRADE_USD = 25.0          # Minimum trade notional (fee gate)
 KRAKEN_TAKER_FEE = 0.004      # 0.40% per side CONSERVATIVE (actual: opens ~0.376%, closes ~0.35%)
 KRAKEN_OPEN_FEE = 0.00376     # Actual observed opening fee rate
@@ -2387,6 +2398,11 @@ class KrakenMarginArmyTrader:
         # The DTP receives the pre-calculated net_pnl (USD) directly so all
         # rollover/fee math already done by the existing pipeline feeds straight in.
         self.dtp_trackers: dict = {}
+        # Margin Wave Rider - pre-entry 250% margin gate
+        self.wave_rider = MarginWaveRider(
+            entry_min_margin_pct=MARGIN_WAVE_ENTRY_PCT,
+            danger_margin_pct=LIQUIDATION_FORCE,
+        ) if HAS_WAVE_RIDER else None
         self._load_state()
 
     # ----------------------------------------------------------
@@ -2524,7 +2540,15 @@ class KrakenMarginArmyTrader:
             return None
 
         margin_budget = free_margin * MARGIN_BUFFER
+        # Get currently committed margin for wave-rider projections
+        margin_used = float(tb.get("margin_amount", tb.get("m", 0)) or 0)
         logger.info(f"ARMY: ${equity:.2f} equity, ${free_margin:.2f} free -> ${margin_budget:.2f} budget")
+
+        # Log wave rider status (informational — per-candidate check below)
+        if self.wave_rider and equity > 0:
+            logger.info(
+                f"[WaveRider] {self.wave_rider.status_line(equity, margin_used, 5)}"
+            )
 
         candidates = []
         for _, info in self.margin_pairs.items():
@@ -2564,6 +2588,35 @@ class KrakenMarginArmyTrader:
             notional = margin_budget * max_lev
             if notional < MIN_TRADE_USD:
                 continue
+
+            # ── WAVE RIDER: pre-entry 250% margin gate ────────────────
+            # Cap notional to the largest size that keeps projected
+            # margin level >= 250% after entry.  If even the minimum
+            # trade size would breach 250%, skip this pair entirely.
+            if self.wave_rider:
+                wave_ok, wave_check = self.wave_rider.check(
+                    equity=equity,
+                    margin_used=margin_used,
+                    new_notional=notional,
+                    leverage=max_lev,
+                )
+                if not wave_ok:
+                    # Try capping to max safe notional instead of skipping
+                    if wave_check.max_safe_notional >= MIN_TRADE_USD:
+                        notional = wave_check.max_safe_notional
+                        logger.debug(
+                            f"[WaveRider] {info.pair}: capped notional to "
+                            f"${notional:.2f} (projected {wave_check.projected_margin_pct:.0f}%)"
+                        )
+                    else:
+                        logger.debug(
+                            f"[WaveRider] {info.pair}: skipped — {wave_check.reason}"
+                        )
+                        continue
+                else:
+                    logger.debug(
+                        f"[WaveRider] {info.pair}: {wave_check.reason}"
+                    )
 
             vol = notional / info.last_price
             vol = max(vol, info.ordermin)
@@ -3483,6 +3536,40 @@ class KrakenMarginArmyTrader:
             logger.warning(f"Not enough margin to promote shadow (${notional:.2f} notional)")
             self.shadow_trades.remove(shadow)
             return None
+
+        # ── WAVE RIDER: final 250% margin gate before real capital ────
+        if self.wave_rider:
+            try:
+                tb2 = self.client.get_trade_balance()
+                eq2 = float(tb2.get("equity", tb2.get("equity_value", 0)) or 0)
+                mu2 = float(tb2.get("margin_amount", tb2.get("m", 0)) or 0)
+            except Exception:
+                eq2, mu2 = 0.0, 0.0
+
+            if eq2 > 0:
+                wave_ok, wave_check = self.wave_rider.check(eq2, mu2, notional, lev)
+                if not wave_ok:
+                    if wave_check.max_safe_notional >= MIN_TRADE_USD:
+                        # Cap to safe size rather than abandoning entirely
+                        notional = wave_check.max_safe_notional
+                        logger.info(
+                            f"[WaveRider] Shadow {shadow.pair}: notional capped to "
+                            f"${notional:.2f} — projected margin "
+                            f"{wave_check.projected_margin_pct:.0f}% >= "
+                            f"{self.wave_rider.entry_min:.0f}%"
+                        )
+                    else:
+                        logger.warning(
+                            f"[WaveRider] Shadow {shadow.pair}: BLOCKED — "
+                            f"{wave_check.reason} — waiting for margin to recover"
+                        )
+                        # Leave shadow in place; retry next scan cycle
+                        return None
+                else:
+                    logger.info(
+                        f"[WaveRider] Shadow {shadow.pair}: APPROVED — "
+                        f"{wave_check.reason}"
+                    )
 
         vol = notional / pair_info.last_price if pair_info.last_price > 0 else shadow.volume
         vol = max(vol, pair_info.ordermin)
