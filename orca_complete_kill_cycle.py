@@ -551,6 +551,16 @@ except ImportError:
     MarketHarp = None
     print("   Market Harp: MISSING")
 
+#   TRADING HIVE MIND — Unity Coordinator
+HIVE_MIND_AVAILABLE = False
+try:
+    from trading_hive_mind import TradingHiveMind
+    HIVE_MIND_AVAILABLE = True
+    print("  Trading Hive Mind: AVAILABLE (unity coordination)")
+except ImportError:
+    TradingHiveMind = None
+    print("   Trading Hive Mind: MISSING")
+
 #   DEAD MAN'S SWITCH - Dynamic Take Profit
 DTP_AVAILABLE = False
 try:
@@ -13397,6 +13407,21 @@ class OrcaKillCycle:
                 print(f"   Market Harp startup failed: {e}")
                 _market_harp = None
 
+        # ── TRADING HIVE MIND — Unity coordinator ─────────────────────────────
+        _hive_mind = None
+        if HIVE_MIND_AVAILABLE:
+            try:
+                _hive_mind = TradingHiveMind()
+                _hive_mind.set_bus(getattr(self, 'bus', None))
+                print(f"  HIVE MIND: {len(_hive_mind.slots)} exchange slots ARMED")
+                print(f"  HIVE MIND: Session goal £{_hive_mind.session_target_gbp:.0f} | "
+                      f"1 trade per exchange | unified gate | shared intelligence")
+                for _line in _hive_mind.goal_banner():
+                    print(_line)
+            except Exception as e:
+                print(f"   Hive Mind startup failed: {e}")
+                _hive_mind = None
+
         #     QUANTUM COGNITION AMPLIFIER - Wire to Queen for enhanced decisions
         quantum_cognition = None
         quantum_stats = {'amplification': 1.0, 'hz': SCHUMANN_BASE_HZ, 'cycles': 0}
@@ -14778,7 +14803,11 @@ class OrcaKillCycle:
                     cash = self.get_available_cash()
                     
                     # Check if we have room for more positions
-                    if (not cap_enabled) or (len(positions) < max_positions):
+                    # Hive Mind also enforces: 1 trade per exchange (Alpaca slot check)
+                    _alpaca_slot_free = (
+                        _hive_mind.alpaca_slot_available() if _hive_mind is not None else True
+                    )
+                    if ((not cap_enabled) or (len(positions) < max_positions)) and _alpaca_slot_free:
                         #    Show quantum-enhanced scanning status
                         quantum_indicator = ""
                         if quantum_cognition and quantum_stats['amplification'] > 1.0:
@@ -14894,46 +14923,66 @@ class OrcaKillCycle:
                                     quad_go = True
                                     quad_sizing = 1.0
 
-                            # ── KRAKEN MARGIN PHASE: Full autonomous trading cycle ──────────
-                            if self.margin_penny_trader and (current_time - last_kraken_margin_tick >= kraken_margin_interval):
+                            # ── HIVE MIND PHASE: Unified coordination of ALL sub-traders ────────
+                            # Kraken Margin + Capital CFD run through the Hive Mind together:
+                            #   • shared Market Harp intelligence injected into both traders
+                            #   • one Quadrumvirate gate result used by both
+                            #   • slot counts synced (1 trade per exchange rule)
+                            #   • Alpaca slot synced from orca positions list
+                            _hive_due = (
+                                current_time - last_kraken_margin_tick >= kraken_margin_interval or
+                                current_time - last_capital_cfd_tick   >= capital_cfd_interval
+                            )
+                            if _hive_due and (_hive_mind is not None or self.margin_penny_trader or self.capital_cfd_trader):
                                 last_kraken_margin_tick = current_time
-                                try:
-                                    closed_trades = self.margin_penny_trader.tick()
-                                    for ct in (closed_trades or []):
-                                        _pnl = ct.get('net_pnl', 0)
-                                        session_stats['total_pnl'] = session_stats.get('total_pnl', 0) + _pnl
-                                        session_stats['total_trades'] = session_stats.get('total_trades', 0) + 1
-                                        if _pnl > 0:
-                                            session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
-                                            if _pnl > session_stats.get('best_trade', 0):
-                                                session_stats['best_trade'] = _pnl
-                                            print(f"  KRAKEN MARGIN CLOSED: {ct.get('pair','?')} +${_pnl:.4f}")
-                                        else:
-                                            session_stats['losing_trades'] = session_stats.get('losing_trades', 0) + 1
-                                            if _pnl < session_stats.get('worst_trade', 0):
-                                                session_stats['worst_trade'] = _pnl
-                                except Exception as _mte:
-                                    logger.debug(f"Kraken margin tick error: {_mte}")
-
-                            # ── CAPITAL CFD PHASE: Forex · Indices · Commodities · Stocks ──────
-                            if self.capital_cfd_trader and (current_time - last_capital_cfd_tick >= capital_cfd_interval):
-                                last_capital_cfd_tick = current_time
-                                try:
-                                    cfd_closed = self.capital_cfd_trader.tick()
-                                    for cc in (cfd_closed or []):
-                                        _cpnl = cc.get('net_pnl', 0)
-                                        session_stats['total_pnl'] = session_stats.get('total_pnl', 0) + _cpnl
-                                        session_stats['total_trades'] = session_stats.get('total_trades', 0) + 1
-                                        if _cpnl > 0:
-                                            session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
-                                            if _cpnl > session_stats.get('best_trade', 0):
-                                                session_stats['best_trade'] = _cpnl
-                                        else:
-                                            session_stats['losing_trades'] = session_stats.get('losing_trades', 0) + 1
-                                            if _cpnl < session_stats.get('worst_trade', 0):
-                                                session_stats['worst_trade'] = _cpnl
-                                except Exception as _cfd_e:
-                                    logger.debug(f"Capital CFD tick error: {_cfd_e}")
+                                last_capital_cfd_tick   = current_time
+                                # Sync Alpaca slot from live positions
+                                if _hive_mind is not None:
+                                    _hive_mind.sync_alpaca(positions)
+                                # Coordinated tick
+                                if _hive_mind is not None:
+                                    try:
+                                        _hive_result = _hive_mind.tick(
+                                            kraken_trader  = self.margin_penny_trader,
+                                            capital_trader = self.capital_cfd_trader,
+                                            price_map      = batch_prices,
+                                            market_harp    = None,   # harp runs separately in intel section
+                                        )
+                                        _hive_all_closed = (
+                                            (_hive_result.get('kraken') or []) +
+                                            (_hive_result.get('capital') or [])
+                                        )
+                                    except Exception as _hive_e:
+                                        logger.debug(f"Hive Mind tick error: {_hive_e}")
+                                        _hive_all_closed = []
+                                else:
+                                    # Fallback: run traders independently when hive unavailable
+                                    _hive_all_closed = []
+                                    if self.margin_penny_trader:
+                                        try: _hive_all_closed.extend(self.margin_penny_trader.tick() or [])
+                                        except Exception as _mte: logger.debug(f"Kraken tick: {_mte}")
+                                    if self.capital_cfd_trader:
+                                        try: _hive_all_closed.extend(self.capital_cfd_trader.tick() or [])
+                                        except Exception as _cfe: logger.debug(f"Capital tick: {_cfe}")
+                                # Feed all closed trades into session_stats
+                                for _ct in _hive_all_closed:
+                                    _pnl = float(_ct.get('net_pnl', 0))
+                                    session_stats['total_pnl']    = session_stats.get('total_pnl', 0) + _pnl
+                                    session_stats['total_trades']  = session_stats.get('total_trades', 0) + 1
+                                    if _pnl > 0:
+                                        session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
+                                        if _pnl > session_stats.get('best_trade', 0):
+                                            session_stats['best_trade'] = _pnl
+                                        _src = _ct.get('pair') or _ct.get('symbol', '?')
+                                        print(f"  HIVE CLOSED [{_ct.get('asset_class','crypto').upper():9}] "
+                                              f"{_src} +{_pnl:.4f}")
+                                    else:
+                                        session_stats['losing_trades'] = session_stats.get('losing_trades', 0) + 1
+                                        if _pnl < session_stats.get('worst_trade', 0):
+                                            session_stats['worst_trade'] = _pnl
+                                # Broadcast unified status to ThoughtBus
+                                if _hive_mind is not None:
+                                    _hive_mind.broadcast(session_stats)
 
                             #
                             #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
@@ -15758,6 +15807,10 @@ class OrcaKillCycle:
                                                                     print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
 
                                                                 positions.append(pos)
+                                                                # Hive Mind: register new Alpaca slot opening
+                                                                if _hive_mind is not None:
+                                                                    try: _hive_mind.register_alpaca_open()
+                                                                    except Exception: pass
 
                                                                 # Track the buy order
                                                                 self.track_buy_order(symbol_clean, buy_order, best.exchange)

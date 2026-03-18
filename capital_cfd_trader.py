@@ -78,7 +78,7 @@ CAPITAL_UNIVERSE: Dict[str, dict] = {
 
 # ── CONFIG ─────────────────────────────────────────────────────────────────────
 CFD_CONFIG: Dict[str, float] = {
-    "max_positions":      3.0,   # Max concurrent CFD positions
+    "max_positions":      1.0,   # ONE active CFD position — Stallion Rule / Hive Mind discipline
     "price_ttl_secs":    20.0,   # Price cache lifetime
     "position_ttl_secs": 3600.0, # Max hold time per position (1 hour — stallion rule)
     "scan_interval_secs": 30.0,  # Opportunity scan interval
@@ -158,6 +158,10 @@ class CapitalCFDTrader:
         # Cached Seer/Lyra gate result
         self._quad_gate_ok:  bool  = True   # Fail-open
         self._quad_gate_at:  float = 0.0
+
+        # Hive Mind shared intelligence — set externally by TradingHiveMind
+        # {symbol/alias: confidence_factor 0.0–1.0} from Market Harp ripples
+        self._hive_boosts:   Dict[str, float] = {}
 
         # Session statistics
         self.stats: Dict[str, float] = {
@@ -264,7 +268,15 @@ class CapitalCFDTrader:
             return 0.0
 
         # Score = momentum minus spread drag
-        return change_pct - spread_pct * 0.15
+        score = change_pct - spread_pct * 0.15
+
+        # Hive Mind ripple amplifier — Market Harp signals shared by TradingHiveMind
+        # A ripple on a correlated market boosts this symbol's momentum score
+        hive_factor = self._hive_boosts.get(symbol, self._hive_boosts.get(symbol.upper(), 0.0))
+        if hive_factor > 0:
+            score = score * (1.0 + float(hive_factor) * 0.40)
+
+        return max(0.0, score)
 
     def _find_best_opportunity(self) -> Optional[Tuple[str, dict, dict]]:
         """
