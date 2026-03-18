@@ -29,6 +29,12 @@ from dataclasses import dataclass, field, asdict
 from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime
 
+try:
+    from kraken_fee_tracker import get_kraken_fee_tracker, is_stable_fx_pair
+    _KRAKEN_FEE_TRACKER_AVAILABLE = True
+except ImportError:
+    _KRAKEN_FEE_TRACKER_AVAILABLE = False
+
 # Windows UTF-8 fix
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -64,8 +70,8 @@ EXCHANGE_FEES = {
         'spread': 0.0005,   # 0.05% estimated
     },
     'kraken': {
-        'maker': 0.0016,    # 0.16%
-        'taker': 0.0026,    # 0.26%
+        'maker': 0.0012,    # 0.12% — Tier 4 ($100K-$250K), updated dynamically
+        'taker': 0.0022,    # 0.22% — Tier 4 ($100K-$250K), updated dynamically
         'slippage': 0.0005, # 0.05%
         'spread': 0.0008,   # 0.08%
     },
@@ -173,31 +179,58 @@ class TradeProfitValidator:
         except Exception as e:
             print(f"⚠️ Failed to save validation history: {e}")
     
-    def get_exchange_costs(self, exchange: str, value: float, is_taker: bool = True) -> Dict[str, float]:
+    def get_exchange_costs(
+        self,
+        exchange: str,
+        value: float,
+        is_taker: bool = True,
+        symbol: str = '',
+    ) -> Dict[str, float]:
         """
         Calculate ALL costs for a trade on an exchange.
-        
+
+        For Kraken, the fee rate is looked up dynamically from
+        KrakenFeeTracker using the account's current 30-day volume tier.
+
         Returns:
             {
                 'fee': actual fee,
                 'slippage': estimated slippage,
                 'spread': estimated spread cost,
-                'total': total costs
+                'total': total costs,
+                'fee_rate': the rate used,
+                'fee_tier': tier number (Kraken only),
             }
         """
         fees = EXCHANGE_FEES.get(exchange.lower(), EXCHANGE_FEES['alpaca'])
-        
-        fee_rate = fees['taker'] if is_taker else fees['maker']
+
+        if exchange.lower() == 'kraken' and _KRAKEN_FEE_TRACKER_AVAILABLE:
+            try:
+                tracker = get_kraken_fee_tracker()
+                rates = tracker.get_fee_rates(symbol=symbol, is_taker=is_taker)
+                fee_rate = rates['current']
+                fee_tier = rates['tier']
+            except Exception:
+                fee_rate = fees['taker'] if is_taker else fees['maker']
+                fee_tier = None
+        else:
+            fee_rate = fees['taker'] if is_taker else fees['maker']
+            fee_tier = None
+
         fee = value * fee_rate
         slippage = value * fees['slippage']
         spread = value * fees['spread']
-        
-        return {
+
+        result = {
             'fee': fee,
             'slippage': slippage,
             'spread': spread,
-            'total': fee + slippage + spread
+            'total': fee + slippage + spread,
+            'fee_rate': fee_rate,
         }
+        if fee_tier is not None:
+            result['fee_tier'] = fee_tier
+        return result
     
     def validate_buy_order(
         self,
@@ -258,7 +291,7 @@ class TradeProfitValidator:
         # Calculate fill value and costs
         if validation.has_fill_price and validation.has_fill_qty:
             validation.fill_value = validation.fill_price * validation.fill_qty
-            costs = self.get_exchange_costs(exchange, validation.fill_value)
+            costs = self.get_exchange_costs(exchange, validation.fill_value, symbol=symbol)
             validation.exchange_fee = costs['fee']
             validation.estimated_slippage = costs['slippage']
             validation.estimated_spread = costs['spread']
@@ -339,9 +372,9 @@ class TradeProfitValidator:
         # Calculate REAL P&L
         if validation.has_fill_price and validation.has_fill_qty:
             validation.fill_value = validation.fill_price * validation.fill_qty
-            
+
             # Calculate exit costs
-            costs = self.get_exchange_costs(exchange, validation.fill_value)
+            costs = self.get_exchange_costs(exchange, validation.fill_value, symbol=symbol)
             validation.exchange_fee = costs['fee']
             validation.estimated_slippage = costs['slippage']
             validation.estimated_spread = costs['spread']

@@ -36,6 +36,12 @@ except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
+try:
+    from kraken_fee_tracker import get_kraken_fee_tracker
+    _FEE_TRACKER_AVAILABLE = True
+except ImportError:
+    _FEE_TRACKER_AVAILABLE = False
+
 
 @dataclass
 class KrakenPosition:
@@ -87,19 +93,41 @@ class KrakenTradingAdapter:
         'ZUSD': 'USD',
     }
     
-    # Fee rate (taker)
-    FEE_RATE = 0.0026  # 0.26%
-    
+    # Fallback fee rate (taker) used when fee tracker is unavailable.
+    # At ~$123K 30-day volume this is Tier 4: maker=12bps, taker=22bps.
+    FEE_RATE = 0.0022  # 0.22% (Tier 4 taker, updated from old hardcoded 0.26%)
+
     def __init__(self):
         if not KRAKEN_AVAILABLE:
             raise RuntimeError("KrakenClient not available")
-        
+
         self.client = get_kraken_client()
         self.positions_file = Path("kraken_positions.json")
         self.tracked_positions: Dict[str, Dict] = {}
-        
+
+        # Wire up the dynamic fee tracker so every order uses the correct tier
+        if _FEE_TRACKER_AVAILABLE:
+            self._fee_tracker = get_kraken_fee_tracker(self.client)
+        else:
+            self._fee_tracker = None
+
         self._load_positions()
         logger.info("🦑 Kraken Trading Adapter initialized")
+
+    def get_fee_rate(self, symbol: str = '', is_taker: bool = True) -> float:
+        """
+        Return the current maker or taker fee rate for *symbol*.
+
+        Uses KrakenFeeTracker when available (dynamic tier lookup),
+        otherwise falls back to FEE_RATE.
+        """
+        if self._fee_tracker is not None:
+            try:
+                rates = self._fee_tracker.get_fee_rates(symbol=symbol, is_taker=is_taker)
+                return rates['current']
+            except Exception as e:
+                logger.warning(f"Fee tracker error: {e} — falling back to FEE_RATE")
+        return self.FEE_RATE
     
     def _normalize_asset(self, asset: str) -> str:
         """Normalize Kraken asset names."""
@@ -333,13 +361,18 @@ class KrakenTradingAdapter:
                         del self.tracked_positions[asset]
                         self._save_positions()
                 
-                logger.info(f"🦑 Kraken order placed: {side} {qty} {symbol}")
+                fee_rate = self.get_fee_rate(symbol=symbol, is_taker=(type.lower() == 'market'))
+                logger.info(
+                    f"🦑 Kraken order placed: {side} {qty} {symbol}  "
+                    f"fee={fee_rate*100:.4f}%"
+                )
                 return {
                     'id': result.get('txid', [None])[0] if isinstance(result.get('txid'), list) else result.get('txid'),
                     'symbol': symbol,
                     'side': side,
                     'qty': qty,
                     'status': 'filled' if type == 'market' else 'new',
+                    'fee_rate': fee_rate,
                     'raw': result,
                 }
             

@@ -35,6 +35,37 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# ── Lazy Kraken fee tracker (auto-calculates correct fee for Kraken trades) ──
+_kraken_fee_tracker = None
+
+def _get_kraken_fee_tracker():
+    global _kraken_fee_tracker
+    if _kraken_fee_tracker is None:
+        try:
+            from kraken_fee_tracker import get_kraken_fee_tracker
+            _kraken_fee_tracker = get_kraken_fee_tracker()
+        except ImportError:
+            pass
+    return _kraken_fee_tracker
+
+
+def _compute_kraken_fee(symbol: str, quantity: float, price: float,
+                        is_taker: bool = True) -> float:
+    """
+    Return the correct Kraken fee in USD for a trade, based on the
+    account's current 30-day volume tier.  Falls back to Tier 4
+    taker rate (0.22%) if the tracker is unavailable.
+    """
+    tracker = _get_kraken_fee_tracker()
+    if tracker is not None:
+        try:
+            rates = tracker.get_fee_rates(symbol=symbol, is_taker=is_taker)
+            return quantity * price * rates['current']
+        except Exception:
+            pass
+    # Fallback: Tier 4 taker 0.22%
+    return quantity * price * 0.0022
+
 # Lazy imports to avoid circular dependencies
 _king = None
 _ledger = None
@@ -91,7 +122,14 @@ def king_on_buy(exchange: str, symbol: str, quantity: float, price: float,
     """
     Hook called when a BUY order executes.
     Records the trade in the King's accounting system and double-entry ledger.
+
+    For Kraken trades where fee=0 (not yet paid / not captured from API),
+    the fee is auto-computed from KrakenFeeTracker using the live tier rate.
     """
+    # Auto-compute Kraken fee from live tier if caller didn't provide one
+    if fee == 0.0 and exchange.lower() == 'kraken':
+        fee = _compute_kraken_fee(symbol, quantity, price, is_taker=True)
+
     king = _get_king()
     ledger = _get_ledger()
 
@@ -133,7 +171,14 @@ def king_on_sell(exchange: str, symbol: str, quantity: float, price: float,
     """
     Hook called when a SELL order executes.
     Records the trade, calculates realized P&L, updates ledger.
+
+    For Kraken trades where fee=0 (not yet captured from API),
+    the fee is auto-computed from KrakenFeeTracker using the live tier rate.
     """
+    # Auto-compute Kraken fee from live tier if caller didn't provide one
+    if fee == 0.0 and exchange.lower() == 'kraken':
+        fee = _compute_kraken_fee(symbol, quantity, price, is_taker=True)
+
     king = _get_king()
     ledger = _get_ledger()
 

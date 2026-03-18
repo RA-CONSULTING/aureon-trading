@@ -88,6 +88,15 @@ except ImportError:
     is_real_profit = None
     get_validator = None
 
+# 🦑💰 KRAKEN FEE TRACKER - Dynamic volume-tiered fees
+try:
+    from kraken_fee_tracker import get_kraken_fee_tracker
+    _KRAKEN_FEE_TRACKER_AVAILABLE = True
+    print("🦑💰 Kraken Fee Tracker loaded - dynamic tier fees active!")
+except ImportError:
+    _KRAKEN_FEE_TRACKER_AVAILABLE = False
+    get_kraken_fee_tracker = None
+
 # 👑 THE KING - Autonomous Accounting AI
 try:
     from king_integration import king_on_buy, king_on_sell, start_king
@@ -145,9 +154,12 @@ _EVOLVED_MIN_COH = _evolved.params['min_coherence'] if SANDBOX_EVOLVED_AVAILABLE
 CONFIG = {
     # Trading Parameters
     'BASE_CURRENCY': os.getenv('BASE_CURRENCY', 'USD'),  # USD or GBP
-    'KRAKEN_FEE_MAKER': 0.0016,     # 0.16% maker fee (Standard Kraken Pro)
-    'KRAKEN_FEE_TAKER': 0.0026,     # 0.26% taker fee (Standard Kraken Pro)
-    'KRAKEN_FEE': 0.0026,           # Legacy field (uses taker)
+    # Fee rates are seeded with Tier 4 defaults (~$123K 30d volume).
+    # refresh_config_fees() is called after the Kraken client starts to
+    # replace these with the live tiered values from KrakenFeeTracker.
+    'KRAKEN_FEE_MAKER': 0.0012,     # 0.12% maker — Tier 4 default, updated dynamically
+    'KRAKEN_FEE_TAKER': 0.0022,     # 0.22% taker — Tier 4 default, updated dynamically
+    'KRAKEN_FEE': 0.0022,           # Legacy field (taker), updated dynamically
     'SLIPPAGE_PCT': 0.0010,         # 0.10% estimated slippage per trade
     'SPREAD_COST_PCT': 0.0005,      # 0.05% estimated spread cost
     'MIN_NET_PROFIT': 0.0001,       # Allow any net profit >$0.0001 (was 0.03 - too strict!)
@@ -1049,6 +1061,25 @@ class AureonKrakenEcosystem:
             print("   🔮 Nexus Predictor initialized (79.6% validated)")
         else:
             self.nexus = None
+
+        # 🦑💰 KRAKEN FEE TRACKER - Patch CONFIG with live tier rates
+        if _KRAKEN_FEE_TRACKER_AVAILABLE and get_kraken_fee_tracker:
+            try:
+                self.fee_tracker = get_kraken_fee_tracker(self.client)
+                rates = self.fee_tracker.get_fee_rates(is_taker=True)
+                CONFIG['KRAKEN_FEE_MAKER'] = rates['maker']
+                CONFIG['KRAKEN_FEE_TAKER'] = rates['taker']
+                CONFIG['KRAKEN_FEE'] = rates['taker']
+                print(
+                    f"   🦑💰 Kraken Fee Tracker: Tier {rates['tier']}, "
+                    f"maker={rates['maker']*100:.2f}% taker={rates['taker']*100:.2f}%  "
+                    f"(30d vol=${rates['volume_30d']:,.0f})"
+                )
+            except Exception as e:
+                self.fee_tracker = None
+                print(f"   🦑 Kraken Fee Tracker: {e}")
+        else:
+            self.fee_tracker = None
 
         # 👑 THE KING - Autonomous Accounting AI
         if KING_AVAILABLE and start_king:

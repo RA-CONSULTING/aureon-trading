@@ -600,6 +600,15 @@ except ImportError:
     ALPACA_FEE_TRACKER_AVAILABLE = False
     AlpacaFeeTracker = None
 
+#    KrakenFeeTracker - Dynamic volume-tiered fee detection for Kraken
+try:
+    from kraken_fee_tracker import get_kraken_fee_tracker, KrakenFeeTracker
+    KRAKEN_FEE_TRACKER_AVAILABLE = True
+except ImportError:
+    KRAKEN_FEE_TRACKER_AVAILABLE = False
+    KrakenFeeTracker = None
+    get_kraken_fee_tracker = None
+
 #    Queen Validated Trader - 100% accuracy validation system
 try:
     from aureon_queen_validated_trader import QueenValidatedTrader, ValidatedTrade
@@ -728,8 +737,8 @@ except ImportError:
             'spread': 0.0005,
         },
         'kraken': {
-            'maker': 0.0016,   # 0.16%
-            'taker': 0.0026,   # 0.26%
+            'maker': 0.0012,   # 0.12% Tier 4 default — updated dynamically by KrakenFeeTracker
+            'taker': 0.0022,   # 0.22% Tier 4 default — updated dynamically by KrakenFeeTracker
             'slippage': 0.0005,
             'spread': 0.0008,
         },
@@ -3960,6 +3969,7 @@ class OrcaKillCycle:
             self.timeline_oracle = None
             self.prime_sentinel = None
             self.alpaca_fee_tracker = None
+            self.kraken_fee_tracker = None
             self.cost_basis_tracker = None
             self.trade_logger = None
             self.tracked_positions = {}
@@ -4104,7 +4114,24 @@ class OrcaKillCycle:
                 print("  Alpaca Fee Tracker: WIRED! (Volume tiers + spread)")
             except Exception as e:
                 print(f"  Alpaca Fee Tracker: {e}")
-        
+
+        # 10b. Kraken Fee Tracker (dynamic volume-tiered fees for Kraken)
+        self.kraken_fee_tracker = None
+        if KRAKEN_FEE_TRACKER_AVAILABLE and get_kraken_fee_tracker:
+            try:
+                kraken_c = self.clients.get('kraken')
+                self.kraken_fee_tracker = get_kraken_fee_tracker(kraken_c)
+                # Update the live fee_rates entry so all downstream users get the right number
+                rates = self.kraken_fee_tracker.get_fee_rates(is_taker=True)
+                self.fee_rates['kraken'] = rates['current'] + 0.0013  # taker + slippage + spread
+                print(
+                    f"  Kraken Fee Tracker: WIRED! "
+                    f"(Tier {rates['tier']}, taker={rates['taker']*100:.2f}%, "
+                    f"vol=${rates['volume_30d']:,.0f})"
+                )
+            except Exception as e:
+                print(f"  Kraken Fee Tracker: {e}")
+
         # 11. Cost Basis Tracker (FIFO cost basis + can_sell_profitably check)
         self.cost_basis_tracker = None
         if COST_BASIS_TRACKER_AVAILABLE and CostBasisTracker:
@@ -8103,14 +8130,25 @@ class OrcaKillCycle:
             base = base[1:]
         return base
 
-    def _get_black_box_costs(self, exchange: str) -> TradingCosts:
+    def _get_black_box_costs(self, exchange: str, symbol: str = '') -> TradingCosts:
         """Get black box cost structure using real fee profiles when available."""
         fee_profile = {}
         if 'EXCHANGE_FEES' in globals() and isinstance(EXCHANGE_FEES, dict):
             fee_profile = EXCHANGE_FEES.get(exchange, {})
 
-        maker_fee = fee_profile.get('maker', self.fee_rates.get(exchange, 0.0025))
-        taker_fee = fee_profile.get('taker', self.fee_rates.get(exchange, 0.0025))
+        # For Kraken, use the live tiered fee tracker instead of hardcoded values
+        if exchange == 'kraken' and self.kraken_fee_tracker is not None:
+            try:
+                rates = self.kraken_fee_tracker.get_fee_rates(symbol=symbol, is_taker=True)
+                maker_fee = rates['maker']
+                taker_fee = rates['taker']
+            except Exception:
+                maker_fee = fee_profile.get('maker', self.fee_rates.get(exchange, 0.0022))
+                taker_fee = fee_profile.get('taker', self.fee_rates.get(exchange, 0.0022))
+        else:
+            maker_fee = fee_profile.get('maker', self.fee_rates.get(exchange, 0.0025))
+            taker_fee = fee_profile.get('taker', self.fee_rates.get(exchange, 0.0025))
+
         spread = fee_profile.get('spread', SPREAD_PCT if 'SPREAD_PCT' in globals() else 0.0005)
         slippage = fee_profile.get('slippage', SLIPPAGE_PCT if 'SLIPPAGE_PCT' in globals() else 0.001)
 

@@ -3210,10 +3210,17 @@ class KrakenMarginArmyTrader:
                 )
             if dtp_triggered:
                 logger.info(f"[DTP] DEAD MAN TRIGGERED: {dtp_reason}")
-                return self.close_position(
-                    reason=f"DTP_DEAD_MAN (floor=£{dtp_state.floor_gbp:.2f})",
-                    trade=trade
-                )
+                # Only fire DTP if net_pnl is positive — never close at a loss
+                if net_pnl >= 0:
+                    return self.close_position(
+                        reason=f"DTP_DEAD_MAN (floor=£{dtp_state.floor_gbp:.2f})",
+                        trade=trade
+                    )
+                else:
+                    logger.info(
+                        f"[DTP] Holding — DTP triggered but net_pnl=${net_pnl:+.4f} < 0. "
+                        f"Waiting for profit before closing."
+                    )
 
         # ── STALLION PHASE ────────────────────────────────────────────────────
         stallion_str = ""
@@ -3278,22 +3285,32 @@ class KrakenMarginArmyTrader:
             )
             self._multiverse_ride_registered = True
 
-        # === 1-HOUR ROTATION CHECK — time to move to the next stallion ===
+        # === 1-HOUR ROTATION CHECK — only rotate when profitable ===
         if self.multiverse is not None and self.multiverse.is_rotation_due():
             _next = self.multiverse.get_next_stallion()
-            logger.info(
-                f"[Multiverse] 1-hour ride limit reached on {trade.pair} "
-                f"— rotating to next stallion: {_next or '?'}"
-            )
-            result = self.close_position(
-                reason = f"ROTATION_DUE (1h limit | next→{_next or '?'})",
-                trade  = trade,
-            )
-            # Advance the multiverse clock to the new pair
-            if _next and self.multiverse is not None:
-                self.multiverse.start_real_ride(_next, time.time())
-                self._multiverse_ride_registered = False  # reset for next trade
-            return result
+            if net_pnl >= PROFIT_TARGET_USD:
+                # Profitable — rotate to next stallion
+                logger.info(
+                    f"[Multiverse] 1-hour ride limit reached on {trade.pair} "
+                    f"(net=${net_pnl:+.2f}) — rotating to next stallion: {_next or '?'}"
+                )
+                result = self.close_position(
+                    reason=f"ROTATION_DUE (1h limit | next→{_next or '?'})",
+                    trade=trade,
+                )
+                if _next and self.multiverse is not None:
+                    self.multiverse.start_real_ride(_next, time.time())
+                    self._multiverse_ride_registered = False
+                return result
+            else:
+                # Underwater — hold, reset the rotation clock and keep riding
+                logger.info(
+                    f"[Multiverse] 1-hour rotation due on {trade.pair} "
+                    f"but net_pnl=${net_pnl:+.4f} — HOLDING until profitable, "
+                    f"resetting rotation clock."
+                )
+                if self.multiverse is not None:
+                    self.multiverse.start_real_ride(trade.pair, time.time())  # reset clock
 
         # === THE GBP1 PROFIT GATE - close immediately ===
         if net_pnl >= PROFIT_TARGET_USD:
