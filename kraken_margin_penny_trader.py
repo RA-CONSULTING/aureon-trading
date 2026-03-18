@@ -89,6 +89,14 @@ except ImportError:
     HAS_LEARNING_BRIDGE = False
     MultiverseLearningBridge = None
 
+# Autonomous Trading Orchestrator - central nervous system for all systems
+try:
+    from autonomous_trading_orchestrator import AutonomousOrchestrator
+    HAS_ORCHESTRATOR = True
+except ImportError:
+    HAS_ORCHESTRATOR = False
+    AutonomousOrchestrator = None
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2438,6 +2446,11 @@ class KrakenMarginArmyTrader:
             if HAS_LEARNING_BRIDGE and self.multiverse is not None
             else None
         )
+        # Autonomous Orchestrator - central nervous system for all Queen's systems
+        self.orchestrator: object = (
+            AutonomousOrchestrator(self)
+            if HAS_ORCHESTRATOR else None
+        )
         self._load_state()
 
     # ----------------------------------------------------------
@@ -3795,6 +3808,9 @@ class KrakenMarginArmyTrader:
         if self.learning_bridge is not None:
             for lb_line in self.learning_bridge.learning_status_lines():
                 print(lb_line)
+        if self.orchestrator is not None:
+            for orch_line in self.orchestrator.status_report():
+                print(orch_line)
 
         print()
         print(f"  Trades: {self.total_trades} ({self.winning_trades} wins)")
@@ -3855,6 +3871,10 @@ class KrakenMarginArmyTrader:
         print("  Signal: streak + volume surge + momentum + spread + leverage")
         print("  Entry gate: ALL criteria must pass – no exceptions")
         print("=" * 70)
+
+        # ── Step 0: Orchestrator cycle sync ────────────────────────────────
+        if self.orchestrator is not None:
+            self.orchestrator.cycle_sync()
 
         # ── Step 1: Discover universe and live prices ──────────────────────
         # Skip re-discovery if already loaded (pride mode calls hunt repeatedly)
@@ -4175,6 +4195,21 @@ class KrakenMarginArmyTrader:
         print(f"   1m ATR          : {best['atr_1m_pct']:.3f}%  |  Round-trip fee: {best['required_pct']:.3f}%")
         print(f"   Notional        : ${tv_b:.2f}  |  Volume: {vol_b}")
 
+        # ── Step 3b: Orchestrator gate before committing capital ───────────
+        if self.orchestrator is not None:
+            _approved, _reason, _sizing = self.orchestrator.gate_pre_trade(
+                info_b.pair, side_b, tv_b
+            )
+            if not _approved:
+                print(f"\n  [Orchestrator] Trade HELD — {_reason}")
+                return {
+                    'traded': False,
+                    'reason': f'orchestrator_gate: {_reason}',
+                    'net_pnl': 0.0,
+                    'pair': info_b.pair,
+                    'side': side_b,
+                }
+
         # ── Step 4: Open the position ──────────────────────────────────────
         print(f"\n⚡ Opening {side_b.upper()} position...")
         trade = self.open_position(info_b, side_b, vol_b, lev_b)
@@ -4201,6 +4236,10 @@ class KrakenMarginArmyTrader:
         while True:  # Hold until profitable — no deadline
             poll += 1
             elapsed = time.time() - mission_start
+
+            # Orchestrator sync every cycle (feeds Seer/Lyra/ThoughtBus)
+            if self.orchestrator is not None:
+                self.orchestrator.cycle_sync()
 
             # Get live price
             current = 0.0
@@ -4411,8 +4450,15 @@ class KrakenMarginArmyTrader:
                 now = time.time()
 
                 # ============================
-                # PHASE 0: ETA REPORTING (every 5 mins)
+                # PHASE 0: ORCHESTRATOR CYCLE SYNC
+                # Update all Queen's systems: multiverse shadows, learning
+                # bridge → Seer/Lyra/ThoughtBus, quick gate refresh.
+                # Fast path — no heavy API calls on every iteration.
                 # ============================
+                if self.orchestrator is not None:
+                    self.orchestrator.cycle_sync()
+
+                # ETA reporting (every 5 mins)
                 self._report_margin_eta()
 
                 # ============================
@@ -4450,6 +4496,22 @@ class KrakenMarginArmyTrader:
                         continue
                     if shadow.side == "sell" and self.active_short:
                         continue
+
+                    # ── ORCHESTRATOR GATE: all Queen's systems must agree ──
+                    # Quadrumvirate (Seer + Lyra + Queen + King) votes before
+                    # real capital is deployed on this validated shadow.
+                    if self.orchestrator is not None:
+                        _orch_approved, _orch_reason, _orch_sizing = (
+                            self.orchestrator.gate_pre_trade(
+                                shadow.pair, shadow.side, shadow.trade_val
+                            )
+                        )
+                        if not _orch_approved:
+                            logger.info(
+                                f"[Orchestrator] Shadow {shadow.pair} {shadow.side.upper()} "
+                                f"HELD — {_orch_reason} (will retry next cycle)"
+                            )
+                            continue   # don't promote — leave shadow, retry next cycle
 
                     trade = self.promote_shadow(shadow)
                     if trade:
