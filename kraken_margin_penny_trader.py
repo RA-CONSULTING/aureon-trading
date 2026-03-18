@@ -4807,7 +4807,7 @@ class KrakenMarginArmyTrader:
         )
 
 
-
+def main():
     global PROFIT_TARGET_USD, MIN_PROFIT_USD
 
     parser = argparse.ArgumentParser(
