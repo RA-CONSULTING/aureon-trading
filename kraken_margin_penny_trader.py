@@ -137,6 +137,20 @@ STATE_FILE = "kraken_margin_army_state.json"
 RESULTS_FILE = "kraken_margin_army_results.json"
 USD_QUOTES = {"USD", "ZUSD"}
 
+# ==============================================================
+#  ENTRY GOAL — maximize profit in the quickest time
+#  Applied ONLY at buy/entry selection. Never affects exit.
+# ==============================================================
+GOAL_TARGET_USD       = 1.27   # Profit we're hunting per trade (same as PROFIT_TARGET_USD)
+GOAL_MAX_ETA_MINUTES  = 15.0   # Ideal: reach profit within this many minutes
+# How goal scoring works:
+#   profit_velocity = (|momentum| * leverage) / required_move_pct
+#     — a dimensionless ratio: momentum-amplified-by-leverage vs. the move needed to profit
+#     — higher = asset is already moving fast enough (relative to target) to close quickly
+#   goal_score = capped and scaled profit_velocity, weighted 2x in total_score
+#   Result: the entry selector prefers signals where leverage × momentum covers the
+#   required move fastest — picking the most profitable signal in the least time.
+
 # Binance public API - FREE, no auth needed
 BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
 BINANCE_24H_URL = "https://api.binance.com/api/v3/ticker/24hr"
@@ -2702,11 +2716,50 @@ class KrakenMarginArmyTrader:
                  if info.binance_symbol else 0.0)
             )
             hive_bonus = float(_hive_factor) * 1.0   # Up to +1.0 score boost from harp
+
+            # ── ENTRY GOAL: maximize profit in quickest time ──────────────────
+            # profit_velocity = how much leverage × momentum covers the required
+            # move.  A velocity > 1.0 means the asset is already moving fast
+            # enough (leveraged) to hit the profit target in theory.
+            # Use live stream trade_velocity to weight if available; fall back
+            # to 24h momentum as a proxy for directional speed.
+            stream_velocity = 0.0
+            if self.stream and self.stream.is_alive() and info.binance_symbol:
+                _sf = self.stream.get_flow_snapshot(info.binance_symbol)
+                # Normalise: 20 trades/sec = maximum pressure signal
+                stream_velocity = min(_sf.get('trade_velocity', 0) / 20.0, 1.0)
+                # Directional alignment bonus: buy pressure on a buy side = faster
+                if side == 'buy':
+                    stream_velocity *= (_sf.get('buy_pct', 50) / 100.0)
+                else:
+                    stream_velocity *= (_sf.get('sell_pct', 50) / 100.0)
+
+            # Leverage × directional momentum vs. required move
+            # (required_move_pct == 0 guarded to avoid div/zero)
+            _req_safe = max(required_move_pct, 0.01)
+            profit_velocity = (abs(info.momentum) * max_lev) / _req_safe
+
+            # Estimated ETA in minutes: assume 24h momentum distributes evenly
+            # per minute → (|momentum| / 24h / 60) = % per minute.
+            # With leverage, actual PnL velocity is higher.
+            _pct_per_minute = abs(info.momentum) / (24 * 60) * max_lev
+            eta_minutes = (GOAL_TARGET_USD / trade_val * 100) / _pct_per_minute if _pct_per_minute > 0 else 999
+
+            # Goal score: reward signals that are heading to profit fastest.
+            # Blend profit_velocity (trend) + stream_velocity (live order flow).
+            _pv_capped = min(profit_velocity, 4.0)
+            _sv_scaled = stream_velocity * 2.0          # 0→2 bonus
+            # Extra bonus when ETA already inside target window
+            _eta_bonus = 1.0 if eta_minutes <= GOAL_MAX_ETA_MINUTES else 0.0
+            goal_score = (_pv_capped + _sv_scaled + _eta_bonus) * 0.5  # 0 → ~3.5
+
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
-                          + momentum_score + vol_score + conviction_bonus + hive_bonus)
+                          + momentum_score + vol_score + conviction_bonus + hive_bonus
+                          + goal_score * 2)  # weight 2 — quickest profitable signal wins
 
             candidates.append((info, side, vol, trade_val, max_lev,
-                              total_score, required_move_pct, round_trip_fee))
+                              total_score, required_move_pct, round_trip_fee,
+                              goal_score, eta_minutes))
 
         if not candidates:
             logger.info("No valid candidates found")
@@ -2721,25 +2774,26 @@ class KrakenMarginArmyTrader:
         if _mv_next:
             boosted = []
             for item in candidates:
-                info_obj, side, vol, tv, lev, score, req, fees = item
+                info_obj, side, vol, tv, lev, score, req, fees, gs, eta = item
                 bonus = 2.0 if info_obj.pair == _mv_next else 0.0
                 if bonus:
                     logger.info(
                         f"[Multiverse] Boosting {info_obj.pair} score by +{bonus:.1f} "
                         f"(scouted as next stallion)"
                     )
-                boosted.append((info_obj, side, vol, tv, lev, score + bonus, req, fees))
+                boosted.append((info_obj, side, vol, tv, lev, score + bonus, req, fees, gs, eta))
             candidates = boosted
 
         candidates.sort(key=lambda x: x[5], reverse=True)
 
-        logger.info("TOP 5 TARGETS:")
-        for i, (info, side, vol, tv, lev, score, req, fees) in enumerate(candidates[:5]):
+        logger.info(f"TOP 5 TARGETS (goal: ${GOAL_TARGET_USD:.2f} in <{GOAL_MAX_ETA_MINUTES:.0f}min):")
+        for i, (info, side, vol, tv, lev, score, req, fees, gs, eta) in enumerate(candidates[:5]):
+            eta_str = f"{eta:.0f}m" if eta < 999 else "∞"
             logger.info(
                 f"  #{i+1} {info.pair} {side.upper()} | "
                 f"${tv:.0f} notional ({lev}x) | mom={info.momentum:+.2f}% | "
-                f"spread={info.spread_pct:.3f}% | need={req:.3f}% move | "
-                f"fees=${fees:.2f} | score={score:.3f}"
+                f"spread={info.spread_pct:.3f}% | need={req:.3f}% | "
+                f"eta≈{eta_str} | goal={gs:.2f} | score={score:.3f}"
             )
 
         best = candidates[0]
