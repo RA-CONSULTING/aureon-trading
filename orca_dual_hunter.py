@@ -67,7 +67,17 @@ POSITION_SIZE_PCT = 0.90     # Use 90% of available capital per trade
 
 # Fee rates (discovered the hard way!)
 ALPACA_FEE_PCT = 0.0025      # 0.25% per side
-KRAKEN_FEE_PCT = 0.0026      # 0.26% per side
+# Kraken fee is now dynamic — looked up from KrakenFeeTracker at runtime.
+# At ~$123K 30d volume: Tier 4 taker = 0.22%. Fallback used when tracker unavailable.
+KRAKEN_FEE_PCT = 0.0022      # 0.22% per side (Tier 4 default, updated dynamically)
+
+# Import dynamic Kraken fee tracker (optional — falls back to KRAKEN_FEE_PCT)
+try:
+    from kraken_fee_tracker import get_kraken_fee_tracker as _get_kft
+    _KRAKEN_FEE_TRACKER_AVAILABLE = True
+except ImportError:
+    _get_kft = None
+    _KRAKEN_FEE_TRACKER_AVAILABLE = False
 
 # Best hunting grounds (from our analysis)
 ALPACA_HUNT_SYMBOLS = ['DOGE/USD', 'SOL/USD', 'ETH/USD', 'AVAX/USD', 'BTC/USD']
@@ -211,12 +221,15 @@ class OrcaDualHunter:
             logger.warning(f"⚠️ Alpaca connection failed: {e}")
             self.alpaca_status.last_error = str(e)
         
-        # Kraken (using our adapter)
+        # Kraken (using our adapter — already wires KrakenFeeTracker internally)
         try:
             from kraken_trading_adapter import KrakenTradingAdapter
             self.kraken = KrakenTradingAdapter()
             self.kraken_status.connected = True
-            logger.info("✅ Kraken connected")
+            # Refresh the module-level fallback with the live tier rate
+            global KRAKEN_FEE_PCT
+            KRAKEN_FEE_PCT = self.kraken.get_fee_rate(is_taker=True)
+            logger.info(f"✅ Kraken connected  (taker fee={KRAKEN_FEE_PCT*100:.3f}%)")
         except Exception as e:
             logger.warning(f"⚠️ Kraken connection failed: {e}")
             self.kraken_status.last_error = str(e)
@@ -493,14 +506,20 @@ class OrcaDualHunter:
         """Enter position on Kraken."""
         if not self.kraken:
             return False
-        
+
         try:
             cash = self.kraken_status.cash
             position_value = cash * POSITION_SIZE_PCT
             qty = position_value / price
-            
+
+            # Fetch live per-symbol fee rate from the adapter (uses KrakenFeeTracker)
+            live_fee_rate = self.kraken.get_fee_rate(symbol=symbol, is_taker=True)
+
             if self.dry_run:
-                logger.info(f"🔶 [DRY RUN] Would BUY {qty:.6f} {symbol} @ ${price:.4f}")
+                logger.info(
+                    f"🔶 [DRY RUN] Would BUY {qty:.6f} {symbol} @ ${price:.4f}  "
+                    f"fee={live_fee_rate*100:.3f}%"
+                )
                 self.kraken_status.position = Position(
                     exchange='kraken',
                     symbol=symbol,
@@ -509,10 +528,10 @@ class OrcaDualHunter:
                     entry_price=price,
                     entry_time=datetime.now(),
                     current_price=price,
-                    fee_rate=KRAKEN_FEE_PCT
+                    fee_rate=live_fee_rate,
                 )
                 return True
-            
+
             # Real order via adapter
             result = self.kraken.place_order(
                 symbol=symbol,
@@ -520,9 +539,14 @@ class OrcaDualHunter:
                 qty=qty,
                 order_type='market'
             )
-            
-            if result.get('success'):
-                logger.info(f"🟢 BOUGHT {qty:.6f} {symbol} @ ${price:.4f}")
+
+            if result and result.get('id'):
+                # Use fee_rate from the order result if present, else fall back to tracker
+                actual_fee_rate = result.get('fee_rate', live_fee_rate)
+                logger.info(
+                    f"🟢 BOUGHT {qty:.6f} {symbol} @ ${price:.4f}  "
+                    f"fee={actual_fee_rate*100:.3f}%"
+                )
                 self.kraken_status.position = Position(
                     exchange='kraken',
                     symbol=symbol,
@@ -531,11 +555,11 @@ class OrcaDualHunter:
                     entry_price=price,
                     entry_time=datetime.now(),
                     current_price=price,
-                    fee_rate=KRAKEN_FEE_PCT
+                    fee_rate=actual_fee_rate,
                 )
                 return True
             else:
-                logger.error(f"❌ Kraken order failed: {result.get('error')}")
+                logger.error(f"❌ Kraken order failed: {result}")
                 return False
             
         except Exception as e:
