@@ -1345,6 +1345,406 @@ class BinanceClient:
         
         return {"success": True, "trades": results, "final_amount": remaining_amount}
 
+    # ═══════════════════════════════════════════════════════════════════════
+    # CROSS MARGIN TRADING  —  Binance SAPI /sapi/v1/margin
+    # ═══════════════════════════════════════════════════════════════════════
+    #
+    # Mirrors the Kraken margin API so OrcaKillCycle can use either exchange
+    # transparently via duck-typing (hasattr(client, 'place_margin_order')).
+    #
+    # Binance Cross Margin uses sideEffectType to auto-borrow / auto-repay:
+    #   MARGIN_BUY   → borrow quote asset, buy base (open LONG)
+    #   AUTO_REPAY   → sell base, repay borrowed quote (close LONG)
+    #   NO_SIDE_EFFECT → move funds within margin account (no borrow/repay)
+    #
+    # UK NOTE: Binance margin is restricted for FCA-regulated UK accounts.
+    # place_margin_order() returns a rejection dict when uk_mode=True so the
+    # Orca loop degrades to spot trading without crashing.
+    #
+    # ENV VARS (add to .env to enable Binance margin):
+    #   BINANCE_MARGIN_ENABLED=true        — master switch (default: false)
+    #   BINANCE_MARGIN_MAX_LEVERAGE=3      — cap leverage (default: 3)
+    #   BINANCE_MARGIN_ISOLATED=false      — cross (default) vs isolated margin
+    # ═══════════════════════════════════════════════════════════════════════
+
+    def _margin_enabled(self) -> bool:
+        """True if Binance margin trading is enabled and account is non-UK."""
+        if self.uk_mode:
+            return False
+        return os.getenv("BINANCE_MARGIN_ENABLED", "false").lower() in ("1", "true", "yes")
+
+    def _margin_isolated(self) -> bool:
+        """True = use Isolated margin; False (default) = Cross margin."""
+        return os.getenv("BINANCE_MARGIN_ISOLATED", "false").lower() in ("1", "true", "yes")
+
+    def get_margin_account(self) -> Dict[str, Any]:
+        """
+        GET /sapi/v1/margin/account
+
+        Returns the cross-margin account summary:
+          marginLevel           — safety score (>1.5 = healthy, <1.1 = liquidation risk)
+          totalAssetOfBtc       — total value in BTC
+          totalLiabilityOfBtc   — total borrowed in BTC
+          totalNetAssetOfBtc    — equity in BTC
+          userAssets[]          — per-asset balances, borrowed, free, interest
+        """
+        if self.dry_run:
+            return {
+                "marginLevel": "2.5",
+                "totalAssetOfBtc": "0.01",
+                "totalLiabilityOfBtc": "0.0",
+                "totalNetAssetOfBtc": "0.01",
+                "userAssets": [],
+                "dry_run": True,
+            }
+        return self._signed_request("GET", "/sapi/v1/margin/account", {})
+
+    def get_margin_pairs(self) -> List[Dict[str, Any]]:
+        """
+        GET /sapi/v1/margin/allPairs
+
+        Returns all cross-margin eligible trading pairs, normalised to match
+        the Kraken margin pairs format used by OrcaKillCycle:
+
+          [{"pair": "BTCUSDT", "base": "BTC", "quote": "USDT",
+            "leverage_buy": [3], "leverage_sell": [3], "max_leverage": 3,
+            "is_buy_allowed": True, "is_sell_allowed": True}]
+
+        Binance cross-margin provides up to 3x leverage for most pairs
+        (5x for BTC/ETH with a higher-tier account).
+        """
+        if self.dry_run:
+            return [
+                {"pair": "BTCUSDT", "base": "BTC", "quote": "USDT",
+                 "leverage_buy": [3], "leverage_sell": [3], "max_leverage": 3,
+                 "is_buy_allowed": True, "is_sell_allowed": True},
+                {"pair": "ETHUSDT", "base": "ETH", "quote": "USDT",
+                 "leverage_buy": [3], "leverage_sell": [3], "max_leverage": 3,
+                 "is_buy_allowed": True, "is_sell_allowed": True},
+            ]
+        try:
+            raw = self._signed_request("GET", "/sapi/v1/margin/allPairs", {})
+            results = []
+            max_lev = int(os.getenv("BINANCE_MARGIN_MAX_LEVERAGE", "3"))
+            for p in (raw if isinstance(raw, list) else []):
+                is_buy  = bool(p.get("isBuyAllowed",  True))
+                is_sell = bool(p.get("isSellAllowed", True))
+                sym     = str(p.get("symbol", p.get("base", "") + p.get("quote", "")))
+                results.append({
+                    "pair":          sym,
+                    "base":          str(p.get("base",  "")),
+                    "quote":         str(p.get("quote", "")),
+                    "leverage_buy":  [max_lev] if is_buy  else [],
+                    "leverage_sell": [max_lev] if is_sell else [],
+                    "max_leverage":  max_lev,
+                    "is_buy_allowed":  is_buy,
+                    "is_sell_allowed": is_sell,
+                })
+            return results
+        except Exception as e:
+            import logging; logging.getLogger(__name__).warning(f"BinanceClient.get_margin_pairs error: {e}")
+            return []
+
+    def get_margin_pair_info(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """
+        GET /sapi/v1/margin/pair?symbol=BTCUSDT
+
+        Returns info for a single cross-margin pair, or None if not eligible.
+        """
+        sym = self._norm(symbol)
+        if self.dry_run:
+            return {"symbol": sym, "isMarginTrade": True,
+                    "isBuyAllowed": True, "isSellAllowed": True}
+        try:
+            return self._signed_request("GET", "/sapi/v1/margin/pair", {"symbol": sym})
+        except Exception:
+            return None
+
+    def get_open_margin_positions(self, do_calcs: bool = True) -> List[Dict[str, Any]]:
+        """
+        Derive open margin positions from the cross-margin account's userAssets.
+
+        Returns a normalised list matching the Kraken get_open_margin_positions()
+        format used by OrcaKillCycle for position monitoring:
+
+          [{"symbol": "BTCUSDT", "side": "buy", "pair": "BTCUSDT",
+            "volume": 0.001, "cost": 65.0, "current_value": 65.5,
+            "unrealized_pnl": 0.50, "leverage": 3, "margin": 21.67,
+            "borrowed": 43.33, "interest": 0.01}]
+        """
+        if self.dry_run:
+            return []
+        try:
+            acct   = self.get_margin_account()
+            assets = acct.get("userAssets", [])
+            positions = []
+            for asset in assets:
+                borrowed = float(asset.get("borrowed", 0))
+                net_asset = float(asset.get("netAsset", 0))
+                free      = float(asset.get("free",     0))
+                interest  = float(asset.get("interest", 0))
+                if borrowed > 0 or net_asset < 0:
+                    a_sym = str(asset.get("asset", ""))
+                    # Get current price in USDT to compute PnL
+                    try:
+                        ticker = self.get_ticker(a_sym + "USDT")
+                        price  = float(ticker.get("lastPrice", ticker.get("price", 0)))
+                    except Exception:
+                        price  = 0.0
+                    current_value = (free + net_asset) * price if price else 0.0
+                    cost          = borrowed * price if price else 0.0
+                    unrealized    = current_value - cost
+                    max_lev = int(os.getenv("BINANCE_MARGIN_MAX_LEVERAGE", "3"))
+                    positions.append({
+                        "symbol":        a_sym + "USDT",
+                        "pair":          a_sym + "USDT",
+                        "side":          "buy" if net_asset > 0 else "sell",
+                        "volume":        abs(free + net_asset),
+                        "cost":          cost,
+                        "current_value": current_value,
+                        "unrealized_pnl": unrealized,
+                        "leverage":      max_lev,
+                        "margin":        current_value / max_lev if max_lev else 0,
+                        "borrowed":      borrowed,
+                        "interest":      interest,
+                        "exchange":      "binance",
+                    })
+            return positions
+        except Exception as e:
+            import logging; logging.getLogger(__name__).warning(f"BinanceClient.get_open_margin_positions error: {e}")
+            return []
+
+    def place_margin_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        leverage: int = 3,
+        order_type: str = "market",
+        price: Optional[float] = None,
+        take_profit: Optional[float] = None,
+        stop_loss: Optional[float] = None,
+        post_only: bool = False,
+        reduce_only: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        POST /sapi/v1/margin/order  —  Open a cross-margin position.
+
+        Args:
+            symbol      Binance symbol, e.g. 'BTCUSDT' or 'BTC/USDT'
+            side        'buy'  → LONG (borrow quote, buy base)
+                        'sell' → SHORT (borrow base, sell base)
+            quantity    Base-asset quantity to trade
+            leverage    Target leverage (stored as metadata; Binance cross
+                        margin leverage is account-level, not per-order)
+            order_type  'market' (default) or 'limit'
+            price       Limit price (required when order_type='limit')
+            take_profit Stored locally; attach a separate OCO order if needed
+            stop_loss   Stored locally; attach a separate OCO order if needed
+            reduce_only If True, uses AUTO_REPAY to close an existing position
+                        rather than opening a new one
+
+        Returns a Kraken-compatible dict for seamless OrcaKillCycle substitution:
+            {symbol, orderId, type, side, leverage, margin, status, ...}
+
+        UK accounts (uk_mode=True) receive a rejection dict; margin is FCA-restricted.
+        BINANCE_MARGIN_ENABLED must be 'true' in .env to allow live orders.
+        """
+        sym = self._norm(symbol)
+
+        # ── UK restriction gate ────────────────────────────────────────────
+        if self.uk_mode:
+            return {
+                "rejected": True, "symbol": sym, "side": side.upper(),
+                "reason": ("Binance margin trading is not available for UK FCA-regulated "
+                           "accounts.  Set BINANCE_UK_MODE=false in .env to override if "
+                           "you are trading from outside the UK."),
+                "uk_restricted": True, "margin": True,
+            }
+
+        # ── Master margin switch ───────────────────────────────────────────
+        if not self._margin_enabled():
+            return {
+                "rejected": True, "symbol": sym, "side": side.upper(),
+                "reason": ("Binance margin not enabled.  Set BINANCE_MARGIN_ENABLED=true "
+                           "in .env to activate margin trading on this account."),
+                "margin": True,
+            }
+
+        b_side = side.upper()  # "BUY" or "SELL"
+        b_type = order_type.upper()  # "MARKET" or "LIMIT"
+
+        # sideEffectType: AUTO_REPAY when closing, MARGIN_BUY when opening
+        side_effect = "AUTO_REPAY" if reduce_only else "MARGIN_BUY"
+
+        # ── Dry-run simulation ─────────────────────────────────────────────
+        if self.dry_run:
+            return {
+                "symbol": sym, "orderId": f"DRY-{int(time.time())}",
+                "type": b_type, "side": b_side, "leverage": str(leverage),
+                "origQty": str(quantity), "executedQty": str(quantity),
+                "status": "FILLED", "margin": True,
+                "sideEffectType": side_effect,
+                "isIsolated": self._margin_isolated(),
+                "exchange": "binance",
+                "dry_run": True,
+            }
+
+        # ── Quantity precision ─────────────────────────────────────────────
+        try:
+            adj_qty = self.adjust_quantity(sym, quantity)
+        except Exception:
+            adj_qty = round(quantity, 6)
+
+        params: Dict[str, Any] = {
+            "symbol":         sym,
+            "side":           b_side,
+            "type":           b_type,
+            "quantity":       str(adj_qty),
+            "sideEffectType": side_effect,
+            "isIsolated":     "TRUE" if self._margin_isolated() else "FALSE",
+        }
+        if b_type == "LIMIT":
+            if price is None:
+                raise ValueError("price is required for LIMIT margin orders")
+            params["price"]       = str(round(price, 8))
+            params["timeInForce"] = "GTC"
+        if post_only and b_type == "LIMIT":
+            params["timeInForce"] = "GTX"  # Post-only (maker-or-cancel)
+
+        try:
+            result = self._signed_request("POST", "/sapi/v1/margin/order", params)
+        except Exception as e:
+            return {"error": str(e), "symbol": sym, "side": b_side, "margin": True}
+
+        # ── Normalise to Kraken-compatible shape ───────────────────────────
+        result["leverage"]  = str(leverage)
+        result["margin"]    = True
+        result["exchange"]  = "binance"
+        return result
+
+    def close_margin_position(
+        self,
+        symbol: str,
+        side: str,
+        volume: Optional[float] = None,
+        order_type: str = "market",
+        price: Optional[float] = None,
+        leverage: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Close an open cross-margin position using AUTO_REPAY.
+
+        Args:
+            symbol      Binance symbol, e.g. 'BTCUSDT'
+            side        'sell' to close a LONG; 'buy' to close a SHORT
+            volume      Quantity to close.  If None, queries open positions
+                        and closes the full volume automatically.
+            order_type  'market' (default) or 'limit'
+            price       Limit price (required when order_type='limit')
+            leverage    Ignored (Binance auto-repay handles this internally)
+
+        Returns a Kraken-compatible dict.
+        """
+        sym = self._norm(symbol)
+
+        if self.uk_mode:
+            return {
+                "rejected": True, "symbol": sym,
+                "reason": "Binance margin not available for UK accounts.",
+                "uk_restricted": True, "margin": True,
+            }
+
+        if not self._margin_enabled():
+            return {
+                "rejected": True, "symbol": sym,
+                "reason": "Binance margin not enabled (BINANCE_MARGIN_ENABLED).",
+                "margin": True,
+            }
+
+        # Auto-detect volume from open positions if not supplied
+        qty = volume
+        if qty is None:
+            try:
+                positions = self.get_open_margin_positions()
+                for pos in positions:
+                    if pos.get("symbol") == sym or pos.get("pair") == sym:
+                        qty = float(pos.get("volume", 0))
+                        break
+            except Exception:
+                pass
+
+        if not qty or qty <= 0:
+            return {
+                "error": f"No open margin position found for {sym} to close.",
+                "symbol": sym, "margin": True,
+            }
+
+        return self.place_margin_order(
+            symbol=sym,
+            side=side,
+            quantity=qty,
+            leverage=leverage or 3,
+            order_type=order_type,
+            price=price,
+            reduce_only=True,   # → AUTO_REPAY sideEffectType
+        )
+
+    def get_margin_interest_rates(self, asset: str = "BTC") -> List[Dict[str, Any]]:
+        """
+        GET /sapi/v1/margin/interestRateHistory
+
+        Returns recent borrow interest rates for an asset.
+        Binance charges interest per hour on borrowed margin funds.
+        """
+        if self.dry_run:
+            return [{"asset": asset, "dailyInterestRate": "0.0002",
+                     "timestamp": int(time.time() * 1000)}]
+        try:
+            return self._signed_request(
+                "GET", "/sapi/v1/margin/interestRateHistory",
+                {"asset": asset, "limit": 24}
+            )
+        except Exception as e:
+            import logging; logging.getLogger(__name__).warning(f"BinanceClient.get_margin_interest_rates error: {e}")
+            return []
+
+    def borrow_margin(self, asset: str, amount: float) -> Dict[str, Any]:
+        """
+        POST /sapi/v1/margin/loan  —  Explicit borrow from the margin pool.
+
+        Usually NOT needed when using place_margin_order() with MARGIN_BUY,
+        which auto-borrows.  Use this for manual collateral management.
+        """
+        if self.dry_run:
+            return {"tranId": 0, "asset": asset, "amount": str(amount), "dry_run": True}
+        if self.uk_mode:
+            return {"rejected": True, "reason": "Margin not available for UK accounts."}
+        params = {
+            "asset":      asset,
+            "amount":     str(round(amount, 8)),
+            "isIsolated": "TRUE" if self._margin_isolated() else "FALSE",
+        }
+        return self._signed_request("POST", "/sapi/v1/margin/loan", params)
+
+    def repay_margin(self, asset: str, amount: float) -> Dict[str, Any]:
+        """
+        POST /sapi/v1/margin/repay  —  Explicitly repay borrowed margin funds.
+
+        Usually NOT needed when using close_margin_position() which uses
+        AUTO_REPAY.  Use this for manual debt management.
+        """
+        if self.dry_run:
+            return {"tranId": 0, "asset": asset, "amount": str(amount), "dry_run": True}
+        if self.uk_mode:
+            return {"rejected": True, "reason": "Margin not available for UK accounts."}
+        params = {
+            "asset":      asset,
+            "amount":     str(round(amount, 8)),
+            "isIsolated": "TRUE" if self._margin_isolated() else "FALSE",
+        }
+        return self._signed_request("POST", "/sapi/v1/margin/repay", params)
+
 
 def position_size_from_balance(client: BinanceClient, symbol: str, fraction: float, max_usdt: float) -> float:
     # Assume quote asset is USDT for simplicity
