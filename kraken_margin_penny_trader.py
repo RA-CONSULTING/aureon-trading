@@ -97,6 +97,14 @@ except ImportError:
     HAS_ORCHESTRATOR = False
     AutonomousOrchestrator = None
 
+# Goal Recorder — proof file for entry goal vs actual outcome
+try:
+    from margin_goal_recorder import MarginGoalRecorder
+    HAS_GOAL_RECORDER = True
+except ImportError:
+    HAS_GOAL_RECORDER = False
+    MarginGoalRecorder = None
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2465,6 +2473,9 @@ class KrakenMarginArmyTrader:
             AutonomousOrchestrator(self)
             if HAS_ORCHESTRATOR else None
         )
+        # Goal Recorder — records every scan + outcome to margin_goal_proof.jsonl
+        self._goal_recorder = MarginGoalRecorder() if HAS_GOAL_RECORDER else None
+        self._pending_scan_id: str = ""
         self._load_state()
 
     # ----------------------------------------------------------
@@ -2799,6 +2810,18 @@ class KrakenMarginArmyTrader:
         best = candidates[0]
         # Store top candidates for fallback if intel rejects #1
         self._last_candidates = candidates[:5]
+
+        # Record this scan to the proof file (all candidates + winner)
+        if self._goal_recorder is not None:
+            try:
+                self._pending_scan_id = self._goal_recorder.record_scan(
+                    candidates_raw=candidates,
+                    winner_pair=best[0].pair,
+                    winner_side=best[1],
+                )
+            except Exception:
+                pass
+
         return (best[0], best[1], best[2], best[3], best[4])
 
     # ----------------------------------------------------------
@@ -2993,6 +3016,13 @@ class KrakenMarginArmyTrader:
                 f"Entry: ~${price:,.4f} | Target: ${breakeven:,.4f} | "
                 f"Fees: ${total_fees:.2f} | Order: {order_id}"
             )
+            # Link this order_id to the scan that chose it
+            if self._goal_recorder is not None and self._pending_scan_id:
+                try:
+                    self._goal_recorder.link_order(self._pending_scan_id, order_id)
+                except Exception:
+                    pass
+                self._pending_scan_id = ""
             return trade
 
         except Exception as e:
@@ -3104,6 +3134,12 @@ class KrakenMarginArmyTrader:
                 "close_order_id": close_id,
             }
             self.completed_trades.append(completed)
+            # Record outcome against the scan that selected this trade
+            if self._goal_recorder is not None:
+                try:
+                    self._goal_recorder.record_outcome(trade.order_id, completed)
+                except Exception:
+                    pass
             self.total_trades += 1
             self.total_profit += net_pnl
             if net_pnl > 0:
