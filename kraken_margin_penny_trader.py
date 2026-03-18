@@ -2690,8 +2690,20 @@ class KrakenMarginArmyTrader:
                 self.learning_bridge.get_conviction_bonus(info.pair)
                 if self.learning_bridge is not None else 0.0
             )
+            # Hive Mind ripple boost — Market Harp shared signal from TradingHiveMind
+            # Positive ripple on a correlated market amplifies this pair's score
+            _sym_root = info.pair.split('/')[0]  # "XBT", "ETH", "SOL" ...
+            _hive_boosts = getattr(self, '_hive_boosts', {})
+            _hive_factor = (
+                _hive_boosts.get(_sym_root, 0) or
+                _hive_boosts.get(_sym_root.replace('XBT', 'BTC'), 0) or
+                _hive_boosts.get(_sym_root.replace('XXBT', 'BTC'), 0) or
+                (float(_hive_boosts.get((info.binance_symbol or '')[:3], 0))
+                 if info.binance_symbol else 0.0)
+            )
+            hive_bonus = float(_hive_factor) * 1.0   # Up to +1.0 score boost from harp
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
-                          + momentum_score + vol_score + conviction_bonus)
+                          + momentum_score + vol_score + conviction_bonus + hive_bonus)
 
             candidates.append((info, side, vol, trade_val, max_lev,
                               total_score, required_move_pct, round_trip_fee))

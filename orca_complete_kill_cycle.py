@@ -14780,6 +14780,10 @@ class OrcaKillCycle:
                                         session_stats['total_trades'] += 1
                                         session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
                                         positions.remove(pos)
+                                        # Hive Mind: register close — slot frees, PnL recorded
+                                        if _hive_mind is not None:
+                                            try: _hive_mind.register_alpaca_close(exit_info.get('net_pnl', net_pnl))
+                                            except Exception: pass
                                         print(f"     CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f}   Cash freed for new buys!")
                                         # 👑 QUEEN LEARNS FROM THIS TRADE
                                         self._queen_learn_from_sell(
@@ -15881,6 +15885,13 @@ class OrcaKillCycle:
                     self._print_harmonic_field_summary()
                     
                     print(f"     {len(positions)}/{max_positions_label} ACTIVE POSITIONS | Next scan: {max(0, scan_interval - (current_time - last_scan_time)):.0f}s")
+                    # Hive Mind unified status — all exchanges working toward the same goal
+                    if _hive_mind is not None:
+                        try:
+                            for _hl in _hive_mind.status_lines():
+                                print(_hl)
+                        except Exception:
+                            pass
                     print("="*80)
                     
                     # Update and display each position
@@ -16374,9 +16385,13 @@ class OrcaKillCycle:
                                     
                                     print(f"\n     SOLD: ${final_pnl:+.4f} ({sell_reason})")
                                     print(f"     CYCLE CONTINUES - SCANNING FOR NEXT TARGET...")
-                                    
+
                                     # Remove position
                                     positions.remove(pos)
+                                    # Hive Mind: register close — slot frees, PnL recorded
+                                    if _hive_mind is not None:
+                                        try: _hive_mind.register_alpaca_close(final_pnl)
+                                        except Exception: pass
                                     
                                     # 👑 QUEEN LEARNS FROM THIS TRADE
                                     self._queen_learn_from_sell(
