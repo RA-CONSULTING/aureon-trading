@@ -105,6 +105,14 @@ except ImportError:
     HAS_GOAL_RECORDER = False
     MarginGoalRecorder = None
 
+# Macro Intelligence — pre-execution market context (F&G, BTC trend, dominance, news)
+try:
+    from macro_intelligence import MacroIntelligence
+    HAS_MACRO_INTEL = True
+except ImportError:
+    HAS_MACRO_INTEL = False
+    MacroIntelligence = None
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2476,6 +2484,8 @@ class KrakenMarginArmyTrader:
         # Goal Recorder — records every scan + outcome to margin_goal_proof.jsonl
         self._goal_recorder = MarginGoalRecorder() if HAS_GOAL_RECORDER else None
         self._pending_scan_id: str = ""
+        # Macro Intelligence — market-wide context fed into every entry decision
+        self.macro: object = MacroIntelligence() if HAS_MACRO_INTEL else None
         self._load_state()
 
     # ----------------------------------------------------------
@@ -2623,6 +2633,21 @@ class KrakenMarginArmyTrader:
                 f"[WaveRider] {self.wave_rider.status_line(equity, margin_used, 5)}"
             )
 
+        # ── MACRO INTELLIGENCE — fetch once for all candidates ───────────────
+        _macro_ctx = {}
+        if self.macro is not None:
+            try:
+                _macro_ctx = self.macro.get_entry_context("")
+                logger.info(self.macro.summary_line(""))
+                if not _macro_ctx.get("entry_ok", True):
+                    logger.warning(
+                        f"MACRO GATE BLOCKED: {_macro_ctx.get('block_reason')} "
+                        f"— skipping entry scan"
+                    )
+                    return None
+            except Exception:
+                pass
+
         candidates = []
         for _, info in self.margin_pairs.items():
             if info.last_price <= 0:
@@ -2764,9 +2789,20 @@ class KrakenMarginArmyTrader:
             _eta_bonus = 1.0 if eta_minutes <= GOAL_MAX_ETA_MINUTES else 0.0
             goal_score = (_pv_capped + _sv_scaled + _eta_bonus) * 0.5  # 0 → ~3.5
 
+            # ── MACRO BONUS — coin-specific context from MacroIntelligence ──────
+            # Coin's own 24h trend relative to BTC + Fear&Greed + dominance
+            macro_bonus = 0.0
+            if self.macro is not None and _macro_ctx:
+                try:
+                    _coin_ctx = self.macro.get_entry_context(info.pair)
+                    macro_bonus = _coin_ctx.get("macro_score", 0.0)  # -2.0 → +2.0
+                except Exception:
+                    pass
+
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
                           + momentum_score + vol_score + conviction_bonus + hive_bonus
-                          + goal_score * 2)  # weight 2 — quickest profitable signal wins
+                          + goal_score * 2          # weight 2 — quickest profitable signal wins
+                          + macro_bonus * 1.5)      # weight 1.5 — macro context shapes the battlefield
 
             candidates.append((info, side, vol, trade_val, max_lev,
                               total_score, required_move_pct, round_trip_fee,
@@ -2841,6 +2877,20 @@ class KrakenMarginArmyTrader:
         if not pair_info.binance_symbol:
             logger.warning("No Binance symbol for intel - skipping research (CAUTION)")
             return (True, side)
+
+        # ── MACRO INTELLIGENCE — final check before any API calls ────────────
+        if self.macro is not None:
+            try:
+                macro_ctx = self.macro.get_entry_context(pair_info.pair)
+                logger.info(self.macro.summary_line(pair_info.pair))
+                if not macro_ctx.get("entry_ok", True):
+                    logger.warning(
+                        f"MACRO ABORT: {macro_ctx.get('block_reason')} "
+                        f"— blocking entry on {pair_info.pair}"
+                    )
+                    return (False, side)
+            except Exception:
+                pass
 
         # ── MULTIVERSE PRE-TRADE CONTEXT ─────────────────────────────────────
         # Before burning API calls on full research, check what the shadow herd
