@@ -81,6 +81,22 @@ except ImportError:
     StallionMultiverse = None
     MULTIVERSE_CONFIG = {'real_ride_limit_secs': 3600, 'max_shadows': 10}
 
+# Multiverse Learning Bridge - adaptive learning → Seer, Lyra, pre-trade
+try:
+    from multiverse_learning_bridge import MultiverseLearningBridge
+    HAS_LEARNING_BRIDGE = True
+except ImportError:
+    HAS_LEARNING_BRIDGE = False
+    MultiverseLearningBridge = None
+
+# Autonomous Trading Orchestrator - central nervous system for all systems
+try:
+    from autonomous_trading_orchestrator import AutonomousOrchestrator
+    HAS_ORCHESTRATOR = True
+except ImportError:
+    HAS_ORCHESTRATOR = False
+    AutonomousOrchestrator = None
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2424,6 +2440,17 @@ class KrakenMarginArmyTrader:
         # Stallion Multiverse - 1-hour ride limit + parallel shadow rides
         self.multiverse: object = StallionMultiverse() if HAS_MULTIVERSE else None
         self._multiverse_ride_registered = False
+        # Learning Bridge - pipes multiverse insight to Seer, Lyra, pre-trade
+        self.learning_bridge: object = (
+            MultiverseLearningBridge(self.multiverse)
+            if HAS_LEARNING_BRIDGE and self.multiverse is not None
+            else None
+        )
+        # Autonomous Orchestrator - central nervous system for all Queen's systems
+        self.orchestrator: object = (
+            AutonomousOrchestrator(self)
+            if HAS_ORCHESTRATOR else None
+        )
         self._load_state()
 
     # ----------------------------------------------------------
@@ -2658,8 +2685,25 @@ class KrakenMarginArmyTrader:
             # For our small account, LEVERAGE is king:
             # 10x lev needs 0.7% move vs 3x needing 1.4% move
             # Weight leverage and ease heavily, momentum as tiebreaker
+            # Multiverse learning conviction: ±0.5 based on shadow phase history
+            conviction_bonus = (
+                self.learning_bridge.get_conviction_bonus(info.pair)
+                if self.learning_bridge is not None else 0.0
+            )
+            # Hive Mind ripple boost — Market Harp shared signal from TradingHiveMind
+            # Positive ripple on a correlated market amplifies this pair's score
+            _sym_root = info.pair.split('/')[0]  # "XBT", "ETH", "SOL" ...
+            _hive_boosts = getattr(self, '_hive_boosts', {})
+            _hive_factor = (
+                _hive_boosts.get(_sym_root, 0) or
+                _hive_boosts.get(_sym_root.replace('XBT', 'BTC'), 0) or
+                _hive_boosts.get(_sym_root.replace('XXBT', 'BTC'), 0) or
+                (float(_hive_boosts.get((info.binance_symbol or '')[:3], 0))
+                 if info.binance_symbol else 0.0)
+            )
+            hive_bonus = float(_hive_factor) * 1.0   # Up to +1.0 score boost from harp
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
-                          + momentum_score + vol_score)
+                          + momentum_score + vol_score + conviction_bonus + hive_bonus)
 
             candidates.append((info, side, vol, trade_val, max_lev,
                               total_score, required_move_pct, round_trip_fee))
@@ -2720,6 +2764,28 @@ class KrakenMarginArmyTrader:
         if not pair_info.binance_symbol:
             logger.warning("No Binance symbol for intel - skipping research (CAUTION)")
             return (True, side)
+
+        # ── MULTIVERSE PRE-TRADE CONTEXT ─────────────────────────────────────
+        # Before burning API calls on full research, check what the shadow herd
+        # already knows about this pair from parallel tracking.
+        if self.learning_bridge is not None:
+            try:
+                mv_ctx = self.learning_bridge.get_pre_trade_context(pair_info.pair)
+                rec    = mv_ctx.get('recommendation', 'HOLD')
+                conviction = mv_ctx.get('conviction', 0.5)
+                phase  = mv_ctx.get('phase', 'UNKNOWN')
+                logger.info(
+                    f"[LearningBridge] Pre-trade: {pair_info.pair} | "
+                    f"phase={phase} | conviction={conviction:.2f} | rec={rec} | "
+                    f"seer={mv_ctx.get('seer_aligned')} lyra={mv_ctx.get('lyra_aligned')}"
+                )
+                if mv_ctx.get('stubborn_bucking'):
+                    logger.warning(
+                        f"[LearningBridge] {pair_info.pair} has been BUCKING in shadow "
+                        f"for 45+ min — treat this as a caution signal"
+                    )
+            except Exception:
+                pass
 
         # Calculate required move for profit
         round_trip_fee = trade_val * (KRAKEN_OPEN_FEE + KRAKEN_CLOSE_FEE)
@@ -3178,6 +3244,13 @@ class KrakenMarginArmyTrader:
                 leverage        = float(trade.leverage),
             )
             stallion_str = f" | STALLION:{snap.phase.value}"
+
+        # ── LEARNING BRIDGE SYNC — push to Seer, Lyra, ThoughtBus ────────
+        if self.learning_bridge is not None:
+            try:
+                self.learning_bridge.sync()
+            except Exception:
+                pass
 
         if net_pnl >= PROFIT_TARGET_USD:
             status = f"TARGET HIT +${net_pnl:.2f} - CLOSING!"
@@ -3740,10 +3813,16 @@ class KrakenMarginArmyTrader:
         else:
             print(f"  Shadows: none (will create on next scan)")
 
-        # Multiverse status
+        # Multiverse status + learning bridge status
         if self.multiverse is not None:
             for mv_line in self.multiverse.status_lines():
                 print(mv_line)
+        if self.learning_bridge is not None:
+            for lb_line in self.learning_bridge.learning_status_lines():
+                print(lb_line)
+        if self.orchestrator is not None:
+            for orch_line in self.orchestrator.status_report():
+                print(orch_line)
 
         print()
         print(f"  Trades: {self.total_trades} ({self.winning_trades} wins)")
@@ -3804,6 +3883,10 @@ class KrakenMarginArmyTrader:
         print("  Signal: streak + volume surge + momentum + spread + leverage")
         print("  Entry gate: ALL criteria must pass – no exceptions")
         print("=" * 70)
+
+        # ── Step 0: Orchestrator cycle sync ────────────────────────────────
+        if self.orchestrator is not None:
+            self.orchestrator.cycle_sync()
 
         # ── Step 1: Discover universe and live prices ──────────────────────
         # Skip re-discovery if already loaded (pride mode calls hunt repeatedly)
@@ -4124,6 +4207,21 @@ class KrakenMarginArmyTrader:
         print(f"   1m ATR          : {best['atr_1m_pct']:.3f}%  |  Round-trip fee: {best['required_pct']:.3f}%")
         print(f"   Notional        : ${tv_b:.2f}  |  Volume: {vol_b}")
 
+        # ── Step 3b: Orchestrator gate before committing capital ───────────
+        if self.orchestrator is not None:
+            _approved, _reason, _sizing = self.orchestrator.gate_pre_trade(
+                info_b.pair, side_b, tv_b
+            )
+            if not _approved:
+                print(f"\n  [Orchestrator] Trade HELD — {_reason}")
+                return {
+                    'traded': False,
+                    'reason': f'orchestrator_gate: {_reason}',
+                    'net_pnl': 0.0,
+                    'pair': info_b.pair,
+                    'side': side_b,
+                }
+
         # ── Step 4: Open the position ──────────────────────────────────────
         print(f"\n⚡ Opening {side_b.upper()} position...")
         trade = self.open_position(info_b, side_b, vol_b, lev_b)
@@ -4150,6 +4248,10 @@ class KrakenMarginArmyTrader:
         while True:  # Hold until profitable — no deadline
             poll += 1
             elapsed = time.time() - mission_start
+
+            # Orchestrator sync every cycle (feeds Seer/Lyra/ThoughtBus)
+            if self.orchestrator is not None:
+                self.orchestrator.cycle_sync()
 
             # Get live price
             current = 0.0
@@ -4360,8 +4462,15 @@ class KrakenMarginArmyTrader:
                 now = time.time()
 
                 # ============================
-                # PHASE 0: ETA REPORTING (every 5 mins)
+                # PHASE 0: ORCHESTRATOR CYCLE SYNC
+                # Update all Queen's systems: multiverse shadows, learning
+                # bridge → Seer/Lyra/ThoughtBus, quick gate refresh.
+                # Fast path — no heavy API calls on every iteration.
                 # ============================
+                if self.orchestrator is not None:
+                    self.orchestrator.cycle_sync()
+
+                # ETA reporting (every 5 mins)
                 self._report_margin_eta()
 
                 # ============================
@@ -4399,6 +4508,22 @@ class KrakenMarginArmyTrader:
                         continue
                     if shadow.side == "sell" and self.active_short:
                         continue
+
+                    # ── ORCHESTRATOR GATE: all Queen's systems must agree ──
+                    # Quadrumvirate (Seer + Lyra + Queen + King) votes before
+                    # real capital is deployed on this validated shadow.
+                    if self.orchestrator is not None:
+                        _orch_approved, _orch_reason, _orch_sizing = (
+                            self.orchestrator.gate_pre_trade(
+                                shadow.pair, shadow.side, shadow.trade_val
+                            )
+                        )
+                        if not _orch_approved:
+                            logger.info(
+                                f"[Orchestrator] Shadow {shadow.pair} {shadow.side.upper()} "
+                                f"HELD — {_orch_reason} (will retry next cycle)"
+                            )
+                            continue   # don't promote — leave shadow, retry next cycle
 
                     trade = self.promote_shadow(shadow)
                     if trade:
@@ -4468,8 +4593,150 @@ class KrakenMarginArmyTrader:
             self._save_state()
             self._save_results()
 
+    # ----------------------------------------------------------
+    #  TICK — one autonomous trading cycle (no internal loop)
+    #  Called by the Orca Kill Cycle's run_autonomous() each
+    #  iteration so both loops stay in sync.
+    # ----------------------------------------------------------
+    def tick(self) -> list:
+        """
+        Execute ONE complete autonomous trading cycle and return.
 
-def main():
+        This is the headless version of run(): same logic, no while-loop,
+        no sleep. The Orca calls this from its own infinite loop so the
+        full Queen's system stack (Orchestrator → Seer → Lyra → Queen)
+        gates every decision without a second blocking loop.
+
+        Returns
+        -------
+        list of dict  — trades closed this tick (may be empty)
+        """
+        now = time.time()
+        closed_this_tick: list = []
+
+        # ── PHASE 0: Orchestrator cycle sync ─────────────────────────────
+        # Updates multiverse shadows, syncs learning bridge → Seer/Lyra/ThoughtBus,
+        # refreshes quick gate flags.  No heavy API calls.
+        if self.orchestrator is not None:
+            try:
+                self.orchestrator.cycle_sync()
+            except Exception:
+                pass
+
+        # ── PHASE 1: Monitor active positions ─────────────────────────────
+        for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
+            if trade:
+                result = self.monitor_position(trade=trade)
+                if result:
+                    pnl = result.get("net_pnl", 0)
+                    logger.info(
+                        f"[tick] TRADE #{self.total_trades}: "
+                        f"{result['pair']} {label} ${pnl:+.2f} | "
+                        f"Session: ${self.total_profit:+.2f}"
+                    )
+                    closed_this_tick.append(result)
+                    self._save_results()
+
+        # ── PHASE 2: Update validation shadows ────────────────────────────
+        if self.shadow_trades:
+            self.update_shadows()
+
+        # ── PHASE 3: Promote validated shadows (Orchestrator gated) ───────
+        for shadow in list(self.shadow_trades):
+            if not shadow.validated:
+                continue
+            if (shadow.validation_time > 0 and
+                    (now - shadow.validation_time) < self.SHADOW_MIN_VALIDATE):
+                continue
+            if shadow.side == "buy" and self.active_long:
+                continue
+            if shadow.side == "sell" and self.active_short:
+                continue
+
+            # Full Quadrumvirate gate before real capital
+            if self.orchestrator is not None:
+                try:
+                    _ok, _reason, _ = self.orchestrator.gate_pre_trade(
+                        shadow.pair, shadow.side, shadow.trade_val
+                    )
+                    if not _ok:
+                        logger.info(
+                            f"[tick] Shadow {shadow.pair} HELD by Orchestrator: {_reason}"
+                        )
+                        continue
+                except Exception:
+                    pass
+
+            trade = self.promote_shadow(shadow)
+            if trade:
+                break   # one promotion per tick
+
+        # ── PHASE 4: Find candidates → create new shadows ─────────────────
+        need_long  = self.active_long  is None
+        need_short = self.active_short is None
+
+        if need_long or need_short:
+            # Price refresh every 30 s
+            if now - getattr(self, '_tick_last_price_refresh', 0) > 30:
+                self.update_prices_free()
+                self._tick_last_price_refresh = now
+
+            # Shadow scan every 15 s
+            if now - getattr(self, '_tick_last_shadow_scan', 0) > 15:
+                self._tick_last_shadow_scan = now
+                target = self.find_best_target()
+                if target:
+                    info, side, vol, trade_val, lev = target
+                    if (side == "buy" and need_long) or (side == "sell" and need_short):
+                        self.create_shadow(info, side, vol, trade_val, lev)
+                    # Opposite direction shadow
+                    opp_side = "sell" if side == "buy" else "buy"
+                    opp_need = need_short if side == "buy" else need_long
+                    if opp_need and hasattr(self, '_last_candidates'):
+                        for cand in self._last_candidates:
+                            ci = cand[0]; cv = cand[2]; ctv = cand[3]
+                            flip_levs = ci.leverage_sell if opp_side == "sell" else ci.leverage_buy
+                            if flip_levs and ci.pair != info.pair:
+                                self.create_shadow(ci, opp_side, cv, ctv, max(flip_levs))
+                                break
+
+        return closed_this_tick
+
+    def monitor_positions(self) -> list:
+        """Compatibility wrapper — monitors both active positions, returns closed list."""
+        return self.tick()
+
+    def refresh_prices(self) -> None:
+        """Compatibility wrapper — refresh all margin pair prices."""
+        try:
+            self.update_prices_free()
+        except Exception:
+            pass
+
+    def init_multiverse_candidates(self) -> None:
+        """
+        Seed the Stallion Multiverse with the top candidate pairs from the
+        current margin universe. Call once after discover_margin_universe().
+        """
+        if self.multiverse is None or not self.margin_pairs:
+            return
+        candidates = [
+            {'pair': pair, 'volume': 0.01, 'leverage': 5}
+            for pair in list(self.margin_pairs.keys())[:10]
+        ]
+        prices = {
+            pair: info.last_price
+            for pair, info in self.margin_pairs.items()
+            if info.last_price > 0
+        }
+        self.multiverse.set_candidates(candidates, prices)
+        logger.info(
+            f"[Multiverse] Seeded {self.multiverse.shadow_count} shadow rides "
+            f"from margin universe"
+        )
+
+
+
     global PROFIT_TARGET_USD, MIN_PROFIT_USD
 
     parser = argparse.ArgumentParser(

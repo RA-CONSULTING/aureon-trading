@@ -531,6 +531,36 @@ except ImportError:
     KrakenMarginPennyTrader = None
     print("   Kraken Margin Penny Trader: MISSING")
 
+#   CAPITAL CFD TRADER — Forex · Indices · Commodities · Stocks
+CAPITAL_CFD_AVAILABLE = False
+try:
+    from capital_cfd_trader import CapitalCFDTrader
+    CAPITAL_CFD_AVAILABLE = True
+    print("  Capital CFD Trader: AVAILABLE (Forex/Indices/Commodities/Stocks)")
+except ImportError:
+    CapitalCFDTrader = None
+    print("   Capital CFD Trader: MISSING")
+
+#   MARKET HARP — Cross-Market Resonance Detector
+MARKET_HARP_AVAILABLE = False
+try:
+    from market_harp import MarketHarp
+    MARKET_HARP_AVAILABLE = True
+    print("  Market Harp: AVAILABLE (cross-asset ripple detection)")
+except ImportError:
+    MarketHarp = None
+    print("   Market Harp: MISSING")
+
+#   TRADING HIVE MIND — Unity Coordinator
+HIVE_MIND_AVAILABLE = False
+try:
+    from trading_hive_mind import TradingHiveMind
+    HIVE_MIND_AVAILABLE = True
+    print("  Trading Hive Mind: AVAILABLE (unity coordination)")
+except ImportError:
+    TradingHiveMind = None
+    print("   Trading Hive Mind: MISSING")
+
 #   DEAD MAN'S SWITCH - Dynamic Take Profit
 DTP_AVAILABLE = False
 try:
@@ -3870,6 +3900,20 @@ class OrcaKillCycle:
             except Exception as e:
                 _safe_print(f"   Margin Penny Trader init failed: {e}")
                 self.margin_penny_trader = None
+
+        #   CAPITAL CFD TRADER — Forex · Indices · Commodities · Stocks (non-crypto)
+        self.capital_cfd_trader = None
+        if CAPITAL_CFD_AVAILABLE:
+            try:
+                self.capital_cfd_trader = CapitalCFDTrader()
+                if getattr(self.capital_cfd_trader, 'enabled', False):
+                    _safe_print("  Capital CFD Trader: CONNECTED (Forex/Indices/Commodities/Stocks)")
+                else:
+                    _safe_print("   Capital CFD Trader: credentials missing — standing by")
+                    self.capital_cfd_trader = None
+            except Exception as e:
+                _safe_print(f"   Capital CFD Trader init failed: {e}")
+                self.capital_cfd_trader = None
 
         #    QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps + Breadcrumb Portfolio
         # ROCK SOLID MATH: Only leaps when value preserved AFTER fees!
@@ -13309,6 +13353,75 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   Temporal consensus startup failed: {e}")
 
+        # ── KRAKEN MARGIN MULTIVERSE + ORCHESTRATOR STARTUP ──────────────────
+        if self.margin_penny_trader is not None:
+            try:
+                if not getattr(self.margin_penny_trader, 'margin_pairs', None):
+                    self.margin_penny_trader.discover_margin_universe()
+                    self.margin_penny_trader.update_prices_free()
+                self.margin_penny_trader.init_multiverse_candidates()
+                _mv = getattr(self.margin_penny_trader, 'multiverse', None)
+                _oc = getattr(self.margin_penny_trader, 'orchestrator', None)
+                if _mv is not None:
+                    print(f"  STALLION MULTIVERSE: {len(getattr(_mv, '_shadows', {}))} shadow rides ACTIVE")
+                else:
+                    print("  STALLION MULTIVERSE: unavailable — continuing without shadow rides")
+                if _oc is not None:
+                    print("  TRADING ORCHESTRATOR: Quadrumvirate gate ARMED")
+                else:
+                    print("  TRADING ORCHESTRATOR: unavailable — gate open")
+            except Exception as e:
+                print(f"   Kraken Margin multiverse startup: {e}")
+
+        # ── CAPITAL CFD TRADER STARTUP — non-crypto financial universe ────────
+        if self.capital_cfd_trader is not None:
+            try:
+                from capital_cfd_trader import CAPITAL_UNIVERSE, CFD_CONFIG
+                _classes = {}
+                for _s, _c in CAPITAL_UNIVERSE.items():
+                    _cls = _c.get('class', 'unknown')
+                    _classes[_cls] = _classes.get(_cls, 0) + 1
+                _cls_str = "  ".join(f"{k}:{v}" for k, v in sorted(_classes.items()))
+                print(f"  CAPITAL CFD: {len(CAPITAL_UNIVERSE)} instruments ARMED [{_cls_str}]")
+                print(f"  CAPITAL CFD: max {int(CFD_CONFIG['max_positions'])} positions | "
+                      f"scan every {int(CFD_CONFIG['scan_interval_secs'])}s | "
+                      f"1h time-limit per trade")
+            except Exception as e:
+                print(f"   Capital CFD startup info error: {e}")
+
+        # ── MARKET HARP — Cross-asset resonance detector ─────────────────────
+        _market_harp = None
+        if MARKET_HARP_AVAILABLE:
+            try:
+                _market_harp = MarketHarp()
+                from market_harp import HARP_CLASSES, RESONANCE_MAP
+                _n_strings = len(_market_harp.strings)
+                _n_edges   = sum(len(v) for v in RESONANCE_MAP.values())
+                _classes   = {}
+                for _cls in HARP_CLASSES.values():
+                    _classes[_cls] = _classes.get(_cls, 0) + 1
+                _cls_str = "  ".join(f"{k}:{v}" for k, v in sorted(_classes.items()))
+                print(f"  MARKET HARP: {_n_strings} strings TUNED | {_n_edges} resonance paths")
+                print(f"    Strings: {_cls_str}")
+            except Exception as e:
+                print(f"   Market Harp startup failed: {e}")
+                _market_harp = None
+
+        # ── TRADING HIVE MIND — Unity coordinator ─────────────────────────────
+        _hive_mind = None
+        if HIVE_MIND_AVAILABLE:
+            try:
+                _hive_mind = TradingHiveMind()
+                _hive_mind.set_bus(getattr(self, 'bus', None))
+                print(f"  HIVE MIND: {len(_hive_mind.slots)} exchange slots ARMED")
+                print(f"  HIVE MIND: Session goal £{_hive_mind.session_target_gbp:.0f} | "
+                      f"1 trade per exchange | unified gate | shared intelligence")
+                for _line in _hive_mind.goal_banner():
+                    print(_line)
+            except Exception as e:
+                print(f"   Hive Mind startup failed: {e}")
+                _hive_mind = None
+
         #     QUANTUM COGNITION AMPLIFIER - Wire to Queen for enhanced decisions
         quantum_cognition = None
         quantum_stats = {'amplification': 1.0, 'hz': SCHUMANN_BASE_HZ, 'cycles': 0}
@@ -13388,6 +13501,12 @@ class OrcaKillCycle:
         #    Quantum cognition timing
         quantum_cognition_interval = 5.0  # Amplify every 5 seconds
         last_quantum_amplification = 0.0
+        #  Kraken Margin autonomous tick timing
+        kraken_margin_interval = 5.0      # Full tick every 5 seconds
+        last_kraken_margin_tick = 0.0
+        #  Capital CFD tick timing (non-crypto: Forex/Indices/Commodities/Stocks)
+        capital_cfd_interval = 10.0       # Full tick every 10 seconds
+        last_capital_cfd_tick = 0.0
         #  📊 Portfolio Intelligence Engine timing (enriched cross-exchange snapshots)
         portfolio_intelligence_interval = 300.0  # Every 5 minutes
         last_portfolio_intelligence = 0.0
@@ -14661,6 +14780,10 @@ class OrcaKillCycle:
                                         session_stats['total_trades'] += 1
                                         session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
                                         positions.remove(pos)
+                                        # Hive Mind: register close — slot frees, PnL recorded
+                                        if _hive_mind is not None:
+                                            try: _hive_mind.register_alpaca_close(exit_info.get('net_pnl', net_pnl))
+                                            except Exception: pass
                                         print(f"     CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f}   Cash freed for new buys!")
                                         # 👑 QUEEN LEARNS FROM THIS TRADE
                                         self._queen_learn_from_sell(
@@ -14684,7 +14807,11 @@ class OrcaKillCycle:
                     cash = self.get_available_cash()
                     
                     # Check if we have room for more positions
-                    if (not cap_enabled) or (len(positions) < max_positions):
+                    # Hive Mind also enforces: 1 trade per exchange (Alpaca slot check)
+                    _alpaca_slot_free = (
+                        _hive_mind.alpaca_slot_available() if _hive_mind is not None else True
+                    )
+                    if ((not cap_enabled) or (len(positions) < max_positions)) and _alpaca_slot_free:
                         #    Show quantum-enhanced scanning status
                         quantum_indicator = ""
                         if quantum_cognition and quantum_stats['amplification'] > 1.0:
@@ -14800,25 +14927,66 @@ class OrcaKillCycle:
                                     quad_go = True
                                     quad_sizing = 1.0
 
-                            # Refresh margin universe prices (every ~10 cycles)
-                            if self.margin_penny_trader and session_stats.get('cycles', 0) % 10 == 0:
-                                try:
-                                    self.margin_penny_trader.refresh_prices()
-                                except Exception:
-                                    pass
-
-                            # Also monitor any margin penny trader active positions
-                            if self.margin_penny_trader:
-                                try:
-                                    penny_closed = self.margin_penny_trader.monitor_positions()
-                                    for pc in penny_closed:
-                                        _pnl = pc.get('net_pnl', 0)
-                                        if _pnl > 0:
-                                            session_stats['total_pnl'] = session_stats.get('total_pnl', 0) + _pnl
-                                            session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
-                                            print(f"     MARGIN PENNY CLOSED: {pc['pair']} +${_pnl:.4f}")
-                                except Exception:
-                                    pass
+                            # ── HIVE MIND PHASE: Unified coordination of ALL sub-traders ────────
+                            # Kraken Margin + Capital CFD run through the Hive Mind together:
+                            #   • shared Market Harp intelligence injected into both traders
+                            #   • one Quadrumvirate gate result used by both
+                            #   • slot counts synced (1 trade per exchange rule)
+                            #   • Alpaca slot synced from orca positions list
+                            _hive_due = (
+                                current_time - last_kraken_margin_tick >= kraken_margin_interval or
+                                current_time - last_capital_cfd_tick   >= capital_cfd_interval
+                            )
+                            if _hive_due and (_hive_mind is not None or self.margin_penny_trader or self.capital_cfd_trader):
+                                last_kraken_margin_tick = current_time
+                                last_capital_cfd_tick   = current_time
+                                # Sync Alpaca slot from live positions
+                                if _hive_mind is not None:
+                                    _hive_mind.sync_alpaca(positions)
+                                # Coordinated tick
+                                if _hive_mind is not None:
+                                    try:
+                                        _hive_result = _hive_mind.tick(
+                                            kraken_trader  = self.margin_penny_trader,
+                                            capital_trader = self.capital_cfd_trader,
+                                            price_map      = batch_prices,
+                                            market_harp    = None,   # harp runs separately in intel section
+                                        )
+                                        _hive_all_closed = (
+                                            (_hive_result.get('kraken') or []) +
+                                            (_hive_result.get('capital') or [])
+                                        )
+                                    except Exception as _hive_e:
+                                        logger.debug(f"Hive Mind tick error: {_hive_e}")
+                                        _hive_all_closed = []
+                                else:
+                                    # Fallback: run traders independently when hive unavailable
+                                    _hive_all_closed = []
+                                    if self.margin_penny_trader:
+                                        try: _hive_all_closed.extend(self.margin_penny_trader.tick() or [])
+                                        except Exception as _mte: logger.debug(f"Kraken tick: {_mte}")
+                                    if self.capital_cfd_trader:
+                                        try: _hive_all_closed.extend(self.capital_cfd_trader.tick() or [])
+                                        except Exception as _cfe: logger.debug(f"Capital tick: {_cfe}")
+                                # Feed all closed trades into session_stats
+                                for _ct in _hive_all_closed:
+                                    _pnl = float(_ct.get('net_pnl', 0))
+                                    session_stats['total_pnl']    = session_stats.get('total_pnl', 0) + _pnl
+                                    session_stats['total_trades']  = session_stats.get('total_trades', 0) + 1
+                                    if _pnl > 0:
+                                        session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
+                                        if _pnl > session_stats.get('best_trade', 0):
+                                            session_stats['best_trade'] = _pnl
+                                        _src = _ct.get('pair') or _ct.get('symbol', '?')
+                                        print(f"  HIVE CLOSED [{_ct.get('asset_class','crypto').upper():9}] "
+                                              f"{_src} +{_pnl:.4f}")
+                                    else:
+                                        session_stats['losing_trades'] = session_stats.get('losing_trades', 0) + 1
+                                        if _pnl < session_stats.get('worst_trade', 0):
+                                            session_stats['worst_trade'] = _pnl
+                                # Broadcast unified status to ThoughtBus
+                                if _hive_mind is not None:
+                                    _hive_mind.broadcast(session_stats)
 
                             #
                             #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
@@ -14861,6 +15029,29 @@ class OrcaKillCycle:
                                         print(f"     QUANTUM TELESCOPE: {len(qt_scan)} observations → scoring")
                                 except Exception as e:
                                     print(f"      Quantum Telescope error: {e}")
+
+                            # Market Harp — cross-asset resonance detector
+                            # Detects volatility plucks on any string and propagates
+                            # ripple signals through the inter-market correlation graph.
+                            if _market_harp is not None:
+                                try:
+                                    _harp_boosts = _market_harp.tick(batch_prices or {})
+                                    if _harp_boosts:
+                                        _intel_active += 1
+                                        for _hsym, _hfactor in _harp_boosts.items():
+                                            if _hfactor > 0:
+                                                # Ripple confidence factor (0–1) → scoring boost
+                                                _intel_boosts[_hsym] = _intel_boosts.get(_hsym, 1.0) * (1.0 + _hfactor * 0.40)
+                                        _plucks  = _market_harp.active_pluck_count
+                                        _ripples = _market_harp.active_ripple_count
+                                        if _plucks > 0:
+                                            print(f"     MARKET HARP: {_plucks} strings PLUCKED → "
+                                                  f"{_ripples} ripples → {len(_harp_boosts)} symbols boosted")
+                                        # Print cross-class ripples (strategically interesting)
+                                        for _hline in _market_harp.cross_class_summary():
+                                            print(f"    {_hline}")
+                                except Exception as _harp_e:
+                                    logger.debug(f"Market Harp intel error: {_harp_e}")
 
                             # Timeline Oracle - 7-day guidance → global timing multiplier
                             _timeline_multiplier = 1.0
@@ -15620,6 +15811,10 @@ class OrcaKillCycle:
                                                                     print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
 
                                                                 positions.append(pos)
+                                                                # Hive Mind: register new Alpaca slot opening
+                                                                if _hive_mind is not None:
+                                                                    try: _hive_mind.register_alpaca_open()
+                                                                    except Exception: pass
 
                                                                 # Track the buy order
                                                                 self.track_buy_order(symbol_clean, buy_order, best.exchange)
@@ -15690,6 +15885,13 @@ class OrcaKillCycle:
                     self._print_harmonic_field_summary()
                     
                     print(f"     {len(positions)}/{max_positions_label} ACTIVE POSITIONS | Next scan: {max(0, scan_interval - (current_time - last_scan_time)):.0f}s")
+                    # Hive Mind unified status — all exchanges working toward the same goal
+                    if _hive_mind is not None:
+                        try:
+                            for _hl in _hive_mind.status_lines():
+                                print(_hl)
+                        except Exception:
+                            pass
                     print("="*80)
                     
                     # Update and display each position
@@ -16183,9 +16385,13 @@ class OrcaKillCycle:
                                     
                                     print(f"\n     SOLD: ${final_pnl:+.4f} ({sell_reason})")
                                     print(f"     CYCLE CONTINUES - SCANNING FOR NEXT TARGET...")
-                                    
+
                                     # Remove position
                                     positions.remove(pos)
+                                    # Hive Mind: register close — slot frees, PnL recorded
+                                    if _hive_mind is not None:
+                                        try: _hive_mind.register_alpaca_close(final_pnl)
+                                        except Exception: pass
                                     
                                     # 👑 QUEEN LEARNS FROM THIS TRADE
                                     self._queen_learn_from_sell(
