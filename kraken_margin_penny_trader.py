@@ -2633,18 +2633,12 @@ class KrakenMarginArmyTrader:
                 f"[WaveRider] {self.wave_rider.status_line(equity, margin_used, 5)}"
             )
 
-        # ── MACRO INTELLIGENCE — fetch once for all candidates ───────────────
+        # ── MACRO INTELLIGENCE — fetch once, shapes all buy signals ─────────
         _macro_ctx = {}
         if self.macro is not None:
             try:
                 _macro_ctx = self.macro.get_entry_context("")
                 logger.info(self.macro.summary_line(""))
-                if not _macro_ctx.get("entry_ok", True):
-                    logger.warning(
-                        f"MACRO GATE BLOCKED: {_macro_ctx.get('block_reason')} "
-                        f"— skipping entry scan"
-                    )
-                    return None
             except Exception:
                 pass
 
@@ -2878,17 +2872,10 @@ class KrakenMarginArmyTrader:
             logger.warning("No Binance symbol for intel - skipping research (CAUTION)")
             return (True, side)
 
-        # ── MACRO INTELLIGENCE — final check before any API calls ────────────
+        # ── MACRO INTELLIGENCE — log context alongside the buy signal ────────
         if self.macro is not None:
             try:
-                macro_ctx = self.macro.get_entry_context(pair_info.pair)
                 logger.info(self.macro.summary_line(pair_info.pair))
-                if not macro_ctx.get("entry_ok", True):
-                    logger.warning(
-                        f"MACRO ABORT: {macro_ctx.get('block_reason')} "
-                        f"— blocking entry on {pair_info.pair}"
-                    )
-                    return (False, side)
             except Exception:
                 pass
 

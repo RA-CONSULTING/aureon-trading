@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-MACRO INTELLIGENCE — Pre-Execution Market Context
-==================================================
-Fetches and caches macro-level signals before every entry decision.
+MACRO INTELLIGENCE — Buy Signal Context Layer
+=============================================
+Fetches and caches macro-level signals that enrich every buy decision.
+All signals feed INTO the scoring — they never block an entry.
 All APIs are free and require no authentication.
 
 Signals gathered:
@@ -26,14 +27,13 @@ Output via get_entry_context(pair):
     "coin_vol_usd":      float,     # This coin's 24h volume USD
     "is_trending":       bool,      # Coin in CoinGecko top-10 trending
     "btc_vol_pattern":   str,       # "rising" | "falling" | "flat" (6h vol trend)
-    "macro_score":       float,     # -2.0 → +2.0 composite score
-    "entry_ok":          bool,      # False = macro says WAIT/SKIP
-    "block_reason":      str,       # Why entry is blocked (if entry_ok=False)
+    "macro_score":       float,     # -2.0 → +2.0 composite — adds to candidate score
     "signal_age_s":      float,     # Seconds since last refresh
   }
 
 macro_score feeds directly into find_best_target() candidate scoring.
-entry_ok acts as a hard gate in research_target().
+Higher macro_score = stronger buy signal for this coin right now.
+Low fear + coin outperforming + trending + rising volume = best buys.
 
 Refresh interval: 10 minutes (MACRO_REFRESH_S).
 Never blocks on network — returns last cached value on failure.
@@ -78,23 +78,17 @@ _COINGECKO_IDS = {             # Kraken base → CoinGecko ID
     "TIA":  "celestia",
 }
 
-# Hard-block thresholds
-EXTREME_FEAR_BLOCK  = 15   # F&G ≤ 15 → block entry
-MARKET_DROP_BLOCK   = -6.0 # Market cap 24h ≤ -6% → block entry
-BTC_CRASH_BLOCK     = -8.0 # BTC 24h ≤ -8% → block entry
 
 
 class MacroIntelligence:
     """
-    Pre-execution macro context engine.
+    Buy signal context engine — enriches every entry decision with macro data.
+    All signals feed into scoring; nothing is blocked.
 
     Usage:
         macro = MacroIntelligence()
         ctx   = macro.get_entry_context("SOLUSDT")
-        if not ctx["entry_ok"]:
-            logger.warning(f"MACRO BLOCK: {ctx['block_reason']}")
-            return None
-        score += ctx["macro_score"]   # add to candidate scoring
+        score += ctx["macro_score"]   # -2.0 → +2.0, part of the buy signal
     """
 
     def __init__(self):
@@ -175,20 +169,6 @@ class MacroIntelligence:
 
         macro_score = round(max(-2.0, min(2.0, score)), 3)
 
-        # ── Hard-block logic ─────────────────────────────────────────────
-        entry_ok    = True
-        block_reason= ""
-
-        if fg <= EXTREME_FEAR_BLOCK:
-            entry_ok     = False
-            block_reason = f"Extreme Fear ({fg}) — macro says WAIT"
-        elif market_24h <= MARKET_DROP_BLOCK:
-            entry_ok     = False
-            block_reason = f"Market crash ({market_24h:+.1f}% 24h) — macro says WAIT"
-        elif btc_24h <= BTC_CRASH_BLOCK:
-            entry_ok     = False
-            block_reason = f"BTC crash ({btc_24h:+.1f}% 24h) — macro says WAIT"
-
         return {
             "fear_greed":      fg,
             "fear_label":      fg_label,
@@ -201,24 +181,21 @@ class MacroIntelligence:
             "coin_vol_usd":    coin_vol,
             "is_trending":     is_trend,
             "btc_vol_pattern": vol_pat,
-            "macro_score":     macro_score,
-            "entry_ok":        entry_ok,
-            "block_reason":    block_reason,
+            "macro_score":     macro_score,   # feeds into candidate score
             "signal_age_s":    round(time.time() - self._last_refresh, 0),
         }
 
     def summary_line(self, kraken_pair: str = "") -> str:
-        """One-line human-readable summary for logger output."""
+        """One-line human-readable summary logged alongside every buy signal."""
         ctx = self.get_entry_context(kraken_pair)
-        trend_tag = "TRENDING" if ctx["is_trending"] else ""
-        block_tag = f" | BLOCKED: {ctx['block_reason']}" if not ctx["entry_ok"] else ""
+        trend_tag = " TRENDING" if ctx["is_trending"] else ""
         return (
             f"MACRO | F&G={ctx['fear_greed']} {ctx['fear_label']} | "
             f"Mkt={ctx['market_24h']:+.1f}% | BTC={ctx['btc_24h']:+.1f}% | "
             f"BTC.dom={ctx['btc_dominance']:.1f}% | "
             f"Coin={ctx['coin_24h']:+.1f}% | "
-            f"score={ctx['macro_score']:+.2f} | vol={ctx['btc_vol_pattern']} "
-            f"{trend_tag}{block_tag}"
+            f"score={ctx['macro_score']:+.2f} | vol={ctx['btc_vol_pattern']}"
+            f"{trend_tag}"
         )
 
     # ------------------------------------------------------------------ #
