@@ -541,6 +541,16 @@ except ImportError:
     CapitalCFDTrader = None
     print("   Capital CFD Trader: MISSING")
 
+#   MARKET HARP — Cross-Market Resonance Detector
+MARKET_HARP_AVAILABLE = False
+try:
+    from market_harp import MarketHarp
+    MARKET_HARP_AVAILABLE = True
+    print("  Market Harp: AVAILABLE (cross-asset ripple detection)")
+except ImportError:
+    MarketHarp = None
+    print("   Market Harp: MISSING")
+
 #   DEAD MAN'S SWITCH - Dynamic Take Profit
 DTP_AVAILABLE = False
 try:
@@ -13369,6 +13379,24 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   Capital CFD startup info error: {e}")
 
+        # ── MARKET HARP — Cross-asset resonance detector ─────────────────────
+        _market_harp = None
+        if MARKET_HARP_AVAILABLE:
+            try:
+                _market_harp = MarketHarp()
+                from market_harp import HARP_CLASSES, RESONANCE_MAP
+                _n_strings = len(_market_harp.strings)
+                _n_edges   = sum(len(v) for v in RESONANCE_MAP.values())
+                _classes   = {}
+                for _cls in HARP_CLASSES.values():
+                    _classes[_cls] = _classes.get(_cls, 0) + 1
+                _cls_str = "  ".join(f"{k}:{v}" for k, v in sorted(_classes.items()))
+                print(f"  MARKET HARP: {_n_strings} strings TUNED | {_n_edges} resonance paths")
+                print(f"    Strings: {_cls_str}")
+            except Exception as e:
+                print(f"   Market Harp startup failed: {e}")
+                _market_harp = None
+
         #     QUANTUM COGNITION AMPLIFIER - Wire to Queen for enhanced decisions
         quantum_cognition = None
         quantum_stats = {'amplification': 1.0, 'hz': SCHUMANN_BASE_HZ, 'cycles': 0}
@@ -14948,6 +14976,29 @@ class OrcaKillCycle:
                                         print(f"     QUANTUM TELESCOPE: {len(qt_scan)} observations → scoring")
                                 except Exception as e:
                                     print(f"      Quantum Telescope error: {e}")
+
+                            # Market Harp — cross-asset resonance detector
+                            # Detects volatility plucks on any string and propagates
+                            # ripple signals through the inter-market correlation graph.
+                            if _market_harp is not None:
+                                try:
+                                    _harp_boosts = _market_harp.tick(batch_prices or {})
+                                    if _harp_boosts:
+                                        _intel_active += 1
+                                        for _hsym, _hfactor in _harp_boosts.items():
+                                            if _hfactor > 0:
+                                                # Ripple confidence factor (0–1) → scoring boost
+                                                _intel_boosts[_hsym] = _intel_boosts.get(_hsym, 1.0) * (1.0 + _hfactor * 0.40)
+                                        _plucks  = _market_harp.active_pluck_count
+                                        _ripples = _market_harp.active_ripple_count
+                                        if _plucks > 0:
+                                            print(f"     MARKET HARP: {_plucks} strings PLUCKED → "
+                                                  f"{_ripples} ripples → {len(_harp_boosts)} symbols boosted")
+                                        # Print cross-class ripples (strategically interesting)
+                                        for _hline in _market_harp.cross_class_summary():
+                                            print(f"    {_hline}")
+                                except Exception as _harp_e:
+                                    logger.debug(f"Market Harp intel error: {_harp_e}")
 
                             # Timeline Oracle - 7-day guidance → global timing multiplier
                             _timeline_multiplier = 1.0
