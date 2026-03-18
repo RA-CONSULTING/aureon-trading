@@ -608,6 +608,34 @@ class CapitalClient:
             logger.error(f"Capital.com positions error: {e}")
             return []
 
+    def close_position(self, deal_id: str) -> Dict[str, Any]:
+        """
+        Close an open CFD position by deal ID.
+
+        Capital.com REST: DELETE /positions/{dealId}
+        Falls back gracefully if the deal_id is unknown or already closed.
+        Returns a dict with 'success' boolean and raw response data.
+        """
+        if not self.enabled:
+            return {'success': False, 'error': 'client_disabled'}
+        if not deal_id:
+            return {'success': False, 'error': 'missing_deal_id'}
+
+        try:
+            resp = self._request('DELETE', f'/positions/{deal_id}')
+            if resp.status_code in (200, 204):
+                try:
+                    data = resp.json()
+                except Exception:
+                    data = {}
+                return {'success': True, 'deal_id': deal_id, 'data': data}
+            else:
+                logger.warning(f"Capital.com close_position failed ({resp.status_code}): {resp.text[:200]}")
+                return {'success': False, 'deal_id': deal_id, 'status_code': resp.status_code, 'error': resp.text[:200]}
+        except Exception as e:
+            logger.error(f"Capital.com close_position exception: {e}")
+            return {'success': False, 'deal_id': deal_id, 'error': str(e)}
+
     def get_order_history(self, from_date: str = None) -> List[Dict[str, Any]]:
         """Get order/deal history."""
         if not self.enabled:
