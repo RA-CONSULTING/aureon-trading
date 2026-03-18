@@ -81,6 +81,14 @@ except ImportError:
     StallionMultiverse = None
     MULTIVERSE_CONFIG = {'real_ride_limit_secs': 3600, 'max_shadows': 10}
 
+# Multiverse Learning Bridge - adaptive learning → Seer, Lyra, pre-trade
+try:
+    from multiverse_learning_bridge import MultiverseLearningBridge
+    HAS_LEARNING_BRIDGE = True
+except ImportError:
+    HAS_LEARNING_BRIDGE = False
+    MultiverseLearningBridge = None
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2424,6 +2432,12 @@ class KrakenMarginArmyTrader:
         # Stallion Multiverse - 1-hour ride limit + parallel shadow rides
         self.multiverse: object = StallionMultiverse() if HAS_MULTIVERSE else None
         self._multiverse_ride_registered = False
+        # Learning Bridge - pipes multiverse insight to Seer, Lyra, pre-trade
+        self.learning_bridge: object = (
+            MultiverseLearningBridge(self.multiverse)
+            if HAS_LEARNING_BRIDGE and self.multiverse is not None
+            else None
+        )
         self._load_state()
 
     # ----------------------------------------------------------
@@ -2658,8 +2672,13 @@ class KrakenMarginArmyTrader:
             # For our small account, LEVERAGE is king:
             # 10x lev needs 0.7% move vs 3x needing 1.4% move
             # Weight leverage and ease heavily, momentum as tiebreaker
+            # Multiverse learning conviction: ±0.5 based on shadow phase history
+            conviction_bonus = (
+                self.learning_bridge.get_conviction_bonus(info.pair)
+                if self.learning_bridge is not None else 0.0
+            )
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
-                          + momentum_score + vol_score)
+                          + momentum_score + vol_score + conviction_bonus)
 
             candidates.append((info, side, vol, trade_val, max_lev,
                               total_score, required_move_pct, round_trip_fee))
@@ -2720,6 +2739,28 @@ class KrakenMarginArmyTrader:
         if not pair_info.binance_symbol:
             logger.warning("No Binance symbol for intel - skipping research (CAUTION)")
             return (True, side)
+
+        # ── MULTIVERSE PRE-TRADE CONTEXT ─────────────────────────────────────
+        # Before burning API calls on full research, check what the shadow herd
+        # already knows about this pair from parallel tracking.
+        if self.learning_bridge is not None:
+            try:
+                mv_ctx = self.learning_bridge.get_pre_trade_context(pair_info.pair)
+                rec    = mv_ctx.get('recommendation', 'HOLD')
+                conviction = mv_ctx.get('conviction', 0.5)
+                phase  = mv_ctx.get('phase', 'UNKNOWN')
+                logger.info(
+                    f"[LearningBridge] Pre-trade: {pair_info.pair} | "
+                    f"phase={phase} | conviction={conviction:.2f} | rec={rec} | "
+                    f"seer={mv_ctx.get('seer_aligned')} lyra={mv_ctx.get('lyra_aligned')}"
+                )
+                if mv_ctx.get('stubborn_bucking'):
+                    logger.warning(
+                        f"[LearningBridge] {pair_info.pair} has been BUCKING in shadow "
+                        f"for 45+ min — treat this as a caution signal"
+                    )
+            except Exception:
+                pass
 
         # Calculate required move for profit
         round_trip_fee = trade_val * (KRAKEN_OPEN_FEE + KRAKEN_CLOSE_FEE)
@@ -3178,6 +3219,13 @@ class KrakenMarginArmyTrader:
                 leverage        = float(trade.leverage),
             )
             stallion_str = f" | STALLION:{snap.phase.value}"
+
+        # ── LEARNING BRIDGE SYNC — push to Seer, Lyra, ThoughtBus ────────
+        if self.learning_bridge is not None:
+            try:
+                self.learning_bridge.sync()
+            except Exception:
+                pass
 
         if net_pnl >= PROFIT_TARGET_USD:
             status = f"TARGET HIT +${net_pnl:.2f} - CLOSING!"
@@ -3740,10 +3788,13 @@ class KrakenMarginArmyTrader:
         else:
             print(f"  Shadows: none (will create on next scan)")
 
-        # Multiverse status
+        # Multiverse status + learning bridge status
         if self.multiverse is not None:
             for mv_line in self.multiverse.status_lines():
                 print(mv_line)
+        if self.learning_bridge is not None:
+            for lb_line in self.learning_bridge.learning_status_lines():
+                print(lb_line)
 
         print()
         print(f"  Trades: {self.total_trades} ({self.winning_trades} wins)")

@@ -78,6 +78,16 @@ except ImportError:
     StallionMultiverse = None
     MULTIVERSE_CONFIG = {'real_ride_limit_secs': 3600}
 
+# ══════════════════════════════════════════════════════════════
+#  MULTIVERSE LEARNING BRIDGE IMPORT
+# ══════════════════════════════════════════════════════════════
+try:
+    from multiverse_learning_bridge import MultiverseLearningBridge
+    _LEARNING_BRIDGE_AVAILABLE = True
+except ImportError:
+    _LEARNING_BRIDGE_AVAILABLE = False
+    MultiverseLearningBridge = None
+
 
 def main():
     from kraken_client import KrakenClient
@@ -107,6 +117,12 @@ def main():
     # Stallion Multiverse — shadow rides on the top-10 herd
     _multiverse = StallionMultiverse() if _MULTIVERSE_AVAILABLE else None
     _multiverse_registered = False   # True once start_real_ride() called
+    # Learning Bridge — wires multiverse learning into Seer, Lyra, ThoughtBus
+    _learning_bridge = (
+        MultiverseLearningBridge(_multiverse)
+        if _LEARNING_BRIDGE_AVAILABLE and _multiverse is not None
+        else None
+    )
 
     while True:
         cycle += 1
@@ -185,6 +201,13 @@ def main():
             # ── Update multiverse shadows with latest prices ────────────────
             if _multiverse is not None and candidate_prices:
                 _multiverse.update(candidate_prices, margin_level)
+
+            # ── Sync learning bridge → Seer, Lyra, ThoughtBus ──────────────
+            if _learning_bridge is not None:
+                try:
+                    _learning_bridge.sync()
+                except Exception as _lb_err:
+                    logger.debug(f"Learning bridge sync skipped: {_lb_err}")
 
             # ── Monitor each position ───────────────────────────────────────
             for i, pos in enumerate(positions):
@@ -374,6 +397,11 @@ def main():
                 print()
                 for mv_line in _multiverse.status_lines():
                     print(mv_line)
+
+            # ── Learning bridge status (Seer / Lyra / conviction summary) ──
+            if _learning_bridge is not None:
+                for lb_line in _learning_bridge.learning_status_lines():
+                    print(lb_line)
 
             # Sleep until next check
             time.sleep(CHECK_INTERVAL)
