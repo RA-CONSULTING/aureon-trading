@@ -4581,8 +4581,150 @@ class KrakenMarginArmyTrader:
             self._save_state()
             self._save_results()
 
+    # ----------------------------------------------------------
+    #  TICK — one autonomous trading cycle (no internal loop)
+    #  Called by the Orca Kill Cycle's run_autonomous() each
+    #  iteration so both loops stay in sync.
+    # ----------------------------------------------------------
+    def tick(self) -> list:
+        """
+        Execute ONE complete autonomous trading cycle and return.
 
-def main():
+        This is the headless version of run(): same logic, no while-loop,
+        no sleep. The Orca calls this from its own infinite loop so the
+        full Queen's system stack (Orchestrator → Seer → Lyra → Queen)
+        gates every decision without a second blocking loop.
+
+        Returns
+        -------
+        list of dict  — trades closed this tick (may be empty)
+        """
+        now = time.time()
+        closed_this_tick: list = []
+
+        # ── PHASE 0: Orchestrator cycle sync ─────────────────────────────
+        # Updates multiverse shadows, syncs learning bridge → Seer/Lyra/ThoughtBus,
+        # refreshes quick gate flags.  No heavy API calls.
+        if self.orchestrator is not None:
+            try:
+                self.orchestrator.cycle_sync()
+            except Exception:
+                pass
+
+        # ── PHASE 1: Monitor active positions ─────────────────────────────
+        for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
+            if trade:
+                result = self.monitor_position(trade=trade)
+                if result:
+                    pnl = result.get("net_pnl", 0)
+                    logger.info(
+                        f"[tick] TRADE #{self.total_trades}: "
+                        f"{result['pair']} {label} ${pnl:+.2f} | "
+                        f"Session: ${self.total_profit:+.2f}"
+                    )
+                    closed_this_tick.append(result)
+                    self._save_results()
+
+        # ── PHASE 2: Update validation shadows ────────────────────────────
+        if self.shadow_trades:
+            self.update_shadows()
+
+        # ── PHASE 3: Promote validated shadows (Orchestrator gated) ───────
+        for shadow in list(self.shadow_trades):
+            if not shadow.validated:
+                continue
+            if (shadow.validation_time > 0 and
+                    (now - shadow.validation_time) < self.SHADOW_MIN_VALIDATE):
+                continue
+            if shadow.side == "buy" and self.active_long:
+                continue
+            if shadow.side == "sell" and self.active_short:
+                continue
+
+            # Full Quadrumvirate gate before real capital
+            if self.orchestrator is not None:
+                try:
+                    _ok, _reason, _ = self.orchestrator.gate_pre_trade(
+                        shadow.pair, shadow.side, shadow.trade_val
+                    )
+                    if not _ok:
+                        logger.info(
+                            f"[tick] Shadow {shadow.pair} HELD by Orchestrator: {_reason}"
+                        )
+                        continue
+                except Exception:
+                    pass
+
+            trade = self.promote_shadow(shadow)
+            if trade:
+                break   # one promotion per tick
+
+        # ── PHASE 4: Find candidates → create new shadows ─────────────────
+        need_long  = self.active_long  is None
+        need_short = self.active_short is None
+
+        if need_long or need_short:
+            # Price refresh every 30 s
+            if now - getattr(self, '_tick_last_price_refresh', 0) > 30:
+                self.update_prices_free()
+                self._tick_last_price_refresh = now
+
+            # Shadow scan every 15 s
+            if now - getattr(self, '_tick_last_shadow_scan', 0) > 15:
+                self._tick_last_shadow_scan = now
+                target = self.find_best_target()
+                if target:
+                    info, side, vol, trade_val, lev = target
+                    if (side == "buy" and need_long) or (side == "sell" and need_short):
+                        self.create_shadow(info, side, vol, trade_val, lev)
+                    # Opposite direction shadow
+                    opp_side = "sell" if side == "buy" else "buy"
+                    opp_need = need_short if side == "buy" else need_long
+                    if opp_need and hasattr(self, '_last_candidates'):
+                        for cand in self._last_candidates:
+                            ci = cand[0]; cv = cand[2]; ctv = cand[3]
+                            flip_levs = ci.leverage_sell if opp_side == "sell" else ci.leverage_buy
+                            if flip_levs and ci.pair != info.pair:
+                                self.create_shadow(ci, opp_side, cv, ctv, max(flip_levs))
+                                break
+
+        return closed_this_tick
+
+    def monitor_positions(self) -> list:
+        """Compatibility wrapper — monitors both active positions, returns closed list."""
+        return self.tick()
+
+    def refresh_prices(self) -> None:
+        """Compatibility wrapper — refresh all margin pair prices."""
+        try:
+            self.update_prices_free()
+        except Exception:
+            pass
+
+    def init_multiverse_candidates(self) -> None:
+        """
+        Seed the Stallion Multiverse with the top candidate pairs from the
+        current margin universe. Call once after discover_margin_universe().
+        """
+        if self.multiverse is None or not self.margin_pairs:
+            return
+        candidates = [
+            {'pair': pair, 'volume': 0.01, 'leverage': 5}
+            for pair in list(self.margin_pairs.keys())[:10]
+        ]
+        prices = {
+            pair: info.last_price
+            for pair, info in self.margin_pairs.items()
+            if info.last_price > 0
+        }
+        self.multiverse.set_candidates(candidates, prices)
+        logger.info(
+            f"[Multiverse] Seeded {self.multiverse.shadow_count} shadow rides "
+            f"from margin universe"
+        )
+
+
+
     global PROFIT_TARGET_USD, MIN_PROFIT_USD
 
     parser = argparse.ArgumentParser(

@@ -13309,6 +13309,26 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   Temporal consensus startup failed: {e}")
 
+        # ── KRAKEN MARGIN MULTIVERSE + ORCHESTRATOR STARTUP ──────────────────
+        if self.margin_penny_trader is not None:
+            try:
+                if not getattr(self.margin_penny_trader, 'margin_pairs', None):
+                    self.margin_penny_trader.discover_margin_universe()
+                    self.margin_penny_trader.update_prices_free()
+                self.margin_penny_trader.init_multiverse_candidates()
+                _mv = getattr(self.margin_penny_trader, 'multiverse', None)
+                _oc = getattr(self.margin_penny_trader, 'orchestrator', None)
+                if _mv is not None:
+                    print(f"  STALLION MULTIVERSE: {len(getattr(_mv, '_shadows', {}))} shadow rides ACTIVE")
+                else:
+                    print("  STALLION MULTIVERSE: unavailable — continuing without shadow rides")
+                if _oc is not None:
+                    print("  TRADING ORCHESTRATOR: Quadrumvirate gate ARMED")
+                else:
+                    print("  TRADING ORCHESTRATOR: unavailable — gate open")
+            except Exception as e:
+                print(f"   Kraken Margin multiverse startup: {e}")
+
         #     QUANTUM COGNITION AMPLIFIER - Wire to Queen for enhanced decisions
         quantum_cognition = None
         quantum_stats = {'amplification': 1.0, 'hz': SCHUMANN_BASE_HZ, 'cycles': 0}
@@ -13388,6 +13408,9 @@ class OrcaKillCycle:
         #    Quantum cognition timing
         quantum_cognition_interval = 5.0  # Amplify every 5 seconds
         last_quantum_amplification = 0.0
+        #  Kraken Margin autonomous tick timing
+        kraken_margin_interval = 5.0      # Full tick every 5 seconds
+        last_kraken_margin_tick = 0.0
         #  📊 Portfolio Intelligence Engine timing (enriched cross-exchange snapshots)
         portfolio_intelligence_interval = 300.0  # Every 5 minutes
         last_portfolio_intelligence = 0.0
@@ -14800,25 +14823,26 @@ class OrcaKillCycle:
                                     quad_go = True
                                     quad_sizing = 1.0
 
-                            # Refresh margin universe prices (every ~10 cycles)
-                            if self.margin_penny_trader and session_stats.get('cycles', 0) % 10 == 0:
+                            # ── KRAKEN MARGIN PHASE: Full autonomous trading cycle ──────────
+                            if self.margin_penny_trader and (current_time - last_kraken_margin_tick >= kraken_margin_interval):
+                                last_kraken_margin_tick = current_time
                                 try:
-                                    self.margin_penny_trader.refresh_prices()
-                                except Exception:
-                                    pass
-
-                            # Also monitor any margin penny trader active positions
-                            if self.margin_penny_trader:
-                                try:
-                                    penny_closed = self.margin_penny_trader.monitor_positions()
-                                    for pc in penny_closed:
-                                        _pnl = pc.get('net_pnl', 0)
+                                    closed_trades = self.margin_penny_trader.tick()
+                                    for ct in (closed_trades or []):
+                                        _pnl = ct.get('net_pnl', 0)
+                                        session_stats['total_pnl'] = session_stats.get('total_pnl', 0) + _pnl
+                                        session_stats['total_trades'] = session_stats.get('total_trades', 0) + 1
                                         if _pnl > 0:
-                                            session_stats['total_pnl'] = session_stats.get('total_pnl', 0) + _pnl
                                             session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
-                                            print(f"     MARGIN PENNY CLOSED: {pc['pair']} +${_pnl:.4f}")
-                                except Exception:
-                                    pass
+                                            if _pnl > session_stats.get('best_trade', 0):
+                                                session_stats['best_trade'] = _pnl
+                                            print(f"  KRAKEN MARGIN CLOSED: {ct.get('pair','?')} +${_pnl:.4f}")
+                                        else:
+                                            session_stats['losing_trades'] = session_stats.get('losing_trades', 0) + 1
+                                            if _pnl < session_stats.get('worst_trade', 0):
+                                                session_stats['worst_trade'] = _pnl
+                                except Exception as _mte:
+                                    logger.debug(f"Kraken margin tick error: {_mte}")
 
                             #
                             #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
