@@ -344,12 +344,21 @@ def main():
                 close_reason = ""
 
                 if dtp_close:
-                    should_close = True
-                    close_reason = f"DTP_DEAD_MAN ({dtp_reason_str})"
+                    if net_pnl >= 0:
+                        should_close = True
+                        close_reason = f"DTP_DEAD_MAN ({dtp_reason_str})"
+                    else:
+                        print(f"      [DTP] Triggered but net_pnl=${net_pnl:+.4f} < 0 — holding until profitable.")
                 elif rotation_close:
-                    should_close = True
-                    _next = (_multiverse.get_next_stallion() or '?') if _multiverse else '?'
-                    close_reason = f"ROTATION_DUE (1h limit | next→{_next})"
+                    if net_pnl >= MIN_PROFIT_USD:
+                        should_close = True
+                        _next = (_multiverse.get_next_stallion() or '?') if _multiverse else '?'
+                        close_reason = f"ROTATION_DUE (1h limit | next→{_next})"
+                    else:
+                        # Underwater — reset rotation clock instead of closing at a loss
+                        print(f"      [ROTATE] net_pnl=${net_pnl:+.4f} < target — holding, resetting rotation clock.")
+                        if _multiverse is not None:
+                            _multiverse.start_real_ride(pair, time.time())
                 elif net_pnl >= MIN_PROFIT_USD and to_breakeven_pct >= MIN_PROFIT_PCT:
                     should_close = True
                     close_reason = f"PROFIT_TARGET (net=${net_pnl:+.4f}, {to_breakeven_pct:+.3f}% above breakeven)"
