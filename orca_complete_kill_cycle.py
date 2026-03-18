@@ -531,6 +531,16 @@ except ImportError:
     KrakenMarginPennyTrader = None
     print("   Kraken Margin Penny Trader: MISSING")
 
+#   CAPITAL CFD TRADER — Forex · Indices · Commodities · Stocks
+CAPITAL_CFD_AVAILABLE = False
+try:
+    from capital_cfd_trader import CapitalCFDTrader
+    CAPITAL_CFD_AVAILABLE = True
+    print("  Capital CFD Trader: AVAILABLE (Forex/Indices/Commodities/Stocks)")
+except ImportError:
+    CapitalCFDTrader = None
+    print("   Capital CFD Trader: MISSING")
+
 #   DEAD MAN'S SWITCH - Dynamic Take Profit
 DTP_AVAILABLE = False
 try:
@@ -3870,6 +3880,20 @@ class OrcaKillCycle:
             except Exception as e:
                 _safe_print(f"   Margin Penny Trader init failed: {e}")
                 self.margin_penny_trader = None
+
+        #   CAPITAL CFD TRADER — Forex · Indices · Commodities · Stocks (non-crypto)
+        self.capital_cfd_trader = None
+        if CAPITAL_CFD_AVAILABLE:
+            try:
+                self.capital_cfd_trader = CapitalCFDTrader()
+                if getattr(self.capital_cfd_trader, 'enabled', False):
+                    _safe_print("  Capital CFD Trader: CONNECTED (Forex/Indices/Commodities/Stocks)")
+                else:
+                    _safe_print("   Capital CFD Trader: credentials missing — standing by")
+                    self.capital_cfd_trader = None
+            except Exception as e:
+                _safe_print(f"   Capital CFD Trader init failed: {e}")
+                self.capital_cfd_trader = None
 
         #    QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps + Breadcrumb Portfolio
         # ROCK SOLID MATH: Only leaps when value preserved AFTER fees!
@@ -13329,6 +13353,22 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   Kraken Margin multiverse startup: {e}")
 
+        # ── CAPITAL CFD TRADER STARTUP — non-crypto financial universe ────────
+        if self.capital_cfd_trader is not None:
+            try:
+                from capital_cfd_trader import CAPITAL_UNIVERSE, CFD_CONFIG
+                _classes = {}
+                for _s, _c in CAPITAL_UNIVERSE.items():
+                    _cls = _c.get('class', 'unknown')
+                    _classes[_cls] = _classes.get(_cls, 0) + 1
+                _cls_str = "  ".join(f"{k}:{v}" for k, v in sorted(_classes.items()))
+                print(f"  CAPITAL CFD: {len(CAPITAL_UNIVERSE)} instruments ARMED [{_cls_str}]")
+                print(f"  CAPITAL CFD: max {int(CFD_CONFIG['max_positions'])} positions | "
+                      f"scan every {int(CFD_CONFIG['scan_interval_secs'])}s | "
+                      f"1h time-limit per trade")
+            except Exception as e:
+                print(f"   Capital CFD startup info error: {e}")
+
         #     QUANTUM COGNITION AMPLIFIER - Wire to Queen for enhanced decisions
         quantum_cognition = None
         quantum_stats = {'amplification': 1.0, 'hz': SCHUMANN_BASE_HZ, 'cycles': 0}
@@ -13411,6 +13451,9 @@ class OrcaKillCycle:
         #  Kraken Margin autonomous tick timing
         kraken_margin_interval = 5.0      # Full tick every 5 seconds
         last_kraken_margin_tick = 0.0
+        #  Capital CFD tick timing (non-crypto: Forex/Indices/Commodities/Stocks)
+        capital_cfd_interval = 10.0       # Full tick every 10 seconds
+        last_capital_cfd_tick = 0.0
         #  📊 Portfolio Intelligence Engine timing (enriched cross-exchange snapshots)
         portfolio_intelligence_interval = 300.0  # Every 5 minutes
         last_portfolio_intelligence = 0.0
@@ -14843,6 +14886,26 @@ class OrcaKillCycle:
                                                 session_stats['worst_trade'] = _pnl
                                 except Exception as _mte:
                                     logger.debug(f"Kraken margin tick error: {_mte}")
+
+                            # ── CAPITAL CFD PHASE: Forex · Indices · Commodities · Stocks ──────
+                            if self.capital_cfd_trader and (current_time - last_capital_cfd_tick >= capital_cfd_interval):
+                                last_capital_cfd_tick = current_time
+                                try:
+                                    cfd_closed = self.capital_cfd_trader.tick()
+                                    for cc in (cfd_closed or []):
+                                        _cpnl = cc.get('net_pnl', 0)
+                                        session_stats['total_pnl'] = session_stats.get('total_pnl', 0) + _cpnl
+                                        session_stats['total_trades'] = session_stats.get('total_trades', 0) + 1
+                                        if _cpnl > 0:
+                                            session_stats['winning_trades'] = session_stats.get('winning_trades', 0) + 1
+                                            if _cpnl > session_stats.get('best_trade', 0):
+                                                session_stats['best_trade'] = _cpnl
+                                        else:
+                                            session_stats['losing_trades'] = session_stats.get('losing_trades', 0) + 1
+                                            if _cpnl < session_stats.get('worst_trade', 0):
+                                                session_stats['worst_trade'] = _cpnl
+                                except Exception as _cfd_e:
+                                    logger.debug(f"Capital CFD tick error: {_cfd_e}")
 
                             #
                             #   PRE-SCAN INTELLIGENCE ENRICHMENT (All available brains!)
