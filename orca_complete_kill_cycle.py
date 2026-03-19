@@ -1186,7 +1186,7 @@ try:
     from queen_asset_command_center import (
         get_asset_command_center,
         get_asset_monitor,
-        # get_ocean_view,
+        get_ocean_view,
         QueenAssetCommandCenter,
         QueenAssetMonitor,
         QueenOceanView
@@ -1197,7 +1197,7 @@ except ImportError:
     ASSET_COMMAND_CENTER_AVAILABLE = False
     get_asset_command_center = None
     get_asset_monitor = None
-    # get_ocean_view = None
+    get_ocean_view = None
     QueenAssetCommandCenter = None
     QueenAssetMonitor = None
     QueenOceanView = None
@@ -3871,6 +3871,15 @@ class OrcaKillCycle:
                 self.unified_kill_chain = None
         else:
             self.unified_kill_chain = None
+
+        #    CAPITAL.COM CFD TRADER
+        self.capital_cfd_trader = None
+        if CAPITAL_CFD_AVAILABLE and 'capital' in self.clients and self.clients['capital']:
+            try:
+                self.capital_cfd_trader = CapitalCFDTrader(client=self.clients['capital'])
+                _safe_print("  Capital CFD Trader: INTEGRATED")
+            except Exception as e:
+                _safe_print(f"   Capital CFD Trader init failed: {e}")
 
         #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
         self.margin_penny_trader = None
@@ -13260,6 +13269,7 @@ class OrcaKillCycle:
         if self.sentience_engine:
             def _run_async_loop():
                 try:
+                    import asyncio
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
                     loop.run_until_complete(self.sentience_engine.start_sentience_loop())
