@@ -1458,12 +1458,13 @@ class BattlefieldIntel:
             try:
                 wave = self.waveform.full_scan(symbol, side)
                 if wave.get('available'):
-                    res_score = wave.get('resonance_score', 0)
-                    res_label = wave.get('resonance_label', 'neutral')
-                    shape = wave.get('shape', 'unknown')
-                    flow_pred = wave.get('flow_prediction', 'neutral')
-                    _ = wave.get('energy_trend', 0)
-                    shifted = wave.get('spectrum_shifted', False)
+                    res_score    = wave.get('resonance_score', 0)
+                    res_label    = wave.get('resonance_label', 'neutral')
+                    shape        = wave.get('shape', 'unknown')
+                    flow_pred    = wave.get('flow_prediction', 'neutral')
+                    energy_trend = wave.get('energy_trend', 0)
+                    flow_vel     = wave.get('flow_velocity', 0)
+                    shifted      = wave.get('spectrum_shifted', False)
 
                     # Strong dissonance = bots moving against us
                     if res_label == 'dissonance' and res_score < -0.4:
@@ -1474,6 +1475,25 @@ class BattlefieldIntel:
                     if shape == 'surge' and res_label == 'dissonance':
                         reasons.append(f"WAVE CRITICAL: Surge + dissonance — bots attacking our direction!")
                         danger += 2
+
+                    # Extreme energy surge (>1.5) with dissonance = all-out attack
+                    if energy_trend > 1.5 and res_label == 'dissonance':
+                        reasons.append(
+                            f"WAVE CRITICAL: Extreme energy surge ({energy_trend:+.2f}) "
+                            f"+ dissonance — full bot offensive against our position")
+                        danger += 1
+
+                    # Flow velocity building hard against our direction
+                    if side == 'buy' and flow_vel < -0.5:
+                        reasons.append(
+                            f"WAVE DANGER: Sell momentum accelerating fast "
+                            f"(flow_velocity={flow_vel:+.3f})")
+                        danger += 1
+                    elif side == 'sell' and flow_vel > 0.5:
+                        reasons.append(
+                            f"WAVE DANGER: Buy momentum accelerating fast "
+                            f"(flow_velocity={flow_vel:+.3f})")
+                        danger += 1
 
                     # Sell building when we're long (or vice versa)
                     if side == 'buy' and flow_pred == 'strong_sell_building':
@@ -2914,10 +2934,59 @@ class KrakenMarginArmyTrader:
                 except Exception:
                     pass
 
+            # ── WAVE BONUS — ocean wave scanner (cached, no new API calls) ───
+            # Reads the waveform result from the last pre_strike_research scan.
+            # Rewards coins where bot resonance is in harmony with our direction;
+            # penalises coins where bots are in active dissonance.
+            # Never triggers a new waveform fetch — uses cache only.
+            wave_bonus = 0.0
+            _waveform = getattr(self.intel, 'waveform', None)
+            if _waveform is not None and HAS_NUMPY and info.binance_symbol:
+                _wc = _waveform._spectral_cache.get(info.binance_symbol, {})
+                _wc_age = time.time() - _waveform._cache_times.get(
+                    f"wave_{info.binance_symbol}", 0)
+                if _wc.get('available') and _wc_age < 120:
+                    _res_score = _wc.get('resonance_score', 0)
+                    _res_label = _wc.get('resonance_label', 'neutral')
+                    _flow_pred = _wc.get('flow_prediction', 'neutral')
+                    _dom_bot   = _wc.get('dominant_bot', 'organic')
+                    _shape     = _wc.get('shape', 'mixed')
+
+                    # Resonance score: -1 → +1 (bots against us → bots with us)
+                    wave_bonus += _res_score * 1.0
+
+                    # Flow prediction alignment with our intended side
+                    _flow_align = {
+                        ('buy',  'strong_buy_building'):  0.5,
+                        ('buy',  'buy_fading'):           0.1,
+                        ('buy',  'strong_sell_building'): -0.5,
+                        ('sell', 'strong_sell_building'): 0.5,
+                        ('sell', 'sell_fading'):          0.1,
+                        ('sell', 'strong_buy_building'):  -0.5,
+                    }
+                    wave_bonus += _flow_align.get((side, _flow_pred), 0.0)
+
+                    # Dominant bot type quality (accumulator = whale, hft = noise)
+                    _bot_q = {'accumulator': 0.3, 'organic': 0.2,
+                              'scalper': 0.1, 'market_maker': 0.0, 'hft': -0.1}
+                    wave_bonus += _bot_q.get(_dom_bot, 0.0)
+
+                    # Energy surge: amplifies signal if aligned, worsens if hostile
+                    if _shape == 'surge':
+                        wave_bonus += 0.25 if _res_label == 'harmony' else -0.25
+
+                    wave_bonus = round(max(-2.0, min(2.0, wave_bonus)), 3)
+                    logger.debug(
+                        f"[Wave] {info.pair} {side}: res={_res_score:+.2f} "
+                        f"flow={_flow_pred} bot={_dom_bot} shape={_shape} "
+                        f"→ wave_bonus={wave_bonus:+.2f}"
+                    )
+
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
                           + momentum_score + vol_score + conviction_bonus + hive_bonus
                           + goal_score * 2          # weight 2 — quickest profitable signal wins
-                          + macro_bonus * 1.5)      # weight 1.5 — macro context shapes the battlefield
+                          + macro_bonus * 1.5       # weight 1.5 — macro context shapes the battlefield
+                          + wave_bonus * 1.5)       # weight 1.5 — ocean wave scanner bot resonance
 
             candidates.append((info, side, vol, trade_val, max_lev,
                               total_score, required_move_pct, round_trip_fee,
