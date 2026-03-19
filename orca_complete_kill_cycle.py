@@ -3654,7 +3654,7 @@ class OrcaKillCycle:
         if os.path.exists(self.positions_file):
             try:
                 with open(self.positions_file, 'r') as f:
-                    self.tracked_positions = json.load(f)
+                    self.tracked_positions = _json.load(f)
                 _safe_print(f"  Orca: Loaded {len(self.tracked_positions)} tracked positions from disk")
             except Exception as e:
                 _safe_print(f"   Failed to load tracked positions: {e}")
@@ -3666,7 +3666,7 @@ class OrcaKillCycle:
         """Save current tracked positions to disk."""
         try:
             with open(self.positions_file, 'w') as f:
-                json.dump(self.tracked_positions, f, indent=4)
+                _json.dump(self.tracked_positions, f, indent=4)
         except Exception as e:
             _safe_print(f"   Failed to save tracked positions: {e}")
 
@@ -4474,7 +4474,7 @@ class OrcaKillCycle:
             # Check if portfolio state file exists
             if os.path.exists("live_profit_state.json"):
                 with open("live_profit_state.json", 'r') as f:
-                    self.portfolio_state = json.load(f)
+                    self.portfolio_state = _json.load(f)
                     self.portfolio_last_update = self.portfolio_state.get('timestamp', 0)
                 print(f"  Portfolio Monitor: WIRED! (${self.portfolio_state['totals']['total_value_usd']:.2f} total)")
             else:
@@ -5064,7 +5064,7 @@ class OrcaKillCycle:
                 'data': data
             }
             with open(self.audit_file, 'a') as f:
-                f.write(json.dumps(event) + '\n')
+                f.write(_json.dumps(event) + '\n')
         except Exception:
             pass
     
@@ -5991,7 +5991,7 @@ class OrcaKillCycle:
         try:
             if os.path.exists("cost_basis_history.json"):
                 with open("cost_basis_history.json", 'r') as _f:
-                    _cb = json.load(_f)
+                    _cb = _json.load(_f)
                 cost_positions = _cb.get('positions', {})
         except Exception:
             pass
@@ -6031,7 +6031,7 @@ class OrcaKillCycle:
                     'Accept': 'application/json', 'User-Agent': 'Aureon/1.0'
                 })
                 _resp = urllib.request.urlopen(_req, timeout=15)
-                for coin in json.loads(_resp.read()):
+                for coin in _json.loads(_resp.read()):
                     gecko_data[coin['id']] = coin
                 _time.sleep(0.5)  # rate-limit courtesy
             _safe_print(f"  📊 [INTEL] CoinGecko: {len(gecko_data)} coins enriched")
@@ -6124,12 +6124,12 @@ class OrcaKillCycle:
                 _bsig = _hmac.new(_bsec.encode(), _query.encode(), _hashlib.sha256).hexdigest()
                 _burl = f'https://api.binance.com/api/v3/account?{_query}&signature={_bsig}'
                 _req = urllib.request.Request(_burl, headers={'X-MBX-APIKEY': _bkey})
-                _acct = json.loads(urllib.request.urlopen(_req, timeout=15).read())
+                _acct = _json.loads(urllib.request.urlopen(_req, timeout=15).read())
                 # Prices
                 _presp = urllib.request.urlopen(
                     'https://api.binance.com/api/v3/ticker/price', timeout=15)
                 _bprices = {p['symbol']: float(p['price'])
-                            for p in json.loads(_presp.read())}
+                            for p in _json.loads(_presp.read())}
 
                 for b in _acct.get('balances', []):
                     amt = float(b['free']) + float(b['locked'])
@@ -6174,10 +6174,10 @@ class OrcaKillCycle:
                 _hdrs = {'APCA-API-KEY-ID': _ak, 'APCA-API-SECRET-KEY': _as}
                 _req = urllib.request.Request(
                     'https://api.alpaca.markets/v2/account', headers=_hdrs)
-                _aacct = json.loads(urllib.request.urlopen(_req, timeout=15).read())
+                _aacct = _json.loads(urllib.request.urlopen(_req, timeout=15).read())
                 _req2 = urllib.request.Request(
                     'https://api.alpaca.markets/v2/positions', headers=_hdrs)
-                _apos = json.loads(urllib.request.urlopen(_req2, timeout=15).read())
+                _apos = _json.loads(urllib.request.urlopen(_req2, timeout=15).read())
 
                 cash = float(_aacct.get('cash', 0))
                 if cash >= 0.01:
@@ -6231,7 +6231,7 @@ class OrcaKillCycle:
         try:
             _tmp = _tmpfile.NamedTemporaryFile(
                 mode='w', dir='.', suffix='.tmp', delete=False)
-            json.dump(snapshot, _tmp, indent=2)
+            _json.dump(snapshot, _tmp, indent=2)
             _tmp.close()
             os.replace(_tmp.name, 'portfolio_intelligence_snapshot.json')
         except Exception as e:
@@ -6284,7 +6284,7 @@ class OrcaKillCycle:
         try:
             if os.path.exists("live_profit_state.json"):
                 with open("live_profit_state.json", 'r') as f:
-                    self.portfolio_state = json.load(f)
+                    self.portfolio_state = _json.load(f)
                     self.portfolio_last_update = self.portfolio_state.get('timestamp', 0)
                 return True
         except Exception:
@@ -16765,10 +16765,10 @@ class OrcaKillCycle:
             # Atomic write into shared state dir
             state_dir = os.environ.get("AUREON_STATE_DIR", "state")
             os.makedirs(state_dir, exist_ok=True)
-            tmp_path = os.path.join(state_dir, "dashboard_snapshot.json.tmp")
+            tmp_path = os.path.join(state_dir, "dashboard_snapshot._json.tmp")
             final_path = os.path.join(state_dir, "dashboard_snapshot.json")
             with open(tmp_path, "w") as f:
-                json.dump(state, f)
+                _json.dump(state, f)
             os.replace(tmp_path, final_path)
         except Exception as e:
             # Log state dump errors to help debugging
@@ -16931,7 +16931,7 @@ class OrcaKillCycle:
                     # 1. Get current price and momentum
                     ticker = None
                     for client_name in ['kraken', 'binance', 'alpaca']:
-                        _ = getattr(self, client_name, None) or self.clients.get(client_name)
+                        cl = getattr(self, client_name, None) or self.clients.get(client_name)
                         if not cl:
                             continue
                         try:
@@ -17224,8 +17224,8 @@ class OrcaKillCycle:
             import os
             state_dir = os.environ.get("AUREON_STATE_DIR", "state")
             os.makedirs(state_dir, exist_ok=True)
-            with tempfile.NamedTemporaryFile(mode='w', dir=state_dir, suffix='.json.tmp', delete=False) as f:
-                json.dump(state, f)
+            with tempfile.NamedTemporaryFile(mode='w', dir=state_dir, suffix='._json.tmp', delete=False) as f:
+                _json.dump(state, f)
                 tmp_path = f.name
             final_path = os.path.join(state_dir, "warroom_snapshot.json")
             os.replace(tmp_path, final_path)
