@@ -11228,7 +11228,7 @@ class OrcaKillCycle:
         """Compute cash/assets energy per exchange with momentum tracking."""
         live_prices = self._get_live_crypto_prices()
         gbp_usd_rate = live_prices.get('GBPUSD', 1.27)
-        _ = {
+        energy = {
             "exchanges": {},
             "total": {"cash": 0.0, "assets": 0.0, "total": 0.0}
         }
