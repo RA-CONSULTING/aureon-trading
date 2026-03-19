@@ -81,6 +81,36 @@ class MultiverseLearningBridge:
         self._last_package:     Dict  = {}
         self._learning_history: List[dict] = []
 
+    # ── Wave context push ─────────────────────────────────────────────────────
+
+    def push_wave_context(self, wave_data: dict) -> None:
+        """
+        Push ocean wave scanner results to Seer and Lyra immediately.
+        Called by the main trader after every WaveformAnalyzer.full_scan().
+
+        Seer's OracleOfHarmony and Lyra's ChamberOfHarmony both read
+        bot frequency signatures from this context when they next call see()/feel().
+        """
+        if not wave_data or not wave_data.get('available'):
+            return
+        try:
+            from aureon_seer_integration import seer_inject_wave_context
+            seer_inject_wave_context(wave_data)
+        except Exception:
+            pass
+        try:
+            from aureon_lyra_integration import lyra_inject_wave_context
+            lyra_inject_wave_context(wave_data)
+        except Exception:
+            pass
+        logger.debug(
+            f"[LearningBridge] Wave context pushed to Seer+Lyra — "
+            f"res={wave_data.get('resonance_score', 0):+.2f} "
+            f"flow={wave_data.get('flow_prediction', '?')} "
+            f"bot={wave_data.get('dominant_bot', '?')} "
+            f"shape={wave_data.get('shape', '?')}"
+        )
+
     # ── Main cycle hook ───────────────────────────────────────────────────────
 
     def sync(self) -> Dict[str, Any]:

@@ -54,6 +54,14 @@ def lyra_update_context(positions: Dict = None,
     )
 
 
+def lyra_inject_wave_context(wave_data: dict) -> None:
+    """
+    Push ocean wave scanner results into Lyra's ChamberOfHarmony.
+    Called by MultiverseLearningBridge.push_wave_context() after each scan.
+    """
+    _get_lyra().inject_wave_context(wave_data)
+
+
 def lyra_get_resonance() -> Dict[str, Any]:
     """Get Lyra's latest resonance. Takes new reading if stale."""
     lyra = _get_lyra()

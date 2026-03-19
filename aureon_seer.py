@@ -423,8 +423,9 @@ class OracleOfHarmony:
                 pass
 
     def read(self, positions: Dict[str, Any] = None,
-             ticker_cache: Dict[str, Any] = None) -> OracleReading:
-        """Take a reading from the Harmonic Field."""
+             ticker_cache: Dict[str, Any] = None,
+             wave_ctx: dict = None) -> OracleReading:
+        """Take a reading from the Harmonic Field, enriched by ocean wave scanner."""
         self._load()
         score = 0.5
         phase = "DORMANT"
@@ -495,8 +496,82 @@ class OracleOfHarmony:
             except Exception:
                 pass
 
-        # Confidence: higher when real scan with relays completed
-        _harm_conf = 0.75 if details.get("relay_count", 0) > 0 else (0.5 if details else 0.3)
+        # ── Ocean wave scanner — bot frequency signatures shape the field ────
+        # The bots' patterns ARE part of the harmonic field. When they move in
+        # structured, directional ways the field has coherence; when they battle
+        # each other or shift strategy the field is scattered or disrupted.
+        if wave_ctx and wave_ctx.get('available'):
+            res_score    = wave_ctx.get('resonance_score', 0)      # -1 → +1
+            flow_pred    = wave_ctx.get('flow_prediction', 'neutral')
+            dom_bot      = wave_ctx.get('dominant_bot', 'organic')
+            shape        = wave_ctx.get('shape', 'mixed')
+            energy_trend = wave_ctx.get('energy_trend', 0)
+            shifted      = wave_ctx.get('spectrum_shifted', False)
+
+            # Map bot type to field coherence contribution
+            _bot_field = {
+                'organic':      0.80,   # Real humans: natural flow, purest coherence
+                'accumulator':  0.75,   # Whale: structured intent, coherent field
+                'market_maker': 0.55,   # Oscillating: partial coherence
+                'scalper':      0.50,   # Fast but directional
+                'hft':          0.30,   # Pure noise: scattered field
+            }.get(dom_bot, 0.50)
+
+            if shifted:
+                _bot_field *= 0.70   # Sudden strategy change = disrupted field
+
+            # Surge amplifies coherence or dissonance; taper dampens
+            _energy_mult = 1.10 if energy_trend > 0.5 else (0.92 if energy_trend < -0.3 else 1.0)
+
+            # Strong directional flow = coherent field; neutral = scattered
+            _flow_clarity = {
+                'strong_buy_building':  0.80,
+                'strong_sell_building': 0.80,
+                'buy_fading':           0.55,
+                'sell_fading':          0.55,
+                'neutral':              0.45,
+            }.get(flow_pred, 0.50)
+
+            # Wave composite: bot structure + flow clarity + resonance polarity
+            _wave_coh = (
+                _bot_field   * 0.40 +
+                _flow_clarity * 0.35 +
+                max(0.0, min(1.0, 0.5 + res_score * 0.25)) * 0.25
+            ) * _energy_mult
+            _wave_coh = max(0.0, min(1.0, _wave_coh))
+
+            # Wave enriches the Oracle score (35% weight)
+            score = score * 0.65 + _wave_coh * 0.35
+            score = max(0.0, min(1.0, score))
+
+            details.update({
+                'wave_resonance_score':  res_score,
+                'wave_flow_prediction':  flow_pred,
+                'wave_dominant_bot':     dom_bot,
+                'wave_shape':            shape,
+                'wave_spectrum_shifted': shifted,
+            })
+
+            # Phase enrichment from wave data
+            if shifted:
+                phase    = "DISRUPTED"
+                dominant = f"Field DISRUPTED — bot spectrum shift ({dom_bot} dominant, {flow_pred})"
+            elif energy_trend > 0.5 and _wave_coh >= 0.65:
+                phase    = "SURGING"
+                dominant = f"Field SURGING — {dom_bot} bots at peak energy ({flow_pred})"
+            elif score >= 0.70 and not details.get("relay_count", 0) > 0:
+                phase    = "RESONATING"
+                dominant = f"Field resonating — {dom_bot} bots in structured flow ({flow_pred})"
+
+        # Confidence: highest when harmonic relays + wave scanner both present
+        _has_wave = bool(wave_ctx and wave_ctx.get('available'))
+        _has_relays = details.get("relay_count", 0) > 0
+        _harm_conf = (
+            0.90 if (_has_relays and _has_wave) else
+            0.80 if _has_wave else
+            0.75 if _has_relays else
+            0.50 if details else 0.30
+        )
 
         return OracleReading(
             oracle="HARMONY",
@@ -2821,6 +2896,7 @@ class AureonTheSeer:
         self._ticker_cache: Dict = {}
         self._market_data: Dict = {}
         self._trade_history: List = []
+        self._wave_ctx: dict = {}   # Ocean wave scanner — bot frequency signatures
 
         logger.info("Aureon the Seer has awakened. The Third Pillar stands. 9 Oracles active.")
 
@@ -2836,7 +2912,7 @@ class AureonTheSeer:
         with self._lock:
             gaia = self.oracle_gaia.read()
             cosmos = self.oracle_cosmos.read()
-            harmony = self.oracle_harmony.read(self._positions, self._ticker_cache)
+            harmony = self.oracle_harmony.read(self._positions, self._ticker_cache, self._wave_ctx)
             spirits = self.oracle_spirits.read(self._market_data)
             timeline = self.oracle_time.read(self._trade_history)
             runes = self.oracle_runes.read()
@@ -2901,6 +2977,15 @@ class AureonTheSeer:
                 self._market_data = market_data
             if trade_history is not None:
                 self._trade_history = trade_history
+
+    def inject_wave_context(self, wave_data: dict) -> None:
+        """
+        Feed ocean wave scanner results into the Seer's Oracles.
+        Called by MultiverseLearningBridge after every WaveformAnalyzer scan.
+        OracleOfHarmony reads bot frequency signatures from this context.
+        """
+        with self._lock:
+            self._wave_ctx = dict(wave_data) if wave_data else {}
 
     # ─────────────────────────────────────────────────────────
     # Autonomous Operation - The Seer Never Sleeps

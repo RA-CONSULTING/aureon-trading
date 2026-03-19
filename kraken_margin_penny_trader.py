@@ -1340,6 +1340,12 @@ class BattlefieldIntel:
                          (side == 'sell' and flow_pred == 'strong_sell_building'):
                         reasons.append(f"WAVE GOOD: {flow_pred} supports our {side}")
                         score += 1
+                # Push wave context to Seer, Lyra, King via learning bridge
+                if self.learning_bridge is not None and waveform_result.get('available'):
+                    try:
+                        self.learning_bridge.push_wave_context(waveform_result)
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.debug(f"Waveform analysis failed: {e}")
 
