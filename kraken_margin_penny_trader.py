@@ -175,6 +175,9 @@ BINANCE_TRADES_URL = "https://api.binance.com/api/v3/trades"
 BINANCE_AGG_TRADES_URL = "https://api.binance.com/api/v3/aggTrades"
 BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
 
+# Kraken public REST (no auth) - order book on our actual trading exchange
+KRAKEN_DEPTH_URL = "https://api.kraken.com/0/public/Depth"
+
 # === WAR INTELLIGENCE THRESHOLDS ===
 WHALE_WALL_USD = 50000        # $50K+ wall = whale detected
 WHALE_WALL_BLOCK_RATIO = 3.0  # Wall must be 3x average level size
@@ -184,6 +187,10 @@ FLEE_MOMENTUM_REVERSAL = -0.3 # % reversal per minute = danger
 FLEE_SPREAD_BLOWOUT = 0.5     # Spread > 0.5% = liquidity pulled
 FLEE_VOLUME_SPIKE = 5.0       # 5x normal volume = whale dump/pump
 INTEL_CACHE_SECONDS = 30      # How long intel stays fresh
+# Fake volume detection thresholds
+FAKE_VOL_VELOCITY_MIN = 0.5   # trades/sec below this vs high 24h vol = suspicious
+FAKE_VOL_BOOK_AGREE_MIN = 0.4 # book imbalance ratio (Binance vs Kraken) must agree within 40%
+SPREAD_DIVERGE_MAX = 0.5      # Binance/Kraken spread diff > 0.5% = manipulation signal
 
 # === WAVEFORM ANALYSIS THRESHOLDS ===
 WAVE_FFT_WINDOW = 256         # FFT window size (power of 2)
@@ -840,6 +847,58 @@ class BattlefieldIntel:
         self._cache_times[cache_key] = time.time()
         return result
 
+    def analyze_kraken_orderbook(self, kraken_pair: str) -> dict:
+        """
+        Fetch Kraken's OWN order book for the pair we actually trade on.
+        Compared against Binance depth to detect cross-exchange spoofing.
+        Returns: {
+            'bid_depth_usd': float, 'ask_depth_usd': float,
+            'imbalance': float,     # bid/ask ratio (>1 = more bids)
+            'best_bid': float, 'best_ask': float,
+            'spread_pct': float,    # Kraken native spread %
+            'available': bool,      # False if fetch failed
+        }
+        """
+        default = {'bid_depth_usd': 0, 'ask_depth_usd': 0, 'imbalance': 1.0,
+                   'best_bid': 0, 'best_ask': 0, 'spread_pct': 0, 'available': False}
+        if not kraken_pair:
+            return default
+        try:
+            url = f"{KRAKEN_DEPTH_URL}?pair={kraken_pair}&count=50"
+            req = urllib.request.Request(url)
+            req.add_header("User-Agent", "AureonWarIntel/1.0")
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read().decode())
+            if data.get("error"):
+                return default
+            result_key = list(data.get("result", {}).keys())
+            if not result_key:
+                return default
+            book = data["result"][result_key[0]]
+            bids = book.get("bids", [])
+            asks = book.get("asks", [])
+            if not bids or not asks:
+                return default
+            best_bid = float(bids[0][0])
+            best_ask = float(asks[0][0])
+            mid = (best_bid + best_ask) / 2
+            bid_depth = sum(float(p) * float(q) for p, q, _ in bids[:25])
+            ask_depth = sum(float(p) * float(q) for p, q, _ in asks[:25])
+            imbalance = bid_depth / ask_depth if ask_depth > 0 else 1.0
+            spread_pct = (best_ask - best_bid) / mid * 100 if mid > 0 else 0
+            return {
+                'bid_depth_usd': bid_depth,
+                'ask_depth_usd': ask_depth,
+                'imbalance': round(imbalance, 4),
+                'best_bid': best_bid,
+                'best_ask': best_ask,
+                'spread_pct': round(spread_pct, 4),
+                'available': True,
+            }
+        except Exception as e:
+            logger.debug(f"Kraken depth fetch failed ({kraken_pair}): {e}")
+            return default
+
     # ----------------------------------------------------------
     #  TRADE FLOW ANALYSIS (Bot Detection + Aggressor Side)
     # ----------------------------------------------------------
@@ -1061,23 +1120,26 @@ class BattlefieldIntel:
     # ----------------------------------------------------------
     #  PRE-STRIKE RESEARCH (Full Assessment Before Entry)
     # ----------------------------------------------------------
-    def pre_strike_research(self, symbol: str, side: str, required_move_pct: float) -> dict:
+    def pre_strike_research(self, symbol: str, side: str, required_move_pct: float,
+                            kraken_pair: str = "") -> dict:
         """
         Full battlefield research before entering a position.
-        Combine orderbook + trade flow + momentum into GO/NO-GO decision.
+        Combines Binance + Kraken order book depth, trade flow, momentum,
+        waveform, and cross-source volume validation into GO/NO-GO decision.
 
         Returns: {
             'verdict': str,        # 'GO', 'CAUTION', 'ABORT'
             'confidence': float,   # 0-1
             'reasons': [str],
-            'intel': {orderbook, trade_flow, momentum}
+            'intel': {orderbook, kraken_book, trade_flow, momentum}
         }
         """
         logger.info(f"INTEL: Running pre-strike research on {symbol} ({side.upper()})...")
 
-        orderbook = self.analyze_orderbook(symbol)
-        trade_flow = self.analyze_trade_flow(symbol)
-        momentum = self.analyze_momentum(symbol)
+        orderbook   = self.analyze_orderbook(symbol)         # Binance depth
+        kraken_book = self.analyze_kraken_orderbook(kraken_pair)  # Kraken depth
+        trade_flow  = self.analyze_trade_flow(symbol)
+        momentum    = self.analyze_momentum(symbol)
 
         reasons = []
         score = 0
@@ -1136,6 +1198,64 @@ class BattlefieldIntel:
 
         if trade_flow.get('large_trade_pct', 0) > 30:
             reasons.append(f"WARN: {trade_flow['large_trade_pct']:.0f}% volume from large trades (whale activity)")
+
+        # === CROSS-SOURCE VOLUME & ORDER BOOK VALIDATION ===
+        # Check all available sources to catch fake/wash-traded volume and spoofed books.
+        max_score += 2
+        velocity = trade_flow.get('trades_per_second', 0)
+        avg_trade_usd = trade_flow.get('avg_trade_usd', 0)
+        # Estimated 24h Binance USD volume from live trade rate
+        binance_vol_proxy = velocity * avg_trade_usd * 86400
+
+        # ── Kraken book cross-check ───────────────────────────────────────
+        if kraken_book.get('available'):
+            k_imb   = kraken_book.get('imbalance', 1.0)
+            b_imb   = orderbook.get('imbalance', 1.0)
+            k_sprd  = kraken_book.get('spread_pct', 0)
+            b_sprd  = (orderbook.get('best_ask', 0) - orderbook.get('best_bid', 0)) / \
+                      max(orderbook.get('best_bid', 1), 1) * 100
+
+            # Both exchanges agree on book direction?
+            k_bid_heavy = k_imb > 1.2
+            b_bid_heavy = b_imb > 1.2
+            k_ask_heavy = k_imb < 0.8
+            b_ask_heavy = b_imb < 0.8
+            books_agree = (k_bid_heavy == b_bid_heavy) or (k_ask_heavy == b_ask_heavy)
+
+            if books_agree:
+                reasons.append(
+                    f"GOOD: Binance+Kraken books agree (Binance imb={b_imb:.2f}, Kraken imb={k_imb:.2f})")
+                score += 1
+            else:
+                reasons.append(
+                    f"WARN: Books DIVERGE — Binance imb={b_imb:.2f} vs Kraken imb={k_imb:.2f} (possible spoofing)")
+
+            # Spread divergence between exchanges
+            spread_diff = abs(k_sprd - b_sprd)
+            if spread_diff > SPREAD_DIVERGE_MAX:
+                reasons.append(
+                    f"WARN: Spread divergence {spread_diff:.3f}% (Kraken={k_sprd:.3f}% Binance={b_sprd:.3f}%) "
+                    f"— liquidity fragmented or manipulation")
+                score -= 1
+            else:
+                reasons.append(
+                    f"GOOD: Spread consistent across exchanges ({spread_diff:.3f}% diff)")
+                score += 1
+        else:
+            reasons.append("INFO: Kraken depth unavailable — single-source book check only")
+
+        # ── Volume authenticity check ─────────────────────────────────────
+        # Low Binance trade velocity with a claimed high 24h volume = likely wash trading
+        if velocity > 0 and binance_vol_proxy > 0:
+            if velocity < FAKE_VOL_VELOCITY_MIN and avg_trade_usd < 200:
+                reasons.append(
+                    f"WARN: Very low trade velocity ({velocity:.2f}/s, avg ${avg_trade_usd:.0f}) "
+                    f"— volume may be inflated/wash-traded")
+                score -= 1
+            elif velocity >= 2.0:
+                reasons.append(
+                    f"GOOD: Healthy trade velocity {velocity:.2f}/s confirms real volume activity")
+                score += 1
 
         # === MOMENTUM CHECKS ===
         max_score += 3
@@ -1248,6 +1368,7 @@ class BattlefieldIntel:
             'reasons': reasons,
             'intel': {
                 'orderbook': orderbook,
+                'kraken_book': kraken_book,
                 'trade_flow': trade_flow,
                 'momentum': momentum,
                 'waveform': waveform_result,
@@ -2908,7 +3029,8 @@ class KrakenMarginArmyTrader:
         research = self.intel.pre_strike_research(
             symbol=pair_info.binance_symbol,
             side=side,
-            required_move_pct=required_move_pct
+            required_move_pct=required_move_pct,
+            kraken_pair=pair_info.pair,
         )
 
         verdict = research.get('verdict', 'ABORT')
@@ -2941,7 +3063,8 @@ class KrakenMarginArmyTrader:
         flip_research = self.intel.pre_strike_research(
             symbol=pair_info.binance_symbol,
             side=flip_side,
-            required_move_pct=required_move_pct
+            required_move_pct=required_move_pct,
+            kraken_pair=pair_info.pair,
         )
 
         fv = flip_research.get('verdict', 'ABORT')
