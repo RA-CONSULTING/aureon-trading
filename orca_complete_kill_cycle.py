@@ -3569,7 +3569,7 @@ class LivePosition:
     breakeven_price: float
     target_price: float
     client: object = None  # Client for THIS position's exchange
-    entry_time: float = field(default_factory=time.time)  # Changed to timestamp
+    entry_time: float = field(default_factory=_time.time)  # Changed to timestamp
     current_price: float = 0.0
     current_pnl: float = 0.0
     current_pnl_pct: float = 0.0
@@ -3608,7 +3608,7 @@ class MarketOpportunity:
     volume: float
     momentum_score: float
     fee_rate: float
-    timestamp: float = field(default_factory=time.time)
+    timestamp: float = field(default_factory=_time.time)
 
 
 @dataclass
