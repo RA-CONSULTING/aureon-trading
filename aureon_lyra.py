@@ -676,7 +676,7 @@ class ChamberOfHarmony:
             except (ImportError, Exception):
                 pass
 
-    def read(self, positions: Dict = None, ticker_cache: Dict = None) -> ChamberReading:
+    def read(self, positions: Dict = None, ticker_cache: Dict = None, wave_ctx: dict = None) -> ChamberReading:
         self._load()
         scores = []
         frequency = LOVE_FREQUENCY
@@ -739,6 +739,73 @@ class ChamberOfHarmony:
         else:
             score = 0.5
 
+        # ── Ocean wave scanner — bot frequency signatures felt as emotional resonance ─
+        # Lyra feels the emotional tone of the market. Bots moving in structured,
+        # directional flow = harmonious field. Bot battles or sudden strategy shifts
+        # = emotional dissonance. Organic human flow = purest emotional signal.
+        if wave_ctx and wave_ctx.get('available'):
+            res_score  = wave_ctx.get('resonance_score', 0)        # -1 → +1
+            flow_pred  = wave_ctx.get('flow_prediction', 'neutral')
+            dom_bot    = wave_ctx.get('dominant_bot', 'organic')
+            shape      = wave_ctx.get('shape', 'mixed')
+            flow_vel   = wave_ctx.get('flow_velocity', 0)
+            shifted    = wave_ctx.get('spectrum_shifted', False)
+
+            # Emotional quality of each bot type
+            _emotional_quality = {
+                'organic':      0.85,   # Real humans = genuine emotion
+                'accumulator':  0.72,   # Whale conviction = strong intent
+                'market_maker': 0.55,   # Mechanical oscillation = muted feeling
+                'scalper':      0.48,   # Rapid noise = anxious frequency
+                'hft':          0.28,   # Machine noise = emotional static
+            }.get(dom_bot, 0.50)
+
+            if shifted:
+                _emotional_quality *= 0.65   # Sudden shift = emotional disruption
+
+            # Flow momentum as emotional energy level
+            _flow_emotion = {
+                'strong_buy_building':  0.80,
+                'strong_sell_building': 0.75,   # Strong sell = intense fear, still clear
+                'buy_fading':           0.55,
+                'sell_fading':          0.50,
+                'neutral':              0.42,
+            }.get(flow_pred, 0.50)
+
+            # Flow velocity intensity: higher absolute velocity = stronger emotional signal
+            _vel_amp = min(1.2, 1.0 + abs(flow_vel) * 0.2)
+
+            # Surge = heightened emotion; taper = emotional exhaustion
+            _shape_mult = 1.08 if shape == 'surge' else (0.92 if shape == 'taper' else 1.0)
+
+            _wave_emotion = (
+                _emotional_quality * 0.40 +
+                _flow_emotion      * 0.35 +
+                max(0.0, min(1.0, 0.5 + res_score * 0.25)) * 0.25
+            ) * _vel_amp * _shape_mult
+            _wave_emotion = max(0.0, min(1.0, _wave_emotion))
+
+            # Wave enriches chamber score (35% weight)
+            score = score * 0.65 + _wave_emotion * 0.35
+            score = max(0.0, min(1.0, score))
+
+            # Reflect wave frequency in emotional tone
+            if shifted:
+                frequency = 396.0   # Liberation/release frequency — field breaking
+            elif dom_bot == 'organic' and score >= 0.70:
+                frequency = 528.0   # Love frequency — pure human resonance
+            elif dom_bot == 'accumulator' and flow_pred == 'strong_buy_building':
+                frequency = 639.0   # Connection — whales and flow aligned
+
+            details.update({
+                'wave_resonance_score':  res_score,
+                'wave_flow_prediction':  flow_pred,
+                'wave_dominant_bot':     dom_bot,
+                'wave_shape':            shape,
+                'wave_flow_velocity':    flow_vel,
+                'wave_spectrum_shifted': shifted,
+            })
+
         # Determine phase
         if score >= 0.75:
             phase = "RESONATING"
@@ -753,6 +820,7 @@ class ChamberOfHarmony:
             phase = "DORMANT"
             dominant = "Harmonic field dormant"
 
+        _has_wave = bool(wave_ctx and wave_ctx.get('available'))
         return ChamberReading(
             chamber="HARMONY",
             timestamp=time.time(),
@@ -761,7 +829,7 @@ class ChamberOfHarmony:
             phase=phase,
             dominant_signal=dominant,
             details=details,
-            confidence=0.7 if scores else 0.3,
+            confidence=0.85 if (_has_wave and scores) else 0.70 if _has_wave else 0.70 if scores else 0.30,
         )
 
 
@@ -1216,6 +1284,7 @@ class AureonLyra:
         self._positions: Dict = {}
         self._ticker_cache: Dict = {}
         self._market_data: Dict = {}
+        self._wave_ctx: dict = {}   # Ocean wave scanner — bot frequency signatures
 
         logger.info("Aureon Lyra has awakened. The Fourth Pillar stands.")
 
@@ -1227,7 +1296,7 @@ class AureonLyra:
         with self._lock:
             emotion = self.chamber_emotion.read(self._market_data)
             earth = self.chamber_earth.read()
-            harmony = self.chamber_harmony.read(self._positions, self._ticker_cache)
+            harmony = self.chamber_harmony.read(self._positions, self._ticker_cache, self._wave_ctx)
             voice = self.chamber_voice.read()
             solfeggio = self.chamber_solfeggio.read(self._positions, self._ticker_cache)
             spirit = self.chamber_spirit.read(self._market_data)
@@ -1250,6 +1319,15 @@ class AureonLyra:
                 self._ticker_cache = ticker_cache
             if market_data is not None:
                 self._market_data = market_data
+
+    def inject_wave_context(self, wave_data: dict) -> None:
+        """
+        Feed ocean wave scanner results into Lyra's Chambers.
+        Called by MultiverseLearningBridge after every WaveformAnalyzer scan.
+        ChamberOfHarmony reads bot frequency signatures from this context.
+        """
+        with self._lock:
+            self._wave_ctx = dict(wave_data) if wave_data else {}
 
     def start_autonomous(self):
         """Start Lyra's autonomous resonance scanning."""

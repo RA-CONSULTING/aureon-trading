@@ -336,6 +336,35 @@ class KingEvaluator:
             "audit_alerts": data.get("audit_alerts", []),
         }
 
+        # ── Ocean wave scanner — bot attacks are systematic financial risk ────
+        # When bots are in strong dissonance and surging against our position,
+        # that's a systematic risk event that the King must factor into health.
+        wave_ctx = data.get('wave_ctx', {})
+        if wave_ctx.get('available'):
+            _wave_res   = wave_ctx.get('resonance_score', 0)
+            _wave_shape = wave_ctx.get('shape', 'mixed')
+            _wave_shift = wave_ctx.get('spectrum_shifted', False)
+            _wave_bot   = wave_ctx.get('dominant_bot', 'organic')
+
+            # Bot dissonance surge = systematic attack — reduce health score
+            if _wave_res < -0.5 and _wave_shape == 'surge':
+                score = max(0.10, score - 0.12)
+                shared_data['wave_risk'] = (
+                    f"Bot dissonance surge ({_wave_res:+.2f}) — "
+                    f"{_wave_bot} bots in full offensive, systematic risk elevated"
+                )
+            elif _wave_shift and _wave_res < -0.3:
+                score = max(0.10, score - 0.07)
+                shared_data['wave_risk'] = (
+                    f"Spectrum shift + dissonance ({_wave_res:+.2f}) — "
+                    f"bots changed strategy against us, elevated uncertainty"
+                )
+            elif _wave_res > 0.5:
+                shared_data['wave_favorable'] = (
+                    f"Bot harmony ({_wave_res:+.2f}) — "
+                    f"{_wave_bot} bots aligned with trade direction, risk reduced"
+                )
+
         # King's vote logic
         if king_health == "BANKRUPT":
             return PillarVote(

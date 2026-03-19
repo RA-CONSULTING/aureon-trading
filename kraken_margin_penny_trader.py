@@ -97,6 +97,22 @@ except ImportError:
     HAS_ORCHESTRATOR = False
     AutonomousOrchestrator = None
 
+# Goal Recorder — proof file for entry goal vs actual outcome
+try:
+    from margin_goal_recorder import MarginGoalRecorder
+    HAS_GOAL_RECORDER = True
+except ImportError:
+    HAS_GOAL_RECORDER = False
+    MarginGoalRecorder = None
+
+# Macro Intelligence — pre-execution market context (F&G, BTC trend, dominance, news)
+try:
+    from macro_intelligence import MacroIntelligence
+    HAS_MACRO_INTEL = True
+except ImportError:
+    HAS_MACRO_INTEL = False
+    MacroIntelligence = None
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -137,6 +153,20 @@ STATE_FILE = "kraken_margin_army_state.json"
 RESULTS_FILE = "kraken_margin_army_results.json"
 USD_QUOTES = {"USD", "ZUSD"}
 
+# ==============================================================
+#  ENTRY GOAL — maximize profit in the quickest time
+#  Applied ONLY at buy/entry selection. Never affects exit.
+# ==============================================================
+GOAL_TARGET_USD       = 1.27   # Profit we're hunting per trade (same as PROFIT_TARGET_USD)
+GOAL_MAX_ETA_MINUTES  = 15.0   # Ideal: reach profit within this many minutes
+# How goal scoring works:
+#   profit_velocity = (|momentum| * leverage) / required_move_pct
+#     — a dimensionless ratio: momentum-amplified-by-leverage vs. the move needed to profit
+#     — higher = asset is already moving fast enough (relative to target) to close quickly
+#   goal_score = capped and scaled profit_velocity, weighted 2x in total_score
+#   Result: the entry selector prefers signals where leverage × momentum covers the
+#   required move fastest — picking the most profitable signal in the least time.
+
 # Binance public API - FREE, no auth needed
 BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
 BINANCE_24H_URL = "https://api.binance.com/api/v3/ticker/24hr"
@@ -144,6 +174,9 @@ BINANCE_DEPTH_URL = "https://api.binance.com/api/v3/depth"
 BINANCE_TRADES_URL = "https://api.binance.com/api/v3/trades"
 BINANCE_AGG_TRADES_URL = "https://api.binance.com/api/v3/aggTrades"
 BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
+
+# Kraken public REST (no auth) - order book on our actual trading exchange
+KRAKEN_DEPTH_URL = "https://api.kraken.com/0/public/Depth"
 
 # === WAR INTELLIGENCE THRESHOLDS ===
 WHALE_WALL_USD = 50000        # $50K+ wall = whale detected
@@ -154,6 +187,10 @@ FLEE_MOMENTUM_REVERSAL = -0.3 # % reversal per minute = danger
 FLEE_SPREAD_BLOWOUT = 0.5     # Spread > 0.5% = liquidity pulled
 FLEE_VOLUME_SPIKE = 5.0       # 5x normal volume = whale dump/pump
 INTEL_CACHE_SECONDS = 30      # How long intel stays fresh
+# Fake volume detection thresholds
+FAKE_VOL_VELOCITY_MIN = 0.5   # trades/sec below this vs high 24h vol = suspicious
+FAKE_VOL_BOOK_AGREE_MIN = 0.4 # book imbalance ratio (Binance vs Kraken) must agree within 40%
+SPREAD_DIVERGE_MAX = 0.5      # Binance/Kraken spread diff > 0.5% = manipulation signal
 
 # === WAVEFORM ANALYSIS THRESHOLDS ===
 WAVE_FFT_WINDOW = 256         # FFT window size (power of 2)
@@ -810,6 +847,58 @@ class BattlefieldIntel:
         self._cache_times[cache_key] = time.time()
         return result
 
+    def analyze_kraken_orderbook(self, kraken_pair: str) -> dict:
+        """
+        Fetch Kraken's OWN order book for the pair we actually trade on.
+        Compared against Binance depth to detect cross-exchange spoofing.
+        Returns: {
+            'bid_depth_usd': float, 'ask_depth_usd': float,
+            'imbalance': float,     # bid/ask ratio (>1 = more bids)
+            'best_bid': float, 'best_ask': float,
+            'spread_pct': float,    # Kraken native spread %
+            'available': bool,      # False if fetch failed
+        }
+        """
+        default = {'bid_depth_usd': 0, 'ask_depth_usd': 0, 'imbalance': 1.0,
+                   'best_bid': 0, 'best_ask': 0, 'spread_pct': 0, 'available': False}
+        if not kraken_pair:
+            return default
+        try:
+            url = f"{KRAKEN_DEPTH_URL}?pair={kraken_pair}&count=50"
+            req = urllib.request.Request(url)
+            req.add_header("User-Agent", "AureonWarIntel/1.0")
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read().decode())
+            if data.get("error"):
+                return default
+            result_key = list(data.get("result", {}).keys())
+            if not result_key:
+                return default
+            book = data["result"][result_key[0]]
+            bids = book.get("bids", [])
+            asks = book.get("asks", [])
+            if not bids or not asks:
+                return default
+            best_bid = float(bids[0][0])
+            best_ask = float(asks[0][0])
+            mid = (best_bid + best_ask) / 2
+            bid_depth = sum(float(p) * float(q) for p, q, _ in bids[:25])
+            ask_depth = sum(float(p) * float(q) for p, q, _ in asks[:25])
+            imbalance = bid_depth / ask_depth if ask_depth > 0 else 1.0
+            spread_pct = (best_ask - best_bid) / mid * 100 if mid > 0 else 0
+            return {
+                'bid_depth_usd': bid_depth,
+                'ask_depth_usd': ask_depth,
+                'imbalance': round(imbalance, 4),
+                'best_bid': best_bid,
+                'best_ask': best_ask,
+                'spread_pct': round(spread_pct, 4),
+                'available': True,
+            }
+        except Exception as e:
+            logger.debug(f"Kraken depth fetch failed ({kraken_pair}): {e}")
+            return default
+
     # ----------------------------------------------------------
     #  TRADE FLOW ANALYSIS (Bot Detection + Aggressor Side)
     # ----------------------------------------------------------
@@ -1031,23 +1120,26 @@ class BattlefieldIntel:
     # ----------------------------------------------------------
     #  PRE-STRIKE RESEARCH (Full Assessment Before Entry)
     # ----------------------------------------------------------
-    def pre_strike_research(self, symbol: str, side: str, required_move_pct: float) -> dict:
+    def pre_strike_research(self, symbol: str, side: str, required_move_pct: float,
+                            kraken_pair: str = "") -> dict:
         """
         Full battlefield research before entering a position.
-        Combine orderbook + trade flow + momentum into GO/NO-GO decision.
+        Combines Binance + Kraken order book depth, trade flow, momentum,
+        waveform, and cross-source volume validation into GO/NO-GO decision.
 
         Returns: {
             'verdict': str,        # 'GO', 'CAUTION', 'ABORT'
             'confidence': float,   # 0-1
             'reasons': [str],
-            'intel': {orderbook, trade_flow, momentum}
+            'intel': {orderbook, kraken_book, trade_flow, momentum}
         }
         """
         logger.info(f"INTEL: Running pre-strike research on {symbol} ({side.upper()})...")
 
-        orderbook = self.analyze_orderbook(symbol)
-        trade_flow = self.analyze_trade_flow(symbol)
-        momentum = self.analyze_momentum(symbol)
+        orderbook   = self.analyze_orderbook(symbol)         # Binance depth
+        kraken_book = self.analyze_kraken_orderbook(kraken_pair)  # Kraken depth
+        trade_flow  = self.analyze_trade_flow(symbol)
+        momentum    = self.analyze_momentum(symbol)
 
         reasons = []
         score = 0
@@ -1106,6 +1198,64 @@ class BattlefieldIntel:
 
         if trade_flow.get('large_trade_pct', 0) > 30:
             reasons.append(f"WARN: {trade_flow['large_trade_pct']:.0f}% volume from large trades (whale activity)")
+
+        # === CROSS-SOURCE VOLUME & ORDER BOOK VALIDATION ===
+        # Check all available sources to catch fake/wash-traded volume and spoofed books.
+        max_score += 2
+        velocity = trade_flow.get('trades_per_second', 0)
+        avg_trade_usd = trade_flow.get('avg_trade_usd', 0)
+        # Estimated 24h Binance USD volume from live trade rate
+        binance_vol_proxy = velocity * avg_trade_usd * 86400
+
+        # ── Kraken book cross-check ───────────────────────────────────────
+        if kraken_book.get('available'):
+            k_imb   = kraken_book.get('imbalance', 1.0)
+            b_imb   = orderbook.get('imbalance', 1.0)
+            k_sprd  = kraken_book.get('spread_pct', 0)
+            b_sprd  = (orderbook.get('best_ask', 0) - orderbook.get('best_bid', 0)) / \
+                      max(orderbook.get('best_bid', 1), 1) * 100
+
+            # Both exchanges agree on book direction?
+            k_bid_heavy = k_imb > 1.2
+            b_bid_heavy = b_imb > 1.2
+            k_ask_heavy = k_imb < 0.8
+            b_ask_heavy = b_imb < 0.8
+            books_agree = (k_bid_heavy == b_bid_heavy) or (k_ask_heavy == b_ask_heavy)
+
+            if books_agree:
+                reasons.append(
+                    f"GOOD: Binance+Kraken books agree (Binance imb={b_imb:.2f}, Kraken imb={k_imb:.2f})")
+                score += 1
+            else:
+                reasons.append(
+                    f"WARN: Books DIVERGE — Binance imb={b_imb:.2f} vs Kraken imb={k_imb:.2f} (possible spoofing)")
+
+            # Spread divergence between exchanges
+            spread_diff = abs(k_sprd - b_sprd)
+            if spread_diff > SPREAD_DIVERGE_MAX:
+                reasons.append(
+                    f"WARN: Spread divergence {spread_diff:.3f}% (Kraken={k_sprd:.3f}% Binance={b_sprd:.3f}%) "
+                    f"— liquidity fragmented or manipulation")
+                score -= 1
+            else:
+                reasons.append(
+                    f"GOOD: Spread consistent across exchanges ({spread_diff:.3f}% diff)")
+                score += 1
+        else:
+            reasons.append("INFO: Kraken depth unavailable — single-source book check only")
+
+        # ── Volume authenticity check ─────────────────────────────────────
+        # Low Binance trade velocity with a claimed high 24h volume = likely wash trading
+        if velocity > 0 and binance_vol_proxy > 0:
+            if velocity < FAKE_VOL_VELOCITY_MIN and avg_trade_usd < 200:
+                reasons.append(
+                    f"WARN: Very low trade velocity ({velocity:.2f}/s, avg ${avg_trade_usd:.0f}) "
+                    f"— volume may be inflated/wash-traded")
+                score -= 1
+            elif velocity >= 2.0:
+                reasons.append(
+                    f"GOOD: Healthy trade velocity {velocity:.2f}/s confirms real volume activity")
+                score += 1
 
         # === MOMENTUM CHECKS ===
         max_score += 3
@@ -1190,6 +1340,12 @@ class BattlefieldIntel:
                          (side == 'sell' and flow_pred == 'strong_sell_building'):
                         reasons.append(f"WAVE GOOD: {flow_pred} supports our {side}")
                         score += 1
+                # Push wave context to Seer, Lyra, King via learning bridge
+                if self.learning_bridge is not None and waveform_result.get('available'):
+                    try:
+                        self.learning_bridge.push_wave_context(waveform_result)
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.debug(f"Waveform analysis failed: {e}")
 
@@ -1218,6 +1374,7 @@ class BattlefieldIntel:
             'reasons': reasons,
             'intel': {
                 'orderbook': orderbook,
+                'kraken_book': kraken_book,
                 'trade_flow': trade_flow,
                 'momentum': momentum,
                 'waveform': waveform_result,
@@ -1307,12 +1464,13 @@ class BattlefieldIntel:
             try:
                 wave = self.waveform.full_scan(symbol, side)
                 if wave.get('available'):
-                    res_score = wave.get('resonance_score', 0)
-                    res_label = wave.get('resonance_label', 'neutral')
-                    shape = wave.get('shape', 'unknown')
-                    flow_pred = wave.get('flow_prediction', 'neutral')
-                    _ = wave.get('energy_trend', 0)
-                    shifted = wave.get('spectrum_shifted', False)
+                    res_score    = wave.get('resonance_score', 0)
+                    res_label    = wave.get('resonance_label', 'neutral')
+                    shape        = wave.get('shape', 'unknown')
+                    flow_pred    = wave.get('flow_prediction', 'neutral')
+                    energy_trend = wave.get('energy_trend', 0)
+                    flow_vel     = wave.get('flow_velocity', 0)
+                    shifted      = wave.get('spectrum_shifted', False)
 
                     # Strong dissonance = bots moving against us
                     if res_label == 'dissonance' and res_score < -0.4:
@@ -1323,6 +1481,25 @@ class BattlefieldIntel:
                     if shape == 'surge' and res_label == 'dissonance':
                         reasons.append(f"WAVE CRITICAL: Surge + dissonance — bots attacking our direction!")
                         danger += 2
+
+                    # Extreme energy surge (>1.5) with dissonance = all-out attack
+                    if energy_trend > 1.5 and res_label == 'dissonance':
+                        reasons.append(
+                            f"WAVE CRITICAL: Extreme energy surge ({energy_trend:+.2f}) "
+                            f"+ dissonance — full bot offensive against our position")
+                        danger += 1
+
+                    # Flow velocity building hard against our direction
+                    if side == 'buy' and flow_vel < -0.5:
+                        reasons.append(
+                            f"WAVE DANGER: Sell momentum accelerating fast "
+                            f"(flow_velocity={flow_vel:+.3f})")
+                        danger += 1
+                    elif side == 'sell' and flow_vel > 0.5:
+                        reasons.append(
+                            f"WAVE DANGER: Buy momentum accelerating fast "
+                            f"(flow_velocity={flow_vel:+.3f})")
+                        danger += 1
 
                     # Sell building when we're long (or vice versa)
                     if side == 'buy' and flow_pred == 'strong_sell_building':
@@ -2451,6 +2628,11 @@ class KrakenMarginArmyTrader:
             AutonomousOrchestrator(self)
             if HAS_ORCHESTRATOR else None
         )
+        # Goal Recorder — records every scan + outcome to margin_goal_proof.jsonl
+        self._goal_recorder = MarginGoalRecorder() if HAS_GOAL_RECORDER else None
+        self._pending_scan_id: str = ""
+        # Macro Intelligence — market-wide context fed into every entry decision
+        self.macro: object = MacroIntelligence() if HAS_MACRO_INTEL else None
         self._load_state()
 
     # ----------------------------------------------------------
@@ -2598,6 +2780,15 @@ class KrakenMarginArmyTrader:
                 f"[WaveRider] {self.wave_rider.status_line(equity, margin_used, 5)}"
             )
 
+        # ── MACRO INTELLIGENCE — fetch once, shapes all buy signals ─────────
+        _macro_ctx = {}
+        if self.macro is not None:
+            try:
+                _macro_ctx = self.macro.get_entry_context("")
+                logger.info(self.macro.summary_line(""))
+            except Exception:
+                pass
+
         candidates = []
         for _, info in self.margin_pairs.items():
             if info.last_price <= 0:
@@ -2702,11 +2893,110 @@ class KrakenMarginArmyTrader:
                  if info.binance_symbol else 0.0)
             )
             hive_bonus = float(_hive_factor) * 1.0   # Up to +1.0 score boost from harp
+
+            # ── ENTRY GOAL: maximize profit in quickest time ──────────────────
+            # profit_velocity = how much leverage × momentum covers the required
+            # move.  A velocity > 1.0 means the asset is already moving fast
+            # enough (leveraged) to hit the profit target in theory.
+            # Use live stream trade_velocity to weight if available; fall back
+            # to 24h momentum as a proxy for directional speed.
+            stream_velocity = 0.0
+            if self.stream and self.stream.is_alive() and info.binance_symbol:
+                _sf = self.stream.get_flow_snapshot(info.binance_symbol)
+                # Normalise: 20 trades/sec = maximum pressure signal
+                stream_velocity = min(_sf.get('trade_velocity', 0) / 20.0, 1.0)
+                # Directional alignment bonus: buy pressure on a buy side = faster
+                if side == 'buy':
+                    stream_velocity *= (_sf.get('buy_pct', 50) / 100.0)
+                else:
+                    stream_velocity *= (_sf.get('sell_pct', 50) / 100.0)
+
+            # Leverage × directional momentum vs. required move
+            # (required_move_pct == 0 guarded to avoid div/zero)
+            _req_safe = max(required_move_pct, 0.01)
+            profit_velocity = (abs(info.momentum) * max_lev) / _req_safe
+
+            # Estimated ETA in minutes: assume 24h momentum distributes evenly
+            # per minute → (|momentum| / 24h / 60) = % per minute.
+            # With leverage, actual PnL velocity is higher.
+            _pct_per_minute = abs(info.momentum) / (24 * 60) * max_lev
+            eta_minutes = (GOAL_TARGET_USD / trade_val * 100) / _pct_per_minute if _pct_per_minute > 0 else 999
+
+            # Goal score: reward signals that are heading to profit fastest.
+            # Blend profit_velocity (trend) + stream_velocity (live order flow).
+            _pv_capped = min(profit_velocity, 4.0)
+            _sv_scaled = stream_velocity * 2.0          # 0→2 bonus
+            # Extra bonus when ETA already inside target window
+            _eta_bonus = 1.0 if eta_minutes <= GOAL_MAX_ETA_MINUTES else 0.0
+            goal_score = (_pv_capped + _sv_scaled + _eta_bonus) * 0.5  # 0 → ~3.5
+
+            # ── MACRO BONUS — coin-specific context from MacroIntelligence ──────
+            # Coin's own 24h trend relative to BTC + Fear&Greed + dominance
+            macro_bonus = 0.0
+            if self.macro is not None and _macro_ctx:
+                try:
+                    _coin_ctx = self.macro.get_entry_context(info.pair)
+                    macro_bonus = _coin_ctx.get("macro_score", 0.0)  # -2.0 → +2.0
+                except Exception:
+                    pass
+
+            # ── WAVE BONUS — ocean wave scanner (cached, no new API calls) ───
+            # Reads the waveform result from the last pre_strike_research scan.
+            # Rewards coins where bot resonance is in harmony with our direction;
+            # penalises coins where bots are in active dissonance.
+            # Never triggers a new waveform fetch — uses cache only.
+            wave_bonus = 0.0
+            _waveform = getattr(self.intel, 'waveform', None)
+            if _waveform is not None and HAS_NUMPY and info.binance_symbol:
+                _wc = _waveform._spectral_cache.get(info.binance_symbol, {})
+                _wc_age = time.time() - _waveform._cache_times.get(
+                    f"wave_{info.binance_symbol}", 0)
+                if _wc.get('available') and _wc_age < 120:
+                    _res_score = _wc.get('resonance_score', 0)
+                    _res_label = _wc.get('resonance_label', 'neutral')
+                    _flow_pred = _wc.get('flow_prediction', 'neutral')
+                    _dom_bot   = _wc.get('dominant_bot', 'organic')
+                    _shape     = _wc.get('shape', 'mixed')
+
+                    # Resonance score: -1 → +1 (bots against us → bots with us)
+                    wave_bonus += _res_score * 1.0
+
+                    # Flow prediction alignment with our intended side
+                    _flow_align = {
+                        ('buy',  'strong_buy_building'):  0.5,
+                        ('buy',  'buy_fading'):           0.1,
+                        ('buy',  'strong_sell_building'): -0.5,
+                        ('sell', 'strong_sell_building'): 0.5,
+                        ('sell', 'sell_fading'):          0.1,
+                        ('sell', 'strong_buy_building'):  -0.5,
+                    }
+                    wave_bonus += _flow_align.get((side, _flow_pred), 0.0)
+
+                    # Dominant bot type quality (accumulator = whale, hft = noise)
+                    _bot_q = {'accumulator': 0.3, 'organic': 0.2,
+                              'scalper': 0.1, 'market_maker': 0.0, 'hft': -0.1}
+                    wave_bonus += _bot_q.get(_dom_bot, 0.0)
+
+                    # Energy surge: amplifies signal if aligned, worsens if hostile
+                    if _shape == 'surge':
+                        wave_bonus += 0.25 if _res_label == 'harmony' else -0.25
+
+                    wave_bonus = round(max(-2.0, min(2.0, wave_bonus)), 3)
+                    logger.debug(
+                        f"[Wave] {info.pair} {side}: res={_res_score:+.2f} "
+                        f"flow={_flow_pred} bot={_dom_bot} shape={_shape} "
+                        f"→ wave_bonus={wave_bonus:+.2f}"
+                    )
+
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
-                          + momentum_score + vol_score + conviction_bonus + hive_bonus)
+                          + momentum_score + vol_score + conviction_bonus + hive_bonus
+                          + goal_score * 2          # weight 2 — quickest profitable signal wins
+                          + macro_bonus * 1.5       # weight 1.5 — macro context shapes the battlefield
+                          + wave_bonus * 1.5)       # weight 1.5 — ocean wave scanner bot resonance
 
             candidates.append((info, side, vol, trade_val, max_lev,
-                              total_score, required_move_pct, round_trip_fee))
+                              total_score, required_move_pct, round_trip_fee,
+                              goal_score, eta_minutes))
 
         if not candidates:
             logger.info("No valid candidates found")
@@ -2721,30 +3011,43 @@ class KrakenMarginArmyTrader:
         if _mv_next:
             boosted = []
             for item in candidates:
-                info_obj, side, vol, tv, lev, score, req, fees = item
+                info_obj, side, vol, tv, lev, score, req, fees, gs, eta = item
                 bonus = 2.0 if info_obj.pair == _mv_next else 0.0
                 if bonus:
                     logger.info(
                         f"[Multiverse] Boosting {info_obj.pair} score by +{bonus:.1f} "
                         f"(scouted as next stallion)"
                     )
-                boosted.append((info_obj, side, vol, tv, lev, score + bonus, req, fees))
+                boosted.append((info_obj, side, vol, tv, lev, score + bonus, req, fees, gs, eta))
             candidates = boosted
 
         candidates.sort(key=lambda x: x[5], reverse=True)
 
-        logger.info("TOP 5 TARGETS:")
-        for i, (info, side, vol, tv, lev, score, req, fees) in enumerate(candidates[:5]):
+        logger.info(f"TOP 5 TARGETS (goal: ${GOAL_TARGET_USD:.2f} in <{GOAL_MAX_ETA_MINUTES:.0f}min):")
+        for i, (info, side, vol, tv, lev, score, req, fees, gs, eta) in enumerate(candidates[:5]):
+            eta_str = f"{eta:.0f}m" if eta < 999 else "∞"
             logger.info(
                 f"  #{i+1} {info.pair} {side.upper()} | "
                 f"${tv:.0f} notional ({lev}x) | mom={info.momentum:+.2f}% | "
-                f"spread={info.spread_pct:.3f}% | need={req:.3f}% move | "
-                f"fees=${fees:.2f} | score={score:.3f}"
+                f"spread={info.spread_pct:.3f}% | need={req:.3f}% | "
+                f"eta≈{eta_str} | goal={gs:.2f} | score={score:.3f}"
             )
 
         best = candidates[0]
         # Store top candidates for fallback if intel rejects #1
         self._last_candidates = candidates[:5]
+
+        # Record this scan to the proof file (all candidates + winner)
+        if self._goal_recorder is not None:
+            try:
+                self._pending_scan_id = self._goal_recorder.record_scan(
+                    candidates_raw=candidates,
+                    winner_pair=best[0].pair,
+                    winner_side=best[1],
+                )
+            except Exception:
+                pass
+
         return (best[0], best[1], best[2], best[3], best[4])
 
     # ----------------------------------------------------------
@@ -2764,6 +3067,13 @@ class KrakenMarginArmyTrader:
         if not pair_info.binance_symbol:
             logger.warning("No Binance symbol for intel - skipping research (CAUTION)")
             return (True, side)
+
+        # ── MACRO INTELLIGENCE — log context alongside the buy signal ────────
+        if self.macro is not None:
+            try:
+                logger.info(self.macro.summary_line(pair_info.pair))
+            except Exception:
+                pass
 
         # ── MULTIVERSE PRE-TRADE CONTEXT ─────────────────────────────────────
         # Before burning API calls on full research, check what the shadow herd
@@ -2794,7 +3104,8 @@ class KrakenMarginArmyTrader:
         research = self.intel.pre_strike_research(
             symbol=pair_info.binance_symbol,
             side=side,
-            required_move_pct=required_move_pct
+            required_move_pct=required_move_pct,
+            kraken_pair=pair_info.pair,
         )
 
         verdict = research.get('verdict', 'ABORT')
@@ -2827,7 +3138,8 @@ class KrakenMarginArmyTrader:
         flip_research = self.intel.pre_strike_research(
             symbol=pair_info.binance_symbol,
             side=flip_side,
-            required_move_pct=required_move_pct
+            required_move_pct=required_move_pct,
+            kraken_pair=pair_info.pair,
         )
 
         fv = flip_research.get('verdict', 'ABORT')
@@ -2939,6 +3251,13 @@ class KrakenMarginArmyTrader:
                 f"Entry: ~${price:,.4f} | Target: ${breakeven:,.4f} | "
                 f"Fees: ${total_fees:.2f} | Order: {order_id}"
             )
+            # Link this order_id to the scan that chose it
+            if self._goal_recorder is not None and self._pending_scan_id:
+                try:
+                    self._goal_recorder.link_order(self._pending_scan_id, order_id)
+                except Exception:
+                    pass
+                self._pending_scan_id = ""
             return trade
 
         except Exception as e:
@@ -3050,6 +3369,12 @@ class KrakenMarginArmyTrader:
                 "close_order_id": close_id,
             }
             self.completed_trades.append(completed)
+            # Record outcome against the scan that selected this trade
+            if self._goal_recorder is not None:
+                try:
+                    self._goal_recorder.record_outcome(trade.order_id, completed)
+                except Exception:
+                    pass
             self.total_trades += 1
             self.total_profit += net_pnl
             if net_pnl > 0:
@@ -4753,7 +5078,7 @@ class KrakenMarginArmyTrader:
         )
 
 
-
+def main():
     global PROFIT_TARGET_USD, MIN_PROFIT_USD
 
     parser = argparse.ArgumentParser(

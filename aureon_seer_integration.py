@@ -276,6 +276,14 @@ def seer_update_context(positions: Dict = None,
     )
 
 
+def seer_inject_wave_context(wave_data: dict) -> None:
+    """
+    Push ocean wave scanner results into the Seer's OracleOfHarmony.
+    Called by MultiverseLearningBridge.push_wave_context() after each scan.
+    """
+    _get_seer().inject_wave_context(wave_data)
+
+
 def seer_get_vision() -> Dict[str, Any]:
     """
     Get the Seer's latest vision. If no recent vision exists, take a new reading.
