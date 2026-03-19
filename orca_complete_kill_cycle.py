@@ -1574,7 +1574,7 @@ _kraken_rate_limit_lock = threading.Lock()
 def kraken_rate_limit_check() -> bool:
     """Check if we can make a Kraken API call without hitting rate limit."""
     global _kraken_call_times
-    now = time.time()
+    now = _time.time()
     with _kraken_rate_limit_lock:
         # Remove old calls outside window
         _kraken_call_times = [t for t in _kraken_call_times if now - t < _kraken_rate_limit_window]
@@ -1584,7 +1584,7 @@ def kraken_rate_limit_record():
     """Record a Kraken API call for rate limiting."""
     global _kraken_call_times
     with _kraken_rate_limit_lock:
-        _kraken_call_times.append(time.time())
+        _kraken_call_times.append(_time.time())
 
 def get_cached_price(symbol: str, exchange: str = 'any', max_age: float = 60.0) -> Optional[float]:
     """
@@ -1772,7 +1772,7 @@ class WarRoomDisplay:
         self.quantum_data = {}
         self.firms_data = {}
         self.kills_data = {'wins': 0, 'losses': 0, 'pnl': 0.0}
-        self.runtime_start = time.time()
+        self.runtime_start = _time.time()
         self.cycle_count = 0
         self.total_pnl = 0.0
         self.best_trade = 0.0
@@ -1828,7 +1828,7 @@ class WarRoomDisplay:
         #   Portfolio tracking
         self.portfolio_start_value = 0.0
         self.portfolio_peak_value = 0.0
-        self.session_start_time = time.time()
+        self.session_start_time = _time.time()
         
         #   Opportunity queue (top candidates waiting to be bought)
         self.opportunity_queue = []
@@ -1975,7 +1975,7 @@ class WarRoomDisplay:
     
     def _build_header(self) -> Panel:
         """Build the header panel with session stats."""
-        runtime = time.time() - self.runtime_start
+        runtime = _time.time() - self.runtime_start
         hrs, rem = divmod(runtime, 3600)
         mins, secs = divmod(rem, 60)
         
@@ -2501,7 +2501,7 @@ class WarRoomDisplay:
             
             # Last trade time
             if sh.get('last_trade_time'):
-                seconds_ago = int(time.time() - sh['last_trade_time'])
+                seconds_ago = int(_time.time() - sh['last_trade_time'])
                 health_text += f" | Last Trade: {seconds_ago}s ago"
             
             # Scanning status
@@ -2605,7 +2605,7 @@ class WarRoomDisplay:
         # Best trading hours
         if hasattr(self, 'hourly_performance') and self.hourly_performance:
             best_hour = max(self.hourly_performance.items(), key=lambda x: x[1].get('pnl', 0), default=(None, {}))
-            current_hour = time.localtime().tm_hour
+            current_hour = _time.localtime().tm_hour
             current_pnl = self.hourly_performance.get(current_hour, {}).get('pnl', 0)
             
             if best_hour[0] is not None and best_hour[1].get('pnl', 0) > 0:
@@ -2770,7 +2770,7 @@ class WarRoomDisplay:
             
             self.parallel_intel['systems_online'] = online_count
             self.parallel_intel['orchestrator_ready'] = orchestrator.is_ready()
-            self.parallel_intel['last_update'] = time.time()
+            self.parallel_intel['last_update'] = _time.time()
             
         except Exception:
             pass
@@ -2826,7 +2826,7 @@ class WarRoomDisplay:
                 'exchange': exchange or 'N/A',
                 'pnl': pnl,
                 'hold_time': int(hold_time),
-                'timestamp': time.time()
+                'timestamp': _time.time()
             })
             # Keep only last 10
             if len(self.recent_kills) > 10:
@@ -2834,7 +2834,7 @@ class WarRoomDisplay:
         
         # Update system health - last trade time
         if hasattr(self, 'system_health'):
-            self.system_health['last_trade_time'] = time.time()
+            self.system_health['last_trade_time'] = _time.time()
     
     def update_opportunity_queue(self, opportunities: list):
         """Update the opportunity queue with top candidates."""
@@ -2873,7 +2873,7 @@ class WarRoomDisplay:
             self.options_data['positions'] = positions
         if best_opportunity is not None:
             self.options_data['best_opportunity'] = best_opportunity
-        self.options_data['last_scan'] = time.time()
+        self.options_data['last_scan'] = _time.time()
     
     def update_predator(self, threat_level: str = None, front_run_rate: float = None,
                         top_predator: str = None, strategy_decay: bool = None):
@@ -2976,7 +2976,7 @@ class WarRoomDisplay:
             self.flash_alerts.append({
                 'message': message,
                 'type': alert_type,
-                'timestamp': time.time()
+                'timestamp': _time.time()
             })
             # Keep only last 10
             if len(self.flash_alerts) > 10:
@@ -3009,7 +3009,7 @@ class WarRoomDisplay:
     def record_hourly_pnl(self, pnl: float):
         """Record P&L for current hour."""
         if hasattr(self, 'hourly_performance'):
-            current_hour = time.localtime().tm_hour
+            current_hour = _time.localtime().tm_hour
             if current_hour not in self.hourly_performance:
                 self.hourly_performance[current_hour] = {'pnl': 0, 'trades': 0}
             self.hourly_performance[current_hour]['pnl'] += pnl
@@ -3072,7 +3072,7 @@ class WarRoomDisplay:
         if RICH_AVAILABLE:
             return
         
-        runtime = time.time() - self.runtime_start
+        runtime = _time.time() - self.runtime_start
         hrs, rem = divmod(runtime, 3600)
         mins, secs = divmod(rem, 60)
         
@@ -3180,7 +3180,7 @@ class WhaleIntelligenceTracker:
             if symbol not in self.whale_signals:
                 self.whale_signals[symbol] = []
             self.whale_signals[symbol].append({
-                'timestamp': time.time(),
+                'timestamp': _time.time(),
                 'type': thought.topic,
                 'data': thought.payload
             })
@@ -3219,7 +3219,7 @@ class WhaleIntelligenceTracker:
                 self.whale_signals[symbol] = []
             
             self.whale_signals[symbol].append({
-                'timestamp': time.time(),
+                'timestamp': _time.time(),
                 'type': 'live_trade.whale',
                 'data': {
                     'symbol': symbol,
@@ -3416,10 +3416,10 @@ class WhaleIntelligenceTracker:
         activities = self._simulate_firm_activity(symbol, current_price, price_change_pct)
         
         # Record to catalog and emit to ThoughtBus
-        if time.time() - self.last_market_scan > 5:  # Every 5 seconds
+        if _time.time() - self.last_market_scan > 5:  # Every 5 seconds
             self._record_firm_activity_to_catalog(symbol, activities, current_price)
             self._emit_thought(symbol, activities)
-            self.last_market_scan = time.time()
+            self.last_market_scan = _time.time()
         
         # Store activities for this symbol
         self.firm_activities[symbol] = activities
@@ -3503,7 +3503,7 @@ class WhaleIntelligenceTracker:
         # 5. Check ThoughtBus signals
         if symbol in self.whale_signals:
             recent = [s for s in self.whale_signals[symbol] 
-                     if time.time() - s['timestamp'] < 300]
+                     if _time.time() - s['timestamp'] < 300]
             if recent:
                 buy_count = sum(1 for s in recent if 'buy' in str(s.get('data', {})).lower() or 'bullish' in str(s.get('data', {})).lower())
                 sell_count = sum(1 for s in recent if 'sell' in str(s.get('data', {})).lower() or 'bearish' in str(s.get('data', {})).lower())
@@ -5082,7 +5082,7 @@ class OrcaKillCycle:
                     'qty': qty,
                     'duration_secs': duration_secs,
                     'success': pnl > 0,
-                    'timestamp': time.time()
+                    'timestamp': _time.time()
                 }
             ))
         except Exception as e:
@@ -5119,7 +5119,7 @@ class OrcaKillCycle:
                     'current_price': current_price,
                     'unrealized_pnl': unrealized_pnl,
                     'status': status,
-                    'timestamp': time.time()
+                    'timestamp': _time.time()
                 }
             ))
         except Exception as e:
@@ -5141,7 +5141,7 @@ class OrcaKillCycle:
                     'confidence': confidence,
                     'urgency': urgency,
                     'data': data,
-                    'timestamp': time.time()
+                    'timestamp': _time.time()
                 }
             ))
         except Exception as e:
@@ -5160,7 +5160,7 @@ class OrcaKillCycle:
                     'symbol': symbol,
                     'level': level,  # LOW, MEDIUM, HIGH, CRITICAL
                     'reason': reason,
-                    'timestamp': time.time()
+                    'timestamp': _time.time()
                 }
             ))
         except Exception as e:
@@ -5253,10 +5253,10 @@ class OrcaKillCycle:
                 self._intel_snapshot_cache[f'nexus:{symbol}'] = {
                     'probability': win_probability,
                     'confidence': confidence,
-                    'timestamp': time.time()
+                    'timestamp': _time.time()
                 }
                 # Track validated prediction history for 30s window
-                now = time.time()
+                now = _time.time()
                 history = self.prediction_buffer.get(symbol, [])
                 history.append({
                     'timestamp': now,
@@ -5330,7 +5330,7 @@ class OrcaKillCycle:
                 self._intel_snapshot_cache[f'coherence:{symbol}'] = {
                     'coherence': coherence,
                     'phase': branch_phase,
-                    'timestamp': time.time()
+                    'timestamp': _time.time()
                 }
             
             # Update orchestrator heartbeat
@@ -5351,7 +5351,7 @@ class OrcaKillCycle:
             self._intel_snapshot_cache[f'timeline:{symbol}'] = {
                 'prediction': prediction,
                 'days_ahead': days_ahead,
-                'timestamp': time.time()
+                'timestamp': _time.time()
             }
             
             # Update orchestrator heartbeat
@@ -5375,7 +5375,7 @@ class OrcaKillCycle:
                     'type': analysis_type,
                     'conclusion': conclusion,
                     'confidence': confidence,
-                    'timestamp': time.time()
+                    'timestamp': _time.time()
                 }
             
             # Update orchestrator heartbeat
@@ -5397,7 +5397,7 @@ class OrcaKillCycle:
                 'signal_type': signal_type,
                 'strength': strength,
                 'direction': direction,
-                'timestamp': time.time()
+                'timestamp': _time.time()
             }
             
             # Update orchestrator heartbeat
@@ -5416,7 +5416,7 @@ class OrcaKillCycle:
         Returns:
             Dict with intelligence data from all systems
         """
-        now = time.time()
+        now = _time.time()
         
         # Use cached snapshot if fresh enough
         if (now - self._intel_snapshot_time) < self._intel_cache_ttl:
@@ -5444,7 +5444,7 @@ class OrcaKillCycle:
         
         result = {
             'symbol': symbol,
-            'timestamp': time.time(),
+            'timestamp': _time.time(),
             'recommendation': 'NEUTRAL',
             'confidence': 0.5,
             'reasons': [],
@@ -5910,7 +5910,7 @@ class OrcaKillCycle:
             data = thought.data if hasattr(thought, 'data') else thought
             if isinstance(data, dict):
                 self.portfolio_state = {
-                    'timestamp': data.get('timestamp', time.time()),
+                    'timestamp': data.get('timestamp', _time.time()),
                     'totals': {
                         'total_value_usd': data.get('total_value_usd', 0),
                         'total_pnl_usd': data.get('total_pnl_usd', 0),
@@ -6001,9 +6001,9 @@ class OrcaKillCycle:
         def _days_held(ts):
             try:
                 if isinstance(ts, (int, float)) and 1e9 < ts < 2e9:
-                    return max(0, int((time.time() - ts) / 86400))
+                    return max(0, int((_time.time() - ts) / 86400))
                 if isinstance(ts, (int, float)) and ts > 1e12:
-                    return max(0, int((time.time() - ts / 1000) / 86400))
+                    return max(0, int((_time.time() - ts / 1000) / 86400))
             except Exception:
                 pass
             return -1
@@ -6024,7 +6024,7 @@ class OrcaKillCycle:
                 _resp = urllib.request.urlopen(_req, timeout=15)
                 for coin in json.loads(_resp.read()):
                     gecko_data[coin['id']] = coin
-                time.sleep(0.5)  # rate-limit courtesy
+                _time.sleep(0.5)  # rate-limit courtesy
             _safe_print(f"  📊 [INTEL] CoinGecko: {len(gecko_data)} coins enriched")
         except Exception as e:
             _safe_print(f"  📊 [INTEL] CoinGecko partial: {len(gecko_data)} coins ({e})")
@@ -6110,7 +6110,7 @@ class OrcaKillCycle:
             _bkey = os.environ.get('BINANCE_API_KEY', '')
             _bsec = os.environ.get('BINANCE_API_SECRET', '')
             if _bkey and _bsec:
-                _ts = str(int(time.time() * 1000))
+                _ts = str(int(_time.time() * 1000))
                 _query = f'recvWindow=60000&timestamp={_ts}'
                 _bsig = _hmac.new(_bsec.encode(), _query.encode(), _hashlib.sha256).hexdigest()
                 _burl = f'https://api.binance.com/api/v3/account?{_query}&signature={_bsig}'
@@ -6252,7 +6252,7 @@ class OrcaKillCycle:
 
         # ── Update internal state (same handler format) ──
         self.portfolio_state = {
-            'timestamp': time.time(),
+            'timestamp': _time.time(),
             'totals': {
                 'total_value_usd': totals['grand_total'],
                 'total_pnl_usd': total_pnl,
@@ -6261,7 +6261,7 @@ class OrcaKillCycle:
             },
             'exchanges': totals,
         }
-        self.portfolio_last_update = time.time()
+        self.portfolio_last_update = _time.time()
 
         _safe_print(
             f"  📊 [INTEL] Portfolio Intelligence: ${totals['grand_total']:.2f} total | "
@@ -6383,7 +6383,7 @@ class OrcaKillCycle:
                     price=price,
                     size=volume / price if price > 0 else 0,
                     side='buy' if change_pct > 0 else 'sell',
-                    timestamp=time.time(),
+                    timestamp=_time.time(),
                     exchange='mixed'
                 ) if HFT_ENGINE_AVAILABLE and HFTTick else None
                 
@@ -6413,7 +6413,7 @@ class OrcaKillCycle:
                     
                 # Get best trading hours
                 best_hours = self.elephant.get_best_trading_hours()
-                current_hour = time.localtime().tm_hour
+                current_hour = _time.localtime().tm_hour
                 if current_hour in best_hours:
                     result['quantum_boost'] *= 1.05  # Optimal time
                     result['optimal_hour'] = True
@@ -6925,7 +6925,7 @@ class OrcaKillCycle:
                         'coherence': min(1.0, opp.momentum_score / 100.0) if opp.momentum_score else 0.5,
                         'volatility': abs(opp.change_pct) / 100.0,
                         'sentiment': 0.5 + (opp.change_pct / 200.0),  # Normalize to 0-1
-                        'timestamp': int(time.time()),
+                        'timestamp': int(_time.time()),
                     }
                     # Feed to Probability Nexus
                     process_market_data([market_snapshot], symbol=opp.symbol)
@@ -8966,7 +8966,7 @@ class OrcaKillCycle:
         #   Normalize the order response first!
         normalized = self.normalize_order_response(order_result, exchange)
         
-        order_id = normalized.get('order_id', str(time.time()))
+        order_id = normalized.get('order_id', str(_time.time()))
         fill_price = normalized.get('filled_avg_price', 0)
         fill_qty = normalized.get('filled_qty', 0)
         
@@ -8990,7 +8990,7 @@ class OrcaKillCycle:
             'target_half_pct': breakeven_info['target_half_pct'],
             'target_1pct': breakeven_info['target_1pct'],
             'min_price_move_pct': breakeven_info['min_price_move_pct'],
-            'entry_time': time.time(),
+            'entry_time': _time.time(),
         }
         
         self.tracked_positions[symbol] = tracking_data
@@ -9063,7 +9063,7 @@ class OrcaKillCycle:
                     side='BUY',
                     exchange=exchange,
                     entry_price=fill_price,
-                    entry_time=time.time(),
+                    entry_time=_time.time(),
                     quantity=fill_qty,
                     entry_value=breakeven_info['entry_cost'],
                     coherence=0.0,
@@ -9105,7 +9105,7 @@ class OrcaKillCycle:
             try:
                 from orca_predator_detection import OrderEvent
                 order_event = OrderEvent(
-                    timestamp=time.time(),
+                    timestamp=_time.time(),
                     symbol=symbol,
                     side='buy',
                     price=fill_price,
@@ -10038,7 +10038,7 @@ class OrcaKillCycle:
             
             # Build price list from current price
             price_list = [price * (1 + 0.001 * i) for i in range(-20, 1)] if price > 0 else [1.0]
-            ts_now = time.time()
+            ts_now = _time.time()
             ts_list = [ts_now - (20-i) for i in range(21)]
             
             # Pass REAL Four Pillar data when available
@@ -10748,7 +10748,7 @@ class OrcaKillCycle:
             )
             
             if report:
-                self.last_sentience_check = time.time()
+                self.last_sentience_check = _time.time()
                 self.sentience_awakening_index = report.awakening_index if hasattr(report, 'awakening_index') else 0.0
                 
                 print(f"\n     SENTIENCE SCORE: {report.overall_sentience_score:.2f}")
@@ -11198,7 +11198,7 @@ class OrcaKillCycle:
             "action": action,
             "exchange": exchange,
             "symbol": symbol,
-            "timestamp": time.time()
+            "timestamp": _time.time()
         }
         if extra:
             record.update(extra)
@@ -11827,13 +11827,13 @@ class OrcaKillCycle:
         print(f"     Whale Signal: {self.whale_signal}")
         print("   Press Ctrl+C to abort...")
         
-        start = time.time()
+        start = _time.time()
         last_price = buy_price
         momentum_direction = 0
         consecutive_drops = 0
         
         try:
-            while (time.time() - start) < max_wait:
+            while (_time.time() - start) < max_wait:
                 # Get current price (FAST - 100ms intervals)
                 if exchange in ['binance', 'kraken']:
                     ticker = client.get_ticker(symbol)
@@ -11844,7 +11844,7 @@ class OrcaKillCycle:
                     if bids and len(bids) > 0:
                         current = float(bids[0].get('p', 0))
                     if current == 0:
-                        time.sleep(self.stream_interval)
+                        _time.sleep(self.stream_interval)
                         continue
                     
                     # Track momentum
@@ -11932,7 +11932,7 @@ class OrcaKillCycle:
                     #     print(f"\n\n  STOP LOSS HIT! ${current:,.2f} <= ${stop_price:,.2f}")
                     #     break
                     
-                time.sleep(self.stream_interval)  # 100ms streaming
+                _time.sleep(self.stream_interval)  # 100ms streaming
             else:
                 print("\n  Timeout - selling anyway")
                 position.kill_reason = 'TIMEOUT'
@@ -12013,7 +12013,7 @@ class OrcaKillCycle:
         print("="*60)
         
         #    EMIT KILL SIGNAL TO QUEEN
-        duration_secs = time.time() - position.entry_time if hasattr(position, 'entry_time') else 0
+        duration_secs = _time.time() - position.entry_time if hasattr(position, 'entry_time') else 0
         self.emit_kill_signal(
             symbol=symbol,
             exchange=self.exchange,
@@ -12486,7 +12486,7 @@ class OrcaKillCycle:
         
         try:
             while True:  # Infinite loop - only exit on user abort
-                current_time = time.time()
+                current_time = _time.time()
                 
                 #                                                            
                 # PERIODIC MARKET SCAN - LOOK FOR NEW OPPORTUNITIES
@@ -12979,7 +12979,7 @@ class OrcaKillCycle:
                     print(f"   Next scan in: {max(0, scan_interval - (current_time - last_scan_time)):.1f}s")
                     print(f"   Available targets remaining: {len(available_targets) - len(attempted_indices)}")
                 
-                time.sleep(monitor_interval)
+                _time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:
             print("\n\n  USER ABORT - Closing profitable positions only (skip losses)...")
@@ -13023,7 +13023,7 @@ class OrcaKillCycle:
         
         try:
             while positions:  # Loop forever until ALL positions exit properly
-                current_time = time.time()
+                current_time = _time.time()
                 
                 # Update whale intelligence periodically
                 whale_signals = {}
@@ -13178,7 +13178,7 @@ class OrcaKillCycle:
                     print("     ALL POSITIONS CLOSED - READY FOR NEXT ROUND!")
                     print(f"{'='*80}")
                 
-                time.sleep(monitor_interval)
+                _time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:
             print("\n\n  USER ABORT - Closing all positions...")
@@ -13512,7 +13512,7 @@ class OrcaKillCycle:
             'winning_trades': 0,
             'losing_trades': 0,
             'total_pnl': 0.0,
-            'start_time': time.time(),
+            'start_time': _time.time(),
             'best_trade': 0.0,
             'worst_trade': 0.0,
             'positions_closed': 0,
@@ -14095,7 +14095,7 @@ class OrcaKillCycle:
 
         try:
             while True:  #    INFINITE LOOP
-                current_time = time.time()
+                current_time = _time.time()
                 session_stats['cycles'] += 1
 
                 #   Update health status for container probes
@@ -14529,7 +14529,7 @@ class OrcaKillCycle:
                     # 🔐 ENIGMA SYMBOL MACHINE: re-discover every 30 min
                     if self.enigma_machine:
                         _ENIGMA_INTERVAL = 1800  # 30 minutes
-                        if time.time() - self._enigma_last_scan > _ENIGMA_INTERVAL:
+                        if _time.time() - self._enigma_last_scan > _ENIGMA_INTERVAL:
                             try:
                                 _report = self.enigma_machine.discover_all()
                                 if self.ocean_scanner:
@@ -14557,7 +14557,7 @@ class OrcaKillCycle:
                                             print(f"       ENIGMA SNIPER error ({new_sym}): {_snipe_err}")
                                 else:
                                     print(f"     🔐 ENIGMA: {_report.total_symbols:,} symbols catalogued (no new)")
-                                self._enigma_last_scan = time.time()
+                                self._enigma_last_scan = _time.time()
                             except Exception as e:
                                 print(f"      Enigma scan error: {e}")
 
@@ -15369,9 +15369,9 @@ class OrcaKillCycle:
                                 topic="orca.scan.plan",
                                 meta={"min_change_pct": min_change_pct, "positions": len(positions), "quantum_amp": quantum_stats['amplification']},
                             )
-                            scan_start = time.time()
+                            scan_start = _time.time()
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
-                            scan_time = time.time() - scan_start
+                            scan_time = _time.time() - scan_start
                             
                             #                                                    
                             #   RISING STARS SCAN - All intelligence systems combined!
@@ -15915,7 +15915,7 @@ class OrcaKillCycle:
                                     pass
                     
                     # Display header
-                    runtime = time.time() - session_stats['start_time']
+                    runtime = _time.time() - session_stats['start_time']
                     runtime_str = f"{int(runtime//3600)}h {int((runtime%3600)//60)}m {int(runtime%60)}s"
                     
                     print("\033[2J\033[H", end="")  # Clear screen
@@ -16118,7 +16118,7 @@ class OrcaKillCycle:
                                         pos.eta_calculator = ImprovedETACalculator()
                                     
                                     # Track P&L history for this position
-                                    pos.pnl_history.append((time.time(), net_pnl))
+                                    pos.pnl_history.append((_time.time(), net_pnl))
                                     # Keep last 60 samples (1 minute at 1Hz)
                                     if len(pos.pnl_history) > 60:
                                         pos.pnl_history = pos.pnl_history[-60:]
@@ -16199,7 +16199,7 @@ class OrcaKillCycle:
                                 try:
                                     symbol_base = pos.symbol.replace('USD', '').replace('/', '').upper()
                                     # Get current hour in UTC
-                                    current_hour = time.gmtime().tm_hour
+                                    current_hour = _time.gmtime().tm_hour
                                     # Estimate frequency based on price change (higher volatility = higher freq)
                                     est_frequency = 0.5 + abs(price_change_pct)
                                     # Use attribute_bot_to_firm method
@@ -16247,7 +16247,7 @@ class OrcaKillCycle:
                                 try:
                                     # Feed tick to HFT engine for harmonic analysis
                                     tick_data = {
-                                        'timestamp': time.time(),
+                                        'timestamp': _time.time(),
                                         'symbol': pos.symbol,
                                         'price': current,
                                         'volume': market_value,
@@ -16481,7 +16481,7 @@ class OrcaKillCycle:
                     try: _lyra_update_context({'cycle': session_stats['cycles'], 'positions': len(positions), 'pnl': session_stats['total_pnl']})
                     except Exception: pass
 
-                time.sleep(monitor_interval)
+                _time.sleep(monitor_interval)
                 
         except KeyboardInterrupt:
             print("\n\n" + "="*80)
@@ -16543,7 +16543,7 @@ class OrcaKillCycle:
                 print(f"\n     Kept {kept_count} positions open (underwater - waiting for profit)")
             
             # Final summary
-            runtime = time.time() - session_stats['start_time']
+            runtime = _time.time() - session_stats['start_time']
             runtime_str = f"{int(runtime//3600)}h {int((runtime%3600)//60)}m {int(runtime%60)}s"
             
             print("\n" + "="*80)
@@ -16605,7 +16605,7 @@ class OrcaKillCycle:
                             'current_pnl': 0.0,
                             'current_pnl_pct': 0.0,
                             'target_price': tp.get('breakeven_price', 0),
-                            'entry_time': tp.get('entry_time', time.time())
+                            'entry_time': tp.get('entry_time', _time.time())
                         })
 
             exchange_status = {}
@@ -16724,7 +16724,7 @@ class OrcaKillCycle:
             bot_count = len(systems_registry)
             
             state = {
-                "timestamp": time.time(),
+                "timestamp": _time.time(),
                 "session_stats": session_stats,
                 "positions": serializable_positions,
                 "active_count": len(positions),
@@ -17058,7 +17058,7 @@ class OrcaKillCycle:
         print(f"  Position sizing: ${amount_per_position:.2f} per trade ({risk_per_trade_pct}% risk on ${capital:.2f} capital)")
 
         # 3. Main trading loop
-        start_time = time.time()
+        start_time = _time.time()
         duration_seconds = duration_hours * 3600
         trades_executed = 0
         last_dashboard_update = 0
@@ -17068,7 +17068,7 @@ class OrcaKillCycle:
         print(f"  Duration: {duration_hours} hours, Check interval: {trade_interval_seconds}s")
         print("  Scanning for rising stars with intelligence systems...")
 
-        while time.time() - start_time < duration_seconds:
+        while _time.time() - start_time < duration_seconds:
             try:
                 # STAGE 1: Scan entire market for rising stars
                 market_opportunities = self.scan_entire_market(min_change_pct=min_change_pct, min_volume=500)
@@ -17091,7 +17091,7 @@ class OrcaKillCycle:
                         print(f"   {i+1}. {cand['symbol']} ({cand['confidence']:.2f}) - {cand['reason']}")
                 else:
                     print("  No rising stars found this scan...")
-                    time.sleep(trade_interval_seconds)
+                    _time.sleep(trade_interval_seconds)
                     continue
 
                 # STAGE 2: Execute trades for top candidates
@@ -17120,23 +17120,23 @@ class OrcaKillCycle:
                         print(f"   Hunt error for {symbol}: {e}")
 
                 # STAGE 3: Dashboard update
-                current_time = time.time()
+                current_time = _time.time()
                 if current_time - last_dashboard_update > dashboard_update_interval:
-                    self.update_warroom_dashboard(trades_executed, time.time() - start_time, duration_seconds)
+                    self.update_warroom_dashboard(trades_executed, _time.time() - start_time, duration_seconds)
                     last_dashboard_update = current_time
 
                 # Sleep between scans
-                time.sleep(trade_interval_seconds)
+                _time.sleep(trade_interval_seconds)
 
             except KeyboardInterrupt:
                 print("\n  War Room interrupted by user")
                 break
             except Exception as e:
                 print(f"   War Room error: {e}")
-                time.sleep(5)  # Brief pause on error
+                _time.sleep(5)  # Brief pause on error
 
         # Final dashboard update
-        self.update_warroom_dashboard(trades_executed, time.time() - start_time, duration_seconds)
+        self.update_warroom_dashboard(trades_executed, _time.time() - start_time, duration_seconds)
         print(f"   War Room completed: {trades_executed} trades executed")
 
     def execute_trade_decision(self, symbol: str, side: str, amount: float, confidence: float) -> bool:
@@ -17191,7 +17191,7 @@ class OrcaKillCycle:
         """
         try:
             state = {
-                "timestamp": time.time(),
+                "timestamp": _time.time(),
                 "trades_executed": trades_executed,
                 "elapsed_seconds": elapsed,
                 "total_duration_seconds": total_duration,
@@ -17447,7 +17447,7 @@ if __name__ == "__main__":
             # Keep alive for manual interaction
             import time
             while True:
-                time.sleep(1)
+                _time.sleep(1)
 
     except KeyboardInterrupt:
         print("\n\n   User interrupted Orca (Ctrl+C)")
