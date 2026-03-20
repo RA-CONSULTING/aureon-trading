@@ -4109,6 +4109,15 @@ class OrcaKillCycle:
             print("  Prime Sentinel Decree LOADED - Control reclaimed")
         except Exception:
             pass
+
+        # 9b. Macro Intelligence (Fear & Greed + CoinGecko trends)
+        self.macro_intel = None
+        try:
+            from macro_intelligence import MacroIntelligence
+            self.macro_intel = MacroIntelligence()
+            print("  Macro Intelligence: WIRED! (Fear/Greed + CoinGecko + Dominance)")
+        except Exception:
+            pass
         
         #                                                                    
         #   COST TRACKING SYSTEMS - KNOW EXACTLY WHEN TO SELL!
@@ -7408,6 +7417,109 @@ class OrcaKillCycle:
                     print(f"     {_pso.symbol} ({_pso.exchange})  leader={getattr(_pso,'_correlation_leader','?')}"
                           f"  remaining={getattr(_pso,'_correlation_remaining',0):+.2f}%"
                           f"  corr={getattr(_pso,'_correlation_strength',0):.0%}")
+
+        # ═══════════════════════════════════════════════════════════════════════
+        #  UNIFIED SIGNAL ENGINE
+        #  Links ALL signal layers → per-asset unified score → top pick per group
+        # ═══════════════════════════════════════════════════════════════════════
+        if opportunities:
+            # ── Lazy-init engine and news fetcher ───────────────────────────
+            if not hasattr(self, '_unified_signal_engine'):
+                try:
+                    from unified_signal_engine import UnifiedSignalEngine as _USE
+                    self._unified_signal_engine = _USE()
+                except Exception as _use_init_err:
+                    self._unified_signal_engine = None
+                    print(f"     UnifiedSignalEngine init failed: {_use_init_err}")
+
+            if not hasattr(self, '_news_signal_fetcher'):
+                try:
+                    from news_signal import get_news_signal as _get_ns
+                    self._news_signal_fetcher = _get_ns   # callable, lazy background fetch
+                except Exception as _ns_init_err:
+                    self._news_signal_fetcher = None
+
+            if self._unified_signal_engine:
+                try:
+                    # ── Gather inputs ────────────────────────────────────────
+                    _use_regime    = 'NEUTRAL'
+                    _use_cat_moves: dict = {}
+                    if hasattr(self, '_cross_asset_correlator') and self._cross_asset_correlator:
+                        _sym_chg_map = {o.symbol: o.change_pct for o in opportunities}
+                        _use_regime    = self._cross_asset_correlator.get_regime(_sym_chg_map)
+                        _use_cat_moves = self._cross_asset_correlator.get_category_moves(_sym_chg_map)
+
+                    # Market Harp boosts (pre-computed in run_autonomous; fall back to empty)
+                    _use_harp = getattr(self, '_last_harp_boosts', {}) or {}
+
+                    # News sentiment (background-fetched, never blocks)
+                    _use_news: dict = {}
+                    _use_geo_risk   = 'NORMAL'
+                    if self._news_signal_fetcher:
+                        try:
+                            _ns_result     = self._news_signal_fetcher()
+                            _use_news      = dict(_ns_result.sentiment)
+                            _use_geo_risk  = _ns_result.risk_level
+                            if abs(_ns_result.geo_risk) >= 0.3 or _ns_result.themes:
+                                print(f"\n  NEWS: {_ns_result.summary()}")
+                        except Exception:
+                            pass
+
+                    # Macro score
+                    _use_macro  = 0.0
+                    _use_fg     = 50
+                    if hasattr(self, 'macro_intel') and self.macro_intel:
+                        try:
+                            _mc = self.macro_intel.get_entry_context('')
+                            _use_macro = float(_mc.get('macro_score', 0.0))
+                            _use_fg    = int(_mc.get('fear_greed', 50))
+                        except Exception:
+                            pass
+
+                    # ── Run the engine ───────────────────────────────────────
+                    _use_bundle = self._unified_signal_engine.process(
+                        opportunities   = opportunities,
+                        regime          = _use_regime,
+                        category_moves  = _use_cat_moves,
+                        harp_boosts     = _use_harp,
+                        news_sentiment  = _use_news,
+                        macro_score     = _use_macro,
+                        fear_greed      = _use_fg,
+                        geo_risk_level  = _use_geo_risk,
+                    )
+
+                    # ── Print group dashboard ────────────────────────────────
+                    print()
+                    for _line in _use_bundle.summary_lines:
+                        print(_line)
+
+                    # ── Apply unified boosts back to momentum_score ──────────
+                    _sig_map = {s.symbol: s for s in _use_bundle.signals}
+                    for _opp in opportunities:
+                        _usig = _sig_map.get(_opp.symbol)
+                        if _usig:
+                            _boost = _usig.pipeline_boost
+                            _opp.momentum_score *= _boost
+                            # Tag the opportunity for downstream visibility
+                            _opp._unified_direction  = _usig.direction
+                            _opp._unified_confidence = _usig.confidence
+                            _opp._unified_group_rank = _usig.group_rank
+
+                    # ── Store top picks for the buy loop ─────────────────────
+                    self._unified_top_picks = _use_bundle.top_per_group
+
+                    # ── Re-sort after boosts ──────────────────────────────────
+                    opportunities.sort(key=lambda o: o.momentum_score, reverse=True)
+
+                    print(f"\n  UNIFIED TOP PICKS (strongest per group, all signals combined):")
+                    for _cat, _top in _use_bundle.top_per_group.items():
+                        if _top and _top.direction in ('BUY', 'NEUTRAL'):
+                            print(f"     {_cat.upper():10s}  {_top.symbol:12s} @ {_top.exchange:7s}"
+                                  f"  {_top.direction}  conf={_top.confidence:.0%}"
+                                  f"  chg={_top.change_pct:+.2f}%")
+
+                except Exception as _use_err:
+                    print(f"     UnifiedSignalEngine error (non-blocking): {_use_err}")
 
         return opportunities
     
@@ -15259,6 +15371,8 @@ class OrcaKillCycle:
                             if _market_harp is not None:
                                 try:
                                     _harp_boosts = _market_harp.tick(batch_prices or {})
+                                    # Cache for unified_signal_engine to use in scan_entire_market
+                                    self._last_harp_boosts = _harp_boosts
                                     if _harp_boosts:
                                         _intel_active += 1
                                         for _hsym, _hfactor in _harp_boosts.items():
