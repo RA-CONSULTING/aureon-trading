@@ -7003,8 +7003,97 @@ class OrcaKillCycle:
                     print(f"     Micro-Momentum: Added {len(micro_signals)} scalp targets")
             except Exception as e:
                 print(f"      Micro-Scanner Failed: {e}")
-        
-        #                                                                    
+
+        # ═══════════════════════════════════════════════════════════════════════
+        #  CROSS-ASSET CORRELATION ENGINE
+        #  Groups all assets by category, detects market regime, and generates
+        #  PRE-SIGNAL opportunities: leader already moved, follower hasn't yet.
+        #  e.g. BTC pumps 0.5% → ETH/SOL/ADA pre-signal before they move
+        #       NAS100 runs  → AAPL/NVDA/MSFT pre-signal
+        #       Gold spikes  → US500 short-side warning
+        # ═══════════════════════════════════════════════════════════════════════
+        if not hasattr(self, '_cross_asset_correlator'):
+            try:
+                from cross_asset_correlator import CrossAssetCorrelator as _CAC
+                self._cross_asset_correlator = _CAC()
+            except Exception as _cac_init_err:
+                self._cross_asset_correlator = None
+                print(f"     Cross-Asset Correlator init failed: {_cac_init_err}")
+
+        if self._cross_asset_correlator:
+            try:
+                _ca_corr = self._cross_asset_correlator
+
+                # Build lookup maps from all already-discovered opportunities
+                _ca_change   = {o.symbol: o.change_pct for o in opportunities}
+                _ca_price    = {o.symbol: o.price      for o in opportunities}
+                _ca_exchange = {o.symbol: o.exchange   for o in opportunities}
+                _ca_existing = {o.symbol for o in opportunities}
+
+                # Feed into rolling history
+                _ca_corr.update_batch(_ca_change)
+
+                # ── Regime + category table ──────────────────────────────────
+                _ca_regime   = _ca_corr.get_regime(_ca_change)
+                _ca_cat      = _ca_corr.get_category_moves(_ca_change)
+                print(f"\n{_ca_corr.format_category_table(_ca_change)}")
+
+                # ── Correlation summary: what's moving together / opposite ───
+                _moving_cats = {c: m for c, m in _ca_cat.items() if abs(m) >= 0.20}
+                if _moving_cats:
+                    _cat_pairs = []
+                    _cat_items = sorted(_moving_cats.items(), key=lambda x: abs(x[1]), reverse=True)
+                    for _ci, (_cat_n, _cat_m) in enumerate(_cat_items[:4]):
+                        _arrow = '↑' if _cat_m > 0 else '↓'
+                        _cat_pairs.append(f"{_cat_n.upper()}:{_cat_m:+.1f}%{_arrow}")
+                    print(f"     Moving categories: {' | '.join(_cat_pairs)}")
+
+                # ── Pre-signal detection ──────────────────────────────────────
+                _ca_presigs = _ca_corr.get_pre_signals(
+                    _ca_change, _ca_price, _ca_exchange, _ca_existing
+                )
+
+                if _ca_presigs:
+                    print(f"\n  PRE-SIGNALS  ({len(_ca_presigs)} correlation-driven — leader already moved):")
+                    _ca_added = 0
+                    for _ps in _ca_presigs:
+                        _dir = '+' if _ps.remaining_pct > 0 else '-'
+                        print(f"     [{_ps.category.upper():9s}]  {_ps.follower:6s} @ {_ps.follower_exchange.upper():7s}"
+                              f"  expected {_ps.remaining_pct:+.2f}% remaining"
+                              f"  ← {_ps.leader} moved {_ps.leader_move_pct:+.2f}%"
+                              f"  corr={_ps.correlation:.0%}  lag≈{_ps.lag_seconds}s")
+
+                        # Add as MarketOpportunity so it flows through quantum + gates
+                        _ps_price = _ca_price.get(_ps.follower_symbol, 0.0)
+                        # momentum_score: remaining * correlation * 25 → typically 3–8 range
+                        _ps_mscore = abs(_ps.remaining_pct) * _ps.correlation * 25.0
+                        _ps_opp = MarketOpportunity(
+                            symbol=_ps.follower_symbol,
+                            exchange=_ps.follower_exchange,
+                            price=_ps_price,
+                            change_pct=_ps.already_moved_pct,
+                            volume=0.0,
+                            momentum_score=_ps_mscore,
+                            fee_rate=self.fee_rates.get(_ps.follower_exchange, 0.0025),
+                        )
+                        # Tag for visibility
+                        _ps_opp._correlation_signal  = True
+                        _ps_opp._correlation_leader  = _ps.leader
+                        _ps_opp._correlation_strength = _ps.correlation
+                        _ps_opp._correlation_remaining = _ps.remaining_pct
+                        opportunities.append(_ps_opp)
+                        _ca_existing.add(_ps.follower_symbol)
+                        _ca_added += 1
+
+                    if _ca_added:
+                        print(f"     Injected {_ca_added} pre-signals into opportunity pipeline")
+                else:
+                    print(f"     No cross-asset pre-signals (all followers in sync with leaders)")
+
+            except Exception as _ca_err:
+                print(f"     Cross-Asset Correlator error (non-blocking): {_ca_err}")
+
+        #
         #   QUANTUM ENHANCEMENT - Apply luck field + LIMBO probability boost
         #    HNC SURGE +     HISTORICAL MANIPULATION FILTER!
         #                                                                    
@@ -7309,6 +7398,16 @@ class OrcaKillCycle:
             for _ex_name, _ex_opps in _exchanges_seen.items():
                 if _ex_name not in ('alpaca', 'kraken', 'capital', 'binance'):
                     print(f"     {_ex_name.upper():10s}  {len(_ex_opps)} signals")
+
+        # Mark any pre-signals in the top-5 so user can see them clearly
+        if opportunities:
+            _presig_in_top = [o for o in opportunities[:10] if getattr(o, '_correlation_signal', False)]
+            if _presig_in_top:
+                print(f"\n  PRE-SIGNALS in top-10 ranked opportunities:")
+                for _pso in _presig_in_top:
+                    print(f"     {_pso.symbol} ({_pso.exchange})  leader={getattr(_pso,'_correlation_leader','?')}"
+                          f"  remaining={getattr(_pso,'_correlation_remaining',0):+.2f}%"
+                          f"  corr={getattr(_pso,'_correlation_strength',0):.0%}")
 
         return opportunities
     
