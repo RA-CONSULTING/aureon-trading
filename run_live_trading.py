@@ -158,10 +158,11 @@ def main():
     print("     • Node weights optimized (Deer, Panda, Falcon boosted)")
     print("  ✅ Logging system active")
     print("\n⚠️  THIS WILL EXECUTE REAL TRADES WITH REAL MONEY")
-    
 
-        return
-    
+    if not args.auto_confirm:
+        if not confirm_live_trading():
+            return
+
     print("\n✅ LIVE TRADING CONFIRMED")
     print("="*80)
     

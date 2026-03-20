@@ -383,7 +383,10 @@ class AureonHistoricalLive:
             'winning_trades': 0,
             'losing_trades': 0,
             'total_profit': 0.0,
-            'patterns_used': {}
+            'patterns_used': {},
+            'ecosystem_predictions': 0,
+            'mycelium_signals': 0,
+            'immune_interventions': 0
         }
         
         print(f"\n💰 Starting Capital: £{self.current_capital:,.2f}")
@@ -487,24 +490,9 @@ class AureonHistoricalLive:
             # Check each historical pattern
             for pattern in self.historical_patterns:
                 confidence = pattern.matches_market_conditions(market['data'])
-                
+
                 if confidence > 0.75:  # 75%+ confidence threshold
-                    # Publish pattern detection to ecosystem
-                    self.publish_thought("pattern.detected", {
-                        "pattern_id": pattern.pattern_id,
-                        "symbol": market['symbol'],
-                        "confidence": confidence,
-                        "entry_price": entry_price,
-                        "predicted_return": pattern.avg_profit_pct
-                    })
-                    
-                    signals.append(signal)
-        
-        # Publish scan complete
-        self.publish_thought("historical.scan_complete", {
-            "signals_found": len(signals),
-            "timestamp": time.time()
-        }bility systems
+                    # Enhance with probability systems
                     if self.ultimate_intel:
                         try:
                             prediction = self.ultimate_intel.predict(
@@ -514,17 +502,17 @@ class AureonHistoricalLive:
                                 momentum_score=market['data'].get('momentum', 0.5)
                             )
                             confidence = max(confidence, prediction.pattern_confidence)
-                        except:
+                        except Exception:
                             pass
-                    
+
                     # Create signal
                     entry_price = market['price']
                     predicted_target = entry_price * (1 + pattern.avg_profit_pct)
                     predicted_stop = entry_price * (1 - pattern.avg_loss_pct)
-                    
+
                     # Position sizing based on confidence and capital
                     position_size_pct = self.calculate_position_size(pattern, confidence)
-                    
+
                     signal = LiveSignal(
                         timestamp=time.time(),
                         pattern=pattern,
@@ -537,9 +525,24 @@ class AureonHistoricalLive:
                         position_size_pct=position_size_pct,
                         reason=f"{pattern.scenario.upper()} pattern ({pattern.win_rate*100:.0f}% historical win rate)"
                     )
-                    
+
+                    # Publish pattern detection to ecosystem
+                    self.publish_thought("pattern.detected", {
+                        "pattern_id": pattern.pattern_id,
+                        "symbol": market['symbol'],
+                        "confidence": confidence,
+                        "entry_price": entry_price,
+                        "predicted_return": pattern.avg_profit_pct
+                    })
+
                     signals.append(signal)
-        
+
+        # Publish scan complete
+        self.publish_thought("historical.scan_complete", {
+            "signals_found": len(signals),
+            "timestamp": time.time()
+        })
+
         return signals
     
     async def get_market_data(self) -> List[Dict]:
@@ -635,83 +638,13 @@ class AureonHistoricalLive:
     async def get_alpaca_markets(self) -> List[Dict]:
         """Get Alpaca market data"""
         # TODO: Implement real Alpaca API calls
-        retuself.publish_thought("trade.skipped", {
-                "symbol": signal.symbol,
-                "reason": reason,
-                "pattern": signal.pattern.pattern_id
-            })
-            return None
-        
-        # 🛡️ Check with Immune System for approval
-        if self.immune_system:
-            try:
-                approval = self.immune_system.check_trade_health({
-                    'symbol': signal.symbol,
-                    'size': signal.position_size_pct * self.current_capital,
-                    'confidence': signal.confidence
-                })
-                if not approval.get('approved', True):
-                    print(f"🛡️  BLOCKED by Immune System: {approval.get('reason')}")
-                    self.stats['immune_interventions'] += 1
-                    return None
-            except:
-                pass
-        
-        # Calculate position size in capital
-        position_size = self.current_capital * signal.position_size_pct
-        
-        print(f"\n🎯 EXECUTING SIGNAL:")
-        print(f"   Pattern: {signal.pattern.pattern_id}")
-        print(f"   Symbol: {signal.symbol} @ {signal.exchange}")
-        print(f"   Confidence: {signal.confidence*100:.1f}%")
-        print(f"   Entry: £{signal.entry_price:,.2f}")
-        print(f"   Target: £{signal.predicted_target:,.2f} (+{signal.pattern.avg_profit_pct*100:.1f}%)")
-        print(f"   Stop: £{signal.predicted_stop:,.2f} (-{signal.pattern.avg_loss_pct*100:.1f}%)")
-        print(f"   Size: £{position_size:,.2f} ({signal.position_size_pct*100:.0f}%)")
-        
-        # Publish execution to ecosystem
-        self.publish_thought("trade.executing", {
-            "pattern": signal.pattern.pattern_id,
-            "symbol": signal.symbol,
-            "entry_price": signal.entry_price,
-            "position_size": position_size,
-            "confidence": signal.confidence
-        })
-        
-        # TODO: Execute real trade via exchange API
-        # For now, create position object
-        
-        position = LivePosition(
-            signal=signal,
-            entry_time=time.time(),
-            entry_price=signal.entry_price,
-            position_size=position_size,
-            current_price=signal.entry_price,
-            unrealized_pnl=0.0,
-            unrealized_pnl_pct=0.0
-        )
-        
-        self.positions.append(position)
-        self.day_trades_used += 1
-        
-        # Track pattern usage
-        pattern_id = signal.pattern.pattern_id
-        self.stats['patterns_used'][pattern_id] = self.stats['patterns_used'].get(pattern_id, 0) + 1
-        
-        print(f"   ✅ Position opened (Day trades: {self.day_trades_used} - UNLIMITED)")
-        
-        # Publish position opened
-        self.publish_thought("position.opened", {
-            "pattern": signal.pattern.pattern_id,
-            "symbol": signal.symbol,
-            "entry_price": signal.entry_price,
-            "position_size": position_size
-        }
-        
+        return []
+
+    def can_trade(self):
+        """Check if we can open a new trade"""
         # NO PDT RESTRICTIONS - Full production autonomous trading (unlimited)
-        
         return True, "OK"
-    
+
     async def execute_signal(self, signal: LiveSignal) -> Optional[LivePosition]:
         """Execute a trading signal"""
         can_trade, reason = self.can_trade()
@@ -862,81 +795,8 @@ class AureonHistoricalLive:
             "reason": reason,
             "win": profit > 0,
             "capital": self.current_capital
-        }sition.entry_price) * (position.position_size / position.entry_price)
-            position.unrealized_pnl_pct = ((current_price - position.entry_price) / position.entry_price) * 100
-            
-            # Check exit conditions
-            should_exit, exit_reason = self.should_exit_position(position)
-            
-            if should_exit:
-                await self.close_position(position, exit_reason)
-    
-    def should_exit_position(self, position: LivePosition) -> Tuple[bool, str]:
-        """Deter\n🐙 ECOSYSTEM STATS:")
-        print(f"   💎 Probability Predictions: {self.stats['ecosystem_predictions']}")
-        print(f"   🍄 Mycelium Signals: {self.stats['mycelium_signals']}")
-        print(f"   🛡️  Immune Interventions: {self.stats['immune_interventions']}")
-        print(f"{'═' * 80}")
-        
-        # Publish status to ecosystem
-        self.publish_thought("system.status", {
-            "capital": self.current_capital,
-            "trades": self.stats['total_trades'],
-            "win_rate": win_rate,
-            "profit": self.stats['total_profit'],
-            "ecosystem_stats": {
-                "predictions": self.stats['ecosystem_predictions'],
-                "mycelium_signals": self.stats['mycelium_signals'],
-                "immune_interventions": self.stats['immune_interventions']
-            }
-        }ition should be closed"""
-        # Target hit
-        if position.current_price >= position.signal.predicted_target:
-            return True, "TARGET HIT"
-        
-        # Stop loss hit
-        if position.current_price <= position.signal.predicted_stop:
-            return True, "STOP LOSS"
-        
-        # Time-based exit (pattern timeframe expired)
-        time_in_position = time.time() - position.entry_time
-        max_time = {'5m': 300, '15m': 900, '1h': 3600, 'instant': 60}
-        timeframe_seconds = max_time.get(position.signal.pattern.timeframe, 900)
-        
-        if time_in_position > timeframe_seconds:
-            return True, "TIMEFRAME EXPIRED"
-        
-        return False, ""
-    
-    async def close_position(self, position: LivePosition, reason: str):
-        """Close a position"""
-        profit = position.unrealized_pnl
-        profit_pct = position.unrealized_pnl_pct
-        
-        # Update capital
-        self.current_capital += profit
-        
-        # Update stats
-        self.stats['total_trades'] += 1
-        if profit > 0:
-            self.stats['winning_trades'] += 1
-        else:
-            self.stats['losing_trades'] += 1
-        self.stats['total_profit'] += profit
-        
-        # Check milestone unlocks
-        self.check_milestones()
-        
-        # Log trade
-        print(f"\n{'✅' if profit > 0 else '❌'} CLOSED: {position.signal.symbol}")
-        print(f"   Reason: {reason}")
-        print(f"   P&L: £{profit:+,.2f} ({profit_pct:+.1f}%)")
-        print(f"   Capital: £{self.current_capital:,.2f}")
-        
-        # Remove from positions
-        self.positions.remove(position)
-        self.closed_trades.append(position)
-    
+        })
+
     def check_milestones(self):
         """Check and unlock milestones"""
         if not self.margin_unlocked and self.current_capital >= self.margin_threshold:

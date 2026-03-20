@@ -72,7 +72,7 @@ CONFIG = {
 # LOT SIZE MANAGER
 # ═══════════════════════════════════════════════════════════════════════════
 
-python3 s5_intelligent_dance.pypython3 s5_intelligent_dance.pyclass LotSizeManager:
+class LotSizeManager:
     def __init__(self, client: BinanceClient):
         self.client = client
         self.symbol_info = {}
