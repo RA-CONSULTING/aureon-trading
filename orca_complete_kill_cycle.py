@@ -6955,10 +6955,21 @@ class OrcaKillCycle:
                 swarm_opps = []
                 for agent, found_list in swarm_layout.items():
                     for anim in found_list:
+                        # Fetch real price so the opportunity passes the funded_opps price>0 gate
+                        _anim_price = getattr(anim, 'current_price', 0.0) or getattr(anim, 'price', 0.0)
+                        if not _anim_price or _anim_price <= 0:
+                            try:
+                                _anim_client = self.clients.get('alpaca')
+                                if _anim_client:
+                                    _anim_ticker = _anim_client.get_ticker(anim.symbol)
+                                    if _anim_ticker:
+                                        _anim_price = float(_anim_ticker.get('last', _anim_ticker.get('price', 0)) or 0)
+                            except Exception:
+                                pass
                         opp = MarketOpportunity(
                             symbol=anim.symbol.replace('/', ''),
                             exchange='alpaca',  # Ecosystem runs on Alpaca
-                            price=0.0,  # Price is less relevant than move pattern
+                            price=_anim_price,
                             change_pct=anim.move_pct,
                             volume=anim.volume,
                             momentum_score=anim.net_pct * 10.0,  # Scaled score
@@ -15633,13 +15644,43 @@ class OrcaKillCycle:
                                         if cash.get(o.exchange, 0.0) >= 1.0 and getattr(o, 'price', 0) and getattr(o, 'price', 0) > 0
                                     ]
                                     funded_opps.sort(key=lambda x: getattr(x, 'momentum_score', 0.0), reverse=True)
+
+                                    # Find the richest exchange - may not be represented in scan opps
+                                    richest_exchange = max(cash.items(), key=lambda x: x[1])[0] if cash else None
+                                    richest_cash = cash.get(richest_exchange, 0.0) if richest_exchange else 0.0
+
                                     if funded_opps:
                                         best = funded_opps[0]
                                         print(f"   [DEBUG] Funded opps: {len(funded_opps)} (best funded: {best.symbol} on {best.exchange}, cash=${cash.get(best.exchange, 0.0):.2f})")
                                     else:
-                                        best = new_opps[0]
+                                        # Fallback: avoid zero-price opps poisoning the COP calculation
+                                        priced_opps = [o for o in new_opps if getattr(o, 'price', 0) > 0]
+                                        best = priced_opps[0] if priced_opps else new_opps[0]
                                         cash_preview = ", ".join([f"{ex.upper()}=${amt:.2f}" for ex, amt in cash.items()])
                                         print(f"   [DEBUG] No funded opportunities. Exchange cash: {cash_preview}")
+
+                                    # ROUTE TO RICHEST EXCHANGE: if a richer exchange isn't represented,
+                                    # fetch a real price on that exchange and reroute the best opportunity there
+                                    if richest_exchange and richest_cash >= 10.0 and richest_exchange != best.exchange:
+                                        try:
+                                            rich_client = self.clients.get(richest_exchange)
+                                            if rich_client:
+                                                sym_base = best.symbol.replace('/', '').upper()
+                                                # Normalise to base asset (strip USD/USDC suffix)
+                                                for suffix in ['USDC', 'USDT', 'USD']:
+                                                    if sym_base.endswith(suffix):
+                                                        sym_base = sym_base[:-len(suffix)]
+                                                        break
+                                                rich_symbol = f"{sym_base}USD"
+                                                rich_ticker = rich_client.get_ticker(rich_symbol)
+                                                if rich_ticker:
+                                                    rich_price = float(rich_ticker.get('c', [0])[0] if 'c' in rich_ticker else rich_ticker.get('last', rich_ticker.get('price', 0)))
+                                                    if rich_price > 0:
+                                                        best.exchange = richest_exchange
+                                                        best.price = rich_price
+                                                        print(f"   [DEBUG] Rerouted {best.symbol} → {richest_exchange} @ ${rich_price:.6f} (${richest_cash:.2f} available)")
+                                        except Exception as _rr_err:
+                                            print(f"   [DEBUG] Reroute to {richest_exchange} failed: {_rr_err}")
 
                                     print(f"   [DEBUG] Top opportunities: {', '.join([f'{o.symbol}({o.change_pct:+.2f}%)' for o in new_opps[:5]])}")
                                     
