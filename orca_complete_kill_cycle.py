@@ -15860,6 +15860,26 @@ class OrcaKillCycle:
                                         opp.momentum_score = opp.momentum_score * boost
                                         boosted_count += 1
 
+                                # ── F2. Unified signal group-rank pass ────────────────────
+                                # Surfaces the strongest pick per group and dampens sell-biased
+                                # assets so Queen sees the correct relative strengths.
+                                _grp_premiums = 0
+                                _grp_dampened = 0
+                                for opp in opportunities:
+                                    _u_dir  = getattr(opp, '_unified_direction',  None)
+                                    _u_rank = getattr(opp, '_unified_group_rank', 0)
+                                    _u_conf = getattr(opp, '_unified_confidence', 0.5)
+                                    if _u_dir == 'BUY' and _u_rank == 1 and _u_conf >= 0.55:
+                                        # Group leader with confirmed buy bias — small premium
+                                        opp.momentum_score *= 1.15
+                                        _grp_premiums += 1
+                                    elif _u_dir == 'SELL' or (_u_dir == 'NEUTRAL' and _u_rank > 3 and _u_conf < 0.45):
+                                        # Sell-biased or low-ranked neutral — dampen so Queen deprioritises
+                                        opp.momentum_score *= 0.80
+                                        _grp_dampened += 1
+                                if _grp_premiums or _grp_dampened:
+                                    print(f"     UNIFIED GROUP PASS: {_grp_premiums} group-leader premiums | {_grp_dampened} dampened")
+
                                 # ── G. Apply Timeline Oracle global timing multiplier ──
                                 if _timeline_multiplier > 1.0:
                                     for opp in opportunities:
@@ -15920,7 +15940,23 @@ class OrcaKillCycle:
                                     richest_cash = cash.get(richest_exchange, 0.0) if richest_exchange else 0.0
 
                                     if funded_opps:
-                                        best = funded_opps[0]
+                                        # Prefer the unified group-rank 1 pick if it's funded and within
+                                        # 20% of the top momentum score — avoids forcing a worse raw score
+                                        # just because it's a group leader.
+                                        _top_score = funded_opps[0].momentum_score if funded_opps else 0
+                                        _group_leaders = [
+                                            o for o in funded_opps
+                                            if getattr(o, '_unified_group_rank', 99) == 1
+                                            and getattr(o, '_unified_direction', '') == 'BUY'
+                                            and o.momentum_score >= _top_score * 0.80
+                                        ]
+                                        if _group_leaders:
+                                            # Among group leaders pick highest unified confidence
+                                            _group_leaders.sort(key=lambda o: getattr(o, '_unified_confidence', 0), reverse=True)
+                                            best = _group_leaders[0]
+                                            print(f"   [UNIFIED] Group leader selected: {best.symbol} ({getattr(best,'_unified_confidence',0):.0%} conf, rank=1 in group)")
+                                        else:
+                                            best = funded_opps[0]
                                         print(f"   [DEBUG] Funded opps: {len(funded_opps)} (best funded: {best.symbol} on {best.exchange}, cash=${cash.get(best.exchange, 0.0):.2f})")
                                     else:
                                         # Fallback: avoid zero-price opps poisoning the COP calculation
@@ -15982,7 +16018,11 @@ class OrcaKillCycle:
                                                     'price': best.price,
                                                     'change_pct': best.change_pct,
                                                     'momentum': best.momentum_score,
-                                                    'exchange': best.exchange
+                                                    'exchange': best.exchange,
+                                                    # Unified signal context — all 7 layers pre-aggregated
+                                                    'unified_bias':       getattr(best, '_unified_direction',  'NEUTRAL'),
+                                                    'unified_confidence': getattr(best, '_unified_confidence', 0.5),
+                                                    'group_rank':         getattr(best, '_unified_group_rank', 0),
                                                 }
                                             )
                                             confidence = float(signal.get('confidence', 0.0))
