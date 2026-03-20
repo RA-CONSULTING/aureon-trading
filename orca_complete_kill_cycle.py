@@ -8492,8 +8492,11 @@ class OrcaKillCycle:
             # Just ensure positive PnL that isn't microscopic noise
             required_pnl = total_costs_value * 0.1 # Minimal hurdle
             
-            # Also ensure it hits the configured target percentage OR 1 penny — whichever is higher
-            target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7¢ guaranteed net
+            # Hard floor scales with position size: normal positions keep the 1.7¢ guarantee;
+            # micro/dust positions (entry < $0.50) use a proportional floor so they can
+            # actually exit — a $0.02 position can never earn $0.017, so we scale down.
+            _hard_floor = 0.017 if entry_cost >= 0.50 else max(entry_cost * 0.004, 0.0005)
+            target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), _hard_floor)
             if net_pnl >= target_pnl:
                 approved = True
                 reason = f"GROWTH_MODE PASS: net_pnl=${net_pnl:.4f} >= target=${target_pnl:.4f}"
@@ -11142,7 +11145,8 @@ class OrcaKillCycle:
         target_pnl_amt = 0.0
         if QUEEN_MIN_PROFIT_PCT < 1.0: # Growth Mode
             _cost_basis = confirmed_cost if 'confirmed_cost' in locals() else entry_cost
-            target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7c guaranteed net
+            _hard_floor_2 = 0.017 if _cost_basis >= 0.50 else max(_cost_basis * 0.004, 0.0005)
+            target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), _hard_floor_2)  # scales for dust
             if net_pnl >= target_pnl_amt:
                 hit_target_profit = True
 
