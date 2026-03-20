@@ -524,7 +524,7 @@ except ImportError:
 #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
 MARGIN_PENNY_AVAILABLE = False
 try:
-    from kraken_margin_penny_trader import KrakenMarginPennyTrader
+    from kraken_margin_penny_trader import KrakenMarginArmyTrader as KrakenMarginPennyTrader
     MARGIN_PENNY_AVAILABLE = True
     print("  Kraken Margin Penny Trader: AVAILABLE")
 except ImportError:
