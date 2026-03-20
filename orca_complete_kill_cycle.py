@@ -1186,7 +1186,7 @@ try:
     from queen_asset_command_center import (
         get_asset_command_center,
         get_asset_monitor,
-        # get_ocean_view,
+        get_ocean_view,
         QueenAssetCommandCenter,
         QueenAssetMonitor,
         QueenOceanView
@@ -1197,7 +1197,7 @@ except ImportError:
     ASSET_COMMAND_CENTER_AVAILABLE = False
     get_asset_command_center = None
     get_asset_monitor = None
-    # get_ocean_view = None
+    get_ocean_view = None
     QueenAssetCommandCenter = None
     QueenAssetMonitor = None
     QueenOceanView = None
@@ -3654,7 +3654,7 @@ class OrcaKillCycle:
         if os.path.exists(self.positions_file):
             try:
                 with open(self.positions_file, 'r') as f:
-                    self.tracked_positions = json.load(f)
+                    self.tracked_positions = _json.load(f)
                 _safe_print(f"  Orca: Loaded {len(self.tracked_positions)} tracked positions from disk")
             except Exception as e:
                 _safe_print(f"   Failed to load tracked positions: {e}")
@@ -3666,7 +3666,7 @@ class OrcaKillCycle:
         """Save current tracked positions to disk."""
         try:
             with open(self.positions_file, 'w') as f:
-                json.dump(self.tracked_positions, f, indent=4)
+                _json.dump(self.tracked_positions, f, indent=4)
         except Exception as e:
             _safe_print(f"   Failed to save tracked positions: {e}")
 
@@ -3871,6 +3871,15 @@ class OrcaKillCycle:
                 self.unified_kill_chain = None
         else:
             self.unified_kill_chain = None
+
+        #    CAPITAL.COM CFD TRADER
+        self.capital_cfd_trader = None
+        if CAPITAL_CFD_AVAILABLE and 'capital' in self.clients and self.clients['capital']:
+            try:
+                self.capital_cfd_trader = CapitalCFDTrader(client=self.clients['capital'])
+                _safe_print("  Capital CFD Trader: INTEGRATED")
+            except Exception as e:
+                _safe_print(f"   Capital CFD Trader init failed: {e}")
 
         #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
         self.margin_penny_trader = None
@@ -4098,6 +4107,15 @@ class OrcaKillCycle:
             from prime_sentinel_decree import PrimeSentinelDecree
             self.prime_sentinel = PrimeSentinelDecree()
             print("  Prime Sentinel Decree LOADED - Control reclaimed")
+        except Exception:
+            pass
+
+        # 9b. Macro Intelligence (Fear & Greed + CoinGecko trends)
+        self.macro_intel = None
+        try:
+            from macro_intelligence import MacroIntelligence
+            self.macro_intel = MacroIntelligence()
+            print("  Macro Intelligence: WIRED! (Fear/Greed + CoinGecko + Dominance)")
         except Exception:
             pass
         
@@ -4465,7 +4483,7 @@ class OrcaKillCycle:
             # Check if portfolio state file exists
             if os.path.exists("live_profit_state.json"):
                 with open("live_profit_state.json", 'r') as f:
-                    self.portfolio_state = json.load(f)
+                    self.portfolio_state = _json.load(f)
                     self.portfolio_last_update = self.portfolio_state.get('timestamp', 0)
                 print(f"  Portfolio Monitor: WIRED! (${self.portfolio_state['totals']['total_value_usd']:.2f} total)")
             else:
@@ -5055,7 +5073,7 @@ class OrcaKillCycle:
                 'data': data
             }
             with open(self.audit_file, 'a') as f:
-                f.write(json.dumps(event) + '\n')
+                f.write(_json.dumps(event) + '\n')
         except Exception:
             pass
     
@@ -5982,7 +6000,7 @@ class OrcaKillCycle:
         try:
             if os.path.exists("cost_basis_history.json"):
                 with open("cost_basis_history.json", 'r') as _f:
-                    _cb = json.load(_f)
+                    _cb = _json.load(_f)
                 cost_positions = _cb.get('positions', {})
         except Exception:
             pass
@@ -6022,7 +6040,7 @@ class OrcaKillCycle:
                     'Accept': 'application/json', 'User-Agent': 'Aureon/1.0'
                 })
                 _resp = urllib.request.urlopen(_req, timeout=15)
-                for coin in json.loads(_resp.read()):
+                for coin in _json.loads(_resp.read()):
                     gecko_data[coin['id']] = coin
                 _time.sleep(0.5)  # rate-limit courtesy
             _safe_print(f"  📊 [INTEL] CoinGecko: {len(gecko_data)} coins enriched")
@@ -6115,12 +6133,12 @@ class OrcaKillCycle:
                 _bsig = _hmac.new(_bsec.encode(), _query.encode(), _hashlib.sha256).hexdigest()
                 _burl = f'https://api.binance.com/api/v3/account?{_query}&signature={_bsig}'
                 _req = urllib.request.Request(_burl, headers={'X-MBX-APIKEY': _bkey})
-                _acct = json.loads(urllib.request.urlopen(_req, timeout=15).read())
+                _acct = _json.loads(urllib.request.urlopen(_req, timeout=15).read())
                 # Prices
                 _presp = urllib.request.urlopen(
                     'https://api.binance.com/api/v3/ticker/price', timeout=15)
                 _bprices = {p['symbol']: float(p['price'])
-                            for p in json.loads(_presp.read())}
+                            for p in _json.loads(_presp.read())}
 
                 for b in _acct.get('balances', []):
                     amt = float(b['free']) + float(b['locked'])
@@ -6165,10 +6183,10 @@ class OrcaKillCycle:
                 _hdrs = {'APCA-API-KEY-ID': _ak, 'APCA-API-SECRET-KEY': _as}
                 _req = urllib.request.Request(
                     'https://api.alpaca.markets/v2/account', headers=_hdrs)
-                _aacct = json.loads(urllib.request.urlopen(_req, timeout=15).read())
+                _aacct = _json.loads(urllib.request.urlopen(_req, timeout=15).read())
                 _req2 = urllib.request.Request(
                     'https://api.alpaca.markets/v2/positions', headers=_hdrs)
-                _apos = json.loads(urllib.request.urlopen(_req2, timeout=15).read())
+                _apos = _json.loads(urllib.request.urlopen(_req2, timeout=15).read())
 
                 cash = float(_aacct.get('cash', 0))
                 if cash >= 0.01:
@@ -6222,7 +6240,7 @@ class OrcaKillCycle:
         try:
             _tmp = _tmpfile.NamedTemporaryFile(
                 mode='w', dir='.', suffix='.tmp', delete=False)
-            json.dump(snapshot, _tmp, indent=2)
+            _json.dump(snapshot, _tmp, indent=2)
             _tmp.close()
             os.replace(_tmp.name, 'portfolio_intelligence_snapshot.json')
         except Exception as e:
@@ -6275,7 +6293,7 @@ class OrcaKillCycle:
         try:
             if os.path.exists("live_profit_state.json"):
                 with open("live_profit_state.json", 'r') as f:
-                    self.portfolio_state = json.load(f)
+                    self.portfolio_state = _json.load(f)
                     self.portfolio_last_update = self.portfolio_state.get('timestamp', 0)
                 return True
         except Exception:
@@ -6946,10 +6964,21 @@ class OrcaKillCycle:
                 swarm_opps = []
                 for agent, found_list in swarm_layout.items():
                     for anim in found_list:
+                        # Fetch real price so the opportunity passes the funded_opps price>0 gate
+                        _anim_price = getattr(anim, 'current_price', 0.0) or getattr(anim, 'price', 0.0)
+                        if not _anim_price or _anim_price <= 0:
+                            try:
+                                _anim_client = self.clients.get('alpaca')
+                                if _anim_client:
+                                    _anim_ticker = _anim_client.get_ticker(anim.symbol)
+                                    if _anim_ticker:
+                                        _anim_price = float(_anim_ticker.get('last', _anim_ticker.get('price', 0)) or 0)
+                            except Exception:
+                                pass
                         opp = MarketOpportunity(
                             symbol=anim.symbol.replace('/', ''),
                             exchange='alpaca',  # Ecosystem runs on Alpaca
-                            price=0.0,  # Price is less relevant than move pattern
+                            price=_anim_price,
                             change_pct=anim.move_pct,
                             volume=anim.volume,
                             momentum_score=anim.net_pct * 10.0,  # Scaled score
@@ -6983,8 +7012,97 @@ class OrcaKillCycle:
                     print(f"     Micro-Momentum: Added {len(micro_signals)} scalp targets")
             except Exception as e:
                 print(f"      Micro-Scanner Failed: {e}")
-        
-        #                                                                    
+
+        # ═══════════════════════════════════════════════════════════════════════
+        #  CROSS-ASSET CORRELATION ENGINE
+        #  Groups all assets by category, detects market regime, and generates
+        #  PRE-SIGNAL opportunities: leader already moved, follower hasn't yet.
+        #  e.g. BTC pumps 0.5% → ETH/SOL/ADA pre-signal before they move
+        #       NAS100 runs  → AAPL/NVDA/MSFT pre-signal
+        #       Gold spikes  → US500 short-side warning
+        # ═══════════════════════════════════════════════════════════════════════
+        if not hasattr(self, '_cross_asset_correlator'):
+            try:
+                from cross_asset_correlator import CrossAssetCorrelator as _CAC
+                self._cross_asset_correlator = _CAC()
+            except Exception as _cac_init_err:
+                self._cross_asset_correlator = None
+                print(f"     Cross-Asset Correlator init failed: {_cac_init_err}")
+
+        if self._cross_asset_correlator:
+            try:
+                _ca_corr = self._cross_asset_correlator
+
+                # Build lookup maps from all already-discovered opportunities
+                _ca_change   = {o.symbol: o.change_pct for o in opportunities}
+                _ca_price    = {o.symbol: o.price      for o in opportunities}
+                _ca_exchange = {o.symbol: o.exchange   for o in opportunities}
+                _ca_existing = {o.symbol for o in opportunities}
+
+                # Feed into rolling history
+                _ca_corr.update_batch(_ca_change)
+
+                # ── Regime + category table ──────────────────────────────────
+                _ca_regime   = _ca_corr.get_regime(_ca_change)
+                _ca_cat      = _ca_corr.get_category_moves(_ca_change)
+                print(f"\n{_ca_corr.format_category_table(_ca_change)}")
+
+                # ── Correlation summary: what's moving together / opposite ───
+                _moving_cats = {c: m for c, m in _ca_cat.items() if abs(m) >= 0.20}
+                if _moving_cats:
+                    _cat_pairs = []
+                    _cat_items = sorted(_moving_cats.items(), key=lambda x: abs(x[1]), reverse=True)
+                    for _ci, (_cat_n, _cat_m) in enumerate(_cat_items[:4]):
+                        _arrow = '↑' if _cat_m > 0 else '↓'
+                        _cat_pairs.append(f"{_cat_n.upper()}:{_cat_m:+.1f}%{_arrow}")
+                    print(f"     Moving categories: {' | '.join(_cat_pairs)}")
+
+                # ── Pre-signal detection ──────────────────────────────────────
+                _ca_presigs = _ca_corr.get_pre_signals(
+                    _ca_change, _ca_price, _ca_exchange, _ca_existing
+                )
+
+                if _ca_presigs:
+                    print(f"\n  PRE-SIGNALS  ({len(_ca_presigs)} correlation-driven — leader already moved):")
+                    _ca_added = 0
+                    for _ps in _ca_presigs:
+                        _dir = '+' if _ps.remaining_pct > 0 else '-'
+                        print(f"     [{_ps.category.upper():9s}]  {_ps.follower:6s} @ {_ps.follower_exchange.upper():7s}"
+                              f"  expected {_ps.remaining_pct:+.2f}% remaining"
+                              f"  ← {_ps.leader} moved {_ps.leader_move_pct:+.2f}%"
+                              f"  corr={_ps.correlation:.0%}  lag≈{_ps.lag_seconds}s")
+
+                        # Add as MarketOpportunity so it flows through quantum + gates
+                        _ps_price = _ca_price.get(_ps.follower_symbol, 0.0)
+                        # momentum_score: remaining * correlation * 25 → typically 3–8 range
+                        _ps_mscore = abs(_ps.remaining_pct) * _ps.correlation * 25.0
+                        _ps_opp = MarketOpportunity(
+                            symbol=_ps.follower_symbol,
+                            exchange=_ps.follower_exchange,
+                            price=_ps_price,
+                            change_pct=_ps.already_moved_pct,
+                            volume=0.0,
+                            momentum_score=_ps_mscore,
+                            fee_rate=self.fee_rates.get(_ps.follower_exchange, 0.0025),
+                        )
+                        # Tag for visibility
+                        _ps_opp._correlation_signal  = True
+                        _ps_opp._correlation_leader  = _ps.leader
+                        _ps_opp._correlation_strength = _ps.correlation
+                        _ps_opp._correlation_remaining = _ps.remaining_pct
+                        opportunities.append(_ps_opp)
+                        _ca_existing.add(_ps.follower_symbol)
+                        _ca_added += 1
+
+                    if _ca_added:
+                        print(f"     Injected {_ca_added} pre-signals into opportunity pipeline")
+                else:
+                    print(f"     No cross-asset pre-signals (all followers in sync with leaders)")
+
+            except Exception as _ca_err:
+                print(f"     Cross-Asset Correlator error (non-blocking): {_ca_err}")
+
+        #
         #   QUANTUM ENHANCEMENT - Apply luck field + LIMBO probability boost
         #    HNC SURGE +     HISTORICAL MANIPULATION FILTER!
         #                                                                    
@@ -7254,14 +7372,155 @@ class OrcaKillCycle:
                 resonance = getattr(opp, '_hnc_resonance', '') or ''
                 if resonance:
                     resonance = f" [{resonance[:15]}]"
-                
+
                 # Show Target metrics
                 time_to_target = getattr(opp, '_time_to_target', 0)
                 required_move = getattr(opp, '_required_move_pct', 0)
                 time_str = f"{time_to_target:.1f}x" if time_to_target < 100 else "slow"
-                
+
                 print(f"   {i+1}. {hnc_tag}{hist_tag} {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% | Need: {required_move:.2f}% | Speed: {time_str}{resonance}")
-        
+
+        # ═══════════════════════════════════════════════════════════════
+        #  PER-EXCHANGE SIGNAL BREAKDOWN - visibility for all 3 exchanges
+        # ═══════════════════════════════════════════════════════════════
+        _exchanges_seen = {}
+        for _opp in opportunities:
+            _ex = _opp.exchange
+            if _ex not in _exchanges_seen:
+                _exchanges_seen[_ex] = []
+            _exchanges_seen[_ex].append(_opp)
+
+        if _exchanges_seen:
+            print("\n  SIGNALS BY EXCHANGE:")
+            for _ex_name in ('alpaca', 'kraken', 'capital', 'binance'):
+                _ex_opps = _exchanges_seen.get(_ex_name, [])
+                if not _ex_opps:
+                    print(f"     {_ex_name.upper():10s}  — no signals passing gates")
+                    continue
+                print(f"     {_ex_name.upper():10s}  top {min(3, len(_ex_opps))} signals:")
+                for _rank, _o in enumerate(_ex_opps[:3], 1):
+                    _mscore = getattr(_o, 'momentum_score', 0)
+                    _price  = _o.price
+                    _chg    = _o.change_pct
+                    print(f"       {_rank}. {_o.symbol:12s}  price=${_price:>12.4f}  chg={_chg:+.2f}%  momentum={_mscore:.1f}")
+            # Print any exchanges not in the hard-coded list
+            for _ex_name, _ex_opps in _exchanges_seen.items():
+                if _ex_name not in ('alpaca', 'kraken', 'capital', 'binance'):
+                    print(f"     {_ex_name.upper():10s}  {len(_ex_opps)} signals")
+
+        # Mark any pre-signals in the top-5 so user can see them clearly
+        if opportunities:
+            _presig_in_top = [o for o in opportunities[:10] if getattr(o, '_correlation_signal', False)]
+            if _presig_in_top:
+                print(f"\n  PRE-SIGNALS in top-10 ranked opportunities:")
+                for _pso in _presig_in_top:
+                    print(f"     {_pso.symbol} ({_pso.exchange})  leader={getattr(_pso,'_correlation_leader','?')}"
+                          f"  remaining={getattr(_pso,'_correlation_remaining',0):+.2f}%"
+                          f"  corr={getattr(_pso,'_correlation_strength',0):.0%}")
+
+        # ═══════════════════════════════════════════════════════════════════════
+        #  UNIFIED SIGNAL ENGINE
+        #  Links ALL signal layers → per-asset unified score → top pick per group
+        # ═══════════════════════════════════════════════════════════════════════
+        if opportunities:
+            # ── Lazy-init engine and news fetcher ───────────────────────────
+            if not hasattr(self, '_unified_signal_engine'):
+                try:
+                    from unified_signal_engine import UnifiedSignalEngine as _USE
+                    self._unified_signal_engine = _USE()
+                except Exception as _use_init_err:
+                    self._unified_signal_engine = None
+                    print(f"     UnifiedSignalEngine init failed: {_use_init_err}")
+
+            if not hasattr(self, '_news_signal_fetcher'):
+                try:
+                    from news_signal import get_news_signal as _get_ns
+                    self._news_signal_fetcher = _get_ns   # callable, lazy background fetch
+                except Exception as _ns_init_err:
+                    self._news_signal_fetcher = None
+
+            if self._unified_signal_engine:
+                try:
+                    # ── Gather inputs ────────────────────────────────────────
+                    _use_regime    = 'NEUTRAL'
+                    _use_cat_moves: dict = {}
+                    if hasattr(self, '_cross_asset_correlator') and self._cross_asset_correlator:
+                        _sym_chg_map = {o.symbol: o.change_pct for o in opportunities}
+                        _use_regime    = self._cross_asset_correlator.get_regime(_sym_chg_map)
+                        _use_cat_moves = self._cross_asset_correlator.get_category_moves(_sym_chg_map)
+
+                    # Market Harp boosts (pre-computed in run_autonomous; fall back to empty)
+                    _use_harp = getattr(self, '_last_harp_boosts', {}) or {}
+
+                    # News sentiment (background-fetched, never blocks)
+                    _use_news: dict = {}
+                    _use_geo_risk   = 'NORMAL'
+                    if self._news_signal_fetcher:
+                        try:
+                            _ns_result     = self._news_signal_fetcher()
+                            _use_news      = dict(_ns_result.sentiment)
+                            _use_geo_risk  = _ns_result.risk_level
+                            if abs(_ns_result.geo_risk) >= 0.3 or _ns_result.themes:
+                                print(f"\n  NEWS: {_ns_result.summary()}")
+                        except Exception:
+                            pass
+
+                    # Macro score
+                    _use_macro  = 0.0
+                    _use_fg     = 50
+                    if hasattr(self, 'macro_intel') and self.macro_intel:
+                        try:
+                            _mc = self.macro_intel.get_entry_context('')
+                            _use_macro = float(_mc.get('macro_score', 0.0))
+                            _use_fg    = int(_mc.get('fear_greed', 50))
+                        except Exception:
+                            pass
+
+                    # ── Run the engine ───────────────────────────────────────
+                    _use_bundle = self._unified_signal_engine.process(
+                        opportunities   = opportunities,
+                        regime          = _use_regime,
+                        category_moves  = _use_cat_moves,
+                        harp_boosts     = _use_harp,
+                        news_sentiment  = _use_news,
+                        macro_score     = _use_macro,
+                        fear_greed      = _use_fg,
+                        geo_risk_level  = _use_geo_risk,
+                    )
+
+                    # ── Print group dashboard ────────────────────────────────
+                    print()
+                    for _line in _use_bundle.summary_lines:
+                        print(_line)
+
+                    # ── Apply unified boosts back to momentum_score ──────────
+                    _sig_map = {s.symbol: s for s in _use_bundle.signals}
+                    for _opp in opportunities:
+                        _usig = _sig_map.get(_opp.symbol)
+                        if _usig:
+                            _boost = _usig.pipeline_boost
+                            _opp.momentum_score *= _boost
+                            # Tag the opportunity for downstream visibility
+                            _opp._unified_direction  = _usig.direction
+                            _opp._unified_confidence = _usig.confidence
+                            _opp._unified_group_rank = _usig.group_rank
+
+                    # ── Store top picks for the buy loop ─────────────────────
+                    self._unified_top_picks = _use_bundle.top_per_group
+
+                    # ── Re-sort after boosts ──────────────────────────────────
+                    opportunities.sort(key=lambda o: o.momentum_score, reverse=True)
+
+                    print(f"\n  UNIFIED TOP PICKS (strongest per group, all signals combined):")
+                    for _cat, _top in _use_bundle.top_per_group.items():
+                        if _top and _top.direction in ('BUY', 'NEUTRAL'):
+                            print(f"     {_cat.upper():10s}  {_top.symbol:12s} @ {_top.exchange:7s}"
+                                  f"  {_top.direction}  conf={_top.confidence:.0%}"
+                                  f"  chg={_top.change_pct:+.2f}%")
+
+                except Exception as _use_err:
+                    print(f"     UnifiedSignalEngine error (non-blocking): {_use_err}")
+
         return opportunities
     
     def _scan_alpaca_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
@@ -7470,7 +7729,7 @@ class OrcaKillCycle:
         if self.margin_penny_trader and self.kraken_margin_pairs:
             existing_symbols = {o.symbol.replace('/', '') for o in opportunities}
             margin_injected = 0
-            for _, minfo in self.kraken_margin_pairs.items():
+            for pair_name, minfo in self.kraken_margin_pairs.items():
                 clean = pair_name.replace('/', '')
                 if clean in existing_symbols:
                     continue
@@ -10308,6 +10567,35 @@ class OrcaKillCycle:
         # ═══════════════════════════════════════════════════════════════
         #  SPOT FALLBACK - Non-Kraken or margin unavailable
         # ═══════════════════════════════════════════════════════════════
+
+        # Capital.com CFDs require quantity in UNITS (not quote currency).
+        # convert quote_qty (USD/GBP) → CFD units: size = quote_gbp / current_price
+        if exchange == 'capital':
+            _cap_price = price if price and price > 0 else None
+            if _cap_price is None:
+                try:
+                    _cap_ticker = client.get_ticker(symbol)
+                    if _cap_ticker:
+                        _cap_price = float(_cap_ticker.get('bid', _cap_ticker.get('price', 0)) or 0)
+                except Exception:
+                    pass
+            if _cap_price and _cap_price > 0:
+                _cap_qty = 0.0
+                if quote_qty and quote_qty > 0:
+                    # quote_qty is in USD; Capital account is GBP — use 1:1 approx (close enough for sizing)
+                    _cap_qty = quote_qty / _cap_price
+                elif quantity and quantity > 0:
+                    _cap_qty = quantity
+                if _cap_qty > 0:
+                    print(f"   CAPITAL CFD: {symbol} size={_cap_qty:.4f} units @ {_cap_price} (quote={quote_qty})")
+                    return client.place_market_order(symbol=symbol, side='buy', quantity=_cap_qty)
+                else:
+                    print(f"  Capital CFD: could not calculate size for {symbol}")
+                    return {'status': 'error', 'reason': 'Capital CFD size calculation failed'}
+            else:
+                print(f"  Capital CFD: no price for {symbol}, cannot size order")
+                return {'status': 'error', 'reason': f'Capital CFD no price for {symbol}'}
+
         if quote_qty and quote_qty > 0:
             return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
         elif quantity and quantity > 0:
@@ -11219,7 +11507,7 @@ class OrcaKillCycle:
         """Compute cash/assets energy per exchange with momentum tracking."""
         live_prices = self._get_live_crypto_prices()
         gbp_usd_rate = live_prices.get('GBPUSD', 1.27)
-        _ = {
+        energy = {
             "exchanges": {},
             "total": {"cash": 0.0, "assets": 0.0, "total": 0.0}
         }
@@ -11355,7 +11643,7 @@ class OrcaKillCycle:
         elif exchange == 'kraken':
             min_required = 5.0   # Kraken: varies by pair, $5 safe minimum
         elif exchange == 'capital':
-            min_required = 100.0 # Capital.com: user specified minimum
+            min_required = 50.0  # Capital.com: £50 balance (~$63) — use GBP min
 
         # 2. Exchange specific filters (if client provided)
         if client and hasattr(client, 'get_symbol_filters'):
@@ -13260,6 +13548,7 @@ class OrcaKillCycle:
         if self.sentience_engine:
             def _run_async_loop():
                 try:
+                    import asyncio
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
                     loop.run_until_complete(self.sentience_engine.start_sentience_loop())
@@ -15082,6 +15371,8 @@ class OrcaKillCycle:
                             if _market_harp is not None:
                                 try:
                                     _harp_boosts = _market_harp.tick(batch_prices or {})
+                                    # Cache for unified_signal_engine to use in scan_entire_market
+                                    self._last_harp_boosts = _harp_boosts
                                     if _harp_boosts:
                                         _intel_active += 1
                                         for _hsym, _hfactor in _harp_boosts.items():
@@ -15569,6 +15860,26 @@ class OrcaKillCycle:
                                         opp.momentum_score = opp.momentum_score * boost
                                         boosted_count += 1
 
+                                # ── F2. Unified signal group-rank pass ────────────────────
+                                # Surfaces the strongest pick per group and dampens sell-biased
+                                # assets so Queen sees the correct relative strengths.
+                                _grp_premiums = 0
+                                _grp_dampened = 0
+                                for opp in opportunities:
+                                    _u_dir  = getattr(opp, '_unified_direction',  None)
+                                    _u_rank = getattr(opp, '_unified_group_rank', 0)
+                                    _u_conf = getattr(opp, '_unified_confidence', 0.5)
+                                    if _u_dir == 'BUY' and _u_rank == 1 and _u_conf >= 0.55:
+                                        # Group leader with confirmed buy bias — small premium
+                                        opp.momentum_score *= 1.15
+                                        _grp_premiums += 1
+                                    elif _u_dir == 'SELL' or (_u_dir == 'NEUTRAL' and _u_rank > 3 and _u_conf < 0.45):
+                                        # Sell-biased or low-ranked neutral — dampen so Queen deprioritises
+                                        opp.momentum_score *= 0.80
+                                        _grp_dampened += 1
+                                if _grp_premiums or _grp_dampened:
+                                    print(f"     UNIFIED GROUP PASS: {_grp_premiums} group-leader premiums | {_grp_dampened} dampened")
+
                                 # ── G. Apply Timeline Oracle global timing multiplier ──
                                 if _timeline_multiplier > 1.0:
                                     for opp in opportunities:
@@ -15609,10 +15920,46 @@ class OrcaKillCycle:
                                 if len(opportunities) > 4000:
                                     print(f"   Extreme volatility! {len(opportunities):,} opportunities")
                                 
-                                # Filter for symbols not already in positions
-                                active_symbols = [p.symbol for p in positions]
-                                new_opps = [o for o in opportunities if o.symbol not in active_symbols]
-                                
+                                # ─── Unified position intent filter ─────────────────────────
+                                # Maps normalised symbol → existing position intent so we can
+                                # detect and block self-destructive spot/margin conflicts.
+                                def _norm_sym(s):
+                                    return s.replace('/', '').replace('-', '').upper()
+
+                                # Build intent map: norm_symbol → (is_margin, margin_side)
+                                _pos_intent = {}
+                                for _p in positions:
+                                    _ps = _norm_sym(_p.symbol)
+                                    _pos_intent[_ps] = (getattr(_p, 'is_margin', False),
+                                                        getattr(_p, 'margin_side', 'LONG'))
+
+                                # Determine the intended direction for new trades this cycle
+                                # (from Quadrumvirate margin recommendation, default LONG)
+                                _cycle_margin_rec = 'LONG'
+                                if hasattr(self, '_last_quad_result') and self._last_quad_result:
+                                    _cycle_margin_rec = self._last_quad_result.get('margin_recommendation', 'LONG')
+
+                                new_opps = []
+                                _blocked_conflict = []
+                                for o in opportunities:
+                                    _os = _norm_sym(o.symbol)
+                                    _existing = _pos_intent.get(_os)
+                                    if _existing is None:
+                                        new_opps.append(o)
+                                        continue
+                                    # Symbol already held — check for directional conflict
+                                    _ex_margin, _ex_side = _existing
+                                    # Rule 1: MARGIN SHORT + incoming SPOT BUY = self-hedging → block
+                                    if _ex_margin and _ex_side == 'SHORT':
+                                        _blocked_conflict.append(f"{o.symbol}(margin-SHORT conflict)")
+                                        continue
+                                    # Rule 2: Any existing position of the same symbol → skip
+                                    # (spot + margin in same direction = redundant capital use)
+                                    _blocked_conflict.append(f"{o.symbol}(already held as {'margin' if _ex_margin else 'spot'})")
+
+                                if _blocked_conflict:
+                                    print(f"   [INTENT] Blocked {len(_blocked_conflict)} conflicts: {', '.join(_blocked_conflict[:5])}")
+
                                 top_opps = [f"{o.symbol}({o.change_pct:+.2f}%)" for o in new_opps[:3]]
                                 print(f"   [DEBUG] Found {len(opportunities)} opps, {len(new_opps)} new (top: {', '.join(top_opps) or 'none'})")
                                 
@@ -15623,13 +15970,74 @@ class OrcaKillCycle:
                                         if cash.get(o.exchange, 0.0) >= 1.0 and getattr(o, 'price', 0) and getattr(o, 'price', 0) > 0
                                     ]
                                     funded_opps.sort(key=lambda x: getattr(x, 'momentum_score', 0.0), reverse=True)
+
+                                    # Find the richest exchange - may not be represented in scan opps
+                                    richest_exchange = max(cash.items(), key=lambda x: x[1])[0] if cash else None
+                                    richest_cash = cash.get(richest_exchange, 0.0) if richest_exchange else 0.0
+
                                     if funded_opps:
-                                        best = funded_opps[0]
+                                        # Prefer the unified group-rank 1 pick if it's funded and within
+                                        # 20% of the top momentum score — avoids forcing a worse raw score
+                                        # just because it's a group leader.
+                                        _top_score = funded_opps[0].momentum_score if funded_opps else 0
+                                        _group_leaders = [
+                                            o for o in funded_opps
+                                            if getattr(o, '_unified_group_rank', 99) == 1
+                                            and getattr(o, '_unified_direction', '') == 'BUY'
+                                            and o.momentum_score >= _top_score * 0.80
+                                        ]
+                                        if _group_leaders:
+                                            # Among group leaders pick highest unified confidence
+                                            _group_leaders.sort(key=lambda o: getattr(o, '_unified_confidence', 0), reverse=True)
+                                            best = _group_leaders[0]
+                                            print(f"   [UNIFIED] Group leader selected: {best.symbol} ({getattr(best,'_unified_confidence',0):.0%} conf, rank=1 in group)")
+                                        else:
+                                            best = funded_opps[0]
                                         print(f"   [DEBUG] Funded opps: {len(funded_opps)} (best funded: {best.symbol} on {best.exchange}, cash=${cash.get(best.exchange, 0.0):.2f})")
                                     else:
-                                        best = new_opps[0]
+                                        # Fallback: avoid zero-price opps poisoning the COP calculation
+                                        priced_opps = [o for o in new_opps if getattr(o, 'price', 0) > 0]
+                                        best = priced_opps[0] if priced_opps else new_opps[0]
                                         cash_preview = ", ".join([f"{ex.upper()}=${amt:.2f}" for ex, amt in cash.items()])
                                         print(f"   [DEBUG] No funded opportunities. Exchange cash: {cash_preview}")
+
+                                    # ROUTE TO RICHEST EXCHANGE: if a richer exchange isn't represented
+                                    # in funded_opps, fetch a real price and reroute the best opportunity.
+                                    # Per-exchange minimums: kraken=$5, alpaca=$1, capital=$50
+                                    _exchange_minimums = {'kraken': 5.0, 'alpaca': 1.0, 'binance': 10.0, 'capital': 50.0}
+                                    # Only reroute if richest exchange has enough cash above its own minimum
+                                    _rich_min = _exchange_minimums.get(richest_exchange, 5.0)
+                                    if (richest_exchange and richest_cash >= _rich_min * 2
+                                            and richest_exchange != best.exchange
+                                            and cash.get(best.exchange, 0.0) < richest_cash * 0.5):
+                                        try:
+                                            rich_client = self.clients.get(richest_exchange)
+                                            if rich_client:
+                                                sym_base = best.symbol.replace('/', '').upper()
+                                                # Normalise to base asset (strip quote suffix)
+                                                for suffix in ['USDC', 'USDT', 'USD']:
+                                                    if sym_base.endswith(suffix):
+                                                        sym_base = sym_base[:-len(suffix)]
+                                                        break
+                                                # Capital.com uses its own symbol universe - skip crypto reroute there
+                                                if richest_exchange == 'capital':
+                                                    # Capital opps are already generated by _scan_capital_market
+                                                    # Only reroute if a capital-tagged opp exists in new_opps
+                                                    cap_opps = [o for o in new_opps if o.exchange == 'capital' and getattr(o, 'price', 0) > 0]
+                                                    if cap_opps:
+                                                        best = cap_opps[0]
+                                                        print(f"   [DEBUG] Selected Capital.com opp: {best.symbol} @ ${best.price:.4f} (${richest_cash:.2f} available)")
+                                                else:
+                                                    rich_symbol = f"{sym_base}USD"
+                                                    rich_ticker = rich_client.get_ticker(rich_symbol)
+                                                    if rich_ticker:
+                                                        rich_price = float(rich_ticker.get('c', [0])[0] if 'c' in rich_ticker else rich_ticker.get('last', rich_ticker.get('price', 0)))
+                                                        if rich_price > 0:
+                                                            best.exchange = richest_exchange
+                                                            best.price = rich_price
+                                                            print(f"   [DEBUG] Rerouted {best.symbol} → {richest_exchange} @ ${rich_price:.6f} (${richest_cash:.2f} available)")
+                                        except Exception as _rr_err:
+                                            print(f"   [DEBUG] Reroute to {richest_exchange} failed: {_rr_err}")
 
                                     print(f"   [DEBUG] Top opportunities: {', '.join([f'{o.symbol}({o.change_pct:+.2f}%)' for o in new_opps[:5]])}")
                                     
@@ -15646,7 +16054,11 @@ class OrcaKillCycle:
                                                     'price': best.price,
                                                     'change_pct': best.change_pct,
                                                     'momentum': best.momentum_score,
-                                                    'exchange': best.exchange
+                                                    'exchange': best.exchange,
+                                                    # Unified signal context — all 7 layers pre-aggregated
+                                                    'unified_bias':       getattr(best, '_unified_direction',  'NEUTRAL'),
+                                                    'unified_confidence': getattr(best, '_unified_confidence', 0.5),
+                                                    'group_rank':         getattr(best, '_unified_group_rank', 0),
                                                 }
                                             )
                                             confidence = float(signal.get('confidence', 0.0))
@@ -15668,12 +16080,18 @@ class OrcaKillCycle:
 
                                             # Fallback autonomy: if Queen says HOLD but setup is strong and funded,
                                             # let the Queen Arsenal perform final hard-gate validation.
+                                            # INTENT CHECK: never override into a directional conflict.
                                             if not queen_approved:
                                                 setup_strong = abs(best.change_pct) >= max(0.10, min_change_pct * 2) and best.momentum_score >= 0.20
                                                 setup_funded = cash.get(best.exchange, 0.0) >= 50.0
-                                                if action != 'BUY' and setup_strong and setup_funded:
+                                                # Block fallback if unified signal says SELL for this asset
+                                                _u_dir_best = getattr(best, '_unified_direction', 'NEUTRAL')
+                                                _intent_ok  = _u_dir_best != 'SELL'
+                                                if action != 'BUY' and setup_strong and setup_funded and _intent_ok:
                                                     print(f"      Queen fallback override: strong funded setup ({best.symbol}) -> sending to Queen Arsenal gates")
                                                     queen_approved = True
+                                                elif not _intent_ok:
+                                                    print(f"      Queen fallback BLOCKED: unified signal is SELL for {best.symbol} (intent coherence)")
 
                                             print(f"   [DEBUG] {quantum_indicator}Queen Decision for {best.symbol}: Approved={queen_approved} (Action={action}, Conf={confidence:.1%})")
                                         except Exception as e:
@@ -15690,13 +16108,48 @@ class OrcaKillCycle:
                                             if client:
                                                 symbol_clean = best.symbol.replace('/', '')
                                                 
-                                                # Adjust amount based on available cash
+                                                # ─── Unified margin-aware sizing ─────────────────────────
+                                                # Margin uses leverage → the CASH deployed is collateral,
+                                                # not full exposure.  High conviction = size up collateral;
+                                                # spot is the overflow when margin isn't available.
                                                 exchange_cash = cash.get(best.exchange, 0)
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                                 # Apply Quadrumvirate sizing modifier
                                                 if quad_sizing != 1.0:
                                                     buy_amount = buy_amount * quad_sizing
                                                     print(f"   [QUAD] Sizing adjusted: x{quad_sizing:.2f} -> ${buy_amount:.2f}")
+
+                                                # When margin conviction is high, scale collateral up so
+                                                # leverage delivers meaningful position size.
+                                                # When low, hold back cash for spot overflow trades.
+                                                _m_conv_now = 0.0
+                                                _m_lev_now  = 1
+                                                if hasattr(self, '_last_quad_result') and self._last_quad_result:
+                                                    _m_conv_now = self._last_quad_result.get('margin_conviction', 0.0)
+                                                    _m_lev_now  = self._last_quad_result.get('margin_leverage', 1)
+
+                                                _will_use_margin = (
+                                                    best.exchange in ('kraken', 'binance')
+                                                    and _m_lev_now >= 2
+                                                    and _m_conv_now >= 0.3
+                                                )
+                                                if _will_use_margin:
+                                                    if _m_conv_now >= 0.7:
+                                                        # High conviction — deploy full collateral allowance
+                                                        buy_amount = min(buy_amount * 1.0, exchange_cash * 0.85)
+                                                        print(f"   [MARGIN] High conviction ({_m_conv_now:.0%}), {_m_lev_now}x — full collateral: ${buy_amount:.2f}")
+                                                    elif _m_conv_now >= 0.5:
+                                                        # Medium conviction — standard collateral
+                                                        buy_amount = min(buy_amount * 0.8, exchange_cash * 0.70)
+                                                        print(f"   [MARGIN] Medium conviction ({_m_conv_now:.0%}), {_m_lev_now}x — scaled collateral: ${buy_amount:.2f}")
+                                                    else:
+                                                        # Low conviction — use smaller collateral, preserve cash
+                                                        buy_amount = min(buy_amount * 0.5, exchange_cash * 0.50)
+                                                        print(f"   [MARGIN] Low conviction ({_m_conv_now:.0%}), {_m_lev_now}x — reduced collateral: ${buy_amount:.2f}")
+                                                else:
+                                                    # Pure spot trade — standard sizing
+                                                    print(f"   [SPOT] No margin this cycle — standard sizing: ${buy_amount:.2f}")
+
                                                 print(f"   [DEBUG] Buy Calc: Cash={exchange_cash:.2f}, AmtPerPos={amount_per_position}, BuyAmt={buy_amount:.2f}")
 
                                                 # Kraken funding fallback:
@@ -15779,7 +16232,13 @@ class OrcaKillCycle:
                                                         
                                                         # If queen_gated_buy returned a block, skip
                                                         if raw_order and raw_order.get('rejected'):
-                                                            print(f"      QUEEN ARSENAL BLOCKED: {raw_order.get('blocked_by', 'unknown')}")
+                                                            _gate_blocker = raw_order.get('blocked_by', 'unknown')
+                                                            _gate_reason  = raw_order.get('reason', 'no reason given')
+                                                            print(f"  ╔═ GATE BLOCKED ═══════════════════════════════════════════════")
+                                                            print(f"  ║  Symbol   : {symbol_clean} @ {best.exchange.upper()}")
+                                                            print(f"  ║  Gate     : {_gate_blocker}")
+                                                            print(f"  ║  Reason   : {_gate_reason}")
+                                                            print(f"  ╚═══════════════════════════════════════════════════════════════")
                                                             raw_order = None
                                                         
                                                         #   NORMALIZE ORDER RESPONSE across exchanges!
@@ -16755,10 +17214,10 @@ class OrcaKillCycle:
             # Atomic write into shared state dir
             state_dir = os.environ.get("AUREON_STATE_DIR", "state")
             os.makedirs(state_dir, exist_ok=True)
-            tmp_path = os.path.join(state_dir, "dashboard_snapshot.json.tmp")
+            tmp_path = os.path.join(state_dir, "dashboard_snapshot._json.tmp")
             final_path = os.path.join(state_dir, "dashboard_snapshot.json")
             with open(tmp_path, "w") as f:
-                json.dump(state, f)
+                _json.dump(state, f)
             os.replace(tmp_path, final_path)
         except Exception as e:
             # Log state dump errors to help debugging
@@ -16921,7 +17380,7 @@ class OrcaKillCycle:
                     # 1. Get current price and momentum
                     ticker = None
                     for client_name in ['kraken', 'binance', 'alpaca']:
-                        _ = getattr(self, client_name, None) or self.clients.get(client_name)
+                        cl = getattr(self, client_name, None) or self.clients.get(client_name)
                         if not cl:
                             continue
                         try:
@@ -17214,8 +17673,8 @@ class OrcaKillCycle:
             import os
             state_dir = os.environ.get("AUREON_STATE_DIR", "state")
             os.makedirs(state_dir, exist_ok=True)
-            with tempfile.NamedTemporaryFile(mode='w', dir=state_dir, suffix='.json.tmp', delete=False) as f:
-                json.dump(state, f)
+            with tempfile.NamedTemporaryFile(mode='w', dir=state_dir, suffix='._json.tmp', delete=False) as f:
+                _json.dump(state, f)
                 tmp_path = f.name
             final_path = os.path.join(state_dir, "warroom_snapshot.json")
             os.replace(tmp_path, final_path)
