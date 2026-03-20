@@ -831,7 +831,9 @@ def execute_trades(predictions):
 
 if __name__ == "__main__":
     initialize_system()
-    
+
     # Start main loop
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main_loop())
+    try:
+        asyncio.run(main_loop())
+    except KeyboardInterrupt:
+        print("\nProbability Nexus stopped.")

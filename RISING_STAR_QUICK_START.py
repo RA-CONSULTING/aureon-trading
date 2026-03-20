@@ -155,7 +155,7 @@ for pos in positions[:]:
     
     # Standard exit logic (if not fast-killed)
     if net_pnl > 0 and current >= pos.target_price:
-        # ... normal exit ...
+        pass  # ... normal exit ...
 
 
 # ═══════════════════════════════════════════════════════════════════════════

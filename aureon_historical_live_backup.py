@@ -308,12 +308,8 @@ class AureonHistoricalLive:
                 self.probability_matrix = ProbabilityIntelligenceMatrix()
                 print("✅ Probability Intelligence Matrix: ACTIVE")
             except Exception as e:
-                print(f"⚠️  Risk Matrix: {e}"),
-            'ecosystem_predictions': 0,
-            'mycelium_signals': 0,
-            'immune_interventions': 0
-        }
-        
+                print(f"⚠️  Risk Matrix: {e}")
+
         print(f"\n💰 Starting Capital: £{self.current_capital:,.2f}")
         print(f"🎯 Target: £100,000.00")
         print(f"📊 Strategy: Historical Patterns (87.5% win rate)")
@@ -353,7 +349,7 @@ class AureonHistoricalLive:
     def on_pattern_thought(self, thought: Thought):
         """Handle pattern-related thoughts"""
         if thought.topic == "pattern.confirmed":
-            print(f"✅ Pattern confirmed by {thought.source}: {thought.payload.get('pattern_id')}"isk Matrix: {e}")
+            print(f"✅ Pattern confirmed by {thought.source}: {thought.payload.get('pattern_id')}")
         
         # Initialize exchange clients
         self.kraken = None
@@ -387,7 +383,10 @@ class AureonHistoricalLive:
             'winning_trades': 0,
             'losing_trades': 0,
             'total_profit': 0.0,
-            'patterns_used': {}
+            'patterns_used': {},
+            'ecosystem_predictions': 0,
+            'mycelium_signals': 0,
+            'immune_interventions': 0
         }
         
         print(f"\n💰 Starting Capital: £{self.current_capital:,.2f}")
@@ -455,59 +454,15 @@ class AureonHistoricalLive:
                 avg_profit_pct=0.012,
                 avg_loss_pct=0.005,
                 sample_size=892,
-          Publish scan start thought
-        self.publish_thought("historical.scan_start", {
-            "timestamp": time.time(),
-            "capital": self.current_capital
-        })
-        
-        # Get market data from all exchanges
-        markets = await self.get_market_data()
-        
-        for market in markets:
-            # Check each historical pattern
-            for pattern in self.historical_patterns:
-                confidence = pattern.matches_market_conditions(market['data'])
-                
-                if confidence > 0.75:  # 75%+ confidence threshold
-                    
-                    # 🍄 Validate with Mycelium Neural Network
-                    if self.mycelium:
-                        try:
-                            mycelium_signal = self.mycelium.process_market_data({
-                                'symbol': market['symbol'],
-                                'price': market['price'],
-                                'momentum': market['data'].get('momentum', 0.5)
-                            })
-                            if mycelium_signal:
-                                confidence = (confidence + mycelium_signal.get('confidence', 0.5)) / 2
-                                self.stats['mycelium_signals'] += 1
-                        except Exception as e:
-                            print(f"⚠️  Mycelium signal error: {e}")
-                    
-                    # 💎 Validate with probability systems
-                    if self.ultimate_intel:
-                        try:
-                            prediction = ultimate_predict(
-                                current_pnl=0.0,
-                                target_pnl=pattern.avg_profit_pct * 100,
-                                pnl_history=[],
-                                momentum_score=market['data'].get('momentum', 0.5)
-                            )
-                            confidence = max(confidence, prediction.pattern_confidence)
-                            self.stats['ecosystem_predictions'] += 1
-                        except Exception as e:
-                            print(f"⚠️  Probability prediction error: {e}")
-                    
-                    # 📊 Store in Memory Core
-                    if self.memory:
-                        try:
-                            self.memory.store(f"pattern_{pattern.pattern_id}", {
-                                'timestamp': time.time(),
-                                'symbol': market['symbol'],
-                                'confidence': confidence,
-                                'market_data': market['data']
-                            }
+                timeframe='instant',
+                conditions={'spread': 0.01, 'liquidity': True}
+            ),
+            HistoricalPattern(
+                pattern_id='support_bounce_15m',
+                scenario='reversal',
+                win_rate=0.87,
+                avg_profit_pct=0.20,
+                avg_loss_pct=0.06,
                 sample_size=321,
                 timeframe='15m',
                 conditions={'support_test': True, 'rsi': 0.30}
@@ -535,24 +490,9 @@ class AureonHistoricalLive:
             # Check each historical pattern
             for pattern in self.historical_patterns:
                 confidence = pattern.matches_market_conditions(market['data'])
-                
+
                 if confidence > 0.75:  # 75%+ confidence threshold
-                    # Publish pattern detection to ecosystem
-                    self.publish_thought("pattern.detected", {
-                        "pattern_id": pattern.pattern_id,
-                        "symbol": market['symbol'],
-                        "confidence": confidence,
-                        "entry_price": entry_price,
-                        "predicted_return": pattern.avg_profit_pct
-                    })
-                    
-                    signals.append(signal)
-        
-        # Publish scan complete
-        self.publish_thought("historical.scan_complete", {
-            "signals_found": len(signals),
-            "timestamp": time.time()
-        }bility systems
+                    # Enhance with probability systems
                     if self.ultimate_intel:
                         try:
                             prediction = self.ultimate_intel.predict(
@@ -562,17 +502,17 @@ class AureonHistoricalLive:
                                 momentum_score=market['data'].get('momentum', 0.5)
                             )
                             confidence = max(confidence, prediction.pattern_confidence)
-                        except:
+                        except Exception:
                             pass
-                    
+
                     # Create signal
                     entry_price = market['price']
                     predicted_target = entry_price * (1 + pattern.avg_profit_pct)
                     predicted_stop = entry_price * (1 - pattern.avg_loss_pct)
-                    
+
                     # Position sizing based on confidence and capital
                     position_size_pct = self.calculate_position_size(pattern, confidence)
-                    
+
                     signal = LiveSignal(
                         timestamp=time.time(),
                         pattern=pattern,
@@ -585,9 +525,24 @@ class AureonHistoricalLive:
                         position_size_pct=position_size_pct,
                         reason=f"{pattern.scenario.upper()} pattern ({pattern.win_rate*100:.0f}% historical win rate)"
                     )
-                    
+
+                    # Publish pattern detection to ecosystem
+                    self.publish_thought("pattern.detected", {
+                        "pattern_id": pattern.pattern_id,
+                        "symbol": market['symbol'],
+                        "confidence": confidence,
+                        "entry_price": entry_price,
+                        "predicted_return": pattern.avg_profit_pct
+                    })
+
                     signals.append(signal)
-        
+
+        # Publish scan complete
+        self.publish_thought("historical.scan_complete", {
+            "signals_found": len(signals),
+            "timestamp": time.time()
+        })
+
         return signals
     
     async def get_market_data(self) -> List[Dict]:
@@ -683,83 +638,13 @@ class AureonHistoricalLive:
     async def get_alpaca_markets(self) -> List[Dict]:
         """Get Alpaca market data"""
         # TODO: Implement real Alpaca API calls
-        retuself.publish_thought("trade.skipped", {
-                "symbol": signal.symbol,
-                "reason": reason,
-                "pattern": signal.pattern.pattern_id
-            })
-            return None
-        
-        # 🛡️ Check with Immune System for approval
-        if self.immune_system:
-            try:
-                approval = self.immune_system.check_trade_health({
-                    'symbol': signal.symbol,
-                    'size': signal.position_size_pct * self.current_capital,
-                    'confidence': signal.confidence
-                })
-                if not approval.get('approved', True):
-                    print(f"🛡️  BLOCKED by Immune System: {approval.get('reason')}")
-                    self.stats['immune_interventions'] += 1
-                    return None
-            except:
-                pass
-        
-        # Calculate position size in capital
-        position_size = self.current_capital * signal.position_size_pct
-        
-        print(f"\n🎯 EXECUTING SIGNAL:")
-        print(f"   Pattern: {signal.pattern.pattern_id}")
-        print(f"   Symbol: {signal.symbol} @ {signal.exchange}")
-        print(f"   Confidence: {signal.confidence*100:.1f}%")
-        print(f"   Entry: £{signal.entry_price:,.2f}")
-        print(f"   Target: £{signal.predicted_target:,.2f} (+{signal.pattern.avg_profit_pct*100:.1f}%)")
-        print(f"   Stop: £{signal.predicted_stop:,.2f} (-{signal.pattern.avg_loss_pct*100:.1f}%)")
-        print(f"   Size: £{position_size:,.2f} ({signal.position_size_pct*100:.0f}%)")
-        
-        # Publish execution to ecosystem
-        self.publish_thought("trade.executing", {
-            "pattern": signal.pattern.pattern_id,
-            "symbol": signal.symbol,
-            "entry_price": signal.entry_price,
-            "position_size": position_size,
-            "confidence": signal.confidence
-        })
-        
-        # TODO: Execute real trade via exchange API
-        # For now, create position object
-        
-        position = LivePosition(
-            signal=signal,
-            entry_time=time.time(),
-            entry_price=signal.entry_price,
-            position_size=position_size,
-            current_price=signal.entry_price,
-            unrealized_pnl=0.0,
-            unrealized_pnl_pct=0.0
-        )
-        
-        self.positions.append(position)
-        self.day_trades_used += 1
-        
-        # Track pattern usage
-        pattern_id = signal.pattern.pattern_id
-        self.stats['patterns_used'][pattern_id] = self.stats['patterns_used'].get(pattern_id, 0) + 1
-        
-        print(f"   ✅ Position opened (Day trades: {self.day_trades_used} - UNLIMITED)")
-        
-        # Publish position opened
-        self.publish_thought("position.opened", {
-            "pattern": signal.pattern.pattern_id,
-            "symbol": signal.symbol,
-            "entry_price": signal.entry_price,
-            "position_size": position_size
-        }
-        
+        return []
+
+    def can_trade(self):
+        """Check if we can open a new trade"""
         # NO PDT RESTRICTIONS - Full production autonomous trading (unlimited)
-        
         return True, "OK"
-    
+
     async def execute_signal(self, signal: LiveSignal) -> Optional[LivePosition]:
         """Execute a trading signal"""
         can_trade, reason = self.can_trade()
@@ -805,42 +690,72 @@ class AureonHistoricalLive:
         return position
     
     async def monitor_positions(self):
-        ""💎 Record outcome with Probability Intelligence
-        if self.ultimate_intel:
-            try:
-                record_ultimate_outcome(
-                    outcome_pnl=profit,
-                    target_pnl=position.signal.pattern.avg_profit_pct * position.position_size,
-                    pnl_history=[profit],
-                    momentum_score=0.5,
-                    risk_flags=[]
-                )
-            except:
-                pass
-        
-        # 📊 Store in Memory Core
-        if self.memory:
-            try:
-                self.memory.store(f"trade_{int(time.time())}", {
-                    'pattern': position.signal.pattern.pattern_id,
-                    'symbol': position.signal.symbol,
-                    'profit': profit,
-                    'profit_pct': profit_pct,
-                    'reason': reason,
-                    'timestamp': time.time()
-                })
-            except:
-                pass
-        
+        """Monitor open positions and check exit conditions"""
+        for position in self.positions:
+            if position.status != 'open':
+                continue
+
+            # Get current price
+            current_price = await self.get_current_price(position.signal.symbol, position.signal.exchange)
+            if not current_price:
+                continue
+
+            # Update P&L
+            position.current_price = current_price
+            position.unrealized_pnl = (current_price - position.entry_price) * (position.position_size / position.entry_price)
+            position.unrealized_pnl_pct = ((current_price - position.entry_price) / position.entry_price) * 100
+
+            # Check exit conditions
+            should_exit, exit_reason = self.should_exit_position(position)
+
+            if should_exit:
+                await self.close_position(position, exit_reason)
+
+    def should_exit_position(self, position: LivePosition) -> Tuple[bool, str]:
+        """Determine if a position should be closed"""
+        # Target hit
+        if position.current_price >= position.signal.predicted_target:
+            return True, "TARGET HIT"
+
+        # Stop loss hit
+        if position.current_price <= position.signal.predicted_stop:
+            return True, "STOP LOSS"
+
+        # Time-based exit (pattern timeframe expired)
+        time_in_position = time.time() - position.entry_time
+        max_time = {'5m': 300, '15m': 900, '1h': 3600, 'instant': 60}
+        timeframe_seconds = max_time.get(position.signal.pattern.timeframe, 900)
+
+        if time_in_position > timeframe_seconds:
+            return True, "TIMEFRAME EXPIRED"
+
+        return False, ""
+
+    async def close_position(self, position: LivePosition, reason: str):
+        """Close a position"""
+        profit = position.unrealized_pnl
+        profit_pct = position.unrealized_pnl_pct
+
+        # Update capital
+        self.current_capital += profit
+
+        # Update stats
+        self.stats['total_trades'] += 1
+        if profit > 0:
+            self.stats['winning_trades'] += 1
+        else:
+            self.stats['losing_trades'] += 1
+        self.stats['total_profit'] += profit
+
         # Check milestone unlocks
         self.check_milestones()
-        
+
         # Log trade
         print(f"\n{'✅' if profit > 0 else '❌'} CLOSED: {position.signal.symbol}")
         print(f"   Reason: {reason}")
         print(f"   P&L: £{profit:+,.2f} ({profit_pct:+.1f}%)")
         print(f"   Capital: £{self.current_capital:,.2f}")
-        
+
         # Publish to ecosystem
         self.publish_thought("position.closed", {
             "pattern": position.signal.pattern.pattern_id,
@@ -850,81 +765,12 @@ class AureonHistoricalLive:
             "reason": reason,
             "win": profit > 0,
             "capital": self.current_capital
-        }sition.entry_price) * (position.position_size / position.entry_price)
-            position.unrealized_pnl_pct = ((current_price - position.entry_price) / position.entry_price) * 100
-            
-            # Check exit conditions
-            should_exit, exit_reason = self.should_exit_position(position)
-            
-            if should_exit:
-                await self.close_position(position, exit_reason)
-    
-    def should_exit_position(self, position: LivePosition) -> Tuple[bool, str]:
-        """Deter\n🐙 ECOSYSTEM STATS:")
-        print(f"   💎 Probability Predictions: {self.stats['ecosystem_predictions']}")
-        print(f"   🍄 Mycelium Signals: {self.stats['mycelium_signals']}")
-        print(f"   🛡️  Immune Interventions: {self.stats['immune_interventions']}")
-        print(f"{'═' * 80}")
-        
-        # Publish status to ecosystem
-        self.publish_thought("system.status", {
-            "capital": self.current_capital,
-            "trades": self.stats['total_trades'],
-            "win_rate": win_rate,
-            "profit": self.stats['total_profit'],
-            "ecosystem_stats": {
-                "predictions": self.stats['ecosystem_predictions'],
-                "mycelium_signals": self.stats['mycelium_signals'],
-                "immune_interventions": self.stats['immune_interventions']
-            }
-        }ition should be closed"""
-        # Target hit
-        if position.current_price >= position.signal.predicted_target:
-            return True, "TARGET HIT"
-        
-        # Stop loss hit
-        if position.current_price <= position.signal.predicted_stop:
-            return True, "STOP LOSS"
-        
-        # Time-based exit (pattern timeframe expired)
-        time_in_position = time.time() - position.entry_time
-        max_time = {'5m': 300, '15m': 900, '1h': 3600, 'instant': 60}
-        timeframe_seconds = max_time.get(position.signal.pattern.timeframe, 900)
-        
-        if time_in_position > timeframe_seconds:
-            return True, "TIMEFRAME EXPIRED"
-        
-        return False, ""
-    
-    async def close_position(self, position: LivePosition, reason: str):
-        """Close a position"""
-        profit = position.unrealized_pnl
-        profit_pct = position.unrealized_pnl_pct
-        
-        # Update capital
-        self.current_capital += profit
-        
-        # Update stats
-        self.stats['total_trades'] += 1
-        if profit > 0:
-            self.stats['winning_trades'] += 1
-        else:
-            self.stats['losing_trades'] += 1
-        self.stats['total_profit'] += profit
-        
-        # Check milestone unlocks
-        self.check_milestones()
-        
-        # Log trade
-        print(f"\n{'✅' if profit > 0 else '❌'} CLOSED: {position.signal.symbol}")
-        print(f"   Reason: {reason}")
-        print(f"   P&L: £{profit:+,.2f} ({profit_pct:+.1f}%)")
-        print(f"   Capital: £{self.current_capital:,.2f}")
-        
+        })
+
         # Remove from positions
         self.positions.remove(position)
         self.closed_trades.append(position)
-    
+
     def check_milestones(self):
         """Check and unlock milestones"""
         if not self.margin_unlocked and self.current_capital >= self.margin_threshold:
