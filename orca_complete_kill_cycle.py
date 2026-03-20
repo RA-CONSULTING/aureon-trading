@@ -15920,10 +15920,46 @@ class OrcaKillCycle:
                                 if len(opportunities) > 4000:
                                     print(f"   Extreme volatility! {len(opportunities):,} opportunities")
                                 
-                                # Filter for symbols not already in positions
-                                active_symbols = [p.symbol for p in positions]
-                                new_opps = [o for o in opportunities if o.symbol not in active_symbols]
-                                
+                                # ─── Unified position intent filter ─────────────────────────
+                                # Maps normalised symbol → existing position intent so we can
+                                # detect and block self-destructive spot/margin conflicts.
+                                def _norm_sym(s):
+                                    return s.replace('/', '').replace('-', '').upper()
+
+                                # Build intent map: norm_symbol → (is_margin, margin_side)
+                                _pos_intent = {}
+                                for _p in positions:
+                                    _ps = _norm_sym(_p.symbol)
+                                    _pos_intent[_ps] = (getattr(_p, 'is_margin', False),
+                                                        getattr(_p, 'margin_side', 'LONG'))
+
+                                # Determine the intended direction for new trades this cycle
+                                # (from Quadrumvirate margin recommendation, default LONG)
+                                _cycle_margin_rec = 'LONG'
+                                if hasattr(self, '_last_quad_result') and self._last_quad_result:
+                                    _cycle_margin_rec = self._last_quad_result.get('margin_recommendation', 'LONG')
+
+                                new_opps = []
+                                _blocked_conflict = []
+                                for o in opportunities:
+                                    _os = _norm_sym(o.symbol)
+                                    _existing = _pos_intent.get(_os)
+                                    if _existing is None:
+                                        new_opps.append(o)
+                                        continue
+                                    # Symbol already held — check for directional conflict
+                                    _ex_margin, _ex_side = _existing
+                                    # Rule 1: MARGIN SHORT + incoming SPOT BUY = self-hedging → block
+                                    if _ex_margin and _ex_side == 'SHORT':
+                                        _blocked_conflict.append(f"{o.symbol}(margin-SHORT conflict)")
+                                        continue
+                                    # Rule 2: Any existing position of the same symbol → skip
+                                    # (spot + margin in same direction = redundant capital use)
+                                    _blocked_conflict.append(f"{o.symbol}(already held as {'margin' if _ex_margin else 'spot'})")
+
+                                if _blocked_conflict:
+                                    print(f"   [INTENT] Blocked {len(_blocked_conflict)} conflicts: {', '.join(_blocked_conflict[:5])}")
+
                                 top_opps = [f"{o.symbol}({o.change_pct:+.2f}%)" for o in new_opps[:3]]
                                 print(f"   [DEBUG] Found {len(opportunities)} opps, {len(new_opps)} new (top: {', '.join(top_opps) or 'none'})")
                                 
@@ -16044,12 +16080,18 @@ class OrcaKillCycle:
 
                                             # Fallback autonomy: if Queen says HOLD but setup is strong and funded,
                                             # let the Queen Arsenal perform final hard-gate validation.
+                                            # INTENT CHECK: never override into a directional conflict.
                                             if not queen_approved:
                                                 setup_strong = abs(best.change_pct) >= max(0.10, min_change_pct * 2) and best.momentum_score >= 0.20
                                                 setup_funded = cash.get(best.exchange, 0.0) >= 50.0
-                                                if action != 'BUY' and setup_strong and setup_funded:
+                                                # Block fallback if unified signal says SELL for this asset
+                                                _u_dir_best = getattr(best, '_unified_direction', 'NEUTRAL')
+                                                _intent_ok  = _u_dir_best != 'SELL'
+                                                if action != 'BUY' and setup_strong and setup_funded and _intent_ok:
                                                     print(f"      Queen fallback override: strong funded setup ({best.symbol}) -> sending to Queen Arsenal gates")
                                                     queen_approved = True
+                                                elif not _intent_ok:
+                                                    print(f"      Queen fallback BLOCKED: unified signal is SELL for {best.symbol} (intent coherence)")
 
                                             print(f"   [DEBUG] {quantum_indicator}Queen Decision for {best.symbol}: Approved={queen_approved} (Action={action}, Conf={confidence:.1%})")
                                         except Exception as e:
@@ -16066,13 +16108,48 @@ class OrcaKillCycle:
                                             if client:
                                                 symbol_clean = best.symbol.replace('/', '')
                                                 
-                                                # Adjust amount based on available cash
+                                                # ─── Unified margin-aware sizing ─────────────────────────
+                                                # Margin uses leverage → the CASH deployed is collateral,
+                                                # not full exposure.  High conviction = size up collateral;
+                                                # spot is the overflow when margin isn't available.
                                                 exchange_cash = cash.get(best.exchange, 0)
                                                 buy_amount = min(amount_per_position, exchange_cash * 0.9)
                                                 # Apply Quadrumvirate sizing modifier
                                                 if quad_sizing != 1.0:
                                                     buy_amount = buy_amount * quad_sizing
                                                     print(f"   [QUAD] Sizing adjusted: x{quad_sizing:.2f} -> ${buy_amount:.2f}")
+
+                                                # When margin conviction is high, scale collateral up so
+                                                # leverage delivers meaningful position size.
+                                                # When low, hold back cash for spot overflow trades.
+                                                _m_conv_now = 0.0
+                                                _m_lev_now  = 1
+                                                if hasattr(self, '_last_quad_result') and self._last_quad_result:
+                                                    _m_conv_now = self._last_quad_result.get('margin_conviction', 0.0)
+                                                    _m_lev_now  = self._last_quad_result.get('margin_leverage', 1)
+
+                                                _will_use_margin = (
+                                                    best.exchange in ('kraken', 'binance')
+                                                    and _m_lev_now >= 2
+                                                    and _m_conv_now >= 0.3
+                                                )
+                                                if _will_use_margin:
+                                                    if _m_conv_now >= 0.7:
+                                                        # High conviction — deploy full collateral allowance
+                                                        buy_amount = min(buy_amount * 1.0, exchange_cash * 0.85)
+                                                        print(f"   [MARGIN] High conviction ({_m_conv_now:.0%}), {_m_lev_now}x — full collateral: ${buy_amount:.2f}")
+                                                    elif _m_conv_now >= 0.5:
+                                                        # Medium conviction — standard collateral
+                                                        buy_amount = min(buy_amount * 0.8, exchange_cash * 0.70)
+                                                        print(f"   [MARGIN] Medium conviction ({_m_conv_now:.0%}), {_m_lev_now}x — scaled collateral: ${buy_amount:.2f}")
+                                                    else:
+                                                        # Low conviction — use smaller collateral, preserve cash
+                                                        buy_amount = min(buy_amount * 0.5, exchange_cash * 0.50)
+                                                        print(f"   [MARGIN] Low conviction ({_m_conv_now:.0%}), {_m_lev_now}x — reduced collateral: ${buy_amount:.2f}")
+                                                else:
+                                                    # Pure spot trade — standard sizing
+                                                    print(f"   [SPOT] No margin this cycle — standard sizing: ${buy_amount:.2f}")
+
                                                 print(f"   [DEBUG] Buy Calc: Cash={exchange_cash:.2f}, AmtPerPos={amount_per_position}, BuyAmt={buy_amount:.2f}")
 
                                                 # Kraken funding fallback:
