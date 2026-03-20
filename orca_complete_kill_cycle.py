@@ -15924,7 +15924,14 @@ class OrcaKillCycle:
                                 # Maps normalised symbol → existing position intent so we can
                                 # detect and block self-destructive spot/margin conflicts.
                                 def _norm_sym(s):
-                                    return s.replace('/', '').replace('-', '').upper()
+                                    # Strip slashes/dashes, uppercase, then remove quote-currency
+                                    # suffixes so ETHUSDT, ETH/USD, ETHUSD all resolve to ETH.
+                                    b = s.replace('/', '').replace('-', '').upper()
+                                    for q in ('USDT', 'USDC', 'BUSD', 'USD', 'GBP', 'EUR', 'BTC', 'ETH'):
+                                        if b.endswith(q) and len(b) > len(q):
+                                            b = b[:-len(q)]
+                                            break
+                                    return b
 
                                 # Build intent map: norm_symbol → (is_margin, margin_side)
                                 _pos_intent = {}
