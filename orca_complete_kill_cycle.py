@@ -7274,14 +7274,42 @@ class OrcaKillCycle:
                 resonance = getattr(opp, '_hnc_resonance', '') or ''
                 if resonance:
                     resonance = f" [{resonance[:15]}]"
-                
+
                 # Show Target metrics
                 time_to_target = getattr(opp, '_time_to_target', 0)
                 required_move = getattr(opp, '_required_move_pct', 0)
                 time_str = f"{time_to_target:.1f}x" if time_to_target < 100 else "slow"
-                
+
                 print(f"   {i+1}. {hnc_tag}{hist_tag} {opp.symbol} ({opp.exchange}): {opp.change_pct:+.2f}% | Need: {required_move:.2f}% | Speed: {time_str}{resonance}")
-        
+
+        # ═══════════════════════════════════════════════════════════════
+        #  PER-EXCHANGE SIGNAL BREAKDOWN - visibility for all 3 exchanges
+        # ═══════════════════════════════════════════════════════════════
+        _exchanges_seen = {}
+        for _opp in opportunities:
+            _ex = _opp.exchange
+            if _ex not in _exchanges_seen:
+                _exchanges_seen[_ex] = []
+            _exchanges_seen[_ex].append(_opp)
+
+        if _exchanges_seen:
+            print("\n  SIGNALS BY EXCHANGE:")
+            for _ex_name in ('alpaca', 'kraken', 'capital', 'binance'):
+                _ex_opps = _exchanges_seen.get(_ex_name, [])
+                if not _ex_opps:
+                    print(f"     {_ex_name.upper():10s}  — no signals passing gates")
+                    continue
+                print(f"     {_ex_name.upper():10s}  top {min(3, len(_ex_opps))} signals:")
+                for _rank, _o in enumerate(_ex_opps[:3], 1):
+                    _mscore = getattr(_o, 'momentum_score', 0)
+                    _price  = _o.price
+                    _chg    = _o.change_pct
+                    print(f"       {_rank}. {_o.symbol:12s}  price=${_price:>12.4f}  chg={_chg:+.2f}%  momentum={_mscore:.1f}")
+            # Print any exchanges not in the hard-coded list
+            for _ex_name, _ex_opps in _exchanges_seen.items():
+                if _ex_name not in ('alpaca', 'kraken', 'capital', 'binance'):
+                    print(f"     {_ex_name.upper():10s}  {len(_ex_opps)} signals")
+
         return opportunities
     
     def _scan_alpaca_market(self, min_change_pct: float, min_volume: float) -> List[MarketOpportunity]:
@@ -10328,6 +10356,35 @@ class OrcaKillCycle:
         # ═══════════════════════════════════════════════════════════════
         #  SPOT FALLBACK - Non-Kraken or margin unavailable
         # ═══════════════════════════════════════════════════════════════
+
+        # Capital.com CFDs require quantity in UNITS (not quote currency).
+        # convert quote_qty (USD/GBP) → CFD units: size = quote_gbp / current_price
+        if exchange == 'capital':
+            _cap_price = price if price and price > 0 else None
+            if _cap_price is None:
+                try:
+                    _cap_ticker = client.get_ticker(symbol)
+                    if _cap_ticker:
+                        _cap_price = float(_cap_ticker.get('bid', _cap_ticker.get('price', 0)) or 0)
+                except Exception:
+                    pass
+            if _cap_price and _cap_price > 0:
+                _cap_qty = 0.0
+                if quote_qty and quote_qty > 0:
+                    # quote_qty is in USD; Capital account is GBP — use 1:1 approx (close enough for sizing)
+                    _cap_qty = quote_qty / _cap_price
+                elif quantity and quantity > 0:
+                    _cap_qty = quantity
+                if _cap_qty > 0:
+                    print(f"   CAPITAL CFD: {symbol} size={_cap_qty:.4f} units @ {_cap_price} (quote={quote_qty})")
+                    return client.place_market_order(symbol=symbol, side='buy', quantity=_cap_qty)
+                else:
+                    print(f"  Capital CFD: could not calculate size for {symbol}")
+                    return {'status': 'error', 'reason': 'Capital CFD size calculation failed'}
+            else:
+                print(f"  Capital CFD: no price for {symbol}, cannot size order")
+                return {'status': 'error', 'reason': f'Capital CFD no price for {symbol}'}
+
         if quote_qty and quote_qty > 0:
             return client.place_market_order(symbol=symbol, side='buy', quote_qty=quote_qty)
         elif quantity and quantity > 0:
@@ -11375,7 +11432,7 @@ class OrcaKillCycle:
         elif exchange == 'kraken':
             min_required = 5.0   # Kraken: varies by pair, $5 safe minimum
         elif exchange == 'capital':
-            min_required = 100.0 # Capital.com: user specified minimum
+            min_required = 50.0  # Capital.com: £50 balance (~$63) — use GBP min
 
         # 2. Exchange specific filters (if client provided)
         if client and hasattr(client, 'get_symbol_filters'):
@@ -15661,8 +15718,8 @@ class OrcaKillCycle:
 
                                     # ROUTE TO RICHEST EXCHANGE: if a richer exchange isn't represented
                                     # in funded_opps, fetch a real price and reroute the best opportunity.
-                                    # Per-exchange minimums: kraken=$5, alpaca=$1, capital=$100
-                                    _exchange_minimums = {'kraken': 5.0, 'alpaca': 1.0, 'binance': 10.0, 'capital': 100.0}
+                                    # Per-exchange minimums: kraken=$5, alpaca=$1, capital=$50
+                                    _exchange_minimums = {'kraken': 5.0, 'alpaca': 1.0, 'binance': 10.0, 'capital': 50.0}
                                     # Only reroute if richest exchange has enough cash above its own minimum
                                     _rich_min = _exchange_minimums.get(richest_exchange, 5.0)
                                     if (richest_exchange and richest_cash >= _rich_min * 2
@@ -15845,7 +15902,13 @@ class OrcaKillCycle:
                                                         
                                                         # If queen_gated_buy returned a block, skip
                                                         if raw_order and raw_order.get('rejected'):
-                                                            print(f"      QUEEN ARSENAL BLOCKED: {raw_order.get('blocked_by', 'unknown')}")
+                                                            _gate_blocker = raw_order.get('blocked_by', 'unknown')
+                                                            _gate_reason  = raw_order.get('reason', 'no reason given')
+                                                            print(f"  ╔═ GATE BLOCKED ═══════════════════════════════════════════════")
+                                                            print(f"  ║  Symbol   : {symbol_clean} @ {best.exchange.upper()}")
+                                                            print(f"  ║  Gate     : {_gate_blocker}")
+                                                            print(f"  ║  Reason   : {_gate_reason}")
+                                                            print(f"  ╚═══════════════════════════════════════════════════════════════")
                                                             raw_order = None
                                                         
                                                         #   NORMALIZE ORDER RESPONSE across exchanges!
