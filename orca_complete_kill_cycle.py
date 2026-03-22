@@ -10555,11 +10555,18 @@ class OrcaKillCycle:
                         quantity=_m_qty,
                         leverage=_m_leverage,
                     )
-                    if result:
+                    if result and not result.get('error'):
                         result['_margin_order'] = True
                         result['_leverage'] = _m_leverage
-                        result['_margin_side'] = margin_recommendation if margin_recommendation in ('LONG', 'SHORT') else 'LONG'
+                        # Ensure margin_side matches the actual order side placed
+                        if margin_recommendation in ('LONG', 'SHORT'):
+                            result['_margin_side'] = margin_recommendation
+                        else:
+                            result['_margin_side'] = 'LONG' if _m_side == 'buy' else 'SHORT'
                         return result
+                    elif result and result.get('error'):
+                        print(f"      Margin order returned error: {result.get('error')}, falling back to spot...")
+                        # Fall through to spot
                 except Exception as e:
                     print(f"      Margin order failed ({e}), falling back to spot...")
                     # Fall through to spot
@@ -13150,7 +13157,7 @@ class OrcaKillCycle:
                                         side='sell',
                                         quantity=pos.entry_qty
                                     )
-                                if sell_order:
+                                if sell_order and not sell_order.get('error'):
                                     sell_price = float(sell_order.get('filled_avg_price', current))
                                     # Recalculate final P&L
                                     final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
@@ -13243,7 +13250,10 @@ class OrcaKillCycle:
                                         print(f"      Re-scan failed: {scan_err}")
                                     
                                     print(f"     CYCLE CONTINUES - NEVER STOP HUNTING!")
-                                positions.remove(pos)
+                                elif sell_order and sell_order.get('error'):
+                                    print(f"      SELL FAILED for {pos.symbol}: {sell_order.get('error')}")
+                                if sell_order and not sell_order.get('error'):
+                                    positions.remove(pos)
                                 
                         except Exception as e:
                             print(f"      Error monitoring {pos.symbol}: {e}")
@@ -16870,15 +16880,22 @@ class OrcaKillCycle:
                                         exchange=pos.exchange
                                     )
                                 
+                                if sell_order and sell_order.get('error'):
+                                    print(f"      SELL FAILED for {pos.symbol}: {sell_order.get('error')}")
+                                    continue
+                                elif not sell_order:
+                                    print(f"      SELL returned None for {pos.symbol}")
+                                    continue
+
                                 if sell_order:
                                     sell_price = float(sell_order.get('filled_avg_price', current))
                                     final_exit = sell_price * pos.entry_qty * (1 - fee_rate)
                                     final_pnl = final_exit - entry_cost
-                                    
+
                                     # For margin positions, account for leverage in P&L
                                     if pos.is_margin:
                                         final_pnl = pos.unrealized_pnl_margin  # Use margin P&L
-                                    
+
                                     # Update session stats
                                     session_stats['total_pnl'] += final_pnl
                                     if final_pnl > 0:

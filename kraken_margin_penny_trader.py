@@ -3290,10 +3290,13 @@ class KrakenMarginArmyTrader:
                     volume=trade.volume,
                 )
                 if result.get("error"):
-                    logger.warning(f"Close without leverage failed, trying bare: {result}")
+                    # Final attempt: still pass volume to avoid closing unrelated positions
+                    # but omit leverage (Kraken may infer it from the open position)
+                    logger.warning(f"Close without leverage failed, trying with volume=0 (close all for pair): {result}")
                     result = self.client.close_margin_position(
                         symbol=trade.pair,
                         side=close_side,
+                        volume=trade.volume,  # Keep volume to avoid closing wrong positions
                     )
                     if result.get("error"):
                         logger.error(f"ALL close attempts FAILED: {result}")

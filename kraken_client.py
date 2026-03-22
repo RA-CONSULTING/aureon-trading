@@ -1190,15 +1190,17 @@ class KrakenClient:
             "price": self._format_order_value(price),
         }
         
+        # reduce_only is a top-level parameter, NOT an oflag
+        if reduce_only:
+            params["reduce_only"] = "true"
+
         # Order flags
         oflags = []
         if post_only:
             oflags.append("post")  # Post-only (maker) order
-        if reduce_only:
-            oflags.append("nompp")  # No market price protection (for reduce-only behavior)
         if oflags:
             params["oflags"] = ",".join(oflags)
-        
+
         # Time in force
         if time_in_force == "IOC":
             params["timeinforce"] = "IOC"
@@ -2371,18 +2373,22 @@ class KrakenClient:
             "ordertype": order_type.lower(),
             "volume": self._format_order_value(vol),
             "leverage": str(lev),
+            "trading_agreement": "agree",
         }
 
         # Price for limit orders
         if order_type.lower() == "limit" and price:
             params["price"] = self._format_order_value(price)
 
+        # reduce_only is a top-level parameter, NOT an oflag
+        # (nompp = "no market price protection" which is unrelated)
+        if reduce_only:
+            params["reduce_only"] = "true"
+
         # Order flags
         oflags = []
         if post_only and order_type.lower() == "limit":
             oflags.append("post")
-        if reduce_only:
-            oflags.append("nompp")
         if oflags:
             params["oflags"] = ",".join(oflags)
 
@@ -2405,6 +2411,7 @@ class KrakenClient:
                 "price": self._format_order_value(take_profit),
                 "leverage": str(lev),
                 "reduce_only": "true",
+                "trading_agreement": "agree",
             }
             tp_res = self._private("/0/private/AddOrder", tp_params)
             tp_txid = tp_res.get("txid", ["unknown"])[0]
@@ -2500,7 +2507,8 @@ class KrakenClient:
                             leverage = pos["leverage"]
                         break
             if volume is None:
-                return {"error": "no_position", "symbol": symbol}
+                # Kraken supports volume=0 to close entire position for the pair
+                volume = 0
 
         pair, pair_info = self._resolve_pair(symbol)
         if not pair:
@@ -2514,6 +2522,7 @@ class KrakenClient:
             "type": side.lower(),
             "ordertype": order_type.lower(),
             "volume": self._format_order_value(vol),
+            "trading_agreement": "agree",
         }
 
         if leverage:
@@ -2522,7 +2531,7 @@ class KrakenClient:
         if order_type.lower() == "limit" and price:
             params["price"] = self._format_order_value(price)
 
-        # Add reduce_only flag to ensure we only close, never open new position
+        # reduce_only ensures we only close, never open new position
         params["reduce_only"] = "true"
 
         res = self._private("/0/private/AddOrder", params)
