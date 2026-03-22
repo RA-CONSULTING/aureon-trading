@@ -16155,11 +16155,36 @@ class OrcaKillCycle:
                                         except Exception as e:
                                             print(f"      Queen signal unavailable: {e}")
                                     
+                                    # ─── SEER VISION GATE ───────────────────────────────
+                                    # Consult the Seer's latest vision before any buy.
+                                    # BLIND grade = block trade, FOG = halve position size.
+                                    _seer_blocked = False
+                                    _seer_size_mod = 1.0
+                                    try:
+                                        from aureon_seer import get_seer as _get_seer_gate
+                                        _seer_g = _get_seer_gate()
+                                        _sv = getattr(_seer_g, 'latest_vision', None)
+                                        if _sv and hasattr(_sv, 'grade'):
+                                            _sg = _sv.grade
+                                            _ss = getattr(_sv, 'unified_score', 0.5)
+                                            print(f"   SEER VISION: grade={_sg} score={_ss:.2f} action={getattr(_sv, 'action', '?')}")
+                                            if _sg == 'BLIND':
+                                                print(f"      SEER BLOCKED: grade is BLIND (score {_ss:.2f}) - no trade visibility")
+                                                _seer_blocked = True
+                                                queen_approved = False
+                                            elif _sg == 'FOG':
+                                                print(f"      SEER WARNING: FOG conditions - halving position size")
+                                                _seer_size_mod = 0.5
+                                    except ImportError:
+                                        pass
+                                    except Exception as _seer_err:
+                                        print(f"   Seer Vision Gate warning: {_seer_err}")
+
                                     if queen_approved:
                                         quantum_indicator = f"  {quantum_stats['amplification']:.1f}x " if quantum_cognition and quantum_stats['amplification'] > 1.0 else ""
                                         print(f"     {quantum_indicator}QUEEN APPROVED: {best.symbol} ({best.exchange})")
                                         print(f"      Change: {best.change_pct:+.2f}% | Momentum: {best.momentum_score:.2f}")
-                                        
+
                                         # Execute buy
                                         try:
                                             client = self.clients.get(best.exchange)
@@ -16176,6 +16201,10 @@ class OrcaKillCycle:
                                                 if quad_sizing != 1.0:
                                                     buy_amount = buy_amount * quad_sizing
                                                     print(f"   [QUAD] Sizing adjusted: x{quad_sizing:.2f} -> ${buy_amount:.2f}")
+                                                # Apply Seer FOG size reduction
+                                                if _seer_size_mod < 1.0:
+                                                    buy_amount = buy_amount * _seer_size_mod
+                                                    print(f"   [SEER] FOG size reduction: x{_seer_size_mod:.2f} -> ${buy_amount:.2f}")
 
                                                 # When margin conviction is high, scale collateral up so
                                                 # leverage delivers meaningful position size.
