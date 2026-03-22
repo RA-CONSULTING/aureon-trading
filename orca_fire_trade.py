@@ -956,7 +956,7 @@ class FireTrader:
 
         # Deploy 85% of funded exchange cash, capped at $20, minimum $5
         # In micro-gains mode: smaller buys to manage risk in bearish conditions
-        # Note: Binance min_notional is $5, Kraken allows $3+
+        # Note: Binance min_notional is $5, Kraken safety net enforces $50 minimum
         if micro_mode:
             def _buy_amount_kraken(cash_amt: float) -> float:
                 return max(3.0, min(self._MICRO_GAINS_MAX_BUY, cash_amt * 0.50))
@@ -1078,7 +1078,12 @@ class FireTrader:
                                else kraken_usd_cash)
                 raw_qty = _buy_amount_kraken(funded_cash)
                 min_buy = 3.0 if micro_mode else self._MIN_POSITION_USD
+                KRAKEN_EXCHANGE_MIN = 50.0  # Kraken safety net enforces $50 minimum
                 quote_qty = max(min_buy, min(raw_qty * seer_risk_mod, funded_cash * 0.9))
+                # Skip entire Kraken buy phase if Seer-adjusted amount is below exchange minimum
+                if quote_qty < KRAKEN_EXCHANGE_MIN:
+                    log_fire(f"   ⏭️ Skipping Kraken buys: Seer-adjusted qty=${quote_qty:.2f} < ${KRAKEN_EXCHANGE_MIN:.0f} exchange minimum (risk_mod={seer_risk_mod:.2f})")
+                    break
                 log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken{' MICRO' if micro_mode else ''}): {candidate['pair']}")
                 log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change_24h']:+.2f}% | Vol=${candidate['quote_vol']:.0f}")
                 log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → qty={quote_qty:.2f} {qccy}")
