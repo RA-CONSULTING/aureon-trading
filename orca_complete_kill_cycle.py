@@ -13572,7 +13572,9 @@ class OrcaKillCycle:
             print("   Queen Sentience: UNAVAILABLE")
 
     def run_autonomous(self, max_positions: int = 0, amount_per_position: float = 10.0,
-                       target_pct: float = 1.0, min_change_pct: float = 0.05):
+                       target_pct: float = 1.0, min_change_pct: float = 0.05,
+                       _crash_restart_count: int = 0,
+                       _recovered_positions: list = None):
         """
            FULLY AUTONOMOUS QUEEN-GUIDED TRADING LOOP   
         
@@ -14392,6 +14394,20 @@ class OrcaKillCycle:
         except Exception as _lm_e:
             print(f"   Live Monitor: skipped ({_lm_e})")
 
+        # ═══════════════════════════════════════════════════════════════
+        #   CRASH RECOVERY: Track last save time for position persistence
+        # ═══════════════════════════════════════════════════════════════
+        _last_position_save = _time.time()
+        _POSITION_SAVE_INTERVAL = 30  # Save positions every 30 seconds
+        _last_batch_cleanup = _time.time()
+        _BATCH_CLEANUP_INTERVAL = 3600  # Clean stale batch_prices every hour
+        _MAX_CRASH_RESTARTS = 10  # Max auto-restarts before giving up
+
+        # Restore positions from crash recovery if available
+        if _recovered_positions:
+            positions = _recovered_positions
+            print(f"  CRASH RECOVERY: Restored {len(positions)} positions from previous session")
+
         try:
             while True:  #    INFINITE LOOP
                 current_time = _time.time()
@@ -14656,13 +14672,16 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                     
-                    # Also batch Kraken if we have positions there
+                    # Also batch Kraken if we have positions there (with rate limit check)
                     try:
                         kraken_client = self.clients.get('kraken')
                         if kraken_client:
                             kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
                             for sym in kraken_symbols:
+                                if not kraken_rate_limit_check():
+                                    _time.sleep(1.0)  # Brief pause if rate limited
                                 try:
+                                    kraken_rate_limit_record()
                                     ticker = kraken_client.get_ticker(sym)
                                     if ticker:
                                         batch_prices[sym] = ticker.get('bid', ticker.get('price', 0))
@@ -14670,6 +14689,34 @@ class OrcaKillCycle:
                                     pass
                     except Exception:
                         pass
+
+                    # ═══ POSITION PERSISTENCE: Save positions every 30s for crash recovery ═══
+                    if current_time - _last_position_save >= _POSITION_SAVE_INTERVAL and positions:
+                        _last_position_save = current_time
+                        try:
+                            _pos_snapshot = {}
+                            for _p in positions:
+                                _pos_snapshot[_p.symbol] = {
+                                    'symbol': _p.symbol, 'exchange': _p.exchange,
+                                    'entry_price': _p.entry_price, 'entry_qty': _p.entry_qty,
+                                    'entry_cost': _p.entry_cost, 'breakeven_price': _p.breakeven_price,
+                                    'target_price': _p.target_price, 'entry_time': _p.entry_time,
+                                    'is_margin': _p.is_margin, 'leverage': _p.leverage,
+                                    'margin_side': _p.margin_side, 'stop_price': _p.stop_price,
+                                    'current_price': _p.current_price, 'current_pnl': _p.current_pnl,
+                                }
+                            self.tracked_positions = _pos_snapshot
+                            self._save_tracked_positions()
+                        except Exception:
+                            pass
+
+                    # ═══ MEMORY MANAGEMENT: Prune stale batch_prices entries hourly ═══
+                    if current_time - _last_batch_cleanup >= _BATCH_CLEANUP_INTERVAL:
+                        _last_batch_cleanup = current_time
+                        _active_syms = {p.symbol for p in positions}
+                        _stale_keys = [k for k in batch_prices if k not in _active_syms]
+                        for k in _stale_keys:
+                            del batch_prices[k]
                     
                     #   PHASE 0.5: FIRE TRADER CHECK (Emergency/Opportunity Profits)
                     #                                                            
@@ -17042,7 +17089,56 @@ class OrcaKillCycle:
             else:
                 print("  SESSION: Learning cycle. The Queen grows stronger.  ")
             print("="*80)
-            
+
+        except Exception as _loop_crash_error:
+            # ═══════════════════════════════════════════════════════════════
+            #   CRASH RECOVERY: Log error, save state, and auto-restart
+            # ═══════════════════════════════════════════════════════════════
+            _crash_restart_count += 1
+            import traceback as _tb
+            print("\n" + "!" * 80)
+            print(f"  AUTONOMOUS LOOP CRASHED (attempt {_crash_restart_count}/{_MAX_CRASH_RESTARTS})")
+            print(f"  Error: {_loop_crash_error}")
+            print("!" * 80)
+            _tb.print_exc()
+
+            # Emergency save positions before restart
+            try:
+                if positions:
+                    _pos_snapshot = {}
+                    for _p in positions:
+                        _pos_snapshot[_p.symbol] = {
+                            'symbol': _p.symbol, 'exchange': _p.exchange,
+                            'entry_price': _p.entry_price, 'entry_qty': _p.entry_qty,
+                            'entry_cost': _p.entry_cost, 'breakeven_price': _p.breakeven_price,
+                            'target_price': _p.target_price, 'entry_time': _p.entry_time,
+                            'is_margin': _p.is_margin, 'leverage': _p.leverage,
+                            'margin_side': _p.margin_side, 'stop_price': _p.stop_price,
+                        }
+                    self.tracked_positions = _pos_snapshot
+                    self._save_tracked_positions()
+                    print(f"  Saved {len(positions)} positions to disk for recovery")
+            except Exception:
+                pass
+
+            if _crash_restart_count < _MAX_CRASH_RESTARTS:
+                # Exponential backoff before restart
+                _restart_delay = min(30, 5 * _crash_restart_count)
+                print(f"  Auto-restarting in {_restart_delay}s...")
+                _time.sleep(_restart_delay)
+                print(f"  RESTARTING AUTONOMOUS LOOP (attempt {_crash_restart_count + 1}/{_MAX_CRASH_RESTARTS})...")
+                # Recursive restart — positions list is preserved from outer scope
+                return self.run_autonomous(
+                    max_positions=max_positions,
+                    amount_per_position=amount_per_position,
+                    target_pct=target_pct,
+                    min_change_pct=min_change_pct,
+                    _crash_restart_count=_crash_restart_count,
+                    _recovered_positions=positions,
+                )
+            else:
+                print(f"\n  FATAL: Autonomous loop crashed {_MAX_CRASH_RESTARTS} times. Stopping.")
+
         return session_stats
 
     def _dump_dashboard_state(self, session_stats, positions, queen=None):
