@@ -14657,6 +14657,7 @@ class OrcaKillCycle:
                     
                     #   BATCH FETCH ALL PRICES AT ONCE - PREVENTS RATE LIMITS!
                     batch_prices = {}
+                    _batch_prices_timestamp = current_time  # Track when prices were fetched
                     try:
                         alpaca_client = self.clients.get('alpaca')
                         if alpaca_client:
@@ -16273,19 +16274,25 @@ class OrcaKillCycle:
                                                             margin_lev = quad_data.get('margin_leverage', 0)
                                                             margin_conv = quad_data.get('margin_conviction', 0.0)
                                                         
-                                                        raw_order = self.queen_gated_buy(
-                                                            client=client,
-                                                            symbol=symbol_clean,
-                                                            exchange=best.exchange,
-                                                            quote_qty=buy_amount,
-                                                            price=best.price,
-                                                            momentum_pct=best.change_pct,
-                                                            expected_move_pct=best.change_pct * 0.5,
-                                                            context='autonomous_queen_loop',
-                                                            margin_recommendation=margin_rec,
-                                                            margin_leverage=margin_lev,
-                                                            margin_conviction=margin_conv
-                                                        )
+                                                        # PRICE FRESHNESS GUARD - block buy if prices are stale
+                                                        _price_age = current_time - _batch_prices_timestamp
+                                                        if _price_age > 60:
+                                                            print(f"      BUY BLOCKED: batch_prices are {_price_age:.0f}s old (max 60s). Skipping stale signal.")
+                                                            raw_order = None
+                                                        else:
+                                                            raw_order = self.queen_gated_buy(
+                                                                client=client,
+                                                                symbol=symbol_clean,
+                                                                exchange=best.exchange,
+                                                                quote_qty=buy_amount,
+                                                                price=best.price,
+                                                                momentum_pct=best.change_pct,
+                                                                expected_move_pct=best.change_pct * 0.5,
+                                                                context='autonomous_queen_loop',
+                                                                margin_recommendation=margin_rec,
+                                                                margin_leverage=margin_lev,
+                                                                margin_conviction=margin_conv
+                                                            )
                                                         
                                                         # If queen_gated_buy returned a block, skip
                                                         if raw_order and raw_order.get('rejected'):
