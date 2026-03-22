@@ -524,7 +524,7 @@ except ImportError:
 #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
 MARGIN_PENNY_AVAILABLE = False
 try:
-    from kraken_margin_penny_trader import KrakenMarginPennyTrader
+    from kraken_margin_penny_trader import KrakenMarginArmyTrader as KrakenMarginPennyTrader
     MARGIN_PENNY_AVAILABLE = True
     print("  Kraken Margin Penny Trader: AVAILABLE")
 except ImportError:
@@ -8492,8 +8492,11 @@ class OrcaKillCycle:
             # Just ensure positive PnL that isn't microscopic noise
             required_pnl = total_costs_value * 0.1 # Minimal hurdle
             
-            # Also ensure it hits the configured target percentage OR 1 penny — whichever is higher
-            target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7¢ guaranteed net
+            # Hard floor scales with position size: normal positions keep the 1.7¢ guarantee;
+            # micro/dust positions (entry < $0.50) use a proportional floor so they can
+            # actually exit — a $0.02 position can never earn $0.017, so we scale down.
+            _hard_floor = 0.017 if entry_cost >= 0.50 else max(entry_cost * 0.004, 0.0005)
+            target_pnl = max(entry_cost * (QUEEN_MIN_PROFIT_PCT / 100.0), _hard_floor)
             if net_pnl >= target_pnl:
                 approved = True
                 reason = f"GROWTH_MODE PASS: net_pnl=${net_pnl:.4f} >= target=${target_pnl:.4f}"
@@ -11149,7 +11152,8 @@ class OrcaKillCycle:
         target_pnl_amt = 0.0
         if QUEEN_MIN_PROFIT_PCT < 1.0: # Growth Mode
             _cost_basis = confirmed_cost if 'confirmed_cost' in locals() else entry_cost
-            target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), 0.017)  # MIN 1.7c guaranteed net
+            _hard_floor_2 = 0.017 if _cost_basis >= 0.50 else max(_cost_basis * 0.004, 0.0005)
+            target_pnl_amt = max(_cost_basis * (QUEEN_MIN_PROFIT_PCT / 100.0), _hard_floor_2)  # scales for dust
             if net_pnl >= target_pnl_amt:
                 hit_target_profit = True
 
@@ -15982,7 +15986,14 @@ class OrcaKillCycle:
                                 # Maps normalised symbol → existing position intent so we can
                                 # detect and block self-destructive spot/margin conflicts.
                                 def _norm_sym(s):
-                                    return s.replace('/', '').replace('-', '').upper()
+                                    # Strip slashes/dashes, uppercase, then remove quote-currency
+                                    # suffixes so ETHUSDT, ETH/USD, ETHUSD all resolve to ETH.
+                                    b = s.replace('/', '').replace('-', '').upper()
+                                    for q in ('USDT', 'USDC', 'BUSD', 'USD', 'GBP', 'EUR', 'BTC', 'ETH'):
+                                        if b.endswith(q) and len(b) > len(q):
+                                            b = b[:-len(q)]
+                                            break
+                                    return b
 
                                 # Build intent map: norm_symbol → (is_margin, margin_side)
                                 _pos_intent = {}
