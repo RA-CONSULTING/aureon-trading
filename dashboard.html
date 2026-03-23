@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Aureon Unified Orca Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0f0f23;
+            color: #e0e0e0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 2px solid #4a4a6a;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #4ade80;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-card {
+            background: #1a1a2e;
+            border: 1px solid #4a4a6a;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .status-card.ready {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .status-card.warning {
+            border-color: #facc15;
+            background: rgba(250, 204, 21, 0.1);
+        }
+
+        .status-card.error {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .status-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #4ade80;
+        }
+
+        .status-card.warning .status-value {
+            color: #facc15;
+        }
+
+        .status-card.error .status-value {
+            color: #ef4444;
+        }
+
+        .status-label {
+            font-size: 0.8em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-detail {
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: #1a1a2e;
+            border: 1px solid #4a4a6a;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .panel h2 {
+            color: #4ade80;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 1px solid #4a4a6a;
+            padding-bottom: 10px;
+        }
+
+        .panel-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            font-size: 0.9em;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #888;
+        }
+
+        .metric-value {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .command-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: 1px solid #4a4a6a;
+            background: #1a1a2e;
+            color: #4ade80;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #2a2a3e;
+            border-color: #4ade80;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.primary {
+            background: #4ade80;
+            color: #0f0f23;
+            border-color: #4ade80;
+        }
+
+        button.primary:hover {
+            background: #5ec990;
+        }
+
+        button.danger {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+        }
+
+        button.danger:hover {
+            background: #f55555;
+        }
+
+        .bottom-panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .decisions-log {
+            background: #1a1a2e;
+            border: 1px solid #4a4a6a;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .decisions-log h2 {
+            color: #4ade80;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 1px solid #4a4a6a;
+            padding-bottom: 10px;
+        }
+
+        .decision-item {
+            background: #0f0f23;
+            border-left: 3px solid #4ade80;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+
+        .decision-item.buy {
+            border-left-color: #4ade80;
+        }
+
+        .decision-item.sell {
+            border-left-color: #ef4444;
+        }
+
+        .decision-item.hold {
+            border-left-color: #facc15;
+        }
+
+        .decision-symbol {
+            font-weight: bold;
+            color: #4ade80;
+            margin-bottom: 5px;
+        }
+
+        .decision-details {
+            color: #888;
+            font-size: 0.8em;
+        }
+
+        .error-message {
+            background: #3f2424;
+            border: 1px solid #ef4444;
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background: #243f2a;
+            border: 1px solid #4ade80;
+            color: #6ee7b7;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .feed-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .feed-status:last-child {
+            border-bottom: none;
+        }
+
+        .feed-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ade80;
+        }
+
+        .feed-dot.unhealthy {
+            background: #ef4444;
+        }
+
+        .update-time {
+            position: fixed;
+            bottom: 10px;
+            right: 20px;
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Aureon Unified Orca Dashboard</h1>
+            <p class="subtitle">Real-time Orca Kill Cycle Control & System Coordination</p>
+        </header>
+
+        <div id="errorMessage"></div>
+        <div id="successMessage"></div>
+
+        <!-- Top Status Bar -->
+        <div class="status-bar">
+            <div class="status-card" id="orcaCard">
+                <div class="status-label">🐋 Orca Status</div>
+                <div class="status-value" id="orcaStatus">—</div>
+                <div class="status-detail" id="orcaDetail">Loading...</div>
+            </div>
+
+            <div class="status-card" id="coordinationCard">
+                <div class="status-label">🔗 System Coordination</div>
+                <div class="status-value" id="coordinationStatus">—</div>
+                <div class="status-detail" id="coordinationDetail">Loading...</div>
+            </div>
+
+            <div class="status-card" id="feedsCard">
+                <div class="status-label">📡 Feeds</div>
+                <div class="status-value" id="feedsStatus">—</div>
+                <div class="status-detail" id="feedsDetail">Loading...</div>
+            </div>
+
+            <div class="status-card" id="overallCard">
+                <div class="status-label">⚡ Overall</div>
+                <div class="status-value" id="overallStatus">—</div>
+                <div class="status-detail" id="overallDetail">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Three-Panel Layout -->
+        <div class="panels">
+            <!-- Left Panel: Orca Control -->
+            <div class="panel">
+                <h2>🐋 Orca Kill Cycle</h2>
+                <div class="panel-content">
+                    <div class="metric">
+                        <span class="metric-label">Status</span>
+                        <span class="metric-value" id="orcaStatusDetail">unknown</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Ready for Execution</span>
+                        <span class="metric-value" id="orcaReadiness">❌ NO</span>
+                    </div>
+                    <div id="blockersSection" style="display: none;">
+                        <div style="color: #ef4444; margin-top: 10px; font-size: 0.8em;">
+                            <strong>Blockers:</strong>
+                        </div>
+                        <div id="blockersList" style="color: #ff6b6b; font-size: 0.8em;"></div>
+                    </div>
+
+                    <div class="command-buttons">
+                        <button class="primary" id="startBtn" onclick="sendOrcaCommand('start')">▶️ Start</button>
+                        <button class="danger" id="stopBtn" onclick="sendOrcaCommand('stop')">⏹️ Stop</button>
+                        <button id="pauseBtn" onclick="sendOrcaCommand('pause')">⏸️ Pause</button>
+                        <button id="refreshBtn" onclick="fetchData()">🔄 Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel: System Coordination -->
+            <div class="panel">
+                <h2>🔗 System Coordination</h2>
+                <div class="panel-content">
+                    <div class="metric">
+                        <span class="metric-label">Total Systems</span>
+                        <span class="metric-value" id="totalSystems">—</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Healthy</span>
+                        <span class="metric-value" id="healthySystems">—</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Health %</span>
+                        <span class="metric-value" id="healthPercent">—</span>
+                    </div>
+                    <div style="border-top: 1px solid #333; margin-top: 10px; padding-top: 10px;">
+                        <div class="metric-label" style="margin-bottom: 10px;">State Distribution</div>
+                        <div id="stateDistribution"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Feeds -->
+            <div class="panel">
+                <h2>📡 Feed Status</h2>
+                <div class="panel-content" id="feedsPanel">
+                    <p style="color: #666;">Loading feed status...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Panels -->
+        <div class="bottom-panels">
+            <!-- Decisions Log -->
+            <div class="decisions-log">
+                <h2>📊 Recent Decisions</h2>
+                <div id="decisionsPanel" style="max-height: 300px; overflow-y: auto;">
+                    <p style="color: #666;">No decisions yet...</p>
+                </div>
+            </div>
+
+            <!-- Coordination Details -->
+            <div class="decisions-log">
+                <h2>📈 Live Metrics</h2>
+                <div id="metricsPanel" style="max-height: 300px; overflow-y: auto;">
+                    <div class="metric">
+                        <span class="metric-label">API Status</span>
+                        <span class="metric-value" id="apiStatus">🔄</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Update Frequency</span>
+                        <span class="metric-value">1/sec</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Last Update</span>
+                        <span class="metric-value" id="lastUpdate">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-time" id="updateTime"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:13334/api';
+        let updateInterval;
+        let isOrcaReady = false;
+
+        // Fetch data from API
+        async function fetchData() {
+            try {
+                const [orca, coordination, feeds, decisions, health] = await Promise.all([
+                    fetch(`${API_BASE}/orca-status`).then(r => r.json()).catch(e => ({error: true})),
+                    fetch(`${API_BASE}/system-coordination`).then(r => r.json()).catch(e => ({error: true})),
+                    fetch(`${API_BASE}/feed-status`).then(r => r.json()).catch(e => ({error: true})),
+                    fetch(`${API_BASE}/decisions`).then(r => r.json()).catch(e => ({error: true})),
+                    fetch(`${API_BASE}/system-health`).then(r => r.json()).catch(e => ({error: true})),
+                ]);
+
+                updateUI(orca, coordination, feeds, decisions, health);
+                updateTime();
+
+                // Hide error message if visible
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('apiStatus').textContent = '✅ Connected';
+                document.getElementById('apiStatus').parentElement.parentElement.style.color = '#4ade80';
+
+            } catch (error) {
+                showError(`API Error: ${error.message}`);
+            }
+        }
+
+        function updateUI(orca, coordination, feeds, decisions, health) {
+            // Orca Status
+            if (!orca.error) {
+                const orcaStatus = orca.status || 'unknown';
+                isOrcaReady = orca.ready_for_execution || false;
+
+                document.getElementById('orcaStatus').textContent = orcaStatus.toUpperCase();
+                document.getElementById('orcaStatusDetail').textContent = orcaStatus;
+                document.getElementById('orcaReadiness').textContent = isOrcaReady ? '✅ YES' : '❌ NO';
+
+                const orcaCard = document.getElementById('orcaCard');
+                orcaCard.classList.remove('ready', 'warning', 'error');
+                if (isOrcaReady) {
+                    orcaCard.classList.add('ready');
+                    document.getElementById('orcaDetail').textContent = '0 blockers';
+                } else if (orca.blockers && orca.blockers.length > 0) {
+                    orcaCard.classList.add('warning');
+                    document.getElementById('orcaDetail').textContent = `${orca.blockers.length} blocker(s)`;
+
+                    const blockersSection = document.getElementById('blockersSection');
+                    const blockersList = document.getElementById('blockersList');
+                    blockersSection.style.display = 'block';
+                    blockersList.innerHTML = orca.blockers.map(b => `<div>• ${b}</div>`).join('');
+                } else {
+                    orcaCard.classList.add('error');
+                    document.getElementById('orcaDetail').textContent = 'Not ready';
+                }
+
+                // Update button states
+                document.getElementById('startBtn').disabled = !isOrcaReady;
+            }
+
+            // System Coordination
+            if (!coordination.error) {
+                document.getElementById('coordinationStatus').textContent = coordination.orca_ready ? '✅ READY' : '⏳ WAIT';
+                document.getElementById('totalSystems').textContent = coordination.total_systems || '0';
+                document.getElementById('coordinationDetail').textContent = coordination.orca_ready ? 'All systems ready' : 'Waiting for systems';
+
+                const coordCard = document.getElementById('coordinationCard');
+                coordCard.classList.remove('ready', 'warning', 'error');
+                coordCard.classList.add(coordination.orca_ready ? 'ready' : 'warning');
+
+                // State distribution
+                const stateInfo = coordination.state_counts || {};
+                const stateHtml = Object.entries(stateInfo)
+                    .map(([state, count]) => `<div class="metric"><span>${state}</span><span class="metric-value">${count}</span></div>`)
+                    .join('');
+                document.getElementById('stateDistribution').innerHTML = stateHtml;
+            }
+
+            // Feeds Status
+            if (!feeds.error) {
+                const feedsHealthy = Object.values(feeds).every(f => f.is_healthy !== false);
+                document.getElementById('feedsStatus').textContent = feedsHealthy ? '✅ HEALTH' : '⚠️ WARN';
+                document.getElementById('feedsDetail').textContent = Object.keys(feeds).length + ' streams';
+
+                const feedsCard = document.getElementById('feedsCard');
+                feedsCard.classList.remove('ready', 'warning', 'error');
+                feedsCard.classList.add(feedsHealthy ? 'ready' : 'warning');
+
+                const feedsHtml = Object.entries(feeds).map(([name, feed]) => `
+                    <div class="feed-status">
+                        <div class="feed-dot ${feed.is_healthy ? '' : 'unhealthy'}"></div>
+                        <span>${name}: ${feed.event_count || 0} events</span>
+                    </div>
+                `).join('');
+                document.getElementById('feedsPanel').innerHTML = feedsHtml;
+            }
+
+            // Health
+            if (!health.error) {
+                document.getElementById('healthySystems').textContent = health.healthy || '0';
+                document.getElementById('healthPercent').textContent = (health.health_percentage || 0).toFixed(0) + '%';
+            }
+
+            // Overall Status
+            const allReady = isOrcaReady && (health && health.health_percentage === 100);
+            document.getElementById('overallStatus').textContent = allReady ? '🚀 GO' : '⏳ WAIT';
+            document.getElementById('overallDetail').textContent = allReady ? 'Ready to execute' : 'Waiting for systems';
+
+            const overallCard = document.getElementById('overallCard');
+            overallCard.classList.remove('ready', 'warning', 'error');
+            overallCard.classList.add(allReady ? 'ready' : 'warning');
+
+            // Decisions
+            if (!decisions.error && decisions.decisions) {
+                const decisionsHtml = Object.entries(decisions.decisions)
+                    .slice(0, 5)
+                    .map(([symbol, decision]) => `
+                        <div class="decision-item ${decision.type}">
+                            <div class="decision-symbol">${symbol} - ${decision.type.toUpperCase()}</div>
+                            <div class="decision-details">
+                                Confidence: ${(decision.confidence * 100).toFixed(0)}% | ${decision.reason}
+                            </div>
+                        </div>
+                    `).join('');
+
+                document.getElementById('decisionsPanel').innerHTML = decisionsHtml || '<p style="color: #666;">No decisions yet...</p>';
+            }
+        }
+
+        async function sendOrcaCommand(command) {
+            try {
+                showMessage(`Sending command: ${command}...`);
+
+                const response = await fetch(`${API_BASE}/orca-command`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command, parameters: {} })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showMessage(`✅ Command "${command}" sent successfully!`, 'success');
+                } else {
+                    showError(result.message);
+                }
+
+                // Refresh after command
+                setTimeout(fetchData, 1000);
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            }
+        }
+
+        function showMessage(msg, type = 'success') {
+            const el = document.getElementById(type === 'success' ? 'successMessage' : 'errorMessage');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 3000);
+        }
+
+        function showError(msg) {
+            showMessage(msg, 'error');
+        }
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+            document.getElementById('updateTime').textContent = `Updated: ${now.toLocaleTimeString()}`;
+        }
+
+        // Start fetching data
+        console.log('🎯 Aureon Unified Dashboard Initialized');
+        console.log(`API Base: ${API_BASE}`);
+
+        // Initial fetch
+        fetchData();
+
+        // Auto-refresh every second
+        updateInterval = setInterval(fetchData, 1000);
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', () => {
+            clearInterval(updateInterval);
+        });
+    </script>
+</body>
+</html>
