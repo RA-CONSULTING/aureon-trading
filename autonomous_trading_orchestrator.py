@@ -7,12 +7,19 @@
 ║   The central nervous system of the autonomous trading loop.                ║
 ║   Every cycle flows through here. Every trade is gated here.               ║
 ║                                                                              ║
+║   UNIFIED POSITION REGISTRY (spot + margin work in unity)                   ║
+║     - Both spot and margin register active positions here                    ║
+║     - gate_pre_trade checks for cross-system conflicts                      ║
+║     - A spot BUY on BTC while margin SHORT BTC is open = CONFLICT           ║
+║     - Total exposure per asset is tracked across both systems               ║
+║                                                                              ║
 ║   CYCLE SYNC (called every loop iteration)                                  ║
 ║     1. Update all multiverse shadow rides with latest prices                ║
 ║     2. Sync learning bridge → Seer, Lyra, ThoughtBus                       ║
 ║     3. Refresh quick gate flags (Seer + Lyra) every 10 s                   ║
 ║                                                                              ║
 ║   PRE-TRADE GATE (called before any shadow is promoted to real capital)     ║
+║     0. Cross-system conflict — spot vs margin directional clash blocked     ║
 ║     1. Seer gate      — BLIND vision = no trade                             ║
 ║     2. Lyra gate      — SILENCE resonance = no trade                       ║
 ║     3. Conviction gate — persistent BUCKING in shadow = caution            ║
@@ -30,6 +37,7 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import logging
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Any
 
 logger = logging.getLogger(__name__)
@@ -38,6 +46,63 @@ logger = logging.getLogger(__name__)
 CONSENSUS_TTL        = 120   # seconds between full Quadrumvirate calls (expensive)
 QUICK_GATE_INTERVAL  =  10   # seconds between lightweight Seer/Lyra checks
 MARGIN_LEVEL_TTL     =  30   # seconds between margin level refreshes
+
+# ── Kraken pair prefix/suffix stripping for base asset extraction ─────────────
+# Kraken uses prefixes like X/Z and suffixes like USD/ZUSD for their pairs.
+# We need to normalize to a base asset (BTC, ETH, etc.) for cross-system matching.
+_KRAKEN_QUOTE_SUFFIXES = ('ZUSD', 'USD', 'ZEUR', 'EUR', 'ZGBP', 'GBP', 'USDT')
+_KRAKEN_BASE_PREFIXES  = {'XX': '', 'X': '', 'Z': ''}  # XXBT->XBT, XETH->ETH
+_KRAKEN_BASE_MAP       = {'XBT': 'BTC', 'XXBT': 'BTC'}  # Kraken calls BTC "XBT"
+
+
+def normalize_base_asset(pair: str) -> str:
+    """
+    Extract the base asset from any pair format used across exchanges.
+
+    Examples:
+        'XXBTZUSD'  -> 'BTC'   (Kraken margin)
+        'XETHZUSD'  -> 'ETH'   (Kraken margin)
+        'BTCUSD'    -> 'BTC'   (Alpaca/spot)
+        'ETHUSD'    -> 'ETH'   (Alpaca/spot)
+        'AAVEUSD'   -> 'AAVE'  (Alpaca/spot)
+        'BTC/USD'   -> 'BTC'   (slash format)
+        'SOLUSD'    -> 'SOL'
+    """
+    pair = pair.upper().replace('/', '')
+
+    # Strip quote currency (longest match first)
+    base = pair
+    for suffix in sorted(_KRAKEN_QUOTE_SUFFIXES, key=len, reverse=True):
+        if base.endswith(suffix) and len(base) > len(suffix):
+            base = base[:-len(suffix)]
+            break
+
+    # Kraken XBT -> BTC
+    if base in _KRAKEN_BASE_MAP:
+        return _KRAKEN_BASE_MAP[base]
+
+    # Strip Kraken X/XX prefix (XETH -> ETH, but keep AAVE as AAVE)
+    if len(base) >= 4 and base.startswith('XX'):
+        base = base[2:]
+    elif len(base) >= 4 and base.startswith('X') and base[1:] not in ('RP',):
+        # X prefix only stripped if result is >= 3 chars (XETH->ETH, not XRP->RP)
+        candidate = base[1:]
+        if len(candidate) >= 3:
+            base = candidate
+
+    return base
+
+
+@dataclass
+class RegisteredPosition:
+    """A position registered by either the spot or margin trading system."""
+    system:     str    # 'spot' or 'margin'
+    pair:       str    # original pair string (e.g. 'BTCUSD' or 'XXBTZUSD')
+    base_asset: str    # normalized (e.g. 'BTC')
+    side:       str    # 'long' or 'short' (spot buys are always 'long')
+    value_usd:  float  # notional value of the position
+    exchange:   str    # 'kraken', 'alpaca', 'binance', 'capital'
+    reg_time:   float = field(default_factory=time.time)
 
 
 class AutonomousOrchestrator:
@@ -86,6 +151,110 @@ class AutonomousOrchestrator:
         self._gates_passed:     int = 0
         self._gates_blocked:    int = 0
         self._last_block_reason: str = ''
+
+        # ── Unified Position Registry ────────────────────────────────────────
+        # Tracks ALL active positions from both spot and margin systems.
+        # Key = unique position id (e.g. "spot:BTCUSD" or "margin:XXBTZUSD:long")
+        self._positions: Dict[str, RegisteredPosition] = {}
+
+    # ── Position Registry (spot + margin unity) ──────────────────────────────
+
+    def register_position(
+        self,
+        system:    str,
+        pair:      str,
+        side:      str,
+        value_usd: float = 0.0,
+        exchange:  str   = 'kraken',
+    ) -> None:
+        """
+        Register an active position so both spot and margin systems are aware.
+
+        Parameters
+        ----------
+        system    : 'spot' or 'margin'
+        pair      : original pair string (e.g. 'BTCUSD', 'XXBTZUSD')
+        side      : 'long', 'short', or 'buy'/'sell' (normalized to long/short)
+        value_usd : notional USD value of the position
+        exchange  : exchange name
+        """
+        norm_side = 'long' if side.lower() in ('long', 'buy') else 'short'
+        base = normalize_base_asset(pair)
+        pos_id = f"{system}:{pair}:{norm_side}"
+
+        self._positions[pos_id] = RegisteredPosition(
+            system=system,
+            pair=pair,
+            base_asset=base,
+            side=norm_side,
+            value_usd=value_usd,
+            exchange=exchange,
+        )
+        logger.info(
+            f"[Orchestrator] Position REGISTERED: {pos_id} "
+            f"(base={base}, ${value_usd:.2f})"
+        )
+
+    def deregister_position(
+        self,
+        system: str,
+        pair:   str,
+        side:   str = '',
+    ) -> None:
+        """
+        Remove a position when it's closed.
+
+        If side is empty, removes all positions matching system+pair.
+        """
+        if side:
+            norm_side = 'long' if side.lower() in ('long', 'buy') else 'short'
+            pos_id = f"{system}:{pair}:{norm_side}"
+            removed = self._positions.pop(pos_id, None)
+            if removed:
+                logger.info(f"[Orchestrator] Position DEREGISTERED: {pos_id}")
+        else:
+            # Remove all sides for this system+pair
+            to_remove = [
+                k for k in self._positions
+                if k.startswith(f"{system}:{pair}:")
+            ]
+            for k in to_remove:
+                self._positions.pop(k, None)
+                logger.info(f"[Orchestrator] Position DEREGISTERED: {k}")
+
+    def get_positions_for_asset(self, base_asset: str) -> List[RegisteredPosition]:
+        """Get all registered positions (spot + margin) for a given base asset."""
+        base = base_asset.upper()
+        if base in _KRAKEN_BASE_MAP:
+            base = _KRAKEN_BASE_MAP[base]
+        return [p for p in self._positions.values() if p.base_asset == base]
+
+    def get_cross_system_conflicts(
+        self, pair: str, side: str
+    ) -> List[RegisteredPosition]:
+        """
+        Find positions in the OTHER system that conflict directionally.
+
+        A conflict = same asset, opposite direction, different system.
+        e.g. spot LONG BTC conflicts with margin SHORT BTC.
+        """
+        base = normalize_base_asset(pair)
+        norm_side = 'long' if side.lower() in ('long', 'buy') else 'short'
+        opposite = 'short' if norm_side == 'long' else 'long'
+
+        conflicts = []
+        for pos in self._positions.values():
+            if pos.base_asset == base and pos.side == opposite:
+                conflicts.append(pos)
+        return conflicts
+
+    def get_total_exposure_usd(self, base_asset: str) -> float:
+        """Total USD exposure for a base asset across all systems."""
+        return sum(p.value_usd for p in self.get_positions_for_asset(base_asset))
+
+    def get_all_positions(self) -> Dict[str, RegisteredPosition]:
+        """Return a copy of the full position registry."""
+        return dict(self._positions)
 
     # ── Per-cycle sync ────────────────────────────────────────────────────────
 
@@ -144,6 +313,39 @@ class AutonomousOrchestrator:
         """
         reasons   = []
         sizing_modifier = 1.0
+
+        # ── 0. Cross-system conflict gate ────────────────────────────────
+        # Spot and margin must work in unity: buying spot BTC while a margin
+        # SHORT BTC is open (or vice versa) creates a self-hedging conflict
+        # that wastes capital and fees.
+        conflicts = self.get_cross_system_conflicts(pair, side)
+        if conflicts:
+            base = normalize_base_asset(pair)
+            conflict_desc = ', '.join(
+                f"{c.system} {c.side.upper()} {c.pair} (${c.value_usd:.2f})"
+                for c in conflicts
+            )
+            self._gates_blocked += 1
+            reason = (
+                f"CROSS-SYSTEM CONFLICT: {base} — proposed {side.upper()} "
+                f"conflicts with active {conflict_desc}. "
+                f"Spot and margin must move in the same direction."
+            )
+            self._last_block_reason = reason
+            logger.warning(f"[Orchestrator] Gate BLOCKED: {reason}")
+            return False, reason, 1.0
+
+        # Check total exposure per asset — warn if doubling up in same direction
+        base = normalize_base_asset(pair)
+        existing = self.get_positions_for_asset(base)
+        if existing:
+            total_exposure = sum(p.value_usd for p in existing)
+            systems = set(p.system for p in existing)
+            if len(systems) >= 1 and trade_val > 0:
+                reasons.append(
+                    f"cross-exposure={base}:${total_exposure:.2f}+"
+                    f"${trade_val:.2f}({','.join(systems)})"
+                )
 
         # ── 1. Seer quick gate ────────────────────────────────────────────
         if not self._seer_ok:
@@ -283,6 +485,27 @@ class AutonomousOrchestrator:
                 lines.append(f"  [QUADRUMVIRATE] Votes: {votes}")
         else:
             lines.append("  [QUADRUMVIRATE] Not yet consulted this session")
+
+        # Unified position registry
+        if self._positions:
+            spot_count   = sum(1 for p in self._positions.values() if p.system == 'spot')
+            margin_count = sum(1 for p in self._positions.values() if p.system == 'margin')
+            total_val    = sum(p.value_usd for p in self._positions.values())
+            # Group by base asset to show cross-system exposure
+            asset_map: Dict[str, List[str]] = {}
+            for p in self._positions.values():
+                asset_map.setdefault(p.base_asset, []).append(
+                    f"{p.system[0].upper()}:{p.side[0].upper()}"
+                )
+            exposure_str = ' '.join(
+                f"{asset}[{'+'.join(dirs)}]" for asset, dirs in asset_map.items()
+            )
+            lines.append(
+                f"  [POSITIONS] spot={spot_count} margin={margin_count} "
+                f"total=${total_val:.2f} | {exposure_str}"
+            )
+        else:
+            lines.append("  [POSITIONS] No active positions registered")
 
         # Last block reason
         if self._last_block_reason:

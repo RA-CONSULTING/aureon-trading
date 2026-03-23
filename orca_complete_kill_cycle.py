@@ -3670,6 +3670,41 @@ class OrcaKillCycle:
         except Exception as e:
             _safe_print(f"   Failed to save tracked positions: {e}")
 
+    def _get_unified_orchestrator(self):
+        """Get the AutonomousOrchestrator (lives on the margin penny trader)."""
+        mpt = getattr(self, 'margin_penny_trader', None)
+        if mpt is not None:
+            return getattr(mpt, 'orchestrator', None)
+        return None
+
+    def _register_spot_position(self, symbol: str, exchange: str, value_usd: float = 0.0):
+        """Register a spot position with the unified orchestrator for cross-system awareness."""
+        orch = self._get_unified_orchestrator()
+        if orch is not None:
+            try:
+                orch.register_position(
+                    system='spot',
+                    pair=symbol,
+                    side='long',       # spot buys are always long
+                    value_usd=value_usd,
+                    exchange=exchange,
+                )
+            except Exception as e:
+                _safe_print(f"   Spot position register error: {e}")
+
+    def _deregister_spot_position(self, symbol: str):
+        """Deregister a spot position from the unified orchestrator."""
+        orch = self._get_unified_orchestrator()
+        if orch is not None:
+            try:
+                orch.deregister_position(
+                    system='spot',
+                    pair=symbol,
+                    side='long',
+                )
+            except Exception as e:
+                _safe_print(f"   Spot position deregister error: {e}")
+
     def _load_kraken_assets_for_monitoring(self) -> List[str]:
         """Auto-discover all tradeable Kraken assets for comprehensive market monitoring."""
         try:
@@ -3919,6 +3954,15 @@ class OrcaKillCycle:
                 _safe_print(f"   Margin Penny Trader init failed: {e}")
                 self.margin_penny_trader = None
 
+        # Register existing spot positions with the unified orchestrator
+        # so the margin system is immediately aware of what spot holds.
+        if self.tracked_positions and self._get_unified_orchestrator():
+            for sym, pos_data in self.tracked_positions.items():
+                self._register_spot_position(
+                    sym,
+                    pos_data.get('exchange', 'unknown'),
+                    value_usd=pos_data.get('entry_cost', 0),
+                )
 
 
         #    QUEEN ETERNAL MACHINE - Bloodless Quantum Leaps + Breadcrumb Portfolio
@@ -9257,7 +9301,13 @@ class OrcaKillCycle:
         
         self.tracked_positions[symbol] = tracking_data
         self._save_tracked_positions()
-        
+
+        # Register with unified orchestrator so margin system sees our spot position
+        self._register_spot_position(
+            symbol, exchange,
+            value_usd=tracking_data.get('entry_cost', 0),
+        )
+
         #    Feed position to Harmonic Liquid Aluminium Field (market as dancing waveform)
         if self.harmonic_field:
             try:
@@ -9674,9 +9724,33 @@ class OrcaKillCycle:
         
         THE QUEEN HAS SPOKEN: No buy executes without profit potential!
         """
-        #                                                                        
-        #       THE QUEEN'S SACRED PROFIT BUY GATE - MANDATORY CHECK!    
-        #                                                                        
+        #
+        #       CROSS-SYSTEM CONFLICT CHECK (spot vs margin unity)
+        #
+        orch = self._get_unified_orchestrator()
+        if orch is not None:
+            conflicts = orch.get_cross_system_conflicts(symbol, 'buy')
+            if conflicts:
+                from autonomous_trading_orchestrator import normalize_base_asset
+                base = normalize_base_asset(symbol)
+                conflict_desc = ', '.join(
+                    f"{c.system} {c.side.upper()} {c.pair}" for c in conflicts
+                )
+                print(f"   CROSS-SYSTEM CONFLICT BLOCKED BUY: {symbol}")
+                print(f"    {base} spot BUY conflicts with active: {conflict_desc}")
+                print(f"    Spot and margin must move in the same direction.")
+                return {
+                    'status': 'blocked',
+                    'reason': f'cross_system_conflict: {conflict_desc}',
+                    'blocked_by': 'CROSS_SYSTEM_UNITY_GATE',
+                    'symbol': symbol,
+                    'quantity': quantity,
+                }
+        #
+
+        #
+        #       THE QUEEN'S SACRED PROFIT BUY GATE - MANDATORY CHECK!
+        #
         current_price = price or 0.0
         if current_price > 0:
             # Check the sacred gate
@@ -10808,6 +10882,7 @@ class OrcaKillCycle:
             if symbol in self.tracked_positions:
                 del self.tracked_positions[symbol]
                 self._save_tracked_positions()
+                self._deregister_spot_position(symbol)
                 print(f"      UNTRACKED: {symbol} (Position closed)")
 
             # Print confirmation
