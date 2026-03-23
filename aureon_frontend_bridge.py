@@ -79,7 +79,7 @@ print("\n🔌 LOADING EXCHANGE CLIENTS...")
 try:
     from kraken_client import KrakenClient
     def get_kraken_client():
-        return get_kraken_client()
+        return KrakenClient()
     KRAKEN_AVAILABLE = True
     print("   🐙 Kraken Client: LOADED")
 except ImportError as e:
@@ -89,6 +89,8 @@ except ImportError as e:
 # Binance
 try:
     from binance_client import BinanceClient
+    def get_binance_client():
+        return BinanceClient()
     BINANCE_AVAILABLE = True
     print("   🟡 Binance Client: LOADED")
 except ImportError:
