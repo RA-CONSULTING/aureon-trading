@@ -6,9 +6,10 @@
 
 ## 📋 Prerequisites
 
-✅ **Python 3.9+** - Download from https://www.python.org/downloads/  
-✅ **Git** - https://git-scm.com/download/win  
-✅ **Visual C++ Build Tools** (for some dependencies)  
+✅ **Python 3.9+** - Download from https://www.python.org/downloads/
+✅ **Node.js 18+ (LTS)** - Download from https://nodejs.org/en/download/ (includes npm)
+✅ **Git** - https://git-scm.com/download/win
+✅ **Visual C++ Build Tools** (for some dependencies)
 
 ---
 
@@ -112,7 +113,26 @@ print('✅ System ready for trading')
 
 ---
 
-## 🚀 Step 7: Start Trading (Dry-Run First!)
+## 🖥️ Step 7: Start the Dashboard (Frontend)
+
+```powershell
+# Navigate to the frontend folder
+cd frontend
+
+# Install frontend dependencies (first time only)
+npm install
+
+# Start the dashboard
+npm run dev
+```
+
+Then open **http://localhost:3000** (or the URL shown in the terminal) in your browser.
+
+> **Note:** If `npm` is not recognised, install Node.js from https://nodejs.org/en/download/, then close and reopen PowerShell.
+
+---
+
+## 🚀 Step 8: Start Trading (Dry-Run First!)
 
 ```powershell
 # Test mode - no real trades
