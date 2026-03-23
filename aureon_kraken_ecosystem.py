@@ -1520,15 +1520,9 @@ class AureonKrakenEcosystem:
             print(f"   🛑 HOLDING {pos.symbol}: Net {net_pnl:+.4f} below target {min_net:.4f}")
             return False
         
-        # 🪙 PENNY PROFIT STOP LOSS: Trust the penny profit engine's calculation
+        # NO STOP LOSS — Dead Man's Switch: only close on profit.
         if reason in ["SL", "PENNY_SL"]:
-            # Penny profit SL already has 3x cushion built in
-            # Only block if we haven't held long enough (noise filter)
-            if pos.cycles < 5:
-                print(f"   🛑 HOLDING {pos.symbol}: Min hold time not met ({pos.cycles}/5 cycles)")
-                return False
-            # Allow the SL
-            return True
+            return False
         
         # REBALANCE/SWAP: Only if loss is small relative to position
         if reason in ["REBALANCE", "SWAP"]:
@@ -2300,15 +2294,13 @@ class AureonKrakenEcosystem:
                 if action == 'TAKE_PROFIT':
                     print(f"   🪙 PENNY TP: {symbol} | Gross: ${gross_pnl:.4f} >= Target: ${threshold.win_gte:.4f}")
                     to_close.append((symbol, "PENNY_TP", change_pct, current_price))
-                
-                # Check Stop Loss (with minimum hold time - 5 cycles)
-                elif action == 'STOP_LOSS' and pos.cycles >= 5:
-                    print(f"   🪙 PENNY SL: {symbol} | Gross: ${gross_pnl:.4f} <= Stop: ${threshold.stop_lte:.4f}")
-                    to_close.append((symbol, "PENNY_SL", change_pct, current_price))
-                
+
+                # NO STOP LOSS — Dead Man's Switch: only close on profit.
+                # Positions are held until they turn profitable.
+
                 # Log threshold info periodically
                 elif pos.cycles % 20 == 0:
-                    print(f"   🪙 {symbol}: Gross ${gross_pnl:.4f} | TP >= ${threshold.win_gte:.4f} | SL <= ${threshold.stop_lte:.4f}")
+                    print(f"   🪙 {symbol}: Gross ${gross_pnl:.4f} | TP >= ${threshold.win_gte:.4f}")
             
             else:
                 # Fallback to percentage-based exits (only if penny profit not available)
@@ -2320,12 +2312,9 @@ class AureonKrakenEcosystem:
                 target_tp = CONFIG['TAKE_PROFIT_PCT'] * tp_mod
                 target_sl = CONFIG['STOP_LOSS_PCT'] * sl_mod
 
-                # Check TP
+                # Check TP only — no stop loss (Dead Man's Switch)
                 if change_pct >= target_tp:
                     to_close.append((symbol, "TP", change_pct, current_price))
-                # Check SL (with minimum hold time)
-                elif change_pct <= -target_sl and pos.cycles >= 5:
-                    to_close.append((symbol, "SL", change_pct, current_price))
                 
         for symbol, reason, pct, price in to_close:
             self.close_position(symbol, reason, pct, price)
