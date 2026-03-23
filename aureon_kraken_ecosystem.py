@@ -2147,11 +2147,9 @@ class AureonKrakenEcosystem:
         notional = margin_budget * leverage
         quantity = notional / price
 
-        # Calculate TP/SL with margin multipliers (tighter SL, wider TP)
+        # Calculate TP only — Dead Man's Switch: no stop loss, only close on profit
         tp_pct = CONFIG['TAKE_PROFIT_PCT'] * CONFIG.get('MARGIN_TP_MULTIPLIER', 1.5)
-        sl_pct = CONFIG['STOP_LOSS_PCT'] * CONFIG.get('MARGIN_SL_MULTIPLIER', 0.5)
         take_profit = price * (1 + tp_pct / 100)
-        stop_loss = price * (1 - sl_pct / 100)
 
         # Fee calculation
         fee_rate = CONFIG.get('KRAKEN_FEE_TAKER', CONFIG['KRAKEN_FEE'])
@@ -2166,7 +2164,6 @@ class AureonKrakenEcosystem:
                     symbol, 'buy', quantity, leverage,
                     order_type='market',
                     take_profit=take_profit,
-                    stop_loss=stop_loss,
                 )
                 if not res.get('orderId') and not res.get('entryOrderId'):
                     print(f"   [MARGIN] Order failed for {symbol}: {res}")
@@ -2204,7 +2201,7 @@ class AureonKrakenEcosystem:
         print(
             f"   [MARGIN {leverage}x] BUY  {symbol:12s} @ {curr_sym}{price:.6f} | "
             f"Notional {curr_sym}{notional:.2f} (Margin {curr_sym}{margin_budget:.2f}) | "
-            f"TP={curr_sym}{take_profit:.2f} SL={curr_sym}{stop_loss:.2f} | "
+            f"TP={curr_sym}{take_profit:.2f} | "
             f"Score={opp.get('score', 0):.0f}"
         )
 
