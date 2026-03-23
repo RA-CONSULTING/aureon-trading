@@ -1,84 +1,19 @@
 {
-  "timestamp": "2026-03-23T17:32:15.369712",
+  "timestamp": "2026-03-23T17:59:45.378151",
   "trades_analyzed": 10,
   "trades": [
     {
-      "index": 1,
-      "pair": "TAOUSD",
+      "index": 9,
+      "pair": "USDTZUSD",
       "type": "buy",
-      "cost": 50.01947005,
-      "fee": 0.11004283,
+      "cost": 145.47055262,
+      "fee": 0.17456466,
       "pnl": 0.0,
-      "fee_ratio": 0.2199999917831996,
+      "fee_ratio": 0.11999999783873785,
       "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
-    },
-    {
-      "index": 2,
-      "pair": "BLUAIUSD",
-      "type": "sell",
-      "cost": 9.72302,
-      "fee": 0.02139,
-      "pnl": 0.0,
-      "fee_ratio": 0.2199933765435019,
-      "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
-    },
-    {
-      "index": 3,
-      "pair": "TAOUSD",
-      "type": "buy",
-      "cost": 50.01688461,
-      "fee": 0.11003715,
-      "pnl": 0.0,
-      "fee_ratio": 0.22000000771339526,
-      "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
-    },
-    {
-      "index": 4,
-      "pair": "BLUAIUSD",
-      "type": "sell",
-      "cost": 9.99073,
-      "fee": 0.02198,
-      "pnl": 0.0,
-      "fee_ratio": 0.22000394365576892,
-      "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
-    },
-    {
-      "index": 5,
-      "pair": "TAOUSD",
-      "type": "buy",
-      "cost": 49.91691838,
-      "fee": 0.10981722,
-      "pnl": 0.0,
-      "fee_ratio": 0.21999999912654866,
-      "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
-    },
-    {
-      "index": 6,
-      "pair": "TAOUSD",
-      "type": "buy",
-      "cost": 49.99728769,
-      "fee": 0.10999403,
-      "pnl": 0.0,
-      "fee_ratio": 0.21999999416368343,
-      "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
+      "decision_quality": 0.7400000010806311,
+      "recommendation": "EFFICIENT_EXECUTION",
+      "reasoning": "Excellent execution: 0.120% fee. Size=145. Good for volatile markets."
     },
     {
       "index": 7,
@@ -89,9 +24,9 @@
       "pnl": 0.0,
       "fee_ratio": 0.11999999787962105,
       "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
+      "decision_quality": 0.7400000010601895,
+      "recommendation": "EFFICIENT_EXECUTION",
+      "reasoning": "Excellent execution: 0.120% fee. Size=146. Good for volatile markets."
     },
     {
       "index": 8,
@@ -102,22 +37,61 @@
       "pnl": 0.0,
       "fee_ratio": 0.12000000161724513,
       "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
+      "decision_quality": 0.7399999991913775,
+      "recommendation": "EFFICIENT_EXECUTION",
+      "reasoning": "Excellent execution: 0.120% fee. Size=145. Good for volatile markets."
     },
     {
-      "index": 9,
-      "pair": "USDTZUSD",
-      "type": "buy",
-      "cost": 145.47055262,
-      "fee": 0.17456466,
+      "index": 2,
+      "pair": "BLUAIUSD",
+      "type": "sell",
+      "cost": 9.72302,
+      "fee": 0.02139,
       "pnl": 0.0,
-      "fee_ratio": 0.11999999783873785,
+      "fee_ratio": 0.2199933765435019,
       "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
+      "decision_quality": 0.2340019870369494,
+      "recommendation": "GOOD_EXECUTION",
+      "reasoning": "Good fee ratio (0.220%). Position: $10. Monitor geopolitical impact."
+    },
+    {
+      "index": 1,
+      "pair": "TAOUSD",
+      "type": "buy",
+      "cost": 50.01947005,
+      "fee": 0.11004283,
+      "pnl": 0.0,
+      "fee_ratio": 0.2199999917831996,
+      "profitability_score": 0.6,
+      "decision_quality": 0.2340000024650401,
+      "recommendation": "GOOD_EXECUTION",
+      "reasoning": "Good fee ratio (0.220%). Position: $50. Monitor geopolitical impact."
+    },
+    {
+      "index": 6,
+      "pair": "TAOUSD",
+      "type": "buy",
+      "cost": 49.99728769,
+      "fee": 0.10999403,
+      "pnl": 0.0,
+      "fee_ratio": 0.21999999416368343,
+      "profitability_score": 0.6,
+      "decision_quality": 0.23400000175089497,
+      "recommendation": "GOOD_EXECUTION",
+      "reasoning": "Good fee ratio (0.220%). Position: $50. Monitor geopolitical impact."
+    },
+    {
+      "index": 5,
+      "pair": "TAOUSD",
+      "type": "buy",
+      "cost": 49.91691838,
+      "fee": 0.10981722,
+      "pnl": 0.0,
+      "fee_ratio": 0.21999999912654866,
+      "profitability_score": 0.6,
+      "decision_quality": 0.23400000026203538,
+      "recommendation": "GOOD_EXECUTION",
+      "reasoning": "Good fee ratio (0.220%). Position: $50. Monitor geopolitical impact."
     },
     {
       "index": 10,
@@ -128,9 +102,35 @@
       "pnl": 0.0,
       "fee_ratio": 0.22,
       "profitability_score": 0.6,
-      "decision_quality": 0.5,
-      "recommendation": "NEUTRAL",
-      "reasoning": "Breakeven or near-breakeven. Low fee burden is positive."
+      "decision_quality": 0.23399999999999999,
+      "recommendation": "GOOD_EXECUTION",
+      "reasoning": "Good fee ratio (0.220%). Position: $50. Monitor geopolitical impact."
+    },
+    {
+      "index": 3,
+      "pair": "TAOUSD",
+      "type": "buy",
+      "cost": 50.01688461,
+      "fee": 0.11003715,
+      "pnl": 0.0,
+      "fee_ratio": 0.22000000771339526,
+      "profitability_score": 0.6,
+      "decision_quality": 0.23399999768598143,
+      "recommendation": "GOOD_EXECUTION",
+      "reasoning": "Good fee ratio (0.220%). Position: $50. Monitor geopolitical impact."
+    },
+    {
+      "index": 4,
+      "pair": "BLUAIUSD",
+      "type": "sell",
+      "cost": 9.99073,
+      "fee": 0.02198,
+      "pnl": 0.0,
+      "fee_ratio": 0.22000394365576892,
+      "profitability_score": 0.6,
+      "decision_quality": 0.23399881690326932,
+      "recommendation": "GOOD_EXECUTION",
+      "reasoning": "Good fee ratio (0.220%). Position: $10. Monitor geopolitical impact."
     }
   ]
 }
