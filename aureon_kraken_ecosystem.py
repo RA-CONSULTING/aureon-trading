@@ -141,6 +141,35 @@ except ImportError:
     lyra_get_position_multiplier = None
     lyra_should_trade = None
 
+# ⚔️ WAR STRATEGY - Quick Kill Probability & Attack Signals
+try:
+    from war_strategy import should_attack, get_quick_kill_estimate
+    WAR_STRATEGY_AVAILABLE = True
+    print("⚔️ War Strategy loaded - quick kill probability active!")
+except ImportError:
+    WAR_STRATEGY_AVAILABLE = False
+    should_attack = None
+    get_quick_kill_estimate = None
+
+# 🎯 UNIFIED SNIPER BRAIN - Million Kill Training
+try:
+    from unified_sniper_brain import get_entry_signal as sniper_get_entry_signal, get_unified_brain
+    SNIPER_BRAIN_AVAILABLE = True
+    print("🎯 Unified Sniper Brain loaded - million kill training active!")
+except ImportError:
+    SNIPER_BRAIN_AVAILABLE = False
+    sniper_get_entry_signal = None
+    get_unified_brain = None
+
+# 🧠 MINER BRAIN - Timeline Oracle & Wisdom Engine
+try:
+    from aureon_miner_brain import MinerBrain as _MinerBrainClass
+    MINER_BRAIN_AVAILABLE = True
+    print("🧠 Miner Brain loaded - timeline oracle & wisdom active!")
+except ImportError:
+    MINER_BRAIN_AVAILABLE = False
+    _MinerBrainClass = None
+
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION - THE UNIFIED PARAMETERS
 # ═══════════════════════════════════════════════════════════════
@@ -1114,6 +1143,35 @@ class AureonKrakenEcosystem:
         else:
             self.lyra = None
 
+        # ⚔️ WAR STRATEGY - Quick Kill Probability
+        if WAR_STRATEGY_AVAILABLE and should_attack:
+            self.war_strategy = True
+            print("   ⚔️ War Strategy wired - attack signals active!")
+        else:
+            self.war_strategy = False
+
+        # 🎯 UNIFIED SNIPER BRAIN - Entry Signal Scoring
+        if SNIPER_BRAIN_AVAILABLE and get_unified_brain:
+            try:
+                self.sniper_brain = get_unified_brain(exchange='kraken')
+                print("   🎯 Sniper Brain wired - entry scoring active!")
+            except Exception as e:
+                self.sniper_brain = None
+                print(f"   ⚠️ Sniper Brain could not load: {e}")
+        else:
+            self.sniper_brain = None
+
+        # 🧠 MINER BRAIN - Timeline Oracle & Wisdom
+        if MINER_BRAIN_AVAILABLE and _MinerBrainClass:
+            try:
+                self.miner_brain = _MinerBrainClass()
+                print("   🧠 Miner Brain wired - timeline oracle active!")
+            except Exception as e:
+                self.miner_brain = None
+                print(f"   ⚠️ Miner Brain could not load: {e}")
+        else:
+            self.miner_brain = None
+
         # Initialize capital pool
         self.capital_pool.update_equity(initial_balance)
         
@@ -1520,15 +1578,9 @@ class AureonKrakenEcosystem:
             print(f"   🛑 HOLDING {pos.symbol}: Net {net_pnl:+.4f} below target {min_net:.4f}")
             return False
         
-        # 🪙 PENNY PROFIT STOP LOSS: Trust the penny profit engine's calculation
+        # NO STOP LOSS — Dead Man's Switch: only close on profit.
         if reason in ["SL", "PENNY_SL"]:
-            # Penny profit SL already has 3x cushion built in
-            # Only block if we haven't held long enough (noise filter)
-            if pos.cycles < 5:
-                print(f"   🛑 HOLDING {pos.symbol}: Min hold time not met ({pos.cycles}/5 cycles)")
-                return False
-            # Allow the SL
-            return True
+            return False
         
         # REBALANCE/SWAP: Only if loss is small relative to position
         if reason in ["REBALANCE", "SWAP"]:
@@ -1858,41 +1910,110 @@ class AureonKrakenEcosystem:
             # Propagate through Mycelium network for enhanced signal
             self.mycelium.add_signal(symbol, coherence)
             network_activations = self.mycelium.propagate()
-            
+
             # Adjust coherence based on network activation
             if symbol in network_activations:
                 network_boost = (network_activations[symbol] - coherence) * 0.2
                 coherence = min(1.0, coherence + network_boost)
-                
-            # Calculate composite score
-            score = 50
-            
-            # Momentum score
-            if change > 20: score += 25
-            elif change > 10: score += 20
-            elif change > 5: score += 15
-            else: score += 10
-            
-            # Volume score
-            if volume > 1000000: score += 20
-            elif volume > 500000: score += 15
-            elif volume > 100000: score += 10
-            else: score += 5
-            
-            # Coherence bonus
-            score += int(coherence * 20)
-            
-            # Golden ratio alignment
+
+            # ⚔️ WAR STRATEGY - Quick Kill Probability
+            war_go = True
+            war_priority = 0
+            war_prob = 0.0
+            if self.war_strategy and should_attack:
+                try:
+                    war_go, _reason, war_priority = should_attack(symbol, 'kraken', prices[-20:])
+                    if not war_go:
+                        continue  # War Strategy says don't attack this target
+                    estimate = get_quick_kill_estimate(symbol, 'kraken', prices[-20:])
+                    war_prob = estimate.prob_penny_profit if estimate else 0.0
+                except Exception:
+                    pass  # Graceful fallback
+
+            # 🎯 SNIPER BRAIN - Entry Signal Scoring
+            sniper_confidence = 0.0
+            sniper_action = 'HOLD'
+            if self.sniper_brain is not None:
+                try:
+                    volumes_list = [volume] * min(len(prices), 20)  # Approximate volume history
+                    sig = self.sniper_brain.get_entry_signal(symbol, prices[-20:], volumes_list[-20:])
+                    sniper_confidence = sig.confidence if sig else 0.0
+                    sniper_action = sig.action if sig else 'HOLD'
+                    if sniper_action == 'HOLD' and sniper_confidence < 0.3:
+                        continue  # Sniper says no opportunity here
+                except Exception:
+                    pass  # Graceful fallback
+
+            # 🧠 MINER BRAIN - Timeline Oracle Validation
+            miner_action = 'HOLD'
+            miner_confidence = 0.0
+            if self.miner_brain is not None:
+                try:
+                    m_action, _branch, m_conf = self.miner_brain.select_timeline_branch(
+                        symbol, price, volume, change
+                    )
+                    miner_action = m_action or 'HOLD'
+                    miner_confidence = m_conf if m_conf else 0.0
+                except Exception:
+                    pass  # Graceful fallback
+
+            # 📊 Calculate volatility from price history (FIX: was never calculated)
+            volatility = 0.0
+            if len(prices) >= 5:
+                returns = [(prices[i] - prices[i-1]) / prices[i-1] for i in range(1, len(prices)) if prices[i-1] > 0]
+                if returns:
+                    mean_ret = sum(returns) / len(returns)
+                    volatility = (sum((r - mean_ret) ** 2 for r in returns) / len(returns)) ** 0.5
+
+            # ═══════════════════════════════════════════════════════
+            # COMPOSITE SCORE - Multi-system weighted scoring
+            # ═══════════════════════════════════════════════════════
+            score = 0
+
+            # Coherence (0-25 pts) - Core signal from 9 Auris nodes
+            score += int(coherence * 25)
+
+            # Momentum (0-20 pts) - Scaled, penalizes negative
+            if change > 20: score += 20
+            elif change > 10: score += 17
+            elif change > 5: score += 14
+            elif change > 2: score += 10
+            elif change > 0: score += 6
+            else: score += 2  # Negative momentum gets minimal score
+
+            # Volume (0-15 pts) - Liquidity matters
+            if volume > 1000000: score += 15
+            elif volume > 500000: score += 12
+            elif volume > 100000: score += 8
+            else: score += 3
+
+            # 🔮 Nexus probability bonus (0-20 pts)
+            if self.nexus is not None and nexus_prob > 0.5:
+                score += int((nexus_prob - 0.5) * 40)  # 0.75 prob = +10 pts
+
+            # ⚔️ War Strategy bonus (0-15 pts)
+            if war_prob > 0:
+                score += int(war_prob * 15)  # High kill probability = more points
+            score += min(war_priority, 5)  # Priority bonus up to 5
+
+            # 🎯 Sniper Brain bonus (0-15 pts)
+            if sniper_action in ('ENTER_LONG',):
+                score += int(sniper_confidence * 15)
+            elif sniper_action == 'ENTER_SHORT':
+                score -= 5  # Penalize if sniper sees short opportunity
+
+            # 🧠 Miner Brain / Timeline Oracle bonus (0-10 pts)
+            if miner_action == 'BUY':
+                score += int(miner_confidence * 10)
+            elif miner_action == 'SELL':
+                score -= 5  # Timeline says sell, penalize
+
+            # Golden ratio alignment (0-5 pts)
             if len(prices) >= 5:
                 ratio = prices[-1] / prices[-5] if prices[-5] > 0 else 1
                 if 1.5 < ratio < 1.7:  # Near PHI
-                    score += 10
-            
-            # 🔮 NEXUS BONUS - Higher edge = Higher score!
-            if self.nexus is not None and nexus_edge > 0:
-                nexus_score = int(nexus_edge * 100)  # Up to +50 for 50% edge
-                score += nexus_score
-                    
+                    score += 5
+
             if score >= CONFIG['MIN_SCORE']:
                 opportunities.append({
                     'symbol': symbol,
@@ -1901,9 +2022,16 @@ class AureonKrakenEcosystem:
                     'volume': volume,
                     'score': score,
                     'coherence': coherence,
+                    'volatility': volatility,
                     'dominant_node': dominant_node,
                     'nexus_prob': nexus_prob,
-                    'nexus_edge': nexus_edge
+                    'nexus_edge': nexus_edge,
+                    'war_prob': war_prob,
+                    'war_priority': war_priority,
+                    'sniper_confidence': sniper_confidence,
+                    'sniper_action': sniper_action,
+                    'miner_action': miner_action,
+                    'miner_confidence': miner_confidence,
                 })
                 
         # Sort by score and return MORE opportunities
@@ -2153,11 +2281,9 @@ class AureonKrakenEcosystem:
         notional = margin_budget * leverage
         quantity = notional / price
 
-        # Calculate TP/SL with margin multipliers (tighter SL, wider TP)
+        # Calculate TP only — Dead Man's Switch: no stop loss, only close on profit
         tp_pct = CONFIG['TAKE_PROFIT_PCT'] * CONFIG.get('MARGIN_TP_MULTIPLIER', 1.5)
-        sl_pct = CONFIG['STOP_LOSS_PCT'] * CONFIG.get('MARGIN_SL_MULTIPLIER', 0.5)
         take_profit = price * (1 + tp_pct / 100)
-        stop_loss = price * (1 - sl_pct / 100)
 
         # Fee calculation
         fee_rate = CONFIG.get('KRAKEN_FEE_TAKER', CONFIG['KRAKEN_FEE'])
@@ -2172,7 +2298,6 @@ class AureonKrakenEcosystem:
                     symbol, 'buy', quantity, leverage,
                     order_type='market',
                     take_profit=take_profit,
-                    stop_loss=stop_loss,
                 )
                 if not res.get('orderId') and not res.get('entryOrderId'):
                     print(f"   [MARGIN] Order failed for {symbol}: {res}")
@@ -2210,7 +2335,7 @@ class AureonKrakenEcosystem:
         print(
             f"   [MARGIN {leverage}x] BUY  {symbol:12s} @ {curr_sym}{price:.6f} | "
             f"Notional {curr_sym}{notional:.2f} (Margin {curr_sym}{margin_budget:.2f}) | "
-            f"TP={curr_sym}{take_profit:.2f} SL={curr_sym}{stop_loss:.2f} | "
+            f"TP={curr_sym}{take_profit:.2f} | "
             f"Score={opp.get('score', 0):.0f}"
         )
 
@@ -2300,15 +2425,13 @@ class AureonKrakenEcosystem:
                 if action == 'TAKE_PROFIT':
                     print(f"   🪙 PENNY TP: {symbol} | Gross: ${gross_pnl:.4f} >= Target: ${threshold.win_gte:.4f}")
                     to_close.append((symbol, "PENNY_TP", change_pct, current_price))
-                
-                # Check Stop Loss (with minimum hold time - 5 cycles)
-                elif action == 'STOP_LOSS' and pos.cycles >= 5:
-                    print(f"   🪙 PENNY SL: {symbol} | Gross: ${gross_pnl:.4f} <= Stop: ${threshold.stop_lte:.4f}")
-                    to_close.append((symbol, "PENNY_SL", change_pct, current_price))
-                
+
+                # NO STOP LOSS — Dead Man's Switch: only close on profit.
+                # Positions are held until they turn profitable.
+
                 # Log threshold info periodically
                 elif pos.cycles % 20 == 0:
-                    print(f"   🪙 {symbol}: Gross ${gross_pnl:.4f} | TP >= ${threshold.win_gte:.4f} | SL <= ${threshold.stop_lte:.4f}")
+                    print(f"   🪙 {symbol}: Gross ${gross_pnl:.4f} | TP >= ${threshold.win_gte:.4f}")
             
             else:
                 # Fallback to percentage-based exits (only if penny profit not available)
@@ -2320,12 +2443,9 @@ class AureonKrakenEcosystem:
                 target_tp = CONFIG['TAKE_PROFIT_PCT'] * tp_mod
                 target_sl = CONFIG['STOP_LOSS_PCT'] * sl_mod
 
-                # Check TP
+                # Check TP only — no stop loss (Dead Man's Switch)
                 if change_pct >= target_tp:
                     to_close.append((symbol, "TP", change_pct, current_price))
-                # Check SL (with minimum hold time)
-                elif change_pct <= -target_sl and pos.cycles >= 5:
-                    to_close.append((symbol, "SL", change_pct, current_price))
                 
         for symbol, reason, pct, price in to_close:
             self.close_position(symbol, reason, pct, price)
