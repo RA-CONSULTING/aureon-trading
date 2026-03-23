@@ -103,7 +103,7 @@ class MomentumFeedEvent:
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
 
 
-@dataclass  
+@dataclass
 class ValidatedIntelFeedEvent:
     """Combined validated intelligence event"""
     symbol: str
@@ -114,6 +114,36 @@ class ValidatedIntelFeedEvent:
     whale_count: int
     momentum_count: int
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+
+
+@dataclass
+class ConsolidatedFeedStream:
+    """One of five core consolidated feed streams"""
+    stream_type: str  # market_data, intelligence, risk_metrics, execution_status, system_health
+    last_update: float = field(default_factory=time.time)
+    is_healthy: bool = True
+    event_count: int = 0
+    latest_events: List[Dict] = field(default_factory=list)  # Last 20 events
+
+    def add_event(self, event: Dict):
+        """Add an event to this stream"""
+        self.latest_events.append(event)
+        self.event_count += 1
+        self.last_update = time.time()
+
+        # Keep only last 20 events
+        if len(self.latest_events) > 20:
+            self.latest_events.pop(0)
+
+    def get_status(self) -> Dict:
+        """Get stream status"""
+        return {
+            "stream_type": self.stream_type,
+            "is_healthy": self.is_healthy,
+            "event_count": self.event_count,
+            "last_update": self.last_update,
+            "latest_events": self.latest_events[-5:]  # Last 5 for dashboard
+        }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -137,16 +167,25 @@ class RealDataFeedHub:
         self.intelligence_engine = None
         self.running = False
         self.feed_thread = None
-        
+
         # Statistics
         self.bots_distributed = 0
         self.whales_distributed = 0
         self.momentum_distributed = 0
         self.intel_distributed = 0
-        
+
         # Subscribers (direct callbacks in addition to ThoughtBus)
         self._subscribers: Dict[str, List[Callable]] = {}
-        
+
+        # Five core consolidated feed streams
+        self.consolidated_streams: Dict[str, ConsolidatedFeedStream] = {
+            "market_data": ConsolidatedFeedStream("market_data"),
+            "intelligence": ConsolidatedFeedStream("intelligence"),
+            "risk_metrics": ConsolidatedFeedStream("risk_metrics"),
+            "execution_status": ConsolidatedFeedStream("execution_status"),
+            "system_health": ConsolidatedFeedStream("system_health")
+        }
+
         self._init_dependencies()
         
     def _init_dependencies(self):
@@ -274,13 +313,16 @@ class RealDataFeedHub:
             layering_score=bp.get('layering_score', 0),
             timing_ms=bp.get('timing_ms', 100)
         )
-        
+
         # Publish to multiple topics for different consumers
         data = asdict(event)
         self._publish_to_bus("intelligence.bot.detected", data)
         self._publish_to_bus(f"intelligence.bot.firm.{bp.get('firm', 'unknown').lower().replace(' ', '_')}", data)
         self._publish_to_bus(f"intelligence.bot.symbol.{bp.get('symbol', '').replace('/', '_')}", data)
-        
+
+        # Also add to consolidated intelligence stream
+        self._add_to_intelligence_stream(data)
+
         self.bots_distributed += 1
     
     def _distribute_whale(self, wp: Dict):
@@ -297,15 +339,18 @@ class RealDataFeedHub:
             validators=wp.get('validators', {}),
             time_horizon_minutes=wp.get('time_horizon_minutes', 30)
         )
-        
+
         data = asdict(event)
         self._publish_to_bus("intelligence.whale.prediction", data)
-        
+
         if event.validated:
             self._publish_to_bus("intelligence.whale.validated", data)
-        
+
         self._publish_to_bus(f"intelligence.whale.symbol.{wp.get('symbol', '').replace('/', '_')}", data)
-        
+
+        # Also add to consolidated intelligence stream
+        self._add_to_intelligence_stream(data)
+
         self.whales_distributed += 1
     
     def _distribute_momentum(self, opp: Dict, scanner_type: str):
@@ -320,12 +365,15 @@ class RealDataFeedHub:
             confidence=opp.get('confidence', 0),
             reason=opp.get('reason', '')
         )
-        
+
         data = asdict(event)
         self._publish_to_bus("intelligence.momentum.opportunity", data)
         self._publish_to_bus(f"intelligence.momentum.{scanner_type}", data)
         self._publish_to_bus(f"intelligence.momentum.symbol.{opp.get('symbol', '').replace('/', '_')}", data)
-        
+
+        # Also add to consolidated intelligence stream
+        self._add_to_intelligence_stream(data)
+
         self.momentum_distributed += 1
     
     def _distribute_validated_intel(self, vi: Dict):
@@ -380,7 +428,45 @@ class RealDataFeedHub:
             pass
         
         return prices
-    
+
+    def get_consolidated_feeds_status(self) -> Dict[str, Any]:
+        """
+        Get status of all five consolidated feed streams.
+
+        Returns:
+            Status of each consolidated stream
+        """
+        return {
+            stream_name: stream.get_status()
+            for stream_name, stream in self.consolidated_streams.items()
+        }
+
+    def publish_to_consolidated(self, stream_type: str, event: Dict):
+        """
+        Publish an event to a consolidated stream.
+
+        Args:
+            stream_type: One of: market_data, intelligence, risk_metrics, execution_status, system_health
+            event: Event data to publish
+        """
+        if stream_type not in self.consolidated_streams:
+            logger.warning(f"Unknown consolidated stream: {stream_type}")
+            return
+
+        # Add to consolidated stream
+        self.consolidated_streams[stream_type].add_event(event)
+
+        # Also publish to ThoughtBus
+        if self.thought_bus:
+            try:
+                self.thought_bus.publish(f"feeds.consolidated.{stream_type}", event)
+            except Exception as e:
+                logger.debug(f"Error publishing to consolidated stream: {e}")
+
+    def _add_to_intelligence_stream(self, event: Dict):
+        """Add an event to the intelligence consolidated stream"""
+        self.publish_to_consolidated("intelligence", event)
+
     def start_continuous_feed(self, interval: float = 5.0):
         """Start continuous data feed in background thread"""
         if self.running:
