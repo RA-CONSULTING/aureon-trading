@@ -75,7 +75,18 @@ class KrakenTradeAnalyzer:
         trade_type = trade.get("type", "unknown")
         cost = float(trade.get("cost", 0))
         fee = float(trade.get("fee", 0))
-        pnl = float(trade.get("pnl", 0))
+
+        # NOTE: Kraken API does NOT return P&L for historical trades
+        # For closed trades, P&L would require matching entry/exit prices
+        # which may be in separate orders for margin positions.
+        # For now, use available data: price, volume, cost, fee
+        price = float(trade.get("price", 0))
+        volume = float(trade.get("vol", 0))
+
+        # For a single trade, P&L would be: (exit_price - entry_price) * volume - fee
+        # But we only have one price point, so we can't calculate realized P&L from this data
+        # This is a limitation of the Kraken API - historical trades don't include P&L
+        pnl = 0.0  # Will be calculated if we have matching entry/exit data
 
         # 1. Calculate fee ratio (cost of trade as % of transaction)
         fee_ratio = (fee / cost * 100) if cost > 0 else 0
@@ -97,31 +108,44 @@ class KrakenTradeAnalyzer:
             profitability_score = 0.5
 
         # 3. Fee Impact Analysis
-        # Higher fee ratio = lower quality (unless high profit compensates)
+        # Lower fees = higher quality
         fee_quality = max(0.1, 1.0 - (fee_ratio / 1.0))  # Normalize to 1%
 
-        # 4. Risk-Adjusted Decision Quality
-        # Good trades have: positive PnL + low fee burden
-        if pnl > 0 and fee_ratio < 0.5:
-            decision_quality = min(0.95, profitability_score + 0.2)
-            recommendation = "BUY_SIGNAL"
-            reasoning = f"Profitable trade with low fee burden ({fee_ratio:.3f}%)"
-        elif pnl > 0 and fee_ratio >= 0.5:
-            decision_quality = profitability_score * 0.8
-            recommendation = "HOLD_SIGNAL"
-            reasoning = f"Profitable but high fee impact ({fee_ratio:.3f}%). Monitor fees."
-        elif pnl >= 0 and fee_ratio < 0.5:
-            decision_quality = 0.5
-            recommendation = "NEUTRAL"
-            reasoning = f"Breakeven or near-breakeven. Low fee burden is positive."
-        elif pnl < 0 and fee_ratio < 0.5:
-            decision_quality = 0.4
-            recommendation = "SELL_SIGNAL"
-            reasoning = f"Loss after trade. Avoid similar setups ({fee_ratio:.3f}% fees)."
+        # 4. Cost-Size Analysis (proxy for risk)
+        # Larger positions (higher cost) = better risk-adjusted opportunity
+        # Small positions (<$100) may indicate lack of conviction or margin testing
+        if cost > 500:
+            size_quality = 0.9  # Large position = good
+        elif cost > 200:
+            size_quality = 0.7
+        elif cost > 100:
+            size_quality = 0.5
         else:
-            decision_quality = 0.1
-            recommendation = "LEARN"
-            reasoning = f"Loss with high fee burden ({fee_ratio:.3f}%). Avoid this pattern."
+            size_quality = 0.3  # Small position = caution flag
+
+        # 5. Risk-Adjusted Decision Quality (WITHOUT P&L data)
+        # Since Kraken API doesn't provide P&L for closed trades,
+        # use: execution quality (low fees) + position sizing
+        # This accounts for geopolitical volatility where position size matters
+
+        fee_efficiency_score = 1.0 - (fee_ratio / 1.0) if fee_ratio < 1.0 else 0.0
+
+        if fee_ratio < 0.2:
+            decision_quality = min(0.95, fee_efficiency_score * size_quality + 0.3)
+            recommendation = "EFFICIENT_EXECUTION"
+            reasoning = f"Excellent execution: {fee_ratio:.3f}% fee. Size={cost:.0f}. Good for volatile markets."
+        elif fee_ratio < 0.5:
+            decision_quality = fee_efficiency_score * size_quality
+            recommendation = "GOOD_EXECUTION"
+            reasoning = f"Good fee ratio ({fee_ratio:.3f}%). Position: ${cost:.0f}. Monitor geopolitical impact."
+        elif fee_ratio < 1.0:
+            decision_quality = fee_efficiency_score * 0.7
+            recommendation = "CAUTION_FEES"
+            reasoning = f"High fee burden ({fee_ratio:.3f}%). Consider impact during volatility."
+        else:
+            decision_quality = 0.2
+            recommendation = "AVOID_PATTERN"
+            reasoning = f"Excessive fees ({fee_ratio:.3f}%). Avoid during geopolitical volatility."
 
         return TradeAnalysis(
             index=index,
@@ -180,30 +204,27 @@ class KrakenTradeAnalyzer:
         print("\n" + "=" * 100)
         print("📈 SUMMARY STATISTICS")
         print("=" * 100)
+        print("⚠️  NOTE: Kraken API does not return P&L for closed trades")
+        print("    Analysis based on: Fee efficiency + Position sizing")
+        print("=" * 100)
 
         total_trades = len(self.analyses)
-        profitable = sum(1 for a in self.analyses if a.pnl > 0)
-        losing = sum(1 for a in self.analyses if a.pnl < 0)
-        breakeven = total_trades - profitable - losing
+        avg_fee_ratio = sum(a.fee_ratio for a in self.analyses) / total_trades if total_trades > 0 else 0
 
         total_cost = sum(a.cost for a in self.analyses)
         total_fees = sum(a.fee for a in self.analyses)
-        total_pnl = sum(a.pnl for a in self.analyses)
-        avg_fee_ratio = (total_fees / total_cost * 100) if total_cost > 0 else 0
         avg_decision_quality = sum(
             a.decision_quality for a in self.analyses
         ) / total_trades
 
         print(f"\nTotal Trades Analyzed: {total_trades}")
-        print(f"  ✅ Profitable: {profitable}")
-        print(f"  ❌ Losing: {losing}")
-        print(f"  ⚪ Breakeven: {breakeven}")
+        print(f"  Average Position Size: ${total_cost/total_trades:.2f}")
+        print(f"  Size Range: ${min(a.cost for a in self.analyses):.2f} - ${max(a.cost for a in self.analyses):.2f}")
 
-        print(f"\nFinancials:")
-        print(f"  Total Cost: ${total_cost:.2f}")
-        print(f"  Total Fees: ${total_fees:.4f}")
-        print(f"  Total P&L: ${total_pnl:+.4f}")
+        print(f"\nFee Efficiency:")
+        print(f"  Total Fees Paid: ${total_fees:.4f}")
         print(f"  Average Fee Ratio: {avg_fee_ratio:.3f}%")
+        print(f"  Total Volume: ${total_cost:.2f}")
 
         print(f"\nDecision Quality:")
         print(f"  Average Quality Score: {avg_decision_quality:.1%}")
