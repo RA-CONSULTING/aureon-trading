@@ -3246,6 +3246,19 @@ class KrakenMarginArmyTrader:
             self.active_trade = self.active_long or self.active_short
             self._save_state()
 
+            # Register with orchestrator so spot system sees our margin position
+            if self.orchestrator is not None:
+                try:
+                    self.orchestrator.register_position(
+                        system='margin',
+                        pair=pair_info.pair,
+                        side=side,
+                        value_usd=trade_val,
+                        exchange='kraken',
+                    )
+                except Exception as e:
+                    logger.debug(f"Position register error: {e}")
+
             logger.info(
                 f"POSITION OPENED: {pair_info.pair} {side.upper()} | "
                 f"Entry: ~${price:,.4f} | Target: ${breakeven:,.4f} | "
@@ -3389,6 +3402,17 @@ class KrakenMarginArmyTrader:
                 self.active_short = None
             self.active_trade = self.active_long or self.active_short
             self._save_state()
+
+            # Deregister from orchestrator so spot system sees slot is free
+            if self.orchestrator is not None:
+                try:
+                    self.orchestrator.deregister_position(
+                        system='margin',
+                        pair=trade.pair,
+                        side=trade.side,
+                    )
+                except Exception as e:
+                    logger.debug(f"Position deregister error: {e}")
 
             logger.info(
                 f"TRADE COMPLETED: {trade.pair} {trade.side.upper()} | "
@@ -3842,6 +3866,21 @@ class KrakenMarginArmyTrader:
 
                 # Keep active_trade alias pointing at something
                 self.active_trade = self.active_long or self.active_short
+
+                # Register restored positions with orchestrator for cross-system awareness
+                if self.orchestrator is not None:
+                    for pos in (self.active_long, self.active_short):
+                        if pos is not None:
+                            try:
+                                self.orchestrator.register_position(
+                                    system='margin',
+                                    pair=pos.pair,
+                                    side=pos.side,
+                                    value_usd=pos.cost,
+                                    exchange='kraken',
+                                )
+                            except Exception as e:
+                                logger.debug(f"Restored position register error: {e}")
 
                 self.total_profit = state.get("total_profit", 0)
                 self.total_trades = state.get("total_trades", 0)
