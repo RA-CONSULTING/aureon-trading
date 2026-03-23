@@ -101,15 +101,21 @@ class PennyProfitEngine:
                 for size_key, values in sizes.items():
                     # Extract size from key like "$7.50"
                     size = float(size_key.replace('$', ''))
-                    
+
                     # Get taker values (worst case)
                     taker = values.get('taker', values)
-                    
+
+                    total_cost = taker.get('total_costs', taker.get('cost', 0.03))
+
+                    # Derive stop_lte from total_cost when missing.
+                    # Stop loss should be proportional to trade size (≈0.5× costs).
+                    default_stop = -(total_cost * 0.5)
+
                     self.thresholds[exchange][size] = PennyThreshold(
                         trade_size=size,
-                        total_cost=taker.get('total_costs', taker.get('cost', 0.03)),
+                        total_cost=total_cost,
                         win_gte=taker.get('min_gross_profit', taker.get('win_gte', 0.04)),
-                        stop_lte=taker.get('max_gross_loss', taker.get('stop_lte', -0.02)),
+                        stop_lte=taker.get('max_gross_loss', taker.get('stop_lte', default_stop)),
                         win_pct=taker.get('min_price_move_pct', taker.get('win_pct', 0.5)),
                         stop_pct=taker.get('stop_pct', -0.3),
                     )
@@ -120,11 +126,13 @@ class PennyProfitEngine:
                 self.thresholds[exchange] = {}
                 for size_key, values in info.get('thresholds', {}).items():
                     size = float(size_key.replace('$', ''))
+                    total_cost = values.get('cost', 0.03)
+                    default_stop = -(total_cost * 0.5)
                     self.thresholds[exchange][size] = PennyThreshold(
                         trade_size=size,
-                        total_cost=values.get('cost', 0.03),
+                        total_cost=total_cost,
                         win_gte=values.get('win_gte', 0.04),
-                        stop_lte=values.get('stop_lte', -0.02),
+                        stop_lte=values.get('stop_lte', default_stop),
                         win_pct=values.get('win_pct', 0.5),
                         stop_pct=values.get('stop_pct', -0.3),
                     )
@@ -162,20 +170,35 @@ class PennyProfitEngine:
     def get_threshold(self, exchange: str, entry_value: float) -> PennyThreshold:
         """
         Get the threshold for a given exchange and trade size.
-        Finds the closest matching size bucket.
+        If entry_value exceeds the largest bucket, scales thresholds linearly
+        so that fees and targets remain proportional to the actual trade size.
         """
         exchange = exchange.lower()
-        
+
         if exchange not in self.thresholds:
             # Default to binance if unknown exchange
             exchange = 'binance'
-        
+
         sizes = self.thresholds[exchange]
-        
-        # Find closest size bucket
-        closest_size = min(sizes.keys(), key=lambda x: abs(x - entry_value))
-        
-        return sizes[closest_size]
+        max_bucket = max(sizes.keys())
+
+        if entry_value <= max_bucket:
+            # Within range — use closest bucket
+            closest_size = min(sizes.keys(), key=lambda x: abs(x - entry_value))
+            return sizes[closest_size]
+
+        # Trade size exceeds largest bucket — scale linearly
+        base = sizes[max_bucket]
+        scale = entry_value / max_bucket
+
+        return PennyThreshold(
+            trade_size=entry_value,
+            total_cost=base.total_cost * scale,
+            win_gte=base.win_gte * scale,
+            stop_lte=base.stop_lte * scale,
+            win_pct=base.win_pct,       # percentages stay the same
+            stop_pct=base.stop_pct,
+        )
     
     def check_exit(self, exchange: str, entry_value: float, current_value: float) -> Tuple[str, float]:
         """
