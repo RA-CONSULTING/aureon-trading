@@ -61,6 +61,7 @@ class UnifiedOrcaLauncher:
 
         code = """
 import asyncio
+import sys
 from aureon_system_coordinator import SystemCoordinator, SystemState
 
 coordinator = SystemCoordinator()
@@ -78,12 +79,10 @@ async def monitor():
     await coordinator.monitor_coordination(interval=2.0)
 
 try:
-    await monitor()
+    asyncio.run(monitor())
 except KeyboardInterrupt:
     print("System Coordinator shutting down...")
     sys.exit(0)
-
-asyncio.run(monitor())
 """
 
         proc = await self._run_python_code(code, "Coordinator")
@@ -96,6 +95,7 @@ asyncio.run(monitor())
 
         code = """
 import asyncio
+import sys
 from aureon_unified_decision_engine import UnifiedDecisionEngine
 
 engine = UnifiedDecisionEngine()
@@ -106,7 +106,7 @@ async def monitor():
     await engine.monitor_decisions(interval=2.0)
 
 try:
-    await monitor()
+    asyncio.run(monitor())
 except KeyboardInterrupt:
     print("Decision Engine shutting down...")
     sys.exit(0)
@@ -122,6 +122,7 @@ except KeyboardInterrupt:
 
         code = """
 import asyncio
+import sys
 from aureon_orca_monitor import OrcaMonitor
 
 monitor = OrcaMonitor()
@@ -133,7 +134,7 @@ async def run():
     await monitor.monitor_orca(interval=1.0)
 
 try:
-    await run()
+    asyncio.run(run())
 except KeyboardInterrupt:
     print("Orca Monitor shutting down...")
     sys.exit(0)
