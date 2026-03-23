@@ -3956,7 +3956,7 @@ class OrcaKillCycle:
 
         # Register existing spot positions with the unified orchestrator
         # so the margin system is immediately aware of what spot holds.
-        if self.tracked_positions and self._get_unified_orchestrator():
+        if getattr(self, 'tracked_positions', None) and self._get_unified_orchestrator():
             for sym, pos_data in self.tracked_positions.items():
                 self._register_spot_position(
                     sym,
