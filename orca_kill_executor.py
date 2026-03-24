@@ -212,6 +212,137 @@ class OrcaKillExecutor:
         except Exception as e:
             logger.error(f"Price fetch error for {symbol}: {e}")
         return 0.0
+
+    def _normalize_symbol(self, symbol: str) -> str:
+        """Normalize symbol formats into BASE/QUOTE convention."""
+        if not isinstance(symbol, str):
+            return ""
+        cleaned = symbol.strip().upper()
+        if "/" in cleaned:
+            return cleaned
+        # Common fallback: BTCUSD -> BTC/USD
+        if len(cleaned) > 3:
+            if cleaned.endswith("USD"):
+                return f"{cleaned[:-3]}/USD"
+            if cleaned.endswith("USDT"):
+                return f"{cleaned[:-4]}/USDT"
+            if cleaned.endswith("USDC"):
+                return f"{cleaned[:-4]}/USDC"
+        return cleaned
+
+    def validate_ticker(self, symbol: str, exchange: str) -> Dict[str, Any]:
+        """Validate ticker syntax and market availability on the selected exchange."""
+        normalized = self._normalize_symbol(symbol)
+        if "/" not in normalized:
+            return {
+                "valid": False,
+                "symbol": normalized,
+                "reason": "Ticker must be in BASE/QUOTE format (example: ETH/USD)",
+            }
+
+        price = self.get_price(normalized, exchange)
+        if price <= 0:
+            return {
+                "valid": False,
+                "symbol": normalized,
+                "reason": f"Ticker unavailable or not priced on {exchange}",
+            }
+
+        return {
+            "valid": True,
+            "symbol": normalized,
+            "exchange": exchange,
+            "price": price,
+        }
+
+    def select_trade_candidate(self, tickers: List[str], exchange: str) -> Dict[str, Any]:
+        """
+        Validate a list of tickers and select the highest-priced valid candidate.
+        Selection policy is intentionally deterministic for auditability.
+        """
+        if not tickers:
+            return {"selected": None, "validations": [], "reason": "No tickers provided"}
+
+        validations = [self.validate_ticker(ticker, exchange) for ticker in tickers]
+        valid = [v for v in validations if v.get("valid")]
+        if not valid:
+            return {"selected": None, "validations": validations, "reason": "No valid tickers"}
+
+        selected = sorted(valid, key=lambda item: item.get("price", 0.0), reverse=True)[0]
+        return {"selected": selected, "validations": validations}
+
+    def run_orca_kill_cycle(
+        self,
+        tickers: List[str],
+        exchange: str,
+        side: str = "buy",
+        amount_usd: Optional[float] = None,
+        take_profit_pct: float = 5.0,
+        stop_loss_pct: float = -3.0,
+        monitor_cycles: int = 30,
+        poll_seconds: float = 1.0,
+    ) -> Dict[str, Any]:
+        """
+        Execute the complete Orca cycle:
+        selection/validation -> trade -> monitor -> profitable close.
+        """
+        selection = self.select_trade_candidate(tickers=tickers, exchange=exchange)
+        selected = selection.get("selected")
+        if not selected:
+            return {
+                "success": False,
+                "phase": "selection",
+                "reason": selection.get("reason", "No valid selection"),
+                "selection": selection,
+            }
+
+        position = self.execute_kill(
+            symbol=selected["symbol"],
+            exchange=exchange,
+            side=side,
+            amount_usd=amount_usd,
+            take_profit_pct=take_profit_pct,
+            stop_loss_pct=stop_loss_pct,
+        )
+        if not position:
+            return {
+                "success": False,
+                "phase": "execution",
+                "reason": "Failed to execute kill",
+                "selection": selection,
+            }
+
+        closed_positions: List[OrcaPosition] = []
+        for _ in range(max(1, monitor_cycles)):
+            closed_now = self.monitor_positions()
+            if closed_now:
+                closed_positions.extend(closed_now)
+                break
+            if poll_seconds > 0:
+                time.sleep(poll_seconds)
+
+        closed_position = next((p for p in closed_positions if p.id == position.id), None)
+        if not closed_position:
+            return {
+                "success": False,
+                "phase": "monitor",
+                "reason": "Position did not close within monitoring window",
+                "selection": selection,
+                "position_id": position.id,
+                "closed_positions": [p.id for p in closed_positions],
+            }
+
+        profitable = closed_position.realized_pnl > 0
+        return {
+            "success": profitable,
+            "phase": "closed",
+            "selection": selection,
+            "position_id": closed_position.id,
+            "symbol": closed_position.symbol,
+            "exit_reason": closed_position.exit_reason,
+            "realized_pnl": closed_position.realized_pnl,
+            "profitable_close": profitable,
+        }
     
     def execute_kill(self, symbol: str, exchange: str, side: str, 
                      amount_usd: Optional[float] = None,
@@ -321,9 +452,24 @@ class OrcaKillExecutor:
         
         # Parse order result
         order_id = order_result.get('orderId', order_result.get('id', str(time.time())))
-        exec_price = float(order_result.get('price', price))
-        exec_qty = float(order_result.get('executedQty', qty))
-        exec_cost = float(order_result.get('cummulativeQuoteQty', trade_amount))
+        exec_price = float(
+            order_result.get('price')
+            or order_result.get('avg_price')
+            or order_result.get('avgPrice')
+            or price
+        )
+        exec_qty = float(
+            order_result.get('executedQty')
+            or order_result.get('vol_exec')
+            or order_result.get('filled_qty')
+            or qty
+        )
+        exec_cost = float(
+            order_result.get('cummulativeQuoteQty')
+            or order_result.get('cost')
+            or order_result.get('filled_notional')
+            or (exec_price * exec_qty)
+        )
         
         print(f"\n✅ ORDER FILLED!")
         print(f"   Order ID: {order_id}")
@@ -408,9 +554,24 @@ class OrcaKillExecutor:
             return False
         
         # Update position with exit details
-        exit_price = float(order_result.get('price', position.current_price))
-        exit_qty = float(order_result.get('executedQty', position.entry_qty))
-        exit_cost = float(order_result.get('cummulativeQuoteQty', 0))
+        exit_price = float(
+            order_result.get('price')
+            or order_result.get('avg_price')
+            or order_result.get('avgPrice')
+            or position.current_price
+        )
+        exit_qty = float(
+            order_result.get('executedQty')
+            or order_result.get('vol_exec')
+            or order_result.get('filled_qty')
+            or position.entry_qty
+        )
+        exit_cost = float(
+            order_result.get('cummulativeQuoteQty')
+            or order_result.get('cost')
+            or order_result.get('filled_notional')
+            or (exit_price * exit_qty)
+        )
         
         position.exit_price = exit_price
         position.exit_qty = exit_qty
