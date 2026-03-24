@@ -10282,11 +10282,19 @@ class OrcaKillCycle:
             status = "WIN ✅" if outcome else "LOSS ❌"
             loss_val = result.get('loss', 'N/A')
             quantum_tag = " ⚛️" if result.get('quantum_enhanced') else ""
-            print(f"     👑 QUEEN LEARNED: {symbol} {status} (${pnl:+.4f}) | Loss: {loss_val}{quantum_tag}")
-            # Update Queen equity tracking
+            # Update Queen equity tracking first so we can show it in the banner
             if hasattr(queen, 'equity'):
                 queen.equity += pnl
-                print(f"     👑 QUEEN EQUITY: ${queen.equity:,.2f}")
+            if outcome:
+                equity_str = f"${queen.equity:,.2f}" if hasattr(queen, 'equity') else "tracking..."
+                print(f"\n{'💰'*30}")
+                print(f"  🏆 PROFIT SECURED!  {symbol}  +${pnl:.4f}")
+                print(f"     Queen Portfolio: {equity_str}{quantum_tag}")
+                print(f"{'💰'*30}\n")
+            else:
+                print(f"     👑 QUEEN LEARNED: {symbol} {status} (${pnl:+.4f}) | Loss: {loss_val}{quantum_tag}")
+                if hasattr(queen, 'equity'):
+                    print(f"     👑 QUEEN EQUITY: ${queen.equity:,.2f}")
         except Exception as e:
             print(f"     Queen learning error: {e}")
 
@@ -10427,9 +10435,9 @@ class OrcaKillCycle:
             except Exception:
                 pass
 
-        status = "WIN" if is_win else "LOSS"
+        status = "WIN ✅" if is_win else "LOSS ❌"
         if _fed > 0:
-            print(f"     OUTCOME BROADCAST: {symbol} {status} (${pnl:+.4f}) → {_fed} brains learning")
+            print(f"     🧠 {_fed} AI systems just learned from {symbol} {status} (${pnl:+.4f})")
 
     def execute_stealth_sell(self, client: Any, symbol: str, quantity: float,
                              price: float = None, exchange: str = 'alpaca') -> Dict:
@@ -11923,10 +11931,10 @@ class OrcaKillCycle:
                 from ira_sniper_mode import get_sniper_config
                 sniper_config = get_sniper_config()
                 if sniper_config.get('ZERO_LOSS_MODE'):
-                    print(f"       IRA SNIPER: Target In Sight {symbol} | PnL: ${info['net_pnl']:.4f} | Preparing 2nd Shot...")
+                    print(f"   🎯 SNIPER: {symbol} locked in crosshairs | Profit ${info['net_pnl']:.4f} confirmed — pulling trigger...")
                     # The logic above already ensured Net PnL > 0 and COP > Target
                     # So the Sniper "pulls the trigger"
-                    print(f"       IRA SNIPER: KILL CONFIRMED! (1st Shot: Buy, 2nd Shot: Sell)")
+                    print(f"   🎯🎯🎯 SNIPER KILL CONFIRMED! Bought low, selling high — PROFIT LOCKED IN!")
             except ImportError:
                 pass
 
@@ -14495,7 +14503,8 @@ class OrcaKillCycle:
                                             session_stats['winning_trades'] += 1
                                             session_stats['total_trades'] += 1
                                             session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
-                                            print(f"        CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} freed ${exit_value:.2f}")
+                                            _pnl_show = exit_info.get('net_pnl', net_pnl)
+                                            print(f"   ✅ SOLD {symbol} on {exchange_name.upper()} | Profit: +${_pnl_show:.4f} | Cash freed: ${exit_value:.2f}")
                                             # 👑 QUEEN LEARNS FROM THIS TRADE
                                             self._queen_learn_from_sell(
                                                 queen=queen, symbol=symbol, exchange=exchange_name,
@@ -14598,7 +14607,7 @@ class OrcaKillCycle:
                                                     session_stats['total_pnl'] += net_pnl
                                                     session_stats['winning_trades'] += 1
                                                     session_stats['total_trades'] += 1
-                                                    print(f"        CLOSED! +${net_pnl:.4f}")
+                                                    print(f"   ✅ SOLD {symbol} on {exchange_name.upper()} | Profit: +${net_pnl:.4f}")
                                                     # 👑 QUEEN LEARNS FROM THIS TRADE
                                                     self._queen_learn_from_sell(
                                                         queen=queen, symbol=symbol, exchange=exchange_name,
@@ -14719,7 +14728,7 @@ class OrcaKillCycle:
                                                             session_stats['winning_trades'] += 1
                                                             session_stats['total_trades'] += 1
                                                             session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
-                                                            print(f"        CLOSED! +${net_pnl:.4f}")
+                                                            print(f"   ✅ SOLD {symbol} on {exchange_name.upper()} | Profit: +${net_pnl:.4f}")
                                                             found_price = True
                                                             break  # Position closed, skip monitoring
                                                     except Exception as e:
@@ -15682,7 +15691,8 @@ class OrcaKillCycle:
                                         if _hive_mind is not None:
                                             try: _hive_mind.register_alpaca_close(exit_info.get('net_pnl', net_pnl))
                                             except Exception: pass
-                                        print(f"     CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f}   Cash freed for new buys!")
+                                        _pnl_show2 = exit_info.get('net_pnl', net_pnl)
+                                        print(f"   ✅ SOLD {pos.symbol} on {pos.exchange.upper()} | Profit: +${_pnl_show2:.4f} | Cash freed for new buys! 💰")
                                         # 👑 QUEEN LEARNS FROM THIS TRADE
                                         self._queen_learn_from_sell(
                                             queen=queen, symbol=pos.symbol, exchange=pos.exchange,
@@ -17063,13 +17073,21 @@ class OrcaKillCycle:
                     runtime_str = f"{int(runtime//3600)}h {int((runtime%3600)//60)}m {int(runtime%60)}s"
                     
                     print("\033[2J\033[H", end="")  # Clear screen
-                    print("   AUTONOMOUS QUEEN MODE - LIVE MONITORING   ")
-                    print("="*80)
-                    print(f"      Runtime: {runtime_str} |   Cycles: {session_stats['cycles']}")
-                    print(f"     Trades: {session_stats['total_trades']} |   Wins: {session_stats['winning_trades']} |   Losses: {session_stats['losing_trades']}")
-                    print(f"     Session P&L: ${session_stats['total_pnl']:+.4f}")
-                    print(f"     Best: ${session_stats['best_trade']:+.4f} |   Worst: ${session_stats['worst_trade']:+.4f}")
-                    print("="*80)
+                    _t = session_stats['total_trades']
+                    _w = session_stats['winning_trades']
+                    _l = session_stats['losing_trades']
+                    _pnl = session_stats['total_pnl']
+                    _win_rate = (_w / _t * 100) if _t > 0 else 0.0
+                    _pnl_emoji = "📈" if _pnl >= 0 else "📉"
+                    _wr_emoji  = "🔥" if _win_rate >= 70 else "✅" if _win_rate >= 50 else "⚠️"
+                    print("╔" + "═"*78 + "╗")
+                    print("║" + "  👑 DR AURIS AUTONOMOUS TRADING — LIVE ON TWITCH  ".center(78) + "║")
+                    print("╠" + "═"*78 + "╣")
+                    print(f"║  ⏱️  Runtime : {runtime_str:<20} Scan cycles: {session_stats['cycles']:<20}    ║")
+                    print(f"║  {_pnl_emoji}  Session P&L: ${_pnl:>+10.4f}{'':31}    ║")
+                    print(f"║  {_wr_emoji}  Win Rate  : {_win_rate:>5.1f}%  ({_w}W / {_l}L / {_t} total){'':21}    ║")
+                    print(f"║  🏆 Best trade: ${session_stats['best_trade']:>+8.4f}   Positions open: {len(positions):<3}{'':19}    ║")
+                    print("╚" + "═"*78 + "╝")
                     
                     #   Harmonic Liquid Aluminium Field visualization
                     self._print_harmonic_field_summary()
