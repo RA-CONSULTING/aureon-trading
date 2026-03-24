@@ -1,7 +1,33 @@
 # AUREON TRADING SYSTEM
 
-Discord 
-https://discord.gg/ueu7gBz7g
+## 🌐 Community & Live Links
+
+| Platform | Link |
+|----------|------|
+| 💬 **Discord** | [Join the Server](https://discord.gg/ueu7gBz7g) |
+| 🎮 **Live Trading Stream (Twitch)** | [the_crypto_wizard_ire](https://www.twitch.tv/the_crypto_wizard_ire) |
+
+---
+
+## 📚 Recent Research Publications
+
+| Document | Description |
+|----------|-------------|
+| [FRESH_DATA_UPDATE_MAR24.pdf](FRESH_DATA_UPDATE_MAR24.pdf) | Fresh data update — March 2024 |
+| [COMPLETE_EVIDENCE_SYNTHESIS.pdf](COMPLETE_EVIDENCE_SYNTHESIS.pdf) | Complete evidence synthesis report |
+| [The Sagittarius Convergence v2 (Corrected)](The_Sagittarius_Convergence_v2_Corrected.docx) | Sagittarius convergence — corrected edition |
+| [The Sagittarius Convergence (2026)](The_Sagittarius_Convergence_Leckey_2026.docx) | Sagittarius convergence research — 2026 |
+| [The Source Oscillator Constraint](The_Source_Oscillator_Constraint_Whitepa.docx) | Source oscillator constraint white paper |
+| [HNC Harmonic LIDAR White Paper](HNC_Harmonic_LIDAR_WhitePaper_Leckey_202.docx) | HNC Harmonic LIDAR research |
+| [HNC Harmonic LIDAR v2 — Aluminium Fluid](HNC_Harmonic_LIDAR_v2_AluminiumFluid_Lec.docx) | HNC Harmonic LIDAR v2 with aluminium fluid model |
+| [EPAS Unified Architecture White Paper](EPAS_Unified_Architecture_WhitePaper_Lec.docx) | EPAS unified architecture technical overview |
+| [HNC Project Druid — EPAS Technical Framework](HNC_Project_Druid_E_P_A_S_technical_Fram.docx) | Project Druid EPAS technical framework |
+| [Harmonic Solar System Survey](Harmonic_Solar_System_Survey_Leckey.docx) | Harmonic solar system survey |
+| [Maeshowe Seer Decode Report 2026](Maeshowe_Seer_Decode_Report_2026.docx) | Maeshowe seer decode — 2026 |
+| [The Doorbell Hypothesis](The_Doorbell_Hypothesis_Leckey.docx) | The doorbell hypothesis |
+| [The Dormant Seed](The_Dormant_Seed.docx) | The dormant seed |
+
+---
 
 <!-- markdownlint-disable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
 
