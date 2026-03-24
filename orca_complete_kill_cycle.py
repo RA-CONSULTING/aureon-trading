@@ -10725,10 +10725,27 @@ class OrcaKillCycle:
                                    entry_cost: float = 0, reason: str = "TP") -> Dict:
         """
           Execute a SELL order with comprehensive logging.
-        
+
         Logs the order ID to verify execution on the exchange.
         """
-        #                                                                    
+        # Guard: refuse to sell without confirmed entry cost unless user manually aborted
+        _is_abort = reason in ('USER_ABORT', 'ctrl_c_cleanup')
+        if entry_cost <= 0 and not _is_abort:
+            # Attempt cost basis lookup as fallback
+            _cb_entry = None
+            if self.cost_basis_tracker:
+                try:
+                    _cb_entry = self.cost_basis_tracker.get_confirmed_entry(symbol, exchange)
+                except Exception:
+                    pass
+            if _cb_entry and _cb_entry > 0:
+                entry_cost = _cb_entry * quantity  # reconstruct approximate cost
+                print(f"   entry_cost was 0 — recovered from cost basis tracker: ${entry_cost:.4f}")
+            else:
+                print(f"   SELL BLOCKED: entry_cost=0 and no confirmed cost basis for {symbol} [{exchange}] — aborting to prevent loss")
+                return {'status': 'blocked', 'reason': 'no_entry_cost', 'rejected': True, 'symbol': symbol, 'exchange': exchange}
+
+        #
         #     DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
         #                                                                    
         #   [QUEEN] Narrative Log Start
@@ -12167,28 +12184,31 @@ class OrcaKillCycle:
         print(f"  Target:      ${target:,.2f} (+{((target/entry_price-1)*100):.3f}%)")
         print(f"  Stop Loss:   ${stop_price:,.2f} (-{abs(stop_pct):.1f}%)")
         
-        # Step 1: BUY
+        # Step 1: BUY — all buys must pass through queen_gated_buy
         print(f"\n  STEP 1: BUY ${amount_usd:.2f} of {symbol}")
         try:
-            # Use the correct exchange client for the buy order
             if exchange in ['binance', 'kraken']:
-                # For Binance/Kraken, use market buy with quantity
                 quantity = amount_usd / entry_price
-                buy_order = client.place_market_order(
+                buy_order = self.queen_gated_buy(
+                    client=client,
                     symbol=symbol,
-                    side='buy',
-                    quantity=quantity
+                    exchange=exchange,
+                    quantity=quantity,
+                    price=entry_price,
+                    context='hunt_and_kill'
                 )
             else:
-                # For Alpaca, use quote_qty
-                buy_order = client.place_market_order(
+                buy_order = self.queen_gated_buy(
+                    client=client,
                     symbol=symbol,
-                    side='buy',
-                    quote_qty=amount_usd
+                    exchange=exchange,
+                    quote_qty=amount_usd,
+                    price=entry_price,
+                    context='hunt_and_kill'
                 )
-            
-            if not buy_order:
-                print("  Buy failed")
+
+            if not buy_order or buy_order.get('rejected'):
+                print(f"  Buy blocked or failed: {buy_order.get('reason', 'no result') if buy_order else 'no result'}")
                 return None
             
             buy_qty = float(buy_order.get('filled_qty', buy_order.get('executedQty', 0)))
@@ -12354,18 +12374,31 @@ class OrcaKillCycle:
             bids = orderbook.get('bids', [])
             current = float(bids[0].get('p', buy_price)) if bids else buy_price
         
-        # Step 3: SELL (only if profitable)
+        # Step 3: SELL — must pass queen_approved_exit before placing order
         print(f"\n  STEP 3: SELL {buy_qty:.8f} {symbol} on {exchange.upper()}")
-        # Recalculate projected P&L at current market price and only sell if positive
         try:
             pnl_est = self.calculate_realized_pnl(buy_price, buy_qty, current, buy_qty)
             if pnl_est['net_pnl'] <= 0:
                 print(f"\n  NOT SELLING: projected net P&L ${pnl_est['net_pnl']:+.4f} <= 0. Waiting for profitable exit.")
-                # Do not execute sell to avoid realizing a loss
                 return None
         except Exception:
-            # If P&L calc fails for some reason, be conservative and skip selling
             print("\n   Could not compute projected P&L - skipping sell to avoid risk")
+            return None
+
+        # Queen gate: confirm cost basis, profit floor, and COP minimum
+        _hunt_entry_cost = buy_price * buy_qty * (1 + self.fee_rate)
+        _can_exit, _exit_info = self.queen_approved_exit(
+            symbol=symbol,
+            exchange=exchange,
+            current_price=current,
+            entry_price=buy_price,
+            entry_qty=buy_qty,
+            entry_cost=_hunt_entry_cost,
+            queen=None,
+            reason='hunt_and_kill'
+        )
+        if not _can_exit:
+            print(f"\n  SELL BLOCKED BY QUEEN: {_exit_info.get('blocked_reason', 'queen rejected')} — not selling")
             return None
         
         try:
@@ -12995,13 +13028,16 @@ class OrcaKillCycle:
                                 else:
                                     continue
                             
-                            # BUY on the appropriate exchange
-                            buy_order = client.place_market_order(
+                            # BUY — must pass queen_gated_buy (profit gate + multi-brain consensus)
+                            buy_order = self.queen_gated_buy(
+                                client=client,
                                 symbol=symbol_clean,
-                                side='buy',
-                                quote_qty=amount_per_position
+                                exchange=exchange,
+                                quote_qty=amount_per_position,
+                                price=entry_price,
+                                context='pack_hunt'
                             )
-                            if not buy_order:
+                            if not buy_order or buy_order.get('rejected'):
                                 continue
                             
                             buy_qty = float(buy_order.get('filled_qty', 0))
@@ -13330,12 +13366,15 @@ class OrcaKillCycle:
                                                             
                                                             if new_price > 0:
                                                                 buy_qty_new = amount_per_position / new_price
-                                                                new_buy = new_client.place_market_order(
+                                                                new_buy = self.queen_gated_buy(
+                                                                    client=new_client,
                                                                     symbol=new_symbol,
-                                                                    side='buy',
-                                                                    quantity=buy_qty_new
+                                                                    exchange=new_exchange,
+                                                                    quantity=buy_qty_new,
+                                                                    price=new_price,
+                                                                    context='pack_hunt_rebuy'
                                                                 )
-                                                                if new_buy:
+                                                                if new_buy and not new_buy.get('rejected'):
                                                                     fill_price = float(new_buy.get('filled_avg_price', new_price))
                                                                     fill_qty = float(new_buy.get('filled_qty', buy_qty_new))
                                                                     new_fee_rate = self.fee_rates.get(new_exchange, 0.0025)
