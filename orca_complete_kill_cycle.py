@@ -16832,6 +16832,12 @@ class OrcaKillCycle:
                                                 # minimum ensures the trade is worth the round-trip fee.
                                                 _GBP_USD_RATE = 1.27
                                                 _exch_min = round(50.0 * _GBP_USD_RATE, 0)  # = 63.0 USD
+                                                # Auto-scale: if amount_per_position was set lower than the
+                                                # exchange minimum but we have enough cash to cover it, raise
+                                                # buy_amount to the minimum so the trade actually fires.
+                                                if buy_amount < _exch_min and exchange_cash >= _exch_min * 1.1:
+                                                    buy_amount = min(_exch_min, exchange_cash * 0.20)
+                                                    print(f"   [AUTOSCALE] buy_amount raised to ${buy_amount:.2f} to meet £50 exchange minimum (cash=${exchange_cash:.2f})")
                                                 if buy_amount >= _exch_min:
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                     expected_qty = buy_amount / best.price if best.price > 0 else 0.0
