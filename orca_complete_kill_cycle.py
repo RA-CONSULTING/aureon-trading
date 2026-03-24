@@ -18750,6 +18750,42 @@ def _production_preflight(orca: "OrcaKillCycle", live_mode: bool) -> None:
 
     print(f"  Production preflight PASSED: total spendable cash=${total_cash:.2f}")
 
+
+def _precheck_exchange_network(live_mode: bool, timeout_sec: float = 2.0) -> None:
+    """
+    Fail fast when all exchange endpoints are unreachable.
+
+    In constrained environments this avoids long startup stalls caused by each
+    client performing its own retry loops during autonomous boot.
+    """
+    if not live_mode:
+        return
+
+    import socket
+
+    targets = [
+        ("api.kraken.com", 443),
+        ("api.binance.com", 443),
+        ("api.alpaca.markets", 443),
+    ]
+    reachable = []
+    failed = []
+
+    for host, port in targets:
+        try:
+            with socket.create_connection((host, port), timeout=timeout_sec):
+                reachable.append(f"{host}:{port}")
+        except Exception as exc:
+            failed.append(f"{host}:{port} ({exc})")
+
+    if not reachable:
+        raise RuntimeError(
+            "Autonomous startup aborted: no exchange endpoints reachable. "
+            f"Failed checks: {', '.join(failed)}"
+        )
+
+    print(f"  Network precheck OK ({len(reachable)}/{len(targets)} reachable): {', '.join(reachable)}")
+
 if __name__ == "__main__":
     # Windows UTF-8 wrapper
     import sys
@@ -18816,6 +18852,9 @@ if __name__ == "__main__":
         symbol_whitelist = None
         if args.symbols:
             symbol_whitelist = [s.strip() for s in args.symbols.split(',')]
+
+        # Fast-fail LIVE autonomous mode if exchange endpoints are unavailable.
+        _precheck_exchange_network(live_mode=(args.autonomous and not args.dry_run))
         
         print(f"  Creating Orca instance...")
         # Create Orca instance
