@@ -8758,10 +8758,28 @@ class OrcaKillCycle:
                             entry_cost = entry_price * qty * (1 + fee_rate)
                             exit_value = current_price * qty * (1 - fee_rate)
                             net_pnl = exit_value - entry_cost
-                            
+
                             results['total_value'] += current_price * qty
-                            
+
                             if net_pnl >= min_profit_usd:
+                                # Gate through queen_approved_exit before placing any sell
+                                can_exit, exit_info = self.queen_approved_exit(
+                                    symbol=symbol,
+                                    exchange=exchange_name,
+                                    current_price=current_price,
+                                    entry_price=entry_price,
+                                    entry_qty=qty,
+                                    entry_cost=entry_cost,
+                                    queen=queen,
+                                    reason='HARVEST'
+                                )
+                                if not can_exit:
+                                    print(f"     {exchange_name.upper()} {symbol}: HARVEST BLOCKED — {exit_info.get('blocked_reason', 'queen rejected')}")
+                                    results['still_holding'].append({
+                                        'exchange': exchange_name, 'symbol': symbol,
+                                        'qty': qty, 'value': current_price * qty, 'pnl': net_pnl
+                                    })
+                                    continue
                                 print(f"     {exchange_name.upper()} {symbol}: +${net_pnl:.4f} profit - HARVESTING!")
                                 try:
                                     sell_order = client.place_market_order(symbol=symbol, side='sell', quantity=qty)
