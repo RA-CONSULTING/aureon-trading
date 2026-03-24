@@ -1320,10 +1320,12 @@ DEADLINE_MODE = False  # EXPIRED 2026-02-20 — disabled to prevent stale aggres
 DEADLINE_DATE = "2026-02-20"
 
 # MICRO-COMPOUND GROWTH MODE: optimized for small capital (<$100)
-# 0.40% target is achievable on micro-positions after fees
-# The key: HIGH FREQUENCY of small wins compounds into visible portfolio growth
-QUEEN_MIN_COP = 1.0040   # 0.40% net profit minimum (Growth Mode)
-QUEEN_MIN_PROFIT_PCT = 0.40  # < 1.0 = GROWTH MODE (enables relaxed black box gate)
+# COP formula in queen_approved_exit omits entry fee from confirmed_cost (intentional —
+# confirmed_entry is the raw fill price). To guarantee TRUE net profit after BOTH
+# Kraken taker fees (0.26% in + 0.26% out) and slippage (0.20%), the apparent COP
+# must be 1.0100 (1.0%) so the real after-entry-fee return is at least 0.74%.
+QUEEN_MIN_COP = 1.0100   # 1.0% apparent COP → covers Kraken 0.72% round-trip + buffer
+QUEEN_MIN_PROFIT_PCT = 1.00  # >= 1.0 disables micro-gains relaxation; real target now 1%
 
 # GROWTH MODE MULTIPLIERS (conservative, protect small capital)
 DEADLINE_POSITION_MULTIPLIER = 1.0  # Normal position sizes
@@ -13517,11 +13519,21 @@ class OrcaKillCycle:
                                 pos.kill_reason = 'MOMENTUM_PROFIT'
                                 print(f"\n       TAKING PROFIT (momentum reversal)    ")
                         
-                        # EXIT if ready - SELL ONLY IF POSITIVE PROFIT
+                        # EXIT if ready - SELL ONLY IF QUEEN APPROVES (profit mathematically certain)
                         if pos.ready_to_kill:
-                            # Only execute sell if current unrealized P&L is positive
-                            if pos.current_pnl > 0:
-                                print(f"\n       EXECUTING SELL ORDER (PROFITABLE)    ")
+                            # Run through the full Queen gate chain before selling
+                            _qt_can_exit, _qt_exit_info = self.queen_approved_exit(
+                                symbol=pos.symbol,
+                                exchange=pos.exchange,
+                                current_price=current,
+                                entry_price=pos.entry_price,
+                                entry_qty=pos.entry_qty,
+                                entry_cost=entry_cost,
+                                queen=None,
+                                reason=pos.kill_reason
+                            )
+                            if _qt_can_exit and pos.current_pnl > 0:
+                                print(f"\n       EXECUTING SELL ORDER (QUEEN APPROVED)    ")
                                 sell_order = self.execute_sell_with_logging(
                                     client=pos.client,
                                     symbol=pos.symbol,
@@ -13545,8 +13557,12 @@ class OrcaKillCycle:
                                     print(f"     SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
                                     print(f"     READY FOR NEXT TRADE!")
                                 positions.remove(pos)
+                            elif not _qt_can_exit:
+                                # Queen blocked — profit not sufficiently certain; keep monitoring
+                                print(f"      SELL BLOCKED: {_qt_exit_info.get('blocked_reason', 'queen rejected')} — holding")
+                                pos.ready_to_kill = False
                             else:
-                                # Skip selling to avoid realizing a loss
+                                # Not profitable yet — reset and keep monitoring
                                 print(f"\n     NOT SELLING {pos.symbol}: current P&L ${pos.current_pnl:+.4f} <= 0 (waiting for profitable exit)")
                                 pos.ready_to_kill = False
                                 pos.kill_reason = 'NOT_PROFIT_YET'
