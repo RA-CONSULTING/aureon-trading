@@ -592,25 +592,25 @@ class HarmonicWaveformScanner:
                 and now - HarmonicWaveformScanner._cached_field_time < self._FIELD_CACHE_TTL):
             return HarmonicWaveformScanner._cached_field
 
-        print("\n" + "🌊"*60)
-        print("   SCANNING QUEEN SERO'S HARMONIC WAVEFORM")
-        print("🌊"*60 + "\n")
-        
+        print("\n" + "═"*60)
+        print("   🌊 MARKET SCAN — Checking all exchanges for opportunities")
+        print("═"*60)
+
         # Reset counters
         self.node_counter = {'BIN': 0, 'KRK': 0, 'ALP': 0, 'CAP': 0}
         self.field = HarmonicField()
-        
+
         # Scan each relay
-        print("📡 Connecting to BIN (Binance)...")
+        print("📡 Binance connecting...")
         self.field.relays['BIN'] = self.scan_binance_relay()
-        
-        print("📡 Connecting to KRK (Kraken)...")
+
+        print("📡 Kraken connecting...")
         self.field.relays['KRK'] = self.scan_kraken_relay()
-        
-        print("📡 Connecting to ALP (Alpaca)...")
+
+        print("📡 Alpaca connecting...")
         self.field.relays['ALP'] = self.scan_alpaca_relay()
-        
-        print("📡 Connecting to CAP (Capital.com)...")
+
+        print("📡 Capital.com connecting...")
         # Wrap Capital.com in a timeout — it hangs frequently
         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
         _cap_executor = ThreadPoolExecutor(max_workers=1)

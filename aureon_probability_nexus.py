@@ -448,10 +448,48 @@ def _log_unified_intelligence(intel: dict, conf_mult: float) -> None:
     runes   = intel.get('war_rune_active', 0)
     stance  = intel.get('planner_stance', '')
     dom     = intel.get('war_rune_dom', '')
-    print(f"🌌 UNIFIED INTELLIGENCE ({src} live sources) | "
-          f"Seer: {grade} | War: {war} | Lyra: {lyra} | "
-          f"Runes: {runes} active ({dom}) | OODA stance: {stance} | "
-          f"Conf ×{conf_mult:.3f}")
+
+    # Translate internal codes into viewer-friendly descriptions
+    _seer_labels = {
+        'CLEAR':   '✅ CLEAR (sharp vision)',
+        'FOG':     '🌫️ FOG (reading carefully)',
+        'BLIND':   '🚫 BLIND (no-trade mode)',
+        'UNKNOWN': '❓ SCANNING...',
+    }
+    _war_labels = {
+        'FLYING_COLUMN':    '⚡ RAPID STRIKE MODE',
+        'GUERRILLA':        '🌿 GUERRILLA TACTICS',
+        'FULL_ASSAULT':     '💥 FULL ASSAULT',
+        'STANDARD':         '🛡️ STANDARD OPS',
+        'DEFENSIVE':        '🛡️ HOLDING DEFENCE',
+        'SIEGE':            '🏰 SIEGE TACTICS',
+    }
+    _lyra_labels = {
+        'BUY_BIAS':         '📈 BULLISH SIGNAL',
+        'SELL_BIAS':        '📉 BEARISH SIGNAL',
+        'HOLD':             '⏸️ NEUTRAL',
+        'STRONG_BUY':       '🚀 STRONG BUY',
+        'STRONG_SELL':      '🔴 STRONG SELL',
+    }
+    _conf_emoji = '🔥' if conf_mult >= 0.9 else '✅' if conf_mult >= 0.7 else '⚠️' if conf_mult >= 0.5 else '🌫️'
+
+    grade_label = _seer_labels.get(grade, f'🔮 {grade}')
+    war_label   = _war_labels.get(war, f'⚔️ {war}')
+    lyra_label  = _lyra_labels.get(lyra, f'🎵 {lyra}')
+
+    print(f"🌌 AI BRAIN STATUS ({src} systems online)")
+    print(f"   👁️  Seer Vision : {grade_label}")
+    print(f"   ⚔️  War Strategy: {war_label}")
+    print(f"   🎵  Market Mood : {lyra_label}")
+    if runes > 0:
+        dom_str = f" — dominant: {dom}" if dom else ""
+        print(f"   🪄  Runes Active: {runes} war runes{dom_str}")
+    print(f"   {_conf_emoji} Confidence  : {conf_mult:.0%}")
+
+    # Return compact summary string so callers can update their live dashboard
+    _log_unified_intelligence._last_summary = (
+        f"{grade_label} | {war_label} | {lyra_label} | {_conf_emoji} {conf_mult:.0%}"
+    )
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # INITIALIZATION - SETUP AND WARMUP

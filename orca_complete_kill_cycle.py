@@ -9072,9 +9072,15 @@ class OrcaKillCycle:
                     for asset, qty in (balances or {}).items():
                         if asset in ['USD', 'ZUSD', 'EUR', 'ZEUR', 'DAI', 'USDC', 'USDT', 'TUSD', 'ZGBP', 'GBP']:
                             continue
+                        # Skip staked (.S), bridged (.B), and other non-spot suffixed assets —
+                        # they cannot be sold directly as spot
+                        if '.' in asset:
+                            continue
+                        # Normalise Kraken X/Z-prefixed asset names (XXBT→BTC, XETH→ETH)
+                        _norm_asset = self._KRAKEN_ASSET_NORM.get(asset, asset)
                         qty = float(qty or 0)
                         if qty > 0.0001:
-                            symbol = f"{asset}USD"
+                            symbol = f"{_norm_asset}USD"
                             try:
                                 ticker = client.get_ticker(symbol)
                                 if ticker:
@@ -9084,65 +9090,99 @@ class OrcaKillCycle:
                                         results['total_value'] += market_value
 
                                         if market_value >= 0.50:
-                                            _entry_data = _kraken_entries.get(symbol) or _kraken_entries.get(asset)
-                                            entry_price = _entry_data['entry_price'] if _entry_data else 0
-                                            entry_cost = entry_price * qty * (1 + fee_rate) if entry_price > 0 else 0
+                                            _entry_data = _kraken_entries.get(symbol) or _kraken_entries.get(_norm_asset) or _kraken_entries.get(asset)
+                                            entry_price = float(_entry_data['entry_price']) if _entry_data else None
 
-                                            if entry_price > 0:
-                                                can_exit, exit_info = self.queen_approved_exit(
-                                                    symbol=symbol,
-                                                    exchange=exchange_name,
-                                                    current_price=current_price,
-                                                    entry_price=entry_price,
-                                                    entry_qty=qty,
-                                                    entry_cost=entry_cost,
-                                                    queen=queen,
-                                                    reason='HARVEST'
+                                            # Fallback: check cost_basis_tracker (catches airdrops
+                                            # recorded with entry_price=0 and other tracked positions
+                                            # not in the local JSON files)
+                                            _is_airdrop = False
+                                            if entry_price is None and self.cost_basis_tracker:
+                                                try:
+                                                    _cb = self.cost_basis_tracker.get_confirmed_entry(symbol, exchange_name)
+                                                    if _cb is not None:
+                                                        entry_price = float(_cb)
+                                                        if entry_price == 0:
+                                                            _is_airdrop = True
+                                                except Exception:
+                                                    pass
+
+                                            if entry_price is not None:
+                                                # For zero-cost airdrops pass a nominal entry_cost so
+                                                # execute_sell_with_logging's guard allows the sale —
+                                                # any positive proceeds are pure profit
+                                                if _is_airdrop:
+                                                    entry_cost = 0.00001
+                                                else:
+                                                    entry_cost = entry_price * qty * (1 + fee_rate)
+
+                                                # Validate minimum order size before touching the queen
+                                                order_ok, order_reason = self.validate_order_params(
+                                                    symbol=symbol, quantity=qty,
+                                                    exchange=exchange_name, price=current_price
                                                 )
-                                                if can_exit:
-                                                    net_pnl = exit_info.get('net_pnl', 0)
-                                                    print(f"     KRAKEN {asset}: +${net_pnl:.4f} profit - HARVESTING!")
-                                                    sell_result = self.execute_sell_with_logging(
-                                                        client=client,
+                                                if not order_ok:
+                                                    print(f"     KRAKEN {_norm_asset}: SKIP — {order_reason}")
+                                                    results['still_holding'].append({
+                                                        'exchange': exchange_name, 'symbol': symbol,
+                                                        'qty': qty, 'value': market_value, 'pnl': 0
+                                                    })
+                                                else:
+                                                    can_exit, exit_info = self.queen_approved_exit(
                                                         symbol=symbol,
-                                                        quantity=qty,
                                                         exchange=exchange_name,
                                                         current_price=current_price,
+                                                        entry_price=entry_price,
+                                                        entry_qty=qty,
                                                         entry_cost=entry_cost,
+                                                        queen=queen,
                                                         reason='HARVEST'
                                                     )
-                                                    if sell_result and not sell_result.get('rejected'):
-                                                        freed = qty * current_price * (1 - fee_rate)
-                                                        results['harvested'].append({
-                                                            'exchange': exchange_name,
-                                                            'symbol': symbol,
-                                                            'qty': qty,
-                                                            'profit': net_pnl,
-                                                            'freed': freed
-                                                        })
-                                                        results['total_freed'] += freed
+                                                    if can_exit:
+                                                        net_pnl = exit_info.get('net_pnl', 0)
+                                                        label = 'AIRDROP' if _is_airdrop else 'HARVEST'
+                                                        print(f"     KRAKEN {_norm_asset}: +${net_pnl:.4f} profit - {label}!")
+                                                        sell_result = self.execute_sell_with_logging(
+                                                            client=client,
+                                                            symbol=symbol,
+                                                            quantity=qty,
+                                                            exchange=exchange_name,
+                                                            current_price=current_price,
+                                                            entry_cost=entry_cost,
+                                                            reason='HARVEST'
+                                                        )
+                                                        if sell_result and not sell_result.get('rejected'):
+                                                            freed = qty * current_price * (1 - fee_rate)
+                                                            results['harvested'].append({
+                                                                'exchange': exchange_name,
+                                                                'symbol': symbol,
+                                                                'qty': qty,
+                                                                'profit': net_pnl,
+                                                                'freed': freed
+                                                            })
+                                                            results['total_freed'] += freed
+                                                        else:
+                                                            results['still_holding'].append({
+                                                                'exchange': exchange_name, 'symbol': symbol,
+                                                                'qty': qty, 'value': market_value,
+                                                                'pnl': exit_info.get('net_pnl', 0)
+                                                            })
                                                     else:
+                                                        print(f"     KRAKEN {_norm_asset}: HARVEST BLOCKED — {exit_info.get('blocked_reason', 'queen rejected')}")
                                                         results['still_holding'].append({
                                                             'exchange': exchange_name, 'symbol': symbol,
                                                             'qty': qty, 'value': market_value,
                                                             'pnl': exit_info.get('net_pnl', 0)
                                                         })
-                                                else:
-                                                    print(f"     KRAKEN {asset}: HARVEST BLOCKED — {exit_info.get('blocked_reason', 'queen rejected')}")
-                                                    results['still_holding'].append({
-                                                        'exchange': exchange_name, 'symbol': symbol,
-                                                        'qty': qty, 'value': market_value,
-                                                        'pnl': exit_info.get('net_pnl', 0)
-                                                    })
                                             else:
-                                                # No entry price on record — report only, cannot verify profit
-                                                print(f"     KRAKEN {asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f} (no entry price)")
+                                                # No entry price found anywhere — report only
+                                                print(f"     KRAKEN {_norm_asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f} (no entry price)")
                                                 results['still_holding'].append({
                                                     'exchange': exchange_name, 'symbol': symbol,
                                                     'qty': qty, 'value': market_value, 'pnl': 0
                                                 })
-                            except Exception:
-                                pass
+                            except Exception as _ex:
+                                results['errors'].append(f"kraken:{asset}: {_ex}")
                                 
                 elif exchange_name == 'capital':
                     capital_client = self._ensure_capital_client()
@@ -10198,6 +10238,16 @@ class OrcaKillCycle:
     #  👑 QUEEN LEARNING FEEDBACK - FEED EVERY TRADE OUTCOME TO HER NEURAL BRAIN
     # ════════════════════════════════════════════════════════════════════════════
 
+    def _push_stream_event(self, icon: str, message: str) -> None:
+        """Append a notable event to the Twitch live event ticker (max 10 entries)."""
+        if not hasattr(self, '_stream_events'):
+            self._stream_events = []
+        import time as _t
+        ts = _t.strftime('%H:%M:%S')
+        self._stream_events.append((ts, icon, message))
+        if len(self._stream_events) > 10:
+            self._stream_events = self._stream_events[-10:]
+
     def _queen_learn_from_sell(self, queen, symbol: str, exchange: str, pnl: float,
                                entry_price: float = 0, exit_price: float = 0,
                                reason: str = '') -> None:
@@ -10242,11 +10292,20 @@ class OrcaKillCycle:
             status = "WIN ✅" if outcome else "LOSS ❌"
             loss_val = result.get('loss', 'N/A')
             quantum_tag = " ⚛️" if result.get('quantum_enhanced') else ""
-            print(f"     👑 QUEEN LEARNED: {symbol} {status} (${pnl:+.4f}) | Loss: {loss_val}{quantum_tag}")
-            # Update Queen equity tracking
+            # Update Queen equity tracking first so we can show it in the banner
             if hasattr(queen, 'equity'):
                 queen.equity += pnl
-                print(f"     👑 QUEEN EQUITY: ${queen.equity:,.2f}")
+            if outcome:
+                equity_str = f"${queen.equity:,.2f}" if hasattr(queen, 'equity') else "tracking..."
+                print(f"\n{'💰'*30}")
+                print(f"  🏆 PROFIT SECURED!  {symbol}  +${pnl:.4f}")
+                print(f"     Queen Portfolio: {equity_str}{quantum_tag}")
+                print(f"{'💰'*30}\n")
+                self._push_stream_event("💰", f"PROFIT  {symbol}  +${pnl:.4f}  (portfolio {equity_str})")
+            else:
+                print(f"     👑 QUEEN LEARNED: {symbol} {status} (${pnl:+.4f}) | Loss: {loss_val}{quantum_tag}")
+                if hasattr(queen, 'equity'):
+                    print(f"     👑 QUEEN EQUITY: ${queen.equity:,.2f}")
         except Exception as e:
             print(f"     Queen learning error: {e}")
 
@@ -10387,9 +10446,9 @@ class OrcaKillCycle:
             except Exception:
                 pass
 
-        status = "WIN" if is_win else "LOSS"
+        status = "WIN ✅" if is_win else "LOSS ❌"
         if _fed > 0:
-            print(f"     OUTCOME BROADCAST: {symbol} {status} (${pnl:+.4f}) → {_fed} brains learning")
+            print(f"     🧠 {_fed} AI systems just learned from {symbol} {status} (${pnl:+.4f})")
 
     def execute_stealth_sell(self, client: Any, symbol: str, quantity: float,
                              price: float = None, exchange: str = 'alpaca') -> Dict:
@@ -11883,10 +11942,10 @@ class OrcaKillCycle:
                 from ira_sniper_mode import get_sniper_config
                 sniper_config = get_sniper_config()
                 if sniper_config.get('ZERO_LOSS_MODE'):
-                    print(f"       IRA SNIPER: Target In Sight {symbol} | PnL: ${info['net_pnl']:.4f} | Preparing 2nd Shot...")
+                    print(f"   🎯 SNIPER: {symbol} locked in crosshairs | Profit ${info['net_pnl']:.4f} confirmed — pulling trigger...")
                     # The logic above already ensured Net PnL > 0 and COP > Target
                     # So the Sniper "pulls the trigger"
-                    print(f"       IRA SNIPER: KILL CONFIRMED! (1st Shot: Buy, 2nd Shot: Sell)")
+                    print(f"   🎯🎯🎯 SNIPER KILL CONFIRMED! Bought low, selling high — PROFIT LOCKED IN!")
             except ImportError:
                 pass
 
@@ -12253,26 +12312,24 @@ class OrcaKillCycle:
             snapshot = self.harmonic_field.capture_snapshot()
             if not snapshot:
                 return
-            
-            print(" " * 60)
-            print("  HARMONIC LIQUID ALUMINIUM FIELD  ")
-            print(f"       Timestamp: {snapshot.timestamp_utc}")
-            print(f"     Nodes Active: {snapshot.node_count}")
-            print(f"     Dominant Frequency: {snapshot.dominant_frequency_hz:.2f} Hz")
-            print(f"     Field Energy: {snapshot.total_field_energy:.4f}")
-            print(f"     Coherence Index: {snapshot.coherence_index:.4f}")
-            
-            # Show top harmonic nodes by energy (if any)
+
+            # ── Feed live dashboard ────────────────────────────────────────────
+            _top_nodes = []
             if snapshot.nodes:
-                top_nodes = sorted(snapshot.nodes, key=lambda n: n.energy, reverse=True)[:3]
-                if top_nodes:
-                    print("     Top Harmonic Nodes:")
-                    for node in top_nodes:
-                        freq_str = f"{node.frequency_hz:.1f}Hz"
-                        energy_bar = " " * int(node.energy * 10)
-                        print(f"      {node.symbol[:10]:<10} | {freq_str:>8} | {energy_bar}")
-            
-            print(" " * 60)
+                _top_nodes = sorted(snapshot.nodes, key=lambda n: n.energy, reverse=True)[:5]
+            self._stream_harmonic = {
+                'coherence': snapshot.coherence_index,
+                'energy':    snapshot.total_field_energy,
+                'freq_hz':   snapshot.dominant_frequency_hz,
+                'nodes':     _top_nodes,
+                'node_count': snapshot.node_count,
+            }
+
+            # Legacy print (kept for non-Twitch logging)
+            print(f"  🌊 Harmonic Field: coherence={snapshot.coherence_index:.2f} "
+                  f"energy={snapshot.total_field_energy:.2f} "
+                  f"freq={snapshot.dominant_frequency_hz:.2f}Hz "
+                  f"nodes={snapshot.node_count}")
         except Exception as e:
             # Silent fail - harmonic display is supplementary
             pass
@@ -14279,7 +14336,16 @@ class OrcaKillCycle:
             'quantum_hz': SCHUMANN_BASE_HZ,
             'quantum_cycles': 0,
         }
-        
+
+        # ── TWITCH LIVE STREAM STATE ───────────────────────────────────────────
+        # Ring buffer of the last 10 notable events shown in the dashboard
+        self._stream_events = []        # list of (timestamp, icon, message)
+        self._stream_last_action  = "🚀 Starting up..."
+        self._stream_ai_status    = ""   # filled from unified intelligence calls
+        self._stream_margin_health = {}  # {exchange: {level, free, used, equity}}
+        self._stream_harmonic      = {}  # {coherence, energy, freq_hz, top_nodes[]}
+        self._stream_start_portfolio = 0.0  # set in Phase 0 for growth %
+
         # Current positions - will be loaded from portfolio
         positions: List[LivePosition] = []
         
@@ -14455,7 +14521,8 @@ class OrcaKillCycle:
                                             session_stats['winning_trades'] += 1
                                             session_stats['total_trades'] += 1
                                             session_stats['best_trade'] = max(session_stats['best_trade'], exit_info.get('net_pnl', net_pnl))
-                                            print(f"        CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f} freed ${exit_value:.2f}")
+                                            _pnl_show = exit_info.get('net_pnl', net_pnl)
+                                            print(f"   ✅ SOLD {symbol} on {exchange_name.upper()} | Profit: +${_pnl_show:.4f} | Cash freed: ${exit_value:.2f}")
                                             # 👑 QUEEN LEARNS FROM THIS TRADE
                                             self._queen_learn_from_sell(
                                                 queen=queen, symbol=symbol, exchange=exchange_name,
@@ -14558,7 +14625,7 @@ class OrcaKillCycle:
                                                     session_stats['total_pnl'] += net_pnl
                                                     session_stats['winning_trades'] += 1
                                                     session_stats['total_trades'] += 1
-                                                    print(f"        CLOSED! +${net_pnl:.4f}")
+                                                    print(f"   ✅ SOLD {symbol} on {exchange_name.upper()} | Profit: +${net_pnl:.4f}")
                                                     # 👑 QUEEN LEARNS FROM THIS TRADE
                                                     self._queen_learn_from_sell(
                                                         queen=queen, symbol=symbol, exchange=exchange_name,
@@ -14679,7 +14746,7 @@ class OrcaKillCycle:
                                                             session_stats['winning_trades'] += 1
                                                             session_stats['total_trades'] += 1
                                                             session_stats['best_trade'] = max(session_stats['best_trade'], net_pnl)
-                                                            print(f"        CLOSED! +${net_pnl:.4f}")
+                                                            print(f"   ✅ SOLD {symbol} on {exchange_name.upper()} | Profit: +${net_pnl:.4f}")
                                                             found_price = True
                                                             break  # Position closed, skip monitoring
                                                     except Exception as e:
@@ -14742,6 +14809,14 @@ class OrcaKillCycle:
         for exchange, amount in cash.items():
             print(f"   {exchange.upper()}: ${amount:.2f}")
         print()
+
+        # ── CAPTURE STARTING PORTFOLIO VALUE FOR GROWTH TRACKING ──────────────
+        _starting_cash = sum(cash.values())
+        _starting_positions_value = sum(
+            p.entry_price * p.entry_qty for p in positions
+        )
+        self._stream_start_portfolio = _starting_cash + _starting_positions_value
+        print(f"  📊 Starting portfolio value: ${self._stream_start_portfolio:.2f} (will track growth)")
         
         # Avalanche timing
         last_avalanche_time = 0
@@ -15642,7 +15717,9 @@ class OrcaKillCycle:
                                         if _hive_mind is not None:
                                             try: _hive_mind.register_alpaca_close(exit_info.get('net_pnl', net_pnl))
                                             except Exception: pass
-                                        print(f"     CLOSED! +${exit_info.get('net_pnl', net_pnl):.4f}   Cash freed for new buys!")
+                                        _pnl_show2 = exit_info.get('net_pnl', net_pnl)
+                                        print(f"   ✅ SOLD {pos.symbol} on {pos.exchange.upper()} | Profit: +${_pnl_show2:.4f} | Cash freed for new buys! 💰")
+                                        self._push_stream_event("✅", f"SOLD  {pos.symbol}  +${_pnl_show2:.4f}  ({pos.exchange.upper()})")
                                         # 👑 QUEEN LEARNS FROM THIS TRADE
                                         self._queen_learn_from_sell(
                                             queen=queen, symbol=pos.symbol, exchange=pos.exchange,
@@ -16198,9 +16275,20 @@ class OrcaKillCycle:
                                 topic="orca.scan.plan",
                                 meta={"min_change_pct": min_change_pct, "positions": len(positions), "quantum_amp": quantum_stats['amplification']},
                             )
+                            self._stream_last_action = f"🔍 Scanning all exchanges for opportunities (cycle #{session_stats['cycles']})..."
                             scan_start = _time.time()
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
                             scan_time = _time.time() - scan_start
+                            _n_opps = len(opportunities) if opportunities else 0
+                            self._stream_last_action = f"✅ Scan complete — {_n_opps} opportunities found in {scan_time:.1f}s"
+                            # Pick up AI summary from last nexus call for the live dashboard
+                            try:
+                                from aureon_probability_nexus import _log_unified_intelligence as _lui
+                                _ai_sum = getattr(_lui, '_last_summary', None)
+                                if _ai_sum:
+                                    self._stream_ai_status = _ai_sum
+                            except Exception:
+                                pass
                             
                             #                                                    
                             #   RISING STARS SCAN - All intelligence systems combined!
@@ -16792,6 +16880,12 @@ class OrcaKillCycle:
                                                 # minimum ensures the trade is worth the round-trip fee.
                                                 _GBP_USD_RATE = 1.27
                                                 _exch_min = round(50.0 * _GBP_USD_RATE, 0)  # = 63.0 USD
+                                                # Auto-scale: if amount_per_position was set lower than the
+                                                # exchange minimum but we have enough cash to cover it, raise
+                                                # buy_amount to the minimum so the trade actually fires.
+                                                if buy_amount < _exch_min and exchange_cash >= _exch_min * 1.1:
+                                                    buy_amount = min(_exch_min, exchange_cash * 0.20)
+                                                    print(f"   [AUTOSCALE] buy_amount raised to ${buy_amount:.2f} to meet £50 exchange minimum (cash=${exchange_cash:.2f})")
                                                 if buy_amount >= _exch_min:
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                     expected_qty = buy_amount / best.price if best.price > 0 else 0.0
@@ -16931,9 +17025,10 @@ class OrcaKillCycle:
                                                                         margin_amount=_margin_collateral,
                                                                         margin_side=_margin_side,
                                                                     )
-                                                                    print(f"     MARGIN BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f} ({_order_leverage}x {_margin_side})")
+                                                                    print(f"   📈 MARGIN BUY: {symbol_clean} on {best.exchange.upper()} | {buy_qty:.6f} @ ${buy_price:,.4f} ({_order_leverage}x {_margin_side})")
                                                                     print(f"        Target: ${target_price_margin:,.4f} (only {target_pct_current/_order_leverage:.2f}% price move needed!)")
                                                                     print(f"        Margin: ${_margin_collateral:.2f} | NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                    self._push_stream_event("📈", f"MARGIN BUY  {symbol_clean}  @ ${buy_price:,.4f}  ({_order_leverage}x {_margin_side})")
                                                                 else:
                                                                     # SPOT POSITION — classic path
                                                                     pos = LivePosition(
@@ -16950,9 +17045,9 @@ class OrcaKillCycle:
                                                                         leverage=1,
                                                                         margin_amount=0.0,
                                                                     )
-                                                                    print(f"     SPOT BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
-                                                                    print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
-                                                                    print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                    print(f"   🛒 SPOT BUY: {symbol_clean} on {best.exchange.upper()} | {buy_qty:.6f} @ ${buy_price:,.4f}")
+                                                                    print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)  | NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                    self._push_stream_event("🛒", f"SPOT BUY  {symbol_clean}  @ ${buy_price:,.4f}  target +{target_pct_current:.2f}%")
 
                                                                 positions.append(pos)
                                                                 # Hive Mind: register new Alpaca slot opening
@@ -17017,13 +17112,123 @@ class OrcaKillCycle:
                     runtime_str = f"{int(runtime//3600)}h {int((runtime%3600)//60)}m {int(runtime%60)}s"
                     
                     print("\033[2J\033[H", end="")  # Clear screen
-                    print("   AUTONOMOUS QUEEN MODE - LIVE MONITORING   ")
-                    print("="*80)
-                    print(f"      Runtime: {runtime_str} |   Cycles: {session_stats['cycles']}")
-                    print(f"     Trades: {session_stats['total_trades']} |   Wins: {session_stats['winning_trades']} |   Losses: {session_stats['losing_trades']}")
-                    print(f"     Session P&L: ${session_stats['total_pnl']:+.4f}")
-                    print(f"     Best: ${session_stats['best_trade']:+.4f} |   Worst: ${session_stats['worst_trade']:+.4f}")
-                    print("="*80)
+                    _t   = session_stats['total_trades']
+                    _w   = session_stats['winning_trades']
+                    _l   = session_stats['losing_trades']
+                    _pnl = session_stats['total_pnl']
+                    _win_rate = (_w / _t * 100) if _t > 0 else 0.0
+                    _pnl_sign  = "+" if _pnl >= 0 else ""
+                    _pnl_emoji = "📈" if _pnl >= 0 else "📉"
+                    _wr_emoji  = "🔥" if _win_rate >= 70 else "✅" if _win_rate >= 50 else "⚠️"
+                    _W = 82  # dashboard width
+
+                    def _row(text="", right=""):
+                        """Print a full-width dashboard row."""
+                        if right:
+                            gap = _W - 2 - len(text) - len(right)
+                            print(f"║{text}{' '*max(1,gap)}{right}║")
+                        else:
+                            print(f"║{text:<{_W-2}}║")
+
+                    def _divider(label=""):
+                        if label:
+                            pad  = "═" * 2
+                            rest = "═" * (_W - 4 - len(label))
+                            print(f"╠{pad} {label} {rest}╣")
+                        else:
+                            print("╠" + "═"*(_W-2) + "╣")
+
+                    # ── HEADER ────────────────────────────────────────────────
+                    print("╔" + "═"*(_W-2) + "╗")
+                    _row("  👑 DR AURIS  ·  AI AUTONOMOUS TRADING BOT  ·  LIVE ON TWITCH  ".center(_W-2))
+                    print("╠" + "═"*(_W-2) + "╣")
+
+                    # ── PORTFOLIO VALUE & GROWTH ──────────────────────────────
+                    _divider("💰 PORTFOLIO")
+                    _cash_now    = sum(cash.values()) if cash else 0.0
+                    _pos_value   = sum(p.current_price * p.entry_qty for p in positions
+                                       if getattr(p, 'current_price', 0) > 0)
+                    _total_value = _cash_now + _pos_value + _pnl
+                    _start_pf    = getattr(self, '_stream_start_portfolio', 0.0) or _total_value
+                    _growth_pct  = ((_total_value - _start_pf) / _start_pf * 100) if _start_pf > 0 else 0.0
+                    _growth_sign = "+" if _growth_pct >= 0 else ""
+                    _g_emoji     = "🚀" if _growth_pct >= 1 else "📈" if _growth_pct >= 0 else "📉"
+                    _row(f"  💵 Est. Total Value: ${_total_value:,.2f}",
+                         f"{_g_emoji} Growth: {_growth_sign}{_growth_pct:.2f}%  ")
+                    # Cash by exchange
+                    _cash_parts = "  ".join(
+                        f"{ex.upper()}: ${amt:.2f}" for ex, amt in cash.items() if amt > 0.01
+                    ) if cash else "—"
+                    _row(f"  💵 Cash: {_cash_parts}")
+                    _row(f"  {_pnl_emoji} Session P&L: {_pnl_sign}${_pnl:.4f}",
+                         f"Best trade: +${session_stats['best_trade']:.4f}  ")
+                    _row(f"  {_wr_emoji} Win Rate: {_win_rate:.1f}%  ({_w}W / {_l}L / {_t} trades)",
+                         f"⏱️  {runtime_str}  |  🔄 #{session_stats['cycles']}  ")
+
+                    # ── MARGIN HEALTH ─────────────────────────────────────────
+                    _mh = getattr(self, '_stream_margin_health', {})
+                    if _mh:
+                        _divider("⚖️  MARGIN HEALTH")
+                        for _exch, _mdata in _mh.items():
+                            _lvl  = _mdata.get('level', 0)
+                            _free = _mdata.get('free', 0)
+                            _used = _mdata.get('used', 0)
+                            _eq   = _mdata.get('equity', 0)
+                            _health_icon = "🟢" if _lvl >= 150 else "🟡" if _lvl >= 120 else "🔴"
+                            _bar_n = min(20, int(_lvl / 20))
+                            _health_bar = "█" * _bar_n + "░" * (20 - _bar_n)
+                            _row(f"  {_health_icon} {_exch.upper()}  [{_health_bar}]  Level: {_lvl:.0f}%",
+                                 f"Free: ${_free:.2f}  Used: ${_used:.2f}  Equity: ${_eq:.2f}  ")
+
+                    # ── OPEN POSITIONS ────────────────────────────────────────
+                    _divider(f"📊 OPEN POSITIONS ({len(positions)})")
+                    # (individual position rows printed below by existing loop)
+
+                    # ── HARMONIC INTELLIGENCE ─────────────────────────────────
+                    _hdata = getattr(self, '_stream_harmonic', {})
+                    if _hdata:
+                        _divider("🌊 HARMONIC INTELLIGENCE")
+                        _coh   = _hdata.get('coherence', 0)
+                        _fen   = _hdata.get('energy', 0)
+                        _fhz   = _hdata.get('freq_hz', 0)
+                        _nc    = _hdata.get('node_count', 0)
+                        _coh_bar = "█" * int(_coh * 20) + "░" * (20 - int(_coh * 20))
+                        _fen_bar = "█" * int(_fen * 20) + "░" * (20 - int(_fen * 20))
+                        # Map frequency to brainwave band
+                        _band = ("Delta 🌊" if _fhz < 4 else "Theta 🧘" if _fhz < 8
+                                 else "Alpha ✨" if _fhz < 13 else "Beta ⚡" if _fhz < 30
+                                 else "Gamma 🔥")
+                        _row(f"  Coherence  [{_coh_bar}] {_coh:.2f}",
+                             f"Field Energy [{_fen_bar}] {_fen:.2f}  ")
+                        _row(f"  Dominant Freq: {_fhz:.2f} Hz  ({_band})  |  {_nc} active nodes")
+                        # Top nodes energy bars
+                        _tnodes = _hdata.get('nodes', [])
+                        if _tnodes:
+                            _row(f"  {'Symbol':<10}  {'Energy Bar':<22}  Hz")
+                            for _nd in _tnodes[:4]:
+                                _nd_bar = "█" * int(_nd.energy * 20) + "░" * (20 - int(_nd.energy * 20))
+                                _nd_icon = "▲" if _nd.energy >= 0.6 else "●" if _nd.energy >= 0.3 else "▽"
+                                _row(f"  {_nd.symbol[:10]:<10}  {_nd_icon} [{_nd_bar}]  {_nd.frequency_hz:.1f}Hz")
+
+                    # ── AI BRAIN STATUS ───────────────────────────────────────
+                    _ai = getattr(self, '_stream_ai_status', '')
+                    if _ai:
+                        _divider("🌌 AI BRAIN")
+                        _row(f"  {_ai}")
+
+                    # ── RECENT ACTIVITY ───────────────────────────────────────
+                    _events = getattr(self, '_stream_events', [])
+                    if _events:
+                        _divider("📡 RECENT ACTIVITY")
+                        for _ev_ts, _ev_icon, _ev_msg in reversed(_events[-6:]):
+                            _row(f"  {_ev_icon}  [{_ev_ts}]  {_ev_msg}")
+
+                    # ── STATUS LINE ───────────────────────────────────────────
+                    _divider("💬 STATUS")
+                    _last_act = getattr(self, '_stream_last_action', '...')
+                    _row(f"  {_last_act}")
+                    print("╚" + "═"*(_W-2) + "╝")
+                    print()
                     
                     #   Harmonic Liquid Aluminium Field visualization
                     self._print_harmonic_field_summary()
@@ -17129,7 +17334,14 @@ class OrcaKillCycle:
                                     # Get margin account health
                                     trade_balance = pos.client.get_trade_balance()
                                     margin_level = float(trade_balance.get('margin_level', 0) or 0)
-                                    free_margin = float(trade_balance.get('free_margin', 0) or 0)
+                                    free_margin  = float(trade_balance.get('free_margin', 0) or 0)
+                                    # Feed into live dashboard
+                                    self._stream_margin_health[pos.exchange] = {
+                                        'level':  margin_level,
+                                        'free':   free_margin,
+                                        'used':   float(trade_balance.get('margin_amount', 0) or 0),
+                                        'equity': float(trade_balance.get('equity_value', 0) or 0),
+                                    }
                                     
                                     # Get open margin positions for this symbol
                                     margin_positions = pos.client.get_open_margin_positions()
@@ -17325,13 +17537,24 @@ class OrcaKillCycle:
                                 except Exception as e:
                                     firm_str = ""
                             
-                            # Display with CORRECT values
+                            # ── Display this position inside the dashboard ─────
                             pnl_color = '\033[92m' if net_pnl >= 0 else '\033[91m'
                             reset = '\033[0m'
-                            margin_indicator = f" [MARGIN {pos.leverage}x]" if pos.is_margin else ""
-                            print(f"\n  {pos.symbol} ({pos.exchange.upper()}){margin_indicator} | Value: ${market_value:.2f}{margin_info}")
-                            print(f"     Entry: ${pos.entry_price:,.6f} | Current: ${current:,.6f} | Target: ${pos.target_price:,.6f}")
-                            print(f"   [{bar}] {raw_progress:+.1f}% to target | {pnl_color}${net_pnl:+.4f} ({price_change_pct:+.2f}% price){reset}")
+                            _pnl_arrow  = "▲" if net_pnl >= 0 else "▼"
+                            _prog_bar   = "█" * int(display_progress / 5) + "░" * (20 - int(display_progress / 5))
+                            _type_tag   = f"{pos.leverage}x MARGIN {'LONG' if getattr(pos,'margin_side','LONG')=='LONG' else 'SHORT'}" if pos.is_margin else "SPOT"
+                            _marg_extra = ""
+                            if pos.is_margin:
+                                _marg_extra = f"  │  Collateral: ${pos.margin_amount:.2f}{margin_info}"
+                            print(f"║  ┌─ {pos.symbol}  [{_type_tag}]  {pos.exchange.upper()}  │  Value: ${market_value:.2f}{_marg_extra:<{max(0,42-len(_marg_extra))}}║")
+                            print(f"║  │  Buy: ${pos.entry_price:>12,.6f}  →  Now: ${current:>12,.6f}  →  Target: ${pos.target_price:>12,.6f}   ║")
+                            _pnl_str = f"{pnl_color}{_pnl_arrow} ${net_pnl:+.4f}  ({price_change_pct:+.2f}%){reset}"
+                            print(f"║  │  [{_prog_bar}] {raw_progress:+.1f}% to target   {_pnl_str:<40}║")
+                            # Update stream status
+                            self._stream_last_action = (
+                                f"👁️  {len(real_positions)} positions open | "
+                                f"{pos.symbol} {_pnl_arrow} ${net_pnl:+.4f} ({raw_progress:+.1f}% to target)"
+                            )
                             if eta_str:
                                 print(f"   {eta_str}")
                             if counter_str:
@@ -17566,7 +17789,9 @@ class OrcaKillCycle:
                 
                 else:
                     # No positions - show scanning status
-                    print(f"\r  No positions - scanning in {max(0, scan_interval - (current_time - last_scan_time)):.0f}s...", end="", flush=True)
+                    _next_scan = max(0, scan_interval - (current_time - last_scan_time))
+                    self._stream_last_action = f"🔍 No open positions — next market scan in {_next_scan:.0f}s  |  P&L this session: {'+'if session_stats['total_pnl']>=0 else ''}${session_stats['total_pnl']:.4f}"
+                    print(f"\r  No positions — next scan in {_next_scan:.0f}s...", end="", flush=True)
                 
                 # Feed context to Seer + Lyra each cycle
                 _seer_ctx = {}
