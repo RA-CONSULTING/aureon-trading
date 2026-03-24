@@ -16883,8 +16883,10 @@ class OrcaKillCycle:
                                                 # Auto-scale: if amount_per_position was set lower than the
                                                 # exchange minimum but we have enough cash to cover it, raise
                                                 # buy_amount to the minimum so the trade actually fires.
-                                                if buy_amount < _exch_min and exchange_cash >= _exch_min * 1.1:
-                                                    buy_amount = min(_exch_min, exchange_cash * 0.20)
+                                                # Guard: only auto-scale if buy_amount > 0 (don't override
+                                                # intentional blocks such as can_open_spot=False).
+                                                if buy_amount > 0 and buy_amount < _exch_min and exchange_cash >= _exch_min:
+                                                    buy_amount = min(_exch_min, exchange_cash * 0.95)
                                                     print(f"   [AUTOSCALE] buy_amount raised to ${buy_amount:.2f} to meet £50 exchange minimum (cash=${exchange_cash:.2f})")
                                                 if buy_amount >= _exch_min:
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
