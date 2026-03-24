@@ -966,6 +966,34 @@ class BinanceClient:
             params["network"] = network
         return self._signed_request("GET", "/sapi/v1/capital/deposit/address", params)
 
+    def withdraw(self, coin: str, address: str, amount: float,
+                 network: str | None = None, address_tag: str | None = None) -> Dict[str, Any]:
+        """Initiate a withdrawal from Binance spot wallet to an external address.
+
+        Args:
+            coin:        Asset ticker, e.g. 'USDT'.
+            address:     Destination wallet address.
+            amount:      Amount to withdraw (must exceed Binance's minimum and network fee).
+            network:     Network override, e.g. 'TRX' for TRC20 (low fee), 'ETH' for ERC20.
+                         If omitted Binance picks the default network for the coin.
+            address_tag: Memo/tag required by some networks (XRP, XLM, etc.).
+
+        Returns:
+            Dict containing 'id' (withdrawal ID) on success, or an error dict.
+        """
+        if self.use_testnet:
+            raise RuntimeError("Withdrawals are not supported on Binance testnet.")
+        params: Dict[str, Any] = {
+            "coin": coin,
+            "address": address,
+            "amount": str(amount),
+        }
+        if network:
+            params["network"] = network
+        if address_tag:
+            params["addressTag"] = address_tag
+        return self._signed_request("POST", "/sapi/v1/capital/withdraw/apply", params)
+
     # ── Simple Earn (Flexible) ──────────────────────────────────────────────
     def get_flexible_positions(self, asset: str = None) -> Dict[str, Any]:
         """Get Simple Earn flexible product positions."""

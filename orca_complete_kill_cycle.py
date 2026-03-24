@@ -8735,7 +8735,128 @@ class OrcaKillCycle:
                     print(f"   PORTFOLIO TRUTH CHECK: {a['type']} | {a.get('exchange')} | {a.get('symbol')} | tracked={a.get('tracked_qty')} actual={a.get('actual_qty')}")
 
         return anomalies
-    
+
+    # ══════════════════════════════════════════════════════════════════════════
+    #  PROFIT SWEEP — Move freed USD/USDT from Binance → Kraken margin collateral
+    # ══════════════════════════════════════════════════════════════════════════
+
+    # Minimum USDT to sweep per transfer.  TRC20 fee is ~1 USDT; anything
+    # smaller would cost more in fees than it adds to collateral.
+    _SWEEP_MIN_USDT = 10.0
+
+    # Only sweep when Kraken margin level is below this threshold (%).
+    # Above 600% Kraken is well-capitalised; don't move cash unnecessarily.
+    _SWEEP_MARGIN_LEVEL_THRESHOLD = 600.0
+
+    # Keep at least this fraction of Binance USDT as a buffer for spot buys.
+    _SWEEP_BINANCE_RESERVE_FRACTION = 0.20
+
+    def _sweep_profits_to_kraken(self, freed_by_exchange: Dict[str, float]) -> Dict[str, Any]:
+        """Transfer profit proceeds from non-Kraken exchanges to Kraken.
+
+        Called after harvest_all_exchanges() or any profitable sell on Binance/Alpaca.
+        Profits land in the source exchange wallet after a sell; this function moves
+        them to Kraken so they become margin collateral for the next trade cycle.
+
+        Args:
+            freed_by_exchange: Dict mapping exchange name → USD value just freed,
+                               e.g. {'binance': 12.50, 'alpaca': 0.0}.
+
+        Returns:
+            Dict summarising transfers attempted, sent, and any errors.
+        """
+        result = {'transfers': [], 'total_swept': 0.0, 'errors': []}
+
+        kraken_client = self.clients.get('kraken')
+        binance_client = self.clients.get('binance')
+
+        if not kraken_client:
+            result['errors'].append('No Kraken client — cannot sweep')
+            return result
+
+        # ── 1. Check if Kraken actually needs more collateral ─────────────────
+        try:
+            tb = kraken_client.get_trade_balance()
+            margin_level = tb.get('margin_level', 0.0)
+            kraken_equity = tb.get('equity_value', 0.0)
+        except Exception as e:
+            result['errors'].append(f'Kraken balance check failed: {e}')
+            return result
+
+        if margin_level > self._SWEEP_MARGIN_LEVEL_THRESHOLD:
+            print(f"  [SWEEP] Kraken margin level {margin_level:.0f}% > {self._SWEEP_MARGIN_LEVEL_THRESHOLD:.0f}% — collateral sufficient, no sweep needed")
+            return result
+
+        print(f"  [SWEEP] Kraken margin level {margin_level:.0f}% — sweeping profits to boost collateral")
+
+        # ── 2. Get Kraken USDT TRC20 deposit address (cached after first fetch) ─
+        if not hasattr(self, '_kraken_usdt_trc20_address'):
+            try:
+                addrs = kraken_client.get_deposit_addresses(asset='USDT', method='Tether USD (TRC20)')
+                if not addrs:
+                    # Fallback: try without specifying method
+                    addrs = kraken_client.get_deposit_addresses(asset='USDT')
+                if addrs:
+                    self._kraken_usdt_trc20_address = addrs[0]['address']
+                    print(f"  [SWEEP] Kraken USDT deposit address: {self._kraken_usdt_trc20_address[:12]}…")
+                else:
+                    result['errors'].append('Could not fetch Kraken USDT deposit address')
+                    return result
+            except Exception as e:
+                result['errors'].append(f'Kraken deposit address fetch failed: {e}')
+                return result
+
+        kraken_deposit_addr = self._kraken_usdt_trc20_address
+
+        # ── 3. Sweep from Binance ────────────────────────────────────────────
+        if binance_client and freed_by_exchange.get('binance', 0.0) > 0:
+            try:
+                balances = binance_client.get_balance() or {}
+                usdt_available = float(balances.get('USDT', 0))
+                # Keep a reserve buffer so spot buys still have funding
+                reserve = usdt_available * self._SWEEP_BINANCE_RESERVE_FRACTION
+                sweepable = usdt_available - reserve
+
+                if sweepable >= self._SWEEP_MIN_USDT:
+                    # Round down to 2 dp (Binance requires this)
+                    sweep_amount = round(sweepable, 2)
+                    print(f"  [SWEEP] Sending ${sweep_amount:.2f} USDT (TRC20) from Binance → Kraken")
+                    withdrawal = binance_client.withdraw(
+                        coin='USDT',
+                        address=kraken_deposit_addr,
+                        amount=sweep_amount,
+                        network='TRX'   # TRC20 — lowest fee (~1 USDT)
+                    )
+                    if withdrawal and withdrawal.get('id'):
+                        print(f"  [SWEEP] Withdrawal submitted. ID: {withdrawal['id']}")
+                        result['transfers'].append({
+                            'source': 'binance',
+                            'destination': 'kraken',
+                            'asset': 'USDT',
+                            'network': 'TRC20',
+                            'amount': sweep_amount,
+                            'withdrawal_id': withdrawal['id'],
+                            'status': 'submitted'
+                        })
+                        result['total_swept'] += sweep_amount
+                    else:
+                        err = withdrawal.get('msg', str(withdrawal)) if withdrawal else 'no response'
+                        result['errors'].append(f'Binance withdrawal rejected: {err}')
+                        print(f"  [SWEEP] Binance withdrawal rejected: {err}")
+                else:
+                    print(f"  [SWEEP] Binance USDT sweepable ${sweepable:.2f} < min ${self._SWEEP_MIN_USDT:.2f} — skipping")
+            except Exception as e:
+                result['errors'].append(f'Binance sweep error: {e}')
+                print(f"  [SWEEP] Binance sweep error: {e}")
+
+        if result['total_swept'] > 0:
+            print(f"  [SWEEP] Total swept to Kraken: ${result['total_swept']:.2f} USDT")
+            print(f"  [SWEEP] Note: TRC20 deposit typically confirms in 3–5 minutes")
+        elif not result['errors']:
+            print(f"  [SWEEP] No funds swept (all exchanges below minimum threshold)")
+
+        return result
+
     def harvest_all_exchanges(self, queen=None, min_profit_usd: float = 0.017) -> Dict[str, Any]:
         """
           HARVEST ALL EXCHANGES - Scan ALL positions and sell profitable ones!
@@ -8936,7 +9057,24 @@ class OrcaKillCycle:
         print(f"   Positions Harvested: {len(results['harvested'])}")
         print(f"   Cash Freed: ${results['total_freed']:.2f}")
         print(f"   Still Holding: {len(results['still_holding'])} positions")
-        
+
+        # ── Sweep freed profits to Kraken margin collateral ───────────────────
+        if results['total_freed'] > 0:
+            freed_by_exchange: Dict[str, float] = {}
+            for h in results['harvested']:
+                ex = h.get('exchange', '')
+                freed_by_exchange[ex] = freed_by_exchange.get(ex, 0.0) + h.get('freed', 0.0)
+
+            try:
+                sweep_result = self._sweep_profits_to_kraken(freed_by_exchange)
+                if sweep_result.get('total_swept', 0) > 0:
+                    results['swept_to_kraken'] = sweep_result['total_swept']
+                    results['sweep_transfers'] = sweep_result['transfers']
+                if sweep_result.get('errors'):
+                    results['errors'].extend(sweep_result['errors'])
+            except Exception as _se:
+                results['errors'].append(f'sweep error: {_se}')
+
         return results
         
     def calculate_exact_breakeven(self, entry_price: float, quantity: float, exchange: str = 'alpaca') -> Dict:

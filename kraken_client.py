@@ -2095,6 +2095,38 @@ class KrakenClient:
         return {k: sorted(v) for k, v in conversions.items()}
 
     # ══════════════════════════════════════════════════════════════════════
+    # ══════════════════════════════════════════════════════════════════════
+    # FUNDING - Deposits, withdrawals, and address management
+    # ══════════════════════════════════════════════════════════════════════
+
+    def get_deposit_addresses(self, asset: str = 'USDT', method: str | None = None,
+                               new: bool = False) -> list:
+        """Return deposit addresses for an asset on Kraken.
+
+        Args:
+            asset:  Kraken asset code, e.g. 'USDT' or 'ZUSD' or 'XBT'.
+            method: Deposit method name, e.g. 'Tether USD (TRC20)'.
+                    If omitted, Kraken returns all available methods.
+            new:    If True, generate a new address even if one already exists.
+
+        Returns:
+            List of dicts each containing 'address', 'expiretm', 'new' keys.
+            Empty list on error.
+        """
+        if self.dry_run:
+            return [{'address': 'DRY_RUN_ADDRESS', 'expiretm': '0', 'new': False}]
+        params: Dict[str, Any] = {'asset': asset}
+        if method:
+            params['method'] = method
+        if new:
+            params['new'] = 'true'
+        try:
+            result = self._private('/0/private/DepositAddresses', params)
+            return result.get('result', [])
+        except Exception as e:
+            print(f"  [Kraken] get_deposit_addresses error: {e}")
+            return []
+
     # MARGIN TRADING - Leveraged positions on Kraken
     # ══════════════════════════════════════════════════════════════════════
 
