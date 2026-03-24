@@ -52,20 +52,34 @@ class FireTrader:
     def _record_buy_cost_basis(self, pair, order, exchange):
         """Record cost basis after a successful buy so we can sell at profit later."""
         try:
-            fill_price = float(order.get('price', 0) or order.get('avgPrice', 0) or 0)
-            fill_qty = float(order.get('executedQty', 0) or order.get('filledQty', 0) or 0)
-            order_id = order.get('orderId', order.get('order_id', ''))
-            
-            # Binance market orders have price=0; get real price from fills or cummulativeQuoteQty
-            if fill_price <= 0:
-                fills = order.get('fills', [])
-                if fills:
-                    fill_price = float(fills[0].get('price', 0) or 0)
-            if fill_price <= 0 and fill_qty > 0:
-                cum_quote = float(order.get('cummulativeQuoteQty', 0) or 0)
-                if cum_quote > 0:
-                    fill_price = cum_quote / fill_qty
-            
+            # ── Handle both Binance and Kraken order response formats ──
+            if exchange == 'kraken':
+                # Kraken market order response fields differ from Binance
+                # Kraken uses: vol_exec (executed qty), cost (total cost), price (0 for market)
+                fill_qty = float(order.get('vol_exec', 0) or order.get('filled_qty', 0) or 0)
+                total_cost = float(order.get('cost', 0) or 0)
+                fill_price = (total_cost / fill_qty) if fill_qty > 0 and total_cost > 0 else 0.0
+                # Fallback: normalize response sometimes maps these fields
+                if fill_price <= 0:
+                    fill_price = float(order.get('filled_avg_price', 0) or order.get('price', 0) or 0)
+                if fill_qty <= 0:
+                    fill_qty = float(order.get('filled_qty', 0) or 0)
+                order_id = order.get('txid', order.get('order_id', order.get('id', '')))
+            else:
+                # Binance format
+                fill_price = float(order.get('price', 0) or order.get('avgPrice', 0) or 0)
+                fill_qty = float(order.get('executedQty', 0) or order.get('filledQty', 0) or 0)
+                order_id = order.get('orderId', order.get('order_id', ''))
+                # Binance market orders have price=0; get real price from fills or cummulativeQuoteQty
+                if fill_price <= 0:
+                    fills = order.get('fills', [])
+                    if fills:
+                        fill_price = float(fills[0].get('price', 0) or 0)
+                if fill_price <= 0 and fill_qty > 0:
+                    cum_quote = float(order.get('cummulativeQuoteQty', 0) or 0)
+                    if cum_quote > 0:
+                        fill_price = cum_quote / fill_qty
+
             if fill_price <= 0 or fill_qty <= 0:
                 log_fire(f"   ⚠️ Cannot record cost basis: price={fill_price}, qty={fill_qty}")
                 return
@@ -182,12 +196,15 @@ class FireTrader:
         sell_fee_rate = fee_rate
         # Body = coins needed to recover cost_basis (including original buy fee)
         if cost_basis and cost_basis > 0:
-            # cost_basis is raw fill price; add buy fee to get true break-even unit cost
+            # cost_basis is raw fill price; add buy fee to get true break-even unit cost.
+            # body_qty = total coins we must KEEP so that selling them later at cost_basis
+            # would recover the full original investment.
+            # Formula: total_investment / current_price = coins_needed_to_break_even
             true_cost_per_coin = cost_basis * (1.0 + buy_fee_rate)
-            body_qty = true_cost_per_coin / price  # coins to cover what we paid
+            body_qty = (total_qty * true_cost_per_coin) / price  # BUG FIX: was missing total_qty multiplier
             body_qty = min(body_qty, total_qty)     # can't protect more than we hold
         else:
-            body_qty = total_qty * 0.90             # no cost basis → protect 90%
+            body_qty = total_qty                    # no cost basis → protect 100% (never sell unknown positions)
         scalp_avail = max(0.0, total_qty - body_qty)
         if scalp_avail <= 0:
             return 0.0, 0.0, body_qty, "body fully covered — no scalp available"
@@ -857,14 +874,18 @@ class FireTrader:
                     except Exception:
                         pass
                 
+                # ── HARD BLOCK: never sell if we don't know what we paid ──
+                if cost_basis is None or cost_basis <= 0:
+                    log_fire(f"   [HOLD] {asset}: no confirmed cost basis — will NOT sell (protecting capital)")
+                    continue
+
                 # ── True net USD after FULL round-trip: buy fee + sell fee + slippage ──
-                entry_ref = cost_basis if cost_basis is not None and cost_basis > 0 else price
+                entry_ref = cost_basis
                 net_usd_k = qty * (price * (1.0 - self._KRAKEN_TAKER - self._SLIPPAGE_BUFFER)
                                    - entry_ref * (1.0 + self._KRAKEN_TAKER))
                 profit_margin = (net_usd_k / (qty * entry_ref) * 100) if (qty * entry_ref) > 0 else 0
 
-                cost_basis_dbg = f"{entry_ref:.4f}"
-                log_fire(f"   [DEBUG] Kraken {asset}: cost_basis=${cost_basis_dbg}, "
+                log_fire(f"   [DEBUG] Kraken {asset}: cost_basis=${entry_ref:.4f}, "
                          f"net_usd=${net_usd_k:.4f}, profit_margin={profit_margin:.2f}%")
 
                 # HARD RULE: net profit after ALL fees+slippage must be >= 1.7¢
@@ -1011,8 +1032,25 @@ class FireTrader:
 
             log_fire(f"   [SCAN] Kraken: fetching tickers for {len(kraken_unique)} pairs across funded quote currencies")
 
+            # Stablecoin/fiat base assets — buying these with USD/GBP is pointless (USDTZUSD etc)
+            _STABLECOIN_BASES = {
+                'USD', 'USDT', 'USDC', 'TUSD', 'DAI', 'BUSD', 'FDUSD',
+                'GBP', 'EUR', 'ZUSD', 'ZGBP', 'ZEUR', 'USDUC', 'U',
+            }
+
             for pair, quote_ccy in kraken_unique:
                 try:
+                    # Derive base asset: strip known quote suffixes
+                    base_candidate = pair
+                    for suffix in [quote_ccy, 'USD', 'USDT', 'USDC', 'GBP', 'EUR', 'TUSD']:
+                        if base_candidate.upper().endswith(suffix.upper()):
+                            base_candidate = base_candidate[:-len(suffix)]
+                            break
+                    base_candidate = base_candidate.lstrip('XZ').upper()
+                    if base_candidate in _STABLECOIN_BASES:
+                        log_fire(f"   [SKIP] {pair} — stablecoin/fiat base ({base_candidate}), skipping")
+                        continue
+
                     ticker24 = self.kraken.get_24h_ticker(pair)
                     if not ticker24:
                         continue
