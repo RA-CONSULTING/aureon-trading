@@ -906,8 +906,9 @@ class KrakenClient:
         if self.dry_run:
             return {"dryRun": True, "symbol": symbol, "side": side, "quantity": quantity, "quoteQty": quote_qty}
         
-        # ═══ SAFETY NET: $50 minimum trade value (last-resort gate across ALL code paths) ═══
-        MIN_TRADE_USD = 50.0
+        # ═══ SAFETY NET: £50 GBP minimum trade value (≈ $63 USD at 1.27 GBP/USD) ═══
+        # Aligned with the system-wide spot minimum — any buy below this is rejected.
+        MIN_TRADE_USD = 63.0
         if side.lower() == 'buy':
             usd_value = 0.0
             if quote_qty:

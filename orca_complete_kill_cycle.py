@@ -13952,7 +13952,7 @@ class OrcaKillCycle:
         else:
             print("   Queen Sentience: UNAVAILABLE")
 
-    def run_autonomous(self, max_positions: int = 0, amount_per_position: float = 10.0,
+    def run_autonomous(self, max_positions: int = 1, amount_per_position: float = 10.0,
                        target_pct: float = 1.0, min_change_pct: float = 0.05,
                        _crash_restart_count: int = 0,
                        _recovered_positions: list = None):
@@ -15596,12 +15596,27 @@ class OrcaKillCycle:
                     _alpaca_slot_free = (
                         _hive_mind.alpaca_slot_available() if _hive_mind is not None else True
                     )
-                    if ((not cap_enabled) or (len(positions) < max_positions)) and _alpaca_slot_free:
+                    # Log Kraken stablecoin vs coin composition each cycle
+                    _k_log = self.clients.get('kraken')
+                    if _k_log:
+                        try:
+                            _k_bal = _k_log.get_balance() or {}
+                            _stable_keys = {'ZUSD', 'USD', 'USDT', 'USDC', 'TUSD', 'DAI'}
+                            _k_stable = sum(float(_k_bal.get(k, 0)) for k in _stable_keys)
+                            _k_coins = {a: v for a, v in _k_bal.items() if a not in _stable_keys and float(v) > 0}
+                            print(f"   [KRAKEN] Stablecoins: ${_k_stable:.2f} | Coins held: {list(_k_coins.keys()) or 'none'}")
+                        except Exception:
+                            pass
+
+                    # Margin positions do not count toward the 1-spot limit —
+                    # they pledge existing equity and do not consume stablecoin cash.
+                    _spot_count = sum(1 for p in positions if not getattr(p, 'is_margin', False))
+                    if ((not cap_enabled) or (_spot_count < max_positions)) and _alpaca_slot_free:
                         #    Show quantum-enhanced scanning status
                         quantum_indicator = ""
                         if quantum_cognition and quantum_stats['amplification'] > 1.0:
                             quantum_indicator = f"   {quantum_stats['amplification']:.1f}x"
-                        print(f"\n {quantum_indicator} QUANTUM-ENHANCED SCANNING... ({len(positions)}/{max_positions_label} positions)")
+                        print(f"\n {quantum_indicator} QUANTUM-ENHANCED SCANNING... ({_spot_count} spot/{len(positions)} total / {max_positions_label} spot max)")
 
                         total_cash = sum(cash.values())
 
@@ -16698,9 +16713,12 @@ class OrcaKillCycle:
                                                     except Exception as kr_fallback_err:
                                                         print(f"      Kraken funding fallback error: {kr_fallback_err}")
                                                 
-                                                # Exchange minimums: Kraken ~$50, Binance ~$10.
-                                                # $1 was so low it only produced rejected orders and wasted API quota.
-                                                _exch_min = 50.0 if best.exchange == 'kraken' else 10.0
+                                                # Minimum £50 GBP per spot trade (≈ $63 USD at 1.27 GBP/USD).
+                                                # Margin trades are sized separately above; this floor only applies
+                                                # when _will_use_margin is False (pure spot). Keeping a meaningful
+                                                # minimum ensures the trade is worth the round-trip fee.
+                                                _GBP_USD_RATE = 1.27
+                                                _exch_min = round(50.0 * _GBP_USD_RATE, 0)  # = 63.0 USD
                                                 if buy_amount >= _exch_min:
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                     expected_qty = buy_amount / best.price if best.price > 0 else 0.0
@@ -16731,9 +16749,36 @@ class OrcaKillCycle:
                                                             margin_lev = quad_data.get('margin_leverage', 0)
                                                             margin_conv = quad_data.get('margin_conviction', 0.0)
                                                         
+                                                        # KRAKEN STABLECOIN COLLATERAL CHECK (spot buys only)
+                                                        # For a spot trade, we are spending stablecoin cash that
+                                                        # would otherwise back margin positions. Only proceed if
+                                                        # Kraken still has enough free collateral after the buy.
+                                                        _kraken_collateral_ok = True
+                                                        if not _will_use_margin:
+                                                            _kc = self.clients.get('kraken')
+                                                            if _kc:
+                                                                try:
+                                                                    _ktb = _kc.get_trade_balance()
+                                                                    _k_equity = _ktb.get('equity_value', 0.0)
+                                                                    _k_margin_used = _ktb.get('margin_amount', 0.0)
+                                                                    _k_free_collateral = _k_equity - _k_margin_used
+                                                                    # Need at least 2× the spot trade size as free collateral
+                                                                    _min_free = _exch_min * 2
+                                                                    if _k_margin_used > 0 and _k_free_collateral < _min_free:
+                                                                        print(f"   [COLLATERAL] SPOT BUY BLOCKED — "
+                                                                              f"Kraken free collateral ${_k_free_collateral:.2f} "
+                                                                              f"< min ${_min_free:.0f} needed. Preserving margin backing.")
+                                                                        _kraken_collateral_ok = False
+                                                                    else:
+                                                                        print(f"   [COLLATERAL] Kraken free collateral ${_k_free_collateral:.2f} — OK for spot")
+                                                                except Exception as _kce:
+                                                                    print(f"   [COLLATERAL] Kraken balance check failed: {_kce} — allowing trade")
+
                                                         # PRICE FRESHNESS GUARD - block buy if prices are stale
                                                         _price_age = current_time - _batch_prices_timestamp
-                                                        if _price_age > 60:
+                                                        if not _kraken_collateral_ok:
+                                                            raw_order = None
+                                                        elif _price_age > 60:
                                                             print(f"      BUY BLOCKED: batch_prices are {_price_age:.0f}s old (max 60s). Skipping stale signal.")
                                                             raw_order = None
                                                         else:
