@@ -12312,26 +12312,24 @@ class OrcaKillCycle:
             snapshot = self.harmonic_field.capture_snapshot()
             if not snapshot:
                 return
-            
-            print(" " * 60)
-            print("  HARMONIC LIQUID ALUMINIUM FIELD  ")
-            print(f"       Timestamp: {snapshot.timestamp_utc}")
-            print(f"     Nodes Active: {snapshot.node_count}")
-            print(f"     Dominant Frequency: {snapshot.dominant_frequency_hz:.2f} Hz")
-            print(f"     Field Energy: {snapshot.total_field_energy:.4f}")
-            print(f"     Coherence Index: {snapshot.coherence_index:.4f}")
-            
-            # Show top harmonic nodes by energy (if any)
+
+            # ── Feed live dashboard ────────────────────────────────────────────
+            _top_nodes = []
             if snapshot.nodes:
-                top_nodes = sorted(snapshot.nodes, key=lambda n: n.energy, reverse=True)[:3]
-                if top_nodes:
-                    print("     Top Harmonic Nodes:")
-                    for node in top_nodes:
-                        freq_str = f"{node.frequency_hz:.1f}Hz"
-                        energy_bar = " " * int(node.energy * 10)
-                        print(f"      {node.symbol[:10]:<10} | {freq_str:>8} | {energy_bar}")
-            
-            print(" " * 60)
+                _top_nodes = sorted(snapshot.nodes, key=lambda n: n.energy, reverse=True)[:5]
+            self._stream_harmonic = {
+                'coherence': snapshot.coherence_index,
+                'energy':    snapshot.total_field_energy,
+                'freq_hz':   snapshot.dominant_frequency_hz,
+                'nodes':     _top_nodes,
+                'node_count': snapshot.node_count,
+            }
+
+            # Legacy print (kept for non-Twitch logging)
+            print(f"  🌊 Harmonic Field: coherence={snapshot.coherence_index:.2f} "
+                  f"energy={snapshot.total_field_energy:.2f} "
+                  f"freq={snapshot.dominant_frequency_hz:.2f}Hz "
+                  f"nodes={snapshot.node_count}")
         except Exception as e:
             # Silent fail - harmonic display is supplementary
             pass
@@ -14342,8 +14340,11 @@ class OrcaKillCycle:
         # ── TWITCH LIVE STREAM STATE ───────────────────────────────────────────
         # Ring buffer of the last 10 notable events shown in the dashboard
         self._stream_events = []        # list of (timestamp, icon, message)
-        self._stream_last_action = "🚀 Starting up..."
-        self._stream_ai_status  = ""   # filled from unified intelligence calls
+        self._stream_last_action  = "🚀 Starting up..."
+        self._stream_ai_status    = ""   # filled from unified intelligence calls
+        self._stream_margin_health = {}  # {exchange: {level, free, used, equity}}
+        self._stream_harmonic      = {}  # {coherence, energy, freq_hz, top_nodes[]}
+        self._stream_start_portfolio = 0.0  # set in Phase 0 for growth %
 
         # Current positions - will be loaded from portfolio
         positions: List[LivePosition] = []
@@ -14808,6 +14809,14 @@ class OrcaKillCycle:
         for exchange, amount in cash.items():
             print(f"   {exchange.upper()}: ${amount:.2f}")
         print()
+
+        # ── CAPTURE STARTING PORTFOLIO VALUE FOR GROWTH TRACKING ──────────────
+        _starting_cash = sum(cash.values())
+        _starting_positions_value = sum(
+            p.entry_price * p.entry_qty for p in positions
+        )
+        self._stream_start_portfolio = _starting_cash + _starting_positions_value
+        print(f"  📊 Starting portfolio value: ${self._stream_start_portfolio:.2f} (will track growth)")
         
         # Avalanche timing
         last_avalanche_time = 0
@@ -17103,59 +17112,121 @@ class OrcaKillCycle:
                     runtime_str = f"{int(runtime//3600)}h {int((runtime%3600)//60)}m {int(runtime%60)}s"
                     
                     print("\033[2J\033[H", end="")  # Clear screen
-                    _t  = session_stats['total_trades']
-                    _w  = session_stats['winning_trades']
-                    _l  = session_stats['losing_trades']
+                    _t   = session_stats['total_trades']
+                    _w   = session_stats['winning_trades']
+                    _l   = session_stats['losing_trades']
                     _pnl = session_stats['total_pnl']
                     _win_rate = (_w / _t * 100) if _t > 0 else 0.0
                     _pnl_sign  = "+" if _pnl >= 0 else ""
                     _pnl_emoji = "📈" if _pnl >= 0 else "📉"
                     _wr_emoji  = "🔥" if _win_rate >= 70 else "✅" if _win_rate >= 50 else "⚠️"
-                    _W = 80  # dashboard width
+                    _W = 82  # dashboard width
 
-                    # ── Header ───────────────────────────────────────────────
+                    def _row(text="", right=""):
+                        """Print a full-width dashboard row."""
+                        if right:
+                            gap = _W - 2 - len(text) - len(right)
+                            print(f"║{text}{' '*max(1,gap)}{right}║")
+                        else:
+                            print(f"║{text:<{_W-2}}║")
+
+                    def _divider(label=""):
+                        if label:
+                            pad  = "═" * 2
+                            rest = "═" * (_W - 4 - len(label))
+                            print(f"╠{pad} {label} {rest}╣")
+                        else:
+                            print("╠" + "═"*(_W-2) + "╣")
+
+                    # ── HEADER ────────────────────────────────────────────────
                     print("╔" + "═"*(_W-2) + "╗")
-                    print("║" + "  👑 DR AURIS — AI TRADING BOT  •  LIVE ON TWITCH  ".center(_W-2) + "║")
+                    _row("  👑 DR AURIS  ·  AI AUTONOMOUS TRADING BOT  ·  LIVE ON TWITCH  ".center(_W-2))
                     print("╠" + "═"*(_W-2) + "╣")
 
-                    # ── Stats row ─────────────────────────────────────────────
-                    _stats_left  = f"  ⏱️  {runtime_str}  |  🔄 Cycle #{session_stats['cycles']}"
-                    _stats_right = f"{_pnl_emoji} Session P&L: {_pnl_sign}${_pnl:.4f}  "
-                    _gap = _W - 2 - len(_stats_left) - len(_stats_right)
-                    print(f"║{_stats_left}{' '*max(0,_gap)}{_stats_right}║")
+                    # ── PORTFOLIO VALUE & GROWTH ──────────────────────────────
+                    _divider("💰 PORTFOLIO")
+                    _cash_now    = sum(cash.values()) if cash else 0.0
+                    _pos_value   = sum(p.current_price * p.entry_qty for p in positions
+                                       if getattr(p, 'current_price', 0) > 0)
+                    _total_value = _cash_now + _pos_value + _pnl
+                    _start_pf    = getattr(self, '_stream_start_portfolio', 0.0) or _total_value
+                    _growth_pct  = ((_total_value - _start_pf) / _start_pf * 100) if _start_pf > 0 else 0.0
+                    _growth_sign = "+" if _growth_pct >= 0 else ""
+                    _g_emoji     = "🚀" if _growth_pct >= 1 else "📈" if _growth_pct >= 0 else "📉"
+                    _row(f"  💵 Est. Total Value: ${_total_value:,.2f}",
+                         f"{_g_emoji} Growth: {_growth_sign}{_growth_pct:.2f}%  ")
+                    # Cash by exchange
+                    _cash_parts = "  ".join(
+                        f"{ex.upper()}: ${amt:.2f}" for ex, amt in cash.items() if amt > 0.01
+                    ) if cash else "—"
+                    _row(f"  💵 Cash: {_cash_parts}")
+                    _row(f"  {_pnl_emoji} Session P&L: {_pnl_sign}${_pnl:.4f}",
+                         f"Best trade: +${session_stats['best_trade']:.4f}  ")
+                    _row(f"  {_wr_emoji} Win Rate: {_win_rate:.1f}%  ({_w}W / {_l}L / {_t} trades)",
+                         f"⏱️  {runtime_str}  |  🔄 #{session_stats['cycles']}  ")
 
-                    _wr_left  = f"  {_wr_emoji} Win Rate: {_win_rate:.1f}%  ({_w} wins / {_l} losses / {_t} trades)"
-                    _wr_right = f"🏆 Best: +${session_stats['best_trade']:.4f}  "
-                    _gap2 = _W - 2 - len(_wr_left) - len(_wr_right)
-                    print(f"║{_wr_left}{' '*max(0,_gap2)}{_wr_right}║")
+                    # ── MARGIN HEALTH ─────────────────────────────────────────
+                    _mh = getattr(self, '_stream_margin_health', {})
+                    if _mh:
+                        _divider("⚖️  MARGIN HEALTH")
+                        for _exch, _mdata in _mh.items():
+                            _lvl  = _mdata.get('level', 0)
+                            _free = _mdata.get('free', 0)
+                            _used = _mdata.get('used', 0)
+                            _eq   = _mdata.get('equity', 0)
+                            _health_icon = "🟢" if _lvl >= 150 else "🟡" if _lvl >= 120 else "🔴"
+                            _bar_n = min(20, int(_lvl / 20))
+                            _health_bar = "█" * _bar_n + "░" * (20 - _bar_n)
+                            _row(f"  {_health_icon} {_exch.upper()}  [{_health_bar}]  Level: {_lvl:.0f}%",
+                                 f"Free: ${_free:.2f}  Used: ${_used:.2f}  Equity: ${_eq:.2f}  ")
 
-                    # ── AI status (compact) ───────────────────────────────────
+                    # ── OPEN POSITIONS ────────────────────────────────────────
+                    _divider(f"📊 OPEN POSITIONS ({len(positions)})")
+                    # (individual position rows printed below by existing loop)
+
+                    # ── HARMONIC INTELLIGENCE ─────────────────────────────────
+                    _hdata = getattr(self, '_stream_harmonic', {})
+                    if _hdata:
+                        _divider("🌊 HARMONIC INTELLIGENCE")
+                        _coh   = _hdata.get('coherence', 0)
+                        _fen   = _hdata.get('energy', 0)
+                        _fhz   = _hdata.get('freq_hz', 0)
+                        _nc    = _hdata.get('node_count', 0)
+                        _coh_bar = "█" * int(_coh * 20) + "░" * (20 - int(_coh * 20))
+                        _fen_bar = "█" * int(_fen * 20) + "░" * (20 - int(_fen * 20))
+                        # Map frequency to brainwave band
+                        _band = ("Delta 🌊" if _fhz < 4 else "Theta 🧘" if _fhz < 8
+                                 else "Alpha ✨" if _fhz < 13 else "Beta ⚡" if _fhz < 30
+                                 else "Gamma 🔥")
+                        _row(f"  Coherence  [{_coh_bar}] {_coh:.2f}",
+                             f"Field Energy [{_fen_bar}] {_fen:.2f}  ")
+                        _row(f"  Dominant Freq: {_fhz:.2f} Hz  ({_band})  |  {_nc} active nodes")
+                        # Top nodes energy bars
+                        _tnodes = _hdata.get('nodes', [])
+                        if _tnodes:
+                            _row(f"  {'Symbol':<10}  {'Energy Bar':<22}  Hz")
+                            for _nd in _tnodes[:4]:
+                                _nd_bar = "█" * int(_nd.energy * 20) + "░" * (20 - int(_nd.energy * 20))
+                                _nd_icon = "▲" if _nd.energy >= 0.6 else "●" if _nd.energy >= 0.3 else "▽"
+                                _row(f"  {_nd.symbol[:10]:<10}  {_nd_icon} [{_nd_bar}]  {_nd.frequency_hz:.1f}Hz")
+
+                    # ── AI BRAIN STATUS ───────────────────────────────────────
                     _ai = getattr(self, '_stream_ai_status', '')
                     if _ai:
-                        _ai_line = f"  🌌 AI: {_ai}"
-                        print(f"║{_ai_line:<{_W-2}}║")
+                        _divider("🌌 AI BRAIN")
+                        _row(f"  {_ai}")
 
-                    # ── Open positions header ─────────────────────────────────
-                    print("╠" + "═"*(_W-2) + "╣")
-                    _pos_count = len(positions)
-                    _total_unreal_str = ""
-                    print(f"║  📊 OPEN POSITIONS ({_pos_count}){'─'*(_W-22)}║")
-
-                    # (positions are printed below this block by the existing loop)
-
-                    # ── Recent events ─────────────────────────────────────────
+                    # ── RECENT ACTIVITY ───────────────────────────────────────
                     _events = getattr(self, '_stream_events', [])
                     if _events:
-                        print("╠" + "═"*(_W-2) + "╣")
-                        print(f"║  📡 RECENT ACTIVITY{' '*(_W-21)}║")
+                        _divider("📡 RECENT ACTIVITY")
                         for _ev_ts, _ev_icon, _ev_msg in reversed(_events[-6:]):
-                            _ev_line = f"     {_ev_icon}  [{_ev_ts}]  {_ev_msg}"
-                            print(f"║{_ev_line:<{_W-2}}║")
+                            _row(f"  {_ev_icon}  [{_ev_ts}]  {_ev_msg}")
 
-                    # ── Last status ───────────────────────────────────────────
-                    print("╠" + "═"*(_W-2) + "╣")
+                    # ── STATUS LINE ───────────────────────────────────────────
+                    _divider("💬 STATUS")
                     _last_act = getattr(self, '_stream_last_action', '...')
-                    print(f"║  💬 {_last_act:<{_W-6}}║")
+                    _row(f"  {_last_act}")
                     print("╚" + "═"*(_W-2) + "╝")
                     print()
                     
@@ -17263,7 +17334,14 @@ class OrcaKillCycle:
                                     # Get margin account health
                                     trade_balance = pos.client.get_trade_balance()
                                     margin_level = float(trade_balance.get('margin_level', 0) or 0)
-                                    free_margin = float(trade_balance.get('free_margin', 0) or 0)
+                                    free_margin  = float(trade_balance.get('free_margin', 0) or 0)
+                                    # Feed into live dashboard
+                                    self._stream_margin_health[pos.exchange] = {
+                                        'level':  margin_level,
+                                        'free':   free_margin,
+                                        'used':   float(trade_balance.get('margin_amount', 0) or 0),
+                                        'equity': float(trade_balance.get('equity_value', 0) or 0),
+                                    }
                                     
                                     # Get open margin positions for this symbol
                                     margin_positions = pos.client.get_open_margin_positions()
@@ -17459,18 +17537,24 @@ class OrcaKillCycle:
                                 except Exception as e:
                                     firm_str = ""
                             
-                            # Display with CORRECT values
+                            # ── Display this position inside the dashboard ─────
                             pnl_color = '\033[92m' if net_pnl >= 0 else '\033[91m'
                             reset = '\033[0m'
-                            margin_indicator = f" [{pos.leverage}x MARGIN]" if pos.is_margin else " [SPOT]"
-                            _pnl_arrow = "▲" if net_pnl >= 0 else "▼"
-                            _progress_bar_filled = "█" * int(display_progress / 5) + "░" * (20 - int(display_progress / 5))
-                            print(f"\n  ┌─ {pos.symbol}{margin_indicator}  on {pos.exchange.upper()}  │  Value: ${market_value:.2f}{margin_info}")
-                            print(f"  │  Buy: ${pos.entry_price:,.6f}  →  Now: ${current:,.6f}  →  Target: ${pos.target_price:,.6f}")
-                            print(f"  │  [{_progress_bar_filled}] {raw_progress:+.1f}%  {pnl_color}{_pnl_arrow} ${net_pnl:+.4f}  ({price_change_pct:+.2f}% price change){reset}")
-                            # Update stream status to show what we're watching
-                            _holding_str = f"Holding {pos.symbol} ({pos.exchange.upper()}) — P&L {'+' if net_pnl>=0 else ''}${net_pnl:.4f} ({raw_progress:+.1f}% to target)"
-                            self._stream_last_action = f"👁️  Monitoring {len(real_positions)} positions | {_holding_str}"
+                            _pnl_arrow  = "▲" if net_pnl >= 0 else "▼"
+                            _prog_bar   = "█" * int(display_progress / 5) + "░" * (20 - int(display_progress / 5))
+                            _type_tag   = f"{pos.leverage}x MARGIN {'LONG' if getattr(pos,'margin_side','LONG')=='LONG' else 'SHORT'}" if pos.is_margin else "SPOT"
+                            _marg_extra = ""
+                            if pos.is_margin:
+                                _marg_extra = f"  │  Collateral: ${pos.margin_amount:.2f}{margin_info}"
+                            print(f"║  ┌─ {pos.symbol}  [{_type_tag}]  {pos.exchange.upper()}  │  Value: ${market_value:.2f}{_marg_extra:<{max(0,42-len(_marg_extra))}}║")
+                            print(f"║  │  Buy: ${pos.entry_price:>12,.6f}  →  Now: ${current:>12,.6f}  →  Target: ${pos.target_price:>12,.6f}   ║")
+                            _pnl_str = f"{pnl_color}{_pnl_arrow} ${net_pnl:+.4f}  ({price_change_pct:+.2f}%){reset}"
+                            print(f"║  │  [{_prog_bar}] {raw_progress:+.1f}% to target   {_pnl_str:<40}║")
+                            # Update stream status
+                            self._stream_last_action = (
+                                f"👁️  {len(real_positions)} positions open | "
+                                f"{pos.symbol} {_pnl_arrow} ${net_pnl:+.4f} ({raw_progress:+.1f}% to target)"
+                            )
                             if eta_str:
                                 print(f"   {eta_str}")
                             if counter_str:
