@@ -47,7 +47,31 @@ class FireTrader:
             self.kraken = None
             self.binance = None
         # {pair: last_buy_timestamp} — prevents hammering the same symbol every cycle
-        self._recent_buys: dict = {}
+        # Persisted to disk so cooldown survives process restarts
+        self._RECENT_BUYS_FILE = os.path.join(os.path.dirname(__file__), '.recent_buys_cooldown.json')
+        self._recent_buys: dict = self._load_recent_buys()
+
+    def _load_recent_buys(self) -> dict:
+        """Load buy cooldown timestamps from disk (survives restarts)."""
+        try:
+            with open(self._RECENT_BUYS_FILE, 'r') as f:
+                data = json.load(f)
+            # Purge stale entries (older than cooldown window) to keep file small
+            cutoff = time.time() - self._BUY_COOLDOWN_SECS
+            return {k: v for k, v in data.items() if v > cutoff}
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
+            return {}
+
+    def _persist_recent_buys(self):
+        """Persist buy cooldown timestamps to disk."""
+        try:
+            cutoff = time.time() - self._BUY_COOLDOWN_SECS
+            pruned = {k: v for k, v in self._recent_buys.items() if v > cutoff}
+            with open(self._RECENT_BUYS_FILE, 'w') as f:
+                json.dump(pruned, f)
+            self._recent_buys = pruned
+        except Exception as e:
+            log_fire(f"   [WARN] Could not persist buy cooldown: {e}")
 
     def _record_buy_cost_basis(self, pair, order, exchange):
         """Record cost basis after a successful buy so we can sell at profit later."""
@@ -130,7 +154,7 @@ class FireTrader:
 
     # ── Goal-Aware Micro-Gains Configuration ──
     _MICRO_GAINS_MAX_BUY = 50.0      # max $50 per micro-gains buy (matches Kraken $50 minimum)
-    _MICRO_GAINS_MIN_CONSENSUS = 1   # only 1/7 oracle needs to be bullish
+    _MICRO_GAINS_MIN_CONSENSUS = 4   # majority (4/7) oracles must be bullish — 1 was not a real consensus
     _MICRO_GAINS_RISK_MOD = 1.0      # no position reduction — $50 is already the minimum
 
     # ── Hard profit floor — NEVER sell unless this GUARANTEED net after EVERYTHING ──
@@ -1057,16 +1081,19 @@ class FireTrader:
                     price = float(ticker24.get('lastPrice', 0) or 0)
                     change_24h = float(ticker24.get('priceChangePercent', 0) or 0)
                     quote_vol = float(ticker24.get('quoteVolume', 0) or 0)
-                    if price <= 0 or quote_vol < 5000:
+                    # Reject micro-cap coins (price < $0.001) and illiquid pairs (< $50K 24h vol)
+                    if price <= 0 or price < 0.001 or quote_vol < 50_000:
                         continue
-                    # ── SCORING: in micro-gains mode, prioritize coins moving UP ──
-                    # against the bearish trend (positive change = counter-trend mover)
+                    # ── SCORING: cap raw change contribution so we never chase 50% pumps ──
+                    # Clamp change to [-5%, +5%] before scoring — anything higher is already
+                    # late and likely to reverse. Volume is the primary quality signal.
+                    clamped_change = max(-5.0, min(5.0, change_24h))
                     if micro_mode:
-                        # Heavily weight positive changers — they're the movers we want
-                        momentum_bonus = max(0, change_24h) * 3  # 3x weight for positive change
+                        # Micro-gains: require positive momentum but cap at 3% to avoid tops
+                        momentum_bonus = max(0, min(3.0, change_24h)) * 2
                         score = momentum_bonus + min(quote_vol / 1_000_000, 5)
                     else:
-                        score = change_24h + min(quote_vol / 1_000_000, 5)
+                        score = clamped_change + min(quote_vol / 1_000_000, 5)
                     buy_candidates.append({
                         'pair': pair, 'price': price, 'change_24h': change_24h,
                         'quote_vol': quote_vol, 'score': score, 'quote_ccy': quote_ccy,
@@ -1094,12 +1121,10 @@ class FireTrader:
                     base_for_seer = 'BTC'
                 sym_bullish, _sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
-                    # In micro-gains mode, allow if 24h change is positive (counter-trend mover)
-                    if micro_mode and candidate['change_24h'] > 1.0:
-                        log_fire(f"   🎯 MICRO: {base_for_seer} SEER bearish BUT +{candidate['change_24h']:.1f}% 24h — overriding for momentum play")
-                    else:
-                        log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
-                        continue
+                    # Seer BEARISH is a hard block — a 24h pump does not override a bearish signal.
+                    # Buying into a BEARISH signal during micro-gains mode is how the system buys tops.
+                    log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
+                    continue
 
                 qccy = candidate['quote_ccy']
                 funded_cash = (kraken_gbp_cash if qccy == 'GBP'
@@ -1107,9 +1132,15 @@ class FireTrader:
                                else kraken_usdt_cash if qccy == 'USDT'
                                else kraken_tusd_cash if qccy == 'TUSD'
                                else kraken_usd_cash)
+                if funded_cash < self._MIN_POSITION_USD:
+                    log_fire(f"   [SKIP] Insufficient {qccy} cash (${funded_cash:.2f}) — minimum is ${self._MIN_POSITION_USD:.0f}")
+                    continue
                 raw_qty = _buy_amount_kraken(funded_cash)
                 quote_qty = min(raw_qty * seer_risk_mod, funded_cash * 0.9)
-                quote_qty = max(self._MIN_POSITION_USD, quote_qty)  # never below $50
+                # Only enforce floor if we actually have enough cash; never create a buy
+                # larger than funded_cash (the old max(..., 50) would send $50 orders
+                # against a $10 balance, causing exchange rejections).
+                quote_qty = max(self._MIN_POSITION_USD, min(quote_qty, funded_cash * 0.95))
                 log_fire(f"\n🎯 BUY OPPORTUNITY (Kraken{' MICRO' if micro_mode else ''}): {candidate['pair']}")
                 log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change_24h']:+.2f}% | Vol=${candidate['quote_vol']:.0f}")
                 log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → qty={quote_qty:.2f} {qccy}")
@@ -1121,6 +1152,7 @@ class FireTrader:
                         self._record_buy_cost_basis(candidate['pair'], order, 'kraken')
                         self._log_seer_prediction(candidate['pair'], 'kraken', candidate['price'], seer_summary, sym_details)
                         self._recent_buys[f"kraken:{candidate['pair']}"] = time.time()
+                        self._persist_recent_buys()
                         bought_any = True
                         break
                     else:
@@ -1154,14 +1186,16 @@ class FireTrader:
                     change = float(t.get('priceChangePercent', 0) or 0)
                     volume = float(t.get('quoteVolume', 0) or 0)
                     count = int(t.get('count', 0) or 0)
-                    if price <= 0 or volume < 25000 or count < 200:
+                    # Reject micro-cap coins (< $0.001) and illiquid pairs (< $100K 24h vol)
+                    if price <= 0 or price < 0.001 or volume < 100_000 or count < 500:
                         continue
-                    # ── SCORING: in micro-gains mode, prioritize coins moving UP ──
+                    # ── SCORING: cap raw change so we never chase 50% pumps ──
+                    clamped_change = max(-5.0, min(5.0, change))
                     if micro_mode:
-                        momentum_bonus = max(0, change) * 3
+                        momentum_bonus = max(0, min(3.0, change)) * 2
                         score = momentum_bonus + min(volume / 1_000_000, 5)
                     else:
-                        score = change + min(volume / 1_000_000, 5)
+                        score = clamped_change + min(volume / 1_000_000, 5)
                     buy_candidates.append({
                         'pair': sym, 'price': price, 'change': change,
                         'volume': volume, 'score': score,
@@ -1197,15 +1231,15 @@ class FireTrader:
                 base_for_seer = candidate['pair'].replace('USDC', '').replace('USDT', '')
                 sym_bullish, _sym_conf, sym_details = self._seer_symbol_signal(base_for_seer)
                 if not sym_bullish:
-                    # In micro-gains mode, allow if 24h change is positive (counter-trend mover)
-                    if micro_mode and candidate['change'] > 1.0:
-                        log_fire(f"   🎯 MICRO: {base_for_seer} SEER bearish BUT +{candidate['change']:.1f}% 24h — overriding for momentum play")
-                    else:
-                        log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
-                        continue
+                    # Seer BEARISH is a hard block — a 24h pump does not override a bearish signal.
+                    log_fire(f"   🔮 SEER rejects {base_for_seer} — BEARISH, trying next")
+                    continue
+                if binance_cash < self._MIN_POSITION_USD:
+                    log_fire(f"   [SKIP] Insufficient Binance cash (${binance_cash:.2f}) — minimum is ${self._MIN_POSITION_USD:.0f}")
+                    break  # No point iterating — all Binance candidates face same cash shortage
                 raw_qty = _buy_amount_binance(binance_cash)
                 quote_qty = min(raw_qty * seer_risk_mod, binance_cash * 0.9)
-                quote_qty = max(self._MIN_POSITION_USD, quote_qty)  # never below $50
+                quote_qty = max(self._MIN_POSITION_USD, min(quote_qty, binance_cash * 0.95))
                 log_fire(f"\n🎯 BUY OPPORTUNITY (Binance{' MICRO' if micro_mode else ''}): {candidate['pair']}")
                 log_fire(f"   Price=${candidate['price']:.6f} | 24h={candidate['change']:+.2f}% | Vol=${candidate['volume']:.0f}")
                 log_fire(f"   Seer risk_mod={seer_risk_mod:.2f} → qty=${quote_qty:.2f} USDC")
@@ -1217,6 +1251,7 @@ class FireTrader:
                         self._record_buy_cost_basis(candidate['pair'], order, 'binance')
                         self._log_seer_prediction(candidate['pair'], 'binance', candidate['price'], seer_summary, sym_details)
                         self._recent_buys[f"binance:{candidate['pair']}"] = time.time()
+                        self._persist_recent_buys()
                         bought_any = True
                         break
                     else:

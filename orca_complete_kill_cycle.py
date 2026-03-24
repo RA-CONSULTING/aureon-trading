@@ -16385,17 +16385,22 @@ class OrcaKillCycle:
                                                     except Exception as kr_fallback_err:
                                                         print(f"      Kraken funding fallback error: {kr_fallback_err}")
                                                 
-                                                if buy_amount >= 1.0:  # Minimum $1 — micro-compound mode (was $50, blocked ALL trades with <$50 cash)
+                                                # Exchange minimums: Kraken ~$50, Binance ~$10.
+                                                # $1 was so low it only produced rejected orders and wasted API quota.
+                                                _exch_min = 50.0 if best.exchange == 'kraken' else 10.0
+                                                if buy_amount >= _exch_min:
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                     expected_qty = buy_amount / best.price if best.price > 0 else 0.0
                                                     cop_est, _, _, _ = self._expected_cop_for_buy(
                                                         best.price, expected_qty, fee_rate, target_pct_current
                                                     )
-                                                    COP_MIN_THRESHOLD = 0.85  # Relaxed from 1.0 to allow more trades
+                                                    # COP must be > 1.02 — below 1.0 means we expect to exit at a loss.
+                                                    # 0.85 (previous value) was guaranteeing losses by design.
+                                                    COP_MIN_THRESHOLD = 1.02
                                                     print(f"   [DEBUG] COP Check: Est={cop_est:.6f}, Threshold={COP_MIN_THRESHOLD}")
-                                                    
+
                                                     if cop_est <= COP_MIN_THRESHOLD:
-                                                        print(f"      BUY BLOCKED: COP {cop_est:.6f}   {COP_MIN_THRESHOLD} (energy increase too low)")
+                                                        print(f"      BUY BLOCKED: COP {cop_est:.6f} <= {COP_MIN_THRESHOLD} (trade not profitable enough to enter)")
                                                     else:
                                                         _baton(
                                                             "execute",
