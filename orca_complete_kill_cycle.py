@@ -8737,6 +8737,63 @@ class OrcaKillCycle:
         return anomalies
 
     # ══════════════════════════════════════════════════════════════════════════
+    #  PORTFOLIO ALLOCATION — 80 % collateral / 20 % spot rule
+    # ══════════════════════════════════════════════════════════════════════════
+
+    # Maximum fraction of total portfolio that may be in open SPOT positions.
+    # The rest must stay as liquid cash so Kraken has collateral for margin.
+    SPOT_MAX_ALLOCATION_PCT = 20.0   # percent
+
+    def _get_portfolio_allocation(self, positions: list) -> Dict[str, float]:
+        """Return a snapshot of how the portfolio is split between cash and spot.
+
+        Args:
+            positions: Current list of LivePosition objects from the trading loop.
+
+        Returns:
+            Dict with keys:
+              total_cash          – sum of all exchange cash balances (USD)
+              spot_value          – mark-to-market value of open SPOT positions
+              total_portfolio     – total_cash + spot_value
+              spot_pct            – spot_value / total_portfolio * 100
+              collateral_pct      – 100 - spot_pct
+              remaining_spot_budget – how much more can go into spot before 20% cap
+              can_open_spot       – True if below the 20% ceiling
+        """
+        # Cash across all exchanges
+        try:
+            cash = self.get_available_cash()
+        except Exception:
+            cash = {}
+        total_cash = sum(float(v) for v in cash.values())
+
+        # Mark-to-market value of every open SPOT (non-margin) position
+        spot_value = 0.0
+        for p in (positions or []):
+            if getattr(p, 'is_margin', False):
+                continue  # margin positions don't consume cash collateral
+            price = getattr(p, 'current_price', 0.0) or 0.0
+            qty   = getattr(p, 'entry_qty', 0.0) or 0.0
+            cost  = getattr(p, 'entry_cost', 0.0) or 0.0
+            # Use current market price when available; fall back to entry cost
+            spot_value += (price * qty) if price > 0 and qty > 0 else cost
+
+        total_portfolio = total_cash + spot_value
+        spot_pct = (spot_value / total_portfolio * 100.0) if total_portfolio > 0 else 0.0
+        max_spot = total_portfolio * (self.SPOT_MAX_ALLOCATION_PCT / 100.0)
+        remaining = max(0.0, max_spot - spot_value)
+
+        return {
+            'total_cash':           total_cash,
+            'spot_value':           spot_value,
+            'total_portfolio':      total_portfolio,
+            'spot_pct':             spot_pct,
+            'collateral_pct':       100.0 - spot_pct,
+            'remaining_spot_budget': remaining,
+            'can_open_spot':        spot_pct < self.SPOT_MAX_ALLOCATION_PCT,
+        }
+
+    # ══════════════════════════════════════════════════════════════════════════
     #  PROFIT SWEEP — Move freed USD/USDT from Binance → Kraken margin collateral
     # ══════════════════════════════════════════════════════════════════════════
 
@@ -16577,8 +16634,31 @@ class OrcaKillCycle:
                                                         buy_amount = min(buy_amount * 0.5, exchange_cash * 0.50)
                                                         print(f"   [MARGIN] Low conviction ({_m_conv_now:.0%}), {_m_lev_now}x — reduced collateral: ${buy_amount:.2f}")
                                                 else:
-                                                    # Pure spot trade — standard sizing
-                                                    print(f"   [SPOT] No margin this cycle — standard sizing: ${buy_amount:.2f}")
+                                                    # ─── 80/20 COLLATERAL ADEQUACY RULE ─────────────────────
+                                                    # Margin is the PRIMARY strategy. At least 80 % of total
+                                                    # portfolio value must stay as liquid cash so Kraken always
+                                                    # has enough collateral. Spot trades may only use the
+                                                    # remaining 20 %. Margin buys are exempt from this cap
+                                                    # because they pledge existing equity, not fresh cash.
+                                                    _alloc = self._get_portfolio_allocation(positions)
+                                                    _spot_pct     = _alloc['spot_pct']
+                                                    _spot_budget  = _alloc['remaining_spot_budget']
+                                                    _total_pf     = _alloc['total_portfolio']
+                                                    print(f"   [COLLATERAL] Portfolio ${_total_pf:.2f} | "
+                                                          f"Spot {_spot_pct:.1f}% (max {self.SPOT_MAX_ALLOCATION_PCT:.0f}%) | "
+                                                          f"Spot budget left: ${_spot_budget:.2f}")
+                                                    if not _alloc['can_open_spot']:
+                                                        print(f"   [COLLATERAL] SPOT BUY BLOCKED — "
+                                                              f"{_spot_pct:.1f}% already in spot positions "
+                                                              f"(max {self.SPOT_MAX_ALLOCATION_PCT:.0f}%). "
+                                                              f"Focus is MARGIN ONLY until spot positions close.")
+                                                        buy_amount = 0.0  # triggers _exch_min block below
+                                                    elif buy_amount > _spot_budget:
+                                                        buy_amount = min(buy_amount, _spot_budget)
+                                                        print(f"   [COLLATERAL] Spot buy capped to ${buy_amount:.2f} "
+                                                              f"to stay within {self.SPOT_MAX_ALLOCATION_PCT:.0f}% allocation")
+                                                    else:
+                                                        print(f"   [SPOT] Within allocation — standard sizing: ${buy_amount:.2f}")
 
                                                 print(f"   [DEBUG] Buy Calc: Cash={exchange_cash:.2f}, AmtPerPos={amount_per_position}, BuyAmt={buy_amount:.2f}")
 
