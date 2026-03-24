@@ -9072,9 +9072,15 @@ class OrcaKillCycle:
                     for asset, qty in (balances or {}).items():
                         if asset in ['USD', 'ZUSD', 'EUR', 'ZEUR', 'DAI', 'USDC', 'USDT', 'TUSD', 'ZGBP', 'GBP']:
                             continue
+                        # Skip staked (.S), bridged (.B), and other non-spot suffixed assets —
+                        # they cannot be sold directly as spot
+                        if '.' in asset:
+                            continue
+                        # Normalise Kraken X/Z-prefixed asset names (XXBT→BTC, XETH→ETH)
+                        _norm_asset = self._KRAKEN_ASSET_NORM.get(asset, asset)
                         qty = float(qty or 0)
                         if qty > 0.0001:
-                            symbol = f"{asset}USD"
+                            symbol = f"{_norm_asset}USD"
                             try:
                                 ticker = client.get_ticker(symbol)
                                 if ticker:
@@ -9084,7 +9090,7 @@ class OrcaKillCycle:
                                         results['total_value'] += market_value
 
                                         if market_value >= 0.50:
-                                            _entry_data = _kraken_entries.get(symbol) or _kraken_entries.get(asset)
+                                            _entry_data = _kraken_entries.get(symbol) or _kraken_entries.get(_norm_asset) or _kraken_entries.get(asset)
                                             entry_price = _entry_data['entry_price'] if _entry_data else 0
                                             entry_cost = entry_price * qty * (1 + fee_rate) if entry_price > 0 else 0
 
@@ -9101,7 +9107,7 @@ class OrcaKillCycle:
                                                 )
                                                 if can_exit:
                                                     net_pnl = exit_info.get('net_pnl', 0)
-                                                    print(f"     KRAKEN {asset}: +${net_pnl:.4f} profit - HARVESTING!")
+                                                    print(f"     KRAKEN {_norm_asset}: +${net_pnl:.4f} profit - HARVESTING!")
                                                     sell_result = self.execute_sell_with_logging(
                                                         client=client,
                                                         symbol=symbol,
@@ -9128,7 +9134,7 @@ class OrcaKillCycle:
                                                             'pnl': exit_info.get('net_pnl', 0)
                                                         })
                                                 else:
-                                                    print(f"     KRAKEN {asset}: HARVEST BLOCKED — {exit_info.get('blocked_reason', 'queen rejected')}")
+                                                    print(f"     KRAKEN {_norm_asset}: HARVEST BLOCKED — {exit_info.get('blocked_reason', 'queen rejected')}")
                                                     results['still_holding'].append({
                                                         'exchange': exchange_name, 'symbol': symbol,
                                                         'qty': qty, 'value': market_value,
@@ -9136,7 +9142,7 @@ class OrcaKillCycle:
                                                     })
                                             else:
                                                 # No entry price on record — report only, cannot verify profit
-                                                print(f"     KRAKEN {asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f} (no entry price)")
+                                                print(f"     KRAKEN {_norm_asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f} (no entry price)")
                                                 results['still_holding'].append({
                                                     'exchange': exchange_name, 'symbol': symbol,
                                                     'qty': qty, 'value': market_value, 'pnl': 0
