@@ -1629,6 +1629,58 @@ def get_cached_price(symbol: str, exchange: str = 'any', max_age: float = 60.0) 
     price = get_price(symbol, max_age=max_age)
     return price if price and price > 0 else None
 
+def _get_monitor_price(symbol: str, max_age: float = 15.0) -> Optional[float]:
+    """
+    Get price for position monitoring WITHOUT hitting Kraken API.
+
+    Priority chain (zero Kraken REST calls):
+      1. Binance WebSocket cache  — real-time, free, ~100ms latency
+      2. Yahoo Finance chart API  — free public endpoint, no auth needed
+      3. Returns None             — caller skips update rather than API call
+
+    Args:
+        symbol: Any format: VANRYUSD, BTC/USD, ETHUSDT, XBT, etc.
+        max_age: Max acceptable cache age in seconds (default 15s)
+    """
+    # 1. Try Binance WebSocket cache first (already normalises symbol)
+    cached = get_cached_price(symbol, max_age=max_age)
+    if cached and cached > 0:
+        return cached
+
+    # 2. Yahoo Finance fallback — convert symbol to Yahoo ticker format
+    try:
+        import requests as _req
+        # Normalise to base asset (strip quote suffixes)
+        base = symbol.upper()
+        for suffix in ('USDT', 'USDC', 'ZUSD', 'USD', '/USDT', '/USD'):
+            if base.endswith(suffix):
+                base = base[:-len(suffix)]
+                break
+        # Kraken X/Z prefixes
+        if len(base) == 4 and base[0] in ('X', 'Z'):
+            base = base[1:]
+        if base == 'XBT':
+            base = 'BTC'
+
+        yf_ticker = f"{base}-USD"
+        resp = _req.get(
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_ticker}",
+            params={"interval": "1m", "range": "1m"},
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            meta = data.get("chart", {}).get("result", [{}])[0].get("meta", {})
+            price = float(meta.get("regularMarketPrice", 0) or 0)
+            if price > 0:
+                return price
+    except Exception:
+        pass
+
+    return None
+
+
 def get_cached_ticker_dict(symbol: str, max_age: float = 60.0) -> Optional[Dict[str, Any]]:
     """
     Get ticker from cache as dict format compatible with Kraken/Binance API responses.
@@ -15202,21 +15254,14 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                     
-                    # Also batch Kraken if we have positions there (with rate limit check)
+                    # Batch Kraken position prices — Binance WS cache → Yahoo Finance.
+                    # Zero Kraken REST calls; Kraken API reserved for order placement only.
                     try:
-                        kraken_client = self.clients.get('kraken')
-                        if kraken_client:
-                            kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
-                            for sym in kraken_symbols:
-                                if not kraken_rate_limit_check():
-                                    _time.sleep(1.0)  # Brief pause if rate limited
-                                try:
-                                    kraken_rate_limit_record()
-                                    ticker = kraken_client.get_ticker(sym)
-                                    if ticker:
-                                        batch_prices[sym] = ticker.get('bid', ticker.get('price', 0))
-                                except Exception:
-                                    pass
+                        kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
+                        for sym in kraken_symbols:
+                            price = _get_monitor_price(sym, max_age=15.0)
+                            if price and price > 0:
+                                batch_prices[sym] = price
                     except Exception:
                         pass
 
@@ -15527,8 +15572,8 @@ class OrcaKillCycle:
                                 # Check if this is a NEW position not already tracked
                                 if qty > 0.000001 and symbol not in current_kraken_symbols:
                                     try:
-                                        ticker = kraken_client.get_ticker(symbol)
-                                        current_price = float(ticker.get('bid', ticker.get('price', 0)))
+                                        # Use cache/Yahoo Finance — no Kraken REST call
+                                        current_price = _get_monitor_price(symbol, max_age=30.0) or 0.0
                                         market_value = qty * current_price
                                         
                                         if market_value > 0.0:  # Track all positions
@@ -16878,8 +16923,7 @@ class OrcaKillCycle:
                                                 # Margin trades are sized separately above; this floor only applies
                                                 # when _will_use_margin is False (pure spot). Keeping a meaningful
                                                 # minimum ensures the trade is worth the round-trip fee.
-                                                _GBP_USD_RATE = 1.27
-                                                _exch_min = round(50.0 * _GBP_USD_RATE, 0)  # = 63.0 USD
+                                                _exch_min = 50.0  # $50 minimum per trade
                                                 # Auto-scale: if amount_per_position was set lower than the
                                                 # exchange minimum but we have enough cash to cover it, raise
                                                 # buy_amount to the minimum so the trade actually fires.
@@ -17267,19 +17311,14 @@ class OrcaKillCycle:
                     except Exception:
                         pass
                     
-                    #   Also batch fetch Kraken prices
+                    # Batch Kraken position prices — Binance WS cache → Yahoo Finance.
+                    # Zero Kraken REST calls; Kraken API reserved for order placement only.
                     try:
-                        kraken_client = self.clients.get('kraken')
-                        if kraken_client:
-                            kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
-                            for sym in kraken_symbols:
-                                try:
-                                    ticker = kraken_client.get_ticker(sym)
-                                    if ticker:
-                                        price = ticker.get('bid', ticker.get('price', 0))
-                                        all_prices[sym] = float(price) if price else 0
-                                except Exception:
-                                    pass
+                        kraken_symbols = [p.symbol for p in positions if p.exchange == 'kraken']
+                        for sym in kraken_symbols:
+                            price = _get_monitor_price(sym, max_age=15.0)
+                            if price and price > 0:
+                                all_prices[sym] = price
                     except Exception:
                         pass
                     
