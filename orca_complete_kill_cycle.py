@@ -9091,64 +9091,98 @@ class OrcaKillCycle:
 
                                         if market_value >= 0.50:
                                             _entry_data = _kraken_entries.get(symbol) or _kraken_entries.get(_norm_asset) or _kraken_entries.get(asset)
-                                            entry_price = _entry_data['entry_price'] if _entry_data else 0
-                                            entry_cost = entry_price * qty * (1 + fee_rate) if entry_price > 0 else 0
+                                            entry_price = float(_entry_data['entry_price']) if _entry_data else None
 
-                                            if entry_price > 0:
-                                                can_exit, exit_info = self.queen_approved_exit(
-                                                    symbol=symbol,
-                                                    exchange=exchange_name,
-                                                    current_price=current_price,
-                                                    entry_price=entry_price,
-                                                    entry_qty=qty,
-                                                    entry_cost=entry_cost,
-                                                    queen=queen,
-                                                    reason='HARVEST'
+                                            # Fallback: check cost_basis_tracker (catches airdrops
+                                            # recorded with entry_price=0 and other tracked positions
+                                            # not in the local JSON files)
+                                            _is_airdrop = False
+                                            if entry_price is None and self.cost_basis_tracker:
+                                                try:
+                                                    _cb = self.cost_basis_tracker.get_confirmed_entry(symbol, exchange_name)
+                                                    if _cb is not None:
+                                                        entry_price = float(_cb)
+                                                        if entry_price == 0:
+                                                            _is_airdrop = True
+                                                except Exception:
+                                                    pass
+
+                                            if entry_price is not None:
+                                                # For zero-cost airdrops pass a nominal entry_cost so
+                                                # execute_sell_with_logging's guard allows the sale —
+                                                # any positive proceeds are pure profit
+                                                if _is_airdrop:
+                                                    entry_cost = 0.00001
+                                                else:
+                                                    entry_cost = entry_price * qty * (1 + fee_rate)
+
+                                                # Validate minimum order size before touching the queen
+                                                order_ok, order_reason = self.validate_order_params(
+                                                    symbol=symbol, quantity=qty,
+                                                    exchange=exchange_name, price=current_price
                                                 )
-                                                if can_exit:
-                                                    net_pnl = exit_info.get('net_pnl', 0)
-                                                    print(f"     KRAKEN {_norm_asset}: +${net_pnl:.4f} profit - HARVESTING!")
-                                                    sell_result = self.execute_sell_with_logging(
-                                                        client=client,
+                                                if not order_ok:
+                                                    print(f"     KRAKEN {_norm_asset}: SKIP — {order_reason}")
+                                                    results['still_holding'].append({
+                                                        'exchange': exchange_name, 'symbol': symbol,
+                                                        'qty': qty, 'value': market_value, 'pnl': 0
+                                                    })
+                                                else:
+                                                    can_exit, exit_info = self.queen_approved_exit(
                                                         symbol=symbol,
-                                                        quantity=qty,
                                                         exchange=exchange_name,
                                                         current_price=current_price,
+                                                        entry_price=entry_price,
+                                                        entry_qty=qty,
                                                         entry_cost=entry_cost,
+                                                        queen=queen,
                                                         reason='HARVEST'
                                                     )
-                                                    if sell_result and not sell_result.get('rejected'):
-                                                        freed = qty * current_price * (1 - fee_rate)
-                                                        results['harvested'].append({
-                                                            'exchange': exchange_name,
-                                                            'symbol': symbol,
-                                                            'qty': qty,
-                                                            'profit': net_pnl,
-                                                            'freed': freed
-                                                        })
-                                                        results['total_freed'] += freed
+                                                    if can_exit:
+                                                        net_pnl = exit_info.get('net_pnl', 0)
+                                                        label = 'AIRDROP' if _is_airdrop else 'HARVEST'
+                                                        print(f"     KRAKEN {_norm_asset}: +${net_pnl:.4f} profit - {label}!")
+                                                        sell_result = self.execute_sell_with_logging(
+                                                            client=client,
+                                                            symbol=symbol,
+                                                            quantity=qty,
+                                                            exchange=exchange_name,
+                                                            current_price=current_price,
+                                                            entry_cost=entry_cost,
+                                                            reason='HARVEST'
+                                                        )
+                                                        if sell_result and not sell_result.get('rejected'):
+                                                            freed = qty * current_price * (1 - fee_rate)
+                                                            results['harvested'].append({
+                                                                'exchange': exchange_name,
+                                                                'symbol': symbol,
+                                                                'qty': qty,
+                                                                'profit': net_pnl,
+                                                                'freed': freed
+                                                            })
+                                                            results['total_freed'] += freed
+                                                        else:
+                                                            results['still_holding'].append({
+                                                                'exchange': exchange_name, 'symbol': symbol,
+                                                                'qty': qty, 'value': market_value,
+                                                                'pnl': exit_info.get('net_pnl', 0)
+                                                            })
                                                     else:
+                                                        print(f"     KRAKEN {_norm_asset}: HARVEST BLOCKED — {exit_info.get('blocked_reason', 'queen rejected')}")
                                                         results['still_holding'].append({
                                                             'exchange': exchange_name, 'symbol': symbol,
                                                             'qty': qty, 'value': market_value,
                                                             'pnl': exit_info.get('net_pnl', 0)
                                                         })
-                                                else:
-                                                    print(f"     KRAKEN {_norm_asset}: HARVEST BLOCKED — {exit_info.get('blocked_reason', 'queen rejected')}")
-                                                    results['still_holding'].append({
-                                                        'exchange': exchange_name, 'symbol': symbol,
-                                                        'qty': qty, 'value': market_value,
-                                                        'pnl': exit_info.get('net_pnl', 0)
-                                                    })
                                             else:
-                                                # No entry price on record — report only, cannot verify profit
+                                                # No entry price found anywhere — report only
                                                 print(f"     KRAKEN {_norm_asset}: {qty:.6f} @ ${current_price:.4f} = ${market_value:.2f} (no entry price)")
                                                 results['still_holding'].append({
                                                     'exchange': exchange_name, 'symbol': symbol,
                                                     'qty': qty, 'value': market_value, 'pnl': 0
                                                 })
-                            except Exception:
-                                pass
+                            except Exception as _ex:
+                                results['errors'].append(f"kraken:{asset}: {_ex}")
                                 
                 elif exchange_name == 'capital':
                     capital_client = self._ensure_capital_client()
