@@ -1320,10 +1320,12 @@ DEADLINE_MODE = False  # EXPIRED 2026-02-20 — disabled to prevent stale aggres
 DEADLINE_DATE = "2026-02-20"
 
 # MICRO-COMPOUND GROWTH MODE: optimized for small capital (<$100)
-# 0.40% target is achievable on micro-positions after fees
-# The key: HIGH FREQUENCY of small wins compounds into visible portfolio growth
-QUEEN_MIN_COP = 1.0040   # 0.40% net profit minimum (Growth Mode)
-QUEEN_MIN_PROFIT_PCT = 0.40  # < 1.0 = GROWTH MODE (enables relaxed black box gate)
+# COP formula in queen_approved_exit omits entry fee from confirmed_cost (intentional —
+# confirmed_entry is the raw fill price). To guarantee TRUE net profit after BOTH
+# Kraken taker fees (0.26% in + 0.26% out) and slippage (0.20%), the apparent COP
+# must be 1.0100 (1.0%) so the real after-entry-fee return is at least 0.74%.
+QUEEN_MIN_COP = 1.0100   # 1.0% apparent COP → covers Kraken 0.72% round-trip + buffer
+QUEEN_MIN_PROFIT_PCT = 1.00  # >= 1.0 disables micro-gains relaxation; real target now 1%
 
 # GROWTH MODE MULTIPLIERS (conservative, protect small capital)
 DEADLINE_POSITION_MULTIPLIER = 1.0  # Normal position sizes
@@ -7657,6 +7659,12 @@ class OrcaKillCycle:
                         momentum = abs(change_pct) * (1 + min(volume / 10000, 1))
                         
                         if abs(change_pct) >= min_change_pct:
+                            # Skip stablecoin/fiat base assets
+                            _base = norm_symbol.split('/')[0] if '/' in norm_symbol else norm_symbol
+                            _STABLE = {'USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'EUR', 'GBP'}
+                            if _base.upper() in _STABLE:
+                                continue
+
                             opportunities.append(MarketOpportunity(
                                 symbol=norm_symbol,
                                 exchange='alpaca',
@@ -7748,9 +7756,16 @@ class OrcaKillCycle:
                     # Calculate momentum score
                     momentum = abs(change_pct) * (1 + min(volume / 100000, 1))
                     
-                    if abs(change_pct) >= min_change_pct:
+                    if abs(change_pct) >= min_change_pct and volume >= min_volume:
                         # Normalize symbol format
                         norm_symbol = symbol if '/' in symbol else symbol.replace('USD', '/USD')
+
+                        # Extract base and skip stablecoin/fiat base assets
+                        _base = norm_symbol.split('/')[0] if '/' in norm_symbol else norm_symbol[:-3]
+                        _STABLE = {'USDT', 'USDC', 'DAI', 'TUSD', 'USDD', 'USDP', 'PAX', 'EUR', 'GBP'}
+                        if _base.upper() in _STABLE:
+                            continue
+
                         opportunities.append(MarketOpportunity(
                             symbol=norm_symbol,
                             exchange='kraken',
@@ -7870,16 +7885,24 @@ class OrcaKillCycle:
                     # Calculate momentum score
                     momentum = abs(change_pct) * (1 + min(volume / 1000000, 1))  # Binance has higher volume
                     
-                    if abs(change_pct) >= min_change_pct:
+                    if abs(change_pct) >= min_change_pct and volume >= min_volume:
                         # Normalize symbol format - detect quote currency
                         norm_symbol = symbol
+                        base = symbol  # fallback before quote stripping
                         for quote in ['USDT', 'USDC', 'BUSD', 'USD', 'BTC', 'ETH', 'BNB', 'EUR', 'GBP']:
                             if symbol.endswith(quote):
                                 base = symbol[:-len(quote)]
                                 norm_symbol = f"{base}/{quote}"
                                 quote_currencies.add(quote)
                                 break
-                        
+
+                        # Skip stablecoin/fiat base assets — they have zero momentum potential
+                        _STABLE = {'USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'FDUSD', 'USDD', 'USDP', 'PAX',
+                                   'EUR', 'GBP', 'LDUSDT', 'LDUSDC', 'LDBUSD', 'LDETH', 'LDBNB'}
+                        if base.upper() in _STABLE:
+                            skipped_low_change += 1
+                            continue
+
                         opportunities.append(MarketOpportunity(
                             symbol=norm_symbol,
                             exchange='binance',
@@ -8712,7 +8735,185 @@ class OrcaKillCycle:
                     print(f"   PORTFOLIO TRUTH CHECK: {a['type']} | {a.get('exchange')} | {a.get('symbol')} | tracked={a.get('tracked_qty')} actual={a.get('actual_qty')}")
 
         return anomalies
-    
+
+    # ══════════════════════════════════════════════════════════════════════════
+    #  PORTFOLIO ALLOCATION — 80 % collateral / 20 % spot rule
+    # ══════════════════════════════════════════════════════════════════════════
+
+    # Maximum fraction of total portfolio that may be in open SPOT positions.
+    # The rest must stay as liquid cash so Kraken has collateral for margin.
+    SPOT_MAX_ALLOCATION_PCT = 20.0   # percent
+
+    def _get_portfolio_allocation(self, positions: list) -> Dict[str, float]:
+        """Return a snapshot of how the portfolio is split between cash and spot.
+
+        Args:
+            positions: Current list of LivePosition objects from the trading loop.
+
+        Returns:
+            Dict with keys:
+              total_cash          – sum of all exchange cash balances (USD)
+              spot_value          – mark-to-market value of open SPOT positions
+              total_portfolio     – total_cash + spot_value
+              spot_pct            – spot_value / total_portfolio * 100
+              collateral_pct      – 100 - spot_pct
+              remaining_spot_budget – how much more can go into spot before 20% cap
+              can_open_spot       – True if below the 20% ceiling
+        """
+        # Cash across all exchanges
+        try:
+            cash = self.get_available_cash()
+        except Exception:
+            cash = {}
+        total_cash = sum(float(v) for v in cash.values())
+
+        # Mark-to-market value of every open SPOT (non-margin) position
+        spot_value = 0.0
+        for p in (positions or []):
+            if getattr(p, 'is_margin', False):
+                continue  # margin positions don't consume cash collateral
+            price = getattr(p, 'current_price', 0.0) or 0.0
+            qty   = getattr(p, 'entry_qty', 0.0) or 0.0
+            cost  = getattr(p, 'entry_cost', 0.0) or 0.0
+            # Use current market price when available; fall back to entry cost
+            spot_value += (price * qty) if price > 0 and qty > 0 else cost
+
+        total_portfolio = total_cash + spot_value
+        spot_pct = (spot_value / total_portfolio * 100.0) if total_portfolio > 0 else 0.0
+        max_spot = total_portfolio * (self.SPOT_MAX_ALLOCATION_PCT / 100.0)
+        remaining = max(0.0, max_spot - spot_value)
+
+        return {
+            'total_cash':           total_cash,
+            'spot_value':           spot_value,
+            'total_portfolio':      total_portfolio,
+            'spot_pct':             spot_pct,
+            'collateral_pct':       100.0 - spot_pct,
+            'remaining_spot_budget': remaining,
+            'can_open_spot':        spot_pct < self.SPOT_MAX_ALLOCATION_PCT,
+        }
+
+    # ══════════════════════════════════════════════════════════════════════════
+    #  PROFIT SWEEP — Move freed USD/USDT from Binance → Kraken margin collateral
+    # ══════════════════════════════════════════════════════════════════════════
+
+    # Minimum USDT to sweep per transfer.  TRC20 fee is ~1 USDT; anything
+    # smaller would cost more in fees than it adds to collateral.
+    _SWEEP_MIN_USDT = 10.0
+
+    # Only sweep when Kraken margin level is below this threshold (%).
+    # Above 600% Kraken is well-capitalised; don't move cash unnecessarily.
+    _SWEEP_MARGIN_LEVEL_THRESHOLD = 600.0
+
+    # Keep at least this fraction of Binance USDT as a buffer for spot buys.
+    _SWEEP_BINANCE_RESERVE_FRACTION = 0.20
+
+    def _sweep_profits_to_kraken(self, freed_by_exchange: Dict[str, float]) -> Dict[str, Any]:
+        """Transfer profit proceeds from non-Kraken exchanges to Kraken.
+
+        Called after harvest_all_exchanges() or any profitable sell on Binance/Alpaca.
+        Profits land in the source exchange wallet after a sell; this function moves
+        them to Kraken so they become margin collateral for the next trade cycle.
+
+        Args:
+            freed_by_exchange: Dict mapping exchange name → USD value just freed,
+                               e.g. {'binance': 12.50, 'alpaca': 0.0}.
+
+        Returns:
+            Dict summarising transfers attempted, sent, and any errors.
+        """
+        result = {'transfers': [], 'total_swept': 0.0, 'errors': []}
+
+        kraken_client = self.clients.get('kraken')
+        binance_client = self.clients.get('binance')
+
+        if not kraken_client:
+            result['errors'].append('No Kraken client — cannot sweep')
+            return result
+
+        # ── 1. Check if Kraken actually needs more collateral ─────────────────
+        try:
+            tb = kraken_client.get_trade_balance()
+            margin_level = tb.get('margin_level', 0.0)
+            kraken_equity = tb.get('equity_value', 0.0)
+        except Exception as e:
+            result['errors'].append(f'Kraken balance check failed: {e}')
+            return result
+
+        if margin_level > self._SWEEP_MARGIN_LEVEL_THRESHOLD:
+            print(f"  [SWEEP] Kraken margin level {margin_level:.0f}% > {self._SWEEP_MARGIN_LEVEL_THRESHOLD:.0f}% — collateral sufficient, no sweep needed")
+            return result
+
+        print(f"  [SWEEP] Kraken margin level {margin_level:.0f}% — sweeping profits to boost collateral")
+
+        # ── 2. Get Kraken USDT TRC20 deposit address (cached after first fetch) ─
+        if not hasattr(self, '_kraken_usdt_trc20_address'):
+            try:
+                addrs = kraken_client.get_deposit_addresses(asset='USDT', method='Tether USD (TRC20)')
+                if not addrs:
+                    # Fallback: try without specifying method
+                    addrs = kraken_client.get_deposit_addresses(asset='USDT')
+                if addrs:
+                    self._kraken_usdt_trc20_address = addrs[0]['address']
+                    print(f"  [SWEEP] Kraken USDT deposit address: {self._kraken_usdt_trc20_address[:12]}…")
+                else:
+                    result['errors'].append('Could not fetch Kraken USDT deposit address')
+                    return result
+            except Exception as e:
+                result['errors'].append(f'Kraken deposit address fetch failed: {e}')
+                return result
+
+        kraken_deposit_addr = self._kraken_usdt_trc20_address
+
+        # ── 3. Sweep from Binance ────────────────────────────────────────────
+        if binance_client and freed_by_exchange.get('binance', 0.0) > 0:
+            try:
+                balances = binance_client.get_balance() or {}
+                usdt_available = float(balances.get('USDT', 0))
+                # Keep a reserve buffer so spot buys still have funding
+                reserve = usdt_available * self._SWEEP_BINANCE_RESERVE_FRACTION
+                sweepable = usdt_available - reserve
+
+                if sweepable >= self._SWEEP_MIN_USDT:
+                    # Round down to 2 dp (Binance requires this)
+                    sweep_amount = round(sweepable, 2)
+                    print(f"  [SWEEP] Sending ${sweep_amount:.2f} USDT (TRC20) from Binance → Kraken")
+                    withdrawal = binance_client.withdraw(
+                        coin='USDT',
+                        address=kraken_deposit_addr,
+                        amount=sweep_amount,
+                        network='TRX'   # TRC20 — lowest fee (~1 USDT)
+                    )
+                    if withdrawal and withdrawal.get('id'):
+                        print(f"  [SWEEP] Withdrawal submitted. ID: {withdrawal['id']}")
+                        result['transfers'].append({
+                            'source': 'binance',
+                            'destination': 'kraken',
+                            'asset': 'USDT',
+                            'network': 'TRC20',
+                            'amount': sweep_amount,
+                            'withdrawal_id': withdrawal['id'],
+                            'status': 'submitted'
+                        })
+                        result['total_swept'] += sweep_amount
+                    else:
+                        err = withdrawal.get('msg', str(withdrawal)) if withdrawal else 'no response'
+                        result['errors'].append(f'Binance withdrawal rejected: {err}')
+                        print(f"  [SWEEP] Binance withdrawal rejected: {err}")
+                else:
+                    print(f"  [SWEEP] Binance USDT sweepable ${sweepable:.2f} < min ${self._SWEEP_MIN_USDT:.2f} — skipping")
+            except Exception as e:
+                result['errors'].append(f'Binance sweep error: {e}')
+                print(f"  [SWEEP] Binance sweep error: {e}")
+
+        if result['total_swept'] > 0:
+            print(f"  [SWEEP] Total swept to Kraken: ${result['total_swept']:.2f} USDT")
+            print(f"  [SWEEP] Note: TRC20 deposit typically confirms in 3–5 minutes")
+        elif not result['errors']:
+            print(f"  [SWEEP] No funds swept (all exchanges below minimum threshold)")
+
+        return result
+
     def harvest_all_exchanges(self, queen=None, min_profit_usd: float = 0.017) -> Dict[str, Any]:
         """
           HARVEST ALL EXCHANGES - Scan ALL positions and sell profitable ones!
@@ -8756,10 +8957,28 @@ class OrcaKillCycle:
                             entry_cost = entry_price * qty * (1 + fee_rate)
                             exit_value = current_price * qty * (1 - fee_rate)
                             net_pnl = exit_value - entry_cost
-                            
+
                             results['total_value'] += current_price * qty
-                            
+
                             if net_pnl >= min_profit_usd:
+                                # Gate through queen_approved_exit before placing any sell
+                                can_exit, exit_info = self.queen_approved_exit(
+                                    symbol=symbol,
+                                    exchange=exchange_name,
+                                    current_price=current_price,
+                                    entry_price=entry_price,
+                                    entry_qty=qty,
+                                    entry_cost=entry_cost,
+                                    queen=queen,
+                                    reason='HARVEST'
+                                )
+                                if not can_exit:
+                                    print(f"     {exchange_name.upper()} {symbol}: HARVEST BLOCKED — {exit_info.get('blocked_reason', 'queen rejected')}")
+                                    results['still_holding'].append({
+                                        'exchange': exchange_name, 'symbol': symbol,
+                                        'qty': qty, 'value': current_price * qty, 'pnl': net_pnl
+                                    })
+                                    continue
                                 print(f"     {exchange_name.upper()} {symbol}: +${net_pnl:.4f} profit - HARVESTING!")
                                 try:
                                     sell_order = client.place_market_order(symbol=symbol, side='sell', quantity=qty)
@@ -8895,7 +9114,24 @@ class OrcaKillCycle:
         print(f"   Positions Harvested: {len(results['harvested'])}")
         print(f"   Cash Freed: ${results['total_freed']:.2f}")
         print(f"   Still Holding: {len(results['still_holding'])} positions")
-        
+
+        # ── Sweep freed profits to Kraken margin collateral ───────────────────
+        if results['total_freed'] > 0:
+            freed_by_exchange: Dict[str, float] = {}
+            for h in results['harvested']:
+                ex = h.get('exchange', '')
+                freed_by_exchange[ex] = freed_by_exchange.get(ex, 0.0) + h.get('freed', 0.0)
+
+            try:
+                sweep_result = self._sweep_profits_to_kraken(freed_by_exchange)
+                if sweep_result.get('total_swept', 0) > 0:
+                    results['swept_to_kraken'] = sweep_result['total_swept']
+                    results['sweep_transfers'] = sweep_result['transfers']
+                if sweep_result.get('errors'):
+                    results['errors'].extend(sweep_result['errors'])
+            except Exception as _se:
+                results['errors'].append(f'sweep error: {_se}')
+
         return results
         
     def calculate_exact_breakeven(self, entry_price: float, quantity: float, exchange: str = 'alpaca') -> Dict:
@@ -9006,24 +9242,36 @@ class OrcaKillCycle:
                 'status': 'dry_run'
             }
         
-        if exchange == 'binance' or exchange == 'kraken':
-            # Both Binance and Kraken now use similar format:
-            # executedQty, cummulativeQuoteQty, orderId, fills[]
+        if exchange == 'kraken':
+            # Kraken market order fields: vol_exec (qty filled), cost (total quote spent)
+            # 'price' in Kraken = the submitted limit price (0 for market orders)
+            exec_qty = float(order.get('vol_exec', order.get('filled_qty', order.get('executedQty', 0))))
+            total_cost = float(order.get('cost', 0))
+            avg_price = (total_cost / exec_qty) if exec_qty > 0 and total_cost > 0 else 0.0
+            if avg_price == 0:
+                avg_price = float(order.get('filled_avg_price', order.get('avgPrice', 0)))
+            # Kraken txid can be a list or string
+            txid = order.get('txid', order.get('orderId', order.get('id', None)))
+            if isinstance(txid, list):
+                txid = txid[0] if txid else None
+            return {
+                'filled_qty': exec_qty,
+                'filled_avg_price': avg_price,
+                'order_id': txid,
+                'status': 'FILLED' if exec_qty > 0 else order.get('status', 'UNKNOWN'),
+                'fee': float(order.get('fee', 0)),
+                'cumm_quote': total_cost,
+            }
+
+        if exchange == 'binance':
+            # Binance fields: executedQty, cummulativeQuoteQty, orderId, fills[]
             exec_qty = float(order.get('executedQty', 0))
             cumm_quote = float(order.get('cummulativeQuoteQty', 0))
-            
-            # Calculate average price from fills or cumulative
+
             avg_price = 0.0
-            
-            # First try the direct price field (Kraken provides this)
-            if order.get('price'):
-                avg_price = float(order.get('price', 0))
-            
-            # If no direct price, calculate from cumulative
-            if avg_price == 0 and exec_qty > 0 and cumm_quote > 0:
+            if exec_qty > 0 and cumm_quote > 0:
                 avg_price = cumm_quote / exec_qty
-            
-            # If still no price, try fills array (Binance provides this)
+            # Fallback: fills array
             if avg_price == 0 and order.get('fills'):
                 total_qty = 0.0
                 total_cost = 0.0
@@ -9035,14 +9283,14 @@ class OrcaKillCycle:
                 if total_qty > 0:
                     avg_price = total_cost / total_qty
                     exec_qty = total_qty
-            
+
             return {
                 'filled_qty': exec_qty,
                 'filled_avg_price': avg_price,
                 'order_id': order.get('orderId'),
                 'status': order.get('status', 'FILLED' if exec_qty > 0 else 'UNKNOWN'),
                 'fee': float(order.get('fee', 0)),
-                'cumm_quote': cumm_quote
+                'cumm_quote': cumm_quote,
             }
         
         else:  # alpaca and default
@@ -10693,10 +10941,27 @@ class OrcaKillCycle:
                                    entry_cost: float = 0, reason: str = "TP") -> Dict:
         """
           Execute a SELL order with comprehensive logging.
-        
+
         Logs the order ID to verify execution on the exchange.
         """
-        #                                                                    
+        # Guard: refuse to sell without confirmed entry cost unless user manually aborted
+        _is_abort = reason in ('USER_ABORT', 'ctrl_c_cleanup')
+        if entry_cost <= 0 and not _is_abort:
+            # Attempt cost basis lookup as fallback
+            _cb_entry = None
+            if self.cost_basis_tracker:
+                try:
+                    _cb_entry = self.cost_basis_tracker.get_confirmed_entry(symbol, exchange)
+                except Exception:
+                    pass
+            if _cb_entry and _cb_entry > 0:
+                entry_cost = _cb_entry * quantity  # reconstruct approximate cost
+                print(f"   entry_cost was 0 — recovered from cost basis tracker: ${entry_cost:.4f}")
+            else:
+                print(f"   SELL BLOCKED: entry_cost=0 and no confirmed cost basis for {symbol} [{exchange}] — aborting to prevent loss")
+                return {'status': 'blocked', 'reason': 'no_entry_cost', 'rejected': True, 'symbol': symbol, 'exchange': exchange}
+
+        #
         #     DR AURIS THRONE SECOND-OPINION GATE - ASK BEFORE EVERY TRADE
         #                                                                    
         #   [QUEEN] Narrative Log Start
@@ -11193,22 +11458,23 @@ class OrcaKillCycle:
                 symbol, current_price, exchange=exchange, quantity=entry_qty
             )
             if cb_info.get('entry_price') is None:
-                #   ALWAYS FALLBACK to estimated entry price — NEVER block sells
-                # on cost basis alone. The math checks (COP, black box, profit gate)
-                # downstream are sufficient to prevent selling at a loss.
-                if entry_price > 0:
-                    print(f"      Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
-                    confirmed_entry = entry_price
-                    cb_info['entry_price'] = entry_price
-                elif entry_cost > 0 and entry_qty > 0:
+                # Try to derive entry from caller-supplied entry_cost/entry_qty (reliable if
+                # they came from the actual order fill, not from an estimated LivePosition).
+                if entry_cost > 0 and entry_qty > 0:
                     confirmed_entry = entry_cost / entry_qty
                     print(f"      Cost Basis Missing for {symbol}. Derived entry from cost/qty: {confirmed_entry:.6f}")
                     cb_info['entry_price'] = confirmed_entry
+                elif entry_price > 0 and entry_price != current_price:
+                    # Accept caller-supplied entry only when it differs from current price
+                    # (using current_price as entry produces a false 0% P&L baseline)
+                    print(f"      Cost Basis Missing for {symbol}. Using caller-supplied entry: {entry_price:.6f}")
+                    confirmed_entry = entry_price
+                    cb_info['entry_price'] = entry_price
                 else:
-                    # Last resort: use current price as entry estimate (worst case: 0% P&L)
-                    confirmed_entry = current_price
-                    cb_info['entry_price'] = confirmed_entry
-                    print(f"      Cost Basis Missing for {symbol}. Using CURRENT PRICE as fallback: {confirmed_entry:.6f}")
+                    # Cannot determine real entry price — BLOCK the sell to protect capital
+                    info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
+                    print(f"      EXIT BLOCKED: {symbol} — no confirmed cost basis, refusing to sell (capital protection)")
+                    return False, info
             else:
                 # Use confirmed entry price for accurate P&L
                 confirmed_entry = cb_info.get('entry_price', entry_price)
@@ -12134,28 +12400,31 @@ class OrcaKillCycle:
         print(f"  Target:      ${target:,.2f} (+{((target/entry_price-1)*100):.3f}%)")
         print(f"  Stop Loss:   ${stop_price:,.2f} (-{abs(stop_pct):.1f}%)")
         
-        # Step 1: BUY
+        # Step 1: BUY — all buys must pass through queen_gated_buy
         print(f"\n  STEP 1: BUY ${amount_usd:.2f} of {symbol}")
         try:
-            # Use the correct exchange client for the buy order
             if exchange in ['binance', 'kraken']:
-                # For Binance/Kraken, use market buy with quantity
                 quantity = amount_usd / entry_price
-                buy_order = client.place_market_order(
+                buy_order = self.queen_gated_buy(
+                    client=client,
                     symbol=symbol,
-                    side='buy',
-                    quantity=quantity
+                    exchange=exchange,
+                    quantity=quantity,
+                    price=entry_price,
+                    context='hunt_and_kill'
                 )
             else:
-                # For Alpaca, use quote_qty
-                buy_order = client.place_market_order(
+                buy_order = self.queen_gated_buy(
+                    client=client,
                     symbol=symbol,
-                    side='buy',
-                    quote_qty=amount_usd
+                    exchange=exchange,
+                    quote_qty=amount_usd,
+                    price=entry_price,
+                    context='hunt_and_kill'
                 )
-            
-            if not buy_order:
-                print("  Buy failed")
+
+            if not buy_order or buy_order.get('rejected'):
+                print(f"  Buy blocked or failed: {buy_order.get('reason', 'no result') if buy_order else 'no result'}")
                 return None
             
             buy_qty = float(buy_order.get('filled_qty', buy_order.get('executedQty', 0)))
@@ -12321,18 +12590,31 @@ class OrcaKillCycle:
             bids = orderbook.get('bids', [])
             current = float(bids[0].get('p', buy_price)) if bids else buy_price
         
-        # Step 3: SELL (only if profitable)
+        # Step 3: SELL — must pass queen_approved_exit before placing order
         print(f"\n  STEP 3: SELL {buy_qty:.8f} {symbol} on {exchange.upper()}")
-        # Recalculate projected P&L at current market price and only sell if positive
         try:
             pnl_est = self.calculate_realized_pnl(buy_price, buy_qty, current, buy_qty)
             if pnl_est['net_pnl'] <= 0:
                 print(f"\n  NOT SELLING: projected net P&L ${pnl_est['net_pnl']:+.4f} <= 0. Waiting for profitable exit.")
-                # Do not execute sell to avoid realizing a loss
                 return None
         except Exception:
-            # If P&L calc fails for some reason, be conservative and skip selling
             print("\n   Could not compute projected P&L - skipping sell to avoid risk")
+            return None
+
+        # Queen gate: confirm cost basis, profit floor, and COP minimum
+        _hunt_entry_cost = buy_price * buy_qty * (1 + self.fee_rate)
+        _can_exit, _exit_info = self.queen_approved_exit(
+            symbol=symbol,
+            exchange=exchange,
+            current_price=current,
+            entry_price=buy_price,
+            entry_qty=buy_qty,
+            entry_cost=_hunt_entry_cost,
+            queen=None,
+            reason='hunt_and_kill'
+        )
+        if not _can_exit:
+            print(f"\n  SELL BLOCKED BY QUEEN: {_exit_info.get('blocked_reason', 'queen rejected')} — not selling")
             return None
         
         try:
@@ -12962,13 +13244,16 @@ class OrcaKillCycle:
                                 else:
                                     continue
                             
-                            # BUY on the appropriate exchange
-                            buy_order = client.place_market_order(
+                            # BUY — must pass queen_gated_buy (profit gate + multi-brain consensus)
+                            buy_order = self.queen_gated_buy(
+                                client=client,
                                 symbol=symbol_clean,
-                                side='buy',
-                                quote_qty=amount_per_position
+                                exchange=exchange,
+                                quote_qty=amount_per_position,
+                                price=entry_price,
+                                context='pack_hunt'
                             )
-                            if not buy_order:
+                            if not buy_order or buy_order.get('rejected'):
                                 continue
                             
                             buy_qty = float(buy_order.get('filled_qty', 0))
@@ -13297,12 +13582,15 @@ class OrcaKillCycle:
                                                             
                                                             if new_price > 0:
                                                                 buy_qty_new = amount_per_position / new_price
-                                                                new_buy = new_client.place_market_order(
+                                                                new_buy = self.queen_gated_buy(
+                                                                    client=new_client,
                                                                     symbol=new_symbol,
-                                                                    side='buy',
-                                                                    quantity=buy_qty_new
+                                                                    exchange=new_exchange,
+                                                                    quantity=buy_qty_new,
+                                                                    price=new_price,
+                                                                    context='pack_hunt_rebuy'
                                                                 )
-                                                                if new_buy:
+                                                                if new_buy and not new_buy.get('rejected'):
                                                                     fill_price = float(new_buy.get('filled_avg_price', new_price))
                                                                     fill_qty = float(new_buy.get('filled_qty', buy_qty_new))
                                                                     new_fee_rate = self.fee_rates.get(new_exchange, 0.0025)
@@ -13504,11 +13792,21 @@ class OrcaKillCycle:
                                 pos.kill_reason = 'MOMENTUM_PROFIT'
                                 print(f"\n       TAKING PROFIT (momentum reversal)    ")
                         
-                        # EXIT if ready - SELL ONLY IF POSITIVE PROFIT
+                        # EXIT if ready - SELL ONLY IF QUEEN APPROVES (profit mathematically certain)
                         if pos.ready_to_kill:
-                            # Only execute sell if current unrealized P&L is positive
-                            if pos.current_pnl > 0:
-                                print(f"\n       EXECUTING SELL ORDER (PROFITABLE)    ")
+                            # Run through the full Queen gate chain before selling
+                            _qt_can_exit, _qt_exit_info = self.queen_approved_exit(
+                                symbol=pos.symbol,
+                                exchange=pos.exchange,
+                                current_price=current,
+                                entry_price=pos.entry_price,
+                                entry_qty=pos.entry_qty,
+                                entry_cost=entry_cost,
+                                queen=None,
+                                reason=pos.kill_reason
+                            )
+                            if _qt_can_exit and pos.current_pnl > 0:
+                                print(f"\n       EXECUTING SELL ORDER (QUEEN APPROVED)    ")
                                 sell_order = self.execute_sell_with_logging(
                                     client=pos.client,
                                     symbol=pos.symbol,
@@ -13532,8 +13830,12 @@ class OrcaKillCycle:
                                     print(f"     SOLD {pos.symbol}: ${final_pnl:+.4f} ({pos.kill_reason})")
                                     print(f"     READY FOR NEXT TRADE!")
                                 positions.remove(pos)
+                            elif not _qt_can_exit:
+                                # Queen blocked — profit not sufficiently certain; keep monitoring
+                                print(f"      SELL BLOCKED: {_qt_exit_info.get('blocked_reason', 'queen rejected')} — holding")
+                                pos.ready_to_kill = False
                             else:
-                                # Skip selling to avoid realizing a loss
+                                # Not profitable yet — reset and keep monitoring
                                 print(f"\n     NOT SELLING {pos.symbol}: current P&L ${pos.current_pnl:+.4f} <= 0 (waiting for profitable exit)")
                                 pos.ready_to_kill = False
                                 pos.kill_reason = 'NOT_PROFIT_YET'
@@ -13650,7 +13952,7 @@ class OrcaKillCycle:
         else:
             print("   Queen Sentience: UNAVAILABLE")
 
-    def run_autonomous(self, max_positions: int = 0, amount_per_position: float = 10.0,
+    def run_autonomous(self, max_positions: int = 1, amount_per_position: float = 10.0,
                        target_pct: float = 1.0, min_change_pct: float = 0.05,
                        _crash_restart_count: int = 0,
                        _recovered_positions: list = None):
@@ -15084,9 +15386,20 @@ class OrcaKillCycle:
                                         if market_value > 0.0:  # Track all positions
                                             print(f"\n  NEW KRAKEN POSITION DETECTED: {symbol}")
                                             print(f"     {qty:.6f} @ ${current_price:.8f} = ${market_value:.2f}")
-                                            
+
                                             fee_rate = self.fee_rates.get('kraken', 0.0026)
-                                            entry_price = current_price  # Use current as entry estimate
+                                            # Prefer confirmed cost basis from tracker over current price.
+                                            # Using current_price as entry creates a fake 0% P&L baseline
+                                            # which lets queen_approved_exit approve a sell that may be a loss.
+                                            real_entry = None
+                                            if self.cost_basis_tracker:
+                                                real_entry = self.cost_basis_tracker.get_entry_price(symbol, 'kraken')
+                                            if real_entry and real_entry > 0:
+                                                entry_price = real_entry
+                                                print(f"     Cost basis confirmed: ${entry_price:.6f} (from tracker)")
+                                            else:
+                                                entry_price = current_price  # tracking only — queen_approved_exit will block sell
+                                                print(f"     No cost basis found — tracking at current price, auto-sell BLOCKED")
                                             entry_cost = entry_price * qty * (1 + fee_rate)
                                             breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                             target_price = breakeven * (1 + target_pct_current / 100)
@@ -15283,12 +15596,27 @@ class OrcaKillCycle:
                     _alpaca_slot_free = (
                         _hive_mind.alpaca_slot_available() if _hive_mind is not None else True
                     )
-                    if ((not cap_enabled) or (len(positions) < max_positions)) and _alpaca_slot_free:
+                    # Log Kraken stablecoin vs coin composition each cycle
+                    _k_log = self.clients.get('kraken')
+                    if _k_log:
+                        try:
+                            _k_bal = _k_log.get_balance() or {}
+                            _stable_keys = {'ZUSD', 'USD', 'USDT', 'USDC', 'TUSD', 'DAI'}
+                            _k_stable = sum(float(_k_bal.get(k, 0)) for k in _stable_keys)
+                            _k_coins = {a: v for a, v in _k_bal.items() if a not in _stable_keys and float(v) > 0}
+                            print(f"   [KRAKEN] Stablecoins: ${_k_stable:.2f} | Coins held: {list(_k_coins.keys()) or 'none'}")
+                        except Exception:
+                            pass
+
+                    # Margin positions do not count toward the 1-spot limit —
+                    # they pledge existing equity and do not consume stablecoin cash.
+                    _spot_count = sum(1 for p in positions if not getattr(p, 'is_margin', False))
+                    if ((not cap_enabled) or (_spot_count < max_positions)) and _alpaca_slot_free:
                         #    Show quantum-enhanced scanning status
                         quantum_indicator = ""
                         if quantum_cognition and quantum_stats['amplification'] > 1.0:
                             quantum_indicator = f"   {quantum_stats['amplification']:.1f}x"
-                        print(f"\n {quantum_indicator} QUANTUM-ENHANCED SCANNING... ({len(positions)}/{max_positions_label} positions)")
+                        print(f"\n {quantum_indicator} QUANTUM-ENHANCED SCANNING... ({_spot_count} spot/{len(positions)} total / {max_positions_label} spot max)")
 
                         total_cash = sum(cash.values())
 
@@ -16100,6 +16428,7 @@ class OrcaKillCycle:
                                     # Rule 2: Any existing position of the same symbol → skip
                                     # (spot + margin in same direction = redundant capital use)
                                     _blocked_conflict.append(f"{o.symbol}(already held as {'margin' if _ex_margin else 'spot'})")
+                                    continue
 
                                 if _blocked_conflict:
                                     print(f"   [INTENT] Blocked {len(_blocked_conflict)} conflicts: {', '.join(_blocked_conflict[:5])}")
@@ -16320,8 +16649,31 @@ class OrcaKillCycle:
                                                         buy_amount = min(buy_amount * 0.5, exchange_cash * 0.50)
                                                         print(f"   [MARGIN] Low conviction ({_m_conv_now:.0%}), {_m_lev_now}x — reduced collateral: ${buy_amount:.2f}")
                                                 else:
-                                                    # Pure spot trade — standard sizing
-                                                    print(f"   [SPOT] No margin this cycle — standard sizing: ${buy_amount:.2f}")
+                                                    # ─── 80/20 COLLATERAL ADEQUACY RULE ─────────────────────
+                                                    # Margin is the PRIMARY strategy. At least 80 % of total
+                                                    # portfolio value must stay as liquid cash so Kraken always
+                                                    # has enough collateral. Spot trades may only use the
+                                                    # remaining 20 %. Margin buys are exempt from this cap
+                                                    # because they pledge existing equity, not fresh cash.
+                                                    _alloc = self._get_portfolio_allocation(positions)
+                                                    _spot_pct     = _alloc['spot_pct']
+                                                    _spot_budget  = _alloc['remaining_spot_budget']
+                                                    _total_pf     = _alloc['total_portfolio']
+                                                    print(f"   [COLLATERAL] Portfolio ${_total_pf:.2f} | "
+                                                          f"Spot {_spot_pct:.1f}% (max {self.SPOT_MAX_ALLOCATION_PCT:.0f}%) | "
+                                                          f"Spot budget left: ${_spot_budget:.2f}")
+                                                    if not _alloc['can_open_spot']:
+                                                        print(f"   [COLLATERAL] SPOT BUY BLOCKED — "
+                                                              f"{_spot_pct:.1f}% already in spot positions "
+                                                              f"(max {self.SPOT_MAX_ALLOCATION_PCT:.0f}%). "
+                                                              f"Focus is MARGIN ONLY until spot positions close.")
+                                                        buy_amount = 0.0  # triggers _exch_min block below
+                                                    elif buy_amount > _spot_budget:
+                                                        buy_amount = min(buy_amount, _spot_budget)
+                                                        print(f"   [COLLATERAL] Spot buy capped to ${buy_amount:.2f} "
+                                                              f"to stay within {self.SPOT_MAX_ALLOCATION_PCT:.0f}% allocation")
+                                                    else:
+                                                        print(f"   [SPOT] Within allocation — standard sizing: ${buy_amount:.2f}")
 
                                                 print(f"   [DEBUG] Buy Calc: Cash={exchange_cash:.2f}, AmtPerPos={amount_per_position}, BuyAmt={buy_amount:.2f}")
 
@@ -16361,17 +16713,25 @@ class OrcaKillCycle:
                                                     except Exception as kr_fallback_err:
                                                         print(f"      Kraken funding fallback error: {kr_fallback_err}")
                                                 
-                                                if buy_amount >= 1.0:  # Minimum $1 — micro-compound mode (was $50, blocked ALL trades with <$50 cash)
+                                                # Minimum £50 GBP per spot trade (≈ $63 USD at 1.27 GBP/USD).
+                                                # Margin trades are sized separately above; this floor only applies
+                                                # when _will_use_margin is False (pure spot). Keeping a meaningful
+                                                # minimum ensures the trade is worth the round-trip fee.
+                                                _GBP_USD_RATE = 1.27
+                                                _exch_min = round(50.0 * _GBP_USD_RATE, 0)  # = 63.0 USD
+                                                if buy_amount >= _exch_min:
                                                     fee_rate = self.fee_rates.get(best.exchange, 0.0025)
                                                     expected_qty = buy_amount / best.price if best.price > 0 else 0.0
                                                     cop_est, _, _, _ = self._expected_cop_for_buy(
                                                         best.price, expected_qty, fee_rate, target_pct_current
                                                     )
-                                                    COP_MIN_THRESHOLD = 0.85  # Relaxed from 1.0 to allow more trades
+                                                    # COP must be > 1.02 — below 1.0 means we expect to exit at a loss.
+                                                    # 0.85 (previous value) was guaranteeing losses by design.
+                                                    COP_MIN_THRESHOLD = 1.02
                                                     print(f"   [DEBUG] COP Check: Est={cop_est:.6f}, Threshold={COP_MIN_THRESHOLD}")
-                                                    
+
                                                     if cop_est <= COP_MIN_THRESHOLD:
-                                                        print(f"      BUY BLOCKED: COP {cop_est:.6f}   {COP_MIN_THRESHOLD} (energy increase too low)")
+                                                        print(f"      BUY BLOCKED: COP {cop_est:.6f} <= {COP_MIN_THRESHOLD} (trade not profitable enough to enter)")
                                                     else:
                                                         _baton(
                                                             "execute",
@@ -16389,9 +16749,36 @@ class OrcaKillCycle:
                                                             margin_lev = quad_data.get('margin_leverage', 0)
                                                             margin_conv = quad_data.get('margin_conviction', 0.0)
                                                         
+                                                        # KRAKEN STABLECOIN COLLATERAL CHECK (spot buys only)
+                                                        # For a spot trade, we are spending stablecoin cash that
+                                                        # would otherwise back margin positions. Only proceed if
+                                                        # Kraken still has enough free collateral after the buy.
+                                                        _kraken_collateral_ok = True
+                                                        if not _will_use_margin:
+                                                            _kc = self.clients.get('kraken')
+                                                            if _kc:
+                                                                try:
+                                                                    _ktb = _kc.get_trade_balance()
+                                                                    _k_equity = _ktb.get('equity_value', 0.0)
+                                                                    _k_margin_used = _ktb.get('margin_amount', 0.0)
+                                                                    _k_free_collateral = _k_equity - _k_margin_used
+                                                                    # Need at least 2× the spot trade size as free collateral
+                                                                    _min_free = _exch_min * 2
+                                                                    if _k_margin_used > 0 and _k_free_collateral < _min_free:
+                                                                        print(f"   [COLLATERAL] SPOT BUY BLOCKED — "
+                                                                              f"Kraken free collateral ${_k_free_collateral:.2f} "
+                                                                              f"< min ${_min_free:.0f} needed. Preserving margin backing.")
+                                                                        _kraken_collateral_ok = False
+                                                                    else:
+                                                                        print(f"   [COLLATERAL] Kraken free collateral ${_k_free_collateral:.2f} — OK for spot")
+                                                                except Exception as _kce:
+                                                                    print(f"   [COLLATERAL] Kraken balance check failed: {_kce} — allowing trade")
+
                                                         # PRICE FRESHNESS GUARD - block buy if prices are stale
                                                         _price_age = current_time - _batch_prices_timestamp
-                                                        if _price_age > 60:
+                                                        if not _kraken_collateral_ok:
+                                                            raw_order = None
+                                                        elif _price_age > 60:
                                                             print(f"      BUY BLOCKED: batch_prices are {_price_age:.0f}s old (max 60s). Skipping stale signal.")
                                                             raw_order = None
                                                         else:
