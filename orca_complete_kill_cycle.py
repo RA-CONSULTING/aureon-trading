@@ -7659,6 +7659,12 @@ class OrcaKillCycle:
                         momentum = abs(change_pct) * (1 + min(volume / 10000, 1))
                         
                         if abs(change_pct) >= min_change_pct:
+                            # Skip stablecoin/fiat base assets
+                            _base = norm_symbol.split('/')[0] if '/' in norm_symbol else norm_symbol
+                            _STABLE = {'USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'EUR', 'GBP'}
+                            if _base.upper() in _STABLE:
+                                continue
+
                             opportunities.append(MarketOpportunity(
                                 symbol=norm_symbol,
                                 exchange='alpaca',
@@ -7750,9 +7756,16 @@ class OrcaKillCycle:
                     # Calculate momentum score
                     momentum = abs(change_pct) * (1 + min(volume / 100000, 1))
                     
-                    if abs(change_pct) >= min_change_pct:
+                    if abs(change_pct) >= min_change_pct and volume >= min_volume:
                         # Normalize symbol format
                         norm_symbol = symbol if '/' in symbol else symbol.replace('USD', '/USD')
+
+                        # Extract base and skip stablecoin/fiat base assets
+                        _base = norm_symbol.split('/')[0] if '/' in norm_symbol else norm_symbol[:-3]
+                        _STABLE = {'USDT', 'USDC', 'DAI', 'TUSD', 'USDD', 'USDP', 'PAX', 'EUR', 'GBP'}
+                        if _base.upper() in _STABLE:
+                            continue
+
                         opportunities.append(MarketOpportunity(
                             symbol=norm_symbol,
                             exchange='kraken',
@@ -7872,16 +7885,24 @@ class OrcaKillCycle:
                     # Calculate momentum score
                     momentum = abs(change_pct) * (1 + min(volume / 1000000, 1))  # Binance has higher volume
                     
-                    if abs(change_pct) >= min_change_pct:
+                    if abs(change_pct) >= min_change_pct and volume >= min_volume:
                         # Normalize symbol format - detect quote currency
                         norm_symbol = symbol
+                        base = symbol  # fallback before quote stripping
                         for quote in ['USDT', 'USDC', 'BUSD', 'USD', 'BTC', 'ETH', 'BNB', 'EUR', 'GBP']:
                             if symbol.endswith(quote):
                                 base = symbol[:-len(quote)]
                                 norm_symbol = f"{base}/{quote}"
                                 quote_currencies.add(quote)
                                 break
-                        
+
+                        # Skip stablecoin/fiat base assets — they have zero momentum potential
+                        _STABLE = {'USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'FDUSD', 'USDD', 'USDP', 'PAX',
+                                   'EUR', 'GBP', 'LDUSDT', 'LDUSDC', 'LDBUSD', 'LDETH', 'LDBNB'}
+                        if base.upper() in _STABLE:
+                            skipped_low_change += 1
+                            continue
+
                         opportunities.append(MarketOpportunity(
                             symbol=norm_symbol,
                             exchange='binance',
@@ -16197,6 +16218,7 @@ class OrcaKillCycle:
                                     # Rule 2: Any existing position of the same symbol → skip
                                     # (spot + margin in same direction = redundant capital use)
                                     _blocked_conflict.append(f"{o.symbol}(already held as {'margin' if _ex_margin else 'spot'})")
+                                    continue
 
                                 if _blocked_conflict:
                                     print(f"   [INTENT] Blocked {len(_blocked_conflict)} conflicts: {', '.join(_blocked_conflict[:5])}")
