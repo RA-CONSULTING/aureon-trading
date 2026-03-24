@@ -175,7 +175,9 @@ class FireTrader:
     #    9% → DCA reinvestment back into the same symbol (body grows)
     #    2% → reinvestment pool for new position seeds
     _MIN_POSITION_USD   = 50.0       # $50 minimum position size — matches Kraken exchange minimum
-    _MIN_NOTIONAL_USD   = 5.50       # $5.50 minimum sell notional (exchange safe)
+    _MIN_NOTIONAL_USD   = 5.50       # $5.50 minimum POSITION notional (exchange safe)
+    _MIN_SCALP_NOTIONAL_KRAKEN  = 10.0   # $10 minimum scalp order notional (Kraken lot minimums)
+    _MIN_SCALP_NOTIONAL_BINANCE = 10.0   # $10 minimum scalp order notional (Binance LOT_SIZE / MIN_NOTIONAL)
     _MODEL_DCA_BACK_PCT = 0.09       # 9% of scalp → DCA back into symbol
     _MODEL_REINVEST_PCT = 0.02       # 2% of scalp → reinvestment pool
     # Prime-number cent scalp targets (cents)
@@ -764,8 +766,13 @@ class FireTrader:
                     except Exception:
                         pass
 
+                # ── HARD BLOCK: never sell if we don't know what we paid ──
+                if cost_basis is None or cost_basis <= 0:
+                    log_fire(f"   [HOLD] Binance {asset}: no confirmed cost basis — will NOT sell (protecting capital)")
+                    continue
+
                 # ── True net USD after FULL round-trip: buy fee + sell fee + slippage ──
-                entry_ref = cost_basis if cost_basis and cost_basis > 0 else price
+                entry_ref = cost_basis
                 # Round-trip cost: buy taker (paid at entry) + sell taker + slippage buffer
                 _total_cost_rate = self._BINANCE_TAKER + self._BINANCE_TAKER + self._SLIPPAGE_BUFFER
                 net_usd = qty * (price * (1.0 - self._BINANCE_TAKER - self._SLIPPAGE_BUFFER)
@@ -811,6 +818,16 @@ class FireTrader:
                 continue
             log_fire(f"   🔢 {scalp_msg}")
             log_fire(f"   🏛 BODY STAYS: {body_qty:.6f} {best_sell['asset']} (${body_qty*best_sell['price']:.2f} principal protected)")
+
+            # Gate: scalp notional must clear Binance's MIN_NOTIONAL filter
+            scalp_notional_b = sell_qty * best_sell['price']
+            if scalp_notional_b < self._MIN_SCALP_NOTIONAL_BINANCE:
+                log_fire(
+                    f"   [HOLD] {best_sell['asset']}: scalp notional ${scalp_notional_b:.2f} < "
+                    f"${self._MIN_SCALP_NOTIONAL_BINANCE} Binance minimum — accumulating more profit"
+                )
+                continue
+
             try:
                 order = self.binance.place_market_order(best_sell['symbol'], 'sell', sell_qty)
                 log_result(f"SELL ORDER RESULT: {json.dumps(order, indent=2) if order else 'None'}")
@@ -923,10 +940,19 @@ class FireTrader:
                     )
                     if sell_qty <= 0:
                         log_fire(f"   ⏸ BODY PROTECTED ({asset}): {scalp_msg_k}")
-                        break
+                        continue  # FIX: was 'break' — must check remaining assets, not stop
                     log_fire(f"   🔢 {scalp_msg_k}")
                     log_fire(f"   🏛 BODY STAYS: {body_qty_k:.6f} {asset} (${body_qty_k*price:.2f} principal protected)")
-                    
+
+                    # Gate: scalp notional must clear Kraken's lot-size minimum
+                    scalp_notional_k = sell_qty * price
+                    if scalp_notional_k < self._MIN_SCALP_NOTIONAL_KRAKEN:
+                        log_fire(
+                            f"   [HOLD] {asset}: scalp notional ${scalp_notional_k:.2f} < "
+                            f"${self._MIN_SCALP_NOTIONAL_KRAKEN} Kraken minimum — accumulating more profit"
+                        )
+                        continue
+
                     log_fire(f"\n⚡ EXECUTING SELL: {sell_qty} {asset}...")
                     
                     # Use self.kraken to place order
