@@ -486,6 +486,11 @@ def _log_unified_intelligence(intel: dict, conf_mult: float) -> None:
         print(f"   🪄  Runes Active: {runes} war runes{dom_str}")
     print(f"   {_conf_emoji} Confidence  : {conf_mult:.0%}")
 
+    # Return compact summary string so callers can update their live dashboard
+    _log_unified_intelligence._last_summary = (
+        f"{grade_label} | {war_label} | {lyra_label} | {_conf_emoji} {conf_mult:.0%}"
+    )
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # INITIALIZATION - SETUP AND WARMUP
 # ═══════════════════════════════════════════════════════════════════════════════

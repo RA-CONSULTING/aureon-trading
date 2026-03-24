@@ -10238,6 +10238,16 @@ class OrcaKillCycle:
     #  👑 QUEEN LEARNING FEEDBACK - FEED EVERY TRADE OUTCOME TO HER NEURAL BRAIN
     # ════════════════════════════════════════════════════════════════════════════
 
+    def _push_stream_event(self, icon: str, message: str) -> None:
+        """Append a notable event to the Twitch live event ticker (max 10 entries)."""
+        if not hasattr(self, '_stream_events'):
+            self._stream_events = []
+        import time as _t
+        ts = _t.strftime('%H:%M:%S')
+        self._stream_events.append((ts, icon, message))
+        if len(self._stream_events) > 10:
+            self._stream_events = self._stream_events[-10:]
+
     def _queen_learn_from_sell(self, queen, symbol: str, exchange: str, pnl: float,
                                entry_price: float = 0, exit_price: float = 0,
                                reason: str = '') -> None:
@@ -10291,6 +10301,7 @@ class OrcaKillCycle:
                 print(f"  🏆 PROFIT SECURED!  {symbol}  +${pnl:.4f}")
                 print(f"     Queen Portfolio: {equity_str}{quantum_tag}")
                 print(f"{'💰'*30}\n")
+                self._push_stream_event("💰", f"PROFIT  {symbol}  +${pnl:.4f}  (portfolio {equity_str})")
             else:
                 print(f"     👑 QUEEN LEARNED: {symbol} {status} (${pnl:+.4f}) | Loss: {loss_val}{quantum_tag}")
                 if hasattr(queen, 'equity'):
@@ -14327,7 +14338,13 @@ class OrcaKillCycle:
             'quantum_hz': SCHUMANN_BASE_HZ,
             'quantum_cycles': 0,
         }
-        
+
+        # ── TWITCH LIVE STREAM STATE ───────────────────────────────────────────
+        # Ring buffer of the last 10 notable events shown in the dashboard
+        self._stream_events = []        # list of (timestamp, icon, message)
+        self._stream_last_action = "🚀 Starting up..."
+        self._stream_ai_status  = ""   # filled from unified intelligence calls
+
         # Current positions - will be loaded from portfolio
         positions: List[LivePosition] = []
         
@@ -15693,6 +15710,7 @@ class OrcaKillCycle:
                                             except Exception: pass
                                         _pnl_show2 = exit_info.get('net_pnl', net_pnl)
                                         print(f"   ✅ SOLD {pos.symbol} on {pos.exchange.upper()} | Profit: +${_pnl_show2:.4f} | Cash freed for new buys! 💰")
+                                        self._push_stream_event("✅", f"SOLD  {pos.symbol}  +${_pnl_show2:.4f}  ({pos.exchange.upper()})")
                                         # 👑 QUEEN LEARNS FROM THIS TRADE
                                         self._queen_learn_from_sell(
                                             queen=queen, symbol=pos.symbol, exchange=pos.exchange,
@@ -16248,9 +16266,20 @@ class OrcaKillCycle:
                                 topic="orca.scan.plan",
                                 meta={"min_change_pct": min_change_pct, "positions": len(positions), "quantum_amp": quantum_stats['amplification']},
                             )
+                            self._stream_last_action = f"🔍 Scanning all exchanges for opportunities (cycle #{session_stats['cycles']})..."
                             scan_start = _time.time()
                             opportunities = self.scan_entire_market(min_change_pct=min_change_pct)
                             scan_time = _time.time() - scan_start
+                            _n_opps = len(opportunities) if opportunities else 0
+                            self._stream_last_action = f"✅ Scan complete — {_n_opps} opportunities found in {scan_time:.1f}s"
+                            # Pick up AI summary from last nexus call for the live dashboard
+                            try:
+                                from aureon_probability_nexus import _log_unified_intelligence as _lui
+                                _ai_sum = getattr(_lui, '_last_summary', None)
+                                if _ai_sum:
+                                    self._stream_ai_status = _ai_sum
+                            except Exception:
+                                pass
                             
                             #                                                    
                             #   RISING STARS SCAN - All intelligence systems combined!
@@ -16987,9 +17016,10 @@ class OrcaKillCycle:
                                                                         margin_amount=_margin_collateral,
                                                                         margin_side=_margin_side,
                                                                     )
-                                                                    print(f"     MARGIN BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f} ({_order_leverage}x {_margin_side})")
+                                                                    print(f"   📈 MARGIN BUY: {symbol_clean} on {best.exchange.upper()} | {buy_qty:.6f} @ ${buy_price:,.4f} ({_order_leverage}x {_margin_side})")
                                                                     print(f"        Target: ${target_price_margin:,.4f} (only {target_pct_current/_order_leverage:.2f}% price move needed!)")
                                                                     print(f"        Margin: ${_margin_collateral:.2f} | NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                    self._push_stream_event("📈", f"MARGIN BUY  {symbol_clean}  @ ${buy_price:,.4f}  ({_order_leverage}x {_margin_side})")
                                                                 else:
                                                                     # SPOT POSITION — classic path
                                                                     pos = LivePosition(
@@ -17006,9 +17036,9 @@ class OrcaKillCycle:
                                                                         leverage=1,
                                                                         margin_amount=0.0,
                                                                     )
-                                                                    print(f"     SPOT BOUGHT: {buy_qty:.6f} @ ${buy_price:,.4f}")
-                                                                    print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)")
-                                                                    print(f"        NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                    print(f"   🛒 SPOT BUY: {symbol_clean} on {best.exchange.upper()} | {buy_qty:.6f} @ ${buy_price:,.4f}")
+                                                                    print(f"        Target: ${target_price:,.4f} ({target_pct_current:.2f}%)  | NO STOP LOSS - HOLD UNTIL PROFIT!")
+                                                                    self._push_stream_event("🛒", f"SPOT BUY  {symbol_clean}  @ ${buy_price:,.4f}  target +{target_pct_current:.2f}%")
 
                                                                 positions.append(pos)
                                                                 # Hive Mind: register new Alpaca slot opening
@@ -17073,21 +17103,61 @@ class OrcaKillCycle:
                     runtime_str = f"{int(runtime//3600)}h {int((runtime%3600)//60)}m {int(runtime%60)}s"
                     
                     print("\033[2J\033[H", end="")  # Clear screen
-                    _t = session_stats['total_trades']
-                    _w = session_stats['winning_trades']
-                    _l = session_stats['losing_trades']
+                    _t  = session_stats['total_trades']
+                    _w  = session_stats['winning_trades']
+                    _l  = session_stats['losing_trades']
                     _pnl = session_stats['total_pnl']
                     _win_rate = (_w / _t * 100) if _t > 0 else 0.0
+                    _pnl_sign  = "+" if _pnl >= 0 else ""
                     _pnl_emoji = "📈" if _pnl >= 0 else "📉"
                     _wr_emoji  = "🔥" if _win_rate >= 70 else "✅" if _win_rate >= 50 else "⚠️"
-                    print("╔" + "═"*78 + "╗")
-                    print("║" + "  👑 DR AURIS AUTONOMOUS TRADING — LIVE ON TWITCH  ".center(78) + "║")
-                    print("╠" + "═"*78 + "╣")
-                    print(f"║  ⏱️  Runtime : {runtime_str:<20} Scan cycles: {session_stats['cycles']:<20}    ║")
-                    print(f"║  {_pnl_emoji}  Session P&L: ${_pnl:>+10.4f}{'':31}    ║")
-                    print(f"║  {_wr_emoji}  Win Rate  : {_win_rate:>5.1f}%  ({_w}W / {_l}L / {_t} total){'':21}    ║")
-                    print(f"║  🏆 Best trade: ${session_stats['best_trade']:>+8.4f}   Positions open: {len(positions):<3}{'':19}    ║")
-                    print("╚" + "═"*78 + "╝")
+                    _W = 80  # dashboard width
+
+                    # ── Header ───────────────────────────────────────────────
+                    print("╔" + "═"*(_W-2) + "╗")
+                    print("║" + "  👑 DR AURIS — AI TRADING BOT  •  LIVE ON TWITCH  ".center(_W-2) + "║")
+                    print("╠" + "═"*(_W-2) + "╣")
+
+                    # ── Stats row ─────────────────────────────────────────────
+                    _stats_left  = f"  ⏱️  {runtime_str}  |  🔄 Cycle #{session_stats['cycles']}"
+                    _stats_right = f"{_pnl_emoji} Session P&L: {_pnl_sign}${_pnl:.4f}  "
+                    _gap = _W - 2 - len(_stats_left) - len(_stats_right)
+                    print(f"║{_stats_left}{' '*max(0,_gap)}{_stats_right}║")
+
+                    _wr_left  = f"  {_wr_emoji} Win Rate: {_win_rate:.1f}%  ({_w} wins / {_l} losses / {_t} trades)"
+                    _wr_right = f"🏆 Best: +${session_stats['best_trade']:.4f}  "
+                    _gap2 = _W - 2 - len(_wr_left) - len(_wr_right)
+                    print(f"║{_wr_left}{' '*max(0,_gap2)}{_wr_right}║")
+
+                    # ── AI status (compact) ───────────────────────────────────
+                    _ai = getattr(self, '_stream_ai_status', '')
+                    if _ai:
+                        _ai_line = f"  🌌 AI: {_ai}"
+                        print(f"║{_ai_line:<{_W-2}}║")
+
+                    # ── Open positions header ─────────────────────────────────
+                    print("╠" + "═"*(_W-2) + "╣")
+                    _pos_count = len(positions)
+                    _total_unreal_str = ""
+                    print(f"║  📊 OPEN POSITIONS ({_pos_count}){'─'*(_W-22)}║")
+
+                    # (positions are printed below this block by the existing loop)
+
+                    # ── Recent events ─────────────────────────────────────────
+                    _events = getattr(self, '_stream_events', [])
+                    if _events:
+                        print("╠" + "═"*(_W-2) + "╣")
+                        print(f"║  📡 RECENT ACTIVITY{' '*(_W-21)}║")
+                        for _ev_ts, _ev_icon, _ev_msg in reversed(_events[-6:]):
+                            _ev_line = f"     {_ev_icon}  [{_ev_ts}]  {_ev_msg}"
+                            print(f"║{_ev_line:<{_W-2}}║")
+
+                    # ── Last status ───────────────────────────────────────────
+                    print("╠" + "═"*(_W-2) + "╣")
+                    _last_act = getattr(self, '_stream_last_action', '...')
+                    print(f"║  💬 {_last_act:<{_W-6}}║")
+                    print("╚" + "═"*(_W-2) + "╝")
+                    print()
                     
                     #   Harmonic Liquid Aluminium Field visualization
                     self._print_harmonic_field_summary()
@@ -17392,10 +17462,15 @@ class OrcaKillCycle:
                             # Display with CORRECT values
                             pnl_color = '\033[92m' if net_pnl >= 0 else '\033[91m'
                             reset = '\033[0m'
-                            margin_indicator = f" [MARGIN {pos.leverage}x]" if pos.is_margin else ""
-                            print(f"\n  {pos.symbol} ({pos.exchange.upper()}){margin_indicator} | Value: ${market_value:.2f}{margin_info}")
-                            print(f"     Entry: ${pos.entry_price:,.6f} | Current: ${current:,.6f} | Target: ${pos.target_price:,.6f}")
-                            print(f"   [{bar}] {raw_progress:+.1f}% to target | {pnl_color}${net_pnl:+.4f} ({price_change_pct:+.2f}% price){reset}")
+                            margin_indicator = f" [{pos.leverage}x MARGIN]" if pos.is_margin else " [SPOT]"
+                            _pnl_arrow = "▲" if net_pnl >= 0 else "▼"
+                            _progress_bar_filled = "█" * int(display_progress / 5) + "░" * (20 - int(display_progress / 5))
+                            print(f"\n  ┌─ {pos.symbol}{margin_indicator}  on {pos.exchange.upper()}  │  Value: ${market_value:.2f}{margin_info}")
+                            print(f"  │  Buy: ${pos.entry_price:,.6f}  →  Now: ${current:,.6f}  →  Target: ${pos.target_price:,.6f}")
+                            print(f"  │  [{_progress_bar_filled}] {raw_progress:+.1f}%  {pnl_color}{_pnl_arrow} ${net_pnl:+.4f}  ({price_change_pct:+.2f}% price change){reset}")
+                            # Update stream status to show what we're watching
+                            _holding_str = f"Holding {pos.symbol} ({pos.exchange.upper()}) — P&L {'+' if net_pnl>=0 else ''}${net_pnl:.4f} ({raw_progress:+.1f}% to target)"
+                            self._stream_last_action = f"👁️  Monitoring {len(real_positions)} positions | {_holding_str}"
                             if eta_str:
                                 print(f"   {eta_str}")
                             if counter_str:
@@ -17630,7 +17705,9 @@ class OrcaKillCycle:
                 
                 else:
                     # No positions - show scanning status
-                    print(f"\r  No positions - scanning in {max(0, scan_interval - (current_time - last_scan_time)):.0f}s...", end="", flush=True)
+                    _next_scan = max(0, scan_interval - (current_time - last_scan_time))
+                    self._stream_last_action = f"🔍 No open positions — next market scan in {_next_scan:.0f}s  |  P&L this session: {'+'if session_stats['total_pnl']>=0 else ''}${session_stats['total_pnl']:.4f}"
+                    print(f"\r  No positions — next scan in {_next_scan:.0f}s...", end="", flush=True)
                 
                 # Feed context to Seer + Lyra each cycle
                 _seer_ctx = {}
