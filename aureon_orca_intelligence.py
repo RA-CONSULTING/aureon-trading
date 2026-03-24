@@ -406,6 +406,16 @@ class OrcaKillerWhaleIntelligence:
     QUEEN_CONSULT_CONFIDENCE = 0.7      # Consult if confidence < 70%
     QUEEN_VETO_OVERRIDE = False         # Queen veto CANNOT be overridden
     
+    # Risk/quality gates
+    MIN_OPPORTUNITY_CONFIDENCE = 0.30
+    MIN_TARGET_PNL_USD = 0.10
+    MAX_POSITION_SIZE_PCT = 0.03
+    MAX_TOTAL_EXPOSURE_PCT = 0.06
+    MAX_SYMBOL_EXPOSURE_PCT = 0.03
+    STALE_PRICE_SECONDS = 15
+    BANNED_SYMBOL_TOKENS = ("PUMP", "MOON", "INU", "PEPE")
+    DEFAULT_ALLOWED_QUOTES = ("USD", "USDT", "USDC")
+    
     def __init__(self):
         self.enabled = True
         self.mode = "STALKING"  # STALKING, HUNTING, FEEDING, RESTING
@@ -463,6 +473,8 @@ class OrcaKillerWhaleIntelligence:
         # Symbol tracking
         self.hot_symbols: Dict[str, float] = {}  # symbol -> heat score
         self.symbol_momentum: Dict[str, float] = {}  # symbol -> momentum
+        self.latest_prices: Dict[str, float] = {}
+        self.price_timestamps: Dict[str, float] = {}
         
         # Risk management
         self.max_concurrent_hunts = 3
@@ -969,6 +981,10 @@ class OrcaKillerWhaleIntelligence:
             if not base or price <= 0:
                 continue
             
+            norm_symbol = f"{base}/USD"
+            self.latest_prices[norm_symbol] = float(price)
+            self.price_timestamps[norm_symbol] = now
+            
             # Calculate heat score based on:
             # - Volume (whale activity)
             # - 24h change (momentum)
@@ -1202,9 +1218,11 @@ class OrcaKillerWhaleIntelligence:
             else:
                 result = {'status': 'no_method', 'error': 'Micro Profit lacks execution method'}
             
-            success = result.get('status') in ['filled', 'success', 'delegated']
+            success = self._confirm_execution(result)
             if success:
                 self.execution_orders_completed += 1
+            else:
+                logger.warning(f"🦈💰 Execution not confirmed for {opportunity.symbol}: {result}")
             
             logger.info(f"🦈💰 Execution order {'COMPLETED' if success else 'FAILED'}: {opportunity.symbol}")
             return (success, result.get('reason', 'Executed'), result)
@@ -1212,6 +1230,72 @@ class OrcaKillerWhaleIntelligence:
         except Exception as e:
             logger.warning(f"🦈 Execution request error: {e}")
             return (False, f"Execution error: {e}", {})
+
+    def _is_symbol_tradeable(self, symbol: str) -> bool:
+        """Block illiquid/speculative symbols and non-standard quote pairs."""
+        normalized = (symbol or "").upper()
+        if "/" not in normalized:
+            return False
+        base, quote = normalized.split("/", 1)
+        if quote not in self.DEFAULT_ALLOWED_QUOTES:
+            return False
+        if any(token in base for token in self.BANNED_SYMBOL_TOKENS):
+            return False
+        if len(base) > 8:
+            return False
+        return True
+
+    def _passes_profit_gate(self, opp: OrcaOpportunity) -> bool:
+        """Ensure expected gross target can cover basic costs."""
+        if opp.target_pnl_usd < self.MIN_TARGET_PNL_USD:
+            return False
+        estimated_costs = max(0.02, opp.position_size_pct * 0.5)
+        return opp.target_pnl_usd > estimated_costs
+
+    def _within_position_limits(self, opp: OrcaOpportunity) -> bool:
+        """Enforce per-trade, per-symbol, and total exposure caps."""
+        if opp.position_size_pct <= 0 or opp.position_size_pct > self.MAX_POSITION_SIZE_PCT:
+            return False
+        current_total = sum(max(0.0, h.position_size_pct) for h in self.active_hunts)
+        if current_total + opp.position_size_pct > self.MAX_TOTAL_EXPOSURE_PCT:
+            return False
+        symbol_total = sum(
+            max(0.0, h.position_size_pct) for h in self.active_hunts
+            if h.symbol.upper() == opp.symbol.upper()
+        )
+        if symbol_total + opp.position_size_pct > self.MAX_SYMBOL_EXPOSURE_PCT:
+            return False
+        return True
+
+    def _has_fresh_price(self, symbol: str) -> bool:
+        ts = self.price_timestamps.get(symbol) or self.price_timestamps.get(symbol.upper())
+        if not ts:
+            # Fallback for environments without live feed metadata.
+            return (self._get_current_price(symbol) or 0) > 0
+        return (time.time() - ts) <= self.STALE_PRICE_SECONDS
+
+    def _validate_opportunity(self, opp: OrcaOpportunity) -> bool:
+        """Central validation gate before publishing or executing opportunities."""
+        if opp.confidence < self.MIN_OPPORTUNITY_CONFIDENCE:
+            return False
+        if not self._is_symbol_tradeable(opp.symbol):
+            return False
+        if not self._passes_profit_gate(opp):
+            return False
+        if not self._within_position_limits(opp):
+            return False
+        if not self._has_fresh_price(opp.symbol):
+            return False
+        return True
+
+    def _confirm_execution(self, result: Dict) -> bool:
+        """Require explicit acknowledgement to avoid silent execution failures."""
+        status = str(result.get('status', '')).lower()
+        if status in {'filled', 'success'}:
+            return True
+        if status == 'delegated':
+            return bool(result.get('order_id') or result.get('execution_id') or result.get('accepted'))
+        return False
     
     def get_hierarchy_status(self) -> Dict:
         """Get the current hierarchy chain status."""
@@ -1723,15 +1807,14 @@ class OrcaKillerWhaleIntelligence:
         
         # Check risk limits
         if self.daily_pnl_usd <= self.daily_loss_limit_usd:
-            logger.info("DEBUG: Daily loss limit checks out")
-            # logger.warning(f"🛑 Daily loss limit reached: ${self.daily_pnl_usd:.2f}")
-            # self.mode = "RESTING"
-            # return []
+            logger.warning(f"🛑 Daily loss limit reached: ${self.daily_pnl_usd:.2f}")
+            self.mode = "RESTING"
+            return []
         
         # Check concurrent hunt limit
-        # if len(self.active_hunts) >= self.max_concurrent_hunts:
-        #     logger.info(f"DEBUG: Max concurrent hunts reached ({len(self.active_hunts)})")
-        #     return []
+        if len(self.active_hunts) >= self.max_concurrent_hunts:
+            logger.info(f"DEBUG: Max concurrent hunts reached ({len(self.active_hunts)})")
+            return []
         
         # === SIGNAL 0: Moby Dick Whale Predictions ===
         moby_predictions = self.scan_moby_dick_predictions()
@@ -1761,7 +1844,7 @@ class OrcaKillerWhaleIntelligence:
             # Build opportunity if whale confidence is high enough
             if whale.ride_confidence >= 0.1 and timing_ok:
                 opp = self._build_opportunity_from_whale(whale, timing_mult)
-                if opp:
+                if opp and self._validate_opportunity(opp):
                     opportunities.append(opp)
                     logger.info(f"DEBUG: Added opp for {whale.symbol}")
                 else:
@@ -1781,7 +1864,7 @@ class OrcaKillerWhaleIntelligence:
             momentum = self.symbol_momentum.get(symbol, 0.0)
             if abs(momentum) > 0.3:  # Strong momentum either way
                 opp = self._build_opportunity_from_momentum(symbol, heat, momentum)
-                if opp:
+                if opp and self._validate_opportunity(opp):
                     opportunities.append(opp)
         
         # === SIGNAL 3: Market Thesis Alignment ===
@@ -1833,6 +1916,8 @@ class OrcaKillerWhaleIntelligence:
         # 👑 QUEEN CONSULTATION - Filter through chain of command
         approved_opportunities = []
         for opp in opportunities[:5]:  # Consider top 5 candidates
+            if not self._validate_opportunity(opp):
+                continue
             if self.should_consult_queen(opp):
                 approved, reason, queen_conf = self.consult_queen(opp)
                 if approved:
@@ -1886,7 +1971,7 @@ class OrcaKillerWhaleIntelligence:
             firm_attribution=whale.firm,
             confidence=whale.ride_confidence,
             harmonic_timing=self.harmonic_data,
-            position_size_pct=min(0.05, confidence_adjusted),  # Cap at 5%
+            position_size_pct=min(self.MAX_POSITION_SIZE_PCT, confidence_adjusted),
             target_pnl_usd=target_pnl_usd,
             max_hold_seconds=300 if whale.volume_usd < 500_000 else 600,
             reasoning=reasoning
@@ -1910,7 +1995,7 @@ class OrcaKillerWhaleIntelligence:
             symbol=symbol,
             action=action,
             confidence=confidence,
-            position_size_pct=0.01 * (heat / 2),  # Scale with heat
+            position_size_pct=min(self.MAX_POSITION_SIZE_PCT, 0.01 * (heat / 2)),
             target_pnl_usd=0.15,  # $0.15 target
             max_hold_seconds=180,  # 3 minutes
             reasoning=reasoning
@@ -1959,6 +2044,10 @@ class OrcaKillerWhaleIntelligence:
         
         Returns: True if hunt started successfully, False if blocked.
         """
+        if not self._validate_opportunity(opportunity):
+            logger.info(f"🦈🛑 Hunt blocked by risk/quality gates: {opportunity.symbol}")
+            return False
+        
         # 👑 Final Queen check (emergency veto)
         if self.queen_connected and self.queen:
             try:
@@ -1969,11 +2058,6 @@ class OrcaKillerWhaleIntelligence:
                         return False
             except Exception:
                 pass
-        
-        # Add to active hunts
-        self.active_hunts.append(opportunity)
-        self.last_hunt_time = time.time()
-        self.mode = "HUNTING"
         
         logger.info(f"🦈🔪 HUNT STARTED: {opportunity.id}")
         logger.info(f"   Symbol: {opportunity.symbol} | Action: {opportunity.action.upper()}")
@@ -2007,10 +2091,18 @@ class OrcaKillerWhaleIntelligence:
         if self.micro_profit_connected:
             success, reason, result = self.request_execution(opportunity)
             if success:
+                self.active_hunts.append(opportunity)
                 opportunity.entry_timestamp = time.time()
+                opportunity.entry_price = opportunity.entry_price or self._get_current_price(opportunity.symbol) or 0.0
+                self.last_hunt_time = time.time()
+                self.mode = "HUNTING"
                 logger.info(f"🦈💰 Execution delegated to Micro Profit: {reason}")
             else:
                 logger.warning(f"🦈💰 Execution request failed: {reason}")
+                return False
+        else:
+            logger.warning("🦈💰 Micro Profit not connected - hunt not started")
+            return False
         
         # Save state
         self._save_state()
@@ -2124,6 +2216,10 @@ class OrcaKillerWhaleIntelligence:
             'DOT/USD': 12.5,
         }
         
+        if symbol in self.latest_prices:
+            return self.latest_prices[symbol]
+        if symbol.upper() in self.latest_prices:
+            return self.latest_prices[symbol.upper()]
         return base_prices.get(symbol, 100.0)  # Default $100
     
     def get_exit_signals(self) -> List[Dict]:
