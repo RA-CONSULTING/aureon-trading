@@ -9006,24 +9006,36 @@ class OrcaKillCycle:
                 'status': 'dry_run'
             }
         
-        if exchange == 'binance' or exchange == 'kraken':
-            # Both Binance and Kraken now use similar format:
-            # executedQty, cummulativeQuoteQty, orderId, fills[]
+        if exchange == 'kraken':
+            # Kraken market order fields: vol_exec (qty filled), cost (total quote spent)
+            # 'price' in Kraken = the submitted limit price (0 for market orders)
+            exec_qty = float(order.get('vol_exec', order.get('filled_qty', order.get('executedQty', 0))))
+            total_cost = float(order.get('cost', 0))
+            avg_price = (total_cost / exec_qty) if exec_qty > 0 and total_cost > 0 else 0.0
+            if avg_price == 0:
+                avg_price = float(order.get('filled_avg_price', order.get('avgPrice', 0)))
+            # Kraken txid can be a list or string
+            txid = order.get('txid', order.get('orderId', order.get('id', None)))
+            if isinstance(txid, list):
+                txid = txid[0] if txid else None
+            return {
+                'filled_qty': exec_qty,
+                'filled_avg_price': avg_price,
+                'order_id': txid,
+                'status': 'FILLED' if exec_qty > 0 else order.get('status', 'UNKNOWN'),
+                'fee': float(order.get('fee', 0)),
+                'cumm_quote': total_cost,
+            }
+
+        if exchange == 'binance':
+            # Binance fields: executedQty, cummulativeQuoteQty, orderId, fills[]
             exec_qty = float(order.get('executedQty', 0))
             cumm_quote = float(order.get('cummulativeQuoteQty', 0))
-            
-            # Calculate average price from fills or cumulative
+
             avg_price = 0.0
-            
-            # First try the direct price field (Kraken provides this)
-            if order.get('price'):
-                avg_price = float(order.get('price', 0))
-            
-            # If no direct price, calculate from cumulative
-            if avg_price == 0 and exec_qty > 0 and cumm_quote > 0:
+            if exec_qty > 0 and cumm_quote > 0:
                 avg_price = cumm_quote / exec_qty
-            
-            # If still no price, try fills array (Binance provides this)
+            # Fallback: fills array
             if avg_price == 0 and order.get('fills'):
                 total_qty = 0.0
                 total_cost = 0.0
@@ -9035,14 +9047,14 @@ class OrcaKillCycle:
                 if total_qty > 0:
                     avg_price = total_cost / total_qty
                     exec_qty = total_qty
-            
+
             return {
                 'filled_qty': exec_qty,
                 'filled_avg_price': avg_price,
                 'order_id': order.get('orderId'),
                 'status': order.get('status', 'FILLED' if exec_qty > 0 else 'UNKNOWN'),
                 'fee': float(order.get('fee', 0)),
-                'cumm_quote': cumm_quote
+                'cumm_quote': cumm_quote,
             }
         
         else:  # alpaca and default
@@ -11193,22 +11205,23 @@ class OrcaKillCycle:
                 symbol, current_price, exchange=exchange, quantity=entry_qty
             )
             if cb_info.get('entry_price') is None:
-                #   ALWAYS FALLBACK to estimated entry price — NEVER block sells
-                # on cost basis alone. The math checks (COP, black box, profit gate)
-                # downstream are sufficient to prevent selling at a loss.
-                if entry_price > 0:
-                    print(f"      Cost Basis Missing for {symbol}. Using ESTIMATED entry: {entry_price}")
-                    confirmed_entry = entry_price
-                    cb_info['entry_price'] = entry_price
-                elif entry_cost > 0 and entry_qty > 0:
+                # Try to derive entry from caller-supplied entry_cost/entry_qty (reliable if
+                # they came from the actual order fill, not from an estimated LivePosition).
+                if entry_cost > 0 and entry_qty > 0:
                     confirmed_entry = entry_cost / entry_qty
                     print(f"      Cost Basis Missing for {symbol}. Derived entry from cost/qty: {confirmed_entry:.6f}")
                     cb_info['entry_price'] = confirmed_entry
+                elif entry_price > 0 and entry_price != current_price:
+                    # Accept caller-supplied entry only when it differs from current price
+                    # (using current_price as entry produces a false 0% P&L baseline)
+                    print(f"      Cost Basis Missing for {symbol}. Using caller-supplied entry: {entry_price:.6f}")
+                    confirmed_entry = entry_price
+                    cb_info['entry_price'] = entry_price
                 else:
-                    # Last resort: use current price as entry estimate (worst case: 0% P&L)
-                    confirmed_entry = current_price
-                    cb_info['entry_price'] = confirmed_entry
-                    print(f"      Cost Basis Missing for {symbol}. Using CURRENT PRICE as fallback: {confirmed_entry:.6f}")
+                    # Cannot determine real entry price — BLOCK the sell to protect capital
+                    info['blocked_reason'] = 'NO_CONFIRMED_COST_BASIS'
+                    print(f"      EXIT BLOCKED: {symbol} — no confirmed cost basis, refusing to sell (capital protection)")
+                    return False, info
             else:
                 # Use confirmed entry price for accurate P&L
                 confirmed_entry = cb_info.get('entry_price', entry_price)
@@ -15084,9 +15097,20 @@ class OrcaKillCycle:
                                         if market_value > 0.0:  # Track all positions
                                             print(f"\n  NEW KRAKEN POSITION DETECTED: {symbol}")
                                             print(f"     {qty:.6f} @ ${current_price:.8f} = ${market_value:.2f}")
-                                            
+
                                             fee_rate = self.fee_rates.get('kraken', 0.0026)
-                                            entry_price = current_price  # Use current as entry estimate
+                                            # Prefer confirmed cost basis from tracker over current price.
+                                            # Using current_price as entry creates a fake 0% P&L baseline
+                                            # which lets queen_approved_exit approve a sell that may be a loss.
+                                            real_entry = None
+                                            if self.cost_basis_tracker:
+                                                real_entry = self.cost_basis_tracker.get_entry_price(symbol, 'kraken')
+                                            if real_entry and real_entry > 0:
+                                                entry_price = real_entry
+                                                print(f"     Cost basis confirmed: ${entry_price:.6f} (from tracker)")
+                                            else:
+                                                entry_price = current_price  # tracking only — queen_approved_exit will block sell
+                                                print(f"     No cost basis found — tracking at current price, auto-sell BLOCKED")
                                             entry_cost = entry_price * qty * (1 + fee_rate)
                                             breakeven = entry_price * (1 + fee_rate) / (1 - fee_rate)
                                             target_price = breakeven * (1 + target_pct_current / 100)
