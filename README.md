@@ -97,6 +97,126 @@ If Aureon has given you an edge, saved you from a bad trade, or simply opened yo
 
 ---
 
+## 🚀 BETA TESTERS WANTED
+
+<div align="center">
+
+[![Fork the Repo](https://img.shields.io/badge/Fork%20the%20Repo-Get%20Started-FFD700?style=for-the-badge&logo=github&logoColor=black)](https://github.com/RA-CONSULTING/aureon-trading/fork)
+[![Open Issues](https://img.shields.io/badge/Open%20an%20Issue-BETA%20TESTER-brightgreen?style=for-the-badge&logo=github)](https://github.com/RA-CONSULTING/aureon-trading/issues/new?title=BETA+TESTER+%E2%80%93+%5Byour+GitHub+username%5D)
+[![Discord Testers](https://img.shields.io/badge/Discord-Private%20Tester%20Channel-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ueu7gBz7g)
+
+</div>
+
+> *"Business guy → Consciousness researcher → Overnight self-taught coder → Open-source trading system that proves the theory in live markets."*
+> — Gary Anthony Leckey, Research Director, Aureon Institute
+
+---
+
+Hi everyone — I'm **Gary**, Director of **R&A Consulting and Brokerage Services Ltd** (Northern Ireland, UK). I hold a Bachelor of Business Administration and spent years in corporate brokerage. For the last 15+ years I've been quietly building the **Harmonic Nexus Core (HNC)** — a unified mathematical framework treating reality, consciousness, and markets as self-organising harmonic fields.
+
+Roughly 8 months ago, I decided the theory needed a real-world engine. **With zero coding experience**, I taught myself Python in flow-state sessions, made every mistake possible, fixed them, and shipped a complete autonomous trading system.
+
+Today it's **fully open-source (MIT license)** and live on GitHub.
+
+---
+
+### 📊 Live Repo Stats
+
+<div align="center">
+
+![Commits](https://img.shields.io/badge/Commits-2%2C338-blue?style=for-the-badge&logo=git)
+![Cloners](https://img.shields.io/badge/Unique%20Cloners-5%2C319-brightgreen?style=for-the-badge&logo=github)
+![Total Clones](https://img.shields.io/badge/Total%20Clones-60%2C546-orange?style=for-the-badge&logo=github)
+
+</div>
+
+---
+
+### 🧠 What the System Actually Does
+
+Pure Python 3.11+ multi-agent autonomous trading research toolkit:
+
+| Module | Description |
+|--------|-------------|
+| `aureon_planetary_harmonic_sweep.py` | FFT spectral analysis + planetary harmonic sweeps |
+| `aureon_queen_hive_mind.py` | Queen AI decision layer with 4th-pass veto |
+| `aureon_ghost_dance_protocol.py` | Ghost Dance resistance protocol |
+| `aureon_probability_nexus.py` | 9 specialised Auris nodes + Lighthouse consensus |
+| `aureon_historical_bot_census.py` | Bot shape & strategic warfare scanners |
+| `adaptive_prime_profit_gate.py` | Adaptive Kelly-criterion risk management |
+
+**The HNC Master Formula driving it all:**
+
+$$\Lambda(t) = \sum w_i \sin(2\pi f_i t + \phi_i) + \alpha \tanh(g \Lambda_{\Delta t}(t)) + \beta \Lambda(t-\tau)$$
+
+---
+
+### 📈 Backtest Highlights *(research only — not financial advice)*
+
+<div align="center">
+
+![Win Rate](https://img.shields.io/badge/Win%20Rate-61.3%25-brightgreen?style=for-the-badge)
+![Sharpe Ratio](https://img.shields.io/badge/Sharpe%20Ratio-2.14-blue?style=for-the-badge)
+![Monte Carlo](https://img.shields.io/badge/Monte%20Carlo%20Success-100%25-gold?style=for-the-badge)
+
+</div>
+
+> ⚠️ **Disclaimer**: This is a research platform. Past/simulated performance does not guarantee future results. Crypto trading carries significant risk of loss.
+
+---
+
+### 🗓️ The 8-Month Journey
+
+```mermaid
+timeline
+    title From Zero Code to Live System
+    Month 0  : Never written code
+             : Didn't know GitHub existed
+    Months 1-2 : Learned Python basics
+    Months 3-4 : Built FFT spectral modules
+              : Planetary harmonic sweeps
+    Months 5-6 : Integrated bot fingerprinting
+    Month 7   : Added Queen AI layer
+              : Ghost Dance protocol
+    Month 8   : Production deployment
+              : 2338 commits — system went live
+```
+
+---
+
+### 🧪 How to Become a Beta Tester (2 minutes)
+
+```bash
+# 1. Fork the repo at https://github.com/RA-CONSULTING/aureon-trading
+# 2. Clone your fork
+git clone https://github.com/YOUR-USERNAME/aureon-trading.git
+cd aureon-trading
+
+# 3. Install dependencies
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# 4. Run in dry-run mode — zero API keys required
+python aureon_full_autonomy.py --dry-run
+```
+
+Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join the Discussion tab.
+
+**The first 20 meaningful beta testers get:**
+- Public credit in the README and on ResearchGate
+- Shout-out on Twitch ([the_crypto_wizard_ire](https://www.twitch.tv/the_crypto_wizard_ire))
+- Direct input into the next version
+- Early access to new research modules
+- Access to the **private Discord tester channel**
+
+<div align="center">
+
+[![Fork & Test Now](https://img.shields.io/badge/Fork%20%26%20Test%20Now-Join%20the%20Beta-FFD700?style=for-the-badge&logo=github&logoColor=black)](https://github.com/RA-CONSULTING/aureon-trading/fork)
+
+</div>
+
+---
+
 ## 📂 LATEST RESEARCH — FRESH OFF THE PRESS
 
 We've been busy. Here's everything that just dropped — peer-reviewed, data-backed, and free to read:
