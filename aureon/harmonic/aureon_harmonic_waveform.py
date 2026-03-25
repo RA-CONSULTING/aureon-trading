@@ -592,25 +592,25 @@ class HarmonicWaveformScanner:
                 and now - HarmonicWaveformScanner._cached_field_time < self._FIELD_CACHE_TTL):
             return HarmonicWaveformScanner._cached_field
 
-        print("\n" + "═"*60)
-        print("   🌊 MARKET SCAN — Checking all exchanges for opportunities")
-        print("═"*60)
+        _wave_print("\n" + "═"*60)
+        _wave_print("   🌊 MARKET SCAN — Checking all exchanges for opportunities")
+        _wave_print("═"*60)
 
         # Reset counters
         self.node_counter = {'BIN': 0, 'KRK': 0, 'ALP': 0, 'CAP': 0}
         self.field = HarmonicField()
 
         # Scan each relay
-        print("📡 Binance connecting...")
+        _wave_print("📡 Binance connecting...")
         self.field.relays['BIN'] = self.scan_binance_relay()
 
-        print("📡 Kraken connecting...")
+        _wave_print("📡 Kraken connecting...")
         self.field.relays['KRK'] = self.scan_kraken_relay()
 
-        print("📡 Alpaca connecting...")
+        _wave_print("📡 Alpaca connecting...")
         self.field.relays['ALP'] = self.scan_alpaca_relay()
 
-        print("📡 Capital.com connecting...")
+        _wave_print("📡 Capital.com connecting...")
         # Wrap Capital.com in a timeout — it hangs frequently
         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
         _cap_executor = ThreadPoolExecutor(max_workers=1)
@@ -618,7 +618,7 @@ class HarmonicWaveformScanner:
             future = _cap_executor.submit(self.scan_capital_relay)
             self.field.relays['CAP'] = future.result(timeout=15)
         except (FuturesTimeout, Exception) as e:
-            print(f"⚠️ Capital.com scan timed out/failed ({e}) — using empty relay")
+            _wave_print(f"⚠️ Capital.com scan timed out/failed ({e}) — using empty relay")
             cap_relay = HarmonicRelay(code='CAP', name='Capital.com')
             self._aggregate_relay(cap_relay)
             self.field.relays['CAP'] = cap_relay
@@ -841,3 +841,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+_QUIET_STARTUP = os.getenv("AUREON_QUIET_STARTUP", "0").lower() in ("1", "true", "yes", "on")
+
+def _wave_print(*args, **kwargs):
+    if not _QUIET_STARTUP:
+        print(*args, **kwargs)

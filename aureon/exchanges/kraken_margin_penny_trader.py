@@ -36,6 +36,9 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from collections import deque
 
+# Production startup should be deterministic and quiet unless explicitly overridden.
+os.environ.setdefault("AUREON_QUIET_STARTUP", "1")
+
 # Import ETA predictor for margin positions
 try:
     from margin_eta_predictor import MarginETAPredictor
@@ -112,6 +115,64 @@ try:
 except ImportError:
     HAS_MACRO_INTEL = False
     MacroIntelligence = None
+
+# Additional repo scanners for mission selection enrichment
+try:
+    from aureon_seer import get_seer
+    HAS_SEER = True
+except ImportError:
+    HAS_SEER = False
+    get_seer = None
+
+try:
+    from war_strategy import should_attack, get_quick_kill_estimate
+    HAS_WAR_STRATEGY = True
+except ImportError:
+    HAS_WAR_STRATEGY = False
+    should_attack = None
+    get_quick_kill_estimate = None
+
+try:
+    from unified_sniper_brain import get_unified_brain
+    HAS_SNIPER_BRAIN = True
+except ImportError:
+    HAS_SNIPER_BRAIN = False
+    get_unified_brain = None
+
+try:
+    from nexus_predictor import NexusPredictor
+    HAS_NEXUS_PREDICTOR = True
+except ImportError:
+    HAS_NEXUS_PREDICTOR = False
+    NexusPredictor = None
+
+try:
+    from aureon_lattice import LatticeEngine
+    HAS_LATTICE = True
+except ImportError:
+    HAS_LATTICE = False
+    LatticeEngine = None
+
+try:
+    from aureon_seer_integration import seer_get_vision
+    HAS_SEER_INTEGRATION = True
+except ImportError:
+    HAS_SEER_INTEGRATION = False
+    seer_get_vision = None
+
+try:
+    from aureon_lyra_integration import lyra_get_resonance
+    HAS_LYRA_INTEGRATION = True
+except ImportError:
+    HAS_LYRA_INTEGRATION = False
+    lyra_get_resonance = None
+
+try:
+    from aureon_atn_monitor import get_atn_monitor
+    HAS_ATN_MONITOR = True
+except ImportError:
+    HAS_ATN_MONITOR = False
+    get_atn_monitor = None
 
 try:
     import websocket as _ws_lib
@@ -257,6 +318,8 @@ class LiveStream:
         self.trade_time: Dict[str, float] = {}
         self.buy_pressure: Dict[str, float] = {}
         self.sell_pressure: Dict[str, float] = {}
+        self.best_bid: Dict[str, float] = {}
+        self.best_ask: Dict[str, float] = {}
         self.bid_wall: Dict[str, float] = {}
         self.ask_wall: Dict[str, float] = {}
         self.spread: Dict[str, float] = {}
@@ -332,6 +395,25 @@ class LiveStream:
         """Get latest price from stream (0 if not available)."""
         return self.price.get(symbol.upper(), 0.0)
 
+    def get_executable_price(self, symbol: str, side: str | None = None) -> float:
+        """
+        Return a side-aware executable price from bookTicker when available.
+
+        For a long we should assume exit at the bid.
+        For a short we should assume exit at the ask.
+        Falls back to last trade when the order book is not populated yet.
+        """
+        sym = symbol.upper()
+        if side == "buy":
+            px = self.best_bid.get(sym, 0.0)
+            if px > 0:
+                return px
+        elif side == "sell":
+            px = self.best_ask.get(sym, 0.0)
+            if px > 0:
+                return px
+        return self.price.get(sym, 0.0)
+
     def get_flow_snapshot(self, symbol: str) -> dict:
         """Get current flow analysis from live stream data."""
         sym = symbol.upper()
@@ -342,6 +424,8 @@ class LiveStream:
         
         return {
             'price': self.price.get(sym, 0),
+            'best_bid': self.best_bid.get(sym, 0),
+            'best_ask': self.best_ask.get(sym, 0),
             'buy_pressure': bp,
             'sell_pressure': sp,
             'buy_pct': buy_pct,
@@ -501,6 +585,8 @@ class LiveStream:
             ask_qty = float(data.get("A", 0))
             
             if best_bid > 0 and best_ask > 0:
+                self.best_bid[sym] = best_bid
+                self.best_ask[sym] = best_ask
                 self.spread[sym] = (best_ask - best_bid) / best_bid * 100
                 self.bid_wall[sym] = best_bid * bid_qty  # USD value of best bid
                 self.ask_wall[sym] = best_ask * ask_qty  # USD value of best ask
@@ -2597,6 +2683,7 @@ class KrakenMarginArmyTrader:
         self.winning_trades = 0
         self.completed_trades: List[dict] = []
         self.start_time = time.time()
+        self.starting_equity = 0.0
         self._last_danger_check = 0
         self._danger_check_interval = 15  # Check danger every 15s
         self._consecutive_danger = 0       # Track consecutive danger signals
@@ -2633,7 +2720,17 @@ class KrakenMarginArmyTrader:
         self._pending_scan_id: str = ""
         # Macro Intelligence — market-wide context fed into every entry decision
         self.macro: object = MacroIntelligence() if HAS_MACRO_INTEL else None
+        self.seer = get_seer() if HAS_SEER and get_seer is not None else None
+        self.sniper_brain = (
+            get_unified_brain(exchange='kraken')
+            if HAS_SNIPER_BRAIN and get_unified_brain is not None else None
+        )
+        self.nexus_predictor = NexusPredictor() if HAS_NEXUS_PREDICTOR and NexusPredictor is not None else None
+        self.lattice = LatticeEngine() if HAS_LATTICE and LatticeEngine is not None else None
+        self.atn_monitor = get_atn_monitor() if HAS_ATN_MONITOR and get_atn_monitor is not None else None
         self._load_state()
+        snap = self._get_capital_snapshot()
+        self.starting_equity = snap["equity"]
 
     # ----------------------------------------------------------
     #  ETA PREDICTION: Estimate time to profitability
@@ -2677,6 +2774,360 @@ class KrakenMarginArmyTrader:
             logger.info("="*80)
         except Exception as e:
             logger.debug(f"ETA report failed: {e}")
+
+    def _binance_symbol_for_pair(self, pair: str) -> str:
+        """Derive Binance symbol for a Kraken alt/internal pair."""
+        try:
+            if pair in self.margin_pairs and self.margin_pairs[pair].binance_symbol:
+                return self.margin_pairs[pair].binance_symbol
+            pairs = self.client._load_asset_pairs()
+            internal = self.client._alt_to_int.get(pair, pair)
+            info = pairs.get(internal, {})
+            base = info.get("base", "")
+            if not base:
+                return ""
+            base_clean = KRAKEN_BASE_MAP.get(base, base)
+            return f"{base_clean}USDT"
+        except Exception:
+            return ""
+
+    def _select_new_position(self, positions: list[dict], known_ids: set[str], pair: str, side: str) -> Optional[dict]:
+        """Find the newly opened Kraken position for this order without trusting pair-only matching."""
+        candidates = []
+        for pos in positions:
+            pos_id = str(pos.get("position_id", ""))
+            kp_pair = pos.get("pair", "")
+            alt_pair = self.client._int_to_alt.get(kp_pair, kp_pair)
+            if pos_id in known_ids:
+                continue
+            if side != pos.get("side", ""):
+                continue
+            if alt_pair != pair and kp_pair != pair:
+                continue
+            candidates.append(pos)
+        if len(candidates) == 1:
+            return candidates[0]
+        if candidates:
+            candidates.sort(key=lambda p: float(p.get("open_time", 0.0) or 0.0), reverse=True)
+            return candidates[0]
+        return None
+
+    def _select_close_trade(self, trades: list[dict], trade: ActiveTrade, close_side: str, since_ts: float) -> Optional[dict]:
+        """Find the best matching close fill from recent Kraken trade history."""
+        candidates = []
+        for td in trades:
+            tp = td.get("pair", "")
+            alt = self.client._int_to_alt.get(tp, tp)
+            if alt != trade.pair and tp != trade.pair:
+                continue
+            if td.get("type", "") != close_side:
+                continue
+            if float(td.get("time", 0.0) or 0.0) + 2 < since_ts:
+                continue
+            vol = float(td.get("vol", 0.0) or 0.0)
+            if trade.volume > 0 and abs(vol - trade.volume) / trade.volume > 0.15:
+                continue
+            candidates.append(td)
+        if not candidates:
+            return None
+        candidates.sort(
+            key=lambda td: (
+                abs(float(td.get("vol", 0.0) or 0.0) - trade.volume),
+                -float(td.get("time", 0.0) or 0.0),
+            )
+        )
+        return candidates[0]
+
+    def _fetch_binance_klines(
+        self,
+        symbol: str,
+        interval: str = "1m",
+        limit: int = 100,
+    ) -> list:
+        """Fetch Binance klines with a small timeout for projection work."""
+        url = f"{BINANCE_KLINES_URL}?symbol={symbol}&interval={interval}&limit={limit}"
+        req = urllib.request.Request(url, headers={"User-Agent": "MarginArmy/1.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            return json.loads(resp.read().decode())
+
+    def _build_prime_projection(self, symbol: str, side: str) -> dict:
+        """
+        Use one month of hourly candles to project forward across prime horizons,
+        then validate that projection against recent live 1m tape.
+        """
+        projection = {
+            "side": side,
+            "confidence": 0.0,
+            "edge": 0.0,
+            "live_match": 0.0,
+            "samples": 0,
+        }
+        try:
+            hist = self._fetch_binance_klines(symbol, interval="1h", limit=720)
+            if len(hist) < 120:
+                return projection
+
+            closes = [float(k[4]) for k in hist]
+            vols = [float(k[5]) for k in hist]
+            primes = [2, 3, 5, 7, 11, 13]
+            max_prime = max(primes)
+
+            curr_mom3 = (closes[-1] - closes[-4]) / closes[-4] if closes[-4] > 0 else 0.0
+            curr_mom12 = (closes[-1] - closes[-13]) / closes[-13] if closes[-13] > 0 else 0.0
+            curr_vol = (
+                sum(abs(closes[j] - closes[j - 1]) / closes[j - 1] for j in range(len(closes) - 12, len(closes)))
+                / 12
+            ) if len(closes) >= 13 else 0.0
+            curr_surge = vols[-1] / max(1.0, sum(vols[-13:-1]) / 12)
+
+            snapshots = []
+            for i in range(24, len(closes) - max_prime - 1):
+                p = closes[i]
+                if p <= 0:
+                    continue
+                mom3 = (closes[i] - closes[i - 3]) / closes[i - 3] if closes[i - 3] > 0 else 0.0
+                mom12 = (closes[i] - closes[i - 12]) / closes[i - 12] if closes[i - 12] > 0 else 0.0
+                vol = sum(abs(closes[j] - closes[j - 1]) / closes[j - 1] for j in range(i - 11, i + 1)) / 12
+                surge = vols[i] / max(1.0, sum(vols[i - 12:i]) / 12)
+                dist = (
+                    abs(mom3 - curr_mom3) * 5.0
+                    + abs(mom12 - curr_mom12) * 3.0
+                    + abs(vol - curr_vol) * 8.0
+                    + abs(surge - curr_surge) * 0.5
+                )
+                future_moves = [(closes[i + pstep] - p) / p for pstep in primes]
+                snapshots.append((dist, future_moves))
+
+            if len(snapshots) < 12:
+                return projection
+
+            snapshots.sort(key=lambda x: x[0])
+            matched = snapshots[:24]
+            weighted_moves = []
+            for dist, future_moves in matched:
+                weight = 1.0 / max(0.05, dist)
+                avg_future = sum(future_moves) / len(future_moves)
+                weighted_moves.append((weight, avg_future))
+
+            total_weight = sum(w for w, _ in weighted_moves)
+            if total_weight <= 0:
+                return projection
+            mean_move = sum(w * mv for w, mv in weighted_moves) / total_weight
+            agreement = sum(
+                w for w, mv in weighted_moves
+                if (side == "buy" and mv > 0) or (side == "sell" and mv < 0)
+            ) / total_weight
+            projected_side = "buy" if mean_move >= 0 else "sell"
+
+            live = self._fetch_binance_klines(symbol, interval="1m", limit=16)
+            if len(live) >= 14:
+                live_closes = [float(k[4]) for k in live]
+                live_primes = [2, 3, 5, 7, 11]
+                checks = 0
+                hits = 0
+                for pstep in live_primes:
+                    if pstep >= len(live_closes):
+                        continue
+                    delta = live_closes[-1] - live_closes[-1 - pstep]
+                    checks += 1
+                    if (projected_side == "buy" and delta > 0) or (projected_side == "sell" and delta < 0):
+                        hits += 1
+                projection["live_match"] = (hits / checks) if checks else 0.0
+
+            projection["side"] = projected_side
+            projection["confidence"] = max(0.0, min(1.0, agreement))
+            projection["edge"] = mean_move * 100.0
+            projection["samples"] = len(matched)
+            return projection
+        except Exception:
+            return projection
+
+    def _collect_alignment_metrics(self, pair: str, side: str, momentum_pct: float) -> dict:
+        """Aggregate coherence, lambda, HNC-style, macro, and planetary/solar alignment."""
+        data = {
+            "coherence": 0.5,
+            "lyra": 0.5,
+            "lambda": 0.5,
+            "purity": 0.5,
+            "macro": 0.0,
+            "earth": 0.75,
+            "solar": 0.0,
+            "score": 0.0,
+        }
+
+        try:
+            if HAS_SEER_INTEGRATION and seer_get_vision is not None:
+                sv = seer_get_vision() or {}
+                data["coherence"] = float(sv.get("score", sv.get("confidence", data["coherence"])) or data["coherence"])
+        except Exception:
+            pass
+
+        try:
+            if HAS_LYRA_INTEGRATION and lyra_get_resonance is not None:
+                lr = lyra_get_resonance()
+                if isinstance(lr, dict):
+                    data["lyra"] = float(lr.get("resonance", lr.get("coherence", data["lyra"])) or data["lyra"])
+                elif isinstance(lr, (int, float)):
+                    data["lyra"] = float(lr)
+        except Exception:
+            pass
+
+        try:
+            if self.lattice is not None:
+                external = max(0.0, min(1.0, 0.5 + momentum_pct / 4.0))
+                state = self.lattice.update(
+                    opportunities=[{"symbol": pair, "coherence": external, "change24h": momentum_pct}],
+                    external_coherence=external,
+                )
+                data["lambda"] = float(getattr(state, "lambda_value", data["lambda"]) or data["lambda"])
+                data["purity"] = float(getattr(state, "field_purity", data["purity"]) or data["purity"])
+        except Exception:
+            pass
+
+        try:
+            if self.macro is not None:
+                mctx = self.macro.get_entry_context(pair)
+                data["macro"] = float(mctx.get("macro_score", 0.0) or 0.0)
+        except Exception:
+            pass
+
+        try:
+            if self.atn_monitor is not None:
+                earth = self.atn_monitor.get_state()
+                data["earth"] = float(getattr(earth, "risk_factor", data["earth"]) or data["earth"])
+                space = getattr(earth, "streams", {}).get("space")
+                if space is not None and isinstance(getattr(space, "raw", None), dict):
+                    raw = space.raw
+                    solar_terms = [
+                        float(raw.get("kp_index", 0.0) or 0.0) / 9.0,
+                        min(1.0, float(raw.get("solar_flares_24h", 0.0) or 0.0) / 5.0),
+                        min(1.0, float(raw.get("cme_24h", 0.0) or 0.0) / 3.0),
+                    ]
+                    data["solar"] = sum(solar_terms) / len(solar_terms)
+        except Exception:
+            pass
+
+        data["score"] = (
+            (data["coherence"] - 0.5) * 2.0
+            + (data["lyra"] - 0.5) * 1.5
+            + (data["lambda"] - 0.5) * 2.0
+            + (data["purity"] - 0.5) * 2.0
+            + data["macro"]
+            + (data["earth"] - 0.5) * 1.0
+            - data["solar"] * 0.75
+        )
+        return data
+
+    def _get_capital_snapshot(self) -> dict:
+        """Return current Kraken portfolio metrics for sizing and UI."""
+        if self.dry_run:
+            equity = 10000.0
+            free_margin = 10000.0
+            margin_used = 0.0
+            unrealized = 0.0
+        else:
+            tb = self.client.get_trade_balance()
+            equity = float(tb.get("equity", tb.get("equity_value", 0.0)) or 0.0)
+            free_margin = float(tb.get("free_margin", tb.get("margin_free", 0.0)) or 0.0)
+            margin_used = float(tb.get("margin_amount", tb.get("m", 0.0)) or 0.0)
+            unrealized = float(tb.get("unrealized_pnl", tb.get("n", 0.0)) or 0.0)
+        budget = free_margin * MARGIN_BUFFER
+        target_pct_equity = (PROFIT_TARGET_USD / equity * 100.0) if equity > 0 else 0.0
+        return {
+            "equity": equity,
+            "free_margin": free_margin,
+            "margin_used": margin_used,
+            "unrealized": unrealized,
+            "budget": budget,
+            "target_pct_equity": target_pct_equity,
+        }
+
+    def _get_seer_bias(self) -> tuple[str, float, float]:
+        """Return Seer verdict, confidence, and score bonus for mission selection."""
+        if self.seer is None:
+            return ("OFF", 0.0, 0.0)
+
+        try:
+            vision = self.seer.see()
+            confidence = float(getattr(vision, "confidence", 0.0) or 0.0)
+            unified = float(getattr(vision, "unified_score", 0.5) or 0.5)
+            risk_modifier = float(getattr(vision, "risk_modifier", 1.0) or 1.0)
+            verdict = "GO" if risk_modifier >= 0.95 and unified >= 0.55 else "CAUTION"
+            bonus = max(-1.0, min(2.0, (unified - 0.5) * 4.0 + (risk_modifier - 1.0)))
+            return (verdict, confidence, bonus)
+        except Exception:
+            return ("ERROR", 0.0, -0.25)
+
+    def _score_aux_scanners(
+        self,
+        symbol: str,
+        side: str,
+        prices: list[float],
+        volumes: list[float],
+        current_price: float,
+        momentum_pct: float,
+    ) -> dict:
+        """Collect optional scanner inputs without letting any one module break selection."""
+        result = {
+            "war_go": True,
+            "war_prob": 0.0,
+            "war_priority": 0,
+            "war_bonus": 0.0,
+            "sniper_action": "OFF",
+            "sniper_conf": 0.0,
+            "sniper_prob": 0.0,
+            "sniper_bonus": 0.0,
+            "nexus_trade": False,
+            "nexus_prob": 0.0,
+            "nexus_edge": 0.0,
+            "nexus_bonus": 0.0,
+        }
+
+        if should_attack is not None and get_quick_kill_estimate is not None:
+            try:
+                war_go, _reason, war_priority = should_attack(symbol, "kraken", prices[-20:])
+                estimate = get_quick_kill_estimate(symbol, "kraken", prices[-20:])
+                war_prob = float(getattr(estimate, "prob_penny_profit", 0.0) or 0.0)
+                result["war_go"] = bool(war_go)
+                result["war_priority"] = int(war_priority or 0)
+                result["war_prob"] = war_prob
+                result["war_bonus"] = (-2.5 if not war_go else 0.0) + min(war_prob * 2.0, 2.0) + min(result["war_priority"] / 10.0, 1.0)
+            except Exception:
+                result["war_go"] = True
+
+        if self.sniper_brain is not None:
+            try:
+                sig = self.sniper_brain.get_entry_signal(symbol, prices[-20:], volumes[-20:])
+                if sig is not None:
+                    result["sniper_action"] = getattr(sig, "action", "HOLD") or "HOLD"
+                    result["sniper_conf"] = float(getattr(sig, "confidence", 0.0) or 0.0)
+                    result["sniper_prob"] = float(getattr(sig, "probability_score", 0.0) or 0.0)
+                    direction_bonus = 0.4 if result["sniper_action"].upper() in {"BUY", "LONG", side.upper()} else 0.0
+                    hold_penalty = -0.5 if result["sniper_action"].upper() == "HOLD" else 0.0
+                    result["sniper_bonus"] = hold_penalty + direction_bonus + result["sniper_conf"] + result["sniper_prob"]
+            except Exception:
+                pass
+
+        if self.nexus_predictor is not None:
+            try:
+                pred = self.nexus_predictor.predict_instant(
+                    price=current_price,
+                    high_24h=max(prices[-20:]),
+                    low_24h=min(prices[-20:]),
+                    momentum=momentum_pct / 100.0,
+                )
+                result["nexus_trade"] = bool(pred.get("should_trade", False))
+                result["nexus_prob"] = float(pred.get("probability", 0.0) or 0.0)
+                result["nexus_edge"] = float(pred.get("edge", 0.0) or 0.0)
+                result["nexus_bonus"] = (
+                    (-1.0 if not result["nexus_trade"] else 0.0)
+                    + max(0.0, (result["nexus_prob"] - 0.5) * 4.0)
+                    + max(-0.5, min(result["nexus_edge"], 1.0))
+                )
+            except Exception:
+                pass
+
+        return result
 
     # ----------------------------------------------------------
     #  STARTUP: Discover margin pairs (ONE Kraken API batch)
@@ -2769,10 +3220,17 @@ class KrakenMarginArmyTrader:
             logger.warning(f"Not enough free margin: ${free_margin:.2f}")
             return None
 
-        margin_budget = free_margin * MARGIN_BUFFER
-        # Get currently committed margin for wave-rider projections
-        margin_used = float(tb.get("margin_amount", tb.get("m", 0)) or 0)
-        logger.info(f"ARMY: ${equity:.2f} equity, ${free_margin:.2f} free -> ${margin_budget:.2f} budget")
+        capital = self._get_capital_snapshot()
+        equity = capital["equity"]
+        free_margin = capital["free_margin"]
+        margin_used = capital["margin_used"]
+        margin_budget = capital["budget"]
+        target_pct_equity = capital["target_pct_equity"]
+        logger.info(
+            f"ARMY: equity=${equity:.2f} | free=${free_margin:.2f} | "
+            f"used=${margin_used:.2f} | budget=${margin_budget:.2f} | "
+            f"target={target_pct_equity:.3f}% eq"
+        )
 
         # Log wave rider status (informational — per-candidate check below)
         if self.wave_rider and equity > 0:
@@ -2994,9 +3452,10 @@ class KrakenMarginArmyTrader:
                           + macro_bonus * 1.5       # weight 1.5 — macro context shapes the battlefield
                           + wave_bonus * 1.5)       # weight 1.5 — ocean wave scanner bot resonance
 
+            route_to_profit = goal_score / max(required_move_pct, 0.01)
             candidates.append((info, side, vol, trade_val, max_lev,
                               total_score, required_move_pct, round_trip_fee,
-                              goal_score, eta_minutes))
+                              goal_score, eta_minutes, route_to_profit))
 
         if not candidates:
             logger.info("No valid candidates found")
@@ -3011,26 +3470,26 @@ class KrakenMarginArmyTrader:
         if _mv_next:
             boosted = []
             for item in candidates:
-                info_obj, side, vol, tv, lev, score, req, fees, gs, eta = item
+                info_obj, side, vol, tv, lev, score, req, fees, gs, eta, route = item
                 bonus = 2.0 if info_obj.pair == _mv_next else 0.0
                 if bonus:
                     logger.info(
                         f"[Multiverse] Boosting {info_obj.pair} score by +{bonus:.1f} "
                         f"(scouted as next stallion)"
                     )
-                boosted.append((info_obj, side, vol, tv, lev, score + bonus, req, fees, gs, eta))
+                boosted.append((info_obj, side, vol, tv, lev, score + bonus, req, fees, gs, eta, route))
             candidates = boosted
 
         candidates.sort(key=lambda x: x[5], reverse=True)
 
         logger.info(f"TOP 5 TARGETS (goal: ${GOAL_TARGET_USD:.2f} in <{GOAL_MAX_ETA_MINUTES:.0f}min):")
-        for i, (info, side, vol, tv, lev, score, req, fees, gs, eta) in enumerate(candidates[:5]):
+        for i, (info, side, vol, tv, lev, score, req, fees, gs, eta, route) in enumerate(candidates[:5]):
             eta_str = f"{eta:.0f}m" if eta < 999 else "∞"
             logger.info(
                 f"  #{i+1} {info.pair} {side.upper()} | "
                 f"${tv:.0f} notional ({lev}x) | mom={info.momentum:+.2f}% | "
                 f"spread={info.spread_pct:.3f}% | need={req:.3f}% | "
-                f"eta≈{eta_str} | goal={gs:.2f} | score={score:.3f}"
+                f"eta≈{eta_str} | goal={gs:.2f} | route={route:.2f} | score={score:.3f}"
             )
 
         best = candidates[0]
@@ -3163,6 +3622,8 @@ class KrakenMarginArmyTrader:
     def open_position(self, pair_info: MarginPairInfo, side: str,
                       volume: float, leverage: int) -> Optional[ActiveTrade]:
         """Open THE ONE margin position - Kraken API call."""
+        if pair_info.binance_symbol:
+            self._start_stream_for(pair_info.binance_symbol)
         price = pair_info.last_price
         logger.info(
             f"OPENING {side.upper()} {volume:.6f} {pair_info.base_clean} "
@@ -3170,6 +3631,15 @@ class KrakenMarginArmyTrader:
         )
 
         try:
+            known_position_ids: set[str] = set()
+            if not self.dry_run:
+                try:
+                    known_position_ids = {
+                        str(p.get("position_id", ""))
+                        for p in self.client.get_open_margin_positions(do_calcs=True)
+                    }
+                except Exception as e:
+                    raise RuntimeError(f"Could not snapshot Kraken positions before open: {e}")
             result = self.client.place_margin_order(
                 symbol=pair_info.pair,
                 side=side,
@@ -3189,24 +3659,23 @@ class KrakenMarginArmyTrader:
             try:
                 time.sleep(1)  # Brief wait for order to settle
                 kraken_positions = self.client.get_open_margin_positions(do_calcs=True)
-                for kp in kraken_positions:
-                    kp_pair = kp.get("pair", "")
-                    alt = self.client._int_to_alt.get(kp_pair, kp_pair)
-                    if alt == pair_info.pair or kp_pair == pair_info.pair:
-                        kp_vol = kp.get("volume", kp.get("vol", 0))
-                        kp_cost = kp.get("cost", 0)
-                        kp_fee = kp.get("fee", 0)
-                        if kp_vol > 0 and kp_cost > 0:
-                            actual_price = kp_cost / kp_vol
-                            logger.info(f"Actual Kraken fill: ${actual_price:,.4f} (Binance est: ${price:,.4f})")
-                            price = actual_price
-                        if kp_fee > 0:
-                            actual_entry_fee = kp_fee
-                            actual_rate = kp_fee / kp_cost * 100 if kp_cost > 0 else 0
-                            logger.info(f"Actual Kraken fee: ${kp_fee:.4f} ({actual_rate:.3f}% of ${kp_cost:.2f})")
-                        break
+                kp = self._select_new_position(kraken_positions, known_position_ids, pair_info.pair, side)
+                if kp is not None:
+                    kp_vol = kp.get("volume", kp.get("vol", 0))
+                    kp_cost = kp.get("cost", 0)
+                    kp_fee = kp.get("fee", 0)
+                    if kp_vol > 0 and kp_cost > 0:
+                        actual_price = kp_cost / kp_vol
+                        logger.info(f"Actual Kraken fill: ${actual_price:,.4f} (Binance est: ${price:,.4f})")
+                        price = actual_price
+                    if kp_fee > 0:
+                        actual_entry_fee = kp_fee
+                        actual_rate = kp_fee / kp_cost * 100 if kp_cost > 0 else 0
+                        logger.info(f"Actual Kraken fee: ${kp_fee:.4f} ({actual_rate:.3f}% of ${kp_cost:.2f})")
+                elif not self.dry_run:
+                    raise RuntimeError("Could not uniquely identify newly opened Kraken position")
             except Exception as e:
-                logger.debug(f"Could not get actual fill from Kraken: {e}")
+                raise RuntimeError(f"Could not verify opened Kraken position: {e}")
 
             trade_val = volume * price
             # Use ACTUAL fee if we got it, otherwise conservative estimate
@@ -3244,6 +3713,8 @@ class KrakenMarginArmyTrader:
             else:
                 self.active_short = trade
             self.active_trade = self.active_long or self.active_short
+            if trade.binance_symbol:
+                self._start_stream_for(trade.binance_symbol)
             self._save_state()
 
             # Register with orchestrator so spot system sees our margin position
@@ -3288,6 +3759,7 @@ class KrakenMarginArmyTrader:
         logger.info(f"CLOSING {trade.pair} ({reason}) - {close_side} {trade.volume:.6f}")
 
         try:
+            close_started = time.time()
             # Try with explicit leverage first, then without (Kraken leverage quirk)
             result = self.client.close_margin_position(
                 symbol=trade.pair,
@@ -3330,26 +3802,21 @@ class KrakenMarginArmyTrader:
             try:
                 time.sleep(1.5)  # Wait for trade to settle on Kraken
                 recent_trades = self.client.get_trades_history(max_records=10)
-                # Walk backwards (newest first) to find our closing trade
-                for td in reversed(recent_trades):
-                    tp = td.get("pair", "")
-                    alt = self.client._int_to_alt.get(tp, tp)
-                    if alt == trade.pair or tp == trade.pair:
-                        actual_exit_fee = td.get("fee", 0)
-                        exit_cost = td.get("cost", 0)
-                        actual_exit_price = td.get("price", 0)
-                        if actual_exit_price > 0:
-                            current_price = actual_exit_price
-                            logger.info(f"ACTUAL Kraken exit price: ${actual_exit_price:,.6f}")
-                        if actual_exit_fee > 0:
-                            rate = actual_exit_fee / exit_cost * 100 if exit_cost > 0 else 0
-                            logger.info(f"ACTUAL Kraken exit fee: ${actual_exit_fee:.4f} ({rate:.3f}% of ${exit_cost:.2f})")
-                        # Recalculate gross P&L with ACTUAL exit price
-                        if trade.side == "buy":
-                            gross_pnl = (current_price - trade.entry_price) * trade.volume
-                        else:
-                            gross_pnl = (trade.entry_price - current_price) * trade.volume
-                        break
+                td = self._select_close_trade(recent_trades, trade, close_side, close_started)
+                if td is not None:
+                    actual_exit_fee = td.get("fee", 0)
+                    exit_cost = td.get("cost", 0)
+                    actual_exit_price = td.get("price", 0)
+                    if actual_exit_price > 0:
+                        current_price = actual_exit_price
+                        logger.info(f"ACTUAL Kraken exit price: ${actual_exit_price:,.6f}")
+                    if actual_exit_fee > 0:
+                        rate = actual_exit_fee / exit_cost * 100 if exit_cost > 0 else 0
+                        logger.info(f"ACTUAL Kraken exit fee: ${actual_exit_fee:.4f} ({rate:.3f}% of ${exit_cost:.2f})")
+                    if trade.side == "buy":
+                        gross_pnl = (current_price - trade.entry_price) * trade.volume
+                    else:
+                        gross_pnl = (trade.entry_price - current_price) * trade.volume
             except Exception as e:
                 logger.warning(f"Could not get actual exit data from Kraken: {e}")
 
@@ -3465,7 +3932,10 @@ class KrakenMarginArmyTrader:
         current_price = 0.0
         stream_live = False
         if self.stream and self.stream.is_alive():
-            current_price = self.stream.get_live_price(trade.binance_symbol)
+            current_price = self.stream.get_executable_price(
+                trade.binance_symbol,
+                side=trade.side,
+            )
             if current_price > 0:
                 stream_live = True
 
@@ -3494,7 +3964,11 @@ class KrakenMarginArmyTrader:
                 pass
 
         if current_price <= 0:
-            return None
+            msg = f"Lost all price sources for {trade.pair} ({trade.binance_symbol}); refusing unmanaged live position"
+            if self.dry_run:
+                logger.warning(msg)
+                return None
+            raise RuntimeError(msg)
 
         # === ROLLOVER FEE TRACKING ===
         # Kraken charges ~0.01% per 4 hours on margin positions
@@ -3774,32 +4248,43 @@ class KrakenMarginArmyTrader:
 
                 # Get Kraken's actual position P&L
                 positions = self.client.get_open_margin_positions(do_calcs=True)
+                matching_positions = []
                 for p in positions:
                     pp = p.get("pair", "")
                     alt = self.client._int_to_alt.get(pp, pp)
                     if alt == trade.pair or pp == trade.pair:
-                        kraken_pnl = p.get("net", p.get("unrealized_pnl", 0))
-                        kraken_fee = p.get("fee", 0)
-                        logger.info(
-                            f"TRUTH CHECK: Kraken equity=${kraken_equity:.2f} ml={ml:.1f}% | "
-                            f"Position pnl=${kraken_pnl:+.2f} fee=${kraken_fee:.4f} | "
-                            f"Our net=${net_pnl:+.2f} fees=${total_fees:.4f}"
-                        )
-                        # Update entry_fee if Kraken shows different (includes rollover)
-                        if kraken_fee > 0 and abs(kraken_fee - trade.entry_fee) > 0.001:
-                            logger.info(f"Fee drift: Kraken=${kraken_fee:.4f} vs ours=${trade.entry_fee:.4f}")
-                            # Kraken's fee field on position includes rollover fees
-                            trade.entry_fee = kraken_fee
-                            trade.rollover_fees = 0  # Kraken fee already includes rollovers
-                            self._save_state()
-                        break
+                        matching_positions.append(p)
+
+                if not matching_positions:
+                    raise RuntimeError(f"Kraken no longer reports live position for {trade.pair}")
+                if len(matching_positions) > 1:
+                    raise RuntimeError(f"Kraken reports multiple live positions for {trade.pair}; local state is ambiguous")
+
+                p = matching_positions[0]
+                kraken_pnl = p.get("net", p.get("unrealized_pnl", 0))
+                kraken_fee = p.get("fee", 0)
+                logger.info(
+                    f"TRUTH CHECK: Kraken equity=${kraken_equity:.2f} ml={ml:.1f}% | "
+                    f"Position pnl=${kraken_pnl:+.2f} fee=${kraken_fee:.4f} | "
+                    f"Our net=${net_pnl:+.2f} fees=${total_fees:.4f}"
+                )
+                # Update entry_fee if Kraken shows different (includes rollover)
+                if kraken_fee > 0 and abs(kraken_fee - trade.entry_fee) > 0.001:
+                    logger.info(f"Fee drift: Kraken=${kraken_fee:.4f} vs ours=${trade.entry_fee:.4f}")
+                    # Kraken's fee field on position includes rollover fees
+                    trade.entry_fee = kraken_fee
+                    trade.rollover_fees = 0  # Kraken fee already includes rollovers
+                    self._save_state()
 
                 if 0 < ml < LIQUIDATION_FORCE:
                     return self.close_position(reason=f"LIQUIDATION_RISK (ml={ml:.0f}%)", trade=trade)
                 elif 0 < ml < LIQUIDATION_WARN:
                     logger.warning(f"WARNING: Margin level {ml:.1f}%")
             except Exception as e:
-                logger.debug(f"Truth check failed: {e}")
+                if self.dry_run:
+                    logger.debug(f"Truth check failed: {e}")
+                else:
+                    raise RuntimeError(f"Live truth check failed: {e}")
 
         return None
 
@@ -3838,11 +4323,60 @@ class KrakenMarginArmyTrader:
                     state = json.load(f)
 
                 valid_fields = {f.name for f in ActiveTrade.__dataclass_fields__.values()}
+                live_positions_by_slot = {"active_long": None, "active_short": None}
+                if not self.dry_run:
+                    try:
+                        for kp in self.client.get_open_margin_positions(do_calcs=True):
+                            kp_pair = kp.get("pair", "")
+                            alt_pair = self.client._int_to_alt.get(kp_pair, kp_pair)
+                            side = kp.get("side", "")
+                            slot = "active_long" if side == "buy" else "active_short" if side == "sell" else None
+                            if slot is None:
+                                continue
+                            if live_positions_by_slot[slot] is not None:
+                                raise RuntimeError(f"Kraken returned multiple live margin positions for {slot}; refusing ambiguous startup")
+                            volume = float(kp.get("volume", 0.0) or 0.0)
+                            cost = float(kp.get("cost", 0.0) or 0.0)
+                            entry_price = (cost / volume) if volume > 0 and cost > 0 else 0.0
+                            lev_raw = str(kp.get("leverage", "1") or "1").replace(":", "")
+                            try:
+                                leverage = int(float(lev_raw))
+                            except Exception:
+                                leverage = 1
+                            live_positions_by_slot[slot] = ActiveTrade(
+                                pair=alt_pair,
+                                side=side,
+                                volume=volume,
+                                entry_price=entry_price,
+                                leverage=leverage,
+                                entry_fee=float(kp.get("fee", 0.0) or 0.0),
+                                entry_time=float(kp.get("open_time", time.time()) or time.time()),
+                                order_id=str(kp.get("position_id", "")),
+                                cost=cost,
+                                breakeven_price=0.0,
+                                binance_symbol=self._binance_symbol_for_pair(alt_pair),
+                            )
+                    except Exception as e:
+                        raise RuntimeError(f"Live position reconciliation failed: {e}")
 
                 # Load dual positions (new format)
                 for slot, attr in [("active_long", "active_long"), ("active_short", "active_short")]:
                     td = state.get(slot)
-                    if td:
+                    reconciled = live_positions_by_slot.get(slot)
+                    if reconciled is not None:
+                        if td:
+                            filtered = {k: v for k, v in td.items() if k in valid_fields}
+                            for key in ("breakeven_price", "rollover_fees", "last_rollover_check"):
+                                value = filtered.get(key)
+                                if value not in (None, "", 0):
+                                    setattr(reconciled, key, value)
+                        setattr(self, attr, reconciled)
+                        logger.info(f"Resumed {slot} from Kraken: {reconciled.pair} {reconciled.side.upper()}")
+                        if reconciled.binance_symbol:
+                            self._start_stream_for(reconciled.binance_symbol)
+                    elif td and not self.dry_run:
+                        logger.warning(f"Dropping stale local {slot}; Kraken shows no matching live margin position.")
+                    elif td:
                         filtered = {k: v for k, v in td.items() if k in valid_fields}
                         t = ActiveTrade(**filtered)
                         setattr(self, attr, t)
@@ -3851,7 +4385,7 @@ class KrakenMarginArmyTrader:
                             self._start_stream_for(t.binance_symbol)
 
                 # Legacy: load old single active_trade into correct slot
-                if not self.active_long and not self.active_short:
+                if self.dry_run and not self.active_long and not self.active_short:
                     td = state.get("active_trade")
                     if td:
                         filtered = {k: v for k, v in td.items() if k in valid_fields}
@@ -3888,7 +4422,11 @@ class KrakenMarginArmyTrader:
                 self.shadow_validated_count = state.get("shadow_validated", 0)
                 self.shadow_failed_count = state.get("shadow_failed", 0)
                 self.completed_trades = state.get("completed_trades", [])
+                if not self.dry_run and not self.active_long and not self.active_short:
+                    self._save_state()
         except Exception as e:
+            if not self.dry_run:
+                raise RuntimeError(f"Live startup state load failed: {e}")
             logger.warning(f"Could not load state: {e}")
 
     def _save_results(self):
@@ -4154,10 +4692,14 @@ class KrakenMarginArmyTrader:
         runtime = time.time() - self.start_time
         hours = int(runtime // 3600)
         mins = int((runtime % 3600) // 60)
+        capital = self._get_capital_snapshot()
+        equity_delta = capital["equity"] - self.starting_equity if self.starting_equity > 0 else 0.0
 
         print()
         print(f"{'=' * 65}")
         print(f"  ARMY STATUS | Runtime: {hours}h {mins}m")
+        print(f"  Equity: ${capital['equity']:.2f} | Free: ${capital['free_margin']:.2f} | Used: ${capital['margin_used']:.2f} | UPNL: ${capital['unrealized']:+.2f}")
+        print(f"  Budget: ${capital['budget']:.2f} | Target/trade: ${PROFIT_TARGET_USD:.2f} ({capital['target_pct_equity']:.3f}% of equity) | Since start: ${equity_delta:+.2f}")
 
         # Dual position display
         for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
@@ -4211,22 +4753,23 @@ class KrakenMarginArmyTrader:
         print()
         print(f"  Trades: {self.total_trades} ({self.winning_trades} wins)")
         print(f"  Shadows: {self.shadow_validated_count} validated, {self.shadow_failed_count} failed")
-        print(f"  Session profit: ${self.total_profit:+.2f}")
+        print(f"  Session P&L tracker: ${self.total_profit:+.2f}")
         print(f"  Target: ${PROFIT_TARGET_USD} per trade (approx GBP1)")
         print(f"{'=' * 65}")
         print()
 
     # ----------------------------------------------------------
-    #  1-MINUTE MISSION HUNT: SELECT WINNER → OPEN → CLOSE IN 60s
+    #  MISSION HUNT: SELECT WINNER → OPEN → HOLD UNTIL PROFIT
     # ----------------------------------------------------------
     def mission_hunt(self, side_filter: str = None) -> dict:
         """
-        1-MINUTE MISSION HUNT — Full profitable cycle within 60 seconds.
+        Mission hunt — scan for the best live setup, enter once confirmed,
+        then hold until realized net profit after all fees clears the target.
 
         DISCIPLINE:
-          Selection IS the gate. Only open a trade when ALL signals align for
-          a completion within 60 seconds. No stop loss needed because we only
-          trade confirmed momentum breakouts with volume surge confirmation.
+          Selection IS the gate. Open only when the fastest high-conviction
+          setup is available. The 1-minute signal is an entry benchmark, not a
+          forced holding limit.
 
         ENTRY CRITERIA (all must pass):
           ✓ 3+ consecutive 1-minute candles in same direction (streak)
@@ -4238,35 +4781,37 @@ class KrakenMarginArmyTrader:
 
         EXECUTION:
           → Open market order (Kraken margin)
-          → Monitor every 2 seconds for 60 seconds
-          → Close immediately when net_pnl > any positive profit
-          → Close at deadline (60s) at best available market price
+          → Monitor continuously from Binance data
+          → Close only when realized net profit clears the configured target
 
         ARGS:
           side_filter : 'buy' | 'sell' | None (None = hunt both directions)
         """
-        MISSION_WINDOW_SEC   = 60      # Full cycle must complete within 60s
         MONITOR_POLL_SEC     = 2       # Price check interval
-        MIN_STREAK           = 3       # Consecutive same-direction candles
-        MIN_VOLUME_SURGE     = 1.2     # Last candle vol / avg(prev 5) — 1.2× = meaningful surge
-        MIN_MOM_PCT          = 0.75    # >= round-trip fee (0.73%) — only enter genuine surges
-        MIN_LAST_CANDLE_PCT  = 0.25    # Last individual candle must move > 0.25% (current impulse)
-        MAX_SPREAD_PCT       = 0.30    # Max allowed spread
+        MIN_STREAK           = 2       # Need direction confirmation, not perfection
+        MIN_VOLUME_SURGE     = 1.05    # Accept smaller but real participation
+        MIN_MOM_PCT          = 0.30    # Favor momentum that can still compound with leverage
+        MIN_LAST_CANDLE_PCT  = 0.08    # Current impulse should be alive, but not extreme
+        MAX_SPREAD_PCT       = 0.45    # Allow more pairs; scoring still penalizes wide spread
         MIN_LEVERAGE         = 3       # Minimum leverage to bother
-        MISSION_PROFIT_MIN   = 0.75    # Benchmark: minimum $0.75 true net profit before closing
-        SCAN_INTERVAL_SEC    = 10      # Seconds between re-scans when hunting
-        HUNT_TIMEOUT_SEC     = 300     # Give up after 5 minutes of scanning
+        MISSION_PROFIT_MIN   = PROFIT_TARGET_USD  # Realized profit target after fees
+        SCAN_INTERVAL_SEC    = 1       # Seconds between re-scans when hunting
+        HUNT_TIMEOUT_SEC     = 300     # Keep hunting for up to 5 minutes per patrol
+        MIN_PROJ_CONF        = 0.52    # Projection should lean clearly, not just random drift
+        MIN_PROJ_LIVE        = 0.40    # Live tape should agree with projection often enough
+        MIN_ALIGNMENT_SCORE  = -0.25   # Weak disagreement allowed, strong dissonance rejected
 
         mode_tag = "DRY RUN" if self.dry_run else "LIVE"
         direction_tag = ("SHORT ONLY ↓" if side_filter == "sell"
                          else "LONG ONLY ↑" if side_filter == "buy"
                          else "LONG + SHORT")
         print("=" * 70)
-        print(f"  🎯 1-MINUTE MISSION HUNT  |  Mode: {mode_tag}  |  Direction: {direction_tag}")
-        print("  Discipline: SELECT WINNER → OPEN → CLOSE IN 60s")
+        print(f"  🎯 MISSION HUNT  |  Mode: {mode_tag}  |  Direction: {direction_tag}")
+        print("  Discipline: SELECT WINNER → OPEN → HOLD UNTIL REALIZED PROFIT")
         print("  Signal: streak + volume surge + momentum + spread + leverage")
         print("  Entry gate: ALL criteria must pass – no exceptions")
         print("=" * 70)
+        seer_verdict, seer_confidence, seer_bonus = self._get_seer_bias()
 
         # ── Step 0: Orchestrator cycle sync ────────────────────────────────
         if self.orchestrator is not None:
@@ -4291,6 +4836,11 @@ class KrakenMarginArmyTrader:
         margin_budget = free_margin * MARGIN_BUFFER
         print(f"\n💰 Capital: ${equity:.2f} equity  |  ${free_margin:.2f} free"
               f"  |  Budget: ${margin_budget:.2f}")
+        if equity > 0:
+            print(
+                f"   Goal metrics: target ${MISSION_PROFIT_MIN:.2f} = {MISSION_PROFIT_MIN / equity * 100:.3f}% of equity"
+                f" | budget usage {margin_budget / equity * 100:.1f}%"
+            )
 
         if free_margin < 5.0:
             print("❌ MISSION ABORTED: Insufficient free margin (need $5+)")
@@ -4300,6 +4850,23 @@ class KrakenMarginArmyTrader:
         # ── Step 3: Scan 1-minute Binance klines for momentum signals ─────
         print("\n🔍 Scanning 1-minute momentum signals across margin universe...")
         candidates = []
+        reject_stats = {
+            "kline_fetch": 0,
+            "short_history": 0,
+            "streak": 0,
+            "surge": 0,
+            "exhaustion": 0,
+            "momentum": 0,
+            "impulse": 0,
+            "side_filter": 0,
+            "leverage": 0,
+            "notional": 0,
+            "atr_frozen": 0,
+            "projection_side": 0,
+            "projection_conf": 0,
+            "projection_live": 0,
+            "alignment": 0,
+        }
 
         valid_pairs = [
             (pair, info) for pair, info in self.margin_pairs.items()
@@ -4310,10 +4877,30 @@ class KrakenMarginArmyTrader:
                      max(info.leverage_sell or [0]) >= MIN_LEVERAGE))
         ]
 
+        MAX_SCAN_PAIRS = 24
+        valid_pairs.sort(
+            key=lambda item: (
+                max((item[1].leverage_buy or [0]) + (item[1].leverage_sell or [0])),
+                abs(item[1].momentum),
+                -item[1].spread_pct,
+                item[1].volume_24h,
+            ),
+            reverse=True,
+        )
+        scan_pairs = valid_pairs[:MAX_SCAN_PAIRS]
+
         print(f"   Universe: {len(valid_pairs)} pairs with Binance symbol, spread"
               f" ≤{MAX_SPREAD_PCT}%, leverage ≥{MIN_LEVERAGE}×")
 
-        for pair_name, info in valid_pairs:
+        macro_ctx = {}
+        if self.macro is not None:
+            try:
+                macro_ctx = self.macro.get_entry_context("")
+                logger.info(self.macro.summary_line(""))
+            except Exception:
+                macro_ctx = {}
+
+        for pair_name, info in scan_pairs:
             bsym = info.binance_symbol
             try:
                 url = (f"{BINANCE_KLINES_URL}?symbol={bsym}"
@@ -4323,9 +4910,11 @@ class KrakenMarginArmyTrader:
                 with urllib.request.urlopen(req, timeout=5) as r:
                     klines = json.loads(r.read().decode())
             except Exception:
+                reject_stats["kline_fetch"] += 1
                 continue
 
             if len(klines) < 6:
+                reject_stats["short_history"] += 1
                 continue
 
             # kline layout: [open_time, open, high, low, close, volume, ...]
@@ -4358,6 +4947,7 @@ class KrakenMarginArmyTrader:
                     break
 
             if streak_count < MIN_STREAK or streak_dir == 0:
+                reject_stats["streak"] += 1
                 continue   # Streak gate
 
             # ── Volume surge: last vs avg of prior 5 ──────────────────────
@@ -4366,6 +4956,7 @@ class KrakenMarginArmyTrader:
             vol_surge = last_vol / avg_vol if avg_vol > 0 else 1.0
 
             if vol_surge < MIN_VOLUME_SURGE:
+                reject_stats["surge"] += 1
                 continue   # Volume surge gate
 
             # ── Climax/Exhaustion filter ───────────────────────────────────
@@ -4382,20 +4973,24 @@ class KrakenMarginArmyTrader:
                     if streak_dir == -1:   # SELL signal
                         lower_wick = (k_cl - k_lo) / k_range  # bounce off low
                         if lower_wick > 0.20:  # wick ≥ 20% of range → sell climax
+                            reject_stats["exhaustion"] += 1
                             continue  # Exhaustion — skip
                     else:              # BUY signal
                         upper_wick = (k_hi - k_cl) / k_range  # rejection off high
                         if upper_wick > 0.20:  # wick ≥ 20% of range → buy climax
+                            reject_stats["exhaustion"] += 1
                             continue  # Exhaustion — skip
 
             # ── 3-candle momentum ──────────────────────────────────────────
             mom_3c = abs(c[-1] - c[-4]) / c[-4] * 100 if c[-4] > 0 else 0.0
             if mom_3c < MIN_MOM_PCT:
+                reject_stats["momentum"] += 1
                 continue   # Momentum gate
 
             # ── Current candle impulse check (last closed candle) ─────────
             last_candle_pct = abs(c[-1] - c[-2]) / c[-2] * 100 if c[-2] > 0 else 0.0
             if last_candle_pct < MIN_LAST_CANDLE_PCT:
+                reject_stats["impulse"] += 1
                 continue   # Current impulse gate
 
             # ── Side from streak direction ─────────────────────────────────
@@ -4403,19 +4998,23 @@ class KrakenMarginArmyTrader:
 
             # ── Direction filter (--side long/short) ──────────────────────
             if side_filter and side != side_filter:
+                reject_stats["side_filter"] += 1
                 continue
 
             # ── Leverage available for this side ──────────────────────────
             levs = info.leverage_buy if side == "buy" else info.leverage_sell
             if not levs:
+                reject_stats["leverage"] += 1
                 continue
             max_lev = max(levs)
             if max_lev < MIN_LEVERAGE:
+                reject_stats["leverage"] += 1
                 continue
 
             # ── Position size ──────────────────────────────────────────────
             notional = margin_budget * max_lev
             if notional < MIN_TRADE_USD:
+                reject_stats["notional"] += 1
                 continue
             vol_qty  = notional / info.last_price
             vol_qty  = max(vol_qty, info.ordermin)
@@ -4435,6 +5034,7 @@ class KrakenMarginArmyTrader:
             # ATR gate: hard reject only if 1m ATR is basically zero (ultra-frozen market)
             # During momentum surges, price can move 5-10× normal ATR in a single minute
             if atr_1m_pct < 0.02:   # Completely frozen — skip
+                reject_stats["atr_frozen"] += 1
                 continue
 
             # ── Mission score ──────────────────────────────────────────────
@@ -4444,8 +5044,98 @@ class KrakenMarginArmyTrader:
             lev_score     = min(max_lev / 10.0, 1.0)          # 0-1
             spread_score  = max(0, 1.0 - info.spread_pct / MAX_SPREAD_PCT)
             atr_ease      = max(0, 1.0 - required_pct / atr_1m_pct) if atr_1m_pct else 0
-            mission_score = (streak_score * 3 + surge_score * 2.5 + mom_score * 2
-                             + atr_ease * 2 + lev_score + spread_score)
+            signal_edge   = (mom_3c / required_pct) if required_pct > 0 else 0.0
+            est_minutes_to_target = (
+                required_pct / max(last_candle_pct, 0.001)
+            )
+            aux = self._score_aux_scanners(
+                symbol=info.pair,
+                side=side,
+                prices=c,
+                volumes=v,
+                current_price=info.last_price,
+                momentum_pct=mom_3c,
+            )
+            projection = self._build_prime_projection(info.binance_symbol, side)
+            if projection["side"] != side:
+                reject_stats["projection_side"] += 1
+                continue
+            if projection["confidence"] < MIN_PROJ_CONF:
+                reject_stats["projection_conf"] += 1
+                continue
+            if projection["live_match"] < MIN_PROJ_LIVE:
+                reject_stats["projection_live"] += 1
+                continue
+            alignment = self._collect_alignment_metrics(info.pair, side, mom_3c)
+            if alignment["score"] < MIN_ALIGNMENT_SCORE:
+                reject_stats["alignment"] += 1
+                continue
+            live_flow_bonus = 0.0
+            if self.stream and self.stream.is_alive() and info.binance_symbol:
+                sf = self.stream.get_flow_snapshot(info.binance_symbol)
+                if side == "buy":
+                    live_flow_bonus = max(0.0, (sf.get("buy_pct", 50.0) - 50.0) / 25.0)
+                else:
+                    live_flow_bonus = max(0.0, (sf.get("sell_pct", 50.0) - 50.0) / 25.0)
+                live_flow_bonus += min(sf.get("trade_velocity", 0.0) / 20.0, 1.0)
+
+            conviction_bonus = (
+                self.learning_bridge.get_conviction_bonus(info.pair)
+                if self.learning_bridge is not None else 0.0
+            )
+
+            macro_bonus = 0.0
+            if self.macro is not None and macro_ctx:
+                try:
+                    macro_bonus = self.macro.get_entry_context(info.pair).get("macro_score", 0.0)
+                except Exception:
+                    macro_bonus = 0.0
+
+            intel_bonus = 0.0
+            intel_verdict = "UNTESTED"
+            intel_confidence = 0.0
+            try:
+                intel = self.intel.pre_strike_research(
+                    symbol=info.binance_symbol,
+                    side=side,
+                    required_move_pct=required_pct,
+                    kraken_pair=info.pair,
+                )
+                intel_verdict = intel.get("verdict", "UNTESTED")
+                intel_confidence = float(intel.get("confidence", 0.0) or 0.0)
+                if intel_verdict == "GO":
+                    intel_bonus = 2.0 + intel_confidence
+                elif intel_verdict == "CAUTION":
+                    intel_bonus = max(0.0, intel_confidence - 0.25)
+                else:
+                    intel_bonus = -3.0
+            except Exception:
+                intel_verdict = "ERROR"
+                intel_bonus = -0.5
+
+            mission_score = (
+                streak_score * 2.5
+                + surge_score * 2.0
+                + mom_score * 2.0
+                + atr_ease * 2.5
+                + lev_score
+                + spread_score
+                + min(signal_edge, 3.0) * 1.5
+                + max(0.0, 2.0 - est_minutes_to_target) * 1.5
+                + live_flow_bonus
+                + conviction_bonus
+                + macro_bonus
+                + intel_bonus
+                + seer_bonus
+                + aux["war_bonus"]
+                + aux["sniper_bonus"]
+                + aux["nexus_bonus"]
+                + (1.5 if projection["side"] == side else -1.5)
+                + projection["confidence"] * 2.0
+                + projection["live_match"] * 2.0
+                + max(-1.5, min(projection["edge"], 1.5))
+                + alignment["score"]
+            )
 
             candidates.append({
                 "info":         info,
@@ -4459,10 +5149,44 @@ class KrakenMarginArmyTrader:
                 "last_c_pct":   last_candle_pct,
                 "atr_1m_pct":   atr_1m_pct,
                 "required_pct": required_pct,
+                "signal_edge":  signal_edge,
+                "eta_min":      est_minutes_to_target,
+                "live_flow":    live_flow_bonus,
+                "conviction":   conviction_bonus,
+                "macro":        macro_bonus,
+                "intel":        intel_verdict,
+                "intel_conf":   intel_confidence,
+                "seer":         seer_verdict,
+                "seer_conf":    seer_confidence,
+                "war_prob":     aux["war_prob"],
+                "war_pri":      aux["war_priority"],
+                "sniper":       aux["sniper_action"],
+                "sniper_conf":  aux["sniper_conf"],
+                "nexus_prob":   aux["nexus_prob"],
+                "nexus_edge":   aux["nexus_edge"],
+                "proj_side":    projection["side"],
+                "proj_conf":    projection["confidence"],
+                "proj_edge":    projection["edge"],
+                "proj_live":    projection["live_match"],
+                "align":        alignment["score"],
+                "coh":          alignment["coherence"],
+                "lyra_h":       alignment["lyra"],
+                "lambda_h":     alignment["lambda"],
+                "purity_h":     alignment["purity"],
+                "earth_h":      alignment["earth"],
+                "solar_h":      alignment["solar"],
                 "score":        mission_score,
             })
 
         if not candidates:
+            print(
+                f"   Rejections: streak={reject_stats['streak']} surge={reject_stats['surge']} "
+                f"momentum={reject_stats['momentum']} impulse={reject_stats['impulse']} "
+                f"exhaustion={reject_stats['exhaustion']} leverage={reject_stats['leverage']} "
+                f"atr={reject_stats['atr_frozen']} proj_side={reject_stats['projection_side']} "
+                f"proj_conf={reject_stats['projection_conf']} proj_live={reject_stats['projection_live']} "
+                f"align={reject_stats['alignment']} fetch={reject_stats['kline_fetch']}"
+            )
             print(f"\n⏳ No targets qualifying right now. Continuous scanning every {SCAN_INTERVAL_SEC}s...")
             print(f"   Will hunt for up to {HUNT_TIMEOUT_SEC//60} minutes. Ctrl+C to abort.")
             hunt_start = time.time()
@@ -4474,7 +5198,7 @@ class KrakenMarginArmyTrader:
                 # Skip update_prices_free() here — the kline scan below fetches
                 # fresh data per-pair already. The bulk price call adds 30s delay.
                 candidates = []
-                for pair_name2, info2 in valid_pairs:
+                for pair_name2, info2 in scan_pairs:
                     bsym2 = info2.binance_symbol
                     try:
                         url2 = (f"{BINANCE_KLINES_URL}?symbol={bsym2}"
@@ -4539,13 +5263,100 @@ class KrakenMarginArmyTrader:
                     ms2 = min(m2/2,1.0); ls2 = min(lev2/10,1.0)
                     sprd2 = max(0,1.0-info2.spread_pct/MAX_SPREAD_PCT)
                     ae2 = max(0,1.0-rp2/atr2) if atr2>0 else 0
-                    sc_total = ss2*3+sg2*2.5+ms2*2+ae2*2+ls2+sprd2
+                    edge2 = (m2 / rp2) if rp2 > 0 else 0.0
+                    eta2 = rp2 / max(m2_last, 0.001)
+                    aux2 = self._score_aux_scanners(
+                        symbol=info2.pair,
+                        side=side2,
+                        prices=c2,
+                        volumes=v2,
+                        current_price=info2.last_price,
+                        momentum_pct=m2,
+                    )
+                    projection2 = self._build_prime_projection(info2.binance_symbol, side2)
+                    if projection2["side"] != side2:
+                        continue
+                    if projection2["confidence"] < MIN_PROJ_CONF:
+                        continue
+                    if projection2["live_match"] < MIN_PROJ_LIVE:
+                        continue
+                    alignment2 = self._collect_alignment_metrics(info2.pair, side2, m2)
+                    if alignment2["score"] < MIN_ALIGNMENT_SCORE:
+                        continue
+                    live_flow2 = 0.0
+                    if self.stream and self.stream.is_alive() and info2.binance_symbol:
+                        sf2 = self.stream.get_flow_snapshot(info2.binance_symbol)
+                        if side2 == "buy":
+                            live_flow2 = max(0.0, (sf2.get("buy_pct", 50.0) - 50.0) / 25.0)
+                        else:
+                            live_flow2 = max(0.0, (sf2.get("sell_pct", 50.0) - 50.0) / 25.0)
+                        live_flow2 += min(sf2.get("trade_velocity", 0.0) / 20.0, 1.0)
+
+                    conviction2 = (
+                        self.learning_bridge.get_conviction_bonus(info2.pair)
+                        if self.learning_bridge is not None else 0.0
+                    )
+
+                    macro2 = 0.0
+                    if self.macro is not None and macro_ctx:
+                        try:
+                            macro2 = self.macro.get_entry_context(info2.pair).get("macro_score", 0.0)
+                        except Exception:
+                            macro2 = 0.0
+
+                    intel_bonus2 = 0.0
+                    intel_verdict2 = "UNTESTED"
+                    intel_conf2 = 0.0
+                    try:
+                        intel2 = self.intel.pre_strike_research(
+                            symbol=info2.binance_symbol,
+                            side=side2,
+                            required_move_pct=rp2,
+                            kraken_pair=info2.pair,
+                        )
+                        intel_verdict2 = intel2.get("verdict", "UNTESTED")
+                        intel_conf2 = float(intel2.get("confidence", 0.0) or 0.0)
+                        if intel_verdict2 == "GO":
+                            intel_bonus2 = 2.0 + intel_conf2
+                        elif intel_verdict2 == "CAUTION":
+                            intel_bonus2 = max(0.0, intel_conf2 - 0.25)
+                        else:
+                            intel_bonus2 = -3.0
+                    except Exception:
+                        intel_verdict2 = "ERROR"
+                        intel_bonus2 = -0.5
+
+                    sc_total = (
+                        ss2*2.5 + sg2*2.0 + ms2*2.0 + ae2*2.5 + ls2 + sprd2
+                        + min(edge2, 3.0)*1.5
+                        + max(0.0, 2.0 - eta2)*1.5
+                        + live_flow2 + conviction2 + macro2 + intel_bonus2
+                        + seer_bonus + aux2["war_bonus"] + aux2["sniper_bonus"] + aux2["nexus_bonus"]
+                        + (1.5 if projection2["side"] == side2 else -1.5)
+                        + projection2["confidence"] * 2.0
+                        + projection2["live_match"] * 2.0
+                        + max(-1.5, min(projection2["edge"], 1.5))
+                        + alignment2["score"]
+                    )
                     candidates.append({
                         "info": info2, "side": side2, "vol": vq2,
                         "trade_val": tv2, "leverage": lev2,
                         "streak": sc2, "vol_surge": vs2, "mom_3c_pct": m2,
                         "last_c_pct": m2_last,
-                        "atr_1m_pct": atr2, "required_pct": rp2, "score": sc_total
+                        "atr_1m_pct": atr2, "required_pct": rp2,
+                        "signal_edge": edge2, "eta_min": eta2,
+                        "live_flow": live_flow2, "conviction": conviction2,
+                        "macro": macro2, "intel": intel_verdict2,
+                        "intel_conf": intel_conf2, "seer": seer_verdict,
+                        "seer_conf": seer_confidence, "war_prob": aux2["war_prob"],
+                        "war_pri": aux2["war_priority"], "sniper": aux2["sniper_action"],
+                        "sniper_conf": aux2["sniper_conf"], "nexus_prob": aux2["nexus_prob"],
+                        "nexus_edge": aux2["nexus_edge"], "proj_side": projection2["side"],
+                        "proj_conf": projection2["confidence"], "proj_edge": projection2["edge"],
+                        "proj_live": projection2["live_match"], "align": alignment2["score"],
+                        "coh": alignment2["coherence"], "lyra_h": alignment2["lyra"],
+                        "lambda_h": alignment2["lambda"], "purity_h": alignment2["purity"],
+                        "earth_h": alignment2["earth"], "solar_h": alignment2["solar"], "score": sc_total
                     })
                 if candidates:
                     print()
@@ -4561,18 +5372,20 @@ class KrakenMarginArmyTrader:
         # Sort by mission score descending
         candidates.sort(key=lambda x: x["score"], reverse=True)
 
-        print(f"\n🏆 TOP MISSION CANDIDATES (passed all gates):")
-        print(f"{'#':<3} {'PAIR':<12} {'SIDE':<5} {'LEV':>4} {'STREAK':>7}"
-              f" {'SURGE':>6} {'3cMOM%':>7} {'1cMOM%':>7} {'SCORE':>6}")
-        print("-" * 70)
+        print(f"\n🏆 TOP MISSION CANDIDATES (goal-aligned after-fee signals):")
+        print(f"{'#':<3} {'PAIR':<12} {'SIDE':<5} {'LEV':>4} {'REQ%':>7}"
+              f" {'EDGE':>6} {'ETAm':>6} {'PRJ':>5} {'LIV':>5} {'ALN':>5} {'SCORE':>6}")
+        print("-" * 86)
         for i, c_ in enumerate(candidates[:5]):
             print(
                 f"{i+1:<3} {c_['info'].pair:<12} {c_['side'].upper():<5}"
                 f" {c_['leverage']:>3}×"
-                f" {c_['streak']:>6}c"
-                f" {c_['vol_surge']:>5.1f}×"
-                f" {c_['mom_3c_pct']:>+6.3f}%"
-                f" {c_['last_c_pct']:>+6.3f}%"
+                f" {c_['required_pct']:>6.3f}%"
+                f" {c_['signal_edge']:>5.2f}"
+                f" {c_['eta_min']:>5.2f}"
+                f" {c_['proj_conf']:>5.2f}"
+                f" {c_['proj_live']:>5.2f}"
+                f" {c_['align']:>5.2f}"
                 f" {c_['score']:>6.2f}"
             )
 
@@ -4586,9 +5399,18 @@ class KrakenMarginArmyTrader:
         print(f"\n🎯 MISSION TARGET: {info_b.pair} {side_b.upper()} {lev_b}×")
         print(f"   Streak          : {best['streak']} consecutive 1m candles")
         print(f"   Volume surge    : {best['vol_surge']:.1f}× normal")
-        print(f"   3-candle mom    : {best['mom_3c_pct']:+.3f}%  (need ≥{0.75:.2f}%)")
+        print(f"   3-candle mom    : {best['mom_3c_pct']:+.3f}%")
         print(f"   Last candle     : {best['last_c_pct']:+.3f}%  (current impulse)")
-        print(f"   1m ATR          : {best['atr_1m_pct']:.3f}%  |  Round-trip fee: {best['required_pct']:.3f}%")
+        print(f"   1m ATR          : {best['atr_1m_pct']:.3f}%  |  Required move: {best['required_pct']:.3f}%")
+        print(f"   Signal edge     : {best['signal_edge']:.2f}x  |  ETA to target: {best['eta_min']:.2f} min")
+        print(f"   Intel verdict   : {best['intel']}  |  Confidence: {best['intel_conf']:.2f}")
+        print(f"   Seer            : {best['seer']}  |  Confidence: {best['seer_conf']:.2f}")
+        print(f"   War / Sniper    : {best['war_prob']:.2f} / {best['sniper']} {best['sniper_conf']:.2f}")
+        print(f"   Nexus           : prob {best['nexus_prob']:.2f}  |  edge {best['nexus_edge']:+.2f}")
+        print(f"   Projection      : {best['proj_side'].upper()}  |  conf {best['proj_conf']:.2f}  |  live match {best['proj_live']:.2f}")
+        print(f"   Alignment       : coh {best['coh']:.2f} | lyra {best['lyra_h']:.2f} | lambda {best['lambda_h']:.2f} | purity {best['purity_h']:.2f}")
+        print(f"   Planet / Solar  : earth {best['earth_h']:.2f} | solar {best['solar_h']:.2f} | align {best['align']:+.2f}")
+        print(f"   Live flow bonus : {best['live_flow']:+.2f}  |  Macro: {best['macro']:+.2f}  |  Learning: {best['conviction']:+.2f}")
         print(f"   Notional        : ${tv_b:.2f}  |  Volume: {vol_b}")
 
         # ── Step 3b: Orchestrator gate before committing capital ───────────
@@ -4625,8 +5447,8 @@ class KrakenMarginArmyTrader:
         max_net_pnl    = -9999.0
         closed_result  = None
 
-        print(f"\n⏱️  MONITORING POSITION — HOLD UNTIL PROFIT")
-        print(f"   ONLY exit: net_pnl >= ${MISSION_PROFIT_MIN:.2f}  |  No stop loss  |  No time limit")
+        print(f"\n⏱️  MONITORING POSITION — HOLD UNTIL REALIZED PROFIT")
+        print(f"   ONLY exit: net_pnl >= ${MISSION_PROFIT_MIN:.2f} after fees  |  No stop loss  |  No time limit")
         print("-" * 55)
 
         while True:  # Hold until profitable — no deadline
@@ -4639,8 +5461,11 @@ class KrakenMarginArmyTrader:
 
             # Get live price
             current = 0.0
+            price_source = "REST"
             if self.stream and self.stream.is_alive():
-                current = self.stream.get_live_price(trade.binance_symbol)
+                current = self.stream.get_executable_price(trade.binance_symbol, side=trade.side)
+                if current > 0:
+                    price_source = "LIVE"
             if current <= 0:
                 current = self.market.get_single_price(trade.binance_symbol)
             if current <= 0:
@@ -4656,16 +5481,25 @@ class KrakenMarginArmyTrader:
             exit_fee_est = current * trade.volume * KRAKEN_CLOSE_FEE
             net_pnl = gross - trade.entry_fee - exit_fee_est
             max_net_pnl = max(max_net_pnl, net_pnl)
+            status_icon = "UP" if net_pnl > 0 else "WAIT"
+            status_line = (
+                f"\r[{status_icon}] t={elapsed:6.0f}s src={price_source:<4} "
+                f"pair={trade.pair:<10} side={trade.side.upper():<4} lev={trade.leverage}x "
+                f"entry=${trade.entry_price:,.4f} now=${current:,.4f} "
+                f"net=${net_pnl:+.4f} peak=${max_net_pnl:+.4f} "
+                f"target=${MISSION_PROFIT_MIN:.2f}"
+            )
+            print(status_line.ljust(180), end="", flush=True)
 
             status_icon = "📈" if net_pnl > 0 else "⏳"
             print(f"  {status_icon} {elapsed:6.0f}s | ${trade.entry_price:,.4f}→${current:,.4f}"
                   f" | Net: ${net_pnl:+.4f}  peak=${max_net_pnl:+.4f}",
                   end="\r", flush=True)
 
-            # ONLY exit condition: net profit >= $0.75 benchmark floor
+            # ONLY exit condition: realized net profit reaches the live target
             if net_pnl >= MISSION_PROFIT_MIN:
                 print()
-                print(f"\n💰 PROFIT FLOOR HIT! Net: ${net_pnl:+.4f} (≥ ${MISSION_PROFIT_MIN:.2f} benchmark)  Closing...")
+                print(f"\n💰 PROFIT TARGET HIT! Net: ${net_pnl:+.4f} (≥ ${MISSION_PROFIT_MIN:.2f} after fees)  Closing...")
                 closed_result = self.close_position(
                     reason=f"MISSION_PROFIT (${net_pnl:+.4f})",
                     trade=trade
@@ -4826,6 +5660,14 @@ class KrakenMarginArmyTrader:
 
         # Step 2: Prices from FREE API
         self.update_prices_free()
+
+        capital = self._get_capital_snapshot()
+        print(
+            f"  Capital: equity=${capital['equity']:.2f} | free=${capital['free_margin']:.2f} | "
+            f"used=${capital['margin_used']:.2f} | budget=${capital['budget']:.2f} | "
+            f"target={capital['target_pct_equity']:.3f}% eq"
+        )
+        print("=" * 70)
 
         # Step 3: Show universe
         self.print_universe()
