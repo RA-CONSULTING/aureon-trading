@@ -1,18 +1,25 @@
 import os
+import sys
 import logging
 import requests
 import time
 from typing import Dict, Any, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Load environment variables from .env file
+# Ensure repo-root package imports and env resolution work when launched directly.
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+# Load environment variables from repo-root .env first.
 try:
     from dotenv import load_dotenv
-    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    env_path = os.path.join(_REPO_ROOT, '.env')
     if os.path.exists(env_path):
-        load_dotenv(env_path)
+        load_dotenv(env_path, override=False)
     else:
-        load_dotenv()  # Fallback
+        load_dotenv(override=False)
 except ImportError:
     pass
 
@@ -28,12 +35,7 @@ class CapitalClient:
         self.identifier = os.getenv('CAPITAL_IDENTIFIER')
         self.password = os.getenv('CAPITAL_PASSWORD')
         self.demo_mode = os.getenv('CAPITAL_DEMO', '0') == '1'
-        
-        # Debug: Show what's loaded
-        has_key = bool(self.api_key)
-        has_id = bool(self.identifier)
-        has_pwd = bool(self.password)
-        print(f"🌐 Capital.com: key={'✓' if has_key else '✗'}, id={'✓' if has_id else '✗'}, pwd={'✓' if has_pwd else '✗'}, demo={self.demo_mode}")
+        self.init_error = ""
         
         if self.demo_mode:
             self.base_url = "https://demo-api-capital.backend-capital.com/api/v1"
@@ -55,6 +57,7 @@ class CapitalClient:
         if not self.api_key or not self.identifier or not self.password:
             logger.warning("Capital.com credentials not fully set. Client will be disabled.")
             self.enabled = False
+            self.init_error = "credentials_missing"
         else:
             self.enabled = True
             self._create_session()
@@ -95,15 +98,18 @@ class CapitalClient:
             elif response.status_code == 429 or 'too-many.requests' in response.text.lower():
                 # Rate limited - back off for 10 minutes (Capital.com has aggressive limits)
                 self._rate_limit_until = time.time() + 600
+                self.init_error = "rate_limited"
                 if not self._session_error_logged:
                     logger.warning("Capital.com rate limited - backing off for 5 minutes")
                     self._session_error_logged = True
             else:
+                self.init_error = f"http_{response.status_code}"
                 if not self._session_error_logged:
                     logger.error(f"Failed to create Capital.com session: {response.text}")
                     self._session_error_logged = True
                 self.enabled = False
         except Exception as e:
+            self.init_error = str(e)
             if not self._session_error_logged:
                 logger.error(f"Capital.com connection error: {e}")
                 self._session_error_logged = True

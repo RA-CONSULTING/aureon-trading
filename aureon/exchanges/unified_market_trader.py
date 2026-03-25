@@ -32,6 +32,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 LOCAL_HOST = "127.0.0.1"
 LOCAL_PORT = 8790
+EXCHANGE_REINIT_INTERVAL_SEC = 30.0
 
 
 class _UnifiedDashboardHandler(BaseHTTPRequestHandler):
@@ -72,17 +73,105 @@ class _UnifiedDashboardHandler(BaseHTTPRequestHandler):
 class UnifiedMarketTrader:
     def __init__(self, dry_run: bool = False):
         os.environ.setdefault("AUREON_DISABLE_LOCAL_DASHBOARD", "1")
-        self.kraken = KrakenMarginArmyTrader(dry_run=dry_run)
-        self.capital = CapitalCFDTrader()
+        self.dry_run = dry_run
+        self.kraken = None
+        self.capital = None
         self.start_time = time.time()
         self.kraken_ready = False
-        self.capital_ready = bool(getattr(self.capital, "enabled", False))
+        self.capital_ready = False
         self.kraken_error = ""
         self.capital_error = ""
+        self._last_kraken_init_attempt = 0.0
+        self._last_capital_init_attempt = 0.0
+        self._last_kraken_startup_attempt = 0.0
+        self._last_capital_startup_attempt = 0.0
         self._latest_dashboard_payload: Dict[str, Any] = {}
         self._local_dashboard_server: ThreadingHTTPServer | None = None
         self._local_dashboard_thread: threading.Thread | None = None
+        self._init_exchanges()
         self._start_local_dashboard_server()
+
+    def _init_exchanges(self) -> None:
+        self._init_kraken(force=True)
+        self._init_capital(force=True)
+
+    def _init_kraken(self, force: bool = False) -> None:
+        now = time.time()
+        if not force and now - self._last_kraken_init_attempt < EXCHANGE_REINIT_INTERVAL_SEC:
+            return
+        self._last_kraken_init_attempt = now
+        try:
+            self.kraken = KrakenMarginArmyTrader(dry_run=self.dry_run)
+            self.kraken_error = ""
+        except Exception as e:
+            self.kraken = None
+            self.kraken_ready = False
+            self.kraken_error = str(e)
+            logger.error("Kraken init failed: %s", e)
+
+    def _init_capital(self, force: bool = False) -> None:
+        now = time.time()
+        if not force and now - self._last_capital_init_attempt < EXCHANGE_REINIT_INTERVAL_SEC:
+            return
+        self._last_capital_init_attempt = now
+        try:
+            self.capital = CapitalCFDTrader()
+            self.capital_ready = bool(getattr(self.capital, "enabled", False))
+            self.capital_error = ""
+            if not self.capital_ready:
+                self.capital_error = str(getattr(self.capital, "init_error", "") or "client_disabled_or_blocked")
+        except Exception as e:
+            self.capital = None
+            self.capital_ready = False
+            self.capital_error = str(e)
+            logger.error("Capital init failed: %s", e)
+
+    def _ensure_exchanges(self) -> None:
+        if self.kraken is None:
+            self._init_kraken()
+        elif not self.kraken_ready:
+            self._startup_kraken()
+        if self.capital is None:
+            self._init_capital()
+        elif not self.capital_ready:
+            self._startup_capital()
+
+    def _startup_kraken(self, force: bool = False) -> None:
+        if self.kraken is None:
+            return
+        now = time.time()
+        if not force and now - self._last_kraken_startup_attempt < EXCHANGE_REINIT_INTERVAL_SEC:
+            return
+        self._last_kraken_startup_attempt = now
+        try:
+            self.kraken.discover_margin_universe()
+            self.kraken.update_prices_free()
+            self.kraken.print_status()
+            self.kraken_ready = True
+            self.kraken_error = ""
+        except Exception as e:
+            self.kraken_ready = False
+            self.kraken_error = str(e)
+            logger.error("Kraken startup unavailable: %s", e)
+
+    def _startup_capital(self, force: bool = False) -> None:
+        if self.capital is None:
+            return
+        now = time.time()
+        if not force and now - self._last_capital_startup_attempt < EXCHANGE_REINIT_INTERVAL_SEC:
+            return
+        self._last_capital_startup_attempt = now
+        try:
+            self.capital.status_lines()
+            self.capital_ready = bool(getattr(self.capital, "enabled", False))
+            if self.capital_ready:
+                self.capital_error = ""
+            elif not self.capital_error:
+                self.capital_error = str(getattr(self.capital, "init_error", "") or "client_disabled_or_blocked")
+        except Exception as e:
+            self.capital_ready = False
+            self.capital_error = str(e)
+            logger.error("Capital startup unavailable: %s", e)
 
     def _start_local_dashboard_server(self) -> None:
         try:
@@ -112,14 +201,14 @@ class UnifiedMarketTrader:
         return "unclear"
 
     def _build_combined_payload(self) -> Dict[str, Any]:
-        kraken_payload = self.kraken.get_local_dashboard_state() if self.kraken_ready else {
+        kraken_payload = self.kraken.get_local_dashboard_state() if self.kraken_ready and self.kraken is not None else {
             "ok": False,
             "exchange": "kraken",
             "error": self.kraken_error or "not_ready",
             "positions": [],
             "status_lines": [f"KRAKEN unavailable: {self.kraken_error or 'not_ready'}"],
         }
-        capital_payload = self.capital.get_dashboard_payload() if self.capital_ready else {
+        capital_payload = self.capital.get_dashboard_payload() if self.capital_ready and self.capital is not None else {
             "ok": False,
             "exchange": "capital",
             "error": self.capital_error or "not_ready",
@@ -236,8 +325,8 @@ class UnifiedMarketTrader:
         return dict(self._build_combined_payload())
 
     def _latest_monitor_line(self) -> str:
-        capital_line = getattr(self.capital, "_latest_monitor_line", "")
-        kraken_line = getattr(self.kraken, "_latest_monitor_line", "")
+        capital_line = getattr(self.capital, "_latest_monitor_line", "") if self.capital is not None else ""
+        kraken_line = getattr(self.kraken, "_latest_monitor_line", "") if self.kraken is not None else ""
         return capital_line or kraken_line
 
     def get_status_lines(self) -> List[str]:
@@ -245,11 +334,11 @@ class UnifiedMarketTrader:
             f"UNIFIED MARKET STATUS | runtime={(time.time() - self.start_time) / 60.0:.1f}m",
             "Markets armed: Kraken margin + Capital CFDs",
         ]
-        if self.kraken_ready:
+        if self.kraken_ready and self.kraken is not None:
             lines.extend(self.kraken._latest_status_lines[-10:] if getattr(self.kraken, "_latest_status_lines", None) else [])
         else:
             lines.append(f"KRAKEN: unavailable | {self.kraken_error or 'not_ready'}")
-        if self.capital_ready:
+        if self.capital_ready and self.capital is not None:
             lines.extend(self.capital.status_lines())
         else:
             lines.append(f"CAPITAL: unavailable | {self.capital_error or 'not_ready'}")
@@ -262,14 +351,14 @@ class UnifiedMarketTrader:
         print("  Exchanges: Kraken Margin + Capital CFDs")
         print("-" * 78)
         print("  [KRAKEN]")
-        if self.kraken_ready:
+        if self.kraken_ready and self.kraken is not None:
             for line in self.kraken._latest_status_lines[-10:]:
                 print(f"  {line}")
         else:
             print(f"  KRAKEN unavailable: {self.kraken_error or 'not_ready'}")
         print("-" * 78)
         print("  [CAPITAL]")
-        if self.capital_ready:
+        if self.capital_ready and self.capital is not None:
             for line in self.capital.status_lines():
                 print(f"  {line}")
         else:
@@ -278,21 +367,24 @@ class UnifiedMarketTrader:
         print()
 
     def tick(self) -> Dict[str, Any]:
+        self._ensure_exchanges()
         kraken_closed: List[dict] = []
         capital_closed: List[dict] = []
-        if self.kraken_ready:
+        if self.kraken_ready and self.kraken is not None:
             try:
                 kraken_closed = self.kraken.tick()
             except Exception as e:
                 self.kraken_error = str(e)
                 self.kraken_ready = False
+                self.kraken = None
                 logger.error("Kraken tick failed: %s", e)
-        if self.capital_ready:
+        if self.capital_ready and self.capital is not None:
             try:
                 capital_closed = self.capital.tick()
             except Exception as e:
                 self.capital_error = str(e)
                 self.capital_ready = False
+                self.capital = None
                 logger.error("Capital tick failed: %s", e)
         payload = self._build_combined_payload()
         return {
@@ -302,7 +394,7 @@ class UnifiedMarketTrader:
         }
 
     def run(self, interval_sec: float = 2.0) -> None:
-        mode = "DRY RUN" if self.kraken.dry_run else "LIVE"
+        mode = "DRY RUN" if self.dry_run else "LIVE"
         print("=" * 78)
         print("  UNIFIED MARKET TRADER")
         print(f"  Mode: {mode}")
@@ -311,26 +403,11 @@ class UnifiedMarketTrader:
         print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("=" * 78)
 
-        try:
-            self.kraken.discover_margin_universe()
-            self.kraken.update_prices_free()
-            self.kraken.print_status()
-            self.kraken_ready = True
-            self.kraken_error = ""
-        except Exception as e:
-            self.kraken_ready = False
-            self.kraken_error = str(e)
-            logger.error("Kraken startup unavailable: %s", e)
+        if self.kraken is not None:
+            self._startup_kraken(force=True)
 
-        try:
-            self.capital.status_lines()
-            self.capital_ready = bool(getattr(self.capital, "enabled", False))
-            if not self.capital_ready and not self.capital_error:
-                self.capital_error = "client_disabled_or_blocked"
-        except Exception as e:
-            self.capital_ready = False
-            self.capital_error = str(e)
-            logger.error("Capital startup unavailable: %s", e)
+        if self.capital is not None:
+            self._startup_capital(force=True)
 
         self._build_combined_payload()
 
