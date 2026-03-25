@@ -31,11 +31,14 @@ import hashlib
 import logging
 import argparse
 import threading
+import math
 import urllib.request
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from collections import deque
+from pathlib import Path
 
 # Production startup should be deterministic and quiet unless explicitly overridden.
 os.environ.setdefault("AUREON_QUIET_STARTUP", "1")
@@ -45,6 +48,12 @@ _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(_REPO_ROOT, ".env"), override=False)
+except Exception:
+    pass
 
 # Import ETA predictor for margin positions
 try:
@@ -186,6 +195,83 @@ except ImportError:
     get_atn_monitor = None
 
 try:
+    from aureon.intelligence.aureon_unified_intelligence_registry import get_unified_puller
+    HAS_UNIFIED_REGISTRY = True
+except ImportError:
+    HAS_UNIFIED_REGISTRY = False
+    get_unified_puller = None
+
+try:
+    from aureon.intelligence.aureon_unified_decision_engine import (
+        UnifiedDecisionEngine,
+        SignalInput,
+        CoordinationInput,
+        DecisionType,
+        DecisionReason,
+    )
+    HAS_UNIFIED_DECISION = True
+except ImportError:
+    HAS_UNIFIED_DECISION = False
+    UnifiedDecisionEngine = None
+    SignalInput = None
+    CoordinationInput = None
+    DecisionType = None
+    DecisionReason = None
+
+try:
+    from aureon.scanners.aureon_margin_harmonic_scanner import HarmonicMarginWaveformScanner
+    HAS_MARGIN_HARMONIC_SCANNER = True
+except ImportError:
+    HAS_MARGIN_HARMONIC_SCANNER = False
+    HarmonicMarginWaveformScanner = None
+
+try:
+    from aureon.scanners.aureon_quantum_mirror_scanner import create_quantum_scanner
+    HAS_QUANTUM_MIRROR_SCANNER = True
+except ImportError:
+    HAS_QUANTUM_MIRROR_SCANNER = False
+    create_quantum_scanner = None
+
+try:
+    from aureon.intelligence.aureon_timeline_oracle import get_timeline_oracle
+    HAS_TIMELINE_ORACLE = True
+except ImportError:
+    HAS_TIMELINE_ORACLE = False
+    get_timeline_oracle = None
+
+try:
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
+    HAS_HARMONIC_FUSION = True
+except ImportError:
+    HAS_HARMONIC_FUSION = False
+    HarmonicWaveFusion = None
+
+try:
+    from aureon.analytics.aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
+    HAS_WHALE_ORDERBOOK = True
+except ImportError:
+    HAS_WHALE_ORDERBOOK = False
+    WhaleOrderbookAnalyzer = None
+
+try:
+    from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker
+    HAS_KRAKEN_FEE_TRACKER = True
+except ImportError:
+    try:
+        from kraken_fee_tracker import get_kraken_fee_tracker
+        HAS_KRAKEN_FEE_TRACKER = True
+    except ImportError:
+        HAS_KRAKEN_FEE_TRACKER = False
+        get_kraken_fee_tracker = None
+
+try:
+    from aureon.scanners.aureon_ocean_wave_scanner import OceanWaveScanner
+    HAS_OCEAN_WAVE_SCANNER = True
+except ImportError:
+    HAS_OCEAN_WAVE_SCANNER = False
+    OceanWaveScanner = None
+
+try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
 except ImportError:
@@ -202,6 +288,49 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger("margin_army")
+
+
+class _LocalDashboardHandler(BaseHTTPRequestHandler):
+    """Minimal local telemetry API for the React dashboard."""
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._send_cors_headers()
+        self.end_headers()
+
+    def do_GET(self):
+        server = getattr(self, "server", None)
+        trader = getattr(server, "trader_ref", None)
+        if not trader:
+            self._send_json(503, {"ok": False, "error": "trader unavailable"})
+            return
+
+        if self.path.startswith("/health"):
+            self._send_json(200, {"ok": True, "service": "kraken-margin-dashboard"})
+            return
+
+        if self.path.startswith("/api/terminal-state"):
+            self._send_json(200, trader.get_local_dashboard_state())
+            return
+
+        self._send_json(404, {"ok": False, "error": "not found"})
+
+    def log_message(self, format: str, *args) -> None:
+        return
+
+    def _send_cors_headers(self) -> None:
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "content-type")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+
+    def _send_json(self, code: int, payload: dict) -> None:
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(code)
+        self._send_cors_headers()
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
 # ==============================================================
 #  CONFIGURATION - ARMY DISCIPLINE
@@ -246,6 +375,10 @@ BINANCE_DEPTH_URL = "https://api.binance.com/api/v3/depth"
 BINANCE_TRADES_URL = "https://api.binance.com/api/v3/trades"
 BINANCE_AGG_TRADES_URL = "https://api.binance.com/api/v3/aggTrades"
 BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
+DASHBOARD_LIVE_FEED_USER_ID = os.getenv("AUREON_LIVE_FEED_USER_ID", "69e5567f-7ad1-42af-860f-3709ef1f5935")
+DASHBOARD_SYNC_INTERVAL_SEC = 10
+LOCAL_DASHBOARD_HOST = os.getenv("AUREON_LOCAL_DASHBOARD_HOST", "127.0.0.1")
+LOCAL_DASHBOARD_PORT = int(os.getenv("AUREON_LOCAL_DASHBOARD_PORT", "8787"))
 
 # Kraken public REST (no auth) - order book on our actual trading exchange
 KRAKEN_DEPTH_URL = "https://api.kraken.com/0/public/Depth"
@@ -2696,6 +2829,21 @@ class KrakenMarginArmyTrader:
         self.completed_trades: List[dict] = []
         self.start_time = time.time()
         self.starting_equity = 0.0
+        self.dashboard_user_id = DASHBOARD_LIVE_FEED_USER_ID
+        self.dashboard_sync_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+        self.dashboard_sync_key = (
+            os.getenv("SUPABASE_ANON_KEY", "")
+            or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+        )
+        self.dashboard_sync_enabled = bool(self.dashboard_sync_url and self.dashboard_sync_key)
+        self._last_dashboard_push = 0.0
+        self._peak_equity_seen = 0.0
+        self._max_drawdown_seen = 0.0
+        self._latest_monitor_line = ""
+        self._latest_status_lines: List[str] = []
+        self._latest_dashboard_payload: Dict[str, Any] = {}
+        self._local_dashboard_server: Optional[ThreadingHTTPServer] = None
+        self._local_dashboard_thread: Optional[threading.Thread] = None
         self._last_danger_check = 0
         self._danger_check_interval = 15  # Check danger every 15s
         self._consecutive_danger = 0       # Track consecutive danger signals
@@ -2740,9 +2888,51 @@ class KrakenMarginArmyTrader:
         self.nexus_predictor = NexusPredictor() if HAS_NEXUS_PREDICTOR and NexusPredictor is not None else None
         self.lattice = LatticeEngine() if HAS_LATTICE and LatticeEngine is not None else None
         self.atn_monitor = get_atn_monitor() if HAS_ATN_MONITOR and get_atn_monitor is not None else None
+        self.unified_registry = get_unified_puller() if HAS_UNIFIED_REGISTRY and get_unified_puller is not None else None
+        self.unified_decision_engine = UnifiedDecisionEngine() if HAS_UNIFIED_DECISION and UnifiedDecisionEngine is not None else None
+        self.margin_harmonic_scanner = (
+            HarmonicMarginWaveformScanner() if HAS_MARGIN_HARMONIC_SCANNER and HarmonicMarginWaveformScanner is not None else None
+        )
+        self.quantum_mirror_scanner = (
+            create_quantum_scanner(with_integrations=False)
+            if HAS_QUANTUM_MIRROR_SCANNER and create_quantum_scanner is not None else None
+        )
+        self.timeline_oracle = (
+            get_timeline_oracle() if HAS_TIMELINE_ORACLE and get_timeline_oracle is not None else None
+        )
+        self.harmonic_fusion = (
+            HarmonicWaveFusion() if HAS_HARMONIC_FUSION and HarmonicWaveFusion is not None else None
+        )
+        self.whale_orderbook = (
+            WhaleOrderbookAnalyzer(poll_symbols=[], poll_interval=1.0)
+            if HAS_WHALE_ORDERBOOK and WhaleOrderbookAnalyzer is not None else None
+        )
+        self.kraken_fee_tracker = (
+            get_kraken_fee_tracker(self.client)
+            if HAS_KRAKEN_FEE_TRACKER and get_kraken_fee_tracker is not None
+            else None
+        )
+        self.ocean_wave_scanner = (
+            OceanWaveScanner() if HAS_OCEAN_WAVE_SCANNER and OceanWaveScanner is not None else None
+        )
+        self.live_tv_log_path = Path(os.getenv("AUREON_LIVE_TV_LOG_PATH", os.path.join(_REPO_ROOT, "data", "live_tv_stream.jsonl")))
+        self._live_tv_tail_offset = 0
+        self._live_tv_symbol_cache: Dict[str, Dict[str, Any]] = {}
+        self._live_tv_snapshot: Dict[str, Any] = {}
+        self._ocean_snapshot: Dict[str, Any] = {}
+        self._registry_snapshot: Dict[str, Any] = {}
+        self._decision_snapshot: Dict[str, Any] = {}
+        self._harmonic_snapshot: Dict[str, Any] = {}
+        self._quantum_snapshot: Dict[str, Any] = {}
+        self._timeline_snapshot: Dict[str, Any] = {}
+        self._fusion_snapshot: Dict[str, Any] = {}
+        self._whale_snapshot: Dict[str, Any] = {}
+        self._fee_snapshot: Dict[str, Any] = {}
         self._load_state()
         snap = self._get_capital_snapshot()
         self.starting_equity = snap["equity"]
+        if os.getenv("AUREON_DISABLE_LOCAL_DASHBOARD", "0") != "1":
+            self._start_local_dashboard_server()
 
     # ----------------------------------------------------------
     #  ETA PREDICTION: Estimate time to profitability
@@ -2787,6 +2977,27 @@ class KrakenMarginArmyTrader:
         except Exception as e:
             logger.debug(f"ETA report failed: {e}")
 
+    def _start_local_dashboard_server(self) -> None:
+        """Expose trader telemetry over localhost for the React dashboard."""
+        try:
+            server = ThreadingHTTPServer((LOCAL_DASHBOARD_HOST, LOCAL_DASHBOARD_PORT), _LocalDashboardHandler)
+            server.trader_ref = self  # type: ignore[attr-defined]
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            self._local_dashboard_server = server
+            self._local_dashboard_thread = thread
+            logger.info(f"LOCAL DASHBOARD: http://{LOCAL_DASHBOARD_HOST}:{LOCAL_DASHBOARD_PORT}/api/terminal-state")
+        except OSError as e:
+            logger.warning(f"LOCAL DASHBOARD: unavailable on {LOCAL_DASHBOARD_HOST}:{LOCAL_DASHBOARD_PORT} ({e})")
+
+    def get_local_dashboard_state(self) -> dict:
+        """Return the last local telemetry payload for the dashboard."""
+        payload = dict(self._latest_dashboard_payload)
+        payload.setdefault("ok", True)
+        payload.setdefault("source", "local-trader")
+        payload.setdefault("generated_at", datetime.now().isoformat())
+        return payload
+
     def _binance_symbol_for_pair(self, pair: str) -> str:
         """Derive Binance symbol for a Kraken alt/internal pair."""
         try:
@@ -2802,6 +3013,520 @@ class KrakenMarginArmyTrader:
             return f"{base_clean}USDT"
         except Exception:
             return ""
+
+    def _get_fee_rates(self, symbol: str = "", is_taker: bool = True) -> Dict[str, Any]:
+        """Resolve current Kraken fee rates with a safe static fallback."""
+        fallback = {
+            "maker": KRAKEN_CLOSE_FEE,
+            "taker": KRAKEN_OPEN_FEE,
+            "current": KRAKEN_OPEN_FEE if is_taker else KRAKEN_CLOSE_FEE,
+            "tier": None,
+            "volume_30d": 0.0,
+            "pair_type": "fallback",
+            "source": "fallback",
+        }
+        if self.kraken_fee_tracker is None:
+            self._fee_snapshot = dict(fallback)
+            return fallback
+        try:
+            rates = dict(self.kraken_fee_tracker.get_fee_rates(symbol=symbol, is_taker=is_taker))
+            rates["source"] = "tracker"
+            self._fee_snapshot = dict(rates)
+            return rates
+        except Exception as e:
+            logger.debug(f"Dynamic Kraken fee lookup failed for {symbol or 'default'}: {e}")
+            self._fee_snapshot = dict(fallback)
+            return fallback
+
+    def _get_open_close_fee_rates(self, symbol: str = "") -> Tuple[float, float]:
+        """Return effective open/close fee rates for selector and monitor math."""
+        taker_rates = self._get_fee_rates(symbol=symbol, is_taker=True)
+        open_fee = float(taker_rates.get("current", KRAKEN_OPEN_FEE) or KRAKEN_OPEN_FEE)
+        close_fee = float(taker_rates.get("current", KRAKEN_CLOSE_FEE) or KRAKEN_CLOSE_FEE)
+        return open_fee, close_fee
+
+    def _estimate_round_trip_fee(self, trade_value: float, symbol: str = "") -> Tuple[float, float, float]:
+        """Estimate open+close fees using live Kraken tier rates when available."""
+        open_fee_rate, close_fee_rate = self._get_open_close_fee_rates(symbol=symbol)
+        return trade_value * (open_fee_rate + close_fee_rate), open_fee_rate, close_fee_rate
+
+    def _estimate_required_move_pct(self, trade_value: float, profit_target_usd: float, symbol: str = "") -> Tuple[float, float, float]:
+        """Return required move %, plus the underlying open/close fee rates used."""
+        round_trip_fee, open_fee_rate, close_fee_rate = self._estimate_round_trip_fee(trade_value, symbol=symbol)
+        required_move_pct = ((round_trip_fee + profit_target_usd) / trade_value * 100) if trade_value > 0 else 0.0
+        return required_move_pct, open_fee_rate, close_fee_rate
+
+    def _refresh_unified_intel_snapshot(self) -> None:
+        """Capture high-level registry/decision-engine state without changing trade logic."""
+        snapshot: Dict[str, Any] = {}
+        if self.unified_registry is not None:
+            try:
+                snapshot["categories"] = self.unified_registry.get_category_summary()
+                snapshot["chain_flow"] = self.unified_registry.get_chain_flow()
+            except Exception as e:
+                snapshot["error"] = str(e)
+        self._registry_snapshot = snapshot
+
+    def _feed_unified_decision_engine(self, symbol: str, side: str, score: float = 0.5, metadata: Optional[dict] = None) -> None:
+        """Publish trader candidate signals into the unified decision engine for auditability."""
+        if self.unified_decision_engine is None or SignalInput is None:
+            return
+        try:
+            direction = "bullish" if side.lower() == "buy" else "bearish"
+            self.unified_decision_engine.add_signal(
+                SignalInput(
+                    source="kraken_margin_trader",
+                    symbol=symbol,
+                    direction=direction,
+                    strength=max(0.0, min(1.0, score)),
+                    metadata=metadata or {},
+                )
+            )
+            if CoordinationInput is not None:
+                self.unified_decision_engine.set_coordination_state(
+                    CoordinationInput(
+                        orca_ready=True,
+                        all_systems_ready=1,
+                        total_systems=1,
+                        blockers=[],
+                    )
+                )
+            decision = None
+            if DecisionType is not None and DecisionReason is not None:
+                decision = self.unified_decision_engine.generate_decision(
+                    symbol,
+                    DecisionType.BUY if side.lower() == "buy" else DecisionType.SELL,
+                    DecisionReason.SIGNAL_STRENGTH,
+                )
+            self._decision_snapshot = {
+                "symbol": symbol,
+                "side": side.upper(),
+                "score": score,
+                "decision": {
+                    "type": decision.decision_type.value,
+                    "confidence": decision.confidence,
+                    "reason": decision.reason.value,
+                } if decision else None,
+            }
+        except Exception as e:
+            self._decision_snapshot = {"error": str(e), "symbol": symbol, "side": side.upper()}
+
+    def _score_harmonic_margin_scanner(
+        self,
+        symbol: str,
+        side: str,
+        current_price: float,
+        momentum_pct: float,
+        required_pct: float,
+        leverage: int,
+    ) -> dict:
+        """Use the harmonic margin scanner as a directional/coherence bonus layer."""
+        result = {
+            "bonus": 0.0,
+            "signal": "OFF",
+            "confidence": 0.0,
+            "coherence": 0.0,
+        }
+        if self.margin_harmonic_scanner is None:
+            return result
+        try:
+            approx_pnl_pct = momentum_pct if side == "buy" else -momentum_pct
+            approx_pnl_usd = required_pct * leverage
+            self.margin_harmonic_scanner.process_tick(
+                price=current_price,
+                pnl_usd=approx_pnl_usd,
+                pnl_pct=approx_pnl_pct,
+                margin_level=300.0,
+            )
+            signal = self.margin_harmonic_scanner.get_probability_signal(symbol=symbol) or {}
+            scanner_side = str(signal.get("signal", "HOLD")).upper()
+            confidence = float(signal.get("confidence", 0.0) or 0.0)
+            coherence = float(signal.get("coherence", signal.get("global_coherence", 0.0)) or 0.0)
+            bonus = max(-1.0, min(2.0, (confidence - 0.5) * 3.0 + (coherence - 0.5) * 2.0))
+            expected = "LONG" if side == "buy" else "SHORT"
+            if scanner_side == expected:
+                bonus += 0.75
+            elif scanner_side not in {"HOLD", "OFF"}:
+                bonus -= 1.0
+            result.update({
+                "bonus": bonus,
+                "signal": scanner_side,
+                "confidence": confidence,
+                "coherence": coherence,
+            })
+            self._harmonic_snapshot = {
+                "symbol": symbol,
+                "side": side.upper(),
+                "signal": scanner_side,
+                "confidence": confidence,
+                "coherence": coherence,
+                "bonus": bonus,
+            }
+        except Exception as e:
+            self._harmonic_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_quantum_mirror_scanner(
+        self,
+        symbol: str,
+        side: str,
+        current_price: float,
+        momentum_pct: float,
+        spread_pct: float,
+    ) -> dict:
+        """Use the quantum mirror scanner as a branch-probability bonus layer."""
+        result = {
+            "bonus": 0.0,
+            "branch_score": 0.0,
+            "coherence": 0.0,
+            "beneficial_probability": 0.0,
+        }
+        if self.quantum_mirror_scanner is None:
+            return result
+        try:
+            branch = self.quantum_mirror_scanner.register_branch(symbol, "kraken", initial_price=current_price)
+            frequency = 432.0 + momentum_pct * 10.0
+            phase = 0.0 if side == "buy" else 3.14159
+            self.quantum_mirror_scanner.update_branch(
+                branch.branch_id,
+                price=current_price,
+                frequency=frequency,
+                phase=phase,
+            )
+            p1 = self.quantum_mirror_scanner.validation_pass_1_harmonic(branch.branch_id)
+            p2 = self.quantum_mirror_scanner.validation_pass_2_coherence(branch.branch_id)
+            p3 = self.quantum_mirror_scanner.validation_pass_3_stability(branch.branch_id)
+            details = self.quantum_mirror_scanner.get_branch_details(branch.branch_id) or {}
+            branch_score = float(details.get("branch_score", 0.0) or 0.0)
+            coherence = float(details.get("coherence_score", 0.0) or 0.0)
+            beneficial_probability = float(details.get("beneficial_probability", 0.0) or 0.0)
+            bonus = (
+                max(-1.0, min(2.5, branch_score * 2.5))
+                + max(-0.5, min(1.5, (coherence - 0.5) * 3.0))
+                + max(-0.5, min(1.5, (beneficial_probability - 0.5) * 3.0))
+                + max(-0.25, min(0.25, (0.3 - spread_pct) * 0.5))
+            )
+            result.update({
+                "bonus": bonus,
+                "branch_score": branch_score,
+                "coherence": coherence,
+                "beneficial_probability": beneficial_probability,
+            })
+            self._quantum_snapshot = {
+                "symbol": symbol,
+                "side": side.upper(),
+                "p1": p1,
+                "p2": p2,
+                "p3": p3,
+                "branch_score": branch_score,
+                "coherence": coherence,
+                "beneficial_probability": beneficial_probability,
+                "bonus": bonus,
+            }
+        except Exception as e:
+            self._quantum_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_timeline_oracle(
+        self,
+        symbol: str,
+        side: str,
+        current_price: float,
+        volume: float,
+        change_pct: float,
+    ) -> dict:
+        """Use timeline approval as a directional confidence overlay."""
+        result = {
+            "bonus": 0.0,
+            "action": "hold",
+            "confidence": 0.0,
+            "reason": "",
+        }
+        if self.timeline_oracle is None:
+            return result
+        try:
+            action, confidence, reason = self.timeline_oracle.get_approved_action(
+                symbol=symbol,
+                price=current_price,
+                volume=volume,
+                change_pct=change_pct,
+            )
+            action_value = getattr(action, "value", "hold") if action is not None else "hold"
+            confidence = float(confidence or 0.0)
+            expected = "buy" if side == "buy" else "sell"
+            bonus = (confidence - 0.5) * 3.0
+            if action_value == expected:
+                bonus += 0.75
+            elif action_value not in {"hold", "wait"}:
+                bonus -= 1.0
+            result.update({
+                "bonus": max(-1.5, min(2.5, bonus)),
+                "action": action_value,
+                "confidence": confidence,
+                "reason": str(reason or ""),
+            })
+            self._timeline_snapshot = {
+                "symbol": symbol,
+                "side": side.upper(),
+                "action": action_value.upper(),
+                "confidence": confidence,
+                "reason": str(reason or ""),
+                "bonus": result["bonus"],
+            }
+        except Exception as e:
+            self._timeline_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_harmonic_fusion(self, symbol: str, side: str) -> dict:
+        """Use harmonic fusion global and symbol phase as an alignment bonus."""
+        result = {
+            "bonus": 0.0,
+            "global_coherence": 0.0,
+            "symbol_coherence": 0.0,
+            "phase_alignment": 0.0,
+        }
+        if self.harmonic_fusion is None:
+            return result
+        try:
+            state = self.harmonic_fusion.get_harmonic_state() or {}
+            phase = self.harmonic_fusion.get_symbol_phase(symbol) or {}
+            global_coh = float(state.get("global_coherence", 0.0) or 0.0)
+            symbol_coh = float(phase.get("coherence", phase.get("amplitude", 0.0)) or 0.0)
+            raw_phase = float(phase.get("phase", 0.0) or 0.0)
+            directional_phase = math.cos(raw_phase)
+            if side == "sell":
+                directional_phase *= -1.0
+            phase_alignment = max(-1.0, min(1.0, directional_phase))
+            bonus = (
+                max(-0.75, min(1.5, (global_coh - 0.5) * 2.5))
+                + max(-0.75, min(1.5, (symbol_coh - 0.5) * 2.5))
+                + phase_alignment * 0.75
+            )
+            result.update({
+                "bonus": max(-2.0, min(3.0, bonus)),
+                "global_coherence": global_coh,
+                "symbol_coherence": symbol_coh,
+                "phase_alignment": phase_alignment,
+            })
+            self._fusion_snapshot = {
+                "symbol": symbol,
+                "side": side.upper(),
+                "global_coherence": global_coh,
+                "symbol_coherence": symbol_coh,
+                "phase_alignment": phase_alignment,
+                "bonus": result["bonus"],
+            }
+        except Exception as e:
+            self._fusion_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_whale_orderbook(
+        self,
+        symbol: str,
+        side: str,
+        current_price: float,
+        spread_pct: float,
+    ) -> dict:
+        """Use whale orderbook pressure as a support/blocker bonus layer."""
+        result = {
+            "bonus": 0.0,
+            "wall_count": 0,
+            "layering_score": 0.0,
+            "depth_imbalance": 0.0,
+        }
+        if self.whale_orderbook is None:
+            return result
+        try:
+            analysis = self.whale_orderbook.analyze_symbol(symbol) or {}
+            walls = analysis.get("walls", []) or []
+            layering_score = float(analysis.get("layering_score", 0.0) or 0.0)
+            bids_depth = float(analysis.get("bids_depth", 0.0) or 0.0)
+            asks_depth = float(analysis.get("asks_depth", 0.0) or 0.0)
+            total_depth = bids_depth + asks_depth
+            depth_imbalance = ((bids_depth - asks_depth) / total_depth) if total_depth > 0 else 0.0
+            support = 0
+            blocking = 0
+            for wall in walls:
+                wall_side = str(wall.get("side", "")).lower()
+                wall_price = float(wall.get("price", current_price) or current_price)
+                if side == "buy":
+                    if wall_side == "bid" and wall_price <= current_price:
+                        support += 1
+                    elif wall_side == "ask" and wall_price >= current_price:
+                        blocking += 1
+                else:
+                    if wall_side == "ask" and wall_price >= current_price:
+                        support += 1
+                    elif wall_side == "bid" and wall_price <= current_price:
+                        blocking += 1
+            directional_imbalance = depth_imbalance if side == "buy" else -depth_imbalance
+            bonus = (
+                support * 0.35
+                - blocking * 0.45
+                + max(-0.75, min(0.75, layering_score))
+                + max(-1.0, min(1.0, directional_imbalance * 1.5))
+                + max(-0.25, min(0.25, (0.3 - spread_pct) * 0.5))
+            )
+            result.update({
+                "bonus": max(-2.0, min(2.5, bonus)),
+                "wall_count": len(walls),
+                "layering_score": layering_score,
+                "depth_imbalance": depth_imbalance,
+            })
+            self._whale_snapshot = {
+                "symbol": symbol,
+                "side": side.upper(),
+                "wall_count": len(walls),
+                "layering_score": layering_score,
+                "depth_imbalance": depth_imbalance,
+                "support_walls": support,
+                "blocking_walls": blocking,
+                "bonus": result["bonus"],
+            }
+        except Exception as e:
+            self._whale_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _refresh_live_tv_cache(self) -> None:
+        """Tail the Live TV JSONL feed into a latest-per-symbol cache."""
+        try:
+            if not self.live_tv_log_path.exists():
+                return
+            with self.live_tv_log_path.open("r", encoding="utf-8", errors="replace") as handle:
+                handle.seek(self._live_tv_tail_offset)
+                for raw_line in handle:
+                    line = raw_line.strip()
+                    if not line:
+                        continue
+                    try:
+                        payload = json.loads(line)
+                    except Exception:
+                        continue
+                    symbol = str(payload.get("symbol", "")).upper()
+                    if not symbol:
+                        continue
+                    self._live_tv_symbol_cache[symbol] = payload
+                self._live_tv_tail_offset = handle.tell()
+        except Exception:
+            pass
+
+    def _score_live_tv_station(
+        self,
+        symbol: str,
+        side: str,
+        fallback_momentum: float,
+    ) -> dict:
+        """Use Live TV truth-feed output as a passive market-context overlay."""
+        result = {
+            "bonus": 0.0,
+            "change_24h": 0.0,
+            "momentum": 0.0,
+            "volatility": 0.0,
+            "hz": 0.0,
+            "label": "OFF",
+        }
+        try:
+            self._refresh_live_tv_cache()
+            payload = self._live_tv_symbol_cache.get(str(symbol or "").upper())
+            if not payload:
+                return result
+            change_24h = float(payload.get("change_24h", 0.0) or 0.0)
+            momentum = float(payload.get("momentum", fallback_momentum) or fallback_momentum or 0.0)
+            volatility = float(payload.get("volatility", 0.0) or 0.0)
+            hz = float(payload.get("hz", 0.0) or 0.0)
+            label = str(payload.get("hz_label", payload.get("type", "LIVE_TV")) or "LIVE_TV")
+            directional_signal = momentum if abs(momentum) > 0.0001 else change_24h / 8.0
+            aligned = (directional_signal >= 0 and side == "buy") or (directional_signal < 0 and side == "sell")
+            bonus = min(1.75, abs(directional_signal) * 0.8 + volatility * 4.0)
+            if aligned:
+                bonus += 0.35
+            else:
+                bonus *= -0.6
+            result.update({
+                "bonus": max(-1.5, min(2.25, bonus)),
+                "change_24h": change_24h,
+                "momentum": momentum,
+                "volatility": volatility,
+                "hz": hz,
+                "label": label,
+            })
+            self._live_tv_snapshot = {
+                "symbol": str(symbol).upper(),
+                "side": side.upper(),
+                "change_24h": change_24h,
+                "momentum": momentum,
+                "volatility": volatility,
+                "hz": hz,
+                "label": label,
+                "bonus": result["bonus"],
+            }
+        except Exception as e:
+            self._live_tv_snapshot = {"symbol": str(symbol).upper(), "error": str(e)}
+        return result
+
+    def _score_ocean_wave_scanner(self, symbol: str, side: str) -> dict:
+        """Use Ocean Wave bot/whale detection as a live microstructure overlay."""
+        result = {
+            "bonus": 0.0,
+            "bots": 0,
+            "whales": 0,
+            "aggression": 0.0,
+        }
+        if self.ocean_wave_scanner is None or not self.stream or not self.stream.is_alive():
+            return result
+        try:
+            trades = []
+            for price, qty, is_buy, ts in list(self.stream.last_trades.get(symbol, []))[-120:]:
+                trades.append({
+                    "price": float(price),
+                    "quantity": float(qty),
+                    "time": float(ts),
+                    "is_buyer_maker": not bool(is_buy),
+                })
+            if len(trades) < 25:
+                return result
+            detected = self.ocean_wave_scanner._detect_bots_in_trades(trades, symbol, "binance") or []
+            if not detected:
+                self._ocean_snapshot = {
+                    "symbol": str(symbol).upper(),
+                    "side": side.upper(),
+                    "bots": 0,
+                    "whales": 0,
+                    "bonus": 0.0,
+                }
+                return result
+            whales = 0
+            aggression_sum = 0.0
+            bonus = 0.0
+            for bot in detected[:5]:
+                pattern = str(bot.get("pattern", "")).lower()
+                freq = float(bot.get("frequency", 0.0) or 0.0)
+                notional = sum(float(t.get("price", 0.0) or 0.0) * float(t.get("quantity", 0.0) or 0.0) for t in bot.get("trades", [])[-25:])
+                bias = 1.0 if pattern in {"accumulation", "momentum_burst", "hft"} else 0.0
+                if side == "sell":
+                    bias *= -1.0
+                aggression = min(1.0, freq / 15.0) if freq > 0 else min(1.0, notional / 250000.0)
+                aggression_sum += aggression
+                if notional >= 100000:
+                    whales += 1
+                bonus += bias * (0.25 + aggression)
+            result.update({
+                "bonus": max(-1.5, min(2.25, bonus)),
+                "bots": len(detected),
+                "whales": whales,
+                "aggression": aggression_sum / max(len(detected[:5]), 1),
+            })
+            self._ocean_snapshot = {
+                "symbol": str(symbol).upper(),
+                "side": side.upper(),
+                "bots": len(detected),
+                "whales": whales,
+                "aggression": result["aggression"],
+                "bonus": result["bonus"],
+            }
+        except Exception as e:
+            self._ocean_snapshot = {"symbol": str(symbol).upper(), "error": str(e)}
+        return result
 
     def _select_new_position(self, positions: list[dict], known_ids: set[str], pair: str, side: str) -> Optional[dict]:
         """Find the newly opened Kraken position for this order without trusting pair-only matching."""
@@ -3054,6 +3779,169 @@ class KrakenMarginArmyTrader:
             "target_pct_equity": target_pct_equity,
         }
 
+    def _track_equity_metrics(self, equity: float) -> tuple[float, float]:
+        """Track peak equity and drawdown values for dashboard telemetry."""
+        if equity > self._peak_equity_seen:
+            self._peak_equity_seen = equity
+        peak = max(self._peak_equity_seen, equity, self.starting_equity)
+        drawdown = ((peak - equity) / peak * 100.0) if peak > 0 else 0.0
+        self._max_drawdown_seen = max(self._max_drawdown_seen, drawdown)
+        return drawdown, self._max_drawdown_seen
+
+    def _build_dashboard_positions(self) -> list[dict]:
+        """Build open-position payload for the live dashboard."""
+        positions: list[dict] = []
+        for trade in (self.active_long, self.active_short):
+            if not trade:
+                continue
+            current_price = 0.0
+            if trade.binance_symbol and self.stream and self.stream.is_alive():
+                current_price = self.stream.get_executable_price(trade.binance_symbol, side=trade.side)
+            if current_price <= 0 and trade.binance_symbol:
+                current_price = self.market.get_single_price(trade.binance_symbol)
+            if current_price <= 0:
+                current_price = trade.entry_price
+            unrealized_pnl = (
+                (current_price - trade.entry_price) * trade.volume
+                if trade.side == "buy"
+                else (trade.entry_price - current_price) * trade.volume
+            )
+            positions.append({
+                "symbol": trade.pair,
+                "side": trade.side.upper(),
+                "entry_price": trade.entry_price,
+                "quantity": trade.volume,
+                "current_price": current_price,
+                "unrealized_pnl": unrealized_pnl,
+                "exchange": "kraken",
+            })
+        return positions
+
+    def _build_dashboard_trades(self) -> list[dict]:
+        """Map completed margin trades into the shared dashboard trade format."""
+        trades = []
+        for idx, trade in enumerate(self.completed_trades[-25:]):
+            trades.append({
+                "symbol": trade.get("pair", ""),
+                "side": str(trade.get("side", "")).upper(),
+                "price": float(trade.get("exit_price", 0.0) or 0.0),
+                "quantity": float(trade.get("volume", 0.0) or 0.0),
+                "fee": float(trade.get("total_fees", 0.0) or 0.0),
+                "fee_asset": "USD",
+                "timestamp": trade.get("exit_time", datetime.now().isoformat()),
+                "transaction_id": trade.get("close_order_id") or trade.get("order_id") or f"margin-{idx}",
+                "pnl": float(trade.get("net_pnl", 0.0) or 0.0),
+                "is_win": float(trade.get("net_pnl", 0.0) or 0.0) > 0,
+                "exchange": "kraken",
+            })
+        return trades
+
+    def _build_dashboard_recent_trades(self) -> list[dict]:
+        """Map closed trades into the session/dashboard recent trade format."""
+        recent = []
+        for trade in reversed(self.completed_trades[-10:]):
+            recent.append({
+                "time": trade.get("exit_time", datetime.now().isoformat()),
+                "side": str(trade.get("side", "")).upper(),
+                "symbol": trade.get("pair", ""),
+                "quantity": float(trade.get("volume", 0.0) or 0.0),
+                "pnl": float(trade.get("net_pnl", 0.0) or 0.0),
+                "success": float(trade.get("net_pnl", 0.0) or 0.0) > 0,
+                "hold_seconds": float(trade.get("hold_seconds", 0.0) or 0.0),
+                "reason": trade.get("reason", ""),
+            })
+        return recent
+
+    def _push_dashboard_state(self, force: bool = False) -> None:
+        """Push live terminal state into the dashboard ingest endpoint."""
+        now = time.time()
+        if not force and (now - self._last_dashboard_push) < DASHBOARD_SYNC_INTERVAL_SEC:
+            return
+        try:
+            capital = self._get_capital_snapshot()
+            equity = float(capital["equity"] or 0.0)
+            current_drawdown, max_drawdown = self._track_equity_metrics(equity)
+            completed = self.completed_trades
+            wins = sum(1 for t in completed if float(t.get("net_pnl", 0.0) or 0.0) > 0)
+            avg_hold_minutes = (
+                sum(float(t.get("hold_seconds", 0.0) or 0.0) for t in completed) / len(completed) / 60.0
+                if completed else 0.0
+            )
+            payload = {
+                "user_id": self.dashboard_user_id,
+                "portfolio_value": equity,
+                "peak_equity": max(self._peak_equity_seen, equity, self.starting_equity),
+                "current_drawdown": current_drawdown,
+                "max_drawdown": max_drawdown,
+                "trades": self._build_dashboard_trades(),
+                "recent_trades": self._build_dashboard_recent_trades(),
+                "total_trades": self.total_trades,
+                "wins": wins,
+                "win_rate": (wins / self.total_trades * 100.0) if self.total_trades else 0.0,
+                "avg_hold_time": avg_hold_minutes,
+                "positions": self._build_dashboard_positions(),
+                "coherence": 0.0,
+                "lambda": 0.0,
+                "gaia_state": "NEUTRAL",
+                "gaia_frequency": 432.0,
+                "gaia_purity": 0.0,
+                "gaia_carrier_phi": 0.0,
+                "gaia_432_lock": 0.0,
+                "hnc_frequency": 432.0,
+                "hnc_market_state": "CONSOLIDATION",
+                "hnc_coherence_percent": 0.0,
+                "hnc_modifier": 1.0,
+                "mycelium_hives": 0,
+                "mycelium_agents": 0,
+                "mycelium_generation": 0,
+                "max_generation": 0,
+                "queen_state": "HOLD",
+                "queen_pnl": float(self.total_profit),
+                "compounded": float(self.total_profit),
+                "harvested": 0.0,
+                "pool_total": equity,
+                "pool_available": float(capital["free_margin"] or 0.0),
+                "scout_count": 0,
+                "split_count": 0,
+                "trading_mode": "BALANCED",
+                "entry_threshold": 0.0,
+                "exit_threshold": 0.0,
+                "risk_multiplier": 1.0,
+                "tp_multiplier": 1.0,
+                "runtime_minutes": (time.time() - self.start_time) / 60.0,
+                "ws_connected": bool(self.stream and self.stream.connected),
+                "ws_message_count": int(self.stream.msg_count if self.stream else 0),
+                "latest_monitor_line": self._latest_monitor_line,
+                "status_lines": self._latest_status_lines[-16:],
+                "registry_snapshot": self._registry_snapshot,
+                "decision_snapshot": self._decision_snapshot,
+                "harmonic_snapshot": self._harmonic_snapshot,
+                "quantum_snapshot": self._quantum_snapshot,
+                "timeline_snapshot": self._timeline_snapshot,
+                "fusion_snapshot": self._fusion_snapshot,
+                "whale_snapshot": self._whale_snapshot,
+                "live_tv_snapshot": self._live_tv_snapshot,
+                "ocean_snapshot": self._ocean_snapshot,
+            }
+            self._latest_dashboard_payload = dict(payload)
+            self._last_dashboard_push = now
+            if not self.dashboard_sync_enabled:
+                return
+            req = urllib.request.Request(
+                f"{self.dashboard_sync_url}/functions/v1/ingest-terminal-state",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "apikey": self.dashboard_sync_key,
+                    "Authorization": f"Bearer {self.dashboard_sync_key}",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=8):
+                pass
+        except Exception as e:
+            logger.debug(f"Dashboard sync skipped: {e}")
+
     def _get_seer_bias(self) -> tuple[str, float, float]:
         """Return Seer verdict, confidence, and score bonus for mission selection."""
         if self.seer is None:
@@ -3243,6 +4131,7 @@ class KrakenMarginArmyTrader:
             f"used=${margin_used:.2f} | budget=${margin_budget:.2f} | "
             f"target={target_pct_equity:.3f}% eq"
         )
+        self._refresh_unified_intel_snapshot()
 
         # Log wave rider status (informational — per-candidate check below)
         if self.wave_rider and equity > 0:
@@ -3334,8 +4223,12 @@ class KrakenMarginArmyTrader:
                 vol = info.ordermin
             trade_val = vol * info.last_price
 
-            round_trip_fee = trade_val * (KRAKEN_OPEN_FEE + KRAKEN_CLOSE_FEE)
-            required_move_pct = (round_trip_fee + PROFIT_TARGET_USD) / trade_val * 100
+            round_trip_fee, _, _ = self._estimate_round_trip_fee(
+                trade_val, symbol=info.pair
+            )
+            required_move_pct, _, _ = self._estimate_required_move_pct(
+                trade_val, PROFIT_TARGET_USD, symbol=info.pair
+            )
 
             momentum_score = min(abs(info.momentum) / 5, 2.0)  # Normalize to 0-2
             spread_score = max(0, 1.0 - info.spread_pct * 5)
@@ -3458,11 +4351,57 @@ class KrakenMarginArmyTrader:
                         f"→ wave_bonus={wave_bonus:+.2f}"
                     )
 
+            harmonic = self._score_harmonic_margin_scanner(
+                symbol=info.pair,
+                side=side,
+                current_price=info.last_price,
+                momentum_pct=abs(info.momentum),
+                required_pct=required_move_pct,
+                leverage=max_lev,
+            )
+            quantum = self._score_quantum_mirror_scanner(
+                symbol=info.pair,
+                side=side,
+                current_price=info.last_price,
+                momentum_pct=float(info.momentum),
+                spread_pct=float(info.spread_pct),
+            )
+            timeline = self._score_timeline_oracle(
+                symbol=info.pair,
+                side=side,
+                current_price=info.last_price,
+                volume=float(info.volume_24h),
+                change_pct=float(info.momentum),
+            )
+            fusion = self._score_harmonic_fusion(symbol=info.pair, side=side)
+            whale = self._score_whale_orderbook(
+                symbol=info.binance_symbol or info.pair,
+                side=side,
+                current_price=info.last_price,
+                spread_pct=float(info.spread_pct),
+            )
+            live_tv = self._score_live_tv_station(
+                symbol=info.base_clean or info.base or info.pair,
+                side=side,
+                fallback_momentum=float(info.momentum),
+            )
+            ocean = self._score_ocean_wave_scanner(
+                symbol=info.binance_symbol or info.pair,
+                side=side,
+            )
+
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
                           + momentum_score + vol_score + conviction_bonus + hive_bonus
                           + goal_score * 2          # weight 2 — quickest profitable signal wins
                           + macro_bonus * 1.5       # weight 1.5 — macro context shapes the battlefield
-                          + wave_bonus * 1.5)       # weight 1.5 — ocean wave scanner bot resonance
+                          + wave_bonus * 1.5        # weight 1.5 — ocean wave scanner bot resonance
+                          + harmonic["bonus"] * 1.5
+                          + quantum["bonus"] * 1.5
+                          + timeline["bonus"] * 1.25
+                          + fusion["bonus"] * 1.25
+                          + whale["bonus"] * 1.25
+                          + live_tv["bonus"] * 1.25
+                          + ocean["bonus"] * 1.25)
 
             route_to_profit = goal_score / max(required_move_pct, 0.01)
             candidates.append((info, side, vol, trade_val, max_lev,
@@ -3494,8 +4433,11 @@ class KrakenMarginArmyTrader:
 
         candidates.sort(key=lambda x: x[5], reverse=True)
 
-        logger.info(f"TOP 5 TARGETS (goal: ${GOAL_TARGET_USD:.2f} in <{GOAL_MAX_ETA_MINUTES:.0f}min):")
-        for i, (info, side, vol, tv, lev, score, req, fees, gs, eta, route) in enumerate(candidates[:5]):
+        logger.info(
+            f"TOP 7 TARGETS (goal: ${GOAL_TARGET_USD:.2f} net | fastest route ranked, "
+            f"target ETA benchmark {GOAL_MAX_ETA_MINUTES:.0f}m):"
+        )
+        for i, (info, side, vol, tv, lev, score, req, fees, gs, eta, route) in enumerate(candidates[:7]):
             eta_str = f"{eta:.0f}m" if eta < 999 else "∞"
             logger.info(
                 f"  #{i+1} {info.pair} {side.upper()} | "
@@ -3505,8 +4447,23 @@ class KrakenMarginArmyTrader:
             )
 
         best = candidates[0]
+        self._feed_unified_decision_engine(
+            best[0].pair,
+            best[1],
+            score=min(max(float(best[5]) / 10.0, 0.0), 1.0),
+            metadata={
+                "trade_value": float(best[3]),
+                "leverage": int(best[4]),
+                "required_move_pct": float(best[6]),
+                "estimated_fees": float(best[7]),
+                "goal_score": float(best[8]),
+                "eta_min": float(best[9]),
+                "route_to_profit": float(best[10]),
+            },
+        )
         # Store top candidates for fallback if intel rejects #1
-        self._last_candidates = candidates[:5]
+        self._last_candidates = candidates[:7]
+        self._sync_market_watchlist(top_n=7)
 
         # Record this scan to the proof file (all candidates + winner)
         if self._goal_recorder is not None:
@@ -3569,8 +4526,12 @@ class KrakenMarginArmyTrader:
                 pass
 
         # Calculate required move for profit
-        round_trip_fee = trade_val * (KRAKEN_OPEN_FEE + KRAKEN_CLOSE_FEE)
-        required_move_pct = (round_trip_fee + PROFIT_TARGET_USD) / trade_val * 100
+        round_trip_fee, _, _ = self._estimate_round_trip_fee(
+            trade_val, symbol=pair_info.pair
+        )
+        required_move_pct, _, _ = self._estimate_required_move_pct(
+            trade_val, PROFIT_TARGET_USD, symbol=pair_info.pair
+        )
 
         research = self.intel.pre_strike_research(
             symbol=pair_info.binance_symbol,
@@ -3690,15 +4651,16 @@ class KrakenMarginArmyTrader:
                 raise RuntimeError(f"Could not verify opened Kraken position: {e}")
 
             trade_val = volume * price
+            open_fee_rate, close_fee_rate = self._get_open_close_fee_rates(pair_info.pair)
             # Use ACTUAL fee if we got it, otherwise conservative estimate
             if actual_entry_fee > 0:
                 entry_fee = actual_entry_fee
                 logger.info(f"Using ACTUAL Kraken entry fee: ${entry_fee:.4f}")
             else:
-                entry_fee = trade_val * KRAKEN_OPEN_FEE
+                entry_fee = trade_val * open_fee_rate
                 logger.warning(f"Using ESTIMATED entry fee: ${entry_fee:.4f} (could not get actual)")
             # Estimate exit fee conservatively
-            exit_fee_est = trade_val * KRAKEN_CLOSE_FEE
+            exit_fee_est = trade_val * close_fee_rate
             total_fees = entry_fee + exit_fee_est
 
             if side == "buy":
@@ -3835,7 +4797,8 @@ class KrakenMarginArmyTrader:
             if actual_exit_fee > 0:
                 exit_fee = actual_exit_fee
             else:
-                exit_fee = current_price * trade.volume * KRAKEN_CLOSE_FEE
+                _, close_fee_rate = self._get_open_close_fee_rates(trade.pair)
+                exit_fee = current_price * trade.volume * close_fee_rate
                 logger.warning(f"Using ESTIMATED exit fee: ${exit_fee:.4f} (could not get actual)")
 
             # Include rollover fees in net P&L
@@ -3900,6 +4863,7 @@ class KrakenMarginArmyTrader:
                 f"Hold: {time.time() - trade.entry_time:.0f}s | "
                 f"Session: ${self.total_profit:+.2f}"
             )
+            self._push_dashboard_state(force=True)
             return completed
 
         except Exception as e:
@@ -3928,6 +4892,50 @@ class KrakenMarginArmyTrader:
         else:
             self.stream.add_symbol(binance_symbol)
 
+    def _sync_market_watchlist(self, extra_symbols: Optional[List[str]] = None, top_n: int = 6) -> None:
+        """Keep the live stream subscribed to the active market watchlist, not just one trade symbol."""
+        if not self.stream:
+            return
+        symbols: List[str] = []
+
+        if extra_symbols:
+            symbols.extend([str(s).upper() for s in extra_symbols if s])
+
+        for trade in (self.active_long, self.active_short):
+            if trade and trade.binance_symbol:
+                symbols.append(str(trade.binance_symbol).upper())
+
+        for shadow in self.shadow_trades[: max(2, top_n)]:
+            if shadow.binance_symbol:
+                symbols.append(str(shadow.binance_symbol).upper())
+
+        for cand in getattr(self, "_last_candidates", [])[:top_n]:
+            try:
+                info = cand[0]
+            except Exception:
+                continue
+            bsym = getattr(info, "binance_symbol", "") or ""
+            if bsym:
+                symbols.append(str(bsym).upper())
+
+        deduped: List[str] = []
+        seen = set()
+        for sym in symbols:
+            if sym and sym not in seen:
+                deduped.append(sym)
+                seen.add(sym)
+
+        if not deduped:
+            return
+
+        if not self._stream_started:
+            self.stream.start(deduped)
+            self._stream_started = True
+            return
+
+        for sym in deduped:
+            self.stream.add_symbol(sym)
+
     def _emit_monitor_snapshot(
         self,
         trade: ActiveTrade,
@@ -3952,7 +4960,9 @@ class KrakenMarginArmyTrader:
             f"target=${trade.breakeven_price:,.4f} dist={need_pct:+.2f}% "
             f"danger={danger_level}:{danger_note} {dtp_text}"
         )
+        self._latest_monitor_line = line
         logger.info(line)
+        self._push_dashboard_state()
 
     def monitor_position(self, trade: Optional[ActiveTrade] = None) -> Optional[dict]:
         """
@@ -4018,7 +5028,8 @@ class KrakenMarginArmyTrader:
             if rollover_fees > 0:
                 logger.info(f"Rollover fee update: ${rollover_fees:.4f} ({rollover_periods} x 4h periods)")
             # Recalculate breakeven with rollover
-            total_fees_est = trade.entry_fee + (trade.cost * KRAKEN_CLOSE_FEE) + rollover_fees
+            _, close_fee_rate = self._get_open_close_fee_rates(trade.pair)
+            total_fees_est = trade.entry_fee + (trade.cost * close_fee_rate) + rollover_fees
             if trade.side == "buy":
                 trade.breakeven_price = trade.entry_price + (total_fees_est + PROFIT_TARGET_USD) / trade.volume
             else:
@@ -4031,7 +5042,8 @@ class KrakenMarginArmyTrader:
             gross_pnl = (trade.entry_price - current_price) * trade.volume
 
         exit_value = current_price * trade.volume
-        exit_fee = exit_value * KRAKEN_CLOSE_FEE  # Use actual close fee rate
+        _, close_fee_rate = self._get_open_close_fee_rates(trade.pair)
+        exit_fee = exit_value * close_fee_rate
         rollover = getattr(trade, 'rollover_fees', 0.0)
         net_pnl = gross_pnl - trade.entry_fee - exit_fee - rollover
         total_fees = trade.entry_fee + exit_fee + rollover
@@ -4369,6 +5381,7 @@ class KrakenMarginArmyTrader:
             with open(tmp, "w") as f:
                 json.dump(state, f, indent=2)
             os.replace(tmp, STATE_FILE)
+            self._push_dashboard_state()
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
 
@@ -4596,8 +5609,11 @@ class KrakenMarginArmyTrader:
         if entry_price <= 0:
             return None
 
-        round_trip_fee_pct = (KRAKEN_OPEN_FEE + KRAKEN_CLOSE_FEE) * 100
-        target_move_pct = round_trip_fee_pct + (PROFIT_TARGET_USD / trade_val * 100)
+        required_move_pct, open_fee_rate, close_fee_rate = self._estimate_required_move_pct(
+            trade_val, PROFIT_TARGET_USD, symbol=pair_info.pair
+        )
+        round_trip_fee_pct = (open_fee_rate + close_fee_rate) * 100
+        target_move_pct = required_move_pct
 
         shadow = ShadowTrade(
             pair=pair_info.pair,
@@ -4787,12 +5803,64 @@ class KrakenMarginArmyTrader:
         best_trade = max(self.completed_trades, key=lambda t: float(t.get("net_pnl", 0.0) or 0.0), default=None)
         worst_trade = min(self.completed_trades, key=lambda t: float(t.get("net_pnl", 0.0) or 0.0), default=None)
         recent_trades = list(reversed(self.completed_trades[-3:]))
+        status_lines = [
+            f"ARMY STATUS | Runtime: {hours}h {mins}m",
+            (
+                f"Equity=${capital['equity']:.2f} Free=${capital['free_margin']:.2f} "
+                f"Used=${capital['margin_used']:.2f} UPNL=${capital['unrealized']:+.2f}"
+            ),
+            (
+                f"Budget=${capital['budget']:.2f} Target=${PROFIT_TARGET_USD:.2f} "
+                f"EqDelta=${equity_delta:+.2f}"
+            ),
+        ]
+        if self.stream:
+            stream_mode = "LIVE" if self.stream.is_alive() else ("CONNECTED" if self.stream.connected else "REST")
+            stream_age_ms = (
+                max(0, int((time.time() - getattr(self.stream, "_last_msg_time", 0.0)) * 1000))
+                if getattr(self.stream, "_last_msg_time", 0.0)
+                else -1
+            )
+            status_lines.append(
+                f"Stream: {stream_mode} watch={len(getattr(self.stream, '_symbols', []))} "
+                f"reconnects={getattr(self.stream, '_reconnect_count', 0)} "
+                f"msgs={getattr(self.stream, 'msg_count', 0)} age_ms={stream_age_ms}"
+            )
+        for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
+            if trade:
+                status_lines.append(
+                    f"{label}: {trade.pair} {trade.side.upper()} {trade.leverage}x @ ${trade.entry_price:,.4f}"
+                )
+            else:
+                status_lines.append(f"{label}: EMPTY")
+        status_lines.append(
+            f"History: closed={closed_count} wins={wins} losses={losses} win_rate={win_rate:.1f}% avg={avg_net:+.2f}"
+        )
+        if recent_trades:
+            for t in recent_trades:
+                pnl = float(t.get('net_pnl', 0.0) or 0.0)
+                status_lines.append(
+                    f"CLOSE: {t.get('pair', '?')} {str(t.get('side', '?')).upper()} ${pnl:+.2f} reason={t.get('reason', '?')}"
+                )
+        self._latest_status_lines = status_lines
 
         print()
         print(f"{'=' * 65}")
         print(f"  ARMY STATUS | Runtime: {hours}h {mins}m")
         print(f"  Equity: ${capital['equity']:.2f} | Free: ${capital['free_margin']:.2f} | Used: ${capital['margin_used']:.2f} | UPNL: ${capital['unrealized']:+.2f}")
         print(f"  Budget: ${capital['budget']:.2f} | Target/trade: ${PROFIT_TARGET_USD:.2f} ({capital['target_pct_equity']:.3f}% of equity) | Since start: ${equity_delta:+.2f}")
+        if self.stream:
+            stream_mode = "LIVE" if self.stream.is_alive() else ("CONNECTED" if self.stream.connected else "REST")
+            stream_age_ms = (
+                max(0, int((time.time() - getattr(self.stream, "_last_msg_time", 0.0)) * 1000))
+                if getattr(self.stream, "_last_msg_time", 0.0)
+                else -1
+            )
+            print(
+                f"  Stream: {stream_mode} | watch={len(getattr(self.stream, '_symbols', []))} "
+                f"| reconnects={getattr(self.stream, '_reconnect_count', 0)} "
+                f"| msgs={getattr(self.stream, 'msg_count', 0)} | age_ms={stream_age_ms}"
+            )
 
         # Dual position display
         for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
@@ -4842,6 +5910,68 @@ class KrakenMarginArmyTrader:
         if self.orchestrator is not None:
             for orch_line in self.orchestrator.status_report():
                 print(orch_line)
+        if self._registry_snapshot.get("categories"):
+            category_count = len(self._registry_snapshot.get("categories", {}))
+            print(f"  [UNIFIED REGISTRY] categories={category_count} linked")
+        if self._decision_snapshot:
+            ds = self._decision_snapshot
+            if ds.get("decision"):
+                decision = ds["decision"]
+                print(
+                    f"  [DECISION ENGINE] {ds.get('symbol', '?')} {ds.get('side', '?')} "
+                    f"-> {decision.get('type', '?')} conf={float(decision.get('confidence', 0.0)):.2f}"
+                )
+            elif ds.get("error"):
+                print(f"  [DECISION ENGINE] error={ds['error']}")
+        if self._timeline_snapshot:
+            ts = self._timeline_snapshot
+            if ts.get("action"):
+                print(
+                    f"  [TIMELINE] {ts.get('symbol', '?')} {ts.get('action', '?')} "
+                    f"conf={float(ts.get('confidence', 0.0) or 0.0):.2f}"
+                )
+            elif ts.get("error"):
+                print(f"  [TIMELINE] error={ts['error']}")
+        if self._fusion_snapshot:
+            fs = self._fusion_snapshot
+            if "global_coherence" in fs:
+                print(
+                    f"  [FUSION] {fs.get('symbol', '?')} global={float(fs.get('global_coherence', 0.0) or 0.0):.2f} "
+                    f"symbol={float(fs.get('symbol_coherence', 0.0) or 0.0):.2f} "
+                    f"phase={float(fs.get('phase_alignment', 0.0) or 0.0):+.2f}"
+                )
+            elif fs.get("error"):
+                print(f"  [FUSION] error={fs['error']}")
+        if self._whale_snapshot:
+            ws = self._whale_snapshot
+            if "wall_count" in ws:
+                print(
+                    f"  [WHALE] {ws.get('symbol', '?')} walls={int(ws.get('wall_count', 0) or 0)} "
+                    f"layer={float(ws.get('layering_score', 0.0) or 0.0):.2f} "
+                    f"imb={float(ws.get('depth_imbalance', 0.0) or 0.0):+.2f}"
+                )
+            elif ws.get("error"):
+                print(f"  [WHALE] error={ws['error']}")
+        if self._live_tv_snapshot:
+            lt = self._live_tv_snapshot
+            if "hz" in lt:
+                print(
+                    f"  [LIVE TV] {lt.get('symbol', '?')} hz={float(lt.get('hz', 0.0) or 0.0):.1f} "
+                    f"mom={float(lt.get('momentum', 0.0) or 0.0):+.2f}% "
+                    f"vol={float(lt.get('volatility', 0.0) or 0.0):.3f}%"
+                )
+            elif lt.get("error"):
+                print(f"  [LIVE TV] error={lt['error']}")
+        if self._ocean_snapshot:
+            oc = self._ocean_snapshot
+            if "bots" in oc:
+                print(
+                    f"  [OCEAN] {oc.get('symbol', '?')} bots={int(oc.get('bots', 0) or 0)} "
+                    f"whales={int(oc.get('whales', 0) or 0)} "
+                    f"agg={float(oc.get('aggression', 0.0) or 0.0):.2f}"
+                )
+            elif oc.get("error"):
+                print(f"  [OCEAN] error={oc['error']}")
 
         print()
         print(f"  Trades: {self.total_trades} ({self.winning_trades} wins)")
@@ -4920,6 +6050,7 @@ class KrakenMarginArmyTrader:
         print("  Entry gate: ALL criteria must pass – no exceptions")
         print("=" * 70)
         seer_verdict, seer_confidence, seer_bonus = self._get_seer_bias()
+        self._refresh_unified_intel_snapshot()
 
         # ── Step 0: Orchestrator cycle sync ────────────────────────────────
         if self.orchestrator is not None:
@@ -5137,8 +6268,12 @@ class KrakenMarginArmyTrader:
                 sum(abs(float(k[2]) - float(k[3])) / float(k[4]) * 100
                     for k in klines[-6:-1]) / 5
             ) if len(klines) >= 6 else 0.5
-            round_trip_fee = trade_val * (KRAKEN_OPEN_FEE + KRAKEN_CLOSE_FEE)
-            required_pct   = (round_trip_fee + MISSION_PROFIT_MIN) / trade_val * 100
+            round_trip_fee, _, _ = self._estimate_round_trip_fee(
+                trade_val, symbol=info.pair
+            )
+            required_pct, _, _ = self._estimate_required_move_pct(
+                trade_val, MISSION_PROFIT_MIN, symbol=info.pair
+            )
             # ATR gate: hard reject only if 1m ATR is basically zero (ultra-frozen market)
             # During momentum surges, price can move 5-10× normal ATR in a single minute
             if atr_1m_pct < 0.02:   # Completely frozen — skip
@@ -5178,6 +6313,35 @@ class KrakenMarginArmyTrader:
             if alignment["score"] < MIN_ALIGNMENT_SCORE:
                 reject_stats["alignment"] += 1
                 continue
+            harmonic = self._score_harmonic_margin_scanner(
+                symbol=info.pair,
+                side=side,
+                current_price=info.last_price,
+                momentum_pct=mom_3c,
+                required_pct=required_pct,
+                leverage=max_lev,
+            )
+            quantum = self._score_quantum_mirror_scanner(
+                symbol=info.pair,
+                side=side,
+                current_price=info.last_price,
+                momentum_pct=mom_3c,
+                spread_pct=info.spread_pct,
+            )
+            timeline = self._score_timeline_oracle(
+                symbol=info.pair,
+                side=side,
+                current_price=info.last_price,
+                volume=float(sum(v[-6:])) if v else 0.0,
+                change_pct=float(mom_3c),
+            )
+            fusion = self._score_harmonic_fusion(symbol=info.pair, side=side)
+            whale = self._score_whale_orderbook(
+                symbol=info.binance_symbol or info.pair,
+                side=side,
+                current_price=info.last_price,
+                spread_pct=info.spread_pct,
+            )
             live_flow_bonus = 0.0
             if self.stream and self.stream.is_alive() and info.binance_symbol:
                 sf = self.stream.get_flow_snapshot(info.binance_symbol)
@@ -5243,6 +6407,11 @@ class KrakenMarginArmyTrader:
                 + projection["live_match"] * 2.0
                 + max(-1.5, min(projection["edge"], 1.5))
                 + alignment["score"]
+                + harmonic["bonus"] * 1.5
+                + quantum["bonus"] * 1.5
+                + timeline["bonus"] * 1.25
+                + fusion["bonus"] * 1.25
+                + whale["bonus"] * 1.25
             )
 
             candidates.append({
@@ -5277,6 +6446,19 @@ class KrakenMarginArmyTrader:
                 "proj_edge":    projection["edge"],
                 "proj_live":    projection["live_match"],
                 "align":        alignment["score"],
+                "harmonic_sig": harmonic["signal"],
+                "harmonic_conf": harmonic["confidence"],
+                "harmonic_coh": harmonic["coherence"],
+                "quantum_branch": quantum["branch_score"],
+                "quantum_coh": quantum["coherence"],
+                "quantum_prob": quantum["beneficial_probability"],
+                "timeline_action": timeline["action"],
+                "timeline_conf": timeline["confidence"],
+                "fusion_coh": fusion["global_coherence"],
+                "fusion_phase": fusion["phase_alignment"],
+                "whale_walls": whale["wall_count"],
+                "whale_layer": whale["layering_score"],
+                "whale_imb": whale["depth_imbalance"],
                 "coh":          alignment["coherence"],
                 "lyra_h":       alignment["lyra"],
                 "lambda_h":     alignment["lambda"],
@@ -5365,8 +6547,10 @@ class KrakenMarginArmyTrader:
                                 for k in klines2[-6:-1])/5) if len(klines2)>=6 else 0.5
                     if atr2 < 0.02:
                         continue
-                    rt2 = tv2*(KRAKEN_OPEN_FEE+KRAKEN_CLOSE_FEE)
-                    rp2 = (rt2+MISSION_PROFIT_MIN)/tv2*100
+                    rt2, _, _ = self._estimate_round_trip_fee(tv2, symbol=info2.pair)
+                    rp2, _, _ = self._estimate_required_move_pct(
+                        tv2, MISSION_PROFIT_MIN, symbol=info2.pair
+                    )
                     ss2 = min(sc2/5,1.0); sg2 = min((vs2-1)/2,1.0)
                     ms2 = min(m2/2,1.0); ls2 = min(lev2/10,1.0)
                     sprd2 = max(0,1.0-info2.spread_pct/MAX_SPREAD_PCT)
@@ -5503,6 +6687,21 @@ class KrakenMarginArmyTrader:
         vol_b    = best["vol"]
         lev_b    = best["leverage"]
         tv_b     = best["trade_val"]
+        self._feed_unified_decision_engine(
+            info_b.pair,
+            side_b,
+            score=min(max(float(best["score"]) / 10.0, 0.0), 1.0),
+            metadata={
+                "trade_value": float(tv_b),
+                "leverage": int(lev_b),
+                "required_move_pct": float(best["required_pct"]),
+                "signal_edge": float(best["signal_edge"]),
+                "eta_min": float(best["eta_min"]),
+                "projection_confidence": float(best["proj_conf"]),
+                "projection_live_match": float(best["proj_live"]),
+                "alignment_score": float(best["align"]),
+            },
+        )
 
         print(f"\n🎯 MISSION TARGET: {info_b.pair} {side_b.upper()} {lev_b}×")
         print(f"   Streak          : {best['streak']} consecutive 1m candles")
@@ -5586,7 +6785,8 @@ class KrakenMarginArmyTrader:
             else:
                 gross = (trade.entry_price - current) * trade.volume
 
-            exit_fee_est = current * trade.volume * KRAKEN_CLOSE_FEE
+            _, close_fee_rate = self._get_open_close_fee_rates(trade.pair)
+            exit_fee_est = current * trade.volume * close_fee_rate
             net_pnl = gross - trade.entry_fee - exit_fee_est
             max_net_pnl = max(max_net_pnl, net_pnl)
             status_icon = "UP" if net_pnl > 0 else "WAIT"
@@ -5888,19 +7088,6 @@ class KrakenMarginArmyTrader:
                             if (side == "buy" and need_long) or (side == "sell" and need_short):
                                 self.create_shadow(info, side, vol, trade_val, lev)
 
-                            # Also create shadow for the OPPOSITE side (dual strategy)
-                            opp_side = "sell" if side == "buy" else "buy"
-                            opp_need = need_short if side == "buy" else need_long
-                            if opp_need and hasattr(self, '_last_candidates'):
-                                # Find a good candidate for the opposite direction
-                                for cand in self._last_candidates:
-                                    ci, _, cv, ctv, _ = cand[0], cand[1], cand[2], cand[3], cand[4]
-                                    # Try flipping this candidate
-                                    flip_levs = ci.leverage_sell if opp_side == "sell" else ci.leverage_buy
-                                    if flip_levs and ci.pair != info.pair:
-                                        opp_lev = max(flip_levs)
-                                        self.create_shadow(ci, opp_side, cv, ctv, opp_lev)
-                                        break
                         else:
                             if not has_open and not self.shadow_trades:
                                 logger.info("No targets met criteria. Scanning again soon...")
@@ -6023,17 +7210,6 @@ class KrakenMarginArmyTrader:
                     info, side, vol, trade_val, lev = target
                     if (side == "buy" and need_long) or (side == "sell" and need_short):
                         self.create_shadow(info, side, vol, trade_val, lev)
-                    # Opposite direction shadow
-                    opp_side = "sell" if side == "buy" else "buy"
-                    opp_need = need_short if side == "buy" else need_long
-                    if opp_need and hasattr(self, '_last_candidates'):
-                        for cand in self._last_candidates:
-                            ci = cand[0]; cv = cand[2]; ctv = cand[3]
-                            flip_levs = ci.leverage_sell if opp_side == "sell" else ci.leverage_buy
-                            if flip_levs and ci.pair != info.pair:
-                                self.create_shadow(ci, opp_side, cv, ctv, max(flip_levs))
-                                break
-
         return closed_this_tick
 
     def monitor_positions(self) -> list:

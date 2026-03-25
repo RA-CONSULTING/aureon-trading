@@ -1,49 +1,7 @@
 {
-  "active_long": {
-    "pair": "DASHUSD",
-    "side": "buy",
-    "volume": 10.76751972,
-    "entry_price": 36.12829482702819,
-    "leverage": 3,
-    "entry_fee": 1.108684,
-    "entry_time": 1772640077.73801,
-    "order_id": "ODKNQ6-ZHFXQ-B2PZHL",
-    "cost": 389.012127,
-    "breakeven_price": 36.47565675825854,
-    "binance_symbol": "DASHUSDT",
-    "rollover_fees": 0.0,
-    "last_rollover_check": 0.0
-  },
-  "active_short": {
-    "pair": "ZECUSD",
-    "side": "sell",
-    "volume": 1.31866486,
-    "entry_price": 216.0400027646145,
-    "leverage": 3,
-    "entry_fee": 0.7407,
-    "entry_time": 1772573263.38044,
-    "order_id": "OMAB3D-TWUNM-WCFKMT",
-    "cost": 284.88436,
-    "breakeven_price": 213.75906289032378,
-    "binance_symbol": "ZECUSDT",
-    "rollover_fees": 0.0,
-    "last_rollover_check": 0.0
-  },
-  "active_trade": {
-    "pair": "DASHUSD",
-    "side": "buy",
-    "volume": 10.76751972,
-    "entry_price": 36.12829482702819,
-    "leverage": 3,
-    "entry_fee": 1.108684,
-    "entry_time": 1772640077.73801,
-    "order_id": "ODKNQ6-ZHFXQ-B2PZHL",
-    "cost": 389.012127,
-    "breakeven_price": 36.47565675825854,
-    "binance_symbol": "DASHUSDT",
-    "rollover_fees": 0.0,
-    "last_rollover_check": 0.0
-  },
+  "active_long": null,
+  "active_short": null,
+  "active_trade": null,
   "total_profit": -50.11265883066977,
   "total_trades": 22,
   "winning_trades": 3,
@@ -491,5 +449,5 @@
       "close_order_id": "OW36TS-XWUQ4-NHAUO5"
     }
   ],
-  "last_updated": "2026-03-04T16:01:17.738048"
+  "last_updated": "2026-03-25T00:07:37.574720"
 }

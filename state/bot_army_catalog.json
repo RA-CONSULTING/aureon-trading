@@ -2323,5 +2323,275 @@
       }
     ],
     "last_shape": "spiral"
+  },
+  "493013173cb1": {
+    "bot_id": "493013173cb1",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1774394239.3275402,
+    "last_seen": 1774394425.2462306,
+    "first_symbol": "DASHUSDT",
+    "last_symbol": "DASHUSDT",
+    "sighting_count": 6,
+    "confidence": 0.8,
+    "frequency": 0.1892,
+    "shape": "spiral",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 9.711921421695946,
+    "last_bsr": 0.92,
+    "action_history": [
+      {
+        "ts": 1774394239,
+        "action": "BUYING",
+        "bsr": 2.2,
+        "power": 9.7,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394272,
+        "action": "NEUTRAL",
+        "bsr": 0.92,
+        "power": 9.7,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394304,
+        "action": "NEUTRAL",
+        "bsr": 0.92,
+        "power": 9.7,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394338,
+        "action": "NEUTRAL",
+        "bsr": 0.92,
+        "power": 9.7,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394392,
+        "action": "NEUTRAL",
+        "bsr": 0.92,
+        "power": 9.7,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394425,
+        "action": "NEUTRAL",
+        "bsr": 0.92,
+        "power": 9.7,
+        "symbol": "DASHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "dc21ca9ecc02": {
+    "bot_id": "dc21ca9ecc02",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1774394239.3275402,
+    "last_seen": 1774394425.2462306,
+    "first_symbol": "DASHUSDT",
+    "last_symbol": "DASHUSDT",
+    "sighting_count": 6,
+    "confidence": 0.91,
+    "frequency": 0.8337,
+    "shape": "spiral",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 89.08637086701276,
+    "last_bsr": 0.91,
+    "action_history": [
+      {
+        "ts": 1774394239,
+        "action": "BUYING",
+        "bsr": 2.19,
+        "power": 89.3,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394272,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 89.1,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394304,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 89.1,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394338,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 89.1,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394392,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 89.1,
+        "symbol": "DASHUSDT"
+      },
+      {
+        "ts": 1774394425,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 89.1,
+        "symbol": "DASHUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "ff5d884e27c5": {
+    "bot_id": "ff5d884e27c5",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1774394353.4851928,
+    "last_seen": 1774394444.2279394,
+    "first_symbol": "ZECUSDT",
+    "last_symbol": "ZECUSDT",
+    "sighting_count": 4,
+    "confidence": 0.8,
+    "frequency": 0.0795,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 9.659430886693825,
+    "last_bsr": 3.58,
+    "action_history": [
+      {
+        "ts": 1774394353,
+        "action": "BUYING",
+        "bsr": 4.19,
+        "power": 9.8,
+        "symbol": "ZECUSDT"
+      },
+      {
+        "ts": 1774394371,
+        "action": "BUYING",
+        "bsr": 4.18,
+        "power": 9.8,
+        "symbol": "ZECUSDT"
+      },
+      {
+        "ts": 1774394410,
+        "action": "BUYING",
+        "bsr": 3.88,
+        "power": 9.7,
+        "symbol": "ZECUSDT"
+      },
+      {
+        "ts": 1774394444,
+        "action": "BUYING",
+        "bsr": 3.58,
+        "power": 9.7,
+        "symbol": "ZECUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "b8dfe245e897": {
+    "bot_id": "b8dfe245e897",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1774394353.4851928,
+    "last_seen": 1774394353.4851928,
+    "first_symbol": "ZECUSDT",
+    "last_symbol": "ZECUSDT",
+    "sighting_count": 1,
+    "confidence": 0.91,
+    "frequency": 0.5511,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.9,
+    "last_bsr": 4.19,
+    "action_history": [
+      {
+        "ts": 1774394353,
+        "action": "BUYING",
+        "bsr": 4.19,
+        "power": 89.9,
+        "symbol": "ZECUSDT"
+      }
+    ]
+  },
+  "ba369e52432c": {
+    "bot_id": "ba369e52432c",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1774394370.9346662,
+    "last_seen": 1774394370.9346662,
+    "first_symbol": "ZECUSDT",
+    "last_symbol": "ZECUSDT",
+    "sighting_count": 1,
+    "confidence": 0.91,
+    "frequency": 2.1702,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 90.0,
+    "last_bsr": 4.14,
+    "action_history": [
+      {
+        "ts": 1774394371,
+        "action": "BUYING",
+        "bsr": 4.14,
+        "power": 90.0,
+        "symbol": "ZECUSDT"
+      }
+    ]
+  },
+  "e799f7e6e6df": {
+    "bot_id": "e799f7e6e6df",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1774394409.7182264,
+    "last_seen": 1774394444.2279394,
+    "first_symbol": "ZECUSDT",
+    "last_symbol": "ZECUSDT",
+    "sighting_count": 2,
+    "confidence": 0.91,
+    "frequency": 3.4461,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 90.10905058188948,
+    "last_bsr": 3.58,
+    "action_history": [
+      {
+        "ts": 1774394410,
+        "action": "BUYING",
+        "bsr": 3.87,
+        "power": 90.1,
+        "symbol": "ZECUSDT"
+      },
+      {
+        "ts": 1774394444,
+        "action": "BUYING",
+        "bsr": 3.58,
+        "power": 90.1,
+        "symbol": "ZECUSDT"
+      }
+    ],
+    "last_shape": "spiral"
   }
 }
