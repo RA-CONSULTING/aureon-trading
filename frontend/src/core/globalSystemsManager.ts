@@ -58,6 +58,9 @@ export interface GlobalState {
     pnl: number;
     success: boolean;
     exchange?: string;
+    tradeId?: string;
+    holdSeconds?: number;
+    reason?: string;
   }>;
   
   // Market data
@@ -121,6 +124,12 @@ export interface GlobalState {
   avgHoldTimeMinutes: number;        // Average trade duration
   latestMonitorLine: string;         // Latest monitor snapshot mirrored from terminal
   statusLines: string[];             // Latest terminal status block
+  queenVoice?: {
+    ts: string;
+    mode: string;
+    text: string;
+    lines: string[];
+  };
   
   // WebSocket status
   wsMessageCount: number;            // Total WS messages received
@@ -171,6 +180,8 @@ export interface GlobalState {
     pnlPercent: number;
     side: 'LONG' | 'SHORT';
     exchange?: string;
+    tradeId?: string;
+    openedAt?: string;
   }>;
 
   unifiedMarketSummary?: {

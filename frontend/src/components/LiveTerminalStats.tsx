@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useGlobalState } from '@/hooks/useGlobalState';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,18 @@ const formatSigned = (value: unknown, digits = 2, prefix = '') => {
   const num = safeNumber(value);
   const sign = num >= 0 ? '+' : '';
   return `${prefix}${sign}${num.toFixed(digits)}`;
+};
+
+const formatClock = (value: Date | number | string | null | undefined) => {
+  const date = value instanceof Date ? value : value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleTimeString() : '--:--:--';
+};
+
+const formatAge = (seconds: unknown) => {
+  const total = Math.max(0, Math.floor(safeNumber(seconds)));
+  const mins = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${mins}m ${secs}s`;
 };
 
 const ExchangeMetric = ({
@@ -35,6 +48,7 @@ const PositionLine = ({
   currentPrice,
   pnlPercent,
   exchange,
+  tradeId,
 }: {
   symbol: string;
   side: 'LONG' | 'SHORT';
@@ -42,6 +56,7 @@ const PositionLine = ({
   currentPrice: number;
   pnlPercent: number;
   exchange?: string;
+  tradeId?: string;
 }) => (
   <div className="rounded border border-border/40 bg-background/60 px-3 py-2">
     <div className="flex items-center justify-between gap-3 font-mono text-[11px]">
@@ -56,19 +71,160 @@ const PositionLine = ({
         {formatSigned(pnlPercent, 2)}%
       </span>
     </div>
-    <div className="mt-1 flex items-center gap-3 font-mono text-[10px] text-muted-foreground">
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-muted-foreground">
       <span>Entry ${entryPrice.toFixed(4)}</span>
       <span>Now ${currentPrice.toFixed(4)}</span>
+      <span>ID {tradeId || 'n/a'}</span>
     </div>
   </div>
 );
 
 export function LiveTerminalStats() {
   const state = useGlobalState();
+  const [clock, setClock] = useState(() => new Date());
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const lastSpokenRef = useRef('');
+  const lastSpokenAtRef = useRef(0);
+  const pendingSpeechRef = useRef('');
+  const unlockedRef = useRef(false);
+  const [voiceStatus, setVoiceStatus] = useState('starting');
+
+  const normalizeSpeechText = (text: string) =>
+    text
+      .replace(/\b\d+(?:\.\d+)?%/g, '')
+      .replace(/\b[$£€]\s*\d+(?:\.\d+)?/g, '')
+      .replace(/\b\d+(?:\.\d+)?\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const speakQueenText = (text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setVoiceStatus('unsupported');
+      return;
+    }
+    const synth = window.speechSynthesis;
+    const trimmed = normalizeSpeechText(text);
+    if (!trimmed) {
+      return;
+    }
+    const voices = synth.getVoices();
+    if (voices.length === 0) {
+      pendingSpeechRef.current = trimmed;
+      setVoiceStatus('loading');
+      return;
+    }
+    if (!unlockedRef.current) {
+      pendingSpeechRef.current = trimmed;
+      setVoiceStatus('waiting');
+      return;
+    }
+    const now = Date.now();
+    if ((now - lastSpokenAtRef.current) < 6000 && lastSpokenRef.current !== '') {
+      pendingSpeechRef.current = trimmed;
+      setVoiceStatus('cooldown');
+      return;
+    }
+    if (lastSpokenRef.current === trimmed && voiceStatus !== 'waiting' && voiceStatus !== 'loading' && voiceStatus !== 'starting') {
+      setVoiceStatus('live');
+      return;
+    }
+    synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(trimmed);
+    utterance.lang = 'en-GB';
+    utterance.rate = 1.02;
+    utterance.pitch = 0.92;
+    utterance.volume = 1;
+    const preferred = voices.find((voice) =>
+      /female|zira|susan|aria|libby|samantha|serena|google uk english female/i.test(
+        `${voice.name} ${voice.voiceURI}`,
+      ),
+    );
+    if (preferred) {
+      utterance.voice = preferred;
+    }
+    utterance.onstart = () => setVoiceStatus('speaking');
+    utterance.onend = () => setVoiceStatus('live');
+    utterance.onerror = () => setVoiceStatus('blocked');
+    lastSpokenRef.current = trimmed;
+    lastSpokenAtRef.current = now;
+    pendingSpeechRef.current = '';
+    synth.resume();
+    window.setTimeout(() => synth.speak(utterance), 30);
+  };
+
+  useEffect(() => {
+    const id = window.setInterval(() => setClock(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      setVoiceStatus('unsupported');
+      return;
+    }
+    const synth = window.speechSynthesis;
+    const unlock = () => {
+      unlockedRef.current = true;
+      synth.resume();
+      if (voiceEnabled && pendingSpeechRef.current) {
+        const pending = pendingSpeechRef.current;
+        pendingSpeechRef.current = '';
+        speakQueenText(pending);
+      } else if (voiceEnabled) {
+        speakQueenText(String(state.queenVoice?.text || 'Queen voice online.'));
+      } else {
+        setVoiceStatus('live');
+      }
+    };
+    const handleVoicesChanged = () => {
+      if (voiceEnabled && pendingSpeechRef.current) {
+        speakQueenText(pendingSpeechRef.current);
+      }
+    };
+    window.addEventListener('click', unlock, { once: true });
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    synth.onvoiceschanged = handleVoicesChanged;
+    synth.getVoices();
+    return () => {
+      synth.onvoiceschanged = null;
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [voiceEnabled, state.queenVoice?.text]);
+
+  useEffect(() => {
+    if (!voiceEnabled) {
+      return;
+    }
+    const id = window.setInterval(() => {
+      if (pendingSpeechRef.current && unlockedRef.current) {
+        const pending = pendingSpeechRef.current;
+        pendingSpeechRef.current = '';
+        speakQueenText(pending);
+      }
+    }, 1500);
+    return () => window.clearInterval(id);
+  }, [voiceEnabled]);
+
+  useEffect(() => {
+    const text = String(state.queenVoice?.text || '').trim();
+    if (!voiceEnabled || !text) {
+      return;
+    }
+    speakQueenText(text);
+  }, [state.queenVoice?.text, voiceEnabled]);
+
   const summary = state.unifiedMarketSummary;
   const activePositions = Array.isArray(state.activePositions) ? state.activePositions : [];
+  const recentTrades = Array.isArray(state.recentTrades) ? state.recentTrades : [];
   const krakenPositions = activePositions.filter((pos) => pos.exchange === 'kraken');
   const capitalPositions = activePositions.filter((pos) => pos.exchange === 'capital');
+  const topWinningTrades = [...recentTrades]
+    .filter((trade) => safeNumber(trade.pnl) > 0)
+    .sort((a, b) => safeNumber(b.pnl) - safeNumber(a.pnl))
+    .slice(0, 5);
 
   const totalEquity = safeNumber(state.totalEquity);
   const available = safeNumber(state.availableBalance);
@@ -79,23 +235,65 @@ export function LiveTerminalStats() {
   const capitalPnl = safeNumber(summary?.capitalSessionPnlGbp);
   const krakenOpen = safeNumber(summary?.krakenOpenPositions, krakenPositions.length);
   const capitalOpen = safeNumber(summary?.capitalOpenPositions, capitalPositions.length);
+  const queenVoice = state.queenVoice;
 
   return (
     <Card className="border-border/50 bg-background/95 p-4">
-      <div className="mb-4 flex items-center justify-between gap-3 border-b border-border/40 pb-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-3">
         <div>
           <div className="text-sm font-semibold text-foreground">Live Exchange Metrics</div>
-          <div className="text-xs text-muted-foreground">Kraken margin and Capital CFDs only</div>
+          <div className="text-xs text-muted-foreground">Trade IDs, winners, and terminal timing</div>
         </div>
-        <div className="text-right font-mono text-[11px]">
-          <div className="text-foreground">Open {krakenOpen}K / {capitalOpen}C</div>
-          <div className={cn(totalPnl >= 0 ? 'text-green-500' : 'text-red-500')}>
-            Session {formatSigned(totalPnl, 2, '€')}
+        <div className="grid gap-1 text-right font-mono text-[11px]">
+          <div className="text-foreground">Now {formatClock(clock)}</div>
+          <div className="text-muted-foreground">Feed {state.wsConnected ? 'live' : 'polling'} ({state.wsMessageCount})</div>
+          <div className="text-muted-foreground">Updated {formatClock(state.lastDataReceived)}</div>
+        </div>
+      </div>
+
+      <div className="mb-4 rounded border border-border/40 bg-muted/20 p-3">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div>
+            <div className="font-mono text-xs font-semibold text-foreground">QUEEN VOICE</div>
+            <div className="text-[11px] text-muted-foreground">
+              Live explanation from current exchange intelligence snapshots
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setVoiceEnabled((current) => !current)}
+            className={cn(
+              'rounded border px-2 py-1 font-mono text-[10px]',
+              voiceEnabled ? 'border-green-500/50 text-green-500' : 'border-border/50 text-muted-foreground',
+            )}
+          >
+            {voiceEnabled ? 'Voice On' : 'Voice Off'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              unlockedRef.current = true;
+              lastSpokenRef.current = '';
+              speakQueenText(String(queenVoice?.text || 'Queen voice test. Audio path confirmed.'));
+            }}
+            className="rounded border border-border/50 px-2 py-1 font-mono text-[10px] text-foreground"
+          >
+            Test Voice
+          </button>
+        </div>
+        <div className="space-y-2">
+          <div className="font-mono text-[11px] leading-5 text-foreground">
+            {queenVoice?.text || 'Queen voice is waiting for live intelligence snapshots.'}
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] text-muted-foreground">
+            <span>Mode {queenVoice?.mode || state.queenState}</span>
+            <span>Stamped {formatClock(queenVoice?.ts)}</span>
+            <span>Audio {voiceStatus}</span>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_1.4fr_1fr]">
         <div className="rounded border border-border/40 bg-muted/20 p-3">
           <div className="mb-2 font-mono text-xs font-semibold text-foreground">KRAKEN</div>
           <div className="space-y-1.5">
@@ -105,15 +303,16 @@ export function LiveTerminalStats() {
           </div>
           <div className="mt-3 space-y-2">
             {krakenPositions.length > 0 ? (
-              krakenPositions.slice(0, 4).map((pos, index) => (
+              krakenPositions.slice(0, 5).map((pos, index) => (
                 <PositionLine
-                  key={`kraken-${pos.symbol}-${index}`}
+                  key={`kraken-${pos.symbol}-${pos.tradeId || index}`}
                   symbol={pos.symbol}
                   side={pos.side}
                   entryPrice={safeNumber(pos.entryPrice)}
                   currentPrice={safeNumber(pos.currentPrice, safeNumber(pos.entryPrice))}
                   pnlPercent={safeNumber(pos.pnlPercent)}
                   exchange={pos.exchange}
+                  tradeId={pos.tradeId}
                 />
               ))
             ) : (
@@ -131,19 +330,46 @@ export function LiveTerminalStats() {
           </div>
           <div className="mt-3 space-y-2">
             {capitalPositions.length > 0 ? (
-              capitalPositions.slice(0, 4).map((pos, index) => (
+              capitalPositions.slice(0, 5).map((pos, index) => (
                 <PositionLine
-                  key={`capital-${pos.symbol}-${index}`}
+                  key={`capital-${pos.symbol}-${pos.tradeId || index}`}
                   symbol={pos.symbol}
                   side={pos.side}
                   entryPrice={safeNumber(pos.entryPrice)}
                   currentPrice={safeNumber(pos.currentPrice, safeNumber(pos.entryPrice))}
                   pnlPercent={safeNumber(pos.pnlPercent)}
                   exchange={pos.exchange}
+                  tradeId={pos.tradeId}
                 />
               ))
             ) : (
               <div className="font-mono text-[11px] text-muted-foreground">No open Capital positions</div>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded border border-border/40 bg-muted/20 p-3">
+          <div className="mb-2 font-mono text-xs font-semibold text-foreground">TOP 5 WINNERS</div>
+          <div className="space-y-2">
+            {topWinningTrades.length > 0 ? (
+              topWinningTrades.map((trade, index) => (
+                <div key={`${trade.exchange || 'local'}-${trade.tradeId || trade.symbol}-${index}`} className="rounded border border-border/40 bg-background/60 px-3 py-2 font-mono text-[10px]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-foreground">
+                      #{index + 1} {trade.symbol} {trade.side}
+                    </span>
+                    <span className="text-green-500">{formatSigned(trade.pnl, 2, trade.exchange === 'capital' ? '£' : '$')}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                    <span>{trade.exchange || 'local'}</span>
+                    <span>{formatClock(trade.time)}</span>
+                    <span>Hold {formatAge(trade.holdSeconds)}</span>
+                    <span>ID {trade.tradeId || 'n/a'}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="font-mono text-[11px] text-muted-foreground">No profitable closed trades yet</div>
             )}
           </div>
         </div>
@@ -155,9 +381,9 @@ export function LiveTerminalStats() {
           <ExchangeMetric label="Portfolio" value={`€${totalEquity.toFixed(2)}`} />
           <ExchangeMetric label="Available" value={`€${available.toFixed(2)}`} />
           <ExchangeMetric
-            label="Total Open"
-            value={`${activePositions.length}/${safeNumber(state.maxPositions)}`}
-            className="text-primary"
+            label="Session"
+            value={formatSigned(totalPnl, 2, '€')}
+            className={totalPnl >= 0 ? 'text-green-500' : 'text-red-500'}
           />
         </div>
         {state.latestMonitorLine && (

@@ -63,7 +63,10 @@ class _UnifiedDashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
+            return
 
 
 class UnifiedMarketTrader:
@@ -93,6 +96,21 @@ class UnifiedMarketTrader:
         except OSError as e:
             logger.warning("UNIFIED DASHBOARD unavailable on %s:%s (%s)", LOCAL_HOST, LOCAL_PORT, e)
 
+    def _confidence_word(self, value: Any) -> str:
+        try:
+            score = float(value or 0.0)
+        except Exception:
+            score = 0.0
+        if score >= 0.85:
+            return "very strong"
+        if score >= 0.65:
+            return "strong"
+        if score >= 0.45:
+            return "building"
+        if score > 0:
+            return "tentative"
+        return "unclear"
+
     def _build_combined_payload(self) -> Dict[str, Any]:
         kraken_payload = self.kraken.get_local_dashboard_state() if self.kraken_ready else {
             "ok": False,
@@ -110,6 +128,7 @@ class UnifiedMarketTrader:
             "stats": {},
         }
         combined_status = self.get_status_lines()
+        queen_voice = self._build_queen_voice_payload(kraken_payload, capital_payload)
         payload = {
             "ok": True,
             "source": "unified-market-trader",
@@ -119,6 +138,7 @@ class UnifiedMarketTrader:
             "capital": capital_payload,
             "status_lines": combined_status[-24:],
             "latest_monitor_line": self._latest_monitor_line(),
+            "queen_voice": queen_voice,
             "combined": {
                 "open_positions": len(kraken_payload.get("positions", [])) + len(capital_payload.get("positions", [])),
                 "kraken_equity": float(kraken_payload.get("equity", 0.0) or 0.0),
@@ -131,6 +151,86 @@ class UnifiedMarketTrader:
         }
         self._latest_dashboard_payload = payload
         return payload
+
+    def _build_queen_voice_payload(self, kraken_payload: Dict[str, Any], capital_payload: Dict[str, Any]) -> Dict[str, Any]:
+        now_iso = datetime.now().isoformat()
+        kraken_decision = kraken_payload.get("decision_snapshot", {}) if isinstance(kraken_payload, dict) else {}
+        capital_target = capital_payload.get("target_snapshot", {}) if isinstance(capital_payload, dict) else {}
+        capital_candidates = capital_payload.get("candidate_snapshot", []) if isinstance(capital_payload, dict) else []
+        kraken_positions = kraken_payload.get("positions", []) if isinstance(kraken_payload.get("positions"), list) else []
+        capital_positions = capital_payload.get("positions", []) if isinstance(capital_payload.get("positions"), list) else []
+        open_positions = list(kraken_positions) + list(capital_positions)
+
+        lines: List[str] = []
+        mode = str(kraken_payload.get("queen_state") or "HOLD").upper()
+
+        if open_positions:
+            lines.append(
+                f"Summary. I am managing {len(open_positions)} live position"
+                f"{'' if len(open_positions) == 1 else 's'} across Kraken and Capital."
+            )
+        else:
+            lines.append("Summary. I am flat on both exchanges and waiting for the next clean strike.")
+
+        if kraken_positions:
+            parts = []
+            for pos in kraken_positions[:2]:
+                symbol = str(pos.get("symbol") or pos.get("pair") or "?")
+                side = str(pos.get("direction") or pos.get("side") or "?").upper()
+                parts.append(f"{symbol} {side}")
+            lines.append(f"Kraken update. I am managing {' and '.join(parts)}.")
+        elif kraken_decision and kraken_decision.get("decision"):
+            decision = kraken_decision.get("decision", {}) or {}
+            decision_type = str(decision.get("type", "UNKNOWN")).replace("_", " ").lower()
+            lines.append(
+                f"Kraken update. I am leaning toward {kraken_decision.get('symbol', '?')} "
+                f"{str(kraken_decision.get('side', '?')).lower()} with a "
+                f"{self._confidence_word(decision.get('confidence', 0.0))} read for {decision_type}."
+            )
+        else:
+            lines.append("Kraken update. I am watching for a cleaner crypto entry.")
+
+        if capital_positions:
+            parts = []
+            for pos in capital_positions[:2]:
+                symbol = str(pos.get("symbol") or "?")
+                side = str(pos.get("direction") or pos.get("side") or "?").upper()
+                parts.append(f"{symbol} {side}")
+            lines.append(f"Capital update. I am managing {' and '.join(parts)}.")
+        elif capital_target:
+            target_symbol = str(capital_target.get("symbol") or "?")
+            target_direction = str(capital_target.get("direction") or "?").upper()
+            expected_net = float(capital_target.get("expected_net_profit", 0.0) or 0.0)
+            lines.append(
+                f"Capital update. I am stalking {target_symbol} {target_direction}. "
+                f"The setup looks {'profitable' if expected_net > 0 else 'weak'} at the moment."
+            )
+            reason = str(capital_target.get("preflight_reason") or "").strip()
+            if reason:
+                lines.append("Capital is still waiting because the exchange checks are blocking entry.")
+        elif capital_candidates:
+            top = capital_candidates[0] if isinstance(capital_candidates[0], dict) else {}
+            if top:
+                lines.append(
+                    f"Capital update. My next candidate is {top.get('symbol', '?')} "
+                    f"{str(top.get('direction', '?')).upper()} if the current leader fails."
+                )
+        else:
+            lines.append("Capital update. I am waiting for a valid CFD setup.")
+
+        if open_positions:
+            lines.append("I am watching the open positions closely and waiting for clean profit exits.")
+
+        return {
+            "ts": now_iso,
+            "mode": mode,
+            "text": " ".join(line.strip() for line in lines if line.strip()),
+            "lines": lines,
+            "sources": {
+                "kraken_decision": kraken_decision,
+                "capital_target": capital_target,
+            },
+        }
 
     def get_local_dashboard_state(self) -> Dict[str, Any]:
         return dict(self._build_combined_payload())

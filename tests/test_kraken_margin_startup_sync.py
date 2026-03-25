@@ -7,6 +7,63 @@ from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader
 
 
 class TestKrakenMarginStartupSync(unittest.TestCase):
+    def test_validator_required_move_pct_uses_trade_profit_validator_when_available(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.trade_profit_validator = type("ValidatorStub", (), {
+            "get_exchange_costs": staticmethod(lambda exchange, value, is_taker=True, symbol="": {
+                "total": 2.0,
+            })
+        })()
+        trader._validator_snapshot = {}
+
+        required_move_pct, round_trip_cost = trader._validator_required_move_pct(
+            trade_value=100.0,
+            profit_target_usd=1.27,
+            symbol="BTC/USD",
+        )
+
+        self.assertAlmostEqual(round_trip_cost, 4.0)
+        self.assertAlmostEqual(required_move_pct, 5.27)
+        self.assertEqual(trader._validator_snapshot["source"], "validator")
+
+    def test_apply_brain_gate_to_candidates_filters_rejected_entries(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+
+        class BrainStub:
+            def decide(self, symbol, base_score, features, population_scores):
+                if symbol == "ETH/USD":
+                    return None
+                return type("Decision", (), {"score": base_score + 1.5, "coherence": 0.81})()
+
+        trader.signal_brain = BrainStub()
+        trader._brain_snapshot = {}
+        info1 = type("Info", (), {"pair": "BTC/USD", "momentum": 1.2, "spread_pct": 0.1})()
+        info2 = type("Info", (), {"pair": "ETH/USD", "momentum": 0.8, "spread_pct": 0.1})()
+        candidates = [
+            (info1, "buy", 1.0, 100.0, 5, 4.0, 1.1, 0.5, 1.0, 10.0, 0.8),
+            (info2, "buy", 1.0, 100.0, 5, 3.5, 1.0, 0.5, 0.9, 12.0, 0.7),
+        ]
+
+        gated = trader._apply_brain_gate_to_candidates(candidates)
+
+        self.assertEqual(len(gated), 1)
+        self.assertEqual(gated[0][0].pair, "BTC/USD")
+        self.assertAlmostEqual(gated[0][5], 5.5)
+        self.assertEqual(trader._brain_snapshot["ETH/USD"]["decision"], "rejected")
+
+    def test_validated_net_pnl_subtracts_slippage_and_spread_buffer(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.trade_profit_validator = type("ValidatorStub", (), {
+            "get_exchange_costs": staticmethod(lambda exchange, value, is_taker=True, symbol="": {
+                "slippage": 0.2,
+                "spread": 0.3,
+            })
+        })()
+
+        validated = trader._validated_net_pnl("BTC/USD", exit_value=100.0, net_pnl=2.0)
+
+        self.assertAlmostEqual(validated, 1.5)
+
     def test_close_margin_position_returns_no_position_instead_of_volume_zero(self):
         client = KrakenClient.__new__(KrakenClient)
         client.dry_run = False

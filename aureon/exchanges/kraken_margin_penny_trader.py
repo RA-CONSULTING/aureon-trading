@@ -272,6 +272,20 @@ except ImportError:
     OceanWaveScanner = None
 
 try:
+    from aureon.intelligence.aureon_brain import AureonBrain
+    HAS_AUREON_BRAIN = True
+except Exception:
+    HAS_AUREON_BRAIN = False
+    AureonBrain = None
+
+try:
+    from aureon.portfolio.trade_profit_validator import TradeProfitValidator
+    HAS_TRADE_PROFIT_VALIDATOR = True
+except Exception:
+    HAS_TRADE_PROFIT_VALIDATOR = False
+    TradeProfitValidator = None
+
+try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
 except ImportError:
@@ -2928,6 +2942,14 @@ class KrakenMarginArmyTrader:
         self._fusion_snapshot: Dict[str, Any] = {}
         self._whale_snapshot: Dict[str, Any] = {}
         self._fee_snapshot: Dict[str, Any] = {}
+        self._brain_snapshot: Dict[str, Any] = {}
+        self._validator_snapshot: Dict[str, Any] = {}
+        self.signal_brain = AureonBrain() if HAS_AUREON_BRAIN and AureonBrain is not None else None
+        self.trade_profit_validator = (
+            TradeProfitValidator(validation_log_file=os.path.join(_REPO_ROOT, "state", "kraken_trade_validations.json"))
+            if HAS_TRADE_PROFIT_VALIDATOR and TradeProfitValidator is not None
+            else None
+        )
         self._load_state()
         snap = self._get_capital_snapshot()
         self.starting_equity = snap["equity"]
@@ -3055,6 +3077,98 @@ class KrakenMarginArmyTrader:
         round_trip_fee, open_fee_rate, close_fee_rate = self._estimate_round_trip_fee(trade_value, symbol=symbol)
         required_move_pct = ((round_trip_fee + profit_target_usd) / trade_value * 100) if trade_value > 0 else 0.0
         return required_move_pct, open_fee_rate, close_fee_rate
+
+    def _validator_required_move_pct(self, trade_value: float, profit_target_usd: float, symbol: str = "") -> Tuple[float, float]:
+        """Estimate stricter required move using validator slippage/spread costs."""
+        if self.trade_profit_validator is None or trade_value <= 0:
+            self._validator_snapshot = {
+                "symbol": symbol,
+                "trade_value": trade_value,
+                "round_trip_cost": 0.0,
+                "required_move_pct": ((profit_target_usd / trade_value) * 100) if trade_value > 0 else 0.0,
+                "source": "disabled",
+            }
+            return (((profit_target_usd / trade_value) * 100) if trade_value > 0 else 0.0), 0.0
+        try:
+            costs = self.trade_profit_validator.get_exchange_costs(
+                "kraken",
+                trade_value,
+                is_taker=True,
+                symbol=symbol,
+            )
+            round_trip_cost = float(costs.get("total", 0.0) or 0.0) * 2.0
+            required_move_pct = ((round_trip_cost + profit_target_usd) / trade_value * 100) if trade_value > 0 else 0.0
+            self._validator_snapshot = {
+                "symbol": symbol,
+                "trade_value": trade_value,
+                "round_trip_cost": round_trip_cost,
+                "required_move_pct": required_move_pct,
+                "source": "validator",
+            }
+            return required_move_pct, round_trip_cost
+        except Exception as e:
+            logger.debug(f"Validator cost estimate failed for {symbol or 'default'}: {e}")
+            self._validator_snapshot = {"symbol": symbol, "error": str(e)}
+            return (((profit_target_usd / trade_value) * 100) if trade_value > 0 else 0.0), 0.0
+
+    def _apply_brain_gate_to_candidates(self, candidates: List[Tuple]) -> List[Tuple]:
+        """Apply AureonBrain as a final selector gate over ranked Kraken candidates."""
+        if self.signal_brain is None or not candidates:
+            return candidates
+
+        population_scores = [float(item[5]) for item in candidates]
+        gated: List[Tuple] = []
+        brain_snapshot: Dict[str, Any] = {}
+        for item in candidates:
+            info, side, vol, trade_val, lev, score, req, fees, gs, eta, route = item
+            threshold = max(0.05, min(2.0, abs(float(info.momentum)) or 0.05))
+            features = {
+                "momentum": float(info.momentum),
+                "volatility": max(float(info.spread_pct), float(req) / 4.0, 0.0001),
+                "trend_strength": min(abs(float(info.momentum)) / threshold, 1.0),
+                "rsi": 50.0 + max(-40.0, min(40.0, float(info.momentum) * 8.0)),
+            }
+            try:
+                decision = self.signal_brain.decide(
+                    symbol=info.pair,
+                    base_score=float(score),
+                    features=features,
+                    population_scores=population_scores,
+                )
+            except Exception as e:
+                brain_snapshot[info.pair] = {"error": str(e)}
+                gated.append(item)
+                continue
+
+            if decision is None:
+                brain_snapshot[info.pair] = {"decision": "rejected"}
+                continue
+
+            brain_snapshot[info.pair] = {
+                "decision": "accepted",
+                "score": float(decision.score),
+                "coherence": float(decision.coherence),
+            }
+            gated.append((info, side, vol, trade_val, lev, float(decision.score), req, fees, gs, eta, route))
+
+        self._brain_snapshot = brain_snapshot
+        return gated
+
+    def _validated_net_pnl(self, symbol: str, exit_value: float, net_pnl: float) -> float:
+        """Apply extra slippage/spread buffer to reported net P&L when available."""
+        if self.trade_profit_validator is None or exit_value <= 0:
+            return net_pnl
+        try:
+            costs = self.trade_profit_validator.get_exchange_costs(
+                "kraken",
+                exit_value,
+                is_taker=True,
+                symbol=symbol,
+            )
+            exit_buffer = float(costs.get("slippage", 0.0) or 0.0) + float(costs.get("spread", 0.0) or 0.0)
+            return net_pnl - exit_buffer
+        except Exception:
+            return net_pnl
 
     def _refresh_unified_intel_snapshot(self) -> None:
         """Capture high-level registry/decision-engine state without changing trade logic."""
@@ -3808,12 +3922,14 @@ class KrakenMarginArmyTrader:
             )
             positions.append({
                 "symbol": trade.pair,
+                "trade_id": trade.order_id,
                 "side": trade.side.upper(),
                 "entry_price": trade.entry_price,
                 "quantity": trade.volume,
                 "current_price": current_price,
                 "unrealized_pnl": unrealized_pnl,
                 "exchange": "kraken",
+                "opened_at": datetime.fromtimestamp(trade.open_time).isoformat() if getattr(trade, "open_time", 0) else "",
             })
         return positions
 
@@ -3849,6 +3965,7 @@ class KrakenMarginArmyTrader:
                 "success": float(trade.get("net_pnl", 0.0) or 0.0) > 0,
                 "hold_seconds": float(trade.get("hold_seconds", 0.0) or 0.0),
                 "reason": trade.get("reason", ""),
+                "trade_id": trade.get("close_order_id") or trade.get("order_id") or "",
             })
         return recent
 
@@ -4229,6 +4346,13 @@ class KrakenMarginArmyTrader:
             required_move_pct, _, _ = self._estimate_required_move_pct(
                 trade_val, PROFIT_TARGET_USD, symbol=info.pair
             )
+            validator_required_move_pct, validator_round_trip_cost = self._validator_required_move_pct(
+                trade_val, PROFIT_TARGET_USD, symbol=info.pair
+            )
+            if validator_required_move_pct > required_move_pct:
+                required_move_pct = validator_required_move_pct
+            if validator_round_trip_cost > round_trip_fee:
+                round_trip_fee = validator_round_trip_cost
 
             momentum_score = min(abs(info.momentum) / 5, 2.0)  # Normalize to 0-2
             spread_score = max(0, 1.0 - info.spread_pct * 5)
@@ -4410,6 +4534,11 @@ class KrakenMarginArmyTrader:
 
         if not candidates:
             logger.info("No valid candidates found")
+            return None
+
+        candidates = self._apply_brain_gate_to_candidates(candidates)
+        if not candidates:
+            logger.info("No candidates passed AureonBrain final gate")
             return None
 
         # Multiverse scout boost: if the multiverse already knows the next
@@ -5046,6 +5175,7 @@ class KrakenMarginArmyTrader:
         exit_fee = exit_value * close_fee_rate
         rollover = getattr(trade, 'rollover_fees', 0.0)
         net_pnl = gross_pnl - trade.entry_fee - exit_fee - rollover
+        validated_net_pnl = self._validated_net_pnl(trade.pair, exit_value, net_pnl)
         total_fees = trade.entry_fee + exit_fee + rollover
 
         if hold_time < 60:
@@ -5077,9 +5207,9 @@ class KrakenMarginArmyTrader:
                     f"(activates at £{DTP_CONFIG['activation_threshold']:.2f} net profit)"
                 )
             dtp = self.dtp_trackers[trade_key]
-            dtp_triggered, dtp_reason, dtp_state = dtp.update(net_pnl)
+            dtp_triggered, dtp_reason, dtp_state = dtp.update(validated_net_pnl)
             if dtp_state.activated:
-                net_gbp = net_pnl / DTP_CONFIG['gbp_usd_rate']
+                net_gbp = validated_net_pnl / DTP_CONFIG['gbp_usd_rate']
                 dtp_status_str = (
                     f" | DTP: floor=£{dtp_state.floor_gbp:.2f} "
                     f"peak=£{dtp_state.peak_profit_gbp:.2f}"
@@ -5087,14 +5217,14 @@ class KrakenMarginArmyTrader:
             if dtp_triggered:
                 logger.info(f"[DTP] DEAD MAN TRIGGERED: {dtp_reason}")
                 # Only fire DTP if net_pnl is positive — never close at a loss
-                if net_pnl >= 0:
+                if validated_net_pnl >= 0:
                     return self.close_position(
                         reason=f"DTP_DEAD_MAN (floor=£{dtp_state.floor_gbp:.2f})",
                         trade=trade
                     )
                 else:
                     logger.info(
-                        f"[DTP] Holding — DTP triggered but net_pnl=${net_pnl:+.4f} < 0. "
+                        f"[DTP] Holding — DTP triggered but validated_net=${validated_net_pnl:+.4f} < 0. "
                         f"Waiting for profit before closing."
                     )
 
@@ -5135,21 +5265,21 @@ class KrakenMarginArmyTrader:
             except Exception:
                 pass
 
-        if net_pnl >= PROFIT_TARGET_USD:
-            status = f"TARGET HIT +${net_pnl:.2f} - CLOSING!"
-        elif net_pnl > 0:
-            status = f"+${net_pnl:.2f} (need ${PROFIT_TARGET_USD - net_pnl:.2f} more -> ${trade.breakeven_price:.4f})"
+        if validated_net_pnl >= PROFIT_TARGET_USD:
+            status = f"TARGET HIT +${validated_net_pnl:.2f} validated - CLOSING!"
+        elif validated_net_pnl > 0:
+            status = f"+${validated_net_pnl:.2f} validated (need ${PROFIT_TARGET_USD - validated_net_pnl:.2f} more -> ${trade.breakeven_price:.4f})"
         elif gross_pnl > 0:
-            status = f"Gross+ but fees eating (net ${net_pnl:+.2f}, fees=${total_fees:.2f})"
+            status = f"Gross+ but fees/friction eating (validated ${validated_net_pnl:+.2f}, fees=${total_fees:.2f})"
         else:
-            status = f"${net_pnl:+.2f} | target=${trade.breakeven_price:.4f} ({need_pct:+.2f}% away)"
+            status = f"${validated_net_pnl:+.2f} validated | target=${trade.breakeven_price:.4f} ({need_pct:+.2f}% away)"
 
         danger_level = 0
         danger_note = "SAFE"
         logger.info(
             f"[{hold_str}] {trade.pair} {trade.side.upper()} {trade.leverage}x | "
             f"${trade.entry_price:,.4f} -> ${current_price:,.4f} | "
-            f"Net: ${net_pnl:+.2f} (fees:${total_fees:.2f}) | {status}"
+            f"Net: ${net_pnl:+.2f} raw / ${validated_net_pnl:+.2f} validated (fees:${total_fees:.2f}) | {status}"
             f"{' [LIVE]' if stream_live else ' [REST]'}"
             f"{dtp_status_str}"
             f"{stallion_str}"
@@ -5166,11 +5296,11 @@ class KrakenMarginArmyTrader:
         # === 1-HOUR ROTATION CHECK — only rotate when profitable ===
         if self.multiverse is not None and self.multiverse.is_rotation_due():
             _next = self.multiverse.get_next_stallion()
-            if net_pnl >= PROFIT_TARGET_USD:
+            if validated_net_pnl >= PROFIT_TARGET_USD:
                 # Profitable — rotate to next stallion
                 logger.info(
                     f"[Multiverse] 1-hour ride limit reached on {trade.pair} "
-                    f"(net=${net_pnl:+.2f}) — rotating to next stallion: {_next or '?'}"
+                    f"(validated_net=${validated_net_pnl:+.2f}) — rotating to next stallion: {_next or '?'}"
                 )
                 result = self.close_position(
                     reason=f"ROTATION_DUE (1h limit | next→{_next or '?'})",
@@ -5184,15 +5314,15 @@ class KrakenMarginArmyTrader:
                 # Underwater — hold, reset the rotation clock and keep riding
                 logger.info(
                     f"[Multiverse] 1-hour rotation due on {trade.pair} "
-                    f"but net_pnl=${net_pnl:+.4f} — HOLDING until profitable, "
+                    f"but validated_net=${validated_net_pnl:+.4f} — HOLDING until profitable, "
                     f"resetting rotation clock."
                 )
                 if self.multiverse is not None:
                     self.multiverse.start_real_ride(trade.pair, time.time())  # reset clock
 
         # === THE GBP1 PROFIT GATE - close immediately ===
-        if net_pnl >= PROFIT_TARGET_USD:
-            return self.close_position(reason=f"PROFIT_TARGET (${net_pnl:+.2f})", trade=trade)
+        if validated_net_pnl >= PROFIT_TARGET_USD:
+            return self.close_position(reason=f"PROFIT_TARGET (${validated_net_pnl:+.2f} validated)", trade=trade)
 
         # === LIVE STREAM INTEL (log-only, NO closing on loss) ===
         if stream_live and self.stream:

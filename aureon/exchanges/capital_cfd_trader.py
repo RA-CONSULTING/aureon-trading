@@ -46,6 +46,20 @@ except ImportError:
     seer_should_trade = None      # type: ignore
     lyra_should_trade = None      # type: ignore
 
+try:
+    from aureon.intelligence.aureon_brain import AureonBrain
+    HAS_AUREON_BRAIN = True
+except Exception:
+    AureonBrain = None            # type: ignore
+    HAS_AUREON_BRAIN = False
+
+try:
+    from aureon.portfolio.trade_profit_validator import TradeProfitValidator
+    HAS_TRADE_PROFIT_VALIDATOR = True
+except Exception:
+    TradeProfitValidator = None   # type: ignore
+    HAS_TRADE_PROFIT_VALIDATOR = False
+
 # ── INSTRUMENT UNIVERSE ────────────────────────────────────────────────────────
 # symbol → {class, tp_pct, sl_pct, size, max_spread_pct, momentum_threshold}
 #   tp_pct / sl_pct  — take-profit / stop-loss as % of entry price
@@ -80,14 +94,35 @@ CAPITAL_UNIVERSE: Dict[str, dict] = {
 }
 
 # ── CONFIG ─────────────────────────────────────────────────────────────────────
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except Exception:
+        return default
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
 CFD_CONFIG: Dict[str, float] = {
-    "max_positions":      1.0,   # ONE active CFD position — Stallion Rule / Hive Mind discipline
-    "price_ttl_secs":    20.0,   # Price cache lifetime
-    "position_ttl_secs": 3600.0, # Max hold time per position (1 hour — stallion rule)
-    "scan_interval_secs": 30.0,  # Opportunity scan interval
-    "monitor_interval":    5.0,  # Position monitor interval
-    "exchange_sync_secs": 15.0,  # Reconcile local CFD positions against Capital.com
-    "quad_gate_ttl":      30.0,  # Cache Seer/Lyra gate results for N secs
+    "max_positions":      _env_float("CAPITAL_MAX_POSITIONS", 2.0),   # One BUY lane and one SELL lane
+    "price_ttl_secs":    _env_float("CAPITAL_PRICE_TTL_SECS", 10.0),  # Price cache lifetime
+    "position_ttl_secs": _env_float("CAPITAL_POSITION_TTL_SECS", 3600.0), # Max hold time per position (1 hour — stallion rule)
+    "scan_interval_secs": _env_float("CAPITAL_SCAN_INTERVAL_SECS", 5.0),  # Opportunity scan interval
+    "monitor_interval":   _env_float("CAPITAL_MONITOR_INTERVAL_SECS", 2.0),  # Position monitor interval
+    "exchange_sync_secs": _env_float("CAPITAL_EXCHANGE_SYNC_SECS", 5.0),  # Reconcile local CFD positions against Capital.com
+    "quad_gate_ttl":      _env_float("CAPITAL_QUAD_GATE_TTL_SECS", 10.0),  # Cache Seer/Lyra gate results for N secs
+}
+CFD_FLAGS = {
+    "profit_only_closes": _env_bool("CAPITAL_PROFIT_ONLY_CLOSES", True),
+    "penny_take_profit": _env_bool("CAPITAL_PENNY_TAKE_PROFIT", True),
 }
 
 CAPITAL_MIN_PROFIT_GBP = 0.01
@@ -165,6 +200,12 @@ class CapitalCFDTrader:
         self._recent_closed_trades: List[dict] = []
         self.start_time: float = time.time()
         self.starting_equity_gbp: float = 0.0
+        self._signal_brain = AureonBrain() if HAS_AUREON_BRAIN and AureonBrain is not None else None
+        self._trade_profit_validator = (
+            TradeProfitValidator(validation_log_file=os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_trade_validations.json"))
+            if HAS_TRADE_PROFIT_VALIDATOR and TradeProfitValidator is not None
+            else None
+        )
 
         # Timing
         self._last_scan:    float = 0.0
@@ -222,6 +263,13 @@ class CapitalCFDTrader:
         notional = max(price * size, 0.0001)
         return (CAPITAL_MIN_PROFIT_GBP / notional) * 100.0
 
+    def _effective_tp_pct(self, price: float, size: float, cfg: Optional[dict] = None) -> float:
+        required_tp_pct = self._required_tp_pct_for_profit(price, size)
+        configured_tp_pct = float((cfg or {}).get("tp_pct", 0.0) or 0.0)
+        if CFD_FLAGS["penny_take_profit"]:
+            return required_tp_pct
+        return max(configured_tp_pct, required_tp_pct)
+
     def _write_exchange_trace(self, payload: Dict[str, Any]) -> None:
         """Persist the latest raw Capital exchange payloads for debugging live behavior."""
         try:
@@ -261,6 +309,206 @@ class CapitalCFDTrader:
             "used_gbp": used,
             "budget_gbp": budget,
             "target_pct_equity": target_pct,
+        }
+
+    def _extract_capital_min_size(self, market_info: dict) -> float:
+        """Best-effort extraction of Capital's minimum deal size for a market."""
+        if not isinstance(market_info, dict):
+            return 0.0
+        instrument = market_info.get("instrument", {}) if isinstance(market_info.get("instrument"), dict) else {}
+        dealing_rules = market_info.get("dealingRules", {}) if isinstance(market_info.get("dealingRules"), dict) else {}
+        candidates = [
+            dealing_rules.get("minDealSize", {}).get("value") if isinstance(dealing_rules.get("minDealSize"), dict) else dealing_rules.get("minDealSize"),
+            instrument.get("minDealSize"),
+            market_info.get("minDealSize"),
+        ]
+        for candidate in candidates:
+            try:
+                value = float(candidate or 0.0)
+                if value > 0:
+                    return value
+            except (TypeError, ValueError):
+                continue
+        return 0.0
+
+    def _market_status_text(self, market_info: dict) -> str:
+        if not isinstance(market_info, dict):
+            return "UNKNOWN"
+        snapshot = market_info.get("snapshot", {}) if isinstance(market_info.get("snapshot"), dict) else {}
+        instrument = market_info.get("instrument", {}) if isinstance(market_info.get("instrument"), dict) else {}
+        for candidate in (
+            snapshot.get("marketStatus"),
+            market_info.get("marketStatus"),
+            instrument.get("marketStatus"),
+            instrument.get("tradingStatus"),
+            market_info.get("status"),
+        ):
+            text = str(candidate or "").strip()
+            if text:
+                return text.upper()
+        return "UNKNOWN"
+
+    def _capital_preflight(self, symbol: str, size: float, ticker: dict, cfg: Optional[dict] = None) -> Dict[str, Any]:
+        """Collect exchange-side constraints before placing a Capital market order."""
+        preflight: Dict[str, Any] = {
+            "symbol": symbol,
+            "epic": str(ticker.get("epic") or symbol),
+            "requested_size": float(size or 0.0),
+            "available_balance": 0.0,
+            "market_status": "UNKNOWN",
+            "minimum_deal_size": 0.0,
+            "price": float(ticker.get("price") or 0.0),
+            "spread": 0.0,
+            "spread_pct": 0.0,
+            "expected_gross_profit": 0.0,
+            "expected_net_profit": 0.0,
+            "round_trip_cost": 0.0,
+            "ok": False,
+            "reason": "",
+        }
+        if not self.client:
+            preflight["reason"] = "capital client unavailable"
+            return preflight
+
+        try:
+            accounts = self.client.get_accounts()
+        except Exception as _e:
+            accounts = []
+            preflight["accounts_error"] = str(_e)
+        preflight["accounts"] = accounts
+        preflight["available_balance"] = float(
+            sum(float(acc.get("available", 0.0) or 0.0) for acc in accounts)
+        )
+
+        market_summary: Dict[str, Any] = {}
+        market_detail: Dict[str, Any] = {}
+        try:
+            if hasattr(self.client, "_resolve_market"):
+                resolved = self.client._resolve_market(symbol)  # type: ignore[attr-defined]
+                if isinstance(resolved, dict):
+                    market_summary = resolved
+                    preflight["epic"] = str(resolved.get("epic") or preflight["epic"])
+        except Exception as _e:
+            preflight["market_resolve_error"] = str(_e)
+
+        try:
+            if hasattr(self.client, "_get_market_snapshot"):
+                snapshot = self.client._get_market_snapshot(preflight["epic"])  # type: ignore[attr-defined]
+                if isinstance(snapshot, dict):
+                    market_detail = snapshot
+        except Exception as _e:
+            preflight["market_snapshot_error"] = str(_e)
+
+        market_info = market_detail or market_summary
+        preflight["market_status"] = self._market_status_text(market_info)
+        preflight["minimum_deal_size"] = self._extract_capital_min_size(market_info)
+
+        snapshot = market_detail.get("snapshot", {}) if isinstance(market_detail.get("snapshot"), dict) else {}
+        bid = float(
+            ticker.get("bid")
+            or snapshot.get("bid")
+            or market_summary.get("bid")
+            or 0.0
+        )
+        ask = float(
+            ticker.get("ask")
+            or snapshot.get("offer")
+            or market_summary.get("offer")
+            or 0.0
+        )
+        price = float(
+            ticker.get("price")
+            or ((bid + ask) / 2.0 if bid > 0 and ask > 0 else 0.0)
+            or snapshot.get("midOpen")
+            or 0.0
+        )
+        spread = max(ask - bid, 0.0) if bid > 0 and ask > 0 else 0.0
+        preflight["price"] = price
+        preflight["bid"] = bid
+        preflight["ask"] = ask
+        preflight["spread"] = spread
+        preflight["spread_pct"] = (spread / price * 100.0) if price > 0 and spread > 0 else 0.0
+
+        if isinstance(cfg, dict):
+            effective_tp_pct = self._effective_tp_pct(price or ask or 0.0, preflight["requested_size"], cfg)
+            cost_profile = self._capital_cost_profile(symbol, preflight["requested_size"], price or ask or 0.0, effective_tp_pct)
+            preflight.update(cost_profile)
+            preflight["effective_tp_pct"] = effective_tp_pct
+
+        if preflight["requested_size"] <= 0:
+            preflight["reason"] = "requested size <= 0"
+            return preflight
+        if preflight["minimum_deal_size"] > 0 and preflight["requested_size"] < preflight["minimum_deal_size"]:
+            preflight["reason"] = (
+                f"requested size {preflight['requested_size']:.6g} below Capital minimum "
+                f"{preflight['minimum_deal_size']:.6g}"
+            )
+            return preflight
+        if preflight["available_balance"] <= 0:
+            preflight["reason"] = "available account balance <= 0"
+            return preflight
+
+        allowed_statuses = {"TRADEABLE", "TRADEABLE_ONLINE", "OPEN", "EDITS_ONLY", "ONLINE"}
+        market_status = str(preflight["market_status"] or "").upper()
+        if market_status and market_status not in allowed_statuses and market_status != "UNKNOWN":
+            preflight["reason"] = f"market not tradeable: {market_status}"
+            return preflight
+        if price <= 0 and ask <= 0:
+            preflight["reason"] = "missing live price"
+            return preflight
+        if isinstance(cfg, dict) and float(preflight.get("expected_net_profit", 0.0) or 0.0) <= 0:
+            preflight["reason"] = (
+                f"expected net profit {float(preflight.get('expected_net_profit', 0.0) or 0.0):+.4f} "
+                f"does not clear costs {float(preflight.get('round_trip_cost', 0.0) or 0.0):.4f}"
+            )
+            return preflight
+
+        preflight["ok"] = True
+        preflight["reason"] = "ok"
+        return preflight
+
+    def _sized_cfg_from_preflight(self, cfg: dict, preflight: Dict[str, Any]) -> Optional[dict]:
+        """Raise size to Capital's minimum when that is affordable and otherwise valid."""
+        adjusted = dict(cfg)
+        requested_size = float(adjusted.get("size", 0.0) or 0.0)
+        minimum_size = float(preflight.get("minimum_deal_size", 0.0) or 0.0)
+        price = float(preflight.get("price", 0.0) or 0.0)
+        available_balance = float(preflight.get("available_balance", 0.0) or 0.0)
+        if minimum_size <= 0 or minimum_size <= requested_size:
+            return adjusted
+        if price <= 0:
+            return None
+        if available_balance > 0 and (minimum_size * price) > available_balance:
+            return None
+        adjusted["size"] = minimum_size
+        return adjusted
+
+    def _capital_cost_profile(self, symbol: str, size: float, price: float, tp_pct: float) -> Dict[str, float]:
+        """Estimate whether a Capital trade clears execution costs with the configured target."""
+        notional = max(float(size or 0.0) * float(price or 0.0), 0.0)
+        expected_gross_profit = notional * (max(float(tp_pct or 0.0), 0.0) / 100.0)
+        if self._trade_profit_validator is None or notional <= 0:
+            return {
+                "notional": notional,
+                "expected_gross_profit": expected_gross_profit,
+                "round_trip_cost": 0.0,
+                "expected_net_profit": expected_gross_profit,
+            }
+        try:
+            costs = self._trade_profit_validator.get_exchange_costs(
+                "capital",
+                notional,
+                is_taker=True,
+                symbol=symbol,
+            )
+            round_trip_cost = float(costs.get("total", 0.0) or 0.0) * 2.0
+        except Exception:
+            round_trip_cost = 0.0
+        return {
+            "notional": notional,
+            "expected_gross_profit": expected_gross_profit,
+            "round_trip_cost": round_trip_cost,
+            "expected_net_profit": expected_gross_profit - round_trip_cost,
         }
 
     # ── PRICES ─────────────────────────────────────────────────────────────────
@@ -329,7 +577,7 @@ class CapitalCFDTrader:
         tp_level = float(position.get("limitLevel", 0.0) or 0.0)
         sl_level = float(position.get("stopLevel", 0.0) or 0.0)
         cfg = CAPITAL_UNIVERSE.get(symbol, {})
-        tp_pct = max(float(cfg.get("tp_pct", 0.0) or 0.0), self._required_tp_pct_for_profit(entry_price, size))
+        tp_pct = self._effective_tp_pct(entry_price, size, cfg)
         sl_pct = float(cfg.get("sl_pct", 0.0) or 0.0)
         if tp_level <= 0:
             tp_level = entry_price * (1 + tp_pct / 100.0) if direction == "BUY" else entry_price * (1 - tp_pct / 100.0)
@@ -407,16 +655,16 @@ class CapitalCFDTrader:
         return self._quad_gate_ok
 
     # ── OPPORTUNITY SCANNER ────────────────────────────────────────────────────
-    def _score_symbol(self, symbol: str, cfg: dict, ticker: dict) -> float:
+    def _score_symbol(self, symbol: str, cfg: dict, ticker: dict) -> Tuple[float, str]:
         """
-        Score a candidate for BUY entry.
-        Returns 0.0 = skip; >0.0 = attractive, higher is better.
+        Score a candidate for BUY/SELL entry.
+        Returns (0.0, "") = skip; (>0.0, direction) = attractive, higher is better.
 
         Scoring:
-          base = momentum magnitude (change_pct)
+          base = momentum magnitude (abs(change_pct))
           penalty = spread quality cost
           gate = spread too wide → 0
-          gate = momentum below threshold → 0
+          gate = abs(momentum) below threshold → 0
         """
         price      = float(ticker.get("price") or 0)
         bid        = float(ticker.get("bid")   or 0)
@@ -424,32 +672,33 @@ class CapitalCFDTrader:
         change_pct = float(ticker.get("change_pct") or 0)
 
         if price <= 0 or bid <= 0 or ask <= 0:
-            return 0.0
+            return 0.0, ""
 
         # Spread guard
         spread_pct = (ask - bid) / price * 100
         max_spread = cfg.get("max_spread_pct", 0.2) * 100   # convert → %
         if spread_pct > max_spread:
-            return 0.0
+            return 0.0, ""
 
-        # Momentum gate — only trade when price is moving positively
+        # Momentum gate — trade in the direction of the move
         threshold = cfg.get("momentum_threshold", 0.10)
-        if change_pct < threshold:          # Only BUY on upward momentum
-            return 0.0
+        if abs(change_pct) < threshold:
+            return 0.0, ""
+        direction = "BUY" if change_pct > 0 else "SELL"
 
         # Score = momentum minus spread drag
-        score = change_pct - spread_pct * 0.15
+        score = abs(change_pct) - spread_pct * 0.15
 
         # Must have enough room to clear the realized-profit floor.
         size = float(cfg.get("size", 0.0) or 0.0)
         required_tp_pct = self._required_tp_pct_for_profit(price, size)
-        configured_tp_pct = float(cfg.get("tp_pct", 0.0) or 0.0)
-        if configured_tp_pct < required_tp_pct:
-            return 0.0
+        effective_tp_pct = self._effective_tp_pct(price, size, cfg)
+        if effective_tp_pct <= 0:
+            return 0.0, ""
 
-        expected_profit_gbp = price * size * (configured_tp_pct / 100.0)
+        expected_profit_gbp = price * size * (effective_tp_pct / 100.0)
         if expected_profit_gbp < CAPITAL_MIN_PROFIT_GBP:
-            return 0.0
+            return 0.0, ""
 
         score += min(1.0, expected_profit_gbp / max(CAPITAL_MIN_PROFIT_GBP, 0.0001)) * 0.25
 
@@ -459,37 +708,103 @@ class CapitalCFDTrader:
         if hive_factor > 0:
             score = score * (1.0 + float(hive_factor) * 0.40)
 
-        return max(0.0, score)
+        return max(0.0, score), direction
+
+    def _apply_hft_analysis(self, scored: List[Dict[str, Any]]) -> None:
+        """Use the repo's viable HFT/intel helpers on Capital candidates."""
+        positive_scores = [float(item.get("score", 0.0) or 0.0) for item in scored if float(item.get("score", 0.0) or 0.0) > 0]
+        for item in scored:
+            symbol = str(item.get("symbol") or "")
+            score = float(item.get("score", 0.0) or 0.0)
+            size = float(item.get("size", 0.0) or 0.0)
+            price = float(item.get("price", 0.0) or 0.0)
+            change_pct = float(item.get("change_pct", 0.0) or 0.0)
+            spread_pct = float(item.get("spread_pct", 0.0) or 0.0)
+            tp_pct = float(item.get("tp_pct", 0.0) or 0.0)
+
+            cost_profile = self._capital_cost_profile(symbol, size, price, tp_pct)
+            item.update(cost_profile)
+            if cost_profile["expected_net_profit"] <= 0:
+                item["hft_reason"] = "cost_gate"
+                item["score"] = 0.0
+                continue
+
+            if self._signal_brain is None:
+                item["brain_coherence"] = 0.0
+                continue
+
+            threshold = max(float(CAPITAL_UNIVERSE.get(symbol, {}).get("momentum_threshold", 0.1) or 0.1), 0.01)
+            features = {
+                "momentum": change_pct,
+                "volatility": max(spread_pct, 0.0001),
+                "trend_strength": min(abs(change_pct) / threshold, 1.0),
+                "rsi": 50.0 + max(-45.0, min(45.0, change_pct * 10.0)),
+            }
+            try:
+                decision = self._signal_brain.decide(symbol, score, features, positive_scores or [score])
+            except Exception:
+                decision = None
+
+            if decision is None:
+                item["brain_coherence"] = 0.0
+                item["hft_reason"] = "brain_gate"
+                item["score"] = 0.0
+                continue
+
+            item["brain_coherence"] = float(decision.coherence)
+            item["score"] = float(decision.score)
+
+    def _direction_counts(self) -> Dict[str, int]:
+        counts = {"BUY": 0, "SELL": 0}
+        for pos in self.positions:
+            direction = str(getattr(pos, "direction", "") or "").upper()
+            if direction in counts:
+                counts[direction] += 1
+        return counts
+
+    def _can_open_candidate(self, symbol: str, direction: str, counts: Optional[Dict[str, int]] = None) -> bool:
+        direction = str(direction or "").upper()
+        if direction not in {"BUY", "SELL"}:
+            return False
+        if counts is None:
+            counts = self._direction_counts()
+        if counts.get(direction, 0) >= 1:
+            return False
+        for pos in self.positions:
+            if pos.symbol == symbol and str(pos.direction or "").upper() == direction:
+                return False
+        return len(self.positions) < int(CFD_CONFIG["max_positions"])
 
     def _find_best_opportunity(self) -> Optional[Tuple[str, dict, dict]]:
         """
-        Scan universe for the highest-scored BUY opportunity.
+        Scan universe for the highest-scored directional opportunity.
         Returns (symbol, cfg, ticker) or None.
         """
         max_pos = int(CFD_CONFIG["max_positions"])
         if len(self.positions) >= max_pos:
             return None
 
-        already_held = {p.symbol for p in self.positions}
+        direction_counts = self._direction_counts()
         best_score = 0.0
         best: Optional[Tuple[str, dict, dict]] = None
         scored: List[Dict[str, Any]] = []
 
         for symbol, cfg in CAPITAL_UNIVERSE.items():
-            if symbol in already_held:
-                continue
             ticker = self._get_price(symbol)
             if not ticker:
                 continue
-            score = self._score_symbol(symbol, cfg, ticker)
+            score, direction = self._score_symbol(symbol, cfg, ticker)
+            if not self._can_open_candidate(symbol, direction, direction_counts):
+                continue
             price = float(ticker.get("price") or 0.0)
             bid = float(ticker.get("bid") or 0.0)
             ask = float(ticker.get("ask") or 0.0)
             spread_pct = ((ask - bid) / price * 100.0) if price > 0 and bid > 0 and ask > 0 else 0.0
             required_tp_pct = self._required_tp_pct_for_profit(price, float(cfg.get("size", 0.0) or 0.0))
-            effective_tp_pct = max(float(cfg.get("tp_pct", 0.0) or 0.0), required_tp_pct)
+            effective_tp_pct = self._effective_tp_pct(price, float(cfg.get("size", 0.0) or 0.0), cfg)
             scored.append({
                 "symbol": symbol,
+                "direction": direction,
                 "asset_class": cfg.get("class", "unknown"),
                 "score": score,
                 "price": price,
@@ -505,65 +820,111 @@ class CapitalCFDTrader:
             })
             if score > best_score:
                 best_score = score
-                best = (symbol, cfg, ticker)
+                best = (symbol, {**cfg, "direction": direction}, ticker)
 
+        self._apply_hft_analysis(scored)
         scored.sort(key=lambda item: float(item.get("score", 0.0) or 0.0), reverse=True)
         self._latest_candidate_snapshot = scored[:7]
         if best is not None:
             symbol, cfg, ticker = best
             self._latest_target_snapshot = {
                 "symbol": symbol,
+                "direction": cfg.get("direction", "BUY"),
                 "asset_class": cfg.get("class", "unknown"),
                 "score": best_score,
                 "price": float(ticker.get("price") or 0.0),
                 "change_pct": float(ticker.get("change_pct") or 0.0),
                 "size": float(cfg.get("size", 0.0) or 0.0),
                 "tp_pct": max(
-                    float(cfg.get("tp_pct", 0.0) or 0.0),
-                    self._required_tp_pct_for_profit(
+                    self._effective_tp_pct(
                         float(ticker.get("price") or 0.0),
                         float(cfg.get("size", 0.0) or 0.0),
+                        cfg,
                     ),
+                    0.0,
                 ),
                 "sl_pct": float(cfg.get("sl_pct", 0.0) or 0.0),
                 "profit_target_gbp": CAPITAL_MIN_PROFIT_GBP,
             }
+            for candidate in scored:
+                if str(candidate.get("symbol") or "").upper() == symbol:
+                    self._latest_target_snapshot.update({
+                        "brain_coherence": float(candidate.get("brain_coherence", 0.0) or 0.0),
+                        "expected_net_profit": float(candidate.get("expected_net_profit", 0.0) or 0.0),
+                        "round_trip_cost": float(candidate.get("round_trip_cost", 0.0) or 0.0),
+                    })
+                    break
         else:
             self._latest_target_snapshot = {}
         return best
 
+    def _ranked_opportunities(self) -> List[Tuple[str, dict, dict]]:
+        ranked: List[Tuple[str, dict, dict]] = []
+        direction_counts = self._direction_counts()
+        for candidate in self._latest_candidate_snapshot:
+            symbol = str(candidate.get("symbol") or "").upper()
+            direction = str(candidate.get("direction") or "BUY").upper()
+            cfg = CAPITAL_UNIVERSE.get(symbol)
+            ticker = self._get_price(symbol)
+            if (
+                symbol
+                and cfg
+                and ticker
+                and float(candidate.get("score", 0.0) or 0.0) > 0
+                and self._can_open_candidate(symbol, direction, direction_counts)
+            ):
+                ranked.append((symbol, {**dict(cfg), "direction": direction}, ticker))
+        return ranked
+
     # ── POSITION MANAGEMENT ────────────────────────────────────────────────────
     def _open_position(self, symbol: str, cfg: dict, ticker: dict) -> Optional[CFDPosition]:
-        """Open a BUY CFD position on Capital.com."""
+        """Open a BUY or SELL CFD position on Capital.com."""
         if not self.client:
             return None
 
         ask   = float(ticker.get("ask") or ticker.get("price") or 0)
-        price = float(ticker.get("price") or ask)
-        if ask <= 0:
+        bid   = float(ticker.get("bid") or ticker.get("price") or 0)
+        direction = str(cfg.get("direction") or "BUY").upper()
+        entry_price = ask if direction == "BUY" else bid
+        if entry_price <= 0:
             return None
 
         size     = cfg["size"]
-        effective_tp_pct = max(float(cfg["tp_pct"]), self._required_tp_pct_for_profit(ask, size))
-        tp_price = ask * (1 + effective_tp_pct / 100)
-        sl_price = ask * (1 - cfg["sl_pct"] / 100)
+        effective_tp_pct = self._effective_tp_pct(entry_price, size, cfg)
+        if direction == "BUY":
+            tp_price = entry_price * (1 + effective_tp_pct / 100)
+            sl_price = entry_price * (1 - cfg["sl_pct"] / 100)
+        else:
+            tp_price = entry_price * (1 - effective_tp_pct / 100)
+            sl_price = entry_price * (1 + cfg["sl_pct"] / 100)
 
         try:
-            known_deal_ids = {
-                str((raw.get("position", {}) if isinstance(raw, dict) else {}).get("dealId") or "")
-                for raw in self.client.get_positions()
-            }
-            result = self.client.place_market_order(symbol, "BUY", size)
+            preflight = self._capital_preflight(symbol, float(size), ticker, cfg)
             trace_payload: Dict[str, Any] = {
                 "symbol": symbol,
+                "direction": direction,
                 "size": size,
                 "ticker": dict(ticker),
-                "known_deal_ids_before": sorted([d for d in known_deal_ids if d]),
-                "order_response": dict(result) if isinstance(result, dict) else result,
+                "preflight": preflight,
+                "known_deal_ids_before": [],
+                "order_response": None,
                 "confirm_response": None,
                 "positions_snapshots": [],
                 "validated": False,
             }
+            if not preflight.get("ok"):
+                self._latest_order_error = f"{symbol} preflight failed: {preflight.get('reason') or 'unknown'}"
+                trace_payload["final_error"] = self._latest_order_error
+                self._write_exchange_trace(trace_payload)
+                logger.warning("CFD preflight failed for %s: %s", symbol, preflight.get("reason") or "unknown")
+                return None
+            known_deal_ids = {
+                str((raw.get("position", {}) if isinstance(raw, dict) else {}).get("dealId") or "")
+                for raw in self.client.get_positions()
+            }
+            trace_payload["known_deal_ids_before"] = sorted([d for d in known_deal_ids if d])
+            result = self.client.place_market_order(symbol, direction, size)
+            trace_payload["order_response"] = dict(result) if isinstance(result, dict) else result
             if result.get("rejected") or result.get("error"):
                 reason = result.get("reason") or result.get("error", "unknown")
                 self._latest_order_error = f"{symbol} open rejected: {reason}"
@@ -574,7 +935,7 @@ class CapitalCFDTrader:
             deal_ref = result.get("dealReference", "")
             deal_id  = result.get("dealId", deal_ref) or deal_ref
             epic     = ticker.get("epic", symbol)
-            fill_price = ask  # Estimate; confirm_order may refine
+            fill_price = entry_price  # Estimate; confirm_order may refine
             confirmed_ok = False
 
             # Attempt to confirm fill price from Capital.com confirmation
@@ -582,12 +943,26 @@ class CapitalCFDTrader:
                 try:
                     conf = self.client.confirm_order(deal_ref)
                     trace_payload["confirm_response"] = dict(conf) if isinstance(conf, dict) else conf
+                    deal_status = str(conf.get("dealStatus") or "").upper()
+                    reject_reason = str(conf.get("rejectReason") or conf.get("reason") or "").strip()
+                    confirm_status = str(conf.get("status") or "").upper()
+                    if reject_reason or deal_status == "REJECTED" or confirm_status == "DELETED":
+                        self._latest_order_error = f"{symbol} rejected by Capital: {reject_reason or deal_status or confirm_status}"
+                        trace_payload["validated"] = False
+                        trace_payload["final_error"] = self._latest_order_error
+                        self._write_exchange_trace(trace_payload)
+                        logger.warning("CFD open rejected by Capital for %s: %s", symbol, reject_reason or deal_status or confirm_status)
+                        return None
                     if not conf.get("error") and not conf.get("reason"):
                         deal_id    = conf.get("dealId", deal_id) or deal_id
                         fill_price = float(conf.get("level", fill_price) or fill_price)
-                        effective_tp_pct = max(float(cfg["tp_pct"]), self._required_tp_pct_for_profit(fill_price, size))
-                        tp_price   = fill_price * (1 + effective_tp_pct / 100)
-                        sl_price   = fill_price * (1 - cfg["sl_pct"] / 100)
+                        effective_tp_pct = self._effective_tp_pct(fill_price, size, cfg)
+                        if direction == "BUY":
+                            tp_price = fill_price * (1 + effective_tp_pct / 100)
+                            sl_price = fill_price * (1 - cfg["sl_pct"] / 100)
+                        else:
+                            tp_price = fill_price * (1 - effective_tp_pct / 100)
+                            sl_price = fill_price * (1 + cfg["sl_pct"] / 100)
                         confirmed_ok = bool(deal_id)
                 except Exception:
                     pass
@@ -605,7 +980,7 @@ class CapitalCFDTrader:
                     if deal_id and raw_deal_id == str(deal_id):
                         live_raw = raw
                         break
-                    if raw_deal_id and raw_deal_id not in known_deal_ids and raw_symbol == symbol and raw_direction == "BUY":
+                    if raw_deal_id and raw_deal_id not in known_deal_ids and raw_symbol == symbol and raw_direction == direction:
                         live_raw = raw
                         deal_id = raw_deal_id
                         break
@@ -653,13 +1028,13 @@ class CapitalCFDTrader:
             }
             self._write_exchange_trace(trace_payload)
             self._latest_monitor_line = (
-                f"CAPITAL OPEN {symbol} BUY deal={pos.deal_id} size={size} entry={pos.entry_price:.5g} "
+                f"CAPITAL OPEN {symbol} {direction} deal={pos.deal_id} size={size} entry={pos.entry_price:.5g} "
                 f"tp={pos.tp_price:.5g} sl={pos.sl_price:.5g}"
             )
 
             print(
                 f"  CAPITAL CFD OPEN:  {symbol:12} [{cfg['class'].upper():9}] "
-                f"BUY {size} @ {pos.entry_price:.5g} | "
+                f"{direction} {size} @ {pos.entry_price:.5g} | "
                 f"TP:{pos.tp_price:.5g}  SL:{pos.sl_price:.5g} | Deal:{pos.deal_id}"
             )
             return pos
@@ -752,6 +1127,7 @@ class CapitalCFDTrader:
 
         record = {
             "symbol":           pos.symbol,
+            "deal_id":          pos.deal_id,
             "asset_class":      pos.asset_class,
             "direction":        pos.direction,
             "entry_price":      pos.entry_price,
@@ -761,6 +1137,7 @@ class CapitalCFDTrader:
             "net_pnl_currency": "GBP",
             "reason":           reason,
             "age_secs":         pos.age_secs,
+            "closed_at":        datetime.now().isoformat(),
         }
         self._recent_closed_trades.append(record)
         self._recent_closed_trades = self._recent_closed_trades[-5:]
@@ -779,6 +1156,16 @@ class CapitalCFDTrader:
                         f"pnl={pos.pnl_pct:+.3f}% tp={pos.tp_price:.5g} sl={pos.sl_price:.5g}"
                     )
 
+    def _position_pnl_gbp(self, pos: CFDPosition) -> float:
+        cp = pos.current_price if pos.current_price > 0 else pos.entry_price
+        if pos.entry_price <= 0 or cp <= 0:
+            return 0.0
+        if pos.direction == "BUY":
+            pnl_pct = (cp - pos.entry_price) / pos.entry_price
+        else:
+            pnl_pct = (pos.entry_price - cp) / pos.entry_price
+        return pnl_pct * pos.entry_price * pos.size
+
     def _monitor_positions(self) -> List[dict]:
         """
         Check TP / SL / 1-hour time-limit on every open position.
@@ -794,6 +1181,7 @@ class CapitalCFDTrader:
                 continue
 
             close_reason: Optional[str] = None
+            pnl_gbp = self._position_pnl_gbp(pos)
 
             if pos.direction == "BUY":
                 if pos.current_price >= pos.tp_price:
@@ -808,6 +1196,13 @@ class CapitalCFDTrader:
 
             if close_reason is None and pos.age_secs >= max_age:
                 close_reason = f"TIME_LIMIT {pos.age_secs/60:.0f}m"
+
+            if close_reason and CFD_FLAGS["profit_only_closes"] and pnl_gbp <= 0:
+                self._latest_monitor_line = (
+                    f"CAPITAL HOLD {pos.symbol} reason={close_reason} pnl={pnl_gbp:+.4f}GBP "
+                    f"mode=profit_only"
+                )
+                close_reason = None
 
             if close_reason:
                 record = self._close_position(pos, close_reason)
@@ -852,16 +1247,55 @@ class CapitalCFDTrader:
             closed_this_tick.extend(self._monitor_positions())
 
         # Phase 2: scan for new opportunity
-        if now - self._last_scan >= CFD_CONFIG["scan_interval_secs"]:
+        should_scan = (now - self._last_scan >= CFD_CONFIG["scan_interval_secs"]) or bool(closed_this_tick)
+        if should_scan:
             self._last_scan = now
 
             if len(self.positions) < int(CFD_CONFIG["max_positions"]):
                 # Quick Seer + Lyra gate before committing capital
                 if self._quad_gate():
-                    opportunity = self._find_best_opportunity()
-                    if opportunity:
-                        sym, cfg, ticker = opportunity
-                        self._open_position(sym, cfg, ticker)
+                    self._find_best_opportunity()
+                    opened_directions = {str(pos.direction or "").upper() for pos in self.positions}
+                    for sym, cfg, ticker in self._ranked_opportunities():
+                        direction = str(cfg.get("direction", "BUY") or "BUY").upper()
+                        if direction in opened_directions:
+                            continue
+                        preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
+                        working_cfg = dict(cfg)
+                        if (not preflight.get("ok")) and "below Capital minimum" in str(preflight.get("reason") or ""):
+                            adjusted_cfg = self._sized_cfg_from_preflight(cfg, preflight)
+                            if adjusted_cfg is not None:
+                                adjusted_preflight = self._capital_preflight(
+                                    sym,
+                                    float(adjusted_cfg.get("size", 0.0) or 0.0),
+                                    ticker,
+                                    adjusted_cfg,
+                                )
+                                if adjusted_preflight.get("ok"):
+                                    working_cfg = adjusted_cfg
+                                    preflight = adjusted_preflight
+
+                        self._latest_target_snapshot = {
+                            **dict(self._latest_target_snapshot),
+                            "symbol": sym,
+                            "direction": str(working_cfg.get("direction", "BUY") or "BUY").upper(),
+                            "asset_class": working_cfg.get("class", cfg.get("class", "unknown")),
+                            "size": float(working_cfg.get("size", 0.0) or 0.0),
+                            "preflight_reason": str(preflight.get("reason") or ""),
+                            "market_status": str(preflight.get("market_status") or ""),
+                            "minimum_deal_size": float(preflight.get("minimum_deal_size", 0.0) or 0.0),
+                            "available_balance": float(preflight.get("available_balance", 0.0) or 0.0),
+                        }
+
+                        if not preflight.get("ok"):
+                            self._latest_order_error = f"{sym} preflight failed: {preflight.get('reason') or 'unknown'}"
+                            logger.warning("CFD candidate skipped for %s: %s", sym, preflight.get("reason") or "unknown")
+                            continue
+
+                        if self._open_position(sym, working_cfg, ticker) is not None:
+                            opened_directions.add(direction)
+                            if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
+                                break
                 else:
                     logger.debug("CFD tick: Quadrumvirate gate CLOSED — scan skipped")
 
@@ -905,19 +1339,26 @@ class CapitalCFDTrader:
         if self._latest_target_snapshot:
             target = self._latest_target_snapshot
             lines.append(
-                f"  Target: {target.get('symbol', '?')} [{target.get('asset_class', '?')}] "
+                f"  Target: {target.get('symbol', '?')} {target.get('direction', '?')} [{target.get('asset_class', '?')}] "
                 f"score={float(target.get('score', 0.0) or 0.0):.3f} "
                 f"chg={float(target.get('change_pct', 0.0) or 0.0):+.3f}% "
                 f"goal=£{float(target.get('profit_target_gbp', CAPITAL_MIN_PROFIT_GBP) or CAPITAL_MIN_PROFIT_GBP):.2f}"
             )
+            if "expected_net_profit" in target:
+                lines.append(
+                    f"    HFT: net=£{float(target.get('expected_net_profit', 0.0) or 0.0):+.4f} "
+                    f"cost=£{float(target.get('round_trip_cost', 0.0) or 0.0):.4f} "
+                    f"coh={float(target.get('brain_coherence', 0.0) or 0.0):.3f}"
+                )
         if self._latest_candidate_snapshot:
             lines.append("  Top 7 candidates:")
             for idx, candidate in enumerate(self._latest_candidate_snapshot[:7], start=1):
                 lines.append(
-                    f"    #{idx} {candidate.get('symbol', '?')} [{candidate.get('asset_class', '?')}] "
+                    f"    #{idx} {candidate.get('symbol', '?')} {candidate.get('direction', '?')} [{candidate.get('asset_class', '?')}] "
                     f"score={float(candidate.get('score', 0.0) or 0.0):.3f} "
                     f"chg={float(candidate.get('change_pct', 0.0) or 0.0):+.3f}% "
                     f"spr={float(candidate.get('spread_pct', 0.0) or 0.0):.3f}% "
+                    f"net=£{float(candidate.get('expected_net_profit', 0.0) or 0.0):+.4f} "
                     f"goal=£{float(candidate.get('profit_target_gbp', CAPITAL_MIN_PROFIT_GBP) or CAPITAL_MIN_PROFIT_GBP):.2f}"
                 )
         for trade in reversed(self._recent_closed_trades[-3:]):
@@ -950,6 +1391,7 @@ class CapitalCFDTrader:
             "positions": [
                 {
                     "symbol": pos.symbol,
+                    "deal_id": pos.deal_id,
                     "epic": pos.epic,
                     "direction": pos.direction,
                     "size": pos.size,

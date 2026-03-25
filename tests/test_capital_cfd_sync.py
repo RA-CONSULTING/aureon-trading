@@ -1,17 +1,26 @@
 #!/usr/bin/env python3
+import time
 import unittest
 
-from aureon.exchanges.capital_cfd_trader import CAPITAL_MIN_PROFIT_GBP, CapitalCFDTrader, CFDPosition
+from aureon.exchanges.capital_cfd_trader import CAPITAL_MIN_PROFIT_GBP, CFD_FLAGS, CapitalCFDTrader, CFDPosition
 
 
 class ClientStub:
-    def __init__(self, positions=None, close_result=None, fallback_result=None, open_result=None, confirm_result=None):
+    def __init__(self, positions=None, close_result=None, fallback_result=None, open_result=None, confirm_result=None, accounts=None, resolved_market=None, market_snapshot=None):
         self._positions = list(positions or [])
         self._position_batches = None
         self._close_result = close_result if close_result is not None else {"success": True}
         self._fallback_result = fallback_result if fallback_result is not None else {"dealReference": "FALLBACK"}
         self._open_result = open_result if open_result is not None else {"dealReference": "REF1"}
         self._confirm_result = confirm_result if confirm_result is not None else {"dealId": "DOPEN", "level": 7282.6}
+        self._accounts = list(accounts or [{"accountId": "A1", "balance": 54.34, "available": 54.34, "currency": "GBP"}])
+        self._resolved_market = dict(resolved_market or {"epic": "CS.D.SILVER.CFD.IP", "symbol": "SILVER"})
+        self._market_snapshot = dict(market_snapshot or {
+            "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
+            "snapshot": {"marketStatus": "TRADEABLE", "bid": 7249.8, "offer": 7251.8},
+            "dealingRules": {"minDealSize": {"value": 1}},
+        })
+        self.order_calls = []
 
     def get_positions(self):
         if self._position_batches is not None:
@@ -20,19 +29,349 @@ class ClientStub:
             return list(self._position_batches[0])
         return list(self._positions)
 
+    def get_accounts(self):
+        return list(self._accounts)
+
     def close_position(self, deal_id: str):
         return dict(self._close_result)
 
     def place_market_order(self, symbol: str, side: str, size: float):
-        if side.upper() == "BUY":
+        side = side.upper()
+        if side in {"BUY", "SELL"}:
+            self.order_calls.append((symbol, side, size))
             return dict(self._open_result)
         return dict(self._fallback_result)
 
     def confirm_order(self, deal_reference: str):
         return dict(self._confirm_result)
 
+    def _resolve_market(self, symbol: str):
+        return dict(self._resolved_market)
+
+    def _get_market_snapshot(self, epic: str):
+        return dict(self._market_snapshot)
+
 
 class TestCapitalCFDSync(unittest.TestCase):
+    def _build_trader(self, client):
+        trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
+        trader.client = client
+        trader.positions = []
+        trader.stats = {
+            "trades_opened": 0.0,
+            "trades_closed": 0.0,
+            "winning_trades": 0.0,
+            "losing_trades": 0.0,
+            "total_pnl_gbp": 0.0,
+            "best_trade": 0.0,
+            "worst_trade": 0.0,
+        }
+        trader._latest_monitor_line = ""
+        trader._latest_order_error = ""
+        trader._latest_order_trace_path = ""
+        trader._latest_target_snapshot = {}
+        trader._latest_candidate_snapshot = []
+        trader._hive_boosts = {}
+        trader._quad_gate_at = 0.0
+        trader._quad_gate_ok = True
+        trader._signal_brain = None
+        trader._trade_profit_validator = None
+        trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
+        return trader
+
+    def test_capital_preflight_reports_minimum_size_failure(self):
+        trader = self._build_trader(ClientStub(market_snapshot={
+            "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
+            "snapshot": {"marketStatus": "TRADEABLE", "bid": 7249.8, "offer": 7251.8},
+            "dealingRules": {"minDealSize": {"value": 2}},
+        }))
+
+        preflight = trader._capital_preflight(
+            "SILVER",
+            1,
+            {"price": 7250.8, "bid": 7249.8, "ask": 7251.8, "epic": "CS.D.SILVER.CFD.IP"},
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45},
+        )
+
+        self.assertFalse(preflight["ok"])
+        self.assertEqual(preflight["minimum_deal_size"], 2.0)
+        self.assertIn("below Capital minimum", preflight["reason"])
+
+    def test_capital_preflight_reports_market_status_and_balance(self):
+        trader = self._build_trader(ClientStub(
+            accounts=[{"accountId": "A1", "balance": 54.34, "available": 12.5, "currency": "GBP"}],
+            market_snapshot={
+                "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
+                "snapshot": {"marketStatus": "CLOSED", "bid": 7249.8, "offer": 7251.8},
+                "dealingRules": {"minDealSize": {"value": 1}},
+            },
+        ))
+
+        preflight = trader._capital_preflight(
+            "SILVER",
+            1,
+            {"price": 7250.8, "bid": 7249.8, "ask": 7251.8, "epic": "CS.D.SILVER.CFD.IP"},
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45},
+        )
+
+        self.assertFalse(preflight["ok"])
+        self.assertEqual(preflight["available_balance"], 12.5)
+        self.assertEqual(preflight["market_status"], "CLOSED")
+        self.assertEqual(preflight["epic"], "CS.D.SILVER.CFD.IP")
+        self.assertGreater(preflight["spread"], 0.0)
+        self.assertIn("market not tradeable", preflight["reason"])
+
+    def test_open_position_stops_on_preflight_failure(self):
+        client = ClientStub(market_snapshot={
+            "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
+            "snapshot": {"marketStatus": "TRADEABLE", "bid": 7249.8, "offer": 7251.8},
+            "dealingRules": {"minDealSize": {"value": 2}},
+        })
+        trader = self._build_trader(client)
+
+        result = trader._open_position(
+            "SILVER",
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45},
+            {"price": 7282.6, "ask": 7282.6, "bid": 7281.6, "epic": "CS.D.SILVER.CFD.IP"},
+        )
+
+        self.assertIsNone(result)
+        self.assertIn("preflight failed", trader._latest_order_error)
+        self.assertEqual(client.order_calls, [])
+
+    def test_sized_cfg_from_preflight_raises_to_capital_minimum_when_affordable(self):
+        trader = self._build_trader(ClientStub())
+
+        adjusted = trader._sized_cfg_from_preflight(
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45},
+            {"minimum_deal_size": 2, "price": 10, "available_balance": 54.34},
+        )
+
+        self.assertIsNotNone(adjusted)
+        self.assertEqual(adjusted["size"], 2)
+
+    def test_sized_cfg_from_preflight_refuses_unaffordable_minimum(self):
+        trader = self._build_trader(ClientStub())
+
+        adjusted = trader._sized_cfg_from_preflight(
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45},
+            {"minimum_deal_size": 10, "price": 100, "available_balance": 54.34},
+        )
+
+        self.assertIsNone(adjusted)
+
+    def test_apply_hft_analysis_zeroes_candidate_when_costs_fail(self):
+        trader = self._build_trader(ClientStub())
+        trader._capital_cost_profile = lambda symbol, size, price, tp_pct: {
+            "notional": 100.0,
+            "expected_gross_profit": 0.01,
+            "round_trip_cost": 0.05,
+            "expected_net_profit": -0.04,
+        }
+
+        scored = [{
+            "symbol": "SILVER",
+            "score": 2.0,
+            "size": 1.0,
+            "price": 100.0,
+            "change_pct": 2.0,
+            "spread_pct": 0.1,
+            "tp_pct": 0.75,
+        }]
+
+        trader._apply_hft_analysis(scored)
+
+        self.assertEqual(scored[0]["score"], 0.0)
+        self.assertEqual(scored[0]["hft_reason"], "cost_gate")
+
+    def test_apply_hft_analysis_uses_signal_brain_when_available(self):
+        class BrainStub:
+            def decide(self, symbol, base_score, features, population_scores):
+                class Decision:
+                    score = base_score * 3
+                    coherence = 0.77
+                return Decision()
+
+        trader = self._build_trader(ClientStub())
+        trader._signal_brain = BrainStub()
+        trader._capital_cost_profile = lambda symbol, size, price, tp_pct: {
+            "notional": 100.0,
+            "expected_gross_profit": 2.0,
+            "round_trip_cost": 0.2,
+            "expected_net_profit": 1.8,
+        }
+
+        scored = [{
+            "symbol": "SILVER",
+            "score": 2.0,
+            "size": 1.0,
+            "price": 100.0,
+            "change_pct": 2.0,
+            "spread_pct": 0.1,
+            "tp_pct": 0.75,
+        }]
+
+        trader._apply_hft_analysis(scored)
+
+        self.assertEqual(scored[0]["score"], 6.0)
+        self.assertEqual(scored[0]["brain_coherence"], 0.77)
+
+    def test_score_symbol_maps_negative_momentum_to_sell(self):
+        trader = self._build_trader(ClientStub())
+
+        score, direction = trader._score_symbol(
+            "SILVER",
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45, "max_spread_pct": 0.15, "momentum_threshold": 0.20},
+            {"price": 100.0, "bid": 99.9, "ask": 100.1, "change_pct": -2.5},
+        )
+
+        self.assertGreater(score, 0.0)
+        self.assertEqual(direction, "SELL")
+
+    def test_effective_tp_pct_uses_penny_target_when_enabled(self):
+        old_flag = CFD_FLAGS["penny_take_profit"]
+        CFD_FLAGS["penny_take_profit"] = True
+        try:
+            trader = self._build_trader(ClientStub())
+            effective_tp_pct = trader._effective_tp_pct(100.0, 1.0, {"tp_pct": 0.75})
+            self.assertAlmostEqual(effective_tp_pct, 0.01)
+        finally:
+            CFD_FLAGS["penny_take_profit"] = old_flag
+
+    def test_tick_skips_failed_top_candidate_and_moves_to_next(self):
+        trader = self._build_trader(ClientStub())
+        trader._last_scan = 0.0
+        trader._last_monitor = time.time()
+        trader._sync_positions_from_exchange = lambda force=False: None
+        trader._refresh_prices = lambda: None
+        trader._monitor_positions = lambda: []
+        trader._quad_gate = lambda: True
+        trader.status_lines = lambda: []
+        trader._find_best_opportunity = lambda: ("SILVER", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9})
+        trader._ranked_opportunities = lambda: [
+            ("SILVER", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9}),
+            ("GOLD", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9}),
+        ]
+        trader._capital_preflight = lambda symbol, size, ticker, cfg=None: {
+            "ok": symbol == "GOLD",
+            "reason": "rejected by preflight" if symbol == "SILVER" else "ok",
+            "market_status": "TRADEABLE",
+            "minimum_deal_size": 1.0,
+            "available_balance": 54.34,
+        }
+        opened = []
+        trader._open_position = lambda symbol, cfg, ticker: opened.append(symbol) or object()
+
+        trader.tick()
+
+        self.assertEqual(opened, ["GOLD"])
+        self.assertIn("rejected by preflight", trader._latest_order_error)
+
+    def test_tick_rescans_immediately_after_close_without_waiting_for_scan_interval(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = []
+        trader._last_scan = time.time()
+        trader._last_monitor = 0.0
+        trader._sync_positions_from_exchange = lambda force=False: None
+        trader._refresh_prices = lambda: None
+        trader._update_position_prices = lambda: None
+        trader._monitor_positions = lambda: [{"symbol": "SILVER", "pnl_gbp": 0.12}]
+        trader._quad_gate = lambda: True
+        trader.status_lines = lambda: []
+        trader._find_best_opportunity = lambda: ("GOLD", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9})
+        trader._ranked_opportunities = lambda: [
+            ("GOLD", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9}),
+        ]
+        trader._capital_preflight = lambda symbol, size, ticker, cfg=None: {
+            "ok": True,
+            "reason": "ok",
+            "market_status": "TRADEABLE",
+            "minimum_deal_size": 1.0,
+            "available_balance": 54.34,
+        }
+        opened = []
+        trader._open_position = lambda symbol, cfg, ticker: opened.append(symbol) or object()
+
+        closed = trader.tick()
+
+        self.assertEqual(len(closed), 1)
+        self.assertEqual(opened, ["GOLD"])
+
+    def test_ranked_opportunities_skips_direction_that_is_already_open(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = [
+            CFDPosition(
+                symbol="SILVER",
+                deal_id="DBUY",
+                epic="CS.D.SILVER.CFD.IP",
+                direction="BUY",
+                size=1,
+                entry_price=7282.6,
+                tp_price=7337.2,
+                sl_price=7249.8,
+                asset_class="commodity",
+                current_price=7282.6,
+            )
+        ]
+        trader._latest_candidate_snapshot = [
+            {"symbol": "SILVER", "direction": "BUY", "score": 3.0},
+            {"symbol": "GOLD", "direction": "BUY", "score": 2.0},
+            {"symbol": "SILVER", "direction": "SELL", "score": 1.8},
+        ]
+        trader._get_price = lambda symbol: {"price": 10, "bid": 9.9, "ask": 10.1}
+
+        ranked = trader._ranked_opportunities()
+
+        self.assertEqual([(sym, cfg["direction"]) for sym, cfg, _ in ranked], [("SILVER", "SELL")])
+
+    def test_tick_can_open_one_buy_and_one_sell_in_same_cycle(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = []
+        trader._last_scan = 0.0
+        trader._last_monitor = time.time()
+        trader._sync_positions_from_exchange = lambda force=False: None
+        trader._refresh_prices = lambda: None
+        trader._monitor_positions = lambda: []
+        trader._quad_gate = lambda: True
+        trader.status_lines = lambda: []
+        trader._find_best_opportunity = lambda: ("SILVER", {"class": "commodity", "size": 1, "direction": "BUY"}, {"price": 10, "ask": 10, "bid": 9.9})
+        trader._ranked_opportunities = lambda: [
+            ("SILVER", {"class": "commodity", "size": 1, "direction": "BUY"}, {"price": 10, "ask": 10, "bid": 9.9}),
+            ("GOLD", {"class": "commodity", "size": 1, "direction": "SELL"}, {"price": 10, "ask": 10.1, "bid": 10}),
+            ("TSLA", {"class": "stock", "size": 1, "direction": "BUY"}, {"price": 10, "ask": 10, "bid": 9.9}),
+        ]
+        trader._capital_preflight = lambda symbol, size, ticker, cfg=None: {
+            "ok": True,
+            "reason": "ok",
+            "market_status": "TRADEABLE",
+            "minimum_deal_size": 1.0,
+            "available_balance": 54.34,
+        }
+
+        opened = []
+        def _open(symbol, cfg, ticker):
+            opened.append((symbol, cfg["direction"]))
+            trader.positions.append(
+                CFDPosition(
+                    symbol=symbol,
+                    deal_id=f"D-{symbol}",
+                    epic=f"EPIC-{symbol}",
+                    direction=cfg["direction"],
+                    size=1,
+                    entry_price=10,
+                    tp_price=11 if cfg["direction"] == "BUY" else 9,
+                    sl_price=9 if cfg["direction"] == "BUY" else 11,
+                    asset_class=cfg["class"],
+                    current_price=10,
+                )
+            )
+            return object()
+        trader._open_position = _open
+
+        trader.tick()
+
+        self.assertEqual(opened, [("SILVER", "BUY"), ("GOLD", "SELL")])
+
     def test_open_position_accepts_verified_live_deal_after_short_delay(self):
         live_position = {
             "position": {
@@ -49,25 +388,11 @@ class TestCapitalCFDSync(unittest.TestCase):
                 "instrumentType": "COMMODITY",
             },
         }
-        trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
-        trader.client = ClientStub(
+        trader = self._build_trader(ClientStub(
             open_result={"dealReference": "REF-DELAY"},
             confirm_result={"dealId": "DDELAY", "level": 7282.6},
-        )
+        ))
         trader.client._position_batches = [[], [], [live_position]]
-        trader.positions = []
-        trader.stats = {
-            "trades_opened": 0.0,
-            "trades_closed": 0.0,
-            "winning_trades": 0.0,
-            "losing_trades": 0.0,
-            "total_pnl_gbp": 0.0,
-            "best_trade": 0.0,
-            "worst_trade": 0.0,
-        }
-        trader._latest_monitor_line = ""
-        trader._latest_order_error = ""
-        trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
 
         result = trader._open_position(
             "SILVER",
@@ -79,25 +404,11 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(result.deal_id, "DDELAY")
 
     def test_open_position_requires_exchange_validation(self):
-        trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
-        trader.client = ClientStub(
+        trader = self._build_trader(ClientStub(
             positions=[],
             open_result={"dealReference": "REF-NO-LIVE"},
             confirm_result={"dealId": "D-NO-LIVE", "level": 7282.6},
-        )
-        trader.positions = []
-        trader.stats = {
-            "trades_opened": 0.0,
-            "trades_closed": 0.0,
-            "winning_trades": 0.0,
-            "losing_trades": 0.0,
-            "total_pnl_gbp": 0.0,
-            "best_trade": 0.0,
-            "worst_trade": 0.0,
-        }
-        trader._latest_monitor_line = ""
-        trader._latest_order_error = ""
-        trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
+        ))
 
         result = trader._open_position(
             "SILVER",
@@ -108,6 +419,27 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertIsNone(result)
         self.assertEqual(trader.positions, [])
         self.assertEqual(trader.stats["trades_opened"], 0.0)
+
+    def test_open_position_stops_immediately_on_capital_reject_reason(self):
+        trader = self._build_trader(ClientStub(
+            positions=[],
+            open_result={"dealReference": "REF-REJECT"},
+            confirm_result={
+                "dealId": "D-REJECT",
+                "dealStatus": "REJECTED",
+                "rejectReason": "RISK_CHECK",
+                "status": "DELETED",
+            },
+        ))
+
+        result = trader._open_position(
+            "SILVER",
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45},
+            {"price": 7282.6, "ask": 7282.6, "epic": "CS.D.SILVER.CFD.IP"},
+        )
+
+        self.assertIsNone(result)
+        self.assertIn("RISK_CHECK", trader._latest_order_error)
 
     def test_sync_positions_from_exchange_rebuilds_live_position(self):
         trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
@@ -155,25 +487,11 @@ class TestCapitalCFDSync(unittest.TestCase):
                 "instrumentType": "COMMODITY",
             },
         }
-        trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
-        trader.client = ClientStub(
+        trader = self._build_trader(ClientStub(
             positions=[live_position],
             open_result={"dealReference": "REF1"},
             confirm_result={"dealId": "DOPEN", "level": 7282.6},
-        )
-        trader.positions = []
-        trader.stats = {
-            "trades_opened": 0.0,
-            "trades_closed": 0.0,
-            "winning_trades": 0.0,
-            "losing_trades": 0.0,
-            "total_pnl_gbp": 0.0,
-            "best_trade": 0.0,
-            "worst_trade": 0.0,
-        }
-        trader._latest_monitor_line = ""
-        trader._latest_order_error = ""
-        trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
+        ))
 
         result = trader._open_position(
             "SILVER",
@@ -185,6 +503,41 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(result.deal_id, "DOPEN")
         self.assertEqual(len(trader.positions), 1)
         self.assertEqual(trader.stats["trades_opened"], 1.0)
+
+    def test_open_position_accepts_verified_live_sell_deal(self):
+        live_position = {
+            "position": {
+                "dealId": "DSELL",
+                "direction": "SELL",
+                "size": 1,
+                "level": 7249.8,
+            },
+            "market": {
+                "epic": "CS.D.SILVER.CFD.IP",
+                "symbol": "SILVER",
+                "bid": 7249.8,
+                "offer": 7251.8,
+                "instrumentType": "COMMODITY",
+            },
+        }
+        client = ClientStub(
+            positions=[live_position],
+            open_result={"dealReference": "REFSELL"},
+            confirm_result={"dealId": "DSELL", "level": 7249.8},
+        )
+        trader = self._build_trader(client)
+
+        result = trader._open_position(
+            "SILVER",
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45, "direction": "SELL"},
+            {"price": 7250.8, "ask": 7251.8, "bid": 7249.8, "epic": "CS.D.SILVER.CFD.IP"},
+        )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.direction, "SELL")
+        self.assertLess(result.tp_price, result.entry_price)
+        self.assertGreater(result.sl_price, result.entry_price)
+        self.assertEqual(client.order_calls[-1], ("SILVER", "SELL", 1))
 
     def test_monitor_keeps_position_when_close_fails_and_exchange_still_reports_it(self):
         trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
@@ -224,6 +577,77 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(closed, [])
         self.assertEqual(len(trader.positions), 1)
         self.assertEqual(trader.positions[0].deal_id, "D2")
+
+    def test_monitor_profit_only_mode_does_not_close_losing_position(self):
+        old_flag = CFD_FLAGS["profit_only_closes"]
+        CFD_FLAGS["profit_only_closes"] = True
+        try:
+            trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
+            trader.client = ClientStub(close_result={"success": True})
+            trader.positions = [
+                CFDPosition(
+                    symbol="SILVER",
+                    deal_id="D3",
+                    epic="CS.D.SILVER.CFD.IP",
+                    direction="BUY",
+                    size=1,
+                    entry_price=7282.6,
+                    tp_price=7337.2,
+                    sl_price=7249.8,
+                    asset_class="commodity",
+                    current_price=7240.0,
+                )
+            ]
+            trader._recent_closed_trades = []
+            trader._latest_monitor_line = ""
+
+            closed = trader._monitor_positions()
+
+            self.assertEqual(closed, [])
+            self.assertEqual(len(trader.positions), 1)
+            self.assertIn("mode=profit_only", trader._latest_monitor_line)
+        finally:
+            CFD_FLAGS["profit_only_closes"] = old_flag
+
+    def test_monitor_profit_only_mode_closes_profitable_position(self):
+        old_flag = CFD_FLAGS["profit_only_closes"]
+        CFD_FLAGS["profit_only_closes"] = True
+        try:
+            trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
+            trader.client = ClientStub(close_result={"success": True})
+            trader.positions = [
+                CFDPosition(
+                    symbol="SILVER",
+                    deal_id="D4",
+                    epic="CS.D.SILVER.CFD.IP",
+                    direction="BUY",
+                    size=1,
+                    entry_price=7282.6,
+                    tp_price=7330.0,
+                    sl_price=7249.8,
+                    asset_class="commodity",
+                    current_price=7335.0,
+                )
+            ]
+            trader.stats = {
+                "trades_opened": 0.0,
+                "trades_closed": 0.0,
+                "winning_trades": 0.0,
+                "losing_trades": 0.0,
+                "total_pnl_gbp": 0.0,
+                "best_trade": 0.0,
+                "worst_trade": 0.0,
+            }
+            trader._recent_closed_trades = []
+            trader._latest_monitor_line = ""
+
+            closed = trader._monitor_positions()
+
+            self.assertEqual(len(closed), 1)
+            self.assertEqual(trader.positions, [])
+            self.assertGreater(closed[0]["net_pnl"], 0.0)
+        finally:
+            CFD_FLAGS["profit_only_closes"] = old_flag
 
 
 if __name__ == "__main__":

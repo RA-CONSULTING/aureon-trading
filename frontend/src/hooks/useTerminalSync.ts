@@ -44,6 +44,13 @@ interface RuntimeStats {
 }
 
 interface LocalTerminalState {
+  generated_at?: string;
+  queen_voice?: {
+    ts?: string;
+    mode?: string;
+    text?: string;
+    lines?: string[];
+  };
   kraken?: any;
   capital?: any;
   combined?: any;
@@ -57,10 +64,13 @@ interface LocalTerminalState {
   positions?: Array<{
     symbol: string;
     side: string;
+    trade_id?: string;
+    deal_id?: string;
     entry_price: number;
     quantity: number;
     current_price?: number;
     unrealized_pnl?: number;
+    opened_at?: string;
   }>;
   recent_trades?: Array<{
     time: string;
@@ -69,6 +79,9 @@ interface LocalTerminalState {
     quantity: number;
     pnl: number;
     success: boolean;
+    trade_id?: string;
+    hold_seconds?: number;
+    reason?: string;
   }>;
   coherence?: number;
   lambda?: number;
@@ -112,6 +125,76 @@ const toNumber = (value: unknown, fallback = 0): number => {
 
 const toStringList = (value: unknown): string[] =>
   Array.isArray(value) ? value.map((item) => String(item ?? '')).filter(Boolean) : [];
+
+const confidenceWord = (value: unknown): string => {
+  const score = toNumber(value);
+  if (score >= 0.85) return 'very strong';
+  if (score >= 0.65) return 'strong';
+  if (score >= 0.45) return 'building';
+  if (score > 0) return 'tentative';
+  return 'unclear';
+};
+
+const buildFallbackQueenVoice = (localState: LocalTerminalState): { ts: string; mode: string; text: string; lines: string[] } => {
+  const ts = String(localState.generated_at || new Date().toISOString());
+  const kraken = localState.kraken || {};
+  const capital = localState.capital || {};
+  const decision = kraken.decision_snapshot || {};
+  const capitalTarget = capital.target_snapshot || {};
+  const capitalCandidates = Array.isArray(capital.candidate_snapshot) ? capital.candidate_snapshot : [];
+  const krakenPositions = Array.isArray(kraken.positions) ? kraken.positions : [];
+  const capitalPositions = Array.isArray(capital.positions) ? capital.positions : [];
+  const openCount = toNumber(localState.combined?.open_positions || (krakenPositions.length + capitalPositions.length));
+  const lines: string[] = [];
+
+  if (openCount > 0) {
+    lines.push(`Summary. I am managing ${openCount} live position${openCount === 1 ? '' : 's'} across Kraken and Capital.`);
+  } else {
+    lines.push('Summary. I am flat on both exchanges and waiting for the next clean strike.');
+  }
+
+  if (krakenPositions.length > 0) {
+    const parts = krakenPositions.slice(0, 2).map((pos: any) => `${String(pos.symbol || pos.pair || '?')} ${String(pos.side || pos.direction || '?').toUpperCase()}`);
+    lines.push(`Kraken update. I am managing ${parts.join(' and ')}.`);
+  } else if (decision?.decision && decision?.symbol) {
+    lines.push(
+      `Kraken update. I am leaning toward ${String(decision.symbol)} ${String(decision.side || '').toLowerCase()} ` +
+      `with a ${confidenceWord(decision.decision.confidence)} read.`,
+    );
+  } else {
+    lines.push('Kraken update. I am watching for a cleaner crypto entry.');
+  }
+
+  if (capitalPositions.length > 0) {
+    const parts = capitalPositions.slice(0, 2).map((pos: any) => `${String(pos.symbol || '?')} ${String(pos.direction || pos.side || '?').toUpperCase()}`);
+    lines.push(`Capital update. I am managing ${parts.join(' and ')}.`);
+  } else if (capitalTarget?.symbol) {
+    lines.push(
+      `Capital update. I am stalking ${String(capitalTarget.symbol)} ${String(capitalTarget.direction || '').toUpperCase()}.`,
+    );
+    if (capitalTarget.preflight_reason) {
+      lines.push('Capital is still waiting because exchange checks are blocking entry.');
+    }
+  } else if (capitalCandidates.length > 0) {
+    const top = capitalCandidates[0] || {};
+    lines.push(
+      `Capital update. My next candidate is ${String(top.symbol || '?')} ${String(top.direction || '').toUpperCase()} if the current leader fails.`,
+    );
+  } else {
+    lines.push('Capital update. I am waiting for a valid CFD setup.');
+  }
+
+  if (openCount > 0) {
+    lines.push('I am watching the open positions closely and waiting for clean profit exits.');
+  }
+
+  return {
+    ts,
+    mode: String(kraken.queen_state || 'HOLD'),
+    text: lines.join(' '),
+    lines,
+  };
+};
 
 export function useTerminalSync(enabled: boolean = true, intervalMs: number = 5000) {
   const lastSyncRef = useRef<number>(0);
@@ -235,7 +318,7 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
 
   const syncTerminalData = useCallback(async () => {
     const now = Date.now();
-    if (now - lastSyncRef.current < 3000) return; // Throttle to 3s minimum
+    if (now - lastSyncRef.current < 1000) return; // Throttle to 1s minimum
     lastSyncRef.current = now;
 
     const localState = await fetchLocalTerminalState();
@@ -261,6 +344,8 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
             pnlPercent: isShort ? -rawPct : rawPct,
             side: (isShort ? 'SHORT' : 'LONG') as 'LONG' | 'SHORT',
             exchange: 'kraken',
+            tradeId: String(p.trade_id || p.transaction_id || ''),
+            openedAt: String(p.opened_at || ''),
           };
         }) : [];
 
@@ -271,6 +356,8 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
           pnlPercent: toNumber(p.pnl_pct || 0),
           side: (String(p.direction || 'BUY').toUpperCase() === 'SELL' ? 'SHORT' : 'LONG') as 'LONG' | 'SHORT',
           exchange: 'capital',
+          tradeId: String(p.deal_id || ''),
+          openedAt: '',
         })) : [];
 
         const activePositions = [...krakenPositions, ...capitalPositions];
@@ -283,16 +370,22 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
           pnl: Number(trade?.pnl || trade?.net_pnl || 0),
           success: Number(trade?.pnl || trade?.net_pnl || 0) >= 0,
           exchange: 'kraken',
+          tradeId: String(trade?.trade_id || trade?.transaction_id || ''),
+          holdSeconds: Number(trade?.hold_seconds || 0),
+          reason: String(trade?.reason || ''),
         })) : [];
 
         const capitalTrades = Array.isArray(capital.recent_closed_trades) ? capital.recent_closed_trades.map((trade: any) => ({
-          time: '',
+          time: String(trade?.closed_at || ''),
           side: String(trade?.direction || 'BUY'),
           symbol: String(trade?.symbol || ''),
           quantity: Number(trade?.size || 0),
           pnl: Number(trade?.net_pnl || 0),
           success: Number(trade?.net_pnl || 0) >= 0,
           exchange: 'capital',
+          tradeId: String(trade?.deal_id || ''),
+          holdSeconds: Number(trade?.age_secs || 0),
+          reason: String(trade?.reason || ''),
         })) : [];
 
         const recentTrades = [...capitalTrades, ...krakenTrades].slice(0, 8);
@@ -364,6 +457,13 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
           latestMonitorLine,
           statusLines,
           recentTrades,
+          lastDataReceived: localState.generated_at ? Date.parse(String(localState.generated_at)) : Date.now(),
+          queenVoice: localState.queen_voice ? {
+            ts: String(localState.queen_voice.ts || ''),
+            mode: String(localState.queen_voice.mode || 'HOLD'),
+            text: String(localState.queen_voice.text || ''),
+            lines: Array.isArray(localState.queen_voice.lines) ? localState.queen_voice.lines.map((line) => String(line || '')) : [],
+          } : buildFallbackQueenVoice(localState),
           unifiedMarketSummary: {
             krakenEquity: toNumber(combined.kraken_equity || krakenEquity || 0),
             capitalEquityGbp: toNumber(combined.capital_equity_gbp || capitalEquity || 0),
@@ -373,7 +473,7 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
             capitalOpenPositions: capitalPositions.length,
             krakenOpenPositions: krakenPositions.length,
             capitalRecentCloses: Array.isArray(capital.recent_closed_trades) ? capital.recent_closed_trades.slice(-3).reverse() : [],
-            capitalCandidates: Array.isArray(capital.candidate_snapshot) ? capital.candidate_snapshot.slice(0, 3) : [],
+            capitalCandidates: Array.isArray(capital.candidate_snapshot) ? capital.candidate_snapshot.slice(0, 3) : [], 
           },
         });
 
@@ -407,6 +507,9 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
           pnl: Number(trade?.pnl || 0),
           success: Boolean(trade?.success),
           exchange: undefined,
+          tradeId: String(trade?.trade_id || ''),
+          holdSeconds: Number(trade?.hold_seconds || 0),
+          reason: String(trade?.reason || ''),
         })) : [];
 
       const totalPnl = Number(localState.compounded || 0);
@@ -456,6 +559,13 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
         latestMonitorLine: localState.latest_monitor_line || '',
         statusLines: localState.status_lines || [],
         recentTrades,
+        lastDataReceived: localState.generated_at ? Date.parse(String(localState.generated_at)) : Date.now(),
+        queenVoice: localState.queen_voice ? {
+          ts: String(localState.queen_voice.ts || ''),
+          mode: String(localState.queen_voice.mode || 'HOLD'),
+          text: String(localState.queen_voice.text || ''),
+          lines: Array.isArray(localState.queen_voice.lines) ? localState.queen_voice.lines.map((line) => String(line || '')) : [],
+        } : buildFallbackQueenVoice(localState),
       });
 
       console.log('[TerminalSync] Local trader synced:', {
@@ -527,6 +637,7 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
       
       // Session timing
       sessionStartTime: sessionStartRef.current,
+      lastDataReceived: Date.now(),
       
       // Coherence/Lambda from session
       coherence: session.current_coherence || 0,

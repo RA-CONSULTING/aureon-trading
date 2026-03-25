@@ -1,394 +1,78 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SettingsDrawer } from "@/components/SettingsDrawer";
-import { LivePriceTicker } from "@/components/LivePriceTicker";
-import { MarketMetricsPanel } from "@/components/MarketMetricsPanel";
-import { PortfolioSummaryPanel } from "@/components/PortfolioSummaryPanel";
-import { ActiveTradePositions } from "@/components/ActiveTradePositions";
-import { LivePnLTable } from "@/components/LivePnLTable";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Card } from "@/components/ui/card";
 import { LiveTerminalStats } from "@/components/LiveTerminalStats";
-import { BrainStatePanel } from "@/components/BrainStatePanel";
-import { HiveStatePanel } from "@/components/HiveStatePanel";
-import { Badge } from "@/components/ui/badge";
 import { useTerminalSync } from "@/hooks/useTerminalSync";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { TrendingUp, TrendingDown, Sparkles } from "lucide-react";
-import { format } from "date-fns";
+import { useGlobalState } from "@/hooks/useGlobalState";
 
 const queryClient = new QueryClient();
 
-// Public live feed user ID - data pushed from Python terminal
-const LIVE_FEED_USER_ID = "69e5567f-7ad1-42af-860f-3709ef1f5935";
+function StatusBlock() {
+  const state = useGlobalState();
+  const statusLines = Array.isArray(state.statusLines) ? state.statusLines : [];
+  const latestMonitorLine = String(state.latestMonitorLine || "").trim();
 
-interface Trade {
-  id: string;
-  transaction_id: string;
-  exchange: string;
-  symbol: string;
-  side: "BUY" | "SELL";
-  price: number;
-  quantity: number;
-  quote_qty: number;
-  fee: number;
-  fee_asset: string;
-  timestamp: string;
+  return (
+    <Card className="border-border/50 bg-background/95 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/40 pb-3">
+        <div>
+          <div className="text-sm font-semibold text-foreground">Terminal Mirror</div>
+          <div className="text-xs text-muted-foreground">
+            Live runtime output from Kraken and Capital only
+          </div>
+        </div>
+        <div className="font-mono text-[11px] text-muted-foreground">
+          {state.wsConnected ? `Feed live (${state.wsMessageCount})` : "Polling local terminal"}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {latestMonitorLine ? (
+          <div className="rounded border border-border/40 bg-muted/20 p-3 font-mono text-[11px] text-foreground">
+            {latestMonitorLine}
+          </div>
+        ) : null}
+
+        <div className="rounded border border-border/40 bg-black/40 p-3">
+          {statusLines.length > 0 ? (
+            <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[11px] leading-5 text-foreground">
+              {statusLines.join("\n")}
+            </pre>
+          ) : (
+            <div className="font-mono text-[11px] text-muted-foreground">
+              Waiting for terminal status...
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
 }
 
-interface DecisionAudit {
-  id: string;
-  symbol: string;
-  decision_action: string;
-  confidence: number;
-  decision_timestamp: string;
-  summary: string | null;
-}
-
-interface ValidationFill {
-  id: string;
-  symbol: string;
-  side: string;
-  exchange: string;
-  stage: string;
-  validation_status: string;
-  executed_price: number | null;
-  executed_qty: number | null;
-  created_at: string;
-}
-
-function TradeFeed() {
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [decisionStream, setDecisionStream] = useState<DecisionAudit[]>([]);
-  const [validationFills, setValidationFills] = useState<ValidationFill[]>([]);
-  const [streamHealth, setStreamHealth] = useState({
-    tradeFeed: false,
-    decisionFeed: false,
-    validationFeed: false,
-  });
-  const { toast } = useToast();
-  
-  // Always sync terminal data (public feed)
-  useTerminalSync(true, 10000);
-
-  // Subscribe to realtime trade updates for the live feed user
-  useEffect(() => {
-    const channel = supabase
-      .channel("trade-records")
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "trade_records",
-        filter: `user_id=eq.${LIVE_FEED_USER_ID}`,
-      }, (payload) => {
-        setTrades(prev => [payload.new as Trade, ...prev]);
-        setStreamHealth(prev => ({ ...prev, tradeFeed: true }));
-        toast({
-          title: "New Trade",
-          description: `${(payload.new as Trade).side} ${(payload.new as Trade).symbol}`,
-        });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [toast]);
-
-  // Load existing trades on mount
-  useEffect(() => {
-    loadTrades();
-    loadDecisionStream();
-    loadValidationFills();
-  }, []);
-
-  const loadTrades = async () => {
-    const { data, error } = await supabase
-      .from("trade_records")
-      .select("*")
-      .eq("user_id", LIVE_FEED_USER_ID)
-      .order("timestamp", { ascending: false })
-      .limit(100);
-
-    if (!error && data) {
-      setTrades(data.map(t => ({ ...t, side: t.side as "BUY" | "SELL" })));
-      setStreamHealth(prev => ({ ...prev, tradeFeed: data.length > 0 }));
-    }
-  };
-
-  const loadDecisionStream = async () => {
-    const { data, error } = await supabase
-      .from("decision_audit_log")
-      .select("id, symbol, decision_action, confidence, decision_timestamp, summary")
-      .order("decision_timestamp", { ascending: false })
-      .limit(20);
-
-    if (!error && data) {
-      setDecisionStream(data as DecisionAudit[]);
-      setStreamHealth(prev => ({ ...prev, decisionFeed: data.length > 0 }));
-    }
-  };
-
-  const loadValidationFills = async () => {
-    const { data, error } = await supabase
-      .from("trade_audit_log")
-      .select("id, symbol, side, exchange, stage, validation_status, executed_price, executed_qty, created_at")
-      .in("stage", ["FILLED", "PARTIALLY_FILLED", "ORDER_CONFIRMED"])
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    if (!error && data) {
-      setValidationFills(data as ValidationFill[]);
-      setStreamHealth(prev => ({ ...prev, validationFeed: data.length > 0 }));
-    }
-  };
-
-  useEffect(() => {
-    const decisionChannel = supabase
-      .channel("decision-audit-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "decision_audit_log",
-        },
-        (payload) => {
-          const next = payload.new as DecisionAudit;
-          setDecisionStream(prev => [next, ...prev].slice(0, 20));
-          setStreamHealth(prev => ({ ...prev, decisionFeed: true }));
-        }
-      )
-      .subscribe();
-
-    const validationChannel = supabase
-      .channel("validation-fill-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "trade_audit_log",
-        },
-        () => {
-          setStreamHealth(prev => ({ ...prev, validationFeed: true }));
-          loadValidationFills();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(decisionChannel);
-      supabase.removeChannel(validationChannel);
-    };
-  }, []);
-
-  const totalBuys = trades.filter(t => t.side === "BUY").length;
-  const totalSells = trades.filter(t => t.side === "SELL").length;
+function TerminalMirrorApp() {
+  useTerminalSync(true, 2000);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">AUREON Live Feed</h1>
-              <p className="text-xs text-muted-foreground">Public Trading Dashboard</p>
-            </div>
+      <main className="mx-auto max-w-6xl p-4 md:p-6">
+        <div className="mb-5 flex items-center justify-between gap-3 border-b border-border/50 pb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">Aureon Terminal Mirror</h1>
+            <p className="text-sm text-muted-foreground">
+              Single-screen monitor for the live unified trader
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="px-3 py-1 rounded-full bg-green-500/20 text-green-500 text-xs font-medium flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-              LIVE
-            </div>
-            <SettingsDrawer />
+          <div className="font-mono text-[11px] text-muted-foreground">
+            `unified_market_trader.py`
           </div>
         </div>
-      </header>
 
-      {/* Live Price Ticker Bar */}
-      <LivePriceTicker />
-
-      <main className="p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Top Row: Stats + Market Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{trades.length}</div>
-                <p className="text-muted-foreground text-sm">Total Trades</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
-                <div>
-                  <div className="text-2xl font-bold text-green-500">{totalBuys}</div>
-                  <p className="text-muted-foreground text-sm">Buys</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 flex items-center gap-2">
-                <TrendingDown className="w-5 h-5 text-red-500" />
-                <div>
-                  <div className="text-2xl font-bold text-red-500">{totalSells}</div>
-                  <p className="text-muted-foreground text-sm">Sells</p>
-                </div>
-              </CardContent>
-            </Card>
-            <MarketMetricsPanel />
-          </div>
-
-          {/* Portfolio Summary */}
-          <PortfolioSummaryPanel />
-
-          {/* Realtime Data Connectivity + Execution Validation */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Aureon Pro Realtime Feeds</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant={streamHealth.tradeFeed ? "default" : "destructive"}>
-                  Trade Feed {streamHealth.tradeFeed ? "Connected" : "Offline"}
-                </Badge>
-                <Badge variant={streamHealth.decisionFeed ? "default" : "destructive"}>
-                  Decision Stream {streamHealth.decisionFeed ? "Connected" : "Offline"}
-                </Badge>
-                <Badge variant={streamHealth.validationFeed ? "default" : "destructive"}>
-                  Validation Fills {streamHealth.validationFeed ? "Connected" : "Offline"}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Live Decisions</h3>
-                  {decisionStream.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No decisions received yet.</p>
-                  ) : (
-                    <div className="space-y-2 max-h-52 overflow-y-auto">
-                      {decisionStream.map((decision) => (
-                        <div key={decision.id} className="rounded-md border border-border/60 p-2 text-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{decision.symbol}</span>
-                            <Badge variant="outline">{decision.decision_action}</Badge>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Confidence {(decision.confidence * 100).toFixed(1)}% · {format(new Date(decision.decision_timestamp), "MMM d, HH:mm:ss")}
-                          </div>
-                          {decision.summary && (
-                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{decision.summary}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Validation Fills</h3>
-                  {validationFills.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No validation fills received yet.</p>
-                  ) : (
-                    <div className="space-y-2 max-h-52 overflow-y-auto">
-                      {validationFills.map((fill) => (
-                        <div key={fill.id} className="rounded-md border border-border/60 p-2 text-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{fill.exchange} · {fill.symbol}</span>
-                            <Badge variant="outline">{fill.validation_status}</Badge>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {fill.side} · {fill.stage} · {format(new Date(fill.created_at), "MMM d, HH:mm:ss")}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {fill.executed_qty ?? 0} @ ${fill.executed_price ? fill.executed_price.toLocaleString() : "-"}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Cognitive State: Brain + Hive */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <BrainStatePanel />
-            <HiveStatePanel />
-          </div>
-
-          {/* Terminal Stats Mirror - Live system metrics */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <LiveTerminalStats />
-
-            {/* Hive State Panel (Queen's mood, coherence, veto log) */}
-            <HiveStatePanel />
-
-            {/* Active Positions (real Binance/Kraken spot balances) */}
-            <ActiveTradePositions />
-          </div>
-
-          {/* Live P&L Tracker - shows open positions with live profit/loss */}
-          <LivePnLTable />
-
-          {/* Trade List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Live Trade Feed</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {trades.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  Waiting for trades from the Python terminal...
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {trades.map((trade) => (
-                    <div
-                      key={trade.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-bold ${
-                            trade.side === "BUY"
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-red-500/20 text-red-500"
-                          }`}
-                        >
-                          {trade.side}
-                        </span>
-                        <div>
-                          <div className="font-medium">{trade.symbol}</div>
-                          <div className="text-xs text-muted-foreground">
-                            ID: {trade.transaction_id}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-mono">
-                          {trade.quantity} @ ${Number(trade.price).toLocaleString()}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {format(new Date(trade.timestamp), "MMM d, HH:mm:ss")}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="space-y-4">
+          <LiveTerminalStats />
+          <StatusBlock />
         </div>
       </main>
     </div>
@@ -402,7 +86,7 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <TradeFeed />
+          <TerminalMirrorApp />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
