@@ -24,6 +24,7 @@ Usage:
 """
 
 import os
+import sys
 import json
 import time
 import hashlib
@@ -39,14 +40,24 @@ from collections import deque
 # Production startup should be deterministic and quiet unless explicitly overridden.
 os.environ.setdefault("AUREON_QUIET_STARTUP", "1")
 
+# Ensure repo-root package imports resolve when this file is launched directly.
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 # Import ETA predictor for margin positions
 try:
-    from margin_eta_predictor import MarginETAPredictor
+    from aureon.monitors.margin_eta_predictor import MarginETAPredictor
     HAS_ETA_PREDICTOR = True
 except ImportError:
-    HAS_ETA_PREDICTOR = False
-    logger_temp = logging.getLogger("margin_army")
-    logger_temp.warning("ETA predictor not available - install margin_eta_predictor.py")
+    try:
+        from margin_eta_predictor import MarginETAPredictor
+        HAS_ETA_PREDICTOR = True
+    except ImportError:
+        HAS_ETA_PREDICTOR = False
+        logger_temp = logging.getLogger("margin_army")
+        logger_temp.warning("ETA predictor not available - install margin_eta_predictor.py")
 
 # Dead Man's Switch - Dynamic Take Profit
 try:
@@ -2676,6 +2687,7 @@ class KrakenMarginArmyTrader:
         self.shadow_trades: List[ShadowTrade] = []
         self.shadow_validated_count = 0  # How many shadows proved right
         self.shadow_failed_count = 0     # How many shadows proved wrong
+        self.shadow_pair_cooldowns: Dict[str, float] = {}
         # Legacy alias for code that still references active_trade
         self.active_trade: Optional[ActiveTrade] = None
         self.total_profit = 0.0
@@ -3378,7 +3390,7 @@ class KrakenMarginArmyTrader:
             # per minute → (|momentum| / 24h / 60) = % per minute.
             # With leverage, actual PnL velocity is higher.
             _pct_per_minute = abs(info.momentum) / (24 * 60) * max_lev
-            eta_minutes = (GOAL_TARGET_USD / trade_val * 100) / _pct_per_minute if _pct_per_minute > 0 else 999
+            eta_minutes = required_move_pct / _pct_per_minute if _pct_per_minute > 0 else 999
 
             # Goal score: reward signals that are heading to profit fastest.
             # Blend profit_velocity (trend) + stream_velocity (live order flow).
@@ -4485,12 +4497,35 @@ class KrakenMarginArmyTrader:
     SHADOW_MAX_AGE = 120       # Kill shadows older than 2 min
     SHADOW_MIN_VALIDATE = 10   # Must be validated for at least 10s
     SHADOW_MAX_ACTIVE = 4      # Max simultaneous shadows
+    SHADOW_PAIR_COOLDOWN = 45  # Block rapid same-pair reversals between scans
+
+    def _set_shadow_cooldown(self, pair: str, seconds: Optional[int] = None):
+        """Temporarily prevent rapid re-shadowing of the same pair."""
+        ttl = float(seconds if seconds is not None else self.SHADOW_PAIR_COOLDOWN)
+        self.shadow_pair_cooldowns[pair] = time.time() + max(1.0, ttl)
+
+    def _shadow_cooldown_remaining(self, pair: str) -> float:
+        """Return the remaining cooldown for a pair and prune expired entries."""
+        until = self.shadow_pair_cooldowns.get(pair, 0.0)
+        remaining = until - time.time()
+        if remaining <= 0:
+            self.shadow_pair_cooldowns.pop(pair, None)
+            return 0.0
+        return remaining
 
     def create_shadow(self, pair_info: MarginPairInfo, side: str,
                       vol: float, trade_val: float, lev: int) -> Optional[ShadowTrade]:
         """Create a paper trade to validate a prediction."""
         if len(self.shadow_trades) >= self.SHADOW_MAX_ACTIVE:
             logger.debug("Shadow slots full — skipping")
+            return None
+
+        cooldown_left = self._shadow_cooldown_remaining(pair_info.pair)
+        if cooldown_left > 0:
+            logger.debug(
+                f"Shadow cooldown active for {pair_info.pair} "
+                f"({cooldown_left:.0f}s remaining) — skipping"
+            )
             return None
 
         # Don't shadow a pair we already have a real or shadow position on
@@ -4500,8 +4535,7 @@ class KrakenMarginArmyTrader:
         if self.active_short:
             existing_pairs.add(self.active_short.pair)
         for s in self.shadow_trades:
-            if s.side == side:
-                existing_pairs.add(s.pair)
+            existing_pairs.add(s.pair)
 
         if pair_info.pair in existing_pairs:
             return None
@@ -4534,6 +4568,7 @@ class KrakenMarginArmyTrader:
         )
 
         self.shadow_trades.append(shadow)
+        self._set_shadow_cooldown(pair_info.pair)
 
         # Start stream for this symbol
         if pair_info.binance_symbol:
@@ -4562,6 +4597,7 @@ class KrakenMarginArmyTrader:
             if shadow.age_seconds > self.SHADOW_MAX_AGE and not shadow.validated:
                 expired.append(shadow)
                 self.shadow_failed_count += 1
+                self._set_shadow_cooldown(shadow.pair, seconds=self.SHADOW_PAIR_COOLDOWN * 2)
                 logger.info(
                     f"SHADOW EXPIRED: {shadow.pair} {shadow.side.upper()} | "
                     f"age={shadow.age_seconds:.0f}s | moved {shadow.current_move_pct:+.3f}% "
@@ -4599,6 +4635,7 @@ class KrakenMarginArmyTrader:
             logger.info(
                 f"SHADOW VALIDATED but intel says NO for {shadow.pair} — skipping promotion"
             )
+            self._set_shadow_cooldown(shadow.pair, seconds=self.SHADOW_PAIR_COOLDOWN * 2)
             self.shadow_trades.remove(shadow)
             return None
 
@@ -4625,6 +4662,7 @@ class KrakenMarginArmyTrader:
         notional = margin_budget * lev
         if notional < MIN_TRADE_USD:
             logger.warning(f"Not enough margin to promote shadow (${notional:.2f} notional)")
+            self._set_shadow_cooldown(shadow.pair, seconds=self.SHADOW_PAIR_COOLDOWN * 2)
             self.shadow_trades.remove(shadow)
             return None
 
@@ -4684,6 +4722,7 @@ class KrakenMarginArmyTrader:
 
         # Remove the shadow regardless of success
         if shadow in self.shadow_trades:
+            self._set_shadow_cooldown(shadow.pair, seconds=self.SHADOW_PAIR_COOLDOWN * 2)
             self.shadow_trades.remove(shadow)
         return trade
 
