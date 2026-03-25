@@ -3928,6 +3928,32 @@ class KrakenMarginArmyTrader:
         else:
             self.stream.add_symbol(binance_symbol)
 
+    def _emit_monitor_snapshot(
+        self,
+        trade: ActiveTrade,
+        hold_str: str,
+        current_price: float,
+        net_pnl: float,
+        total_fees: float,
+        need_pct: float,
+        stream_live: bool,
+        dtp_status_str: str,
+        danger_level: int = 0,
+        danger_note: str = "SAFE",
+    ) -> None:
+        """Print a compact live terminal snapshot for the active trade."""
+        src = "LIVE" if stream_live else "REST"
+        dtp_text = dtp_status_str.replace("|", "").strip() if dtp_status_str else "DTP: idle"
+        line = (
+            f"[MONITOR] t={hold_str:<6} pair={trade.pair:<10} side={trade.side.upper():<4} "
+            f"lev={trade.leverage}x src={src:<4} "
+            f"entry=${trade.entry_price:,.4f} now=${current_price:,.4f} "
+            f"net=${net_pnl:+.2f} fees=${total_fees:.2f} "
+            f"target=${trade.breakeven_price:,.4f} dist={need_pct:+.2f}% "
+            f"danger={danger_level}:{danger_note} {dtp_text}"
+        )
+        logger.info(line)
+
     def monitor_position(self, trade: Optional[ActiveTrade] = None) -> Optional[dict]:
         """
         Check a position using LIVE WebSocket stream (sub-second).
@@ -4106,6 +4132,8 @@ class KrakenMarginArmyTrader:
         else:
             status = f"${net_pnl:+.2f} | target=${trade.breakeven_price:.4f} ({need_pct:+.2f}% away)"
 
+        danger_level = 0
+        danger_note = "SAFE"
         logger.info(
             f"[{hold_str}] {trade.pair} {trade.side.upper()} {trade.leverage}x | "
             f"${trade.entry_price:,.4f} -> ${current_price:,.4f} | "
@@ -4186,10 +4214,14 @@ class KrakenMarginArmyTrader:
                     target_price=trade.breakeven_price,
                 )
                 dl = danger.get('danger_level', 0)
+                danger_level = dl
                 if dl > 0:
+                    reasons = danger.get('reasons', [])
+                    danger_note = reasons[0][:48] if reasons else "WATCH"
                     for r in danger.get('reasons', []):
                         logger.warning(f"  INTEL: {r}")
                 else:
+                    danger_note = "SAFE"
                     flow = danger.get('reasons', [])
                     # Show flow info from trade analysis
                     tf = self.intel._trades_cache.get(trade.binance_symbol, {})
@@ -4250,6 +4282,19 @@ class KrakenMarginArmyTrader:
                     pass  # Safe, nothing to report
             except Exception as e:
                 logger.debug(f"Danger check error: {e}")
+
+        self._emit_monitor_snapshot(
+            trade=trade,
+            hold_str=hold_str,
+            current_price=current_price,
+            net_pnl=net_pnl,
+            total_fees=total_fees,
+            need_pct=need_pct,
+            stream_live=stream_live,
+            dtp_status_str=dtp_status_str,
+            danger_level=danger_level,
+            danger_note=danger_note,
+        )
 
         # === TRUTH CHECK: Reconcile with Kraken every ~2 minutes ===
         if int(hold_time) % 120 < MONITOR_INTERVAL + 1:
@@ -4733,6 +4778,15 @@ class KrakenMarginArmyTrader:
         mins = int((runtime % 3600) // 60)
         capital = self._get_capital_snapshot()
         equity_delta = capital["equity"] - self.starting_equity if self.starting_equity > 0 else 0.0
+        realized = sum(float(t.get("net_pnl", 0.0) or 0.0) for t in self.completed_trades)
+        closed_count = len(self.completed_trades)
+        avg_net = realized / closed_count if closed_count else 0.0
+        wins = sum(1 for t in self.completed_trades if float(t.get("net_pnl", 0.0) or 0.0) > 0)
+        losses = sum(1 for t in self.completed_trades if float(t.get("net_pnl", 0.0) or 0.0) <= 0)
+        win_rate = (wins / closed_count * 100.0) if closed_count else 0.0
+        best_trade = max(self.completed_trades, key=lambda t: float(t.get("net_pnl", 0.0) or 0.0), default=None)
+        worst_trade = min(self.completed_trades, key=lambda t: float(t.get("net_pnl", 0.0) or 0.0), default=None)
+        recent_trades = list(reversed(self.completed_trades[-3:]))
 
         print()
         print(f"{'=' * 65}")
@@ -4793,6 +4847,21 @@ class KrakenMarginArmyTrader:
         print(f"  Trades: {self.total_trades} ({self.winning_trades} wins)")
         print(f"  Shadows: {self.shadow_validated_count} validated, {self.shadow_failed_count} failed")
         print(f"  Session P&L tracker: ${self.total_profit:+.2f}")
+        print(f"  Realized history: {closed_count} closed | wins={wins} losses={losses} | win-rate={win_rate:.1f}% | avg=${avg_net:+.2f}")
+        if best_trade:
+            print(f"  Best trade: {best_trade['pair']} {best_trade['side'].upper()} ${float(best_trade.get('net_pnl', 0.0) or 0.0):+.2f} | reason={best_trade.get('reason', '?')}")
+        if worst_trade:
+            print(f"  Worst trade: {worst_trade['pair']} {worst_trade['side'].upper()} ${float(worst_trade.get('net_pnl', 0.0) or 0.0):+.2f} | reason={worst_trade.get('reason', '?')}")
+        if recent_trades:
+            print(f"  Recent closes:")
+            for t in recent_trades:
+                pnl = float(t.get("net_pnl", 0.0) or 0.0)
+                hold_s = float(t.get("hold_seconds", 0.0) or 0.0)
+                hold_str = f"{hold_s/60:.1f}m" if hold_s >= 60 else f"{int(hold_s)}s"
+                print(
+                    f"    {t.get('pair', '?')} {str(t.get('side', '?')).upper()} "
+                    f"${pnl:+.2f} | hold={hold_str} | reason={t.get('reason', '?')}"
+                )
         print(f"  Target: ${PROFIT_TARGET_USD} per trade (approx GBP1)")
         print(f"{'=' * 65}")
         print()
