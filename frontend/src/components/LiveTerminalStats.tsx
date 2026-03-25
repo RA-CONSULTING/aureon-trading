@@ -1,309 +1,171 @@
-/**
- * LiveTerminalStats - Mirrors the Python terminal output exactly
- * Shows real-time system metrics in the same format as the terminal
- */
-
-import { useGlobalState } from '@/hooks/useGlobalState';
-import { useTerminalMetrics } from '@/hooks/useTerminalMetrics';
 import { Card } from '@/components/ui/card';
+import { useGlobalState } from '@/hooks/useGlobalState';
 import { cn } from '@/lib/utils';
-
-const StatusIndicator = ({ active, label }: { active: boolean; label?: string }) => (
-  <span className={cn("inline-flex items-center gap-1", active ? "text-green-500" : "text-red-500")}>
-    {active ? '🟢' : '🔴'}
-    {label && <span className="text-xs">{label}</span>}
-  </span>
-);
-
-const MetricRow = ({
-  icon,
-  children,
-  className,
-}: {
-  icon: string;
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <div className={cn("font-mono text-sm flex items-start gap-2", className)}>
-    <span>{icon}</span>
-    <span className="flex-1">{children}</span>
-  </div>
-);
 
 const safeNumber = (value: unknown, fallback = 0): number => {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
 };
 
-const formatCurrency = (value: unknown, currency = '€') => {
+const formatSigned = (value: unknown, digits = 2, prefix = '') => {
   const num = safeNumber(value);
   const sign = num >= 0 ? '+' : '';
-  return `${currency}${sign}${num.toFixed(2)}`;
+  return `${prefix}${sign}${num.toFixed(digits)}`;
 };
 
-const formatPercent = (value: unknown) => {
-  const num = safeNumber(value);
-  const sign = num >= 0 ? '+' : '';
-  return `${sign}${num.toFixed(2)}%`;
-};
+const ExchangeMetric = ({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) => (
+  <div className="flex items-center justify-between gap-3 text-[11px] font-mono">
+    <span className="text-muted-foreground">{label}</span>
+    <span className={cn('text-foreground', className)}>{value}</span>
+  </div>
+);
+
+const PositionLine = ({
+  symbol,
+  side,
+  entryPrice,
+  currentPrice,
+  pnlPercent,
+  exchange,
+}: {
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  entryPrice: number;
+  currentPrice: number;
+  pnlPercent: number;
+  exchange?: string;
+}) => (
+  <div className="rounded border border-border/40 bg-background/60 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 font-mono text-[11px]">
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-foreground">{symbol}</span>
+        <span className={cn('text-[10px]', side === 'LONG' ? 'text-green-500' : 'text-red-500')}>
+          {side}
+        </span>
+        {exchange && <span className="text-[10px] uppercase text-muted-foreground">{exchange}</span>}
+      </div>
+      <span className={cn(pnlPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
+        {formatSigned(pnlPercent, 2)}%
+      </span>
+    </div>
+    <div className="mt-1 flex items-center gap-3 font-mono text-[10px] text-muted-foreground">
+      <span>Entry ${entryPrice.toFixed(4)}</span>
+      <span>Now ${currentPrice.toFixed(4)}</span>
+    </div>
+  </div>
+);
 
 export function LiveTerminalStats() {
   const state = useGlobalState();
-  const metrics = useTerminalMetrics();
-  const recentTerminalLines = Array.isArray(state.statusLines) ? state.statusLines.slice(-6) : [];
-  const recentTrades = Array.isArray(state.recentTrades) ? state.recentTrades : [];
+  const summary = state.unifiedMarketSummary;
   const activePositions = Array.isArray(state.activePositions) ? state.activePositions : [];
-  const unifiedSummary = state.unifiedMarketSummary
-    ? {
-        krakenEquity: safeNumber(state.unifiedMarketSummary.krakenEquity),
-        capitalEquityGbp: safeNumber(state.unifiedMarketSummary.capitalEquityGbp),
-        krakenSessionPnl: safeNumber(state.unifiedMarketSummary.krakenSessionPnl),
-        capitalSessionPnlGbp: safeNumber(state.unifiedMarketSummary.capitalSessionPnlGbp),
-        capitalOpenPositions: safeNumber(state.unifiedMarketSummary.capitalOpenPositions),
-        krakenOpenPositions: safeNumber(state.unifiedMarketSummary.krakenOpenPositions),
-        capitalRecentCloses: Array.isArray(state.unifiedMarketSummary.capitalRecentCloses)
-          ? state.unifiedMarketSummary.capitalRecentCloses
-          : [],
-        capitalCandidates: Array.isArray(state.unifiedMarketSummary.capitalCandidates)
-          ? state.unifiedMarketSummary.capitalCandidates
-          : [],
-      }
-    : undefined;
+  const krakenPositions = activePositions.filter((pos) => pos.exchange === 'kraken');
+  const capitalPositions = activePositions.filter((pos) => pos.exchange === 'capital');
 
-  const winRate = safeNumber(state.totalTrades) > 0
-    ? ((safeNumber(state.winningTrades) / safeNumber(state.totalTrades)) * 100).toFixed(1)
-    : '0.0';
-
-  const coherence = safeNumber(state.coherence);
-  const hncCoherence = safeNumber(state.hncCoherencePercent);
-  const currentDd = safeNumber(state.currentDrawdownPercent);
-  const coherenceColor = coherence >= 0.45 ? 'text-green-500' : coherence >= 0.30 ? 'text-yellow-500' : 'text-red-500';
-  const gaiaColor = state.gaiaLatticeState === 'COHERENT' ? 'text-green-500' : state.gaiaLatticeState === 'NEUTRAL' ? 'text-yellow-500' : 'text-red-500';
-  const hncColor = hncCoherence >= 50 ? 'text-green-500' : hncCoherence >= 25 ? 'text-yellow-500' : 'text-red-500';
-  const ddColor = currentDd > 30 ? 'text-red-500' : currentDd > 15 ? 'text-yellow-500' : 'text-green-500';
+  const totalEquity = safeNumber(state.totalEquity);
+  const available = safeNumber(state.availableBalance);
+  const totalPnl = safeNumber(state.totalPnl);
+  const krakenEquity = safeNumber(summary?.krakenEquity);
+  const capitalEquity = safeNumber(summary?.capitalEquityGbp);
+  const krakenPnl = safeNumber(summary?.krakenSessionPnl);
+  const capitalPnl = safeNumber(summary?.capitalSessionPnlGbp);
+  const krakenOpen = safeNumber(summary?.krakenOpenPositions, krakenPositions.length);
+  const capitalOpen = safeNumber(summary?.capitalOpenPositions, capitalPositions.length);
 
   return (
-    <Card className="bg-background/95 border-border/50 p-4 font-mono text-xs space-y-1">
-      <div className="text-center text-primary font-bold mb-2 border-b border-border/30 pb-2">
-        📊 AUREON TERMINAL MIRROR
-      </div>
-
-      <MetricRow icon="📊">
-        <span className="text-muted-foreground">Active Positions</span>{' '}
-        <span className="text-foreground">({activePositions.length}/{safeNumber(state.maxPositions)})</span>
-      </MetricRow>
-
-      {activePositions.slice(0, 3).map((pos, i) => (
-        <MetricRow key={i} icon="   🎯" className="pl-4">
-          <span className="text-primary">{pos.symbol}</span>{' '}
-          {pos.exchange && <span className="text-[10px] text-muted-foreground uppercase">[{pos.exchange}]</span>}{' '}
-          <span className="text-muted-foreground">Entry: ${safeNumber(pos.entryPrice).toFixed(6)}</span>{' | '}
-          <span className={safeNumber(pos.pnlPercent) >= 0 ? 'text-green-500' : 'text-red-500'}>
-            Now: {formatPercent(pos.pnlPercent)}
-          </span>
-          {safeNumber(pos.pnlPercent) < 0 ? ' 🔴' : ' 🟢'}
-        </MetricRow>
-      ))}
-
-      <div className="border-t border-border/30 my-2" />
-
-      <MetricRow icon="💎">
-        <span className="text-muted-foreground">Portfolio:</span>{' '}
-        <span className="text-foreground font-bold">€{safeNumber(state.totalEquity).toFixed(2)}</span>{' '}
-        <span className={safeNumber(state.totalPnl) >= 0 ? 'text-green-500' : 'text-red-500'}>
-          ({formatPercent((safeNumber(state.totalPnl) / Math.max(safeNumber(state.peakEquity), 1)) * 100)})
-        </span>
-        {' | Peak: '}
-        <span className="text-primary">€{safeNumber(state.peakEquity).toFixed(2)}</span>
-      </MetricRow>
-
-      <MetricRow icon="📉">
-        <span className="text-muted-foreground">Max DD:</span>{' '}
-        <span className={ddColor}>{safeNumber(state.maxDrawdownPercent).toFixed(1)}%</span>
-        {' | Current DD: '}
-        <span className={ddColor}>{currentDd.toFixed(1)}%</span>
-      </MetricRow>
-
-      <MetricRow icon="📈">
-        <span className="text-muted-foreground">Cycle P&L:</span>{' '}
-        <span className={safeNumber(state.cyclePnl) >= 0 ? 'text-green-500' : 'text-red-500'}>
-          {formatCurrency(state.cyclePnl)} ({formatPercent(state.cyclePnlPercent)})
-        </span>
-      </MetricRow>
-
-      <MetricRow icon="📈">
-        <span className="text-muted-foreground">Trades:</span>{' '}
-        <span className="text-foreground">{safeNumber(state.totalTrades)}</span>
-        {' | Wins: '}<span className="text-green-500">{safeNumber(state.winningTrades)}</span>
-        {' | WR: '}<span className={Number(winRate) >= 51 ? 'text-green-500' : 'text-yellow-500'}>{winRate}%</span>
-        {' | Avg Hold: '}<span className="text-muted-foreground">{safeNumber(state.avgHoldTimeMinutes).toFixed(1)}m</span>
-      </MetricRow>
-
-      <div className="border-t border-border/30 my-2" />
-
-      <MetricRow icon="🍄">
-        <span className="text-muted-foreground">Network Γ:</span>{' '}
-        <span className={coherenceColor}>{coherence.toFixed(2)}</span>
-        {' | WS: '}
-        <StatusIndicator active={Boolean(state.wsConnected)} />
-        <span className="text-muted-foreground"> ({safeNumber(state.wsMessageCount)})</span>
-      </MetricRow>
-
-      <MetricRow icon="🌐">
-        <span className="text-muted-foreground">Gaia Lattice:</span>{' '}
-        <span className={gaiaColor}>{state.gaiaLatticeState}</span>
-        {' ('}<span className={safeNumber(state.gaiaFrequency) === 432 ? 'text-green-500' : 'text-red-500'}>
-          {safeNumber(state.gaiaFrequency).toFixed(1)}Hz
-        </span>{')'}
-        {' | Purity: '}<span className="text-foreground">{safeNumber(state.purityPercent)}%</span>
-        {' | Carrier: '}<span className="text-primary">{safeNumber(state.carrierWavePhi).toFixed(2)}φ</span>
-        {' | 432Hz: '}<span className="text-foreground">{safeNumber(state.harmonicLock432)}%</span>
-      </MetricRow>
-
-      <MetricRow icon="🌍">
-        <span className="text-muted-foreground">Carrier Wave:</span>
-        {' Nullify: '}<span className="text-foreground">{100 - safeNumber(state.purityPercent)}%</span>
-        {' | Risk: '}<span className="text-yellow-500">{safeNumber(state.riskMultiplier).toFixed(2)}x</span>
-        {' | TP: '}<span className="text-green-500">{safeNumber(state.takeProfitMultiplier).toFixed(2)}x</span>
-        {' | Λ-Field'}
-      </MetricRow>
-
-      <MetricRow icon="🌍">
-        <span className="text-muted-foreground">HNC:</span>{' '}
-        <span className="text-primary">{safeNumber(state.hncFrequency)}Hz</span>
-        {' | '}<span className={hncColor}>{state.hncMarketState}</span>
-        {' | Coherence: '}<span className={hncColor}>{hncCoherence}%</span>
-        {' | Mod: '}<span className="text-foreground">×{safeNumber(state.hncModifier).toFixed(2)}</span>
-      </MetricRow>
-
-      <div className="border-t border-border/30 my-2" />
-
-      <MetricRow icon="🎮">
-        <span className="text-muted-foreground">Mode:</span>{' '}
-        <span className={cn("font-bold", state.tradingMode === 'AGGRESSIVE' ? 'text-red-500' : state.tradingMode === 'CONSERVATIVE' ? 'text-blue-500' : 'text-yellow-500')}>
-          {state.tradingMode}
-        </span>
-        {' | Entry Γ: '}<span className="text-foreground">{safeNumber(state.entryCoherenceThreshold).toFixed(3)}</span>
-        {' | Exit Γ: '}<span className="text-foreground">{safeNumber(state.exitCoherenceThreshold).toFixed(3)}</span>
-      </MetricRow>
-
-      <MetricRow icon="💰">
-        <span className="text-muted-foreground">Compounded:</span>{' '}
-        <span className="text-green-500">€{safeNumber(state.compoundedCapital).toFixed(2)}</span>
-        {' | Harvested: '}
-        <span className="text-primary">€{safeNumber(state.harvestedCapital).toFixed(2)}</span>
-      </MetricRow>
-
-      <MetricRow icon="🌟">
-        <span className="text-muted-foreground">Pool:</span>{' '}
-        <span className="text-foreground">€{safeNumber(state.poolTotal).toFixed(2)} total</span>
-        {' | '}<span className="text-green-500">€{safeNumber(state.poolAvailable).toFixed(2)} available</span>
-        {' | Scouts: '}<span className="text-foreground">{safeNumber(state.scoutCount)}</span>
-        {' | Splits: '}<span className="text-foreground">{safeNumber(state.splitCount)}</span>
-      </MetricRow>
-
-      <MetricRow icon="🍄">
-        <span className="text-muted-foreground">Mycelium:</span>{' '}
-        <span className="text-foreground">{safeNumber(state.myceliumHives)} hives</span>
-        {' | '}<span className="text-primary">{safeNumber(state.myceliumAgents)} agents</span>
-        {' | Gen '}<span className="text-foreground">{safeNumber(state.myceliumGeneration)}</span>
-        {' | Queen: '}
-        <span className={safeNumber(state.queenPnl) >= 0 ? 'text-green-500' : 'text-red-500'}>
-          {safeNumber(state.queenPnl) >= 0 ? '+' : ''}{safeNumber(state.queenPnl).toFixed(2)}
-        </span>
-        {' -> '}<span className={cn(state.queenState === 'BUY' ? 'text-green-500' : state.queenState === 'SELL' ? 'text-red-500' : 'text-yellow-500')}>{state.queenState}</span>
-      </MetricRow>
-
-      <MetricRow icon="⏱️">
-        <span className="text-muted-foreground">Runtime:</span>{' '}
-        <span className="text-foreground">{safeNumber(metrics.runtimeMinutes).toFixed(1)} min</span>
-        {' | Positions: '}<span className="text-foreground">{activePositions.length}/{safeNumber(state.maxPositions)}</span>
-        {' | Max Gen: '}<span className="text-foreground">{safeNumber(state.maxGeneration)}</span>
-      </MetricRow>
-
-      {unifiedSummary && (
-        <div className="rounded border border-border/30 bg-muted/20 p-2">
-          <div className="text-[10px] text-muted-foreground mb-1">UNIFIED MARKET SUMMARY</div>
-          <div className="font-mono text-[11px] break-words">
-            Kraken ${unifiedSummary.krakenEquity.toFixed(2)} | Capital £{unifiedSummary.capitalEquityGbp.toFixed(2)} | Open {unifiedSummary.krakenOpenPositions}K/{unifiedSummary.capitalOpenPositions}C
-          </div>
-          <div className="font-mono text-[11px] break-words">
-            Kraken PnL ${unifiedSummary.krakenSessionPnl.toFixed(2)} | Capital PnL £{unifiedSummary.capitalSessionPnlGbp.toFixed(2)}
+    <Card className="border-border/50 bg-background/95 p-4">
+      <div className="mb-4 flex items-center justify-between gap-3 border-b border-border/40 pb-3">
+        <div>
+          <div className="text-sm font-semibold text-foreground">Live Exchange Metrics</div>
+          <div className="text-xs text-muted-foreground">Kraken margin and Capital CFDs only</div>
+        </div>
+        <div className="text-right font-mono text-[11px]">
+          <div className="text-foreground">Open {krakenOpen}K / {capitalOpen}C</div>
+          <div className={cn(totalPnl >= 0 ? 'text-green-500' : 'text-red-500')}>
+            Session {formatSigned(totalPnl, 2, '€')}
           </div>
         </div>
-      )}
+      </div>
 
-      {(state.latestMonitorLine || recentTerminalLines.length > 0 || recentTrades.length > 0) && (
-        <>
-          <div className="border-t border-border/30 my-2" />
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded border border-border/40 bg-muted/20 p-3">
+          <div className="mb-2 font-mono text-xs font-semibold text-foreground">KRAKEN</div>
+          <div className="space-y-1.5">
+            <ExchangeMetric label="Equity" value={`$${krakenEquity.toFixed(2)}`} />
+            <ExchangeMetric label="Session P&L" value={formatSigned(krakenPnl, 2, '$')} className={krakenPnl >= 0 ? 'text-green-500' : 'text-red-500'} />
+            <ExchangeMetric label="Open Positions" value={`${krakenOpen}`} />
+          </div>
+          <div className="mt-3 space-y-2">
+            {krakenPositions.length > 0 ? (
+              krakenPositions.slice(0, 4).map((pos, index) => (
+                <PositionLine
+                  key={`kraken-${pos.symbol}-${index}`}
+                  symbol={pos.symbol}
+                  side={pos.side}
+                  entryPrice={safeNumber(pos.entryPrice)}
+                  currentPrice={safeNumber(pos.currentPrice, safeNumber(pos.entryPrice))}
+                  pnlPercent={safeNumber(pos.pnlPercent)}
+                  exchange={pos.exchange}
+                />
+              ))
+            ) : (
+              <div className="font-mono text-[11px] text-muted-foreground">No open Kraken positions</div>
+            )}
+          </div>
+        </div>
 
-          {state.latestMonitorLine && (
-            <div className="rounded border border-border/30 bg-muted/20 p-2">
-              <div className="text-[10px] text-muted-foreground mb-1">LIVE MONITOR</div>
-              <div className="font-mono text-[11px] break-words">{state.latestMonitorLine}</div>
-            </div>
-          )}
+        <div className="rounded border border-border/40 bg-muted/20 p-3">
+          <div className="mb-2 font-mono text-xs font-semibold text-foreground">CAPITAL</div>
+          <div className="space-y-1.5">
+            <ExchangeMetric label="Equity" value={`£${capitalEquity.toFixed(2)}`} />
+            <ExchangeMetric label="Session P&L" value={formatSigned(capitalPnl, 2, '£')} className={capitalPnl >= 0 ? 'text-green-500' : 'text-red-500'} />
+            <ExchangeMetric label="Open Positions" value={`${capitalOpen}`} />
+          </div>
+          <div className="mt-3 space-y-2">
+            {capitalPositions.length > 0 ? (
+              capitalPositions.slice(0, 4).map((pos, index) => (
+                <PositionLine
+                  key={`capital-${pos.symbol}-${index}`}
+                  symbol={pos.symbol}
+                  side={pos.side}
+                  entryPrice={safeNumber(pos.entryPrice)}
+                  currentPrice={safeNumber(pos.currentPrice, safeNumber(pos.entryPrice))}
+                  pnlPercent={safeNumber(pos.pnlPercent)}
+                  exchange={pos.exchange}
+                />
+              ))
+            ) : (
+              <div className="font-mono text-[11px] text-muted-foreground">No open Capital positions</div>
+            )}
+          </div>
+        </div>
+      </div>
 
-          {recentTerminalLines.length > 0 && (
-            <div className="rounded border border-border/30 bg-muted/20 p-2">
-              <div className="text-[10px] text-muted-foreground mb-1">STATUS BLOCK</div>
-              <div className="space-y-1">
-                {recentTerminalLines.map((line, idx) => (
-                  <div key={`${idx}-${line}`} className="font-mono text-[11px] break-words">
-                    {line}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {recentTrades.length > 0 && (
-            <div className="rounded border border-border/30 bg-muted/20 p-2">
-              <div className="text-[10px] text-muted-foreground mb-1">RECENT CLOSES</div>
-              <div className="space-y-1">
-                {recentTrades.slice(0, 5).map((trade, idx) => (
-                  <div key={`${idx}-${trade.time}-${trade.symbol}`} className="font-mono text-[11px] flex items-center justify-between gap-2">
-                    <span>{trade.symbol} {trade.side} {trade.exchange ? `[${trade.exchange}]` : ''}</span>
-                    <span className={safeNumber(trade.pnl) >= 0 ? 'text-green-500' : 'text-red-500'}>
-                      {safeNumber(trade.pnl) >= 0 ? '+' : ''}{safeNumber(trade.pnl).toFixed(2)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {unifiedSummary && (unifiedSummary.capitalRecentCloses.length > 0 || unifiedSummary.capitalCandidates.length > 0) && (
-            <div className="rounded border border-border/30 bg-muted/20 p-2">
-              <div className="text-[10px] text-muted-foreground mb-1">CAPITAL MARKET FEED</div>
-              {unifiedSummary.capitalRecentCloses.length > 0 && (
-                <div className="space-y-1 mb-2">
-                  {unifiedSummary.capitalRecentCloses.map((trade, idx) => (
-                    <div key={`${idx}-${trade.symbol}-${trade.reason}`} className="font-mono text-[11px] flex items-center justify-between gap-2">
-                      <span>{trade.symbol} {trade.direction} [capital]</span>
-                      <span className={safeNumber(trade.net_pnl) >= 0 ? 'text-green-500' : 'text-red-500'}>
-                        {safeNumber(trade.net_pnl) >= 0 ? '+' : ''}{safeNumber(trade.net_pnl).toFixed(2)} GBP
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {unifiedSummary.capitalCandidates.length > 0 && (
-                <div className="space-y-1">
-                  {unifiedSummary.capitalCandidates.map((candidate, idx) => (
-                    <div key={`${idx}-${candidate.symbol}`} className="font-mono text-[11px] flex items-center justify-between gap-2">
-                      <span>{candidate.symbol} [{candidate.asset_class}]</span>
-                      <span className="text-primary">
-                        s={safeNumber(candidate.score).toFixed(2)} chg={safeNumber(candidate.change_pct).toFixed(2)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
+      <div className="mt-4 rounded border border-border/40 bg-background/60 p-3">
+        <div className="mb-2 font-mono text-xs font-semibold text-foreground">ACCOUNT SUMMARY</div>
+        <div className="grid gap-1.5 md:grid-cols-3">
+          <ExchangeMetric label="Portfolio" value={`€${totalEquity.toFixed(2)}`} />
+          <ExchangeMetric label="Available" value={`€${available.toFixed(2)}`} />
+          <ExchangeMetric
+            label="Total Open"
+            value={`${activePositions.length}/${safeNumber(state.maxPositions)}`}
+            className="text-primary"
+          />
+        </div>
+        {state.latestMonitorLine && (
+          <div className="mt-3 border-t border-border/30 pt-3 font-mono text-[11px] text-muted-foreground">
+            {state.latestMonitorLine}
+          </div>
+        )}
+      </div>
     </Card>
   );
 }

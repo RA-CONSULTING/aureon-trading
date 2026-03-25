@@ -2540,8 +2540,7 @@ class KrakenClient:
                             leverage = pos["leverage"]
                         break
             if volume is None:
-                # Kraken supports volume=0 to close entire position for the pair
-                volume = 0
+                return {"error": "no_position", "symbol": symbol}
 
         pair, pair_info = self._resolve_pair(symbol)
         if not pair:

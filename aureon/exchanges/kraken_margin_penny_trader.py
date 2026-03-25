@@ -5385,115 +5385,134 @@ class KrakenMarginArmyTrader:
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
 
+    def _reconcile_live_positions(self) -> Dict[str, Optional[ActiveTrade]]:
+        """Rebuild active Kraken margin slots from the exchange, even without local state."""
+        live_positions_by_slot: Dict[str, Optional[ActiveTrade]] = {"active_long": None, "active_short": None}
+        if self.dry_run:
+            return live_positions_by_slot
+
+        try:
+            for kp in self.client.get_open_margin_positions(do_calcs=True):
+                kp_pair = kp.get("pair", "")
+                alt_pair = self.client._int_to_alt.get(kp_pair, kp_pair)
+                side = kp.get("side", "")
+                slot = "active_long" if side == "buy" else "active_short" if side == "sell" else None
+                if slot is None:
+                    continue
+                if live_positions_by_slot[slot] is not None:
+                    raise RuntimeError(f"Kraken returned multiple live margin positions for {slot}; refusing ambiguous startup")
+
+                volume = float(kp.get("volume", 0.0) or 0.0)
+                cost = float(kp.get("cost", 0.0) or 0.0)
+                fee_total = float(kp.get("fee", 0.0) or 0.0)
+                entry_price = (cost / volume) if volume > 0 and cost > 0 else 0.0
+                lev_raw = str(kp.get("leverage", "1") or "1").replace(":", "")
+                try:
+                    leverage = int(float(lev_raw))
+                except Exception:
+                    leverage = 1
+
+                breakeven_price = entry_price
+                if volume > 0 and entry_price > 0:
+                    if side == "buy":
+                        breakeven_price = entry_price + (fee_total + PROFIT_TARGET_USD) / volume
+                    elif side == "sell":
+                        breakeven_price = entry_price - (fee_total + PROFIT_TARGET_USD) / volume
+
+                live_positions_by_slot[slot] = ActiveTrade(
+                    pair=alt_pair,
+                    side=side,
+                    volume=volume,
+                    entry_price=entry_price,
+                    leverage=leverage,
+                    entry_fee=fee_total,
+                    entry_time=float(kp.get("open_time", time.time()) or time.time()),
+                    order_id=str(kp.get("position_id", "")),
+                    cost=cost,
+                    breakeven_price=breakeven_price,
+                    binance_symbol=self._binance_symbol_for_pair(alt_pair),
+                )
+        except Exception as e:
+            raise RuntimeError(f"Live position reconciliation failed: {e}")
+
+        return live_positions_by_slot
+
     def _load_state(self):
         """Load saved state — supports dual positions."""
         try:
+            state: Dict[str, Any] = {}
             if os.path.exists(STATE_FILE):
                 with open(STATE_FILE) as f:
                     state = json.load(f)
 
-                valid_fields = {f.name for f in ActiveTrade.__dataclass_fields__.values()}
-                live_positions_by_slot = {"active_long": None, "active_short": None}
-                if not self.dry_run:
-                    try:
-                        for kp in self.client.get_open_margin_positions(do_calcs=True):
-                            kp_pair = kp.get("pair", "")
-                            alt_pair = self.client._int_to_alt.get(kp_pair, kp_pair)
-                            side = kp.get("side", "")
-                            slot = "active_long" if side == "buy" else "active_short" if side == "sell" else None
-                            if slot is None:
-                                continue
-                            if live_positions_by_slot[slot] is not None:
-                                raise RuntimeError(f"Kraken returned multiple live margin positions for {slot}; refusing ambiguous startup")
-                            volume = float(kp.get("volume", 0.0) or 0.0)
-                            cost = float(kp.get("cost", 0.0) or 0.0)
-                            entry_price = (cost / volume) if volume > 0 and cost > 0 else 0.0
-                            lev_raw = str(kp.get("leverage", "1") or "1").replace(":", "")
-                            try:
-                                leverage = int(float(lev_raw))
-                            except Exception:
-                                leverage = 1
-                            live_positions_by_slot[slot] = ActiveTrade(
-                                pair=alt_pair,
-                                side=side,
-                                volume=volume,
-                                entry_price=entry_price,
-                                leverage=leverage,
-                                entry_fee=float(kp.get("fee", 0.0) or 0.0),
-                                entry_time=float(kp.get("open_time", time.time()) or time.time()),
-                                order_id=str(kp.get("position_id", "")),
-                                cost=cost,
-                                breakeven_price=0.0,
-                                binance_symbol=self._binance_symbol_for_pair(alt_pair),
-                            )
-                    except Exception as e:
-                        raise RuntimeError(f"Live position reconciliation failed: {e}")
+            valid_fields = {f.name for f in ActiveTrade.__dataclass_fields__.values()}
+            live_positions_by_slot = self._reconcile_live_positions()
 
-                # Load dual positions (new format)
-                for slot, attr in [("active_long", "active_long"), ("active_short", "active_short")]:
-                    td = state.get(slot)
-                    reconciled = live_positions_by_slot.get(slot)
-                    if reconciled is not None:
-                        if td:
-                            filtered = {k: v for k, v in td.items() if k in valid_fields}
-                            for key in ("breakeven_price", "rollover_fees", "last_rollover_check"):
-                                value = filtered.get(key)
-                                if value not in (None, "", 0):
-                                    setattr(reconciled, key, value)
-                        setattr(self, attr, reconciled)
-                        logger.info(f"Resumed {slot} from Kraken: {reconciled.pair} {reconciled.side.upper()}")
-                        if reconciled.binance_symbol:
-                            self._start_stream_for(reconciled.binance_symbol)
-                    elif td and not self.dry_run:
-                        logger.warning(f"Dropping stale local {slot}; Kraken shows no matching live margin position.")
-                    elif td:
-                        filtered = {k: v for k, v in td.items() if k in valid_fields}
-                        t = ActiveTrade(**filtered)
-                        setattr(self, attr, t)
-                        logger.info(f"Resumed {slot}: {t.pair} {t.side.upper()}")
-                        if t.binance_symbol:
-                            self._start_stream_for(t.binance_symbol)
-
-                # Legacy: load old single active_trade into correct slot
-                if self.dry_run and not self.active_long and not self.active_short:
-                    td = state.get("active_trade")
+            # Load dual positions (new format)
+            for slot, attr in [("active_long", "active_long"), ("active_short", "active_short")]:
+                td = state.get(slot)
+                reconciled = live_positions_by_slot.get(slot)
+                if reconciled is not None:
                     if td:
                         filtered = {k: v for k, v in td.items() if k in valid_fields}
-                        t = ActiveTrade(**filtered)
-                        if t.side == "buy":
-                            self.active_long = t
-                        else:
-                            self.active_short = t
-                        logger.info(f"Resumed active trade (legacy): {t.pair} {t.side.upper()}")
-                        if t.binance_symbol:
-                            self._start_stream_for(t.binance_symbol)
+                        for key in ("breakeven_price", "rollover_fees", "last_rollover_check"):
+                            value = filtered.get(key)
+                            if value not in (None, "", 0):
+                                setattr(reconciled, key, value)
+                    setattr(self, attr, reconciled)
+                    logger.info(f"Resumed {slot} from Kraken: {reconciled.pair} {reconciled.side.upper()}")
+                    if reconciled.binance_symbol:
+                        self._start_stream_for(reconciled.binance_symbol)
+                elif td and not self.dry_run:
+                    logger.warning(f"Dropping stale local {slot}; Kraken shows no matching live margin position.")
+                elif td:
+                    filtered = {k: v for k, v in td.items() if k in valid_fields}
+                    t = ActiveTrade(**filtered)
+                    setattr(self, attr, t)
+                    logger.info(f"Resumed {slot}: {t.pair} {t.side.upper()}")
+                    if t.binance_symbol:
+                        self._start_stream_for(t.binance_symbol)
 
-                # Keep active_trade alias pointing at something
-                self.active_trade = self.active_long or self.active_short
+            # Legacy: load old single active_trade into correct slot
+            if self.dry_run and not self.active_long and not self.active_short:
+                td = state.get("active_trade")
+                if td:
+                    filtered = {k: v for k, v in td.items() if k in valid_fields}
+                    t = ActiveTrade(**filtered)
+                    if t.side == "buy":
+                        self.active_long = t
+                    else:
+                        self.active_short = t
+                    logger.info(f"Resumed active trade (legacy): {t.pair} {t.side.upper()}")
+                    if t.binance_symbol:
+                        self._start_stream_for(t.binance_symbol)
 
-                # Register restored positions with orchestrator for cross-system awareness
-                if self.orchestrator is not None:
-                    for pos in (self.active_long, self.active_short):
-                        if pos is not None:
-                            try:
-                                self.orchestrator.register_position(
-                                    system='margin',
-                                    pair=pos.pair,
-                                    side=pos.side,
-                                    value_usd=pos.cost,
-                                    exchange='kraken',
-                                )
-                            except Exception as e:
-                                logger.debug(f"Restored position register error: {e}")
+            # Keep active_trade alias pointing at something
+            self.active_trade = self.active_long or self.active_short
 
-                self.total_profit = state.get("total_profit", 0)
-                self.total_trades = state.get("total_trades", 0)
-                self.winning_trades = state.get("winning_trades", 0)
-                self.shadow_validated_count = state.get("shadow_validated", 0)
-                self.shadow_failed_count = state.get("shadow_failed", 0)
-                self.completed_trades = state.get("completed_trades", [])
-                if not self.dry_run and not self.active_long and not self.active_short:
-                    self._save_state()
+            # Register restored positions with orchestrator for cross-system awareness
+            if self.orchestrator is not None:
+                for pos in (self.active_long, self.active_short):
+                    if pos is not None:
+                        try:
+                            self.orchestrator.register_position(
+                                system='margin',
+                                pair=pos.pair,
+                                side=pos.side,
+                                value_usd=pos.cost,
+                                exchange='kraken',
+                            )
+                        except Exception as e:
+                            logger.debug(f"Restored position register error: {e}")
+
+            self.total_profit = state.get("total_profit", 0)
+            self.total_trades = state.get("total_trades", 0)
+            self.winning_trades = state.get("winning_trades", 0)
+            self.shadow_validated_count = state.get("shadow_validated", 0)
+            self.shadow_failed_count = state.get("shadow_failed", 0)
+            self.completed_trades = state.get("completed_trades", [])
+            if not self.dry_run:
+                self._save_state()
         except Exception as e:
             if not self.dry_run:
                 raise RuntimeError(f"Live startup state load failed: {e}")

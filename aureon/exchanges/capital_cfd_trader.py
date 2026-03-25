@@ -21,10 +21,13 @@ Author: Aureon Trading System  |  March 2026
 import os
 import time
 import logging
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+CAPITAL_TRACE_PATH = Path(os.getenv("CAPITAL_TRACE_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_cfd_last_exchange_trace.json"))).resolve()
 
 # ── IMPORT GUARDS ──────────────────────────────────────────────────────────────
 try:
@@ -83,6 +86,7 @@ CFD_CONFIG: Dict[str, float] = {
     "position_ttl_secs": 3600.0, # Max hold time per position (1 hour — stallion rule)
     "scan_interval_secs": 30.0,  # Opportunity scan interval
     "monitor_interval":    5.0,  # Position monitor interval
+    "exchange_sync_secs": 15.0,  # Reconcile local CFD positions against Capital.com
     "quad_gate_ttl":      30.0,  # Cache Seer/Lyra gate results for N secs
 }
 
@@ -156,6 +160,8 @@ class CapitalCFDTrader:
         self._latest_target_snapshot: Dict[str, Any] = {}
         self._latest_status_lines: List[str] = []
         self._latest_monitor_line: str = ""
+        self._latest_order_error: str = ""
+        self._latest_order_trace_path: str = str(CAPITAL_TRACE_PATH)
         self._recent_closed_trades: List[dict] = []
         self.start_time: float = time.time()
         self.starting_equity_gbp: float = 0.0
@@ -163,6 +169,7 @@ class CapitalCFDTrader:
         # Timing
         self._last_scan:    float = 0.0
         self._last_monitor: float = 0.0
+        self._last_exchange_sync: float = 0.0
 
         # Cached Seer/Lyra gate result
         self._quad_gate_ok:  bool  = True   # Fail-open
@@ -194,6 +201,7 @@ class CapitalCFDTrader:
                     logger.info("CapitalCFDTrader: Capital.com client READY")
                     snap = self.get_capital_snapshot()
                     self.starting_equity_gbp = float(snap.get("equity_gbp", 0.0) or 0.0)
+                    self._sync_positions_from_exchange(force=True)
             except Exception as _e:
                 logger.debug(f"CapitalCFDTrader: client init failed: {_e}")
                 self.client = None
@@ -213,6 +221,18 @@ class CapitalCFDTrader:
         """Minimum percentage move required to realize the configured absolute GBP target."""
         notional = max(price * size, 0.0001)
         return (CAPITAL_MIN_PROFIT_GBP / notional) * 100.0
+
+    def _write_exchange_trace(self, payload: Dict[str, Any]) -> None:
+        """Persist the latest raw Capital exchange payloads for debugging live behavior."""
+        try:
+            CAPITAL_TRACE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            trace = dict(payload)
+            trace["written_at"] = time.time()
+            with open(CAPITAL_TRACE_PATH, "w", encoding="utf-8") as f:
+                json.dump(trace, f, indent=2, default=str)
+            self._latest_order_trace_path = str(CAPITAL_TRACE_PATH)
+        except Exception as _e:
+            logger.debug(f"Capital trace write failed: {_e}")
 
     def get_capital_snapshot(self) -> Dict[str, float]:
         """Expose Capital.com account state in the same style as the Kraken trader."""
@@ -260,6 +280,111 @@ class CapitalCFDTrader:
 
     def _get_price(self, symbol: str) -> Optional[dict]:
         return self._prices.get(symbol.upper())
+
+    def _canonical_symbol(self, value: Optional[str]) -> str:
+        if not value:
+            return ""
+        return "".join(ch for ch in str(value).upper() if ch.isalnum())
+
+    def _symbol_from_market(self, market: dict) -> str:
+        candidates = [
+            market.get("symbol"),
+            market.get("instrumentName"),
+            market.get("epic"),
+            market.get("marketId"),
+        ]
+        for candidate in candidates:
+            canon = self._canonical_symbol(candidate)
+            if canon in CAPITAL_UNIVERSE:
+                return canon
+        for candidate in candidates:
+            canon = self._canonical_symbol(candidate)
+            for known in CAPITAL_UNIVERSE:
+                if canon == self._canonical_symbol(known):
+                    return known
+        return self._canonical_symbol(candidates[0]) or str(candidates[0] or "")
+
+    def _position_from_exchange(self, raw: dict) -> Optional[CFDPosition]:
+        position = raw.get("position", {}) if isinstance(raw, dict) else {}
+        market = raw.get("market", {}) if isinstance(raw, dict) else {}
+
+        deal_id = str(position.get("dealId") or position.get("dealReference") or "").strip()
+        direction = str(position.get("direction") or "").upper()
+        size = float(position.get("size", 0.0) or 0.0)
+        entry_price = float(position.get("level", 0.0) or 0.0)
+        epic = str(market.get("epic") or position.get("epic") or "").strip()
+        symbol = self._symbol_from_market(market or position)
+        if not deal_id or direction not in ("BUY", "SELL") or size <= 0 or entry_price <= 0:
+            return None
+
+        price = float(market.get("price") or 0.0)
+        bid = float(market.get("bid") or 0.0)
+        ask = float(market.get("offer") or market.get("ask") or 0.0)
+        current_price = price or ((bid + ask) / 2 if bid > 0 and ask > 0 else bid or ask or entry_price)
+
+        asset_class = str(market.get("instrumentType") or market.get("marketType") or "").lower()
+        if not asset_class:
+            asset_class = CAPITAL_UNIVERSE.get(symbol, {}).get("class", "unknown")
+
+        tp_level = float(position.get("limitLevel", 0.0) or 0.0)
+        sl_level = float(position.get("stopLevel", 0.0) or 0.0)
+        cfg = CAPITAL_UNIVERSE.get(symbol, {})
+        tp_pct = max(float(cfg.get("tp_pct", 0.0) or 0.0), self._required_tp_pct_for_profit(entry_price, size))
+        sl_pct = float(cfg.get("sl_pct", 0.0) or 0.0)
+        if tp_level <= 0:
+            tp_level = entry_price * (1 + tp_pct / 100.0) if direction == "BUY" else entry_price * (1 - tp_pct / 100.0)
+        if sl_level <= 0:
+            sl_level = entry_price * (1 - sl_pct / 100.0) if direction == "BUY" else entry_price * (1 + sl_pct / 100.0)
+
+        opened_at = time.time()
+        raw_created = position.get("createdDateUTC") or position.get("createdDate")
+        if isinstance(raw_created, (int, float)):
+            opened_at = float(raw_created)
+
+        return CFDPosition(
+            symbol=symbol,
+            deal_id=deal_id,
+            epic=epic or symbol,
+            direction=direction,
+            size=size,
+            entry_price=entry_price,
+            tp_price=tp_level,
+            sl_price=sl_level,
+            asset_class=asset_class,
+            opened_at=opened_at,
+            current_price=current_price,
+        )
+
+    def _sync_positions_from_exchange(self, force: bool = False) -> None:
+        """Reconcile local CFD position state against Capital.com's open positions."""
+        if not self.client:
+            return
+        now = time.time()
+        if not force and (now - self._last_exchange_sync) < CFD_CONFIG["exchange_sync_secs"]:
+            return
+        self._last_exchange_sync = now
+
+        try:
+            raw_positions = self.client.get_positions()
+            live_positions: List[CFDPosition] = []
+            for raw in raw_positions:
+                pos = self._position_from_exchange(raw)
+                if pos is not None:
+                    live_positions.append(pos)
+
+            existing_by_deal = {p.deal_id: p for p in self.positions}
+            merged: List[CFDPosition] = []
+            for live in live_positions:
+                existing = existing_by_deal.get(live.deal_id)
+                if existing is not None:
+                    live.opened_at = existing.opened_at
+                    if existing.current_price > 0:
+                        live.current_price = existing.current_price
+                merged.append(live)
+
+            self.positions = merged
+        except Exception as _e:
+            logger.debug(f"Capital CFD sync error: {_e}")
 
     # ── QUADRUMVIRATE GATE (lightweight) ───────────────────────────────────────
     def _quad_gate(self) -> bool:
@@ -424,9 +549,25 @@ class CapitalCFDTrader:
         sl_price = ask * (1 - cfg["sl_pct"] / 100)
 
         try:
+            known_deal_ids = {
+                str((raw.get("position", {}) if isinstance(raw, dict) else {}).get("dealId") or "")
+                for raw in self.client.get_positions()
+            }
             result = self.client.place_market_order(symbol, "BUY", size)
+            trace_payload: Dict[str, Any] = {
+                "symbol": symbol,
+                "size": size,
+                "ticker": dict(ticker),
+                "known_deal_ids_before": sorted([d for d in known_deal_ids if d]),
+                "order_response": dict(result) if isinstance(result, dict) else result,
+                "confirm_response": None,
+                "positions_snapshots": [],
+                "validated": False,
+            }
             if result.get("rejected") or result.get("error"):
                 reason = result.get("reason") or result.get("error", "unknown")
+                self._latest_order_error = f"{symbol} open rejected: {reason}"
+                self._write_exchange_trace(trace_payload)
                 logger.debug(f"CFD open rejected {symbol}: {reason}")
                 return None
 
@@ -434,46 +575,104 @@ class CapitalCFDTrader:
             deal_id  = result.get("dealId", deal_ref) or deal_ref
             epic     = ticker.get("epic", symbol)
             fill_price = ask  # Estimate; confirm_order may refine
+            confirmed_ok = False
 
             # Attempt to confirm fill price from Capital.com confirmation
             if deal_ref:
                 try:
                     conf = self.client.confirm_order(deal_ref)
-                    deal_id    = conf.get("dealId", deal_id) or deal_id
-                    fill_price = float(conf.get("level", fill_price) or fill_price)
-                    effective_tp_pct = max(float(cfg["tp_pct"]), self._required_tp_pct_for_profit(fill_price, size))
-                    tp_price   = fill_price * (1 + effective_tp_pct / 100)
-                    sl_price   = fill_price * (1 - cfg["sl_pct"] / 100)
+                    trace_payload["confirm_response"] = dict(conf) if isinstance(conf, dict) else conf
+                    if not conf.get("error") and not conf.get("reason"):
+                        deal_id    = conf.get("dealId", deal_id) or deal_id
+                        fill_price = float(conf.get("level", fill_price) or fill_price)
+                        effective_tp_pct = max(float(cfg["tp_pct"]), self._required_tp_pct_for_profit(fill_price, size))
+                        tp_price   = fill_price * (1 + effective_tp_pct / 100)
+                        sl_price   = fill_price * (1 - cfg["sl_pct"] / 100)
+                        confirmed_ok = bool(deal_id)
                 except Exception:
                     pass
 
-            pos = CFDPosition(
-                symbol=symbol,
-                deal_id=deal_id or deal_ref,
-                epic=epic,
-                direction="BUY",
-                size=size,
-                entry_price=fill_price,
-                tp_price=tp_price,
-                sl_price=sl_price,
-                asset_class=cfg["class"],
-                current_price=fill_price,
-            )
+            live_raw = None
+            for _attempt in range(4):
+                position_snapshot = self.client.get_positions()
+                trace_payload["positions_snapshots"].append(position_snapshot)
+                for raw in position_snapshot:
+                    raw_pos = raw.get("position", {}) if isinstance(raw, dict) else {}
+                    raw_market = raw.get("market", {}) if isinstance(raw, dict) else {}
+                    raw_deal_id = str(raw_pos.get("dealId") or raw_pos.get("dealReference") or "")
+                    raw_symbol = self._symbol_from_market(raw_market or raw_pos)
+                    raw_direction = str(raw_pos.get("direction") or "").upper()
+                    if deal_id and raw_deal_id == str(deal_id):
+                        live_raw = raw
+                        break
+                    if raw_deal_id and raw_deal_id not in known_deal_ids and raw_symbol == symbol and raw_direction == "BUY":
+                        live_raw = raw
+                        deal_id = raw_deal_id
+                        break
+                if live_raw is not None:
+                    break
+                time.sleep(0.5)
+
+            if live_raw is None:
+                self._latest_order_error = (
+                    f"{symbol} open not validated: deal_ref={deal_ref or 'none'} "
+                    f"deal_id={deal_id or 'none'} confirmed={confirmed_ok}"
+                )
+                trace_payload["validated"] = False
+                trace_payload["final_error"] = self._latest_order_error
+                self._write_exchange_trace(trace_payload)
+                logger.warning(
+                    "CFD open not validated on exchange for %s (deal_ref=%s deal_id=%s confirmed=%s)",
+                    symbol, deal_ref, deal_id, confirmed_ok
+                )
+                return None
+
+            pos = self._position_from_exchange(live_raw)
+            if pos is None:
+                logger.warning("CFD open validation returned unusable position for %s", symbol)
+                trace_payload["validated"] = False
+                trace_payload["final_error"] = f"{symbol} validated raw position could not be parsed"
+                self._write_exchange_trace(trace_payload)
+                return None
+            pos.epic = epic or pos.epic
+            pos.current_price = fill_price if fill_price > 0 else pos.current_price
+            self.positions = [p for p in self.positions if p.deal_id != pos.deal_id]
             self.positions.append(pos)
             self.stats["trades_opened"] += 1
+            self._latest_order_error = ""
+            trace_payload["validated"] = True
+            trace_payload["validated_deal_id"] = pos.deal_id
+            trace_payload["validated_position"] = {
+                "symbol": pos.symbol,
+                "deal_id": pos.deal_id,
+                "epic": pos.epic,
+                "direction": pos.direction,
+                "entry_price": pos.entry_price,
+                "tp_price": pos.tp_price,
+                "sl_price": pos.sl_price,
+            }
+            self._write_exchange_trace(trace_payload)
             self._latest_monitor_line = (
-                f"CAPITAL OPEN {symbol} BUY size={size} entry={fill_price:.5g} "
-                f"tp={tp_price:.5g} sl={sl_price:.5g}"
+                f"CAPITAL OPEN {symbol} BUY deal={pos.deal_id} size={size} entry={pos.entry_price:.5g} "
+                f"tp={pos.tp_price:.5g} sl={pos.sl_price:.5g}"
             )
 
             print(
                 f"  CAPITAL CFD OPEN:  {symbol:12} [{cfg['class'].upper():9}] "
-                f"BUY {size} @ {fill_price:.5g} | "
-                f"TP:{tp_price:.5g}  SL:{sl_price:.5g}"
+                f"BUY {size} @ {pos.entry_price:.5g} | "
+                f"TP:{pos.tp_price:.5g}  SL:{pos.sl_price:.5g} | Deal:{pos.deal_id}"
             )
             return pos
 
         except Exception as _e:
+            self._latest_order_error = f"{symbol} open exception: {_e}"
+            self._write_exchange_trace({
+                "symbol": symbol,
+                "size": size,
+                "ticker": dict(ticker),
+                "validated": False,
+                "final_error": self._latest_order_error,
+            })
             logger.debug(f"CFD open exception {symbol}: {_e}")
             return None
 
@@ -483,17 +682,37 @@ class CapitalCFDTrader:
         Falls back to a reverse market order if DELETE fails.
         Returns a closed-trade record compatible with orca session_stats.
         """
+        close_ok = False
+        close_detail: Dict[str, Any] = {}
         pnl_gbp = 0.0
 
         if self.client and pos.deal_id:
             try:
                 result = self.client.close_position(pos.deal_id)
-                if not result.get("success"):
+                close_ok = bool(result.get("success"))
+                close_detail = dict(result)
+                if not close_ok:
                     # Fallback: reverse market order to flatten the position
                     opposite = "SELL" if pos.direction == "BUY" else "BUY"
-                    self.client.place_market_order(pos.symbol, opposite, pos.size)
+                    fallback = self.client.place_market_order(pos.symbol, opposite, pos.size)
+                    close_detail["fallback"] = fallback
+                    close_ok = not bool(fallback.get("rejected") or fallback.get("error"))
             except Exception as _e:
                 logger.debug(f"CFD close error {pos.symbol}: {_e}")
+                close_detail = {"error": str(_e)}
+
+        if self.client and pos.deal_id:
+            try:
+                still_open = False
+                for raw in self.client.get_positions():
+                    raw_pos = raw.get("position", {}) if isinstance(raw, dict) else {}
+                    if str(raw_pos.get("dealId") or raw_pos.get("dealReference") or "") == pos.deal_id:
+                        still_open = True
+                        break
+                if still_open:
+                    close_ok = False
+            except Exception as _e:
+                logger.debug(f"CFD close verification skipped {pos.symbol}: {_e}")
 
         # Estimate PnL from tracked prices
         cp = pos.current_price if pos.current_price > 0 else pos.entry_price
@@ -503,6 +722,15 @@ class CapitalCFDTrader:
             else:
                 pnl_pct = (pos.entry_price - cp) / pos.entry_price
             pnl_gbp = pnl_pct * pos.entry_price * pos.size
+
+        if not close_ok:
+            return {
+                "error": "close_failed",
+                "symbol": pos.symbol,
+                "deal_id": pos.deal_id,
+                "reason": reason,
+                "detail": close_detail,
+            }
 
         # Update session stats
         self.stats["trades_closed"]  += 1
@@ -583,7 +811,10 @@ class CapitalCFDTrader:
 
             if close_reason:
                 record = self._close_position(pos, close_reason)
-                closed.append(record)
+                if record.get("error"):
+                    remaining.append(pos)
+                else:
+                    closed.append(record)
             else:
                 remaining.append(pos)
 
@@ -608,6 +839,8 @@ class CapitalCFDTrader:
 
         now = time.time()
         closed_this_tick: List[dict] = []
+
+        self._sync_positions_from_exchange()
 
         # Phase 0: price refresh
         self._refresh_prices()
@@ -664,6 +897,9 @@ class CapitalCFDTrader:
         if by_class:
             breakdown = "  ".join(f"{cls}:{n}" for cls, n in sorted(by_class.items()))
             lines.append(f"    Classes: {breakdown}")
+        if self._latest_order_error:
+            lines.append(f"    Last order: {self._latest_order_error}")
+            lines.append(f"    Trace: {self._latest_order_trace_path}")
         for pos in self.positions:
             lines.append(pos.one_line())
         if self._latest_target_snapshot:
