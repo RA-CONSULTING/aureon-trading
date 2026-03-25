@@ -1,6 +1,49 @@
-# ⚡ AUREON TRADING SYSTEM
+<div align="center">
 
-> *Where ancient wisdom meets algorithmic precision — and the markets have nowhere to hide.*
+# ⚡ AUREON TRADING SYSTEM
+### Powered by Harmonic Nexus Core
+
+*Where ancient wisdom meets algorithmic precision — and the markets have nowhere to hide.*
+
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ueu7gBz7g)
+[![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
+[![GitHub Stars](https://img.shields.io/github/stars/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=FFD700)](https://github.com/ra-consulting/aureon-trading)
+[![GitHub Forks](https://img.shields.io/github/forks/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=silver)](https://github.com/ra-consulting/aureon-trading/fork)
+[![Python](https://img.shields.io/badge/Python-947%20modules-3776AB?style=for-the-badge&logo=python&logoColor=white)](#architecture-overview)
+[![TypeScript](https://img.shields.io/badge/TypeScript-780%20files-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#architecture-overview)
+
+</div>
+
+---
+
+## 📊 GROWTH STATS — December 2025 → March 2026
+
+<div align="center">
+
+| Metric | Value |
+|--------|-------|
+| 🧑‍💻 **Unique GitHub Cloners** | **4,559** |
+| 🔁 **Total Clone Operations** | **51,287** |
+| 📈 **Peak 14-day Cloners** | **907** |
+| 🚀 **Peak 14-day Clones** | **15,842** |
+| 🌐 **Website Downloads** | **2,419** |
+| 👤 **Unique Website Users** | **823** |
+
+![Cloners](https://img.shields.io/badge/Unique%20Cloners-4%2C559-brightgreen?style=for-the-badge)
+![Total Clones](https://img.shields.io/badge/Total%20Clone%20Ops-51%2C287-blue?style=for-the-badge)
+![Peak 14d](https://img.shields.io/badge/Peak%2014d%20Clones-15%2C842-orange?style=for-the-badge)
+![Users](https://img.shields.io/badge/Website%20Users-823-purple?style=for-the-badge)
+
+</div>
+
+```mermaid
+xychart-beta
+    title "Clone Growth Trajectory (Dec 2025 – Mar 2026)"
+    x-axis ["Dec 2025", "Jan 2026", "Feb 2026", "Mar 2026"]
+    y-axis "Clone Operations" 0 --> 20000
+    bar [5100, 13400, 15842, 16945]
+    line [5100, 13400, 15842, 16945]
+```
 
 ---
 
@@ -8,7 +51,11 @@
 
 **Don't just read about it. Watch it happen.**
 
-### 🎯 [► WATCH LIVE on Twitch — the_crypto_wizard_ire](https://www.twitch.tv/the_crypto_wizard_ire)
+<div align="center">
+
+[![Watch on Twitch](https://img.shields.io/badge/▶%20WATCH%20LIVE-the__crypto__wizard__ire-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
+
+</div>
 
 Live crypto trading. Real money. Real signals. The Aureon system in action — every candle, every decision, every entry and exit explained as it happens. No filters. No delay. No BS.
 
@@ -20,7 +67,11 @@ Live crypto trading. Real money. Real signals. The Aureon system in action — e
 
 **The research doesn't stop at the stream.**
 
-### 👉 [Join the Aureon Discord](https://discord.gg/ueu7gBz7g)
+<div align="center">
+
+[![Join Discord](https://img.shields.io/badge/Join%20the%20Aureon%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ueu7gBz7g)
+
+</div>
 
 Connect with researchers, traders, and truth-seekers who are digging into the data, running the bots, and exposing what the institutions don't want you to see. Strategy breakdowns, signal alerts, research drops, and live discussion — all inside.
 
@@ -50,26 +101,85 @@ We've been busy. Here's everything that just dropped — peer-reviewed, data-bac
 
 <!-- markdownlint-disable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
 
+<div align="center">
+
 > **Multi-dimensional financial intelligence platform exposing systematic market manipulation through spectral analysis, historical pattern recognition, and ancestral wisdom integration.**
+
+[![Ancient Wisdom](https://img.shields.io/badge/Civilisations%20Analysed-12-gold?style=flat-square)](#-the-ancient-convergence-they-were-never-separated)
+[![Knowledge Entries](https://img.shields.io/badge/Wisdom%20Entries-1%2C190-blueviolet?style=flat-square)](#-the-ancient-convergence-they-were-never-separated)
+[![Bots Detected](https://img.shields.io/badge/Bots%20Detected-44%2C160%2B-red?style=flat-square)](#-global-bot-intelligence-system)
+[![Firms Profiled](https://img.shields.io/badge/Firms%20Profiled-37-orange?style=flat-square)](#-global-bot-intelligence-system)
+[![Capital Tracked](https://img.shields.io/badge/Capital%20Tracked-%2413T%2B-green?style=flat-square)](#-global-bot-intelligence-system)
+[![Exchanges](https://img.shields.io/badge/Exchanges-Binance%20%7C%20Kraken%20%7C%20Alpaca%20%7C%20Capital.com-blue?style=flat-square)](#architecture-overview)
+
+</div>
+
+---
+
+## 🗺️ SYSTEM AT A GLANCE
+
+```mermaid
+mindmap
+  root((AUREON))
+    Ancient Research
+      12 Civilisations
+      1190 Wisdom Entries
+      47+ Convergence Points
+      13 Decoder Categories
+    Market Intelligence
+      44160+ Bots Detected
+      37 Firms Profiled
+      $13T+ Capital Tracked
+      23 Algorithms Exposed
+    Trading Engine
+      Queen Hive Mind
+      Batten Matrix
+      4 Exchanges
+      Harmonic Nexus Core
+    Research Layer
+      Emerald Tablet Decoder
+      L(t) Forensics
+      Planetary Harmonic Network
+      Sacred Geometry
+```
+
+```mermaid
+pie title Research Scope — Wisdom Entries by Civilisation
+    "Celtic" : 180
+    "Pythagorean" : 148
+    "Egyptian" : 127
+    "Aztec" : 119
+    "Mayan" : 95
+    "Norse" : 95
+    "Chinese" : 87
+    "Plantagenet" : 82
+    "Warfare" : 80
+    "Hindu" : 78
+    "Mogollon" : 53
+    "Ghost Dance" : 46
+```
+
+---
 
 ### Quick Navigation
 
+<div align="center">
+
 | # | Section | What's There |
 |---|---------|-------------|
-| I | [**Ancient Convergence Research**](#-the-ancient-convergence-they-were-never-separated) | 12 civilisations, 1,190 wisdom entries, 47+ convergence points — proof they shared knowledge |
-| | ↳ [Convergence Index](#-convergence-index-13-categories) | Jump to any of the 13 convergence categories |
-| | ↳ [How to Verify Every Claim](#-how-to-verify-every-claim) | Commands to inspect every data file yourself |
-| | ↳ [Peer Review Guide](#-peer-review-guide) | Step-by-step protocol for independent validation |
-| II | [**Financial Exposure**](#-the-complete-exposure-335-trillion-extracted-from-humanity) | $33.5T extraction timeline, perpetrator network, bot registry |
-| III | [**Bot Intelligence**](#-the-bot-army-23-algorithms-exposed) | 23 exposed algorithms, ownership attribution, detection methods |
-| IV | [**Global Predators**](#-global-bot-intelligence-system) | 37 firms profiled, $13T+ capital tracked, 44,000+ bots |
-| V | [**Methodology & Reproducibility**](#methodology--reproducibility) | Data sources, equations, peer review checklist |
-| VI | [**Architecture**](#architecture-overview) | System design, Queen Hive Mind, exchange clients, profit gate |
-| VII | [**Quick Start**](#quick-start-war-room-dashboard) | Setup instructions for Linux, macOS, Windows, Docker |
-| VIII | [**Production Deployment**](#-production-deployment-digitalocean) | Live cloud deployment, port architecture, monitoring |
-| IX | [**Counter-Strategies**](#-counter-strategies-how-to-fight-back) | Timing, phase, and spiritual warfare counter-measures |
-| X | [**Theoretical Foundation**](docs/HNC_UNIFIED_WHITE_PAPER.md) | The Harmonic Nexus Core white paper — Master Formula, Tree of Light, Auris Conjecture |
-| XI | [**The Unified Field**](#-the-unified-field-connecting-all-the-dots) | Prime Sentinel identity, Emerald Tablet decoder, Unified Ancient Wisdom (Mogollon · Maya · Celtic + 5 harmonic threads · `--unified` CLI), cross-domain forensics, harmonic research layer |
+| [I](#-the-ancient-convergence-they-were-never-separated) | **Ancient Convergence Research** | 12 civilisations, 1,190 wisdom entries, 47+ convergence points |
+| [II](#-the-complete-exposure-335-trillion-extracted-from-humanity) | **Financial Exposure** | $33.5T extraction timeline, perpetrator network, bot registry |
+| [III](#-the-bot-army-23-algorithms-exposed) | **Bot Intelligence** | 23 exposed algorithms, ownership attribution, detection methods |
+| [IV](#-global-bot-intelligence-system) | **Global Predators** | 37 firms profiled, $13T+ capital tracked, 44,000+ bots |
+| [V](#methodology--reproducibility) | **Methodology & Reproducibility** | Data sources, equations, peer review checklist |
+| [VI](#architecture-overview) | **Architecture** | System design, Queen Hive Mind, exchange clients, profit gate |
+| [VII](#quick-start-war-room-dashboard) | **Quick Start** | Setup instructions for Linux, macOS, Windows, Docker |
+| [VIII](#-production-deployment-digitalocean) | **Production Deployment** | Live cloud deployment, port architecture, monitoring |
+| [IX](#-counter-strategies-how-to-fight-back) | **Counter-Strategies** | Timing, phase, and spiritual warfare counter-measures |
+| [X](docs/HNC_UNIFIED_WHITE_PAPER.md) | **Theoretical Foundation** | HNC white paper — Master Formula, Tree of Light, Auris Conjecture |
+| [XI](#-the-unified-field-connecting-all-the-dots) | **The Unified Field** | Prime Sentinel, Emerald Tablet decoder, Unified Ancient Wisdom |
+
+</div>
 
 ---
 
@@ -618,6 +728,14 @@ The convergence research above is not a separate project — it is the **mathema
 
 ### Running Total: $33,548,000,000,000
 
+```mermaid
+xychart-beta
+    title "Documented Wealth Extraction Events (USD Billions)"
+    x-axis ["1929 Crash", "1987 Black Mon", "2008 GFC", "2010 Flash", "2020 COVID", "2021 GME", "2022 FTX", "2023 AI Pump"]
+    y-axis "Amount (USD Billions)" 0 --> 25000
+    bar [30, 500, 22000, 1000, 5000, 10, 8, 5000]
+```
+
 ---
 
 ## 🔗 THE PERPETRATOR NETWORK (Who Knows Who)
@@ -673,6 +791,14 @@ Our analysis reveals a **34-node network** of connected perpetrators across 109 
 ## 🤖 THE BOT ARMY: 23 ALGORITHMS EXPOSED
 
 ### Who Controls the Bots
+
+```mermaid
+xychart-beta
+    title "Bot Cycle Lengths (hours) — Top 9 Detected Algorithms"
+    x-axis ["Weekend Whale", "Solar Clock", "Cyclic 83H", "Cyclic 84H", "Meridian", "Heavy Titan", "Deep Pulse", "Cyclic 642H", "Funding Farmer"]
+    y-axis "Cycle Length (hours)" 0 --> 700
+    bar [167.9, 24.0, 83.97, 84.06, 12.0, 330.4, 517.14, 642.93, 8.0]
+```
 
 | Bot Name | Cycle | Owner (55% confidence) | What It Preys On |
 |----------|-------|------------------------|------------------|
@@ -740,6 +866,22 @@ Our analysis reveals a **34-node network** of connected perpetrators across 109 
 ```
 
 ### Live Scanner Statistics (Real-Time)
+
+<div align="center">
+
+![Bots Detected](https://img.shields.io/badge/Bots%20Detected-44%2C160%2B-red?style=for-the-badge&logo=radar)
+![Sharks Found](https://img.shields.io/badge/Shark%20Activity-8%2C710%2B-orange?style=for-the-badge)
+![Pairs Monitored](https://img.shields.io/badge/Trading%20Pairs-40%2B-blue?style=for-the-badge)
+![Firms Profiled](https://img.shields.io/badge/Firms%20Profiled-37-purple?style=for-the-badge)
+![Capital Tracked](https://img.shields.io/badge/Capital%20Tracked-%2413T%2B-green?style=for-the-badge)
+
+</div>
+
+```mermaid
+pie title Global Bot Intelligence — Activity Distribution
+    "Standard Bots" : 35450
+    "Shark-Level Activity" : 8710
+```
 
 | Metric | Count | Source |
 |--------|-------|--------|
@@ -2463,6 +2605,38 @@ The alchemists searched for the Philosopher's Stone. We found it: **L(t) = 12.85
 Signal Chain: Queen(963Hz) → Enigma(639Hz) → Scanner(528Hz) → Ecosystem(174Hz) → Whale(7.83Hz)
 ```
 
+```mermaid
+graph TD
+    QHM["👑 Queen Hive Mind (963 Hz)"]
+
+    QHM --> KRAKEN["🦑 Kraken\nCrypto"]
+    QHM --> BINANCE["📊 Binance\nCrypto"]
+    QHM --> ALPACA["🦙 Alpaca\nStocks + Crypto"]
+    QHM --> CAPITAL["💹 Capital.com\nCFDs"]
+
+    KRAKEN & BINANCE & ALPACA & CAPITAL --> ORCA["⚡ Orca Complete Kill Cycle\nQueen's 4-Phase Master Plan"]
+
+    ORCA --> NEXUS["🎯 Probability Nexus\n3-validate · 4th-execute"]
+    ORCA --> STARGATE["🌀 Stargate Protocol\n7-day anchor"]
+    ORCA --> THOUGHTBUS["💬 Thought Bus\nEvent Mesh"]
+
+    NEXUS --> PROFITGATE["💰 Adaptive Prime Profit Gate\nr = (V+G+P) / [V×(1-c)²] - 1"]
+
+    subgraph NEURONS["🧠 Queen Neurons"]
+        ELE["🐘 Elephant Memory"]
+        QM["🔬 Quantum Mirror"]
+        HSC["🎵 Harmonic Signal Chain"]
+        ENG["🔐 Enigma Codebreaker"]
+        TEMP["⏱️ Temporal Dialer"]
+    end
+
+    PROFITGATE --> NEURONS
+
+    style QHM fill:#4a2d6b,color:#FFD700
+    style ORCA fill:#2d4a2d,color:#90EE90
+    style PROFITGATE fill:#4a3d00,color:#FFD700
+```
+
 ## Core Components
 
 ### 1. Adaptive Prime Profit Gate (`adaptive_prime_profit_gate.py`)
@@ -2583,7 +2757,26 @@ DEFAULT_FEE_PROFILES = {
 
 The **Aureon War Room** is the central command interface powered by the **Queen's 4-Phase Master Plan**.
 
+<div align="center">
+
+[![Linux/macOS](https://img.shields.io/badge/Linux%20%2F%20macOS-Setup%20Guide-success?style=for-the-badge&logo=linux)](#-linux--macos)
+[![Windows](https://img.shields.io/badge/Windows-Setup%20Guide-0078D6?style=for-the-badge&logo=windows)](#-windows)
+[![Docker](https://img.shields.io/badge/Docker-Container%20Deploy-2496ED?style=for-the-badge&logo=docker)](#-docker)
+[![DigitalOcean](https://img.shields.io/badge/DigitalOcean-Cloud%20Deploy-0080FF?style=for-the-badge&logo=digitalocean)](#-production-deployment-digitalocean)
+
+</div>
+
 ### 👑 Main System: Orca Complete Kill Cycle
+
+```mermaid
+graph LR
+    A[💰 Start Capital] -->|Phase 1| B[📈 $248 → $2K]
+    B -->|Phase 2| C[📈 $2K → $50K]
+    C -->|Phase 3| D[📈 $50K → $250K]
+    D -->|Phase 4| E[🏆 $250K → $1B]
+    style A fill:#2d4a2d,color:#90EE90
+    style E fill:#4a2d2d,color:#FFD700
+```
 
 **orca_complete_kill_cycle.py** is the primary trading engine featuring:
 - 👑 **Queen's 4-Phase Master Plan**: $248 → $1B in 22 days
@@ -3200,6 +3393,30 @@ For Docker-based deployment options see also `production/README.md`.
 - ETA verification: forecasted vs actual execution latency and slippage.
 
 <!-- markdownlint-enable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
+
+---
+
+<div align="center">
+
+## 🌐 CONNECT WITH AUREON
+
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ueu7gBz7g)
+[![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
+[![GitHub](https://img.shields.io/badge/GitHub-Star%20the%20Repo-181717?style=for-the-badge&logo=github)](https://github.com/ra-consulting/aureon-trading)
+[![Fork](https://img.shields.io/badge/GitHub-Fork%20%26%20Clone-FFD700?style=for-the-badge&logo=github)](https://github.com/ra-consulting/aureon-trading/fork)
+
+*Cloned it? Running live? Share your anonymous 24h P&L screenshot in Discord.*
+
+---
+
+![GitHub last commit](https://img.shields.io/github/last-commit/ra-consulting/aureon-trading?style=flat-square)
+![GitHub repo size](https://img.shields.io/github/repo-size/ra-consulting/aureon-trading?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/ra-consulting/aureon-trading?style=flat-square)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/ra-consulting/aureon-trading?style=flat-square)
+
+*Built with ⚡ by R&A Consulting · Powered by Harmonic Nexus Core*
+
+</div>
 
 ## License
 
