@@ -362,6 +362,32 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
 
         const activePositions = [...krakenPositions, ...capitalPositions];
 
+        const krakenShadows = Array.isArray(kraken.shadows) ? kraken.shadows.map((s: any) => ({
+          symbol: String(s.symbol || s.pair || ''),
+          side: (String(s.side || s.direction || 'BUY').toUpperCase() === 'SELL' ? 'SHORT' : 'LONG') as 'LONG' | 'SHORT',
+          entryPrice: toNumber(s.entry_price || 0),
+          currentPrice: toNumber(s.current_price || s.entry_price || 0),
+          movePercent: toNumber(s.current_move_pct || 0),
+          targetMovePercent: toNumber(s.target_move_pct || 0),
+          exchange: 'kraken',
+          validated: Boolean(s.validated),
+          ageSeconds: toNumber(s.age_secs || 0),
+        })) : [];
+
+        const capitalShadows = Array.isArray(capital.shadows) ? capital.shadows.map((s: any) => ({
+          symbol: String(s.symbol || ''),
+          side: (String(s.direction || 'BUY').toUpperCase() === 'SELL' ? 'SHORT' : 'LONG') as 'LONG' | 'SHORT',
+          entryPrice: toNumber(s.entry_price || 0),
+          currentPrice: toNumber(s.current_price || s.entry_price || 0),
+          movePercent: toNumber(s.current_move_pct || 0),
+          targetMovePercent: toNumber(s.target_move_pct || 0),
+          exchange: 'capital',
+          validated: Boolean(s.validated),
+          ageSeconds: toNumber(s.age_secs || 0),
+        })) : [];
+
+        const shadowTrades = [...krakenShadows, ...capitalShadows];
+
         const krakenTrades = Array.isArray(kraken.recent_trades) ? kraken.recent_trades.map((trade: any) => ({
           time: String(trade?.time || trade?.closed_at || ''),
           side: String(trade?.side || 'BUY'),
@@ -423,6 +449,7 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
           cyclePnlPercent: totalEquity > 0 ? (totalPnl / totalEquity) * 100 : 0,
           avgHoldTimeMinutes: toNumber(kraken.avg_hold_time || 0),
           activePositions,
+          shadowTrades,
           sessionStartTime: sessionStartRef.current,
           coherence: toNumber(kraken.coherence || 0),
           lambda: toNumber(kraken.lambda || 0),
@@ -473,7 +500,9 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
             capitalOpenPositions: capitalPositions.length,
             krakenOpenPositions: krakenPositions.length,
             capitalRecentCloses: Array.isArray(capital.recent_closed_trades) ? capital.recent_closed_trades.slice(-3).reverse() : [],
-            capitalCandidates: Array.isArray(capital.candidate_snapshot) ? capital.candidate_snapshot.slice(0, 3) : [], 
+            capitalCandidates: Array.isArray(capital.candidate_snapshot) ? capital.candidate_snapshot.slice(0, 3) : [],
+            krakenShadows: krakenShadows.length,
+            capitalShadows: capitalShadows.length,
           },
         });
 

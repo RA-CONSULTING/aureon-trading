@@ -183,6 +183,17 @@ export interface GlobalState {
     tradeId?: string;
     openedAt?: string;
   }>;
+  shadowTrades?: Array<{
+    symbol: string;
+    side: 'LONG' | 'SHORT';
+    entryPrice: number;
+    currentPrice: number;
+    movePercent: number;
+    targetMovePercent: number;
+    exchange?: string;
+    validated?: boolean;
+    ageSeconds?: number;
+  }>;
 
   unifiedMarketSummary?: {
     krakenEquity: number;
@@ -205,6 +216,8 @@ export interface GlobalState {
       change_pct: number;
       spread_pct: number;
     }>;
+    krakenShadows?: number;
+    capitalShadows?: number;
   };
 }
 
@@ -332,6 +345,7 @@ const initialState: GlobalState = {
   // Active positions
   maxPositions: 30,
   activePositions: [],
+  shadowTrades: [],
   unifiedMarketSummary: undefined,
 };
 

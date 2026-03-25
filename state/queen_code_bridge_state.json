@@ -1,0 +1,30 @@
+{
+  "enabled": true,
+  "last_error": "",
+  "architect_available": false,
+  "rules": [
+    {
+      "topic": "queen.code.*",
+      "kind": "code_task",
+      "enabled": true
+    },
+    {
+      "topic": "decisions.code.*",
+      "kind": "code_task",
+      "enabled": true
+    },
+    {
+      "topic": "system.patch.*",
+      "kind": "patch_proposal",
+      "enabled": true
+    }
+  ],
+  "recent_events": [],
+  "controller": {
+    "enabled": true,
+    "last_error": "",
+    "pending_count": 0,
+    "pending_proposals": [],
+    "recent_reviews": []
+  }
+}

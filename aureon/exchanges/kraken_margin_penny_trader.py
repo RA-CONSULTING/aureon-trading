@@ -219,6 +219,14 @@ except ImportError:
     DecisionReason = None
 
 try:
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
+    HAS_THOUGHT_BUS = True
+except ImportError:
+    HAS_THOUGHT_BUS = False
+    get_thought_bus = None
+    Thought = None
+
+try:
     from aureon.scanners.aureon_margin_harmonic_scanner import HarmonicMarginWaveformScanner
     HAS_MARGIN_HARMONIC_SCANNER = True
 except ImportError:
@@ -353,6 +361,7 @@ PROFIT_TARGET_USD = 1.27      # GBP1 approx USD1.27 - minimum net profit to clos
 MIN_PROFIT_USD = 1.27         # Same - the gate
 MONITOR_INTERVAL = 2          # Seconds between FREE API price checks
 ENTRY_SCAN_INTERVAL = 30      # Seconds between scanning for new entry
+STREAM_STALE_MS = 12000       # Force-refresh stream if no messages for this long
 LIQUIDATION_WARN = 150        # Margin level % warning
 LIQUIDATION_FORCE = 110       # Margin level % force-close (Kraken liquidates at ~40%)
 MARGIN_WAVE_ENTRY_PCT = 250.0 # Minimum PROJECTED margin % before entering any position
@@ -470,6 +479,10 @@ class LiveStream:
         self._running = False
         self._symbols = set()
         self._lock = threading.Lock()
+        self._pending_reconnect = False
+        self._last_error = ""
+        self._last_close_code = None
+        self._last_close_msg = ""
         
         # === LIVE CACHE (read by monitoring loop) ===
         self.price: Dict[str, float] = {}
@@ -502,43 +515,42 @@ class LiveStream:
         if not HAS_WEBSOCKET:
             logger.warning("LIVE STREAM: websocket-client not installed — falling back to REST polling")
             return False
-        
+
         self._symbols = set(s.upper() for s in symbols)
         if not self._symbols:
             return False
-        
-        # Build stream URL
-        streams = []
-        for sym in self._symbols:
-            sl = sym.lower()
-            streams.append(f"{sl}@trade")
-            streams.append(f"{sl}@bookTicker")  # Best bid/ask in real-time
-        
-        url = BINANCE_WS_URL + "/".join(streams)
-        
+
+        if self._thread and self._thread.is_alive():
+            self._request_reconnect("watchlist refresh")
+            return True
+
         self._running = True
         self._thread = threading.Thread(
             target=self._run_forever,
-            args=(url,),
             daemon=True,
             name="LiveStream"
         )
         self._thread.start()
-        logger.info(f"LIVE STREAM: Connecting to {len(self._symbols)} symbols ({len(streams)} streams)...")
+        logger.info(f"LIVE STREAM: Connecting to {len(self._symbols)} symbols ({len(self._symbols) * 2} streams)...")
         return True
 
     def add_symbol(self, symbol: str):
         """Dynamically subscribe to a new symbol (reconnects)."""
         symbol = symbol.upper()
-        if symbol in self._symbols:
+        self.sync_symbols(list(self._symbols | {symbol}))
+
+    def sync_symbols(self, symbols: List[str]):
+        """Replace the watched symbol set and reconnect once if it changed."""
+        new_symbols = set(s.upper() for s in symbols if s)
+        if not new_symbols:
             return
-        self._symbols.add(symbol)
-        # Reconnect with new symbol set
-        if self._ws:
-            try:
-                self._ws.close()
-            except Exception:
-                pass
+        if new_symbols == self._symbols:
+            return
+        self._symbols = new_symbols
+        if self._thread and self._thread.is_alive():
+            self._request_reconnect("watchlist sync")
+        else:
+            self.start(list(self._symbols))
 
     def stop(self):
         """Stop the stream."""
@@ -616,7 +628,17 @@ class LiveStream:
             streams.append(f"{sl}@bookTicker")
         return BINANCE_WS_URL + "/".join(streams)
 
-    def _run_forever(self, url: str):
+    def _request_reconnect(self, reason: str):
+        """Close the socket once so the run loop reconnects with the latest watchlist."""
+        self._pending_reconnect = True
+        self._last_error = reason
+        if self._ws:
+            try:
+                self._ws.close()
+            except Exception:
+                pass
+
+    def _run_forever(self):
         """WebSocket run loop with auto-reconnect."""
         while self._running:
             # Rebuild URL each iteration to pick up newly added symbols
@@ -630,31 +652,38 @@ class LiveStream:
                     on_error=self._on_error,
                 )
                 self._ws.run_forever(
-                    ping_interval=20,
-                    ping_timeout=10,
-                    reconnect=5,
+                    ping_interval=30,
+                    ping_timeout=15,
                 )
             except Exception as e:
                 logger.warning(f"LIVE STREAM: Connection error: {e}")
-            
+
             if self._running:
                 self._reconnect_count += 1
-                wait = min(5 * self._reconnect_count, 30)
-                logger.info(f"LIVE STREAM: Reconnecting in {wait}s (attempt #{self._reconnect_count})...")
+                wait = 1 if self._pending_reconnect else min(2 * self._reconnect_count, 10)
+                if self._pending_reconnect:
+                    logger.info("LIVE STREAM: Refreshing subscriptions with latest watchlist...")
+                else:
+                    logger.info(f"LIVE STREAM: Reconnecting in {wait}s (attempt #{self._reconnect_count})...")
                 self.connected = False
+                self._pending_reconnect = False
                 time.sleep(wait)
 
     def _on_open(self, ws):
         self.connected = True
         self.connect_time = time.time()
         self._reconnect_count = 0
+        self._last_error = ""
         logger.info(f"LIVE STREAM: CONNECTED — {len(self._symbols)} symbols streaming in real-time")
 
     def _on_close(self, ws, close_code, close_msg):
         self.connected = False
-        logger.info(f"LIVE STREAM: Disconnected (code={close_code})")
+        self._last_close_code = close_code
+        self._last_close_msg = str(close_msg or "")
+        logger.info(f"LIVE STREAM: Disconnected (code={close_code}) {self._last_close_msg}".rstrip())
 
     def _on_error(self, ws, error):
+        self._last_error = str(error)
         logger.warning(f"LIVE STREAM: Error: {error}")
 
     def _on_message(self, ws, raw_msg):
@@ -2826,6 +2855,7 @@ class KrakenMarginArmyTrader:
         # LIVE STREAM: Binance WebSocket for sub-second reaction
         self.stream = LiveStream() if HAS_WEBSOCKET else None
         self._stream_started = False
+        self._last_stream_self_heal = 0.0
         self.margin_pairs: Dict[str, MarginPairInfo] = {}
         # DUAL POSITION: 1 LONG + 1 SHORT simultaneously
         self.active_long: Optional[ActiveTrade] = None
@@ -2904,6 +2934,10 @@ class KrakenMarginArmyTrader:
         self.atn_monitor = get_atn_monitor() if HAS_ATN_MONITOR and get_atn_monitor is not None else None
         self.unified_registry = get_unified_puller() if HAS_UNIFIED_REGISTRY and get_unified_puller is not None else None
         self.unified_decision_engine = UnifiedDecisionEngine() if HAS_UNIFIED_DECISION and UnifiedDecisionEngine is not None else None
+        self.thought_bus = (
+            get_thought_bus(os.path.join(_REPO_ROOT, "state", "kraken_thoughts.jsonl"))
+            if HAS_THOUGHT_BUS and get_thought_bus is not None else None
+        )
         self.margin_harmonic_scanner = (
             HarmonicMarginWaveformScanner() if HAS_MARGIN_HARMONIC_SCANNER and HarmonicMarginWaveformScanner is not None else None
         )
@@ -2944,6 +2978,8 @@ class KrakenMarginArmyTrader:
         self._fee_snapshot: Dict[str, Any] = {}
         self._brain_snapshot: Dict[str, Any] = {}
         self._validator_snapshot: Dict[str, Any] = {}
+        self._thought_bus_snapshot: Dict[str, Any] = {}
+        self._cognition_snapshot: Dict[str, Any] = {}
         self.signal_brain = AureonBrain() if HAS_AUREON_BRAIN and AureonBrain is not None else None
         self.trade_profit_validator = (
             TradeProfitValidator(validation_log_file=os.path.join(_REPO_ROOT, "state", "kraken_trade_validations.json"))
@@ -3180,6 +3216,73 @@ class KrakenMarginArmyTrader:
             except Exception as e:
                 snapshot["error"] = str(e)
         self._registry_snapshot = snapshot
+        self._refresh_thought_bus_snapshot()
+
+    def _refresh_thought_bus_snapshot(self) -> None:
+        if self.thought_bus is None:
+            self._thought_bus_snapshot = {}
+            self._cognition_snapshot = {}
+            return
+        try:
+            market_events = self.thought_bus.recall("market.", limit=8)
+            decision_events = self.thought_bus.recall("decisions.", limit=8)
+            cognition_events = self.thought_bus.recall("brain.", limit=8)
+            queen_events = self.thought_bus.recall("queen.", limit=8)
+            self._thought_bus_snapshot = {
+                "market_events": len(market_events),
+                "decision_events": len(decision_events),
+                "latest_market_topic": (market_events[-1].get("topic") if market_events else ""),
+                "latest_decision_topic": (decision_events[-1].get("topic") if decision_events else ""),
+            }
+            self._cognition_snapshot = {
+                "cognition_events": len(cognition_events),
+                "queen_events": len(queen_events),
+                "latest_cognition_topic": (cognition_events[-1].get("topic") if cognition_events else ""),
+                "latest_queen_topic": (queen_events[-1].get("topic") if queen_events else ""),
+            }
+        except Exception as e:
+            self._thought_bus_snapshot = {"error": str(e)}
+            self._cognition_snapshot = {"error": str(e)}
+
+    def _publish_market_snapshot_to_thought_bus(self) -> None:
+        if self.thought_bus is None or Thought is None:
+            return
+        try:
+            candidates = list(getattr(self, "_last_candidates", []) or [])[:7]
+            market_by_symbol: Dict[str, Dict[str, Any]] = {}
+            universe: List[str] = []
+            for item in candidates:
+                info, side, _vol, trade_val, lev, score, req, fees, goal_score, eta, route = item
+                symbol = str(info.pair).upper()
+                universe.append(symbol)
+                market_by_symbol[symbol] = {
+                    "momentum": float(info.momentum),
+                    "spread_pct": float(info.spread_pct),
+                    "score": float(score),
+                    "direction": str(side).upper(),
+                    "trade_value": float(trade_val),
+                    "leverage": int(lev),
+                    "required_move_pct": float(req),
+                    "estimated_fees": float(fees),
+                    "goal_score": float(goal_score),
+                    "eta_to_target": float(eta),
+                    "route_to_profit": float(route),
+                }
+            if not universe:
+                return
+            self.thought_bus.publish(Thought(
+                source="kraken_margin_trader",
+                topic="market.snapshot",
+                payload={
+                    "venue": "kraken",
+                    "universe": universe,
+                    "market_by_symbol": market_by_symbol,
+                    "capital": self._get_capital_snapshot(),
+                },
+                meta={"mode": "kraken_margin"},
+            ))
+        except Exception as e:
+            logger.debug(f"Kraken ThoughtBus publish failed: {e}")
 
     def _feed_unified_decision_engine(self, symbol: str, side: str, score: float = 0.5, metadata: Optional[dict] = None) -> None:
         """Publish trader candidate signals into the unified decision engine for auditability."""
@@ -4039,6 +4142,8 @@ class KrakenMarginArmyTrader:
                 "whale_snapshot": self._whale_snapshot,
                 "live_tv_snapshot": self._live_tv_snapshot,
                 "ocean_snapshot": self._ocean_snapshot,
+                "thought_bus_snapshot": self._thought_bus_snapshot,
+                "cognition_snapshot": self._cognition_snapshot,
             }
             self._latest_dashboard_payload = dict(payload)
             self._last_dashboard_push = now
@@ -4592,6 +4697,8 @@ class KrakenMarginArmyTrader:
         )
         # Store top candidates for fallback if intel rejects #1
         self._last_candidates = candidates[:7]
+        self._publish_market_snapshot_to_thought_bus()
+        self._refresh_thought_bus_snapshot()
         self._sync_market_watchlist(top_n=7)
 
         # Record this scan to the proof file (all candidates + winner)
@@ -5021,6 +5128,30 @@ class KrakenMarginArmyTrader:
         else:
             self.stream.add_symbol(binance_symbol)
 
+    def _stream_age_ms(self) -> int:
+        if not self.stream:
+            return -1
+        last = float(getattr(self.stream, "_last_msg_time", 0.0) or 0.0)
+        if last <= 0:
+            return -1
+        return max(0, int((time.time() - last) * 1000))
+
+    def _self_heal_stream_if_stale(self) -> None:
+        """Proactively refresh the websocket if it stops advancing."""
+        if not self.stream or not self._stream_started:
+            return
+        age_ms = self._stream_age_ms()
+        if age_ms < 0 or age_ms < STREAM_STALE_MS:
+            return
+        now = time.time()
+        if (now - self._last_stream_self_heal) < 15:
+            return
+        self._last_stream_self_heal = now
+        logger.warning(
+            f"LIVE STREAM: stale feed detected (age={age_ms}ms) — forcing watchlist refresh"
+        )
+        self._sync_market_watchlist(top_n=7)
+
     def _sync_market_watchlist(self, extra_symbols: Optional[List[str]] = None, top_n: int = 6) -> None:
         """Keep the live stream subscribed to the active market watchlist, not just one trade symbol."""
         if not self.stream:
@@ -5062,8 +5193,7 @@ class KrakenMarginArmyTrader:
             self._stream_started = True
             return
 
-        for sym in deduped:
-            self.stream.add_symbol(sym)
+        self.stream.sync_symbols(deduped)
 
     def _emit_monitor_snapshot(
         self,
@@ -5075,6 +5205,7 @@ class KrakenMarginArmyTrader:
         need_pct: float,
         stream_live: bool,
         dtp_status_str: str,
+        dtp_progress_str: str,
         danger_level: int = 0,
         danger_note: str = "SAFE",
     ) -> None:
@@ -5087,11 +5218,26 @@ class KrakenMarginArmyTrader:
             f"entry=${trade.entry_price:,.4f} now=${current_price:,.4f} "
             f"net=${net_pnl:+.2f} fees=${total_fees:.2f} "
             f"target=${trade.breakeven_price:,.4f} dist={need_pct:+.2f}% "
-            f"danger={danger_level}:{danger_note} {dtp_text}"
+            f"danger={danger_level}:{danger_note} {dtp_text} {dtp_progress_str}"
         )
         self._latest_monitor_line = line
         logger.info(line)
         self._push_dashboard_state()
+
+    def _format_dtp_progress_bar(self, validated_net_pnl: float) -> str:
+        """Visualize progress toward the first DTP activation threshold."""
+        threshold_gbp = float(DTP_CONFIG.get("activation_threshold", 15.0) or 15.0)
+        gbp_usd_rate = float(DTP_CONFIG.get("gbp_usd_rate", 1.27) or 1.27)
+        threshold_usd = threshold_gbp * gbp_usd_rate
+        current_usd = max(0.0, float(validated_net_pnl))
+        progress = 1.0 if threshold_usd <= 0 else max(0.0, min(current_usd / threshold_usd, 1.0))
+        filled = int(round(progress * 12))
+        bar = "#" * filled + "-" * (12 - filled)
+        current_gbp = current_usd / gbp_usd_rate if gbp_usd_rate > 0 else 0.0
+        remaining_gbp = max(0.0, threshold_gbp - current_gbp)
+        if progress >= 1.0:
+            return f"DTP1=[{bar}] ARMED £{current_gbp:.2f}/£{threshold_gbp:.2f}"
+        return f"DTP1=[{bar}] £{current_gbp:.2f}/£{threshold_gbp:.2f} rem=£{remaining_gbp:.2f}"
 
     def monitor_position(self, trade: Optional[ActiveTrade] = None) -> Optional[dict]:
         """
@@ -5194,6 +5340,7 @@ class KrakenMarginArmyTrader:
         # rollover) straight into the DTP engine.  Keyed by order_id so the
         # floor survives across monitoring cycles.
         dtp_status_str = ""
+        dtp_progress_str = self._format_dtp_progress_bar(validated_net_pnl)
         if HAS_DTP and DynamicTakeProfit is not None:
             trade_key = getattr(trade, 'order_id', trade.pair)
             if trade_key not in self.dtp_trackers:
@@ -5434,6 +5581,7 @@ class KrakenMarginArmyTrader:
             need_pct=need_pct,
             stream_live=stream_live,
             dtp_status_str=dtp_status_str,
+            dtp_progress_str=dtp_progress_str,
             danger_level=danger_level,
             danger_note=danger_note,
         )
@@ -5970,11 +6118,14 @@ class KrakenMarginArmyTrader:
                 if getattr(self.stream, "_last_msg_time", 0.0)
                 else -1
             )
+            stream_error = str(getattr(self.stream, "_last_error", "") or "")
             status_lines.append(
                 f"Stream: {stream_mode} watch={len(getattr(self.stream, '_symbols', []))} "
                 f"reconnects={getattr(self.stream, '_reconnect_count', 0)} "
                 f"msgs={getattr(self.stream, 'msg_count', 0)} age_ms={stream_age_ms}"
             )
+            if stream_error:
+                status_lines.append(f"StreamErr: {stream_error[:90]}")
         for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
             if trade:
                 status_lines.append(
@@ -6072,6 +6223,24 @@ class KrakenMarginArmyTrader:
                 )
             elif ds.get("error"):
                 print(f"  [DECISION ENGINE] error={ds['error']}")
+        if self._thought_bus_snapshot:
+            tbs = self._thought_bus_snapshot
+            if tbs.get("error"):
+                print(f"  [THOUGHT BUS] error={tbs['error']}")
+            else:
+                print(
+                    f"  [THOUGHT BUS] market={int(tbs.get('market_events', 0) or 0)} "
+                    f"decision={int(tbs.get('decision_events', 0) or 0)}"
+                )
+        if self._cognition_snapshot:
+            cs = self._cognition_snapshot
+            if cs.get("error"):
+                print(f"  [COGNITION] error={cs['error']}")
+            else:
+                print(
+                    f"  [COGNITION] brain={int(cs.get('cognition_events', 0) or 0)} "
+                    f"queen={int(cs.get('queen_events', 0) or 0)}"
+                )
         if self._timeline_snapshot:
             ts = self._timeline_snapshot
             if ts.get("action"):
@@ -7155,6 +7324,7 @@ class KrakenMarginArmyTrader:
 
                 # ETA reporting (every 5 mins)
                 self._report_margin_eta()
+                self._self_heal_stream_if_stale()
 
                 # ============================
                 # PHASE 1: Monitor active positions
@@ -7283,6 +7453,7 @@ class KrakenMarginArmyTrader:
         """
         now = time.time()
         closed_this_tick: list = []
+        self._self_heal_stream_if_stale()
 
         # ── PHASE 0: Orchestrator cycle sync ─────────────────────────────
         # Updates multiverse shadows, syncs learning bridge → Seer/Lyra/ThoughtBus,

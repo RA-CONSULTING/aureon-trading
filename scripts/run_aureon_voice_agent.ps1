@@ -1,0 +1,56 @@
+param(
+    [string]$RepoRoot = "C:\Users\ayman kattan\aureon-trading",
+    [string]$PythonExe = "C:\Users\ayman kattan\aureon-trading\.venv\Scripts\python.exe",
+    [string]$SpeechBackend = "google_first",
+    [int]$MicDeviceIndex = 1,
+    [int]$GoogleRetries = 3,
+    [int]$CaptureRetries = 3,
+    [double]$AdjustDuration = 1.5
+)
+
+$ErrorActionPreference = "Continue"
+
+$stateDir = Join-Path $RepoRoot "state"
+$null = New-Item -ItemType Directory -Force -Path $stateDir
+
+$stopFile = Join-Path $stateDir "aureon_voice_agent.stop"
+$lockFile = Join-Path $stateDir "aureon_voice_agent_supervisor.lock"
+$supervisorLog = Join-Path $stateDir "aureon_voice_agent_supervisor.log"
+$agentOut = Join-Path $stateDir "aureon_voice_agent_runtime.out.log"
+$agentErr = Join-Path $stateDir "aureon_voice_agent_runtime.err.log"
+$agentScript = Join-Path $RepoRoot "aureon\autonomous\aureon_unified_voice_agent.py"
+
+if (Test-Path $lockFile) {
+    exit 0
+}
+
+Set-Content -Path $lockFile -Value $PID -Encoding ascii
+
+try {
+    while ($true) {
+        if (Test-Path $stopFile) {
+            Add-Content -Path $supervisorLog -Value "$(Get-Date -Format s) stop file detected"
+            break
+        }
+
+        $env:AUREON_SPEECH_BACKEND = $SpeechBackend
+        $env:AUREON_MIC_DEVICE_INDEX = "$MicDeviceIndex"
+        $env:AUREON_GOOGLE_RETRIES = "$GoogleRetries"
+        $env:AUREON_CAPTURE_RETRIES = "$CaptureRetries"
+        $env:AUREON_ADJUST_DURATION = "$AdjustDuration"
+        $env:AUREON_AUTO_APPROVE_LIVE_VOICE = "true"
+
+        Add-Content -Path $supervisorLog -Value "$(Get-Date -Format s) starting voice runtime"
+
+        & $PythonExe $agentScript --mic 1>> $agentOut 2>> $agentErr
+        $exitCode = $LASTEXITCODE
+
+        Add-Content -Path $supervisorLog -Value "$(Get-Date -Format s) runtime exited code=$exitCode"
+        Start-Sleep -Seconds 3
+    }
+}
+finally {
+    if (Test-Path $lockFile) {
+        Remove-Item $lockFile -Force
+    }
+}

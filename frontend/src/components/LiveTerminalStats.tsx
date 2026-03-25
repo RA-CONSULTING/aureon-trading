@@ -79,6 +79,50 @@ const PositionLine = ({
   </div>
 );
 
+const ShadowLine = ({
+  symbol,
+  side,
+  entryPrice,
+  currentPrice,
+  movePercent,
+  targetMovePercent,
+  exchange,
+  validated,
+  ageSeconds,
+}: {
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  entryPrice: number;
+  currentPrice: number;
+  movePercent: number;
+  targetMovePercent: number;
+  exchange?: string;
+  validated?: boolean;
+  ageSeconds?: number;
+}) => (
+  <div className="rounded border border-border/40 bg-background/60 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 font-mono text-[11px]">
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-foreground">{symbol}</span>
+        <span className={cn('text-[10px]', side === 'LONG' ? 'text-green-500' : 'text-red-500')}>
+          {side}
+        </span>
+        {exchange && <span className="text-[10px] uppercase text-muted-foreground">{exchange}</span>}
+        {validated && <span className="text-[10px] text-amber-400">VALID</span>}
+      </div>
+      <span className={cn(movePercent >= 0 ? 'text-green-500' : 'text-red-500')}>
+        {formatSigned(movePercent, 3)}%
+      </span>
+    </div>
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-muted-foreground">
+      <span>Entry ${entryPrice.toFixed(4)}</span>
+      <span>Now ${currentPrice.toFixed(4)}</span>
+      <span>Need {targetMovePercent.toFixed(3)}%</span>
+      <span>Age {formatAge(ageSeconds)}</span>
+    </div>
+  </div>
+);
+
 export function LiveTerminalStats() {
   const state = useGlobalState();
   const [clock, setClock] = useState(() => new Date());
@@ -218,9 +262,12 @@ export function LiveTerminalStats() {
 
   const summary = state.unifiedMarketSummary;
   const activePositions = Array.isArray(state.activePositions) ? state.activePositions : [];
+  const shadowTrades = Array.isArray(state.shadowTrades) ? state.shadowTrades : [];
   const recentTrades = Array.isArray(state.recentTrades) ? state.recentTrades : [];
   const krakenPositions = activePositions.filter((pos) => pos.exchange === 'kraken');
   const capitalPositions = activePositions.filter((pos) => pos.exchange === 'capital');
+  const krakenShadows = shadowTrades.filter((shadow) => shadow.exchange === 'kraken');
+  const capitalShadows = shadowTrades.filter((shadow) => shadow.exchange === 'capital');
   const topWinningTrades = [...recentTrades]
     .filter((trade) => safeNumber(trade.pnl) > 0)
     .sort((a, b) => safeNumber(b.pnl) - safeNumber(a.pnl))
@@ -300,6 +347,7 @@ export function LiveTerminalStats() {
             <ExchangeMetric label="Equity" value={`$${krakenEquity.toFixed(2)}`} />
             <ExchangeMetric label="Session P&L" value={formatSigned(krakenPnl, 2, '$')} className={krakenPnl >= 0 ? 'text-green-500' : 'text-red-500'} />
             <ExchangeMetric label="Open Positions" value={`${krakenOpen}`} />
+            <ExchangeMetric label="Shadows" value={`${safeNumber(summary?.krakenShadows, krakenShadows.length)}`} />
           </div>
           <div className="mt-3 space-y-2">
             {krakenPositions.length > 0 ? (
@@ -319,6 +367,27 @@ export function LiveTerminalStats() {
               <div className="font-mono text-[11px] text-muted-foreground">No open Kraken positions</div>
             )}
           </div>
+          <div className="mt-3 space-y-2">
+            <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Shadow Validation</div>
+            {krakenShadows.length > 0 ? (
+              krakenShadows.slice(0, 4).map((shadow, index) => (
+                <ShadowLine
+                  key={`kraken-shadow-${shadow.symbol}-${index}`}
+                  symbol={shadow.symbol}
+                  side={shadow.side}
+                  entryPrice={safeNumber(shadow.entryPrice)}
+                  currentPrice={safeNumber(shadow.currentPrice, safeNumber(shadow.entryPrice))}
+                  movePercent={safeNumber(shadow.movePercent)}
+                  targetMovePercent={safeNumber(shadow.targetMovePercent)}
+                  exchange={shadow.exchange}
+                  validated={Boolean(shadow.validated)}
+                  ageSeconds={safeNumber(shadow.ageSeconds)}
+                />
+              ))
+            ) : (
+              <div className="font-mono text-[11px] text-muted-foreground">No active Kraken shadows</div>
+            )}
+          </div>
         </div>
 
         <div className="rounded border border-border/40 bg-muted/20 p-3">
@@ -327,6 +396,7 @@ export function LiveTerminalStats() {
             <ExchangeMetric label="Equity" value={`£${capitalEquity.toFixed(2)}`} />
             <ExchangeMetric label="Session P&L" value={formatSigned(capitalPnl, 2, '£')} className={capitalPnl >= 0 ? 'text-green-500' : 'text-red-500'} />
             <ExchangeMetric label="Open Positions" value={`${capitalOpen}`} />
+            <ExchangeMetric label="Shadows" value={`${safeNumber(summary?.capitalShadows, capitalShadows.length)}`} />
           </div>
           <div className="mt-3 space-y-2">
             {capitalPositions.length > 0 ? (
@@ -344,6 +414,27 @@ export function LiveTerminalStats() {
               ))
             ) : (
               <div className="font-mono text-[11px] text-muted-foreground">No open Capital positions</div>
+            )}
+          </div>
+          <div className="mt-3 space-y-2">
+            <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Shadow Validation</div>
+            {capitalShadows.length > 0 ? (
+              capitalShadows.slice(0, 4).map((shadow, index) => (
+                <ShadowLine
+                  key={`capital-shadow-${shadow.symbol}-${index}`}
+                  symbol={shadow.symbol}
+                  side={shadow.side}
+                  entryPrice={safeNumber(shadow.entryPrice)}
+                  currentPrice={safeNumber(shadow.currentPrice, safeNumber(shadow.entryPrice))}
+                  movePercent={safeNumber(shadow.movePercent)}
+                  targetMovePercent={safeNumber(shadow.targetMovePercent)}
+                  exchange={shadow.exchange}
+                  validated={Boolean(shadow.validated)}
+                  ageSeconds={safeNumber(shadow.ageSeconds)}
+                />
+              ))
+            ) : (
+              <div className="font-mono text-[11px] text-muted-foreground">No active Capital shadows</div>
             )}
           </div>
         </div>

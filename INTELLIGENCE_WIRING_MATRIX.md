@@ -49,8 +49,8 @@ This file tracks which intelligence systems in the repo are feeding the Kraken m
 
 | System | File | Status | Missing Adapter |
 | --- | --- | --- | --- |
-| Margin Harmonic Scanner | `aureon/scanners/aureon_margin_harmonic_scanner.py` | unwired | scanner-to-candidate score adapter |
-| Quantum Mirror Scanner | `aureon/scanners/aureon_quantum_mirror_scanner.py` | unwired | branch-score adapter |
+| Margin Harmonic Scanner | `aureon/scanners/aureon_margin_harmonic_scanner.py` | wired | Kraken candidate score overlay |
+| Quantum Mirror Scanner | `aureon/scanners/aureon_quantum_mirror_scanner.py` | wired | Kraken branch-score overlay |
 | Global Wave Scanner | `aureon/scanners/aureon_global_wave_scanner.py` | unwired | wave-state shortlist adapter |
 | Strategic Warfare Scanner | `aureon/scanners/aureon_strategic_warfare_scanner.py` | unwired | strategic-vulnerability adapter |
 | Live Momentum Hunter | `aureon/scanners/aureon_live_momentum_hunter.py` | unwired | live impulse adapter |
@@ -72,14 +72,14 @@ This file tracks which intelligence systems in the repo are feeding the Kraken m
 
 | System | File | Status | Missing Adapter |
 | --- | --- | --- | --- |
-| Timeline Oracle | `aureon/intelligence/aureon_timeline_oracle.py` | unwired | timeline probability adapter |
+| Timeline Oracle | `aureon/intelligence/aureon_timeline_oracle.py` | wired | Kraken timeline probability overlay |
 | Timeline Anchor Validator | `aureon/intelligence/aureon_timeline_anchor_validator.py` | unwired | anchor validation adapter |
 | Global Harmonic Field | `aureon/harmonic/global_harmonic_field.py` | unwired | harmonic field snapshot adapter |
-| Harmonic Fusion | `aureon/harmonic/aureon_harmonic_fusion.py` | unwired | fusion score adapter |
+| Harmonic Fusion | `aureon/harmonic/aureon_harmonic_fusion.py` | wired | Kraken fusion score overlay |
 | Earth Resonance Engine | `aureon/harmonic/earth_resonance_engine.py` | unwired | earth resonance adapter |
 | Planetary Harmonic Sweep | `aureon/harmonic/aureon_planetary_harmonic_sweep.py` | unwired | planetary score adapter |
 | Deep Money Flow Analyzer | `aureon/analytics/aureon_deep_money_flow_analyzer.py` | unwired | flow bias adapter |
-| Whale Orderbook Analyzer | `aureon/analytics/aureon_whale_orderbook_analyzer.py` | unwired | whale pressure adapter |
+| Whale Orderbook Analyzer | `aureon/analytics/aureon_whale_orderbook_analyzer.py` | wired | Kraken whale pressure overlay |
 | Whale Integration | `aureon/analytics/aureon_whale_integration.py` | unwired | unified whale signal adapter |
 
 ## Recommended Wiring Order

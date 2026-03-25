@@ -1,0 +1,90 @@
+{
+  "enabled": true,
+  "speech_recognition_available": true,
+  "thought_bus_available": true,
+  "inbox_path": "state\\voice_command_inbox.jsonl",
+  "last_inbox_line": 0,
+  "last_error": "",
+  "last_command": "",
+  "last_route": "",
+  "recent_commands": [],
+  "task_queue": {
+    "queued_count": 0,
+    "active_count": 0,
+    "tasks": [],
+    "recent_completed": []
+  },
+  "code_control": {
+    "enabled": true,
+    "last_error": "",
+    "pending_count": 0,
+    "pending_proposals": [],
+    "recent_reviews": []
+  },
+  "desktop_control": {
+    "ok": true,
+    "armed": true,
+    "dry_run": false,
+    "pyautogui_available": true,
+    "emergency_stopped": false,
+    "require_confirmation": true,
+    "auto_approve_live_voice": true,
+    "allowed_actions": [
+      "double_click",
+      "hotkey",
+      "left_click",
+      "move_mouse",
+      "press_key",
+      "right_click",
+      "type_text"
+    ],
+    "auto_execute_actions": [
+      "double_click",
+      "left_click",
+      "move_mouse",
+      "press_key",
+      "right_click"
+    ],
+    "last_error": "",
+    "last_result": {
+      "ok": true,
+      "action": "press_key",
+      "reason": "dry_run",
+      "executed_at": 1774462733.7842317,
+      "dry_run": true,
+      "params": {
+        "key": "f8"
+      }
+    },
+    "pending_actions": [],
+    "recent_actions": [
+      {
+        "ok": true,
+        "action": "press_key",
+        "reason": "dry_run",
+        "executed_at": 1774462646.5495014,
+        "dry_run": true,
+        "params": {
+          "key": "f8"
+        }
+      },
+      {
+        "ok": true,
+        "action": "press_key",
+        "reason": "dry_run",
+        "executed_at": 1774462733.7842317,
+        "dry_run": true,
+        "params": {
+          "key": "f8"
+        }
+      }
+    ]
+  },
+  "cognition": {
+    "last_error": "",
+    "pending_clarification": {},
+    "last_harmonic": {},
+    "last_intent": {},
+    "recent_intents": []
+  }
+}

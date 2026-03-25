@@ -1,0 +1,40 @@
+{
+  "active_long": {
+    "pair": "ADAUSD",
+    "side": "buy",
+    "volume": 2941.03864382,
+    "entry_price": 0.2749785915596069,
+    "leverage": 1,
+    "entry_fee": 2.070331,
+    "entry_time": 1774443401.337875,
+    "order_id": "TQTIZX-A6XL3-MQ6JBC",
+    "cost": 808.722664,
+    "breakeven_price": 0.27717577468626137,
+    "binance_symbol": "ADAUSDT",
+    "rollover_fees": 0.0808722664,
+    "last_rollover_check": 0.0
+  },
+  "active_short": null,
+  "active_trade": {
+    "pair": "ADAUSD",
+    "side": "buy",
+    "volume": 2941.03864382,
+    "entry_price": 0.2749785915596069,
+    "leverage": 1,
+    "entry_fee": 2.070331,
+    "entry_time": 1774443401.337875,
+    "order_id": "TQTIZX-A6XL3-MQ6JBC",
+    "cost": 808.722664,
+    "breakeven_price": 0.27717577468626137,
+    "binance_symbol": "ADAUSDT",
+    "rollover_fees": 0.0808722664,
+    "last_rollover_check": 0.0
+  },
+  "total_profit": 0,
+  "total_trades": 0,
+  "winning_trades": 0,
+  "shadow_validated": 0,
+  "shadow_failed": 0,
+  "completed_trades": [],
+  "last_updated": "2026-03-25T20:08:13.964743"
+}

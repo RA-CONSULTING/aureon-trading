@@ -60,6 +60,49 @@ except Exception:
     TradeProfitValidator = None   # type: ignore
     HAS_TRADE_PROFIT_VALIDATOR = False
 
+try:
+    from aureon.trading.dynamic_take_profit import DynamicTakeProfit
+    HAS_CAPITAL_DTP = True
+except Exception:
+    try:
+        from dynamic_take_profit import DynamicTakeProfit
+        HAS_CAPITAL_DTP = True
+    except Exception:
+        DynamicTakeProfit = None   # type: ignore
+        HAS_CAPITAL_DTP = False
+
+try:
+    from aureon.intelligence.aureon_unified_intelligence_registry import get_unified_puller
+    HAS_UNIFIED_REGISTRY = True
+except Exception:
+    get_unified_puller = None   # type: ignore
+    HAS_UNIFIED_REGISTRY = False
+
+try:
+    from aureon.intelligence.aureon_unified_decision_engine import (
+        UnifiedDecisionEngine,
+        SignalInput,
+        CoordinationInput,
+        DecisionType,
+        DecisionReason,
+    )
+    HAS_UNIFIED_DECISION = True
+except Exception:
+    UnifiedDecisionEngine = None   # type: ignore
+    SignalInput = None             # type: ignore
+    CoordinationInput = None       # type: ignore
+    DecisionType = None            # type: ignore
+    DecisionReason = None          # type: ignore
+    HAS_UNIFIED_DECISION = False
+
+try:
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
+    HAS_THOUGHT_BUS = True
+except Exception:
+    get_thought_bus = None         # type: ignore
+    Thought = None                 # type: ignore
+    HAS_THOUGHT_BUS = False
+
 # ── INSTRUMENT UNIVERSE ────────────────────────────────────────────────────────
 # symbol → {class, tp_pct, sl_pct, size, max_spread_pct, momentum_threshold}
 #   tp_pct / sl_pct  — take-profit / stop-loss as % of entry price
@@ -114,7 +157,7 @@ def _env_bool(name: str, default: bool) -> bool:
 CFD_CONFIG: Dict[str, float] = {
     "max_positions":      _env_float("CAPITAL_MAX_POSITIONS", 2.0),   # One BUY lane and one SELL lane
     "price_ttl_secs":    _env_float("CAPITAL_PRICE_TTL_SECS", 10.0),  # Price cache lifetime
-    "position_ttl_secs": _env_float("CAPITAL_POSITION_TTL_SECS", 3600.0), # Max hold time per position (1 hour — stallion rule)
+    "position_ttl_secs": _env_float("CAPITAL_POSITION_TTL_SECS", 3600.0), # Selection benchmark only; not a forced close
     "scan_interval_secs": _env_float("CAPITAL_SCAN_INTERVAL_SECS", 5.0),  # Opportunity scan interval
     "monitor_interval":   _env_float("CAPITAL_MONITOR_INTERVAL_SECS", 2.0),  # Position monitor interval
     "exchange_sync_secs": _env_float("CAPITAL_EXCHANGE_SYNC_SECS", 5.0),  # Reconcile local CFD positions against Capital.com
@@ -126,6 +169,7 @@ CFD_FLAGS = {
 }
 
 CAPITAL_MIN_PROFIT_GBP = 0.01
+CAPITAL_DTP_TRIGGER_GBP = 0.01
 
 
 # ── DATA CLASSES ───────────────────────────────────────────────────────────────
@@ -167,6 +211,42 @@ class CFDPosition:
         )
 
 
+@dataclass
+class CFDShadowTrade:
+    """Paper validation pass for Capital candidates before live deployment."""
+    symbol: str
+    direction: str
+    asset_class: str
+    size: float
+    entry_price: float
+    target_move_pct: float
+    score: float
+    created_at: float = field(default_factory=time.time)
+    current_price: float = 0.0
+    current_move_pct: float = 0.0
+    peak_move_pct: float = 0.0
+    validated: bool = False
+    validation_time: float = 0.0
+
+    @property
+    def age_secs(self) -> float:
+        return time.time() - self.created_at
+
+    def update(self, price: float) -> None:
+        self.current_price = price
+        if self.entry_price <= 0 or price <= 0:
+            return
+        if self.direction == "BUY":
+            move_pct = (price - self.entry_price) / self.entry_price * 100.0
+        else:
+            move_pct = (self.entry_price - price) / self.entry_price * 100.0
+        self.current_move_pct = move_pct
+        self.peak_move_pct = max(self.peak_move_pct, move_pct)
+        if not self.validated and move_pct >= self.target_move_pct:
+            self.validated = True
+            self.validation_time = time.time()
+
+
 # ── MAIN CLASS ─────────────────────────────────────────────────────────────────
 class CapitalCFDTrader:
     """
@@ -182,11 +262,16 @@ class CapitalCFDTrader:
     Returns list of closed-trade records for orca session_stats.
     """
 
+    SHADOW_MAX_AGE = 120.0
+    SHADOW_MIN_VALIDATE = 5.0
+    SHADOW_MAX_ACTIVE = 4
+
     def __init__(self) -> None:
         self.client: Optional[CapitalClient] = None
 
         # Open position tracking
         self.positions: List[CFDPosition] = []
+        self.shadow_trades: List[CFDShadowTrade] = []
 
         # Price cache
         self._prices: Dict[str, dict] = {}
@@ -198,6 +283,9 @@ class CapitalCFDTrader:
         self._latest_order_error: str = ""
         self._latest_order_trace_path: str = str(CAPITAL_TRACE_PATH)
         self._recent_closed_trades: List[dict] = []
+        self._shadow_validated_count: int = 0
+        self._shadow_failed_count: int = 0
+        self._dtp_trackers: Dict[str, Any] = {}
         self.start_time: float = time.time()
         self.starting_equity_gbp: float = 0.0
         self._signal_brain = AureonBrain() if HAS_AUREON_BRAIN and AureonBrain is not None else None
@@ -206,11 +294,22 @@ class CapitalCFDTrader:
             if HAS_TRADE_PROFIT_VALIDATOR and TradeProfitValidator is not None
             else None
         )
+        self.unified_registry = get_unified_puller() if HAS_UNIFIED_REGISTRY and get_unified_puller is not None else None
+        self.unified_decision_engine = UnifiedDecisionEngine() if HAS_UNIFIED_DECISION and UnifiedDecisionEngine is not None else None
+        self.thought_bus = (
+            get_thought_bus(os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_thoughts.jsonl"))
+            if HAS_THOUGHT_BUS and get_thought_bus is not None else None
+        )
+        self._registry_snapshot: Dict[str, Any] = {}
+        self._decision_snapshot: Dict[str, Any] = {}
+        self._thought_bus_snapshot: Dict[str, Any] = {}
+        self._cognition_snapshot: Dict[str, Any] = {}
 
         # Timing
         self._last_scan:    float = 0.0
         self._last_monitor: float = 0.0
         self._last_exchange_sync: float = 0.0
+        self._last_shadow_scan: float = 0.0
 
         # Cached Seer/Lyra gate result
         self._quad_gate_ok:  bool  = True   # Fail-open
@@ -232,11 +331,13 @@ class CapitalCFDTrader:
         }
 
         # Init Capital.com client
+        self.init_error = ""
         if HAS_CAPITAL:
             try:
                 self.client = CapitalClient()  # type: ignore[misc]
                 if not getattr(self.client, "enabled", False):
-                    logger.info("CapitalCFDTrader: Capital.com credentials missing — trader disabled")
+                    self.init_error = str(getattr(self.client, "init_error", "") or "client_disabled_or_blocked")
+                    logger.warning("CapitalCFDTrader: Capital.com unavailable (%s)", self.init_error)
                     self.client = None
                 else:
                     logger.info("CapitalCFDTrader: Capital.com client READY")
@@ -244,9 +345,11 @@ class CapitalCFDTrader:
                     self.starting_equity_gbp = float(snap.get("equity_gbp", 0.0) or 0.0)
                     self._sync_positions_from_exchange(force=True)
             except Exception as _e:
+                self.init_error = str(_e)
                 logger.debug(f"CapitalCFDTrader: client init failed: {_e}")
                 self.client = None
         else:
+            self.init_error = "capital_client_not_installed"
             logger.info("CapitalCFDTrader: capital_client not installed — disabled")
 
     # ── PROPERTIES ─────────────────────────────────────────────────────────────
@@ -269,6 +372,119 @@ class CapitalCFDTrader:
         if CFD_FLAGS["penny_take_profit"]:
             return required_tp_pct
         return max(configured_tp_pct, required_tp_pct)
+
+    def _refresh_unified_intel_snapshot(self) -> None:
+        snapshot: Dict[str, Any] = {}
+        if self.unified_registry is not None:
+            try:
+                snapshot["categories"] = self.unified_registry.get_category_summary()
+                snapshot["chain_flow"] = self.unified_registry.get_chain_flow()
+            except Exception as e:
+                snapshot["error"] = str(e)
+        self._registry_snapshot = snapshot
+
+    def _refresh_thought_bus_snapshot(self) -> None:
+        if self.thought_bus is None:
+            self._thought_bus_snapshot = {}
+            self._cognition_snapshot = {}
+            return
+        try:
+            market_events = self.thought_bus.recall("market.", limit=8)
+            decision_events = self.thought_bus.recall("decisions.", limit=8)
+            cognition_events = self.thought_bus.recall("brain.", limit=8)
+            queen_events = self.thought_bus.recall("queen.", limit=8)
+            self._thought_bus_snapshot = {
+                "market_events": len(market_events),
+                "decision_events": len(decision_events),
+                "latest_market_topic": (market_events[-1].get("topic") if market_events else ""),
+                "latest_decision_topic": (decision_events[-1].get("topic") if decision_events else ""),
+            }
+            self._cognition_snapshot = {
+                "cognition_events": len(cognition_events),
+                "queen_events": len(queen_events),
+                "latest_cognition_topic": (cognition_events[-1].get("topic") if cognition_events else ""),
+                "latest_queen_topic": (queen_events[-1].get("topic") if queen_events else ""),
+            }
+        except Exception as e:
+            self._thought_bus_snapshot = {"error": str(e)}
+            self._cognition_snapshot = {"error": str(e)}
+
+    def _publish_market_snapshot_to_thought_bus(self) -> None:
+        if self.thought_bus is None or Thought is None:
+            return
+        try:
+            market_by_symbol: Dict[str, Dict[str, Any]] = {}
+            universe: List[str] = []
+            for candidate in self._latest_candidate_snapshot[:7]:
+                symbol = str(candidate.get("symbol") or "").upper()
+                if not symbol:
+                    continue
+                universe.append(symbol)
+                market_by_symbol[symbol] = {
+                    "momentum": float(candidate.get("change_pct", 0.0) or 0.0),
+                    "score": float(candidate.get("score", 0.0) or 0.0),
+                    "spread_pct": float(candidate.get("spread_pct", 0.0) or 0.0),
+                    "direction": str(candidate.get("direction") or "BUY").upper(),
+                    "eta_to_target": float(candidate.get("eta_to_target", 0.0) or 0.0),
+                }
+            if not universe:
+                return
+            self.thought_bus.publish(Thought(
+                source="capital_cfd_trader",
+                topic="market.snapshot",
+                payload={
+                    "venue": "capital",
+                    "universe": universe,
+                    "market_by_symbol": market_by_symbol,
+                    "capital": self.get_capital_snapshot(),
+                },
+                meta={"mode": "capital_cfd"},
+            ))
+        except Exception as e:
+            logger.debug(f"Capital ThoughtBus publish failed: {e}")
+
+    def _feed_unified_decision_engine(self, symbol: str, side: str, score: float = 0.5, metadata: Optional[dict] = None) -> None:
+        if self.unified_decision_engine is None or SignalInput is None:
+            return
+        try:
+            direction = "bullish" if str(side).upper() == "BUY" else "bearish"
+            self.unified_decision_engine.add_signal(
+                SignalInput(
+                    source="capital_cfd_trader",
+                    symbol=symbol,
+                    direction=direction,
+                    strength=max(0.0, min(1.0, float(score))),
+                    metadata=metadata or {},
+                )
+            )
+            if CoordinationInput is not None:
+                self.unified_decision_engine.set_coordination_state(
+                    CoordinationInput(
+                        orca_ready=True,
+                        all_systems_ready=1,
+                        total_systems=1,
+                        blockers=[],
+                    )
+                )
+            decision = None
+            if DecisionType is not None and DecisionReason is not None:
+                decision = self.unified_decision_engine.generate_decision(
+                    symbol,
+                    DecisionType.BUY if str(side).upper() == "BUY" else DecisionType.SELL,
+                    DecisionReason.SIGNAL_STRENGTH,
+                )
+            self._decision_snapshot = {
+                "symbol": symbol,
+                "side": str(side).upper(),
+                "score": float(score),
+                "decision": {
+                    "type": decision.decision_type.value,
+                    "confidence": decision.confidence,
+                    "reason": decision.reason.value,
+                } if decision else None,
+            }
+        except Exception as e:
+            self._decision_snapshot = {"error": str(e), "symbol": symbol, "side": str(side).upper()}
 
     def _write_exchange_trace(self, payload: Dict[str, Any]) -> None:
         """Persist the latest raw Capital exchange payloads for debugging live behavior."""
@@ -702,6 +918,14 @@ class CapitalCFDTrader:
 
         score += min(1.0, expected_profit_gbp / max(CAPITAL_MIN_PROFIT_GBP, 0.0001)) * 0.25
 
+        # Time-to-profit is a selection signal only: prefer the quickest realistic route
+        # to the configured realized-profit floor, but never force a close because of time.
+        threshold_safe = max(float(threshold or 0.0), 0.01)
+        momentum_speed = max(abs(change_pct), threshold_safe)
+        eta_to_target = required_tp_pct / momentum_speed if momentum_speed > 0 else 999.0
+        eta_score = max(0.0, 2.0 - eta_to_target)
+        score += eta_score * 0.5
+
         # Hive Mind ripple amplifier — Market Harp signals shared by TradingHiveMind
         # A ripple on a correlated market boosts this symbol's momentum score
         hive_factor = self._hive_boosts.get(symbol, self._hive_boosts.get(symbol.upper(), 0.0))
@@ -817,6 +1041,9 @@ class CapitalCFDTrader:
                 "sl_pct": float(cfg.get("sl_pct", 0.0) or 0.0),
                 "profit_target_gbp": CAPITAL_MIN_PROFIT_GBP,
                 "required_tp_pct": required_tp_pct,
+                "eta_to_target": (
+                    required_tp_pct / max(abs(float(ticker.get("change_pct") or 0.0)), max(float(cfg.get("momentum_threshold", 0.1) or 0.1), 0.01))
+                ) if required_tp_pct > 0 else 0.0,
             })
             if score > best_score:
                 best_score = score
@@ -852,10 +1079,20 @@ class CapitalCFDTrader:
                         "brain_coherence": float(candidate.get("brain_coherence", 0.0) or 0.0),
                         "expected_net_profit": float(candidate.get("expected_net_profit", 0.0) or 0.0),
                         "round_trip_cost": float(candidate.get("round_trip_cost", 0.0) or 0.0),
+                        "eta_to_target": float(candidate.get("eta_to_target", 0.0) or 0.0),
                     })
                     break
+            self._feed_unified_decision_engine(
+                symbol,
+                cfg.get("direction", "BUY"),
+                score=min(1.0, max(0.0, best_score / 10.0)),
+                metadata=dict(self._latest_target_snapshot),
+            )
         else:
             self._latest_target_snapshot = {}
+            self._decision_snapshot = {}
+        self._publish_market_snapshot_to_thought_bus()
+        self._refresh_thought_bus_snapshot()
         return best
 
     def _ranked_opportunities(self) -> List[Tuple[str, dict, dict]]:
@@ -875,6 +1112,101 @@ class CapitalCFDTrader:
             ):
                 ranked.append((symbol, {**dict(cfg), "direction": direction}, ticker))
         return ranked
+
+    def _shadow_blocks_symbol(self, symbol: str, direction: str) -> bool:
+        canon = self._canonical_symbol(symbol)
+        for pos in self.positions:
+            if self._canonical_symbol(pos.symbol) == canon and str(pos.direction or "").upper() == direction:
+                return True
+        for shadow in self.shadow_trades:
+            if self._canonical_symbol(shadow.symbol) == canon and str(shadow.direction or "").upper() == direction:
+                return True
+        return False
+
+    def _create_shadow(self, symbol: str, cfg: dict, ticker: dict) -> Optional[CFDShadowTrade]:
+        if len(self.shadow_trades) >= self.SHADOW_MAX_ACTIVE:
+            return None
+        direction = str(cfg.get("direction") or "BUY").upper()
+        if self._shadow_blocks_symbol(symbol, direction):
+            return None
+        price = float(ticker.get("price") or ticker.get("ask") or ticker.get("bid") or 0.0)
+        if price <= 0:
+            return None
+        size = float(cfg.get("size", 0.0) or 0.0)
+        target_move_pct = self._effective_tp_pct(price, size, cfg)
+        score = 0.0
+        for candidate in self._latest_candidate_snapshot:
+            if self._canonical_symbol(candidate.get("symbol")) == self._canonical_symbol(symbol):
+                score = float(candidate.get("score", 0.0) or 0.0)
+                break
+        shadow = CFDShadowTrade(
+            symbol=symbol,
+            direction=direction,
+            asset_class=str(cfg.get("class", "unknown")),
+            size=size,
+            entry_price=price,
+            target_move_pct=max(target_move_pct, 0.0001),
+            score=score,
+        )
+        self.shadow_trades.append(shadow)
+        self._latest_monitor_line = (
+            f"CAPITAL SHADOW OPEN {symbol} {direction} entry={price:.5g} need={shadow.target_move_pct:.4f}%"
+        )
+        logger.info(
+            "CAPITAL SHADOW OPENED: %s %s entry=%.5g need %.4f%%",
+            symbol,
+            direction,
+            price,
+            shadow.target_move_pct,
+        )
+        return shadow
+
+    def _update_shadows(self) -> None:
+        survivors: List[CFDShadowTrade] = []
+        for shadow in self.shadow_trades:
+            ticker = self._get_price(shadow.symbol)
+            price = float((ticker or {}).get("price") or (ticker or {}).get("bid") or (ticker or {}).get("ask") or 0.0)
+            if price > 0:
+                shadow.update(price)
+            if shadow.validated:
+                survivors.append(shadow)
+                continue
+            if shadow.age_secs > self.SHADOW_MAX_AGE:
+                self._shadow_failed_count += 1
+                logger.info(
+                    "CAPITAL SHADOW EXPIRED: %s %s moved=%+.4f%% need=%.4f%% age=%.0fs",
+                    shadow.symbol,
+                    shadow.direction,
+                    shadow.current_move_pct,
+                    shadow.target_move_pct,
+                    shadow.age_secs,
+                )
+                continue
+            survivors.append(shadow)
+        self.shadow_trades = survivors
+
+    def _promote_shadow(self, shadow: CFDShadowTrade) -> Optional[CFDPosition]:
+        ticker = self._get_price(shadow.symbol)
+        cfg = CAPITAL_UNIVERSE.get(shadow.symbol)
+        if not ticker or not cfg:
+            return None
+        direction = str(shadow.direction or "BUY").upper()
+        if not self._can_open_candidate(shadow.symbol, direction):
+            return None
+        working_cfg = {**dict(cfg), "direction": direction, "size": shadow.size}
+        pos = self._open_position(shadow.symbol, working_cfg, ticker)
+        if pos is not None:
+            self._shadow_validated_count += 1
+            self._latest_monitor_line = (
+                f"CAPITAL SHADOW PROMOTED {shadow.symbol} {direction} deal={pos.deal_id}"
+            )
+            logger.info(
+                "CAPITAL SHADOW PROMOTED: %s %s peak=%+.4f%%",
+                shadow.symbol,
+                direction,
+                shadow.peak_move_pct,
+            )
+        return pos
 
     # ── POSITION MANAGEMENT ────────────────────────────────────────────────────
     def _open_position(self, symbol: str, cfg: dict, ticker: dict) -> Optional[CFDPosition]:
@@ -1166,6 +1498,22 @@ class CapitalCFDTrader:
             pnl_pct = (pos.entry_price - cp) / pos.entry_price
         return pnl_pct * pos.entry_price * pos.size
 
+    def _get_capital_dtp(self, pos: CFDPosition):
+        if not HAS_CAPITAL_DTP or DynamicTakeProfit is None or not pos.deal_id:
+            return None
+        tracker = self._dtp_trackers.get(pos.deal_id)
+        if tracker is None:
+            tracker = DynamicTakeProfit(
+                position_size_usd=float(pos.entry_price * pos.size),
+                entry_fee_usd=0.0,
+                fee_rate=0.0,
+                gbp_usd_rate=1.0,
+                activation_threshold_gbp=CAPITAL_DTP_TRIGGER_GBP,
+                trailing_distance_pct=0.02,
+            )
+            self._dtp_trackers[pos.deal_id] = tracker
+        return tracker
+
     def _monitor_positions(self) -> List[dict]:
         """
         Check TP / SL / 1-hour time-limit on every open position.
@@ -1173,8 +1521,6 @@ class CapitalCFDTrader:
         """
         closed:    List[dict]       = []
         remaining: List[CFDPosition] = []
-        max_age = CFD_CONFIG["position_ttl_secs"]
-
         for pos in self.positions:
             if pos.current_price <= 0:
                 remaining.append(pos)
@@ -1182,6 +1528,17 @@ class CapitalCFDTrader:
 
             close_reason: Optional[str] = None
             pnl_gbp = self._position_pnl_gbp(pos)
+            dtp = self._get_capital_dtp(pos)
+            dtp_triggered = False
+            dtp_reason = ""
+            dtp_state = None
+            if dtp is not None:
+                dtp_triggered, dtp_reason, dtp_state = dtp.update(pnl_gbp)
+                if dtp_state and dtp_state.activated:
+                    self._latest_monitor_line = (
+                        f"CAPITAL DTP {pos.symbol} floor=£{dtp_state.floor_gbp:.4f} "
+                        f"peak=£{dtp_state.peak_profit_gbp:.4f} pnl=£{pnl_gbp:+.4f}"
+                    )
 
             if pos.direction == "BUY":
                 if pos.current_price >= pos.tp_price:
@@ -1194,9 +1551,6 @@ class CapitalCFDTrader:
                 elif pos.current_price >= pos.sl_price:
                     close_reason = f"SL_HIT {pos.current_price:.5g}>={pos.sl_price:.5g}"
 
-            if close_reason is None and pos.age_secs >= max_age:
-                close_reason = f"TIME_LIMIT {pos.age_secs/60:.0f}m"
-
             if close_reason and CFD_FLAGS["profit_only_closes"] and pnl_gbp <= 0:
                 self._latest_monitor_line = (
                     f"CAPITAL HOLD {pos.symbol} reason={close_reason} pnl={pnl_gbp:+.4f}GBP "
@@ -1204,11 +1558,15 @@ class CapitalCFDTrader:
                 )
                 close_reason = None
 
+            if dtp_triggered and pnl_gbp >= CAPITAL_DTP_TRIGGER_GBP:
+                close_reason = f"DTP_DEAD_MAN {dtp_reason}"
+
             if close_reason:
                 record = self._close_position(pos, close_reason)
                 if record.get("error"):
                     remaining.append(pos)
                 else:
+                    self._dtp_trackers.pop(pos.deal_id, None)
                     closed.append(record)
             else:
                 remaining.append(pos)
@@ -1236,6 +1594,8 @@ class CapitalCFDTrader:
         closed_this_tick: List[dict] = []
 
         self._sync_positions_from_exchange()
+        self._refresh_unified_intel_snapshot()
+        self._refresh_thought_bus_snapshot()
 
         # Phase 0: price refresh
         self._refresh_prices()
@@ -1246,12 +1606,25 @@ class CapitalCFDTrader:
             self._update_position_prices()
             closed_this_tick.extend(self._monitor_positions())
 
-        # Phase 2: scan for new opportunity
+        # Phase 2: update and promote shadows
+        self._update_shadows()
+        promoted_this_tick = False
+        for shadow in list(self.shadow_trades):
+            if not shadow.validated:
+                continue
+            if shadow.validation_time > 0 and (now - shadow.validation_time) < self.SHADOW_MIN_VALIDATE:
+                continue
+            if self._promote_shadow(shadow) is not None:
+                promoted_this_tick = True
+                self.shadow_trades.remove(shadow)
+                break
+
+        # Phase 3: scan for new opportunity
         should_scan = (now - self._last_scan >= CFD_CONFIG["scan_interval_secs"]) or bool(closed_this_tick)
         if should_scan:
             self._last_scan = now
 
-            if len(self.positions) < int(CFD_CONFIG["max_positions"]):
+            if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
                 # Quick Seer + Lyra gate before committing capital
                 if self._quad_gate():
                     self._find_best_opportunity()
@@ -1292,7 +1665,7 @@ class CapitalCFDTrader:
                             logger.warning("CFD candidate skipped for %s: %s", sym, preflight.get("reason") or "unknown")
                             continue
 
-                        if self._open_position(sym, working_cfg, ticker) is not None:
+                        if self._create_shadow(sym, working_cfg, ticker) is not None:
                             opened_directions.add(direction)
                             if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
                                 break
@@ -1322,7 +1695,8 @@ class CapitalCFDTrader:
                 f"EqDelta={eq_delta:+.2f} GBP"
             ),
             f"  CAPITAL CFD: {len(self.positions)} open / {c} closed | "
-            f"W:{w} L:{l} | PnL:{pnl:+.2f} GBP | gate:{gate}"
+            f"W:{w} L:{l} | PnL:{pnl:+.2f} GBP | gate:{gate}",
+            f"  Shadows: {len(self.shadow_trades)} active | validated={self._shadow_validated_count} failed={self._shadow_failed_count}",
         ]
         # Asset-class breakdown
         by_class: Dict[str, int] = {}
@@ -1336,6 +1710,20 @@ class CapitalCFDTrader:
             lines.append(f"    Trace: {self._latest_order_trace_path}")
         for pos in self.positions:
             lines.append(pos.one_line())
+            dtp = self._dtp_trackers.get(pos.deal_id)
+            dtp_state = getattr(dtp, "state", None)
+            if dtp_state and getattr(dtp_state, "activated", False):
+                lines.append(
+                    f"      DTP floor=£{float(getattr(dtp_state, 'floor_gbp', 0.0) or 0.0):.4f} "
+                    f"peak=£{float(getattr(dtp_state, 'peak_profit_gbp', 0.0) or 0.0):.4f}"
+                )
+        for shadow in self.shadow_trades[:4]:
+            lines.append(
+                f"    SHADOW {shadow.direction:4} {shadow.symbol:12} [{shadow.asset_class:9}] "
+                f"entry:{shadow.entry_price:.5g} now:{shadow.current_price or shadow.entry_price:.5g} "
+                f"move:{shadow.current_move_pct:+.3f}% need:{shadow.target_move_pct:.3f}% "
+                f"age:{shadow.age_secs/60:.1f}m{' VALID' if shadow.validated else ''}"
+            )
         if self._latest_target_snapshot:
             target = self._latest_target_snapshot
             lines.append(
@@ -1366,6 +1754,33 @@ class CapitalCFDTrader:
                 f"  CLOSE: {trade.get('symbol', '?')} {trade.get('direction', '?')} "
                 f"{float(trade.get('net_pnl', 0.0) or 0.0):+.2f} GBP reason={trade.get('reason', '?')}"
             )
+        if self._registry_snapshot.get("categories"):
+            lines.append(f"  Registry: {len(self._registry_snapshot.get('categories', {}))} categories linked")
+        if self._decision_snapshot:
+            if self._decision_snapshot.get("decision"):
+                decision = self._decision_snapshot.get("decision", {}) or {}
+                lines.append(
+                    f"  Decision: {self._decision_snapshot.get('symbol', '?')} {self._decision_snapshot.get('side', '?')} "
+                    f"-> {decision.get('type', '?')} conf={float(decision.get('confidence', 0.0) or 0.0):.2f}"
+                )
+            elif self._decision_snapshot.get("error"):
+                lines.append(f"  Decision: error={self._decision_snapshot.get('error')}")
+        if self._thought_bus_snapshot:
+            if self._thought_bus_snapshot.get("error"):
+                lines.append(f"  ThoughtBus: error={self._thought_bus_snapshot.get('error')}")
+            else:
+                lines.append(
+                    f"  ThoughtBus: market={int(self._thought_bus_snapshot.get('market_events', 0) or 0)} "
+                    f"decision={int(self._thought_bus_snapshot.get('decision_events', 0) or 0)}"
+                )
+        if self._cognition_snapshot:
+            if self._cognition_snapshot.get("error"):
+                lines.append(f"  Cognition: error={self._cognition_snapshot.get('error')}")
+            else:
+                lines.append(
+                    f"  Cognition: brain={int(self._cognition_snapshot.get('cognition_events', 0) or 0)} "
+                    f"queen={int(self._cognition_snapshot.get('queen_events', 0) or 0)}"
+                )
         self._latest_status_lines = lines
         return lines
 
@@ -1405,10 +1820,32 @@ class CapitalCFDTrader:
                 }
                 for pos in self.positions
             ],
+            "shadows": [
+                {
+                    "symbol": shadow.symbol,
+                    "direction": shadow.direction,
+                    "asset_class": shadow.asset_class,
+                    "size": shadow.size,
+                    "entry_price": shadow.entry_price,
+                    "current_price": shadow.current_price,
+                    "current_move_pct": shadow.current_move_pct,
+                    "peak_move_pct": shadow.peak_move_pct,
+                    "target_move_pct": shadow.target_move_pct,
+                    "age_secs": shadow.age_secs,
+                    "validated": shadow.validated,
+                }
+                for shadow in self.shadow_trades
+            ],
             "stats": dict(self.stats),
             "latest_monitor_line": self._latest_monitor_line,
             "status_lines": self._latest_status_lines[-16:],
             "candidate_snapshot": list(self._latest_candidate_snapshot),
             "target_snapshot": dict(self._latest_target_snapshot),
+            "registry_snapshot": dict(self._registry_snapshot),
+            "decision_snapshot": dict(self._decision_snapshot),
+            "thought_bus_snapshot": dict(self._thought_bus_snapshot),
+            "cognition_snapshot": dict(self._cognition_snapshot),
             "recent_closed_trades": list(self._recent_closed_trades[-5:]),
+            "shadow_validated": self._shadow_validated_count,
+            "shadow_failed": self._shadow_failed_count,
         }
