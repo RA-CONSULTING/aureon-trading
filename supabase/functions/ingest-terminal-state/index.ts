@@ -37,6 +37,16 @@ interface TerminalState {
     is_win?: boolean;
     exchange?: string;
   }>;
+  recent_trades?: Array<{
+    time: string;
+    side: string;
+    symbol: string;
+    quantity: number;
+    pnl: number;
+    success: boolean;
+    hold_seconds?: number;
+    reason?: string;
+  }>;
   total_trades: number;
   wins: number;
   win_rate: number;
@@ -50,6 +60,7 @@ interface TerminalState {
     quantity: number;
     current_price?: number;
     unrealized_pnl?: number;
+    exchange?: string;
   }>;
   
   // Coherence/HNC/Gaia
@@ -92,6 +103,8 @@ interface TerminalState {
   runtime_minutes: number;
   ws_connected?: boolean;
   ws_message_count?: number;
+  latest_monitor_line?: string;
+  status_lines?: string[];
 }
 
 serve(async (req) => {
@@ -142,6 +155,7 @@ serve(async (req) => {
         dominant_node: state.queen_state,
         total_trades: state.total_trades,
         winning_trades: state.wins,
+        recent_trades: state.recent_trades || [],
         trading_mode: state.trading_mode,
         is_trading_active: true,
         updated_at: now,
@@ -212,7 +226,7 @@ serve(async (req) => {
             current_price: pos.current_price || pos.entry_price,
             unrealized_pnl: pos.unrealized_pnl || 0,
             status: 'open',
-            exchange: 'binance',
+            exchange: pos.exchange || 'binance',
             updated_at: now,
           }, { 
             onConflict: 'user_id,symbol',
@@ -256,6 +270,7 @@ serve(async (req) => {
       peak_equity: state.peak_equity,
       current_drawdown: state.current_drawdown,
       max_drawdown: state.max_drawdown,
+      avg_hold_time_minutes: state.avg_hold_time || 0,
       mycelium_hives: state.mycelium_hives,
       mycelium_agents: state.mycelium_agents,
       mycelium_generation: state.mycelium_generation,
@@ -272,6 +287,8 @@ serve(async (req) => {
       ws_message_count: state.ws_message_count || 0,
       gaia_purity: state.gaia_purity || 0,
       gaia_carrier_phi: state.gaia_carrier_phi || 0,
+      latest_monitor_line: state.latest_monitor_line || '',
+      status_lines: state.status_lines || [],
       timestamp: now,
     };
 

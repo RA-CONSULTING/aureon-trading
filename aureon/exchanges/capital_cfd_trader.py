@@ -22,7 +22,7 @@ import os
 import time
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +85,8 @@ CFD_CONFIG: Dict[str, float] = {
     "monitor_interval":    5.0,  # Position monitor interval
     "quad_gate_ttl":      30.0,  # Cache Seer/Lyra gate results for N secs
 }
+
+CAPITAL_MIN_PROFIT_GBP = 0.01
 
 
 # ── DATA CLASSES ───────────────────────────────────────────────────────────────
@@ -150,6 +152,13 @@ class CapitalCFDTrader:
         # Price cache
         self._prices: Dict[str, dict] = {}
         self._prices_fetched_at: float = 0.0
+        self._latest_candidate_snapshot: List[Dict[str, Any]] = []
+        self._latest_target_snapshot: Dict[str, Any] = {}
+        self._latest_status_lines: List[str] = []
+        self._latest_monitor_line: str = ""
+        self._recent_closed_trades: List[dict] = []
+        self.start_time: float = time.time()
+        self.starting_equity_gbp: float = 0.0
 
         # Timing
         self._last_scan:    float = 0.0
@@ -183,6 +192,8 @@ class CapitalCFDTrader:
                     self.client = None
                 else:
                     logger.info("CapitalCFDTrader: Capital.com client READY")
+                    snap = self.get_capital_snapshot()
+                    self.starting_equity_gbp = float(snap.get("equity_gbp", 0.0) or 0.0)
             except Exception as _e:
                 logger.debug(f"CapitalCFDTrader: client init failed: {_e}")
                 self.client = None
@@ -197,6 +208,40 @@ class CapitalCFDTrader:
     @property
     def position_count(self) -> int:
         return len(self.positions)
+
+    def _required_tp_pct_for_profit(self, price: float, size: float) -> float:
+        """Minimum percentage move required to realize the configured absolute GBP target."""
+        notional = max(price * size, 0.0001)
+        return (CAPITAL_MIN_PROFIT_GBP / notional) * 100.0
+
+    def get_capital_snapshot(self) -> Dict[str, float]:
+        """Expose Capital.com account state in the same style as the Kraken trader."""
+        if not self.client:
+            return {
+                "equity_gbp": 0.0,
+                "free_gbp": 0.0,
+                "used_gbp": 0.0,
+                "budget_gbp": 0.0,
+                "target_pct_equity": 0.0,
+            }
+        accounts = self.client.get_accounts()
+        if not accounts:
+            balances = self.client.get_account_balance()
+            equity = float(sum(float(v or 0.0) for v in balances.values()))
+            free = equity
+        else:
+            equity = sum(float(acc.get("balance", 0.0) or 0.0) for acc in accounts)
+            free = sum(float(acc.get("available", 0.0) or 0.0) for acc in accounts)
+        used = max(0.0, equity - free)
+        budget = free * 0.70
+        target_pct = (CAPITAL_MIN_PROFIT_GBP / equity * 100.0) if equity > 0 else 0.0
+        return {
+            "equity_gbp": equity,
+            "free_gbp": free,
+            "used_gbp": used,
+            "budget_gbp": budget,
+            "target_pct_equity": target_pct,
+        }
 
     # ── PRICES ─────────────────────────────────────────────────────────────────
     def _refresh_prices(self) -> None:
@@ -270,6 +315,19 @@ class CapitalCFDTrader:
         # Score = momentum minus spread drag
         score = change_pct - spread_pct * 0.15
 
+        # Must have enough room to clear the realized-profit floor.
+        size = float(cfg.get("size", 0.0) or 0.0)
+        required_tp_pct = self._required_tp_pct_for_profit(price, size)
+        configured_tp_pct = float(cfg.get("tp_pct", 0.0) or 0.0)
+        if configured_tp_pct < required_tp_pct:
+            return 0.0
+
+        expected_profit_gbp = price * size * (configured_tp_pct / 100.0)
+        if expected_profit_gbp < CAPITAL_MIN_PROFIT_GBP:
+            return 0.0
+
+        score += min(1.0, expected_profit_gbp / max(CAPITAL_MIN_PROFIT_GBP, 0.0001)) * 0.25
+
         # Hive Mind ripple amplifier — Market Harp signals shared by TradingHiveMind
         # A ripple on a correlated market boosts this symbol's momentum score
         hive_factor = self._hive_boosts.get(symbol, self._hive_boosts.get(symbol.upper(), 0.0))
@@ -290,6 +348,7 @@ class CapitalCFDTrader:
         already_held = {p.symbol for p in self.positions}
         best_score = 0.0
         best: Optional[Tuple[str, dict, dict]] = None
+        scored: List[Dict[str, Any]] = []
 
         for symbol, cfg in CAPITAL_UNIVERSE.items():
             if symbol in already_held:
@@ -298,10 +357,54 @@ class CapitalCFDTrader:
             if not ticker:
                 continue
             score = self._score_symbol(symbol, cfg, ticker)
+            price = float(ticker.get("price") or 0.0)
+            bid = float(ticker.get("bid") or 0.0)
+            ask = float(ticker.get("ask") or 0.0)
+            spread_pct = ((ask - bid) / price * 100.0) if price > 0 and bid > 0 and ask > 0 else 0.0
+            required_tp_pct = self._required_tp_pct_for_profit(price, float(cfg.get("size", 0.0) or 0.0))
+            effective_tp_pct = max(float(cfg.get("tp_pct", 0.0) or 0.0), required_tp_pct)
+            scored.append({
+                "symbol": symbol,
+                "asset_class": cfg.get("class", "unknown"),
+                "score": score,
+                "price": price,
+                "bid": bid,
+                "ask": ask,
+                "spread_pct": spread_pct,
+                "change_pct": float(ticker.get("change_pct") or 0.0),
+                "size": float(cfg.get("size", 0.0) or 0.0),
+                "tp_pct": effective_tp_pct,
+                "sl_pct": float(cfg.get("sl_pct", 0.0) or 0.0),
+                "profit_target_gbp": CAPITAL_MIN_PROFIT_GBP,
+                "required_tp_pct": required_tp_pct,
+            })
             if score > best_score:
                 best_score = score
                 best = (symbol, cfg, ticker)
 
+        scored.sort(key=lambda item: float(item.get("score", 0.0) or 0.0), reverse=True)
+        self._latest_candidate_snapshot = scored[:7]
+        if best is not None:
+            symbol, cfg, ticker = best
+            self._latest_target_snapshot = {
+                "symbol": symbol,
+                "asset_class": cfg.get("class", "unknown"),
+                "score": best_score,
+                "price": float(ticker.get("price") or 0.0),
+                "change_pct": float(ticker.get("change_pct") or 0.0),
+                "size": float(cfg.get("size", 0.0) or 0.0),
+                "tp_pct": max(
+                    float(cfg.get("tp_pct", 0.0) or 0.0),
+                    self._required_tp_pct_for_profit(
+                        float(ticker.get("price") or 0.0),
+                        float(cfg.get("size", 0.0) or 0.0),
+                    ),
+                ),
+                "sl_pct": float(cfg.get("sl_pct", 0.0) or 0.0),
+                "profit_target_gbp": CAPITAL_MIN_PROFIT_GBP,
+            }
+        else:
+            self._latest_target_snapshot = {}
         return best
 
     # ── POSITION MANAGEMENT ────────────────────────────────────────────────────
@@ -316,7 +419,8 @@ class CapitalCFDTrader:
             return None
 
         size     = cfg["size"]
-        tp_price = ask * (1 + cfg["tp_pct"] / 100)
+        effective_tp_pct = max(float(cfg["tp_pct"]), self._required_tp_pct_for_profit(ask, size))
+        tp_price = ask * (1 + effective_tp_pct / 100)
         sl_price = ask * (1 - cfg["sl_pct"] / 100)
 
         try:
@@ -337,7 +441,8 @@ class CapitalCFDTrader:
                     conf = self.client.confirm_order(deal_ref)
                     deal_id    = conf.get("dealId", deal_id) or deal_id
                     fill_price = float(conf.get("level", fill_price) or fill_price)
-                    tp_price   = fill_price * (1 + cfg["tp_pct"] / 100)
+                    effective_tp_pct = max(float(cfg["tp_pct"]), self._required_tp_pct_for_profit(fill_price, size))
+                    tp_price   = fill_price * (1 + effective_tp_pct / 100)
                     sl_price   = fill_price * (1 - cfg["sl_pct"] / 100)
                 except Exception:
                     pass
@@ -356,6 +461,10 @@ class CapitalCFDTrader:
             )
             self.positions.append(pos)
             self.stats["trades_opened"] += 1
+            self._latest_monitor_line = (
+                f"CAPITAL OPEN {symbol} BUY size={size} entry={fill_price:.5g} "
+                f"tp={tp_price:.5g} sl={sl_price:.5g}"
+            )
 
             print(
                 f"  CAPITAL CFD OPEN:  {symbol:12} [{cfg['class'].upper():9}] "
@@ -409,8 +518,11 @@ class CapitalCFDTrader:
             f"  CAPITAL CFD CLOSE: {pos.symbol:12} [{pos.asset_class.upper():9}] "
             f"{reason}  |  PnL: {pnl_gbp:+.4f} GBP  age:{pos.age_secs/60:.1f}m"
         )
+        self._latest_monitor_line = (
+            f"CAPITAL CLOSE {pos.symbol} {reason} pnl={pnl_gbp:+.4f}GBP age={pos.age_secs/60:.1f}m"
+        )
 
-        return {
+        record = {
             "symbol":           pos.symbol,
             "asset_class":      pos.asset_class,
             "direction":        pos.direction,
@@ -422,6 +534,9 @@ class CapitalCFDTrader:
             "reason":           reason,
             "age_secs":         pos.age_secs,
         }
+        self._recent_closed_trades.append(record)
+        self._recent_closed_trades = self._recent_closed_trades[-5:]
+        return record
 
     def _update_position_prices(self) -> None:
         """Refresh current_price on all tracked positions from the price cache."""
@@ -431,6 +546,10 @@ class CapitalCFDTrader:
                 cp = float(ticker.get("price") or 0)
                 if cp > 0:
                     pos.current_price = cp
+                    self._latest_monitor_line = (
+                        f"CAPITAL MONITOR {pos.symbol} now={cp:.5g} entry={pos.entry_price:.5g} "
+                        f"pnl={pos.pnl_pct:+.3f}% tp={pos.tp_price:.5g} sl={pos.sl_price:.5g}"
+                    )
 
     def _monitor_positions(self) -> List[dict]:
         """
@@ -513,6 +632,7 @@ class CapitalCFDTrader:
                 else:
                     logger.debug("CFD tick: Quadrumvirate gate CLOSED — scan skipped")
 
+        self.status_lines()
         return closed_this_tick
 
     # ── STATUS ─────────────────────────────────────────────────────────────────
@@ -523,8 +643,17 @@ class CapitalCFDTrader:
         c = int(self.stats["trades_closed"])
         pnl = self.stats["total_pnl_gbp"]
         gate = "ARMED" if HAS_QUAD_GATES else "open"
+        capital = self.get_capital_snapshot()
+        eq_delta = capital["equity_gbp"] - self.starting_equity_gbp if self.starting_equity_gbp > 0 else 0.0
+        runtime_m = (time.time() - self.start_time) / 60.0
 
         lines: List[str] = [
+            f"  CAPITAL STATUS | runtime={runtime_m:.1f}m",
+            (
+                f"  Equity={capital['equity_gbp']:.2f} GBP | Free={capital['free_gbp']:.2f} GBP | "
+                f"Used={capital['used_gbp']:.2f} GBP | Budget={capital['budget_gbp']:.2f} GBP | "
+                f"EqDelta={eq_delta:+.2f} GBP"
+            ),
             f"  CAPITAL CFD: {len(self.positions)} open / {c} closed | "
             f"W:{w} L:{l} | PnL:{pnl:+.2f} GBP | gate:{gate}"
         ]
@@ -537,6 +666,30 @@ class CapitalCFDTrader:
             lines.append(f"    Classes: {breakdown}")
         for pos in self.positions:
             lines.append(pos.one_line())
+        if self._latest_target_snapshot:
+            target = self._latest_target_snapshot
+            lines.append(
+                f"  Target: {target.get('symbol', '?')} [{target.get('asset_class', '?')}] "
+                f"score={float(target.get('score', 0.0) or 0.0):.3f} "
+                f"chg={float(target.get('change_pct', 0.0) or 0.0):+.3f}% "
+                f"goal=£{float(target.get('profit_target_gbp', CAPITAL_MIN_PROFIT_GBP) or CAPITAL_MIN_PROFIT_GBP):.2f}"
+            )
+        if self._latest_candidate_snapshot:
+            lines.append("  Top 7 candidates:")
+            for idx, candidate in enumerate(self._latest_candidate_snapshot[:7], start=1):
+                lines.append(
+                    f"    #{idx} {candidate.get('symbol', '?')} [{candidate.get('asset_class', '?')}] "
+                    f"score={float(candidate.get('score', 0.0) or 0.0):.3f} "
+                    f"chg={float(candidate.get('change_pct', 0.0) or 0.0):+.3f}% "
+                    f"spr={float(candidate.get('spread_pct', 0.0) or 0.0):.3f}% "
+                    f"goal=£{float(candidate.get('profit_target_gbp', CAPITAL_MIN_PROFIT_GBP) or CAPITAL_MIN_PROFIT_GBP):.2f}"
+                )
+        for trade in reversed(self._recent_closed_trades[-3:]):
+            lines.append(
+                f"  CLOSE: {trade.get('symbol', '?')} {trade.get('direction', '?')} "
+                f"{float(trade.get('net_pnl', 0.0) or 0.0):+.2f} GBP reason={trade.get('reason', '?')}"
+            )
+        self._latest_status_lines = lines
         return lines
 
     def recommendations_summary(self) -> str:
@@ -545,3 +698,39 @@ class CapitalCFDTrader:
             f"Capital CFD: {len(self.positions)}/{int(CFD_CONFIG['max_positions'])} pos | "
             f"PnL:{self.stats['total_pnl_gbp']:+.2f} GBP"
         )
+
+    def get_dashboard_payload(self) -> Dict[str, Any]:
+        """Expose Capital trader state in the same local-dashboard style as the margin trader."""
+        capital = self.get_capital_snapshot()
+        return {
+            "exchange": "capital",
+            "mode": "cfd",
+            "ok": self.enabled,
+            "equity_gbp": capital["equity_gbp"],
+            "free_gbp": capital["free_gbp"],
+            "used_gbp": capital["used_gbp"],
+            "budget_gbp": capital["budget_gbp"],
+            "target_pct_equity": capital["target_pct_equity"],
+            "positions": [
+                {
+                    "symbol": pos.symbol,
+                    "epic": pos.epic,
+                    "direction": pos.direction,
+                    "size": pos.size,
+                    "entry_price": pos.entry_price,
+                    "current_price": pos.current_price,
+                    "tp_price": pos.tp_price,
+                    "sl_price": pos.sl_price,
+                    "asset_class": pos.asset_class,
+                    "age_secs": pos.age_secs,
+                    "pnl_pct": pos.pnl_pct,
+                }
+                for pos in self.positions
+            ],
+            "stats": dict(self.stats),
+            "latest_monitor_line": self._latest_monitor_line,
+            "status_lines": self._latest_status_lines[-16:],
+            "candidate_snapshot": list(self._latest_candidate_snapshot),
+            "target_snapshot": dict(self._latest_target_snapshot),
+            "recent_closed_trades": list(self._recent_closed_trades[-5:]),
+        }

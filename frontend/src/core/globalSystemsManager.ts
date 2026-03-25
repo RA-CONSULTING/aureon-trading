@@ -57,6 +57,7 @@ export interface GlobalState {
     quantity: number;
     pnl: number;
     success: boolean;
+    exchange?: string;
   }>;
   
   // Market data
@@ -118,6 +119,8 @@ export interface GlobalState {
   cyclePnl: number;                  // Current session P&L
   cyclePnlPercent: number;           // Current session P&L %
   avgHoldTimeMinutes: number;        // Average trade duration
+  latestMonitorLine: string;         // Latest monitor snapshot mirrored from terminal
+  statusLines: string[];             // Latest terminal status block
   
   // WebSocket status
   wsMessageCount: number;            // Total WS messages received
@@ -167,7 +170,31 @@ export interface GlobalState {
     currentPrice: number;
     pnlPercent: number;
     side: 'LONG' | 'SHORT';
+    exchange?: string;
   }>;
+
+  unifiedMarketSummary?: {
+    krakenEquity: number;
+    capitalEquityGbp: number;
+    krakenSessionPnl: number;
+    capitalSessionPnlGbp: number;
+    openPositions: number;
+    capitalOpenPositions: number;
+    krakenOpenPositions: number;
+    capitalRecentCloses: Array<{
+      symbol: string;
+      direction: string;
+      net_pnl: number;
+      reason: string;
+    }>;
+    capitalCandidates: Array<{
+      symbol: string;
+      asset_class: string;
+      score: number;
+      change_pct: number;
+      spread_pct: number;
+    }>;
+  };
 }
 
 const initialState: GlobalState = {
@@ -248,6 +275,8 @@ const initialState: GlobalState = {
   cyclePnl: 0,
   cyclePnlPercent: 0,
   avgHoldTimeMinutes: 0,
+  latestMonitorLine: '',
+  statusLines: [],
   
   // WebSocket status
   wsMessageCount: 0,
@@ -292,6 +321,7 @@ const initialState: GlobalState = {
   // Active positions
   maxPositions: 30,
   activePositions: [],
+  unifiedMarketSummary: undefined,
 };
 
 type StateListener = (state: GlobalState) => void;

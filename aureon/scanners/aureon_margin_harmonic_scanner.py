@@ -60,6 +60,13 @@ if sys.platform == 'win32':
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger('margin_harmonic_scanner')
 
+
+def _optional_init_log(message: str) -> None:
+    if os.getenv("AUREON_QUIET_STARTUP", "0") == "1":
+        logger.debug(message)
+    else:
+        logger.warning(message)
+
 # ═══════════════════════════════════════════════════════════════
 #  SACRED CONSTANTS
 # ═══════════════════════════════════════════════════════════════
@@ -263,7 +270,7 @@ class HarmonicMarginWaveformScanner:
             )
             logger.info("Lighthouse metrics engine ONLINE")
         except Exception as e:
-            logger.warning(f"Lighthouse unavailable: {e}")
+            _optional_init_log(f"Lighthouse unavailable: {e}")
     
     def _init_probability(self):
         """Initialize the probability nexus."""
@@ -272,7 +279,7 @@ class HarmonicMarginWaveformScanner:
             self.probability_nexus = EnhancedProbabilityNexus()
             logger.info("Probability nexus ONLINE")
         except Exception as e:
-            logger.warning(f"Probability nexus unavailable: {e}")
+            _optional_init_log(f"Probability nexus unavailable: {e}")
     
     def _init_aluminium_field(self):
         """Initialize the liquid aluminium harmonic field."""
@@ -281,7 +288,7 @@ class HarmonicMarginWaveformScanner:
             self.aluminium_field = HarmonicLiquidAluminiumField()
             logger.info("Liquid aluminium field ONLINE")
         except Exception as e:
-            logger.warning(f"Liquid aluminium field unavailable: {e}")
+            _optional_init_log(f"Liquid aluminium field unavailable: {e}")
 
     def _init_lyra_observer(self):
         """Initialize Lyra — the emotional frequency engine — as the observer."""
@@ -290,7 +297,7 @@ class HarmonicMarginWaveformScanner:
             self.lyra = get_lyra()
             logger.info("LYRA Observer ONLINE — The Fourth Pillar observes the waveform")
         except Exception as e:
-            logger.warning(f"Lyra unavailable (observer effect disabled): {e}")
+            _optional_init_log(f"Lyra unavailable (observer effect disabled): {e}")
 
     def _init_math_angel(self):
         """Initialize the Math Angel for Reality Field Ψ computation."""
@@ -300,7 +307,7 @@ class HarmonicMarginWaveformScanner:
             self.observer_field.awaken()
             logger.info("Math Angel Reality Field ONLINE — Ψ = α(M+F)·O·T + βG + γS")
         except Exception as e:
-            logger.warning(f"Math Angel unavailable: {e}")
+            _optional_init_log(f"Math Angel unavailable: {e}")
     
     # ═════════════════════════════════════════════════════════
     #  FREQUENCY MAPPING — Price → Hz
