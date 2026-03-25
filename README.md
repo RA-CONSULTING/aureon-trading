@@ -12,6 +12,8 @@
 [![Python](https://img.shields.io/badge/Python-947%20modules-3776AB?style=for-the-badge&logo=python&logoColor=white)](#architecture-overview)
 [![TypeScript](https://img.shields.io/badge/TypeScript-780%20files-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#architecture-overview)
 
+[![Support the Project](https://img.shields.io/badge/☕%20Support%20the%20Project-Donate%20via%20SumUp-FFD700?style=for-the-badge&logoColor=black)](https://pay.sumup.com/b2c/QFTPOX6U)
+
 </div>
 
 ---
@@ -74,6 +76,24 @@ Live crypto trading. Real money. Real signals. The Aureon system in action — e
 </div>
 
 Connect with researchers, traders, and truth-seekers who are digging into the data, running the bots, and exposing what the institutions don't want you to see. Strategy breakdowns, signal alerts, research drops, and live discussion — all inside.
+
+---
+
+## ☕ SUPPORT THE PROJECT
+
+This research is **free, open-source, and independent** — no VCs, no hedge funds, no corporate backing. Just one researcher exposing what institutions don't want you to see.
+
+If Aureon has given you an edge, saved you from a bad trade, or simply opened your eyes — consider supporting the work that makes it possible.
+
+<div align="center">
+
+[![Support the Project](https://img.shields.io/badge/☕%20Buy%20Me%20a%20Coffee-Support%20Aureon-FFD700?style=for-the-badge&logoColor=black)](https://pay.sumup.com/b2c/QFTPOX6U)
+
+**[➡️ Donate via SumUp — pay.sumup.com/b2c/QFTPOX6U](https://pay.sumup.com/b2c/QFTPOX6U)**
+
+*Every contribution goes directly into research, server costs, and keeping the system live 24/7.*
+
+</div>
 
 ---
 
@@ -3404,6 +3424,7 @@ For Docker-based deployment options see also `production/README.md`.
 [![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
 [![GitHub](https://img.shields.io/badge/GitHub-Star%20the%20Repo-181717?style=for-the-badge&logo=github)](https://github.com/ra-consulting/aureon-trading)
 [![Fork](https://img.shields.io/badge/GitHub-Fork%20%26%20Clone-FFD700?style=for-the-badge&logo=github)](https://github.com/ra-consulting/aureon-trading/fork)
+[![Support](https://img.shields.io/badge/☕%20Support%20the%20Project-SumUp-FFD700?style=for-the-badge)](https://pay.sumup.com/b2c/QFTPOX6U)
 
 *Cloned it? Running live? Share your anonymous 24h P&L screenshot in Discord.*
 
