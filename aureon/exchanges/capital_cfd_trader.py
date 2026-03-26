@@ -22,6 +22,7 @@ import os
 import time
 import logging
 import json
+import importlib
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -195,6 +196,10 @@ CAPITAL_RISK_REJECTION_COOLDOWN_SECS = _env_float("CAPITAL_RISK_REJECTION_COOLDO
 
 CAPITAL_MIN_PROFIT_GBP = 0.01
 CAPITAL_DTP_TRIGGER_GBP = 0.01
+CAPITAL_SHADOW_MIN_VALIDATE_SECS = _env_float("CAPITAL_SHADOW_MIN_VALIDATE_SECS", 10.0)
+CAPITAL_HISTORY_LOOKBACK_DAYS = int(_env_float("CAPITAL_HISTORY_LOOKBACK_DAYS", 90.0))
+CAPITAL_MIN_PROBABILITY_ACCURACY = _env_float("CAPITAL_MIN_PROBABILITY_ACCURACY", 0.55)
+CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR = _env_float("CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR", 1.05)
 
 
 # ── DATA CLASSES ───────────────────────────────────────────────────────────────
@@ -309,7 +314,7 @@ class CapitalCFDTrader:
     """
 
     SHADOW_MAX_AGE = 120.0
-    SHADOW_MIN_VALIDATE = 5.0
+    SHADOW_MIN_VALIDATE = CAPITAL_SHADOW_MIN_VALIDATE_SECS
     SHADOW_MAX_ACTIVE = 4
 
     def __init__(self) -> None:
@@ -372,6 +377,10 @@ class CapitalCFDTrader:
             "votes": [],
             "ranked": [],
         }
+        self._probability_snapshot: Dict[str, Any] = {}
+        self._probability_snapshot_at: float = 0.0
+        self._harmonic_wiring_audit: Dict[str, Any] = self._build_harmonic_wiring_audit()
+        self._harmonic_wiring_audit_at: float = time.time()
 
         # Timing
         self._last_scan:    float = 0.0
@@ -1418,6 +1427,152 @@ class CapitalCFDTrader:
             "ranked": ranked_consensus,
         }
 
+    def _probability_validation_snapshot(self, force: bool = False) -> Dict[str, Any]:
+        now = time.time()
+        if not force and self._probability_snapshot and (now - self._probability_snapshot_at) < 30.0:
+            return dict(self._probability_snapshot)
+
+        payload: Dict[str, Any] = {
+            "ok": False,
+            "direction_accuracy": 0.0,
+            "profit_factor": 0.0,
+            "updated": "",
+            "reason": "file_missing",
+        }
+        report_path = Path(os.path.join(os.path.dirname(__file__), "..", "..", "state", "reports", "probability_validation.json")).resolve()
+        try:
+            if report_path.exists():
+                raw = json.loads(report_path.read_text(encoding="utf-8"))
+                stats = raw.get("stats", {}) if isinstance(raw, dict) else {}
+                payload = {
+                    "ok": True,
+                    "direction_accuracy": float(stats.get("direction_accuracy", 0.0) or 0.0),
+                    "profit_factor": float(stats.get("profit_factor", 0.0) or 0.0),
+                    "updated": str(raw.get("updated") or ""),
+                    "reason": "ok",
+                }
+        except Exception as e:
+            payload = {
+                "ok": False,
+                "direction_accuracy": 0.0,
+                "profit_factor": 0.0,
+                "updated": "",
+                "reason": f"load_error:{e}",
+            }
+        self._probability_snapshot = payload
+        self._probability_snapshot_at = now
+        return dict(payload)
+
+    def _build_harmonic_wiring_audit(self) -> Dict[str, Any]:
+        """Audit harmonic/probability subsystem wiring required by Capital trader."""
+        root = Path(os.path.join(os.path.dirname(__file__), "..", "..")).resolve()
+        checks: List[Dict[str, Any]] = []
+
+        import_specs = [
+            ("timeline_oracle", "aureon.intelligence.aureon_timeline_oracle", "get_timeline_oracle"),
+            ("harmonic_fusion", "aureon.harmonic.aureon_harmonic_fusion", "HarmonicWaveFusion"),
+            ("unified_decision_engine", "aureon.intelligence.aureon_unified_decision_engine", "UnifiedDecisionEngine"),
+            ("harmonic_nexus_bridge", "aureon.harmonic.harmonic_nexus_bridge", "HarmonicNexusBridge"),
+            ("global_harmonic_field", "aureon.harmonic.global_harmonic_field", "GlobalHarmonicField"),
+            ("probability_intelligence_matrix", "aureon.strategies.probability_intelligence_matrix", "ProbabilityIntelligenceMatrix"),
+            ("hnc_probability_integration", "aureon.strategies.hnc_probability_matrix", "HNCProbabilityIntegration"),
+            ("thought_bus", "aureon.core.aureon_thought_bus", "get_thought_bus"),
+        ]
+        for name, module_name, attr_name in import_specs:
+            item = {
+                "name": name,
+                "kind": "import",
+                "target": f"{module_name}:{attr_name}",
+                "ok": False,
+                "reason": "",
+            }
+            try:
+                module = importlib.import_module(module_name)
+                if hasattr(module, attr_name):
+                    item["ok"] = True
+                    item["reason"] = "ok"
+                else:
+                    item["reason"] = "attribute_missing"
+            except Exception as e:
+                item["reason"] = str(e)
+            checks.append(item)
+
+        file_specs = [
+            ("probability_validation_report", root / "state" / "reports" / "probability_validation.json"),
+            ("trained_probability_matrix", root / "state" / "trained_probability_matrix.json"),
+            ("wave_monitor_final", root / "state" / "wave_monitor_final.json"),
+            ("money_flow_timeline", root / "state" / "money_flow_timeline.json"),
+            ("harmonic_wave_data", root / "state" / "harmonic_wave_data.json"),
+        ]
+        for name, path in file_specs:
+            path_obj = Path(path).resolve()
+            checks.append({
+                "name": name,
+                "kind": "file",
+                "target": str(path_obj),
+                "ok": path_obj.exists(),
+                "reason": "ok" if path_obj.exists() else "missing",
+            })
+
+        passed = sum(1 for item in checks if item.get("ok"))
+        return {
+            "ok": passed == len(checks),
+            "passed": passed,
+            "total": len(checks),
+            "updated_at": datetime.now().isoformat(),
+            "checks": checks,
+        }
+
+    def _build_shadow_promotion_gate(self, shadow: CFDShadowTrade, ticker: Optional[dict]) -> Dict[str, Any]:
+        direction = str(shadow.direction or "BUY").upper()
+        momentum = float((ticker or {}).get("change_pct") or 0.0)
+        direction_aligned = (direction == "BUY" and momentum >= 0) or (direction == "SELL" and momentum <= 0)
+
+        latest_target = dict(getattr(self, "_latest_target_snapshot", {}) or {})
+        target_symbol = self._canonical_symbol(latest_target.get("symbol"))
+        target_direction = str(latest_target.get("direction") or "").upper()
+        target_aligned = target_symbol == self._canonical_symbol(shadow.symbol) and target_direction == direction
+
+        timeline_confidence = float(latest_target.get("timeline_confidence", 0.0) or 0.0)
+        fusion_coherence = float(latest_target.get("fusion_global_coherence", 0.0) or 0.0)
+        brain_coherence = 0.0
+        for candidate in getattr(self, "_latest_candidate_snapshot", []):
+            if (
+                self._canonical_symbol(candidate.get("symbol")) == self._canonical_symbol(shadow.symbol)
+                and str(candidate.get("direction") or "").upper() == direction
+            ):
+                brain_coherence = float(candidate.get("brain_coherence", 0.0) or 0.0)
+                break
+
+        probability = self._probability_validation_snapshot()
+        probability_ok = (
+            bool(probability.get("ok"))
+            and float(probability.get("direction_accuracy", 0.0) or 0.0) >= CAPITAL_MIN_PROBABILITY_ACCURACY
+            and float(probability.get("profit_factor", 0.0) or 0.0) >= CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR
+        )
+
+        checks = {
+            "direction_live": bool(direction_aligned),
+            "target_alignment": bool(target_aligned),
+            "timeline_alignment": timeline_confidence >= 0.40,
+            "fusion_alignment": fusion_coherence >= 0.40,
+            "brain_alignment": brain_coherence >= 0.10,
+            "probability_matrix": probability_ok,
+        }
+        ok = all(checks.values())
+        return {
+            "ok": ok,
+            "checks": checks,
+            "momentum": momentum,
+            "timeline_confidence": timeline_confidence,
+            "fusion_global_coherence": fusion_coherence,
+            "brain_coherence": brain_coherence,
+            "probability": probability,
+            "history_lookback_days": CAPITAL_HISTORY_LOOKBACK_DAYS,
+            "validation_window_secs": self.SHADOW_MIN_VALIDATE,
+            "reason": "aligned" if ok else "gate_misaligned",
+        }
+
     def _can_open_candidate(self, symbol: str, direction: str, counts: Optional[Dict[str, int]] = None) -> bool:
         direction = str(direction or "").upper()
         if direction not in {"BUY", "SELL"}:
@@ -1676,6 +1831,17 @@ class CapitalCFDTrader:
         cfg = CAPITAL_UNIVERSE.get(shadow.symbol)
         if not ticker or not cfg:
             return None
+        gate = self._build_shadow_promotion_gate(shadow, ticker)
+        if not gate.get("ok"):
+            self._append_promotion_event(
+                "shadow_promotion_blocked",
+                {
+                    "symbol": shadow.symbol,
+                    "direction": str(shadow.direction or "BUY").upper(),
+                    "gate": gate,
+                },
+            )
+            return None
         direction = str(shadow.direction or "BUY").upper()
         if not self._can_open_candidate(shadow.symbol, direction):
             return None
@@ -1694,6 +1860,7 @@ class CapitalCFDTrader:
                     "peak_move_pct": shadow.peak_move_pct,
                     "current_move_pct": shadow.current_move_pct,
                     "validation_age_secs": max(0.0, time.time() - float(shadow.validation_time or time.time())),
+                    "promotion_gate": gate,
                 },
             )
             self._latest_monitor_line = (
@@ -2092,6 +2259,9 @@ class CapitalCFDTrader:
             return []
 
         now = time.time()
+        if now - float(getattr(self, "_harmonic_wiring_audit_at", 0.0) or 0.0) > 120.0:
+            self._harmonic_wiring_audit = self._build_harmonic_wiring_audit()
+            self._harmonic_wiring_audit_at = now
         closed_this_tick: List[dict] = []
         sync_elapsed = 0.0
         refresh_elapsed = 0.0
@@ -2127,7 +2297,7 @@ class CapitalCFDTrader:
                 shadow for shadow in self.shadow_trades
                 if shadow.validated
             ],
-            key=lambda item: (0 if str(item.direction or "").upper() == "BUY" else 1, -float(item.score or 0.0)),
+            key=lambda item: (float(item.validation_time or item.created_at or 0.0), -float(item.score or 0.0)),
         )
         for shadow in list(validated_shadows):
             if not shadow.validated:
@@ -2426,6 +2596,7 @@ class CapitalCFDTrader:
             "orchestrator_snapshot": dict(getattr(self, "_orchestrator_snapshot", {}) or {}),
             "timeline_snapshot": dict(getattr(self, "_timeline_snapshot", {}) or {}),
             "fusion_snapshot": dict(getattr(self, "_fusion_snapshot", {}) or {}),
+            "harmonic_wiring_audit": dict(getattr(self, "_harmonic_wiring_audit", {}) or {}),
             "thought_bus_snapshot": dict(self._thought_bus_snapshot),
             "cognition_snapshot": dict(self._cognition_snapshot),
             "recent_closed_trades": list(self._recent_closed_trades[-5:]),
