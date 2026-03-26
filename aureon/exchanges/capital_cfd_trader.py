@@ -23,11 +23,13 @@ import time
 import logging
 import json
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 CAPITAL_TRACE_PATH = Path(os.getenv("CAPITAL_TRACE_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_cfd_last_exchange_trace.json"))).resolve()
+CAPITAL_PROMOTION_LOG_PATH = Path(os.getenv("CAPITAL_PROMOTION_LOG_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_shadow_promotions.jsonl"))).resolve()
 
 # ── IMPORT GUARDS ──────────────────────────────────────────────────────────────
 try:
@@ -94,6 +96,27 @@ except Exception:
     DecisionType = None            # type: ignore
     DecisionReason = None          # type: ignore
     HAS_UNIFIED_DECISION = False
+
+try:
+    from autonomous_trading_orchestrator import AutonomousOrchestrator
+    HAS_CAPITAL_ORCHESTRATOR = True
+except Exception:
+    AutonomousOrchestrator = None   # type: ignore
+    HAS_CAPITAL_ORCHESTRATOR = False
+
+try:
+    from aureon.intelligence.aureon_timeline_oracle import get_timeline_oracle
+    HAS_TIMELINE_ORACLE = True
+except Exception:
+    get_timeline_oracle = None      # type: ignore
+    HAS_TIMELINE_ORACLE = False
+
+try:
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
+    HAS_HARMONIC_FUSION = True
+except Exception:
+    HarmonicWaveFusion = None       # type: ignore
+    HAS_HARMONIC_FUSION = False
 
 try:
     from aureon.core.aureon_thought_bus import get_thought_bus, Thought
@@ -167,6 +190,8 @@ CFD_FLAGS = {
     "profit_only_closes": _env_bool("CAPITAL_PROFIT_ONLY_CLOSES", True),
     "penny_take_profit": _env_bool("CAPITAL_PENNY_TAKE_PROFIT", True),
 }
+CAPITAL_REJECTION_COOLDOWN_SECS = _env_float("CAPITAL_REJECTION_COOLDOWN_SECS", 60.0)
+CAPITAL_RISK_REJECTION_COOLDOWN_SECS = _env_float("CAPITAL_RISK_REJECTION_COOLDOWN_SECS", 180.0)
 
 CAPITAL_MIN_PROFIT_GBP = 0.01
 CAPITAL_DTP_TRIGGER_GBP = 0.01
@@ -247,6 +272,27 @@ class CFDShadowTrade:
             self.validation_time = time.time()
 
 
+@dataclass
+class CapitalSwarmAgentVote:
+    """One specialist agent's view of the best current Capital candidate."""
+    agent: str
+    symbol: str
+    direction: str
+    score: float
+    confidence: float
+    rationale: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "agent": self.agent,
+            "symbol": self.symbol,
+            "direction": self.direction,
+            "score": self.score,
+            "confidence": self.confidence,
+            "rationale": self.rationale,
+        }
+
+
 # ── MAIN CLASS ─────────────────────────────────────────────────────────────────
 class CapitalCFDTrader:
     """
@@ -285,6 +331,8 @@ class CapitalCFDTrader:
         self._recent_closed_trades: List[dict] = []
         self._shadow_validated_count: int = 0
         self._shadow_failed_count: int = 0
+        self._rejection_cooldowns: Dict[str, Dict[str, Any]] = {}
+        self._lane_snapshot: Dict[str, Any] = {}
         self._dtp_trackers: Dict[str, Any] = {}
         self.start_time: float = time.time()
         self.starting_equity_gbp: float = 0.0
@@ -296,14 +344,34 @@ class CapitalCFDTrader:
         )
         self.unified_registry = get_unified_puller() if HAS_UNIFIED_REGISTRY and get_unified_puller is not None else None
         self.unified_decision_engine = UnifiedDecisionEngine() if HAS_UNIFIED_DECISION and UnifiedDecisionEngine is not None else None
+        self.orchestrator = (
+            AutonomousOrchestrator(self)
+            if HAS_CAPITAL_ORCHESTRATOR and AutonomousOrchestrator is not None
+            else None
+        )
+        self.timeline_oracle = (
+            get_timeline_oracle() if HAS_TIMELINE_ORACLE and get_timeline_oracle is not None else None
+        )
+        self.harmonic_fusion = (
+            HarmonicWaveFusion() if HAS_HARMONIC_FUSION and HarmonicWaveFusion is not None else None
+        )
         self.thought_bus = (
             get_thought_bus(os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_thoughts.jsonl"))
             if HAS_THOUGHT_BUS and get_thought_bus is not None else None
         )
         self._registry_snapshot: Dict[str, Any] = {}
         self._decision_snapshot: Dict[str, Any] = {}
+        self._orchestrator_snapshot: Dict[str, Any] = {}
+        self._timeline_snapshot: Dict[str, Any] = {}
+        self._fusion_snapshot: Dict[str, Any] = {}
         self._thought_bus_snapshot: Dict[str, Any] = {}
         self._cognition_snapshot: Dict[str, Any] = {}
+        self._swarm_snapshot: Dict[str, Any] = {
+            "enabled": True,
+            "leader": {},
+            "votes": [],
+            "ranked": [],
+        }
 
         # Timing
         self._last_scan:    float = 0.0
@@ -498,6 +566,21 @@ class CapitalCFDTrader:
         except Exception as _e:
             logger.debug(f"Capital trace write failed: {_e}")
 
+    def _append_promotion_event(self, event_type: str, payload: Dict[str, Any]) -> None:
+        """Persist shadow lifecycle events for promotion debugging."""
+        try:
+            CAPITAL_PROMOTION_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            row = {
+                "event": str(event_type or "").strip() or "unknown",
+                "written_at": time.time(),
+                "written_at_iso": datetime.now().isoformat(),
+                **dict(payload or {}),
+            }
+            with open(CAPITAL_PROMOTION_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(row, default=str) + "\n")
+        except Exception as _e:
+            logger.debug(f"Capital promotion event write failed: {_e}")
+
     def get_capital_snapshot(self) -> Dict[str, float]:
         """Expose Capital.com account state in the same style as the Kraken trader."""
         if not self.client:
@@ -547,6 +630,51 @@ class CapitalCFDTrader:
                 continue
         return 0.0
 
+    def _extract_margin_factor_pct(self, market_info: dict, asset_class: str = "") -> float:
+        """Best-effort extraction of Capital margin requirement percentage."""
+        if not isinstance(market_info, dict):
+            market_info = {}
+        instrument = market_info.get("instrument", {}) if isinstance(market_info.get("instrument"), dict) else {}
+        snapshot = market_info.get("snapshot", {}) if isinstance(market_info.get("snapshot"), dict) else {}
+        candidates = [
+            instrument.get("marginFactor"),
+            instrument.get("marginFactorPercent"),
+            snapshot.get("marginFactor"),
+            market_info.get("marginFactor"),
+        ]
+        for candidate in candidates:
+            try:
+                value = float(candidate or 0.0)
+                if value > 0:
+                    return value
+            except (TypeError, ValueError):
+                continue
+        asset = str(asset_class or "").strip().lower()
+        fallback_margin_pct = {
+            "forex": 3.33,
+            "index": 5.0,
+            "commodity": 10.0,
+            "stock": 20.0,
+        }
+        return float(fallback_margin_pct.get(asset, 10.0))
+
+    def _is_capital_risk_rejection(self, reason: str) -> bool:
+        text = str(reason or "").strip().upper()
+        if not text:
+            return False
+        risk_tokens = (
+            "RISK_CHECK",
+            "INSUFFICIENT",
+            "NOT_ENOUGH",
+            "NO_CASH",
+            "NO_FUNDS",
+            "MARGIN",
+            "EQUITY",
+            "FUNDS",
+            "BALANCE",
+        )
+        return any(token in text for token in risk_tokens)
+
     def _market_status_text(self, market_info: dict) -> str:
         if not isinstance(market_info, dict):
             return "UNKNOWN"
@@ -576,6 +704,8 @@ class CapitalCFDTrader:
             "price": float(ticker.get("price") or 0.0),
             "spread": 0.0,
             "spread_pct": 0.0,
+            "margin_factor_pct": 0.0,
+            "estimated_margin_required": 0.0,
             "expected_gross_profit": 0.0,
             "expected_net_profit": 0.0,
             "round_trip_cost": 0.0,
@@ -618,6 +748,10 @@ class CapitalCFDTrader:
         market_info = market_detail or market_summary
         preflight["market_status"] = self._market_status_text(market_info)
         preflight["minimum_deal_size"] = self._extract_capital_min_size(market_info)
+        preflight["margin_factor_pct"] = self._extract_margin_factor_pct(
+            market_info,
+            str((cfg or {}).get("class", "") or ""),
+        )
 
         snapshot = market_detail.get("snapshot", {}) if isinstance(market_detail.get("snapshot"), dict) else {}
         bid = float(
@@ -650,6 +784,12 @@ class CapitalCFDTrader:
             cost_profile = self._capital_cost_profile(symbol, preflight["requested_size"], price or ask or 0.0, effective_tp_pct)
             preflight.update(cost_profile)
             preflight["effective_tp_pct"] = effective_tp_pct
+            margin_factor_pct = float(preflight.get("margin_factor_pct", 0.0) or 0.0)
+            preflight["estimated_margin_required"] = (
+                float(preflight.get("notional", 0.0) or 0.0) * (margin_factor_pct / 100.0)
+                if margin_factor_pct > 0
+                else 0.0
+            )
 
         if preflight["requested_size"] <= 0:
             preflight["reason"] = "requested size <= 0"
@@ -662,6 +802,17 @@ class CapitalCFDTrader:
             return preflight
         if preflight["available_balance"] <= 0:
             preflight["reason"] = "available account balance <= 0"
+            return preflight
+        if (
+            isinstance(cfg, dict)
+            and float(preflight.get("estimated_margin_required", 0.0) or 0.0) > 0
+            and float(preflight.get("available_balance", 0.0) or 0.0) < float(preflight.get("estimated_margin_required", 0.0) or 0.0)
+        ):
+            preflight["reason"] = (
+                f"insufficient equity for estimated margin "
+                f"{float(preflight.get('estimated_margin_required', 0.0) or 0.0):.2f} "
+                f"> available {float(preflight.get('available_balance', 0.0) or 0.0):.2f}"
+            )
             return preflight
 
         allowed_statuses = {"TRADEABLE", "TRADEABLE_ONLINE", "OPEN", "EDITS_ONLY", "ONLINE"}
@@ -978,6 +1129,108 @@ class CapitalCFDTrader:
             item["brain_coherence"] = float(decision.coherence)
             item["score"] = float(decision.score)
 
+    def _score_timeline_oracle(self, symbol: str, side: str, price: float, change_pct: float) -> Dict[str, Any]:
+        result = {"bonus": 0.0, "action": "hold", "confidence": 0.0, "reason": ""}
+        if self.timeline_oracle is None:
+            return result
+        try:
+            action, confidence, reason = self.timeline_oracle.get_approved_action(
+                symbol=symbol,
+                price=price,
+                volume=max(abs(change_pct), 0.01),
+                change_pct=change_pct,
+            )
+            action_value = getattr(action, "value", "hold") if action is not None else "hold"
+            confidence = float(confidence or 0.0)
+            expected = "buy" if str(side).upper() == "BUY" else "sell"
+            bonus = (confidence - 0.5) * 2.0
+            if action_value == expected:
+                bonus += 0.5
+            elif action_value not in {"hold", "wait"}:
+                bonus -= 0.75
+            result.update({
+                "bonus": max(-1.5, min(2.0, bonus)),
+                "action": action_value,
+                "confidence": confidence,
+                "reason": str(reason or ""),
+            })
+        except Exception as e:
+            result["error"] = str(e)
+        self._timeline_snapshot = {"symbol": symbol, "side": str(side).upper(), **result}
+        return result
+
+    def _score_harmonic_fusion(self, symbol: str, side: str) -> Dict[str, Any]:
+        result = {"bonus": 0.0, "global_coherence": 0.0, "symbol_coherence": 0.0}
+        if self.harmonic_fusion is None:
+            return result
+        try:
+            state = self.harmonic_fusion.get_harmonic_state() or {}
+            phase = self.harmonic_fusion.get_symbol_phase(symbol) or {}
+            global_coh = float(state.get("global_coherence", 0.0) or 0.0)
+            symbol_coh = float(phase.get("coherence", phase.get("amplitude", 0.0)) or 0.0)
+            bonus = max(-1.5, min(2.0, (global_coh - 0.5) * 2.0 + (symbol_coh - 0.5) * 2.0))
+            result.update({
+                "bonus": bonus,
+                "global_coherence": global_coh,
+                "symbol_coherence": symbol_coh,
+            })
+        except Exception as e:
+            result["error"] = str(e)
+        self._fusion_snapshot = {"symbol": symbol, "side": str(side).upper(), **result}
+        return result
+
+    def _orchestrator_pretrade_gate(self, symbol: str, side: str) -> Dict[str, Any]:
+        result = {"approved": True, "reason": "orchestrator_unavailable", "sizing": {}}
+        if self.orchestrator is None:
+            return result
+        try:
+            approved, reason, sizing = self.orchestrator.gate_pre_trade(symbol, str(side).lower())
+            result = {
+                "approved": bool(approved),
+                "reason": str(reason or "ok"),
+                "sizing": sizing or {},
+            }
+        except Exception as e:
+            result = {"approved": True, "reason": f"fail_open:{e}", "sizing": {}}
+        self._orchestrator_snapshot = {"symbol": symbol, "side": str(side).upper(), **result}
+        return result
+
+    def _apply_intelligence_overlays(self, scored: List[Dict[str, Any]]) -> None:
+        """Apply higher-level signal systems from the main margin trader to Capital candidates."""
+        for item in scored:
+            base_score = float(item.get("score", 0.0) or 0.0)
+            if base_score <= 0:
+                continue
+            symbol = str(item.get("symbol") or "")
+            side = str(item.get("direction") or "BUY").upper()
+            price = float(item.get("price", 0.0) or 0.0)
+            change_pct = float(item.get("change_pct", 0.0) or 0.0)
+
+            timeline = self._score_timeline_oracle(symbol, side, price, change_pct)
+            fusion = self._score_harmonic_fusion(symbol, side)
+            gate = self._orchestrator_pretrade_gate(symbol, side)
+
+            item["timeline_bonus"] = float(timeline.get("bonus", 0.0) or 0.0)
+            item["timeline_action"] = str(timeline.get("action", "hold") or "hold")
+            item["timeline_confidence"] = float(timeline.get("confidence", 0.0) or 0.0)
+            item["fusion_bonus"] = float(fusion.get("bonus", 0.0) or 0.0)
+            item["fusion_global_coherence"] = float(fusion.get("global_coherence", 0.0) or 0.0)
+            item["fusion_symbol_coherence"] = float(fusion.get("symbol_coherence", 0.0) or 0.0)
+            item["orchestrator_reason"] = str(gate.get("reason") or "")
+            item["orchestrator_approved"] = bool(gate.get("approved"))
+
+            if not gate.get("approved"):
+                item["score"] = 0.0
+                item["intel_reason"] = f"orchestrator_gate:{gate.get('reason') or 'blocked'}"
+                continue
+
+            item["score"] = max(
+                0.0,
+                base_score
+                + float(timeline.get("bonus", 0.0) or 0.0) * 1.25
+                + float(fusion.get("bonus", 0.0) or 0.0) * 1.0
+            )
+
     def _direction_counts(self) -> Dict[str, int]:
         counts = {"BUY": 0, "SELL": 0}
         for pos in self.positions:
@@ -986,6 +1239,185 @@ class CapitalCFDTrader:
                 counts[direction] += 1
         return counts
 
+    def _cooldown_key(self, symbol: str, direction: str) -> str:
+        return f"{self._canonical_symbol(symbol)}|{str(direction or '').upper()}"
+
+    def _record_rejection(self, symbol: str, direction: str, reason: str) -> None:
+        cooldown_secs = CAPITAL_RISK_REJECTION_COOLDOWN_SECS if self._is_capital_risk_rejection(reason) else CAPITAL_REJECTION_COOLDOWN_SECS
+        self._rejection_cooldowns[self._cooldown_key(symbol, direction)] = {
+            "until": time.time() + max(1.0, cooldown_secs),
+            "reason": str(reason or "rejected"),
+        }
+
+    def _cooldown_info(self, symbol: str, direction: str) -> Optional[Dict[str, Any]]:
+        key = self._cooldown_key(symbol, direction)
+        info = self._rejection_cooldowns.get(key)
+        if not info:
+            return None
+        if time.time() >= float(info.get("until", 0.0) or 0.0):
+            self._rejection_cooldowns.pop(key, None)
+            return None
+        return info
+
+    def _build_lane_snapshot(self) -> Dict[str, Any]:
+        lanes: Dict[str, Dict[str, Any]] = {}
+        for direction in ("BUY", "SELL"):
+            open_pos = next(
+                (pos for pos in self.positions if str(pos.direction or "").upper() == direction),
+                None,
+            )
+            validated_shadow = next(
+                (
+                    shadow for shadow in self.shadow_trades
+                    if str(shadow.direction or "").upper() == direction and shadow.validated
+                ),
+                None,
+            )
+            queued_shadow = next(
+                (
+                    shadow for shadow in self.shadow_trades
+                    if str(shadow.direction or "").upper() == direction and not shadow.validated
+                ),
+                None,
+            )
+            lane: Dict[str, Any] = {
+                "direction": direction,
+                "occupied": open_pos is not None,
+                "hunting": open_pos is None,
+                "position_symbol": getattr(open_pos, "symbol", ""),
+                "validated_shadow_symbol": getattr(validated_shadow, "symbol", ""),
+                "queued_shadow_symbol": getattr(queued_shadow, "symbol", ""),
+            }
+            if validated_shadow is not None:
+                lane["next_action"] = "promote_validated_shadow"
+            elif queued_shadow is not None:
+                lane["next_action"] = "monitor_shadow"
+            elif open_pos is not None:
+                lane["next_action"] = "manage_live_position"
+            else:
+                lane["next_action"] = "scan_for_candidate"
+            lanes[direction] = lane
+        self._lane_snapshot = lanes
+        return lanes
+
+    def _build_swarm_snapshot(self, scored: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Build a lightweight multi-agent consensus over ranked Capital candidates."""
+        ranked = [
+            dict(item)
+            for item in scored
+            if float(item.get("score", 0.0) or 0.0) > 0
+        ]
+        ranked.sort(key=lambda item: float(item.get("score", 0.0) or 0.0), reverse=True)
+        if not ranked:
+            return {"enabled": True, "leader": {}, "votes": [], "ranked": []}
+
+        scout_pick = max(
+            ranked,
+            key=lambda item: (
+                abs(float(item.get("change_pct", 0.0) or 0.0)),
+                float(item.get("score", 0.0) or 0.0),
+            ),
+        )
+        tactician_pick = max(
+            ranked,
+            key=lambda item: (
+                float(item.get("expected_net_profit", 0.0) or 0.0),
+                float(item.get("score", 0.0) or 0.0),
+            ),
+        )
+        risk_pick = max(
+            ranked,
+            key=lambda item: (
+                -float(item.get("spread_pct", 999.0) or 999.0),
+                float(item.get("brain_coherence", 0.0) or 0.0),
+                float(item.get("score", 0.0) or 0.0),
+            ),
+        )
+        execution_pick = max(
+            ranked,
+            key=lambda item: (
+                -float(item.get("eta_to_target", 999.0) or 999.0),
+                float(item.get("expected_net_profit", 0.0) or 0.0),
+                float(item.get("score", 0.0) or 0.0),
+            ),
+        )
+
+        votes = [
+            CapitalSwarmAgentVote(
+                agent="scout",
+                symbol=str(scout_pick.get("symbol") or ""),
+                direction=str(scout_pick.get("direction") or "BUY").upper(),
+                score=float(scout_pick.get("score", 0.0) or 0.0),
+                confidence=min(1.0, abs(float(scout_pick.get("change_pct", 0.0) or 0.0)) / 3.0),
+                rationale=f"momentum {float(scout_pick.get('change_pct', 0.0) or 0.0):+.3f}%",
+            ),
+            CapitalSwarmAgentVote(
+                agent="tactician",
+                symbol=str(tactician_pick.get("symbol") or ""),
+                direction=str(tactician_pick.get("direction") or "BUY").upper(),
+                score=float(tactician_pick.get("score", 0.0) or 0.0),
+                confidence=min(1.0, max(0.0, float(tactician_pick.get("expected_net_profit", 0.0) or 0.0) * 20.0)),
+                rationale=f"net £{float(tactician_pick.get('expected_net_profit', 0.0) or 0.0):+.4f}",
+            ),
+            CapitalSwarmAgentVote(
+                agent="risk",
+                symbol=str(risk_pick.get("symbol") or ""),
+                direction=str(risk_pick.get("direction") or "BUY").upper(),
+                score=float(risk_pick.get("score", 0.0) or 0.0),
+                confidence=min(1.0, 1.0 / max(float(risk_pick.get("spread_pct", 1.0) or 1.0), 0.01) * 0.05),
+                rationale=f"spread {float(risk_pick.get('spread_pct', 0.0) or 0.0):.3f}%",
+            ),
+            CapitalSwarmAgentVote(
+                agent="execution",
+                symbol=str(execution_pick.get("symbol") or ""),
+                direction=str(execution_pick.get("direction") or "BUY").upper(),
+                score=float(execution_pick.get("score", 0.0) or 0.0),
+                confidence=min(1.0, 1.0 / max(float(execution_pick.get("eta_to_target", 1.0) or 1.0), 0.1)),
+                rationale=f"eta {float(execution_pick.get('eta_to_target', 0.0) or 0.0):.2f}",
+            ),
+        ]
+
+        weighted: Dict[str, float] = {}
+        for vote in votes:
+            key = f"{vote.symbol}|{vote.direction}"
+            weighted[key] = weighted.get(key, 0.0) + max(vote.confidence, 0.05) * max(vote.score, 0.0)
+
+        ranked_keys = sorted(weighted.items(), key=lambda item: item[1], reverse=True)
+        ranked_consensus: List[Dict[str, Any]] = []
+        for key, swarm_score in ranked_keys:
+            symbol, direction = key.split("|", 1)
+            source = next(
+                (
+                    item for item in ranked
+                    if str(item.get("symbol") or "") == symbol and str(item.get("direction") or "BUY").upper() == direction
+                ),
+                None,
+            )
+            if source is None:
+                continue
+            ranked_consensus.append({
+                "symbol": symbol,
+                "direction": direction,
+                "swarm_score": swarm_score,
+                "score": float(source.get("score", 0.0) or 0.0),
+                "expected_net_profit": float(source.get("expected_net_profit", 0.0) or 0.0),
+                "spread_pct": float(source.get("spread_pct", 0.0) or 0.0),
+                "eta_to_target": float(source.get("eta_to_target", 0.0) or 0.0),
+            })
+
+        leader = dict(ranked_consensus[0]) if ranked_consensus else {}
+        if leader:
+            leader["votes"] = sum(
+                1 for vote in votes
+                if vote.symbol == leader["symbol"] and vote.direction == leader["direction"]
+            )
+        return {
+            "enabled": True,
+            "leader": leader,
+            "votes": [vote.to_dict() for vote in votes],
+            "ranked": ranked_consensus,
+        }
+
     def _can_open_candidate(self, symbol: str, direction: str, counts: Optional[Dict[str, int]] = None) -> bool:
         direction = str(direction or "").upper()
         if direction not in {"BUY", "SELL"}:
@@ -993,6 +1425,8 @@ class CapitalCFDTrader:
         if counts is None:
             counts = self._direction_counts()
         if counts.get(direction, 0) >= 1:
+            return False
+        if self._cooldown_info(symbol, direction) is not None:
             return False
         for pos in self.positions:
             if pos.symbol == symbol and str(pos.direction or "").upper() == direction:
@@ -1050,10 +1484,31 @@ class CapitalCFDTrader:
                 best = (symbol, {**cfg, "direction": direction}, ticker)
 
         self._apply_hft_analysis(scored)
+        self._apply_intelligence_overlays(scored)
         scored.sort(key=lambda item: float(item.get("score", 0.0) or 0.0), reverse=True)
         self._latest_candidate_snapshot = scored[:7]
-        if best is not None:
-            symbol, cfg, ticker = best
+        self._swarm_snapshot = self._build_swarm_snapshot(scored)
+
+        chosen_best = best
+        swarm_leader = dict(getattr(self, "_swarm_snapshot", {}).get("leader", {}) or {})
+        if swarm_leader:
+            leader_symbol = str(swarm_leader.get("symbol") or "").upper()
+            leader_direction = str(swarm_leader.get("direction") or "BUY").upper()
+            for symbol, cfg, ticker in self._ranked_opportunities():
+                if symbol == leader_symbol and str(cfg.get("direction") or "BUY").upper() == leader_direction:
+                    chosen_best = (symbol, cfg, ticker)
+                    break
+
+        if chosen_best is not None:
+            symbol, cfg, ticker = chosen_best
+            best_score = 0.0
+            for candidate in scored:
+                if (
+                    str(candidate.get("symbol") or "").upper() == symbol
+                    and str(candidate.get("direction") or "BUY").upper() == str(cfg.get("direction") or "BUY").upper()
+                ):
+                    best_score = float(candidate.get("score", 0.0) or 0.0)
+                    break
             self._latest_target_snapshot = {
                 "symbol": symbol,
                 "direction": cfg.get("direction", "BUY"),
@@ -1080,6 +1535,11 @@ class CapitalCFDTrader:
                         "expected_net_profit": float(candidate.get("expected_net_profit", 0.0) or 0.0),
                         "round_trip_cost": float(candidate.get("round_trip_cost", 0.0) or 0.0),
                         "eta_to_target": float(candidate.get("eta_to_target", 0.0) or 0.0),
+                        "timeline_confidence": float(candidate.get("timeline_confidence", 0.0) or 0.0),
+                        "fusion_global_coherence": float(candidate.get("fusion_global_coherence", 0.0) or 0.0),
+                        "orchestrator_reason": str(candidate.get("orchestrator_reason", "") or ""),
+                        "swarm_score": float(swarm_leader.get("swarm_score", 0.0) or 0.0),
+                        "swarm_votes": int(swarm_leader.get("votes", 0) or 0),
                     })
                     break
             self._feed_unified_decision_engine(
@@ -1091,14 +1551,28 @@ class CapitalCFDTrader:
         else:
             self._latest_target_snapshot = {}
             self._decision_snapshot = {}
+            self._swarm_snapshot = {"enabled": True, "leader": {}, "votes": [], "ranked": []}
         self._publish_market_snapshot_to_thought_bus()
         self._refresh_thought_bus_snapshot()
-        return best
+        return chosen_best
 
     def _ranked_opportunities(self) -> List[Tuple[str, dict, dict]]:
         ranked: List[Tuple[str, dict, dict]] = []
         direction_counts = self._direction_counts()
-        for candidate in self._latest_candidate_snapshot:
+        ordered_candidates: List[Dict[str, Any]] = []
+        swarm_ranked = list(getattr(self, "_swarm_snapshot", {}).get("ranked", []) or [])
+        candidate_lookup = {
+            f"{str(item.get('symbol') or '').upper()}|{str(item.get('direction') or 'BUY').upper()}": item
+            for item in getattr(self, "_latest_candidate_snapshot", [])
+        }
+        for swarm_item in swarm_ranked:
+            key = f"{str(swarm_item.get('symbol') or '').upper()}|{str(swarm_item.get('direction') or 'BUY').upper()}"
+            if key in candidate_lookup:
+                ordered_candidates.append(candidate_lookup[key])
+        if not ordered_candidates:
+            ordered_candidates = list(getattr(self, "_latest_candidate_snapshot", []) or [])
+
+        for candidate in ordered_candidates:
             symbol = str(candidate.get("symbol") or "").upper()
             direction = str(candidate.get("direction") or "BUY").upper()
             cfg = CAPITAL_UNIVERSE.get(symbol)
@@ -1149,6 +1623,18 @@ class CapitalCFDTrader:
             score=score,
         )
         self.shadow_trades.append(shadow)
+        self._append_promotion_event(
+            "shadow_opened",
+            {
+                "symbol": symbol,
+                "direction": direction,
+                "asset_class": str(cfg.get("class", "unknown")),
+                "entry_price": price,
+                "target_move_pct": shadow.target_move_pct,
+                "size": size,
+                "score": score,
+            },
+        )
         self._latest_monitor_line = (
             f"CAPITAL SHADOW OPEN {symbol} {direction} entry={price:.5g} need={shadow.target_move_pct:.4f}%"
         )
@@ -1197,6 +1683,19 @@ class CapitalCFDTrader:
         pos = self._open_position(shadow.symbol, working_cfg, ticker)
         if pos is not None:
             self._shadow_validated_count += 1
+            self._append_promotion_event(
+                "shadow_promoted",
+                {
+                    "symbol": shadow.symbol,
+                    "direction": direction,
+                    "deal_id": pos.deal_id,
+                    "entry_price": pos.entry_price,
+                    "size": pos.size,
+                    "peak_move_pct": shadow.peak_move_pct,
+                    "current_move_pct": shadow.current_move_pct,
+                    "validation_age_secs": max(0.0, time.time() - float(shadow.validation_time or time.time())),
+                },
+            )
             self._latest_monitor_line = (
                 f"CAPITAL SHADOW PROMOTED {shadow.symbol} {direction} deal={pos.deal_id}"
             )
@@ -1259,6 +1758,7 @@ class CapitalCFDTrader:
             trace_payload["order_response"] = dict(result) if isinstance(result, dict) else result
             if result.get("rejected") or result.get("error"):
                 reason = result.get("reason") or result.get("error", "unknown")
+                self._record_rejection(symbol, direction, str(reason))
                 self._latest_order_error = f"{symbol} open rejected: {reason}"
                 self._write_exchange_trace(trace_payload)
                 logger.debug(f"CFD open rejected {symbol}: {reason}")
@@ -1279,6 +1779,7 @@ class CapitalCFDTrader:
                     reject_reason = str(conf.get("rejectReason") or conf.get("reason") or "").strip()
                     confirm_status = str(conf.get("status") or "").upper()
                     if reject_reason or deal_status == "REJECTED" or confirm_status == "DELETED":
+                        self._record_rejection(symbol, direction, reject_reason or deal_status or confirm_status)
                         self._latest_order_error = f"{symbol} rejected by Capital: {reject_reason or deal_status or confirm_status}"
                         trace_payload["validated"] = False
                         trace_payload["final_error"] = self._latest_order_error
@@ -1592,36 +2093,60 @@ class CapitalCFDTrader:
 
         now = time.time()
         closed_this_tick: List[dict] = []
+        sync_elapsed = 0.0
+        refresh_elapsed = 0.0
+        monitor_elapsed = 0.0
+        shadow_elapsed = 0.0
+        scan_elapsed = 0.0
 
+        stage_started = time.time()
         self._sync_positions_from_exchange()
+        sync_elapsed = time.time() - stage_started
         self._refresh_unified_intel_snapshot()
         self._refresh_thought_bus_snapshot()
 
         # Phase 0: price refresh
+        stage_started = time.time()
         self._refresh_prices()
+        refresh_elapsed = time.time() - stage_started
 
         # Phase 1: monitor open positions
         if now - self._last_monitor >= CFD_CONFIG["monitor_interval"]:
+            stage_started = time.time()
             self._last_monitor = now
             self._update_position_prices()
             closed_this_tick.extend(self._monitor_positions())
+            monitor_elapsed = time.time() - stage_started
 
         # Phase 2: update and promote shadows
+        stage_started = time.time()
         self._update_shadows()
         promoted_this_tick = False
-        for shadow in list(self.shadow_trades):
+        validated_shadows = sorted(
+            [
+                shadow for shadow in self.shadow_trades
+                if shadow.validated
+            ],
+            key=lambda item: (0 if str(item.direction or "").upper() == "BUY" else 1, -float(item.score or 0.0)),
+        )
+        for shadow in list(validated_shadows):
             if not shadow.validated:
                 continue
             if shadow.validation_time > 0 and (now - shadow.validation_time) < self.SHADOW_MIN_VALIDATE:
                 continue
-            if self._promote_shadow(shadow) is not None:
+            promoted = self._promote_shadow(shadow)
+            if promoted is not None:
                 promoted_this_tick = True
                 self.shadow_trades.remove(shadow)
                 break
+            if self._cooldown_info(shadow.symbol, str(shadow.direction or "").upper()) is not None:
+                self.shadow_trades.remove(shadow)
+        shadow_elapsed = time.time() - stage_started
 
         # Phase 3: scan for new opportunity
         should_scan = (now - self._last_scan >= CFD_CONFIG["scan_interval_secs"]) or bool(closed_this_tick)
         if should_scan:
+            stage_started = time.time()
             self._last_scan = now
 
             if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
@@ -1661,6 +2186,7 @@ class CapitalCFDTrader:
                         }
 
                         if not preflight.get("ok"):
+                            self._record_rejection(sym, direction, str(preflight.get("reason") or "preflight_failed"))
                             self._latest_order_error = f"{sym} preflight failed: {preflight.get('reason') or 'unknown'}"
                             logger.warning("CFD candidate skipped for %s: %s", sym, preflight.get("reason") or "unknown")
                             continue
@@ -1669,9 +2195,20 @@ class CapitalCFDTrader:
                             opened_directions.add(direction)
                             if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
                                 break
+                        else:
+                            self._record_rejection(sym, direction, "shadow_blocked_or_duplicate")
                 else:
                     logger.debug("CFD tick: Quadrumvirate gate CLOSED — scan skipped")
 
+        if should_scan:
+            scan_elapsed = time.time() - stage_started
+
+        self._latest_monitor_line = (
+            f"CAPITAL TICK sync={sync_elapsed:.2f}s prices={refresh_elapsed:.2f}s "
+            f"monitor={monitor_elapsed:.2f}s shadows={shadow_elapsed:.2f}s scan={scan_elapsed:.2f}s "
+            f"positions={len(self.positions)} shadows_active={len(self.shadow_trades)}"
+        )
+        self._build_lane_snapshot()
         self.status_lines()
         return closed_this_tick
 
@@ -1708,6 +2245,27 @@ class CapitalCFDTrader:
         if self._latest_order_error:
             lines.append(f"    Last order: {self._latest_order_error}")
             lines.append(f"    Trace: {self._latest_order_trace_path}")
+        active_cooldowns = sum(
+            1 for info in self._rejection_cooldowns.values()
+            if float(info.get("until", 0.0) or 0.0) > time.time()
+        )
+        if active_cooldowns:
+            lines.append(f"    Cooldowns: {active_cooldowns} rejected targets cooling off")
+        if self._lane_snapshot:
+            buy_lane = self._lane_snapshot.get("BUY", {}) or {}
+            sell_lane = self._lane_snapshot.get("SELL", {}) or {}
+            lines.append(
+                f"  Lanes: BUY={buy_lane.get('next_action', 'scan_for_candidate')} "
+                f"[pos={buy_lane.get('position_symbol', '-') or '-'} "
+                f"valid={buy_lane.get('validated_shadow_symbol', '-') or '-'} "
+                f"queue={buy_lane.get('queued_shadow_symbol', '-') or '-'}]"
+            )
+            lines.append(
+                f"         SELL={sell_lane.get('next_action', 'scan_for_candidate')} "
+                f"[pos={sell_lane.get('position_symbol', '-') or '-'} "
+                f"valid={sell_lane.get('validated_shadow_symbol', '-') or '-'} "
+                f"queue={sell_lane.get('queued_shadow_symbol', '-') or '-'}]"
+            )
         for pos in self.positions:
             lines.append(pos.one_line())
             dtp = self._dtp_trackers.get(pos.deal_id)
@@ -1738,6 +2296,12 @@ class CapitalCFDTrader:
                     f"cost=£{float(target.get('round_trip_cost', 0.0) or 0.0):.4f} "
                     f"coh={float(target.get('brain_coherence', 0.0) or 0.0):.3f}"
                 )
+            if "timeline_confidence" in target or "fusion_global_coherence" in target or "orchestrator_reason" in target:
+                lines.append(
+                    f"    Intel: timeline={float(target.get('timeline_confidence', 0.0) or 0.0):.2f} "
+                    f"fusion={float(target.get('fusion_global_coherence', 0.0) or 0.0):.2f} "
+                    f"orch={target.get('orchestrator_reason', 'n/a')}"
+                )
         if self._latest_candidate_snapshot:
             lines.append("  Top 7 candidates:")
             for idx, candidate in enumerate(self._latest_candidate_snapshot[:7], start=1):
@@ -1749,6 +2313,13 @@ class CapitalCFDTrader:
                     f"net=£{float(candidate.get('expected_net_profit', 0.0) or 0.0):+.4f} "
                     f"goal=£{float(candidate.get('profit_target_gbp', CAPITAL_MIN_PROFIT_GBP) or CAPITAL_MIN_PROFIT_GBP):.2f}"
                 )
+        swarm_leader = dict(getattr(self, "_swarm_snapshot", {}).get("leader", {}) or {})
+        if swarm_leader:
+            lines.append(
+                f"  Swarm: {swarm_leader.get('symbol', '?')} {swarm_leader.get('direction', '?')} "
+                f"votes={int(swarm_leader.get('votes', 0) or 0)} "
+                f"swarm={float(swarm_leader.get('swarm_score', 0.0) or 0.0):.3f}"
+            )
         for trade in reversed(self._recent_closed_trades[-3:]):
             lines.append(
                 f"  CLOSE: {trade.get('symbol', '?')} {trade.get('direction', '?')} "
@@ -1765,6 +2336,13 @@ class CapitalCFDTrader:
                 )
             elif self._decision_snapshot.get("error"):
                 lines.append(f"  Decision: error={self._decision_snapshot.get('error')}")
+        if self._orchestrator_snapshot:
+            lines.append(
+                f"  Orchestrator: {self._orchestrator_snapshot.get('symbol', '?')} "
+                f"{self._orchestrator_snapshot.get('side', '?')} "
+                f"approved={self._orchestrator_snapshot.get('approved', True)} "
+                f"reason={self._orchestrator_snapshot.get('reason', '')}"
+            )
         if self._thought_bus_snapshot:
             if self._thought_bus_snapshot.get("error"):
                 lines.append(f"  ThoughtBus: error={self._thought_bus_snapshot.get('error')}")
@@ -1841,8 +2419,13 @@ class CapitalCFDTrader:
             "status_lines": self._latest_status_lines[-16:],
             "candidate_snapshot": list(self._latest_candidate_snapshot),
             "target_snapshot": dict(self._latest_target_snapshot),
+            "swarm_snapshot": dict(getattr(self, "_swarm_snapshot", {}) or {}),
+            "lane_snapshot": dict(getattr(self, "_lane_snapshot", {}) or {}),
             "registry_snapshot": dict(self._registry_snapshot),
             "decision_snapshot": dict(self._decision_snapshot),
+            "orchestrator_snapshot": dict(getattr(self, "_orchestrator_snapshot", {}) or {}),
+            "timeline_snapshot": dict(getattr(self, "_timeline_snapshot", {}) or {}),
+            "fusion_snapshot": dict(getattr(self, "_fusion_snapshot", {}) or {}),
             "thought_bus_snapshot": dict(self._thought_bus_snapshot),
             "cognition_snapshot": dict(self._cognition_snapshot),
             "recent_closed_trades": list(self._recent_closed_trades[-5:]),
