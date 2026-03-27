@@ -37,6 +37,7 @@ if sys.platform == 'win32':
 
 import asyncio
 import aiohttp
+import builtins
 import json
 import time
 import logging
@@ -44,6 +45,22 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Set, Optional, Any
 from collections import defaultdict, deque
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_print(*args, **kwargs):
+    try:
+        builtins.print(*args, **kwargs)
+    except (ValueError, OSError):
+        try:
+            message = " ".join(str(arg) for arg in args)
+            logger.info(message)
+        except Exception:
+            pass
+
+
+print = _safe_print
 
 # Import Bot Intelligence Profiler
 try:

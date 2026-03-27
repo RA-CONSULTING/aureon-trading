@@ -658,14 +658,7 @@ class CapitalCFDTrader:
                     return value
             except (TypeError, ValueError):
                 continue
-        asset = str(asset_class or "").strip().lower()
-        fallback_margin_pct = {
-            "forex": 3.33,
-            "index": 5.0,
-            "commodity": 10.0,
-            "stock": 20.0,
-        }
-        return float(fallback_margin_pct.get(asset, 10.0))
+        return 0.0
 
     def _is_capital_risk_rejection(self, reason: str) -> bool:
         text = str(reason or "").strip().upper()
@@ -812,18 +805,6 @@ class CapitalCFDTrader:
         if preflight["available_balance"] <= 0:
             preflight["reason"] = "available account balance <= 0"
             return preflight
-        if (
-            isinstance(cfg, dict)
-            and float(preflight.get("estimated_margin_required", 0.0) or 0.0) > 0
-            and float(preflight.get("available_balance", 0.0) or 0.0) < float(preflight.get("estimated_margin_required", 0.0) or 0.0)
-        ):
-            preflight["reason"] = (
-                f"insufficient equity for estimated margin "
-                f"{float(preflight.get('estimated_margin_required', 0.0) or 0.0):.2f} "
-                f"> available {float(preflight.get('available_balance', 0.0) or 0.0):.2f}"
-            )
-            return preflight
-
         allowed_statuses = {"TRADEABLE", "TRADEABLE_ONLINE", "OPEN", "EDITS_ONLY", "ONLINE"}
         market_status = str(preflight["market_status"] or "").upper()
         if market_status and market_status not in allowed_statuses and market_status != "UNKNOWN":
@@ -836,6 +817,17 @@ class CapitalCFDTrader:
             preflight["reason"] = (
                 f"expected net profit {float(preflight.get('expected_net_profit', 0.0) or 0.0):+.4f} "
                 f"does not clear costs {float(preflight.get('round_trip_cost', 0.0) or 0.0):.4f}"
+            )
+            return preflight
+        if (
+            isinstance(cfg, dict)
+            and float(preflight.get("estimated_margin_required", 0.0) or 0.0) > 0
+            and float(preflight.get("available_balance", 0.0) or 0.0) < float(preflight.get("estimated_margin_required", 0.0) or 0.0)
+        ):
+            preflight["reason"] = (
+                f"insufficient equity for estimated margin "
+                f"{float(preflight.get('estimated_margin_required', 0.0) or 0.0):.2f} "
+                f"> available {float(preflight.get('available_balance', 0.0) or 0.0):.2f}"
             )
             return preflight
 

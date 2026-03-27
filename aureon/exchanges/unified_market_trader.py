@@ -35,6 +35,14 @@ LOCAL_PORT = 8790
 EXCHANGE_REINIT_INTERVAL_SEC = 30.0
 
 
+def _safe_print(*args: Any, **kwargs: Any) -> None:
+    try:
+        print(*args, **kwargs)
+    except (ValueError, OSError):
+        message = " ".join(str(arg) for arg in args)
+        logger.info(message)
+
+
 class _UnifiedDashboardHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
@@ -345,26 +353,26 @@ class UnifiedMarketTrader:
         return lines
 
     def print_status(self) -> None:
-        print()
-        print("=" * 78)
-        print(f"  UNIFIED MARKET TRADER | Runtime: {(time.time() - self.start_time) / 60.0:.1f}m")
-        print("  Exchanges: Kraken Margin + Capital CFDs")
-        print("-" * 78)
-        print("  [KRAKEN]")
+        _safe_print()
+        _safe_print("=" * 78)
+        _safe_print(f"  UNIFIED MARKET TRADER | Runtime: {(time.time() - self.start_time) / 60.0:.1f}m")
+        _safe_print("  Exchanges: Kraken Margin + Capital CFDs")
+        _safe_print("-" * 78)
+        _safe_print("  [KRAKEN]")
         if self.kraken_ready and self.kraken is not None:
             for line in self.kraken._latest_status_lines[-10:]:
-                print(f"  {line}")
+                _safe_print(f"  {line}")
         else:
-            print(f"  KRAKEN unavailable: {self.kraken_error or 'not_ready'}")
-        print("-" * 78)
-        print("  [CAPITAL]")
+            _safe_print(f"  KRAKEN unavailable: {self.kraken_error or 'not_ready'}")
+        _safe_print("-" * 78)
+        _safe_print("  [CAPITAL]")
         if self.capital_ready and self.capital is not None:
             for line in self.capital.status_lines():
-                print(f"  {line}")
+                _safe_print(f"  {line}")
         else:
-            print(f"  CAPITAL unavailable: {self.capital_error or 'not_ready'}")
-        print("=" * 78)
-        print()
+            _safe_print(f"  CAPITAL unavailable: {self.capital_error or 'not_ready'}")
+        _safe_print("=" * 78)
+        _safe_print()
 
     def tick(self) -> Dict[str, Any]:
         self._ensure_exchanges()
@@ -395,13 +403,13 @@ class UnifiedMarketTrader:
 
     def run(self, interval_sec: float = 2.0) -> None:
         mode = "DRY RUN" if self.dry_run else "LIVE"
-        print("=" * 78)
-        print("  UNIFIED MARKET TRADER")
-        print(f"  Mode: {mode}")
-        print("  Execution venues: Kraken margin + Capital CFDs")
-        print("  Monitoring: local-first dashboard + terminal telemetry")
-        print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("=" * 78)
+        _safe_print("=" * 78)
+        _safe_print("  UNIFIED MARKET TRADER")
+        _safe_print(f"  Mode: {mode}")
+        _safe_print("  Execution venues: Kraken margin + Capital CFDs")
+        _safe_print("  Monitoring: local-first dashboard + terminal telemetry")
+        _safe_print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        _safe_print("=" * 78)
 
         if self.kraken is not None:
             self._startup_kraken(force=True)
@@ -417,7 +425,7 @@ class UnifiedMarketTrader:
                 self.print_status()
                 time.sleep(interval_sec)
         except KeyboardInterrupt:
-            print("\nUnified market trader stopped.")
+            _safe_print("\nUnified market trader stopped.")
 
 
 def main() -> None:

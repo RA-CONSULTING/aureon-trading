@@ -95,6 +95,13 @@ TIMELINE_VALIDATIONS_FILE = "timeline_validations.json"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
+
+def _safe_import_print(message: str) -> None:
+    try:
+        print(message)
+    except (ValueError, OSError):
+        logger.info(message)
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # SYSTEM INTEGRATIONS
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -103,7 +110,7 @@ logger = logging.getLogger(__name__)
 try:
     from aureon_miner_brain import MinerBrain, SpeculationEngine
     MINER_BRAIN_AVAILABLE = True
-    print("🧠 Timeline Oracle: Miner Brain WIRED!")
+    _safe_import_print("🧠 Timeline Oracle: Miner Brain WIRED!")
 except ImportError:
     MINER_BRAIN_AVAILABLE = False
     MinerBrain = None
@@ -113,7 +120,7 @@ except ImportError:
 try:
     from aureon_quantum_telescope import QuantumPrism, LightBeam, GeometricSolid
     QUANTUM_TELESCOPE_AVAILABLE = True
-    print("🔭 Timeline Oracle: Quantum Telescope WIRED!")
+    _safe_import_print("🔭 Timeline Oracle: Quantum Telescope WIRED!")
 except ImportError:
     QUANTUM_TELESCOPE_AVAILABLE = False
     QuantumPrism = None
@@ -138,7 +145,7 @@ def _lazy_load_mycelium():
         Hive = _Hive
         Neuron = _Neuron
         MYCELIUM_AVAILABLE = True
-        print("🍄 Timeline Oracle: Mycelium Network WIRED!")
+        _safe_import_print("🍄 Timeline Oracle: Mycelium Network WIRED!")
         return True
     except ImportError:
         MYCELIUM_AVAILABLE = False
@@ -149,7 +156,7 @@ try:
     from aureon_harmonic_fusion import HarmonicWaveFusion
     from aureon_harmonic_seed import GlobalHarmonicState, SymbolWaveState, SEED_DAYS
     HARMONIC_AVAILABLE = True
-    print("🌊 Timeline Oracle: Harmonic Fusion WIRED!")
+    _safe_import_print("🌊 Timeline Oracle: Harmonic Fusion WIRED!")
 except ImportError:
     HARMONIC_AVAILABLE = False
     HarmonicWaveFusion = None
@@ -159,7 +166,7 @@ except ImportError:
 try:
     from aureon_internal_multiverse import InternalMultiverse, World, ConsensusEngine
     MULTIVERSE_AVAILABLE = True
-    print("🌌 Timeline Oracle: Internal Multiverse WIRED!")
+    _safe_import_print("🌌 Timeline Oracle: Internal Multiverse WIRED!")
 except ImportError:
     MULTIVERSE_AVAILABLE = False
     InternalMultiverse = None
@@ -168,7 +175,7 @@ except ImportError:
 try:
     from probability_ultimate_intelligence import get_ultimate_intelligence, ultimate_predict
     ULTIMATE_INTEL_AVAILABLE = True
-    print("💎 Timeline Oracle: Ultimate Intelligence WIRED!")
+    _safe_import_print("💎 Timeline Oracle: Ultimate Intelligence WIRED!")
 except ImportError:
     ULTIMATE_INTEL_AVAILABLE = False
     ultimate_predict = None
@@ -193,7 +200,7 @@ except ImportError:
 try:
     from kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
-    print("🐙 Timeline Oracle: Kraken Exchange WIRED!")
+    _safe_import_print("🐙 Timeline Oracle: Kraken Exchange WIRED!")
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
@@ -202,7 +209,7 @@ except ImportError:
 try:
     from binance_client import BinanceClient
     BINANCE_AVAILABLE = True
-    print("🟡 Timeline Oracle: Binance Exchange WIRED!")
+    _safe_import_print("🟡 Timeline Oracle: Binance Exchange WIRED!")
 except ImportError:
     BINANCE_AVAILABLE = False
     BinanceClient = None
@@ -211,7 +218,7 @@ except ImportError:
 try:
     from alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
-    print("🦙 Timeline Oracle: Alpaca Exchange WIRED!")
+    _safe_import_print("🦙 Timeline Oracle: Alpaca Exchange WIRED!")
 except ImportError:
     ALPACA_AVAILABLE = False
     AlpacaClient = None
@@ -220,7 +227,7 @@ except ImportError:
 try:
     from aureon_market_pulse import MarketPulse
     MARKET_PULSE_AVAILABLE = True
-    print("🌍 Timeline Oracle: Global Market Pulse WIRED!")
+    _safe_import_print("🌍 Timeline Oracle: Global Market Pulse WIRED!")
 except ImportError:
     MARKET_PULSE_AVAILABLE = False
     MarketPulse = None
@@ -229,7 +236,7 @@ except ImportError:
 try:
     from hnc_probability_matrix import HNCProbabilityMatrix
     HNC_AVAILABLE = True
-    print("📊 Timeline Oracle: HNC Probability Matrix WIRED!")
+    _safe_import_print("📊 Timeline Oracle: HNC Probability Matrix WIRED!")
 except ImportError:
     HNC_AVAILABLE = False
     HNCProbabilityMatrix = None
