@@ -1,0 +1,48 @@
+{
+  "symbol": "SILVER",
+  "direction": "BUY",
+  "size": 1,
+  "ticker": {
+    "price": 7282.6,
+    "ask": 7282.6,
+    "bid": 7281.6,
+    "epic": "CS.D.SILVER.CFD.IP"
+  },
+  "preflight": {
+    "symbol": "SILVER",
+    "epic": "CS.D.SILVER.CFD.IP",
+    "requested_size": 1.0,
+    "available_balance": 54.34,
+    "market_status": "TRADEABLE",
+    "minimum_deal_size": 2.0,
+    "price": 7282.6,
+    "spread": 1.0,
+    "spread_pct": 0.013731359679235437,
+    "margin_factor_pct": 0.0,
+    "estimated_margin_required": 0.0,
+    "expected_gross_profit": 0.01,
+    "expected_net_profit": 0.01,
+    "round_trip_cost": 0.0,
+    "ok": false,
+    "reason": "requested size 1 below Capital minimum 2",
+    "accounts": [
+      {
+        "accountId": "A1",
+        "balance": 54.34,
+        "available": 54.34,
+        "currency": "GBP"
+      }
+    ],
+    "bid": 7281.6,
+    "ask": 7282.6,
+    "notional": 7282.6,
+    "effective_tp_pct": 0.00013731359679235438
+  },
+  "known_deal_ids_before": [],
+  "order_response": null,
+  "confirm_response": null,
+  "positions_snapshots": [],
+  "validated": false,
+  "final_error": "SILVER preflight failed: requested size 1 below Capital minimum 2",
+  "written_at": 1774553609.1984026
+}

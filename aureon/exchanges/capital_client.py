@@ -3,6 +3,7 @@ import sys
 import logging
 import requests
 import time
+import json
 from typing import Dict, Any, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -24,6 +25,11 @@ except ImportError:
     pass
 
 logger = logging.getLogger(__name__)
+
+CAPITAL_HTTP_TIMEOUT = float(os.getenv('CAPITAL_HTTP_TIMEOUT_SECS', '8'))
+CAPITAL_TICKER_WORKERS = int(os.getenv('CAPITAL_TICKER_WORKERS', '4'))
+CAPITAL_MONITOR_CACHE_PATH = os.getenv("CAPITAL_MONITOR_CACHE_PATH", os.path.join("ws_cache", "capital_monitor.json"))
+CAPITAL_MONITOR_CACHE_MAX_AGE_S = float(os.getenv("CAPITAL_MONITOR_CACHE_MAX_AGE_S", "20"))
 
 class CapitalClient:
     """
@@ -88,7 +94,7 @@ class CapitalClient:
         }
         
         try:
-            response = requests.post(url, json=payload, headers=headers, timeout=20)
+            response = requests.post(url, json=payload, headers=headers, timeout=CAPITAL_HTTP_TIMEOUT)
             if response.status_code == 200:
                 self.cst = response.headers.get('CST')
                 self.x_security_token = response.headers.get('X-SECURITY-TOKEN')
@@ -144,7 +150,7 @@ class CapitalClient:
         url = f"{self.base_url}{path}"
         headers = self._get_headers()
         try:
-            resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=20)
+            resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=CAPITAL_HTTP_TIMEOUT)
         except Exception as e:
             logger.error(f"Capital.com request error ({method} {path}): {e}")
             raise
@@ -173,7 +179,7 @@ class CapitalClient:
             self._session_error_logged = False
             self._create_session()
             headers = self._get_headers()
-            resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=20)
+            resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=CAPITAL_HTTP_TIMEOUT)
         return resp
 
     def _get_headers(self):
@@ -318,6 +324,34 @@ class CapitalClient:
             logger.error(f"Capital.com market snapshot error for {epic}: {e}")
         return None
 
+    def _read_monitor_cache(self) -> Dict[str, Any]:
+        path = CAPITAL_MONITOR_CACHE_PATH
+        if not path or not os.path.exists(path):
+            return {}
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except Exception:
+            return {}
+        generated_at = float(payload.get("generated_at", 0.0) or 0.0)
+        if generated_at <= 0 or (time.time() - generated_at) > CAPITAL_MONITOR_CACHE_MAX_AGE_S:
+            return {}
+        return payload
+
+    def _get_cached_monitor_quote(self, symbol: str) -> Dict[str, float]:
+        payload = self._read_monitor_cache()
+        prices = payload.get("prices", {}) if isinstance(payload.get("prices"), dict) else {}
+        quote = prices.get(str(symbol or "").upper(), {})
+        if not isinstance(quote, dict):
+            return {}
+        return {
+            "price": float(quote.get("price", 0.0) or 0.0),
+            "bid": float(quote.get("bid", 0.0) or 0.0),
+            "ask": float(quote.get("ask", 0.0) or 0.0),
+            "epic": str(quote.get("epic") or ""),
+            "change_pct": float(quote.get("change_pct", 0.0) or 0.0),
+        }
+
     def get_account_balance(self) -> Dict[str, float]:
         """Get account balances.
         
@@ -382,6 +416,9 @@ class CapitalClient:
     def get_ticker(self, symbol: str) -> Dict[str, float]:
         """Get current price for a symbol."""
         if not self.enabled:
+            cached = self._get_cached_monitor_quote(symbol)
+            if cached:
+                return cached
             return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
 
         # 🔥 Skip crypto symbols - Capital.com doesn't have them
@@ -389,6 +426,10 @@ class CapitalClient:
                            'DOGE', 'SHIB', 'AVAX', 'DOT', 'LINK', 'MATIC', 'UNI')
         if any(p in symbol.upper() for p in CRYPTO_PATTERNS):
             return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
+        cached = self._get_cached_monitor_quote(symbol)
+        if cached and float(cached.get("price", 0.0) or 0.0) > 0:
+            return cached
 
         try:
             market = self._resolve_market(symbol) or {}
@@ -412,7 +453,7 @@ class CapitalClient:
             logger.error(f"Error fetching Capital.com ticker for {symbol}: {e}")
             return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
 
-    def get_tickers_for_symbols(self, symbols: List[str], *, max_workers: int = 8) -> Dict[str, Dict[str, float]]:
+    def get_tickers_for_symbols(self, symbols: List[str], *, max_workers: int = CAPITAL_TICKER_WORKERS) -> Dict[str, Dict[str, float]]:
         """Fetch tickers for many symbols concurrently (best-effort).
 
         Returns: {symbol: {price,bid,ask,epic,change_pct}}
@@ -435,13 +476,23 @@ class CapitalClient:
             unique_symbols.append(su)
 
         results: Dict[str, Dict[str, float]] = {}
+        uncached_symbols: List[str] = []
+        for sym in unique_symbols:
+            cached = self._get_cached_monitor_quote(sym)
+            if cached and float(cached.get("price", 0.0) or 0.0) > 0:
+                results[sym] = cached
+            else:
+                uncached_symbols.append(sym)
+
+        if not uncached_symbols:
+            return results
         max_workers = max(1, int(max_workers))
 
         def _fetch(sym: str) -> Dict[str, float]:
             return self.get_ticker(sym)
 
         with ThreadPoolExecutor(max_workers=max_workers) as ex:
-            future_map = {ex.submit(_fetch, sym): sym for sym in unique_symbols}
+            future_map = {ex.submit(_fetch, sym): sym for sym in uncached_symbols}
             for fut in as_completed(future_map):
                 sym = future_map[fut]
                 try:

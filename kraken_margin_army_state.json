@@ -9,9 +9,9 @@
     "entry_time": 1774443401.337875,
     "order_id": "TQTIZX-A6XL3-MQ6JBC",
     "cost": 808.722664,
-    "breakeven_price": 0.27717577468626137,
+    "breakeven_price": 0.27725826826372924,
     "binance_symbol": "ADAUSDT",
-    "rollover_fees": 0.0808722664,
+    "rollover_fees": 0.3234890656,
     "last_rollover_check": 0.0
   },
   "active_short": null,
@@ -25,16 +25,37 @@
     "entry_time": 1774443401.337875,
     "order_id": "TQTIZX-A6XL3-MQ6JBC",
     "cost": 808.722664,
-    "breakeven_price": 0.27717577468626137,
+    "breakeven_price": 0.27725826826372924,
     "binance_symbol": "ADAUSDT",
-    "rollover_fees": 0.0808722664,
+    "rollover_fees": 0.3234890656,
     "last_rollover_check": 0.0
   },
-  "total_profit": 0,
-  "total_trades": 0,
-  "winning_trades": 0,
-  "shadow_validated": 0,
-  "shadow_failed": 0,
-  "completed_trades": [],
-  "last_updated": "2026-03-25T20:08:13.964743"
+  "total_profit": 4.446711779700118,
+  "total_trades": 1,
+  "winning_trades": 1,
+  "shadow_validated": 1,
+  "shadow_failed": 62,
+  "completed_trades": [
+    {
+      "pair": "SOLUSD",
+      "side": "sell",
+      "volume": 12.80183113,
+      "entry_price": 90.07000000944397,
+      "exit_price": 89.31,
+      "leverage": 10,
+      "entry_fee": 2.76735,
+      "exit_fee": 2.51533,
+      "rollover_fees": 0.0,
+      "total_fees": 5.28268,
+      "gross_pnl": 9.72939177970012,
+      "net_pnl": 4.446711779700118,
+      "reason": "PROFIT_TARGET ($+2.41 validated)",
+      "entry_time": "2026-03-26T05:13:33.783561",
+      "exit_time": "2026-03-26T05:51:49.327213",
+      "hold_seconds": 2295.5436522960663,
+      "order_id": "OKLAJM-2R4OW-Z7M26R",
+      "close_order_id": "O53DRX-V6KY2-E6YAIH"
+    }
+  ],
+  "last_updated": "2026-03-26T08:04:09.330455"
 }

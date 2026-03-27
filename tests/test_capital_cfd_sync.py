@@ -2,7 +2,7 @@
 import time
 import unittest
 
-from aureon.exchanges.capital_cfd_trader import CAPITAL_MIN_PROFIT_GBP, CFD_FLAGS, CapitalCFDTrader, CFDPosition
+from aureon.exchanges.capital_cfd_trader import CAPITAL_MIN_PROFIT_GBP, CFD_FLAGS, CapitalCFDTrader, CFDPosition, CFDShadowTrade
 
 
 class ClientStub:
@@ -57,6 +57,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
         trader.client = client
         trader.positions = []
+        trader.shadow_trades = []
         trader.stats = {
             "trades_opened": 0.0,
             "trades_closed": 0.0,
@@ -71,11 +72,33 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._latest_order_trace_path = ""
         trader._latest_target_snapshot = {}
         trader._latest_candidate_snapshot = []
+        trader._swarm_snapshot = {"enabled": True, "leader": {}, "votes": [], "ranked": []}
         trader._hive_boosts = {}
+        trader._rejection_cooldowns = {}
         trader._quad_gate_at = 0.0
         trader._quad_gate_ok = True
         trader._signal_brain = None
         trader._trade_profit_validator = None
+        trader.unified_registry = None
+        trader.unified_decision_engine = None
+        trader.orchestrator = None
+        trader.timeline_oracle = None
+        trader.harmonic_fusion = None
+        trader.thought_bus = None
+        trader._registry_snapshot = {}
+        trader._decision_snapshot = {}
+        trader._orchestrator_snapshot = {}
+        trader._timeline_snapshot = {}
+        trader._fusion_snapshot = {}
+        trader._lane_snapshot = {}
+        trader._thought_bus_snapshot = {}
+        trader._cognition_snapshot = {}
+        trader._recent_closed_trades = []
+        trader._shadow_validated_count = 0
+        trader._shadow_failed_count = 0
+        trader._dtp_trackers = {}
+        trader.start_time = time.time()
+        trader.starting_equity_gbp = 0.0
         trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
         return trader
 
@@ -260,7 +283,7 @@ class TestCapitalCFDSync(unittest.TestCase):
             "available_balance": 54.34,
         }
         opened = []
-        trader._open_position = lambda symbol, cfg, ticker: opened.append(symbol) or object()
+        trader._create_shadow = lambda symbol, cfg, ticker: opened.append(symbol) or object()
 
         trader.tick()
 
@@ -290,7 +313,7 @@ class TestCapitalCFDSync(unittest.TestCase):
             "available_balance": 54.34,
         }
         opened = []
-        trader._open_position = lambda symbol, cfg, ticker: opened.append(symbol) or object()
+        trader._create_shadow = lambda symbol, cfg, ticker: opened.append(symbol) or object()
 
         closed = trader.tick()
 
@@ -349,7 +372,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         }
 
         opened = []
-        def _open(symbol, cfg, ticker):
+        def _shadow(symbol, cfg, ticker):
             opened.append((symbol, cfg["direction"]))
             trader.positions.append(
                 CFDPosition(
@@ -366,11 +389,135 @@ class TestCapitalCFDSync(unittest.TestCase):
                 )
             )
             return object()
-        trader._open_position = _open
+        trader._create_shadow = _shadow
 
         trader.tick()
 
         self.assertEqual(opened, [("SILVER", "BUY"), ("GOLD", "SELL")])
+
+    def test_build_swarm_snapshot_prefers_consensus_leader(self):
+        trader = self._build_trader(ClientStub())
+
+        snapshot = trader._build_swarm_snapshot([
+            {
+                "symbol": "SILVER",
+                "direction": "BUY",
+                "score": 2.4,
+                "change_pct": 1.8,
+                "expected_net_profit": 0.14,
+                "spread_pct": 0.03,
+                "eta_to_target": 0.2,
+                "brain_coherence": 0.7,
+            },
+            {
+                "symbol": "GOLD",
+                "direction": "SELL",
+                "score": 1.8,
+                "change_pct": -2.5,
+                "expected_net_profit": 0.05,
+                "spread_pct": 0.06,
+                "eta_to_target": 0.5,
+                "brain_coherence": 0.5,
+            },
+        ])
+
+        self.assertEqual(snapshot["leader"]["symbol"], "SILVER")
+        self.assertEqual(snapshot["leader"]["direction"], "BUY")
+        self.assertGreaterEqual(snapshot["leader"]["votes"], 3)
+
+    def test_ranked_opportunities_uses_swarm_order_when_available(self):
+        trader = self._build_trader(ClientStub())
+        trader._latest_candidate_snapshot = [
+            {"symbol": "SILVER", "direction": "BUY", "score": 1.5},
+            {"symbol": "GOLD", "direction": "SELL", "score": 2.2},
+        ]
+        trader._swarm_snapshot = {
+            "enabled": True,
+            "leader": {"symbol": "SILVER", "direction": "BUY", "swarm_score": 8.0, "votes": 3},
+            "votes": [],
+            "ranked": [
+                {"symbol": "SILVER", "direction": "BUY", "swarm_score": 8.0},
+                {"symbol": "GOLD", "direction": "SELL", "swarm_score": 5.0},
+            ],
+        }
+        trader._get_price = lambda symbol: {"price": 10, "bid": 9.9, "ask": 10.1}
+
+        ranked = trader._ranked_opportunities()
+
+        self.assertEqual([(sym, cfg["direction"]) for sym, cfg, _ in ranked], [("SILVER", "BUY"), ("GOLD", "SELL")])
+
+    def test_apply_intelligence_overlays_can_block_candidate_via_orchestrator(self):
+        class OrchestratorStub:
+            def gate_pre_trade(self, symbol, side):
+                if symbol == "SILVER":
+                    return False, "confidence_too_low", {}
+                return True, "ok", {}
+
+        trader = self._build_trader(ClientStub())
+        trader.orchestrator = OrchestratorStub()
+        trader.timeline_oracle = None
+        trader.harmonic_fusion = None
+        scored = [
+            {"symbol": "SILVER", "direction": "BUY", "score": 2.0, "price": 100.0, "change_pct": 1.5},
+            {"symbol": "GOLD", "direction": "SELL", "score": 1.5, "price": 100.0, "change_pct": -1.2},
+        ]
+
+        trader._apply_intelligence_overlays(scored)
+
+        self.assertEqual(scored[0]["score"], 0.0)
+        self.assertIn("orchestrator_gate", scored[0]["intel_reason"])
+        self.assertTrue(scored[1]["score"] > 0.0)
+
+    def test_can_open_candidate_skips_symbol_on_active_rejection_cooldown(self):
+        trader = self._build_trader(ClientStub())
+
+        trader._record_rejection("SILVER", "BUY", "preflight_failed")
+
+        self.assertFalse(trader._can_open_candidate("SILVER", "BUY"))
+        self.assertTrue(trader._can_open_candidate("SILVER", "SELL"))
+
+    def test_build_lane_snapshot_prefers_validated_shadow_as_next_in_line(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = [
+            CFDPosition(
+                symbol="SILVER",
+                deal_id="DBUY",
+                epic="EPIC-SILVER",
+                direction="BUY",
+                size=1,
+                entry_price=10,
+                tp_price=11,
+                sl_price=9,
+                asset_class="commodity",
+                current_price=10,
+            )
+        ]
+        validated_sell = CFDShadowTrade(
+            symbol="GOLD",
+            direction="SELL",
+            asset_class="commodity",
+            size=1,
+            entry_price=10,
+            target_move_pct=0.1,
+            score=2.0,
+        )
+        validated_sell.validated = True
+        queued_buy = CFDShadowTrade(
+            symbol="TSLA",
+            direction="BUY",
+            asset_class="stock",
+            size=1,
+            entry_price=10,
+            target_move_pct=0.1,
+            score=1.0,
+        )
+        trader.shadow_trades = [queued_buy, validated_sell]
+
+        lanes = trader._build_lane_snapshot()
+
+        self.assertEqual(lanes["BUY"]["position_symbol"], "SILVER")
+        self.assertEqual(lanes["SELL"]["validated_shadow_symbol"], "GOLD")
+        self.assertEqual(lanes["SELL"]["next_action"], "promote_validated_shadow")
 
     def test_open_position_accepts_verified_live_deal_after_short_delay(self):
         live_position = {
@@ -459,6 +606,7 @@ class TestCapitalCFDSync(unittest.TestCase):
             },
         }])
         trader.positions = []
+        trader._dtp_trackers = {}
         trader._last_exchange_sync = 0.0
         trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
 
@@ -571,6 +719,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         }
         trader._recent_closed_trades = []
         trader._latest_monitor_line = ""
+        trader._dtp_trackers = {}
 
         closed = trader._monitor_positions()
 
@@ -600,6 +749,7 @@ class TestCapitalCFDSync(unittest.TestCase):
             ]
             trader._recent_closed_trades = []
             trader._latest_monitor_line = ""
+            trader._dtp_trackers = {}
 
             closed = trader._monitor_positions()
 
@@ -640,6 +790,7 @@ class TestCapitalCFDSync(unittest.TestCase):
             }
             trader._recent_closed_trades = []
             trader._latest_monitor_line = ""
+            trader._dtp_trackers = {}
 
             closed = trader._monitor_positions()
 
