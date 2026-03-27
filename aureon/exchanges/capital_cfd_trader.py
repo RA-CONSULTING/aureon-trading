@@ -197,6 +197,9 @@ CAPITAL_RISK_REJECTION_COOLDOWN_SECS = _env_float("CAPITAL_RISK_REJECTION_COOLDO
 CAPITAL_MIN_PROFIT_GBP = 0.01
 CAPITAL_DTP_TRIGGER_GBP = 0.01
 CAPITAL_SHADOW_MIN_VALIDATE_SECS = _env_float("CAPITAL_SHADOW_MIN_VALIDATE_SECS", 10.0)
+CAPITAL_SELF_CONFIDENCE_ENABLED = _env_bool("CAPITAL_SELF_CONFIDENCE_ENABLED", True)
+CAPITAL_SELF_CONFIDENCE_MAX_BOOST = _env_float("CAPITAL_SELF_CONFIDENCE_MAX_BOOST", 0.35)
+CAPITAL_SELF_CONFIDENCE_MIN_VALIDATE_SECS = _env_float("CAPITAL_SELF_CONFIDENCE_MIN_VALIDATE_SECS", 4.0)
 CAPITAL_HISTORY_LOOKBACK_DAYS = int(_env_float("CAPITAL_HISTORY_LOOKBACK_DAYS", 90.0))
 CAPITAL_MIN_PROBABILITY_ACCURACY = _env_float("CAPITAL_MIN_PROBABILITY_ACCURACY", 0.55)
 CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR = _env_float("CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR", 1.05)
@@ -379,6 +382,7 @@ class CapitalCFDTrader:
         }
         self._probability_snapshot: Dict[str, Any] = {}
         self._probability_snapshot_at: float = 0.0
+        self._self_confidence_snapshot: Dict[str, Any] = {}
         self._harmonic_wiring_audit: Dict[str, Any] = self._build_harmonic_wiring_audit()
         self._harmonic_wiring_audit_at: float = time.time()
 
@@ -1231,6 +1235,11 @@ class CapitalCFDTrader:
                 + float(timeline.get("bonus", 0.0) or 0.0) * 1.25
                 + float(fusion.get("bonus", 0.0) or 0.0) * 1.0
             )
+            confidence = self._compute_self_confidence(item)
+            item["self_confidence"] = float(confidence.get("score", 0.0) or 0.0)
+            item["self_confidence_boost"] = float(confidence.get("boost_multiplier", 1.0) or 1.0)
+            item["self_confidence_reason"] = str(confidence.get("reason") or "")
+            item["score"] = max(0.0, float(item.get("score", 0.0) or 0.0) * item["self_confidence_boost"])
 
     def _direction_counts(self) -> Dict[str, int]:
         counts = {"BUY": 0, "SELL": 0}
@@ -1455,6 +1464,108 @@ class CapitalCFDTrader:
         self._probability_snapshot_at = now
         return dict(payload)
 
+    def _compute_self_confidence(self, candidate: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        snapshot: Dict[str, Any] = {
+            "enabled": CAPITAL_SELF_CONFIDENCE_ENABLED,
+            "score": 0.0,
+            "boost_multiplier": 1.0,
+            "validation_window_secs": self.SHADOW_MIN_VALIDATE,
+            "recent_success_ratio": 0.0,
+            "alignment_score": 0.0,
+            "rejection_pressure": 0.0,
+            "reason": "disabled" if not CAPITAL_SELF_CONFIDENCE_ENABLED else "cold_start",
+        }
+        if not CAPITAL_SELF_CONFIDENCE_ENABLED:
+            self._self_confidence_snapshot = snapshot
+            return dict(snapshot)
+
+        opened = float((self.stats or {}).get("trades_opened", 0.0) or 0.0)
+        validated = float(getattr(self, "_shadow_validated_count", 0) or 0.0)
+        failed = float(getattr(self, "_shadow_failed_count", 0) or 0.0)
+        completed_cycles = validated + failed
+        if completed_cycles > 0:
+            recent_success_ratio = validated / completed_cycles
+        elif opened > 0:
+            wins = float((self.stats or {}).get("winning_trades", 0.0) or 0.0)
+            recent_success_ratio = wins / max(opened, 1.0)
+        else:
+            recent_success_ratio = 0.5
+
+        alignment_inputs: List[float] = []
+        source = dict(candidate or getattr(self, "_latest_target_snapshot", {}) or {})
+        for key in ("brain_coherence", "timeline_confidence", "fusion_global_coherence"):
+            try:
+                value = float(source.get(key, 0.0) or 0.0)
+            except Exception:
+                value = 0.0
+            if value > 0:
+                alignment_inputs.append(max(0.0, min(1.0, value)))
+        alignment_score = sum(alignment_inputs) / len(alignment_inputs) if alignment_inputs else 0.5
+
+        cooldowns = [
+            info for info in getattr(self, "_rejection_cooldowns", {}).values()
+            if float((info or {}).get("until", 0.0) or 0.0) > time.time()
+        ]
+        rejection_pressure = min(1.0, len(cooldowns) / 4.0)
+
+        raw_score = (recent_success_ratio * 0.5) + (alignment_score * 0.4) + ((1.0 - rejection_pressure) * 0.1)
+        score = max(0.0, min(1.0, raw_score))
+        boost_multiplier = 1.0 + max(0.0, score - 0.5) * 2.0 * max(0.0, CAPITAL_SELF_CONFIDENCE_MAX_BOOST)
+        validation_floor = max(0.5, float(CAPITAL_SELF_CONFIDENCE_MIN_VALIDATE_SECS or 4.0))
+        validation_window = max(
+            validation_floor,
+            float(self.SHADOW_MIN_VALIDATE) - max(0.0, score - 0.55) * (float(self.SHADOW_MIN_VALIDATE) - validation_floor),
+        )
+
+        snapshot.update({
+            "score": score,
+            "boost_multiplier": boost_multiplier,
+            "validation_window_secs": validation_window,
+            "recent_success_ratio": recent_success_ratio,
+            "alignment_score": alignment_score,
+            "rejection_pressure": rejection_pressure,
+            "reason": "armed" if score >= 0.55 else "warming_up",
+        })
+        self._self_confidence_snapshot = snapshot
+        return dict(snapshot)
+
+    def _compute_growth_metrics(self) -> Dict[str, Any]:
+        runtime_secs = max(1.0, time.time() - float(getattr(self, "start_time", time.time()) or time.time()))
+        runtime_hours = runtime_secs / 3600.0
+        pnl_gbp = float((self.stats or {}).get("total_pnl_gbp", 0.0) or 0.0)
+        trades_closed = int((self.stats or {}).get("trades_closed", 0.0) or 0.0)
+        wins = int((self.stats or {}).get("winning_trades", 0.0) or 0.0)
+        losses = int((self.stats or {}).get("losing_trades", 0.0) or 0.0)
+        equity_now = float(self.get_capital_snapshot().get("equity_gbp", 0.0) or 0.0)
+        equity_start = float(getattr(self, "starting_equity_gbp", 0.0) or 0.0)
+        equity_growth_pct = ((equity_now - equity_start) / equity_start * 100.0) if equity_start > 0 else 0.0
+        pnl_per_hour = pnl_gbp / runtime_hours if runtime_hours > 0 else 0.0
+        trades_per_hour = trades_closed / runtime_hours if runtime_hours > 0 else 0.0
+        avg_pnl = pnl_gbp / trades_closed if trades_closed > 0 else 0.0
+        recent = list(getattr(self, "_recent_closed_trades", []) or [])[-3:]
+        recent_pnl = sum(float(item.get("net_pnl", 0.0) or 0.0) for item in recent)
+        recent_avg = recent_pnl / len(recent) if recent else 0.0
+        if recent_avg > avg_pnl + 1e-9:
+            trend = "accelerating"
+        elif recent_avg < avg_pnl - 1e-9:
+            trend = "cooling"
+        else:
+            trend = "steady"
+        return {
+            "runtime_hours": runtime_hours,
+            "equity_growth_pct": equity_growth_pct,
+            "pnl_per_hour_gbp": pnl_per_hour,
+            "trades_per_hour": trades_per_hour,
+            "avg_pnl_per_close_gbp": avg_pnl,
+            "recent_avg_pnl_gbp": recent_avg,
+            "recent_total_pnl_gbp": recent_pnl,
+            "win_rate": (wins / trades_closed) if trades_closed > 0 else 0.0,
+            "closed_trades": trades_closed,
+            "wins": wins,
+            "losses": losses,
+            "trend": trend,
+        }
+
     def _build_harmonic_wiring_audit(self) -> Dict[str, Any]:
         """Audit harmonic/probability subsystem wiring required by Capital trader."""
         root = Path(os.path.join(os.path.dirname(__file__), "..", "..")).resolve()
@@ -1551,6 +1662,11 @@ class CapitalCFDTrader:
             "brain_alignment": brain_coherence >= 0.10,
             "probability_matrix": probability_ok,
         }
+        confidence = self._compute_self_confidence({
+            "brain_coherence": brain_coherence,
+            "timeline_confidence": timeline_confidence,
+            "fusion_global_coherence": fusion_coherence,
+        })
         ok = all(checks.values())
         return {
             "ok": ok,
@@ -1560,8 +1676,9 @@ class CapitalCFDTrader:
             "fusion_global_coherence": fusion_coherence,
             "brain_coherence": brain_coherence,
             "probability": probability,
+            "self_confidence": confidence,
             "history_lookback_days": CAPITAL_HISTORY_LOOKBACK_DAYS,
-            "validation_window_secs": self.SHADOW_MIN_VALIDATE,
+            "validation_window_secs": float(confidence.get("validation_window_secs", self.SHADOW_MIN_VALIDATE) or self.SHADOW_MIN_VALIDATE),
             "reason": "aligned" if ok else "gate_misaligned",
         }
 
@@ -2294,7 +2411,9 @@ class CapitalCFDTrader:
         for shadow in list(validated_shadows):
             if not shadow.validated:
                 continue
-            if shadow.validation_time > 0 and (now - shadow.validation_time) < self.SHADOW_MIN_VALIDATE:
+            gate_preview = self._build_shadow_promotion_gate(shadow, self._get_price(shadow.symbol))
+            min_validate_window = float(gate_preview.get("validation_window_secs", self.SHADOW_MIN_VALIDATE) or self.SHADOW_MIN_VALIDATE)
+            if shadow.validation_time > 0 and (now - shadow.validation_time) < min_validate_window:
                 continue
             promoted = self._promote_shadow(shadow)
             if promoted is not None:
@@ -2397,6 +2516,21 @@ class CapitalCFDTrader:
             f"W:{w} L:{l} | PnL:{pnl:+.2f} GBP | gate:{gate}",
             f"  Shadows: {len(self.shadow_trades)} active | validated={self._shadow_validated_count} failed={self._shadow_failed_count}",
         ]
+        confidence = self._compute_self_confidence()
+        growth = self._compute_growth_metrics()
+        lines.append(
+            f"  Confidence: {float(confidence.get('score', 0.0) or 0.0):.2f} "
+            f"| boost={float(confidence.get('boost_multiplier', 1.0) or 1.0):.2f}x "
+            f"| promote_wait={float(confidence.get('validation_window_secs', self.SHADOW_MIN_VALIDATE) or self.SHADOW_MIN_VALIDATE):.1f}s "
+            f"| mode={confidence.get('reason', 'n/a')}"
+        )
+        lines.append(
+            f"  Growth: eq={float(growth.get('equity_growth_pct', 0.0) or 0.0):+.2f}% "
+            f"| pnl/hr=£{float(growth.get('pnl_per_hour_gbp', 0.0) or 0.0):+.3f} "
+            f"| trades/hr={float(growth.get('trades_per_hour', 0.0) or 0.0):.2f} "
+            f"| avg/close=£{float(growth.get('avg_pnl_per_close_gbp', 0.0) or 0.0):+.3f} "
+            f"| trend={growth.get('trend', 'steady')}"
+        )
         # Asset-class breakdown
         by_class: Dict[str, int] = {}
         for pos in self.positions:
@@ -2534,6 +2668,7 @@ class CapitalCFDTrader:
     def get_dashboard_payload(self) -> Dict[str, Any]:
         """Expose Capital trader state in the same local-dashboard style as the margin trader."""
         capital = self.get_capital_snapshot()
+        growth = self._compute_growth_metrics()
         return {
             "exchange": "capital",
             "mode": "cfd",
@@ -2577,6 +2712,7 @@ class CapitalCFDTrader:
                 for shadow in self.shadow_trades
             ],
             "stats": dict(self.stats),
+            "growth_metrics": growth,
             "latest_monitor_line": self._latest_monitor_line,
             "status_lines": self._latest_status_lines[-16:],
             "candidate_snapshot": list(self._latest_candidate_snapshot),

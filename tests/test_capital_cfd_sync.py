@@ -239,6 +239,100 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(scored[0]["score"], 6.0)
         self.assertEqual(scored[0]["brain_coherence"], 0.77)
 
+    def test_self_confidence_boosts_score_when_recent_validation_is_strong(self):
+        trader = self._build_trader(ClientStub())
+        trader._shadow_validated_count = 5
+        trader._shadow_failed_count = 0
+        trader._capital_cost_profile = lambda symbol, size, price, tp_pct: {
+            "notional": 100.0,
+            "expected_gross_profit": 2.0,
+            "round_trip_cost": 0.2,
+            "expected_net_profit": 1.8,
+        }
+        scored = [{
+            "symbol": "SILVER",
+            "direction": "BUY",
+            "score": 2.0,
+            "size": 1.0,
+            "price": 100.0,
+            "change_pct": 2.0,
+            "spread_pct": 0.1,
+            "tp_pct": 0.75,
+            "brain_coherence": 0.8,
+        }]
+
+        trader._apply_intelligence_overlays(scored)
+
+        self.assertGreater(scored[0]["self_confidence"], 0.55)
+        self.assertGreater(scored[0]["self_confidence_boost"], 1.0)
+        self.assertGreater(scored[0]["score"], 2.0)
+
+    def test_shadow_promotion_gate_shortens_wait_when_confidence_is_high(self):
+        trader = self._build_trader(ClientStub())
+        trader._shadow_validated_count = 4
+        trader._shadow_failed_count = 0
+        trader._latest_target_snapshot = {
+            "symbol": "SILVER",
+            "direction": "BUY",
+            "timeline_confidence": 0.9,
+            "fusion_global_coherence": 0.9,
+        }
+        trader._latest_candidate_snapshot = [{
+            "symbol": "SILVER",
+            "direction": "BUY",
+            "brain_coherence": 0.9,
+        }]
+        trader._probability_validation_snapshot = lambda force=False: {
+            "ok": True,
+            "direction_accuracy": 0.9,
+            "profit_factor": 1.5,
+        }
+        gate = trader._build_shadow_promotion_gate(
+            CFDShadowTrade(
+                symbol="SILVER",
+                direction="BUY",
+                asset_class="commodity",
+                size=1,
+                entry_price=100.0,
+                target_move_pct=0.1,
+                score=2.0,
+            ),
+            {"change_pct": 1.5},
+        )
+
+        self.assertTrue(gate["ok"])
+        self.assertLess(gate["validation_window_secs"], trader.SHADOW_MIN_VALIDATE)
+
+    def test_growth_metrics_capture_session_velocity_and_trend(self):
+        trader = self._build_trader(ClientStub())
+        trader.start_time = time.time() - 3600
+        trader.starting_equity_gbp = 100.0
+        trader.get_capital_snapshot = lambda: {
+            "equity_gbp": 112.0,
+            "free_gbp": 90.0,
+            "used_gbp": 22.0,
+            "budget_gbp": 50.0,
+            "target_pct_equity": 0.01,
+        }
+        trader.stats.update({
+            "trades_closed": 4.0,
+            "winning_trades": 3.0,
+            "losing_trades": 1.0,
+            "total_pnl_gbp": 8.0,
+        })
+        trader._recent_closed_trades = [
+            {"net_pnl": 1.0},
+            {"net_pnl": 3.0},
+            {"net_pnl": 6.0},
+        ]
+
+        metrics = trader._compute_growth_metrics()
+
+        self.assertAlmostEqual(metrics["equity_growth_pct"], 12.0)
+        self.assertGreater(metrics["pnl_per_hour_gbp"], 7.9)
+        self.assertAlmostEqual(metrics["trades_per_hour"], 4.0, places=1)
+        self.assertEqual(metrics["trend"], "accelerating")
+
     def test_score_symbol_maps_negative_momentum_to_sell(self):
         trader = self._build_trader(ClientStub())
 
