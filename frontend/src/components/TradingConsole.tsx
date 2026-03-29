@@ -17,11 +17,12 @@ import AureonReportCard from './AureonReportCard';
 import AureonChart from './AureonChart';
 import APIKeyManager from './APIKeyManager';
 import TradeControls from './AureonProcessTree';
+import type { UnifiedExecutionConfig } from './AureonProcessTree';
 import AutonomousTradingGuide from './AutonomousTradingGuide';
 
 import { runAnalysis, runBacktest } from '@/services/lighthouseService';
 import { runGaelicHistoricalSimulation } from '@/services/aureonService';
-import { connectWebSocket, type AureonWebSocketConnection } from '@/services/websocketService';
+import { connectWebSocket, type AureonWebSocketConnection, type StreamConnectionOptions } from '@/services/websocketService';
 import { streamLiveAnalysis, startTranscriptionSession } from '@/services/geminiService';
 import { streamAureonChat } from '@/services/aureonChatService';
 import { buildEcosystemContext } from '@/services/ecosystemContextBuilder';
@@ -36,6 +37,15 @@ interface TradingConsoleProps {
 
 const ANALYSIS_UPDATE_THRESHOLD = 20; // Run analysis every 20 data points
 const STREAM_INTERVAL_MS = 150;
+const DEFAULT_UNIFIED_CONFIG: UnifiedExecutionConfig = {
+  streamSource: 'nexus_command',
+  streamSymbol: 'ETHUSDT',
+  targetPrice: '3000',
+  etaHourUtc: '20:00',
+  prepositionMinutes: '120',
+  validationMinutes: '15',
+  cooldownMinutes: '15',
+};
 
 const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -49,6 +59,7 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
   const [chatInput, setChatInput] = useState<string>('');
   const [lastTrade, setLastTrade] = useState<MonitoringEvent | null>(null);
   const [isApiActive, setIsApiActive] = useState<boolean>(false);
+  const [unifiedConfig, setUnifiedConfig] = useState<UnifiedExecutionConfig>(DEFAULT_UNIFIED_CONFIG);
   
   // Get ecosystem data for AI context
   const { metrics, busSnapshot } = useEcosystemData();
@@ -77,7 +88,7 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
     setIsConnected(false);
   }, []);
   
-  const connect = useCallback(() => {
+  const connect = useCallback((streamOptions?: StreamConnectionOptions) => {
     // 1. Initialize historical data and base state
     const historicalData = runGaelicHistoricalSimulation();
     const initialMonitoringEvents: MonitoringEvent[] = [
@@ -266,7 +277,7 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
             };
         });
       }
-    });
+    }, streamOptions);
   }, [disconnect]);
   
   useEffect(() => {
@@ -291,9 +302,42 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
     if (isConnected) {
       disconnect();
     } else {
-      connect();
+      connect({
+        source: unifiedConfig.streamSource,
+        symbol: unifiedConfig.streamSymbol,
+      });
     }
-  }, [isConnected, connect, disconnect]);
+  }, [isConnected, connect, disconnect, unifiedConfig.streamSource, unifiedConfig.streamSymbol]);
+
+  const handleUnifiedConfigChange = useCallback((config: UnifiedExecutionConfig) => {
+    setUnifiedConfig(config);
+    const now = new Date();
+    const [hours, minutes] = config.etaHourUtc.split(':').map(Number);
+    const eta = new Date(now);
+    eta.setUTCHours(hours || 0, minutes || 0, 0, 0);
+    if (eta.getTime() <= now.getTime()) {
+      eta.setUTCDate(eta.getUTCDate() + 1);
+    }
+    const leadMs = Math.max(0, Number(config.prepositionMinutes) || 0) * 60_000;
+    const validationMs = Math.max(0, Number(config.validationMinutes) || 0) * 60_000;
+    const orderWindowStart = new Date(eta.getTime() - leadMs);
+    const validationStart = new Date(orderWindowStart.getTime() - validationMs);
+
+    dataStreamRef.current.monitoring.push({
+      ts: Date.now(),
+      stage: 'risk_update',
+      note: `Unified plan set: ${config.streamSource} ${config.streamSymbol.toUpperCase()} | target ${config.targetPrice} | ETA ${eta.toISOString()} | validate from ${validationStart.toISOString()} | pre-position from ${orderWindowStart.toISOString()} | cooldown ${config.cooldownMinutes}m.`,
+    });
+    setNexusResult(prev => {
+      if (!prev) return prev;
+      return { ...prev, monitoringEvents: [...dataStreamRef.current.monitoring] };
+    });
+
+    if (isConnected) {
+      disconnect();
+      connect({ source: config.streamSource, symbol: config.streamSymbol });
+    }
+  }, [connect, disconnect, isConnected]);
 
   const handleExecuteTrade = useCallback(async (tradeDetails: { pair: string; side: 'LONG' | 'SHORT'; size: string; price: string }) => {
     const baseEvent: MonitoringEvent = {
@@ -532,6 +576,7 @@ const TradingConsole: React.FC<TradingConsoleProps> = ({ onBackToLanding }) => {
                   <TradeControls
                       onExecuteTrade={handleExecuteTrade}
                       isApiActive={isApiActive}
+                      onUnifiedConfigChange={handleUnifiedConfigChange}
                   />
                 </div>
                 <div className="mt-6">
