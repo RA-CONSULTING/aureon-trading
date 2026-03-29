@@ -910,6 +910,34 @@ class PositionData:
         }
 
 
+@dataclass
+class LiveTickerFrame:
+    """Normalized live ticker slice for short-horizon probability updates."""
+    timestamp: float
+    symbol: str
+    source: str
+    price: float
+    bid: float
+    ask: float
+    bid_size: float = 0.0
+    ask_size: float = 0.0
+    trade_volume: float = 0.0
+    coherence: float = 0.5
+    planetary_alignment: float = 0.0
+    solar_risk: float = 0.0
+
+    @property
+    def spread(self) -> float:
+        return max(0.0, self.ask - self.bid)
+
+    @property
+    def orderbook_imbalance(self) -> float:
+        denom = self.bid_size + self.ask_size
+        if denom <= 0:
+            return 0.0
+        return (self.bid_size - self.ask_size) / denom
+
+
 class HNCProbabilityIntegration:
     """
     Integrates Probability Matrix with HNC trading system.
@@ -929,10 +957,166 @@ class HNCProbabilityIntegration:
         self.position_history: deque = deque(maxlen=1000)  # Historical position events
         self.position_outcomes: Dict[str, List[Dict]] = {}  # symbol -> list of trade outcomes
         self.last_position_sync: float = 0.0  # Timestamp of last sync
-        
+        self.live_ticker_frames: Dict[str, deque] = {}  # symbol -> rolling live frames
+        self.live_horizon_seconds: Tuple[int, int] = (30, 40)
+        self.live_frame_ttl_seconds: int = 180
+
         # 💾 Persistence paths
         self._outcomes_path = "probability_outcomes.json"
         self._load_persisted_outcomes()
+
+    def feed_live_ticker_frame(
+        self,
+        symbol: str,
+        source: str,
+        price: float,
+        bid: float,
+        ask: float,
+        bid_size: float = 0.0,
+        ask_size: float = 0.0,
+        trade_volume: float = 0.0,
+        coherence: float = 0.5,
+        planetary_alignment: float = 0.0,
+        solar_risk: float = 0.0,
+        timestamp: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """
+        Feed a normalized live tick into the probability matrix's short-horizon engine.
+
+        Returns a compact forecast dictionary for the next 30-40 seconds:
+        - directional probabilities
+        - projected 30s / 40s prices
+        - confidence and diagnostics
+        """
+        ts = float(timestamp if timestamp is not None else time.time())
+        frame = LiveTickerFrame(
+            timestamp=ts,
+            symbol=symbol,
+            source=source,
+            price=max(0.0, float(price)),
+            bid=max(0.0, float(bid)),
+            ask=max(0.0, float(ask)),
+            bid_size=max(0.0, float(bid_size)),
+            ask_size=max(0.0, float(ask_size)),
+            trade_volume=max(0.0, float(trade_volume)),
+            coherence=max(0.0, min(1.0, float(coherence))),
+            planetary_alignment=max(-1.0, min(1.0, float(planetary_alignment))),
+            solar_risk=max(0.0, min(1.0, float(solar_risk))),
+        )
+
+        if symbol not in self.live_ticker_frames:
+            self.live_ticker_frames[symbol] = deque(maxlen=5000)
+        self.live_ticker_frames[symbol].append(frame)
+        self._trim_live_ticker_frames(symbol, now_ts=ts)
+
+        return self.predict_short_horizon(symbol)
+
+    def _trim_live_ticker_frames(self, symbol: str, now_ts: Optional[float] = None) -> None:
+        """Drop stale live frames outside TTL."""
+        if symbol not in self.live_ticker_frames:
+            return
+        horizon_now = float(now_ts if now_ts is not None else time.time())
+        cutoff = horizon_now - float(self.live_frame_ttl_seconds)
+        frames = self.live_ticker_frames[symbol]
+        while frames and frames[0].timestamp < cutoff:
+            frames.popleft()
+
+    def predict_short_horizon(self, symbol: str) -> Dict[str, Any]:
+        """
+        Predict short-horizon direction for a symbol (30-40s) using:
+        - tick momentum
+        - orderbook imbalance
+        - spread pressure
+        - live volume impulse
+        - coherence + planetary modulation controls
+        """
+        frames = self.live_ticker_frames.get(symbol, deque())
+        if len(frames) < 3:
+            return {
+                'symbol': symbol,
+                'status': 'insufficient_data',
+                'required_frames': 3,
+                'frames_seen': len(frames),
+            }
+
+        last = frames[-1]
+        recent = [f for f in frames if (last.timestamp - f.timestamp) <= 40.0]
+        if len(recent) < 2:
+            return {
+                'symbol': symbol,
+                'status': 'insufficient_recent_data',
+                'required_frames': 2,
+                'frames_seen': len(recent),
+            }
+
+        first = recent[0]
+        dt = max(1e-6, last.timestamp - first.timestamp)
+        px_return = (last.price - first.price) / first.price if first.price > 0 else 0.0
+        momentum_per_sec = px_return / dt
+
+        avg_imbalance = float(np.mean([f.orderbook_imbalance for f in recent]))
+        avg_spread_ratio = float(np.mean([(f.spread / f.price) if f.price > 0 else 0.0 for f in recent]))
+        avg_volume = float(np.mean([f.trade_volume for f in recent]))
+        volume_std = float(np.std([f.trade_volume for f in recent])) if len(recent) > 1 else 0.0
+        volume_impulse = 0.0 if avg_volume <= 0 else min(3.0, volume_std / (avg_volume + 1e-9))
+
+        avg_coherence = float(np.mean([f.coherence for f in recent]))
+        avg_planetary_alignment = float(np.mean([f.planetary_alignment for f in recent]))
+        avg_solar_risk = float(np.mean([f.solar_risk for f in recent]))
+
+        # Signal stack -> bounded directional score in [-1, 1]
+        directional_score = (
+            np.tanh(momentum_per_sec * 200.0) * 0.35 +
+            np.tanh(avg_imbalance * 2.5) * 0.25 +
+            np.tanh(volume_impulse) * 0.10 +
+            np.tanh((avg_coherence - 0.5) * 3.0) * 0.20 +
+            np.tanh(avg_planetary_alignment * 2.0) * 0.10
+        )
+        # Spread and solar-risk are drag terms
+        drag = min(0.35, avg_spread_ratio * 250.0) + (avg_solar_risk * 0.10)
+        directional_score = max(-1.0, min(1.0, directional_score - drag))
+
+        up_prob = float(max(0.01, min(0.99, 0.5 + directional_score * 0.45)))
+        down_prob = float(max(0.01, min(0.99, 1.0 - up_prob)))
+
+        micro_drift = directional_score * 0.0008
+        seconds_30, seconds_40 = self.live_horizon_seconds
+        expected_price_30s = last.price * (1.0 + micro_drift * (seconds_30 / 30.0))
+        expected_price_40s = last.price * (1.0 + micro_drift * (seconds_40 / 30.0))
+
+        confidence = float(max(0.05, min(
+            0.99,
+            0.35
+            + abs(directional_score) * 0.25
+            + avg_coherence * 0.20
+            + min(0.15, len(recent) / 100.0)
+            - min(0.12, avg_spread_ratio * 300.0)
+            - (avg_solar_risk * 0.08)
+        )))
+
+        return {
+            'symbol': symbol,
+            'status': 'ok',
+            'generated_at': datetime.utcnow().isoformat(),
+            'window_seconds': {'primary': seconds_30, 'secondary': seconds_40},
+            'probability_up': up_prob,
+            'probability_down': down_prob,
+            'direction': 'UP' if up_prob >= down_prob else 'DOWN',
+            'confidence': confidence,
+            'expected_price_30s': float(expected_price_30s),
+            'expected_price_40s': float(expected_price_40s),
+            'diagnostics': {
+                'frames_used': len(recent),
+                'momentum_per_sec': float(momentum_per_sec),
+                'avg_orderbook_imbalance': avg_imbalance,
+                'avg_spread_ratio': avg_spread_ratio,
+                'avg_volume': avg_volume,
+                'volume_impulse': volume_impulse,
+                'avg_coherence': avg_coherence,
+                'avg_planetary_alignment': avg_planetary_alignment,
+                'avg_solar_risk': avg_solar_risk,
+            }
+        }
 
     # ═══════════════════════════════════════════════════════════════
     # 💾 PERSISTENCE - Save/load position outcomes for learning continuity
