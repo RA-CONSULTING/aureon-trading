@@ -3,6 +3,7 @@ import { AQTSOrchestrator } from '@/core/aqtsOrchestrator';
 
 const DATA_INTERVAL_MS = 150;
 const DEFAULT_SOCKET_URL = import.meta.env.VITE_NEXUS_SOCKET_URL || 'ws://localhost:8790/command-stream';
+const BINANCE_WS_BASE = 'wss://stream.binance.com:9443/ws';
 
 export interface CommandSummary {
   id: string;
@@ -37,17 +38,144 @@ interface WebSocketCallbacks {
   onStatus?: (snapshot: CommandCenterSnapshot) => void;
 }
 
+export type StreamSource = 'nexus_command' | 'binance_orderbook';
+
+export interface StreamConnectionOptions {
+  source?: StreamSource;
+  symbol?: string;
+}
+
 export interface AureonWebSocketConnection {
   sendCommand: (command: string, payload?: Record<string, unknown>) => void;
   close: () => void;
 }
 
-export const connectWebSocket = (callbacks: WebSocketCallbacks): AureonWebSocketConnection => {
+export const connectWebSocket = (
+  callbacks: WebSocketCallbacks,
+  options: StreamConnectionOptions = {},
+): AureonWebSocketConnection => {
+  const source = options.source ?? 'nexus_command';
   if (typeof window === 'undefined' || typeof window.WebSocket === 'undefined') {
     return startSimulatedStream(callbacks);
   }
 
+  if (source === 'binance_orderbook') {
+    return connectToBinanceOrderBook(callbacks, options.symbol ?? 'ethusdt');
+  }
+
   return connectToCommandServer(callbacks);
+};
+
+const connectToBinanceOrderBook = (
+  callbacks: WebSocketCallbacks,
+  symbol: string,
+): AureonWebSocketConnection => {
+  let socket: WebSocket | null = null;
+  let closed = false;
+  const normalizedSymbol = symbol.toLowerCase().replace('/', '').trim() || 'ethusdt';
+  const wsUrl = `${BINANCE_WS_BASE}/${normalizedSymbol}@depth20@100ms`;
+  const baseSnapshot: CommandCenterSnapshot = {
+    streaming: true,
+    intervalMs: 100,
+    clients: 1,
+    activeCommand: null,
+    commandHistory: [],
+    lastTick: null,
+  };
+
+  try {
+    socket = new WebSocket(wsUrl);
+  } catch (error) {
+    callbacks.onError(error as Error);
+    return startSimulatedStream(callbacks);
+  }
+
+  socket.addEventListener('open', () => {
+    callbacks.onOpen();
+    callbacks.onStatus?.(baseSnapshot);
+  });
+
+  socket.addEventListener('message', (event) => {
+    try {
+      const depthEvent = JSON.parse(event.data as string) as {
+        b?: [string, string][];
+        a?: [string, string][];
+        E?: number;
+      };
+      const bids = depthEvent.b ?? [];
+      const asks = depthEvent.a ?? [];
+      if (bids.length === 0 || asks.length === 0) return;
+
+      const bestBid = Number(bids[0][0]);
+      const bestAsk = Number(asks[0][0]);
+      const spread = Math.max(bestAsk - bestBid, 0);
+      const midpoint = (bestAsk + bestBid) / 2;
+      const bidVolume = bids.slice(0, 10).reduce((sum, [, qty]) => sum + Number(qty), 0);
+      const askVolume = asks.slice(0, 10).reduce((sum, [, qty]) => sum + Number(qty), 0);
+      const totalDepth = Math.max(bidVolume + askVolume, 1e-6);
+      const imbalance = (bidVolume - askVolume) / totalDepth;
+      const syntheticTime = Math.floor((depthEvent.E ?? Date.now()) / 1000);
+
+      const tick: StreamPayload = {
+        aureon: {
+          time: syntheticTime,
+          market: {
+            open: midpoint,
+            high: midpoint + spread,
+            low: Math.max(midpoint - spread, 0),
+            close: midpoint,
+            volume: totalDepth,
+          },
+          sentiment: imbalance,
+          policyRate: 0,
+          dataIntegrity: Math.max(0, 1 - spread / Math.max(midpoint, 1)),
+          crystalCoherence: Math.abs(imbalance),
+          celestialModulators: Math.max(0, 1 - spread / Math.max(midpoint * 0.01, 1e-9)),
+          polarisBaseline: spread,
+          choeranceDrift: imbalance,
+          pingPong: bidVolume / Math.max(askVolume, 1e-6),
+          gravReflection: askVolume / Math.max(bidVolume, 1e-6),
+          unityIndex: (Math.abs(imbalance) + Math.max(0, 1 - spread / Math.max(midpoint, 1))) / 2,
+          inerchaVector: imbalance * midpoint,
+          coherenceIndex: Math.abs(imbalance),
+          prismStatus: imbalance > 0.2 ? 'Gold' : imbalance < -0.2 ? 'Red' : 'Blue',
+          surgeMagnitude: Math.abs(imbalance),
+        },
+        nexus: {
+          time: syntheticTime,
+          cognitiveCapacity: Math.max(0.05, 1 - spread / Math.max(midpoint, 1)),
+          sporeConcentration: Math.min(1, totalDepth / 1000),
+          systemRigidity: Math.min(10, spread * 1000 / Math.max(midpoint, 1)),
+        },
+      };
+
+      callbacks.onMessage(tick);
+      callbacks.onStatus?.({ ...baseSnapshot, lastTick: tick });
+    } catch (error) {
+      callbacks.onError(error as Error);
+    }
+  });
+
+  socket.addEventListener('error', () => {
+    callbacks.onError(new Error(`Order book stream error for ${normalizedSymbol.toUpperCase()}.`));
+  });
+
+  socket.addEventListener('close', () => {
+    if (closed) return;
+    callbacks.onClose();
+  });
+
+  return {
+    sendCommand: () => {
+      // Binance depth socket is push-only; command channel is intentionally a no-op.
+    },
+    close: () => {
+      if (closed) return;
+      closed = true;
+      socket?.close();
+      callbacks.onClose();
+    },
+  };
 };
 
 const connectToCommandServer = (callbacks: WebSocketCallbacks): AureonWebSocketConnection => {
