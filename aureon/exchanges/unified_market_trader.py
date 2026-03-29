@@ -49,6 +49,17 @@ KRAKEN_CLI_INSTALL_CMD = (
     "curl --proto '=https' --tlsv1.2 -LsSf "
     "https://github.com/krakenfx/kraken-cli/releases/latest/download/kraken-cli-installer.sh | sh"
 )
+SYMBOL_ALIASES = {
+    "XBTUSD": "BTCUSD",
+    "XXBTZUSD": "BTCUSD",
+    "XETHZUSD": "ETHUSD",
+    "ETHUSD": "ETHUSD",
+    "BTCUSD": "BTCUSD",
+    "GOLD": "XAUUSD",
+    "XAUUSD": "XAUUSD",
+    "SILVER": "XAGUSD",
+    "XAGUSD": "XAGUSD",
+}
 
 
 def _safe_print(*args: Any, **kwargs: Any) -> None:
@@ -309,10 +320,12 @@ class UnifiedMarketTrader:
 
     def _sync_shared_market_feed(self, kraken_payload: Dict[str, Any], capital_payload: Dict[str, Any]) -> Dict[str, Any]:
         boosts: Dict[str, float] = {}
+        aliases: Dict[str, List[str]] = {}
 
         def push(symbol: Any, confidence: Any) -> None:
-            sym = str(symbol or "").upper().strip()
-            if not sym:
+            raw_symbol = str(symbol or "").upper().strip()
+            normalized = self._normalize_symbol(raw_symbol)
+            if not normalized:
                 return
             try:
                 conf = float(confidence or 0.0)
@@ -323,7 +336,11 @@ class UnifiedMarketTrader:
             conf = max(0.0, min(1.0, conf))
             if conf <= 0.0:
                 return
-            boosts[sym] = max(boosts.get(sym, 0.0), conf)
+            boosts[normalized] = max(boosts.get(normalized, 0.0), conf)
+            if raw_symbol:
+                known = aliases.setdefault(normalized, [])
+                if raw_symbol not in known:
+                    known.append(raw_symbol)
 
         for candidate in kraken_payload.get("candidate_snapshot", [])[:8]:
             if isinstance(candidate, dict):
@@ -353,6 +370,7 @@ class UnifiedMarketTrader:
 
         return {
             "symbols": dict(boosts),
+            "aliases": dict(aliases),
             "count": len(boosts),
             "generated_at": datetime.now().isoformat(),
         }
@@ -363,7 +381,8 @@ class UnifiedMarketTrader:
             return ""
         for needle in ("PERP", ".D", "-CFD"):
             raw = raw.replace(needle, "")
-        return "".join(ch for ch in raw if ch.isalnum())
+        alnum = "".join(ch for ch in raw if ch.isalnum())
+        return SYMBOL_ALIASES.get(alnum, alnum)
 
     def _capital_tradable_symbols(self) -> Dict[str, str]:
         return {self._normalize_symbol(symbol): symbol for symbol in CAPITAL_UNIVERSE.keys()}
