@@ -32,6 +32,9 @@ class ClientStub:
     def get_accounts(self):
         return list(self._accounts)
 
+    def get_account_balance(self):
+        return {}
+
     def close_position(self, deal_id: str):
         return dict(self._close_result)
 
@@ -52,6 +55,17 @@ class ClientStub:
         return dict(self._market_snapshot)
 
 
+class ThoughtBusStub:
+    def __init__(self):
+        self.published = []
+
+    def publish(self, thought):
+        self.published.append(thought)
+
+    def recall(self, prefix: str, limit: int = 8):
+        return []
+
+
 class TestCapitalCFDSync(unittest.TestCase):
     def _build_trader(self, client):
         trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
@@ -68,8 +82,11 @@ class TestCapitalCFDSync(unittest.TestCase):
             "worst_trade": 0.0,
         }
         trader._latest_monitor_line = ""
+        trader._latest_tick_line = ""
         trader._latest_order_error = ""
         trader._latest_order_trace_path = ""
+        trader._capital_snapshot_cache = {}
+        trader._capital_snapshot_error = ""
         trader._latest_target_snapshot = {}
         trader._latest_candidate_snapshot = []
         trader._swarm_snapshot = {"enabled": True, "leader": {}, "votes": [], "ranked": []}
@@ -239,6 +256,85 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(scored[0]["score"], 6.0)
         self.assertEqual(scored[0]["brain_coherence"], 0.77)
 
+    def test_status_lines_include_latest_monitor_line(self):
+        trader = self._build_trader(ClientStub())
+        trader._latest_monitor_line = "CAPITAL SLOT FILL EURUSD BUY deal=D1"
+
+        lines = trader.status_lines()
+
+        self.assertTrue(any("Monitor: CAPITAL SLOT FILL EURUSD BUY deal=D1" in line for line in lines))
+
+    def test_get_capital_snapshot_reuses_last_good_snapshot_when_feed_goes_empty(self):
+        client = ClientStub(accounts=[{"accountId": "A1", "balance": 129.07, "available": 129.07, "currency": "GBP"}])
+        trader = self._build_trader(client)
+
+        first = trader.get_capital_snapshot()
+        client._accounts = []
+        second = trader.get_capital_snapshot()
+
+        self.assertEqual(first["equity_gbp"], 129.07)
+        self.assertEqual(second["equity_gbp"], 129.07)
+        self.assertEqual(second["free_gbp"], 129.07)
+        self.assertEqual(second.get("stale", 0.0), 1.0)
+
+    def test_status_lines_include_tick_and_stale_capital_feed(self):
+        trader = self._build_trader(ClientStub())
+        trader._latest_tick_line = "CAPITAL TICK sync=0.01s prices=0.02s"
+        trader._capital_snapshot_cache = {
+            "equity_gbp": 129.07,
+            "free_gbp": 129.07,
+            "used_gbp": 0.0,
+            "budget_gbp": 90.35,
+            "target_pct_equity": 0.01,
+        }
+
+        trader.client._accounts = []
+        lines = trader.status_lines()
+
+        self.assertTrue(any("Tick: CAPITAL TICK sync=0.01s prices=0.02s" in line for line in lines))
+        self.assertTrue(any("CapitalFeed: stale_snapshot" in line for line in lines))
+
+    def test_capital_cost_profile_uses_passed_quote_not_refetched_quote(self):
+        trader = self._build_trader(ClientStub())
+        trader._trade_profit_validator = object()
+        trader._get_price = lambda symbol: {"bid": 1.0, "ask": 99.0}
+
+        profile = trader._capital_cost_profile(
+            "EURUSD",
+            0.01,
+            1.085,
+            0.921658986175115,
+            bid=1.08498,
+            ask=1.08502,
+        )
+
+        self.assertAlmostEqual(profile["round_trip_cost"], 0.0000005, places=10)
+        self.assertGreater(profile["expected_net_profit"], 0.00009)
+
+    def test_capital_preflight_no_longer_produces_absurd_stock_costs_from_mismatched_refetch(self):
+        client = ClientStub(
+            accounts=[{"accountId": "A1", "balance": 129.07, "available": 129.07, "currency": "GBP"}],
+            market_snapshot={
+                "instrument": {"epic": "AAPL.EPIC", "name": "Apple"},
+                "snapshot": {"marketStatus": "TRADEABLE", "bid": 199.96, "offer": 200.04},
+                "dealingRules": {"minDealSize": {"value": 1}},
+            },
+        )
+        trader = self._build_trader(client)
+        trader._trade_profit_validator = object()
+        trader._get_price = lambda symbol: {"bid": 150.0, "ask": 175.0}
+
+        preflight = trader._capital_preflight(
+            "AAPL",
+            1.0,
+            {"price": 200.0, "bid": 199.96, "ask": 200.04, "epic": "AAPL.EPIC"},
+            {"class": "stock", "size": 1.0, "tp_pct": 0.9, "sl_pct": 0.55},
+        )
+
+        self.assertLess(preflight["round_trip_cost"], 0.2)
+        self.assertGreater(preflight["expected_net_profit"], 1.6)
+        self.assertTrue(preflight["ok"])
+
     def test_self_confidence_boosts_score_when_recent_validation_is_strong(self):
         trader = self._build_trader(ClientStub())
         trader._shadow_validated_count = 5
@@ -332,6 +428,87 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertGreater(metrics["pnl_per_hour_gbp"], 7.9)
         self.assertAlmostEqual(metrics["trades_per_hour"], 4.0, places=1)
         self.assertEqual(metrics["trend"], "accelerating")
+
+    def test_capital_cost_profile_uses_live_spread_instead_of_generic_fee_profile(self):
+        trader = self._build_trader(ClientStub())
+        trader._trade_profit_validator = object()
+        trader._prices = {
+            "SILVER": {"bid": 99.9, "ask": 100.1, "price": 100.0}
+        }
+
+        costs = trader._capital_cost_profile("SILVER", 1.0, 100.0, 0.75)
+
+        self.assertAlmostEqual(costs["expected_gross_profit"], 0.75, places=4)
+        self.assertLess(costs["round_trip_cost"], 0.25)
+        self.assertGreater(costs["expected_net_profit"], 0.5)
+
+    def test_close_position_feeds_learning_back_into_brain(self):
+        class BrainStub:
+            def __init__(self):
+                self.calls = []
+
+            def learn_from_outcome(self, symbol, pnl, confidence=0.5):
+                self.calls.append((symbol, pnl, confidence))
+                return {"symbol_bias": 0.1, "reward": pnl}
+
+            def learning_snapshot(self):
+                return {"total_feedback": 1.0, "win_bias": 1.0}
+
+        trader = self._build_trader(ClientStub(close_result={"success": True}))
+        trader._signal_brain = BrainStub()
+        trader._latest_candidate_snapshot = [{
+            "symbol": "SILVER",
+            "brain_coherence": 0.8,
+            "self_confidence": 0.7,
+        }]
+        pos = CFDPosition(
+            symbol="SILVER",
+            deal_id="D5",
+            epic="CS.D.SILVER.CFD.IP",
+            direction="BUY",
+            size=1,
+            entry_price=100.0,
+            tp_price=101.0,
+            sl_price=99.0,
+            asset_class="commodity",
+            current_price=101.0,
+        )
+
+        record = trader._close_position(pos, "TP_HIT")
+
+        self.assertIn("learning_update", record)
+        self.assertEqual(trader._signal_brain.calls[0][0], "SILVER")
+        self.assertGreater(trader._signal_brain.calls[0][1], 0.0)
+
+    def test_close_position_publishes_learning_to_queen_systems(self):
+        class BrainStub:
+            def learn_from_outcome(self, symbol, pnl, confidence=0.5):
+                return {"symbol_bias": 0.12, "reward": pnl}
+
+        trader = self._build_trader(ClientStub(close_result={"success": True}))
+        trader._signal_brain = BrainStub()
+        trader.thought_bus = ThoughtBusStub()
+        from aureon.core.aureon_thought_bus import Thought
+        import aureon.exchanges.capital_cfd_trader as capital_cfd_trader_module
+        capital_cfd_trader_module.Thought = Thought
+        pos = CFDPosition(
+            symbol="SILVER",
+            deal_id="D6",
+            epic="CS.D.SILVER.CFD.IP",
+            direction="BUY",
+            size=1,
+            entry_price=100.0,
+            tp_price=101.0,
+            sl_price=99.0,
+            asset_class="commodity",
+            current_price=101.0,
+        )
+
+        trader._close_position(pos, "TP_HIT")
+
+        topics = [thought.topic for thought in trader.thought_bus.published]
+        self.assertIn("brain.learning", topics)
+        self.assertIn("queen.learning", topics)
 
     def test_score_symbol_maps_negative_momentum_to_sell(self):
         trader = self._build_trader(ClientStub())
@@ -893,6 +1070,53 @@ class TestCapitalCFDSync(unittest.TestCase):
             self.assertGreater(closed[0]["net_pnl"], 0.0)
         finally:
             CFD_FLAGS["profit_only_closes"] = old_flag
+
+    def test_score_symbol_uses_central_beat_alignment(self):
+        trader = self._build_trader(ClientStub())
+        trader._effective_tp_pct = lambda price, size, cfg: 0.5
+        trader._central_beat_symbols = {
+            "SILVER": {"side": "BUY", "support_count": 3, "strength": 0.9},
+        }
+        trader._central_beat_regime = {"bias": "BUY", "confidence": 0.8}
+        ticker = {"price": 100.0, "bid": 99.9, "ask": 100.1, "change_pct": 0.4}
+        cfg = {"max_spread_pct": 0.01, "momentum_threshold": 0.1, "size": 1.0}
+        boosted_score, direction = trader._score_symbol("SILVER", cfg, ticker)
+
+        trader._central_beat_symbols = {}
+        trader._central_beat_regime = {}
+        plain_score, _ = trader._score_symbol("SILVER", cfg, ticker)
+
+        self.assertEqual(direction, "BUY")
+        self.assertGreater(boosted_score, plain_score)
+
+    def test_fill_live_monitoring_slots_opens_one_buy_and_one_sell(self):
+        trader = self._build_trader(ClientStub())
+        trader._last_slot_fill_attempt = {"BUY": 0.0, "SELL": 0.0}
+        trader._capital_preflight = lambda symbol, size, ticker, cfg=None: {
+            "ok": False,
+            "reason": "expected net profit -0.0010 does not clear costs 0.0020",
+            "price": ticker.get("price"),
+            "bid": ticker.get("bid"),
+            "ask": ticker.get("ask"),
+        }
+        opened = []
+        class Opened:
+            def __init__(self, deal_id):
+                self.deal_id = deal_id
+        trader._open_position = lambda symbol, cfg, ticker: opened.append((symbol, cfg["direction"])) or Opened(f"{symbol}-{cfg['direction']}")
+        trader._latest_candidate_snapshot = [
+            {"symbol": "SILVER", "direction": "BUY", "score": 0.0},
+            {"symbol": "GOLD", "direction": "SELL", "score": 0.0},
+        ]
+        trader._prices = {
+            "SILVER": {"price": 100.0, "bid": 99.9, "ask": 100.1},
+            "GOLD": {"price": 200.0, "bid": 199.9, "ask": 200.1},
+        }
+
+        result = trader._fill_live_monitoring_slots(100.0)
+
+        self.assertTrue(result)
+        self.assertEqual(opened, [("SILVER", "BUY"), ("GOLD", "SELL")])
 
 
 if __name__ == "__main__":

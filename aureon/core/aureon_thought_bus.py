@@ -35,6 +35,57 @@ def _now() -> float:
     return time.time()
 
 
+def _coerce_thought_args(*args: Any, **kwargs: Any) -> "Thought":
+    if len(args) == 1 and isinstance(args[0], Thought):
+        return args[0]
+
+    if len(args) == 1 and all(hasattr(args[0], attr) for attr in ("source", "topic", "payload")):
+        foreign = args[0]
+        payload = getattr(foreign, "payload", {}) or {}
+        meta = getattr(foreign, "meta", {}) or {}
+        payload_encoding = getattr(foreign, "payload_encoding", "json") or "json"
+        binary_payload_b64 = getattr(foreign, "binary_payload_b64", None)
+        return Thought(
+            id=str(getattr(foreign, "id", "") or str(uuid.uuid4())),
+            ts=float(getattr(foreign, "ts", _now()) or _now()),
+            source=str(getattr(foreign, "source", "unknown") or "unknown"),
+            topic=str(getattr(foreign, "topic", "thought") or "thought"),
+            trace_id=str(getattr(foreign, "trace_id", "") or str(uuid.uuid4())),
+            parent_id=getattr(foreign, "parent_id", None),
+            payload=dict(payload) if isinstance(payload, dict) else {"value": payload},
+            meta=dict(meta) if isinstance(meta, dict) else {"value": meta},
+            payload_encoding=str(payload_encoding),
+            binary_payload_b64=binary_payload_b64,
+        )
+
+    if len(args) == 1 and isinstance(args[0], dict):
+        payload = dict(args[0])
+        topic = str(payload.pop("topic", kwargs.pop("topic", "thought")))
+        source = str(payload.pop("source", kwargs.pop("source", "unknown")))
+        meta = kwargs.pop("meta", None) or payload.pop("meta", None) or {}
+        return Thought(source=source, topic=topic, payload=payload, meta=dict(meta))
+
+    if args and isinstance(args[0], str):
+        topic = args[0]
+        payload = {}
+        if len(args) >= 2 and isinstance(args[1], dict):
+            payload = dict(args[1])
+        source = str(kwargs.pop("source", payload.pop("source", "unknown")))
+        meta = kwargs.pop("meta", None) or payload.pop("meta", None) or {}
+        trace_id = kwargs.pop("trace_id", None) or payload.pop("trace_id", None)
+        parent_id = kwargs.pop("parent_id", None) or payload.pop("parent_id", None)
+        return Thought(
+            source=source,
+            topic=topic,
+            payload=payload,
+            meta=dict(meta),
+            trace_id=trace_id or str(uuid.uuid4()),
+            parent_id=parent_id,
+        )
+
+    raise TypeError("publish() expects a Thought, dict, or topic/payload arguments")
+
+
 @dataclass
 class Thought:
     """
@@ -101,8 +152,9 @@ class FileThoughtBus:
         except Exception as e:
             print(f"Warning: Could not save thought: {e}")
     
-    def publish(self, thought: Thought):
+    def publish(self, *args: Any, **kwargs: Any):
         """Publish a thought to all matching subscribers."""
+        thought = _coerce_thought_args(*args, **kwargs)
         self._save_thought(thought)
         
         # Find matching handlers
@@ -193,8 +245,9 @@ class RedisThoughtBus:
             return topic.startswith(subscription[:-1])
         return topic == subscription
     
-    def publish(self, thought: Thought):
+    def publish(self, *args: Any, **kwargs: Any):
         """Publish a thought to Redis."""
+        thought = _coerce_thought_args(*args, **kwargs)
         try:
             thought_json = json.dumps(asdict(thought))
             
@@ -344,7 +397,8 @@ class ThoughtBus:
         with self._lock:
             self._subs.setdefault(topic, []).append(handler)
 
-    def publish(self, thought: Thought) -> Thought:
+    def publish(self, *args: Any, **kwargs: Any) -> Thought:
+        thought = _coerce_thought_args(*args, **kwargs)
         with self._lock:
             self._memory.append(thought)
             self._persist(thought)

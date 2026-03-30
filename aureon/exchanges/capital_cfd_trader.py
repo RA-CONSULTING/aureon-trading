@@ -182,7 +182,7 @@ CFD_CONFIG: Dict[str, float] = {
     "max_positions":      _env_float("CAPITAL_MAX_POSITIONS", 2.0),   # One BUY lane and one SELL lane
     "price_ttl_secs":    _env_float("CAPITAL_PRICE_TTL_SECS", 10.0),  # Price cache lifetime
     "position_ttl_secs": _env_float("CAPITAL_POSITION_TTL_SECS", 3600.0), # Selection benchmark only; not a forced close
-    "scan_interval_secs": _env_float("CAPITAL_SCAN_INTERVAL_SECS", 5.0),  # Opportunity scan interval
+    "scan_interval_secs": _env_float("CAPITAL_SCAN_INTERVAL_SECS", 8.0),  # Opportunity scan interval
     "monitor_interval":   _env_float("CAPITAL_MONITOR_INTERVAL_SECS", 2.0),  # Position monitor interval
     "exchange_sync_secs": _env_float("CAPITAL_EXCHANGE_SYNC_SECS", 5.0),  # Reconcile local CFD positions against Capital.com
     "quad_gate_ttl":      _env_float("CAPITAL_QUAD_GATE_TTL_SECS", 10.0),  # Cache Seer/Lyra gate results for N secs
@@ -196,13 +196,15 @@ CAPITAL_RISK_REJECTION_COOLDOWN_SECS = _env_float("CAPITAL_RISK_REJECTION_COOLDO
 
 CAPITAL_MIN_PROFIT_GBP = 0.01
 CAPITAL_DTP_TRIGGER_GBP = 0.01
-CAPITAL_SHADOW_MIN_VALIDATE_SECS = _env_float("CAPITAL_SHADOW_MIN_VALIDATE_SECS", 10.0)
+CAPITAL_SHADOW_MIN_VALIDATE_SECS = _env_float("CAPITAL_SHADOW_MIN_VALIDATE_SECS", 3.0)
 CAPITAL_SELF_CONFIDENCE_ENABLED = _env_bool("CAPITAL_SELF_CONFIDENCE_ENABLED", True)
 CAPITAL_SELF_CONFIDENCE_MAX_BOOST = _env_float("CAPITAL_SELF_CONFIDENCE_MAX_BOOST", 0.35)
-CAPITAL_SELF_CONFIDENCE_MIN_VALIDATE_SECS = _env_float("CAPITAL_SELF_CONFIDENCE_MIN_VALIDATE_SECS", 4.0)
+CAPITAL_SELF_CONFIDENCE_MIN_VALIDATE_SECS = _env_float("CAPITAL_SELF_CONFIDENCE_MIN_VALIDATE_SECS", 1.5)
 CAPITAL_HISTORY_LOOKBACK_DAYS = int(_env_float("CAPITAL_HISTORY_LOOKBACK_DAYS", 90.0))
 CAPITAL_MIN_PROBABILITY_ACCURACY = _env_float("CAPITAL_MIN_PROBABILITY_ACCURACY", 0.55)
 CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR = _env_float("CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR", 1.05)
+CAPITAL_FORCE_SLOT_FILL = _env_bool("CAPITAL_FORCE_SLOT_FILL", True)
+CAPITAL_SLOT_FILL_INTERVAL_SECS = _env_float("CAPITAL_SLOT_FILL_INTERVAL_SECS", 8.0)
 
 
 # ── DATA CLASSES ───────────────────────────────────────────────────────────────
@@ -334,8 +336,11 @@ class CapitalCFDTrader:
         self._latest_target_snapshot: Dict[str, Any] = {}
         self._latest_status_lines: List[str] = []
         self._latest_monitor_line: str = ""
+        self._latest_tick_line: str = ""
         self._latest_order_error: str = ""
         self._latest_order_trace_path: str = str(CAPITAL_TRACE_PATH)
+        self._capital_snapshot_cache: Dict[str, float] = {}
+        self._capital_snapshot_error: str = ""
         self._recent_closed_trades: List[dict] = []
         self._shadow_validated_count: int = 0
         self._shadow_failed_count: int = 0
@@ -385,6 +390,8 @@ class CapitalCFDTrader:
         self._self_confidence_snapshot: Dict[str, Any] = {}
         self._harmonic_wiring_audit: Dict[str, Any] = self._build_harmonic_wiring_audit()
         self._harmonic_wiring_audit_at: float = time.time()
+        self._last_slot_fill_attempt: Dict[str, float] = {"BUY": 0.0, "SELL": 0.0}
+        self._last_client_reinit_at: float = 0.0
 
         # Timing
         self._last_scan:    float = 0.0
@@ -414,21 +421,7 @@ class CapitalCFDTrader:
         # Init Capital.com client
         self.init_error = ""
         if HAS_CAPITAL:
-            try:
-                self.client = CapitalClient()  # type: ignore[misc]
-                if not getattr(self.client, "enabled", False):
-                    self.init_error = str(getattr(self.client, "init_error", "") or "client_disabled_or_blocked")
-                    logger.warning("CapitalCFDTrader: Capital.com unavailable (%s)", self.init_error)
-                    self.client = None
-                else:
-                    logger.info("CapitalCFDTrader: Capital.com client READY")
-                    snap = self.get_capital_snapshot()
-                    self.starting_equity_gbp = float(snap.get("equity_gbp", 0.0) or 0.0)
-                    self._sync_positions_from_exchange(force=True)
-            except Exception as _e:
-                self.init_error = str(_e)
-                logger.debug(f"CapitalCFDTrader: client init failed: {_e}")
-                self.client = None
+            self._ensure_client_ready(force=True)
         else:
             self.init_error = "capital_client_not_installed"
             logger.info("CapitalCFDTrader: capital_client not installed — disabled")
@@ -436,7 +429,41 @@ class CapitalCFDTrader:
     # ── PROPERTIES ─────────────────────────────────────────────────────────────
     @property
     def enabled(self) -> bool:
+        if self.client is not None and not getattr(self.client, "enabled", False):
+            self.init_error = str(getattr(self.client, "init_error", "") or self.init_error or "client_disabled_or_blocked")
         return self.client is not None and getattr(self.client, "enabled", False)
+
+    def _ensure_client_ready(self, force: bool = False) -> bool:
+        if not HAS_CAPITAL:
+            self.init_error = "capital_client_not_installed"
+            self.client = None
+            return False
+        now = time.time()
+        if self.client is not None and getattr(self.client, "enabled", False):
+            return True
+        if not force and (now - float(getattr(self, "_last_client_reinit_at", 0.0) or 0.0)) < 15.0:
+            return False
+        self._last_client_reinit_at = now
+        try:
+            client = CapitalClient()  # type: ignore[misc]
+            if not getattr(client, "enabled", False):
+                self.init_error = str(getattr(client, "init_error", "") or "client_disabled_or_blocked")
+                logger.warning("CapitalCFDTrader: Capital.com unavailable (%s)", self.init_error)
+                self.client = None
+                return False
+            self.client = client
+            self.init_error = ""
+            logger.info("CapitalCFDTrader: Capital.com client READY")
+            snap = self.get_capital_snapshot()
+            if float(getattr(self, "starting_equity_gbp", 0.0) or 0.0) <= 0 and float(snap.get("equity_gbp", 0.0) or 0.0) > 0:
+                self.starting_equity_gbp = float(snap.get("equity_gbp", 0.0) or 0.0)
+            self._sync_positions_from_exchange(force=True)
+            return True
+        except Exception as _e:
+            self.init_error = str(_e) or "client_init_exception"
+            logger.debug(f"CapitalCFDTrader: client init failed: {_e}")
+            self.client = None
+            return False
 
     @property
     def position_count(self) -> int:
@@ -450,8 +477,8 @@ class CapitalCFDTrader:
     def _effective_tp_pct(self, price: float, size: float, cfg: Optional[dict] = None) -> float:
         required_tp_pct = self._required_tp_pct_for_profit(price, size)
         configured_tp_pct = float((cfg or {}).get("tp_pct", 0.0) or 0.0)
-        if CFD_FLAGS["penny_take_profit"]:
-            return required_tp_pct
+        # The penny target is a minimum viability floor, not the actual strategy TP.
+        # Use the configured strategy target whenever it is larger.
         return max(configured_tp_pct, required_tp_pct)
 
     def _refresh_unified_intel_snapshot(self) -> None:
@@ -523,6 +550,45 @@ class CapitalCFDTrader:
             ))
         except Exception as e:
             logger.debug(f"Capital ThoughtBus publish failed: {e}")
+
+    def _publish_learning_update(self, record: Dict[str, Any]) -> None:
+        thought_bus = getattr(self, "thought_bus", None)
+        if thought_bus is None or Thought is None:
+            return
+        learning_update = dict(record.get("learning_update") or {})
+        if not learning_update:
+            return
+        try:
+            symbol = str(record.get("symbol") or "").upper()
+            payload = {
+                "venue": "capital",
+                "symbol": symbol,
+                "direction": str(record.get("direction") or "").upper(),
+                "net_pnl_gbp": float(record.get("net_pnl", 0.0) or 0.0),
+                "reason": str(record.get("reason") or ""),
+                "learning_update": learning_update,
+            }
+            thought_bus.publish(Thought(
+                source="capital_cfd_trader",
+                topic="brain.learning",
+                payload=payload,
+                meta={"mode": "capital_cfd", "expressive": True},
+            ))
+            thought_bus.publish(Thought(
+                source="capital_cfd_trader",
+                topic="queen.learning",
+                payload={
+                    "voice": (
+                        f"I learned from {symbol}. "
+                        f"Net outcome was {float(record.get('net_pnl', 0.0) or 0.0):+.2f} GBP, "
+                        f"and my bias is now {float(learning_update.get('symbol_bias', 0.0) or 0.0):+.3f}."
+                    ),
+                    **payload,
+                },
+                meta={"mode": "capital_cfd", "expressive": True},
+            ))
+        except Exception as e:
+            logger.debug(f"Capital learning publish failed: {e}")
 
     def _feed_unified_decision_engine(self, symbol: str, side: str, score: float = 0.5, metadata: Optional[dict] = None) -> None:
         if self.unified_decision_engine is None or SignalInput is None:
@@ -596,17 +662,26 @@ class CapitalCFDTrader:
 
     def get_capital_snapshot(self) -> Dict[str, float]:
         """Expose Capital.com account state in the same style as the Kraken trader."""
+        cached = dict(getattr(self, "_capital_snapshot_cache", {}) or {})
         if not self.client:
-            return {
+            return cached or {
                 "equity_gbp": 0.0,
                 "free_gbp": 0.0,
                 "used_gbp": 0.0,
                 "budget_gbp": 0.0,
                 "target_pct_equity": 0.0,
             }
-        accounts = self.client.get_accounts()
+        try:
+            accounts = self.client.get_accounts()
+        except Exception as e:
+            accounts = []
+            self._capital_snapshot_error = f"accounts_error:{e}"
         if not accounts:
-            balances = self.client.get_account_balance()
+            try:
+                balances = self.client.get_account_balance()
+            except Exception as e:
+                balances = {}
+                self._capital_snapshot_error = f"balance_error:{e}"
             equity = float(sum(float(v or 0.0) for v in balances.values()))
             free = equity
         else:
@@ -615,13 +690,21 @@ class CapitalCFDTrader:
         used = max(0.0, equity - free)
         budget = free * 0.70
         target_pct = (CAPITAL_MIN_PROFIT_GBP / equity * 100.0) if equity > 0 else 0.0
-        return {
+        snapshot = {
             "equity_gbp": equity,
             "free_gbp": free,
             "used_gbp": used,
             "budget_gbp": budget,
             "target_pct_equity": target_pct,
         }
+        if equity > 0 or free > 0:
+            self._capital_snapshot_cache = dict(snapshot)
+            self._capital_snapshot_error = ""
+            return snapshot
+        if cached:
+            cached["stale"] = 1.0
+            return cached
+        return snapshot
 
     def _extract_capital_min_size(self, market_info: dict) -> float:
         """Best-effort extraction of Capital's minimum deal size for a market."""
@@ -787,7 +870,14 @@ class CapitalCFDTrader:
 
         if isinstance(cfg, dict):
             effective_tp_pct = self._effective_tp_pct(price or ask or 0.0, preflight["requested_size"], cfg)
-            cost_profile = self._capital_cost_profile(symbol, preflight["requested_size"], price or ask or 0.0, effective_tp_pct)
+            cost_profile = self._capital_cost_profile(
+                symbol,
+                preflight["requested_size"],
+                price or ask or 0.0,
+                effective_tp_pct,
+                bid=bid,
+                ask=ask,
+            )
             preflight.update(cost_profile)
             preflight["effective_tp_pct"] = effective_tp_pct
             margin_factor_pct = float(preflight.get("margin_factor_pct", 0.0) or 0.0)
@@ -855,7 +945,16 @@ class CapitalCFDTrader:
         adjusted["size"] = minimum_size
         return adjusted
 
-    def _capital_cost_profile(self, symbol: str, size: float, price: float, tp_pct: float) -> Dict[str, float]:
+    def _capital_cost_profile(
+        self,
+        symbol: str,
+        size: float,
+        price: float,
+        tp_pct: float,
+        *,
+        bid: float = 0.0,
+        ask: float = 0.0,
+    ) -> Dict[str, float]:
         """Estimate whether a Capital trade clears execution costs with the configured target."""
         notional = max(float(size or 0.0) * float(price or 0.0), 0.0)
         expected_gross_profit = notional * (max(float(tp_pct or 0.0), 0.0) / 100.0)
@@ -867,13 +966,20 @@ class CapitalCFDTrader:
                 "expected_net_profit": expected_gross_profit,
             }
         try:
-            costs = self._trade_profit_validator.get_exchange_costs(
-                "capital",
-                notional,
-                is_taker=True,
-                symbol=symbol,
-            )
-            round_trip_cost = float(costs.get("total", 0.0) or 0.0) * 2.0
+            live_bid = float(bid or 0.0)
+            live_ask = float(ask or 0.0)
+            if live_bid <= 0 or live_ask <= 0:
+                ticker = self._get_price(symbol) or {}
+                live_bid = float(ticker.get("bid") or 0.0)
+                live_ask = float(ticker.get("ask") or 0.0)
+            live_spread_cost = 0.0
+            if live_bid > 0 and live_ask > 0 and live_ask >= live_bid:
+                # Capital CFDs are spread-priced already; model the real quoted spread,
+                # not a generic percentage of notional from the validator profile.
+                live_spread_cost = max(live_ask - live_bid, 0.0) * max(float(size or 0.0), 0.0)
+            # Use a small fraction of the quoted spread as slippage, not a fraction of notional.
+            slippage_cost = live_spread_cost * 0.25
+            round_trip_cost = live_spread_cost + slippage_cost
         except Exception:
             round_trip_cost = 0.0
         return {
@@ -1088,6 +1194,27 @@ class CapitalCFDTrader:
         if hive_factor > 0:
             score = score * (1.0 + float(hive_factor) * 0.40)
 
+        central_symbols = getattr(self, "_central_beat_symbols", {}) or {}
+        central_regime = getattr(self, "_central_beat_regime", {}) or {}
+        central_signal = central_symbols.get(symbol) or central_symbols.get(symbol.upper()) or {}
+        if isinstance(central_signal, dict) and central_signal:
+            support_count = max(1, int(central_signal.get("support_count", 1) or 1))
+            central_side = str(central_signal.get("side") or direction).upper()
+            central_strength = max(0.0, float(central_signal.get("strength", 0.0) or 0.0))
+            aligned = central_side == direction
+            multiplier = 1.0 + min(0.18, central_strength * 0.12 + (support_count - 1) * 0.03)
+            if aligned:
+                score *= multiplier
+            else:
+                score *= max(0.82, 1.0 - min(0.18, central_strength * 0.10))
+
+        if isinstance(central_regime, dict) and central_regime:
+            regime_bias = str(central_regime.get("bias") or direction).upper()
+            regime_conf = max(0.0, min(1.0, float(central_regime.get("confidence", 0.0) or 0.0)))
+            if regime_conf > 0:
+                regime_multiplier = 1.0 + regime_conf * 0.05 if regime_bias == direction else 1.0 - regime_conf * 0.05
+                score *= max(0.9, regime_multiplier)
+
         return max(0.0, score), direction
 
     def _apply_hft_analysis(self, scored: List[Dict[str, Any]]) -> None:
@@ -1268,6 +1395,46 @@ class CapitalCFDTrader:
             self._rejection_cooldowns.pop(key, None)
             return None
         return info
+
+    def _has_live_reading(self, ticker: Optional[dict]) -> bool:
+        if not isinstance(ticker, dict):
+            return False
+        price = float(ticker.get("price") or 0.0)
+        bid = float(ticker.get("bid") or 0.0)
+        ask = float(ticker.get("ask") or 0.0)
+        return price > 0 and bid > 0 and ask > 0 and ask >= bid
+
+    def _preflight_allows_slot_fill(self, preflight: Dict[str, Any]) -> bool:
+        if not isinstance(preflight, dict):
+            return False
+        if bool(preflight.get("ok")):
+            return True
+        reason = str(preflight.get("reason") or "").lower()
+        return "expected net profit" in reason and self._has_live_reading({
+            "price": preflight.get("price"),
+            "bid": preflight.get("bid"),
+            "ask": preflight.get("ask"),
+        })
+
+    def _ranked_live_slot_candidates(self, direction: str) -> List[Tuple[str, dict, dict]]:
+        ranked: List[Tuple[str, dict, dict]] = []
+        wanted = str(direction or "").upper()
+        if wanted not in {"BUY", "SELL"}:
+            return ranked
+        counts = self._direction_counts()
+        for candidate in list(getattr(self, "_latest_candidate_snapshot", []) or []):
+            symbol = str(candidate.get("symbol") or "").upper()
+            candidate_direction = str(candidate.get("direction") or "BUY").upper()
+            cfg = CAPITAL_UNIVERSE.get(symbol)
+            ticker = self._get_price(symbol)
+            if candidate_direction != wanted or not symbol or not cfg or not ticker:
+                continue
+            if not self._has_live_reading(ticker):
+                continue
+            if not self._can_open_candidate(symbol, wanted, counts):
+                continue
+            ranked.append((symbol, {**dict(cfg), "direction": wanted}, ticker))
+        return ranked
 
     def _build_lane_snapshot(self) -> Dict[str, Any]:
         lanes: Dict[str, Dict[str, Any]] = {}
@@ -1820,6 +1987,31 @@ class CapitalCFDTrader:
         self._refresh_thought_bus_snapshot()
         return chosen_best
 
+    def _fill_live_monitoring_slots(self, now: float) -> bool:
+        if not CAPITAL_FORCE_SLOT_FILL:
+            return False
+        opened_any = False
+        direction_counts = self._direction_counts()
+        for direction in ("BUY", "SELL"):
+            if direction_counts.get(direction, 0) >= 1:
+                continue
+            last_attempt = float(self._last_slot_fill_attempt.get(direction, 0.0) or 0.0)
+            if (now - last_attempt) < CAPITAL_SLOT_FILL_INTERVAL_SECS:
+                continue
+            self._last_slot_fill_attempt[direction] = now
+            for sym, cfg, ticker in self._ranked_live_slot_candidates(direction):
+                preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
+                if not self._preflight_allows_slot_fill(preflight):
+                    self._record_rejection(sym, direction, str(preflight.get("reason") or "preflight_failed"))
+                    continue
+                pos = self._open_position(sym, cfg, ticker)
+                if pos is not None:
+                    self._latest_monitor_line = f"CAPITAL SLOT FILL {sym} {direction} deal={pos.deal_id}"
+                    opened_any = True
+                    direction_counts[direction] = direction_counts.get(direction, 0) + 1
+                    break
+        return opened_any
+
     def _ranked_opportunities(self) -> List[Tuple[str, dict, dict]]:
         ranked: List[Tuple[str, dict, dict]] = []
         direction_counts = self._direction_counts()
@@ -2141,11 +2333,15 @@ class CapitalCFDTrader:
                 f"tp={pos.tp_price:.5g} sl={pos.sl_price:.5g}"
             )
 
-            print(
+            open_line = (
                 f"  CAPITAL CFD OPEN:  {symbol:12} [{cfg['class'].upper():9}] "
                 f"{direction} {size} @ {pos.entry_price:.5g} | "
                 f"TP:{pos.tp_price:.5g}  SL:{pos.sl_price:.5g} | Deal:{pos.deal_id}"
             )
+            try:
+                print(open_line)
+            except (ValueError, OSError):
+                logger.info(open_line.strip())
             return pos
 
         except Exception as _e:
@@ -2226,10 +2422,14 @@ class CapitalCFDTrader:
             self.stats["losing_trades"] += 1
             self.stats["worst_trade"] = min(self.stats["worst_trade"], pnl_gbp)
 
-        print(
+        close_line = (
             f"  CAPITAL CFD CLOSE: {pos.symbol:12} [{pos.asset_class.upper():9}] "
             f"{reason}  |  PnL: {pnl_gbp:+.4f} GBP  age:{pos.age_secs/60:.1f}m"
         )
+        try:
+            print(close_line)
+        except (ValueError, OSError):
+            logger.info(close_line.strip())
         self._latest_monitor_line = (
             f"CAPITAL CLOSE {pos.symbol} {reason} pnl={pnl_gbp:+.4f}GBP age={pos.age_secs/60:.1f}m"
         )
@@ -2248,8 +2448,25 @@ class CapitalCFDTrader:
             "age_secs":         pos.age_secs,
             "closed_at":        datetime.now().isoformat(),
         }
+        brain = getattr(self, "_signal_brain", None)
+        if brain is not None and hasattr(brain, "learn_from_outcome"):
+            try:
+                confidence = 0.5
+                for candidate in getattr(self, "_latest_candidate_snapshot", []):
+                    if self._canonical_symbol(candidate.get("symbol")) == self._canonical_symbol(pos.symbol):
+                        confidence = float(candidate.get("brain_coherence", candidate.get("self_confidence", 0.5)) or 0.5)
+                        break
+                learning_update = brain.learn_from_outcome(
+                    pos.symbol,
+                    pnl_gbp / max(abs(pos.entry_price * pos.size), 0.0001),
+                    confidence=confidence,
+                )
+                record["learning_update"] = dict(learning_update or {})
+            except Exception as e:
+                record["learning_error"] = str(e)
         self._recent_closed_trades.append(record)
         self._recent_closed_trades = self._recent_closed_trades[-5:]
+        self._publish_learning_update(record)
         return record
 
     def _update_position_prices(self) -> None:
@@ -2364,7 +2581,7 @@ class CapitalCFDTrader:
 
         Returns: list of closed-trade records
         """
-        if not self.client:
+        if not self._ensure_client_ready():
             return []
 
         now = time.time()
@@ -2434,10 +2651,15 @@ class CapitalCFDTrader:
                 # Quick Seer + Lyra gate before committing capital
                 if self._quad_gate():
                     self._find_best_opportunity()
+                    slot_filled_this_tick = self._fill_live_monitoring_slots(now)
+                    if slot_filled_this_tick:
+                        promoted_this_tick = True
                     opened_directions = {str(pos.direction or "").upper() for pos in self.positions}
                     for sym, cfg, ticker in self._ranked_opportunities():
                         direction = str(cfg.get("direction", "BUY") or "BUY").upper()
                         if direction in opened_directions:
+                            continue
+                        if CAPITAL_FORCE_SLOT_FILL:
                             continue
                         preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
                         working_cfg = dict(cfg)
@@ -2484,7 +2706,7 @@ class CapitalCFDTrader:
         if should_scan:
             scan_elapsed = time.time() - stage_started
 
-        self._latest_monitor_line = (
+        self._latest_tick_line = (
             f"CAPITAL TICK sync={sync_elapsed:.2f}s prices={refresh_elapsed:.2f}s "
             f"monitor={monitor_elapsed:.2f}s shadows={shadow_elapsed:.2f}s scan={scan_elapsed:.2f}s "
             f"positions={len(self.positions)} shadows_active={len(self.shadow_trades)}"
@@ -2531,6 +2753,15 @@ class CapitalCFDTrader:
             f"| avg/close=£{float(growth.get('avg_pnl_per_close_gbp', 0.0) or 0.0):+.3f} "
             f"| trend={growth.get('trend', 'steady')}"
         )
+        if self._signal_brain is not None and hasattr(self._signal_brain, "learning_snapshot"):
+            try:
+                learning = self._signal_brain.learning_snapshot()
+                lines.append(
+                    f"  Learning: feedback={int(learning.get('total_feedback', 0) or 0)} "
+                    f"| win_bias={float(learning.get('win_bias', 0.0) or 0.0):.2f}"
+                )
+            except Exception:
+                pass
         # Asset-class breakdown
         by_class: Dict[str, int] = {}
         for pos in self.positions:
@@ -2541,6 +2772,14 @@ class CapitalCFDTrader:
         if self._latest_order_error:
             lines.append(f"    Last order: {self._latest_order_error}")
             lines.append(f"    Trace: {self._latest_order_trace_path}")
+        if self._latest_monitor_line:
+            lines.append(f"    Monitor: {self._latest_monitor_line}")
+        if self._latest_tick_line:
+            lines.append(f"    Tick: {self._latest_tick_line}")
+        if self._capital_snapshot_error:
+            lines.append(f"    CapitalFeed: degraded ({self._capital_snapshot_error})")
+        elif float(capital.get("stale", 0.0) or 0.0) > 0:
+            lines.append("    CapitalFeed: stale_snapshot")
         active_cooldowns = sum(
             1 for info in self._rejection_cooldowns.values()
             if float(info.get("until", 0.0) or 0.0) > time.time()

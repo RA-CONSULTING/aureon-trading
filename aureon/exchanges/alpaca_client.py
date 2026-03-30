@@ -22,9 +22,10 @@ if sys.platform == 'win32':
                 return stream.buffer is not None and not stream.buffer.closed
             except (ValueError, AttributeError):
                 return False
-        if _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
+        force_stdio_wrap = os.getenv("ALPACA_FORCE_UTF8_STDIO", "false").lower() == "true"
+        if force_stdio_wrap and _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
+        if force_stdio_wrap and _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
             sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
@@ -1591,7 +1592,11 @@ class AlpacaClient:
 
     def get_asset(self, symbol: str) -> Dict[str, Any]:
         """Fetch asset metadata (shortable, marginable, etc.)."""
-        symbol = self._resolve_symbol(symbol)
+        raw = (symbol or '').strip().upper()
+        if raw and '/' not in raw and raw.replace('.', '').replace('-', '').isalnum():
+            symbol = raw
+        else:
+            symbol = self._resolve_symbol(symbol)
         return self._request("GET", f"/v2/assets/{symbol}")
 
     def is_shortable(self, symbol: str) -> bool:

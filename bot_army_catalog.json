@@ -6,17 +6,17 @@
     "animal": "\ud83e\udd16 Robot",
     "band": "market_maker",
     "first_seen": 1774478365.4851832,
-    "last_seen": 1774509544.7692585,
+    "last_seen": 1774869518.1213572,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 23,
+    "sighting_count": 30,
     "confidence": 0.8,
     "frequency": 0.365,
     "shape": "spiral",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 10.058898131308192,
-    "last_bsr": 0.98,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 10.92423821674947,
+    "last_bsr": 2.68,
     "action_history": [
       {
         "ts": 1774478365,
@@ -178,6 +178,55 @@
         "bsr": 0.98,
         "power": 10.1,
         "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774863160,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 9.8,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774863832,
+        "action": "BUYING",
+        "bsr": 1.55,
+        "power": 10.1,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774866087,
+        "action": "NEUTRAL",
+        "bsr": 1.07,
+        "power": 11.4,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774866867,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 10.5,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774867922,
+        "action": "BUYING",
+        "bsr": 2.15,
+        "power": 9.7,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774869197,
+        "action": "BUYING",
+        "bsr": 2.19,
+        "power": 12.6,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774869518,
+        "action": "BUYING",
+        "bsr": 2.68,
+        "power": 10.9,
+        "symbol": "ADAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -189,17 +238,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1774478365.4851832,
-    "last_seen": 1774509265.3462949,
+    "last_seen": 1774867256.7316267,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 6,
+    "sighting_count": 7,
     "confidence": 0.91,
     "frequency": 4.0393,
     "shape": "spiral",
     "last_action": "SELLING",
     "last_direction": "bearish",
-    "last_power_pct": 89.41681503843344,
-    "last_bsr": 0.65,
+    "last_power_pct": 89.85985937357378,
+    "last_bsr": 0.21,
     "action_history": [
       {
         "ts": 1774478365,
@@ -242,6 +291,13 @@
         "bsr": 0.65,
         "power": 89.4,
         "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774867257,
+        "action": "SELLING",
+        "bsr": 0.21,
+        "power": 89.9,
+        "symbol": "ADAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -253,88 +309,18 @@
     "animal": "\ud83e\udd16 Robot",
     "band": "market_maker",
     "first_seen": 1774478788.503614,
-    "last_seen": 1774510055.909678,
+    "last_seen": 1774872138.873405,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 47,
+    "sighting_count": 60,
     "confidence": 0.8,
     "frequency": 0.0244,
     "shape": "spiral",
     "last_action": "SELLING",
     "last_direction": "bearish",
-    "last_power_pct": 9.815820046135462,
-    "last_bsr": 0.48,
+    "last_power_pct": 10.91397489776563,
+    "last_bsr": 0.53,
     "action_history": [
-      {
-        "ts": 1774478789,
-        "action": "NEUTRAL",
-        "bsr": 0.81,
-        "power": 9.4,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774478841,
-        "action": "NEUTRAL",
-        "bsr": 0.81,
-        "power": 9.4,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774478893,
-        "action": "NEUTRAL",
-        "bsr": 0.8,
-        "power": 9.5,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774479047,
-        "action": "NEUTRAL",
-        "bsr": 0.8,
-        "power": 9.5,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774479096,
-        "action": "NEUTRAL",
-        "bsr": 0.8,
-        "power": 9.5,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774479145,
-        "action": "NEUTRAL",
-        "bsr": 0.79,
-        "power": 9.5,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774479236,
-        "action": "NEUTRAL",
-        "bsr": 0.79,
-        "power": 9.5,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774479313,
-        "action": "NEUTRAL",
-        "bsr": 0.81,
-        "power": 9.5,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774479488,
-        "action": "NEUTRAL",
-        "bsr": 0.83,
-        "power": 9.5,
-        "symbol": "ADAUSDT"
-      },
-      {
-        "ts": 1774479566,
-        "action": "NEUTRAL",
-        "bsr": 0.84,
-        "power": 9.4,
-        "symbol": "ADAUSDT"
-      },
       {
         "ts": 1774479642,
         "action": "NEUTRAL",
@@ -593,6 +579,97 @@
         "bsr": 0.48,
         "power": 9.8,
         "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774802308,
+        "action": "SELLING",
+        "bsr": 0.54,
+        "power": 15.7,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774802990,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 9.7,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774864808,
+        "action": "NEUTRAL",
+        "bsr": 1.23,
+        "power": 10.2,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774867257,
+        "action": "SELLING",
+        "bsr": 0.21,
+        "power": 9.8,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774867600,
+        "action": "BUYING",
+        "bsr": 2.0,
+        "power": 9.6,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774868238,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 9.9,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774868557,
+        "action": "NEUTRAL",
+        "bsr": 1.12,
+        "power": 9.9,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774869843,
+        "action": "BUYING",
+        "bsr": 2.76,
+        "power": 10.7,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774870535,
+        "action": "SELLING",
+        "bsr": 0.48,
+        "power": 11.9,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774870856,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 12.5,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774871496,
+        "action": "SELLING",
+        "bsr": 0.45,
+        "power": 12.9,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774871816,
+        "action": "SELLING",
+        "bsr": 0.47,
+        "power": 11.7,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774872139,
+        "action": "SELLING",
+        "bsr": 0.53,
+        "power": 10.9,
+        "symbol": "ADAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -661,17 +738,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1774478840.945152,
-    "last_seen": 1774508457.1443923,
+    "last_seen": 1774872138.873405,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 7,
+    "sighting_count": 16,
     "confidence": 0.91,
     "frequency": 1.1328,
     "shape": "spiral",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 89.57826219235776,
-    "last_bsr": 1.01,
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 88.87255703560758,
+    "last_bsr": 0.49,
     "action_history": [
       {
         "ts": 1774478841,
@@ -721,6 +798,69 @@
         "bsr": 1.01,
         "power": 89.6,
         "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774802990,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 89.3,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774867600,
+        "action": "BUYING",
+        "bsr": 2.02,
+        "power": 89.6,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774867922,
+        "action": "BUYING",
+        "bsr": 2.19,
+        "power": 89.7,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774868557,
+        "action": "NEUTRAL",
+        "bsr": 1.12,
+        "power": 89.6,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774870535,
+        "action": "SELLING",
+        "bsr": 0.48,
+        "power": 87.6,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774870856,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 87.3,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774871496,
+        "action": "SELLING",
+        "bsr": 0.47,
+        "power": 86.9,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774871816,
+        "action": "SELLING",
+        "bsr": 0.47,
+        "power": 88.1,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774872139,
+        "action": "SELLING",
+        "bsr": 0.49,
+        "power": 88.9,
+        "symbol": "ADAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -732,17 +872,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1774478892.5576894,
-    "last_seen": 1774509202.1963494,
+    "last_seen": 1774866087.0518599,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 11,
+    "sighting_count": 12,
     "confidence": 0.91,
     "frequency": 2.4695,
     "shape": "spiral",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 89.69364702133635,
-    "last_bsr": 0.71,
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 87.37885107649583,
+    "last_bsr": 0.81,
     "action_history": [
       {
         "ts": 1774478893,
@@ -820,6 +960,13 @@
         "bsr": 0.71,
         "power": 89.7,
         "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774866087,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 87.4,
+        "symbol": "ADAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -831,17 +978,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1774479046.60641,
-    "last_seen": 1774510055.909678,
+    "last_seen": 1774863831.5263603,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 14,
+    "sighting_count": 15,
     "confidence": 0.91,
     "frequency": 2.0081,
     "shape": "spiral",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 89.52810943743057,
-    "last_bsr": 0.49,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 88.91122339856378,
+    "last_bsr": 1.62,
     "action_history": [
       {
         "ts": 1774479047,
@@ -940,6 +1087,13 @@
         "bsr": 0.49,
         "power": 89.5,
         "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774863832,
+        "action": "BUYING",
+        "bsr": 1.62,
+        "power": 88.9,
+        "symbol": "ADAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -994,17 +1148,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1774479312.9655683,
-    "last_seen": 1774508742.3461564,
+    "last_seen": 1774864807.6033638,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 4,
+    "sighting_count": 5,
     "confidence": 0.91,
     "frequency": 4.6484,
     "shape": "spiral",
-    "last_action": "BUYING",
-    "last_direction": "bullish",
-    "last_power_pct": 89.80344353008778,
-    "last_bsr": 1.66,
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 88.41064393885111,
+    "last_bsr": 1.27,
     "action_history": [
       {
         "ts": 1774479313,
@@ -1033,6 +1187,13 @@
         "bsr": 1.66,
         "power": 89.8,
         "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774864808,
+        "action": "NEUTRAL",
+        "bsr": 1.27,
+        "power": 88.4,
+        "symbol": "ADAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -1044,17 +1205,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1774480339.162095,
-    "last_seen": 1774497474.047909,
+    "last_seen": 1774869842.7956505,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 12,
+    "sighting_count": 15,
     "confidence": 0.91,
     "frequency": 0.7214,
     "shape": "spiral",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 84.85993979459325,
-    "last_bsr": 0.43,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 88.47113192919818,
+    "last_bsr": 2.78,
     "action_history": [
       {
         "ts": 1774480339,
@@ -1139,6 +1300,27 @@
         "bsr": 0.43,
         "power": 84.9,
         "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774802308,
+        "action": "NEUTRAL",
+        "bsr": 0.79,
+        "power": 83.3,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774869518,
+        "action": "BUYING",
+        "bsr": 2.76,
+        "power": 88.4,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774869843,
+        "action": "BUYING",
+        "bsr": 2.78,
+        "power": 88.5,
+        "symbol": "ADAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -1150,17 +1332,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1774480665.1333234,
-    "last_seen": 1774509544.7692585,
+    "last_seen": 1774869197.28777,
     "first_symbol": "ADAUSDT",
     "last_symbol": "ADAUSDT",
-    "sighting_count": 6,
+    "sighting_count": 10,
     "confidence": 0.91,
     "frequency": 3.125,
     "shape": "spiral",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 89.39831946325823,
-    "last_bsr": 0.95,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 84.91185595825374,
+    "last_bsr": 1.55,
     "action_history": [
       {
         "ts": 1774480665,
@@ -1202,6 +1384,34 @@
         "action": "NEUTRAL",
         "bsr": 0.95,
         "power": 89.4,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774863160,
+        "action": "SELLING",
+        "bsr": 0.63,
+        "power": 89.9,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774866867,
+        "action": "NEUTRAL",
+        "bsr": 0.85,
+        "power": 88.6,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774868238,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 89.3,
+        "symbol": "ADAUSDT"
+      },
+      {
+        "ts": 1774869197,
+        "action": "BUYING",
+        "bsr": 1.55,
+        "power": 84.9,
         "symbol": "ADAUSDT"
       }
     ],

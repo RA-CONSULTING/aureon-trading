@@ -35,7 +35,8 @@ class CapitalSwarmRunner:
             for line in self.trader.status_lines():
                 print(f"  {line}")
         else:
-            print(f"  CAPITAL unavailable: {self.trader.init_error or 'not_ready'}")
+            reason = self.trader.init_error or getattr(getattr(self.trader, "client", None), "init_error", "") or "not_ready"
+            print(f"  CAPITAL unavailable: {reason}")
         print("=" * 78)
         print()
 
@@ -47,7 +48,8 @@ class CapitalSwarmRunner:
         print("=" * 78)
 
         if not self.trader.enabled:
-            print(f"Capital trader not available: {self.trader.init_error or 'client_disabled_or_blocked'}")
+            reason = self.trader.init_error or getattr(getattr(self.trader, "client", None), "init_error", "") or "client_disabled_or_blocked"
+            print(f"Capital trader not available: {reason}")
             return
 
         try:

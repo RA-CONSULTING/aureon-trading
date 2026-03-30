@@ -1,48 +1,49 @@
 {
-  "symbol": "SILVER",
-  "direction": "BUY",
+  "symbol": "TSLA",
+  "direction": "SELL",
   "size": 1,
   "ticker": {
-    "price": 7282.6,
-    "ask": 7282.6,
-    "bid": 7281.6,
-    "epic": "CS.D.SILVER.CFD.IP"
+    "price": 35573.0,
+    "bid": 35567.0,
+    "ask": 35579.0,
+    "epic": "TSLA",
+    "change_pct": -1.51
   },
   "preflight": {
-    "symbol": "SILVER",
-    "epic": "CS.D.SILVER.CFD.IP",
+    "symbol": "TSLA",
+    "epic": "TSLA",
     "requested_size": 1.0,
-    "available_balance": 54.34,
+    "available_balance": 105.05,
     "market_status": "TRADEABLE",
-    "minimum_deal_size": 2.0,
-    "price": 7282.6,
-    "spread": 1.0,
-    "spread_pct": 0.013731359679235437,
-    "margin_factor_pct": 0.0,
-    "estimated_margin_required": 0.0,
+    "minimum_deal_size": 0.001,
+    "price": 35573.0,
+    "spread": 12.0,
+    "spread_pct": 0.03373344952632615,
+    "margin_factor_pct": 100.0,
+    "estimated_margin_required": 35573.0,
     "expected_gross_profit": 0.01,
-    "expected_net_profit": 0.01,
-    "round_trip_cost": 0.0,
+    "expected_net_profit": -15.5473,
+    "round_trip_cost": 15.5573,
     "ok": false,
-    "reason": "requested size 1 below Capital minimum 2",
+    "reason": "expected net profit -15.5473 does not clear costs 15.5573",
     "accounts": [
       {
-        "accountId": "A1",
-        "balance": 54.34,
-        "available": 54.34,
+        "accountId": "299152263237103760",
+        "balance": 125.72,
+        "available": 105.05,
         "currency": "GBP"
       }
     ],
-    "bid": 7281.6,
-    "ask": 7282.6,
-    "notional": 7282.6,
-    "effective_tp_pct": 0.00013731359679235438
+    "bid": 35567.0,
+    "ask": 35579.0,
+    "notional": 35573.0,
+    "effective_tp_pct": 2.8111207938605122e-05
   },
   "known_deal_ids_before": [],
   "order_response": null,
   "confirm_response": null,
   "positions_snapshots": [],
   "validated": false,
-  "final_error": "SILVER preflight failed: requested size 1 below Capital minimum 2",
-  "written_at": 1774553609.1984026
+  "final_error": "TSLA preflight failed: expected net profit -15.5473 does not clear costs 15.5573",
+  "written_at": 1774896549.3702278
 }

@@ -27,8 +27,26 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List
 
-from kraken_margin_penny_trader import KrakenMarginArmyTrader
-from capital_cfd_trader import CAPITAL_UNIVERSE, CapitalCFDTrader
+try:
+    from kraken_margin_penny_trader import KrakenMarginArmyTrader
+    from capital_cfd_trader import CAPITAL_UNIVERSE, CapitalCFDTrader
+except Exception:
+    from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader
+    from aureon.exchanges.capital_cfd_trader import CAPITAL_UNIVERSE, CapitalCFDTrader
+try:
+    from alpaca_client import AlpacaClient
+except Exception:
+    try:
+        from aureon.exchanges.alpaca_client import AlpacaClient
+    except Exception:
+        AlpacaClient = None  # type: ignore[assignment]
+try:
+    from binance_client import BinanceClient
+except Exception:
+    try:
+        from aureon.exchanges.binance_client import BinanceClient
+    except Exception:
+        BinanceClient = None  # type: ignore[assignment]
 
 try:
     from aureon.utils.aureon_sero_client import get_sero_client
@@ -45,6 +63,9 @@ LOCAL_HOST = "127.0.0.1"
 LOCAL_PORT = 8790
 EXCHANGE_REINIT_INTERVAL_SEC = 30.0
 AURIS_FEED_MIN_INTERVAL_SEC = 45.0
+CENTRAL_BEAT_REFRESH_SEC = 20.0
+CENTRAL_BEAT_STALE_AFTER_SEC = 90.0
+CENTRAL_BEAT_HISTORY_LIMIT = 24
 KRAKEN_CLI_INSTALL_CMD = (
     "curl --proto '=https' --tlsv1.2 -LsSf "
     "https://github.com/krakenfx/kraken-cli/releases/latest/download/kraken-cli-installer.sh | sh"
@@ -59,6 +80,11 @@ SYMBOL_ALIASES = {
     "XAUUSD": "XAUUSD",
     "SILVER": "XAGUSD",
     "XAGUSD": "XAGUSD",
+    "BTCUSDT": "BTCUSD",
+    "ETHUSDT": "ETHUSD",
+    "SOLUSDT": "SOLUSD",
+    "XRPUSDT": "XRPUSD",
+    "DOGEUSDT": "DOGEUSD",
 }
 
 
@@ -112,6 +138,8 @@ class UnifiedMarketTrader:
         self.setup_kraken_cli = setup_kraken_cli
         self.kraken = None
         self.capital = None
+        self.alpaca = None
+        self.binance = None
         self.start_time = time.time()
         self.kraken_ready = False
         self.capital_ready = False
@@ -124,6 +152,11 @@ class UnifiedMarketTrader:
         self._latest_dashboard_payload: Dict[str, Any] = {}
         self._shared_market_feed: Dict[str, float] = {}
         self._shared_market_feed_at: float = 0.0
+        self._central_beat_feed: Dict[str, Any] = {}
+        self._central_beat_at: float = 0.0
+        self._central_beat_layers: Dict[str, Any] = {"trader": {}, "probe": {}, "merged": {}}
+        self._central_beat_history: List[Dict[str, Any]] = []
+        self._central_source_memory: Dict[str, Dict[str, Any]] = {}
         self._last_auris_feed_at: float = 0.0
         self._local_dashboard_server: ThreadingHTTPServer | None = None
         self._local_dashboard_thread: threading.Thread | None = None
@@ -153,6 +186,8 @@ class UnifiedMarketTrader:
     def _init_exchanges(self) -> None:
         self._init_kraken(force=True)
         self._init_capital(force=True)
+        self._init_alpaca(force=True)
+        self._init_binance(force=True)
 
     def _init_kraken(self, force: bool = False) -> None:
         now = time.time()
@@ -184,6 +219,30 @@ class UnifiedMarketTrader:
             self.capital_ready = False
             self.capital_error = str(e)
             logger.error("Capital init failed: %s", e)
+
+    def _init_alpaca(self, force: bool = False) -> None:
+        if self.alpaca is not None and not force:
+            return
+        if AlpacaClient is None:
+            self.alpaca = None
+            return
+        try:
+            self.alpaca = AlpacaClient()
+        except Exception as e:
+            self.alpaca = None
+            logger.debug("Alpaca passive client unavailable: %s", e)
+
+    def _init_binance(self, force: bool = False) -> None:
+        if self.binance is not None and not force:
+            return
+        if BinanceClient is None:
+            self.binance = None
+            return
+        try:
+            self.binance = BinanceClient()
+        except Exception as e:
+            self.binance = None
+            logger.debug("Binance passive client unavailable: %s", e)
 
     def _ensure_exchanges(self) -> None:
         if self.kraken is None:
@@ -275,7 +334,8 @@ class UnifiedMarketTrader:
             "status_lines": [f"CAPITAL unavailable: {self.capital_error or 'not_ready'}"],
             "stats": {},
         }
-        shared_market_feed = self._sync_shared_market_feed(kraken_payload, capital_payload)
+        central_beat = self._build_central_beat_feed(kraken_payload, capital_payload)
+        shared_market_feed = self._sync_shared_market_feed(central_beat)
         order_flow_feed = self._build_global_order_flow_feed(kraken_payload, capital_payload, shared_market_feed)
         self._feed_shared_order_flow_to_decision_logic(order_flow_feed)
         self._feed_auris_throne(order_flow_feed)
@@ -291,6 +351,7 @@ class UnifiedMarketTrader:
             "status_lines": combined_status[-24:],
             "latest_monitor_line": self._latest_monitor_line(),
             "shared_market_feed": shared_market_feed,
+            "central_beat": central_beat,
             "shared_order_flow": order_flow_feed,
             "queen_voice": queen_voice,
             "combined": {
@@ -318,11 +379,216 @@ class UnifiedMarketTrader:
                 continue
         return 0.0
 
-    def _sync_shared_market_feed(self, kraken_payload: Dict[str, Any], capital_payload: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_central_beat_feed(self, kraken_payload: Dict[str, Any], capital_payload: Dict[str, Any]) -> Dict[str, Any]:
+        now = time.time()
+        if self._central_beat_feed and (now - self._central_beat_at) < CENTRAL_BEAT_REFRESH_SEC:
+            return dict(self._central_beat_feed)
+
+        trader_sources: List[Dict[str, Any]] = []
+        probe_sources: List[Dict[str, Any]] = []
+        sources: List[Dict[str, Any]] = []
+
+        kraken_source = self._extract_trader_source_snapshot("kraken", kraken_payload)
+        if kraken_source:
+            trader_sources.append(kraken_source)
+        capital_source = self._extract_trader_source_snapshot("capital", capital_payload)
+        if capital_source:
+            trader_sources.append(capital_source)
+        trader_sources = self._stabilize_sources("trader", trader_sources)
+        sources.extend(trader_sources)
+
+        watchlist = self._build_probe_watchlist(sources)
+        alpaca_source = self._extract_alpaca_source_snapshot(watchlist)
+        if alpaca_source:
+            probe_sources.append(alpaca_source)
+        binance_source = self._extract_binance_source_snapshot(watchlist)
+        if binance_source:
+            probe_sources.append(binance_source)
+        probe_sources = self._stabilize_sources("probe", probe_sources)
+        sources.extend(probe_sources)
+
+        symbols: Dict[str, Dict[str, Any]] = {}
+        buy_pressure = 0.0
+        sell_pressure = 0.0
+        for source in sources:
+            source_name = str(source.get("source") or "?")
+            source_symbols = source.get("symbols", {})
+            if not isinstance(source_symbols, dict):
+                continue
+            for normalized, item in source_symbols.items():
+                if not isinstance(item, dict):
+                    continue
+                confidence = max(0.0, min(1.0, float(item.get("confidence", 0.0) or 0.0)))
+                if confidence <= 0.0:
+                    continue
+                side = str(item.get("side") or "BUY").upper()
+                symbol_state = symbols.setdefault(
+                    normalized,
+                    {"support_count": 0, "confidence_sum": 0.0, "buy_confidence": 0.0, "sell_confidence": 0.0, "sources": []},
+                )
+                symbol_state["support_count"] += 1
+                symbol_state["confidence_sum"] += confidence
+                if side == "SELL":
+                    symbol_state["sell_confidence"] += confidence
+                    sell_pressure += confidence
+                else:
+                    symbol_state["buy_confidence"] += confidence
+                    buy_pressure += confidence
+                if source_name not in symbol_state["sources"]:
+                    symbol_state["sources"].append(source_name)
+
+        normalized_symbols: Dict[str, Dict[str, Any]] = {}
+        for normalized, item in symbols.items():
+            support_count = int(item.get("support_count", 0) or 0)
+            confidence_sum = float(item.get("confidence_sum", 0.0) or 0.0)
+            avg_confidence = confidence_sum / support_count if support_count > 0 else 0.0
+            buy_conf = float(item.get("buy_confidence", 0.0) or 0.0)
+            sell_conf = float(item.get("sell_confidence", 0.0) or 0.0)
+            side = "BUY" if buy_conf >= sell_conf else "SELL"
+            imbalance = abs(buy_conf - sell_conf)
+            normalized_symbols[normalized] = {
+                "confidence": round(avg_confidence, 4),
+                "support_count": support_count,
+                "side": side,
+                "imbalance": round(imbalance, 4),
+                "strength": round(avg_confidence * (1.0 + min(1.0, (support_count - 1) * 0.35)), 4),
+                "sources": list(item.get("sources", [])),
+            }
+
+        total_pressure = buy_pressure + sell_pressure
+        regime = {
+            "buy_pressure": round(buy_pressure, 4),
+            "sell_pressure": round(sell_pressure, 4),
+            "bias": "BUY" if buy_pressure >= sell_pressure else "SELL",
+            "confidence": round((max(buy_pressure, sell_pressure) / total_pressure) if total_pressure > 0 else 0.0, 4),
+            "source_count": len(sources),
+        }
+
+        payload = {
+            "generated_at": datetime.now().isoformat(),
+            "sources": sources,
+            "source_count": len(sources),
+            "symbols": normalized_symbols,
+            "regime": regime,
+        }
+        self._central_beat_layers = {
+            "trader": {"sources": trader_sources, "count": len(trader_sources)},
+            "probe": {"sources": probe_sources, "count": len(probe_sources)},
+            "merged": {"sources": sources, "count": len(sources), "symbols": normalized_symbols, "regime": regime},
+        }
+        self._central_beat_feed = payload
+        self._central_beat_at = now
+        self._central_beat_history.append(payload)
+        self._central_beat_history = self._central_beat_history[-CENTRAL_BEAT_HISTORY_LIMIT:]
+        return dict(payload)
+
+    def _sync_shared_market_feed(self, central_beat: Dict[str, Any]) -> Dict[str, Any]:
         boosts: Dict[str, float] = {}
         aliases: Dict[str, List[str]] = {}
+        symbol_metrics = central_beat.get("symbols", {}) if isinstance(central_beat, dict) else {}
+        regime = central_beat.get("regime", {}) if isinstance(central_beat, dict) else {}
 
-        def push(symbol: Any, confidence: Any) -> None:
+        for normalized, item in symbol_metrics.items():
+            if not isinstance(item, dict):
+                continue
+            strength = max(0.0, min(1.5, float(item.get("strength", 0.0) or 0.0)))
+            confidence = max(0.0, min(1.0, float(item.get("confidence", 0.0) or 0.0)))
+            boosts[str(normalized)] = round(min(1.0, max(strength, confidence)), 4)
+            for source_name in item.get("sources", []) if isinstance(item.get("sources"), list) else []:
+                known = aliases.setdefault(str(normalized), [])
+                if source_name not in known:
+                    known.append(str(source_name))
+
+        self._shared_market_feed = boosts
+        self._shared_market_feed_at = time.time()
+
+        for trader in self._central_feed_targets():
+            if trader is None:
+                continue
+            try:
+                trader._hive_boosts = dict(boosts)  # type: ignore[attr-defined]
+                trader._central_beat_symbols = dict(symbol_metrics)  # type: ignore[attr-defined]
+                trader._central_beat_regime = dict(regime)  # type: ignore[attr-defined]
+            except Exception:
+                continue
+
+        return {
+            "symbols": dict(boosts),
+            "aliases": dict(aliases),
+            "count": len(boosts),
+            "generated_at": datetime.now().isoformat(),
+        }
+
+    def _central_feed_targets(self) -> List[Any]:
+        targets: List[Any] = []
+        seen: set[int] = set()
+        for attr in ("kraken", "capital", "alpaca_trader", "binance_trader", "alpaca", "binance"):
+            target = getattr(self, attr, None)
+            if target is None:
+                continue
+            target_id = id(target)
+            if target_id in seen:
+                continue
+            seen.add(target_id)
+            targets.append(target)
+        return targets
+
+    def _stabilize_sources(self, stage: str, fresh_sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        now = time.time()
+        stabilized: List[Dict[str, Any]] = []
+        fresh_names = set()
+        for source in fresh_sources:
+            if not isinstance(source, dict):
+                continue
+            source_name = str(source.get("source") or "").strip()
+            if not source_name:
+                continue
+            memory_key = f"{stage}:{source_name}"
+            prepared = dict(source)
+            prepared["stale"] = False
+            prepared["captured_at"] = datetime.now().isoformat()
+            prepared["_seen_at"] = now
+            prepared["_stage"] = stage
+            self._central_source_memory[memory_key] = prepared
+            stabilized.append(prepared)
+            fresh_names.add(source_name)
+
+        for memory_key, cached in list(self._central_source_memory.items()):
+            if str(cached.get("_stage") or "") != stage:
+                continue
+            source_name = str(cached.get("source") or "").strip()
+            if source_name in fresh_names:
+                continue
+            seen_at = float(cached.get("_seen_at", 0.0) or 0.0)
+            if seen_at <= 0 or (now - seen_at) > CENTRAL_BEAT_STALE_AFTER_SEC:
+                continue
+            reused = dict(cached)
+            reused["stale"] = True
+            reused["reused_at"] = datetime.now().isoformat()
+            stabilized.append(reused)
+
+        stabilized.sort(key=lambda item: str(item.get("source") or ""))
+        return stabilized
+
+    def _build_probe_watchlist(self, sources: List[Dict[str, Any]]) -> List[str]:
+        watchlist: List[str] = []
+        for source in sources:
+            source_symbols = source.get("symbols", {})
+            if not isinstance(source_symbols, dict):
+                continue
+            for normalized in source_symbols.keys():
+                symbol = str(normalized or "").upper()
+                if symbol and symbol not in watchlist:
+                    watchlist.append(symbol)
+        for fallback in ("BTCUSD", "ETHUSD", "SOLUSD", "XRPUSD"):
+            if fallback not in watchlist:
+                watchlist.append(fallback)
+        return watchlist[:12]
+
+    def _extract_trader_source_snapshot(self, source_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        symbols: Dict[str, Dict[str, Any]] = {}
+
+        def push(symbol: Any, confidence: Any, side: Any = "BUY") -> None:
             raw_symbol = str(symbol or "").upper().strip()
             normalized = self._normalize_symbol(raw_symbol)
             if not normalized:
@@ -336,43 +602,117 @@ class UnifiedMarketTrader:
             conf = max(0.0, min(1.0, conf))
             if conf <= 0.0:
                 return
-            boosts[normalized] = max(boosts.get(normalized, 0.0), conf)
-            if raw_symbol:
-                known = aliases.setdefault(normalized, [])
-                if raw_symbol not in known:
-                    known.append(raw_symbol)
+            symbols[normalized] = {
+                "symbol": normalized,
+                "raw_symbol": raw_symbol,
+                "confidence": conf,
+                "side": str(side or "BUY").upper(),
+            }
 
-        for candidate in kraken_payload.get("candidate_snapshot", [])[:8]:
+        for candidate in payload.get("candidate_snapshot", [])[:8]:
             if isinstance(candidate, dict):
-                push(candidate.get("symbol") or candidate.get("pair"), self._extract_candidate_confidence(candidate))
-        kraken_decision = kraken_payload.get("decision_snapshot", {})
-        if isinstance(kraken_decision, dict):
-            decision = kraken_decision.get("decision", {}) if isinstance(kraken_decision.get("decision"), dict) else {}
-            push(kraken_decision.get("symbol"), decision.get("confidence", 0.0))
+                push(
+                    candidate.get("symbol") or candidate.get("pair"),
+                    self._extract_candidate_confidence(candidate),
+                    candidate.get("direction") or candidate.get("side") or "BUY",
+                )
 
-        for candidate in capital_payload.get("candidate_snapshot", [])[:8]:
-            if isinstance(candidate, dict):
-                push(candidate.get("symbol"), self._extract_candidate_confidence(candidate))
-        capital_target = capital_payload.get("target_snapshot", {})
-        if isinstance(capital_target, dict):
-            push(capital_target.get("symbol"), self._extract_candidate_confidence(capital_target))
+        decision_snapshot = payload.get("decision_snapshot", {})
+        if isinstance(decision_snapshot, dict):
+            decision = decision_snapshot.get("decision", {}) if isinstance(decision_snapshot.get("decision"), dict) else {}
+            push(
+                decision_snapshot.get("symbol"),
+                decision.get("confidence", 0.0),
+                decision_snapshot.get("side") or decision.get("direction") or decision.get("type") or "BUY",
+            )
 
-        self._shared_market_feed = boosts
-        self._shared_market_feed_at = time.time()
+        target_snapshot = payload.get("target_snapshot", {})
+        if isinstance(target_snapshot, dict):
+            push(
+                target_snapshot.get("symbol"),
+                self._extract_candidate_confidence(target_snapshot),
+                target_snapshot.get("direction") or "BUY",
+            )
 
-        for trader in (self.kraken, self.capital):
-            if trader is None:
+        if not symbols:
+            return {}
+        strongest = max(symbols.values(), key=lambda item: float(item.get("confidence", 0.0) or 0.0))
+        return {
+            "source": source_name,
+            "ready": bool(payload.get("ok", True)),
+            "symbols": symbols,
+            "top_symbol": strongest.get("symbol"),
+            "top_side": strongest.get("side"),
+            "top_confidence": strongest.get("confidence"),
+        }
+
+    def _extract_alpaca_source_snapshot(self, watchlist: List[str]) -> Dict[str, Any]:
+        client = self.alpaca
+        if client is None:
+            return {}
+        symbols: Dict[str, Dict[str, Any]] = {}
+        for normalized in watchlist:
+            crypto_symbol = self._to_alpaca_crypto_symbol(normalized)
+            if not crypto_symbol:
                 continue
             try:
-                trader._hive_boosts = dict(boosts)  # type: ignore[attr-defined]
+                ticker = client.get_ticker(crypto_symbol)
             except Exception:
                 continue
-
+            price = float(ticker.get("price", 0.0) or ticker.get("last", 0.0) or 0.0)
+            change_pct = float(ticker.get("change_pct", 0.0) or ticker.get("priceChangePercent", 0.0) or 0.0)
+            if price <= 0 or abs(change_pct) <= 0.0:
+                continue
+            symbols[normalized] = {
+                "symbol": normalized,
+                "raw_symbol": crypto_symbol,
+                "confidence": min(1.0, abs(change_pct) / 5.0),
+                "side": "BUY" if change_pct >= 0 else "SELL",
+            }
+        if not symbols:
+            return {}
+        strongest = max(symbols.values(), key=lambda item: float(item.get("confidence", 0.0) or 0.0))
         return {
-            "symbols": dict(boosts),
-            "aliases": dict(aliases),
-            "count": len(boosts),
-            "generated_at": datetime.now().isoformat(),
+            "source": "alpaca",
+            "ready": True,
+            "symbols": symbols,
+            "top_symbol": strongest.get("symbol"),
+            "top_side": strongest.get("side"),
+            "top_confidence": strongest.get("confidence"),
+        }
+
+    def _extract_binance_source_snapshot(self, watchlist: List[str]) -> Dict[str, Any]:
+        client = self.binance
+        if client is None:
+            return {}
+        symbols: Dict[str, Dict[str, Any]] = {}
+        for normalized in watchlist:
+            binance_symbol = self._to_binance_symbol(normalized)
+            if not binance_symbol:
+                continue
+            try:
+                ticker = client.get_24h_ticker(binance_symbol)
+            except Exception:
+                continue
+            change_pct = float(ticker.get("priceChangePercent", 0.0) or 0.0)
+            if abs(change_pct) <= 0.0:
+                continue
+            symbols[normalized] = {
+                "symbol": normalized,
+                "raw_symbol": binance_symbol,
+                "confidence": min(1.0, abs(change_pct) / 5.0),
+                "side": "BUY" if change_pct >= 0 else "SELL",
+            }
+        if not symbols:
+            return {}
+        strongest = max(symbols.values(), key=lambda item: float(item.get("confidence", 0.0) or 0.0))
+        return {
+            "source": "binance",
+            "ready": True,
+            "symbols": symbols,
+            "top_symbol": strongest.get("symbol"),
+            "top_side": strongest.get("side"),
+            "top_confidence": strongest.get("confidence"),
         }
 
     def _normalize_symbol(self, symbol: Any) -> str:
@@ -383,6 +723,18 @@ class UnifiedMarketTrader:
             raw = raw.replace(needle, "")
         alnum = "".join(ch for ch in raw if ch.isalnum())
         return SYMBOL_ALIASES.get(alnum, alnum)
+
+    def _to_alpaca_crypto_symbol(self, normalized: str) -> str:
+        symbol = str(normalized or "").upper()
+        if symbol.endswith("USD") and len(symbol) > 3:
+            return f"{symbol[:-3]}/USD"
+        return ""
+
+    def _to_binance_symbol(self, normalized: str) -> str:
+        symbol = str(normalized or "").upper()
+        if symbol.endswith("USD") and len(symbol) > 3:
+            return f"{symbol[:-3]}USDT"
+        return ""
 
     def _capital_tradable_symbols(self) -> Dict[str, str]:
         return {self._normalize_symbol(symbol): symbol for symbol in CAPITAL_UNIVERSE.keys()}
@@ -497,6 +849,7 @@ class UnifiedMarketTrader:
         kraken_decision = kraken_payload.get("decision_snapshot", {}) if isinstance(kraken_payload, dict) else {}
         capital_target = capital_payload.get("target_snapshot", {}) if isinstance(capital_payload, dict) else {}
         capital_candidates = capital_payload.get("candidate_snapshot", []) if isinstance(capital_payload, dict) else []
+        capital_recent_closed = capital_payload.get("recent_closed_trades", []) if isinstance(capital_payload, dict) else []
         kraken_positions = kraken_payload.get("positions", []) if isinstance(kraken_payload.get("positions"), list) else []
         capital_positions = capital_payload.get("positions", []) if isinstance(capital_payload.get("positions"), list) else []
         open_positions = list(kraken_positions) + list(capital_positions)
@@ -558,6 +911,16 @@ class UnifiedMarketTrader:
         else:
             lines.append("Capital update. I am waiting for a valid CFD setup.")
 
+        if capital_recent_closed:
+            latest_close = capital_recent_closed[-1] if isinstance(capital_recent_closed[-1], dict) else {}
+            learning_update = latest_close.get("learning_update", {}) if isinstance(latest_close, dict) else {}
+            if learning_update:
+                lines.append(
+                    f"Learning update. I learned from {latest_close.get('symbol', '?')} and shifted my bias to "
+                    f"{float(learning_update.get('symbol_bias', 0.0) or 0.0):+.3f} after a "
+                    f"{float(latest_close.get('net_pnl', 0.0) or 0.0):+.2f} GBP result."
+                )
+
         if open_positions:
             lines.append("I am watching the open positions closely and waiting for clean profit exits.")
 
@@ -583,8 +946,17 @@ class UnifiedMarketTrader:
     def get_status_lines(self) -> List[str]:
         lines = [
             f"UNIFIED MARKET STATUS | runtime={(time.time() - self.start_time) / 60.0:.1f}m",
-            "Markets armed: Kraken margin + Capital CFDs",
+            "Markets armed: Kraken margin + Capital CFDs | CentralBeat fed by Kraken + Capital + Alpaca + Binance",
         ]
+        central_beat = self._central_beat_feed or {}
+        regime = central_beat.get("regime", {}) if isinstance(central_beat, dict) else {}
+        if regime:
+            lines.append(
+                "CentralBeat: "
+                f"sources={int(regime.get('source_count', 0) or 0)} "
+                f"bias={regime.get('bias', '?')} "
+                f"conf={float(regime.get('confidence', 0.0) or 0.0):.2f}"
+            )
         if self.kraken_ready and self.kraken is not None:
             lines.extend(self.kraken._latest_status_lines[-10:] if getattr(self.kraken, "_latest_status_lines", None) else [])
         else:
@@ -600,6 +972,7 @@ class UnifiedMarketTrader:
         _safe_print("=" * 78)
         _safe_print(f"  UNIFIED MARKET TRADER | Runtime: {(time.time() - self.start_time) / 60.0:.1f}m")
         _safe_print("  Exchanges: Kraken Margin + Capital CFDs")
+        _safe_print("  CentralBeat: Kraken + Capital + Alpaca + Binance feed fusion")
         _safe_print("-" * 78)
         _safe_print("  [KRAKEN]")
         if self.kraken_ready and self.kraken is not None:

@@ -2860,6 +2860,8 @@ class KrakenMarginArmyTrader:
         # DUAL POSITION: 1 LONG + 1 SHORT simultaneously
         self.active_long: Optional[ActiveTrade] = None
         self.active_short: Optional[ActiveTrade] = None
+        self.extra_active_longs: List[ActiveTrade] = []
+        self.extra_active_shorts: List[ActiveTrade] = []
         # SHADOW TRADES: Prove predictions before deploying capital
         self.shadow_trades: List[ShadowTrade] = []
         self.shadow_validated_count = 0  # How many shadows proved right
@@ -5646,6 +5648,8 @@ class KrakenMarginArmyTrader:
             state = {
                 "active_long": self.active_long.to_dict() if self.active_long else None,
                 "active_short": self.active_short.to_dict() if self.active_short else None,
+                "extra_active_longs": [trade.to_dict() for trade in self.extra_active_longs[-10:]],
+                "extra_active_shorts": [trade.to_dict() for trade in self.extra_active_shorts[-10:]],
                 "active_trade": at.to_dict() if at else None,
                 "total_profit": self.total_profit,
                 "total_trades": self.total_trades,
@@ -5663,9 +5667,14 @@ class KrakenMarginArmyTrader:
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
 
-    def _reconcile_live_positions(self) -> Dict[str, Optional[ActiveTrade]]:
+    def _reconcile_live_positions(self) -> Dict[str, Any]:
         """Rebuild active Kraken margin slots from the exchange, even without local state."""
-        live_positions_by_slot: Dict[str, Optional[ActiveTrade]] = {"active_long": None, "active_short": None}
+        live_positions_by_slot: Dict[str, Any] = {
+            "active_long": None,
+            "active_short": None,
+            "extra_active_longs": [],
+            "extra_active_shorts": [],
+        }
         if self.dry_run:
             return live_positions_by_slot
 
@@ -5677,8 +5686,6 @@ class KrakenMarginArmyTrader:
                 slot = "active_long" if side == "buy" else "active_short" if side == "sell" else None
                 if slot is None:
                     continue
-                if live_positions_by_slot[slot] is not None:
-                    raise RuntimeError(f"Kraken returned multiple live margin positions for {slot}; refusing ambiguous startup")
 
                 volume = float(kp.get("volume", 0.0) or 0.0)
                 cost = float(kp.get("cost", 0.0) or 0.0)
@@ -5697,7 +5704,7 @@ class KrakenMarginArmyTrader:
                     elif side == "sell":
                         breakeven_price = entry_price - (fee_total + PROFIT_TARGET_USD) / volume
 
-                live_positions_by_slot[slot] = ActiveTrade(
+                trade = ActiveTrade(
                     pair=alt_pair,
                     side=side,
                     volume=volume,
@@ -5710,6 +5717,24 @@ class KrakenMarginArmyTrader:
                     breakeven_price=breakeven_price,
                     binance_symbol=self._binance_symbol_for_pair(alt_pair),
                 )
+                primary_trade = live_positions_by_slot[slot]
+                extras_key = "extra_active_longs" if slot == "active_long" else "extra_active_shorts"
+                if primary_trade is None:
+                    live_positions_by_slot[slot] = trade
+                else:
+                    primary_key = (
+                        float(getattr(primary_trade, "entry_time", 0.0) or 0.0),
+                        -float(getattr(primary_trade, "cost", 0.0) or 0.0),
+                    )
+                    new_key = (
+                        float(getattr(trade, "entry_time", 0.0) or 0.0),
+                        -float(getattr(trade, "cost", 0.0) or 0.0),
+                    )
+                    if new_key < primary_key:
+                        live_positions_by_slot[extras_key].append(primary_trade)
+                        live_positions_by_slot[slot] = trade
+                    else:
+                        live_positions_by_slot[extras_key].append(trade)
         except Exception as e:
             raise RuntimeError(f"Live position reconciliation failed: {e}")
 
@@ -5725,6 +5750,8 @@ class KrakenMarginArmyTrader:
 
             valid_fields = {f.name for f in ActiveTrade.__dataclass_fields__.values()}
             live_positions_by_slot = self._reconcile_live_positions()
+            self.extra_active_longs = list(live_positions_by_slot.get("extra_active_longs", []) or [])
+            self.extra_active_shorts = list(live_positions_by_slot.get("extra_active_shorts", []) or [])
 
             # Load dual positions (new format)
             for slot, attr in [("active_long", "active_long"), ("active_short", "active_short")]:
@@ -5770,7 +5797,7 @@ class KrakenMarginArmyTrader:
 
             # Register restored positions with orchestrator for cross-system awareness
             if self.orchestrator is not None:
-                for pos in (self.active_long, self.active_short):
+                for pos in (self.active_long, self.active_short, *self.extra_active_longs, *self.extra_active_shorts):
                     if pos is not None:
                         try:
                             self.orchestrator.register_position(
@@ -5789,6 +5816,13 @@ class KrakenMarginArmyTrader:
             self.shadow_validated_count = state.get("shadow_validated", 0)
             self.shadow_failed_count = state.get("shadow_failed", 0)
             self.completed_trades = state.get("completed_trades", [])
+            if self.extra_active_longs or self.extra_active_shorts:
+                logger.warning(
+                    "Kraken startup found extra live positions; keeping one primary slot per side and tracking extras "
+                    "(extra_longs=%s extra_shorts=%s)",
+                    len(self.extra_active_longs),
+                    len(self.extra_active_shorts),
+                )
             if not self.dry_run:
                 self._save_state()
         except Exception as e:
@@ -6133,6 +6167,10 @@ class KrakenMarginArmyTrader:
                 )
             else:
                 status_lines.append(f"{label}: EMPTY")
+        if self.extra_active_longs or self.extra_active_shorts:
+            status_lines.append(
+                f"ExtraLive: longs={len(self.extra_active_longs)} shorts={len(self.extra_active_shorts)}"
+            )
         status_lines.append(
             f"History: closed={closed_count} wins={wins} losses={losses} win_rate={win_rate:.1f}% avg={avg_net:+.2f}"
         )

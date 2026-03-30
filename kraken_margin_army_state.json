@@ -9,12 +9,30 @@
     "entry_time": 1774443401.337875,
     "order_id": "TQTIZX-A6XL3-MQ6JBC",
     "cost": 808.722664,
-    "breakeven_price": 0.27725826826372924,
+    "breakeven_price": 0.27751674813979527,
     "binance_symbol": "ADAUSDT",
-    "rollover_fees": 0.3234890656,
+    "rollover_fees": 2.3452957256,
     "last_rollover_check": 0.0
   },
   "active_short": null,
+  "extra_active_longs": [
+    {
+      "pair": "SOLUSD",
+      "side": "buy",
+      "volume": 14.53542065,
+      "entry_price": 88.74999981510682,
+      "leverage": 1,
+      "entry_fee": 3.26375,
+      "entry_time": 1774515905.89342,
+      "order_id": "TRG3BM-YKUBQ-B3SS6N",
+      "cost": 1290.01858,
+      "breakeven_price": 89.06191029290919,
+      "binance_symbol": "SOLUSDT",
+      "rollover_fees": 0.0,
+      "last_rollover_check": 0.0
+    }
+  ],
+  "extra_active_shorts": [],
   "active_trade": {
     "pair": "ADAUSD",
     "side": "buy",
@@ -25,16 +43,16 @@
     "entry_time": 1774443401.337875,
     "order_id": "TQTIZX-A6XL3-MQ6JBC",
     "cost": 808.722664,
-    "breakeven_price": 0.27725826826372924,
+    "breakeven_price": 0.27751674813979527,
     "binance_symbol": "ADAUSDT",
-    "rollover_fees": 0.3234890656,
+    "rollover_fees": 2.3452957256,
     "last_rollover_check": 0.0
   },
   "total_profit": 4.446711779700118,
   "total_trades": 1,
   "winning_trades": 1,
   "shadow_validated": 1,
-  "shadow_failed": 62,
+  "shadow_failed": 66,
   "completed_trades": [
     {
       "pair": "SOLUSD",
@@ -57,5 +75,5 @@
       "close_order_id": "O53DRX-V6KY2-E6YAIH"
     }
   ],
-  "last_updated": "2026-03-26T08:04:09.330455"
+  "last_updated": "2026-03-30T10:32:36.338497"
 }

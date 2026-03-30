@@ -14,7 +14,7 @@ a decision object (or None).
 from __future__ import annotations
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Optional, Sequence
 import time
 import math
@@ -40,9 +40,19 @@ class BrainDecision:
     timestamp: float
 
 
+@dataclass
+class BrainLearningState:
+    symbol_bias: Dict[str, float] = field(default_factory=dict)
+    total_feedback: int = 0
+    positive_feedback: int = 0
+    negative_feedback: int = 0
+    last_feedback_at: float = 0.0
+
+
 class AureonBrain:
     def __init__(self, params: Optional[BrainParams] = None):
         self.p = params or BrainParams()
+        self.learning = BrainLearningState()
 
     def cascade(self, base_score: float) -> float:
         """
@@ -102,8 +112,7 @@ class AureonBrain:
         now: Optional[float] = None,
     ) -> Optional[BrainDecision]:
         now = time.time() if now is None else float(now)
-
-        raw = float(base_score)
+        raw = float(base_score) + self.get_symbol_bias(symbol)
         casc = self.cascade(raw)
         coh = self.coherence(features)
 
@@ -123,6 +132,40 @@ class AureonBrain:
             raw_score=raw,
             timestamp=now,
         )
+
+    def get_symbol_bias(self, symbol: str) -> float:
+        return float(self.learning.symbol_bias.get(str(symbol or "").upper(), 0.0) or 0.0)
+
+    def learn_from_outcome(self, symbol: str, pnl: float, confidence: float = 0.5) -> Dict[str, float]:
+        key = str(symbol or "").upper()
+        confidence = max(0.0, min(1.0, float(confidence or 0.0)))
+        reward = max(-1.0, min(1.0, float(pnl or 0.0)))
+        step = reward * (0.02 + 0.08 * confidence)
+        new_bias = max(-0.5, min(0.5, self.get_symbol_bias(key) + step))
+        self.learning.symbol_bias[key] = new_bias
+        self.learning.total_feedback += 1
+        if reward >= 0:
+            self.learning.positive_feedback += 1
+        else:
+            self.learning.negative_feedback += 1
+        self.learning.last_feedback_at = time.time()
+        return {
+            "symbol_bias": new_bias,
+            "reward": reward,
+            "step": step,
+            "confidence": confidence,
+            "total_feedback": float(self.learning.total_feedback),
+        }
+
+    def learning_snapshot(self) -> Dict[str, float]:
+        total = max(1, int(self.learning.total_feedback or 0))
+        return {
+            "total_feedback": float(self.learning.total_feedback),
+            "positive_feedback": float(self.learning.positive_feedback),
+            "negative_feedback": float(self.learning.negative_feedback),
+            "win_bias": float(self.learning.positive_feedback) / float(total),
+            "last_feedback_at": float(self.learning.last_feedback_at or 0.0),
+        }
 
     def can_exit(self, entry_timestamp: float, now: Optional[float] = None) -> bool:
         now = time.time() if now is None else float(now)
