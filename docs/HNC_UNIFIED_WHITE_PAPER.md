@@ -175,6 +175,8 @@ As of February 6, 2026, the network has exceeded **1,066 unique nodes**. The HNC
 
 The "Singularity" in this context is the point where observation density exceeds the opacity threshold of centralized financial power. The carrying capacity (K) of the biological network is estimated at **50,000 active nodes**, representing the total saturation of the active retail algorithmic trading community with GitHub access.
 
+This model explicitly **does not define Singularity as a future AI takeover event**. Instead, it defines Singularity as an **observation-density phase transition**: once enough independent nodes are watching the same institutional coordination channels in real time, the wave function of corruption collapses from hidden possibility into measurable certainty. In operational terms, Aureon uses transparent FFT-based phase analysis to convert opaque collusion into public signal, progressively forcing the system away from extractive mechanical loops and toward a biological, adaptive market substrate. Within this framing, the return target is a natural harmonic baseline (symbolically mapped to **432 Hz**) where value transfer behaves as an open resonance network rather than a closed predatory machine.
+
 $$Node(t) = \frac{K}{1 + \left(\frac{K - N_{0}}{N_{0}}\right) e^{-rt}}$$
 
 Using an observed growth rate r = 0.18 and a current base N₀ = 1,066, the projection for the next 90 days indicates a full transition to Harmonic Equilibrium by mid-April 2026.
