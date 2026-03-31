@@ -97,8 +97,16 @@ class SystemRegistry:
     Auto-discovers Python modules and categorizes them.
     """
     
-    def __init__(self, workspace_path: str = "/workspaces/aureon-trading"):
-        self.workspace_path = Path(workspace_path)
+    def __init__(self, workspace_path: Optional[str] = None):
+        if workspace_path:
+            resolved_workspace = Path(workspace_path)
+        else:
+            env_workspace = os.getenv("AUREON_WORKSPACE")
+            if env_workspace:
+                resolved_workspace = Path(env_workspace)
+            else:
+                resolved_workspace = Path(__file__).resolve().parents[2]
+        self.workspace_path = resolved_workspace.resolve()
         self.categories: Dict[str, SystemCategory] = {}
         self.systems: Dict[str, SystemInfo] = {}
         self._initialize_categories()
@@ -192,10 +200,13 @@ class SystemRegistry:
     def scan_workspace(self):
         """Scan workspace and categorize all Python files."""
         print(f"🔍 Scanning workspace: {self.workspace_path}")
-        
-        python_files = list(self.workspace_path.glob("aureon_*.py"))
-        python_files.extend(self.workspace_path.glob("*_client.py"))
-        python_files.extend(self.workspace_path.glob("micro_*.py"))
+
+        self.systems.clear()
+        for category in self.categories.values():
+            category.systems.clear()
+
+        python_files = list(self._iter_python_files())
+        python_files = sorted(set(python_files))
         
         print(f"📁 Found {len(python_files)} Python modules")
         
@@ -213,6 +224,20 @@ class SystemRegistry:
                     self.categories[category].add_system(system_info)
         
         print(f"✅ Registered {len(self.systems)} systems across {len(self.categories)} categories")
+
+    def _iter_python_files(self):
+        """Yield Python files while skipping cache/virtualenv/vendor folders."""
+        skip_dirs = {
+            ".git",
+            "__pycache__",
+            ".venv",
+            "venv",
+            "node_modules",
+        }
+        for path in self.workspace_path.rglob("*.py"):
+            if any(part in skip_dirs for part in path.parts):
+                continue
+            yield path
     
     def _analyze_file(self, filepath: Path) -> Optional[SystemInfo]:
         """Analyze a Python file to extract system information."""
