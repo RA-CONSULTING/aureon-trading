@@ -107,12 +107,12 @@ class AlpacaClient:
         prom_port = os.getenv('PROMETHEUS_METRICS_PORT')
         if prom_port:
             try:
-                from telemetry_server import start_telemetry_server
+                try:
+                    from telemetry_server import start_telemetry_server
+                except ImportError:
+                    from aureon.monitors.telemetry_server import start_telemetry_server
                 start_telemetry_server(int(prom_port))
             except Exception as e:
-                error_text = str(e)
-                self.init_error = "socket_blocked" if "WinError 10013" in error_text else error_text
-                self.is_authenticated = False
                 logger.warning(f"Failed to start telemetry server: {e}")
 
         self.timeout_seconds = 10.0
@@ -141,10 +141,16 @@ class AlpacaClient:
 
         # Rate limiting and in-memory TTL caching for market data
         try:
-            from rate_limiter_v2 import AdaptiveRateLimiter  # type: ignore
+            try:
+                from rate_limiter_v2 import AdaptiveRateLimiter  # type: ignore
+            except ImportError:
+                from aureon.core.rate_limiter_v2 import AdaptiveRateLimiter  # type: ignore
         except ImportError:
             try:
-                from rate_limiter import TokenBucket  # type: ignore
+                try:
+                    from rate_limiter import TokenBucket  # type: ignore
+                except ImportError:
+                    from aureon.core.rate_limiter import TokenBucket  # type: ignore
             except ImportError:
                 TokenBucket = None  # type: ignore
 
@@ -166,7 +172,10 @@ class AlpacaClient:
                     time.sleep(1.0)
 
         try:
-            from rate_limiter import TTLCache  # type: ignore
+            try:
+                from rate_limiter import TTLCache  # type: ignore
+            except ImportError:
+                from aureon.core.rate_limiter import TTLCache  # type: ignore
         except ImportError:
             class TTLCache:  # type: ignore[no-redef]
                 def __init__(self, default_ttl: float = 1.0, name: str = "cache"):
@@ -239,7 +248,10 @@ class AlpacaClient:
         # Market Data Hub integration (Phase 2 optimization)
         self._market_data_hub = None
         try:
-            from market_data_hub import get_market_data_hub
+            try:
+                from market_data_hub import get_market_data_hub
+            except ImportError:
+                from aureon.data_feeds.market_data_hub import get_market_data_hub
             self._market_data_hub = get_market_data_hub(self)
         except ImportError:
             logger.debug("MarketDataHub not available - running without prefetching")
@@ -248,7 +260,10 @@ class AlpacaClient:
         self._global_rate_budget = None
         self._classify_request_type = None
         try:
-            from global_rate_budget import get_global_rate_budget, classify_request_type
+            try:
+                from global_rate_budget import get_global_rate_budget, classify_request_type
+            except ImportError:
+                from aureon.core.global_rate_budget import get_global_rate_budget, classify_request_type
             self._global_rate_budget = get_global_rate_budget()
             self._classify_request_type = classify_request_type
         except ImportError:
@@ -274,7 +289,7 @@ class AlpacaClient:
             test_url = f"{self.base_url}/v2/account"
             auth_resp = self.session.get(test_url, timeout=self.auth_probe_timeout_seconds)
             if auth_resp.status_code in (401, 403):
-                logger.warning(f"?? Alpaca authentication failed ({auth_resp.status_code}). Disabling client.")
+                logger.warning(f"⚠️ Alpaca authentication failed ({auth_resp.status_code}). Disabling client.")
                 self.init_error = f"auth_failed_{auth_resp.status_code}"
                 self.is_authenticated = False
                 return
@@ -282,13 +297,13 @@ class AlpacaClient:
         except Exception as e:
             error_text = str(e)
             if "WinError 10013" in error_text:
-                logger.warning(f"?? Alpaca initial auth check blocked by local socket policy: {e}")
+                logger.warning(f"⚠️ Alpaca initial auth check blocked by local socket policy: {e}")
                 self.init_error = "socket_blocked"
                 self.is_authenticated = False
                 return
             self.auth_probe_warning = error_text
             logger.warning(
-                "?? Alpaca initial auth probe failed (%s). Keeping client enabled and retrying on demand.",
+                "⚠️ Alpaca initial auth probe failed (%s). Keeping client enabled and retrying on demand.",
                 e,
             )
             self.init_error = ""
@@ -2788,7 +2803,10 @@ class AlpacaClient:
         """Start the MarketDataHub prefetching service."""
         if self._market_data_hub:
             try:
-                from market_data_hub import start_market_data_hub
+                try:
+                    from market_data_hub import start_market_data_hub
+                except ImportError:
+                    from aureon.data_feeds.market_data_hub import start_market_data_hub
                 start_market_data_hub(self)
                 logger.info("MarketDataHub started for Alpaca client")
             except Exception as e:
@@ -2797,7 +2815,10 @@ class AlpacaClient:
     def stop_market_data_hub(self):
         """Stop the MarketDataHub prefetching service."""
         try:
-            from market_data_hub import stop_market_data_hub
+            try:
+                from market_data_hub import stop_market_data_hub
+            except ImportError:
+                from aureon.data_feeds.market_data_hub import stop_market_data_hub
             stop_market_data_hub()
             logger.info("MarketDataHub stopped")
         except Exception as e:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+import threading
 import unittest
 
 from aureon.exchanges.capital_cfd_trader import CAPITAL_MIN_PROFIT_GBP, CFD_FLAGS, CapitalCFDTrader, CFDPosition, CFDShadowTrade
@@ -68,10 +69,15 @@ class ThoughtBusStub:
 
 class TestCapitalCFDSync(unittest.TestCase):
     def _build_trader(self, client):
+        client.enabled = True
+        client.init_error = ""
         trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
         trader.client = client
         trader.positions = []
         trader.shadow_trades = []
+        trader._prices = {}
+        trader._prices_lock = threading.RLock()
+        trader._prices_fetched_at = 0.0
         trader.stats = {
             "trades_opened": 0.0,
             "trades_closed": 0.0,
@@ -114,8 +120,22 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._shadow_validated_count = 0
         trader._shadow_failed_count = 0
         trader._dtp_trackers = {}
+        trader._state_lock = threading.RLock()
+        trader.penny_engine = None
         trader.start_time = time.time()
         trader.starting_equity_gbp = 0.0
+        trader._last_live_event_at = 0.0
+        trader._live_refresh_stop = threading.Event()
+        trader._live_refresh_thread = None
+        trader._last_deadman_kick_at = time.time()
+        trader._last_scan = 0.0
+        trader._last_monitor = 0.0
+        trader._last_exchange_sync = 0.0
+        trader._last_shadow_scan = 0.0
+        trader._last_slot_fill_attempt = {"BUY": 0.0, "SELL": 0.0}
+        trader._harmonic_wiring_audit = {}
+        trader._harmonic_wiring_audit_at = time.time()
+        trader._ensure_live_refresh = lambda: None
         trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
         return trader
 
@@ -417,6 +437,8 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader = self._build_trader(ClientStub())
         calls = []
         trader._quad_gate = lambda: True
+        trader._refresh_unified_intel_snapshot = lambda: calls.append("intel")
+        trader._refresh_thought_bus_snapshot = lambda: calls.append("thought")
         trader._find_best_opportunity = lambda: calls.append("find")
         trader._queue_background_shadows = lambda: calls.append("queue") or 1
         trader._fill_live_monitoring_slots = lambda now: calls.append("fill") or True
@@ -433,7 +455,25 @@ class TestCapitalCFDSync(unittest.TestCase):
         finally:
             original.CAPITAL_LIVE_EVENT_TRIGGER_PCT = old_trigger
 
-        self.assertEqual(calls, ["find", "queue", "fill"])
+        self.assertEqual(calls, ["intel", "thought", "find", "queue", "fill"])
+
+    def test_handle_live_price_events_force_triggers_without_price_move(self):
+        trader = self._build_trader(ClientStub())
+        calls = []
+        trader._quad_gate = lambda: True
+        trader._refresh_unified_intel_snapshot = lambda: calls.append("intel")
+        trader._refresh_thought_bus_snapshot = lambda: calls.append("thought")
+        trader._find_best_opportunity = lambda: calls.append("find")
+        trader._queue_background_shadows = lambda: calls.append("queue") or 1
+        trader._fill_live_monitoring_slots = lambda now: calls.append("fill") or True
+
+        trader._handle_live_price_events(
+            {"GOLD": {"price": 3000.0}},
+            {"GOLD": {"price": 3000.0}},
+            force=True,
+        )
+
+        self.assertEqual(calls, ["intel", "thought", "find", "queue", "fill"])
 
     def test_self_confidence_boosts_score_when_recent_validation_is_strong(self):
         trader = self._build_trader(ClientStub())
@@ -622,13 +662,29 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertGreater(score, 0.0)
         self.assertEqual(direction, "SELL")
 
-    def test_effective_tp_pct_uses_penny_target_when_enabled(self):
+    def test_effective_tp_pct_keeps_configured_target_without_penny_engine(self):
         old_flag = CFD_FLAGS["penny_take_profit"]
         CFD_FLAGS["penny_take_profit"] = True
         try:
             trader = self._build_trader(ClientStub())
             effective_tp_pct = trader._effective_tp_pct(100.0, 1.0, {"tp_pct": 0.75})
-            self.assertAlmostEqual(effective_tp_pct, 0.01)
+            self.assertAlmostEqual(effective_tp_pct, 0.75)
+        finally:
+            CFD_FLAGS["penny_take_profit"] = old_flag
+
+    def test_effective_tp_pct_uses_penny_engine_threshold_when_available(self):
+        class EngineStub:
+            @staticmethod
+            def get_threshold(exchange, entry_value):
+                return type("Threshold", (), {"win_pct": 0.49})()
+
+        old_flag = CFD_FLAGS["penny_take_profit"]
+        CFD_FLAGS["penny_take_profit"] = True
+        try:
+            trader = self._build_trader(ClientStub())
+            trader.penny_engine = EngineStub()
+            effective_tp_pct = trader._effective_tp_pct(100.0, 1.0, {"tp_pct": 0.75})
+            self.assertAlmostEqual(effective_tp_pct, 0.49)
         finally:
             CFD_FLAGS["penny_take_profit"] = old_flag
 
@@ -641,6 +697,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._monitor_positions = lambda: []
         trader._quad_gate = lambda: True
         trader.status_lines = lambda: []
+        trader._queue_background_shadows = lambda: 0
         trader._find_best_opportunity = lambda: ("SILVER", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9})
         trader._ranked_opportunities = lambda: [
             ("SILVER", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9}),
@@ -656,7 +713,13 @@ class TestCapitalCFDSync(unittest.TestCase):
         opened = []
         trader._create_shadow = lambda symbol, cfg, ticker: opened.append(symbol) or object()
 
-        trader.tick()
+        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_FORCE_SLOT_FILL"])
+        old_force_slot_fill = original.CAPITAL_FORCE_SLOT_FILL
+        try:
+            original.CAPITAL_FORCE_SLOT_FILL = False
+            trader.tick()
+        finally:
+            original.CAPITAL_FORCE_SLOT_FILL = old_force_slot_fill
 
         self.assertEqual(opened, ["GOLD"])
         self.assertIn("rejected by preflight", trader._latest_order_error)
@@ -728,6 +791,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._monitor_positions = lambda: []
         trader._quad_gate = lambda: True
         trader.status_lines = lambda: []
+        trader._queue_background_shadows = lambda: 0
         trader._find_best_opportunity = lambda: ("SILVER", {"class": "commodity", "size": 1, "direction": "BUY"}, {"price": 10, "ask": 10, "bid": 9.9})
         trader._ranked_opportunities = lambda: [
             ("SILVER", {"class": "commodity", "size": 1, "direction": "BUY"}, {"price": 10, "ask": 10, "bid": 9.9}),
@@ -762,7 +826,13 @@ class TestCapitalCFDSync(unittest.TestCase):
             return object()
         trader._create_shadow = _shadow
 
-        trader.tick()
+        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_FORCE_SLOT_FILL"])
+        old_force_slot_fill = original.CAPITAL_FORCE_SLOT_FILL
+        try:
+            original.CAPITAL_FORCE_SLOT_FILL = False
+            trader.tick()
+        finally:
+            original.CAPITAL_FORCE_SLOT_FILL = old_force_slot_fill
 
         self.assertEqual(opened, [("SILVER", "BUY"), ("GOLD", "SELL")])
 
@@ -1170,6 +1240,43 @@ class TestCapitalCFDSync(unittest.TestCase):
             self.assertGreater(closed[0]["net_pnl"], 0.0)
         finally:
             CFD_FLAGS["profit_only_closes"] = old_flag
+
+    def test_monitor_positions_closes_on_penny_profit_before_static_tp(self):
+        class EngineStub:
+            @staticmethod
+            def get_threshold(exchange, entry_value):
+                return type("Threshold", (), {"win_gte": 0.05, "win_pct": 0.49})()
+
+        old_profit_only = CFD_FLAGS["profit_only_closes"]
+        old_penny = CFD_FLAGS["penny_take_profit"]
+        CFD_FLAGS["profit_only_closes"] = True
+        CFD_FLAGS["penny_take_profit"] = True
+        try:
+            trader = self._build_trader(ClientStub(close_result={"success": True}))
+            trader.penny_engine = EngineStub()
+            trader.positions = [
+                CFDPosition(
+                    symbol="SILVER",
+                    deal_id="D5P",
+                    epic="CS.D.SILVER.CFD.IP",
+                    direction="BUY",
+                    size=1,
+                    entry_price=100.0,
+                    tp_price=101.0,
+                    sl_price=99.0,
+                    asset_class="commodity",
+                    current_price=100.08,
+                )
+            ]
+
+            closed = trader._monitor_positions()
+
+            self.assertEqual(len(closed), 1)
+            self.assertEqual(trader.positions, [])
+            self.assertIn("PENNY_TP", closed[0]["reason"])
+        finally:
+            CFD_FLAGS["profit_only_closes"] = old_profit_only
+            CFD_FLAGS["penny_take_profit"] = old_penny
 
     def test_score_symbol_uses_central_beat_alignment(self):
         trader = self._build_trader(ClientStub())

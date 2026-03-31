@@ -38,8 +38,12 @@ try:
     from capital_client import CapitalClient
     HAS_CAPITAL = True
 except ImportError:
-    CapitalClient = None          # type: ignore
-    HAS_CAPITAL = False
+    try:
+        from aureon.exchanges.capital_client import CapitalClient
+        HAS_CAPITAL = True
+    except ImportError:
+        CapitalClient = None          # type: ignore
+        HAS_CAPITAL = False
 
 # Seer + Lyra lightweight gates (used directly — no full orchestrator needed)
 try:
@@ -128,6 +132,17 @@ except Exception:
     Thought = None                 # type: ignore
     HAS_THOUGHT_BUS = False
 
+try:
+    from aureon.trading.penny_profit_engine import get_penny_engine
+    HAS_PENNY_ENGINE = True
+except Exception:
+    try:
+        from penny_profit_engine import get_penny_engine
+        HAS_PENNY_ENGINE = True
+    except Exception:
+        get_penny_engine = None     # type: ignore
+        HAS_PENNY_ENGINE = False
+
 # ── INSTRUMENT UNIVERSE ────────────────────────────────────────────────────────
 # symbol → {class, tp_pct, sl_pct, size, max_spread_pct, momentum_threshold}
 #   tp_pct / sl_pct  — take-profit / stop-loss as % of entry price
@@ -211,6 +226,7 @@ CAPITAL_DEADMAN_STALE_SECS = _env_float("CAPITAL_DEADMAN_STALE_SECS", 60.0)
 CAPITAL_LIVE_REFRESH_ENABLED = _env_bool("CAPITAL_LIVE_REFRESH_ENABLED", True)
 CAPITAL_LIVE_REFRESH_INTERVAL_SECS = _env_float("CAPITAL_LIVE_REFRESH_INTERVAL_SECS", 1.0)
 CAPITAL_LIVE_EVENT_TRIGGER_PCT = _env_float("CAPITAL_LIVE_EVENT_TRIGGER_PCT", 0.03)
+CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS = _env_float("CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS", 0.25)
 CAPITAL_FOCUS_SYMBOLS = tuple(
     symbol.strip().upper()
     for symbol in str(os.getenv("CAPITAL_FOCUS_SYMBOLS", "") or "").split(",")
@@ -335,6 +351,7 @@ class CapitalCFDTrader:
 
     def __init__(self) -> None:
         self.client: Optional[CapitalClient] = None
+        self._state_lock = threading.RLock()
 
         # Open position tracking
         self.positions: List[CFDPosition] = []
@@ -408,6 +425,7 @@ class CapitalCFDTrader:
         self._live_refresh_thread: Optional[threading.Thread] = None
         self._live_refresh_stop = threading.Event()
         self._last_live_event_at: float = 0.0
+        self.penny_engine = get_penny_engine() if HAS_PENNY_ENGINE and get_penny_engine is not None else None
 
         # Timing
         self._last_scan:    float = 0.0
@@ -493,9 +511,46 @@ class CapitalCFDTrader:
     def _effective_tp_pct(self, price: float, size: float, cfg: Optional[dict] = None) -> float:
         required_tp_pct = self._required_tp_pct_for_profit(price, size)
         configured_tp_pct = float((cfg or {}).get("tp_pct", 0.0) or 0.0)
+        if CFD_FLAGS["penny_take_profit"]:
+            threshold = self._capital_penny_threshold(price, size)
+            if threshold is not None:
+                try:
+                    win_pct = float(getattr(threshold, "win_pct", 0.0) or 0.0)
+                except (TypeError, ValueError):
+                    win_pct = 0.0
+                if win_pct > 0:
+                    return win_pct
+            return max(configured_tp_pct, required_tp_pct)
         # The penny target is a minimum viability floor, not the actual strategy TP.
         # Use the configured strategy target whenever it is larger.
         return max(configured_tp_pct, required_tp_pct)
+
+    def _capital_penny_threshold(self, price: float, size: float) -> Optional[Any]:
+        if not CFD_FLAGS["penny_take_profit"]:
+            return None
+        engine = getattr(self, "penny_engine", None)
+        if engine is None:
+            return None
+        entry_value = max(float(price or 0.0), 0.0) * max(float(size or 0.0), 0.0)
+        if entry_value <= 0:
+            return None
+        try:
+            return engine.get_threshold("capital", entry_value)
+        except Exception as e:
+            logger.debug("Capital penny threshold unavailable: %s", e)
+            return None
+
+    def _penny_take_profit_reason(self, pos: CFDPosition, pnl_gbp: float) -> str:
+        threshold = self._capital_penny_threshold(pos.entry_price, pos.size)
+        if threshold is None:
+            return ""
+        try:
+            target_gbp = float(getattr(threshold, "win_gte", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            target_gbp = 0.0
+        if target_gbp > 0 and pnl_gbp >= target_gbp:
+            return f"PENNY_TP pnl={pnl_gbp:+.4f}GBP target={target_gbp:.4f}GBP"
+        return ""
 
     def _refresh_unified_intel_snapshot(self) -> None:
         snapshot: Dict[str, Any] = {}
@@ -1042,12 +1097,13 @@ class CapitalCFDTrader:
 
     def _continuous_watch_symbols(self) -> List[str]:
         watched: List[str] = []
-        for symbol in self._active_universe().keys():
-            watched.append(str(symbol).upper())
-        for pos in getattr(self, "positions", []) or []:
-            watched.append(str(getattr(pos, "symbol", "") or "").upper())
-        for shadow in getattr(self, "shadow_trades", []) or []:
-            watched.append(str(getattr(shadow, "symbol", "") or "").upper())
+        with self._state_lock:
+            for symbol in self._active_universe().keys():
+                watched.append(str(symbol).upper())
+            for pos in getattr(self, "positions", []) or []:
+                watched.append(str(getattr(pos, "symbol", "") or "").upper())
+            for shadow in getattr(self, "shadow_trades", []) or []:
+                watched.append(str(getattr(shadow, "symbol", "") or "").upper())
         seen = set()
         ordered: List[str] = []
         for symbol in watched:
@@ -1068,12 +1124,15 @@ class CapitalCFDTrader:
                     previous_prices = dict(self._prices)
                 raw = self.client.get_tickers_for_symbols(symbols) if self.client else {}
                 if raw:
-                    with self._prices_lock:
-                        self._prices.update(raw)
-                        self._prices_fetched_at = time.time()
-                    self._update_position_prices()
-                    self._update_shadows()
-                    self._handle_live_price_events(previous_prices, raw)
+                    with self._state_lock:
+                        with self._prices_lock:
+                            self._prices.update(raw)
+                            self._prices_fetched_at = time.time()
+                        self._update_position_prices()
+                        self._last_monitor = time.time()
+                        live_closed = self._monitor_positions()
+                        self._update_shadows()
+                        self._handle_live_price_events(previous_prices, raw, force=bool(live_closed))
             except Exception as e:
                 logger.debug("Capital live refresh loop error: %s", e)
 
@@ -1091,29 +1150,32 @@ class CapitalCFDTrader:
         )
         self._live_refresh_thread.start()
 
-    def _handle_live_price_events(self, previous: Dict[str, dict], updated: Dict[str, dict]) -> None:
+    def _handle_live_price_events(self, previous: Dict[str, dict], updated: Dict[str, dict], force: bool = False) -> None:
         now = time.time()
-        if (now - float(getattr(self, "_last_live_event_at", 0.0) or 0.0)) < 0.5:
+        if (now - float(getattr(self, "_last_live_event_at", 0.0) or 0.0)) < max(0.05, CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS):
             return
         trigger_pct = max(0.0, float(CAPITAL_LIVE_EVENT_TRIGGER_PCT or 0.0))
-        meaningful = False
-        for symbol, quote in (updated or {}).items():
-            prev = (previous or {}).get(symbol, {}) if isinstance(previous, dict) else {}
-            new_price = float((quote or {}).get("price", 0.0) or 0.0)
-            old_price = float((prev or {}).get("price", 0.0) or 0.0)
-            if new_price <= 0:
-                continue
-            if old_price <= 0:
-                meaningful = True
-                break
-            move_pct = abs((new_price - old_price) / old_price) * 100.0
-            if move_pct >= trigger_pct:
-                meaningful = True
-                break
+        meaningful = bool(force)
+        if not meaningful:
+            for symbol, quote in (updated or {}).items():
+                prev = (previous or {}).get(symbol, {}) if isinstance(previous, dict) else {}
+                new_price = float((quote or {}).get("price", 0.0) or 0.0)
+                old_price = float((prev or {}).get("price", 0.0) or 0.0)
+                if new_price <= 0:
+                    continue
+                if old_price <= 0:
+                    meaningful = True
+                    break
+                move_pct = abs((new_price - old_price) / old_price) * 100.0
+                if move_pct >= trigger_pct:
+                    meaningful = True
+                    break
         if not meaningful:
             return
         self._last_live_event_at = now
         try:
+            self._refresh_unified_intel_snapshot()
+            self._refresh_thought_bus_snapshot()
             if self._quad_gate():
                 self._find_best_opportunity()
                 self._queue_background_shadows()
@@ -2713,6 +2775,11 @@ class CapitalCFDTrader:
                 elif pos.current_price >= pos.sl_price:
                     close_reason = f"SL_HIT {pos.current_price:.5g}>={pos.sl_price:.5g}"
 
+            if close_reason is None:
+                penny_reason = self._penny_take_profit_reason(pos, pnl_gbp)
+                if penny_reason:
+                    close_reason = penny_reason
+
             if close_reason and CFD_FLAGS["profit_only_closes"] and pnl_gbp <= 0:
                 self._latest_monitor_line = (
                     f"CAPITAL HOLD {pos.symbol} reason={close_reason} pnl={pnl_gbp:+.4f}GBP "
@@ -2752,6 +2819,8 @@ class CapitalCFDTrader:
         if not self._ensure_client_ready():
             return []
         self._ensure_live_refresh()
+        with self._state_lock:
+            return self._tick_locked()
 
         now = time.time()
         closed_this_tick: List[dict] = self._deadman_guard(now)
@@ -2886,6 +2955,135 @@ class CapitalCFDTrader:
         return closed_this_tick
 
     # ── STATUS ─────────────────────────────────────────────────────────────────
+    def _tick_locked(self) -> List[dict]:
+        now = time.time()
+        closed_this_tick: List[dict] = self._deadman_guard(now)
+        self._last_deadman_kick_at = now
+        if now - float(getattr(self, "_harmonic_wiring_audit_at", 0.0) or 0.0) > 120.0:
+            self._harmonic_wiring_audit = self._build_harmonic_wiring_audit()
+            self._harmonic_wiring_audit_at = now
+        sync_elapsed = 0.0
+        refresh_elapsed = 0.0
+        monitor_elapsed = 0.0
+        shadow_elapsed = 0.0
+        scan_elapsed = 0.0
+
+        stage_started = time.time()
+        self._sync_positions_from_exchange()
+        sync_elapsed = time.time() - stage_started
+        self._refresh_unified_intel_snapshot()
+        self._refresh_thought_bus_snapshot()
+
+        stage_started = time.time()
+        self._refresh_prices()
+        refresh_elapsed = time.time() - stage_started
+
+        if now - self._last_monitor >= CFD_CONFIG["monitor_interval"]:
+            stage_started = time.time()
+            self._last_monitor = now
+            self._update_position_prices()
+            closed_this_tick.extend(self._monitor_positions())
+            monitor_elapsed = time.time() - stage_started
+
+        stage_started = time.time()
+        self._update_shadows()
+        promoted_this_tick = False
+        validated_shadows = sorted(
+            [
+                shadow for shadow in self.shadow_trades
+                if shadow.validated
+            ],
+            key=lambda item: (float(item.validation_time or item.created_at or 0.0), -float(item.score or 0.0)),
+        )
+        for shadow in list(validated_shadows):
+            if not shadow.validated:
+                continue
+            gate_preview = self._build_shadow_promotion_gate(shadow, self._get_price(shadow.symbol))
+            min_validate_window = float(gate_preview.get("validation_window_secs", self.SHADOW_MIN_VALIDATE) or self.SHADOW_MIN_VALIDATE)
+            if shadow.validation_time > 0 and (now - shadow.validation_time) < min_validate_window:
+                continue
+            promoted = self._promote_shadow(shadow)
+            if promoted is not None:
+                promoted_this_tick = True
+                self.shadow_trades.remove(shadow)
+                break
+            if self._cooldown_info(shadow.symbol, str(shadow.direction or "").upper()) is not None:
+                self.shadow_trades.remove(shadow)
+        shadow_elapsed = time.time() - stage_started
+
+        should_scan = (now - self._last_scan >= CFD_CONFIG["scan_interval_secs"]) or bool(closed_this_tick)
+        if should_scan:
+            stage_started = time.time()
+            self._last_scan = now
+
+            if self._quad_gate():
+                self._find_best_opportunity()
+                self._queue_background_shadows()
+                if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
+                    slot_filled_this_tick = self._fill_live_monitoring_slots(now)
+                    if slot_filled_this_tick:
+                        promoted_this_tick = True
+                    opened_directions = {str(pos.direction or "").upper() for pos in self.positions}
+                    for sym, cfg, ticker in self._ranked_opportunities():
+                        direction = str(cfg.get("direction", "BUY") or "BUY").upper()
+                        if direction in opened_directions:
+                            continue
+                        if CAPITAL_FORCE_SLOT_FILL:
+                            continue
+                        preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
+                        working_cfg = dict(cfg)
+                        if (not preflight.get("ok")) and "below Capital minimum" in str(preflight.get("reason") or ""):
+                            adjusted_cfg = self._sized_cfg_from_preflight(cfg, preflight)
+                            if adjusted_cfg is not None:
+                                adjusted_preflight = self._capital_preflight(
+                                    sym,
+                                    float(adjusted_cfg.get("size", 0.0) or 0.0),
+                                    ticker,
+                                    adjusted_cfg,
+                                )
+                                if adjusted_preflight.get("ok"):
+                                    working_cfg = adjusted_cfg
+                                    preflight = adjusted_preflight
+
+                        self._latest_target_snapshot = {
+                            **dict(self._latest_target_snapshot),
+                            "symbol": sym,
+                            "direction": str(working_cfg.get("direction", "BUY") or "BUY").upper(),
+                            "asset_class": working_cfg.get("class", cfg.get("class", "unknown")),
+                            "size": float(working_cfg.get("size", 0.0) or 0.0),
+                            "preflight_reason": str(preflight.get("reason") or ""),
+                            "market_status": str(preflight.get("market_status") or ""),
+                            "minimum_deal_size": float(preflight.get("minimum_deal_size", 0.0) or 0.0),
+                            "available_balance": float(preflight.get("available_balance", 0.0) or 0.0),
+                        }
+
+                        if not preflight.get("ok"):
+                            self._record_rejection(sym, direction, str(preflight.get("reason") or "preflight_failed"))
+                            self._latest_order_error = f"{sym} preflight failed: {preflight.get('reason') or 'unknown'}"
+                            logger.warning("CFD candidate skipped for %s: %s", sym, preflight.get("reason") or "unknown")
+                            continue
+
+                        if self._create_shadow(sym, working_cfg, ticker) is not None:
+                            opened_directions.add(direction)
+                            if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
+                                break
+                        else:
+                            self._record_rejection(sym, direction, "shadow_blocked_or_duplicate")
+            else:
+                logger.debug("CFD tick: Quadrumvirate gate CLOSED â€” scan skipped")
+
+        if should_scan:
+            scan_elapsed = time.time() - stage_started
+
+        self._latest_tick_line = (
+            f"CAPITAL TICK sync={sync_elapsed:.2f}s prices={refresh_elapsed:.2f}s "
+            f"monitor={monitor_elapsed:.2f}s shadows={shadow_elapsed:.2f}s scan={scan_elapsed:.2f}s "
+            f"positions={len(self.positions)} shadows_active={len(self.shadow_trades)}"
+        )
+        self._build_lane_snapshot()
+        self.status_lines()
+        return closed_this_tick
+
     def status_lines(self) -> List[str]:
         """Return human-readable status lines for orca dashboard / print_status."""
         w = int(self.stats["winning_trades"])

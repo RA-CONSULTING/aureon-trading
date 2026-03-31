@@ -18,7 +18,10 @@ import threading
 import logging
 import os
 from typing import Dict, List, Optional, Set
-from rate_limiter import TTLCache
+try:
+    from rate_limiter import TTLCache
+except ImportError:
+    from aureon.core.rate_limiter import TTLCache
 
 # Metrics (optional)
 try:

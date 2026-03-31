@@ -1,169 +1,55 @@
 {
-  "symbol": "EURGBP",
+  "symbol": "AUDUSD",
   "direction": "BUY",
   "size": 0.01,
   "ticker": {
-    "price": 8692.25,
-    "bid": 8691.9,
-    "ask": 8692.6,
-    "epic": "EURGBP",
-    "change_pct": 0.17
+    "price": 6866.4,
+    "bid": 6866.0,
+    "ask": 6866.8,
+    "epic": "AUDUSD",
+    "change_pct": 0.21
   },
   "preflight": {
-    "symbol": "EURGBP",
-    "epic": "EURGBP",
+    "symbol": "AUDUSD",
+    "epic": "AUDUSD",
     "requested_size": 0.01,
-    "available_balance": 120.22,
+    "available_balance": 126.18,
     "market_status": "TRADEABLE",
-    "minimum_deal_size": 0.01,
-    "price": 8692.25,
-    "spread": 0.7000000000007276,
-    "spread_pct": 0.008053150795257012,
-    "margin_factor_pct": 100.0,
-    "estimated_margin_required": 86.9225,
-    "expected_gross_profit": 0.30422875,
-    "expected_net_profit": 0.2954787499999909,
-    "round_trip_cost": 0.008750000000009096,
+    "minimum_deal_size": 0.0,
+    "price": 6866.4,
+    "spread": 0.8000000000001819,
+    "spread_pct": 0.01165093790050364,
+    "margin_factor_pct": 0.0,
+    "estimated_margin_required": 0.0,
+    "expected_gross_profit": 0.24032399999999998,
+    "expected_net_profit": 0.2303239999999977,
+    "round_trip_cost": 0.010000000000002274,
     "ok": true,
     "reason": "ok",
     "accounts": [
       {
         "accountId": "299152263237103760",
-        "balance": 124.04,
-        "available": 120.22,
+        "balance": 133.05,
+        "available": 126.18,
         "currency": "GBP"
       }
     ],
-    "bid": 8691.9,
-    "ask": 8692.6,
-    "notional": 86.9225,
+    "bid": 6866.0,
+    "ask": 6866.8,
+    "notional": 68.664,
     "effective_tp_pct": 0.35
   },
-  "known_deal_ids_before": [
-    "006c5552-0001-54c4-0000-000081f701d2"
-  ],
+  "known_deal_ids_before": [],
   "order_response": {
-    "dealReference": "o_6bed3b5c-0787-42d0-aae3-27e06c652c6b"
+    "rejected": true,
+    "error": "exception",
+    "reason": "HTTPSConnectionPool(host='api-capital.backend-capital.com', port=443): Max retries exceeded with url: /api/v1/positions (Caused by NameResolutionError(\"HTTPSConnection(host='api-capital.backend-capital.com', port=443): Failed to resolve 'api-capital.backend-capital.com' ([Errno 11001] getaddrinfo failed)\"))",
+    "symbol": "AUDUSD",
+    "side": "BUY",
+    "quantity": 0.01
   },
-  "confirm_response": {
-    "date": "2026-03-30T19:35:58.759",
-    "status": "OPEN",
-    "dealStatus": "ACCEPTED",
-    "epic": "EURGBP",
-    "dealReference": "o_6bed3b5c-0787-42d0-aae3-27e06c652c6b",
-    "dealId": "006c5552-0000-7090-0000-000080f600bf",
-    "affectedDeals": [
-      {
-        "dealId": "006c5552-0000-7090-0000-000080f600c0",
-        "status": "OPENED"
-      }
-    ],
-    "level": 8692.8,
-    "size": 0.01,
-    "direction": "BUY",
-    "guaranteedStop": false,
-    "trailingStop": false
-  },
-  "positions_snapshots": [
-    [
-      {
-        "position": {
-          "contractSize": 1,
-          "createdDate": "2026-03-30T20:35:05.965",
-          "createdDateUTC": "2026-03-30T19:35:05.965",
-          "dealId": "006c5552-0001-54c4-0000-000081f701d2",
-          "dealReference": "p_006c5552-0001-54c4-0000-000081f701d2",
-          "workingOrderId": "006c5552-0001-54c4-0000-000081f701d1",
-          "size": 0.01,
-          "leverage": 30,
-          "upl": -0.012,
-          "direction": "SELL",
-          "level": 11457.4,
-          "currency": "GBP",
-          "guaranteedStop": false
-        },
-        "market": {
-          "instrumentName": "EUR/USD",
-          "instrumentId": 30493108160517316,
-          "expiry": "2030-04-01",
-          "epic": "EURUSD",
-          "symbol": "EUR/USD",
-          "instrumentType": "CURRENCIES",
-          "marketStatus": "TRADEABLE",
-          "lotSize": 1,
-          "high": 11521.0,
-          "low": 11443.0,
-          "percentageChange": -0.42,
-          "netChange": -50.2,
-          "bid": 11458.1,
-          "offer": 11458.6,
-          "updateTime": "2026-03-30T20:35:57.764",
-          "updateTimeUTC": "2026-03-30T19:35:57.764",
-          "delayTime": 0,
-          "streamingPricesAvailable": true,
-          "scalingFactor": 1,
-          "marketModes": [
-            "REGULAR"
-          ],
-          "pipPosition": 0,
-          "tickSize": 0.1
-        }
-      },
-      {
-        "position": {
-          "contractSize": 1,
-          "createdDate": "2026-03-30T20:35:58.760",
-          "createdDateUTC": "2026-03-30T19:35:58.760",
-          "dealId": "006c5552-0000-7090-0000-000080f600c0",
-          "dealReference": "p_006c5552-0000-7090-0000-000080f600c0",
-          "workingOrderId": "006c5552-0000-7090-0000-000080f600bf",
-          "size": 0.01,
-          "leverage": 30,
-          "upl": -0.006,
-          "direction": "BUY",
-          "level": 8692.8,
-          "currency": "GBP",
-          "guaranteedStop": false
-        },
-        "market": {
-          "instrumentName": "EUR/GBP",
-          "instrumentId": 30493108160458896,
-          "expiry": "2030-04-01",
-          "epic": "EURGBP",
-          "symbol": "EUR/GBP",
-          "instrumentType": "CURRENCIES",
-          "marketStatus": "TRADEABLE",
-          "lotSize": 1,
-          "high": 8698.0,
-          "low": 8662.9,
-          "percentageChange": 0.17,
-          "netChange": 16.3,
-          "bid": 8692.2,
-          "offer": 8692.9,
-          "updateTime": "2026-03-30T20:36:00.908",
-          "updateTimeUTC": "2026-03-30T19:36:00.908",
-          "delayTime": 0,
-          "streamingPricesAvailable": true,
-          "scalingFactor": 1,
-          "marketModes": [
-            "REGULAR"
-          ],
-          "pipPosition": 0,
-          "tickSize": 0.1
-        }
-      }
-    ]
-  ],
-  "validated": true,
-  "validated_deal_id": "006c5552-0000-7090-0000-000080f600c0",
-  "validated_position": {
-    "symbol": "EURGBP",
-    "deal_id": "006c5552-0000-7090-0000-000080f600c0",
-    "epic": "EURGBP",
-    "direction": "BUY",
-    "entry_price": 8692.8,
-    "tp_price": 8723.2248,
-    "sl_price": 8675.4144
-  },
-  "written_at": 1774899361.5992737
+  "confirm_response": null,
+  "positions_snapshots": [],
+  "validated": false,
+  "written_at": 1774956765.815024
 }

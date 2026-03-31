@@ -2840,7 +2840,10 @@ class KrakenMarginArmyTrader:
     def __init__(self, dry_run: bool = False):
         if dry_run:
             os.environ["KRAKEN_DRY_RUN"] = "true"
-        from kraken_client import KrakenClient
+        try:
+            from kraken_client import KrakenClient
+        except ImportError:
+            from aureon.exchanges.kraken_client import KrakenClient
         self.client = KrakenClient()
         self.dry_run = dry_run or self.client.dry_run
         self.market = FreeMarketData()

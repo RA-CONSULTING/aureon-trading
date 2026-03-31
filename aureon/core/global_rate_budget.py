@@ -17,7 +17,10 @@ import logging
 import os
 from enum import Enum
 from typing import Dict, Optional
-from rate_limiter_v2 import AdaptiveRateLimiter
+try:
+    from rate_limiter_v2 import AdaptiveRateLimiter
+except ImportError:
+    from aureon.core.rate_limiter_v2 import AdaptiveRateLimiter
 
 # Metrics (optional)
 try:

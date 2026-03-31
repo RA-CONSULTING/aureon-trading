@@ -14,7 +14,10 @@ import threading
 from typing import Any, Dict, Optional, Tuple
 import math
 
-from rate_limiter import TokenBucket
+try:
+    from rate_limiter import TokenBucket
+except ImportError:
+    from aureon.core.rate_limiter import TokenBucket
 
 
 class AdaptiveRateLimiter:
