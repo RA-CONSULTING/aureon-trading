@@ -44,6 +44,8 @@ UK_RESTRICTED_FEATURES = {
 
 class BinanceClient:
     def __init__(self):
+        self.init_error = ""
+        self.last_error = ""
         # Support common env var aliases from TS/Node side as well
         self.api_key = os.getenv("BINANCE_API_KEY") or os.getenv("BINANCE_KEY") or ""
         self.api_secret = os.getenv("BINANCE_API_SECRET") or os.getenv("BINANCE_SECRET") or ""
@@ -130,6 +132,7 @@ class BinanceClient:
                 if abs(self._time_offset_ms) > 1000:
                     print(f"   [Binance] Clock offset detected: {self._time_offset_ms}ms - auto-correcting")
         except Exception as e:
+            self.last_error = f"time_sync_failed: {e}"
             print(f"   [Binance] Time sync failed: {e} - using local time")
             self._time_offset_ms = 0
     
@@ -238,7 +241,13 @@ class BinanceClient:
 
         for attempt in range(self.max_retries + 1):
             # For signed POST requests, params go in query string, not body
-            resp = self.session.request(method, url, params=params, data=data, timeout=timeout)
+            try:
+                resp = self.session.request(method, url, params=params, data=data, timeout=timeout)
+            except Exception as e:
+                self.last_error = str(e)
+                if "[WinError 10013]" in self.last_error:
+                    self.init_error = "socket_blocked"
+                raise
             if resp.status_code == 429:
                 # Metric: API 429
                 try:
@@ -256,6 +265,7 @@ class BinanceClient:
                 if attempt < self.max_retries:
                     continue
             if resp.status_code != 200:
+                self.last_error = f"Binance error {resp.status_code}: {resp.text}"
                 # 🇬🇧 UK Mode: Cache ONLY genuine "not permitted" errors
                 # -2010 can mean "insufficient balance" OR "not permitted" — check message text
                 if self.uk_mode and resp.status_code == 400:
@@ -273,6 +283,7 @@ class BinanceClient:
                     except Exception:
                         pass
                 raise RuntimeError(f"Binance error {resp.status_code}: {resp.text}")
+            self.last_error = ""
             return resp.json()
         raise RuntimeError("Binance request failed after retries")
 
@@ -286,9 +297,43 @@ class BinanceClient:
     def ping(self) -> bool:
         try:
             r = self.session.get(f"{self.base}/api/v3/ping", timeout=5)
+            if r.status_code != 200:
+                self.last_error = f"ping_failed_http_{r.status_code}"
             return r.status_code == 200
-        except Exception:
+        except Exception as e:
+            self.last_error = str(e)
+            if "[WinError 10013]" in self.last_error:
+                self.init_error = "socket_blocked"
             return False
+
+    def diagnose_ready(self) -> Dict[str, Any]:
+        network_ok = self.ping()
+        account_ok = False
+        account_error = ""
+        if network_ok:
+            try:
+                self.account()
+                account_ok = True
+                self.init_error = ""
+            except Exception as e:
+                account_error = str(e)
+                self.last_error = account_error
+                self.init_error = "account_unavailable"
+        elif not self.init_error:
+            self.init_error = "network_unavailable"
+
+        return {
+            "dry_run": self.dry_run,
+            "testnet": self.use_testnet,
+            "uk_mode": self.uk_mode,
+            "base": self.base,
+            "network_ok": network_ok,
+            "account_ok": account_ok,
+            "margin_available": (not self.uk_mode) and self._margin_enabled(),
+            "init_error": self.init_error,
+            "last_error": self.last_error,
+            "account_error": account_error,
+        }
 
     def server_time(self) -> Dict[str, Any]:
         r = self.session.get(f"{self.base}/api/v3/time")

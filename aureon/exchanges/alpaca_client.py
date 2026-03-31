@@ -100,6 +100,9 @@ class AlpacaClient:
                 from telemetry_server import start_telemetry_server
                 start_telemetry_server(int(prom_port))
             except Exception as e:
+                error_text = str(e)
+                self.init_error = "socket_blocked" if "WinError 10013" in error_text else error_text
+                self.is_authenticated = False
                 logger.warning(f"Failed to start telemetry server: {e}")
 
         self.timeout_seconds = 10.0
@@ -123,10 +126,56 @@ class AlpacaClient:
         
         self.session = requests.Session()
         self.last_error: Optional[Dict[str, Any]] = None
+        self.init_error: str = ""
 
         # Rate limiting and in-memory TTL caching for market data
-        from rate_limiter_v2 import AdaptiveRateLimiter
-        from rate_limiter import TTLCache
+        try:
+            from rate_limiter_v2 import AdaptiveRateLimiter  # type: ignore
+        except ImportError:
+            try:
+                from rate_limiter import TokenBucket  # type: ignore
+            except ImportError:
+                TokenBucket = None  # type: ignore
+
+            class AdaptiveRateLimiter:  # type: ignore[no-redef]
+                def __init__(self, trading_rate: float, data_rate: float, trading_capacity: float, data_capacity: float, name: str = "alpaca"):
+                    self._trading = TokenBucket(rate=trading_rate, capacity=trading_capacity) if TokenBucket else None
+                    self._data = TokenBucket(rate=data_rate, capacity=data_capacity) if TokenBucket else None
+                    self.name = name
+
+                def wait_trading(self) -> None:
+                    if self._trading:
+                        self._trading.wait()
+
+                def wait_data(self) -> None:
+                    if self._data:
+                        self._data.wait()
+
+                def on_429_error(self) -> None:
+                    time.sleep(1.0)
+
+        try:
+            from rate_limiter import TTLCache  # type: ignore
+        except ImportError:
+            class TTLCache:  # type: ignore[no-redef]
+                def __init__(self, default_ttl: float = 1.0, name: str = "cache"):
+                    self.default_ttl = float(default_ttl)
+                    self.name = name
+                    self._store: Dict[str, Any] = {}
+                    self._expires: Dict[str, float] = {}
+
+                def get(self, key: str) -> Any:
+                    expires = self._expires.get(key, 0.0)
+                    if expires and expires >= time.time():
+                        return self._store.get(key)
+                    self._store.pop(key, None)
+                    self._expires.pop(key, None)
+                    return None
+
+                def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+                    life = self.default_ttl if ttl is None else float(ttl)
+                    self._store[key] = value
+                    self._expires[key] = time.time() + max(0.0, life)
         
         # Production-safe rates: trading below Alpaca's 200/min limit (3.33/sec)
         try:
@@ -182,7 +231,7 @@ class AlpacaClient:
             from market_data_hub import get_market_data_hub
             self._market_data_hub = get_market_data_hub(self)
         except ImportError:
-            logger.warning("MarketDataHub not available - running without prefetching")
+            logger.debug("MarketDataHub not available - running without prefetching")
 
         # Global Rate Budget integration (Phase 2 optimization)
         self._global_rate_budget = None
@@ -192,7 +241,7 @@ class AlpacaClient:
             self._global_rate_budget = get_global_rate_budget()
             self._classify_request_type = classify_request_type
         except ImportError:
-            logger.warning("GlobalRateBudget not available - running without priority budgeting")
+            logger.debug("GlobalRateBudget not available - running without priority budgeting")
 
         if self.api_key and self.secret_key:
             self.session.headers.update({
@@ -207,11 +256,16 @@ class AlpacaClient:
                 auth_resp = self.session.get(test_url, timeout=3)
                 if auth_resp.status_code in (401, 403):
                     logger.warning(f"⚠️ Alpaca authentication failed ({auth_resp.status_code}). Disabling client.")
+                    self.init_error = f"auth_failed_{auth_resp.status_code}"
                     self.is_authenticated = False
             except Exception as e:
                 logger.warning(f"⚠️ Alpaca initial auth check failed: {e}")
+                error_text = str(e)
+                self.init_error = "socket_blocked" if "WinError 10013" in error_text else error_text
+                self.is_authenticated = False
         else:
             logger.warning("Alpaca API keys not found in environment variables.")
+            self.init_error = "credentials_missing"
             self.is_authenticated = False
 
     def _request(self, method: str, endpoint: str, params: Dict = None, data: Dict = None, base_url: str = None, request_type: str = 'data') -> Any:
@@ -325,6 +379,7 @@ class AlpacaClient:
                     result_json = {}
 
                 self.last_error = None
+                self.init_error = ""
                 return result_json
             except requests.exceptions.Timeout as e:
                 if attempt < self.max_retries:
@@ -332,10 +387,14 @@ class AlpacaClient:
                     continue
                 logger.error(f"Alpaca Request Failed: {e}")
                 self.last_error = {"exception": str(e), "endpoint": endpoint, "url": url}
+                if "WinError 10013" in str(e):
+                    self.init_error = "socket_blocked"
                 return {}
             except Exception as e:
                 logger.error(f"Alpaca Request Failed: {e}")
                 self.last_error = {"exception": str(e), "endpoint": endpoint, "url": url}
+                if "WinError 10013" in str(e):
+                    self.init_error = "socket_blocked"
                 return {}
 
     # ═════════════════════════════════════════════════════════════════════=

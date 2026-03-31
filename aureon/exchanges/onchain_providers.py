@@ -10,7 +10,11 @@ Architecture:
 - Unified TransferEvent dataclass
 - Known exchange wallet registry
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+try:
+    from aureon_baton_link import link_system as _baton_link
+    _baton_link(__name__)
+except Exception:
+    pass
 import sys
 import os
 
@@ -22,9 +26,18 @@ if sys.platform == 'win32':
             return (isinstance(stream, io.TextIOWrapper) and 
                     hasattr(stream, 'encoding') and stream.encoding and
                     stream.encoding.lower().replace('-', '') == 'utf8')
-        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+        def _is_buffer_valid(stream):
+            if not hasattr(stream, 'buffer'):
+                return False
+            try:
+                return stream.buffer is not None and not stream.buffer.closed
+            except (ValueError, AttributeError):
+                return False
+        force_stdio_wrap = os.getenv("ALPACA_FORCE_UTF8_STDIO", "false").lower() == "true"
+        if force_stdio_wrap and _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        # Skip stderr wrapping (causes Windows exit errors)
+        if force_stdio_wrap and _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
 

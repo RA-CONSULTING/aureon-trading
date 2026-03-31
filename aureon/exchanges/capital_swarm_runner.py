@@ -10,20 +10,39 @@ from __future__ import annotations
 
 import argparse
 import logging
+import json
+import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 from capital_cfd_trader import CapitalCFDTrader
 
 
 logger = logging.getLogger("capital_swarm_runner")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+HEARTBEAT_PATH = Path(os.getenv("AUREON_HEARTBEAT_FILE", os.path.join(os.path.dirname(__file__), "..", "..", ".aureon_heartbeat"))).resolve()
 
 
 class CapitalSwarmRunner:
     def __init__(self) -> None:
         self.trader = CapitalCFDTrader()
         self.started_at = time.time()
+
+    def write_heartbeat(self) -> None:
+        payload = {
+            "system": "capital_swarm_runner",
+            "ts": time.time(),
+            "runtime_sec": time.time() - self.started_at,
+            "enabled": bool(self.trader.enabled),
+            "init_error": str(getattr(self.trader, "init_error", "") or ""),
+            "positions": len(getattr(self.trader, "positions", []) or []),
+            "shadows": len(getattr(self.trader, "shadow_trades", []) or []),
+        }
+        HEARTBEAT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        HEARTBEAT_PATH.write_text(json.dumps(payload), encoding="utf-8")
+        if hasattr(self.trader, "mark_deadman_heartbeat"):
+            self.trader.mark_deadman_heartbeat()
 
     def print_status(self) -> None:
         print()
@@ -55,8 +74,10 @@ class CapitalSwarmRunner:
         try:
             while True:
                 tick_started = time.time()
+                self.write_heartbeat()
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] Capital tick starting...", flush=True)
                 self.trader.tick()
+                self.write_heartbeat()
                 print(
                     f"[{datetime.now().strftime('%H:%M:%S')}] Capital tick complete "
                     f"({time.time() - tick_started:.1f}s)",

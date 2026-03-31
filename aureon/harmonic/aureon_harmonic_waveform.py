@@ -34,7 +34,11 @@ Gary Leckey | Harmonic Waveform System | January 2026
 ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+try:
+    from aureon_baton_link import link_system as _baton_link
+    _baton_link(__name__)
+except Exception:
+    pass
 import sys
 import os
 if sys.platform == 'win32':
@@ -52,9 +56,10 @@ if sys.platform == 'win32':
                 return stream.buffer is not None and not stream.buffer.closed
             except (ValueError, AttributeError):
                 return False
-        if _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
+        force_stdio_wrap = os.getenv("AUREON_FORCE_UTF8_STDIO", "false").lower() == "true"
+        if force_stdio_wrap and _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        if _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
+        if force_stdio_wrap and _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
             sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
@@ -69,11 +74,18 @@ from decimal import Decimal, ROUND_DOWN
 from enum import Enum
 
 # Exchange clients
-from binance_client import BinanceClient, get_binance_client
-from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
-from capital_client import CapitalClient
-from cost_basis_tracker import CostBasisTracker
+try:
+    from binance_client import BinanceClient, get_binance_client
+    from kraken_client import KrakenClient, get_kraken_client
+    from alpaca_client import AlpacaClient
+    from capital_client import CapitalClient
+    from cost_basis_tracker import CostBasisTracker
+except Exception:
+    from aureon.exchanges.binance_client import BinanceClient, get_binance_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.alpaca_client import AlpacaClient
+    from aureon.exchanges.capital_client import CapitalClient
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════# 👑💰 QUEEN'S SACRED 1.88% LAW - SOURCE LAW DIRECT! 💰👑
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════

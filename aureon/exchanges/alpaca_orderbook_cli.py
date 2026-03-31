@@ -11,12 +11,16 @@ Notes:
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+try:
+    from aureon_baton_link import link_system as _baton_link
+    _baton_link(__name__)
+except Exception:
+    pass
 
 import os
 import sys
 
-# WINDOWS UTF-8 FIX - MUST BE AT TOP BEFORE ANY PRINT STATEMENTS
+# WINDOWS UTF-8 FIX - opt-in only; avoid import-time stdio mutation
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
@@ -30,9 +34,19 @@ if sys.platform == 'win32':
                 and stream.encoding.lower().replace('-', '') == 'utf8'
             )
 
-        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+        def _is_buffer_valid(stream):
+            if not hasattr(stream, 'buffer'):
+                return False
+            try:
+                return stream.buffer is not None and not stream.buffer.closed
+            except (ValueError, AttributeError):
+                return False
+
+        force_stdio_wrap = os.getenv("ALPACA_FORCE_UTF8_STDIO", "false").lower() == "true"
+        if force_stdio_wrap and _is_buffer_valid(sys.stdout) and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        # Skip stderr wrapping (causes Windows exit errors)
+        if force_stdio_wrap and _is_buffer_valid(sys.stderr) and not _is_utf8_wrapper(sys.stderr):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass
 

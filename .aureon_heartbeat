@@ -1,1 +1,1 @@
-{"timestamp": 1769373938.7627397, "iteration": 14, "positions": 0, "equity": 1000.0, "status": "RUNNING"}
+{"system": "capital_swarm_runner", "ts": 1774904865.1821756, "runtime_sec": 2220.684380531311, "enabled": true, "init_error": "", "positions": 1, "shadows": 0}

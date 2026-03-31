@@ -52,7 +52,11 @@ Gary Leckey & GitHub Copilot | January 2026
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+try:
+    from aureon_baton_link import link_system as _baton_link
+    _baton_link(__name__)
+except Exception:
+    pass
 
 import os
 import json
@@ -207,12 +211,13 @@ except ImportError:
 
 # 🟡 Binance Client - Exchange Integration
 try:
-    from binance_client import BinanceClient
+    from binance_client import BinanceClient, get_binance_client
     BINANCE_AVAILABLE = True
     _safe_import_print("🟡 Timeline Oracle: Binance Exchange WIRED!")
 except ImportError:
     BINANCE_AVAILABLE = False
     BinanceClient = None
+    get_binance_client = None
 
 # 🦙 Alpaca Client - Exchange Integration
 try:

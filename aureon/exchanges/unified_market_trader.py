@@ -145,6 +145,9 @@ class UnifiedMarketTrader:
         self.capital_ready = False
         self.kraken_error = ""
         self.capital_error = ""
+        self.alpaca_error = ""
+        self.binance_error = ""
+        self._binance_diag: Dict[str, Any] = {}
         self._last_kraken_init_attempt = 0.0
         self._last_capital_init_attempt = 0.0
         self._last_kraken_startup_attempt = 0.0
@@ -164,6 +167,126 @@ class UnifiedMarketTrader:
             self._ensure_kraken_cli()
         self._init_exchanges()
         self._start_local_dashboard_server()
+
+    def _preflight_item(self, name: str, ok: bool, severity: str, detail: str, meta: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        return {
+            "name": name,
+            "ok": bool(ok),
+            "severity": str(severity or "info"),
+            "detail": str(detail or ""),
+            "meta": dict(meta or {}),
+        }
+
+    def _service_preflight(self) -> List[Dict[str, Any]]:
+        items: List[Dict[str, Any]] = []
+        telemetry_spec = None
+        try:
+            import importlib.util
+            telemetry_spec = importlib.util.find_spec("telemetry_server")
+        except Exception:
+            telemetry_spec = None
+        items.append(
+            self._preflight_item(
+                "telemetry_server",
+                telemetry_spec is not None,
+                "warning" if telemetry_spec is None else "ok",
+                "available" if telemetry_spec is not None else "missing_optional_module",
+            )
+        )
+
+        market_hub_spec = None
+        try:
+            import importlib.util
+            market_hub_spec = importlib.util.find_spec("market_data_hub")
+        except Exception:
+            market_hub_spec = None
+        items.append(
+            self._preflight_item(
+                "market_data_hub",
+                market_hub_spec is not None,
+                "warning" if market_hub_spec is None else "ok",
+                "available" if market_hub_spec is not None else "missing_optional_module",
+            )
+        )
+
+        rate_budget_spec = None
+        try:
+            import importlib.util
+            rate_budget_spec = importlib.util.find_spec("global_rate_budget")
+        except Exception:
+            rate_budget_spec = None
+        items.append(
+            self._preflight_item(
+                "global_rate_budget",
+                rate_budget_spec is not None,
+                "warning" if rate_budget_spec is None else "ok",
+                "available" if rate_budget_spec is not None else "missing_optional_module",
+            )
+        )
+        return items
+
+    def _build_preflight_report(self) -> Dict[str, Any]:
+        items: List[Dict[str, Any]] = []
+
+        items.append(
+            self._preflight_item(
+                "kraken",
+                self.kraken_ready and self.kraken is not None,
+                "critical" if not (self.kraken_ready and self.kraken is not None) else "ok",
+                self.kraken_error or ("startup_pending" if self.kraken is not None else "not_initialized"),
+            )
+        )
+        items.append(
+            self._preflight_item(
+                "capital",
+                self.capital_ready and self.capital is not None,
+                "critical" if not (self.capital_ready and self.capital is not None) else "ok",
+                self.capital_error or ("ready" if self.capital is not None else "not_initialized"),
+            )
+        )
+
+        alpaca_ok = self.alpaca is not None and not bool(getattr(self.alpaca, "init_error", "") or self.alpaca_error)
+        items.append(
+            self._preflight_item(
+                "alpaca_passive",
+                alpaca_ok,
+                "warning" if not alpaca_ok else "ok",
+                self.alpaca_error or str(getattr(self.alpaca, "init_error", "") or ("ready" if self.alpaca is not None else "not_initialized")),
+            )
+        )
+
+        binance_diag = self._binance_diag or {}
+        binance_network_ok = bool(binance_diag.get("network_ok", False))
+        items.append(
+            self._preflight_item(
+                "binance_passive",
+                self.binance is not None and binance_network_ok,
+                "warning" if self.binance is not None else "warning",
+                self.binance_error or ("ready" if binance_network_ok else "network_unavailable"),
+                meta={
+                    "account_ready": bool(binance_diag.get("account_ok", False)),
+                    "margin_available": bool(binance_diag.get("margin_available", False)),
+                    "uk_mode": bool(binance_diag.get("uk_mode", False)),
+                },
+            )
+        )
+
+        items.extend(self._service_preflight())
+
+        critical_failures = sum(1 for item in items if item["severity"] == "critical" and not item["ok"])
+        warnings = sum(1 for item in items if item["severity"] == "warning" and not item["ok"])
+        overall = "green"
+        if critical_failures:
+            overall = "red"
+        elif warnings:
+            overall = "yellow"
+
+        return {
+            "overall": overall,
+            "critical_failures": critical_failures,
+            "warnings": warnings,
+            "items": items,
+        }
 
     def _ensure_kraken_cli(self) -> None:
         if shutil.which("kraken"):
@@ -228,8 +351,10 @@ class UnifiedMarketTrader:
             return
         try:
             self.alpaca = AlpacaClient()
+            self.alpaca_error = str(getattr(self.alpaca, "init_error", "") or "")
         except Exception as e:
             self.alpaca = None
+            self.alpaca_error = str(e)
             logger.debug("Alpaca passive client unavailable: %s", e)
 
     def _init_binance(self, force: bool = False) -> None:
@@ -237,11 +362,24 @@ class UnifiedMarketTrader:
             return
         if BinanceClient is None:
             self.binance = None
+            self.binance_error = "client_missing"
             return
         try:
             self.binance = BinanceClient()
+            diag = {}
+            try:
+                diag = self.binance.diagnose_ready() if hasattr(self.binance, "diagnose_ready") else {}
+            except Exception as diag_error:
+                diag = {"init_error": str(diag_error), "network_ok": False, "account_ok": False}
+            self._binance_diag = diag if isinstance(diag, dict) else {}
+            self.binance_error = str(
+                self._binance_diag.get("init_error")
+                or self._binance_diag.get("last_error")
+                or ""
+            )
         except Exception as e:
             self.binance = None
+            self.binance_error = str(e)
             logger.debug("Binance passive client unavailable: %s", e)
 
     def _ensure_exchanges(self) -> None:
@@ -253,6 +391,10 @@ class UnifiedMarketTrader:
             self._init_capital()
         elif not self.capital_ready:
             self._startup_capital()
+        if self.alpaca is None:
+            self._init_alpaca()
+        if self.binance is None:
+            self._init_binance()
 
     def _startup_kraken(self, force: bool = False) -> None:
         if self.kraken is None:
@@ -353,6 +495,7 @@ class UnifiedMarketTrader:
             "shared_market_feed": shared_market_feed,
             "central_beat": central_beat,
             "shared_order_flow": order_flow_feed,
+            "preflight": self._build_preflight_report(),
             "queen_voice": queen_voice,
             "combined": {
                 "open_positions": len(kraken_payload.get("positions", [])) + len(capital_payload.get("positions", [])),
@@ -650,6 +793,8 @@ class UnifiedMarketTrader:
         client = self.alpaca
         if client is None:
             return {}
+        if getattr(client, "init_error", "") or not getattr(client, "is_authenticated", True):
+            return {}
         symbols: Dict[str, Dict[str, Any]] = {}
         for normalized in watchlist:
             crypto_symbol = self._to_alpaca_crypto_symbol(normalized)
@@ -684,6 +829,9 @@ class UnifiedMarketTrader:
     def _extract_binance_source_snapshot(self, watchlist: List[str]) -> Dict[str, Any]:
         client = self.binance
         if client is None:
+            return {}
+        binance_diag = self._binance_diag or {}
+        if binance_diag.get("init_error") == "socket_blocked" or not bool(binance_diag.get("network_ok", False)):
             return {}
         symbols: Dict[str, Dict[str, Any]] = {}
         for normalized in watchlist:
@@ -948,6 +1096,13 @@ class UnifiedMarketTrader:
             f"UNIFIED MARKET STATUS | runtime={(time.time() - self.start_time) / 60.0:.1f}m",
             "Markets armed: Kraken margin + Capital CFDs | CentralBeat fed by Kraken + Capital + Alpaca + Binance",
         ]
+        preflight = self._build_preflight_report()
+        lines.append(
+            "Preflight: "
+            f"{str(preflight.get('overall', 'unknown')).upper()} "
+            f"critical={int(preflight.get('critical_failures', 0) or 0)} "
+            f"warnings={int(preflight.get('warnings', 0) or 0)}"
+        )
         central_beat = self._central_beat_feed or {}
         regime = central_beat.get("regime", {}) if isinstance(central_beat, dict) else {}
         if regime:
@@ -957,6 +1112,20 @@ class UnifiedMarketTrader:
                 f"bias={regime.get('bias', '?')} "
                 f"conf={float(regime.get('confidence', 0.0) or 0.0):.2f}"
             )
+        alpaca_state = "ready" if self.alpaca is not None else "unavailable"
+        lines.append(f"ALPACA: passive_{alpaca_state} | {self.alpaca_error or 'ok'}")
+        binance_diag = self._binance_diag or {}
+        if self.binance is not None:
+            lines.append(
+                "BINANCE: "
+                f"passive_ready={bool(binance_diag.get('network_ok', False))} "
+                f"account_ready={bool(binance_diag.get('account_ok', False))} "
+                f"margin_available={bool(binance_diag.get('margin_available', False))} "
+                f"uk_mode={bool(binance_diag.get('uk_mode', getattr(self.binance, 'uk_mode', False)))} "
+                f"| {self.binance_error or 'ok'}"
+            )
+        else:
+            lines.append(f"BINANCE: unavailable | {self.binance_error or 'not_ready'}")
         if self.kraken_ready and self.kraken is not None:
             lines.extend(self.kraken._latest_status_lines[-10:] if getattr(self.kraken, "_latest_status_lines", None) else [])
         else:
@@ -973,6 +1142,26 @@ class UnifiedMarketTrader:
         _safe_print(f"  UNIFIED MARKET TRADER | Runtime: {(time.time() - self.start_time) / 60.0:.1f}m")
         _safe_print("  Exchanges: Kraken Margin + Capital CFDs")
         _safe_print("  CentralBeat: Kraken + Capital + Alpaca + Binance feed fusion")
+        preflight = self._build_preflight_report()
+        _safe_print(
+            "  Preflight: "
+            f"{str(preflight.get('overall', 'unknown')).upper()} "
+            f"critical={int(preflight.get('critical_failures', 0) or 0)} "
+            f"warnings={int(preflight.get('warnings', 0) or 0)}"
+        )
+        _safe_print(f"  ALPACA: {'passive_ready' if self.alpaca is not None else 'passive_unavailable'} | {self.alpaca_error or 'ok'}")
+        binance_diag = self._binance_diag or {}
+        if self.binance is not None:
+            _safe_print(
+                "  BINANCE: "
+                f"passive_ready={bool(binance_diag.get('network_ok', False))} "
+                f"account_ready={bool(binance_diag.get('account_ok', False))} "
+                f"margin_available={bool(binance_diag.get('margin_available', False))} "
+                f"uk_mode={bool(binance_diag.get('uk_mode', getattr(self.binance, 'uk_mode', False)))} "
+                f"| {self.binance_error or 'ok'}"
+            )
+        else:
+            _safe_print(f"  BINANCE: unavailable | {self.binance_error or 'not_ready'}")
         _safe_print("-" * 78)
         _safe_print("  [KRAKEN]")
         if self.kraken_ready and self.kraken is not None:

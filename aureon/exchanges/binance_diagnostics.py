@@ -14,7 +14,11 @@ Gary Leckey | Aureon Trading | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+try:
+    from aureon_baton_link import link_system as _baton_link
+    _baton_link(__name__)
+except Exception:
+    pass
 import sys
 import os
 
@@ -67,14 +71,25 @@ def main():
     # 2. Test client initialization
     print("\n🔗 Client Configuration:")
     try:
-        from binance_client import BinanceClient
+        from binance_client import BinanceClient, get_binance_client
         client = get_binance_client()
+        if client is None:
+            print("  ❌ Client initialization failed: client unavailable")
+            return
         print(f"  Dry Run: {client.dry_run}")
         print(f"  Testnet: {client.use_testnet}")
         print(f"  UK Mode: {client.uk_mode}")
         print(f"  API Key Set: {bool(client.api_key)}")
         print(f"  API Secret Set: {bool(client.api_secret)}")
         print(f"  Base URL: {client.base}")
+        diag = client.diagnose_ready()
+        print(f"  Network OK: {diag['network_ok']}")
+        print(f"  Account OK: {diag['account_ok']}")
+        print(f"  Margin Available: {diag['margin_available']}")
+        if diag["init_error"]:
+            print(f"  Init Error: {diag['init_error']}")
+        if diag["last_error"]:
+            print(f"  Last Error: {diag['last_error']}")
     except Exception as e:
         print(f"  ❌ Client initialization failed: {e}")
         return

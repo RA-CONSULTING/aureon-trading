@@ -23,6 +23,7 @@ import time
 import logging
 import json
 import importlib
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -205,6 +206,16 @@ CAPITAL_MIN_PROBABILITY_ACCURACY = _env_float("CAPITAL_MIN_PROBABILITY_ACCURACY"
 CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR = _env_float("CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR", 1.05)
 CAPITAL_FORCE_SLOT_FILL = _env_bool("CAPITAL_FORCE_SLOT_FILL", True)
 CAPITAL_SLOT_FILL_INTERVAL_SECS = _env_float("CAPITAL_SLOT_FILL_INTERVAL_SECS", 8.0)
+CAPITAL_DEADMAN_ENABLED = _env_bool("CAPITAL_DEADMAN_ENABLED", True)
+CAPITAL_DEADMAN_STALE_SECS = _env_float("CAPITAL_DEADMAN_STALE_SECS", 60.0)
+CAPITAL_LIVE_REFRESH_ENABLED = _env_bool("CAPITAL_LIVE_REFRESH_ENABLED", True)
+CAPITAL_LIVE_REFRESH_INTERVAL_SECS = _env_float("CAPITAL_LIVE_REFRESH_INTERVAL_SECS", 1.0)
+CAPITAL_LIVE_EVENT_TRIGGER_PCT = _env_float("CAPITAL_LIVE_EVENT_TRIGGER_PCT", 0.03)
+CAPITAL_FOCUS_SYMBOLS = tuple(
+    symbol.strip().upper()
+    for symbol in str(os.getenv("CAPITAL_FOCUS_SYMBOLS", "") or "").split(",")
+    if symbol.strip()
+)
 
 
 # ── DATA CLASSES ───────────────────────────────────────────────────────────────
@@ -331,6 +342,7 @@ class CapitalCFDTrader:
 
         # Price cache
         self._prices: Dict[str, dict] = {}
+        self._prices_lock = threading.RLock()
         self._prices_fetched_at: float = 0.0
         self._latest_candidate_snapshot: List[Dict[str, Any]] = []
         self._latest_target_snapshot: Dict[str, Any] = {}
@@ -341,6 +353,7 @@ class CapitalCFDTrader:
         self._latest_order_trace_path: str = str(CAPITAL_TRACE_PATH)
         self._capital_snapshot_cache: Dict[str, float] = {}
         self._capital_snapshot_error: str = ""
+        self._last_deadman_kick_at: float = time.time()
         self._recent_closed_trades: List[dict] = []
         self._shadow_validated_count: int = 0
         self._shadow_failed_count: int = 0
@@ -392,6 +405,9 @@ class CapitalCFDTrader:
         self._harmonic_wiring_audit_at: float = time.time()
         self._last_slot_fill_attempt: Dict[str, float] = {"BUY": 0.0, "SELL": 0.0}
         self._last_client_reinit_at: float = 0.0
+        self._live_refresh_thread: Optional[threading.Thread] = None
+        self._live_refresh_stop = threading.Event()
+        self._last_live_event_at: float = 0.0
 
         # Timing
         self._last_scan:    float = 0.0
@@ -997,20 +1013,115 @@ class CapitalCFDTrader:
         if time.time() - self._prices_fetched_at < CFD_CONFIG["price_ttl_secs"]:
             return
         try:
-            raw = self.client.get_tickers_for_symbols(list(CAPITAL_UNIVERSE.keys()))
+            raw = self.client.get_tickers_for_symbols(list(self._active_universe().keys()))
             if raw:
-                self._prices = raw
-                self._prices_fetched_at = time.time()
+                with self._prices_lock:
+                    self._prices = raw
+                    self._prices_fetched_at = time.time()
         except Exception as _e:
             logger.debug(f"CFD price refresh error: {_e}")
 
     def _get_price(self, symbol: str) -> Optional[dict]:
-        return self._prices.get(symbol.upper())
+        with self._prices_lock:
+            return self._prices.get(symbol.upper())
 
     def _canonical_symbol(self, value: Optional[str]) -> str:
         if not value:
             return ""
         return "".join(ch for ch in str(value).upper() if ch.isalnum())
+
+    def _active_universe(self) -> Dict[str, dict]:
+        if not CAPITAL_FOCUS_SYMBOLS:
+            return CAPITAL_UNIVERSE
+        focused = {
+            symbol: dict(cfg)
+            for symbol, cfg in CAPITAL_UNIVERSE.items()
+            if symbol.upper() in CAPITAL_FOCUS_SYMBOLS
+        }
+        return focused or CAPITAL_UNIVERSE
+
+    def _continuous_watch_symbols(self) -> List[str]:
+        watched: List[str] = []
+        for symbol in self._active_universe().keys():
+            watched.append(str(symbol).upper())
+        for pos in getattr(self, "positions", []) or []:
+            watched.append(str(getattr(pos, "symbol", "") or "").upper())
+        for shadow in getattr(self, "shadow_trades", []) or []:
+            watched.append(str(getattr(shadow, "symbol", "") or "").upper())
+        seen = set()
+        ordered: List[str] = []
+        for symbol in watched:
+            if symbol and symbol not in seen:
+                seen.add(symbol)
+                ordered.append(symbol)
+        return ordered
+
+    def _continuous_price_refresh_loop(self) -> None:
+        while not self._live_refresh_stop.wait(max(0.2, CAPITAL_LIVE_REFRESH_INTERVAL_SECS)):
+            try:
+                if not self._ensure_client_ready():
+                    continue
+                symbols = self._continuous_watch_symbols()
+                if not symbols:
+                    continue
+                with self._prices_lock:
+                    previous_prices = dict(self._prices)
+                raw = self.client.get_tickers_for_symbols(symbols) if self.client else {}
+                if raw:
+                    with self._prices_lock:
+                        self._prices.update(raw)
+                        self._prices_fetched_at = time.time()
+                    self._update_position_prices()
+                    self._update_shadows()
+                    self._handle_live_price_events(previous_prices, raw)
+            except Exception as e:
+                logger.debug("Capital live refresh loop error: %s", e)
+
+    def _ensure_live_refresh(self) -> None:
+        if not CAPITAL_LIVE_REFRESH_ENABLED:
+            return
+        thread = getattr(self, "_live_refresh_thread", None)
+        if thread is not None and thread.is_alive():
+            return
+        self._live_refresh_stop.clear()
+        self._live_refresh_thread = threading.Thread(
+            target=self._continuous_price_refresh_loop,
+            name="capital_live_refresh",
+            daemon=True,
+        )
+        self._live_refresh_thread.start()
+
+    def _handle_live_price_events(self, previous: Dict[str, dict], updated: Dict[str, dict]) -> None:
+        now = time.time()
+        if (now - float(getattr(self, "_last_live_event_at", 0.0) or 0.0)) < 0.5:
+            return
+        trigger_pct = max(0.0, float(CAPITAL_LIVE_EVENT_TRIGGER_PCT or 0.0))
+        meaningful = False
+        for symbol, quote in (updated or {}).items():
+            prev = (previous or {}).get(symbol, {}) if isinstance(previous, dict) else {}
+            new_price = float((quote or {}).get("price", 0.0) or 0.0)
+            old_price = float((prev or {}).get("price", 0.0) or 0.0)
+            if new_price <= 0:
+                continue
+            if old_price <= 0:
+                meaningful = True
+                break
+            move_pct = abs((new_price - old_price) / old_price) * 100.0
+            if move_pct >= trigger_pct:
+                meaningful = True
+                break
+        if not meaningful:
+            return
+        self._last_live_event_at = now
+        try:
+            if self._quad_gate():
+                self._find_best_opportunity()
+                self._queue_background_shadows()
+                if len(self.positions) < int(CFD_CONFIG["max_positions"]):
+                    if self._fill_live_monitoring_slots(now):
+                        self._latest_monitor_line = self._latest_monitor_line or "CAPITAL LIVE EVENT FILL"
+        except Exception as e:
+            logger.debug("Capital live event actuation error: %s", e)
 
     def _symbol_from_market(self, market: dict) -> str:
         candidates = [
@@ -1405,6 +1516,18 @@ class CapitalCFDTrader:
         return price > 0 and bid > 0 and ask > 0 and ask >= bid
 
     def _preflight_allows_slot_fill(self, preflight: Dict[str, Any]) -> bool:
+        if not isinstance(preflight, dict):
+            return False
+        if bool(preflight.get("ok")):
+            return True
+        reason = str(preflight.get("reason") or "").lower()
+        return "expected net profit" in reason and self._has_live_reading({
+            "price": preflight.get("price"),
+            "bid": preflight.get("bid"),
+            "ask": preflight.get("ask"),
+        })
+
+    def _preflight_allows_shadow(self, preflight: Dict[str, Any]) -> bool:
         if not isinstance(preflight, dict):
             return False
         if bool(preflight.get("ok")):
@@ -1878,7 +2001,7 @@ class CapitalCFDTrader:
         best: Optional[Tuple[str, dict, dict]] = None
         scored: List[Dict[str, Any]] = []
 
-        for symbol, cfg in CAPITAL_UNIVERSE.items():
+        for symbol, cfg in self._active_universe().items():
             ticker = self._get_price(symbol)
             if not ticker:
                 continue
@@ -2011,6 +2134,51 @@ class CapitalCFDTrader:
                     direction_counts[direction] = direction_counts.get(direction, 0) + 1
                     break
         return opened_any
+
+    def _queue_background_shadows(self) -> int:
+        if len(self.shadow_trades) >= self.SHADOW_MAX_ACTIVE:
+            return 0
+        queued = 0
+        for sym, cfg, ticker in self._ranked_opportunities():
+            if len(self.shadow_trades) >= self.SHADOW_MAX_ACTIVE:
+                break
+            direction = str(cfg.get("direction", "BUY") or "BUY").upper()
+            if self._shadow_blocks_symbol(sym, direction):
+                continue
+            preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
+            if not self._preflight_allows_shadow(preflight):
+                continue
+            if self._create_shadow(sym, dict(cfg), ticker) is not None:
+                queued += 1
+        return queued
+
+    def mark_deadman_heartbeat(self) -> None:
+        self._last_deadman_kick_at = time.time()
+
+    def _deadman_close_all(self, reason: str) -> List[dict]:
+        closed: List[dict] = []
+        for pos in list(self.positions):
+            try:
+                record = self._close_position(pos, reason)
+                if record and not record.get("error"):
+                    closed.append(record)
+            except Exception as e:
+                logger.warning("Capital deadman close failed for %s: %s", pos.symbol, e)
+        self.positions = [pos for pos in self.positions if pos.deal_id not in {str(r.get('deal_id') or '') for r in closed}]
+        if closed:
+            self._latest_monitor_line = f"CAPITAL DEADMAN FLATTEN count={len(closed)} reason={reason}"
+        return closed
+
+    def _deadman_guard(self, now: float) -> List[dict]:
+        if not CAPITAL_DEADMAN_ENABLED:
+            return []
+        age = now - float(getattr(self, "_last_deadman_kick_at", 0.0) or 0.0)
+        if age < max(1.0, CAPITAL_DEADMAN_STALE_SECS):
+            return []
+        if not self.positions:
+            return []
+        logger.error("Capital deadman triggered: stale loop age=%.1fs", age)
+        return self._deadman_close_all(f"DEADMAN_STALE {age:.1f}s")
 
     def _ranked_opportunities(self) -> List[Tuple[str, dict, dict]]:
         ranked: List[Tuple[str, dict, dict]] = []
@@ -2583,12 +2751,14 @@ class CapitalCFDTrader:
         """
         if not self._ensure_client_ready():
             return []
+        self._ensure_live_refresh()
 
         now = time.time()
+        closed_this_tick: List[dict] = self._deadman_guard(now)
+        self._last_deadman_kick_at = now
         if now - float(getattr(self, "_harmonic_wiring_audit_at", 0.0) or 0.0) > 120.0:
             self._harmonic_wiring_audit = self._build_harmonic_wiring_audit()
             self._harmonic_wiring_audit_at = now
-        closed_this_tick: List[dict] = []
         sync_elapsed = 0.0
         refresh_elapsed = 0.0
         monitor_elapsed = 0.0
@@ -2647,10 +2817,10 @@ class CapitalCFDTrader:
             stage_started = time.time()
             self._last_scan = now
 
-            if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
-                # Quick Seer + Lyra gate before committing capital
-                if self._quad_gate():
-                    self._find_best_opportunity()
+            if self._quad_gate():
+                self._find_best_opportunity()
+                self._queue_background_shadows()
+                if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
                     slot_filled_this_tick = self._fill_live_monitoring_slots(now)
                     if slot_filled_this_tick:
                         promoted_this_tick = True

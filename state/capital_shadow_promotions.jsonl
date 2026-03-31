@@ -1,0 +1,2 @@
+{"event": "shadow_opened", "written_at": 1774899268.4451933, "written_at_iso": "2026-03-30T20:34:28.445193", "symbol": "EURUSD", "direction": "SELL", "asset_class": "forex", "entry_price": 11457.85, "target_move_pct": 0.35, "size": 0.01, "score": 31.38394014624481}
+{"event": "shadow_opened", "written_at": 1774899345.7320168, "written_at_iso": "2026-03-30T20:35:45.732016", "symbol": "EURGBP", "direction": "BUY", "asset_class": "forex", "entry_price": 8692.25, "target_move_pct": 0.35, "size": 0.01, "score": 11.849552593334483}

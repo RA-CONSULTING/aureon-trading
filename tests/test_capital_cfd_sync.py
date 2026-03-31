@@ -335,6 +335,106 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertGreater(preflight["expected_net_profit"], 1.6)
         self.assertTrue(preflight["ok"])
 
+    def test_queue_background_shadows_runs_even_when_live_lanes_are_full(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = [
+            CFDPosition("US100", "D1", "E1", "BUY", 1.0, 100.0, 101.0, 99.0, "indices"),
+            CFDPosition("AUDUSD", "D2", "E2", "SELL", 0.01, 1.0, 0.99, 1.01, "currencies"),
+        ]
+        created = []
+        trader._ranked_opportunities = lambda: [
+            ("US500", {"direction": "SELL", "class": "index", "size": 1.0}, {"price": 5000.0, "bid": 4999.0, "ask": 5001.0}),
+            ("EURUSD", {"direction": "BUY", "class": "forex", "size": 0.01}, {"price": 1.085, "bid": 1.0849, "ask": 1.0851}),
+        ]
+        trader._capital_preflight = lambda symbol, size, ticker, cfg: {
+            "ok": True,
+            "symbol": symbol,
+            "price": ticker.get("price"),
+            "bid": ticker.get("bid"),
+            "ask": ticker.get("ask"),
+        }
+        trader._create_shadow = lambda symbol, cfg, ticker: created.append((symbol, cfg["direction"])) or object()
+
+        queued = trader._queue_background_shadows()
+
+        self.assertEqual(queued, 2)
+        self.assertEqual(created, [("US500", "SELL"), ("EURUSD", "BUY")])
+
+    def test_active_universe_can_focus_symbols(self):
+        trader = self._build_trader(ClientStub())
+        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_FOCUS_SYMBOLS"])
+        old_focus = original.CAPITAL_FOCUS_SYMBOLS
+        try:
+            original.CAPITAL_FOCUS_SYMBOLS = ("GOLD",)
+            active = trader._active_universe()
+            self.assertEqual(set(active.keys()), {"GOLD"})
+        finally:
+            original.CAPITAL_FOCUS_SYMBOLS = old_focus
+
+    def test_deadman_guard_flattens_positions_when_stale(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = [
+            CFDPosition("GOLD", "D1", "E1", "BUY", 0.1, 3000.0, 3020.0, 2980.0, "commodity"),
+            CFDPosition("GOLD", "D2", "E2", "SELL", 0.1, 3000.0, 2980.0, 3020.0, "commodity"),
+        ]
+        closed = []
+        trader._close_position = lambda pos, reason: closed.append((pos.deal_id, reason)) or {"deal_id": pos.deal_id}
+
+        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_DEADMAN_ENABLED", "CAPITAL_DEADMAN_STALE_SECS"])
+        old_enabled = original.CAPITAL_DEADMAN_ENABLED
+        old_stale = original.CAPITAL_DEADMAN_STALE_SECS
+        try:
+            original.CAPITAL_DEADMAN_ENABLED = True
+            original.CAPITAL_DEADMAN_STALE_SECS = 5.0
+            trader._last_deadman_kick_at = time.time() - 10.0
+            trader._deadman_guard(time.time())
+        finally:
+            original.CAPITAL_DEADMAN_ENABLED = old_enabled
+            original.CAPITAL_DEADMAN_STALE_SECS = old_stale
+
+        self.assertEqual(len(closed), 2)
+        self.assertTrue(all("DEADMAN_STALE" in reason for _, reason in closed))
+
+    def test_continuous_watch_symbols_includes_universe_positions_and_shadows(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = [
+            CFDPosition("US100", "D1", "E1", "BUY", 1.0, 100.0, 101.0, 99.0, "indices"),
+        ]
+        trader.shadow_trades = [
+            CFDShadowTrade("GOLD", "BUY", "commodity", 0.1, 3000.0, 0.75, 10.0),
+        ]
+        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_FOCUS_SYMBOLS"])
+        old_focus = original.CAPITAL_FOCUS_SYMBOLS
+        try:
+            original.CAPITAL_FOCUS_SYMBOLS = ("GOLD",)
+            watched = trader._continuous_watch_symbols()
+        finally:
+            original.CAPITAL_FOCUS_SYMBOLS = old_focus
+
+        self.assertEqual(watched, ["GOLD", "US100"])
+
+    def test_handle_live_price_events_triggers_actuation_on_meaningful_move(self):
+        trader = self._build_trader(ClientStub())
+        calls = []
+        trader._quad_gate = lambda: True
+        trader._find_best_opportunity = lambda: calls.append("find")
+        trader._queue_background_shadows = lambda: calls.append("queue") or 1
+        trader._fill_live_monitoring_slots = lambda now: calls.append("fill") or True
+
+        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_LIVE_EVENT_TRIGGER_PCT"])
+        old_trigger = original.CAPITAL_LIVE_EVENT_TRIGGER_PCT
+        try:
+            original.CAPITAL_LIVE_EVENT_TRIGGER_PCT = 0.03
+            trader._last_live_event_at = 0.0
+            trader._handle_live_price_events(
+                {"GOLD": {"price": 3000.0}},
+                {"GOLD": {"price": 3001.2}},
+            )
+        finally:
+            original.CAPITAL_LIVE_EVENT_TRIGGER_PCT = old_trigger
+
+        self.assertEqual(calls, ["find", "queue", "fill"])
+
     def test_self_confidence_boosts_score_when_recent_validation_is_strong(self):
         trader = self._build_trader(ClientStub())
         trader._shadow_validated_count = 5
