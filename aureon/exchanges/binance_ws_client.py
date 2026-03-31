@@ -56,6 +56,13 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
 # ═══════════════════════════════════════════════════════════════
 # DATA STRUCTURES
 # ═══════════════════════════════════════════════════════════════
@@ -230,9 +237,9 @@ class BinanceWebSocketClient:
 
     def _connect(self):
         """Establish WebSocket connection."""
-        # DISABLED: No local WebSocket server running
-        logger.warning("🔶 Binance WebSocket connection disabled (no local server)")
-        return
+        if _env_bool("BINANCE_WS_DISABLE", False):
+            logger.warning("Binance WebSocket connection disabled by BINANCE_WS_DISABLE")
+            return
         
         # Build stream URL
         # Note: If no streams initially, we connect to base path and subscribe later? 

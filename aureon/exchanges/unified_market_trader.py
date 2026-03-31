@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import copy
 import json
 import logging
 import os
@@ -25,6 +26,7 @@ import threading
 import time
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any, Dict, List
 
 try:
@@ -59,12 +61,26 @@ except Exception:
 logger = logging.getLogger("unified_market_trader")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except Exception:
+        return default
+
 LOCAL_HOST = "127.0.0.1"
 LOCAL_PORT = 8790
-EXCHANGE_REINIT_INTERVAL_SEC = 30.0
-AURIS_FEED_MIN_INTERVAL_SEC = 45.0
-CENTRAL_BEAT_REFRESH_SEC = 20.0
-CENTRAL_BEAT_STALE_AFTER_SEC = 90.0
+RUNTIME_STATUS_PATH = Path(__file__).resolve().parents[2] / "state" / "unified_runtime_status.json"
+EXCHANGE_REINIT_INTERVAL_SEC = max(2.0, _env_float("UNIFIED_EXCHANGE_REINIT_INTERVAL_SEC", 30.0))
+AURIS_FEED_MIN_INTERVAL_SEC = max(5.0, _env_float("UNIFIED_AURIS_FEED_MIN_INTERVAL_SEC", 45.0))
+CENTRAL_BEAT_REFRESH_SEC = max(1.0, _env_float("UNIFIED_CENTRAL_BEAT_REFRESH_SEC", 20.0))
+CENTRAL_BEAT_STALE_AFTER_SEC = max(
+    CENTRAL_BEAT_REFRESH_SEC * 2.0,
+    _env_float("UNIFIED_CENTRAL_BEAT_STALE_AFTER_SEC", 90.0),
+)
+READY_STALE_AFTER_SEC = max(5.0, _env_float("UNIFIED_READY_STALE_AFTER_SEC", 15.0))
 CENTRAL_BEAT_HISTORY_LIMIT = 24
 KRAKEN_CLI_INSTALL_CMD = (
     "curl --proto '=https' --tlsv1.2 -LsSf "
@@ -107,6 +123,11 @@ class _UnifiedDashboardHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             self._send_json(200, {"ok": True, "service": "unified-market-trader"})
+            return
+        if self.path == "/ready":
+            trader = getattr(self.server, "trader_ref", None)
+            payload = trader.get_runtime_health() if trader else {"ok": False, "error": "trader_unavailable"}
+            self._send_json(200 if payload.get("ok") else 503, payload)
             return
         if self.path == "/api/terminal-state":
             trader = getattr(self.server, "trader_ref", None)
@@ -161,11 +182,16 @@ class UnifiedMarketTrader:
         self._central_beat_history: List[Dict[str, Any]] = []
         self._central_source_memory: Dict[str, Dict[str, Any]] = {}
         self._last_auris_feed_at: float = 0.0
+        self._last_tick_started_at: float = 0.0
+        self._last_tick_completed_at: float = 0.0
+        self._last_tick_error: str = ""
         self._local_dashboard_server: ThreadingHTTPServer | None = None
         self._local_dashboard_thread: threading.Thread | None = None
         if self.setup_kraken_cli:
             self._ensure_kraken_cli()
         self._init_exchanges()
+        self._latest_dashboard_payload = self._build_bootstrap_dashboard_payload()
+        self._write_runtime_status_file()
         self._start_local_dashboard_server()
 
     def _preflight_item(self, name: str, ok: bool, severity: str, detail: str, meta: Dict[str, Any] | None = None) -> Dict[str, Any]:
@@ -179,12 +205,18 @@ class UnifiedMarketTrader:
 
     def _service_preflight(self) -> List[Dict[str, Any]]:
         items: List[Dict[str, Any]] = []
-        telemetry_spec = None
-        try:
-            import importlib.util
-            telemetry_spec = importlib.util.find_spec("telemetry_server")
-        except Exception:
-            telemetry_spec = None
+        def find_optional_module(*module_names: str):
+            try:
+                import importlib.util
+                for module_name in module_names:
+                    spec = importlib.util.find_spec(module_name)
+                    if spec is not None:
+                        return spec
+            except Exception:
+                return None
+            return None
+
+        telemetry_spec = find_optional_module("telemetry_server")
         items.append(
             self._preflight_item(
                 "telemetry_server",
@@ -194,12 +226,7 @@ class UnifiedMarketTrader:
             )
         )
 
-        market_hub_spec = None
-        try:
-            import importlib.util
-            market_hub_spec = importlib.util.find_spec("market_data_hub")
-        except Exception:
-            market_hub_spec = None
+        market_hub_spec = find_optional_module("market_data_hub", "aureon.data_feeds.market_data_hub")
         items.append(
             self._preflight_item(
                 "market_data_hub",
@@ -209,12 +236,7 @@ class UnifiedMarketTrader:
             )
         )
 
-        rate_budget_spec = None
-        try:
-            import importlib.util
-            rate_budget_spec = importlib.util.find_spec("global_rate_budget")
-        except Exception:
-            rate_budget_spec = None
+        rate_budget_spec = find_optional_module("global_rate_budget", "aureon.core.global_rate_budget")
         items.append(
             self._preflight_item(
                 "global_rate_budget",
@@ -255,7 +277,7 @@ class UnifiedMarketTrader:
             )
         )
 
-        binance_diag = self._binance_diag or {}
+        binance_diag = getattr(self, "_binance_diag", {}) or {}
         binance_network_ok = bool(binance_diag.get("network_ok", False))
         items.append(
             self._preflight_item(
@@ -293,12 +315,18 @@ class UnifiedMarketTrader:
             logger.info("Kraken CLI detected in PATH.")
             return
         logger.info("Kraken CLI not found. Running installer...")
+        bash_executable = shutil.which("bash")
+        if not bash_executable:
+            if os.name == "nt":
+                logger.warning("Kraken CLI installer skipped: bash is not available on this Windows host.")
+                return
+            bash_executable = "/bin/bash"
         try:
             subprocess.run(
                 KRAKEN_CLI_INSTALL_CMD,
                 shell=True,
                 check=True,
-                executable="/bin/bash",
+                executable=bash_executable,
             )
             logger.info("Kraken CLI installer completed.")
             if not shutil.which("kraken"):
@@ -460,25 +488,102 @@ class UnifiedMarketTrader:
             return "tentative"
         return "unclear"
 
+    def _copy_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return copy.deepcopy(payload)
+
+    def _write_runtime_status_file(self) -> None:
+        try:
+            RUNTIME_STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(RUNTIME_STATUS_PATH, "w", encoding="utf-8") as f:
+                json.dump(self.get_runtime_health(), f, indent=2, default=str)
+        except Exception as e:
+            logger.debug("Unified runtime status write failed: %s", e)
+
+    def _unavailable_exchange_payload(self, exchange: str, error: str, extra: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        payload = {
+            "ok": False,
+            "exchange": exchange,
+            "error": error or "not_ready",
+            "positions": [],
+            "status_lines": [f"{str(exchange).upper()} unavailable: {error or 'not_ready'}"],
+        }
+        if extra:
+            payload.update(extra)
+        return payload
+
+    def _build_bootstrap_dashboard_payload(self) -> Dict[str, Any]:
+        now_iso = datetime.now().isoformat()
+        kraken_error = self.kraken_error or ("startup_pending" if self.kraken is not None else "not_ready")
+        capital_error = self.capital_error or ("ready" if self.capital_ready else "not_ready")
+        kraken_payload = self._unavailable_exchange_payload("kraken", kraken_error)
+        capital_payload = self._unavailable_exchange_payload("capital", capital_error, extra={"stats": {}})
+        preflight = self._build_preflight_report()
+        return {
+            "ok": True,
+            "source": "unified-market-trader",
+            "generated_at": now_iso,
+            "runtime_minutes": (time.time() - self.start_time) / 60.0,
+            "kraken": kraken_payload,
+            "capital": capital_payload,
+            "status_lines": [
+                f"UNIFIED MARKET STATUS | runtime={(time.time() - self.start_time) / 60.0:.1f}m",
+                "Cached telemetry pending first trading cycle.",
+            ],
+            "latest_monitor_line": "",
+            "shared_market_feed": {
+                "symbols": dict(self._shared_market_feed),
+                "aliases": {},
+                "count": len(self._shared_market_feed),
+                "generated_at": now_iso,
+            },
+            "central_beat": {
+                "generated_at": now_iso,
+                "sources": [],
+                "source_count": 0,
+                "symbols": {},
+                "regime": {},
+            },
+            "shared_order_flow": {
+                "generated_at": now_iso,
+                "shared_tradable_count": 0,
+                "active_order_flow_count": 0,
+                "active_order_flow": [],
+                "kraken_tradables": 0,
+                "capital_tradables": 0,
+                "scope": "cross-exchange shared tradables only",
+            },
+            "preflight": preflight,
+            "queen_voice": {
+                "ts": now_iso,
+                "mode": "HOLD",
+                "text": "Awaiting the first unified trading cycle.",
+                "lines": ["Awaiting the first unified trading cycle."],
+                "sources": {"kraken_decision": {}, "capital_target": {}},
+            },
+            "combined": {
+                "open_positions": 0,
+                "kraken_equity": 0.0,
+                "capital_equity_gbp": 0.0,
+                "kraken_session_pnl": 0.0,
+                "capital_session_pnl_gbp": 0.0,
+                "kraken_ready": self.kraken_ready,
+                "capital_ready": self.capital_ready,
+            },
+        }
+
     def _build_combined_payload(self) -> Dict[str, Any]:
-        kraken_payload = self.kraken.get_local_dashboard_state() if self.kraken_ready and self.kraken is not None else {
-            "ok": False,
-            "exchange": "kraken",
-            "error": self.kraken_error or "not_ready",
-            "positions": [],
-            "status_lines": [f"KRAKEN unavailable: {self.kraken_error or 'not_ready'}"],
-        }
-        capital_payload = self.capital.get_dashboard_payload() if self.capital_ready and self.capital is not None else {
-            "ok": False,
-            "exchange": "capital",
-            "error": self.capital_error or "not_ready",
-            "positions": [],
-            "status_lines": [f"CAPITAL unavailable: {self.capital_error or 'not_ready'}"],
-            "stats": {},
-        }
+        kraken_payload = self.kraken.get_local_dashboard_state() if self.kraken_ready and self.kraken is not None else self._unavailable_exchange_payload(
+            "kraken",
+            self.kraken_error or "not_ready",
+        )
+        capital_payload = self.capital.get_dashboard_payload() if self.capital_ready and self.capital is not None else self._unavailable_exchange_payload(
+            "capital",
+            self.capital_error or "not_ready",
+            extra={"stats": {}},
+        )
         central_beat = self._build_central_beat_feed(kraken_payload, capital_payload)
         shared_market_feed = self._sync_shared_market_feed(central_beat)
-        order_flow_feed = self._build_global_order_flow_feed(kraken_payload, capital_payload, shared_market_feed)
+        order_flow_feed = self._build_global_order_flow_feed(kraken_payload, capital_payload, central_beat, shared_market_feed)
         self._feed_shared_order_flow_to_decision_logic(order_flow_feed)
         self._feed_auris_throne(order_flow_feed)
         combined_status = self.get_status_lines()
@@ -507,7 +612,8 @@ class UnifiedMarketTrader:
                 "capital_ready": self.capital_ready,
             },
         }
-        self._latest_dashboard_payload = payload
+        self._latest_dashboard_payload = self._copy_payload(payload)
+        self._write_runtime_status_file()
         return payload
 
     def _extract_candidate_confidence(self, candidate: Dict[str, Any]) -> float:
@@ -830,7 +936,7 @@ class UnifiedMarketTrader:
         client = self.binance
         if client is None:
             return {}
-        binance_diag = self._binance_diag or {}
+        binance_diag = getattr(self, "_binance_diag", {}) or {}
         if binance_diag.get("init_error") == "socket_blocked" or not bool(binance_diag.get("network_ok", False)):
             return {}
         symbols: Dict[str, Dict[str, Any]] = {}
@@ -905,6 +1011,7 @@ class UnifiedMarketTrader:
         self,
         kraken_payload: Dict[str, Any],
         capital_payload: Dict[str, Any],
+        central_beat: Dict[str, Any],
         shared_market_feed: Dict[str, Any],
     ) -> Dict[str, Any]:
         kraken_tradables = self._kraken_tradable_symbols()
@@ -912,15 +1019,19 @@ class UnifiedMarketTrader:
         shared_keys = sorted(set(kraken_tradables.keys()) & set(capital_tradables.keys()))
 
         symbols_conf = shared_market_feed.get("symbols", {}) if isinstance(shared_market_feed, dict) else {}
+        central_symbols = central_beat.get("symbols", {}) if isinstance(central_beat, dict) else {}
         ranked: List[Dict[str, Any]] = []
         for normalized in shared_keys:
             confidence = float(symbols_conf.get(normalized, 0.0) or 0.0)
             if confidence <= 0.0:
                 continue
             capital_symbol = capital_tradables.get(normalized, normalized)
-            side = "BUY"
-            if "SHORT" in capital_symbol.upper():
+            central_signal = central_symbols.get(normalized, {}) if isinstance(central_symbols, dict) else {}
+            side = str(central_signal.get("side") or "").upper() if isinstance(central_signal, dict) else ""
+            if side not in ("BUY", "SELL") and "SHORT" in capital_symbol.upper():
                 side = "SELL"
+            elif side not in ("BUY", "SELL"):
+                side = "BUY"
             ranked.append(
                 {
                     "symbol": normalized,
@@ -928,6 +1039,8 @@ class UnifiedMarketTrader:
                     "capital_symbol": capital_symbol,
                     "side": side,
                     "confidence": max(0.0, min(1.0, confidence)),
+                    "support_count": int(central_signal.get("support_count", 0) or 0) if isinstance(central_signal, dict) else 0,
+                    "sources": list(central_signal.get("sources", [])) if isinstance(central_signal, dict) and isinstance(central_signal.get("sources"), list) else [],
                 }
             )
 
@@ -1084,7 +1197,56 @@ class UnifiedMarketTrader:
         }
 
     def get_local_dashboard_state(self) -> Dict[str, Any]:
-        return dict(self._build_combined_payload())
+        payload = self._latest_dashboard_payload or self._build_bootstrap_dashboard_payload()
+        return self._copy_payload(payload)
+
+    def get_runtime_health(self) -> Dict[str, Any]:
+        payload = self._latest_dashboard_payload or self._build_bootstrap_dashboard_payload()
+        preflight = payload.get("preflight", {}) if isinstance(payload, dict) else {}
+        combined = payload.get("combined", {}) if isinstance(payload, dict) else {}
+        now = time.time()
+        last_tick_completed_at = float(getattr(self, "_last_tick_completed_at", 0.0) or 0.0)
+        last_tick_started_at = float(getattr(self, "_last_tick_started_at", 0.0) or 0.0)
+        tick_age_sec = (now - last_tick_completed_at) if last_tick_completed_at > 0 else None
+        stale = bool(last_tick_completed_at > 0 and tick_age_sec is not None and tick_age_sec > READY_STALE_AFTER_SEC)
+        alpaca_ok = self.alpaca is not None and not bool(self.alpaca_error or getattr(self.alpaca, "init_error", ""))
+        binance_diag = getattr(self, "_binance_diag", {}) or {}
+        binance_ok = self.binance is not None and bool(binance_diag.get("network_ok", False))
+        trading_ready = bool(self.kraken_ready and self.capital_ready)
+        data_ready = bool(alpaca_ok and binance_ok)
+        return {
+            "ok": bool(trading_ready and data_ready and not stale),
+            "service": "unified-market-trader",
+            "trading_ready": trading_ready,
+            "data_ready": data_ready,
+            "stale": stale,
+            "last_tick_started_at": datetime.fromtimestamp(last_tick_started_at).isoformat() if last_tick_started_at > 0 else None,
+            "last_tick_completed_at": datetime.fromtimestamp(last_tick_completed_at).isoformat() if last_tick_completed_at > 0 else None,
+            "last_tick_age_sec": round(float(tick_age_sec), 3) if tick_age_sec is not None else None,
+            "dashboard_generated_at": payload.get("generated_at"),
+            "runtime_minutes": payload.get("runtime_minutes"),
+            "preflight_overall": preflight.get("overall"),
+            "preflight_critical_failures": int(preflight.get("critical_failures", 0) or 0),
+            "preflight_warnings": int(preflight.get("warnings", 0) or 0),
+            "exchanges": {
+                "kraken_ready": bool(self.kraken_ready),
+                "capital_ready": bool(self.capital_ready),
+                "alpaca_ready": alpaca_ok,
+                "binance_ready": binance_ok,
+            },
+            "errors": {
+                "kraken": self.kraken_error,
+                "capital": self.capital_error,
+                "alpaca": self.alpaca_error,
+                "binance": self.binance_error,
+                "last_tick_error": self._last_tick_error,
+            },
+            "combined": {
+                "open_positions": int(combined.get("open_positions", 0) or 0),
+                "kraken_equity": float(combined.get("kraken_equity", 0.0) or 0.0),
+                "capital_equity_gbp": float(combined.get("capital_equity_gbp", 0.0) or 0.0),
+            },
+        }
 
     def _latest_monitor_line(self) -> str:
         capital_line = getattr(self.capital, "_latest_monitor_line", "") if self.capital is not None else ""
@@ -1114,7 +1276,7 @@ class UnifiedMarketTrader:
             )
         alpaca_state = "ready" if self.alpaca is not None else "unavailable"
         lines.append(f"ALPACA: passive_{alpaca_state} | {self.alpaca_error or 'ok'}")
-        binance_diag = self._binance_diag or {}
+        binance_diag = getattr(self, "_binance_diag", {}) or {}
         if self.binance is not None:
             lines.append(
                 "BINANCE: "
@@ -1150,7 +1312,7 @@ class UnifiedMarketTrader:
             f"warnings={int(preflight.get('warnings', 0) or 0)}"
         )
         _safe_print(f"  ALPACA: {'passive_ready' if self.alpaca is not None else 'passive_unavailable'} | {self.alpaca_error or 'ok'}")
-        binance_diag = self._binance_diag or {}
+        binance_diag = getattr(self, "_binance_diag", {}) or {}
         if self.binance is not None:
             _safe_print(
                 "  BINANCE: "
@@ -1180,6 +1342,8 @@ class UnifiedMarketTrader:
         _safe_print()
 
     def tick(self) -> Dict[str, Any]:
+        self._last_tick_started_at = time.time()
+        self._last_tick_error = ""
         self._ensure_exchanges()
         kraken_closed: List[dict] = []
         capital_closed: List[dict] = []
@@ -1190,6 +1354,7 @@ class UnifiedMarketTrader:
                 self.kraken_error = str(e)
                 self.kraken_ready = False
                 self.kraken = None
+                self._last_tick_error = str(e)
                 logger.error("Kraken tick failed: %s", e)
         if self.capital_ready and self.capital is not None:
             try:
@@ -1198,8 +1363,11 @@ class UnifiedMarketTrader:
                 self.capital_error = str(e)
                 self.capital_ready = False
                 self.capital = None
+                self._last_tick_error = str(e)
                 logger.error("Capital tick failed: %s", e)
         payload = self._build_combined_payload()
+        self._last_tick_completed_at = time.time()
+        self._write_runtime_status_file()
         return {
             "kraken_closed": kraken_closed,
             "capital_closed": capital_closed,

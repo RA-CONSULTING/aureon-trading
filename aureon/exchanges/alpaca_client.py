@@ -64,6 +64,16 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
 # CRYPTO SYMBOL DETECTION - Centralized set to prevent stock API fallback for crypto
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════
@@ -110,6 +120,7 @@ class AlpacaClient:
             self.timeout_seconds = float(os.getenv("ALPACA_TIMEOUT", "10") or 10)
         except (TypeError, ValueError):
             self.timeout_seconds = 10.0
+        self.auth_probe_timeout_seconds = max(3.0, _env_float("ALPACA_AUTH_TIMEOUT", min(self.timeout_seconds, 8.0)))
         self.max_retries = 3  # 🛡️ Increased for rate limit retries
         try:
             self.max_retries = max(0, int(os.getenv("ALPACA_RETRY_COUNT", "3") or 3))
@@ -248,25 +259,39 @@ class AlpacaClient:
                 "APCA-API-KEY-ID": self.api_key,
                 "APCA-API-SECRET-KEY": self.secret_key
             })
-            # Verify authentication immediately to fail fast
             self.is_authenticated = True
-            try:
-                # Only check if keys are present (avoids spamming if misconfigured)
-                test_url = f"{self.base_url}/v2/account"
-                auth_resp = self.session.get(test_url, timeout=3)
-                if auth_resp.status_code in (401, 403):
-                    logger.warning(f"⚠️ Alpaca authentication failed ({auth_resp.status_code}). Disabling client.")
-                    self.init_error = f"auth_failed_{auth_resp.status_code}"
-                    self.is_authenticated = False
-            except Exception as e:
-                logger.warning(f"⚠️ Alpaca initial auth check failed: {e}")
-                error_text = str(e)
-                self.init_error = "socket_blocked" if "WinError 10013" in error_text else error_text
-                self.is_authenticated = False
+            self.auth_probe_warning = ""
+            self._probe_initial_auth()
         else:
             logger.warning("Alpaca API keys not found in environment variables.")
             self.init_error = "credentials_missing"
             self.is_authenticated = False
+            self.auth_probe_warning = ""
+
+    def _probe_initial_auth(self) -> None:
+        """Probe auth once without disabling the client on transient network issues."""
+        try:
+            test_url = f"{self.base_url}/v2/account"
+            auth_resp = self.session.get(test_url, timeout=self.auth_probe_timeout_seconds)
+            if auth_resp.status_code in (401, 403):
+                logger.warning(f"?? Alpaca authentication failed ({auth_resp.status_code}). Disabling client.")
+                self.init_error = f"auth_failed_{auth_resp.status_code}"
+                self.is_authenticated = False
+                return
+            self.init_error = ""
+        except Exception as e:
+            error_text = str(e)
+            if "WinError 10013" in error_text:
+                logger.warning(f"?? Alpaca initial auth check blocked by local socket policy: {e}")
+                self.init_error = "socket_blocked"
+                self.is_authenticated = False
+                return
+            self.auth_probe_warning = error_text
+            logger.warning(
+                "?? Alpaca initial auth probe failed (%s). Keeping client enabled and retrying on demand.",
+                e,
+            )
+            self.init_error = ""
 
     def _request(self, method: str, endpoint: str, params: Dict = None, data: Dict = None, base_url: str = None, request_type: str = 'data') -> Any:
         """Make a request with adaptive rate limiting.

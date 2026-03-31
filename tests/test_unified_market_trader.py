@@ -1,4 +1,5 @@
 import sys
+import time
 import unittest
 from pathlib import Path
 
@@ -27,6 +28,15 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader.binance = FeedTarget()
         trader.alpaca_trader = None
         trader.binance_trader = None
+        trader.start_time = time.time()
+        trader.kraken_ready = False
+        trader.capital_ready = False
+        trader.kraken_error = ""
+        trader.capital_error = ""
+        trader.alpaca_error = ""
+        trader.binance_error = ""
+        trader._last_auris_feed_at = 0.0
+        trader._binance_diag = {}
         trader._shared_market_feed = {}
         trader._shared_market_feed_at = 0.0
         trader._central_beat_feed = {}
@@ -34,6 +44,9 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader._central_beat_layers = {"trader": {}, "probe": {}, "merged": {}}
         trader._central_beat_history = []
         trader._central_source_memory = {}
+        trader._last_tick_started_at = 0.0
+        trader._last_tick_completed_at = 0.0
+        trader._last_tick_error = ""
         return trader
 
     def test_central_beat_merges_sources_into_symbol_metrics(self):
@@ -97,6 +110,65 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertEqual(beat2["source_count"], 1)
         self.assertTrue(beat2["sources"][0]["stale"])
         self.assertEqual(beat2["sources"][0]["source"], "alpaca")
+
+    def test_shared_order_flow_preserves_sell_direction_from_central_beat(self):
+        trader = self._make_trader()
+        trader._kraken_tradable_symbols = lambda: {"BTCUSD": "XXBTZUSD"}  # type: ignore[method-assign]
+        trader._capital_tradable_symbols = lambda: {"BTCUSD": "BTCUSD"}  # type: ignore[method-assign]
+        central_beat = {
+            "symbols": {
+                "BTCUSD": {
+                    "strength": 0.82,
+                    "confidence": 0.74,
+                    "support_count": 2,
+                    "side": "SELL",
+                    "sources": ["kraken", "capital"],
+                }
+            }
+        }
+        shared_market_feed = {"symbols": {"BTCUSD": 0.82}}
+
+        order_flow = trader._build_global_order_flow_feed({}, {}, central_beat, shared_market_feed)
+
+        self.assertEqual(order_flow["active_order_flow"][0]["side"], "SELL")
+        self.assertEqual(order_flow["active_order_flow"][0]["support_count"], 2)
+
+    def test_get_local_dashboard_state_returns_cached_copy_without_rebuild(self):
+        trader = self._make_trader()
+        trader._latest_dashboard_payload = {"ok": True, "nested": {"value": 1}}
+
+        def fail_build():
+            raise AssertionError("dashboard read should not rebuild payload")
+
+        trader._build_combined_payload = fail_build  # type: ignore[method-assign]
+
+        payload = trader.get_local_dashboard_state()
+        payload["nested"]["value"] = 9
+
+        self.assertEqual(payload["nested"]["value"], 9)
+        self.assertEqual(trader._latest_dashboard_payload["nested"]["value"], 1)
+
+    def test_runtime_health_uses_cached_state_and_flags_missing_systems(self):
+        trader = self._make_trader()
+        trader._latest_dashboard_payload = {
+            "generated_at": "2026-03-31T10:00:00",
+            "runtime_minutes": 1.2,
+            "preflight": {"overall": "yellow", "critical_failures": 1, "warnings": 2},
+            "combined": {"open_positions": 0, "kraken_equity": 100.0, "capital_equity_gbp": 50.0},
+        }
+        trader.kraken_ready = True
+        trader.capital_ready = True
+        trader.alpaca = object()
+        trader.binance = None
+        trader._last_tick_completed_at = time.time()
+
+        health = trader.get_runtime_health()
+
+        self.assertFalse(health["ok"])
+        self.assertTrue(health["trading_ready"])
+        self.assertFalse(health["data_ready"])
+        self.assertFalse(health["stale"])
+        self.assertEqual(health["preflight_overall"], "yellow")
 
 
 if __name__ == "__main__":

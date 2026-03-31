@@ -27,6 +27,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 CAPITAL_HTTP_TIMEOUT = float(os.getenv('CAPITAL_HTTP_TIMEOUT_SECS', '8'))
+CAPITAL_SESSION_RETRY_BACKOFF_SECS = float(os.getenv('CAPITAL_SESSION_RETRY_BACKOFF_SECS', '15'))
 CAPITAL_TICKER_WORKERS = int(os.getenv('CAPITAL_TICKER_WORKERS', '4'))
 CAPITAL_MONITOR_CACHE_PATH = os.getenv("CAPITAL_MONITOR_CACHE_PATH", os.path.join("ws_cache", "capital_monitor.json"))
 CAPITAL_MONITOR_CACHE_MAX_AGE_S = float(os.getenv("CAPITAL_MONITOR_CACHE_MAX_AGE_S", "20"))
@@ -59,6 +60,7 @@ class CapitalClient:
         self._rate_limit_until = 0  # Timestamp when rate limit expires
         self._rate_limit_logged = False  # Only log rate limits once
         self._session_error_logged = False  # Only log session errors once
+        self._next_session_retry_at = 0.0
         
         if not self.api_key or not self.identifier or not self.password:
             logger.warning("Capital.com credentials not fully set. Client will be disabled.")
@@ -68,6 +70,19 @@ class CapitalClient:
             self.enabled = True
             self._create_session()
 
+    @staticmethod
+    def _error_response(status_code: int, error_code: str, detail: str = ""):
+        class ErrorResponse:
+            def __init__(self, code: int, err: str, msg: str):
+                self.status_code = code
+                self._payload = {"errorCode": err, "detail": msg}
+                self.text = json.dumps(self._payload)
+
+            def json(self):
+                return dict(self._payload)
+
+        return ErrorResponse(status_code, error_code, detail)
+
     def _create_session(self):
         """Create a new session to get CST and X-SECURITY-TOKEN."""
         if not self.enabled:
@@ -76,6 +91,9 @@ class CapitalClient:
         # Check if we're rate limited
         if time.time() < self._rate_limit_until:
             return  # Still rate limited, skip silently
+
+        if time.time() < self._next_session_retry_at:
+            return
         
         # Check if session is still valid (avoid unnecessary re-auth within 50 min window)
         if (self.cst and self.x_security_token and 
@@ -99,6 +117,8 @@ class CapitalClient:
                 self.cst = response.headers.get('CST')
                 self.x_security_token = response.headers.get('X-SECURITY-TOKEN')
                 self.session_start_time = time.time()
+                self._next_session_retry_at = 0.0
+                self.init_error = ""
                 self._session_error_logged = False  # Reset on success
                 logger.info("Capital.com session established.")
             elif response.status_code == 429 or 'too-many.requests' in response.text.lower():
@@ -113,13 +133,16 @@ class CapitalClient:
                 if not self._session_error_logged:
                     logger.error(f"Failed to create Capital.com session: {response.text}")
                     self._session_error_logged = True
-                self.enabled = False
+                if response.status_code in (400, 401, 403):
+                    self.enabled = False
+                else:
+                    self._next_session_retry_at = time.time() + CAPITAL_SESSION_RETRY_BACKOFF_SECS
         except Exception as e:
             self.init_error = str(e)
+            self._next_session_retry_at = time.time() + CAPITAL_SESSION_RETRY_BACKOFF_SECS
             if not self._session_error_logged:
                 logger.error(f"Capital.com connection error: {e}")
                 self._session_error_logged = True
-            self.enabled = False
 
     def _session_is_expired(self) -> bool:
         """Capital.com sessions can expire; refresh after 55 minutes or when tokens missing."""
@@ -149,11 +172,13 @@ class CapitalClient:
 
         url = f"{self.base_url}{path}"
         headers = self._get_headers()
+        if not headers:
+            return self._error_response(503, "session_unavailable", self.init_error or "session_unavailable")
         try:
             resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=CAPITAL_HTTP_TIMEOUT)
         except Exception as e:
             logger.error(f"Capital.com request error ({method} {path}): {e}")
-            raise
+            return self._error_response(503, "request_error", str(e))
 
         # Rate limit handling
         rate_limit_hit = resp.status_code == 429 or ('too-many.requests' in (resp.text or '').lower())
@@ -179,7 +204,13 @@ class CapitalClient:
             self._session_error_logged = False
             self._create_session()
             headers = self._get_headers()
-            resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=CAPITAL_HTTP_TIMEOUT)
+            if not headers:
+                return self._error_response(503, "session_unavailable", self.init_error or "session_unavailable")
+            try:
+                resp = requests.request(method.upper(), url, headers=headers, params=params, json=json_body, timeout=CAPITAL_HTTP_TIMEOUT)
+            except Exception as e:
+                logger.error(f"Capital.com retry request error ({method} {path}): {e}")
+                return self._error_response(503, "request_error", str(e))
         return resp
 
     def _get_headers(self):
