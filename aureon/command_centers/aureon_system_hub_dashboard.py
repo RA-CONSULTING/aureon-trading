@@ -209,6 +209,53 @@ ELEPHANT_HISTORY_FILE = "elephant_unified_history.jsonl"
 THOUGHTS_FILE = "thoughts.jsonl"
 LIVE_THOUGHT_LIMIT = 50
 
+UNIFIED_MARGIN_LAYERS = [
+    {
+        "id": "harmonic",
+        "label": "Harmonic Layer",
+        "overseers": ["seer", "laura"],
+        "module_guardians": ["Harmonic Fusion", "Wave Scanner", "Timeline Oracle"],
+        "thought_topics": ["harmonic.*", "wave.*", "timeline.*"],
+    },
+    {
+        "id": "financial_analytic",
+        "label": "Financial + Analytic Layer",
+        "overseers": ["king_module"],
+        "module_guardians": ["Bot Intelligence", "Probability Nexus", "Ultimate Intelligence"],
+        "thought_topics": ["market.*", "orderbook.*", "analytics.*"],
+    },
+    {
+        "id": "planetary_coherence",
+        "label": "Planetary Coherence Layer",
+        "overseers": ["laura", "queen_hive_main_module"],
+        "module_guardians": ["Quantum Telescope", "Open Data Engine", "Mycelium Network"],
+        "thought_topics": ["planetary.*", "coherence.*", "stargate.*"],
+    },
+    {
+        "id": "margin_unified",
+        "label": "Unified Margin Trader Layer",
+        "overseers": ["seer", "emerald_tablet_payphone"],
+        "module_guardians": ["Queen Hive Mind", "Orca Intelligence", "Counter Intelligence"],
+        "thought_topics": ["margin.*", "signal.*", "position.*"],
+    },
+]
+
+UNIFIED_MARGIN_WEBSOCKETS = [
+    {"name": "yahoo_finance", "status_key": "financial_feed", "required": True},
+    {"name": "geopolitical", "status_key": "geopolitical_feed", "required": True},
+    {"name": "harmonic_layers", "status_key": "harmonic_feed", "required": True},
+    {"name": "thought_bus", "status_key": "thought_bus", "required": True},
+]
+
+UNIFIED_WAVEFORM_REJECTION_THRESHOLD = 0.35
+UNIFIED_WAVEFORM_KEEPALIVE_TOPICS = (
+    "wave.",
+    "ocean.",
+    "momentum.",
+    "scanner.wave",
+    "scanner.opportunity",
+)
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # GLOBAL STATE - Combined from all dashboards
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2141,6 +2188,324 @@ def get_intelligence():
             "LOVE_FREQ": LOVE_FREQ
         },
         "timestamp": datetime.utcnow().isoformat() + "Z"
+    })
+
+
+def _build_unified_layer_readiness():
+    """Build readiness report for the 4D margin coordination model."""
+    module_online = set(name for name, ready in SYSTEMS_STATUS.items() if ready)
+    layers = []
+
+    for layer in UNIFIED_MARGIN_LAYERS:
+        guardians = layer["module_guardians"]
+        online = [name for name in guardians if name in module_online]
+        readiness = len(online) / max(len(guardians), 1)
+
+        layers.append({
+            "id": layer["id"],
+            "label": layer["label"],
+            "overseers": layer["overseers"],
+            "module_guardians": guardians,
+            "online_guardians": online,
+            "offline_guardians": [name for name in guardians if name not in online],
+            "readiness_score": round(readiness, 3),
+            "thought_topics": layer["thought_topics"],
+        })
+
+    return layers
+
+
+def _build_unified_telemetry(thoughts):
+    """Aggregate telemetry counters for probability matrix inputs."""
+    thoughts = thoughts or []
+
+    topic_counts = defaultdict(int)
+    for thought in thoughts:
+        topic = str(thought.get("topic", "unknown"))
+        topic_counts[topic] += 1
+
+    websocket_status = []
+    thought_bus_ready = bool(thoughts)
+    for ws in UNIFIED_MARGIN_WEBSOCKETS:
+        if ws["name"] == "thought_bus":
+            active = thought_bus_ready
+        else:
+            prefix = ws["name"].replace("_", ".")
+            active = any(k.startswith(prefix) for k in topic_counts.keys())
+        websocket_status.append({
+            "name": ws["name"],
+            "status_key": ws["status_key"],
+            "required": ws["required"],
+            "active": active,
+        })
+
+    wave_events = sum(
+        count for topic, count in topic_counts.items()
+        if topic.startswith(UNIFIED_WAVEFORM_KEEPALIVE_TOPICS)
+    )
+    keep_stream_active = wave_events > 0
+
+    return {
+        "total_events": len(thoughts),
+        "topic_counts": dict(sorted(topic_counts.items(), key=lambda item: item[1], reverse=True)[:20]),
+        "websocket_status": websocket_status,
+        "wave_event_count": wave_events,
+        "keep_stream_active": keep_stream_active,
+        "telemetry_ready": all(item["active"] or not item["required"] for item in websocket_status),
+    }
+
+
+def _assess_unified_waveform(telemetry: dict, revenue: dict) -> dict:
+    """Ocean-scanner biased waveform gate that avoids over-rejecting active streams."""
+    total_events = max(int(telemetry.get("total_events", 0)), 1)
+    wave_event_count = int(telemetry.get("wave_event_count", 0))
+    wave_ratio = wave_event_count / total_events
+    keep_stream_active = bool(telemetry.get("keep_stream_active", False))
+
+    recent_profit = float(revenue.get("recent_profit_sum", 0.0))
+    profitable = recent_profit > 0
+    auto_activate = profitable and (wave_ratio >= UNIFIED_WAVEFORM_REJECTION_THRESHOLD or keep_stream_active)
+
+    return {
+        "accepted": wave_ratio >= UNIFIED_WAVEFORM_REJECTION_THRESHOLD or keep_stream_active,
+        "wave_ratio": round(wave_ratio, 4),
+        "rejection_threshold": UNIFIED_WAVEFORM_REJECTION_THRESHOLD,
+        "keep_stream_active": keep_stream_active,
+        "ocean_scanner_logic_active": True,
+        "profit_detected": profitable,
+        "auto_activate_on_profit": auto_activate,
+    }
+
+
+def _build_bot_profiling_metrics(thoughts: list, events: list) -> dict:
+    """Operational status for bot profiling + live metrics used by probability matrices."""
+    thoughts = thoughts or []
+    events = events or []
+
+    bot_topics = ("bot.", "firm.", "counter.")
+    bot_events = [t for t in thoughts if str(t.get("topic", "")).startswith(bot_topics)]
+    scanner_opps = [
+        t for t in thoughts
+        if "opportunity" in str(t.get("topic", "")) or str(t.get("topic", "")).startswith("scanner.")
+    ]
+
+    ticker_counts = defaultdict(int)
+    for e in events:
+        if e.get("type") != "result":
+            continue
+        symbol = str(e.get("symbol") or e.get("ticker") or "").strip().upper()
+        if symbol:
+            ticker_counts[symbol] += 1
+
+    live_tickers = [
+        {"symbol": symbol, "samples": count}
+        for symbol, count in sorted(ticker_counts.items(), key=lambda kv: kv[1], reverse=True)[:20]
+    ]
+
+    signatures = len(TRADING_FIRM_SIGNATURES) if isinstance(TRADING_FIRM_SIGNATURES, dict) else 0
+    profiler_online = bool(SYSTEMS_STATUS.get("Bot Intelligence", False))
+    stream_health = "active" if bot_events or scanner_opps else "idle"
+
+    return {
+        "profiler_online": profiler_online,
+        "signatures_loaded": signatures,
+        "bot_events_recent": len(bot_events),
+        "scanner_opportunities_recent": len(scanner_opps),
+        "stream_health": stream_health,
+        "live_tickers": live_tickers,
+        "real_time_mapping_ready": profiler_online and len(live_tickers) > 0,
+    }
+
+
+def _build_probability_matrix_payload(thoughts: list, events: list, revenue: dict, waveform: dict) -> dict:
+    """Build raw metrics payload for probability-matrix ingestion."""
+    profiling = _build_bot_profiling_metrics(thoughts, events)
+    profitable = bool(waveform.get("profit_detected", False))
+    active_waveform = bool(waveform.get("accepted", False))
+
+    return {
+        "raw_metrics": {
+            "recent_profit_sum": float(revenue.get("recent_profit_sum", 0.0)),
+            "recent_trade_count": int(revenue.get("recent_trade_count", 0)),
+            "bot_events_recent": profiling["bot_events_recent"],
+            "scanner_opportunities_recent": profiling["scanner_opportunities_recent"],
+            "live_tickers_observed": len(profiling["live_tickers"]),
+            "wave_ratio": float(waveform.get("wave_ratio", 0.0)),
+        },
+        "validation": {
+            "profiler_online": profiling["profiler_online"],
+            "real_time_mapping_ready": profiling["real_time_mapping_ready"],
+            "live_ticker_validation": len(profiling["live_tickers"]) > 0,
+            "waveform_validation": active_waveform,
+        },
+        "capital_run_gate": {
+            "ready_for_existing_run": (
+                profiling["profiler_online"]
+                and profiling["real_time_mapping_ready"]
+                and active_waveform
+                and profitable
+            ),
+            "reason": "ready" if (
+                profiling["profiler_online"]
+                and profiling["real_time_mapping_ready"]
+                and active_waveform
+                and profitable
+            ) else "awaiting_profiler_tickers_waveform_or_profit",
+        },
+        "profiling": profiling,
+        "bot_shadow_tracking": _build_bot_shadow_tracking(thoughts, events),
+    }
+
+
+def _build_bot_shadow_tracking(thoughts: list, events: list) -> dict:
+    """
+    Follow detected bot direction, compare with live movement, and emit
+    prediction payload for probability matrices.
+    """
+    thoughts = thoughts or []
+    events = events or []
+
+    bot_signals = {}
+    for t in thoughts:
+        topic = str(t.get("topic", ""))
+        payload = t.get("payload", {}) or {}
+        if not (
+            topic.startswith("bot.")
+            or topic.startswith("firm.")
+            or topic.startswith("counter.")
+            or topic.startswith("scanner.")
+        ):
+            continue
+
+        symbol = str(payload.get("symbol") or payload.get("ticker") or "").strip().upper()
+        if not symbol:
+            continue
+
+        direction = str(payload.get("direction", payload.get("side", "HOLD"))).upper()
+        confidence = float(payload.get("confidence", payload.get("probability", 0.0)) or 0.0)
+        ts = float(t.get("ts", 0) or 0)
+
+        existing = bot_signals.get(symbol)
+        if existing is None or ts >= existing["ts"]:
+            bot_signals[symbol] = {
+                "symbol": symbol,
+                "direction": direction,
+                "confidence": confidence,
+                "ts": ts,
+            }
+
+    movement = defaultdict(list)
+    for e in events:
+        if e.get("type") != "result":
+            continue
+        symbol = str(e.get("symbol") or e.get("ticker") or "").strip().upper()
+        if not symbol:
+            continue
+        try:
+            profit = float(e.get("profit", 0.0))
+        except Exception:
+            profit = 0.0
+        movement[symbol].append(profit)
+
+    tracked = []
+    aligned = 0
+    for symbol, signal in bot_signals.items():
+        profits = movement.get(symbol, [])
+        live_drift = sum(profits[-5:]) if profits else 0.0
+        if signal["direction"] == "BUY" or signal["direction"] == "LONG":
+            predicted_move = "UP"
+            is_aligned = live_drift >= 0
+        elif signal["direction"] == "SELL" or signal["direction"] == "SHORT":
+            predicted_move = "DOWN"
+            is_aligned = live_drift <= 0
+        else:
+            predicted_move = "NEUTRAL"
+            is_aligned = abs(live_drift) < 1e-9
+
+        if is_aligned:
+            aligned += 1
+
+        tracked.append({
+            "symbol": symbol,
+            "bot_direction": signal["direction"],
+            "predicted_move": predicted_move,
+            "confidence": round(signal["confidence"], 4),
+            "live_drift_proxy": round(live_drift, 6),
+            "alignment": is_aligned,
+        })
+
+    total = len(tracked)
+    alignment_ratio = (aligned / total) if total else 0.0
+
+    return {
+        "tracked_symbols": tracked[:30],
+        "tracked_count": total,
+        "alignment_ratio": round(alignment_ratio, 4),
+        "prediction_feed_ready": total > 0,
+    }
+
+
+def _build_unified_margin_wiring_status(thoughts: list, events: list, probability_matrix: dict) -> dict:
+    """Explicit wiring report for unified margin trader run-path integration."""
+    thoughts = thoughts or []
+    events = events or []
+
+    def _has_topic(prefixes):
+        return any(str(t.get("topic", "")).startswith(prefixes) for t in thoughts)
+
+    required_wires = {
+        "thought_bus": _has_topic(("thought.", "system.", "market.", "queen.")),
+        "wave_scanner": _has_topic(("wave.", "ocean.", "momentum.", "scanner.wave")),
+        "bot_profiler": bool(SYSTEMS_STATUS.get("Bot Intelligence", False)),
+        "probability_nexus": bool(SYSTEMS_STATUS.get("Probability Nexus", False)),
+        "queen_hive": bool(SYSTEMS_STATUS.get("Queen Hive Mind", False)),
+        "mycelium_network": bool(SYSTEMS_STATUS.get("Mycelium Network", False)),
+        "live_ticker_feed": any(e.get("type") == "result" and (e.get("symbol") or e.get("ticker")) for e in events),
+    }
+
+    connected = [k for k, v in required_wires.items() if v]
+    missing = [k for k, v in required_wires.items() if not v]
+    ready_for_existing_run = bool(probability_matrix.get("capital_run_gate", {}).get("ready_for_existing_run", False))
+
+    return {
+        "required_wires": required_wires,
+        "connected_wires": connected,
+        "missing_wires": missing,
+        "wiring_score": round(len(connected) / max(len(required_wires), 1), 4),
+        "unified_margin_trader_wired": len(missing) == 0,
+        "ready_for_existing_run": ready_for_existing_run,
+    }
+
+
+@app.route('/api/unified-margin/layers')
+def get_unified_margin_layers():
+    """Return the canonical 4D layer map used by unified margin coordination."""
+    layers = _build_unified_layer_readiness()
+    return jsonify({
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "layer_count": len(layers),
+        "layers": layers,
+    })
+
+
+@app.route('/api/unified-margin/telemetry')
+def get_unified_margin_telemetry():
+    """Expose telemetry required for probability matrices and shadow trading."""
+    events = _read_last_jsonl(ELEPHANT_HISTORY_FILE, limit=400)
+    revenue = _extract_revenue(events)
+    thoughts = _read_recent_thoughts(limit=400)
+    telemetry = _build_unified_telemetry(thoughts)
+    waveform = _assess_unified_waveform(telemetry, revenue)
+    probability_matrix = _build_probability_matrix_payload(thoughts, events, revenue, waveform)
+    wiring = _build_unified_margin_wiring_status(thoughts, events, probability_matrix)
+    return jsonify({
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "layers": _build_unified_layer_readiness(),
+        "telemetry": telemetry,
+        "revenue": revenue,
+        "unified_waveform": waveform,
+        "probability_matrix": probability_matrix,
+        "unified_margin_wiring": wiring,
     })
 
 
