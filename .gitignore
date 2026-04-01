@@ -101,3 +101,14 @@ state/baton_relay.jsonl
 cached_candles_1yr_hourly.json
 russian_doll_state.tmp
 geometric_glyph.png
+
+# Windows error artifacts
+CONERR$
+
+# Simulation output files
+sim_mission_err.txt
+sim_mission_out.txt
+
+# Large runtime thought logs
+state/*_thoughts.jsonl
+state/*_thoughts.json
