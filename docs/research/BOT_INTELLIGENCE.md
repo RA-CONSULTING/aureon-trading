@@ -595,3 +595,11 @@ Bot Detected: BTC/USDT | Shark Level
 **Files**: [aureon_ocean_wave_scanner.py](aureon_ocean_wave_scanner.py) | [aureon_bot_intelligence_profiler.py](aureon_bot_intelligence_profiler.py)
 
 ---
+
+## See Also
+
+- [Theory to Code](../architecture/THEORY_TO_CODE.md) — How bot detection research becomes working code
+- [Counter-Strategies](COUNTER_STRATEGIES.md) — How to fight back against bot manipulation
+- [Intelligence Wiring Matrix](../architecture/INTELLIGENCE_WIRING_MATRIX.md) — How detection feeds trading
+- **Code:** `aureon/bots_intelligence/` (21 modules) | `aureon/scanners/` (18 modules) | `aureon/analytics/` (40 modules)
+- [Back to README](../../README.md) | [Navigation Guide](../NAVIGATION_GUIDE.md) | [Full Index](../INDEX.md)

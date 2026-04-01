@@ -58,3 +58,14 @@ By contributing code to this repository, you agree that your code contributions 
 ---
 
 **"Let the ripples of attribution flow forward."**
+
+---
+
+## 📖 Useful Resources for Contributors
+
+- [Module Reference](docs/MODULES_AT_A_GLANCE.md) — All 715 modules across 24 domains
+- [Navigation Guide](docs/NAVIGATION_GUIDE.md) — Learning paths by role
+- [System Architecture Map](docs/SYSTEM_ARCHITECTURE_MAP.md) — 5-phase startup hierarchy
+- [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) — What feeds what
+- [Theory to Code](docs/architecture/THEORY_TO_CODE.md) — Research concepts → implementations
+- [Scripts Index](docs/SCRIPTS_INDEX.md) — All 150+ startup and diagnostic scripts

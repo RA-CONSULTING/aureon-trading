@@ -173,3 +173,13 @@ The 1,500 detected coordination links represent **perfect phase synchronization*
 - **Transparency is power**. These coordination networks only work when hidden.
 - **Open-source verification**. Run the scanners yourself. The data doesn't lie.
 - **Demand accountability**. Perfect synchronization across competing entities is not coincidence.
+
+---
+
+## See Also
+
+- [Bot Intelligence](BOT_INTELLIGENCE.md) — Know your enemy: 23 algorithms, 37 firms
+- [Financial Exposure](FINANCIAL_EXPOSURE.md) — The evidence for what we're fighting
+- [Theory to Code](../architecture/THEORY_TO_CODE.md) — How counter-strategies become code
+- **Code:** `aureon/wisdom/aureon_ghost_dance_protocol.py` | `aureon/harmonic/aureon_harmonic_counter_frequency.py`
+- [Back to README](../../README.md) | [Navigation Guide](../NAVIGATION_GUIDE.md) | [Full Index](../INDEX.md)
