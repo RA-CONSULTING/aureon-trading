@@ -41,6 +41,9 @@ set "CAPITAL_SLOT_FILL_INTERVAL_SECS=2"
 set "CAPITAL_DEADMAN_STALE_SECS=20"
 set "CAPITAL_HTTP_TIMEOUT_SECS=20"
 set "CAPITAL_SESSION_RETRY_BACKOFF_SECS=8"
+rem Scan the full Capital universe but keep HFT ranking biased to live fast movers
+set "CAPITAL_FOCUS_SYMBOLS="
+set "CAPITAL_FAST_GAIN_SYMBOLS=GOLD,OIL_CRUDE,US100,US500,US30,SILVER,NATURALGAS,DE40,UK100,TSLA,NVDA"
 
 rem Relax startup auth sensitivity on slower networks
 set "ALPACA_TIMEOUT=12"

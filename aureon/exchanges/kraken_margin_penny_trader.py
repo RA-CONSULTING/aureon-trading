@@ -373,8 +373,8 @@ KRAKEN_CLOSE_FEE = 0.0035     # Actual observed closing fee rate
 KRAKEN_ROLLOVER_RATE = 0.0001 # 0.01% per 4 hours (Kraken margin rollover)
 KRAKEN_ROLLOVER_INTERVAL = 4 * 3600  # 4 hours in seconds
 MARGIN_BUFFER = 0.70          # Use 70% of free margin (30% safety for margin level)
-STATE_FILE = "kraken_margin_army_state.json"
-RESULTS_FILE = "kraken_margin_army_results.json"
+STATE_FILE = os.path.join(_REPO_ROOT, "kraken_margin_army_state.json")
+RESULTS_FILE = os.path.join(_REPO_ROOT, "kraken_margin_army_results.json")
 USD_QUOTES = {"USD", "ZUSD"}
 
 # ==============================================================
@@ -2860,7 +2860,11 @@ class KrakenMarginArmyTrader:
         self._stream_started = False
         self._last_stream_self_heal = 0.0
         self.margin_pairs: Dict[str, MarginPairInfo] = {}
-        # DUAL POSITION: 1 LONG + 1 SHORT simultaneously
+        # Multi-slot directional positions: up to 2 LONG + 2 SHORT simultaneously
+        self.max_long_positions = int(float(os.getenv("KRAKEN_MAX_LONG_POSITIONS", "2") or 2))
+        self.max_short_positions = int(float(os.getenv("KRAKEN_MAX_SHORT_POSITIONS", "2") or 2))
+        self.active_longs: List[ActiveTrade] = []
+        self.active_shorts: List[ActiveTrade] = []
         self.active_long: Optional[ActiveTrade] = None
         self.active_short: Optional[ActiveTrade] = None
         self.extra_active_longs: List[ActiveTrade] = []
@@ -2991,11 +2995,62 @@ class KrakenMarginArmyTrader:
             if HAS_TRADE_PROFIT_VALIDATOR and TradeProfitValidator is not None
             else None
         )
+        self._shared_portfolio_snapshot_provider = None
         self._load_state()
         snap = self._get_capital_snapshot()
         self.starting_equity = snap["equity"]
         if os.getenv("AUREON_DISABLE_LOCAL_DASHBOARD", "0") != "1":
             self._start_local_dashboard_server()
+
+    def set_shared_portfolio_snapshot_provider(self, provider) -> None:
+        """Inject a shared portfolio snapshot callback from the unified runner."""
+        self._shared_portfolio_snapshot_provider = provider
+
+    def _sync_active_aliases(self) -> None:
+        """Keep legacy single-slot attributes pointed at the primary tracked trades."""
+        self.active_long = self.active_longs[0] if self.active_longs else None
+        self.active_short = self.active_shorts[0] if self.active_shorts else None
+        self.active_trade = self.active_long or self.active_short
+
+    def _iter_active_trades(self, side: Optional[str] = None) -> List[ActiveTrade]:
+        """Return tracked live trades, optionally filtered by side."""
+        if side == "buy":
+            return list(self.active_longs)
+        if side == "sell":
+            return list(self.active_shorts)
+        return list(self.active_longs) + list(self.active_shorts)
+
+    def _side_capacity(self, side: str) -> int:
+        return self.max_long_positions if side == "buy" else self.max_short_positions
+
+    def _side_has_capacity(self, side: str) -> bool:
+        return len(self._iter_active_trades(side)) < self._side_capacity(side)
+
+    def _register_active_trade(self, trade: ActiveTrade) -> None:
+        """Track a live trade in the appropriate directional lane."""
+        bucket = self.active_longs if trade.side == "buy" else self.active_shorts
+        bucket[:] = [t for t in bucket if t.order_id != trade.order_id]
+        bucket.append(trade)
+        bucket.sort(key=lambda t: float(t.entry_time or 0.0))
+        overflow = max(0, len(bucket) - self._side_capacity(trade.side))
+        if overflow > 0:
+            dropped = bucket[:-self._side_capacity(trade.side)]
+            bucket[:] = bucket[-self._side_capacity(trade.side):]
+            logger.warning(
+                f"Kraken {trade.side.upper()} lane exceeded capacity; dropping tracked extras "
+                f"{[t.order_id for t in dropped]}"
+            )
+        self._sync_active_aliases()
+
+    def _remove_active_trade(self, order_id: str) -> None:
+        """Remove a live trade from either lane by order id."""
+        self.active_longs[:] = [t for t in self.active_longs if t.order_id != order_id]
+        self.active_shorts[:] = [t for t in self.active_shorts if t.order_id != order_id]
+        self._sync_active_aliases()
+
+    def _format_side_label(self, trade: ActiveTrade, index: int) -> str:
+        prefix = "LONG" if trade.side == "buy" else "SHORT"
+        return f"{prefix}{index + 1}"
 
     # ----------------------------------------------------------
     #  ETA PREDICTION: Estimate time to profitability
@@ -3977,7 +4032,7 @@ class KrakenMarginArmyTrader:
         )
         return data
 
-    def _get_capital_snapshot(self) -> dict:
+    def _get_capital_snapshot(self, include_shared: bool = True) -> dict:
         """Return current Kraken portfolio metrics for sizing and UI."""
         if self.dry_run:
             equity = 10000.0
@@ -3992,7 +4047,7 @@ class KrakenMarginArmyTrader:
             unrealized = float(tb.get("unrealized_pnl", tb.get("n", 0.0)) or 0.0)
         budget = free_margin * MARGIN_BUFFER
         target_pct_equity = (PROFIT_TARGET_USD / equity * 100.0) if equity > 0 else 0.0
-        return {
+        snapshot = {
             "equity": equity,
             "free_margin": free_margin,
             "margin_used": margin_used,
@@ -4000,6 +4055,28 @@ class KrakenMarginArmyTrader:
             "budget": budget,
             "target_pct_equity": target_pct_equity,
         }
+        provider = getattr(self, "_shared_portfolio_snapshot_provider", None)
+        if include_shared and provider is not None:
+            try:
+                shared = provider() or {}
+                kraken_shared = shared.get("kraken", {}) if isinstance(shared, dict) else {}
+                snapshot["free_margin"] = min(
+                    snapshot["free_margin"],
+                    float(kraken_shared.get("free_margin", snapshot["free_margin"]) or snapshot["free_margin"]),
+                )
+                snapshot["budget"] = min(
+                    snapshot["budget"],
+                    float(kraken_shared.get("budget", snapshot["budget"]) or snapshot["budget"]),
+                )
+                snapshot["portfolio_equity_usd"] = float(
+                    shared.get("portfolio_equity_usd", snapshot["equity"]) or snapshot["equity"]
+                )
+                snapshot["portfolio_free_usd"] = float(
+                    shared.get("portfolio_free_usd", snapshot["free_margin"]) or snapshot["free_margin"]
+                )
+            except Exception:
+                pass
+        return snapshot
 
     def _track_equity_metrics(self, equity: float) -> tuple[float, float]:
         """Track peak equity and drawdown values for dashboard telemetry."""
@@ -4013,7 +4090,7 @@ class KrakenMarginArmyTrader:
     def _build_dashboard_positions(self) -> list[dict]:
         """Build open-position payload for the live dashboard."""
         positions: list[dict] = []
-        for trade in (self.active_long, self.active_short):
+        for trade in self._iter_active_trades():
             if not trade:
                 continue
             current_price = 0.0
@@ -4923,11 +5000,7 @@ class KrakenMarginArmyTrader:
                 binance_symbol=pair_info.binance_symbol,
             )
             # Place into correct slot: buy→long, sell→short
-            if side == "buy":
-                self.active_long = trade
-            else:
-                self.active_short = trade
-            self.active_trade = self.active_long or self.active_short
+            self._register_active_trade(trade)
             if trade.binance_symbol:
                 self._start_stream_for(trade.binance_symbol)
             self._save_state()
@@ -5079,11 +5152,7 @@ class KrakenMarginArmyTrader:
             if net_pnl > 0:
                 self.winning_trades += 1
             # Clear the correct position slot
-            if self.active_long and self.active_long.order_id == trade.order_id:
-                self.active_long = None
-            if self.active_short and self.active_short.order_id == trade.order_id:
-                self.active_short = None
-            self.active_trade = self.active_long or self.active_short
+            self._remove_active_trade(trade.order_id)
             self._save_state()
 
             # Deregister from orchestrator so spot system sees slot is free
@@ -5166,7 +5235,7 @@ class KrakenMarginArmyTrader:
         if extra_symbols:
             symbols.extend([str(s).upper() for s in extra_symbols if s])
 
-        for trade in (self.active_long, self.active_short):
+        for trade in self._iter_active_trades():
             if trade and trade.binance_symbol:
                 symbols.append(str(trade.binance_symbol).upper())
 
@@ -5646,9 +5715,11 @@ class KrakenMarginArmyTrader:
     def _save_state(self):
         """Save current state atomically."""
         try:
-            # Legacy active_trade = whichever is open (prefer long)
-            at = self.active_long or self.active_short
+            self._sync_active_aliases()
+            at = self.active_trade
             state = {
+                "active_longs": [trade.to_dict() for trade in self.active_longs],
+                "active_shorts": [trade.to_dict() for trade in self.active_shorts],
                 "active_long": self.active_long.to_dict() if self.active_long else None,
                 "active_short": self.active_short.to_dict() if self.active_short else None,
                 "extra_active_longs": [trade.to_dict() for trade in self.extra_active_longs[-10:]],
@@ -5670,18 +5741,136 @@ class KrakenMarginArmyTrader:
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
 
-    def _reconcile_live_positions(self) -> Dict[str, Any]:
-        """Rebuild active Kraken margin slots from the exchange, even without local state."""
-        live_positions_by_slot: Dict[str, Any] = {
-            "active_long": None,
-            "active_short": None,
-            "extra_active_longs": [],
-            "extra_active_shorts": [],
-        }
+    def _load_state_file_safe(self) -> Dict[str, Any]:
+        """Load persisted state while tolerating empty/corrupt JSON."""
+
+        def _read_state(path: str) -> Dict[str, Any]:
+            with open(path, "r", encoding="utf-8") as f:
+                raw = f.read()
+            if not str(raw or "").strip():
+                raise ValueError("state file is empty")
+            data = json.loads(raw)
+            if not isinstance(data, dict):
+                raise ValueError("state file root is not an object")
+            return data
+
+        if not os.path.exists(STATE_FILE):
+            return {}
+
+        try:
+            return _read_state(STATE_FILE)
+        except Exception as main_err:
+            tmp_path = STATE_FILE + ".tmp"
+            if os.path.exists(tmp_path):
+                try:
+                    tmp_state = _read_state(tmp_path)
+                    try:
+                        os.replace(tmp_path, STATE_FILE)
+                    except Exception:
+                        pass
+                    logger.warning(
+                        "Kraken state unreadable (%s); recovered from %s",
+                        main_err,
+                        tmp_path,
+                    )
+                    return tmp_state
+                except Exception as tmp_err:
+                    logger.warning("Kraken tmp state unreadable: %s", tmp_err)
+
+            corrupt_backup = f"{STATE_FILE}.corrupt.{int(time.time())}"
+            try:
+                os.replace(STATE_FILE, corrupt_backup)
+                logger.error(
+                    "Kraken state unreadable (%s); moved to %s and continuing with clean state",
+                    main_err,
+                    corrupt_backup,
+                )
+            except Exception as backup_err:
+                logger.error(
+                    "Kraken state unreadable (%s); could not move aside (%s). Continuing with clean state",
+                    main_err,
+                    backup_err,
+                )
+            return {}
+
+    def _select_startup_position(
+        self,
+        positions: list[dict],
+        slot: str,
+        state_trade: Optional[dict],
+    ) -> tuple[Optional[dict], list[dict]]:
+        """Choose the best live Kraken position for a startup slot and leave extras as warnings."""
+        if not positions:
+            return None, []
+        if len(positions) == 1:
+            return positions[0], []
+
+        state_trade = state_trade or {}
+        state_order_id = str(state_trade.get("order_id", "") or "")
+        state_pair = str(state_trade.get("pair", "") or "")
+        state_entry_time = float(state_trade.get("entry_time", 0.0) or 0.0)
+
+        if state_order_id:
+            for pos in positions:
+                if str(pos.get("position_id", "") or "") == state_order_id:
+                    extras = [p for p in positions if p is not pos]
+                    return pos, extras
+
+        if state_pair:
+            pair_matches = []
+            for pos in positions:
+                kp_pair = pos.get("pair", "")
+                alt_pair = self.client._int_to_alt.get(kp_pair, kp_pair)
+                if alt_pair == state_pair or kp_pair == state_pair:
+                    pair_matches.append(pos)
+            if len(pair_matches) == 1:
+                extras = [p for p in positions if p is not pair_matches[0]]
+                return pair_matches[0], extras
+            if len(pair_matches) > 1 and state_entry_time > 0:
+                pair_matches.sort(
+                    key=lambda p: abs(float(p.get("open_time", 0.0) or 0.0) - state_entry_time)
+                )
+                chosen = pair_matches[0]
+                extras = [p for p in positions if p is not chosen]
+                return chosen, extras
+
+        positions.sort(key=lambda p: float(p.get("open_time", 0.0) or 0.0), reverse=True)
+        chosen = positions[0]
+        return chosen, positions[1:]
+
+    def _select_startup_positions(
+        self,
+        positions: list[dict],
+        slot: str,
+        state_trades: list[dict],
+        max_count: int,
+    ) -> tuple[list[dict], list[dict]]:
+        """Choose up to max_count live positions for a startup lane."""
+        remaining = list(positions)
+        chosen: list[dict] = []
+        for state_trade in state_trades:
+            if len(chosen) >= max_count or not remaining:
+                break
+            selected, _ = self._select_startup_position(list(remaining), slot, state_trade)
+            if selected is None:
+                continue
+            chosen.append(selected)
+            remaining = [pos for pos in remaining if pos is not selected]
+        if len(chosen) < max_count and remaining:
+            remaining.sort(key=lambda p: float(p.get("open_time", 0.0) or 0.0), reverse=True)
+            take = remaining[: max_count - len(chosen)]
+            chosen.extend(take)
+            remaining = [pos for pos in remaining if pos not in take]
+        return chosen, remaining
+
+    def _reconcile_live_positions(self, state: Optional[Dict[str, Any]] = None) -> Dict[str, list[ActiveTrade]]:
+        """Rebuild tracked Kraken margin lanes from the exchange, even without local state."""
+        live_positions_by_slot: Dict[str, list[ActiveTrade]] = {"active_long": [], "active_short": []}
         if self.dry_run:
             return live_positions_by_slot
 
         try:
+            positions_by_slot: Dict[str, list[dict]] = {"active_long": [], "active_short": []}
             for kp in self.client.get_open_margin_positions(do_calcs=True):
                 kp_pair = kp.get("pair", "")
                 alt_pair = self.client._int_to_alt.get(kp_pair, kp_pair)
@@ -5689,55 +5878,65 @@ class KrakenMarginArmyTrader:
                 slot = "active_long" if side == "buy" else "active_short" if side == "sell" else None
                 if slot is None:
                     continue
+                kp = dict(kp)
+                kp["_resolved_pair"] = alt_pair
+                positions_by_slot[slot].append(kp)
 
-                volume = float(kp.get("volume", 0.0) or 0.0)
-                cost = float(kp.get("cost", 0.0) or 0.0)
-                fee_total = float(kp.get("fee", 0.0) or 0.0)
-                entry_price = (cost / volume) if volume > 0 and cost > 0 else 0.0
-                lev_raw = str(kp.get("leverage", "1") or "1").replace(":", "")
-                try:
-                    leverage = int(float(lev_raw))
-                except Exception:
-                    leverage = 1
-
-                breakeven_price = entry_price
-                if volume > 0 and entry_price > 0:
-                    if side == "buy":
-                        breakeven_price = entry_price + (fee_total + PROFIT_TARGET_USD) / volume
-                    elif side == "sell":
-                        breakeven_price = entry_price - (fee_total + PROFIT_TARGET_USD) / volume
-
-                trade = ActiveTrade(
-                    pair=alt_pair,
-                    side=side,
-                    volume=volume,
-                    entry_price=entry_price,
-                    leverage=leverage,
-                    entry_fee=fee_total,
-                    entry_time=float(kp.get("open_time", time.time()) or time.time()),
-                    order_id=str(kp.get("position_id", "")),
-                    cost=cost,
-                    breakeven_price=breakeven_price,
-                    binance_symbol=self._binance_symbol_for_pair(alt_pair),
-                )
-                primary_trade = live_positions_by_slot[slot]
-                extras_key = "extra_active_longs" if slot == "active_long" else "extra_active_shorts"
-                if primary_trade is None:
-                    live_positions_by_slot[slot] = trade
-                else:
-                    primary_key = (
-                        float(getattr(primary_trade, "entry_time", 0.0) or 0.0),
-                        -float(getattr(primary_trade, "cost", 0.0) or 0.0),
+            state = state or {}
+            for slot, slot_positions in positions_by_slot.items():
+                max_count = self.max_long_positions if slot == "active_long" else self.max_short_positions
+                state_trades = state.get(f"{slot}s")
+                if not isinstance(state_trades, list):
+                    state_trade = state.get(slot)
+                    state_trades = [state_trade] if state_trade else []
+                chosen_positions, extras = self._select_startup_positions(slot_positions, slot, state_trades, max_count)
+                if not chosen_positions:
+                    continue
+                if extras:
+                    extra_pairs = [
+                        f"{p.get('_resolved_pair', p.get('pair', '?'))}:{p.get('position_id', '?')}"
+                        for p in extras
+                    ]
+                    tracked_pairs = [
+                        f"{p.get('_resolved_pair', p.get('pair', '?'))}:{p.get('position_id', '?')}"
+                        for p in chosen_positions
+                    ]
+                    logger.warning(
+                        f"Kraken startup found {len(slot_positions)} live positions for {slot}; "
+                        f"tracking {tracked_pairs} and ignoring extras {extra_pairs}"
                     )
-                    new_key = (
-                        float(getattr(trade, "entry_time", 0.0) or 0.0),
-                        -float(getattr(trade, "cost", 0.0) or 0.0),
+                for chosen in chosen_positions:
+                    volume = float(chosen.get("volume", 0.0) or 0.0)
+                    cost = float(chosen.get("cost", 0.0) or 0.0)
+                    fee_total = float(chosen.get("fee", 0.0) or 0.0)
+                    entry_price = (cost / volume) if volume > 0 and cost > 0 else 0.0
+                    lev_raw = str(chosen.get("leverage", "1") or "1").replace(":", "")
+                    try:
+                        leverage = int(float(lev_raw))
+                    except Exception:
+                        leverage = 1
+                    side = chosen.get("side", "")
+                    breakeven_price = entry_price
+                    if volume > 0 and entry_price > 0:
+                        if side == "buy":
+                            breakeven_price = entry_price + (fee_total + PROFIT_TARGET_USD) / volume
+                        elif side == "sell":
+                            breakeven_price = entry_price - (fee_total + PROFIT_TARGET_USD) / volume
+                    live_positions_by_slot[slot].append(
+                        ActiveTrade(
+                            pair=chosen.get("_resolved_pair", chosen.get("pair", "")),
+                            side=side,
+                            volume=volume,
+                            entry_price=entry_price,
+                            leverage=leverage,
+                            entry_fee=fee_total,
+                            entry_time=float(chosen.get("open_time", time.time()) or time.time()),
+                            order_id=str(chosen.get("position_id", "")),
+                            cost=cost,
+                            breakeven_price=breakeven_price,
+                            binance_symbol=self._binance_symbol_for_pair(chosen.get("_resolved_pair", chosen.get("pair", ""))),
+                        )
                     )
-                    if new_key < primary_key:
-                        live_positions_by_slot[extras_key].append(primary_trade)
-                        live_positions_by_slot[slot] = trade
-                    else:
-                        live_positions_by_slot[extras_key].append(trade)
         except Exception as e:
             raise RuntimeError(f"Live position reconciliation failed: {e}")
 
@@ -5746,15 +5945,12 @@ class KrakenMarginArmyTrader:
     def _load_state(self):
         """Load saved state — supports dual positions."""
         try:
-            state: Dict[str, Any] = {}
-            if os.path.exists(STATE_FILE):
-                with open(STATE_FILE) as f:
-                    state = json.load(f)
+            state: Dict[str, Any] = self._load_state_file_safe()
 
             valid_fields = {f.name for f in ActiveTrade.__dataclass_fields__.values()}
-            live_positions_by_slot = self._reconcile_live_positions()
-            self.extra_active_longs = list(live_positions_by_slot.get("extra_active_longs", []) or [])
-            self.extra_active_shorts = list(live_positions_by_slot.get("extra_active_shorts", []) or [])
+            live_positions_by_slot = self._reconcile_live_positions(state)
+            self.extra_active_longs = []
+            self.extra_active_shorts = []
 
             # Load dual positions (new format)
             for slot, attr in [("active_long", "active_long"), ("active_short", "active_short")]:
@@ -5826,6 +6022,105 @@ class KrakenMarginArmyTrader:
                     len(self.extra_active_longs),
                     len(self.extra_active_shorts),
                 )
+            if not self.dry_run:
+                self._save_state()
+        except Exception as e:
+            if not self.dry_run:
+                raise RuntimeError(f"Live startup state load failed: {e}")
+            logger.warning(f"Could not load state: {e}")
+
+    def _load_state(self):
+        """Load saved state with multi-position directional lanes."""
+        try:
+            state: Dict[str, Any] = self._load_state_file_safe()
+
+            valid_fields = {f.name for f in ActiveTrade.__dataclass_fields__.values()}
+            live_positions_by_slot = self._reconcile_live_positions(state)
+
+            def _state_lane(lane_name: str, slot_name: str) -> list[dict]:
+                items = state.get(lane_name)
+                if isinstance(items, list):
+                    return [dict(item) for item in items if isinstance(item, dict)]
+                singular = state.get(slot_name)
+                return [dict(singular)] if isinstance(singular, dict) else []
+
+            self.active_longs = []
+            self.active_shorts = []
+
+            for slot, lane_name, max_count in [
+                ("active_long", "active_longs", self.max_long_positions),
+                ("active_short", "active_shorts", self.max_short_positions),
+            ]:
+                state_lane = _state_lane(lane_name, slot)
+                reconciled_lane = list(live_positions_by_slot.get(slot, []))
+                merged_lane: list[ActiveTrade] = []
+                if reconciled_lane:
+                    preserved_by_id = {}
+                    for item in state_lane:
+                        filtered = {k: v for k, v in item.items() if k in valid_fields}
+                        preserved_by_id[str(filtered.get("order_id", "") or "")] = filtered
+                    for reconciled in reconciled_lane:
+                        preserved = preserved_by_id.get(reconciled.order_id, {})
+                        for key in ("breakeven_price", "rollover_fees", "last_rollover_check"):
+                            value = preserved.get(key)
+                            if value not in (None, "", 0):
+                                setattr(reconciled, key, value)
+                        merged_lane.append(reconciled)
+                        logger.info(f"Resumed {slot} from Kraken: {reconciled.pair} {reconciled.side.upper()}")
+                        if reconciled.binance_symbol:
+                            self._start_stream_for(reconciled.binance_symbol)
+                elif state_lane and not self.dry_run:
+                    logger.warning(f"Dropping stale local {slot}; Kraken shows no matching live margin position.")
+                else:
+                    for item in state_lane:
+                        filtered = {k: v for k, v in item.items() if k in valid_fields}
+                        t = ActiveTrade(**filtered)
+                        merged_lane.append(t)
+                        logger.info(f"Resumed {slot}: {t.pair} {t.side.upper()}")
+                        if t.binance_symbol:
+                            self._start_stream_for(t.binance_symbol)
+
+                merged_lane.sort(key=lambda t: float(t.entry_time or 0.0))
+                merged_lane = merged_lane[:max_count]
+                if slot == "active_long":
+                    self.active_longs = merged_lane
+                else:
+                    self.active_shorts = merged_lane
+
+            if self.dry_run and not self.active_longs and not self.active_shorts:
+                td = state.get("active_trade")
+                if td:
+                    filtered = {k: v for k, v in td.items() if k in valid_fields}
+                    t = ActiveTrade(**filtered)
+                    if t.side == "buy":
+                        self.active_longs = [t]
+                    else:
+                        self.active_shorts = [t]
+                    logger.info(f"Resumed active trade (legacy): {t.pair} {t.side.upper()}")
+                    if t.binance_symbol:
+                        self._start_stream_for(t.binance_symbol)
+
+            self._sync_active_aliases()
+
+            if self.orchestrator is not None:
+                for pos in self._iter_active_trades():
+                    try:
+                        self.orchestrator.register_position(
+                            system='margin',
+                            pair=pos.pair,
+                            side=pos.side,
+                            value_usd=pos.cost,
+                            exchange='kraken',
+                        )
+                    except Exception as e:
+                        logger.debug(f"Restored position register error: {e}")
+
+            self.total_profit = state.get("total_profit", 0)
+            self.total_trades = state.get("total_trades", 0)
+            self.winning_trades = state.get("winning_trades", 0)
+            self.shadow_validated_count = state.get("shadow_validated", 0)
+            self.shadow_failed_count = state.get("shadow_failed", 0)
+            self.completed_trades = state.get("completed_trades", [])
             if not self.dry_run:
                 self._save_state()
         except Exception as e:
@@ -5921,11 +6216,7 @@ class KrakenMarginArmyTrader:
             return None
 
         # Don't shadow a pair we already have a real or shadow position on
-        existing_pairs = set()
-        if self.active_long:
-            existing_pairs.add(self.active_long.pair)
-        if self.active_short:
-            existing_pairs.add(self.active_short.pair)
+        existing_pairs = {trade.pair for trade in self._iter_active_trades()}
         for s in self.shadow_trades:
             existing_pairs.add(s.pair)
 
@@ -6008,11 +6299,11 @@ class KrakenMarginArmyTrader:
         Returns the real ActiveTrade if successfully opened.
         """
         # Check correct slot is free
-        if shadow.side == "buy" and self.active_long:
-            logger.debug(f"Long slot occupied — cannot promote {shadow.pair}")
+        if shadow.side == "buy" and not self._side_has_capacity("buy"):
+            logger.debug(f"Long lane full — cannot promote {shadow.pair}")
             return None
-        if shadow.side == "sell" and self.active_short:
-            logger.debug(f"Short slot occupied — cannot promote {shadow.pair}")
+        if shadow.side == "sell" and not self._side_has_capacity("sell"):
+            logger.debug(f"Short lane full — cannot promote {shadow.pair}")
             return None
 
         # Get the pair info
@@ -6049,7 +6340,7 @@ class KrakenMarginArmyTrader:
             free_margin = 10.0
 
         # If both slots will be used, use half the margin
-        if (side == "buy" and self.active_short) or (side == "sell" and self.active_long):
+        if (side == "buy" and self.active_shorts) or (side == "sell" and self.active_longs):
             margin_budget = free_margin * MARGIN_BUFFER * 0.5
         else:
             margin_budget = free_margin * MARGIN_BUFFER
@@ -6163,13 +6454,22 @@ class KrakenMarginArmyTrader:
             )
             if stream_error:
                 status_lines.append(f"StreamErr: {stream_error[:90]}")
-        for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
-            if trade:
+        long_trades = self._iter_active_trades("buy")
+        short_trades = self._iter_active_trades("sell")
+        if long_trades:
+            for idx, trade in enumerate(long_trades):
                 status_lines.append(
-                    f"{label}: {trade.pair} {trade.side.upper()} {trade.leverage}x @ ${trade.entry_price:,.4f}"
+                    f"{self._format_side_label(trade, idx)}: {trade.pair} {trade.side.upper()} {trade.leverage}x @ ${trade.entry_price:,.4f}"
                 )
-            else:
-                status_lines.append(f"{label}: EMPTY")
+        else:
+            status_lines.append("LONG: EMPTY")
+        if short_trades:
+            for idx, trade in enumerate(short_trades):
+                status_lines.append(
+                    f"{self._format_side_label(trade, idx)}: {trade.pair} {trade.side.upper()} {trade.leverage}x @ ${trade.entry_price:,.4f}"
+                )
+        else:
+            status_lines.append("SHORT: EMPTY")
         if self.extra_active_longs or self.extra_active_shorts:
             status_lines.append(
                 f"ExtraLive: longs={len(self.extra_active_longs)} shorts={len(self.extra_active_shorts)}"
@@ -6204,8 +6504,10 @@ class KrakenMarginArmyTrader:
             )
 
         # Dual position display
-        for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
+        for trade in long_trades + short_trades:
             if trade:
+                side_index = (long_trades.index(trade) if trade.side == "buy" else short_trades.index(trade))
+                label = self._format_side_label(trade, side_index)
                 age = time.time() - trade.entry_time
                 if age < 60:
                     age_str = f"{int(age)}s"
@@ -6229,8 +6531,10 @@ class KrakenMarginArmyTrader:
                         pass
                 print(f"  {label}: {trade.pair} {trade.side.upper()} {trade.leverage}x | "
                       f"${trade.entry_price:,.4f} | age={age_str}{phase_str}")
-            else:
-                print(f"  {label}: EMPTY (scanning)")
+        if not long_trades:
+            print("  LONG: EMPTY (scanning)")
+        if not short_trades:
+            print("  SHORT: EMPTY (scanning)")
 
         # Shadow trades
         if self.shadow_trades:
@@ -7312,7 +7616,7 @@ class KrakenMarginArmyTrader:
         print("=" * 70)
         print(f"  KRAKEN MARGIN ARMY TRADER — SHADOW VALIDATION + DUAL POSITIONS")
         print(f"  Mode: {mode}")
-        print(f"  Strategy: 1 LONG + 1 SHORT | SHADOW VALIDATE FIRST | NO STOP LOSS")
+        print(f"  Strategy: up to {self.max_long_positions} LONG + {self.max_short_positions} SHORT | SHADOW VALIDATE FIRST | NO STOP LOSS")
         print(f"  Intel: Pre-strike research + Live danger detection")
         print(f"  Stream: {'Binance WebSocket (sub-second)' if HAS_WEBSOCKET else 'REST polling (2s)'}")
         print(f"  Shadow: Simulated plays validate predictions before real capital")
@@ -7370,8 +7674,9 @@ class KrakenMarginArmyTrader:
                 # ============================
                 # PHASE 1: Monitor active positions
                 # ============================
-                for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
-                    if trade:
+                for side in ("buy", "sell"):
+                    for idx, trade in enumerate(self._iter_active_trades(side)):
+                        label = self._format_side_label(trade, idx)
                         result = self.monitor_position(trade=trade)
                         if result:
                             pnl = result.get("net_pnl", 0)
@@ -7398,9 +7703,9 @@ class KrakenMarginArmyTrader:
                     if shadow.validation_time > 0 and (now - shadow.validation_time) < self.SHADOW_MIN_VALIDATE:
                         continue
                     # Check if the correct slot is free
-                    if shadow.side == "buy" and self.active_long:
+                    if shadow.side == "buy" and not self._side_has_capacity("buy"):
                         continue
-                    if shadow.side == "sell" and self.active_short:
+                    if shadow.side == "sell" and not self._side_has_capacity("sell"):
                         continue
 
                     # ── ORCHESTRATOR GATE: all Queen's systems must agree ──
@@ -7427,9 +7732,9 @@ class KrakenMarginArmyTrader:
                 # ============================
                 # PHASE 4: Find candidates → create shadows (if slots empty)
                 # ============================
-                has_open = self.active_long or self.active_short
-                need_long = self.active_long is None
-                need_short = self.active_short is None
+                has_open = bool(self._iter_active_trades())
+                need_long = self._side_has_capacity("buy")
+                need_short = self._side_has_capacity("sell")
 
                 if (need_long or need_short) and not promoted_this_cycle:
                     if now - last_full_refresh > 30:
@@ -7455,7 +7760,7 @@ class KrakenMarginArmyTrader:
                 # ============================
                 # Sleep & periodic tasks
                 # ============================
-                if self.active_long or self.active_short:
+                if self._iter_active_trades():
                     time.sleep(MONITOR_INTERVAL)
                 elif self.shadow_trades:
                     time.sleep(1)  # Fast updates for shadows
@@ -7506,8 +7811,9 @@ class KrakenMarginArmyTrader:
                 pass
 
         # ── PHASE 1: Monitor active positions ─────────────────────────────
-        for label, trade in [("LONG", self.active_long), ("SHORT", self.active_short)]:
-            if trade:
+        for side in ("buy", "sell"):
+            for idx, trade in enumerate(self._iter_active_trades(side)):
+                label = self._format_side_label(trade, idx)
                 result = self.monitor_position(trade=trade)
                 if result:
                     pnl = result.get("net_pnl", 0)
@@ -7530,9 +7836,9 @@ class KrakenMarginArmyTrader:
             if (shadow.validation_time > 0 and
                     (now - shadow.validation_time) < self.SHADOW_MIN_VALIDATE):
                 continue
-            if shadow.side == "buy" and self.active_long:
+            if shadow.side == "buy" and not self._side_has_capacity("buy"):
                 continue
-            if shadow.side == "sell" and self.active_short:
+            if shadow.side == "sell" and not self._side_has_capacity("sell"):
                 continue
 
             # Full Quadrumvirate gate before real capital
@@ -7554,8 +7860,8 @@ class KrakenMarginArmyTrader:
                 break   # one promotion per tick
 
         # ── PHASE 4: Find candidates → create new shadows ─────────────────
-        need_long  = self.active_long  is None
-        need_short = self.active_short is None
+        need_long = self._side_has_capacity("buy")
+        need_short = self._side_has_capacity("sell")
 
         if need_long or need_short:
             # Price refresh every 30 s

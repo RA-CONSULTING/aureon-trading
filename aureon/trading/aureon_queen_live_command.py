@@ -57,37 +57,77 @@ QUEEN_AVAILABLE = False
 queen_hive = None
 
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
-    queen_hive = QueenHiveMind()
-    QUEEN_AVAILABLE = True
-    logger.info("👑 QUEEN HIVE MIND LOADED!")
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
 except ImportError:
-    logger.warning("Queen Hive Mind not available")
-    
+    try:
+        from aureon_queen_hive_mind import QueenHiveMind
+    except ImportError:
+        QueenHiveMind = None  # type: ignore
+if QueenHiveMind is not None:
+    try:
+        queen_hive = QueenHiveMind()
+        QUEEN_AVAILABLE = True
+        logger.info("👑 QUEEN HIVE MIND LOADED!")
+    except Exception as e:
+        logger.warning(f"Queen Hive Mind not available: {e}")
+
 try:
-    from aureon_enigma import Enigma
-    enigma = Enigma()
-    ENIGMA_AVAILABLE = True
-    logger.info("🔐 ENIGMA DECODER LOADED!")
-except:
+    from aureon.wisdom.aureon_enigma import Enigma
+except ImportError:
+    try:
+        from aureon_enigma import Enigma
+    except ImportError:
+        Enigma = None  # type: ignore
+if Enigma is not None:
+    try:
+        enigma = Enigma()
+        ENIGMA_AVAILABLE = True
+        logger.info("🔐 ENIGMA DECODER LOADED!")
+    except Exception as e:
+        ENIGMA_AVAILABLE = False
+        enigma = None
+        logger.warning(f"Enigma Decoder not available: {e}")
+else:
     ENIGMA_AVAILABLE = False
     enigma = None
 
 try:
-    from aureon_elephant_learning import ElephantMemory
-    elephant = ElephantMemory()
-    ELEPHANT_AVAILABLE = True
-    logger.info("🐘 ELEPHANT MEMORY LOADED!")
-except:
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
+except ImportError:
+    try:
+        from aureon_elephant_learning import ElephantMemory
+    except ImportError:
+        ElephantMemory = None  # type: ignore
+if ElephantMemory is not None:
+    try:
+        elephant = ElephantMemory()
+        ELEPHANT_AVAILABLE = True
+        logger.info("🐘 ELEPHANT MEMORY LOADED!")
+    except Exception as e:
+        ELEPHANT_AVAILABLE = False
+        elephant = None
+        logger.warning(f"Elephant Memory not available: {e}")
+else:
     ELEPHANT_AVAILABLE = False
     elephant = None
 
 try:
-    from aureon_probability_nexus import ProbabilityNexus
-    nexus = ProbabilityNexus()
-    NEXUS_AVAILABLE = True
-    logger.info("🎯 PROBABILITY NEXUS LOADED!")
-except:
+    from aureon.bridges.aureon_probability_nexus import ProbabilityNexus
+except ImportError:
+    try:
+        from aureon_probability_nexus import ProbabilityNexus
+    except ImportError:
+        ProbabilityNexus = None  # type: ignore
+if ProbabilityNexus is not None:
+    try:
+        nexus = ProbabilityNexus()
+        NEXUS_AVAILABLE = True
+        logger.info("🎯 PROBABILITY NEXUS LOADED!")
+    except Exception as e:
+        NEXUS_AVAILABLE = False
+        nexus = None
+        logger.warning(f"Probability Nexus not available: {e}")
+else:
     NEXUS_AVAILABLE = False
     nexus = None
 

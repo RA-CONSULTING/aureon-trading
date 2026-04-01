@@ -26,6 +26,26 @@ const formatAge = (seconds: unknown) => {
   return `${mins}m ${secs}s`;
 };
 
+const queenTone = (confidence: unknown, readiness: unknown, veto?: unknown) => {
+  if (Boolean(veto)) return 'Veto';
+  const conf = safeNumber(confidence);
+  const ready = safeNumber(readiness);
+  if (conf >= 0.8 && ready >= 0.8) return 'Queen green';
+  if (conf >= 0.55 || ready >= 0.55) return 'Queen watching';
+  return 'Queen weak';
+};
+
+const QueenSystemBadge = ({ label, active }: { label: string; active?: boolean }) => (
+  <span
+    className={cn(
+      'rounded border px-1.5 py-0.5 font-mono text-[9px]',
+      active ? 'border-green-500/40 text-green-500' : 'border-border/40 text-muted-foreground',
+    )}
+  >
+    {label} {active ? 'on' : 'off'}
+  </span>
+);
+
 const ExchangeMetric = ({
   label,
   value,
@@ -283,6 +303,10 @@ export function LiveTerminalStats() {
   const krakenOpen = safeNumber(summary?.krakenOpenPositions, krakenPositions.length);
   const capitalOpen = safeNumber(summary?.capitalOpenPositions, capitalPositions.length);
   const queenVoice = state.queenVoice;
+  const capitalTarget = summary?.capitalTarget;
+  const capitalCandidates = Array.isArray(summary?.capitalCandidates) ? summary.capitalCandidates : [];
+  const capitalQueenSnapshot = summary?.capitalQueenSnapshot;
+  const queenSystems = capitalTarget?.queen_systems || capitalQueenSnapshot?.systems;
 
   return (
     <Card className="border-border/50 bg-background/95 p-4">
@@ -398,6 +422,43 @@ export function LiveTerminalStats() {
             <ExchangeMetric label="Open Positions" value={`${capitalOpen}`} />
             <ExchangeMetric label="Shadows" value={`${safeNumber(summary?.capitalShadows, capitalShadows.length)}`} />
           </div>
+          {(capitalTarget?.symbol || capitalQueenSnapshot?.symbol) && (
+            <div className="mt-3 rounded border border-border/40 bg-background/60 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 font-mono text-[11px]">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-foreground">Target</span>
+                  <span className="text-foreground">
+                    {String(capitalTarget?.symbol || capitalQueenSnapshot?.symbol || '?')}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {String(capitalTarget?.direction || capitalQueenSnapshot?.side || 'NEUTRAL')}
+                  </span>
+                </div>
+                <span className="text-[10px] text-amber-400">
+                  {queenTone(capitalTarget?.queen_confidence, capitalTarget?.queen_battle_readiness)}
+                </span>
+              </div>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] text-muted-foreground">
+                <span>Q {safeNumber(capitalTarget?.queen_confidence, capitalQueenSnapshot?.confidence).toFixed(2)}</span>
+                <span>Ready {safeNumber(capitalTarget?.queen_battle_readiness, capitalQueenSnapshot?.battle_readiness).toFixed(2)}</span>
+                <span>Dir {String(capitalTarget?.queen_direction || capitalQueenSnapshot?.direction || 'NEUTRAL')}</span>
+                <span>Net £{safeNumber(capitalTarget?.expected_net_profit).toFixed(4)}</span>
+              </div>
+              {(capitalTarget?.queen_reason || capitalTarget?.intel_reason || capitalQueenSnapshot?.reason) && (
+                <div className="mt-1 font-mono text-[10px] text-muted-foreground">
+                  {String(capitalTarget?.queen_reason || capitalTarget?.intel_reason || capitalQueenSnapshot?.reason || '')}
+                </div>
+              )}
+              {queenSystems && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <QueenSystemBadge label="Open Source" active={Boolean(queenSystems.open_source)} />
+                  <QueenSystemBadge label="Ocean" active={Boolean(queenSystems.ocean)} />
+                  <QueenSystemBadge label="Solar" active={Boolean(queenSystems.solar)} />
+                  <QueenSystemBadge label="Warrior" active={Boolean(queenSystems.warrior)} />
+                </div>
+              )}
+            </div>
+          )}
           <div className="mt-3 space-y-2">
             {capitalPositions.length > 0 ? (
               capitalPositions.slice(0, 5).map((pos, index) => (
@@ -435,6 +496,36 @@ export function LiveTerminalStats() {
               ))
             ) : (
               <div className="font-mono text-[11px] text-muted-foreground">No active Capital shadows</div>
+            )}
+          </div>
+          <div className="mt-3 space-y-2">
+            <div className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Queen View</div>
+            {capitalCandidates.length > 0 ? (
+              capitalCandidates.map((candidate, index) => (
+                <div key={`capital-queen-${candidate.symbol}-${index}`} className="rounded border border-border/40 bg-background/60 px-3 py-2 font-mono text-[10px]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-foreground">
+                      #{index + 1} {candidate.symbol} {candidate.direction || ''}
+                    </span>
+                    <span className={cn(Boolean(candidate.queen_avoid_trade) ? 'text-red-500' : 'text-amber-400')}>
+                      {queenTone(candidate.queen_confidence, candidate.queen_battle_readiness, candidate.queen_avoid_trade)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                    <span>Q {safeNumber(candidate.queen_confidence).toFixed(2)}</span>
+                    <span>Ready {safeNumber(candidate.queen_battle_readiness).toFixed(2)}</span>
+                    <span>Dir {String(candidate.queen_direction || 'NEUTRAL')}</span>
+                    <span>Net £{safeNumber(candidate.expected_net_profit).toFixed(4)}</span>
+                  </div>
+                  {(candidate.queen_reason || candidate.intel_reason) && (
+                    <div className="mt-1 text-muted-foreground">
+                      {String(candidate.queen_reason || candidate.intel_reason || '')}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="font-mono text-[11px] text-muted-foreground">No Capital candidates to score</div>
             )}
           </div>
         </div>

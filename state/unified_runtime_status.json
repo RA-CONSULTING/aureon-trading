@@ -1,33 +1,33 @@
 {
-  "ok": true,
+  "ok": false,
   "service": "unified-market-trader",
-  "trading_ready": true,
+  "trading_ready": false,
   "data_ready": true,
   "stale": false,
-  "last_tick_started_at": null,
-  "last_tick_completed_at": null,
-  "last_tick_age_sec": null,
-  "dashboard_generated_at": "2026-03-31T12:41:36.638913",
-  "runtime_minutes": 2.135301077365875,
-  "preflight_overall": "green",
-  "preflight_critical_failures": 0,
+  "last_tick_started_at": "2026-04-01T14:14:09.506516",
+  "last_tick_completed_at": "2026-04-01T14:17:39.601789",
+  "last_tick_age_sec": 0.0,
+  "dashboard_generated_at": "2026-04-01T14:17:39.601788",
+  "runtime_minutes": 13.622920640309651,
+  "preflight_overall": "red",
+  "preflight_critical_failures": 2,
   "preflight_warnings": 0,
   "exchanges": {
-    "kraken_ready": true,
-    "capital_ready": true,
+    "kraken_ready": false,
+    "capital_ready": false,
     "alpaca_ready": true,
     "binance_ready": true
   },
   "errors": {
-    "kraken": "",
-    "capital": "",
+    "kraken": "Live startup state load failed: Expecting value: line 1 column 1 (char 0)",
+    "capital": "CapitalCFDTrader._capital_cost_profile() got an unexpected keyword argument 'bid'",
     "alpaca": "",
     "binance": "",
-    "last_tick_error": ""
+    "last_tick_error": "CapitalCFDTrader._capital_cost_profile() got an unexpected keyword argument 'bid'"
   },
   "combined": {
-    "open_positions": 1,
+    "open_positions": 0,
     "kraken_equity": 0.0,
-    "capital_equity_gbp": 133.09
+    "capital_equity_gbp": 0.0
   }
 }

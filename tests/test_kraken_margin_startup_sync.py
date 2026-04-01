@@ -77,6 +77,10 @@ class TestKrakenMarginStartupSync(unittest.TestCase):
     def test_load_state_reconciles_live_kraken_positions_without_local_state_file(self):
         trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
         trader.dry_run = False
+        trader.max_long_positions = 2
+        trader.max_short_positions = 2
+        trader.active_longs = []
+        trader.active_shorts = []
         trader.active_long = None
         trader.active_short = None
         trader.active_trade = None
@@ -112,6 +116,108 @@ class TestKrakenMarginStartupSync(unittest.TestCase):
         self.assertEqual(trader.active_long.side, "buy")
         self.assertEqual(trader.active_long.order_id, "P123")
         self.assertGreater(trader.active_long.breakeven_price, trader.active_long.entry_price)
+
+    def test_load_state_prefers_local_order_id_when_multiple_live_long_positions_exist(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.dry_run = False
+        trader.max_long_positions = 2
+        trader.max_short_positions = 2
+        trader.active_longs = []
+        trader.active_shorts = []
+        trader.active_long = None
+        trader.active_short = None
+        trader.active_trade = None
+        trader.total_profit = 0
+        trader.total_trades = 0
+        trader.winning_trades = 0
+        trader.shadow_validated_count = 0
+        trader.shadow_failed_count = 0
+        trader.completed_trades = []
+        trader.orchestrator = None
+        trader._start_stream_for = lambda symbol: None
+        trader._save_state = lambda: None
+        trader._binance_symbol_for_pair = lambda pair: "ADAUSDT" if pair == "ADAUSD" else "SOLUSDT"
+        trader.client = type("ClientStub", (), {})()
+        trader.client._int_to_alt = {"ADAUSD": "ADAUSD", "SOLUSD": "SOLUSD"}
+        trader.client.get_open_margin_positions = lambda do_calcs=True: [
+            {
+                "pair": "SOLUSD",
+                "side": "buy",
+                "volume": 1.0,
+                "cost": 92.0,
+                "fee": 0.3,
+                "open_time": 1700000200.0,
+                "position_id": "SOL123",
+                "leverage": "1",
+            },
+            {
+                "pair": "ADAUSD",
+                "side": "buy",
+                "volume": 100.0,
+                "cost": 27.5,
+                "fee": 0.2,
+                "open_time": 1700000100.0,
+                "position_id": "ADA123",
+                "leverage": "1",
+            },
+        ]
+        state_payload = {
+            "active_long": {
+                "pair": "ADAUSD",
+                "side": "buy",
+                "volume": 100.0,
+                "entry_price": 0.275,
+                "leverage": 1,
+                "entry_fee": 0.2,
+                "entry_time": 1700000100.0,
+                "order_id": "ADA123",
+                "cost": 27.5,
+                "breakeven_price": 0.29,
+                "binance_symbol": "ADAUSDT",
+            }
+        }
+
+        with patch("aureon.exchanges.kraken_margin_penny_trader.os.path.exists", return_value=True), \
+             patch("aureon.exchanges.kraken_margin_penny_trader.open", unittest.mock.mock_open(read_data='{\"active_long\": {\"pair\": \"ADAUSD\", \"side\": \"buy\", \"volume\": 100.0, \"entry_price\": 0.275, \"leverage\": 1, \"entry_fee\": 0.2, \"entry_time\": 1700000100.0, \"order_id\": \"ADA123\", \"cost\": 27.5, \"breakeven_price\": 0.29, \"binance_symbol\": \"ADAUSDT\"}}')):
+            trader._load_state()
+
+        self.assertIsNotNone(trader.active_long)
+        self.assertEqual(trader.active_long.pair, "ADAUSD")
+        self.assertEqual(trader.active_long.order_id, "ADA123")
+
+    def test_load_state_tracks_two_live_longs(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.dry_run = False
+        trader.max_long_positions = 2
+        trader.max_short_positions = 2
+        trader.active_longs = []
+        trader.active_shorts = []
+        trader.active_long = None
+        trader.active_short = None
+        trader.active_trade = None
+        trader.total_profit = 0
+        trader.total_trades = 0
+        trader.winning_trades = 0
+        trader.shadow_validated_count = 0
+        trader.shadow_failed_count = 0
+        trader.completed_trades = []
+        trader.orchestrator = None
+        trader._start_stream_for = lambda symbol: None
+        trader._save_state = lambda: None
+        trader._binance_symbol_for_pair = lambda pair: f"{pair.replace('/', '')}T"
+        trader.client = type("ClientStub", (), {})()
+        trader.client._int_to_alt = {"ADAUSD": "ADAUSD", "SOLUSD": "SOLUSD"}
+        trader.client.get_open_margin_positions = lambda do_calcs=True: [
+            {"pair": "ADAUSD", "side": "buy", "volume": 100.0, "cost": 27.5, "fee": 0.2, "open_time": 1700000100.0, "position_id": "ADA123", "leverage": "1"},
+            {"pair": "SOLUSD", "side": "buy", "volume": 1.0, "cost": 92.0, "fee": 0.3, "open_time": 1700000200.0, "position_id": "SOL123", "leverage": "1"},
+        ]
+
+        with patch("aureon.exchanges.kraken_margin_penny_trader.os.path.exists", return_value=False):
+            trader._load_state()
+
+        self.assertEqual(len(trader.active_longs), 2)
+        self.assertEqual({t.order_id for t in trader.active_longs}, {"ADA123", "SOL123"})
+        self.assertEqual(trader.active_long.order_id, "ADA123")
 
 
 if __name__ == "__main__":

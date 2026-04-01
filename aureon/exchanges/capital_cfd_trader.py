@@ -11,7 +11,7 @@ Design principles:
   - tick() is headless (no sleep / no while-True) → called by orca main loop
   - Gated by Seer + Lyra quick-check before opening any position
   - TP / SL / 1-hour time-limit on every position
-  - Max 3 concurrent CFD positions to protect margin
+  - Max 6 concurrent CFD positions to protect margin
   - Phase-aware scoring: momentum + spread quality
   - Status lines for orca dashboard
 
@@ -24,6 +24,8 @@ import logging
 import json
 import importlib
 import threading
+import requests
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -44,6 +46,13 @@ except ImportError:
     except ImportError:
         CapitalClient = None          # type: ignore
         HAS_CAPITAL = False
+
+try:
+    from unified_market_cache import get_ticker as get_cached_ticker
+    HAS_UNIFIED_CACHE = True
+except Exception:
+    get_cached_ticker = None      # type: ignore
+    HAS_UNIFIED_CACHE = False
 
 # Seer + Lyra lightweight gates (used directly — no full orchestrator needed)
 try:
@@ -125,6 +134,41 @@ except Exception:
     HAS_HARMONIC_FUSION = False
 
 try:
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
+    HAS_HNC_PROBABILITY = True
+except Exception:
+    HNCProbabilityIntegration = None   # type: ignore
+    HAS_HNC_PROBABILITY = False
+
+try:
+    from aureon.strategies.hnc_6d_harmonic_waveform import Enhanced6DProbabilityMatrix
+    HAS_HNC_6D = True
+except Exception:
+    Enhanced6DProbabilityMatrix = None   # type: ignore
+    HAS_HNC_6D = False
+
+try:
+    from aureon.strategies.hnc_master_protocol import HNCTradingBridge
+    HAS_HNC_BRIDGE = True
+except Exception:
+    HNCTradingBridge = None   # type: ignore
+    HAS_HNC_BRIDGE = False
+
+try:
+    from aureon.strategies.hnc_imperial_predictability import ImperialTradingIntegration
+    HAS_HNC_IMPERIAL = True
+except Exception:
+    ImperialTradingIntegration = None   # type: ignore
+    HAS_HNC_IMPERIAL = False
+
+try:
+    from aureon.bridges.aureon_hnc_surge_detector import HncSurgeDetector
+    HAS_HNC_SURGE = True
+except Exception:
+    HncSurgeDetector = None   # type: ignore
+    HAS_HNC_SURGE = False
+
+try:
     from aureon.core.aureon_thought_bus import get_thought_bus, Thought
     HAS_THOUGHT_BUS = True
 except Exception:
@@ -143,6 +187,56 @@ except Exception:
         get_penny_engine = None     # type: ignore
         HAS_PENNY_ENGINE = False
 
+try:
+    from aureon.queen.queen_signal_reader import (
+        detect_movement_state,
+        detect_consciousness_state,
+        detect_direction_from_signals,
+        detect_schumann_alignment,
+    )
+    HAS_QUEEN_SIGNAL_READER = True
+except Exception:
+    detect_movement_state = None   # type: ignore
+    detect_consciousness_state = None   # type: ignore
+    detect_direction_from_signals = None   # type: ignore
+    detect_schumann_alignment = None   # type: ignore
+    HAS_QUEEN_SIGNAL_READER = False
+
+try:
+    from aureon.queen.queen_market_awareness import QueenMarketAwareness
+    HAS_QUEEN_MARKET_AWARENESS = True
+except Exception:
+    QueenMarketAwareness = None   # type: ignore
+    HAS_QUEEN_MARKET_AWARENESS = False
+
+try:
+    from aureon.trading.aureon_queen_live_command import QueenLiveAnalyzer
+    HAS_QUEEN_LIVE_ANALYZER = True
+except Exception:
+    QueenLiveAnalyzer = None   # type: ignore
+    HAS_QUEEN_LIVE_ANALYZER = False
+
+try:
+    from aureon.queen.queen_loss_learning import QueenLossLearningSystem
+    HAS_QUEEN_LOSS_LEARNING = True
+except Exception:
+    QueenLossLearningSystem = None   # type: ignore
+    HAS_QUEEN_LOSS_LEARNING = False
+
+try:
+    from aureon.queen.queen_sentience_integration import get_sentience_engine
+    HAS_QUEEN_SENTIENCE = True
+except Exception:
+    get_sentience_engine = None   # type: ignore
+    HAS_QUEEN_SENTIENCE = False
+
+try:
+    from aureon.utils.aureon_queen_hive_mind import get_queen
+    HAS_QUEEN_HIVE = True
+except Exception:
+    get_queen = None   # type: ignore
+    HAS_QUEEN_HIVE = False
+
 # ── INSTRUMENT UNIVERSE ────────────────────────────────────────────────────────
 # symbol → {class, tp_pct, sl_pct, size, max_spread_pct, momentum_threshold}
 #   tp_pct / sl_pct  — take-profit / stop-loss as % of entry price
@@ -160,6 +254,7 @@ CAPITAL_UNIVERSE: Dict[str, dict] = {
     "EURGBP":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "size": 0.01, "max_spread_pct": 0.07, "momentum_threshold": 0.06},
     # ── Indices ──────────────────────────────────────────────────────────
     "UK100":      {"class": "index",     "tp_pct": 0.55, "sl_pct": 0.30, "size": 1,    "max_spread_pct": 0.05, "momentum_threshold": 0.10},
+    "US100":      {"class": "index",     "tp_pct": 0.60, "sl_pct": 0.32, "size": 1,    "max_spread_pct": 0.06, "momentum_threshold": 0.12},
     "US500":      {"class": "index",     "tp_pct": 0.55, "sl_pct": 0.30, "size": 1,    "max_spread_pct": 0.05, "momentum_threshold": 0.10},
     "US30":       {"class": "index",     "tp_pct": 0.55, "sl_pct": 0.30, "size": 1,    "max_spread_pct": 0.05, "momentum_threshold": 0.10},
     "DE40":       {"class": "index",     "tp_pct": 0.55, "sl_pct": 0.30, "size": 1,    "max_spread_pct": 0.06, "momentum_threshold": 0.12},
@@ -195,8 +290,10 @@ def _env_bool(name: str, default: bool) -> bool:
 
 
 CFD_CONFIG: Dict[str, float] = {
-    "max_positions":      _env_float("CAPITAL_MAX_POSITIONS", 2.0),   # One BUY lane and one SELL lane
-    "price_ttl_secs":    _env_float("CAPITAL_PRICE_TTL_SECS", 10.0),  # Price cache lifetime
+    "max_positions":      _env_float("CAPITAL_MAX_POSITIONS", 6.0),   # Up to 3 BUY + 3 SELL lanes
+    "max_positions_per_direction": _env_float("CAPITAL_MAX_POSITIONS_PER_DIRECTION", 3.0),
+    "price_ttl_secs":    _env_float("CAPITAL_PRICE_TTL_SECS", 1.0),  # Price cache lifetime
+    "capital_api_price_ttl_secs": _env_float("CAPITAL_API_PRICE_TTL_SECS", 5.0),
     "position_ttl_secs": _env_float("CAPITAL_POSITION_TTL_SECS", 3600.0), # Selection benchmark only; not a forced close
     "scan_interval_secs": _env_float("CAPITAL_SCAN_INTERVAL_SECS", 8.0),  # Opportunity scan interval
     "monitor_interval":   _env_float("CAPITAL_MONITOR_INTERVAL_SECS", 2.0),  # Position monitor interval
@@ -227,11 +324,44 @@ CAPITAL_LIVE_REFRESH_ENABLED = _env_bool("CAPITAL_LIVE_REFRESH_ENABLED", True)
 CAPITAL_LIVE_REFRESH_INTERVAL_SECS = _env_float("CAPITAL_LIVE_REFRESH_INTERVAL_SECS", 1.0)
 CAPITAL_LIVE_EVENT_TRIGGER_PCT = _env_float("CAPITAL_LIVE_EVENT_TRIGGER_PCT", 0.03)
 CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS = _env_float("CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS", 0.25)
+CAPITAL_ACCOUNT_TTL_SECS = _env_float("CAPITAL_ACCOUNT_TTL_SECS", 2.0)
+CAPITAL_EQUITY_REFRESH_SECS = _env_float("CAPITAL_EQUITY_REFRESH_SECS", 1.0)
 CAPITAL_FOCUS_SYMBOLS = tuple(
     symbol.strip().upper()
     for symbol in str(os.getenv("CAPITAL_FOCUS_SYMBOLS", "") or "").split(",")
     if symbol.strip()
 )
+CAPITAL_FAST_GAIN_SYMBOLS = {
+    symbol.strip().upper()
+    for symbol in str(
+        os.getenv("CAPITAL_FAST_GAIN_SYMBOLS", "GOLD,OIL_CRUDE,US100,US500,US30,SILVER,NATURALGAS,DE40,UK100,TSLA,NVDA")
+        or ""
+    ).split(",")
+    if symbol.strip()
+}
+
+YAHOO_SYMBOL_MAP: Dict[str, str] = {
+    "AAPL": "AAPL",
+    "TSLA": "TSLA",
+    "NVDA": "NVDA",
+    "AMZN": "AMZN",
+    "MSFT": "MSFT",
+    "EURUSD": "EURUSD=X",
+    "GBPUSD": "GBPUSD=X",
+    "USDJPY": "JPY=X",
+    "AUDUSD": "AUDUSD=X",
+    "USDCAD": "CAD=X",
+    "EURGBP": "EURGBP=X",
+    "UK100": "^FTSE",
+    "US100": "^NDX",
+    "US500": "^GSPC",
+    "US30": "^DJI",
+    "DE40": "^GDAXI",
+    "GOLD": "GC=F",
+    "SILVER": "SI=F",
+    "OIL_CRUDE": "CL=F",
+    "NATURALGAS": "NG=F",
+}
 
 
 # ── DATA CLASSES ───────────────────────────────────────────────────────────────
@@ -349,6 +479,22 @@ class CapitalCFDTrader:
     SHADOW_MIN_VALIDATE = CAPITAL_SHADOW_MIN_VALIDATE_SECS
     SHADOW_MAX_ACTIVE = 4
 
+    @staticmethod
+    def _is_closed_stream_error(exc: Exception) -> bool:
+        text = str(exc or "").strip().lower()
+        return "closed file" in text or "i/o operation on closed file" in text
+
+    def _safe_component_init(self, label: str, factory):
+        """Initialize optional intelligence components without aborting trader startup."""
+        try:
+            return factory()
+        except Exception as e:
+            if self._is_closed_stream_error(e):
+                logger.warning("Capital %s init skipped due closed output stream: %s", label, e)
+            else:
+                logger.debug("Capital %s init failed: %s", label, e)
+            return None
+
     def __init__(self) -> None:
         self.client: Optional[CapitalClient] = None
         self._state_lock = threading.RLock()
@@ -361,6 +507,12 @@ class CapitalCFDTrader:
         self._prices: Dict[str, dict] = {}
         self._prices_lock = threading.RLock()
         self._prices_fetched_at: float = 0.0
+        self._external_prices: Dict[str, dict] = {}
+        self._external_prices_at: Dict[str, float] = {}
+        self._accounts_cache: List[Dict[str, Any]] = []
+        self._accounts_cache_at: float = 0.0
+        self._balance_cache: Dict[str, float] = {}
+        self._balance_cache_at: float = 0.0
         self._latest_candidate_snapshot: List[Dict[str, Any]] = []
         self._latest_target_snapshot: Dict[str, Any] = {}
         self._latest_status_lines: List[str] = []
@@ -370,36 +522,118 @@ class CapitalCFDTrader:
         self._latest_order_trace_path: str = str(CAPITAL_TRACE_PATH)
         self._capital_snapshot_cache: Dict[str, float] = {}
         self._capital_snapshot_error: str = ""
+        self._last_capital_snapshot_refresh_at: float = 0.0
+        self._latest_runtime_snapshot: Dict[str, Any] = {}
         self._last_deadman_kick_at: float = time.time()
         self._recent_closed_trades: List[dict] = []
         self._shadow_validated_count: int = 0
         self._shadow_failed_count: int = 0
         self._rejection_cooldowns: Dict[str, Dict[str, Any]] = {}
+        self._market_history: Dict[str, Any] = {}
+        self._last_fusion_candle_at: Dict[str, float] = {}
         self._lane_snapshot: Dict[str, Any] = {}
         self._dtp_trackers: Dict[str, Any] = {}
         self.start_time: float = time.time()
         self.starting_equity_gbp: float = 0.0
-        self._signal_brain = AureonBrain() if HAS_AUREON_BRAIN and AureonBrain is not None else None
+        self._signal_brain = (
+            self._safe_component_init("AureonBrain", lambda: AureonBrain())
+            if HAS_AUREON_BRAIN and AureonBrain is not None else None
+        )
         self._trade_profit_validator = (
-            TradeProfitValidator(validation_log_file=os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_trade_validations.json"))
+            self._safe_component_init(
+                "TradeProfitValidator",
+                lambda: TradeProfitValidator(
+                    validation_log_file=os.path.join(
+                        os.path.dirname(__file__), "..", "..", "state", "capital_trade_validations.json"
+                    )
+                ),
+            )
             if HAS_TRADE_PROFIT_VALIDATOR and TradeProfitValidator is not None
             else None
         )
-        self.unified_registry = get_unified_puller() if HAS_UNIFIED_REGISTRY and get_unified_puller is not None else None
-        self.unified_decision_engine = UnifiedDecisionEngine() if HAS_UNIFIED_DECISION and UnifiedDecisionEngine is not None else None
+        self.unified_registry = (
+            self._safe_component_init("UnifiedRegistry", lambda: get_unified_puller())
+            if HAS_UNIFIED_REGISTRY and get_unified_puller is not None else None
+        )
+        self.unified_decision_engine = (
+            self._safe_component_init("UnifiedDecisionEngine", lambda: UnifiedDecisionEngine())
+            if HAS_UNIFIED_DECISION and UnifiedDecisionEngine is not None else None
+        )
         self.orchestrator = (
-            AutonomousOrchestrator(self)
-            if HAS_CAPITAL_ORCHESTRATOR and AutonomousOrchestrator is not None
-            else None
+            self._safe_component_init("AutonomousOrchestrator", lambda: AutonomousOrchestrator(self))
+            if HAS_CAPITAL_ORCHESTRATOR and AutonomousOrchestrator is not None else None
         )
         self.timeline_oracle = (
-            get_timeline_oracle() if HAS_TIMELINE_ORACLE and get_timeline_oracle is not None else None
+            self._safe_component_init("TimelineOracle", lambda: get_timeline_oracle())
+            if HAS_TIMELINE_ORACLE and get_timeline_oracle is not None else None
         )
         self.harmonic_fusion = (
-            HarmonicWaveFusion() if HAS_HARMONIC_FUSION and HarmonicWaveFusion is not None else None
+            self._safe_component_init("HarmonicWaveFusion", lambda: HarmonicWaveFusion())
+            if HAS_HARMONIC_FUSION and HarmonicWaveFusion is not None else None
         )
+        if self.harmonic_fusion is not None:
+            try:
+                self.harmonic_fusion.initialize()
+                self.harmonic_fusion.start_background_scanning()
+            except Exception as _e:
+                logger.debug(f"Capital HarmonicFusion init failed: {_e}")
+        self.hnc_probability = (
+            self._safe_component_init("HNCProbability", lambda: HNCProbabilityIntegration())
+            if HAS_HNC_PROBABILITY and HNCProbabilityIntegration is not None else None
+        )
+        self.hnc_6d = (
+            self._safe_component_init("HNC6D", lambda: Enhanced6DProbabilityMatrix())
+            if HAS_HNC_6D and Enhanced6DProbabilityMatrix is not None else None
+        )
+        self.hnc_bridge = (
+            self._safe_component_init("HNCBridge", lambda: HNCTradingBridge())
+            if HAS_HNC_BRIDGE and HNCTradingBridge is not None else None
+        )
+        self.hnc_imperial = (
+            self._safe_component_init("HNCImperial", lambda: ImperialTradingIntegration())
+            if HAS_HNC_IMPERIAL and ImperialTradingIntegration is not None else None
+        )
+        self.hnc_surge_detector = (
+            self._safe_component_init("HNCSurge", lambda: HncSurgeDetector(sample_rate=4, analysis_window_size=32))
+            if HAS_HNC_SURGE and HncSurgeDetector is not None else None
+        )
+        self.queen_market_awareness = None
+        if HAS_QUEEN_MARKET_AWARENESS and QueenMarketAwareness is not None:
+            try:
+                self.queen_market_awareness = QueenMarketAwareness()
+            except Exception as _e:
+                logger.debug(f"Capital QueenMarketAwareness init failed: {_e}")
+        self.queen_live_analyzer = None
+        if HAS_QUEEN_LIVE_ANALYZER and QueenLiveAnalyzer is not None:
+            try:
+                self.queen_live_analyzer = QueenLiveAnalyzer()
+            except Exception as _e:
+                logger.debug(f"Capital QueenLiveAnalyzer init failed: {_e}")
+        self.queen_loss_learning = None
+        if HAS_QUEEN_LOSS_LEARNING and QueenLossLearningSystem is not None:
+            try:
+                self.queen_loss_learning = QueenLossLearningSystem()
+            except Exception as _e:
+                logger.debug(f"Capital QueenLossLearning init failed: {_e}")
+        self.queen_sentience = None
+        if HAS_QUEEN_SENTIENCE and get_sentience_engine is not None:
+            try:
+                self.queen_sentience = get_sentience_engine()
+            except Exception as _e:
+                logger.debug(f"Capital QueenSentience init failed: {_e}")
+        self.queen_hive = None
+        if HAS_QUEEN_HIVE and get_queen is not None:
+            try:
+                self.queen_hive = get_queen(initial_capital=100.0)
+            except Exception as _e:
+                logger.debug(f"Capital QueenHive init failed: {_e}")
         self.thought_bus = (
-            get_thought_bus(os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_thoughts.jsonl"))
+            self._safe_component_init(
+                "ThoughtBus",
+                lambda: get_thought_bus(
+                    os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_thoughts.jsonl")
+                ),
+            )
             if HAS_THOUGHT_BUS and get_thought_bus is not None else None
         )
         self._registry_snapshot: Dict[str, Any] = {}
@@ -407,6 +641,8 @@ class CapitalCFDTrader:
         self._orchestrator_snapshot: Dict[str, Any] = {}
         self._timeline_snapshot: Dict[str, Any] = {}
         self._fusion_snapshot: Dict[str, Any] = {}
+        self._hnc_snapshot: Dict[str, Any] = {}
+        self._queen_snapshot: Dict[str, Any] = {}
         self._thought_bus_snapshot: Dict[str, Any] = {}
         self._cognition_snapshot: Dict[str, Any] = {}
         self._swarm_snapshot: Dict[str, Any] = {
@@ -418,14 +654,21 @@ class CapitalCFDTrader:
         self._probability_snapshot: Dict[str, Any] = {}
         self._probability_snapshot_at: float = 0.0
         self._self_confidence_snapshot: Dict[str, Any] = {}
-        self._harmonic_wiring_audit: Dict[str, Any] = self._build_harmonic_wiring_audit()
+        try:
+            self._harmonic_wiring_audit: Dict[str, Any] = self._build_harmonic_wiring_audit()
+        except Exception as _e:
+            logger.debug(f"Capital harmonic wiring audit init failed: {_e}")
+            self._harmonic_wiring_audit = {}
         self._harmonic_wiring_audit_at: float = time.time()
         self._last_slot_fill_attempt: Dict[str, float] = {"BUY": 0.0, "SELL": 0.0}
         self._last_client_reinit_at: float = 0.0
         self._live_refresh_thread: Optional[threading.Thread] = None
         self._live_refresh_stop = threading.Event()
         self._last_live_event_at: float = 0.0
-        self.penny_engine = get_penny_engine() if HAS_PENNY_ENGINE and get_penny_engine is not None else None
+        self.penny_engine = (
+            self._safe_component_init("PennyEngine", lambda: get_penny_engine())
+            if HAS_PENNY_ENGINE and get_penny_engine is not None else None
+        )
 
         # Timing
         self._last_scan:    float = 0.0
@@ -440,6 +683,7 @@ class CapitalCFDTrader:
         # Hive Mind shared intelligence — set externally by TradingHiveMind
         # {symbol/alias: confidence_factor 0.0–1.0} from Market Harp ripples
         self._hive_boosts:   Dict[str, float] = {}
+        self._shared_portfolio_snapshot_provider = None
 
         # Session statistics
         self.stats: Dict[str, float] = {
@@ -461,6 +705,46 @@ class CapitalCFDTrader:
             logger.info("CapitalCFDTrader: capital_client not installed — disabled")
 
     # ── PROPERTIES ─────────────────────────────────────────────────────────────
+    def set_shared_portfolio_snapshot_provider(self, provider) -> None:
+        """Inject a shared portfolio snapshot callback from the unified runner."""
+        self._shared_portfolio_snapshot_provider = provider
+
+    def _get_cached_accounts(self, force: bool = False) -> List[Dict[str, Any]]:
+        """Return Capital account balances with a short TTL to avoid rate-limit churn."""
+        now = time.time()
+        if not self.client:
+            return list(getattr(self, "_accounts_cache", []) or [])
+        ttl = max(0.25, float(CAPITAL_ACCOUNT_TTL_SECS))
+        if not force and (now - float(getattr(self, "_accounts_cache_at", 0.0) or 0.0)) < ttl:
+            return list(getattr(self, "_accounts_cache", []) or [])
+        try:
+            accounts = self.client.get_accounts()
+            if accounts:
+                self._accounts_cache = list(accounts)
+                self._accounts_cache_at = now
+                return list(accounts)
+        except Exception as e:
+            logger.debug(f"Capital accounts cache refresh failed: {e}")
+        return list(getattr(self, "_accounts_cache", []) or [])
+
+    def _get_cached_account_balance(self, force: bool = False) -> Dict[str, float]:
+        """Return fallback account balances with a short TTL to avoid rate-limit churn."""
+        now = time.time()
+        if not self.client:
+            return dict(getattr(self, "_balance_cache", {}) or {})
+        ttl = max(0.25, float(CAPITAL_ACCOUNT_TTL_SECS))
+        if not force and (now - float(getattr(self, "_balance_cache_at", 0.0) or 0.0)) < ttl:
+            return dict(getattr(self, "_balance_cache", {}) or {})
+        try:
+            balances = self.client.get_account_balance()
+            if balances:
+                self._balance_cache = dict(balances)
+                self._balance_cache_at = now
+                return dict(balances)
+        except Exception as e:
+            logger.debug(f"Capital balance cache refresh failed: {e}")
+        return dict(getattr(self, "_balance_cache", {}) or {})
+
     @property
     def enabled(self) -> bool:
         if self.client is not None and not getattr(self.client, "enabled", False):
@@ -552,6 +836,21 @@ class CapitalCFDTrader:
             return f"PENNY_TP pnl={pnl_gbp:+.4f}GBP target={target_gbp:.4f}GBP"
         return ""
 
+    def _fallback_margin_pct_for_asset(self, asset_class: str = "") -> float:
+        asset = str(asset_class or "").strip().lower()
+        fallback_margin_pct = {
+            "forex": 3.33,
+            "index": 5.0,
+            "commodity": 10.0,
+            "stock": 20.0,
+        }
+        return float(fallback_margin_pct.get(asset, 10.0))
+
+    def _estimate_candidate_margin_required(self, price: float, size: float, asset_class: str = "") -> float:
+        if price <= 0 or size <= 0:
+            return 0.0
+        return float(price) * float(size) * (self._fallback_margin_pct_for_asset(asset_class) / 100.0)
+
     def _refresh_unified_intel_snapshot(self) -> None:
         snapshot: Dict[str, Any] = {}
         if self.unified_registry is not None:
@@ -605,6 +904,17 @@ class CapitalCFDTrader:
                     "spread_pct": float(candidate.get("spread_pct", 0.0) or 0.0),
                     "direction": str(candidate.get("direction") or "BUY").upper(),
                     "eta_to_target": float(candidate.get("eta_to_target", 0.0) or 0.0),
+                    "waveform_coherence": float(candidate.get("waveform_coherence", 0.0) or 0.0),
+                    "waveform_velocity": float(candidate.get("waveform_velocity", 0.0) or 0.0),
+                    "timeline_confidence": float(candidate.get("timeline_confidence", 0.0) or 0.0),
+                    "fusion_coherence": float(candidate.get("fusion_symbol_coherence", 0.0) or 0.0),
+                    "hnc_probability": float(candidate.get("hnc_probability", 0.5) or 0.5),
+                    "hnc_confidence": float(candidate.get("hnc_confidence", 0.0) or 0.0),
+                    "hnc_frequency": float(candidate.get("hnc_frequency", 432.0) or 432.0),
+                    "hnc_surge_active": bool(candidate.get("hnc_surge_active", False)),
+                    "queen_confidence": float(candidate.get("queen_confidence", 0.0) or 0.0),
+                    "queen_battle_readiness": float(candidate.get("queen_battle_readiness", 0.0) or 0.0),
+                    "queen_direction": str(candidate.get("queen_direction", "NEUTRAL") or "NEUTRAL"),
                 }
             if not universe:
                 return
@@ -731,7 +1041,7 @@ class CapitalCFDTrader:
         except Exception as _e:
             logger.debug(f"Capital promotion event write failed: {_e}")
 
-    def get_capital_snapshot(self) -> Dict[str, float]:
+    def get_capital_snapshot(self, include_shared: bool = True, force_refresh: bool = False) -> Dict[str, float]:
         """Expose Capital.com account state in the same style as the Kraken trader."""
         cached = dict(getattr(self, "_capital_snapshot_cache", {}) or {})
         if not self.client:
@@ -741,15 +1051,15 @@ class CapitalCFDTrader:
                 "used_gbp": 0.0,
                 "budget_gbp": 0.0,
                 "target_pct_equity": 0.0,
-            }
+        }
+        accounts: List[Dict[str, Any]] = []
         try:
-            accounts = self.client.get_accounts()
+            accounts = self._get_cached_accounts(force=force_refresh)
         except Exception as e:
-            accounts = []
             self._capital_snapshot_error = f"accounts_error:{e}"
         if not accounts:
             try:
-                balances = self.client.get_account_balance()
+                balances = self._get_cached_account_balance(force=force_refresh)
             except Exception as e:
                 balances = {}
                 self._capital_snapshot_error = f"balance_error:{e}"
@@ -770,12 +1080,78 @@ class CapitalCFDTrader:
         }
         if equity > 0 or free > 0:
             self._capital_snapshot_cache = dict(snapshot)
+            self._last_capital_snapshot_refresh_at = time.time()
             self._capital_snapshot_error = ""
+        provider = getattr(self, "_shared_portfolio_snapshot_provider", None)
+        if include_shared and provider is not None:
+            try:
+                shared = provider() or {}
+                capital_shared = shared.get("capital", {}) if isinstance(shared, dict) else {}
+                snapshot["free_gbp"] = min(
+                    snapshot["free_gbp"],
+                    float(capital_shared.get("free_gbp", snapshot["free_gbp"]) or snapshot["free_gbp"]),
+                )
+                snapshot["budget_gbp"] = min(
+                    snapshot["budget_gbp"],
+                    float(capital_shared.get("budget_gbp", snapshot["budget_gbp"]) or snapshot["budget_gbp"]),
+                )
+                snapshot["portfolio_equity_gbp"] = float(
+                    shared.get("portfolio_equity_gbp", snapshot["equity_gbp"]) or snapshot["equity_gbp"]
+                )
+                snapshot["portfolio_free_gbp"] = float(
+                    shared.get("portfolio_free_gbp", snapshot["free_gbp"]) or snapshot["free_gbp"]
+                )
+            except Exception:
+                pass
+        if equity > 0 or free > 0:
             return snapshot
         if cached:
             cached["stale"] = 1.0
             return cached
         return snapshot
+
+    def _refresh_capital_runtime_state(self, force: bool = False) -> Dict[str, float]:
+        """Refresh live equity/free-budget snapshots on a short cadence for open/close decisions."""
+        now = time.time()
+        refresh_due = force or (
+            now - float(getattr(self, "_last_capital_snapshot_refresh_at", 0.0) or 0.0)
+            >= max(0.25, float(CAPITAL_EQUITY_REFRESH_SECS))
+        )
+        snapshot = self.get_capital_snapshot(force_refresh=refresh_due)
+        self._latest_runtime_snapshot.update({
+            "capital_snapshot_at": now,
+            "equity_gbp": float(snapshot.get("equity_gbp", 0.0) or 0.0),
+            "free_gbp": float(snapshot.get("free_gbp", 0.0) or 0.0),
+            "budget_gbp": float(snapshot.get("budget_gbp", 0.0) or 0.0),
+            "stale": float(snapshot.get("stale", 0.0) or 0.0),
+        })
+        return snapshot
+
+    def _update_open_close_runtime_state(self) -> None:
+        """Track whether we can open more positions and how many are immediately closable."""
+        counts = self._direction_counts()
+        max_positions = int(CFD_CONFIG["max_positions"])
+        max_per_side = int(CFD_CONFIG["max_positions_per_direction"])
+        closable = 0
+        profitable = 0
+        for pos in self.positions:
+            pnl_gbp = self._position_pnl_gbp(pos)
+            if pnl_gbp > 0:
+                profitable += 1
+            if (
+                (pos.direction == "BUY" and (pos.current_price >= pos.tp_price or pos.current_price <= pos.sl_price))
+                or (pos.direction != "BUY" and (pos.current_price <= pos.tp_price or pos.current_price >= pos.sl_price))
+                or pnl_gbp >= CAPITAL_DTP_TRIGGER_GBP
+            ):
+                closable += 1
+        self._latest_runtime_snapshot.update({
+            "open_slots": max(0, max_positions - len(self.positions)),
+            "buy_slots": max(0, max_per_side - counts.get("BUY", 0)),
+            "sell_slots": max(0, max_per_side - counts.get("SELL", 0)),
+            "closable_positions": closable,
+            "profitable_positions": profitable,
+            "can_open_any": len(self.positions) < max_positions,
+        })
 
     def _extract_capital_min_size(self, market_info: dict) -> float:
         """Best-effort extraction of Capital's minimum deal size for a market."""
@@ -876,15 +1252,14 @@ class CapitalCFDTrader:
             preflight["reason"] = "capital client unavailable"
             return preflight
 
+        snapshot = self.get_capital_snapshot(force_refresh=True)
         try:
-            accounts = self.client.get_accounts()
+            accounts = self._get_cached_accounts(force=True)
         except Exception as _e:
             accounts = []
             preflight["accounts_error"] = str(_e)
         preflight["accounts"] = accounts
-        preflight["available_balance"] = float(
-            sum(float(acc.get("available", 0.0) or 0.0) for acc in accounts)
-        )
+        preflight["available_balance"] = float(snapshot.get("budget_gbp", 0.0) or snapshot.get("free_gbp", 0.0) or 0.0)
 
         market_summary: Dict[str, Any] = {}
         market_detail: Dict[str, Any] = {}
@@ -967,6 +1342,11 @@ class CapitalCFDTrader:
                 f"{preflight['minimum_deal_size']:.6g}"
             )
             return preflight
+        allowed_statuses = {"TRADEABLE", "TRADEABLE_ONLINE", "OPEN", "EDITS_ONLY", "ONLINE"}
+        market_status = str(preflight["market_status"] or "").upper()
+        if market_status and market_status not in allowed_statuses and market_status != "UNKNOWN":
+            preflight["reason"] = f"market not tradeable: {market_status}"
+            return preflight
         if preflight["available_balance"] <= 0:
             preflight["reason"] = "available account balance <= 0"
             return preflight
@@ -975,6 +1355,18 @@ class CapitalCFDTrader:
         if market_status and market_status not in allowed_statuses and market_status != "UNKNOWN":
             preflight["reason"] = f"market not tradeable: {market_status}"
             return preflight
+        if (
+            isinstance(cfg, dict)
+            and float(preflight.get("estimated_margin_required", 0.0) or 0.0) > 0
+            and float(preflight.get("available_balance", 0.0) or 0.0) < float(preflight.get("estimated_margin_required", 0.0) or 0.0)
+        ):
+            preflight["reason"] = (
+                f"insufficient equity for estimated margin "
+                f"{float(preflight.get('estimated_margin_required', 0.0) or 0.0):.2f} "
+                f"> available {float(preflight.get('available_balance', 0.0) or 0.0):.2f}"
+            )
+            return preflight
+
         if price <= 0 and ask <= 0:
             preflight["reason"] = "missing live price"
             return preflight
@@ -1016,16 +1408,39 @@ class CapitalCFDTrader:
         adjusted["size"] = minimum_size
         return adjusted
 
-    def _capital_cost_profile(
-        self,
-        symbol: str,
-        size: float,
-        price: float,
-        tp_pct: float,
-        *,
-        bid: float = 0.0,
-        ask: float = 0.0,
-    ) -> Dict[str, float]:
+    def _candidate_affordability(self, symbol: str, cfg: dict, ticker: dict, available_balance: float) -> Dict[str, Any]:
+        """Cheap pre-filter to skip symbols we cannot currently afford before shadow work."""
+        price = float(ticker.get("price") or ticker.get("ask") or ticker.get("bid") or 0.0)
+        requested_size = float(cfg.get("size", 0.0) or 0.0)
+        minimum_size = requested_size
+        try:
+            if hasattr(self.client, "_resolve_market") and hasattr(self.client, "_get_market_snapshot"):
+                resolved = self.client._resolve_market(symbol)  # type: ignore[attr-defined]
+                epic = str((resolved or {}).get("epic") or ticker.get("epic") or symbol)
+                snapshot = self.client._get_market_snapshot(epic)  # type: ignore[attr-defined]
+                minimum_size = max(minimum_size, self._extract_capital_min_size(snapshot))
+        except Exception:
+            pass
+        working_size = minimum_size if minimum_size > 0 else requested_size
+        estimated_margin_required = self._estimate_candidate_margin_required(
+            price,
+            working_size,
+            str(cfg.get("class", "unknown") or "unknown"),
+        )
+        affordable = available_balance <= 0 or estimated_margin_required <= available_balance
+        return {
+            "affordable": affordable,
+            "working_size": working_size,
+            "estimated_margin_required": estimated_margin_required,
+            "available_balance": available_balance,
+            "reason": (
+                f"insufficient equity for estimated margin {estimated_margin_required:.2f} > available {available_balance:.2f}"
+                if not affordable and available_balance > 0
+                else "ok"
+            ),
+        }
+
+    def _capital_cost_profile(self, symbol: str, size: float, price: float, tp_pct: float) -> Dict[str, float]:
         """Estimate whether a Capital trade clears execution costs with the configured target."""
         notional = max(float(size or 0.0) * float(price or 0.0), 0.0)
         expected_gross_profit = notional * (max(float(tp_pct or 0.0), 0.0) / 100.0)
@@ -1062,12 +1477,26 @@ class CapitalCFDTrader:
 
     # ── PRICES ─────────────────────────────────────────────────────────────────
     def _refresh_prices(self) -> None:
-        """Fetch prices for all universe symbols (thread-safe via concurrent futures)."""
+        """Fetch prices for all universe symbols, preferring cheaper external monitoring paths."""
         if not self.client:
             return
-        if time.time() - self._prices_fetched_at < CFD_CONFIG["price_ttl_secs"]:
+        active_ttl = float(CFD_CONFIG["price_ttl_secs"])
+        if self.positions or self.shadow_trades:
+            active_ttl = min(active_ttl, 0.5)
+        if time.time() - self._prices_fetched_at < active_ttl:
             return
+        # Keep fast monitoring mostly off Capital.com by updating hot symbols from cache/public feeds.
+        hot_symbols = {
+            str(pos.symbol or "").upper() for pos in self.positions
+        } | {
+            str(shadow.symbol or "").upper() for shadow in self.shadow_trades
+        }
+        for symbol in hot_symbols:
+            self._refresh_external_price(symbol, force=False)
         try:
+            capital_ttl = float(CFD_CONFIG["capital_api_price_ttl_secs"])
+            if time.time() - self._prices_fetched_at < capital_ttl and self._prices:
+                return
             raw = self.client.get_tickers_for_symbols(list(self._active_universe().keys()))
             if raw:
                 with self._prices_lock:
@@ -1079,6 +1508,74 @@ class CapitalCFDTrader:
     def _get_price(self, symbol: str) -> Optional[dict]:
         with self._prices_lock:
             return self._prices.get(symbol.upper())
+
+    def _external_price_from_cache(self, symbol: str) -> Optional[dict]:
+        if not HAS_UNIFIED_CACHE or get_cached_ticker is None:
+            return None
+        try:
+            ticker = get_cached_ticker(symbol, max_age=2.0)
+        except Exception:
+            ticker = None
+        if not ticker:
+            return None
+        price = float(getattr(ticker, "price", 0.0) or 0.0)
+        if price <= 0:
+            try:
+                price = float((ticker or {}).get("price", 0.0) or 0.0)
+            except Exception:
+                price = 0.0
+        if price <= 0:
+            return None
+        return {"price": price, "source": "unified_cache"}
+
+    def _external_price_from_yahoo(self, symbol: str) -> Optional[dict]:
+        yahoo_symbol = YAHOO_SYMBOL_MAP.get(str(symbol or "").upper())
+        if not yahoo_symbol:
+            return None
+        try:
+            response = requests.get(
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{yahoo_symbol}",
+                params={"interval": "1m", "range": "1d"},
+                timeout=2.0,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            result = (((payload or {}).get("chart") or {}).get("result") or [None])[0] or {}
+            meta = result.get("meta") or {}
+            price = float(meta.get("regularMarketPrice") or meta.get("previousClose") or 0.0)
+            if price <= 0:
+                return None
+            return {"price": price, "source": "yahoo"}
+        except Exception:
+            return None
+
+    def _refresh_external_price(self, symbol: str, force: bool = False) -> Optional[dict]:
+        symbol = str(symbol or "").upper()
+        if not symbol:
+            return None
+        now = time.time()
+        last = float(self._external_prices_at.get(symbol, 0.0) or 0.0)
+        if not force and (now - last) < 0.5:
+            return self._external_prices.get(symbol)
+        ticker = self._external_price_from_cache(symbol) or self._external_price_from_yahoo(symbol)
+        if ticker:
+            self._external_prices[symbol] = dict(ticker)
+            self._external_prices_at[symbol] = now
+        return ticker
+
+    def _get_fast_price(self, symbol: str, prefer_external: bool = True) -> Optional[dict]:
+        symbol = str(symbol or "").upper()
+        external = self._refresh_external_price(symbol, force=False) if prefer_external else None
+        capital = self._get_price(symbol)
+        if external and capital:
+            merged = dict(capital)
+            merged["price"] = float(external.get("price", 0.0) or capital.get("price", 0.0) or 0.0)
+            merged["source"] = str(external.get("source") or "external")
+            self._record_market_observation(symbol, merged)
+            return merged
+        ticker = external or capital
+        self._record_market_observation(symbol, ticker)
+        return ticker
 
     def _canonical_symbol(self, value: Optional[str]) -> str:
         if not value:
@@ -1185,6 +1682,426 @@ class CapitalCFDTrader:
         except Exception as e:
             logger.debug("Capital live event actuation error: %s", e)
 
+    def _history_buffer(self, symbol: str):
+        symbol = str(symbol or "").upper()
+        history = self._market_history.get(symbol)
+        if history is None:
+            history = deque(maxlen=180)
+            self._market_history[symbol] = history
+        return history
+
+    def _record_market_observation(self, symbol: str, ticker: Optional[dict]) -> None:
+        if not ticker:
+            return
+        symbol = str(symbol or "").upper()
+        if not symbol:
+            return
+        price = float(ticker.get("price") or ticker.get("ask") or ticker.get("bid") or 0.0)
+        bid = float(ticker.get("bid") or 0.0)
+        ask = float(ticker.get("ask") or 0.0)
+        change_pct = float(ticker.get("change_pct") or 0.0)
+        if price <= 0:
+            return
+        now = time.time()
+        spread_pct = ((ask - bid) / price * 100.0) if bid > 0 and ask > 0 else 0.0
+        history = self._history_buffer(symbol)
+        if history:
+            last_price = float(history[-1].get("price", 0.0) or 0.0)
+            last_ts = float(history[-1].get("ts", 0.0) or 0.0)
+            if abs(last_price - price) < max(price * 1e-9, 1e-9) and (now - last_ts) < 0.2:
+                return
+        history.append({
+            "ts": now,
+            "price": price,
+            "bid": bid,
+            "ask": ask,
+            "change_pct": change_pct,
+            "spread_pct": spread_pct,
+            "volume": max(abs(change_pct), spread_pct, 0.01),
+        })
+        if self.harmonic_fusion is not None:
+            try:
+                self.harmonic_fusion.ingest_tick(symbol, price, max(abs(change_pct), spread_pct, 0.01), timestamp=now)
+                last_candle_at = float(self._last_fusion_candle_at.get(symbol, 0.0) or 0.0)
+                if len(history) >= 5 and (now - last_candle_at) >= 5.0:
+                    recent = list(history)[-5:]
+                    self.harmonic_fusion.ingest_candle(symbol, {
+                        "timestamp": recent[-1]["ts"],
+                        "open": recent[0]["price"],
+                        "high": max(float(item.get("price", 0.0) or 0.0) for item in recent),
+                        "low": min(float(item.get("price", 0.0) or 0.0) for item in recent),
+                        "close": recent[-1]["price"],
+                        "volume": sum(float(item.get("volume", 0.0) or 0.0) for item in recent),
+                    })
+                    self._last_fusion_candle_at[symbol] = now
+            except Exception as _e:
+                logger.debug(f"Capital harmonic ingest failed for {symbol}: {_e}")
+        if self.hnc_surge_detector is not None:
+            try:
+                self.hnc_surge_detector.add_price_tick(symbol, price)
+            except Exception as _e:
+                logger.debug(f"Capital HNC surge ingest failed for {symbol}: {_e}")
+        if self.queen_live_analyzer is not None:
+            try:
+                self.queen_live_analyzer.feed_price(symbol, price, now)
+                buy_volume = max(float(change_pct or 0.0), 0.0) + 0.01
+                sell_volume = max(-float(change_pct or 0.0), 0.0) + 0.01
+                self.queen_live_analyzer.feed_flow(symbol, buy_volume, sell_volume)
+            except Exception as _e:
+                logger.debug(f"Capital Queen live ingest failed for {symbol}: {_e}")
+
+    def _waveform_context(self, symbol: str, side: str) -> Dict[str, float]:
+        history = list(self._history_buffer(symbol))
+        result = {
+            "bonus": 0.0,
+            "coherence": 0.0,
+            "velocity": 0.0,
+            "acceleration": 0.0,
+            "slope_pct": 0.0,
+        }
+        if len(history) < 4:
+            return result
+        prices = [float(item.get("price", 0.0) or 0.0) for item in history[-12:]]
+        prices = [price for price in prices if price > 0]
+        if len(prices) < 4:
+            return result
+        returns: List[float] = []
+        for prev, curr in zip(prices[:-1], prices[1:]):
+            if prev > 0 and curr > 0:
+                returns.append(((curr - prev) / prev) * 100.0)
+        if len(returns) < 3:
+            return result
+        velocity = sum(returns[-3:]) / 3.0
+        prior_slice = returns[-6:-3]
+        prior_velocity = (sum(prior_slice) / len(prior_slice)) if prior_slice else velocity
+        acceleration = velocity - prior_velocity
+        tail = returns[-6:] if len(returns) >= 6 else returns
+        aligned = sum(1 for value in tail if value > 0) if str(side).upper() == "BUY" else sum(1 for value in tail if value < 0)
+        coherence = aligned / max(len(tail), 1)
+        slope_pct = ((prices[-1] - prices[0]) / prices[0]) * 100.0 if prices[0] > 0 else 0.0
+        directional_slope = slope_pct if str(side).upper() == "BUY" else -slope_pct
+        bonus = max(-1.5, min(2.0, directional_slope * 0.8 + velocity * 1.5 + acceleration * 0.75 + (coherence - 0.5) * 1.5))
+        result.update({
+            "bonus": bonus,
+            "coherence": coherence,
+            "velocity": velocity,
+            "acceleration": acceleration,
+            "slope_pct": directional_slope,
+        })
+        return result
+
+    def _hnc_market_type(self, asset_class: str) -> str:
+        asset = str(asset_class or "").strip().lower()
+        if asset == "forex":
+            return "FOREX"
+        if asset == "stock":
+            return "EQUITIES"
+        if asset == "commodity":
+            return "COMMODITIES"
+        return "EQUITIES"
+
+    def _score_hnc_suite(
+        self,
+        symbol: str,
+        side: str,
+        asset_class: str,
+        price: float,
+        high: float,
+        low: float,
+        momentum: float,
+        coherence: float,
+    ) -> Dict[str, Any]:
+        result: Dict[str, Any] = {
+            "bonus": 0.0,
+            "probability": 0.5,
+            "confidence": 0.0,
+            "action": "HOLD",
+            "reason": "",
+            "surge_active": False,
+            "surge_intensity": 0.0,
+            "frequency": 432.0,
+            "is_harmonic": False,
+        }
+        if price <= 0:
+            self._hnc_snapshot = {"symbol": symbol, "side": str(side).upper(), **result}
+            return result
+
+        market_type = self._hnc_market_type(asset_class)
+        prices = [float(item.get("price", 0.0) or 0.0) for item in list(self._history_buffer(symbol))[-16:]]
+        prices = [item for item in prices if item > 0]
+        bridge_data: Dict[str, Any] = {}
+        if self.hnc_bridge is not None:
+            try:
+                bridge_data = self.hnc_bridge.enhance_opportunity({
+                    "symbol": symbol,
+                    "score": 1.0,
+                    "change24h": momentum,
+                    "coherence": coherence,
+                    "source": "capital",
+                }) or {}
+                result["frequency"] = float(bridge_data.get("hnc_frequency", 432.0) or 432.0)
+                result["is_harmonic"] = bool(bridge_data.get("hnc_is_harmonic", False))
+                result["bridge_resonance"] = float(bridge_data.get("hnc_resonance", 0.0) or 0.0)
+                result["bonus"] += (float(bridge_data.get("hnc_resonance", 0.0) or 0.0) - 0.5) * 0.8
+            except Exception as _e:
+                result["bridge_error"] = str(_e)
+
+        if self.hnc_probability is not None:
+            try:
+                self.hnc_probability.update_and_analyze(
+                    symbol,
+                    price,
+                    float(result.get("frequency", 432.0) or 432.0),
+                    momentum,
+                    coherence,
+                    bool(result.get("is_harmonic", False)),
+                    volume=max(abs(momentum), 0.01),
+                )
+                signal = self.hnc_probability.get_trading_signal(symbol) or {}
+                result["probability"] = float(signal.get("probability", 0.5) or 0.5)
+                result["confidence"] = float(signal.get("confidence", 0.0) or 0.0)
+                result["action"] = str(signal.get("action", "HOLD") or "HOLD").upper()
+                result["reason"] = str(signal.get("reason", "") or "")
+                directional_prob = result["probability"] if str(side).upper() == "BUY" else (1.0 - result["probability"])
+                result["bonus"] += (directional_prob - 0.5) * 3.0 + result["confidence"] * 0.6
+            except Exception as _e:
+                result["probability_error"] = str(_e)
+
+        if self.hnc_6d is not None:
+            try:
+                matrix6d = self.hnc_6d.update(
+                    symbol=symbol,
+                    price=price,
+                    volume=max(abs(momentum), 0.01),
+                    change_pct=momentum,
+                    high=max(high, price),
+                    low=min(low, price),
+                    frequency=float(result.get("frequency", 432.0) or 432.0),
+                    coherence=coherence,
+                    hnc_probability=float(result.get("probability", 0.5) or 0.5),
+                ) or {}
+                result["probability_6d"] = float(matrix6d.get("probability", 0.5) or 0.5)
+                result["confidence_6d"] = float(matrix6d.get("confidence", 0.0) or 0.0)
+                result["wave_state_6d"] = str(matrix6d.get("wave_state", "") or "")
+                result["harmonic_lock_6d"] = bool(matrix6d.get("harmonic_lock", False))
+                directional_prob_6d = result["probability_6d"] if str(side).upper() == "BUY" else (1.0 - result["probability_6d"])
+                result["bonus"] += (directional_prob_6d - 0.5) * 2.5 + float(matrix6d.get("resonance", 0.0) or 0.0) * 0.5
+            except Exception as _e:
+                result["matrix6d_error"] = str(_e)
+
+        if self.hnc_imperial is not None:
+            try:
+                enhanced = self.hnc_imperial.enhance_opportunity({
+                    "symbol": symbol,
+                    "price": price,
+                    "change24h": momentum,
+                    "score": 1.0,
+                    "position_size": 1.0,
+                }) or {}
+                imperial = dict(enhanced.get("imperial", {}) or {})
+                result["imperial_probability"] = float(imperial.get("probability", 0.5) or 0.5)
+                result["imperial_confidence"] = float(imperial.get("confidence", 0.0) or 0.0)
+                result["imperial_action"] = str(imperial.get("action", "HOLD") or "HOLD").upper()
+                directional_imperial = result["imperial_probability"] if str(side).upper() == "BUY" else (1.0 - result["imperial_probability"])
+                result["bonus"] += (directional_imperial - 0.5) * 2.0 + float(imperial.get("alignment_bonus", 0.0) or 0.0) * 8.0
+            except Exception as _e:
+                result["imperial_error"] = str(_e)
+
+        if self.hnc_surge_detector is not None and prices:
+            try:
+                surge = self.hnc_surge_detector.detect_surge(symbol)
+                if surge is not None:
+                    result["surge_active"] = True
+                    result["surge_intensity"] = float(getattr(surge, "intensity", 0.0) or 0.0)
+                    result["surge_harmonic"] = str(getattr(surge, "primary_harmonic", "") or "")
+                    result["bonus"] += max(0.0, result["surge_intensity"]) * 1.5
+            except Exception as _e:
+                result["surge_error"] = str(_e)
+
+        expected = "BUY" if str(side).upper() == "BUY" else "SELL"
+        action = str(result.get("action", "HOLD") or "HOLD").upper()
+        if action and action != "HOLD" and expected not in action:
+            result["bonus"] -= 1.0
+        result["bonus"] = max(-2.0, min(4.0, float(result.get("bonus", 0.0) or 0.0)))
+        self._hnc_snapshot = {"symbol": symbol, "side": str(side).upper(), **result}
+        return result
+
+    def _score_queen_suite(
+        self,
+        symbol: str,
+        side: str,
+        asset_class: str,
+        price: float,
+        momentum: float,
+        expected_net_profit: float,
+        notional: float,
+    ) -> Dict[str, Any]:
+        result: Dict[str, Any] = {
+            "bonus": 0.0,
+            "confidence": 0.0,
+            "direction": "NEUTRAL",
+            "reason": "",
+            "battle_readiness": 0.0,
+            "avoid_trade": False,
+        }
+        upper_side = str(side).upper()
+        if price <= 0:
+            self._queen_snapshot = {"symbol": symbol, "side": upper_side, **result}
+            return result
+
+        market_data = {
+            "symbol": symbol,
+            "price": price,
+            "change_pct": momentum,
+            "momentum": momentum,
+            "score": 0.0,
+        }
+
+        if HAS_QUEEN_SIGNAL_READER:
+            try:
+                movement = detect_movement_state() if detect_movement_state else {}
+                consciousness = detect_consciousness_state() if detect_consciousness_state else {}
+                direction = detect_direction_from_signals() if detect_direction_from_signals else {}
+                schumann = detect_schumann_alignment() if detect_schumann_alignment else {}
+                result["signal_reader"] = {
+                    "movement": str(movement.get("state", "") or ""),
+                    "consciousness": str(consciousness.get("state", "") or ""),
+                    "direction": str(direction.get("direction", "") or ""),
+                    "schumann_alignment": str(schumann.get("alignment", "") or ""),
+                    "schumann_coherence": float(schumann.get("coherence", 0.0) or 0.0),
+                }
+                result["bonus"] += (float(schumann.get("coherence", 0.0) or 0.0) - 0.5) * 0.6
+            except Exception as _e:
+                result["signal_reader_error"] = str(_e)
+
+        if self.queen_market_awareness is not None:
+            try:
+                market = self.queen_market_awareness.assess_market()
+                tactical = self.queen_market_awareness.get_tactical_assessment(
+                    symbol=symbol,
+                    price=price,
+                    price_change_pct=momentum,
+                    volume=max(abs(momentum), 0.01),
+                    market_context={"asset_class": asset_class},
+                )
+                readiness = float(self.queen_market_awareness.get_battle_readiness() or 0.0)
+                result["battle_readiness"] = readiness
+                result["market_state"] = str(getattr(market, "market_state", "") or "")
+                result["queen_market_message"] = str(getattr(market, "queen_message", "") or "")
+                result["tactical"] = tactical
+                result["bonus"] += (readiness - 0.5) * 1.4
+                can_win, reason = self.queen_market_awareness.can_win_without_fighting({"symbol": symbol, "change_pct": momentum})
+                if can_win:
+                    result["avoid_trade"] = True
+                    result["reason"] = str(reason or "queen_market_veto")
+                if str(getattr(market, "market_state", "") or "").upper() in {"CRASH", "BEAR"} and upper_side == "BUY":
+                    result["bonus"] -= 0.8
+            except Exception as _e:
+                result["market_awareness_error"] = str(_e)
+
+        if self.queen_live_analyzer is not None:
+            try:
+                analysis = self.queen_live_analyzer.analyze()
+                queen_action = str(getattr(analysis, "recommended_action", "") or "")
+                queen_conf = float(getattr(analysis, "queen_confidence", 0.0) or 0.0)
+                result["live_action"] = queen_action
+                result["confidence"] = max(result["confidence"], queen_conf)
+                result["live_reasoning"] = str(getattr(analysis, "reasoning", "") or "")
+                result["manipulation_detected"] = bool(getattr(analysis, "manipulation_detected", False))
+                result["live_phase"] = str(getattr(analysis, "market_phase", "") or "")
+                if "AVOID LONGS" in queen_action.upper() and upper_side == "BUY":
+                    result["bonus"] -= 1.0
+                elif "FAVORABLE" in queen_action.upper() and upper_side == "BUY":
+                    result["bonus"] += queen_conf * 0.8
+                elif "CAUTION" in queen_action.upper() and upper_side == "SELL":
+                    result["bonus"] += queen_conf * 0.5
+                if result["manipulation_detected"]:
+                    result["bonus"] -= 0.9
+            except Exception as _e:
+                result["live_analyzer_error"] = str(_e)
+
+        if self.queen_sentience is not None:
+            try:
+                sentiment = self.queen_sentience.get_current_sentiment()
+                sent_conf = float(sentiment.get("confidence", 0.0) or 0.0)
+                mood = str(sentiment.get("mood", "") or "")
+                result["sentience_mood"] = mood
+                result["sentience_confidence"] = sent_conf
+                result["bonus"] += (sent_conf - 0.5) * 0.5
+                if mood.lower() in {"fearful", "anxious", "doubt"}:
+                    result["bonus"] -= 0.4
+            except Exception as _e:
+                result["sentience_error"] = str(_e)
+
+        if self.queen_hive is not None:
+            try:
+                collective = self.queen_hive.get_collective_signal(symbol=symbol, market_data=market_data) or {}
+                result["collective_signal"] = float(collective.get("signal", 0.0) or 0.0)
+                result["collective_direction"] = str(collective.get("direction", "NEUTRAL") or "NEUTRAL")
+                result["collective_confidence"] = float(collective.get("confidence", 0.0) or 0.0)
+                result["bonus"] += float(collective.get("signal", 0.0) or 0.0) * 1.2
+                decision = self.queen_hive.get_queen_decision_with_intelligence({
+                    "symbol": symbol,
+                    "exchange": "capital",
+                    "action": upper_side,
+                    "score": max(0.0, abs(momentum)),
+                    "coherence": max(0.0, min(1.0, result.get("battle_readiness", 0.0) or 0.5)),
+                }) or {}
+                result["queen_decision"] = decision
+                final_score = float(decision.get("final_score", 0.0) or 0.0)
+                result["bonus"] += max(-1.0, min(1.5, final_score - 0.5))
+            except Exception as _e:
+                result["hive_error"] = str(_e)
+
+        if self.queen_loss_learning is not None:
+            try:
+                quote_asset = "USD" if asset_class in {"forex", "commodity", "stock", "index"} else "GBP"
+                avoid, reason = self.queen_loss_learning.should_avoid_trade(
+                    from_asset=symbol,
+                    to_asset=quote_asset,
+                    exchange="capital",
+                    expected_profit=expected_net_profit,
+                    from_value_usd=notional,
+                )
+                result["avoid_trade"] = result["avoid_trade"] or bool(avoid)
+                if avoid and not result["reason"]:
+                    result["reason"] = str(reason or "queen_loss_memory")
+                if avoid:
+                    result["bonus"] -= 1.2
+            except Exception as _e:
+                result["loss_learning_error"] = str(_e)
+
+        collective_signal = float(result.get("collective_signal", 0.0) or 0.0)
+        if upper_side == "SELL":
+            collective_signal = -collective_signal
+        result["bonus"] = max(-3.0, min(4.0, float(result.get("bonus", 0.0) or 0.0)))
+        result["direction"] = "BULLISH" if collective_signal > 0.05 else "BEARISH" if collective_signal < -0.05 else "NEUTRAL"
+        result["systems"] = {
+            "open_source": bool(
+                getattr(self.queen_market_awareness, "data_engine", None) is not None
+                if self.queen_market_awareness is not None else False
+            ),
+            "ocean": bool(
+                getattr(self.queen_market_awareness, "ocean_scanner", None) is not None
+                if self.queen_market_awareness is not None else False
+            ),
+            "solar": bool(
+                getattr(self.queen_market_awareness, "solar_awareness", None) is not None
+                if self.queen_market_awareness is not None else False
+            ),
+            "warrior": bool(
+                getattr(self.queen_market_awareness, "warrior_path", None) is not None
+                if self.queen_market_awareness is not None else False
+            ),
+            "signal_reader": bool(HAS_QUEEN_SIGNAL_READER),
+            "live_analyzer": bool(self.queen_live_analyzer is not None),
+            "sentience": bool(self.queen_sentience is not None),
+            "hive": bool(self.queen_hive is not None),
+            "loss_learning": bool(self.queen_loss_learning is not None),
+        }
+        self._queen_snapshot = {"symbol": symbol, "side": upper_side, **result}
+        return result
+
     def _symbol_from_market(self, market: dict) -> str:
         candidates = [
             market.get("symbol"),
@@ -1259,7 +2176,10 @@ class CapitalCFDTrader:
         if not self.client:
             return
         now = time.time()
-        if not force and (now - self._last_exchange_sync) < CFD_CONFIG["exchange_sync_secs"]:
+        sync_interval = float(CFD_CONFIG["exchange_sync_secs"])
+        if self.positions:
+            sync_interval = min(sync_interval, 0.5)
+        if not force and (now - self._last_exchange_sync) < sync_interval:
             return
         self._last_exchange_sync = now
 
@@ -1358,8 +2278,8 @@ class CapitalCFDTrader:
         threshold_safe = max(float(threshold or 0.0), 0.01)
         momentum_speed = max(abs(change_pct), threshold_safe)
         eta_to_target = required_tp_pct / momentum_speed if momentum_speed > 0 else 999.0
-        eta_score = max(0.0, 2.0 - eta_to_target)
-        score += eta_score * 0.5
+        eta_score = max(0.0, 2.5 - eta_to_target)
+        score += eta_score * 1.1
 
         # Hive Mind ripple amplifier — Market Harp signals shared by TradingHiveMind
         # A ripple on a correlated market boosts this symbol's momentum score
@@ -1387,6 +2307,43 @@ class CapitalCFDTrader:
             if regime_conf > 0:
                 regime_multiplier = 1.0 + regime_conf * 0.05 if regime_bias == direction else 1.0 - regime_conf * 0.05
                 score *= max(0.9, regime_multiplier)
+
+        asset_class = str(cfg.get("class", "") or "").lower()
+        if symbol.upper() in CAPITAL_FAST_GAIN_SYMBOLS:
+            score *= 1.20
+        elif asset_class in {"commodity", "index"}:
+            score *= 1.08
+        elif asset_class == "forex":
+            score *= 0.82
+        elif asset_class == "stock":
+            score *= 0.95
+
+        # HFT/probability mode: heavily prefer moves already traveling materially faster
+        # than their symbol's own minimum threshold.
+        speed_ratio = abs(change_pct) / max(threshold_safe, 0.01)
+        if speed_ratio < 1.15:
+            score *= 0.55
+        elif speed_ratio < 1.40:
+            score *= 0.82
+        elif speed_ratio > 2.0:
+            score *= 1.30
+        elif speed_ratio > 1.7:
+            score *= 1.18
+
+        # Prefer instruments that can plausibly hit the realized-profit floor quickly
+        # without paying an outsized spread tax.
+        spread_efficiency = abs(change_pct) / max(spread_pct, 0.005)
+        if spread_efficiency < 2.0:
+            score *= 0.70
+        elif spread_efficiency > 5.0:
+            score *= 1.12
+
+        if eta_to_target <= 0.75:
+            score *= 1.22
+        elif eta_to_target <= 1.25:
+            score *= 1.10
+        elif eta_to_target >= 3.0:
+            score *= 0.72
 
         return max(0.0, score), direction
 
@@ -1420,6 +2377,32 @@ class CapitalCFDTrader:
                 "trend_strength": min(abs(change_pct) / threshold, 1.0),
                 "rsi": 50.0 + max(-45.0, min(45.0, change_pct * 10.0)),
             }
+            waveform = self._waveform_context(symbol, str(item.get("direction") or "BUY"))
+            features["waveform_coherence"] = float(waveform.get("coherence", 0.0) or 0.0)
+            features["waveform_velocity"] = float(waveform.get("velocity", 0.0) or 0.0)
+            hnc = self._score_hnc_suite(
+                symbol,
+                str(item.get("direction") or "BUY"),
+                str(CAPITAL_UNIVERSE.get(symbol, {}).get("class", item.get("asset_class", "unknown")) or "unknown"),
+                price,
+                max(float(item.get("ask", price) or price), price),
+                min(float(item.get("bid", price) or price), price),
+                change_pct,
+                float(waveform.get("coherence", 0.0) or 0.0),
+            )
+            features["hnc_probability"] = float(hnc.get("probability", 0.5) or 0.5)
+            features["hnc_confidence"] = float(hnc.get("confidence", 0.0) or 0.0)
+            queen = self._score_queen_suite(
+                symbol,
+                str(item.get("direction") or "BUY"),
+                str(CAPITAL_UNIVERSE.get(symbol, {}).get("class", item.get("asset_class", "unknown")) or "unknown"),
+                price,
+                change_pct,
+                float(cost_profile.get("expected_net_profit", 0.0) or 0.0),
+                float(cost_profile.get("notional", 0.0) or 0.0),
+            )
+            features["queen_confidence"] = float(queen.get("confidence", 0.0) or 0.0)
+            features["queen_battle_readiness"] = float(queen.get("battle_readiness", 0.0) or 0.0)
             try:
                 decision = self._signal_brain.decide(symbol, score, features, positive_scores or [score])
             except Exception:
@@ -1432,7 +2415,31 @@ class CapitalCFDTrader:
                 continue
 
             item["brain_coherence"] = float(decision.coherence)
-            item["score"] = float(decision.score)
+            item["waveform_bonus"] = float(waveform.get("bonus", 0.0) or 0.0)
+            item["waveform_coherence"] = float(waveform.get("coherence", 0.0) or 0.0)
+            item["waveform_velocity"] = float(waveform.get("velocity", 0.0) or 0.0)
+            item["waveform_acceleration"] = float(waveform.get("acceleration", 0.0) or 0.0)
+            item["hnc_bonus"] = float(hnc.get("bonus", 0.0) or 0.0)
+            item["hnc_probability"] = float(hnc.get("probability", 0.5) or 0.5)
+            item["hnc_confidence"] = float(hnc.get("confidence", 0.0) or 0.0)
+            item["hnc_action"] = str(hnc.get("action", "HOLD") or "HOLD")
+            item["hnc_surge_active"] = bool(hnc.get("surge_active", False))
+            item["hnc_surge_intensity"] = float(hnc.get("surge_intensity", 0.0) or 0.0)
+            item["hnc_frequency"] = float(hnc.get("frequency", 432.0) or 432.0)
+            item["queen_bonus"] = float(queen.get("bonus", 0.0) or 0.0)
+            item["queen_confidence"] = float(queen.get("confidence", 0.0) or 0.0)
+            item["queen_battle_readiness"] = float(queen.get("battle_readiness", 0.0) or 0.0)
+            item["queen_direction"] = str(queen.get("direction", "NEUTRAL") or "NEUTRAL")
+            item["queen_avoid_trade"] = bool(queen.get("avoid_trade", False))
+            item["queen_reason"] = str(queen.get("reason", "") or "")
+            item["queen_systems"] = dict(queen.get("systems", {}) or {})
+            item["score"] = max(
+                0.0,
+                float(decision.score)
+                + float(waveform.get("bonus", 0.0) or 0.0) * 0.75
+                + float(hnc.get("bonus", 0.0) or 0.0) * 0.9
+                + float(queen.get("bonus", 0.0) or 0.0) * 1.0
+            )
 
     def _score_timeline_oracle(self, symbol: str, side: str, price: float, change_pct: float) -> Dict[str, Any]:
         result = {"bonus": 0.0, "action": "hold", "confidence": 0.0, "reason": ""}
@@ -1514,6 +2521,26 @@ class CapitalCFDTrader:
             timeline = self._score_timeline_oracle(symbol, side, price, change_pct)
             fusion = self._score_harmonic_fusion(symbol, side)
             gate = self._orchestrator_pretrade_gate(symbol, side)
+            waveform = self._waveform_context(symbol, side)
+            hnc = self._score_hnc_suite(
+                symbol,
+                side,
+                str(item.get("asset_class", CAPITAL_UNIVERSE.get(symbol, {}).get("class", "unknown")) or "unknown"),
+                price,
+                max(float(item.get("ask", price) or price), price),
+                min(float(item.get("bid", price) or price), price),
+                change_pct,
+                float(waveform.get("coherence", 0.0) or 0.0),
+            )
+            queen = self._score_queen_suite(
+                symbol,
+                side,
+                str(item.get("asset_class", CAPITAL_UNIVERSE.get(symbol, {}).get("class", "unknown")) or "unknown"),
+                price,
+                change_pct,
+                float(item.get("expected_net_profit", 0.0) or 0.0),
+                float(item.get("notional", 0.0) or 0.0),
+            )
 
             item["timeline_bonus"] = float(timeline.get("bonus", 0.0) or 0.0)
             item["timeline_action"] = str(timeline.get("action", "hold") or "hold")
@@ -1521,6 +2548,23 @@ class CapitalCFDTrader:
             item["fusion_bonus"] = float(fusion.get("bonus", 0.0) or 0.0)
             item["fusion_global_coherence"] = float(fusion.get("global_coherence", 0.0) or 0.0)
             item["fusion_symbol_coherence"] = float(fusion.get("symbol_coherence", 0.0) or 0.0)
+            item["waveform_bonus"] = float(waveform.get("bonus", 0.0) or 0.0)
+            item["waveform_coherence"] = float(waveform.get("coherence", 0.0) or 0.0)
+            item["waveform_velocity"] = float(waveform.get("velocity", 0.0) or 0.0)
+            item["hnc_bonus"] = float(hnc.get("bonus", 0.0) or 0.0)
+            item["hnc_probability"] = float(hnc.get("probability", 0.5) or 0.5)
+            item["hnc_confidence"] = float(hnc.get("confidence", 0.0) or 0.0)
+            item["hnc_action"] = str(hnc.get("action", "HOLD") or "HOLD")
+            item["hnc_frequency"] = float(hnc.get("frequency", 432.0) or 432.0)
+            item["hnc_surge_active"] = bool(hnc.get("surge_active", False))
+            item["hnc_surge_intensity"] = float(hnc.get("surge_intensity", 0.0) or 0.0)
+            item["queen_bonus"] = float(queen.get("bonus", 0.0) or 0.0)
+            item["queen_confidence"] = float(queen.get("confidence", 0.0) or 0.0)
+            item["queen_battle_readiness"] = float(queen.get("battle_readiness", 0.0) or 0.0)
+            item["queen_direction"] = str(queen.get("direction", "NEUTRAL") or "NEUTRAL")
+            item["queen_avoid_trade"] = bool(queen.get("avoid_trade", False))
+            item["queen_reason"] = str(queen.get("reason", "") or "")
+            item["queen_systems"] = dict(queen.get("systems", {}) or {})
             item["orchestrator_reason"] = str(gate.get("reason") or "")
             item["orchestrator_approved"] = bool(gate.get("approved"))
 
@@ -1528,12 +2572,31 @@ class CapitalCFDTrader:
                 item["score"] = 0.0
                 item["intel_reason"] = f"orchestrator_gate:{gate.get('reason') or 'blocked'}"
                 continue
+            if float(waveform.get("coherence", 0.0) or 0.0) < 0.34:
+                item["score"] = 0.0
+                item["intel_reason"] = "waveform_disagreement"
+                continue
+            if str(hnc.get("action", "HOLD") or "HOLD").upper() not in {"HOLD", side, f"STRONG {side}", f"SLIGHT {side}"}:
+                item["score"] = 0.0
+                item["intel_reason"] = "hnc_direction_disagreement"
+                continue
+            if bool(queen.get("avoid_trade", False)):
+                item["score"] = 0.0
+                item["intel_reason"] = f"queen_veto:{queen.get('reason') or 'avoid_trade'}"
+                continue
+            if str(queen.get("direction", "NEUTRAL") or "NEUTRAL").upper() not in {"NEUTRAL", "BULLISH" if side == "BUY" else "BEARISH"}:
+                item["score"] = 0.0
+                item["intel_reason"] = "queen_direction_disagreement"
+                continue
 
             item["score"] = max(
                 0.0,
                 base_score
                 + float(timeline.get("bonus", 0.0) or 0.0) * 1.25
                 + float(fusion.get("bonus", 0.0) or 0.0) * 1.0
+                + float(waveform.get("bonus", 0.0) or 0.0) * 1.1
+                + float(hnc.get("bonus", 0.0) or 0.0) * 1.2
+                + float(queen.get("bonus", 0.0) or 0.0) * 1.1
             )
             confidence = self._compute_self_confidence(item)
             item["self_confidence"] = float(confidence.get("score", 0.0) or 0.0)
@@ -1624,37 +2687,38 @@ class CapitalCFDTrader:
     def _build_lane_snapshot(self) -> Dict[str, Any]:
         lanes: Dict[str, Dict[str, Any]] = {}
         for direction in ("BUY", "SELL"):
-            open_pos = next(
-                (pos for pos in self.positions if str(pos.direction or "").upper() == direction),
-                None,
-            )
-            validated_shadow = next(
-                (
-                    shadow for shadow in self.shadow_trades
-                    if str(shadow.direction or "").upper() == direction and shadow.validated
-                ),
-                None,
-            )
-            queued_shadow = next(
-                (
-                    shadow for shadow in self.shadow_trades
-                    if str(shadow.direction or "").upper() == direction and not shadow.validated
-                ),
-                None,
-            )
+            open_positions = [
+                pos for pos in self.positions if str(pos.direction or "").upper() == direction
+            ]
+            validated_shadows = [
+                shadow for shadow in self.shadow_trades
+                if str(shadow.direction or "").upper() == direction and shadow.validated
+            ]
+            queued_shadows = [
+                shadow for shadow in self.shadow_trades
+                if str(shadow.direction or "").upper() == direction and not shadow.validated
+            ]
+            open_pos = open_positions[0] if open_positions else None
+            validated_shadow = validated_shadows[0] if validated_shadows else None
+            queued_shadow = queued_shadows[0] if queued_shadows else None
             lane: Dict[str, Any] = {
                 "direction": direction,
-                "occupied": open_pos is not None,
-                "hunting": open_pos is None,
+                "occupied": bool(open_positions),
+                "count": len(open_positions),
+                "capacity": int(CFD_CONFIG["max_positions_per_direction"]),
+                "hunting": len(open_positions) < int(CFD_CONFIG["max_positions_per_direction"]),
                 "position_symbol": getattr(open_pos, "symbol", ""),
+                "position_symbols": [str(pos.symbol) for pos in open_positions[:3]],
                 "validated_shadow_symbol": getattr(validated_shadow, "symbol", ""),
+                "validated_shadow_count": len(validated_shadows),
                 "queued_shadow_symbol": getattr(queued_shadow, "symbol", ""),
+                "queued_shadow_count": len(queued_shadows),
             }
             if validated_shadow is not None:
                 lane["next_action"] = "promote_validated_shadow"
             elif queued_shadow is not None:
                 lane["next_action"] = "monitor_shadow"
-            elif open_pos is not None:
+            elif open_positions:
                 lane["next_action"] = "manage_live_position"
             else:
                 lane["next_action"] = "scan_for_candidate"
@@ -2040,7 +3104,7 @@ class CapitalCFDTrader:
             return False
         if counts is None:
             counts = self._direction_counts()
-        if counts.get(direction, 0) >= 1:
+        if counts.get(direction, 0) >= int(CFD_CONFIG["max_positions_per_direction"]):
             return False
         if self._cooldown_info(symbol, direction) is not None:
             return False
@@ -2062,10 +3126,26 @@ class CapitalCFDTrader:
         best_score = 0.0
         best: Optional[Tuple[str, dict, dict]] = None
         scored: List[Dict[str, Any]] = []
+        available_balance = float(self.get_capital_snapshot().get("budget_gbp", 0.0) or 0.0)
+        filtered_out: List[Dict[str, Any]] = []
 
         for symbol, cfg in self._active_universe().items():
-            ticker = self._get_price(symbol)
+            ticker = self._get_fast_price(symbol)
             if not ticker:
+                continue
+            affordability = self._candidate_affordability(symbol, cfg, ticker, available_balance)
+            if not affordability.get("affordable"):
+                filtered_out.append({
+                    "symbol": symbol,
+                    "direction": "",
+                    "asset_class": cfg.get("class", "unknown"),
+                    "score": 0.0,
+                    "price": float(ticker.get("price") or 0.0),
+                    "size": float(affordability.get("working_size", cfg.get("size", 0.0)) or 0.0),
+                    "estimated_margin_required": float(affordability.get("estimated_margin_required", 0.0) or 0.0),
+                    "available_balance": available_balance,
+                    "filter_reason": str(affordability.get("reason") or "unaffordable"),
+                })
                 continue
             score, direction = self._score_symbol(symbol, cfg, ticker)
             if not self._can_open_candidate(symbol, direction, direction_counts):
@@ -2074,8 +3154,10 @@ class CapitalCFDTrader:
             bid = float(ticker.get("bid") or 0.0)
             ask = float(ticker.get("ask") or 0.0)
             spread_pct = ((ask - bid) / price * 100.0) if price > 0 and bid > 0 and ask > 0 else 0.0
+            working_size = float(affordability.get("working_size", cfg.get("size", 0.0)) or 0.0)
+            estimated_margin_required = float(affordability.get("estimated_margin_required", 0.0) or 0.0)
             required_tp_pct = self._required_tp_pct_for_profit(price, float(cfg.get("size", 0.0) or 0.0))
-            effective_tp_pct = self._effective_tp_pct(price, float(cfg.get("size", 0.0) or 0.0), cfg)
+            effective_tp_pct = self._effective_tp_pct(price, working_size, cfg)
             scored.append({
                 "symbol": symbol,
                 "direction": direction,
@@ -2086,11 +3168,13 @@ class CapitalCFDTrader:
                 "ask": ask,
                 "spread_pct": spread_pct,
                 "change_pct": float(ticker.get("change_pct") or 0.0),
-                "size": float(cfg.get("size", 0.0) or 0.0),
+                "size": working_size,
                 "tp_pct": effective_tp_pct,
                 "sl_pct": float(cfg.get("sl_pct", 0.0) or 0.0),
                 "profit_target_gbp": CAPITAL_MIN_PROFIT_GBP,
                 "required_tp_pct": required_tp_pct,
+                "estimated_margin_required": estimated_margin_required,
+                "available_balance": available_balance,
                 "eta_to_target": (
                     required_tp_pct / max(abs(float(ticker.get("change_pct") or 0.0)), max(float(cfg.get("momentum_threshold", 0.1) or 0.1), 0.01))
                 ) if required_tp_pct > 0 else 0.0,
@@ -2103,17 +3187,14 @@ class CapitalCFDTrader:
         self._apply_intelligence_overlays(scored)
         scored.sort(key=lambda item: float(item.get("score", 0.0) or 0.0), reverse=True)
         self._latest_candidate_snapshot = scored[:7]
+        self._latest_candidate_filtered = filtered_out[:10]
         self._swarm_snapshot = self._build_swarm_snapshot(scored)
 
         chosen_best = best
+        ranked_now = self._ranked_opportunities()
+        if ranked_now:
+            chosen_best = ranked_now[0]
         swarm_leader = dict(getattr(self, "_swarm_snapshot", {}).get("leader", {}) or {})
-        if swarm_leader:
-            leader_symbol = str(swarm_leader.get("symbol") or "").upper()
-            leader_direction = str(swarm_leader.get("direction") or "BUY").upper()
-            for symbol, cfg, ticker in self._ranked_opportunities():
-                if symbol == leader_symbol and str(cfg.get("direction") or "BUY").upper() == leader_direction:
-                    chosen_best = (symbol, cfg, ticker)
-                    break
 
         if chosen_best is not None:
             symbol, cfg, ticker = chosen_best
@@ -2153,6 +3234,20 @@ class CapitalCFDTrader:
                         "eta_to_target": float(candidate.get("eta_to_target", 0.0) or 0.0),
                         "timeline_confidence": float(candidate.get("timeline_confidence", 0.0) or 0.0),
                         "fusion_global_coherence": float(candidate.get("fusion_global_coherence", 0.0) or 0.0),
+                        "fusion_symbol_coherence": float(candidate.get("fusion_symbol_coherence", 0.0) or 0.0),
+                        "waveform_coherence": float(candidate.get("waveform_coherence", 0.0) or 0.0),
+                        "waveform_velocity": float(candidate.get("waveform_velocity", 0.0) or 0.0),
+                        "hnc_probability": float(candidate.get("hnc_probability", 0.5) or 0.5),
+                        "hnc_confidence": float(candidate.get("hnc_confidence", 0.0) or 0.0),
+                        "hnc_frequency": float(candidate.get("hnc_frequency", 432.0) or 432.0),
+                        "hnc_surge_active": bool(candidate.get("hnc_surge_active", False)),
+                        "hnc_surge_intensity": float(candidate.get("hnc_surge_intensity", 0.0) or 0.0),
+                        "queen_confidence": float(candidate.get("queen_confidence", 0.0) or 0.0),
+                        "queen_battle_readiness": float(candidate.get("queen_battle_readiness", 0.0) or 0.0),
+                        "queen_direction": str(candidate.get("queen_direction", "NEUTRAL") or "NEUTRAL"),
+                        "queen_reason": str(candidate.get("queen_reason", "") or ""),
+                        "queen_systems": dict(candidate.get("queen_systems", {}) or {}),
+                        "intel_reason": str(candidate.get("intel_reason", "") or ""),
                         "orchestrator_reason": str(candidate.get("orchestrator_reason", "") or ""),
                         "swarm_score": float(swarm_leader.get("swarm_score", 0.0) or 0.0),
                         "swarm_votes": int(swarm_leader.get("votes", 0) or 0),
@@ -2255,8 +3350,15 @@ class CapitalCFDTrader:
             key = f"{str(swarm_item.get('symbol') or '').upper()}|{str(swarm_item.get('direction') or 'BUY').upper()}"
             if key in candidate_lookup:
                 ordered_candidates.append(candidate_lookup[key])
-        if not ordered_candidates:
-            ordered_candidates = list(getattr(self, "_latest_candidate_snapshot", []) or [])
+        seen_keys = {
+            f"{str(item.get('symbol') or '').upper()}|{str(item.get('direction') or 'BUY').upper()}"
+            for item in ordered_candidates
+        }
+        for item in list(getattr(self, "_latest_candidate_snapshot", []) or []):
+            key = f"{str(item.get('symbol') or '').upper()}|{str(item.get('direction') or 'BUY').upper()}"
+            if key not in seen_keys:
+                ordered_candidates.append(item)
+                seen_keys.add(key)
 
         for candidate in ordered_candidates:
             symbol = str(candidate.get("symbol") or "").upper()
@@ -2336,7 +3438,7 @@ class CapitalCFDTrader:
     def _update_shadows(self) -> None:
         survivors: List[CFDShadowTrade] = []
         for shadow in self.shadow_trades:
-            ticker = self._get_price(shadow.symbol)
+            ticker = self._get_fast_price(shadow.symbol)
             price = float((ticker or {}).get("price") or (ticker or {}).get("bid") or (ticker or {}).get("ask") or 0.0)
             if price > 0:
                 shadow.update(price)
@@ -2358,7 +3460,7 @@ class CapitalCFDTrader:
         self.shadow_trades = survivors
 
     def _promote_shadow(self, shadow: CFDShadowTrade) -> Optional[CFDPosition]:
-        ticker = self._get_price(shadow.symbol)
+        ticker = self._get_fast_price(shadow.symbol)
         cfg = CAPITAL_UNIVERSE.get(shadow.symbol)
         if not ticker or not cfg:
             return None
@@ -2702,7 +3804,7 @@ class CapitalCFDTrader:
     def _update_position_prices(self) -> None:
         """Refresh current_price on all tracked positions from the price cache."""
         for pos in self.positions:
-            ticker = self._get_price(pos.symbol)
+            ticker = self._get_fast_price(pos.symbol)
             if ticker:
                 cp = float(ticker.get("price") or 0)
                 if cp > 0:
@@ -2795,7 +3897,7 @@ class CapitalCFDTrader:
                 if record.get("error"):
                     remaining.append(pos)
                 else:
-                    self._dtp_trackers.pop(pos.deal_id, None)
+                    getattr(self, "_dtp_trackers", {}).pop(pos.deal_id, None)
                     closed.append(record)
             else:
                 remaining.append(pos)
@@ -2846,7 +3948,7 @@ class CapitalCFDTrader:
         refresh_elapsed = time.time() - stage_started
 
         # Phase 1: monitor open positions
-        if now - self._last_monitor >= CFD_CONFIG["monitor_interval"]:
+        if self.positions or (now - self._last_monitor >= CFD_CONFIG["monitor_interval"]):
             stage_started = time.time()
             self._last_monitor = now
             self._update_position_prices()
@@ -2869,7 +3971,13 @@ class CapitalCFDTrader:
                 continue
             gate_preview = self._build_shadow_promotion_gate(shadow, self._get_price(shadow.symbol))
             min_validate_window = float(gate_preview.get("validation_window_secs", self.SHADOW_MIN_VALIDATE) or self.SHADOW_MIN_VALIDATE)
-            if shadow.validation_time > 0 and (now - shadow.validation_time) < min_validate_window:
+            validation_age = max(0.0, now - float(shadow.validation_time or now))
+            immediate_promote = (
+                float(shadow.current_move_pct or 0.0) >= (
+                    max(float(shadow.target_move_pct or 0.0) * 1.25, float(shadow.target_move_pct or 0.0) + 0.005)
+                )
+            )
+            if shadow.validation_time > 0 and validation_age < min_validate_window and not immediate_promote:
                 continue
             promoted = self._promote_shadow(shadow)
             if promoted is not None:
@@ -2886,17 +3994,19 @@ class CapitalCFDTrader:
             stage_started = time.time()
             self._last_scan = now
 
-            if self._quad_gate():
-                self._find_best_opportunity()
-                self._queue_background_shadows()
-                if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
+            if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
+                # Quick Seer + Lyra gate before committing capital
+                if self._quad_gate():
+                    self._find_best_opportunity()
+                    direction_counts = self._direction_counts()
+                    self._queue_background_shadows()
                     slot_filled_this_tick = self._fill_live_monitoring_slots(now)
                     if slot_filled_this_tick:
                         promoted_this_tick = True
-                    opened_directions = {str(pos.direction or "").upper() for pos in self.positions}
+                    direction_counts = self._direction_counts()
                     for sym, cfg, ticker in self._ranked_opportunities():
                         direction = str(cfg.get("direction", "BUY") or "BUY").upper()
-                        if direction in opened_directions:
+                        if direction_counts.get(direction, 0) >= int(CFD_CONFIG["max_positions_per_direction"]):
                             continue
                         if CAPITAL_FORCE_SLOT_FILL:
                             continue
@@ -2934,8 +4044,8 @@ class CapitalCFDTrader:
                             continue
 
                         if self._create_shadow(sym, working_cfg, ticker) is not None:
-                            opened_directions.add(direction)
-                            if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
+                            direction_counts[direction] = direction_counts.get(direction, 0) + 1
+                            if len(self.positions) >= int(CFD_CONFIG["max_positions"]):
                                 break
                         else:
                             self._record_rejection(sym, direction, "shadow_blocked_or_duplicate")
@@ -2957,6 +4067,7 @@ class CapitalCFDTrader:
     # ── STATUS ─────────────────────────────────────────────────────────────────
     def _tick_locked(self) -> List[dict]:
         now = time.time()
+        self._refresh_capital_runtime_state(force=False)
         closed_this_tick: List[dict] = self._deadman_guard(now)
         self._last_deadman_kick_at = now
         if now - float(getattr(self, "_harmonic_wiring_audit_at", 0.0) or 0.0) > 120.0:
@@ -2981,8 +4092,10 @@ class CapitalCFDTrader:
         if now - self._last_monitor >= CFD_CONFIG["monitor_interval"]:
             stage_started = time.time()
             self._last_monitor = now
+            self._refresh_capital_runtime_state(force=False)
             self._update_position_prices()
             closed_this_tick.extend(self._monitor_positions())
+            self._update_open_close_runtime_state()
             monitor_elapsed = time.time() - stage_started
 
         stage_started = time.time()
@@ -3075,10 +4188,15 @@ class CapitalCFDTrader:
         if should_scan:
             scan_elapsed = time.time() - stage_started
 
+        self._refresh_capital_runtime_state(force=False)
+        self._update_open_close_runtime_state()
         self._latest_tick_line = (
             f"CAPITAL TICK sync={sync_elapsed:.2f}s prices={refresh_elapsed:.2f}s "
             f"monitor={monitor_elapsed:.2f}s shadows={shadow_elapsed:.2f}s scan={scan_elapsed:.2f}s "
-            f"positions={len(self.positions)} shadows_active={len(self.shadow_trades)}"
+            f"positions={len(self.positions)} shadows_active={len(self.shadow_trades)} "
+            f"budget=£{float(self._latest_runtime_snapshot.get('budget_gbp', 0.0) or 0.0):.2f} "
+            f"slots={int(self._latest_runtime_snapshot.get('open_slots', 0) or 0)} "
+            f"closable={int(self._latest_runtime_snapshot.get('closable_positions', 0) or 0)}"
         )
         self._build_lane_snapshot()
         self.status_lines()
@@ -3086,12 +4204,15 @@ class CapitalCFDTrader:
 
     def status_lines(self) -> List[str]:
         """Return human-readable status lines for orca dashboard / print_status."""
+        self._refresh_capital_runtime_state(force=False)
+        self._update_open_close_runtime_state()
         w = int(self.stats["winning_trades"])
         l = int(self.stats["losing_trades"])
         c = int(self.stats["trades_closed"])
         pnl = self.stats["total_pnl_gbp"]
         gate = "ARMED" if HAS_QUAD_GATES else "open"
         capital = self.get_capital_snapshot()
+        runtime_state = dict(getattr(self, "_latest_runtime_snapshot", {}) or {})
         eq_delta = capital["equity_gbp"] - self.starting_equity_gbp if self.starting_equity_gbp > 0 else 0.0
         runtime_m = (time.time() - self.start_time) / 60.0
 
@@ -3105,6 +4226,13 @@ class CapitalCFDTrader:
             f"  CAPITAL CFD: {len(self.positions)} open / {c} closed | "
             f"W:{w} L:{l} | PnL:{pnl:+.2f} GBP | gate:{gate}",
             f"  Shadows: {len(self.shadow_trades)} active | validated={self._shadow_validated_count} failed={self._shadow_failed_count}",
+            (
+                f"  Capacity: open_slots={int(runtime_state.get('open_slots', 0) or 0)} "
+                f"buy_slots={int(runtime_state.get('buy_slots', 0) or 0)} "
+                f"sell_slots={int(runtime_state.get('sell_slots', 0) or 0)} "
+                f"closable={int(runtime_state.get('closable_positions', 0) or 0)} "
+                f"profitable={int(runtime_state.get('profitable_positions', 0) or 0)}"
+            ),
         ]
         confidence = self._compute_self_confidence()
         growth = self._compute_growth_metrics()
@@ -3148,6 +4276,11 @@ class CapitalCFDTrader:
             lines.append(f"    CapitalFeed: degraded ({self._capital_snapshot_error})")
         elif float(capital.get("stale", 0.0) or 0.0) > 0:
             lines.append("    CapitalFeed: stale_snapshot")
+        else:
+            lines.append(
+                f"    CapitalFeed: live budget=£{float(runtime_state.get('budget_gbp', capital.get('budget_gbp', 0.0)) or 0.0):.2f} "
+                f"free=£{float(runtime_state.get('free_gbp', capital.get('free_gbp', 0.0)) or 0.0):.2f}"
+            )
         active_cooldowns = sum(
             1 for info in self._rejection_cooldowns.values()
             if float(info.get("until", 0.0) or 0.0) > time.time()
@@ -3205,6 +4338,30 @@ class CapitalCFDTrader:
                     f"fusion={float(target.get('fusion_global_coherence', 0.0) or 0.0):.2f} "
                     f"orch={target.get('orchestrator_reason', 'n/a')}"
                 )
+            if (
+                "queen_confidence" in target
+                or "queen_battle_readiness" in target
+                or "queen_direction" in target
+                or "queen_reason" in target
+            ):
+                queen_reason = str(target.get("queen_reason", "") or "").strip()
+                lines.append(
+                    f"    Queen: conf={float(target.get('queen_confidence', 0.0) or 0.0):.2f} "
+                    f"ready={float(target.get('queen_battle_readiness', 0.0) or 0.0):.2f} "
+                    f"dir={target.get('queen_direction', 'NEUTRAL')}"
+                    + (f" reason={queen_reason}" if queen_reason else "")
+                )
+            queen_systems = dict(target.get("queen_systems", {}) or {})
+            if queen_systems:
+                labels = []
+                for key, label in (
+                    ("open_source", "Open Source"),
+                    ("ocean", "Ocean"),
+                    ("solar", "Solar"),
+                    ("warrior", "Warrior"),
+                ):
+                    labels.append(f"{label}={'on' if bool(queen_systems.get(key)) else 'off'}")
+                lines.append(f"    Queen Systems: {' | '.join(labels)}")
         if self._latest_candidate_snapshot:
             lines.append("  Top 7 candidates:")
             for idx, candidate in enumerate(self._latest_candidate_snapshot[:7], start=1):
@@ -3216,6 +4373,20 @@ class CapitalCFDTrader:
                     f"net=£{float(candidate.get('expected_net_profit', 0.0) or 0.0):+.4f} "
                     f"goal=£{float(candidate.get('profit_target_gbp', CAPITAL_MIN_PROFIT_GBP) or CAPITAL_MIN_PROFIT_GBP):.2f}"
                 )
+                queen_reason = str(candidate.get("queen_reason", "") or "").strip()
+                intel_reason = str(candidate.get("intel_reason", "") or "").strip()
+                queen_bits = (
+                    f"Q conf={float(candidate.get('queen_confidence', 0.0) or 0.0):.2f} "
+                    f"ready={float(candidate.get('queen_battle_readiness', 0.0) or 0.0):.2f} "
+                    f"dir={candidate.get('queen_direction', 'NEUTRAL')}"
+                )
+                if bool(candidate.get("queen_avoid_trade", False)):
+                    queen_bits += " veto=yes"
+                if queen_reason:
+                    queen_bits += f" reason={queen_reason}"
+                if intel_reason:
+                    queen_bits += f" intel={intel_reason}"
+                lines.append(f"       {queen_bits}")
         swarm_leader = dict(getattr(self, "_swarm_snapshot", {}).get("leader", {}) or {})
         if swarm_leader:
             lines.append(
@@ -3331,6 +4502,8 @@ class CapitalCFDTrader:
             "orchestrator_snapshot": dict(getattr(self, "_orchestrator_snapshot", {}) or {}),
             "timeline_snapshot": dict(getattr(self, "_timeline_snapshot", {}) or {}),
             "fusion_snapshot": dict(getattr(self, "_fusion_snapshot", {}) or {}),
+            "harmonic_wiring_audit": dict(getattr(self, "_harmonic_wiring_audit", {}) or {}),
+            "queen_snapshot": dict(getattr(self, "_queen_snapshot", {}) or {}),
             "harmonic_wiring_audit": dict(getattr(self, "_harmonic_wiring_audit", {}) or {}),
             "thought_bus_snapshot": dict(self._thought_bus_snapshot),
             "cognition_snapshot": dict(self._cognition_snapshot),

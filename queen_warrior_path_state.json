@@ -1,0 +1,43 @@
+{
+  "ancestors_invoked": [],
+  "ceremony_count": 0,
+  "combat_mode": "stealth",
+  "last_assessment": {
+    "timestamp": 1775049477.507055,
+    "ira_hit_and_run_score": 0.5,
+    "ira_stealth_score": 0.95,
+    "ira_cell_integrity": 0.95,
+    "apache_patience_score": 0.9,
+    "apache_terrain_knowledge": 0.3666666666666667,
+    "apache_survival_mode": false,
+    "sun_tzu_deception_active": false,
+    "sun_tzu_enemy_weakness": "NO_CLEAR_WEAKNESS - Continue observation",
+    "sun_tzu_can_win_without_fight": false,
+    "moon_phase": 0.9887816168801358,
+    "active_frequency": 639,
+    "ancestors_invoked": [],
+    "ceremony_power": 0.0,
+    "current_pattern_match": "none",
+    "pattern_danger_level": 0.0,
+    "pattern_opportunity": false,
+    "wolf_readiness": 0.55,
+    "lion_strength": 0.0,
+    "hummingbird_agility": 0.4,
+    "ant_swarm_mode": false,
+    "counter_phase_angle": 115.70289563814293,
+    "harmonic_alignment": 1.0,
+    "neutralization_power": 0.8213969323281748,
+    "recommended_philosophy": "GHOST_DANCE - Invoke ancestors, await guidance",
+    "recommended_combat_mode": "stealth",
+    "recommended_action": "OBSERVE - Continue intelligence gathering",
+    "battle_readiness": 0.6841666666666667,
+    "evidence": [
+      "Philosophy: GHOST_DANCE - Invoke ancestors, await guidance",
+      "Recommended Action: OBSERVE - Continue intelligence gathering",
+      "Enemy Weakness: NO_CLEAR_WEAKNESS - Continue observation",
+      "Moon: \ud83c\udf11 New Moon",
+      "Active Frequency: Connection Hz"
+    ]
+  },
+  "last_updated": 1775049477.507055
+}

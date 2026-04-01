@@ -28,9 +28,12 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Tuple
 from collections import deque
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv('/workspaces/aureon-trading/.env', override=True)
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_DOTENV_PATH = _REPO_ROOT / ".env"
+load_dotenv(str(_DOTENV_PATH), override=False)
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +55,7 @@ def _load_data_engine():
         return True
     
     try:
-        from queen_open_source_data_engine import (
+        from aureon.queen.queen_open_source_data_engine import (
             OpenSourceDataEngine as OSE, 
             get_data_engine as get_engine,
             MarketData as MD,
@@ -137,7 +140,11 @@ class QueenMarketAwareness:
     """
     
     def __init__(self):
-        self.state_file = '/workspaces/aureon-trading/queen_market_state.json'
+        repo_root = Path(str(os.getenv("AUREON_REPO_ROOT", str(_REPO_ROOT))))
+        state_path = Path(
+            str(os.getenv("QUEEN_MARKET_STATE_PATH", str(repo_root / "queen_market_state.json")))
+        )
+        self.state_file = str(state_path)
         self.last_update = None
         self.update_interval = 300  # 5 minutes
         self.market_condition: Optional[MarketCondition] = None
@@ -212,7 +219,7 @@ class QueenMarketAwareness:
     def _wire_ocean_scanner(self):
         """Wire the Ocean Scanner for full market opportunity scanning"""
         try:
-            from aureon_ocean_scanner import OceanScanner
+            from aureon.scanners.aureon_ocean_scanner import OceanScanner
             
             # Load exchange clients
             exchanges = {}
@@ -335,7 +342,7 @@ class QueenMarketAwareness:
     def _wire_solar_awareness(self):
         """Wire the Solar System Awareness for cosmic counter-intelligence"""
         try:
-            from queen_solar_system_awareness import QueenSolarSystemAwareness
+            from aureon.queen.queen_solar_system_awareness import QueenSolarSystemAwareness
             
             self.solar_awareness = QueenSolarSystemAwareness()
             logger.info("☀️🌍 Solar System Awareness WIRED!")
@@ -385,7 +392,7 @@ class QueenMarketAwareness:
     def _wire_warrior_path(self):
         """Wire the Warrior Path for all tactical systems"""
         try:
-            from queen_warrior_path import QueenWarriorPath
+            from aureon.queen.queen_warrior_path import QueenWarriorPath
             
             self.warrior_path = QueenWarriorPath()
             logger.info("⚔️🦅 Warrior Path WIRED!")
@@ -1079,6 +1086,8 @@ I am protecting your positions and will NOT sell at a loss. 👑
         """Save market state to file"""
         try:
             if self.market_condition:
+                state_path = Path(self.state_file)
+                state_path.parent.mkdir(parents=True, exist_ok=True)
                 data = {
                     'timestamp': self.market_condition.timestamp.isoformat(),
                     'btc_price': self.market_condition.btc_price,
@@ -1088,7 +1097,7 @@ I am protecting your positions and will NOT sell at a loss. 👑
                     'should_hold': self.market_condition.should_hold,
                     'outlook': self.market_condition.recovery_outlook
                 }
-                with open(self.state_file, 'w') as f:
+                with open(state_path, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2)
         except Exception as e:
             logger.warning(f"Failed to save market state: {e}")
@@ -1096,8 +1105,9 @@ I am protecting your positions and will NOT sell at a loss. 👑
     def load_state(self) -> Optional[MarketCondition]:
         """Load market state from file"""
         try:
-            if os.path.exists(self.state_file):
-                with open(self.state_file) as f:
+            state_path = Path(self.state_file)
+            if state_path.exists():
+                with open(state_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 # Recreate MarketCondition
                 condition = MarketCondition(

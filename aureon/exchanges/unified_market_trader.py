@@ -24,6 +24,8 @@ import shutil
 import subprocess
 import threading
 import time
+import io
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -194,6 +196,17 @@ class UnifiedMarketTrader:
         self._write_runtime_status_file()
         self._start_local_dashboard_server()
 
+    @staticmethod
+    def _is_closed_stream_error(exc: Exception) -> bool:
+        text = str(exc or "").strip().lower()
+        return "closed file" in text or "i/o operation on closed file" in text
+
+    def _retry_with_safe_streams(self, factory):
+        """Retry constructor calls with captured stdout/stderr when terminal streams are unstable."""
+        sink = io.StringIO()
+        with redirect_stdout(sink), redirect_stderr(sink):
+            return factory()
+
     def _preflight_item(self, name: str, ok: bool, severity: str, detail: str, meta: Dict[str, Any] | None = None) -> Dict[str, Any]:
         return {
             "name": name,
@@ -347,12 +360,28 @@ class UnifiedMarketTrader:
         self._last_kraken_init_attempt = now
         try:
             self.kraken = KrakenMarginArmyTrader(dry_run=self.dry_run)
+            if hasattr(self.kraken, "set_shared_portfolio_snapshot_provider"):
+                self.kraken.set_shared_portfolio_snapshot_provider(self._shared_portfolio_snapshot)
             self.kraken_error = ""
         except Exception as e:
-            self.kraken = None
-            self.kraken_ready = False
-            self.kraken_error = str(e)
-            logger.error("Kraken init failed: %s", e)
+            retried = False
+            if self._is_closed_stream_error(e):
+                try:
+                    self.kraken = self._retry_with_safe_streams(
+                        lambda: KrakenMarginArmyTrader(dry_run=self.dry_run)
+                    )
+                    if hasattr(self.kraken, "set_shared_portfolio_snapshot_provider"):
+                        self.kraken.set_shared_portfolio_snapshot_provider(self._shared_portfolio_snapshot)
+                    self.kraken_error = ""
+                    retried = True
+                    logger.warning("Kraken init succeeded after safe-stream retry.")
+                except Exception as retry_error:
+                    e = retry_error
+            if not retried:
+                self.kraken = None
+                self.kraken_ready = False
+                self.kraken_error = str(e)
+                logger.error("Kraken init failed: %s", e)
 
     def _init_capital(self, force: bool = False) -> None:
         now = time.time()
@@ -361,15 +390,32 @@ class UnifiedMarketTrader:
         self._last_capital_init_attempt = now
         try:
             self.capital = CapitalCFDTrader()
+            if hasattr(self.capital, "set_shared_portfolio_snapshot_provider"):
+                self.capital.set_shared_portfolio_snapshot_provider(self._shared_portfolio_snapshot)
             self.capital_ready = bool(getattr(self.capital, "enabled", False))
             self.capital_error = ""
             if not self.capital_ready:
                 self.capital_error = str(getattr(self.capital, "init_error", "") or "client_disabled_or_blocked")
         except Exception as e:
-            self.capital = None
-            self.capital_ready = False
-            self.capital_error = str(e)
-            logger.error("Capital init failed: %s", e)
+            retried = False
+            if self._is_closed_stream_error(e):
+                try:
+                    self.capital = self._retry_with_safe_streams(lambda: CapitalCFDTrader())
+                    if hasattr(self.capital, "set_shared_portfolio_snapshot_provider"):
+                        self.capital.set_shared_portfolio_snapshot_provider(self._shared_portfolio_snapshot)
+                    self.capital_ready = bool(getattr(self.capital, "enabled", False))
+                    self.capital_error = ""
+                    if not self.capital_ready:
+                        self.capital_error = str(getattr(self.capital, "init_error", "") or "client_disabled_or_blocked")
+                    retried = True
+                    logger.warning("Capital init succeeded after safe-stream retry.")
+                except Exception as retry_error:
+                    e = retry_error
+            if not retried:
+                self.capital = None
+                self.capital_ready = False
+                self.capital_error = str(e)
+                logger.error("Capital init failed: %s", e)
 
     def _init_alpaca(self, force: bool = False) -> None:
         if self.alpaca is not None and not force:
@@ -406,9 +452,29 @@ class UnifiedMarketTrader:
                 or ""
             )
         except Exception as e:
-            self.binance = None
-            self.binance_error = str(e)
-            logger.debug("Binance passive client unavailable: %s", e)
+            retried = False
+            if self._is_closed_stream_error(e):
+                try:
+                    self.binance = self._retry_with_safe_streams(lambda: BinanceClient())
+                    diag = {}
+                    try:
+                        diag = self.binance.diagnose_ready() if hasattr(self.binance, "diagnose_ready") else {}
+                    except Exception as diag_error:
+                        diag = {"init_error": str(diag_error), "network_ok": False, "account_ok": False}
+                    self._binance_diag = diag if isinstance(diag, dict) else {}
+                    self.binance_error = str(
+                        self._binance_diag.get("init_error")
+                        or self._binance_diag.get("last_error")
+                        or ""
+                    )
+                    retried = True
+                    logger.warning("Binance init succeeded after safe-stream retry.")
+                except Exception as retry_error:
+                    e = retry_error
+            if not retried:
+                self.binance = None
+                self.binance_error = str(e)
+                logger.debug("Binance passive client unavailable: %s", e)
 
     def _ensure_exchanges(self) -> None:
         if self.kraken is None:
@@ -432,9 +498,23 @@ class UnifiedMarketTrader:
             return
         self._last_kraken_startup_attempt = now
         try:
-            self.kraken.discover_margin_universe()
-            self.kraken.update_prices_free()
-            self.kraken.print_status()
+            try:
+                self.kraken.discover_margin_universe()
+                self.kraken.update_prices_free()
+            except Exception as startup_error:
+                if self._is_closed_stream_error(startup_error):
+                    self._retry_with_safe_streams(lambda: self.kraken.discover_margin_universe())
+                    self._retry_with_safe_streams(lambda: self.kraken.update_prices_free())
+                    logger.warning("Kraken startup recovered after safe-stream retry.")
+                else:
+                    raise
+            try:
+                self.kraken.print_status()
+            except Exception as status_error:
+                if self._is_closed_stream_error(status_error):
+                    logger.warning("Kraken status print skipped due closed output stream: %s", status_error)
+                else:
+                    logger.debug("Kraken status print failed: %s", status_error)
             self.kraken_ready = True
             self.kraken_error = ""
         except Exception as e:
@@ -450,12 +530,27 @@ class UnifiedMarketTrader:
             return
         self._last_capital_startup_attempt = now
         try:
-            self.capital.status_lines()
+            status_error = None
+            try:
+                self.capital.status_lines()
+            except Exception as status_exc:
+                status_error = status_exc
             self.capital_ready = bool(getattr(self.capital, "enabled", False))
             if self.capital_ready:
                 self.capital_error = ""
+                if status_error is not None:
+                    if self._is_closed_stream_error(status_error):
+                        logger.warning(
+                            "Capital status render skipped due closed output stream: %s",
+                            status_error,
+                        )
+                    else:
+                        logger.debug("Capital status render failed: %s", status_error)
             elif not self.capital_error:
-                self.capital_error = str(getattr(self.capital, "init_error", "") or "client_disabled_or_blocked")
+                if status_error is not None:
+                    self.capital_error = str(status_error)
+                else:
+                    self.capital_error = str(getattr(self.capital, "init_error", "") or "client_disabled_or_blocked")
         except Exception as e:
             self.capital_ready = False
             self.capital_error = str(e)
@@ -1253,6 +1348,38 @@ class UnifiedMarketTrader:
         kraken_line = getattr(self.kraken, "_latest_monitor_line", "") if self.kraken is not None else ""
         return capital_line or kraken_line
 
+    def _shared_portfolio_snapshot(self) -> Dict[str, Any]:
+        """Build a shared live portfolio view for all active traders."""
+        kraken_local = (
+            self.kraken._get_capital_snapshot(include_shared=False)
+            if self.kraken_ready and self.kraken is not None
+            else {"equity": 0.0, "free_margin": 0.0, "budget": 0.0}
+        )
+        capital_local = (
+            self.capital.get_capital_snapshot(include_shared=False)
+            if self.capital_ready and self.capital is not None
+            else {"equity_gbp": 0.0, "free_gbp": 0.0, "budget_gbp": 0.0}
+        )
+        gbp_usd = 1.27
+        portfolio_equity_usd = float(kraken_local.get("equity", 0.0) or 0.0) + float(capital_local.get("equity_gbp", 0.0) or 0.0) * gbp_usd
+        portfolio_free_usd = float(kraken_local.get("free_margin", 0.0) or 0.0) + float(capital_local.get("free_gbp", 0.0) or 0.0) * gbp_usd
+        return {
+            "portfolio_equity_usd": portfolio_equity_usd,
+            "portfolio_free_usd": portfolio_free_usd,
+            "portfolio_equity_gbp": portfolio_equity_usd / gbp_usd if gbp_usd > 0 else 0.0,
+            "portfolio_free_gbp": portfolio_free_usd / gbp_usd if gbp_usd > 0 else 0.0,
+            "kraken": {
+                "equity": float(kraken_local.get("equity", 0.0) or 0.0),
+                "free_margin": float(kraken_local.get("free_margin", 0.0) or 0.0),
+                "budget": float(kraken_local.get("budget", 0.0) or 0.0),
+            },
+            "capital": {
+                "equity_gbp": float(capital_local.get("equity_gbp", 0.0) or 0.0),
+                "free_gbp": float(capital_local.get("free_gbp", 0.0) or 0.0),
+                "budget_gbp": float(capital_local.get("budget_gbp", 0.0) or 0.0),
+            },
+        }
+
     def get_status_lines(self) -> List[str]:
         lines = [
             f"UNIFIED MARKET STATUS | runtime={(time.time() - self.start_time) / 60.0:.1f}m",
@@ -1293,7 +1420,16 @@ class UnifiedMarketTrader:
         else:
             lines.append(f"KRAKEN: unavailable | {self.kraken_error or 'not_ready'}")
         if self.capital_ready and self.capital is not None:
-            lines.extend(self.capital.status_lines())
+            try:
+                lines.extend(self.capital.status_lines())
+            except Exception as e:
+                if self._is_closed_stream_error(e):
+                    try:
+                        lines.extend(self._retry_with_safe_streams(lambda: self.capital.status_lines()))
+                    except Exception as retry_error:
+                        lines.append(f"CAPITAL: status_unavailable | {retry_error}")
+                else:
+                    lines.append(f"CAPITAL: status_unavailable | {e}")
         else:
             lines.append(f"CAPITAL: unavailable | {self.capital_error or 'not_ready'}")
         return lines
@@ -1334,7 +1470,18 @@ class UnifiedMarketTrader:
         _safe_print("-" * 78)
         _safe_print("  [CAPITAL]")
         if self.capital_ready and self.capital is not None:
-            for line in self.capital.status_lines():
+            status_lines = []
+            try:
+                status_lines = self.capital.status_lines()
+            except Exception as e:
+                if self._is_closed_stream_error(e):
+                    try:
+                        status_lines = self._retry_with_safe_streams(lambda: self.capital.status_lines())
+                    except Exception as retry_error:
+                        status_lines = [f"CAPITAL status unavailable: {retry_error}"]
+                else:
+                    status_lines = [f"CAPITAL status unavailable: {e}"]
+            for line in status_lines:
                 _safe_print(f"  {line}")
         else:
             _safe_print(f"  CAPITAL unavailable: {self.capital_error or 'not_ready'}")
@@ -1351,20 +1498,44 @@ class UnifiedMarketTrader:
             try:
                 kraken_closed = self.kraken.tick()
             except Exception as e:
-                self.kraken_error = str(e)
-                self.kraken_ready = False
-                self.kraken = None
-                self._last_tick_error = str(e)
-                logger.error("Kraken tick failed: %s", e)
+                if self._is_closed_stream_error(e):
+                    try:
+                        kraken_closed = self._retry_with_safe_streams(lambda: self.kraken.tick())
+                        self.kraken_error = ""
+                        logger.warning("Kraken tick recovered after safe-stream retry.")
+                    except Exception as retry_error:
+                        self.kraken_error = str(retry_error)
+                        self.kraken_ready = False
+                        self.kraken = None
+                        self._last_tick_error = str(retry_error)
+                        logger.error("Kraken tick failed after retry: %s", retry_error)
+                else:
+                    self.kraken_error = str(e)
+                    self.kraken_ready = False
+                    self.kraken = None
+                    self._last_tick_error = str(e)
+                    logger.error("Kraken tick failed: %s", e)
         if self.capital_ready and self.capital is not None:
             try:
                 capital_closed = self.capital.tick()
             except Exception as e:
-                self.capital_error = str(e)
-                self.capital_ready = False
-                self.capital = None
-                self._last_tick_error = str(e)
-                logger.error("Capital tick failed: %s", e)
+                if self._is_closed_stream_error(e):
+                    try:
+                        capital_closed = self._retry_with_safe_streams(lambda: self.capital.tick())
+                        self.capital_error = ""
+                        logger.warning("Capital tick recovered after safe-stream retry.")
+                    except Exception as retry_error:
+                        self.capital_error = str(retry_error)
+                        self.capital_ready = False
+                        self.capital = None
+                        self._last_tick_error = str(retry_error)
+                        logger.error("Capital tick failed after retry: %s", retry_error)
+                else:
+                    self.capital_error = str(e)
+                    self.capital_ready = False
+                    self.capital = None
+                    self._last_tick_error = str(e)
+                    logger.error("Capital tick failed: %s", e)
         payload = self._build_combined_payload()
         self._last_tick_completed_at = time.time()
         self._write_runtime_status_file()
@@ -1374,7 +1545,7 @@ class UnifiedMarketTrader:
             "payload": payload,
         }
 
-    def run(self, interval_sec: float = 2.0) -> None:
+    def run(self, interval_sec: float = 0.5) -> None:
         mode = "DRY RUN" if self.dry_run else "LIVE"
         _safe_print("=" * 78)
         _safe_print("  UNIFIED MARKET TRADER")
@@ -1404,7 +1575,7 @@ class UnifiedMarketTrader:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Unified Kraken + Capital market trader")
     parser.add_argument("--dry-run", action="store_true", help="Run Kraken in dry-run mode")
-    parser.add_argument("--interval", type=float, default=2.0, help="Main loop interval in seconds")
+    parser.add_argument("--interval", type=float, default=0.5, help="Main loop interval in seconds")
     parser.add_argument(
         "--setup-kraken-cli",
         action="store_true",
@@ -1413,7 +1584,7 @@ def main() -> None:
     args = parser.parse_args()
 
     trader = UnifiedMarketTrader(dry_run=args.dry_run, setup_kraken_cli=args.setup_kraken_cli)
-    trader.run(interval_sec=max(0.5, float(args.interval)))
+    trader.run(interval_sec=max(0.25, float(args.interval)))
 
 
 if __name__ == "__main__":

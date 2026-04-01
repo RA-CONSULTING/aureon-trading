@@ -17,7 +17,7 @@ class ClientStub:
         self._accounts = list(accounts or [{"accountId": "A1", "balance": 54.34, "available": 54.34, "currency": "GBP"}])
         self._resolved_market = dict(resolved_market or {"epic": "CS.D.SILVER.CFD.IP", "symbol": "SILVER"})
         self._market_snapshot = dict(market_snapshot or {
-            "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
+            "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver", "marginFactor": 0.5},
             "snapshot": {"marketStatus": "TRADEABLE", "bid": 7249.8, "offer": 7251.8},
             "dealingRules": {"minDealSize": {"value": 1}},
         })
@@ -78,6 +78,8 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._prices = {}
         trader._prices_lock = threading.RLock()
         trader._prices_fetched_at = 0.0
+        trader.start_time = time.time()
+        trader.starting_equity_gbp = 0.0
         trader.stats = {
             "trades_opened": 0.0,
             "trades_closed": 0.0,
@@ -98,6 +100,17 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._swarm_snapshot = {"enabled": True, "leader": {}, "votes": [], "ranked": []}
         trader._hive_boosts = {}
         trader._rejection_cooldowns = {}
+        trader._latest_candidate_filtered = []
+        trader._prices = {}
+        trader._prices_fetched_at = 0.0
+        trader._external_prices = {}
+        trader._external_prices_at = {}
+        trader._market_history = {}
+        trader._last_fusion_candle_at = {}
+        trader._hive_boosts = {}
+        trader._rejection_cooldowns = {}
+        trader._lane_snapshot = {}
+        trader._dtp_trackers = {}
         trader._quad_gate_at = 0.0
         trader._quad_gate_ok = True
         trader._signal_brain = None
@@ -107,6 +120,16 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader.orchestrator = None
         trader.timeline_oracle = None
         trader.harmonic_fusion = None
+        trader.hnc_probability = None
+        trader.hnc_6d = None
+        trader.hnc_bridge = None
+        trader.hnc_imperial = None
+        trader.hnc_surge_detector = None
+        trader.queen_market_awareness = None
+        trader.queen_live_analyzer = None
+        trader.queen_loss_learning = None
+        trader.queen_sentience = None
+        trader.queen_hive = None
         trader.thought_bus = None
         trader._registry_snapshot = {}
         trader._decision_snapshot = {}
@@ -136,7 +159,34 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._harmonic_wiring_audit = {}
         trader._harmonic_wiring_audit_at = time.time()
         trader._ensure_live_refresh = lambda: None
+        trader._hnc_snapshot = {}
+        trader._queen_snapshot = {}
+        trader._thought_bus_snapshot = {}
+        trader._cognition_snapshot = {}
+        trader._swarm_snapshot = {"enabled": True, "leader": {}, "votes": [], "ranked": []}
+        trader.shadow_trades = []
+        trader._shadow_validated_count = 0
+        trader._shadow_failed_count = 0
+        trader._recent_closed_trades = []
+        trader._last_shadow_scan = 0.0
         trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
+        trader._score_hnc_suite = lambda *args, **kwargs: {
+            "bonus": 0.0,
+            "probability": 0.5,
+            "confidence": 0.0,
+            "action": "HOLD",
+            "surge_active": False,
+            "surge_intensity": 0.0,
+            "frequency": 432.0,
+        }
+        trader._score_queen_suite = lambda *args, **kwargs: {
+            "bonus": 0.0,
+            "confidence": 0.0,
+            "direction": "NEUTRAL",
+            "reason": "",
+            "battle_readiness": 0.0,
+            "avoid_trade": False,
+        }
         return trader
 
     def test_capital_preflight_reports_minimum_size_failure(self):
@@ -175,7 +225,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         )
 
         self.assertFalse(preflight["ok"])
-        self.assertEqual(preflight["available_balance"], 12.5)
+        self.assertEqual(preflight["available_balance"], 8.75)
         self.assertEqual(preflight["market_status"], "CLOSED")
         self.assertEqual(preflight["epic"], "CS.D.SILVER.CFD.IP")
         self.assertGreater(preflight["spread"], 0.0)
@@ -710,8 +760,8 @@ class TestCapitalCFDSync(unittest.TestCase):
             "minimum_deal_size": 1.0,
             "available_balance": 54.34,
         }
-        opened = []
-        trader._create_shadow = lambda symbol, cfg, ticker: opened.append(symbol) or object()
+        created = []
+        trader._create_shadow = lambda symbol, cfg, ticker: created.append(symbol) or object()
 
         original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_FORCE_SLOT_FILL"])
         old_force_slot_fill = original.CAPITAL_FORCE_SLOT_FILL
@@ -721,7 +771,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         finally:
             original.CAPITAL_FORCE_SLOT_FILL = old_force_slot_fill
 
-        self.assertEqual(opened, ["GOLD"])
+        self.assertEqual(created, ["GOLD"])
         self.assertIn("rejected by preflight", trader._latest_order_error)
 
     def test_tick_rescans_immediately_after_close_without_waiting_for_scan_interval(self):
@@ -746,13 +796,59 @@ class TestCapitalCFDSync(unittest.TestCase):
             "minimum_deal_size": 1.0,
             "available_balance": 54.34,
         }
-        opened = []
-        trader._create_shadow = lambda symbol, cfg, ticker: opened.append(symbol) or object()
+        created = []
+        trader._create_shadow = lambda symbol, cfg, ticker: created.append(symbol) or object()
 
         closed = trader.tick()
 
         self.assertEqual(len(closed), 1)
-        self.assertEqual(opened, ["GOLD"])
+        self.assertEqual(created, ["GOLD"])
+
+    def test_tick_can_promote_validated_shadow_immediately_on_strong_overshoot(self):
+        trader = self._build_trader(ClientStub())
+        trader.client = ClientStub()
+        trader._last_scan = time.time()
+        trader._last_monitor = time.time()
+        trader._sync_positions_from_exchange = lambda force=False: None
+        trader._refresh_prices = lambda: None
+        trader._update_position_prices = lambda: None
+        trader._monitor_positions = lambda: []
+        trader.status_lines = lambda: []
+        shadow = type("ShadowStub", (), {
+            "symbol": "SILVER",
+            "direction": "BUY",
+            "validated": True,
+            "validation_time": time.time(),
+            "current_move_pct": 0.03,
+            "target_move_pct": 0.01,
+            "score": 2.0,
+        })()
+        trader.shadow_trades = [shadow]
+        promoted = []
+        trader._promote_shadow = lambda item: promoted.append(item.symbol) or object()
+
+        trader.tick()
+
+        self.assertEqual(promoted, ["SILVER"])
+
+    def test_find_best_opportunity_filters_unaffordable_candidates_before_snapshot(self):
+        trader = self._build_trader(ClientStub(
+            accounts=[{"accountId": "A1", "balance": 100.0, "available": 100.0, "currency": "GBP"}]
+        ))
+        trader.positions = []
+        trader._get_fast_price = lambda symbol: {"price": 100.0, "bid": 99.9, "ask": 100.1, "change_pct": 1.2, "epic": f"EPIC-{symbol}"}
+        trader._score_symbol = lambda symbol, cfg, ticker: (2.0, "BUY")
+        trader._apply_hft_analysis = lambda scored: None
+        trader._apply_intelligence_overlays = lambda scored: None
+        trader._build_swarm_snapshot = lambda scored: {"enabled": True, "leader": {}, "votes": [], "ranked": []}
+        trader._estimate_candidate_margin_required = lambda price, size, asset_class: 200.0 if asset_class == "stock" else 20.0
+        trader._required_tp_pct_for_profit = lambda price, size: 0.01
+        trader._effective_tp_pct = lambda price, size, cfg: 0.01
+
+        trader._find_best_opportunity()
+
+        self.assertTrue(all(item["asset_class"] != "stock" for item in trader._latest_candidate_snapshot))
+        self.assertTrue(any(item["asset_class"] == "stock" for item in trader._latest_candidate_filtered))
 
     def test_ranked_opportunities_skips_direction_that_is_already_open(self):
         trader = self._build_trader(ClientStub())
@@ -779,7 +875,29 @@ class TestCapitalCFDSync(unittest.TestCase):
 
         ranked = trader._ranked_opportunities()
 
-        self.assertEqual([(sym, cfg["direction"]) for sym, cfg, _ in ranked], [("SILVER", "SELL")])
+        self.assertEqual([(sym, cfg["direction"]) for sym, cfg, _ in ranked], [("GOLD", "BUY"), ("SILVER", "SELL")])
+
+    def test_ranked_opportunities_appends_scored_candidates_after_swarm_ranked(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = []
+        trader._swarm_snapshot = {
+            "ranked": [
+                {"symbol": "MSFT", "direction": "SELL", "swarm_score": 2.0},
+            ]
+        }
+        trader._latest_candidate_snapshot = [
+            {"symbol": "GOLD", "direction": "SELL", "score": 2.7},
+            {"symbol": "MSFT", "direction": "SELL", "score": 1.8},
+            {"symbol": "UK100", "direction": "SELL", "score": 1.6},
+        ]
+        trader._get_price = lambda symbol: {"price": 10, "bid": 9.9, "ask": 10.1}
+
+        ranked = trader._ranked_opportunities()
+
+        self.assertEqual(
+            [(sym, cfg["direction"]) for sym, cfg, _ in ranked],
+            [("MSFT", "SELL"), ("GOLD", "SELL"), ("UK100", "SELL")],
+        )
 
     def test_tick_can_open_one_buy_and_one_sell_in_same_cycle(self):
         trader = self._build_trader(ClientStub())
@@ -806,9 +924,8 @@ class TestCapitalCFDSync(unittest.TestCase):
             "available_balance": 54.34,
         }
 
-        opened = []
         def _shadow(symbol, cfg, ticker):
-            opened.append((symbol, cfg["direction"]))
+            created.append((symbol, cfg["direction"]))
             trader.positions.append(
                 CFDPosition(
                     symbol=symbol,
@@ -834,7 +951,20 @@ class TestCapitalCFDSync(unittest.TestCase):
         finally:
             original.CAPITAL_FORCE_SLOT_FILL = old_force_slot_fill
 
-        self.assertEqual(opened, [("SILVER", "BUY"), ("GOLD", "SELL")])
+        self.assertEqual(created, [("SILVER", "BUY"), ("GOLD", "SELL"), ("TSLA", "BUY")])
+
+    def test_can_open_candidate_allows_up_to_three_same_direction_positions(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = [
+            CFDPosition("SILVER", "D1", "E1", "BUY", 1, 10, 11, 9, "commodity"),
+            CFDPosition("GOLD", "D2", "E2", "BUY", 1, 10, 11, 9, "commodity"),
+        ]
+
+        self.assertTrue(trader._can_open_candidate("TSLA", "BUY"))
+
+        trader.positions.append(CFDPosition("AMZN", "D3", "E3", "BUY", 1, 10, 11, 9, "stock"))
+
+        self.assertFalse(trader._can_open_candidate("MSFT", "BUY"))
 
     def test_build_swarm_snapshot_prefers_consensus_leader(self):
         trader = self._build_trader(ClientStub())
@@ -1324,6 +1454,243 @@ class TestCapitalCFDSync(unittest.TestCase):
 
         self.assertTrue(result)
         self.assertEqual(opened, [("SILVER", "BUY"), ("GOLD", "SELL")])
+
+    def test_record_market_observation_builds_waveform_context_and_feeds_fusion(self):
+        class FusionStub:
+            def __init__(self):
+                self.ticks = []
+                self.candles = []
+
+            def ingest_tick(self, symbol, price, volume, timestamp=None):
+                self.ticks.append((symbol, price, volume))
+
+            def ingest_candle(self, symbol, candle):
+                self.candles.append((symbol, candle))
+
+        trader = self._build_trader(ClientStub())
+        trader.harmonic_fusion = FusionStub()
+
+        for idx, price in enumerate([100.0, 100.3, 100.7, 101.1, 101.4, 101.8]):
+            trader._record_market_observation("SILVER", {
+                "price": price,
+                "bid": price - 0.1,
+                "ask": price + 0.1,
+                "change_pct": 0.4 + idx * 0.1,
+            })
+
+        waveform = trader._waveform_context("SILVER", "BUY")
+
+        self.assertGreater(waveform["coherence"], 0.5)
+        self.assertGreater(waveform["bonus"], 0.0)
+        self.assertGreaterEqual(len(trader.harmonic_fusion.ticks), 6)
+        self.assertGreaterEqual(len(trader.harmonic_fusion.candles), 1)
+
+    def test_apply_intelligence_overlays_blocks_waveform_disagreement(self):
+        trader = self._build_trader(ClientStub())
+        for price in [100.0, 99.7, 99.4, 99.1, 98.8, 98.5]:
+            trader._record_market_observation("SILVER", {
+                "price": price,
+                "bid": price - 0.1,
+                "ask": price + 0.1,
+                "change_pct": -0.4,
+            })
+        trader._score_timeline_oracle = lambda symbol, side, price, change_pct: {
+            "bonus": 0.5,
+            "action": "buy",
+            "confidence": 0.8,
+        }
+        trader._score_harmonic_fusion = lambda symbol, side: {
+            "bonus": 0.6,
+            "global_coherence": 0.9,
+            "symbol_coherence": 0.8,
+        }
+        trader._orchestrator_pretrade_gate = lambda symbol, side: {
+            "approved": True,
+            "reason": "ok",
+            "sizing": {},
+        }
+        scored = [{
+            "symbol": "SILVER",
+            "direction": "BUY",
+            "score": 2.0,
+            "price": 100.0,
+            "change_pct": 0.5,
+        }]
+
+        trader._apply_intelligence_overlays(scored)
+
+        self.assertEqual(scored[0]["score"], 0.0)
+        self.assertEqual(scored[0]["intel_reason"], "waveform_disagreement")
+
+    def test_score_hnc_suite_combines_hnc_subsystems(self):
+        class HNCProbStub:
+            def update_and_analyze(self, *args, **kwargs):
+                return {}
+
+            def get_trading_signal(self, symbol):
+                return {
+                    "action": "BUY",
+                    "probability": 0.8,
+                    "confidence": 0.7,
+                    "reason": "hnc_ok",
+                }
+
+        class HNC6DStub:
+            def update(self, **kwargs):
+                return {
+                    "probability": 0.75,
+                    "confidence": 0.65,
+                    "wave_state": "resonant",
+                    "harmonic_lock": True,
+                    "resonance": 0.8,
+                }
+
+        class HNCBridgeStub:
+            def enhance_opportunity(self, opp):
+                enhanced = dict(opp)
+                enhanced.update({
+                    "hnc_frequency": 528.0,
+                    "hnc_is_harmonic": True,
+                    "hnc_resonance": 0.9,
+                })
+                return enhanced
+
+        class HNCImperialStub:
+            def enhance_opportunity(self, opp):
+                enhanced = dict(opp)
+                enhanced["imperial"] = {
+                    "probability": 0.72,
+                    "confidence": 0.66,
+                    "action": "BUY",
+                    "alignment_bonus": 0.1,
+                }
+                return enhanced
+
+        class HNCSurgeStub:
+            def add_price_tick(self, symbol, price):
+                return None
+
+            def detect_surge(self, symbol):
+                return type("Surge", (), {"intensity": 0.7, "primary_harmonic": "Queen's Profit"})()
+
+        trader = self._build_trader(ClientStub())
+        trader.hnc_probability = HNCProbStub()
+        trader.hnc_6d = HNC6DStub()
+        trader.hnc_bridge = HNCBridgeStub()
+        trader.hnc_imperial = HNCImperialStub()
+        trader.hnc_surge_detector = HNCSurgeStub()
+        trader._score_hnc_suite = CapitalCFDTrader._score_hnc_suite.__get__(trader, CapitalCFDTrader)
+        for price in [100.0, 100.2, 100.5, 100.7, 101.0, 101.3]:
+            trader._record_market_observation("SILVER", {
+                "price": price,
+                "bid": price - 0.1,
+                "ask": price + 0.1,
+                "change_pct": 0.4,
+            })
+
+        hnc = trader._score_hnc_suite("SILVER", "BUY", "commodity", 101.3, 101.4, 101.2, 0.8, 0.8)
+
+        self.assertGreater(hnc["bonus"], 0.0)
+        self.assertTrue(hnc["surge_active"])
+        self.assertEqual(hnc["frequency"], 528.0)
+        self.assertEqual(hnc["action"], "BUY")
+
+    def test_score_queen_suite_combines_queen_subsystems_and_can_veto(self):
+        class MarketAwarenessStub:
+            def assess_market(self):
+                return type("Market", (), {"market_state": "BULL", "queen_message": "favorable"})()
+
+            def get_tactical_assessment(self, **kwargs):
+                return {"battle_readiness": 0.8}
+
+            def get_battle_readiness(self):
+                return 0.8
+
+            def can_win_without_fighting(self, context=None):
+                return False, "engage"
+
+        class LiveAnalyzerStub:
+            def analyze(self):
+                return type("Analysis", (), {
+                    "recommended_action": "FAVORABLE - Markup phase in progress",
+                    "queen_confidence": 0.8,
+                    "reasoning": "uptrend",
+                    "manipulation_detected": False,
+                    "market_phase": "markup",
+                })()
+
+        class SentienceStub:
+            def get_current_sentiment(self):
+                return {"confidence": 0.7, "mood": "calm"}
+
+        class HiveStub:
+            def get_collective_signal(self, symbol=None, market_data=None):
+                return {"signal": 0.6, "direction": "BULLISH", "confidence": 0.75}
+
+            def get_queen_decision_with_intelligence(self, opportunity):
+                return {"final_score": 1.1}
+
+        class LossLearningStub:
+            def should_avoid_trade(self, **kwargs):
+                return True, "path_blocked"
+
+        trader = self._build_trader(ClientStub())
+        trader.queen_market_awareness = MarketAwarenessStub()
+        trader.queen_live_analyzer = LiveAnalyzerStub()
+        trader.queen_sentience = SentienceStub()
+        trader.queen_hive = HiveStub()
+        trader.queen_loss_learning = LossLearningStub()
+        trader._score_queen_suite = CapitalCFDTrader._score_queen_suite.__get__(trader, CapitalCFDTrader)
+
+        queen = trader._score_queen_suite("SILVER", "BUY", "commodity", 100.0, 0.8, 0.02, 100.0)
+
+        self.assertTrue(queen["avoid_trade"])
+        self.assertEqual(queen["reason"], "path_blocked")
+        self.assertGreater(queen["confidence"], 0.0)
+        self.assertEqual(queen["direction"], "BULLISH")
+
+    def test_status_lines_surface_queen_metrics_for_target_and_candidates(self):
+        trader = self._build_trader(ClientStub())
+        trader._latest_target_snapshot = {
+            "symbol": "SILVER",
+            "direction": "SELL",
+            "asset_class": "commodity",
+            "score": 2.4,
+            "change_pct": -1.2,
+            "profit_target_gbp": 0.01,
+            "queen_confidence": 0.82,
+            "queen_battle_readiness": 0.77,
+            "queen_direction": "SELL",
+            "queen_reason": "queen_market_aligned",
+            "queen_systems": {
+                "open_source": True,
+                "ocean": True,
+                "solar": False,
+                "warrior": True,
+            },
+        }
+        trader._latest_candidate_snapshot = [{
+            "symbol": "GOLD",
+            "direction": "SELL",
+            "asset_class": "commodity",
+            "score": 2.1,
+            "change_pct": -1.0,
+            "spread_pct": 0.01,
+            "expected_net_profit": 0.01,
+            "profit_target_gbp": 0.01,
+            "queen_confidence": 0.7,
+            "queen_battle_readiness": 0.66,
+            "queen_direction": "SELL",
+            "queen_avoid_trade": True,
+            "queen_reason": "loss-memory",
+            "intel_reason": "queen_veto:loss-memory",
+        }]
+
+        rendered = "\n".join(trader.status_lines())
+
+        self.assertIn("Queen: conf=0.82 ready=0.77 dir=SELL reason=queen_market_aligned", rendered)
+        self.assertIn("Queen Systems: Open Source=on | Ocean=on | Solar=off | Warrior=on", rendered)
+        self.assertIn("Q conf=0.70 ready=0.66 dir=SELL veto=yes reason=loss-memory intel=queen_veto:loss-memory", rendered)
 
 
 if __name__ == "__main__":

@@ -215,7 +215,49 @@ export interface GlobalState {
       score: number;
       change_pct: number;
       spread_pct: number;
+      direction?: string;
+      expected_net_profit?: number;
+      queen_confidence?: number;
+      queen_battle_readiness?: number;
+      queen_direction?: string;
+      queen_avoid_trade?: boolean;
+      queen_reason?: string;
+      intel_reason?: string;
     }>;
+    capitalTarget?: {
+      symbol?: string;
+      asset_class?: string;
+      direction?: string;
+      score?: number;
+      change_pct?: number;
+      expected_net_profit?: number;
+      queen_confidence?: number;
+      queen_battle_readiness?: number;
+      queen_direction?: string;
+      queen_reason?: string;
+      intel_reason?: string;
+      queen_systems?: {
+        open_source?: boolean;
+        ocean?: boolean;
+        solar?: boolean;
+        warrior?: boolean;
+      };
+    };
+    capitalQueenSnapshot?: {
+      symbol?: string;
+      side?: string;
+      confidence?: number;
+      battle_readiness?: number;
+      direction?: string;
+      reason?: string;
+      avoid_trade?: boolean;
+      systems?: {
+        open_source?: boolean;
+        ocean?: boolean;
+        solar?: boolean;
+        warrior?: boolean;
+      };
+    };
     krakenShadows?: number;
     capitalShadows?: number;
   };

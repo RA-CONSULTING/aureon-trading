@@ -400,17 +400,25 @@ except ImportError:
 
 # 👑🌍 MARKET AWARENESS - Queen understands market-wide context 🌍👑
 try:
-    from queen_market_awareness import (
-        QueenMarketAwareness, 
-        MarketCondition, 
-        PositionContext
+    from aureon.queen.queen_market_awareness import (
+        QueenMarketAwareness,
+        MarketCondition,
+        PositionContext,
     )
     MARKET_AWARENESS_AVAILABLE = True
 except ImportError:
-    QueenMarketAwareness = None
-    MarketCondition = None
-    PositionContext = None
-    MARKET_AWARENESS_AVAILABLE = False
+    try:
+        from queen_market_awareness import (
+            QueenMarketAwareness,
+            MarketCondition,
+            PositionContext,
+        )
+        MARKET_AWARENESS_AVAILABLE = True
+    except ImportError:
+        QueenMarketAwareness = None
+        MarketCondition = None
+        PositionContext = None
+        MARKET_AWARENESS_AVAILABLE = False
 
 # 👑⚛️🧠 QUANTUM COGNITION AMPLIFIER - Quantum Power → Enhanced Cognition 🧠⚛️👑
 try:
@@ -1100,6 +1108,7 @@ class QueenHiveMind:
             
         # The systems we'll wire
         self.dreamer = None  # EnigmaDreamer
+        self._dream_engine_missing_warned = False
         self.mycelium = None  # MyceliumNetwork
         self.micro_labyrinth = None  # MicroProfitLabyrinth components
         self.enigma = None  # EnigmaIntegration
@@ -2648,12 +2657,20 @@ class QueenHiveMind:
         """
         try:
             self.dreamer = dreamer
+            self._dream_engine_missing_warned = False
             logger.info("👑🌙 Dream Engine WIRED to Queen Hive Mind")
             logger.info("   The Queen can now DREAM")
             return True
         except Exception as e:
             logger.error(f"Failed to wire Dream Engine: {e}")
             return False
+
+    def _warn_dream_engine_unwired(self) -> None:
+        if not self._dream_engine_missing_warned:
+            logger.warning("👑 Queen cannot dream - Dream Engine not wired!")
+            self._dream_engine_missing_warned = True
+        else:
+            logger.debug("Queen dream request skipped: Dream Engine not wired")
 
     def wire_river_consciousness(self, river) -> bool:
         """
@@ -7503,7 +7520,7 @@ I will NOT sell at a loss when the market is down. 👑
         She processes historical data and generates prophecies.
         """
         if not self.dreamer:
-            logger.warning("👑 Queen cannot dream - Dream Engine not wired!")
+            self._warn_dream_engine_unwired()
             return
         
         self.state = QueenState.SLEEPING
@@ -7536,7 +7553,7 @@ I will NOT sell at a loss when the market is down. 👑
         Returns wisdom if generated.
         """
         if not self.dreamer:
-            logger.warning("👑 Queen cannot dream - Dream Engine not wired!")
+            self._warn_dream_engine_unwired()
             return None
         
         self.state = QueenState.DREAMING
