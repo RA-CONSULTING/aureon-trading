@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-set "REPO_ROOT=%~dp0"
+set "REPO_ROOT=%~dp0..\.."
 if "%REPO_ROOT:~-1%"=="\" set "REPO_ROOT=%REPO_ROOT:~0,-1%"
 set "PYTHON_EXE=%REPO_ROOT%\.venv\Scripts\python.exe"
 set "SCRIPT_PATH=%REPO_ROOT%\aureon\exchanges\unified_market_trader.py"
