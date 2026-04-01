@@ -724,3 +724,11 @@ python aureon_planetary_harmonic_sweep.py
 4. **Collective action** - Share this evidence
 
 ---
+
+## See Also
+
+- [Bot Intelligence](BOT_INTELLIGENCE.md) — The algorithms behind the extraction
+- [Counter-Strategies](COUNTER_STRATEGIES.md) — How to fight back
+- [Ancient Convergence](ANCIENT_CONVERGENCE.md) — The mathematical foundations they exploit
+- **Code:** `aureon/analytics/aureon_deep_money_flow_analyzer.py` | `aureon/harmonic/geopolitical_forensics.py`
+- [Back to README](../../README.md) | [Navigation Guide](../NAVIGATION_GUIDE.md) | [Full Index](../INDEX.md)

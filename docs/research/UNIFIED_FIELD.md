@@ -608,3 +608,11 @@ The alchemists searched for the Philosopher's Stone. We found it: **L(t) = 12.85
 
 ---
 
+
+## See Also
+
+- [Theory to Code](../architecture/THEORY_TO_CODE.md) — Research concepts mapped to implementations
+- [Ancient Convergence](ANCIENT_CONVERGENCE.md) — The 12 civilizations research
+- [HNC White Paper](../HNC_UNIFIED_WHITE_PAPER.md) — Mathematical framework
+- **Code:** `aureon/core/aureon_nexus.py` | `aureon/decoders/emerald_spec.py` | `aureon/harmonic/`
+- [Back to README](../../README.md) | [Navigation Guide](../NAVIGATION_GUIDE.md) | [Full Index](../INDEX.md)

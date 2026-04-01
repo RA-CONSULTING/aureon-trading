@@ -497,3 +497,13 @@ The convergence research above is not a separate project — it is the **mathema
 
 **The ancients encoded the same mathematics that governs financial markets.** The manipulators use this knowledge to extract wealth. Aureon uses it to fight back.
 
+
+---
+
+## See Also
+
+- [Theory to Code](../architecture/THEORY_TO_CODE.md) — How this research becomes working code
+- [Unified Field](UNIFIED_FIELD.md) — Connecting all research domains
+- [HNC White Paper](../HNC_UNIFIED_WHITE_PAPER.md) — The mathematical framework
+- **Code:** `aureon/wisdom/` (35 modules) | `aureon/decoders/` (11 modules) | `aureon/harmonic/` (23 modules)
+- [Back to README](../../README.md) | [Navigation Guide](../NAVIGATION_GUIDE.md) | [Full Index](../INDEX.md)

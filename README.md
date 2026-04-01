@@ -9,7 +9,7 @@
 [![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
 [![GitHub Stars](https://img.shields.io/github/stars/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=FFD700)](https://github.com/ra-consulting/aureon-trading)
 [![GitHub Forks](https://img.shields.io/github/forks/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=silver)](https://github.com/ra-consulting/aureon-trading/fork)
-[![Python](https://img.shields.io/badge/Python-947%20modules-3776AB?style=for-the-badge&logo=python&logoColor=white)](#architecture-overview)
+[![Python](https://img.shields.io/badge/Python-715%20modules%20·%2024%20domains-3776AB?style=for-the-badge&logo=python&logoColor=white)](#project-structure--715-modules-across-24-domains)
 [![TypeScript](https://img.shields.io/badge/TypeScript-780%20files-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#architecture-overview)
 
 [![Support the Project](https://img.shields.io/badge/☕%20Support%20the%20Project-Donate%20via%20SumUp-FFD700?style=for-the-badge&logoColor=black)](https://pay.sumup.com/b2c/QFTPOX6U)
@@ -97,6 +97,24 @@ If Aureon has given you an edge, saved you from a bad trade, or simply opened yo
 
 ---
 
+## 📖 NAVIGATE BY ROLE
+
+<div align="center">
+
+| 🏦 **Trader** | 🔧 **Developer** | 🔬 **Researcher** |
+|---|---|---|
+| [Quick Start](#quick-start-war-room-dashboard) | [Architecture Overview](#architecture-overview) | [Ancient Convergence](docs/research/ANCIENT_CONVERGENCE.md) |
+| [Scripts Index](docs/SCRIPTS_INDEX.md) | [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Bot Intelligence](docs/research/BOT_INTELLIGENCE.md) |
+| [Exchange Setup](#configuration) | [Intelligence Wiring](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Financial Exposure](docs/research/FINANCIAL_EXPOSURE.md) |
+| [Dashboard Guide](docs/DASHBOARD_GUIDE.md) | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | [Unified Field](docs/research/UNIFIED_FIELD.md) |
+| [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | [Contributing](CONTRIBUTING.md) | [Counter-Strategies](docs/research/COUNTER_STRATEGIES.md) |
+
+> **New here?** Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) for guided learning paths. See the [Full Documentation Index](docs/INDEX.md) for all 180+ docs.
+
+</div>
+
+---
+
 ## 🚀 BETA TESTERS WANTED
 
 <div align="center">
@@ -136,14 +154,17 @@ Today it's **fully open-source (MIT license)** and live on GitHub.
 
 Pure Python 3.11+ multi-agent autonomous trading research toolkit:
 
-| Module | Description |
-|--------|-------------|
-| `aureon_planetary_harmonic_sweep.py` | FFT spectral analysis + planetary harmonic sweeps |
-| `aureon_queen_hive_mind.py` | Queen AI decision layer with 4th-pass veto |
-| `aureon_ghost_dance_protocol.py` | Ghost Dance resistance protocol |
-| `aureon_probability_nexus.py` | 9 specialised Auris nodes + Lighthouse consensus |
-| `aureon_historical_bot_census.py` | Bot shape & strategic warfare scanners |
-| `adaptive_prime_profit_gate.py` | Adaptive Kelly-criterion risk management |
+| Module | Path | Description |
+|--------|------|-------------|
+| Planetary Harmonic Sweep | `aureon/harmonic/` | FFT spectral analysis + planetary harmonic sweeps |
+| Queen Hive Mind | `aureon/queen/` | Queen AI decision layer with 4th-pass veto |
+| Ghost Dance Protocol | `aureon/wisdom/` | Ghost Dance resistance protocol |
+| Probability Nexus | `aureon/core/` | 9 specialised Auris nodes + Lighthouse consensus |
+| Bot Census & Detection | `aureon/bots_intelligence/` | Bot shape & strategic warfare scanners |
+| Adaptive Profit Gate | `aureon/utils/` | Adaptive Kelly-criterion risk management |
+| Unified Market Trader | `aureon/exchanges/` | Multi-exchange orchestration (Kraken, Capital, Alpaca, Binance) |
+| Voice Agent System | `aureon/autonomous/` | Voice-controlled trading with intent cognition |
+| Geopolitical Forensics | `aureon/harmonic/` | Geopolitical event → market signal integration |
 
 **The HNC Master Formula driving it all:**
 
@@ -307,17 +328,17 @@ pie title Research Scope — Wisdom Entries by Civilisation
 
 | # | Section | What's There |
 |---|---------|-------------|
-| [I](#-the-ancient-convergence-they-were-never-separated) | **Ancient Convergence Research** | 12 civilisations, 1,190 wisdom entries, 47+ convergence points |
-| [II](#-the-complete-exposure-335-trillion-extracted-from-humanity) | **Financial Exposure** | $33.5T extraction timeline, perpetrator network, bot registry |
-| [III](#-the-bot-army-23-algorithms-exposed) | **Bot Intelligence** | 23 exposed algorithms, ownership attribution, detection methods |
-| [IV](#-global-bot-intelligence-system) | **Global Predators** | 37 firms profiled, $13T+ capital tracked, 44,000+ bots |
-| [V](#methodology--reproducibility) | **Methodology & Reproducibility** | Data sources, equations, peer review checklist |
-| [VI](#architecture-overview) | **Architecture** | System design, Queen Hive Mind, exchange clients, profit gate |
-| [VII](#quick-start-war-room-dashboard) | **Quick Start** | Setup instructions for Linux, macOS, Windows, Docker |
-| [VIII](#-production-deployment-digitalocean) | **Production Deployment** | Live cloud deployment, port architecture, monitoring |
-| [IX](#-counter-strategies-how-to-fight-back) | **Counter-Strategies** | Timing, phase, and spiritual warfare counter-measures |
-| [X](docs/HNC_UNIFIED_WHITE_PAPER.md) | **Theoretical Foundation** | HNC white paper — Master Formula, Tree of Light, Auris Conjecture |
-| [XI](#-the-unified-field-connecting-all-the-dots) | **The Unified Field** | Prime Sentinel, Emerald Tablet decoder, Unified Ancient Wisdom |
+| [I](#-the-ancient-convergence-they-were-never-separated) | **Ancient Convergence** | 12 civilisations, 1,190 wisdom entries — [Full Research](docs/research/ANCIENT_CONVERGENCE.md) |
+| [II](#-the-complete-exposure-335-trillion-extracted-from-humanity) | **Financial Exposure** | $33.5T extraction timeline — [Full Research](docs/research/FINANCIAL_EXPOSURE.md) |
+| [III](#-the-bot-army-23-algorithms-exposed) | **Bot Intelligence** | 23 algorithms, 37 firms — [Full Research](docs/research/BOT_INTELLIGENCE.md) |
+| [IV](#architecture-overview) | **Architecture** | 24 domains, 715 modules — [Module Reference](docs/MODULES_AT_A_GLANCE.md) |
+| [V](#quick-start-war-room-dashboard) | **Quick Start** | Setup for Linux, macOS, Windows, Docker |
+| [VI](#-production-deployment-digitalocean) | **Production Deployment** | Live cloud deployment, port architecture |
+| [VII](#-market-intelligence--manipulation-detection-tools) | **Market Intelligence** | Bot detection, coordination analysis tools |
+| [VIII](docs/HNC_UNIFIED_WHITE_PAPER.md) | **Theoretical Foundation** | HNC white paper — Master Formula, Auris Conjecture |
+| [IX](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | **Intelligence Wiring** | What feeds what — live system topology |
+| [X](docs/architecture/THEORY_TO_CODE.md) | **Theory → Code** | Research concepts mapped to implementations |
+| [XI](docs/SCRIPTS_INDEX.md) | **Scripts Index** | All 150+ startup, monitoring, and diagnostic scripts |
 
 </div>
 
@@ -2777,9 +2798,43 @@ graph TD
     style PROFITGATE fill:#4a3d00,color:#FFD700
 ```
 
+## Project Structure — 715 Modules Across 24 Domains
+
+The codebase is organized into domain-specific subdirectories under `aureon/`:
+
+```
+aureon/
+├── core/           (34)  Central nervous system — ThoughtBus, Nexus, Mycelium
+├── trading/        (86)  Execution layer — Auris, Orca kill chain, snipers
+├── exchanges/      (37)  Multi-exchange — Kraken, Capital.com, Alpaca, Binance, Unified Trader
+├── queen/          (53)  Queen AI — Hive Mind, neural implementation, cognitive narrator
+├── autonomous/     (35)  Autonomous ops — Voice agent, cognition runtime, planners
+├── intelligence/   (33)  AI/ML prediction — Seer, Lyra, Brain, Timeline Oracle
+├── harmonic/       (23)  Harmonic field — Planetary sweep, fusion, geopolitical forensics
+├── analytics/      (40)  Analysis — Backtesting, whale profiling, money flow
+├── strategies/     (35)  Strategies — Harmonic Trinity, HNC protocols, probability matrix
+├── portfolio/      (31)  Portfolio — P&L tracking, profit monitors, billion-goal tracker
+├── scanners/       (18)  Scanners — Momentum hunter, wave scanner, bot detection
+├── monitors/       (24)  Monitoring — Live dashboards, margin ETA, power monitor
+├── command_centers/(16)  Orchestration — Command center, war room, system hub
+├── simulation/     (34)  Simulations — Quantum telescope, multiverse, demos
+├── data_feeds/     (20)  Market data — WebSocket feeds, news, ephemeris
+├── wisdom/         (35)  Ancient wisdom — Celtic, Ghost Dance, Enigma, QGita
+├── bots/           (32)  Bot implementations — Gaia traders, planetary reclaimer
+├── bots_intelligence/(21) Bot detection — Profiling, fingerprinting, attribution
+├── bridges/        (17)  Cross-system — Frontend bridge, ML bridge, Nexus-Earth
+├── decoders/       (11)  Hermetic translation — Emerald Tablet, Aztec, Egyptian, Ogham
+├── conversion/     (10)  Conversion — Ladder climber, dust converter
+├── utils/          (41)  Utilities — Profit gates, diagnostics, configuration
+├── s51/            (5)   Section 51 — Experimental compound strategies
+└── atn/            (3)   Astronomical Temporal Nexus — Earth hazard monitoring
+```
+
+> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Repo Mindmap](docs/architecture/REPO_MINDMAP.md)
+
 ## Core Components
 
-### 1. Adaptive Prime Profit Gate (`adaptive_prime_profit_gate.py`)
+### 1. Adaptive Prime Profit Gate (`aureon/utils/adaptive_prime_profit_gate.py`)
 Calculates exact price movements required for profit after all costs.
 
 **Master Equation:**
@@ -2803,14 +2858,14 @@ Where:
 | `r_prime` | Net profit ≥ prime target | Standard profit target |
 | `r_prime_buffer` | Net profit ≥ prime + buffer | Safe mode with margin |
 
-### 2. Queen Hive Mind (`aureon_queen_hive_mind.py`)
+### 2. Queen Hive Mind (`aureon/queen/aureon_queen_hive_mind.py`)
 Central neural decision controller with:
 - 12 connected neurons (Dream, Harmonic, Mycelium, etc.)
 - `handle_runtime_error()` for self-repair
 - Dynamic learning from trade outcomes
 - Per-asset guidance generation
 
-### 3. Micro Profit Labyrinth (`micro_profit_labyrinth.py`)
+### 3. Micro Profit Labyrinth (`aureon/trading/micro_profit_labyrinth.py`)
 Turn-based execution engine:
 - Round-robin exchange rotation
 - Pre-flight min_qty validation
@@ -2820,12 +2875,13 @@ Turn-based execution engine:
 ### 4. Exchange Clients
 | Client | File | Features |
 |--------|------|----------|
-| Kraken | `kraken_client.py` | Multi-hop conversion paths, symbol filters |
-| Binance | `binance_client.py` | UK restriction handling, tiered fees, symbol normalization |
-| Alpaca | `alpaca_client.py` | Stocks + crypto, fractional shares, SSE streaming |
-| Capital.com | `capital_client.py` | CFD trading, spread-only fee model |
+| Kraken | `aureon/exchanges/kraken_client.py` | Multi-hop conversion paths, symbol filters |
+| Binance | `aureon/exchanges/binance_client.py` | UK restriction handling, tiered fees, symbol normalization |
+| Alpaca | `aureon/exchanges/alpaca_client.py` | Stocks + crypto, fractional shares, SSE streaming |
+| Capital.com | `aureon/exchanges/capital_client.py` | CFD trading, spread-only fee model |
+| **Unified Trader** | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration with central beat feed** |
 
-### 5. Animal Ecosystem Scanners (`aureon_animal_momentum_scanners.py`)
+### 5. Animal Ecosystem Scanners (`aureon/scanners/aureon_animal_momentum_scanners.py`)
 Specialized Alpaca-focused momentum scanners using biological metaphors:
 - **Wolf**: 24h high-momentum breakout sniper.
 - **Lion**: Composite scorer (Volume * Move * Coherence).
@@ -2931,11 +2987,11 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # Add API keys
 
-# 2. Launch Queen's War Room (MAIN SYSTEM)
-python orca_complete_kill_cycle.py
+# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
+python aureon/exchanges/unified_market_trader.py
 
-# 3. Optional: Legacy micro-profit engine (conservative mode)
-python micro_profit_labyrinth.py --dry-run
+# 3. Or: Launch Queen's War Room (Orca Kill Cycle)
+python aureon/trading/orca_complete_kill_cycle.py
 ```
 
 ### 🪟 Windows (PowerShell)
@@ -2950,11 +3006,12 @@ py -3 -m venv .venv
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-# 2. Launch Queen's War Room (MAIN SYSTEM)
-python orca_complete_kill_cycle.py
+# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
+.\scripts\runners\run_unified_live.cmd
 
-# 3. Optional: Legacy micro-profit engine
-python micro_profit_labyrinth.py --dry-run
+# 3. Or: Launch specific exchange traders
+.\scripts\runners\run_alpaca_capital_style.ps1
+.\scripts\runners\run_capital_swarm.ps1
 ```
 
 Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
@@ -3102,13 +3159,13 @@ See [production/README.md](production/README.md) for full deployment documentati
 ### Quantum Telescope Suite (Bot Shape Detection)
 Real-time FFT-based spectral analysis of trading patterns to identify algorithmic entities.
 
-| Tool | Purpose |
-|------|---------|
-| [`aureon_bot_shape_scanner.py`](aureon_bot_shape_scanner.py) | Real-time "Quantum Telescope" - FFT analysis on WebSocket streams |
-| [`bot_shape_viewer.py`](bot_shape_viewer.py) | 3D visualization (Plotly) of bot frequency signatures |
-| [`aureon_historical_bot_census.py`](aureon_historical_bot_census.py) | 8-year deep scan to track bot evolution and "birth dates" |
-| [`aureon_bot_entity_attribution.py`](aureon_bot_entity_attribution.py) | Map bots to real-world entities (volume + timing analysis) |
-| [`aureon_cultural_bot_fingerprinting.py`](aureon_cultural_bot_fingerprinting.py) | Cultural pattern analysis (holidays, timezones) for ownership attribution |
+| Tool | Path | Purpose |
+|------|------|---------|
+| Bot Shape Scanner | `aureon/bots_intelligence/` | Real-time "Quantum Telescope" - FFT analysis on WebSocket streams |
+| Bot Shape Viewer | `aureon/bots_intelligence/` | 3D visualization (Plotly) of bot frequency signatures |
+| Historical Bot Census | `aureon/analytics/` | 8-year deep scan to track bot evolution and "birth dates" |
+| Bot Entity Attribution | `aureon/bots_intelligence/` | Map bots to real-world entities (volume + timing analysis) |
+| Cultural Fingerprinting | `aureon/bots_intelligence/` | Cultural pattern analysis (holidays, timezones) for ownership |
 
 **Key Discoveries:**
 - **193 unique bot patterns** identified across 8 years of data
@@ -3118,11 +3175,11 @@ Real-time FFT-based spectral analysis of trading patterns to identify algorithmi
 ### Planetary Energy Tracking (Cosmic Whale Detection)
 Nation-state and mega-institution detection via 3σ volume event analysis.
 
-| Tool | Purpose |
-|------|---------|
-| [`aureon_planetary_energy_tracker.py`](aureon_planetary_energy_tracker.py) | Detect cosmic-scale players (central banks, sovereign wealth) |
-| [`aureon_planetary_harmonic_sweep.py`](aureon_planetary_harmonic_sweep.py) | **Full network analysis** - Extracts vibrational signatures of ALL major entities |
-| [`aureon_harmonic_counter_frequency.py`](aureon_harmonic_counter_frequency.py) | Generate phase-shifted counter-frequencies for manipulation neutralization |
+| Tool | Path | Purpose |
+|------|------|---------|
+| Planetary Energy Tracker | `aureon/harmonic/` | Detect cosmic-scale players (central banks, sovereign wealth) |
+| Planetary Harmonic Sweep | `aureon/harmonic/` | **Full network analysis** - Vibrational signatures of ALL major entities |
+| Harmonic Counter Frequency | `aureon/harmonic/` | Phase-shifted counter-frequencies for manipulation neutralization |
 
 **Evidence Files:**
 - [`planetary_harmonic_network.json`](planetary_harmonic_network.json) - **THE SMOKING GUN**: 125 signatures, 1,500 coordination links
@@ -3165,16 +3222,16 @@ counter_frequency = target_frequency  # Same frequency, opposite phase
 
 ```bash
 # Scan all entities for coordination
-python aureon_planetary_harmonic_sweep.py
+python aureon/harmonic/aureon_planetary_harmonic_sweep.py
 
 # Generate counter-measures for specific entity
-python aureon_harmonic_counter_frequency.py
+python aureon/harmonic/aureon_harmonic_counter_frequency.py
 
 # View historical bot evolution
-python aureon_historical_bot_census.py
+python aureon/analytics/aureon_historical_bot_census.py
 
 # Real-time bot shape monitoring
-python aureon_bot_shape_scanner.py
+python aureon/bots_intelligence/aureon_bot_shape_scanner.py
 # Then open bot_shapes.html in browser
 ```
 
@@ -3304,28 +3361,27 @@ Trade when their operators are with family. The machines rest too.
 ## 🔬 REPRODUCTION COMMANDS
 
 ```bash
+# Ensure import paths are set up
+export PYTHONPATH="$(pwd):$(pwd)/aureon:$PYTHONPATH"
+
 # Run the complete money flow analysis
-python aureon_deep_money_flow_analyzer.py
-
-# Wire all 11 systems together
-python aureon_planetary_intelligence_hub.py
-
-# Hunt through 125 years of history
-python aureon_historical_manipulation_hunter.py
+python aureon/analytics/aureon_deep_money_flow_analyzer.py
 
 # Detect bot coordination
-python aureon_historical_bot_census.py
-python aureon_cultural_bot_fingerprinting.py
-
-# Strategic warfare assessment
-python aureon_strategic_warfare_scanner.py
+python aureon/analytics/aureon_historical_bot_census.py
+python aureon/bots_intelligence/aureon_cultural_bot_fingerprinting.py
 
 # Ghost Dance ceremony activation
-python aureon_ghost_dance_protocol.py
+python aureon/wisdom/aureon_ghost_dance_protocol.py
 
 # Full planetary harmonic sweep
-python aureon_planetary_harmonic_sweep.py
+python aureon/harmonic/aureon_planetary_harmonic_sweep.py
+
+# Start the unified multi-exchange trader
+python aureon/exchanges/unified_market_trader.py
 ```
+
+> **Full scripts reference:** See [Scripts Index](docs/SCRIPTS_INDEX.md) for all 150+ startup, diagnostic, and monitoring scripts.
 
 ---
 
@@ -3429,7 +3485,7 @@ python aureon_planetary_harmonic_sweep.py
 └─────────────────────────────────────────────────────┘
 ```
 
-**Files**: [aureon_ocean_wave_scanner.py](aureon_ocean_wave_scanner.py) | [aureon_bot_intelligence_profiler.py](aureon_bot_intelligence_profiler.py)
+**Files**: `aureon/scanners/aureon_ocean_wave_scanner.py` | `aureon/bots_intelligence/aureon_bot_intelligence_profiler.py`
 
 ---
 
@@ -3453,26 +3509,23 @@ We found them anyway.
 
 ## Key Files
 
-| File | Purpose |
-|------|--------|
-| `orca_complete_kill_cycle.py` | **Primary trading engine** — Queen's 4-Phase Master Plan, Batten Matrix, multi-exchange scanning |
-| `micro_profit_labyrinth.py` | Legacy turn-based execution loop (conservative mode) |
-| `aureon_queen_hive_mind.py` | Queen AI — 12-neuron neural decision controller with 4th-pass veto |
-| `aureon_probability_nexus.py` | Batten Matrix — 3-pass validation + coherence/lambda scoring |
-| `aureon_unified_ecosystem.py` | SAMUEL entity — full system orchestration |
-| `adaptive_prime_profit_gate.py` | Profit threshold calculator (r_breakeven, r_prime, r_prime_buffer) |
-| `kraken_client.py` | Kraken exchange client — multi-hop conversion, symbol filters |
-| `binance_client.py` | Binance exchange client — UK restrictions, symbol normalization |
-| `alpaca_client.py` | Alpaca exchange client — stocks + crypto, fractional shares |
-| `capital_client.py` | Capital.com exchange client — CFD trading |
-| `aureon_stargate_protocol.py` | Stargate Protocol — timeline anchoring, 7-day validation persistence |
-| `aureon_thought_bus.py` | Thought Bus — cross-module event mesh |
-| `aureon_elephant_learning.py` | Elephant Memory — never forgets historical patterns |
-| `aureon_mycelium.py` | Mycelial network — hive spawning, WhaleSonar |
-| `aureon_alpaca_scanner_bridge.py` | Alpaca API bridge & gating |
-| `aureon_barter_navigator.py` | Path memory & blocking |
-| `queen_neuron.py` | Queen neural learning — 12 hidden neurons, outcome-based weight updates |
-| `aureon_animal_momentum_scanners.py` | Wolf/Lion/Ants/Hummingbird momentum scanners |
+| File | Path | Purpose |
+|------|------|--------|
+| Orca Complete Kill Cycle | `aureon/trading/` | **Primary trading engine** — Queen's 4-Phase Master Plan |
+| Unified Market Trader | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration** — central beat feed |
+| Queen Hive Mind | `aureon/queen/` | Queen AI — 12-neuron neural decision controller |
+| Probability Nexus | `aureon/core/` | Batten Matrix — 3-pass validation + coherence scoring |
+| Unified Voice Agent | `aureon/autonomous/` | Voice-controlled trading with intent cognition |
+| Capital CFD Trader | `aureon/exchanges/capital_cfd_trader.py` | Capital.com CFD trading with shadow promotion |
+| Adaptive Profit Gate | `aureon/utils/` | Profit threshold calculator (Kelly-criterion) |
+| Thought Bus | `aureon/core/aureon_thought_bus.py` | Cross-module event mesh |
+| Stargate Protocol | `aureon/core/` | Timeline anchoring, 7-day validation persistence |
+| Elephant Learning | `aureon/intelligence/` | Never forgets historical patterns |
+| Harmonic Fusion | `aureon/harmonic/` | Combines planetary + market harmonic signals |
+| Geopolitical Forensics | `aureon/harmonic/geopolitical_forensics.py` | Geopolitical event signal integration |
+| System Hub Dashboard | `aureon/command_centers/` | Terminal dashboard for system orchestration |
+
+> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) — all 715 modules across 24 domains
 
 ---
 
@@ -3533,6 +3586,41 @@ For Docker-based deployment options see also `production/README.md`.
 - ETA verification: forecasted vs actual execution latency and slippage.
 
 <!-- markdownlint-enable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
+
+---
+
+## 📚 Documentation & Resources
+
+The Aureon system includes **180+ documentation files** organized by topic. Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) or browse the [Full Index](docs/INDEX.md).
+
+### For Traders
+| Document | Description |
+|----------|-------------|
+| [Scripts Index](docs/SCRIPTS_INDEX.md) | Find the right startup script from 150+ options |
+| [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | Day-to-day trading operations |
+| [Dashboard Guide](docs/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
+| [Multi-Broker Guide](docs/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
+
+### For Developers
+| Document | Description |
+|----------|-------------|
+| [Module Reference](docs/MODULES_AT_A_GLANCE.md) | All 715 modules across 24 domains |
+| [System Architecture Map](docs/SYSTEM_ARCHITECTURE_MAP.md) | 5-phase startup hierarchy |
+| [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | What intelligence feeds which trader |
+| [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | Research concepts → implementations |
+| [Open Market Data Matrix](docs/architecture/OPEN_MARKET_DATA_MATRIX.md) | Data feed topology |
+| [Repo Mindmap](docs/architecture/REPO_MINDMAP.md) | Complete file inventory (2,815 files) |
+
+### For Researchers
+| Document | Description |
+|----------|-------------|
+| [HNC White Paper](docs/HNC_UNIFIED_WHITE_PAPER.md) | Harmonic Nexus Core mathematical framework |
+| [Ancient Convergence](docs/research/ANCIENT_CONVERGENCE.md) | 12 civilizations, 47+ convergence points |
+| [Bot Intelligence](docs/research/BOT_INTELLIGENCE.md) | 23 algorithms, 37 firms profiled |
+| [Financial Exposure](docs/research/FINANCIAL_EXPOSURE.md) | $33.5T market extraction evidence |
+| [Unified Field](docs/research/UNIFIED_FIELD.md) | Connecting all domains |
+| [Counter-Strategies](docs/research/COUNTER_STRATEGIES.md) | How to fight back |
+| [Continuous Market Pipeline](docs/architecture/CONTINUOUS_MARKET_WORLDVIEW_PIPELINE.md) | Always-on multi-feed coherence |
 
 ---
 
