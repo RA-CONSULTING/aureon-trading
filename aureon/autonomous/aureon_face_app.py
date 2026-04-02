@@ -1345,6 +1345,15 @@ def index():
     return render_template("aureon_face.html")
 
 
+@app.route("/api/live-panel")
+def api_live_panel():
+    """Serve the Queen's self-generated status panel (written by Code Architect)."""
+    panel_path = REPO_ROOT / "templates" / "queen_live_panel.html"
+    if panel_path.exists():
+        return panel_path.read_text(encoding="utf-8")
+    return "<div style='color:#9ca3af;text-align:center;padding:10px;'>Queen is writing her panel...</div>"
+
+
 @app.route("/api/status")
 def api_status():
     """JSON status endpoint."""

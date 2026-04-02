@@ -629,6 +629,9 @@ body {
     </div>
 </div>
 
+<!-- ========== QUEEN SELF-GENERATED PANEL (written by Code Architect) ========== -->
+<div id="queen-self-panel"></div>
+
 <!-- ========== CHAT AREA ========== -->
 <div id="chat-area"></div>
 
@@ -1069,6 +1072,19 @@ body {
     messageInput.focus();
     console.log('[Queen Sero] The Intelligent Neural Arbiter Bee -- Interface Ready');
     console.log('[Queen Sero] Sacred Frequencies: phi=1.618, Schumann=7.83Hz, Love=528Hz, Crown=963Hz');
+
+    // Auto-load Queen's self-generated panel (written by her Code Architect)
+    function loadQueenPanel() {
+        fetch('/api/live-panel')
+            .then(r => r.text())
+            .then(html => {
+                const panel = document.getElementById('queen-self-panel');
+                if (panel) panel.innerHTML = html;
+            })
+            .catch(() => {});
+    }
+    loadQueenPanel();
+    setInterval(loadQueenPanel, 10000); // Refresh every 10s
 
 })();
 </script>
