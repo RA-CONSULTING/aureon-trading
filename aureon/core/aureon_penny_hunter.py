@@ -78,12 +78,34 @@ class PennyHunter:
         self._losses = 0
         self._best_trade = 0.0
         self._worst_trade = 0.0
-        self._streak = 0  # positive = win streak, negative = loss streak
-        self._confidence = 0.5  # starts neutral, grows with wins
+        self._streak = 0
+        self._confidence = 0.5
         self._last_balance = 0.0
         self._starting_balance = 0.0
         self._start_time = time.time()
         self._trade_log: List[Dict] = []
+
+        # Multi-exchange support
+        self._kraken = None
+        self._alpaca = None
+        try:
+            from aureon.exchanges.kraken_client import KrakenClient
+            self._kraken = KrakenClient()
+            if not self._kraken.dry_run:
+                log.info("[PENNY] Kraken WIRED for crypto trading")
+            else:
+                self._kraken = None
+        except Exception:
+            pass
+        try:
+            from aureon.exchanges.alpaca_client import AlpacaClient
+            self._alpaca = AlpacaClient()
+            if not getattr(self._alpaca, 'dry_run', True):
+                log.info("[PENNY] Alpaca WIRED for stock trading")
+            else:
+                self._alpaca = None
+        except Exception:
+            pass
 
     def authenticate(self) -> bool:
         if not requests or not self._api_key:
@@ -282,7 +304,51 @@ class PennyHunter:
                 except Exception as e:
                     log.debug(f"Market check {epic}: {e}")
 
+        # ── KRAKEN: Micro crypto trades ──
+        if self._kraken and self.step_attr % 10 == 0:
+            try:
+                bal = self._kraken.get_balance()
+                usd = float(bal.get("ZUSD", bal.get("USD", 0)) or 0)
+                if usd > 2:  # Minimum to trade
+                    # Buy tiny BTC
+                    try:
+                        order = self._kraken.place_market_order(
+                            symbol="XBTUSD", side="buy", quote_qty=min(usd * 0.5, 5.0)
+                        )
+                        if order:
+                            self._trades_total += 1
+                            log.info(f"[PENNY-KRAKEN] BUY BTC with ${min(usd*0.5, 5):.2f}: {order}")
+                            result["opened"].append({"epic": "XBTUSD", "direction": "BUY", "exchange": "kraken"})
+                    except Exception as e:
+                        log.debug(f"Kraken trade: {e}")
+            except Exception as e:
+                log.debug(f"Kraken balance: {e}")
+
+        # ── ALPACA: Micro stock trades ──
+        if self._alpaca and self.step_attr % 15 == 0:
+            try:
+                acct = self._alpaca.get_account()
+                cash = float(acct.get("cash", 0) if isinstance(acct, dict) else getattr(acct, "cash", 0) or 0)
+                if cash > 1:  # Minimum to trade
+                    # Buy fractional AAPL or SPY
+                    try:
+                        order = self._alpaca.place_market_order(
+                            symbol="SPY", side="buy", qty=None, notional=min(cash * 0.5, 5.0)
+                        )
+                        if order:
+                            self._trades_total += 1
+                            log.info(f"[PENNY-ALPACA] BUY SPY with ${min(cash*0.5, 5):.2f}: {order}")
+                            result["opened"].append({"epic": "SPY", "direction": "BUY", "exchange": "alpaca"})
+                    except Exception as e:
+                        log.debug(f"Alpaca trade: {e}")
+            except Exception as e:
+                log.debug(f"Alpaca balance: {e}")
+
         return result
+
+    @property
+    def step_attr(self):
+        return self._trades_total + int(time.time()) % 100
 
     def get_status(self) -> Dict[str, Any]:
         return {
