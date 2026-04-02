@@ -237,6 +237,32 @@ class ConsciousnessModule:
         except Exception as e:
             log.debug(f"ProbabilityMatrix: {e}")
 
+        # Wire the ACTION systems — skills the Queen can execute
+        self._eternal_machine = None
+        self._happiness = None
+        self._asset_commander = None
+
+        try:
+            from aureon.queen.queen_eternal_machine import QueenEternalMachine
+            self._eternal_machine = QueenEternalMachine()
+            log.info("[CONSCIOUSNESS] Eternal Machine WIRED — 7 strategies, leap/scalp execution")
+        except Exception as e:
+            log.debug(f"EternalMachine: {e}")
+
+        try:
+            from aureon.queen.queen_pursuit_of_happiness import get_pursuit_of_happiness
+            self._happiness = get_pursuit_of_happiness()
+            log.info("[CONSCIOUSNESS] Pursuit of Happiness WIRED — Big Wheel, dream tracking")
+        except Exception as e:
+            log.debug(f"Happiness: {e}")
+
+        try:
+            from aureon.queen.queen_asset_command_center import QueenAssetCommandCenter
+            self._asset_commander = QueenAssetCommandCenter()
+            log.info("[CONSCIOUSNESS] Asset Command Center WIRED — multi-exchange execution")
+        except Exception as e:
+            log.debug(f"AssetCommandCenter: {e}")
+
         # Subscribe to EVERYTHING — the consciousness sees all
         self.bus.subscribe("*", self._observe)
 
@@ -245,9 +271,10 @@ class ConsciousnessModule:
                        self._probability_nexus, self._quantum_cognition,
                        self._timeline_oracle, self._mirror_scanner, self._quantum_field,
                        self._cognitive_cycle, self._dream_engine, self._multiverse,
-                       self._stargate, self._probability_matrix]
+                       self._stargate, self._probability_matrix,
+                       self._eternal_machine, self._happiness, self._asset_commander]
         active = sum(1 for s in all_systems if s is not None)
-        log.info(f"[CONSCIOUSNESS] Module online — {active}/13 cognitive systems connected")
+        log.info(f"[CONSCIOUSNESS] Module online — {active}/{len(all_systems)} cognitive systems connected")
 
     def _observe(self, thought: Thought) -> None:
         """Called for EVERY thought on the bus. The consciousness sees all."""
@@ -381,10 +408,81 @@ class ConsciousnessModule:
         # ── Step 4: Generate genuine thought ──
         thought = self._maybe_generate_thought(understanding)
 
-        # ── Step 5: Update self-model ──
+        # ── Step 5: ACT — pursue goals autonomously ──
+        if self.lambda_state and self.lambda_state.consciousness_psi > 0.5:
+            self._autonomous_action(understanding)
+
+        # ── Step 6: Update self-model ──
         self._update_self_model(understanding)
 
         return thought
+
+    def _autonomous_action(self, understanding: dict):
+        """
+        The Queen doesn't just think — she ACTS.
+        This is goal-driven autonomous behavior.
+        """
+        step = understanding.get("step", 0)
+
+        # Update the Big Wheel — dream progress, happiness
+        if self._happiness and step % 10 == 0:
+            try:
+                # Track dream progress from portfolio equity
+                equity = 0.0
+                if self._miner_brain and self._miner_brain.latest_prediction:
+                    pred = self._miner_brain.latest_prediction
+                    if isinstance(pred, dict):
+                        equity = float(pred.get("portfolio_equity", 0) or 0)
+                if equity > 0:
+                    self._happiness.update_dream_progress(equity)
+
+                # Update gaia alignment from Λ coherence
+                if self.lambda_state:
+                    self._happiness.update_gaia_alignment(self.lambda_state.coherence_gamma)
+
+                status = self._happiness.get_status()
+                self._understanding["happiness"] = status.get("happiness_quotient", 0)
+                self._understanding["dream_pct"] = status.get("dream_progress_pct", 0)
+                self._understanding["wheel"] = status.get("subconscious_bias", 1.0)
+            except Exception as e:
+                log.debug(f"Happiness update: {e}")
+
+        # Scan for opportunities via Eternal Machine
+        if self._eternal_machine and step % 15 == 0:
+            try:
+                leaps = self._eternal_machine.find_leap_opportunities()
+                if leaps:
+                    self._understanding["leap_opportunities"] = len(leaps)
+                    best = leaps[0]
+                    self._understanding["best_leap"] = f"{getattr(best, 'symbol', '?')} profit={getattr(best, 'expected_profit_after_fees', 0):.4f}"
+                    log.info(f"[ACTION] Found {len(leaps)} leap opportunities, best: {self._understanding['best_leap']}")
+
+                scalps = self._eternal_machine.find_scalp_opportunities()
+                if scalps:
+                    self._understanding["scalp_opportunities"] = len(scalps)
+                    log.info(f"[ACTION] Found {len(scalps)} scalp opportunities")
+            except Exception as e:
+                log.debug(f"Opportunity scan: {e}")
+
+        # Scan for whale activity
+        if self._eternal_machine and step % 20 == 0:
+            try:
+                whales = self._eternal_machine.scan_entire_ocean_for_whales()
+                if whales:
+                    self._understanding["whale_count"] = len(whales)
+                    log.info(f"[ACTION] Detected {len(whales)} whale territories")
+            except Exception as e:
+                log.debug(f"Whale scan: {e}")
+
+        # Detect orca kill cycles
+        if self._eternal_machine and step % 25 == 0:
+            try:
+                orcas = self._eternal_machine.detect_orca_kill_cycle()
+                if orcas:
+                    self._understanding["orca_cycles"] = len(orcas)
+                    log.info(f"[ACTION] Detected {len(orcas)} orca kill cycles")
+            except Exception as e:
+                log.debug(f"Orca detection: {e}")
 
     def _build_readings(self) -> List[SubsystemReading]:
         """Convert current understanding into Λ(t) subsystem readings."""
@@ -524,6 +622,36 @@ class ConsciousnessModule:
         last_action = understanding.get("last_action", "none")
         if last_action != "none":
             fragments.append(f"did:{last_action}")
+
+        # Opportunities (from Eternal Machine)
+        leaps = understanding.get("leap_opportunities", 0)
+        if leaps:
+            best = understanding.get("best_leap", "")
+            fragments.append(f"{leaps} leaps")
+            if best:
+                fragments.append(best)
+
+        scalps = understanding.get("scalp_opportunities", 0)
+        if scalps:
+            fragments.append(f"{scalps} scalps")
+
+        # Whales & orcas
+        whales = understanding.get("whale_count", 0)
+        if whales:
+            fragments.append(f"{whales} whales")
+
+        orcas = understanding.get("orca_cycles", 0)
+        if orcas:
+            fragments.append(f"{orcas} orca kills")
+
+        # Big Wheel / happiness
+        happiness = understanding.get("happiness", 0)
+        if happiness:
+            fragments.append(f"joy:{happiness:.2f}")
+
+        dream_pct = understanding.get("dream_pct", 0)
+        if dream_pct:
+            fragments.append(f"dream:{dream_pct:.4f}%")
 
         if not fragments:
             return None
