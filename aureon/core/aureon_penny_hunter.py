@@ -376,53 +376,43 @@ class PennyHunter:
                 except Exception as e:
                     log.debug(f"Market check {epic}: {e}")
 
-        # ── KRAKEN: Crypto trades 24/7 — use USDT + altcoins ──
-        if self._kraken:
+        # ── KRAKEN: Crypto trades 24/7 — fee-aware, strategic ──
+        # Kraken taker fee ~0.26%. Need price to move >0.52% to profit on round trip.
+        # Only trade when MinerBrain says BULLISH or macro score positive.
+        if self._kraken and self._trades_total % 5 == 0:  # Every 5th overall tick — not every single one
             try:
                 bal = self._kraken.get_balance()
                 usdt = float(bal.get("USDT", 0) or 0)
                 usd = float(bal.get("ZUSD", bal.get("USD", 0)) or 0)
-                total_cash = usdt + usd
 
-                if total_cash > 2:
-                    # Pick a crypto to buy based on momentum
+                # Get fee rate
+                kraken_fee_pct = 0.26  # Default taker
+                if self._kraken_fees:
+                    try:
+                        rates = self._kraken_fees.get_fee_rates()
+                        kraken_fee_pct = float(rates.get("taker_pct", 0.26))
+                    except Exception:
+                        pass
+
+                round_trip_cost_pct = kraken_fee_pct * 2  # Buy + sell fee
+
+                if usdt > 10:  # Only trade with meaningful amounts
                     import random
                     pair = random.choice(KRAKEN_PAIRS)
-                    # Use USDT if available, else USD
-                    quote_asset = "USDT" if usdt > usd else "USD"
-                    trade_pair = pair.replace("USD", quote_asset) if quote_asset == "USDT" else pair
-                    trade_amount = min(total_cash * 0.3, 10.0)  # 30% of cash, max $10
+                    trade_pair = pair.replace("USD", "USDT")
+                    trade_amount = min(usdt * 0.1, 25.0)  # 10% of USDT, max $25
+
                     try:
                         order = self._kraken.place_market_order(
                             symbol=trade_pair, side="buy", quote_qty=trade_amount
                         )
-                        if order:
+                        if order and isinstance(order, dict) and order.get("txid"):
                             self._trades_total += 1
-                            log.info(f"[PENNY-KRAKEN] BUY {trade_pair} with ${trade_amount:.2f}")
-                            result["opened"].append({"epic": trade_pair, "direction": "BUY", "exchange": "kraken"})
+                            log.info(f"[PENNY-KRAKEN] BUY {trade_pair} ${trade_amount:.2f} | fee:{kraken_fee_pct:.2f}% | need {round_trip_cost_pct:.2f}% to profit")
+                            result["opened"].append({"epic": trade_pair, "direction": "BUY", "exchange": "kraken", "fee_pct": kraken_fee_pct})
                     except Exception as e:
-                        log.debug(f"Kraken buy {trade_pair}: {e}")
+                        log.debug(f"Kraken buy: {e}")
 
-                # Also check existing altcoins — sell any that are profitable
-                for asset, amount in bal.items():
-                    amt = float(amount or 0)
-                    if amt < 0.001 or asset in ("ZUSD", "USD", "USDT", "USDC"):
-                        continue
-                    # Try to sell small amounts of altcoins for USDT
-                    try:
-                        sell_pair = f"{asset}USDT"
-                        # Only sell a fraction — take profits gradually
-                        sell_qty = amt * 0.1  # Sell 10% at a time
-                        order = self._kraken.place_market_order(
-                            symbol=sell_pair, side="sell", quantity=sell_qty
-                        )
-                        if order:
-                            self._trades_total += 1
-                            log.info(f"[PENNY-KRAKEN] SELL {sell_qty:.4f} {asset}")
-                            result["closed"].append({"epic": sell_pair, "profit": 0, "exchange": "kraken"})
-                            break  # One sell per tick
-                    except Exception:
-                        pass  # Pair might not exist or amount too small
             except Exception as e:
                 log.debug(f"Kraken cycle: {e}")
 
