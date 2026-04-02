@@ -1,9 +1,0 @@
-{
-  "archived_at": "20251229_122618",
-  "phase": "pre-beta-training",
-  "total_trades": 23,
-  "wins": 11,
-  "losses": 12,
-  "net_profit": 0,
-  "message": "These losses were training data for v0.9.0-beta"
-}
