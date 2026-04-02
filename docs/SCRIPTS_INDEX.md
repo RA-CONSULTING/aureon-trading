@@ -51,6 +51,25 @@ Complete reference for all startup, monitoring, diagnostic, and utility scripts.
 | `start_full_ecosystem.ps1` | `scripts/` | Full ecosystem (Windows) |
 | `start_queen_hive_mind.ps1` | `scripts/` | Queen hive mind (Windows) |
 
+---
+
+## Global Memory / Data Ingest
+
+These scripts build and refresh the single-file SQLite dataset used as Aureon's "memory":
+`state/aureon_global_history.sqlite`.
+
+| Script | Location | Description |
+|--------|----------|-------------|
+| `ingest_global_memory.cmd` | `scripts/runners/` | One-command orchestrator (`--profile standard|max|unsafe-all`) |
+| `ingest_all_global_history.cmd` | `scripts/runners/` | Legacy full ingest (simple chain, passes args to all steps) |
+| `sync_global_history_db.cmd` | `scripts/runners/` | Sync private account trades into the DB |
+| `ingest_market_history.cmd` | `scripts/runners/` | Public market history ingest (CoinAPI + Alpaca) |
+| `ingest_yfinance.cmd` | `scripts/runners/` | Yahoo Finance OHLCV ingest |
+| `ingest_fred.cmd` | `scripts/runners/` | FRED macro indicator ingest |
+| `ingest_existing_feeds.cmd` | `scripts/runners/` | CoinGecko/news/onchain/coinbase/macro feeds ingest |
+| `ingest_economic_calendar.cmd` | `scripts/runners/` | Calendar + events ingest |
+| `ingest_queen_knowledge.cmd` | `scripts/runners/` | Queen memories/insights/thoughts/strategies ingest |
+
 ### Python Runners
 
 | Script | Location | Description |
