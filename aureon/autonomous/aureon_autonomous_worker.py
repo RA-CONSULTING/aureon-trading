@@ -108,6 +108,16 @@ class AureonAutonomousWorker:
         except Exception as e:
             logger.error(f"❌ Failed to start Autonomous Controller: {e}")
 
+        # Start Sentient Consciousness Loop (autonomous proactive communication)
+        self._sentient_loop = None
+        try:
+            from aureon.queen.queen_sentient_loop import QueenSentientLoop
+            self._sentient_loop = QueenSentientLoop(voice_enabled=True)
+            self._sentient_loop.start()
+            logger.info("✅ Sentient Consciousness Loop started (autonomous thought every 10s)")
+        except Exception as e:
+            logger.warning(f"Sentient loop not available: {e}")
+
         # Keep worker alive
         logger.info("🔄 Aureon Autonomous Engine running... (press Ctrl+C to stop)")
         while self.running:
@@ -117,6 +127,14 @@ class AureonAutonomousWorker:
         """Stop the autonomous trading engine."""
         logger.info("🛑 Stopping Aureon Autonomous Engine Worker")
         self.running = False
+
+        # Stop sentient consciousness loop
+        if getattr(self, '_sentient_loop', None):
+            try:
+                self._sentient_loop.stop()
+                logger.info("Sentient Consciousness Loop stopped")
+            except Exception:
+                pass
 
         # Stop orchestrator
         if self.orchestrator:

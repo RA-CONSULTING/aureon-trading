@@ -58,6 +58,13 @@ try:
 except Exception:
     KimiVoiceAdapter = None  # type: ignore
 
+try:
+    from aureon.autonomous.aureon_agent_core import AureonAgentCore
+    HAS_AGENT_CORE = True
+except Exception:
+    AureonAgentCore = None  # type: ignore
+    HAS_AGENT_CORE = False
+
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +103,15 @@ class ConversationLoop:
         self._local_tts_lock = threading.Lock()
         backend = os.getenv("AUREON_SPEECH_BACKEND", "auto")
         self.voice_adapter = KimiVoiceAdapter(backend=backend) if KimiVoiceAdapter is not None else None
+
+        # Agent core for autonomous task execution
+        self._agent = None
+        if HAS_AGENT_CORE and AureonAgentCore is not None:
+            try:
+                self._agent = AureonAgentCore()
+            except Exception:
+                self._agent = None
+
         self._persist()
 
     def handle_text(self, text: str, source: str = "text") -> Dict[str, Any]:
@@ -245,6 +261,7 @@ class ConversationLoop:
             "last_reply": self.last_reply,
             "recent_exchanges": self.recent_exchanges[-10:],
             "voice_adapter": self.voice_adapter.status() if self.voice_adapter is not None else {},
+            "agent_core_available": self._agent is not None,
             "voice_bridge": self.voice_bridge.status(),
             "memory": self.memory.status(),
         }
@@ -310,6 +327,9 @@ class ConversationLoop:
             return "I queued that desktop action. It still needs approval."
         if route == "desktop_emergency_stop":
             return "Emergency stop is now active."
+        if route == "agent_core":
+            steps = result.get("steps", 0)
+            return f"I handled that through my agent core in {steps} step(s)."
         if route == "generic_task":
             return "I queued that as a task."
         if not result.get("ok", False):
@@ -345,7 +365,31 @@ class ConversationLoop:
         if lower in {"clear code proposals", "clear pending code proposals"}:
             code_ctl.clear_pending()
             return {"ok": True, "route": "clear_code_pending"}
-        return self.voice_bridge.submit_command(text=text, source=source)
+        bridge_result = self.voice_bridge.submit_command(text=text, source=source)
+
+        # Fallback to AureonAgentCore when the voice bridge couldn't match
+        # a specific intent (indicated by generic/fallback routes)
+        if self._agent and not bridge_result.get("ok", False):
+            try:
+                plan = self._agent.plan_task(text)
+                if plan:
+                    agent_results = []
+                    for step in plan:
+                        step_result = self._agent.execute(
+                            intent=step["intent"],
+                            params=step.get("params", {}),
+                        )
+                        agent_results.append(step_result)
+                    return {
+                        "ok": True,
+                        "route": "agent_core",
+                        "agent_results": agent_results,
+                        "steps": len(plan),
+                    }
+            except Exception as exc:
+                logger.debug("Agent core fallback failed: %s", exc)
+
+        return bridge_result
 
     def _speak(self, text: str) -> None:
         if self.voice_engine is not None:

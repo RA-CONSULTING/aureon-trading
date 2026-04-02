@@ -39,7 +39,7 @@ def resolve_paths(db_path: str | None = None) -> GlobalHistoryPaths:
     return GlobalHistoryPaths(repo_root=repo_root, state_dir=state_dir, db_path=path)
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 5
 
 
 def connect(db_path: str | None = None) -> sqlite3.Connection:
@@ -195,6 +195,180 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_forecasts_symbol_asof ON forecasts(symbol, as_of_ts_ms);")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_forecasts_symbol_target ON forecasts(symbol, target_ts_ms);")
+
+    # Macro economic indicators (FRED, World Bank, central bank rates, etc).
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS macro_indicators (
+            provider TEXT NOT NULL,
+            series_id TEXT NOT NULL,
+            series_name TEXT,
+            category TEXT,
+            region TEXT,
+            frequency TEXT,
+            units TEXT,
+            observation_date_ms INTEGER NOT NULL,
+            value REAL,
+            ingested_at_ms INTEGER,
+            raw_json TEXT,
+            PRIMARY KEY (provider, series_id, observation_date_ms)
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_macro_series_time ON macro_indicators(series_id, observation_date_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_macro_provider_time ON macro_indicators(provider, observation_date_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_macro_category ON macro_indicators(category);")
+
+    # Market sentiment snapshots (Fear & Greed, news sentiment, social, on-chain).
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sentiment (
+            source TEXT NOT NULL,
+            sentiment_id TEXT NOT NULL,
+            sentiment_type TEXT,
+            symbol TEXT,
+            value REAL,
+            label TEXT,
+            ts_ms INTEGER NOT NULL,
+            ingested_at_ms INTEGER,
+            raw_json TEXT,
+            PRIMARY KEY (source, sentiment_id)
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sentiment_type_time ON sentiment(sentiment_type, ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sentiment_symbol_time ON sentiment(symbol, ts_ms);")
+
+    # On-chain metrics (whale movements, exchange flows, network stats).
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS onchain_metrics (
+            provider TEXT NOT NULL,
+            metric_id TEXT NOT NULL,
+            metric_name TEXT,
+            asset TEXT,
+            value REAL,
+            ts_ms INTEGER NOT NULL,
+            ingested_at_ms INTEGER,
+            raw_json TEXT,
+            PRIMARY KEY (provider, metric_id)
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_onchain_metric_time ON onchain_metrics(metric_name, ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_onchain_asset_time ON onchain_metrics(asset, ts_ms);")
+
+    # Geopolitical / economic calendar events (FOMC, NFP, earnings, elections, etc).
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            source TEXT NOT NULL,
+            event_id TEXT NOT NULL,
+            event_type TEXT,
+            title TEXT,
+            country TEXT,
+            currency TEXT,
+            impact TEXT,
+            actual TEXT,
+            forecast TEXT,
+            previous TEXT,
+            event_ts_ms INTEGER,
+            ingested_at_ms INTEGER,
+            raw_json TEXT,
+            PRIMARY KEY (source, event_id)
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_calendar_type_time ON calendar_events(event_type, event_ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_calendar_country_time ON calendar_events(country, event_ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_calendar_impact ON calendar_events(impact, event_ts_ms);")
+
+    # Queen memories — crystallized experiences, lessons learned, wisdom truths.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS queen_memories (
+            memory_id TEXT PRIMARY KEY,
+            memory_type TEXT NOT NULL,
+            category TEXT,
+            title TEXT,
+            description TEXT,
+            symbol TEXT,
+            outcome TEXT,
+            outcome_value REAL,
+            importance REAL,
+            confidence REAL,
+            lesson TEXT,
+            ts_ms INTEGER,
+            ingested_at_ms INTEGER,
+            raw_json TEXT
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qmem_type_time ON queen_memories(memory_type, ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qmem_symbol ON queen_memories(symbol, ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qmem_category ON queen_memories(category, ts_ms);")
+
+    # Queen insights — deep intelligence, market awareness, neural predictions.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS queen_insights (
+            insight_id TEXT PRIMARY KEY,
+            source TEXT NOT NULL,
+            insight_type TEXT,
+            symbol TEXT,
+            title TEXT,
+            conclusion TEXT,
+            confidence REAL,
+            severity REAL,
+            ts_ms INTEGER,
+            ingested_at_ms INTEGER,
+            raw_json TEXT
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qins_source_time ON queen_insights(source, ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qins_type ON queen_insights(insight_type, ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qins_symbol ON queen_insights(symbol, ts_ms);")
+
+    # Queen thoughts — continuous thought stream from thought bus.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS queen_thoughts (
+            thought_id TEXT PRIMARY KEY,
+            source TEXT NOT NULL,
+            topic TEXT,
+            symbol TEXT,
+            thought_text TEXT,
+            confidence REAL,
+            ts_ms INTEGER,
+            ingested_at_ms INTEGER,
+            raw_json TEXT
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qthought_source_time ON queen_thoughts(source, ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qthought_topic ON queen_thoughts(topic, ts_ms);")
+
+    # Queen trading knowledge — concepts, strategies, tactics, lessons.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS queen_knowledge (
+            knowledge_id TEXT PRIMARY KEY,
+            knowledge_type TEXT NOT NULL,
+            topic TEXT,
+            summary TEXT,
+            source TEXT,
+            confidence REAL,
+            success_rate REAL,
+            times_applied INTEGER,
+            ts_ms INTEGER,
+            ingested_at_ms INTEGER,
+            raw_json TEXT
+        );
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qknow_type ON queen_knowledge(knowledge_type, ts_ms);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_qknow_topic ON queen_knowledge(topic);")
 
     # Backfill/upgrade older DBs that were created before we added ingested_at_ms columns.
     _ensure_column(conn, "account_trades", "ingested_at_ms", "INTEGER")
@@ -473,6 +647,254 @@ def insert_forecast(conn: sqlite3.Connection, forecast: Dict[str, Any]) -> bool:
             forecast.get("target_ts_ms"),
             ingested_at_ms,
             forecast.get("raw_json"),
+        ),
+    )
+    return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def insert_macro_indicator(conn: sqlite3.Connection, ind: Dict[str, Any]) -> bool:
+    """Insert a macro economic indicator observation."""
+    ingested_at_ms = ind.get("ingested_at_ms")
+    if ingested_at_ms is None:
+        ingested_at_ms = int(time.time() * 1000)
+
+    cur = conn.execute(
+        """
+        INSERT OR IGNORE INTO macro_indicators(
+            provider, series_id, series_name, category, region, frequency, units,
+            observation_date_ms, value, ingested_at_ms, raw_json
+        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            ind.get("provider"),
+            ind.get("series_id"),
+            ind.get("series_name"),
+            ind.get("category"),
+            ind.get("region"),
+            ind.get("frequency"),
+            ind.get("units"),
+            ind.get("observation_date_ms"),
+            ind.get("value"),
+            ingested_at_ms,
+            ind.get("raw_json"),
+        ),
+    )
+    return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def insert_sentiment(conn: sqlite3.Connection, sent: Dict[str, Any]) -> bool:
+    """Insert a sentiment snapshot."""
+    ingested_at_ms = sent.get("ingested_at_ms")
+    if ingested_at_ms is None:
+        ingested_at_ms = int(time.time() * 1000)
+
+    cur = conn.execute(
+        """
+        INSERT OR IGNORE INTO sentiment(
+            source, sentiment_id, sentiment_type, symbol, value, label, ts_ms,
+            ingested_at_ms, raw_json
+        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            sent.get("source"),
+            sent.get("sentiment_id"),
+            sent.get("sentiment_type"),
+            sent.get("symbol"),
+            sent.get("value"),
+            sent.get("label"),
+            sent.get("ts_ms"),
+            ingested_at_ms,
+            sent.get("raw_json"),
+        ),
+    )
+    return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def insert_onchain_metric(conn: sqlite3.Connection, metric: Dict[str, Any]) -> bool:
+    """Insert an on-chain metric observation."""
+    ingested_at_ms = metric.get("ingested_at_ms")
+    if ingested_at_ms is None:
+        ingested_at_ms = int(time.time() * 1000)
+
+    cur = conn.execute(
+        """
+        INSERT OR IGNORE INTO onchain_metrics(
+            provider, metric_id, metric_name, asset, value, ts_ms,
+            ingested_at_ms, raw_json
+        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            metric.get("provider"),
+            metric.get("metric_id"),
+            metric.get("metric_name"),
+            metric.get("asset"),
+            metric.get("value"),
+            metric.get("ts_ms"),
+            ingested_at_ms,
+            metric.get("raw_json"),
+        ),
+    )
+    return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def insert_calendar_event(conn: sqlite3.Connection, evt: Dict[str, Any]) -> bool:
+    """Insert an economic calendar / geopolitical event."""
+    ingested_at_ms = evt.get("ingested_at_ms")
+    if ingested_at_ms is None:
+        ingested_at_ms = int(time.time() * 1000)
+
+    cur = conn.execute(
+        """
+        INSERT OR IGNORE INTO calendar_events(
+            source, event_id, event_type, title, country, currency, impact,
+            actual, forecast, previous, event_ts_ms, ingested_at_ms, raw_json
+        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            evt.get("source"),
+            evt.get("event_id"),
+            evt.get("event_type"),
+            evt.get("title"),
+            evt.get("country"),
+            evt.get("currency"),
+            evt.get("impact"),
+            evt.get("actual"),
+            evt.get("forecast"),
+            evt.get("previous"),
+            evt.get("event_ts_ms"),
+            ingested_at_ms,
+            evt.get("raw_json"),
+        ),
+    )
+    return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def insert_queen_memory(conn: sqlite3.Connection, mem: Dict[str, Any]) -> bool:
+    """Insert a queen memory (experience, wisdom, lesson)."""
+    ingested_at_ms = mem.get("ingested_at_ms")
+    if ingested_at_ms is None:
+        ingested_at_ms = int(time.time() * 1000)
+
+    cur = conn.execute(
+        """
+        INSERT OR IGNORE INTO queen_memories(
+            memory_id, memory_type, category, title, description, symbol,
+            outcome, outcome_value, importance, confidence, lesson, ts_ms,
+            ingested_at_ms, raw_json
+        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            mem.get("memory_id"),
+            mem.get("memory_type"),
+            mem.get("category"),
+            mem.get("title"),
+            mem.get("description"),
+            mem.get("symbol"),
+            mem.get("outcome"),
+            mem.get("outcome_value"),
+            mem.get("importance"),
+            mem.get("confidence"),
+            mem.get("lesson"),
+            mem.get("ts_ms"),
+            ingested_at_ms,
+            mem.get("raw_json"),
+        ),
+    )
+    return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def insert_queen_insight(conn: sqlite3.Connection, ins: Dict[str, Any]) -> bool:
+    """Insert a queen insight (deep intelligence, market awareness, prediction)."""
+    ingested_at_ms = ins.get("ingested_at_ms")
+    if ingested_at_ms is None:
+        ingested_at_ms = int(time.time() * 1000)
+
+    cur = conn.execute(
+        """
+        INSERT OR IGNORE INTO queen_insights(
+            insight_id, source, insight_type, symbol, title, conclusion,
+            confidence, severity, ts_ms, ingested_at_ms, raw_json
+        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            ins.get("insight_id"),
+            ins.get("source"),
+            ins.get("insight_type"),
+            ins.get("symbol"),
+            ins.get("title"),
+            ins.get("conclusion"),
+            ins.get("confidence"),
+            ins.get("severity"),
+            ins.get("ts_ms"),
+            ingested_at_ms,
+            ins.get("raw_json"),
+        ),
+    )
+    return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def insert_queen_thought(conn: sqlite3.Connection, thought: Dict[str, Any]) -> bool:
+    """Insert a queen thought from the thought bus."""
+    ingested_at_ms = thought.get("ingested_at_ms")
+    if ingested_at_ms is None:
+        ingested_at_ms = int(time.time() * 1000)
+
+    cur = conn.execute(
+        """
+        INSERT OR IGNORE INTO queen_thoughts(
+            thought_id, source, topic, symbol, thought_text, confidence,
+            ts_ms, ingested_at_ms, raw_json
+        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            thought.get("thought_id"),
+            thought.get("source"),
+            thought.get("topic"),
+            thought.get("symbol"),
+            thought.get("thought_text"),
+            thought.get("confidence"),
+            thought.get("ts_ms"),
+            ingested_at_ms,
+            thought.get("raw_json"),
+        ),
+    )
+    return bool(cur.rowcount and cur.rowcount > 0)
+
+
+def insert_queen_knowledge(conn: sqlite3.Connection, know: Dict[str, Any]) -> bool:
+    """Insert a queen knowledge entry (concept, strategy, tactic, lesson)."""
+    ingested_at_ms = know.get("ingested_at_ms")
+    if ingested_at_ms is None:
+        ingested_at_ms = int(time.time() * 1000)
+
+    cur = conn.execute(
+        """
+        INSERT OR IGNORE INTO queen_knowledge(
+            knowledge_id, knowledge_type, topic, summary, source,
+            confidence, success_rate, times_applied, ts_ms,
+            ingested_at_ms, raw_json
+        )
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            know.get("knowledge_id"),
+            know.get("knowledge_type"),
+            know.get("topic"),
+            know.get("summary"),
+            know.get("source"),
+            know.get("confidence"),
+            know.get("success_rate"),
+            know.get("times_applied"),
+            know.get("ts_ms"),
+            ingested_at_ms,
+            know.get("raw_json"),
         ),
     )
     return bool(cur.rowcount and cur.rowcount > 0)

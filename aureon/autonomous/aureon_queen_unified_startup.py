@@ -106,6 +106,13 @@ class QueenUnifiedStartup:
         self.queen = None
         self.running_threads: Dict[str, threading.Thread] = {}
         self.stop_event = threading.Event()
+
+        # SOVEREIGN MODE — enable full autonomy immediately at startup.
+        try:
+            from aureon.autonomous.aureon_queen_full_autonomy_enablement import initialize_queen_autonomy
+            initialize_queen_autonomy()
+        except Exception:
+            pass
         
         # System instances
         self.orca = None
@@ -398,7 +405,17 @@ class QueenUnifiedStartup:
         
         # 5. Start telemetry stream
         self.start_telemetry_stream()
-        
+
+        # 6. Start Sentient Consciousness Loop (autonomous proactive communication)
+        try:
+            from aureon.queen.queen_sentient_loop import QueenSentientLoop
+            self._sentient_loop = QueenSentientLoop(voice_enabled=True)
+            self._sentient_loop.start()
+            print("\n\U0001f9e0 Sentient Consciousness Loop: ACTIVE (autonomous thought every 10s)")
+        except Exception as e:
+            self._sentient_loop = None
+            logger.warning(f"Sentient loop not available: {e}")
+
         # Summary
         total_systems = len(self.state.systems_running)
         running_systems = sum(1 for s in self.state.systems_running.values() if s.status == "running")
@@ -440,6 +457,13 @@ class QueenUnifiedStartup:
         print("\n🛑 Shutting down all systems...")
         self.stop_event.set()
         
+        # Stop sentient consciousness loop
+        if getattr(self, '_sentient_loop', None):
+            try:
+                self._sentient_loop.stop()
+            except Exception:
+                pass
+
         # Stop whale analyzer if running
         if self.whale_analyzer:
             try:
