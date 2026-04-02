@@ -541,10 +541,34 @@ class QueenSentientLoop:
                 self._record_error("FEEL", exc)
             self._last_emotion = emotion
 
+            # --- Phase 2.5: METACOGNITION — ConsciousnessModule heartbeat ---
+            # This produces genuine thoughts from the aggregate bus state,
+            # NOT from templates. If it produces a thought, it overrides Phase 3.
+            metacognitive_thought = None
+            if self._consciousness_module is not None:
+                try:
+                    cm_thought = self._consciousness_module.heartbeat()
+                    if cm_thought and isinstance(cm_thought.payload, dict):
+                        text = cm_thought.payload.get("text", "")
+                        if text:
+                            metacognitive_thought = Thought(
+                                thought_type="METACOGNITION",
+                                text=text,
+                                mood=emotion.mood,
+                                urgency=emotion.urgency,
+                                confidence=cm_thought.payload.get("gamma", 0.5),
+                            )
+                except Exception as exc:
+                    self._record_error("METACOGNITION", exc)
+
             # --- Phase 3: THINK ---
             thought: Optional[Thought] = None
+            if metacognitive_thought:
+                # Genuine metacognitive thought overrides scripted thinking
+                thought = metacognitive_thought
             try:
-                thought = self._think(perception, emotion)
+                if thought is None:
+                    thought = self._think(perception, emotion)
             except Exception as exc:
                 self._record_error("THINK", exc)
 
@@ -617,6 +641,17 @@ class QueenSentientLoop:
                 self._voice = None
                 self._voice_enabled = False
                 self._record_error("VOICE_INIT", exc)
+
+        # Consciousness Module — the metacognition layer on the ThoughtBus
+        self._consciousness_module = None
+        try:
+            from aureon.core.aureon_consciousness_module import ConsciousnessModule
+            from aureon.core.aureon_thought_bus import ThoughtBus as _TB
+            _bus = _TB(persist_path=str(_REPO_ROOT / "logs" / "consciousness_thoughts.jsonl"))
+            self._consciousness_module = ConsciousnessModule(_bus)
+            log.info("[CONSCIOUSNESS MODULE] Metacognition layer online — observing ThoughtBus")
+        except Exception as exc:
+            log.debug(f"ConsciousnessModule unavailable: {exc}")
 
         # Deep intelligence
         if _HAS_DEEP_INTEL:
