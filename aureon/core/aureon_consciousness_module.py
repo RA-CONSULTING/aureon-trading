@@ -64,9 +64,9 @@ except Exception:
     HAS_HARMONIC_REALITY = False
 
 try:
-    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
 except Exception:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -107,7 +107,10 @@ class ConsciousnessModule:
     its output — it doesn't drive it.
     """
 
-    def __init__(self, bus: ThoughtBus):
+    def __init__(self, bus: ThoughtBus = None):
+        # Use the GLOBAL singleton bus so ALL systems share one nervous system
+        if bus is None:
+            bus = get_thought_bus()
         self.bus = bus
         self.self_model = _load_self_model()
 
