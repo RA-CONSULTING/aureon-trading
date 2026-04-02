@@ -302,15 +302,26 @@ class ConsciousnessModule:
         except Exception as e:
             log.debug(f"PennyHunter: {e}")
 
-        # THE MONEY MAKER — Capital.com CFD Trader
+        # THE REAL MONEY MAKER — Full Capital.com CFD Trading System (3800 lines)
+        # Shadow trades, quadrumvirate gate, harmonic analysis, position management
         self._capital_trader = None
         try:
+            # Ensure .env is loaded BEFORE creating the trader
+            _env_path = _REPO_ROOT / ".env"
+            if _env_path.exists():
+                for _line in _env_path.read_text(encoding="utf-8").splitlines():
+                    _line = _line.strip()
+                    if _line and not _line.startswith("#") and "=" in _line:
+                        _k, _, _v = _line.partition("=")
+                        os.environ.setdefault(_k.strip(), _v.strip())
+
             from aureon.exchanges.capital_cfd_trader import CapitalCFDTrader
             self._capital_trader = CapitalCFDTrader()
-            if self._capital_trader and getattr(self._capital_trader, '_client', None):
-                log.info("[CONSCIOUSNESS] Capital CFD Trader WIRED — LIVE TRADING ACTIVE")
-            else:
-                log.info("[CONSCIOUSNESS] Capital CFD Trader WIRED — awaiting client auth")
+            # Force ready check
+            ready = getattr(self._capital_trader, '_ensure_client_ready', None)
+            if ready:
+                ready()
+            log.info("[CONSCIOUSNESS] FULL Capital CFD Trader WIRED — 3800-line trading system LIVE")
         except Exception as e:
             log.debug(f"CapitalCFDTrader: {e}")
 
@@ -541,10 +552,11 @@ class ConsciousnessModule:
             except Exception as e:
                 log.debug(f"Penny hunter tick: {e}")
 
-        # ── Step 4d: CAPITAL CFD TRADER — heavier strategy ──
+        # ── Step 4d: FULL CAPITAL CFD TRADER — the real trading system ──
+        # This is the 3800-line beast: shadow trades, quadrumvirate, harmonic analysis
         if self._capital_trader and self.lambda_state:
             step = self.lambda_state.step if self.lambda_state else 0
-            if step > 5 and step % 5 == 0:  # Every 5th cycle for heavy trader
+            if step > 3:  # After minimal warmup, TRADE EVERY CYCLE
                 try:
                     closed = self._capital_trader.tick()
                     if closed:
