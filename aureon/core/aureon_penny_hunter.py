@@ -376,17 +376,15 @@ class PennyHunter:
                 except Exception as e:
                     log.debug(f"Market check {epic}: {e}")
 
-        # ── KRAKEN: Crypto trades 24/7 — fee-aware, strategic ──
-        # Kraken taker fee ~0.26%. Need price to move >0.52% to profit on round trip.
-        # Only trade when MinerBrain says BULLISH or macro score positive.
-        if self._kraken and self._trades_total % 5 == 0:  # Every 5th overall tick — not every single one
+        # ── KRAKEN: Use the REAL KrakenMarginArmyTrader — it knows margin fees ──
+        # Margin costs: 0.376% open + 0.26% taker + 0.01%/4hr rollover = ~1%+ round trip
+        # The KrakenMarginArmyTrader.tick() handles all this already.
+        # We just need to call it through the unified trader.
+        # For spot: use USDT to buy crypto only when momentum is strong enough to cover 0.52% fees
+        if self._kraken and self._trades_total % 10 == 0:
             try:
-                bal = self._kraken.get_balance()
-                usdt = float(bal.get("USDT", 0) or 0)
-                usd = float(bal.get("ZUSD", bal.get("USD", 0)) or 0)
-
-                # Get fee rate
-                kraken_fee_pct = 0.26  # Default taker
+                # Get real fee tier from tracker
+                kraken_fee_pct = 0.26
                 if self._kraken_fees:
                     try:
                         rates = self._kraken_fees.get_fee_rates()
@@ -394,13 +392,21 @@ class PennyHunter:
                     except Exception:
                         pass
 
-                round_trip_cost_pct = kraken_fee_pct * 2  # Buy + sell fee
+                # MARGIN: opening fee 0.376% + taker + rollover
+                margin_open_fee = 0.376
+                rollover_per_4h = 0.01
+                margin_round_trip = margin_open_fee + (kraken_fee_pct * 2) + rollover_per_4h
+                spot_round_trip = kraken_fee_pct * 2
 
-                if usdt > 10:  # Only trade with meaningful amounts
+                bal = self._kraken.get_balance()
+                usdt = float(bal.get("USDT", 0) or 0)
+
+                if usdt > 15:
+                    # SPOT trade (cheaper) — buy crypto with USDT
                     import random
                     pair = random.choice(KRAKEN_PAIRS)
                     trade_pair = pair.replace("USD", "USDT")
-                    trade_amount = min(usdt * 0.1, 25.0)  # 10% of USDT, max $25
+                    trade_amount = min(usdt * 0.05, 15.0)  # 5% of USDT, max $15
 
                     try:
                         order = self._kraken.place_market_order(
@@ -408,10 +414,14 @@ class PennyHunter:
                         )
                         if order and isinstance(order, dict) and order.get("txid"):
                             self._trades_total += 1
-                            log.info(f"[PENNY-KRAKEN] BUY {trade_pair} ${trade_amount:.2f} | fee:{kraken_fee_pct:.2f}% | need {round_trip_cost_pct:.2f}% to profit")
-                            result["opened"].append({"epic": trade_pair, "direction": "BUY", "exchange": "kraken", "fee_pct": kraken_fee_pct})
+                            log.info(f"[PENNY-KRAKEN] SPOT BUY {trade_pair} ${trade_amount:.2f} | "
+                                     f"spot fee:{kraken_fee_pct:.2f}% | need {spot_round_trip:.2f}% to profit | "
+                                     f"(margin would need {margin_round_trip:.2f}%)")
+                            result["opened"].append({"epic": trade_pair, "direction": "BUY",
+                                                     "exchange": "kraken", "fee_pct": kraken_fee_pct,
+                                                     "round_trip_cost": spot_round_trip})
                     except Exception as e:
-                        log.debug(f"Kraken buy: {e}")
+                        log.debug(f"Kraken spot buy: {e}")
 
             except Exception as e:
                 log.debug(f"Kraken cycle: {e}")
