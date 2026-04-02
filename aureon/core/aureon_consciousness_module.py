@@ -621,6 +621,36 @@ class ConsciousnessModule:
                 except Exception as e:
                     log.debug(f"Capital trader tick: {e}")
 
+        # ── Step 4e: ASSET SCAN — know what we own across ALL exchanges ──
+        if self._asset_commander and self.lambda_state:
+            step = self.lambda_state.step if self.lambda_state else 0
+            if step % 20 == 0 and step > 5:  # Every 20th heartbeat (~60s)
+                try:
+                    inventory = self._asset_commander.scan_all_assets()
+                    if inventory:
+                        self._understanding["total_equity"] = getattr(inventory, 'total_equity_gbp', 0) or getattr(inventory, 'total_value_gbp', 0) or 0
+                        self._understanding["asset_count"] = getattr(inventory, 'total_assets', 0) or 0
+                        # Get per-exchange status
+                        for exch in ['kraken', 'binance', 'alpaca', 'capital']:
+                            summary = getattr(inventory, f'{exch}_summary', None)
+                            if summary:
+                                self._understanding[f"{exch}_equity"] = getattr(summary, 'total_value_gbp', 0) or getattr(summary, 'balance', 0) or 0
+                        log.info(f"[ASSETS] Total equity: £{self._understanding.get('total_equity', 0):.2f} across {self._understanding.get('asset_count', 0)} assets")
+                except Exception as e:
+                    log.debug(f"Asset scan: {e}")
+
+                # Also check for opportunities
+                try:
+                    if hasattr(self._asset_commander, 'get_opportunities_free_api'):
+                        opps = self._asset_commander.get_opportunities_free_api()
+                        if opps:
+                            self._understanding["opportunities"] = len(opps)
+                            best = opps[0] if opps else {}
+                            self._understanding["best_opportunity"] = f"{best.get('symbol', '?')} score={best.get('score', 0):.2f}"
+                            log.info(f"[ASSETS] {len(opps)} opportunities found, best: {self._understanding['best_opportunity']}")
+                except Exception as e:
+                    log.debug(f"Opportunity scan: {e}")
+
         # ── Step 5: ACT — pursue goals autonomously ──
         if self.lambda_state and self.lambda_state.consciousness_psi > 0.5:
             self._autonomous_action(understanding)
@@ -916,6 +946,17 @@ class ConsciousnessModule:
         branches = understanding.get("branches", 0)
         if branches:
             fragments.append(f"{branches} branches")
+
+        # Total equity across all exchanges
+        total_equity = understanding.get("total_equity", 0)
+        if total_equity:
+            fragments.append(f"equity:£{total_equity:.0f}")
+        asset_count = understanding.get("asset_count", 0)
+        if asset_count:
+            fragments.append(f"{asset_count} assets")
+        opps = understanding.get("opportunities", 0)
+        if opps:
+            fragments.append(f"{opps} opps")
 
         # Penny hunter LIVE performance
         penny_trades = understanding.get("penny_trades", 0)
