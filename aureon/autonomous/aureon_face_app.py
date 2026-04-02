@@ -368,7 +368,48 @@ def queen_respond(text: str) -> Dict[str, Any]:
     cognition + parser + sentient loop.
     Returns: {"text": str, "action": str|None, "data": dict|None}
     """
-    # PRIMARY: Queen's own cognitive brain (harmonic nexus core, no external AI)
+    # PRIMARY: Language Cortex — understands through internal knowledge
+    try:
+        from aureon.core.aureon_language_cortex import get_language_cortex
+        cortex = get_language_cortex()
+
+        # Get real system state from consciousness module
+        system_state = {}
+        try:
+            from aureon.core.aureon_consciousness_module import ConsciousnessModule
+            # Find the running consciousness module
+            if hasattr(state, '_consciousness_ref') and state._consciousness_ref:
+                system_state = state._consciousness_ref.get_understanding()
+        except Exception:
+            pass
+
+        # Add basic state even without consciousness module
+        system_state.setdefault("level", state.current_mood)
+        system_state.setdefault("mood", state.current_mood)
+
+        result = cortex.understand_and_respond(text, system_state)
+
+        if result.get("understood"):
+            if result.get("response"):
+                with state.lock:
+                    state.current_mood = system_state.get("mood", state.current_mood)
+                return {
+                    "text": result["response"],
+                    "action": result.get("category", "cortex"),
+                    "data": {
+                        "concept": result.get("concept"),
+                        "confidence": result.get("confidence"),
+                        "category": result.get("category"),
+                    },
+                }
+            elif result.get("action_key"):
+                # Cortex says: execute this action, don't just talk
+                # Fall through to cognitive brain for execution
+                pass
+    except Exception as e:
+        log.debug(f"Language cortex error: {e}")
+
+    # SECONDARY: Cognitive brain for actions
     try:
         from aureon.autonomous.aureon_cognitive_brain import get_brain
         brain = get_brain()
@@ -383,13 +424,12 @@ def queen_respond(text: str) -> Dict[str, Any]:
                     "mood": result.get("mood"),
                     "confidence": result.get("confidence"),
                     "consciousness": result.get("consciousness_level"),
-                    "reasoning": result.get("reasoning"),
                 },
             }
     except Exception as e:
         log.debug(f"Cognitive brain error: {e}")
 
-    # FALLBACK: rule-based if cognitive brain fails
+    # FALLBACK: rule-based
     return _rule_based_respond(text)
 
 

@@ -1,45 +1,6 @@
 {
   "predictions": [
     {
-      "timestamp": "2026-04-02T19:45:24.521954",
-      "validation_time": "2026-04-02T21:45:24.521954",
-      "btc_price_at_call": 66737.56,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "fear_greed": 12,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
-    },
-    {
-      "timestamp": "2026-04-02T19:45:41.679778",
-      "validation_time": "2026-04-02T21:45:41.679778",
-      "btc_price_at_call": 66754.0,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "fear_greed": 12,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
-    },
-    {
-      "timestamp": "2026-04-02T19:45:58.719907",
-      "validation_time": "2026-04-02T21:45:58.719907",
-      "btc_price_at_call": 66790.72,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "fear_greed": 12,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
-    },
-    {
       "timestamp": "2026-04-02T19:46:15.775195",
       "validation_time": "2026-04-02T21:46:15.775195",
       "btc_price_at_call": 66795.65,
@@ -1299,6 +1260,45 @@
       "validated": false,
       "was_correct": null,
       "actual_outcome": null
+    },
+    {
+      "timestamp": "2026-04-02T20:21:00.351863",
+      "validation_time": "2026-04-02T22:21:00.351863",
+      "btc_price_at_call": 66996.97,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "fear_greed": 12,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.42622950819672134,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2026-04-02T20:37:10.033208",
+      "validation_time": "2026-04-02T22:37:10.033208",
+      "btc_price_at_call": 66951.36,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "fear_greed": 12,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.42622950819672134,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2026-04-02T20:37:33.232980",
+      "validation_time": "2026-04-02T22:37:33.232980",
+      "btc_price_at_call": 66898.58,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "fear_greed": 12,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.42622950819672134,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
     }
   ],
   "bias_tracker": {
@@ -1309,5 +1309,5 @@
     "neutral_calls": 0,
     "neutral_correct": 0
   },
-  "last_updated": "2026-04-02T20:20:36.406151"
+  "last_updated": "2026-04-02T20:37:33.234987"
 }
