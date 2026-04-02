@@ -373,17 +373,43 @@ def queen_respond(text: str) -> Dict[str, Any]:
         from aureon.core.aureon_language_cortex import get_language_cortex
         cortex = get_language_cortex()
 
-        # Get real system state from consciousness module
+        # Get real system state from ALL live systems
         system_state = {}
+
+        # Pull from consciousness module (inside sentient loop)
         try:
-            from aureon.core.aureon_consciousness_module import ConsciousnessModule
-            # Find the running consciousness module
-            if hasattr(state, '_consciousness_ref') and state._consciousness_ref:
-                system_state = state._consciousness_ref.get_understanding()
+            loop = getattr(state, 'sentient_loop', None)
+            if loop:
+                cm = getattr(loop, '_consciousness_module', None)
+                if cm and hasattr(cm, 'get_understanding'):
+                    system_state = cm.get_understanding()
         except Exception:
             pass
 
-        # Add basic state even without consciousness module
+        # Pull from penny hunter directly
+        try:
+            from aureon.core.aureon_penny_hunter import get_penny_hunter
+            hunter = get_penny_hunter()
+            if hunter and hunter._authenticated:
+                hs = hunter.get_status()
+                system_state["penny_trades"] = hs.get("trades_total", 0)
+                system_state["penny_profit"] = hs.get("profit_total", 0)
+                system_state["penny_wins"] = hs.get("wins", 0)
+                system_state["penny_losses"] = hs.get("losses", 0)
+                system_state["penny_win_rate"] = hs.get("win_rate", 0)
+                system_state["penny_confidence"] = hs.get("confidence", 0.5)
+                system_state["penny_balance"] = hs.get("balance", 0)
+                system_state["penny_streak"] = hs.get("streak", 0)
+                system_state["open_positions"] = len(hunter.get_positions()) if hunter._authenticated else 0
+        except Exception:
+            pass
+
+        # Count live subsystems
+        live_subs = sum(1 for v in state.subsystems.values() if v == "online")
+        system_state.setdefault("subsystems", {k: v == "online" for k, v in state.subsystems.items()})
+        system_state["live_subsystem_count"] = live_subs
+
+        # Add basic state
         system_state.setdefault("level", state.current_mood)
         system_state.setdefault("mood", state.current_mood)
 
