@@ -288,6 +288,26 @@ class ConsciousnessModule:
         except Exception as e:
             log.debug(f"AssetCommandCenter: {e}")
 
+        # Wire the LIVE execution pipeline — AureonRuntime
+        self._runtime = None
+        self._kraken = None
+        try:
+            from aureon.autonomous.aureon_cognition_runtime import (
+                AureonRuntime, MinerModule, RiskModule, ExecutionModule
+            )
+            # Create runtime on OUR bus so consciousness sees everything
+            self._runtime = AureonRuntime.__new__(AureonRuntime)
+            self._runtime.bus = self.bus
+            self._runtime.miner = MinerModule(self.bus)
+            self._runtime.risk = RiskModule(self.bus, max_positions=3)
+
+            # Wire REAL order execution
+            real_place_order = self._build_real_order_fn()
+            self._runtime.exec = ExecutionModule(self.bus, place_order_fn=real_place_order)
+            log.info("[CONSCIOUSNESS] LIVE execution pipeline WIRED — market→miner→risk→execute")
+        except Exception as e:
+            log.debug(f"Runtime pipeline: {e}")
+
         # Subscribe to EVERYTHING — the consciousness sees all
         self.bus.subscribe("*", self._observe)
 
@@ -467,6 +487,15 @@ class ConsciousnessModule:
 
         # ── Step 4: Generate genuine thought ──
         thought = self._maybe_generate_thought(understanding)
+
+        # ── Step 4b: TICK — feed real market data into execution pipeline ──
+        if self._runtime and self.lambda_state:
+            step = self.lambda_state.step if self.lambda_state else 0
+            if step % 10 == 0 and step > 0:
+                try:
+                    self._tick_live_market()
+                except Exception as e:
+                    log.debug(f"Live tick error: {e}")
 
         # ── Step 5: ACT — pursue goals autonomously ──
         if self.lambda_state and self.lambda_state.consciousness_psi > 0.5:
@@ -739,6 +768,12 @@ class ConsciousnessModule:
         if branches:
             fragments.append(f"{branches} branches")
 
+        # Live prices
+        live_prices = understanding.get("live_prices", {})
+        if live_prices:
+            for sym, price in list(live_prices.items())[:3]:
+                fragments.append(f"{sym}=${price:,.0f}")
+
         # Prophecy from the harmonic analyzer
         prophecy = understanding.get("prophecy", "")
         if prophecy and len(prophecy) > 5:
@@ -815,6 +850,93 @@ class ConsciousnessModule:
     # ──────────────────────────────────────────────────────────
     #  Public API
     # ──────────────────────────────────────────────────────────
+
+    def _build_real_order_fn(self):
+        """Build a real order function from available exchange clients."""
+        def place_order(symbol: str, side: str, qty: float):
+            # Try Kraken first (crypto)
+            try:
+                from aureon.exchanges.kraken_client import KrakenClient
+                client = KrakenClient()
+                if not client.dry_run:
+                    result = client.place_market_order(symbol=symbol, side=side, quantity=qty)
+                    log.info(f"[TRADE] Kraken {side} {qty} {symbol}: {result}")
+                    return {"ok": True, "exchange": "kraken", "symbol": symbol, "side": side, "qty": qty, "result": result}
+            except Exception as e:
+                log.debug(f"Kraken order failed: {e}")
+
+            # Try Binance
+            try:
+                from aureon.exchanges.binance_client import BinanceClient
+                client = BinanceClient()
+                if not getattr(client, 'dry_run', True):
+                    result = client.place_market_order(symbol=symbol, side=side, quantity=qty)
+                    log.info(f"[TRADE] Binance {side} {qty} {symbol}: {result}")
+                    return {"ok": True, "exchange": "binance", "symbol": symbol, "side": side, "qty": qty, "result": result}
+            except Exception as e:
+                log.debug(f"Binance order failed: {e}")
+
+            # Fallback: log the intent
+            log.info(f"[TRADE-DRY] Would {side} {qty} {symbol} — no live exchange available")
+            return {"ok": False, "reason": "no_live_exchange", "symbol": symbol, "side": side, "qty": qty}
+
+        return place_order
+
+    def _tick_live_market(self):
+        """Feed real market data into the execution pipeline."""
+        if not self._runtime:
+            return
+
+        try:
+            import requests
+            # Fetch live prices from CoinGecko (free, no key)
+            resp = requests.get(
+                "https://api.coingecko.com/api/v3/simple/price",
+                params={
+                    "ids": "bitcoin,ethereum,solana,ripple,cardano,dogecoin",
+                    "vs_currencies": "usd",
+                    "include_24hr_change": "true",
+                    "include_24hr_vol": "true",
+                },
+                timeout=5,
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                universe = []
+                market_by_symbol = {}
+                for coin_id, vals in data.items():
+                    sym = coin_id.upper()
+                    price = vals.get("usd", 0)
+                    change = vals.get("usd_24h_change", 0)
+                    vol = vals.get("usd_24h_vol", 0)
+                    if price > 0:
+                        universe.append(sym)
+                        # Compute momentum and gamma for the miner signal
+                        momentum = change / 100.0 if change else 0
+                        gamma = min(1.0, abs(momentum) * 5) if abs(momentum) > 0.01 else 0.1
+                        market_by_symbol[sym] = {
+                            "price": price,
+                            "volume": vol,
+                            "change_24h": change,
+                            "momentum": momentum,
+                            "gamma": gamma,
+                        }
+
+                if universe:
+                    # TICK the runtime — this triggers the full pipeline:
+                    # market.snapshot → miner.signal → risk.approved → execution.order
+                    self._runtime.bus.publish(Thought(
+                        source="runtime",
+                        topic="market.snapshot",
+                        payload={"universe": universe, "market_by_symbol": market_by_symbol},
+                    ))
+                    self._understanding["live_prices"] = {s: market_by_symbol[s]["price"] for s in universe[:5]}
+                    self._understanding["live_tick"] = True
+                    price_strs = [f"{s}=${market_by_symbol[s]['price']:,.0f}" for s in universe[:3]]
+                    log.info("[TICK] Live market data: %s", ", ".join(price_strs))
+
+        except Exception as e:
+            log.debug(f"Live market tick: {e}")
 
     def get_understanding(self) -> dict:
         """Current understanding of the universe."""
