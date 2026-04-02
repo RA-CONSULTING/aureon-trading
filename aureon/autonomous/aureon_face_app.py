@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 aureon_face_app.py -- The Queen's Desktop Conversation Interface
 
@@ -368,37 +368,29 @@ def queen_respond(text: str) -> Dict[str, Any]:
     cognition + parser + sentient loop.
     Returns: {"text": str, "action": str|None, "data": dict|None}
     """
-    mode = (os.getenv("AUREON_FACE_BRAIN_MODE", "hybrid") or "hybrid").strip().lower()
-
-    if mode == "llm":
-        try:
-            tools_enabled = (os.getenv("AUREON_FACE_LLM_TOOLS", "true") or "true").strip().lower() in {
-                "1",
-                "true",
-                "yes",
-                "on",
+    # PRIMARY: Queen's own cognitive brain (harmonic nexus core, no external AI)
+    try:
+        from aureon.autonomous.aureon_cognitive_brain import get_brain
+        brain = get_brain()
+        result = brain.think(text)
+        if result and result.get("response"):
+            with state.lock:
+                state.current_mood = result.get("mood", state.current_mood)
+            return {
+                "text": result["response"],
+                "action": result.get("action_taken", "cognitive"),
+                "data": {
+                    "mood": result.get("mood"),
+                    "confidence": result.get("confidence"),
+                    "consciousness": result.get("consciousness_level"),
+                    "reasoning": result.get("reasoning"),
+                },
             }
-            result = _llm_respond(text, tools_enabled=tools_enabled)
-            if result:
-                return result
-        except Exception as e:
-            log.debug(f"LLM brain unavailable: {e}")
-        return _rule_based_respond(text)
+    except Exception as e:
+        log.debug(f"Cognitive brain error: {e}")
 
-    # rules/hybrid: prefer the local parser/brain
-    rb = _rule_based_respond(text)
-    if mode == "rules":
-        return rb
-
-    # If the local brain didn't understand, ask the LLM (no tools).
-    if rb.get("action") is None:
-        try:
-            llm = _llm_respond(text, tools_enabled=False)
-            if llm:
-                return llm
-        except Exception as e:
-            log.debug(f"LLM brain unavailable: {e}")
-    return rb
+    # FALLBACK: rule-based if cognitive brain fails
+    return _rule_based_respond(text)
 
 
 # ============================================================================
