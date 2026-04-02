@@ -555,6 +555,11 @@ class ConsciousnessModule:
             step = self.lambda_state.step if self.lambda_state else 0
             if step > 3 and step % 3 == 0:  # Every 3rd heartbeat (~9s)
                 try:
+                    # Keep the deadman fed on BOTH the unified trader and capital trader
+                    if self._unified_trader.capital:
+                        self._unified_trader.capital.mark_deadman_heartbeat()
+                    if self._capital_trader:
+                        self._capital_trader.mark_deadman_heartbeat()
                     result = self._unified_trader.tick()
                     kraken_closed = result.get("kraken_closed", [])
                     capital_closed = result.get("capital_closed", [])
