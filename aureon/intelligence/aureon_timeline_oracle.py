@@ -1467,19 +1467,20 @@ class TimelineOracle:
         try:
             # 1. ThoughtBus
             if self.thought_bus:
-                self.thought_bus.publish(Thought(
-                    source="TIMELINE_ORACLE",
-                    thought_type="TIMELINE_PREDICTION",
-                    priority=2,
-                    content={
+                # ThoughtBus expects a topic + payload (or a Thought dataclass). Keep this
+                # compatible with the core ThoughtBus implementation in aureon.core.
+                self.thought_bus.publish(
+                    "timeline.prediction",
+                    {
                         "symbol": branch.symbol,
                         "action": branch.action.value,
                         "confidence": branch.branch_confidence,
                         "branch_id": branch.branch_id,
                         "entry": branch.entry_price,
-                        "target_time": branch.target_time
-                    }
-                ))
+                        "target_time": branch.target_time,
+                    },
+                    source="TIMELINE_ORACLE",
+                )
 
             # 2. ChirpBus
             if self.chirp_bus:
@@ -1497,12 +1498,11 @@ class TimelineOracle:
         try:
             # 1. ThoughtBus
             if self.thought_bus:
-                self.thought_bus.publish(Thought(
+                self.thought_bus.publish(
+                    "timeline.validation",
+                    asdict(validation),
                     source="TIMELINE_ORACLE",
-                    thought_type="TIMELINE_VALIDATION",
-                    priority=1,
-                    content=asdict(validation)
-                ))
+                )
 
             # 2. ChirpBus
             if self.chirp_bus:
