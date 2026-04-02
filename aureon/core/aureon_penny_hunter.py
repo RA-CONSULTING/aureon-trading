@@ -108,8 +108,8 @@ ALPACA_STOCKS = ["SPY", "AAPL", "TSLA", "QQQ"]
 
 BASE_URL = "https://api-capital.backend-capital.com"
 MAX_POSITIONS = 3
-TAKE_PROFIT_GBP = 0.01  # Take ANY profit — a penny is enough
-MAX_LOSS_GBP = -2.0     # Cut loss at £2 max
+TAKE_PROFIT_GBP = 0.02  # Take profit above spread cost — 2p minimum
+MAX_LOSS_GBP = -999.0   # NEVER close at loss — hold forever
 
 
 class PennyHunter:
@@ -135,6 +135,22 @@ class PennyHunter:
         self._starting_balance = 0.0
         self._start_time = time.time()
         self._trade_log: List[Dict] = []
+
+        # Fee trackers — know the REAL cost before every trade
+        self._kraken_fees = None
+        self._alpaca_fees = None
+        try:
+            from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker
+            self._kraken_fees = get_kraken_fee_tracker()
+            log.info(f"[PENNY] Kraken fee tracker loaded")
+        except Exception:
+            pass
+        try:
+            from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
+            self._alpaca_fees = AlpacaFeeTracker()
+            log.info(f"[PENNY] Alpaca fee tracker loaded")
+        except Exception:
+            pass
 
         # Multi-exchange support
         self._kraken = None
@@ -326,7 +342,7 @@ class PennyHunter:
                 if any(h["epic"] == epic for h in result["holding"]):
                     continue
 
-                # Get market price to determine direction
+                # Get market price + spread to determine direction AND cost
                 try:
                     r = requests.get(f"{BASE_URL}/api/v1/markets/{epic}",
                                      headers=self._headers, timeout=10)
@@ -334,18 +350,29 @@ class PennyHunter:
                         market = r.json()
                         snap = market.get("snapshot", {})
                         change = float(snap.get("percentageChange", 0) or 0)
+                        bid = float(snap.get("bid", 0) or 0)
+                        ask = float(snap.get("offer", snap.get("ask", 0)) or 0)
+                        spread = ask - bid if ask > bid > 0 else 0
 
-                        # Follow momentum — BUY if up, SELL if down
-                        if abs(change) > 0.01:  # Any movement
+                        size = instrument["min_size"]
+                        # Cost check: spread cost must be recoverable
+                        spread_cost = spread * size
+                        min_movement = spread * 2  # Need at least 2x spread to profit
+
+                        # Only trade if momentum > spread cost AND market is moving
+                        if abs(change) > 0.05 and spread_cost < 1.0:
                             direction = "BUY" if change > 0 else "SELL"
-                            size = instrument["min_size"]
                             deal_id = self.open_position(epic, direction, size)
                             if deal_id:
                                 result["opened"].append({
                                     "epic": epic, "direction": direction,
                                     "size": size, "change": change,
+                                    "spread": spread, "spread_cost": spread_cost,
                                 })
                                 open_count += 1
+                                log.info(f"[PENNY] {direction} {epic} | momentum:{change:+.2f}% | spread:{spread:.2f} | cost:£{spread_cost:.3f}")
+                        elif spread_cost >= 1.0:
+                            log.debug(f"[PENNY] SKIP {epic} — spread cost £{spread_cost:.3f} too high")
                 except Exception as e:
                     log.debug(f"Market check {epic}: {e}")
 
