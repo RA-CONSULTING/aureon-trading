@@ -288,6 +288,18 @@ class ConsciousnessModule:
         except Exception as e:
             log.debug(f"AssetCommandCenter: {e}")
 
+        # THE MONEY MAKER — Capital.com CFD Trader
+        self._capital_trader = None
+        try:
+            from aureon.exchanges.capital_cfd_trader import CapitalCFDTrader
+            self._capital_trader = CapitalCFDTrader()
+            if self._capital_trader and getattr(self._capital_trader, '_client', None):
+                log.info("[CONSCIOUSNESS] Capital CFD Trader WIRED — LIVE TRADING ACTIVE")
+            else:
+                log.info("[CONSCIOUSNESS] Capital CFD Trader WIRED — awaiting client auth")
+        except Exception as e:
+            log.debug(f"CapitalCFDTrader: {e}")
+
         # Wire the LIVE execution pipeline — AureonRuntime
         self._runtime = None
         self._kraken = None
@@ -496,6 +508,27 @@ class ConsciousnessModule:
                     self._tick_live_market()
                 except Exception as e:
                     log.debug(f"Live tick error: {e}")
+
+        # ── Step 4c: TRADE — run the Capital CFD trader tick ──
+        if self._capital_trader and self.lambda_state:
+            step = self.lambda_state.step if self.lambda_state else 0
+            if step % 8 == 0 and step > 5:  # Every 8th heartbeat (~24s), after warmup
+                try:
+                    closed = self._capital_trader.tick()
+                    if closed:
+                        self._understanding["trades_closed"] = len(closed)
+                        total_pnl = sum(c.get("pnl_gbp", 0) or c.get("pnl", 0) for c in closed if isinstance(c, dict))
+                        self._understanding["pnl_this_session"] = self._understanding.get("pnl_this_session", 0) + total_pnl
+                        log.info(f"[TRADE] Capital trader tick: {len(closed)} closed, PnL: {total_pnl:+.2f}")
+                    else:
+                        # Still working — check positions
+                        try:
+                            pos_count = self._capital_trader.position_count
+                            self._understanding["open_positions"] = pos_count
+                        except Exception:
+                            pass
+                except Exception as e:
+                    log.debug(f"Capital trader tick: {e}")
 
         # ── Step 5: ACT — pursue goals autonomously ──
         if self.lambda_state and self.lambda_state.consciousness_psi > 0.5:
@@ -767,6 +800,17 @@ class ConsciousnessModule:
         branches = understanding.get("branches", 0)
         if branches:
             fragments.append(f"{branches} branches")
+
+        # Trading state
+        open_pos = understanding.get("open_positions", 0)
+        if open_pos:
+            fragments.append(f"{open_pos} positions")
+        trades_closed = understanding.get("trades_closed", 0)
+        if trades_closed:
+            fragments.append(f"closed:{trades_closed}")
+        pnl = understanding.get("pnl_this_session", 0)
+        if pnl:
+            fragments.append(f"PnL:{pnl:+.2f}")
 
         # Live prices
         live_prices = understanding.get("live_prices", {})
