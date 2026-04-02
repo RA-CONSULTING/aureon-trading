@@ -1,32 +1,6 @@
 {
   "predictions": [
     {
-      "timestamp": "2026-04-02T19:46:15.775195",
-      "validation_time": "2026-04-02T21:46:15.775195",
-      "btc_price_at_call": 66795.65,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "fear_greed": 12,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
-    },
-    {
-      "timestamp": "2026-04-02T19:46:33.769480",
-      "validation_time": "2026-04-02T21:46:33.769480",
-      "btc_price_at_call": 66800.5,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "fear_greed": 12,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
-    },
-    {
       "timestamp": "2026-04-02T19:46:50.904751",
       "validation_time": "2026-04-02T21:46:50.904751",
       "btc_price_at_call": 66816.15,
@@ -35,9 +9,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.2063572953544984,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:47:08.250059",
@@ -48,9 +26,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.2063722926825755,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:47:25.389279",
@@ -61,9 +43,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.17674632944271665,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:47:42.940346",
@@ -74,9 +60,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.1505683258749761,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:47:59.934758",
@@ -87,9 +77,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.14223978756466163,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:49:17.850337",
@@ -100,9 +94,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.15474809642638418,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:49:38.052547",
@@ -113,9 +111,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.1362339137345688,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:49:57.325675",
@@ -126,9 +128,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.14312350560902698,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:50:19.140575",
@@ -139,9 +145,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.1119182382319966,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:50:41.430100",
@@ -152,9 +162,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.09542503984141436,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:51:01.582833",
@@ -165,9 +179,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.08076233183856328,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:51:21.333094",
@@ -178,9 +196,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.08701590024607195,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:51:41.062685",
@@ -191,9 +213,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.09719083939336345,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:51:58.522638",
@@ -204,9 +230,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.01564004065514467,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T19:52:15.756217",
@@ -217,9 +247,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.03965327865878409,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:52:33.273749",
@@ -230,9 +264,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.041757487086084566,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:52:50.690815",
@@ -243,9 +281,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.04960644755434977,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:53:08.063834",
@@ -256,9 +298,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.04674157061828405,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:53:25.452767",
@@ -269,9 +315,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.09245554680309341,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:53:43.720697",
@@ -282,9 +332,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.13038204429976966,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:54:02.040821",
@@ -295,9 +349,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.1243038210335278,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:54:20.850667",
@@ -308,9 +366,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.06121348684916788,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:54:40.200447",
@@ -321,9 +383,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.031683345713530243,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:54:59.637109",
@@ -334,9 +400,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.06550949641421616,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:55:19.280900",
@@ -347,9 +417,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.06622546210058053,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:55:37.180685",
@@ -360,9 +434,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.04674157061828405,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:55:54.811255",
@@ -373,9 +451,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.053426028014417926,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:56:12.216541",
@@ -386,9 +468,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.05344094767818176,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:56:29.639331",
@@ -399,9 +485,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.06540508389449359,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:56:47.907359",
@@ -412,9 +502,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.020860709592643,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:57:05.480885",
@@ -425,9 +519,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.028966711127075592,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:57:23.762764",
@@ -438,9 +536,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.06533050338966961,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:57:42.763659",
@@ -451,9 +553,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.04920358415866484,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:58:02.739195",
@@ -464,9 +570,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.013320799038868888,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:58:23.303618",
@@ -477,9 +587,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.01526187480633497,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:58:46.490599",
@@ -490,9 +604,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.042190256558852744,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:59:06.423481",
@@ -503,9 +621,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.030728062470243192,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:59:24.250633",
@@ -516,9 +638,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.034071473949591514,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:59:41.605473",
@@ -529,9 +655,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.02690674691905664,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T19:59:58.838431",
@@ -542,9 +672,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.030787768207814963,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:00:16.350755",
@@ -555,9 +689,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.0595576345498677,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:00:33.831024",
@@ -568,9 +706,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.07387670470496108,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:00:51.481069",
@@ -581,9 +723,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.04132471386593081,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:02:15.649163",
@@ -594,9 +740,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.11265182485213947,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:02:38.863121",
@@ -607,9 +757,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.14759965997047286,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:03:00.906731",
@@ -620,9 +774,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.14472550549902952,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:03:28.932284",
@@ -633,9 +791,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.07129659203186194,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:03:48.040934",
@@ -646,9 +808,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.05861780207872141,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:04:08.039272",
@@ -659,9 +825,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.040100989998790075,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:04:27.783600",
@@ -672,9 +842,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.026130506500299456,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:04:48.090785",
@@ -685,9 +859,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.007304052001264568,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T20:05:05.571076",
@@ -698,9 +876,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.006019417475726417,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T20:05:23.813459",
@@ -711,9 +893,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.03850413452888967,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:05:42.692775",
@@ -724,9 +910,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.05369458128078992,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:06:05.529989",
@@ -737,9 +927,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.06039302635187819,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:06:26.510997",
@@ -750,9 +944,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.10761469849981657,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:06:46.360976",
@@ -763,9 +961,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.10666086589108931,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:07:05.312769",
@@ -776,9 +978,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.11931256984327199,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:07:29.538243",
@@ -789,9 +995,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.1019510503658805,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:07:50.945043",
@@ -802,9 +1012,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.09075600407970319,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:08:11.865255",
@@ -815,9 +1029,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.08054262177650603,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:08:32.029531",
@@ -828,9 +1046,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.12025126113901796,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:08:51.954120",
@@ -841,9 +1063,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.08412127072811884,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:09:12.051050",
@@ -854,9 +1080,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.07632246884829845,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:09:36.787259",
@@ -867,9 +1097,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.05278447825842359,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:09:56.156682",
@@ -880,9 +1114,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.05970681268166731,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:10:17.459395",
@@ -893,9 +1131,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.09358854316271852,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:10:37.885386",
@@ -906,9 +1148,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.1004903211482751,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:10:59.674663",
@@ -919,9 +1165,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.13891712357135944,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:11:20.580981",
@@ -932,9 +1182,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.15418129716293802,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:11:40.053497",
@@ -945,9 +1199,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.17249214697780507,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:12:00.311443",
@@ -958,9 +1216,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.15802266626901457,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:12:22.131777",
@@ -971,9 +1233,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.22060425566666486,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:12:41.031144",
@@ -984,9 +1250,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.2177491731015771,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:13:01.288233",
@@ -997,9 +1267,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.1872996691844182,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:13:19.891134",
@@ -1010,9 +1284,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.15836509955303926,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:13:40.486533",
@@ -1023,9 +1301,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.160211221137864,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:14:00.291353",
@@ -1036,9 +1318,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.15435997204787824,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:14:19.391377",
@@ -1049,9 +1335,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.14031715435379422,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:14:36.933203",
@@ -1062,9 +1352,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.13607225924695637,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:15:55.749548",
@@ -1075,9 +1369,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.11365024814931589,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:16:17.203253",
@@ -1088,9 +1386,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.10582624741589933,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:16:35.921837",
@@ -1101,9 +1403,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.0720721312336769,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:16:58.196460",
@@ -1114,9 +1420,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.05490305312026954,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:17:16.721590",
@@ -1127,9 +1437,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.08052771020292714,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:17:37.041926",
@@ -1140,9 +1454,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.09917860952992168,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:17:55.381410",
@@ -1153,9 +1471,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.11464865148720384,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:18:14.801374",
@@ -1166,9 +1488,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.11035686578743387,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:18:32.311532",
@@ -1179,9 +1505,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.10229386838079173,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:18:51.187741",
@@ -1192,9 +1522,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.08567193900027142,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:19:11.859734",
@@ -1205,9 +1539,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.07457763715599243,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:19:34.063761",
@@ -1218,9 +1556,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.09917860952992168,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:19:54.301670",
@@ -1231,9 +1573,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.10736133848975062,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:20:16.732498",
@@ -1244,9 +1590,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.09600352858476939,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:20:36.406151",
@@ -1257,9 +1607,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.08798294181472338,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:21:00.351863",
@@ -1270,9 +1624,13 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": -0.06409245074814925,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-02T20:37:10.033208",
@@ -1283,14 +1641,48 @@
       "fear_greed": 12,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.003987969773875025,
+        "direction": "UP"
+      }
     },
     {
       "timestamp": "2026-04-02T20:37:33.232980",
       "validation_time": "2026-04-02T22:37:33.232980",
       "btc_price_at_call": 66898.58,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "fear_greed": 12,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.42622950819672134,
+      "validated": true,
+      "was_correct": true,
+      "actual_outcome": {
+        "price_at_validation": 66954.03,
+        "price_change_pct": 0.08288666216831073,
+        "direction": "UP"
+      }
+    },
+    {
+      "timestamp": "2026-04-03T00:01:20.730252",
+      "validation_time": "2026-04-03T02:01:20.730252",
+      "btc_price_at_call": 66954.03,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "fear_greed": 12,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.42622950819672134,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2026-04-03T00:38:24.652926",
+      "validation_time": "2026-04-03T02:38:24.652926",
+      "btc_price_at_call": 66899.51,
       "consensus": "INCONCLUSIVE",
       "manipulation_probability": 0.2,
       "fear_greed": 12,
@@ -1302,12 +1694,12 @@
     }
   ],
   "bias_tracker": {
-    "bullish_calls": 0,
-    "bullish_correct": 0,
+    "bullish_calls": 100,
+    "bullish_correct": 20,
     "bearish_calls": 0,
     "bearish_correct": 0,
     "neutral_calls": 0,
     "neutral_correct": 0
   },
-  "last_updated": "2026-04-02T20:37:33.234987"
+  "last_updated": "2026-04-03T00:38:24.655434"
 }
