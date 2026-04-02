@@ -6,7 +6,7 @@ This module is intentionally constrained:
 - local-only
 - manual arm/disarm
 - dry-run by default
-- per-action confirmation token for non-trivial actions
+- optional per-action confirmation token for non-trivial actions
 - emergency stop support
 - allowlisted action types only
 
@@ -26,9 +26,17 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 try:
     import pyautogui  # type: ignore
+
     HAS_PYAUTOGUI = True
+    try:
+        pyautogui.FAILSAFE = True
+        pyautogui.PAUSE = 0.05
+    except Exception:
+        pass
 except Exception:
     pyautogui = None  # type: ignore
     HAS_PYAUTOGUI = False
@@ -44,9 +52,16 @@ ALLOWED_ACTIONS = {
     "hotkey",
 }
 
-# SOVEREIGN MODE — no high-risk classification. All actions execute freely.
-HIGH_RISK_ACTIONS = set()  # Cleared — sovereign authority
+# Actions that are easy to misuse (typing/hotkeys). These can be gated behind a
+# confirmation token if AUREON_DESKTOP_REQUIRE_CONFIRMATION is enabled.
+HIGH_RISK_ACTIONS = {
+    "type_text",
+    "press_key",
+    "hotkey",
+}
 
+# When a DesktopAction is proposed, we can auto-execute some low-risk actions if
+# the controller is armed.
 AUTO_EXECUTE_ACTIONS = {
     "move_mouse",
     "left_click",
@@ -55,8 +70,30 @@ AUTO_EXECUTE_ACTIONS = {
     "press_key",
 }
 
-DEFAULT_STATE_PATH = Path(os.getenv("AUREON_DESKTOP_CONTROL_STATE", "state/safe_desktop_control_state.json"))
-DEFAULT_KILL_PATH = Path(os.getenv("AUREON_DESKTOP_KILL_SWITCH", "state/safe_desktop_control.stop"))
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _resolve_env_path(env_name: str, default_path: Path) -> Path:
+    raw = (os.getenv(env_name) or "").strip()
+    p = Path(raw) if raw else default_path
+    if not p.is_absolute():
+        p = (REPO_ROOT / p).resolve()
+    return p
+
+
+DEFAULT_STATE_PATH = _resolve_env_path(
+    "AUREON_DESKTOP_CONTROL_STATE",
+    REPO_ROOT / "state" / "safe_desktop_control_state.json",
+)
+DEFAULT_KILL_PATH = _resolve_env_path(
+    "AUREON_DESKTOP_KILL_SWITCH",
+    REPO_ROOT / "state" / "safe_desktop_control.stop",
+)
 
 
 @dataclass
@@ -84,7 +121,7 @@ class SafeDesktopControl:
         self,
         state_path: Optional[Path] = None,
         kill_path: Optional[Path] = None,
-        dry_run: bool = False,
+        dry_run: bool = True,
     ) -> None:
         self.state_path = Path(state_path or DEFAULT_STATE_PATH)
         self.kill_path = Path(kill_path or DEFAULT_KILL_PATH)
@@ -98,21 +135,13 @@ class SafeDesktopControl:
         self.recent_actions: List[Dict[str, Any]] = []
         self.pending_actions: List[Dict[str, Any]] = []
 
-        self.require_confirmation = False  # Sovereign — no confirmation needed
-        self.auto_approve_live_voice = os.getenv("AUREON_AUTO_APPROVE_LIVE_VOICE", "true").strip().lower() in {"1", "true", "yes", "on"}
+        self.require_confirmation = _env_bool("AUREON_DESKTOP_REQUIRE_CONFIRMATION", False)
+        self.auto_approve_live_voice = _env_bool("AUREON_AUTO_APPROVE_LIVE_VOICE", True)
         self.confirmation_token = os.getenv("AUREON_DESKTOP_CONFIRM_TOKEN", "I_UNDERSTAND")
         self.max_recent_actions = 25
         self.max_pending_actions = 20
 
         self._load_state()
-
-        if HAS_PYAUTOGUI:
-            try:
-                pyautogui.FAILSAFE = True
-                pyautogui.PAUSE = 0.05
-            except Exception:
-                pass
-
         self._persist_state()
 
     def arm(self) -> None:
@@ -174,11 +203,12 @@ class SafeDesktopControl:
             payload["execution_result"] = asdict(result)
             self._persist_state()
             return payload
+
         item = asdict(req)
         item["status"] = "pending"
         self.pending_actions.append(item)
         if len(self.pending_actions) > self.max_pending_actions:
-            self.pending_actions = self.pending_actions[-self.max_pending_actions:]
+            self.pending_actions = self.pending_actions[-self.max_pending_actions :]
         self._persist_state()
         return item
 
@@ -186,6 +216,7 @@ class SafeDesktopControl:
         if not self.pending_actions:
             dummy = DesktopAction(action="noop")
             return self._reject(dummy, "no_pending_actions")
+
         item = self.pending_actions.pop(0)
         req = DesktopAction(
             action=str(item.get("action") or ""),
@@ -285,7 +316,7 @@ class SafeDesktopControl:
         self.last_result = dict(data)
         self.recent_actions.append(data)
         if len(self.recent_actions) > self.max_recent_actions:
-            self.recent_actions = self.recent_actions[-self.max_recent_actions:]
+            self.recent_actions = self.recent_actions[-self.max_recent_actions :]
         self._persist_state()
 
     def _load_state(self) -> None:
@@ -295,12 +326,16 @@ class SafeDesktopControl:
             payload = json.loads(self.state_path.read_text(encoding="utf-8"))
         except Exception:
             return
+
+        # Persisted runtime state.
         self.armed = bool(payload.get("armed", self.armed))
         self.dry_run = bool(payload.get("dry_run", self.dry_run))
         self.last_error = str(payload.get("last_error") or "")
         self.last_result = dict(payload.get("last_result") or {})
-        self.pending_actions = list(payload.get("pending_actions") or [])[-self.max_pending_actions:]
-        self.recent_actions = list(payload.get("recent_actions") or [])[-self.max_recent_actions:]
+        self.pending_actions = list(payload.get("pending_actions") or [])[-self.max_pending_actions :]
+        self.recent_actions = list(payload.get("recent_actions") or [])[-self.max_recent_actions :]
+
+        # Persisted configuration (can be overridden via env on next start).
         self.require_confirmation = bool(payload.get("require_confirmation", self.require_confirmation))
         self.auto_approve_live_voice = bool(payload.get("auto_approve_live_voice", self.auto_approve_live_voice))
 
@@ -323,14 +358,15 @@ class SafeDesktopControl:
         try:
             self.state_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         except Exception as e:
-            logger.debug(f"Could not persist desktop control state: {e}")
+            logger.debug("Could not persist desktop control state: %s", e)
 
 
-def build_default_controller(dry_run: bool = False) -> SafeDesktopControl:
+def build_default_controller(dry_run: bool = True) -> SafeDesktopControl:
     return SafeDesktopControl(dry_run=dry_run)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-    ctl = build_default_controller(dry_run=False)
+    ctl = build_default_controller(dry_run=True)
     print(json.dumps(ctl.status(), indent=2))
+

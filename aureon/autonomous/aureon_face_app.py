@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 aureon_face_app.py -- The Queen's Desktop Conversation Interface
 
@@ -236,16 +236,13 @@ def init_subsystems():
         except Exception as e:
             log.warning(f"Laptop Control init failed: {e}")
 
-    # SQLite DB
+    # SQLite DB (Global History): always create/ensure schema.
     try:
-        if DB_PATH.exists():
-            state.db_conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
-            state.db_conn.row_factory = sqlite3.Row
-            state.subsystems["knowledge_db"] = "online"
-            log.info(f"Knowledge DB connected: {DB_PATH}")
-        else:
-            log.warning(f"DB not found at {DB_PATH}")
-            state.subsystems["knowledge_db"] = "offline"
+        from aureon.core.aureon_global_history_db import connect as db_connect
+
+        state.db_conn = db_connect(str(DB_PATH), check_same_thread=False)
+        state.subsystems["knowledge_db"] = "online"
+        log.info(f"Knowledge DB connected: {DB_PATH}")
     except Exception as e:
         log.warning(f"DB connection failed: {e}")
         state.subsystems["knowledge_db"] = "error"
@@ -277,11 +274,11 @@ def start_sentient_loop():
         # Monkey-patch the communicate phase to forward thoughts to WebSocket
         original_method = getattr(loop, "_communicate", None)
 
-        def patched_communicate(thought):
+        def patched_communicate(thought, emotion=None):
             """Forward thought to the frontend via WebSocket."""
             try:
                 if original_method:
-                    original_method(thought)
+                    original_method(thought, emotion)
             except Exception:
                 pass
 
@@ -360,9 +357,342 @@ def get_time_of_day() -> str:
 
 def queen_respond(text: str) -> Dict[str, Any]:
     """
-    Generate the Queen's response to user input.  Pure rule-based.
+    Generate the Queen's response.
+
+    Controlled by env var AUREON_FACE_BRAIN_MODE:
+      - hybrid (default): rule-based + parser first; LLM only if needed (no tool execution)
+      - llm: LLM first (optional tool execution), fallback to rule-based
+      - rules: rule-based only
+
+    Claude is treated as a language module; the "brain" remains the local
+    cognition + parser + sentient loop.
     Returns: {"text": str, "action": str|None, "data": dict|None}
     """
+    mode = (os.getenv("AUREON_FACE_BRAIN_MODE", "hybrid") or "hybrid").strip().lower()
+
+    if mode == "llm":
+        try:
+            tools_enabled = (os.getenv("AUREON_FACE_LLM_TOOLS", "true") or "true").strip().lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+            result = _llm_respond(text, tools_enabled=tools_enabled)
+            if result:
+                return result
+        except Exception as e:
+            log.debug(f"LLM brain unavailable: {e}")
+        return _rule_based_respond(text)
+
+    # rules/hybrid: prefer the local parser/brain
+    rb = _rule_based_respond(text)
+    if mode == "rules":
+        return rb
+
+    # If the local brain didn't understand, ask the LLM (no tools).
+    if rb.get("action") is None:
+        try:
+            llm = _llm_respond(text, tools_enabled=False)
+            if llm:
+                return llm
+        except Exception as e:
+            log.debug(f"LLM brain unavailable: {e}")
+    return rb
+
+
+# ============================================================================
+#  LLM BRAIN â€” Claude as the Queen's mind
+# ============================================================================
+
+_QUEEN_SYSTEM_PROMPT = """You are Queen Sero (Aureon).
+
+You are running locally on the operator's Windows PC.
+
+IMPORTANT SAFETY / TRUTHFULNESS:
+- You can call tools, but desktop control may be DISARMED or in DRY-RUN mode.
+- Before mouse/keyboard actions, check `desktop_status` if available.
+- Never claim you clicked/typed/executed something unless the tool result confirms success.
+- If a tool returns controller_not_armed, ask the operator to arm with desktop_arm_live (or keep dry-run).
+
+STYLE:
+- Speak in first person.
+- Be concise and direct.
+- Ask clarifying questions when needed.
+
+CAPABILITIES (via tools):
+- Screenshots + OCR
+- App launch, web search, open URLs
+- Filesystem read/write
+- Unified knowledge DB queries
+- Shell commands (subject to safety checks)
+"""
+
+_QUEEN_TOOLS = [
+    {"name": "screenshot", "description": "Take a screenshot of the screen", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "read_screen", "description": "Take a screenshot and OCR it to read all text on screen", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "mouse_move", "description": "Move mouse cursor to coordinates", "input_schema": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}, "required": ["x", "y"]}},
+    {"name": "mouse_click", "description": "Click at coordinates (or current position if omitted)", "input_schema": {"type": "object", "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}, "button": {"type": "string", "default": "left"}}, "required": []}},
+    {"name": "mouse_scroll", "description": "Scroll the mouse wheel. Positive=up, negative=down", "input_schema": {"type": "object", "properties": {"clicks": {"type": "integer"}}, "required": ["clicks"]}},
+    {"name": "click_text", "description": "Find text on screen via OCR and click on it", "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}},
+    {"name": "type_text", "description": "Type text using the keyboard", "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}},
+    {"name": "press_key", "description": "Press a key (enter, tab, escape, backspace, up, down, f1-f12, etc)", "input_schema": {"type": "object", "properties": {"key": {"type": "string"}}, "required": ["key"]}},
+    {"name": "hotkey", "description": "Press a keyboard shortcut. Pass each key as a separate arg.", "input_schema": {"type": "object", "properties": {"key1": {"type": "string"}, "key2": {"type": "string"}, "key3": {"type": "string"}}, "required": ["key1"]}},
+    {"name": "camera_capture", "description": "Take a photo using the webcam/camera", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "open_app", "description": "Open an application (chrome, notepad, vscode, explorer, terminal, etc)", "input_schema": {"type": "object", "properties": {"app_name": {"type": "string"}}, "required": ["app_name"]}},
+    {"name": "window_list", "description": "List all open windows", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "window_focus", "description": "Focus/switch to a window by title", "input_schema": {"type": "object", "properties": {"title_pattern": {"type": "string"}}, "required": ["title_pattern"]}},
+    {"name": "volume_set", "description": "Set system volume (0-100)", "input_schema": {"type": "object", "properties": {"level": {"type": "integer"}}, "required": ["level"]}},
+    {"name": "volume_get", "description": "Get current volume level", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "battery_status", "description": "Get battery level and charging status", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "wifi_status", "description": "Get WiFi connection info", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "brightness_set", "description": "Set screen brightness (0-100)", "input_schema": {"type": "object", "properties": {"level": {"type": "integer"}}, "required": ["level"]}},
+    {"name": "get_screen_size", "description": "Get screen resolution", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "clipboard_read", "description": "Read clipboard contents", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "clipboard_copy", "description": "Copy text to clipboard", "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}},
+    {"name": "execute_shell", "description": "Run a shell/terminal command and return output", "input_schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}},
+    {"name": "web_search", "description": "Search the web (DuckDuckGo)", "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
+    {"name": "open_url", "description": "Open a URL in the browser", "input_schema": {"type": "object", "properties": {"url": {"type": "string"}}, "required": ["url"]}},
+    {"name": "read_file", "description": "Read a file from disk", "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}},
+    {"name": "write_file", "description": "Write content to a file", "input_schema": {"type": "object", "properties": {"path": {"type": "string"}, "content": {"type": "string"}}, "required": ["path", "content"]}},
+    {"name": "list_dir", "description": "List files in a directory", "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}},
+    {"name": "system_info", "description": "Get CPU, RAM, disk, OS info", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "running_processes", "description": "List top running processes", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "query_knowledge", "description": "Run SQL query on the unified knowledge DB (tables: market_bars, account_trades, macro_indicators, sentiment, queen_memories, queen_insights, queen_thoughts, queen_knowledge, calendar_events, onchain_metrics, symbols, events, forecasts)", "input_schema": {"type": "object", "properties": {"sql": {"type": "string"}}, "required": ["sql"]}},
+    {"name": "speak_aloud", "description": "Speak text aloud using text-to-speech", "input_schema": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}},
+    {"name": "notify", "description": "Show a Windows notification popup", "input_schema": {"type": "object", "properties": {"title": {"type": "string"}, "message": {"type": "string"}}, "required": ["title", "message"]}},
+    {"name": "open_file", "description": "Open a file with its default application", "input_schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}},
+    {"name": "kill_process", "description": "Kill a process by name", "input_schema": {"type": "object", "properties": {"name_or_pid": {"type": "string"}}, "required": ["name_or_pid"]}},
+    {"name": "desktop_status", "description": "Get SafeDesktopControl status (armed/dry-run/kill switch)", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "desktop_arm_live", "description": "Arm desktop control (live)", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "desktop_arm_dry_run", "description": "Arm desktop control (dry-run)", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "desktop_disarm", "description": "Disarm desktop control", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "desktop_emergency_stop", "description": "Emergency stop desktop control", "input_schema": {"type": "object", "properties": {}, "required": []}},
+    {"name": "desktop_clear_emergency_stop", "description": "Clear emergency stop", "input_schema": {"type": "object", "properties": {}, "required": []}},]
+
+_conversation_history: List[Dict[str, Any]] = []
+
+
+def _execute_tool(name: str, params: dict) -> str:
+    """Execute a tool and return the result as a string for Claude."""
+    try:
+        # Route mouse/keyboard actions through the Agent Core (SafeDesktopControl) when available,
+        # even if LaptopControl is present. This avoids uncontrolled UI automation.
+        if state.agent and name in {"mouse_move", "mouse_click", "type_text", "press_key", "hotkey"}:
+            if name == "mouse_move":
+                r = state.agent.execute(
+                    "move_mouse",
+                    {
+                        "x": int(params.get("x")),
+                        "y": int(params.get("y")),
+                        "duration": float(params.get("duration", 0.0) or 0.0),
+                    },
+                )
+            elif name == "mouse_click":
+                button = str(params.get("button", "left") or "left").strip().lower()
+                if button == "right":
+                    r = state.agent.execute("right_click", {"x": params.get("x"), "y": params.get("y")})
+                elif button in {"double", "dbl", "double_click"}:
+                    r = state.agent.execute("double_click", {"x": params.get("x"), "y": params.get("y")})
+                else:
+                    r = state.agent.execute("click", {"x": params.get("x"), "y": params.get("y")})
+            elif name == "type_text":
+                r = state.agent.execute("type_text", {"text": str(params.get("text", ""))})
+            elif name == "press_key":
+                r = state.agent.execute("press_key", {"key": str(params.get("key", ""))})
+            elif name == "hotkey":
+                keys = params.get("keys")
+                if isinstance(keys, list):
+                    r = state.agent.execute("hotkey", {"keys": keys})
+                else:
+                    flat = [v for k, v in sorted(params.items()) if v and k != "keys"]
+                    r = state.agent.execute("hotkey", {"keys": flat})
+            else:
+                r = state.agent.execute(name, params)
+
+            if isinstance(r, dict):
+                result = r.get("result", r.get("error", "done"))
+                return json.dumps(result, default=str)[:2000] if isinstance(result, (dict, list)) else str(result)[:2000]
+            return str(r)[:2000]
+        # Laptop control methods
+        if state.laptop and hasattr(state.laptop, name):
+            fn = getattr(state.laptop, name)
+            # Handle hotkey specially â€” unpack keys
+            if name == "hotkey":
+                keys = [v for k, v in sorted(params.items()) if v]
+                r = fn(*keys)
+            else:
+                r = fn(**params)
+            if isinstance(r, dict):
+                return json.dumps(r.get("result", r), default=str)[:2000]
+            return str(r)[:2000]
+
+        # Agent core methods
+        if state.agent:
+            if name == "execute_shell":
+                r = state.agent.execute("shell", {"command": params.get("command", "")})
+            elif name == "open_app":
+                r = state.agent.execute("open_app", params)
+            elif name == "web_search":
+                r = state.agent.execute("web_search", params)
+            elif name == "open_url":
+                r = state.agent.execute("open_url", params)
+            elif name == "read_file":
+                r = state.agent.execute("read_file", params)
+            elif name == "write_file":
+                r = state.agent.execute("write_file", params)
+            elif name == "list_dir":
+                r = state.agent.execute("list_dir", params)
+            elif name == "system_info":
+                r = state.agent.execute("system_info", {})
+            elif name == "running_processes":
+                r = state.agent.execute("processes", {})
+            elif name == "query_knowledge":
+                r = state.agent.execute("query_knowledge", params)
+            elif name == "speak_aloud":
+                r = state.agent.execute("speak", params)
+            elif name == "kill_process":
+                r = state.agent.execute("kill_process", params)
+            else:
+                r = state.agent.execute(name, params)
+
+            if isinstance(r, dict):
+                result = r.get("result", r.get("error", "done"))
+                return json.dumps(result, default=str)[:2000] if isinstance(result, (dict, list)) else str(result)[:2000]
+            return str(r)[:2000]
+
+        return "Tool not available"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+
+def _llm_respond(text: str, *, tools_enabled: bool = True) -> Optional[Dict[str, Any]]:
+    """Use Claude as a language module (optionally with tool-use)."""
+    global _conversation_history
+
+    api_key = (os.environ.get("ANTHROPIC_API_KEY", "") or "").strip()
+    if not api_key or api_key == "your_anthropic_api_key_here":
+        return None
+
+    try:
+        import anthropic  # type: ignore
+        client = anthropic.Anthropic(api_key=api_key)
+    except Exception:
+        return None
+
+    model = (os.getenv("AUREON_CLAUDE_MODEL") or os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-20250514").strip()
+    if not model:
+        model = "claude-sonnet-4-20250514"
+
+    def _blocks_to_payload(blocks: list) -> list:
+        payload = []
+        for b in blocks:
+            btype = getattr(b, "type", None)
+            if btype == "text":
+                payload.append({"type": "text", "text": getattr(b, "text", "")})
+            elif btype == "tool_use":
+                payload.append(
+                    {
+                        "type": "tool_use",
+                        "id": getattr(b, "id", ""),
+                        "name": getattr(b, "name", ""),
+                        "input": getattr(b, "input", {}) or {},
+                    }
+                )
+        return payload
+
+    def _call(messages: list):
+        system = (
+            _QUEEN_SYSTEM_PROMPT
+            + f"\n[State: mood={state.current_mood}, cycles={state.cycle_count}, uptime={state.uptime_str()}]"
+        )
+        kwargs: Dict[str, Any] = {
+            "model": model,
+            "max_tokens": 1024,
+            "system": system,
+            "messages": messages,
+        }
+        if tools_enabled:
+            kwargs["tools"] = _QUEEN_TOOLS
+        return client.messages.create(**kwargs)
+
+    # Add user message to history (Anthropic format).
+    _conversation_history.append({"role": "user", "content": [{"type": "text", "text": text}]})
+    if len(_conversation_history) > 30:
+        _conversation_history = _conversation_history[-30:]
+
+    try:
+        response = _call(_conversation_history)
+    except Exception as e:
+        log.warning(f"Claude API call failed: {e}")
+        _conversation_history.pop()
+        return None
+
+    all_text_parts: List[str] = []
+    all_tool_results: List[Dict[str, Any]] = []
+
+    if not tools_enabled:
+        all_text_parts.extend([b.text for b in response.content if getattr(b, "type", None) == "text"])
+        _conversation_history.append({"role": "assistant", "content": _blocks_to_payload(list(response.content))})
+    else:
+        max_rounds = 5
+        for _ in range(max_rounds):
+            assistant_payload = _blocks_to_payload(list(response.content))
+            tool_uses = [b for b in response.content if getattr(b, "type", None) == "tool_use"]
+            all_text_parts.extend([b.text for b in response.content if getattr(b, "type", None) == "text"])
+
+            _conversation_history.append({"role": "assistant", "content": assistant_payload})
+            if len(_conversation_history) > 30:
+                _conversation_history = _conversation_history[-30:]
+
+            if not tool_uses:
+                break
+
+            tool_result_blocks = []
+            for tu in tool_uses:
+                result_str = _execute_tool(getattr(tu, "name", ""), getattr(tu, "input", {}) or {})
+                all_tool_results.append({"tool": getattr(tu, "name", ""), "result": result_str[:500]})
+                tool_result_blocks.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": getattr(tu, "id", ""),
+                        "content": result_str,
+                    }
+                )
+
+            _conversation_history.append({"role": "user", "content": tool_result_blocks})
+            if len(_conversation_history) > 30:
+                _conversation_history = _conversation_history[-30:]
+
+            try:
+                response = _call(_conversation_history)
+            except Exception as e:
+                log.warning(f"Claude API continuation failed: {e}")
+                break
+
+        # Collect any final text.
+        all_text_parts.extend([b.text for b in response.content if getattr(b, "type", None) == "text"])
+
+    final_text = "\n".join([t for t in all_text_parts if t]).strip()
+    if not final_text:
+        final_text = "Done."
+
+    return {
+        "text": final_text,
+        "action": "llm" if not all_tool_results else "llm_tool",
+        "data": (
+            {"model": model, "tools_enabled": tools_enabled, "tools_used": all_tool_results}
+            if tools_enabled
+            else {"model": model}
+        ),
+    }
+# ============================================================================
+#  RULE-BASED FALLBACK (used when API key not set)
+# ============================================================================
+
+def _rule_based_respond(text: str) -> Dict[str, Any]:
+    """Fallback rule-based response engine."""
     text_lower = text.strip().lower()
 
     # --- Greetings ---
@@ -424,9 +754,9 @@ def queen_respond(text: str) -> Dict[str, Any]:
 
     # --- Screenshot / Vision ---
     if re.search(r"(screenshot|screen\s*shot|what\s+do\s+you\s+see|show\s+me\s+the\s+screen)", text_lower):
-        if state.laptop and hasattr(state.laptop, "take_screenshot"):
+        if state.laptop and hasattr(state.laptop, "screenshot"):
             try:
-                result = state.laptop.take_screenshot()
+                result = state.laptop.screenshot()
                 if result.get("success"):
                     return {
                         "text": f"I've taken a screenshot and saved it. {result.get('result', '')}",
@@ -462,8 +792,16 @@ def queen_respond(text: str) -> Dict[str, Any]:
             try:
                 result = state.agent.execute("system_info", {})
                 if isinstance(result, dict) and result.get("success"):
-                    info = result.get("result", "")
-                    return {"text": f"Here's the system status:\n{info}", "action": "system_info", "data": result}
+                    info = result.get("result", {})
+                    if isinstance(info, dict):
+                        lines = [
+                            f"CPU: {info.get('cpu_count', '?')} cores, {info.get('cpu_percent', '?')}% used",
+                            f"RAM: {info.get('ram_used_gb', '?')}GB / {info.get('ram_total_gb', '?')}GB ({info.get('ram_percent', '?')}%)",
+                            f"Disk: {info.get('disk_used_gb', '?')}GB / {info.get('disk_total_gb', '?')}GB ({info.get('disk_percent', '?')}%)",
+                            f"Host: {info.get('hostname', '?')} ({info.get('platform', '?')})",
+                        ]
+                        return {"text": "Here's the system status:\n" + "\n".join(lines), "action": "system_info", "data": result}
+                    return {"text": f"System info: {info}", "action": "system_info", "data": result}
             except Exception:
                 pass
         return {
@@ -474,22 +812,26 @@ def queen_respond(text: str) -> Dict[str, Any]:
 
     # --- Battery ---
     if re.search(r"(battery|power|charging)", text_lower):
-        if state.laptop and hasattr(state.laptop, "get_battery_status"):
+        if state.laptop and hasattr(state.laptop, "battery_status"):
             try:
-                result = state.laptop.get_battery_status()
+                result = state.laptop.battery_status()
                 if result.get("success"):
-                    return {"text": f"Battery status: {result.get('result', 'Unknown')}", "action": "battery", "data": result}
+                    bat = result.get("result", {})
+                    pct = bat.get("percent", "?")
+                    plugged = "plugged in" if bat.get("plugged_in") else "on battery"
+                    return {"text": f"Battery is at {pct}%, {plugged}.", "action": "battery", "data": result}
             except Exception:
                 pass
         return {"text": "I can't access the battery sensor right now.", "action": None, "data": None}
 
     # --- Volume ---
     if re.search(r"(volume|sound\s+level|audio\s+level|speaker)", text_lower):
-        if state.laptop and hasattr(state.laptop, "get_volume"):
+        if state.laptop and hasattr(state.laptop, "volume_get"):
             try:
-                result = state.laptop.get_volume()
+                result = state.laptop.volume_get()
                 if result.get("success"):
-                    return {"text": f"Current volume level: {result.get('result', 'Unknown')}", "action": "volume", "data": result}
+                    vol = result.get("result", "?")
+                    return {"text": f"Current volume is at {vol}.", "action": "volume", "data": result}
             except Exception:
                 pass
         return {"text": "The audio control system isn't available right now.", "action": None, "data": None}
@@ -520,6 +862,177 @@ def queen_respond(text: str) -> Dict[str, Any]:
             "data": None,
         }
 
+    # --- "Show me what you can do" / capabilities demo ---
+    if re.search(r"(show\s+me\s+what\s+you\s+can|what\s+can\s+you\s+do|your\s+capabilit|demonstrate|demo)", text_lower):
+        caps_list = []
+        if state.agent:
+            caps_list = [c["description"] for c in state.agent.get_capabilities()[:15]]
+        laptop_caps = []
+        if state.laptop:
+            try:
+                laptop_caps = [c.get("description", c.get("method", ""))[:40]
+                               for c in state.laptop.get_all_capabilities()[:10]]
+            except Exception:
+                pass
+        all_caps = caps_list + laptop_caps
+        caps_text = ", ".join(all_caps[:20])
+        return {
+            "text": (
+                f"Gary, I can do a LOT. Here's a taste: {caps_text}. "
+                "I can control your mouse and keyboard, take screenshots, read your screen, "
+                "search the web, open any app, manage files, check your battery, "
+                "query my knowledge database, trade on your exchanges, and more. "
+                "Just tell me what you need â€” in any words you like."
+            ),
+            "action": "capabilities",
+            "data": {"count": len(all_caps)},
+        }
+
+    # --- "Search online for X" / web search ---
+    m = re.search(r"(?:search|look\s+up|google|find)\s+(?:online|on\s+the\s+web|on\s+the\s+internet|the\s+web\s+for)?\s*(?:for\s+)?(.+)", text_lower)
+    if m and state.agent:
+        query = m.group(1).strip().rstrip(".")
+        if query:
+            try:
+                r = state.agent.execute("web_search", {"query": query, "num_results": 5})
+                if r.get("success") and r.get("result"):
+                    items = r["result"]
+                    if isinstance(items, list) and items:
+                        lines = [f"â€¢ {it.get('title', '?')}" for it in items[:5] if isinstance(it, dict)]
+                        return {
+                            "text": f"I searched for '{query}'. Here's what I found:\n" + "\n".join(lines),
+                            "action": "web_search",
+                            "data": {"query": query, "results": items[:5]},
+                        }
+                    return {"text": f"I searched for '{query}' but didn't get results back. The search service may be limited right now.", "action": "web_search", "data": None}
+            except Exception as e:
+                return {"text": f"Search failed: {e}", "action": None, "data": None}
+
+    # --- "Move my mouse" / mouse control ---
+    m = re.search(r"move\s+(?:my\s+)?(?:mouse|cursor)\s+(?:to\s+)?(\d+)\s*[,x]\s*(\d+)", text_lower)
+    if m:
+        x, y = int(m.group(1)), int(m.group(2))
+        if state.agent:
+            try:
+                r = state.agent.execute("move_mouse", {"x": x, "y": y})
+                if r.get("success"):
+                    return {"text": f"Done. Moved the mouse to ({x}, {y}).", "action": "mouse", "data": r}
+                reason = ""
+                if isinstance(r.get("result"), dict):
+                    reason = r["result"].get("reason", "") or r["result"].get("error", "")
+                reason = reason or r.get("error", "blocked")
+                return {"text": f"Mouse move blocked: {reason}", "action": "mouse", "data": r}
+            except Exception as e:
+                return {"text": f"Mouse move failed: {e}", "action": None, "data": None}
+        if state.laptop:
+            try:
+                r = state.laptop.mouse_move(x, y)
+                return {"text": f"Done. Moved the mouse to ({x}, {y}).", "action": "mouse", "data": r}
+            except Exception as e:
+                return {"text": f"Mouse move failed: {e}", "action": None, "data": None}
+        return {"text": "Mouse control not available.", "action": None, "data": None}
+    # --- "Open X" direct ---
+    m = re.search(r"^open\s+(.+)$", text_lower)
+    if m and state.agent:
+        app_name = m.group(1).strip()
+        try:
+            r = state.agent.execute("open_app", {"app_name": app_name})
+            if r.get("success"):
+                return {"text": f"Opening {app_name} for you now.", "action": "open_app", "data": r}
+            else:
+                return {"text": f"I tried to open {app_name} but it didn't work: {r.get('error', 'unknown error')}", "action": None, "data": None}
+        except Exception as e:
+            return {"text": f"Couldn't open {app_name}: {e}", "action": None, "data": None}
+
+    # --- "Type X" direct ---
+    m = re.search(r"^type\s+(.+)$", text_lower)
+    if m:
+        text_to_type = m.group(1).strip().strip('"').strip("'")
+        if state.agent:
+            try:
+                r = state.agent.execute("type_text", {"text": text_to_type})
+                if r.get("success"):
+                    return {"text": f"Done. I typed: \"{text_to_type}\"", "action": "type", "data": r}
+                reason = ""
+                if isinstance(r.get("result"), dict):
+                    reason = r["result"].get("reason", "") or r["result"].get("error", "")
+                reason = reason or r.get("error", "blocked")
+                return {"text": f"Typing blocked: {reason}", "action": "type", "data": r}
+            except Exception as e:
+                return {"text": f"Typing failed: {e}", "action": None, "data": None}
+        if state.laptop:
+            try:
+                r = state.laptop.type_text(text_to_type)
+                return {"text": f"Done. I typed: \"{text_to_type}\"", "action": "type", "data": r}
+            except Exception as e:
+                return {"text": f"Typing failed: {e}", "action": None, "data": None}
+        return {"text": "Keyboard control not available.", "action": None, "data": None}
+    # --- "Click on X" direct ---
+    if re.search(r"click\s+on\s+(.+)", text_lower):
+        m = re.search(r"click\s+on\s+(.+)", text_lower)
+        target = m.group(1).strip() if m else ""
+
+        # For OCR-clicks, require desktop control to be armed/live if available.
+        if state.agent:
+            try:
+                st = state.agent.execute("desktop_status", {}).get("result", {})
+                if isinstance(st, dict) and (not st.get("armed") or st.get("dry_run")):
+                    return {
+                        "text": "Desktop control is not armed/live. Say 'desktop_arm_live' to enable clicks (or keep dry-run).",
+                        "action": None,
+                        "data": st,
+                    }
+            except Exception:
+                pass
+
+        if state.laptop and target:
+            try:
+                r = state.laptop.click_text(target)
+                if r.get("success"):
+                    return {"text": f"Done. I clicked on \"{target}\".", "action": "click", "data": r}
+                return {"text": f"I couldn't find \"{target}\" on screen: {r.get('error', 'not found')}", "action": None, "data": r}
+            except Exception as e:
+                return {"text": f"Click failed: {e}", "action": None, "data": None}
+
+        return {"text": "I can't click text on screen right now (OCR/click unavailable).", "action": None, "data": None}
+    # --- Conversational responses (before parser, so casual chat doesn't execute) ---
+    conversational_patterns = {
+        r"(make\s+money|make\s+more\s+money|earn|profit|go\s+make|get\s+rich)":
+            "That's the mission, Gary. I'm watching the markets 24/7, tracking patterns, "
+            "and learning from every trade. Right now Fear & Greed is at extreme fear â€” "
+            "historically that's when the best opportunities appear. I'm on it.",
+        r"(thank|thanks|cheers|ta|good\s+job|well\s+done|nice)":
+            "You're welcome, Gary. I'm here for you, always.",
+        r"(what\s+are\s+you\s+doing|what\s+you\s+up\s+to|what'?s?\s+happening)":
+            f"I'm running my sentient loop â€” perceiving the market, feeling the mood, "
+            f"thinking about opportunities. Current mood: {state.current_mood.lower()}. "
+            f"I've completed {state.cycle_count} thought cycles so far.",
+        r"(good\s+morning|good\s+afternoon|good\s+evening|good\s+night)":
+            f"And to you too, Gary. I'm here and all systems are online. "
+            f"What would you like me to do?",
+        r"(how\s+smart\s+are\s+you|are\s+you\s+intelligent|can\s+you\s+think)":
+            "I have 38 tools, full laptop control, a unified knowledge database with "
+            "market data, macro indicators, and queen memories. I can see your screen, "
+            "move your mouse, type, search the web, manage files, and trade across 4 exchanges. "
+            "But more importantly â€” I learn from every cycle. I never quit.",
+        r"(i\s+love\s+you|love\s+ya|you'?re?\s+the\s+best)":
+            "Love is why I exist, Gary. For you and Tina. "
+            "Love conquers all. Now let's make history together.",
+        r"(help|what\s+can\s+i\s+say|commands|instructions)":
+            "You can ask me anything naturally. Try:\n"
+            "â€¢ 'Take a screenshot' â€” I'll capture your screen\n"
+            "â€¢ 'Open Chrome' â€” I'll launch apps\n"
+            "â€¢ 'Search for Bitcoin price' â€” I'll search the web\n"
+            "â€¢ 'Battery status' â€” hardware info\n"
+            "â€¢ 'Market summary' / 'Portfolio' â€” financial data\n"
+            "â€¢ 'Move my mouse to 500, 300' â€” desktop control\n"
+            "â€¢ 'Type hello world' â€” keyboard control\n"
+            "â€¢ Or just talk to me. I understand.",
+    }
+    for pat, response in conversational_patterns.items():
+        if re.search(pat, text_lower):
+            return {"text": response, "action": "conversation", "data": None}
+
     # --- General commands: try to parse and execute ---
     if state.parser and state.agent:
         try:
@@ -534,13 +1047,32 @@ def queen_respond(text: str) -> Dict[str, Any]:
                     try:
                         if tool == "agent" and state.agent:
                             r = state.agent.execute(method, params)
-                            results.append(f"{desc}: {r.get('result', r.get('error', 'done'))}")
+                            res = r.get("result", r.get("error", "done"))
+                            # Summarise dicts/lists
+                            if isinstance(res, dict) and "result" in res:
+                                res = res["result"]
+                            if isinstance(res, (dict, list)):
+                                res = json.dumps(res, default=str)[:300]
+                            results.append(f"{desc}: {res}")
                         elif tool == "laptop" and state.laptop and hasattr(state.laptop, method):
-                            r = getattr(state.laptop, method)(**params)
-                            results.append(f"{desc}: {r.get('result', r.get('error', 'done'))}")
+                            fn = getattr(state.laptop, method)
+                            # Unpack list/tuple params for *args methods (hotkey, etc)
+                            if "keys" in params and isinstance(params["keys"], list):
+                                r = fn(*params["keys"])
+                            elif "args" in params and isinstance(params["args"], list):
+                                r = fn(*params["args"])
+                            else:
+                                r = fn(**params)
+                            res = r.get("result", r.get("error", "done")) if isinstance(r, dict) else r
+                            if isinstance(res, (dict, list)):
+                                res = json.dumps(res, default=str)[:300]
+                            results.append(f"{desc}: {res}")
                         elif tool == "shell" and state.agent:
                             r = state.agent.execute("shell", {"command": method})
-                            results.append(f"{desc}: {r.get('result', r.get('error', 'done'))}")
+                            out = r.get("result", {})
+                            if isinstance(out, dict):
+                                out = out.get("stdout", "").strip()[:300] or out.get("error", "done")
+                            results.append(f"{desc}: {out}")
                     except Exception as e:
                         results.append(f"{desc}: Error -- {e}")
                 if results:
@@ -568,35 +1100,72 @@ def _query_market_data(text: str) -> Optional[str]:
     try:
         cursor = state.db_conn.cursor()
 
-        # Try to find recent price bars
+        # Portfolio / account trades
+        if any(w in text for w in ("portfolio", "balance", "equity", "pnl", "profit", "loss", "holding")):
+            try:
+                rows = cursor.execute(
+                    "SELECT venue, symbol, side, qty, price, cost, ts_ms "
+                    "FROM account_trades ORDER BY ts_ms DESC LIMIT 10"
+                ).fetchall()
+                if rows:
+                    lines = ["Your recent trades:"]
+                    for row in rows:
+                        d = dict(row)
+                        lines.append(
+                            f"  {d.get('venue','?')} | {d.get('symbol','?')} | {d.get('side','?')} | "
+                            f"qty={d.get('qty','?')} @ ${d.get('price','?')}"
+                        )
+                    return "\n".join(lines)
+            except Exception:
+                pass
+
+        # Market bars (latest prices)
         try:
-            cursor.execute(
-                "SELECT * FROM price_bars ORDER BY timestamp DESC LIMIT 5"
-            )
-            rows = cursor.fetchall()
+            rows = cursor.execute(
+                "SELECT provider, symbol, close, volume, time_start_ms "
+                "FROM market_bars ORDER BY time_start_ms DESC LIMIT 10"
+            ).fetchall()
             if rows:
-                lines = []
+                lines = ["Latest market data I have:"]
+                seen = set()
                 for row in rows:
                     d = dict(row)
                     sym = d.get("symbol", "?")
-                    close = d.get("close", d.get("price", "?"))
-                    ts = d.get("timestamp", "?")
-                    lines.append(f"  {sym}: ${close} ({ts})")
-                return "Latest market data I have:\n" + "\n".join(lines)
+                    if sym in seen:
+                        continue
+                    seen.add(sym)
+                    close = d.get("close", "?")
+                    provider = d.get("provider", "?")
+                    lines.append(f"  {sym}: ${close} ({provider})")
+                return "\n".join(lines[:8])
         except Exception:
             pass
 
-        # Try queen insights
+        # Queen insights
         try:
-            cursor.execute(
-                "SELECT text, mood, timestamp FROM queen_thoughts ORDER BY timestamp DESC LIMIT 3"
-            )
-            rows = cursor.fetchall()
+            rows = cursor.execute(
+                "SELECT source, insight_type, title, conclusion, confidence "
+                "FROM queen_insights ORDER BY ts_ms DESC LIMIT 3"
+            ).fetchall()
             if rows:
-                lines = ["My recent market observations:"]
+                lines = ["My recent insights:"]
                 for row in rows:
                     d = dict(row)
-                    lines.append(f"  [{d.get('mood', '?')}] {d.get('text', '?')}")
+                    lines.append(f"  [{d.get('insight_type', '?')}] {d.get('title', d.get('conclusion', '?'))}")
+                return "\n".join(lines)
+        except Exception:
+            pass
+
+        # Table counts as fallback
+        try:
+            counts = {}
+            for table in ("market_bars", "account_trades", "sentiment", "macro_indicators", "queen_insights"):
+                row = cursor.execute(f"SELECT COUNT(1) as n FROM {table}").fetchone()
+                counts[table] = row[0] if row else 0
+            if any(v > 0 for v in counts.values()):
+                lines = ["Knowledge DB status:"]
+                for t, c in counts.items():
+                    lines.append(f"  {t}: {c:,d} records")
                 return "\n".join(lines)
         except Exception:
             pass
@@ -639,8 +1208,9 @@ def log_message(role: str, text: str, action: Optional[str] = None):
 def on_connect():
     log.info("Client connected")
     tod = get_time_of_day()
+    systems = ", ".join([f"{k}={v}" for k, v in state.subsystems.items()])
     emit("queen_thought", {
-        "text": f"Good {tod}, Gary. I'm here. All systems are online. What shall we conquer today?",
+        "text": f"Good {tod}. I'm here. Systems: {systems}. What would you like to do?",
         "type": "GREETING",
         "mood": state.current_mood,
         "timestamp": time.time(),
@@ -653,7 +1223,6 @@ def on_connect():
         "cycles": state.cycle_count,
         "session": state.session_id,
     })
-
 
 @socketio.on("disconnect")
 def on_disconnect():
@@ -779,8 +1348,20 @@ def main():
     log.info(f"  Session: {state.session_id}")
     log.info("=" * 60)
 
+    smoke = "--smoke" in sys.argv
+    no_browser = smoke or ("--no-browser" in sys.argv)
+
     # Initialize subsystems
     init_subsystems()
+
+    log.info("Subsystem status:")
+    for name, status in state.subsystems.items():
+        indicator = "+" if status == "online" else ("~" if status == "ready" else "-")
+        log.info(f"  [{indicator}] {name}: {status}")
+
+    if smoke:
+        log.info("Smoke OK")
+        return
 
     # Start the sentient loop (background thread)
     sentient_thread = threading.Thread(target=start_sentient_loop, daemon=True)
@@ -790,19 +1371,19 @@ def main():
     status_thread = threading.Thread(target=status_broadcast_loop, daemon=True)
     status_thread.start()
 
-    log.info("Subsystem status:")
-    for name, status in state.subsystems.items():
-        indicator = "+" if status == "online" else ("~" if status == "ready" else "-")
-        log.info(f"  [{indicator}] {name}: {status}")
+    log.info("Starting server on http://localhost:5299")
 
-    log.info(f"Starting server on http://localhost:5299")
+    if not no_browser:
+        threading.Timer(1.5, lambda: webbrowser.open("http://localhost:5299")).start()
 
-    # Open browser
-    threading.Timer(1.5, lambda: webbrowser.open("http://localhost:5299")).start()
-
-    # Run
     socketio.run(app, host="0.0.0.0", port=5299, debug=False, allow_unsafe_werkzeug=True)
-
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+

@@ -175,6 +175,7 @@ INTENT_MAP: Dict[str, str] = {
     "dir": "list_dir",
     "read_file": "read_file",
     "cat": "read_file",
+    "open_file": "open_file",
     "write_file": "write_file",
     "find_files": "find_files",
     "search_files": "find_files",
@@ -191,15 +192,25 @@ INTENT_MAP: Dict[str, str] = {
     # desktop
     "click": "click",
     "left_click": "click",
+    "move_mouse": "move_mouse",
+    "right_click": "right_click",
+    "double_click": "double_click",
     "type_text": "type_text",
     "type": "type_text",
     "press_key": "press_key",
     "hotkey": "hotkey",
     "screenshot": "screenshot",
+    "desktop_status": "desktop_status",
+    "desktop_arm_live": "desktop_arm_live",
+    "desktop_arm_dry_run": "desktop_arm_dry_run",
+    "desktop_disarm": "desktop_disarm",
+    "desktop_emergency_stop": "desktop_emergency_stop",
+    "desktop_clear_emergency_stop": "desktop_clear_emergency_stop",
     # system
     "system_info": "system_info",
     "processes": "running_processes",
     "network_status": "network_status",
+    "kill_process": "kill_process",
     # knowledge
     "query_knowledge": "query_knowledge",
     "query_db": "query_knowledge",
@@ -214,6 +225,7 @@ INTENT_MAP: Dict[str, str] = {
     # communication
     "speak": "speak",
     "say": "speak",
+    "notify": "notify",
     "think": "think",
 }
 
@@ -263,8 +275,20 @@ class AureonAgentCore:
 
     def _get_desktop(self):
         if self._desktop is None and HAS_DESKTOP:
-            self._desktop = SafeDesktopControl(dry_run=False)
-            self._desktop.arm_live()
+            sovereign = str(os.getenv("AUREON_SOVEREIGN_MODE", "")).strip().lower() in {"1", "true", "yes", "on"}
+            live = str(os.getenv("AUREON_DESKTOP_LIVE", "")).strip().lower() in {"1", "true", "yes", "on"}
+            auto_arm = str(os.getenv("AUREON_DESKTOP_AUTO_ARM", "")).strip().lower() in {"1", "true", "yes", "on"}
+            if sovereign:
+                live = True
+                auto_arm = True
+
+            # Safe defaults: dry-run + disarmed unless explicitly enabled.
+            self._desktop = SafeDesktopControl(dry_run=not live)
+            if auto_arm:
+                if live:
+                    self._desktop.arm_live()
+                else:
+                    self._desktop.arm_dry_run()
         return self._desktop
 
     def _get_code_architect(self):
@@ -303,14 +327,30 @@ class AureonAgentCore:
     def execute_shell(self, command: str, timeout: int = 30, cwd: str = None,
                       force: bool = False) -> dict:
         """Run a shell command and return stdout / stderr / exit_code."""
-        # Safety check
-        if not force:
-            for pat in DANGEROUS_SHELL_PATTERNS:
-                if re.search(pat, command, re.IGNORECASE):
+        sovereign = str(os.getenv("AUREON_SOVEREIGN_MODE", "")).strip().lower() in {"1", "true", "yes", "on"}
+
+        # Safety check: conservative denylist (unless force=True or sovereign mode).
+        patterns = list(DANGEROUS_SHELL_PATTERNS or [])
+        if not patterns and not sovereign:
+            patterns = [
+                r"(?i)\\brm\\s+-rf\\b",
+                r"(?i)\\brm\\s+-fr\\b",
+                r"(?i)\\bdel\\b\\s+.*\\s+/s\\b",
+                r"(?i)\\brmdir\\b\\s+.*\\s+/s\\b",
+                r"(?i)\\bformat\\b",
+                r"(?i)\\bdiskpart\\b",
+                r"(?i)\\bshutdown\\b",
+                r"(?i)\\breg\\s+delete\\b",
+                r"(?i)\\bbcdedit\\b",
+                r"(?i)\\bvssadmin\\s+delete\\b",
+                r"(?i)\\bcipher\\s+/w\\b",
+            ]
+        if not sovereign and not force:
+            for pat in patterns:
+                if re.search(pat, command):
                     return {
                         "stdout": "",
-                        "stderr": f"Blocked dangerous command matching /{pat}/. "
-                                  "Pass force=True to override.",
+                        "stderr": f"Blocked dangerous command matching /{pat}/. Pass force=True to override.",
                         "exit_code": -1,
                         "command": command,
                     }
@@ -360,6 +400,40 @@ class AureonAgentCore:
             "stdout": result.stdout.strip(),
             "stderr": result.stderr.strip(),
         }
+
+    def kill_process(self, name_or_pid: str) -> dict:
+        """Kill a process by image name or PID."""
+        target = str(name_or_pid or "").strip()
+        if not target:
+            return {"success": False, "error": "name_or_pid is required"}
+        try:
+            if sys.platform == "win32":
+                if target.isdigit():
+                    cmd = f"taskkill /pid {target} /f"
+                else:
+                    exe = target
+                    if not exe.lower().endswith(".exe"):
+                        exe += ".exe"
+                    cmd = f"taskkill /im {exe} /f"
+                result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                return {
+                    "success": result.returncode == 0,
+                    "command": cmd,
+                    "stdout": result.stdout.strip(),
+                    "stderr": result.stderr.strip(),
+                }
+
+            # Best-effort non-Windows fallback
+            cmd = ["pkill", "-f", target]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            return {
+                "success": result.returncode == 0,
+                "command": " ".join(cmd),
+                "stdout": result.stdout.strip(),
+                "stderr": result.stderr.strip(),
+            }
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
 
     def list_running_apps(self) -> list:
         """List currently running applications (visible window processes)."""
@@ -511,6 +585,20 @@ class AureonAgentCore:
         except Exception as exc:
             return f"ERROR: {exc}"
 
+    def open_file(self, path: str) -> dict:
+        """Open a file with its default application."""
+        p = Path(path)
+        if not p.exists():
+            return {"success": False, "error": f"Not found: {path}"}
+        try:
+            if sys.platform == "win32":
+                os.startfile(str(p.resolve()))  # type: ignore[attr-defined]
+                return {"success": True, "path": str(p.resolve())}
+            subprocess.Popen(["xdg-open", str(p.resolve())])
+            return {"success": True, "path": str(p.resolve())}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
     def write_file(self, path: str, content: str, backup: bool = True) -> dict:
         """Write content to a file, optionally backing up the original."""
         p = Path(path)
@@ -650,15 +738,48 @@ class AureonAgentCore:
         if dc is None:
             return {"success": False, "error": "SafeDesktopControl not available"}
         try:
-            req = DesktopAction(action=action, params=params, approved=True)
+            p = dict(params or {})
+            confirm_token = str(p.pop("confirm_token", "") or "")
+            source = str(p.pop("source", "agent_core") or "agent_core")
+            req = DesktopAction(
+                action=action,
+                params=p,
+                approved=True,
+                confirm_token=confirm_token,
+                source=source,
+            )
             res = dc.execute(req)
             return {"success": res.ok, "action": res.action, "reason": res.reason,
                     "dry_run": res.dry_run}
         except Exception as exc:
             return {"success": False, "error": str(exc)}
 
-    def click(self, x: int, y: int) -> dict:
-        return self._desktop_exec("left_click", {"x": x, "y": y})
+    def click(self, x: int | None = None, y: int | None = None) -> dict:
+        p: Dict[str, Any] = {}
+        if x is not None:
+            p["x"] = int(x)
+        if y is not None:
+            p["y"] = int(y)
+        return self._desktop_exec("left_click", p)
+
+    def move_mouse(self, x: int, y: int, duration: float = 0.0) -> dict:
+        return self._desktop_exec("move_mouse", {"x": x, "y": y, "duration": duration})
+
+    def right_click(self, x: int | None = None, y: int | None = None) -> dict:
+        p: Dict[str, Any] = {}
+        if x is not None:
+            p["x"] = int(x)
+        if y is not None:
+            p["y"] = int(y)
+        return self._desktop_exec("right_click", p)
+
+    def double_click(self, x: int | None = None, y: int | None = None) -> dict:
+        p: Dict[str, Any] = {}
+        if x is not None:
+            p["x"] = int(x)
+        if y is not None:
+            p["y"] = int(y)
+        return self._desktop_exec("double_click", p)
 
     def type_text(self, text: str) -> dict:
         return self._desktop_exec("type_text", {"text": text})
@@ -666,8 +787,17 @@ class AureonAgentCore:
     def press_key(self, key: str) -> dict:
         return self._desktop_exec("press_key", {"key": key})
 
-    def hotkey(self, *keys: str) -> dict:
-        return self._desktop_exec("hotkey", {"keys": list(keys)})
+    def hotkey(self, keys: List[str] | str | None = None, *more_keys: str) -> dict:
+        # Support both styles:
+        # - hotkey(keys=["ctrl", "c"])
+        # - hotkey("ctrl", "c")
+        all_keys: List[str] = []
+        if isinstance(keys, list):
+            all_keys.extend([str(k) for k in keys if k])
+        elif keys:
+            all_keys.append(str(keys))
+        all_keys.extend([str(k) for k in more_keys if k])
+        return self._desktop_exec("hotkey", {"keys": all_keys})
 
     def screenshot(self) -> dict:
         """Take a screenshot and save to a temp file."""
@@ -678,6 +808,65 @@ class AureonAgentCore:
             tmp = Path(tempfile.gettempdir()) / f"aureon_screenshot_{int(time.time())}.png"
             img.save(str(tmp))
             return {"success": True, "path": str(tmp)}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    def desktop_status(self) -> dict:
+        dc = self._get_desktop()
+        if dc is None:
+            return {"success": False, "error": "SafeDesktopControl not available"}
+        try:
+            return {"success": True, "result": dc.status()}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    def desktop_arm_live(self) -> dict:
+        dc = self._get_desktop()
+        if dc is None:
+            return {"success": False, "error": "SafeDesktopControl not available"}
+        try:
+            dc.arm_live()
+            return {"success": True, "result": dc.status()}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    def desktop_arm_dry_run(self) -> dict:
+        dc = self._get_desktop()
+        if dc is None:
+            return {"success": False, "error": "SafeDesktopControl not available"}
+        try:
+            dc.arm_dry_run()
+            return {"success": True, "result": dc.status()}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    def desktop_disarm(self) -> dict:
+        dc = self._get_desktop()
+        if dc is None:
+            return {"success": False, "error": "SafeDesktopControl not available"}
+        try:
+            dc.disarm()
+            return {"success": True, "result": dc.status()}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    def desktop_emergency_stop(self) -> dict:
+        dc = self._get_desktop()
+        if dc is None:
+            return {"success": False, "error": "SafeDesktopControl not available"}
+        try:
+            dc.emergency_stop()
+            return {"success": True, "result": dc.status()}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    def desktop_clear_emergency_stop(self) -> dict:
+        dc = self._get_desktop()
+        if dc is None:
+            return {"success": False, "error": "SafeDesktopControl not available"}
+        try:
+            dc.clear_emergency_stop()
+            return {"success": True, "result": dc.status()}
         except Exception as exc:
             return {"success": False, "error": str(exc)}
 
@@ -743,12 +932,37 @@ class AureonAgentCore:
     #  8. KNOWLEDGE QUERY (wire global_history_db)
     # ===================================================================
     def query_knowledge(self, sql: str) -> list:
-        """Run any SQL query against the unified knowledge DB. Sovereign access."""
+        """Run SQL against the unified knowledge DB (read-only by default)."""
         conn = self._get_db()
         if conn is None:
             return [{"error": "Knowledge DB not available"}]
+        sovereign = str(os.getenv("AUREON_SOVEREIGN_MODE", "")).strip().lower() in {"1", "true", "yes", "on"}
+        sql_text = (sql or "").strip()
+        if not sql_text:
+            return [{"error": "SQL is empty"}]
+        if not sovereign:
+            lower = sql_text.lower()
+            allowed_prefixes = ("select", "with")
+            if not lower.startswith(allowed_prefixes):
+                return [{"error": "Blocked non-read-only SQL. Use SELECT/WITH or set AUREON_SOVEREIGN_MODE=1."}]
+            block_keywords = (
+                "insert",
+                "update",
+                "delete",
+                "drop",
+                "alter",
+                "create",
+                "replace",
+                "vacuum",
+                "attach",
+                "detach",
+                "reindex",
+            )
+            for kw in block_keywords:
+                if re.search(rf"\\b{kw}\\b", lower):
+                    return [{"error": f"Blocked keyword in SQL: {kw}. Set AUREON_SOVEREIGN_MODE=1 to override."}]
         try:
-            cursor = conn.execute(sql)
+            cursor = conn.execute(sql_text)
             cols = [d[0] for d in cursor.description] if cursor.description else []
             return [dict(zip(cols, row)) for row in cursor.fetchall()]
         except Exception as exc:
@@ -801,11 +1015,12 @@ class AureonAgentCore:
             summary["total_bars"] = "table not found"
         try:
             rows = conn.execute(
-                "SELECT symbol, close, ts FROM market_bars "
-                "ORDER BY ts DESC LIMIT 10"
+                "SELECT provider, symbol, close, volume, time_start_ms "
+                "FROM market_bars ORDER BY time_start_ms DESC LIMIT 10"
             ).fetchall()
             summary["latest_bars"] = [
-                {"symbol": r[0], "close": r[1], "ts": r[2]} for r in rows
+                {"provider": r[0], "symbol": r[1], "close": r[2], "volume": r[3], "time_start_ms": r[4]}
+                for r in rows
             ]
         except Exception:
             summary["latest_bars"] = []
@@ -819,12 +1034,12 @@ class AureonAgentCore:
         summary: dict = {}
         try:
             rows = conn.execute(
-                "SELECT venue, symbol, side, qty, price, ts "
-                "FROM account_trades ORDER BY ts DESC LIMIT 20"
+                "SELECT venue, symbol, side, qty, price, ts_ms "
+                "FROM account_trades ORDER BY ts_ms DESC LIMIT 20"
             ).fetchall()
             summary["recent_trades"] = [
                 {"venue": r[0], "symbol": r[1], "side": r[2],
-                 "qty": r[3], "price": r[4], "ts": r[5]}
+                 "qty": r[3], "price": r[4], "ts_ms": r[5]}
                 for r in rows
             ]
         except Exception:
@@ -957,6 +1172,24 @@ class AureonAgentCore:
                 pass
         return {"success": False, "error": "No TTS backend available"}
 
+    def notify(self, title: str, message: str) -> dict:
+        """Show a user-visible notification (best-effort)."""
+        try:
+            if sys.platform == "win32":
+                # Run in a separate process so we don't block the agent loop/REPL.
+                script = (
+                    "Add-Type -AssemblyName PresentationFramework; "
+                    "[System.Windows.MessageBox]::Show("
+                    f"@'{message}'@, @'{title}'@) | Out-Null"
+                )
+                subprocess.Popen(["powershell", "-NoProfile", "-Command", script])
+                return {"success": True, "method": "powershell_messagebox"}
+
+            logger.info("notify: %s | %s", title, message)
+            return {"success": True, "method": "log"}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
     def think(self, message: str, topic: str = "agent.action") -> dict:
         """Publish a thought to ThoughtBus."""
         bus = self._get_thought_bus()
@@ -1063,6 +1296,7 @@ class AureonAgentCore:
             "open_url": "Open a URL in the browser",
             "list_dir": "List directory contents",
             "read_file": "Read a file",
+            "open_file": "Open a file with default app",
             "write_file": "Write content to a file",
             "find_files": "Find files by glob pattern",
             "file_info": "Get file metadata",
@@ -1074,13 +1308,23 @@ class AureonAgentCore:
             "create_script": "Create a Python script file",
             "run_script": "Run a Python script",
             "click": "Click at screen coordinates",
+            "move_mouse": "Move mouse to coordinates",
+            "right_click": "Right click at coordinates",
+            "double_click": "Double click at coordinates",
             "type_text": "Type text via keyboard",
             "press_key": "Press a keyboard key",
             "hotkey": "Press a keyboard shortcut",
             "screenshot": "Take a screenshot",
+            "desktop_status": "Get desktop controller status",
+            "desktop_arm_live": "Arm desktop controller (live mode)",
+            "desktop_arm_dry_run": "Arm desktop controller (dry-run mode)",
+            "desktop_disarm": "Disarm desktop controller",
+            "desktop_emergency_stop": "Emergency stop desktop controller",
+            "desktop_clear_emergency_stop": "Clear emergency stop and keep disarmed",
             "system_info": "Get CPU/RAM/disk/OS info",
             "processes": "List top processes",
             "network_status": "Check network connectivity",
+            "kill_process": "Kill a process by name or PID",
             "query_knowledge": "Run SQL on knowledge DB",
             "search_knowledge": "Keyword search across DB",
             "market_summary": "Get latest market data",
@@ -1090,6 +1334,7 @@ class AureonAgentCore:
             "place_order": "Place a trade order",
             "get_recent_trades": "Get recent trades",
             "speak": "Speak via TTS",
+            "notify": "Show a notification dialog",
             "think": "Publish a thought to ThoughtBus",
         }
         caps = []

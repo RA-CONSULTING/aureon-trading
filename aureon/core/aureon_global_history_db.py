@@ -42,9 +42,9 @@ def resolve_paths(db_path: str | None = None) -> GlobalHistoryPaths:
 SCHEMA_VERSION = 5
 
 
-def connect(db_path: str | None = None) -> sqlite3.Connection:
+def connect(db_path: str | None = None, *, check_same_thread: bool = True) -> sqlite3.Connection:
     paths = resolve_paths(db_path)
-    conn = sqlite3.connect(str(paths.db_path))
+    conn = sqlite3.connect(str(paths.db_path), check_same_thread=check_same_thread)
     conn.row_factory = sqlite3.Row
 
     # Keep this resilient for long-running ingestion jobs.
