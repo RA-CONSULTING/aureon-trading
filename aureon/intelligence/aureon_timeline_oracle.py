@@ -112,7 +112,7 @@ def _safe_import_print(message: str) -> None:
 
 # 🧠 Miner Brain - Speculative Analysis
 try:
-    from aureon_miner_brain import MinerBrain, SpeculationEngine
+    from aureon.utils.aureon_miner_brain import MinerBrain, SpeculationEngine
     MINER_BRAIN_AVAILABLE = True
     _safe_import_print("🧠 Timeline Oracle: Miner Brain WIRED!")
 except ImportError:
@@ -122,7 +122,7 @@ except ImportError:
 
 # 🔭 Quantum Telescope - Geometric Probability Prism
 try:
-    from aureon_quantum_telescope import QuantumPrism, LightBeam, GeometricSolid
+    from aureon.simulation.aureon_quantum_telescope import QuantumPrism, LightBeam, GeometricSolid
     QUANTUM_TELESCOPE_AVAILABLE = True
     _safe_import_print("🔭 Timeline Oracle: Quantum Telescope WIRED!")
 except ImportError:
@@ -157,8 +157,8 @@ def _lazy_load_mycelium():
 
 # 🌊 Harmonic Wave Fusion - 7-day Seed Validation
 try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
-    from aureon_harmonic_seed import GlobalHarmonicState, SymbolWaveState, SEED_DAYS
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_seed import GlobalHarmonicState, SymbolWaveState, SEED_DAYS
     HARMONIC_AVAILABLE = True
     _safe_import_print("🌊 Timeline Oracle: Harmonic Fusion WIRED!")
 except ImportError:
@@ -168,7 +168,7 @@ except ImportError:
 
 # 🌌 Internal Multiverse - 10 World Consensus
 try:
-    from aureon_internal_multiverse import InternalMultiverse, World, ConsensusEngine
+    from aureon.simulation.aureon_internal_multiverse import InternalMultiverse, World, ConsensusEngine
     MULTIVERSE_AVAILABLE = True
     _safe_import_print("🌌 Timeline Oracle: Internal Multiverse WIRED!")
 except ImportError:
@@ -277,11 +277,13 @@ class TimelineBranch:
     
     # Quantum Vision (what the systems SEE for this branch)
     quantum_vision: Dict[str, float] = field(default_factory=dict)
-    harmonic_alignment: float = 0.0  # Does 7-day seed support this?
-    mycelium_consensus: float = 0.0  # Hive agreement
-    miner_speculation: float = 0.0   # Brain's critical analysis
+    # Default to neutral (0.5) so missing/disabled subsystems don't drag
+    # confidence to 0.0 and stall the trader.
+    harmonic_alignment: float = 0.5  # Does 7-day seed support this?
+    mycelium_consensus: float = 0.5  # Hive agreement
+    miner_speculation: float = 0.5   # Brain's critical analysis
     telescope_refraction: Dict[str, float] = field(default_factory=dict)
-    multiverse_vote: float = 0.0     # 10-world consensus
+    multiverse_vote: float = 0.5     # 10-world consensus
     
     # Combined confidence (are we acting out the right timeline?)
     branch_confidence: float = 0.0
@@ -575,6 +577,9 @@ class TimelineOracle:
                 logger.warning(f"   🔭 Quantum Prism: Failed ({e})")
         
         # 🍄 Mycelium - Distributed Intelligence
+        # Mycelium is lazily imported to avoid circular imports; ensure it's loaded here
+        # so the oracle isn't permanently stuck in low-confidence mode.
+        _lazy_load_mycelium()
         if MYCELIUM_AVAILABLE:
             try:
                 self.mycelium = MyceliumNetwork(initial_capital=1000.0)
@@ -717,9 +722,17 @@ class TimelineOracle:
         unity_score = self._calculate_unity_score(move_1, move_2, move_3)
         
         # Sequence confidence = average of all move confidences * unity multiplier
-        sequence_confidence = (
-            (move_1.confidence + move_2.confidence + move_3.confidence) / 3.0
-        ) * unity_score
+        avg_move_confidence = (move_1.confidence + move_2.confidence + move_3.confidence) / 3.0
+        sequence_confidence = avg_move_confidence * unity_score
+
+        # Approval should reflect: "moves align" + "each move is confident enough".
+        # UNITY_THRESHOLD is a unity score threshold (not a raw confidence threshold).
+        action_approved = (
+            unity_score >= UNITY_THRESHOLD
+            and move_1.confidence >= MIN_MOVE_CONFIDENCE
+            and move_2.confidence >= MIN_MOVE_CONFIDENCE
+            and move_3.confidence >= MIN_MOVE_CONFIDENCE
+        )
         
         # ═══════════════════════════════════════════════════════════════════════
         # Step 6: Determine Best Exchange
@@ -743,7 +756,7 @@ class TimelineOracle:
             fallback_exchanges=fallback_exchanges,
             fully_validated=False,
             moves_validated=0,
-            action_approved=sequence_confidence >= UNITY_THRESHOLD
+            action_approved=action_approved
         )
         
         # Store sequence
