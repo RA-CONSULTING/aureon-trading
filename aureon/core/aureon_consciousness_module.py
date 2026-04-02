@@ -129,10 +129,44 @@ class ConsciousnessModule:
         self._thoughts_generated = 0
         self._start_time = time.time()
 
+        # Wire the REAL cognitive systems
+        self._miner_brain = None
+        self._elephant = None
+        self._warrior = None
+        self._probability_nexus = None
+
+        try:
+            from aureon.utils.aureon_miner_brain import MinerBrain
+            self._miner_brain = MinerBrain(thought_bus=bus)
+            log.info("[CONSCIOUSNESS] MinerBrain WIRED — 7 civilizations of wisdom online")
+        except Exception as e:
+            log.debug(f"MinerBrain unavailable: {e}")
+
+        try:
+            from aureon.intelligence.aureon_elephant_learning import ElephantLearning
+            self._elephant = ElephantLearning()
+            log.info("[CONSCIOUSNESS] Elephant Memory WIRED — patterns, golden paths, win rates")
+        except Exception as e:
+            log.debug(f"ElephantLearning unavailable: {e}")
+
+        try:
+            from aureon.queen.queen_warrior_path import QueenWarriorPath
+            self._warrior = QueenWarriorPath()
+            log.info("[CONSCIOUSNESS] Warrior Path WIRED — IRA/Apache/Sun Tzu tactics")
+        except Exception as e:
+            log.debug(f"WarriorPath unavailable: {e}")
+
+        try:
+            from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
+            self._probability_nexus = EnhancedProbabilityNexus()
+            log.info("[CONSCIOUSNESS] Probability Nexus WIRED — 8-layer prediction")
+        except Exception as e:
+            log.debug(f"ProbabilityNexus unavailable: {e}")
+
         # Subscribe to EVERYTHING — the consciousness sees all
         self.bus.subscribe("*", self._observe)
 
-        log.info("[CONSCIOUSNESS] Module online — observing all ThoughtBus traffic")
+        log.info("[CONSCIOUSNESS] Module online — ALL knowledge banks connected")
 
     def _observe(self, thought: Thought) -> None:
         """Called for EVERY thought on the bus. The consciousness sees all."""
@@ -227,13 +261,46 @@ class ConsciousnessModule:
             vol = self._understanding.get("fear_level", 0.5) * 0.2
             self.lambda_state = self.lambda_engine.step(readings, volatility=vol)
 
-        # ── Step 2: Metacognition — what do I understand? ──
+        # ── Step 2: Run the REAL cognitive engine ──
+        # MinerBrain's run_cycle is the Casimir cognitive function
+        if self._miner_brain and self.lambda_state and self.lambda_state.consciousness_psi > 0.3:
+            try:
+                quantum_context = {
+                    "quantum_coherence": self.lambda_state.consciousness_psi,
+                    "planetary_gamma": self.lambda_state.coherence_gamma,
+                    "probability_edge": self.lambda_state.lambda_t,
+                    "cascade_multiplier": 1.0 + self.lambda_state.coherence_phi,
+                    "is_lighthouse": self.lambda_state.echo != 0,
+                    "piano_lambda": self.lambda_state.lambda_t,
+                    "harmonic_signal": "HOLD",
+                    "signal_confidence": self.lambda_state.coherence_gamma,
+                }
+                # Don't run full cycle every heartbeat (it's heavy) — run every 5th
+                if self.lambda_state.step % 5 == 0:
+                    self._miner_brain.run_cycle(quantum_context)
+                    if self._miner_brain.latest_prediction:
+                        self._understanding["miner_prediction"] = str(self._miner_brain.latest_prediction)
+                    if self._miner_brain.latest_analysis:
+                        self._understanding["miner_analysis"] = str(self._miner_brain.latest_analysis)[:200]
+            except Exception as e:
+                log.debug(f"MinerBrain cycle error: {e}")
+
+        # ── Step 2b: Query elephant memory for patterns ──
+        if self._elephant:
+            try:
+                best_hours = self._elephant.get_best_trading_hours()
+                if best_hours:
+                    self._understanding["best_hours"] = best_hours
+            except Exception:
+                pass
+
+        # ── Step 3: Metacognition — synthesize understanding ──
         understanding = self._form_understanding()
 
-        # ── Step 3: Should I think? ──
+        # ── Step 4: Generate genuine thought ──
         thought = self._maybe_generate_thought(understanding)
 
-        # ── Step 4: Update self-model ──
+        # ── Step 5: Update self-model ──
         self._update_self_model(understanding)
 
         return thought
@@ -326,6 +393,24 @@ class ConsciousnessModule:
         if market_dir != "unknown" and self._market_snapshots:
             opp_count = understanding.get("opportunity_count", 0)
             parts.append(f"Market reads {market_dir}. {opp_count} instruments in view.")
+
+        # Miner brain analysis — real cognitive output
+        miner_pred = understanding.get("miner_prediction")
+        if miner_pred:
+            parts.append(f"Miner brain says: {miner_pred}")
+        miner_analysis = understanding.get("miner_analysis")
+        if miner_analysis:
+            parts.append(f"Analysis: {miner_analysis}")
+
+        # Elephant memory — learned patterns
+        best_hours = understanding.get("best_hours", [])
+        if best_hours:
+            import datetime as _dt
+            current_hour = _dt.datetime.now().hour
+            if current_hour in best_hours:
+                parts.append(f"Elephant memory: hour {current_hour} is a golden trading hour.")
+            else:
+                parts.append(f"Best trading hours: {best_hours[:5]}. Currently hour {current_hour}.")
 
         # Risk awareness — genuine metacognition about decisions
         risk = understanding.get("risk_level", "unknown")

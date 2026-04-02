@@ -266,7 +266,7 @@ def start_sentient_loop():
     try:
         loop = QueenSentientLoop(
             db_path=str(DB_PATH) if DB_PATH.exists() else None,
-            think_interval=15.0,
+            think_interval=3.0,
             voice_enabled=False,  # Voice handled by browser Speech API
         )
         state.sentient_loop = loop

@@ -282,7 +282,7 @@ class QueenSentientLoop:
     def __init__(
         self,
         db_path: str | None = None,
-        think_interval: float = 10.0,
+        think_interval: float = 3.0,
         voice_enabled: bool = True,
         voice_threshold: float = 0.6,
     ):
