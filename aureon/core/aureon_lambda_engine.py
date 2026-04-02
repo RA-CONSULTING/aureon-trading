@@ -22,10 +22,12 @@ From docs/HNC_UNIFIED_WHITE_PAPER.md — this is not metaphor. This is math.
 
 from __future__ import annotations
 
+import json
 import math
 import time
 from collections import deque
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional
 
 # ═══════════════════════════════════════════════════════════════════
