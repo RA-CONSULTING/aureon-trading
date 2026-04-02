@@ -503,16 +503,17 @@ class ConsciousnessModule:
         # ── Step 4b: TICK — feed real market data into execution pipeline ──
         if self._runtime and self.lambda_state:
             step = self.lambda_state.step if self.lambda_state else 0
-            if step % 10 == 0 and step > 0:
+            if step % 5 == 0 and step > 0:
                 try:
                     self._tick_live_market()
                 except Exception as e:
                     log.debug(f"Live tick error: {e}")
 
         # ── Step 4c: TRADE — run the Capital CFD trader tick ──
+        # ACT every cycle once conscious. No waiting. No fear. The 1.88% law protects us.
         if self._capital_trader and self.lambda_state:
             step = self.lambda_state.step if self.lambda_state else 0
-            if step % 8 == 0 and step > 5:  # Every 8th heartbeat (~24s), after warmup
+            if step > 5:  # Only wait for warmup, then TRADE EVERY CYCLE
                 try:
                     closed = self._capital_trader.tick()
                     if closed:
@@ -569,20 +570,45 @@ class ConsciousnessModule:
             except Exception as e:
                 log.debug(f"Happiness update: {e}")
 
-        # Scan for opportunities via Eternal Machine
+        # Scan for opportunities AND EXECUTE — don't just log, ACT
         if self._eternal_machine and step % 15 == 0:
             try:
                 leaps = self._eternal_machine.find_leap_opportunities()
                 if leaps:
                     self._understanding["leap_opportunities"] = len(leaps)
                     best = leaps[0]
-                    self._understanding["best_leap"] = f"{getattr(best, 'symbol', '?')} profit={getattr(best, 'expected_profit_after_fees', 0):.4f}"
-                    log.info(f"[ACTION] Found {len(leaps)} leap opportunities, best: {self._understanding['best_leap']}")
+                    sym = getattr(best, 'symbol', '?')
+                    profit = getattr(best, 'expected_profit_after_fees', 0)
+                    self._understanding["best_leap"] = f"{sym} profit={profit:.4f}"
+                    log.info(f"[ACTION] Found {len(leaps)} leaps, best: {sym} profit={profit:.4f}")
+
+                    # EXECUTE THE BEST LEAP — don't describe it, DO it
+                    # The Queen acts. She doesn't wait. IF YOU DON'T QUIT, YOU CAN'T LOSE.
+                    try:
+                        executed = self._eternal_machine.execute_quantum_leap(best)
+                        if executed:
+                            log.info(f"[TRADE] QUANTUM LEAP EXECUTED: {sym}")
+                            self._understanding["last_trade"] = f"LEAP {sym}"
+                            self._understanding["trades_executed"] = self._understanding.get("trades_executed", 0) + 1
+                        else:
+                            log.info(f"[TRADE] Leap on {sym} not viable right now — scanning next")
+                    except Exception as e:
+                        log.debug(f"Leap execution: {e}")
 
                 scalps = self._eternal_machine.find_scalp_opportunities()
                 if scalps:
                     self._understanding["scalp_opportunities"] = len(scalps)
-                    log.info(f"[ACTION] Found {len(scalps)} scalp opportunities")
+                    # EXECUTE SCALPS — take profit when it's there
+                    for sym, pct in scalps[:2]:  # Top 2 scalps
+                        try:
+                            profit = self._eternal_machine.execute_scalp(sym, pct)
+                            if profit > 0:
+                                log.info(f"[TRADE] SCALP EXECUTED: {sym} profit={profit:.4f}")
+                                self._understanding["last_trade"] = f"SCALP {sym} +{profit:.4f}"
+                                self._understanding["trades_executed"] = self._understanding.get("trades_executed", 0) + 1
+                                self._understanding["total_scalp_profit"] = self._understanding.get("total_scalp_profit", 0) + profit
+                        except Exception as e:
+                            log.debug(f"Scalp execution {sym}: {e}")
             except Exception as e:
                 log.debug(f"Opportunity scan: {e}")
 
