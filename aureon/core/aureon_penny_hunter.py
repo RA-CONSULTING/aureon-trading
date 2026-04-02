@@ -376,25 +376,55 @@ class PennyHunter:
                 except Exception as e:
                     log.debug(f"Market check {epic}: {e}")
 
-        # ── KRAKEN: Micro crypto trades ──
-        if self._kraken and self.step_attr % 10 == 0:
+        # ── KRAKEN: Crypto trades 24/7 — use USDT + altcoins ──
+        if self._kraken:
             try:
                 bal = self._kraken.get_balance()
+                usdt = float(bal.get("USDT", 0) or 0)
                 usd = float(bal.get("ZUSD", bal.get("USD", 0)) or 0)
-                if usd > 2:  # Minimum to trade
-                    # Buy tiny BTC
+                total_cash = usdt + usd
+
+                if total_cash > 2:
+                    # Pick a crypto to buy based on momentum
+                    import random
+                    pair = random.choice(KRAKEN_PAIRS)
+                    # Use USDT if available, else USD
+                    quote_asset = "USDT" if usdt > usd else "USD"
+                    trade_pair = pair.replace("USD", quote_asset) if quote_asset == "USDT" else pair
+                    trade_amount = min(total_cash * 0.3, 10.0)  # 30% of cash, max $10
                     try:
                         order = self._kraken.place_market_order(
-                            symbol="XBTUSD", side="buy", quote_qty=min(usd * 0.5, 5.0)
+                            symbol=trade_pair, side="buy", quote_qty=trade_amount
                         )
                         if order:
                             self._trades_total += 1
-                            log.info(f"[PENNY-KRAKEN] BUY BTC with ${min(usd*0.5, 5):.2f}: {order}")
-                            result["opened"].append({"epic": "XBTUSD", "direction": "BUY", "exchange": "kraken"})
+                            log.info(f"[PENNY-KRAKEN] BUY {trade_pair} with ${trade_amount:.2f}")
+                            result["opened"].append({"epic": trade_pair, "direction": "BUY", "exchange": "kraken"})
                     except Exception as e:
-                        log.debug(f"Kraken trade: {e}")
+                        log.debug(f"Kraken buy {trade_pair}: {e}")
+
+                # Also check existing altcoins — sell any that are profitable
+                for asset, amount in bal.items():
+                    amt = float(amount or 0)
+                    if amt < 0.001 or asset in ("ZUSD", "USD", "USDT", "USDC"):
+                        continue
+                    # Try to sell small amounts of altcoins for USDT
+                    try:
+                        sell_pair = f"{asset}USDT"
+                        # Only sell a fraction — take profits gradually
+                        sell_qty = amt * 0.1  # Sell 10% at a time
+                        order = self._kraken.place_market_order(
+                            symbol=sell_pair, side="sell", quantity=sell_qty
+                        )
+                        if order:
+                            self._trades_total += 1
+                            log.info(f"[PENNY-KRAKEN] SELL {sell_qty:.4f} {asset}")
+                            result["closed"].append({"epic": sell_pair, "profit": 0, "exchange": "kraken"})
+                            break  # One sell per tick
+                    except Exception:
+                        pass  # Pair might not exist or amount too small
             except Exception as e:
-                log.debug(f"Kraken balance: {e}")
+                log.debug(f"Kraken cycle: {e}")
 
         # ── ALPACA: Stock trades (US market hours only) ──
         if self._alpaca and self.step_attr % 15 == 0 and _is_market_open("us_stocks"):
