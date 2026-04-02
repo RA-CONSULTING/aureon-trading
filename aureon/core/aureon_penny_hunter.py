@@ -250,22 +250,10 @@ class PennyHunter:
                          f"conf:{self._confidence:.0%} | balance: £{self._last_balance:.2f} ({growth:+.2f})")
 
             elif profit <= MAX_LOSS_GBP:
-                # CUT LOSS — learn from it
-                actual = self.close_position(deal_id, epic, direction, size)
-                self._trades_total += 1
-                self._profit_total += actual
-                self._losses += 1
-                self._streak = min(-1, self._streak - 1) if self._streak <= 0 else -1
-                self._worst_trade = min(self._worst_trade, actual)
-                # Confidence drops with losses but never below 0.1 — never give up
-                self._confidence = max(0.1, self._confidence - 0.08)
-                self._trade_log.append({"epic": epic, "profit": actual, "result": "LOSS", "time": time.time()})
-                result["closed"].append({"epic": epic, "profit": actual, "name": name})
-                open_count -= 1
-                self._last_balance = self.get_balance()
-                log.info(f"[PENNY] LOSS: {name} £{actual:.3f} | total: £{self._profit_total:+.3f} | "
-                         f"wins:{self._wins} losses:{self._losses} | streak:{self._streak} | "
-                         f"conf:{self._confidence:.0%} | LEARNING — never give up")
+                # HOLD — never close at a loss. Wait for recovery.
+                # "IF YOU DON'T QUIT, YOU CAN'T LOSE"
+                result["holding"].append({"epic": epic, "profit": profit, "name": name, "waiting": True})
+                log.info(f"[PENNY] HOLDING {name} at £{profit:+.3f} — waiting for recovery. Never close negative.")
 
             else:
                 result["holding"].append({"epic": epic, "profit": profit, "name": name})
