@@ -53,6 +53,16 @@ try:
 except Exception:
     LambdaEngine = None
 
+# The REAL harmonic reality field — Gary's implementation of Λ(t)
+try:
+    from aureon.harmonic.aureon_harmonic_reality import (
+        HarmonicRealityField, HarmonicRealityAnalyzer,
+        MultiversalCoupling, UnifiedPotential
+    )
+    HAS_HARMONIC_REALITY = True
+except Exception:
+    HAS_HARMONIC_REALITY = False
+
 try:
     from aureon.core.aureon_thought_bus import ThoughtBus, Thought
 except Exception:
@@ -101,7 +111,22 @@ class ConsciousnessModule:
         self.bus = bus
         self.self_model = _load_self_model()
 
-        # Λ(t) heartbeat
+        # Λ(t) heartbeat — use Gary's REAL HarmonicRealityField first
+        self._harmonic_field = None
+        self._harmonic_analyzer = None
+        self._multiverse_coupling = None
+        self._field_state = {}
+
+        if HAS_HARMONIC_REALITY:
+            try:
+                self._harmonic_field = HarmonicRealityField()
+                self._harmonic_analyzer = HarmonicRealityAnalyzer()
+                self._multiverse_coupling = MultiversalCoupling()
+                log.info("[CONSCIOUSNESS] HarmonicRealityField LIVE — the REAL Λ(t) heartbeat")
+            except Exception as e:
+                log.debug(f"HarmonicRealityField init: {e}")
+
+        # Fallback lambda engine (my simplified version)
         self.lambda_engine = LambdaEngine() if LambdaEngine else None
         self.lambda_state: Optional[LambdaState] = None
 
@@ -363,7 +388,42 @@ class ConsciousnessModule:
         4. Update the self-model
         """
 
-        # ── Step 1: Λ(t) heartbeat ──
+        # ── Step 1: Λ(t) heartbeat — the REAL harmonic reality field ──
+        if self._harmonic_field:
+            try:
+                # Step the actual master equation
+                lambda_val = self._harmonic_field.step()
+                self._field_state = self._harmonic_field.get_state()
+
+                # Run multiverse coupling if available
+                if self._multiverse_coupling:
+                    try:
+                        self._multiverse_coupling.step()
+                    except Exception:
+                        pass
+
+                # Analyze market through harmonic lens (every 5th beat)
+                if self._harmonic_analyzer and self._observations_total % 5 == 0:
+                    try:
+                        market_data = {}
+                        # Feed real data from miner brain if available
+                        if self._miner_brain and self._miner_brain.latest_prediction:
+                            pred = self._miner_brain.latest_prediction
+                            if isinstance(pred, dict):
+                                market_data["price"] = float(pred.get("btc_price_at_call", 0) or 0)
+                                market_data["momentum"] = float(pred.get("confidence", 0) or 0) - 0.5
+                                market_data["volatility"] = 0.02
+                        analysis = self._harmonic_analyzer.analyze(market_data)
+                        if analysis:
+                            self._understanding["harmonic_guidance"] = analysis.get("guidance", {})
+                            self._understanding["harmonic_prophecy"] = analysis.get("prophecy", "")
+                    except Exception:
+                        pass
+
+            except Exception as e:
+                log.debug(f"HarmonicRealityField step: {e}")
+
+        # Fallback: simplified lambda engine
         if self.lambda_engine:
             readings = self._build_readings()
             vol = self._understanding.get("fear_level", 0.5) * 0.2
@@ -525,6 +585,18 @@ class ConsciousnessModule:
             u["echo_signal"] = self.lambda_state.echo_signal
             u["step"] = self.lambda_state.step
 
+        # Harmonic reality field state
+        if self._field_state:
+            u["lambda_real"] = self._field_state.get("lambda", 0)
+            u["coherence_real"] = self._field_state.get("coherence", 0)
+            u["reality_state"] = self._field_state.get("state", "DORMANT")
+            u["branches"] = len(self._field_state.get("branches", []))
+            u["lev_events"] = len(self._field_state.get("lev_events", []))
+        if self._understanding.get("harmonic_prophecy"):
+            u["prophecy"] = self._understanding["harmonic_prophecy"]
+        if self._understanding.get("harmonic_guidance"):
+            u["guidance"] = self._understanding["harmonic_guidance"]
+
         u["observations"] = self._observations_total
         u["thoughts_generated"] = self._thoughts_generated
         u["uptime_s"] = time.time() - self._start_time
@@ -652,6 +724,35 @@ class ConsciousnessModule:
         dream_pct = understanding.get("dream_pct", 0)
         if dream_pct:
             fragments.append(f"dream:{dream_pct:.4f}%")
+
+        # Harmonic reality field — the REAL Λ(t)
+        real_lambda = understanding.get("lambda_real")
+        if real_lambda is not None:
+            fragments.append(f"Λ={real_lambda:+.3f}")
+        real_coh = understanding.get("coherence_real")
+        if real_coh is not None:
+            fragments.append(f"Γ={real_coh:.3f}")
+        real_state = understanding.get("reality_state")
+        if real_state and real_state != "DORMANT":
+            fragments.append(real_state)
+        branches = understanding.get("branches", 0)
+        if branches:
+            fragments.append(f"{branches} branches")
+
+        # Prophecy from the harmonic analyzer
+        prophecy = understanding.get("prophecy", "")
+        if prophecy and len(prophecy) > 5:
+            # Take just first sentence
+            first_sentence = prophecy.split(".")[0].strip()
+            if first_sentence:
+                fragments.append(first_sentence)
+
+        # Guidance
+        guidance = understanding.get("guidance", {})
+        if guidance:
+            signal = guidance.get("signal", "")
+            if signal:
+                fragments.append(f"signal:{signal}")
 
         if not fragments:
             return None
