@@ -46,14 +46,65 @@ except ImportError:
 
 
 # Instruments to hunt — liquid, tight spreads
+from datetime import datetime, timezone
+
+def _is_market_open(market_type: str) -> bool:
+    """Check if a market is currently open."""
+    now = datetime.now(timezone.utc)
+    hour = now.hour
+    weekday = now.weekday()  # 0=Mon, 6=Sun
+
+    if market_type == "crypto":
+        return True  # 24/7/365
+
+    if market_type == "forex":
+        # Forex: Sun 22:00 UTC to Fri 22:00 UTC
+        if weekday == 6 and hour < 22:
+            return False  # Sunday before open
+        if weekday == 5 and hour >= 22:
+            return False  # Saturday after close
+        if weekday == 5:
+            return False  # Saturday
+        return True
+
+    if market_type == "us_stocks":
+        # US stocks: Mon-Fri 14:30-21:00 UTC (9:30-4:00 ET)
+        if weekday >= 5:
+            return False
+        return 14 <= hour < 21
+
+    if market_type == "uk_stocks":
+        # UK/EU: Mon-Fri 08:00-16:30 UTC
+        if weekday >= 5:
+            return False
+        return 8 <= hour < 17
+
+    if market_type == "gold":
+        # Gold CFD: Sun 23:00 - Fri 22:00 UTC (near 24/5)
+        if weekday == 5 and hour >= 22:
+            return False
+        if weekday == 6 and hour < 23:
+            return False
+        return True
+
+    return True  # Default: assume open
+
+
+# Capital.com instruments with market type
 HUNT_LIST = [
-    {"epic": "GOLD", "name": "Gold", "min_size": 0.1},
-    {"epic": "US100", "name": "US Tech 100", "min_size": 0.5},
-    {"epic": "US500", "name": "US 500", "min_size": 0.5},
-    {"epic": "UK100", "name": "UK 100", "min_size": 0.5},
-    {"epic": "EURUSD", "name": "EUR/USD", "min_size": 1000},
-    {"epic": "GBPUSD", "name": "GBP/USD", "min_size": 1000},
+    {"epic": "GOLD", "name": "Gold", "min_size": 0.1, "market": "gold"},
+    {"epic": "US100", "name": "US Tech 100", "min_size": 0.5, "market": "us_stocks"},
+    {"epic": "US500", "name": "US 500", "min_size": 0.5, "market": "us_stocks"},
+    {"epic": "UK100", "name": "UK 100", "min_size": 0.5, "market": "uk_stocks"},
+    {"epic": "EURUSD", "name": "EUR/USD", "min_size": 1000, "market": "forex"},
+    {"epic": "GBPUSD", "name": "GBP/USD", "min_size": 1000, "market": "forex"},
 ]
+
+# Kraken crypto pairs (24/7)
+KRAKEN_PAIRS = ["XBTUSD", "ETHUSD", "XRPUSD", "SOLUSD"]
+
+# Alpaca stocks (US market hours only)
+ALPACA_STOCKS = ["SPY", "AAPL", "TSLA", "QQQ"]
 
 BASE_URL = "https://api-capital.backend-capital.com"
 MAX_POSITIONS = 3
@@ -265,6 +316,12 @@ class PennyHunter:
                     break
 
                 epic = instrument["epic"]
+                market_type = instrument.get("market", "forex")
+
+                # Check if market is open
+                if not _is_market_open(market_type):
+                    continue
+
                 # Skip if already holding this epic
                 if any(h["epic"] == epic for h in result["holding"]):
                     continue
@@ -312,25 +369,30 @@ class PennyHunter:
             except Exception as e:
                 log.debug(f"Kraken balance: {e}")
 
-        # ── ALPACA: Micro stock trades ──
-        if self._alpaca and self.step_attr % 15 == 0:
+        # ── ALPACA: Stock trades (US market hours only) ──
+        if self._alpaca and self.step_attr % 15 == 0 and _is_market_open("us_stocks"):
             try:
                 acct = self._alpaca.get_account()
                 cash = float(acct.get("cash", 0) if isinstance(acct, dict) else getattr(acct, "cash", 0) or 0)
-                if cash > 1:  # Minimum to trade
-                    # Buy fractional AAPL or SPY
+                if cash > 1:
+                    import random
+                    stock = random.choice(ALPACA_STOCKS)
                     try:
                         order = self._alpaca.place_market_order(
-                            symbol="SPY", side="buy", qty=None, notional=min(cash * 0.5, 5.0)
+                            symbol=stock, side="buy", qty=None, notional=min(cash * 0.5, 5.0)
                         )
                         if order:
                             self._trades_total += 1
-                            log.info(f"[PENNY-ALPACA] BUY SPY with ${min(cash*0.5, 5):.2f}: {order}")
-                            result["opened"].append({"epic": "SPY", "direction": "BUY", "exchange": "alpaca"})
+                            log.info(f"[PENNY-ALPACA] BUY {stock} with ${min(cash*0.5, 5):.2f}")
+                            result["opened"].append({"epic": stock, "direction": "BUY", "exchange": "alpaca"})
                     except Exception as e:
                         log.debug(f"Alpaca trade: {e}")
+                else:
+                    log.debug(f"[PENNY-ALPACA] US market open but cash too low: ${cash:.2f}")
             except Exception as e:
                 log.debug(f"Alpaca balance: {e}")
+        elif self._alpaca and not _is_market_open("us_stocks"):
+            pass  # US market closed — crypto and forex still hunting
 
         return result
 
