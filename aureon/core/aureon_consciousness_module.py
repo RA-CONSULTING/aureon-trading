@@ -288,7 +288,23 @@ class ConsciousnessModule:
         except Exception as e:
             log.debug(f"AssetCommandCenter: {e}")
 
-        # PENNY HUNTER — fast autonomous trading (runs every heartbeat)
+        # UNIFIED MARKET TRADER — ALL 4 exchanges in one tick
+        self._unified_trader = None
+        try:
+            _env_path = _REPO_ROOT / ".env"
+            if _env_path.exists():
+                for _line in _env_path.read_text(encoding="utf-8").splitlines():
+                    _line = _line.strip()
+                    if _line and not _line.startswith("#") and "=" in _line:
+                        _k, _, _v = _line.partition("=")
+                        os.environ.setdefault(_k.strip(), _v.strip())
+            from aureon.exchanges.unified_market_trader import UnifiedMarketTrader
+            self._unified_trader = UnifiedMarketTrader(dry_run=False)
+            log.info("[CONSCIOUSNESS] UNIFIED MARKET TRADER WIRED — Kraken + Capital + Alpaca + Binance ALL LIVE")
+        except Exception as e:
+            log.debug(f"UnifiedMarketTrader: {e}")
+
+        # PENNY HUNTER — fast autonomous scalping
         self._penny_hunter = None
         try:
             from aureon.core.aureon_penny_hunter import get_penny_hunter
@@ -533,6 +549,24 @@ class ConsciousnessModule:
                     self._tick_live_market()
                 except Exception as e:
                     log.debug(f"Live tick error: {e}")
+
+        # ── Step 4b2: UNIFIED TRADER — ALL exchanges in one tick ──
+        if self._unified_trader and self.lambda_state:
+            step = self.lambda_state.step if self.lambda_state else 0
+            if step > 3 and step % 3 == 0:  # Every 3rd heartbeat (~9s)
+                try:
+                    result = self._unified_trader.tick()
+                    kraken_closed = result.get("kraken_closed", [])
+                    capital_closed = result.get("capital_closed", [])
+                    total_closed = len(kraken_closed) + len(capital_closed)
+                    if total_closed:
+                        self._understanding["unified_trades_closed"] = self._understanding.get("unified_trades_closed", 0) + total_closed
+                        log.info(f"[UNIFIED] Tick: {len(kraken_closed)} Kraken + {len(capital_closed)} Capital closed")
+                    # Track exchange status
+                    self._understanding["kraken_ready"] = getattr(self._unified_trader, 'kraken_ready', False)
+                    self._understanding["capital_ready"] = getattr(self._unified_trader, 'capital_ready', False)
+                except Exception as e:
+                    log.debug(f"Unified trader tick: {e}")
 
         # ── Step 4c: PENNY HUNTER — fast autonomous trading ──
         if self._penny_hunter:
