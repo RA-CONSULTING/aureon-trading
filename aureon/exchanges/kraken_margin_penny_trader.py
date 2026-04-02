@@ -293,6 +293,201 @@ except Exception:
     HAS_TRADE_PROFIT_VALIDATOR = False
     TradeProfitValidator = None
 
+# ── TIER 1: High-Impact Signal Producers ────────────────────────────────────
+try:
+    from aureon.intelligence.aureon_phase_transition_detector import PhaseTransitionDetector
+    HAS_PHASE_TRANSITION = True
+except Exception:
+    HAS_PHASE_TRANSITION = False
+    PhaseTransitionDetector = None
+
+try:
+    from aureon.strategies.probability_ultimate_intelligence import get_ultimate_intelligence
+    HAS_PROB_ULTIMATE = True
+except Exception:
+    HAS_PROB_ULTIMATE = False
+    get_ultimate_intelligence = None
+
+try:
+    from aureon.data_feeds.news_signal import get_news_signal
+    HAS_NEWS_SIGNAL = True
+except Exception:
+    HAS_NEWS_SIGNAL = False
+    get_news_signal = None
+
+try:
+    from aureon.scanners.aureon_phantom_signal_filter import PhantomSignalFilter
+    HAS_PHANTOM_FILTER = True
+except Exception:
+    HAS_PHANTOM_FILTER = False
+    PhantomSignalFilter = None
+
+try:
+    from aureon.data_feeds.global_financial_feed import GlobalFinancialFeed
+    HAS_GLOBAL_FINANCIAL = True
+except Exception:
+    HAS_GLOBAL_FINANCIAL = False
+    GlobalFinancialFeed = None
+
+try:
+    from aureon.analytics.aureon_whale_behavior_predictor import WhaleBehaviorPredictor
+    HAS_WHALE_BEHAVIOR = True
+except Exception:
+    HAS_WHALE_BEHAVIOR = False
+    WhaleBehaviorPredictor = None
+
+try:
+    from aureon.bridges.aureon_kraken_unified_signal_bridge import KrakenUnifiedSignalBridge
+    HAS_KRAKEN_SIGNAL_BRIDGE = True
+except Exception:
+    HAS_KRAKEN_SIGNAL_BRIDGE = False
+    KrakenUnifiedSignalBridge = None
+
+try:
+    from aureon.intelligence.aureon_truth_prediction_engine import TruthPredictionEngine
+    HAS_TRUTH_PREDICTION = True
+except Exception:
+    HAS_TRUTH_PREDICTION = False
+    TruthPredictionEngine = None
+
+try:
+    from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
+    HAS_PROB_NEXUS = True
+except Exception:
+    HAS_PROB_NEXUS = False
+    EnhancedProbabilityNexus = None
+
+# ── TIER 2: Market Intelligence & Context ───────────────────────────────────
+try:
+    from aureon.intelligence.aureon_real_intelligence_engine import RealIntelligenceEngine
+    HAS_REAL_INTEL = True
+except Exception:
+    HAS_REAL_INTEL = False
+    RealIntelligenceEngine = None
+
+try:
+    from aureon.intelligence.aureon_market_organism import get_organism as get_market_organism
+    HAS_MARKET_ORGANISM = True
+except Exception:
+    HAS_MARKET_ORGANISM = False
+    get_market_organism = None
+
+try:
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
+    HAS_ELEPHANT = True
+except Exception:
+    HAS_ELEPHANT = False
+    ElephantMemory = None
+
+try:
+    from aureon.intelligence.aureon_advanced_intelligence import MyceliumNetwork as AdvancedMycelium
+    HAS_ADVANCED_INTEL = True
+except Exception:
+    HAS_ADVANCED_INTEL = False
+    AdvancedMycelium = None
+
+try:
+    from aureon.intelligence.aureon_multiversal_reality_detector import get_reality_detector
+    HAS_REALITY_DETECTOR = True
+except Exception:
+    HAS_REALITY_DETECTOR = False
+    get_reality_detector = None
+
+try:
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
+    HAS_GLOBAL_WAVE = True
+except Exception:
+    HAS_GLOBAL_WAVE = False
+    GlobalWaveScanner = None
+
+try:
+    from aureon.scanners.aureon_obsidian_filter import AureonObsidianFilter
+    HAS_OBSIDIAN_FILTER = True
+except Exception:
+    HAS_OBSIDIAN_FILTER = False
+    AureonObsidianFilter = None
+
+# ── TIER 3: Harmonic, Resonance & Correlation ──────────────────────────────
+try:
+    from aureon.harmonic.aureon_schumann_resonance_bridge import get_schumann_bridge
+    HAS_SCHUMANN = True
+except Exception:
+    HAS_SCHUMANN = False
+    get_schumann_bridge = None
+
+try:
+    from aureon.harmonic.harmonic_nexus_bridge import HarmonicNexusBridge
+    HAS_HARMONIC_NEXUS = True
+except Exception:
+    HAS_HARMONIC_NEXUS = False
+    HarmonicNexusBridge = None
+
+try:
+    from aureon.data_feeds.earth_resonance_engine import EarthResonanceEngine, get_earth_engine
+    HAS_EARTH_RESONANCE = True
+except Exception:
+    HAS_EARTH_RESONANCE = False
+    EarthResonanceEngine = None
+    get_earth_engine = None
+
+try:
+    from aureon.data_feeds.market_harp import MarketHarp
+    HAS_MARKET_HARP = True
+except Exception:
+    HAS_MARKET_HARP = False
+    MarketHarp = None
+
+try:
+    from aureon.data_feeds.crypto_market_map import CryptoMarketMap
+    HAS_CRYPTO_MAP = True
+except Exception:
+    HAS_CRYPTO_MAP = False
+    CryptoMarketMap = None
+
+try:
+    from aureon.intelligence.aureon_sensory_framework import SensoryRegistry
+    HAS_SENSORY = True
+except Exception:
+    HAS_SENSORY = False
+    SensoryRegistry = None
+
+# ── TIER 4: Core Infrastructure ────────────────────────────────────────────
+try:
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpBus
+    HAS_CHIRP_BUS = True
+except Exception:
+    HAS_CHIRP_BUS = False
+    get_chirp_bus = None
+    ChirpBus = None
+
+try:
+    from aureon.core.mycelium_whale_sonar import WhaleSonar
+    HAS_WHALE_SONAR = True
+except Exception:
+    HAS_WHALE_SONAR = False
+    WhaleSonar = None
+
+try:
+    from aureon.core.aureon_hive_state import get_hive as get_hive_state
+    HAS_HIVE_STATE = True
+except Exception:
+    HAS_HIVE_STATE = False
+    get_hive_state = None
+
+try:
+    from aureon.intelligence.trading_hive_mind import TradingHiveMind
+    HAS_TRADING_HIVE_MIND = True
+except Exception:
+    HAS_TRADING_HIVE_MIND = False
+    TradingHiveMind = None
+
+try:
+    from aureon.intelligence.aureon_inception_engine import InceptionEngine
+    HAS_INCEPTION = True
+except Exception:
+    HAS_INCEPTION = False
+    InceptionEngine = None
+
 try:
     import websocket as _ws_lib
     HAS_WEBSOCKET = True
@@ -2985,6 +3180,114 @@ class KrakenMarginArmyTrader:
         self._validator_snapshot: Dict[str, Any] = {}
         self._thought_bus_snapshot: Dict[str, Any] = {}
         self._cognition_snapshot: Dict[str, Any] = {}
+        # ── TIER 1: High-Impact Signal Producers ────────────────────
+        self.phase_transition_detector = (
+            PhaseTransitionDetector() if HAS_PHASE_TRANSITION and PhaseTransitionDetector is not None else None
+        )
+        self.prob_ultimate = (
+            get_ultimate_intelligence() if HAS_PROB_ULTIMATE and get_ultimate_intelligence is not None else None
+        )
+        self.phantom_filter = (
+            PhantomSignalFilter() if HAS_PHANTOM_FILTER and PhantomSignalFilter is not None else None
+        )
+        self.global_financial_feed = (
+            GlobalFinancialFeed() if HAS_GLOBAL_FINANCIAL and GlobalFinancialFeed is not None else None
+        )
+        self.whale_behavior_predictor = (
+            WhaleBehaviorPredictor() if HAS_WHALE_BEHAVIOR and WhaleBehaviorPredictor is not None else None
+        )
+        self.kraken_signal_bridge = (
+            KrakenUnifiedSignalBridge() if HAS_KRAKEN_SIGNAL_BRIDGE and KrakenUnifiedSignalBridge is not None else None
+        )
+        self.truth_prediction_engine = (
+            TruthPredictionEngine() if HAS_TRUTH_PREDICTION and TruthPredictionEngine is not None else None
+        )
+        self.prob_nexus = (
+            EnhancedProbabilityNexus() if HAS_PROB_NEXUS and EnhancedProbabilityNexus is not None else None
+        )
+        # ── TIER 2: Market Intelligence & Context ───────────────────
+        self.real_intel_engine = (
+            RealIntelligenceEngine() if HAS_REAL_INTEL and RealIntelligenceEngine is not None else None
+        )
+        self.market_organism = (
+            get_market_organism() if HAS_MARKET_ORGANISM and get_market_organism is not None else None
+        )
+        self.elephant_memory = (
+            ElephantMemory() if HAS_ELEPHANT and ElephantMemory is not None else None
+        )
+        self.advanced_intel = (
+            AdvancedMycelium() if HAS_ADVANCED_INTEL and AdvancedMycelium is not None else None
+        )
+        self.reality_detector = (
+            get_reality_detector() if HAS_REALITY_DETECTOR and get_reality_detector is not None else None
+        )
+        self.global_wave_scanner = (
+            GlobalWaveScanner() if HAS_GLOBAL_WAVE and GlobalWaveScanner is not None else None
+        )
+        self.obsidian_filter = (
+            AureonObsidianFilter() if HAS_OBSIDIAN_FILTER and AureonObsidianFilter is not None else None
+        )
+        # ── TIER 3: Harmonic, Resonance & Correlation ───────────────
+        self.schumann_bridge = (
+            get_schumann_bridge() if HAS_SCHUMANN and get_schumann_bridge is not None else None
+        )
+        self.harmonic_nexus = (
+            HarmonicNexusBridge() if HAS_HARMONIC_NEXUS and HarmonicNexusBridge is not None else None
+        )
+        self.earth_resonance = (
+            get_earth_engine() if HAS_EARTH_RESONANCE and get_earth_engine is not None else None
+        )
+        self.market_harp = (
+            MarketHarp() if HAS_MARKET_HARP and MarketHarp is not None else None
+        )
+        self.crypto_map = (
+            CryptoMarketMap() if HAS_CRYPTO_MAP and CryptoMarketMap is not None else None
+        )
+        self.sensory_registry = (
+            SensoryRegistry() if HAS_SENSORY and SensoryRegistry is not None else None
+        )
+        # ── TIER 4: Core Infrastructure ─────────────────────────────
+        self.chirp_bus = (
+            get_chirp_bus() if HAS_CHIRP_BUS and get_chirp_bus is not None else None
+        )
+        self.whale_sonar = (
+            WhaleSonar(thought_bus=self.thought_bus) if HAS_WHALE_SONAR and WhaleSonar is not None else None
+        )
+        self.hive_state = (
+            get_hive_state() if HAS_HIVE_STATE and get_hive_state is not None else None
+        )
+        self.trading_hive_mind = (
+            TradingHiveMind() if HAS_TRADING_HIVE_MIND and TradingHiveMind is not None else None
+        )
+        self.inception_engine = (
+            InceptionEngine() if HAS_INCEPTION and InceptionEngine is not None else None
+        )
+        # ── Snapshots for all new systems ───────────────────────────
+        self._phase_transition_snapshot: Dict[str, Any] = {}
+        self._prob_ultimate_snapshot: Dict[str, Any] = {}
+        self._news_signal_snapshot: Dict[str, Any] = {}
+        self._phantom_filter_snapshot: Dict[str, Any] = {}
+        self._global_financial_snapshot: Dict[str, Any] = {}
+        self._whale_behavior_snapshot: Dict[str, Any] = {}
+        self._kraken_signal_bridge_snapshot: Dict[str, Any] = {}
+        self._truth_prediction_snapshot: Dict[str, Any] = {}
+        self._prob_nexus_snapshot: Dict[str, Any] = {}
+        self._real_intel_snapshot: Dict[str, Any] = {}
+        self._market_organism_snapshot: Dict[str, Any] = {}
+        self._elephant_snapshot: Dict[str, Any] = {}
+        self._advanced_intel_snapshot: Dict[str, Any] = {}
+        self._reality_detector_snapshot: Dict[str, Any] = {}
+        self._global_wave_snapshot: Dict[str, Any] = {}
+        self._obsidian_snapshot: Dict[str, Any] = {}
+        self._schumann_snapshot: Dict[str, Any] = {}
+        self._harmonic_nexus_snapshot: Dict[str, Any] = {}
+        self._earth_resonance_snapshot: Dict[str, Any] = {}
+        self._market_harp_snapshot: Dict[str, Any] = {}
+        self._crypto_map_snapshot: Dict[str, Any] = {}
+        self._sensory_snapshot: Dict[str, Any] = {}
+        self._whale_sonar_snapshot: Dict[str, Any] = {}
+        self._hive_state_snapshot: Dict[str, Any] = {}
+        self._inception_snapshot: Dict[str, Any] = {}
         self.signal_brain = AureonBrain() if HAS_AUREON_BRAIN and AureonBrain is not None else None
         self.trade_profit_validator = (
             TradeProfitValidator(validation_log_file=os.path.join(_REPO_ROOT, "state", "kraken_trade_validations.json"))
@@ -3221,7 +3524,45 @@ class KrakenMarginArmyTrader:
             except Exception as e:
                 snapshot["error"] = str(e)
         self._registry_snapshot = snapshot
+        self._refresh_new_intel_snapshots()
         self._refresh_thought_bus_snapshot()
+
+    def _refresh_new_intel_snapshots(self) -> None:
+        """Refresh cached state for systems that benefit from periodic updates."""
+        # Global financial feed snapshot (macro data, refreshes slowly)
+        if self.global_financial_feed is not None:
+            try:
+                snap = self.global_financial_feed.get_snapshot()
+                if snap is not None:
+                    self._global_financial_snapshot["macro"] = snap.to_dict() if hasattr(snap, 'to_dict') else str(snap)
+            except Exception:
+                pass
+        # Reality detector snapshot
+        if self.reality_detector is not None:
+            try:
+                permitted, reason, confidence = self.reality_detector.get_trading_permission()
+                self._reality_detector_snapshot["permitted"] = permitted
+                self._reality_detector_snapshot["reason"] = reason
+                self._reality_detector_snapshot["confidence"] = confidence
+            except Exception:
+                pass
+        # Schumann resonance (slow-changing earth data)
+        if self.schumann_bridge is not None:
+            try:
+                from aureon.harmonic.aureon_schumann_resonance_bridge import get_earth_blessing
+                blessing_score, blessing_label = get_earth_blessing()
+                self._schumann_snapshot["coherence"] = float(blessing_score)
+                self._schumann_snapshot["blessing"] = blessing_label
+            except Exception:
+                pass
+        # Phase transition detector needs continuous feeding but status can be cached
+        if self.phase_transition_detector is not None:
+            try:
+                status = self.phase_transition_detector.get_status()
+                self._phase_transition_snapshot["state"] = status.get("phase_state", "UNKNOWN")
+                self._phase_transition_snapshot["score"] = status.get("transition_score", 0.0)
+            except Exception:
+                pass
 
     def _refresh_thought_bus_snapshot(self) -> None:
         if self.thought_bus is None:
@@ -3748,6 +4089,604 @@ class KrakenMarginArmyTrader:
             }
         except Exception as e:
             self._ocean_snapshot = {"symbol": str(symbol).upper(), "error": str(e)}
+        return result
+
+    # ══════════════════════════════════════════════════════════════════════
+    #  NEW INTELLIGENCE SCORING METHODS — Tier 1, 2, 3
+    # ══════════════════════════════════════════════════════════════════════
+
+    def _score_phase_transition(self, symbol: str, side: str, current_price: float) -> dict:
+        """Phase transition detector: penalise entry during CRITICAL regime changes."""
+        result = {"bonus": 0.0, "state": "UNKNOWN", "score": 0.0}
+        if self.phase_transition_detector is None:
+            return result
+        try:
+            self.phase_transition_detector.ingest(current_price)
+            prediction = self.phase_transition_detector.predict()
+            status = self.phase_transition_detector.get_status()
+            state = str(status.get("phase_state", "UNKNOWN"))
+            t_score = float(status.get("transition_score", 0.0) or 0.0)
+            nav = str(status.get("navigation_signal", "hold")).lower()
+            bonus = 0.0
+            if state == "STABLE":
+                bonus += 0.5
+            elif state == "ELEVATED":
+                bonus -= 0.25
+            elif state == "CRITICAL":
+                bonus -= 1.5
+            elif state == "RECOVERY":
+                bonus += 0.25
+            if nav == side:
+                bonus += 0.5
+            elif nav not in {"hold", "unknown", ""}:
+                bonus -= 0.5
+            result.update({"bonus": max(-2.0, min(2.0, bonus)), "state": state, "score": t_score})
+            self._phase_transition_snapshot = {"symbol": symbol, "state": state, "score": t_score, "nav": nav, "bonus": result["bonus"]}
+        except Exception as e:
+            self._phase_transition_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_prob_ultimate(self, symbol: str, side: str, current_price: float, momentum_pct: float) -> dict:
+        """Probability Ultimate Intelligence: 95% accuracy pattern-based prediction."""
+        result = {"bonus": 0.0, "win_rate": 0.0, "pattern": ""}
+        if self.prob_ultimate is None:
+            return result
+        try:
+            signals = self.prob_ultimate.get_pattern_signals(
+                symbol=symbol, current_price=current_price, momentum=momentum_pct / 100.0
+            ) if hasattr(self.prob_ultimate, 'get_pattern_signals') else {}
+            if not signals:
+                return result
+            win_rate = float(signals.get("win_rate", 0.5) or 0.5)
+            pattern = str(signals.get("pattern_key", "") or "")
+            direction = str(signals.get("direction", "neutral") or "neutral").lower()
+            bonus = (win_rate - 0.5) * 4.0
+            if direction == side or (direction == "bullish" and side == "buy") or (direction == "bearish" and side == "sell"):
+                bonus += 0.5
+            elif direction not in {"neutral", "flat", ""}:
+                bonus -= 0.5
+            result.update({"bonus": max(-2.0, min(2.0, bonus)), "win_rate": win_rate, "pattern": pattern})
+            self._prob_ultimate_snapshot = {"symbol": symbol, "win_rate": win_rate, "pattern": pattern, "bonus": result["bonus"]}
+        except Exception as e:
+            self._prob_ultimate_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_news_signal(self, symbol: str, side: str) -> dict:
+        """News signal: sentiment-based directional bias from live news."""
+        result = {"bonus": 0.0, "sentiment": 0.0, "headline_count": 0}
+        if not HAS_NEWS_SIGNAL or get_news_signal is None:
+            return result
+        try:
+            news = get_news_signal()
+            if news is None:
+                return result
+            sentiment = float(getattr(news, 'sentiment_score', 0.0) or 0.0)
+            count = int(getattr(news, 'article_count', 0) or 0)
+            bonus = sentiment * 1.5
+            if (sentiment > 0 and side == "sell") or (sentiment < 0 and side == "buy"):
+                bonus *= -0.5
+            result.update({"bonus": max(-1.5, min(1.5, bonus)), "sentiment": sentiment, "headline_count": count})
+            self._news_signal_snapshot = {"symbol": symbol, "sentiment": sentiment, "count": count, "bonus": result["bonus"]}
+        except Exception as e:
+            self._news_signal_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_phantom_filter(self, symbol: str, side: str) -> dict:
+        """Phantom signal filter: penalise signals that appear in only one reality layer."""
+        result = {"bonus": 0.0, "verified": False, "layers": 0}
+        if self.phantom_filter is None:
+            return result
+        try:
+            status = {}
+            if hasattr(self.phantom_filter, 'get_signal_status'):
+                status = self.phantom_filter.get_signal_status(symbol) or {}
+            elif hasattr(self.phantom_filter, 'check_signal'):
+                status = self.phantom_filter.check_signal(symbol) or {}
+            verified = bool(status.get("verified", False))
+            layers = int(status.get("layers_confirmed", 0) or 0)
+            bonus = 0.0
+            if verified:
+                bonus = min(layers * 0.5, 2.0)
+            elif layers == 0:
+                bonus = 0.0
+            else:
+                bonus = -0.5
+            result.update({"bonus": bonus, "verified": verified, "layers": layers})
+            self._phantom_filter_snapshot = {"symbol": symbol, "verified": verified, "layers": layers, "bonus": bonus}
+        except Exception as e:
+            self._phantom_filter_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_global_financial(self, symbol: str, side: str) -> dict:
+        """Global financial feed: macro ecosystem probability adjustment."""
+        result = {"bonus": 0.0, "signal": "neutral", "probability": 0.5}
+        if self.global_financial_feed is None:
+            return result
+        try:
+            sig = self.global_financial_feed.get_trading_signal(symbol) or {}
+            direction = str(sig.get("signal", "neutral") or "neutral").lower()
+            probability = float(sig.get("probability", 0.5) or 0.5)
+            strength = float(sig.get("strength", 0.0) or 0.0)
+            bonus = (probability - 0.5) * 3.0 + strength * 0.5
+            if (direction in {"bullish", "buy"} and side == "sell") or (direction in {"bearish", "sell"} and side == "buy"):
+                bonus *= -0.5
+            result.update({"bonus": max(-2.0, min(2.0, bonus)), "signal": direction, "probability": probability})
+            self._global_financial_snapshot = {"symbol": symbol, "signal": direction, "prob": probability, "bonus": result["bonus"]}
+        except Exception as e:
+            self._global_financial_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_whale_behavior(self, symbol: str, side: str) -> dict:
+        """Whale behavior predictor: predict next whale move direction."""
+        result = {"bonus": 0.0, "prediction": "neutral", "confidence": 0.0}
+        if self.whale_behavior_predictor is None:
+            return result
+        try:
+            pred = self.whale_behavior_predictor.predict_next_move(symbol) if hasattr(self.whale_behavior_predictor, 'predict_next_move') else {}
+            if not pred:
+                return result
+            direction = str(pred.get("direction", "neutral") or "neutral").lower()
+            confidence = float(pred.get("confidence", 0.0) or 0.0)
+            bonus = confidence * 2.0
+            if (direction in {"buy", "bullish", "accumulate"} and side == "buy") or (direction in {"sell", "bearish", "distribute"} and side == "sell"):
+                bonus = abs(bonus)
+            elif direction not in {"neutral", "unknown", ""}:
+                bonus = -abs(bonus) * 0.5
+            result.update({"bonus": max(-1.5, min(2.0, bonus)), "prediction": direction, "confidence": confidence})
+            self._whale_behavior_snapshot = {"symbol": symbol, "direction": direction, "confidence": confidence, "bonus": result["bonus"]}
+        except Exception as e:
+            self._whale_behavior_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_kraken_signal_bridge(self, symbol: str, side: str, current_price: float) -> dict:
+        """Kraken unified signal bridge: synthesised multi-source Kraken signal."""
+        result = {"bonus": 0.0, "strength": "NEUTRAL", "confidence": 0.0}
+        if self.kraken_signal_bridge is None:
+            return result
+        try:
+            decision = None
+            if hasattr(self.kraken_signal_bridge, 'synthesize_unified_decision'):
+                signals = []
+                if hasattr(self.kraken_signal_bridge, 'parse_kraken_trade_analysis'):
+                    sig = self.kraken_signal_bridge.parse_kraken_trade_analysis(
+                        symbol=symbol, price=current_price, side=side
+                    )
+                    if sig:
+                        signals.append(sig)
+                if signals:
+                    decision = self.kraken_signal_bridge.synthesize_unified_decision(signals)
+            if decision is None:
+                return result
+            strength = str(getattr(decision, 'overall_strength', 'NEUTRAL') or 'NEUTRAL')
+            confidence = float(getattr(decision, 'confidence', 0.0) or 0.0)
+            direction = str(getattr(decision, 'direction', 'neutral') or 'neutral').lower()
+            bonus = confidence * 2.0
+            if direction == side or (direction == "bullish" and side == "buy") or (direction == "bearish" and side == "sell"):
+                bonus = abs(bonus)
+            elif direction not in {"neutral", ""}:
+                bonus = -abs(bonus) * 0.5
+            if strength in {"STRONG", "VERY_STRONG"}:
+                bonus += 0.5
+            result.update({"bonus": max(-2.0, min(2.5, bonus)), "strength": strength, "confidence": confidence})
+            self._kraken_signal_bridge_snapshot = {"symbol": symbol, "strength": strength, "confidence": confidence, "bonus": result["bonus"]}
+        except Exception as e:
+            self._kraken_signal_bridge_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_truth_prediction(self, symbol: str, side: str, current_price: float, momentum_pct: float) -> dict:
+        """Truth prediction engine: scenario-based directional predictions."""
+        result = {"bonus": 0.0, "accuracy": 0.0, "prediction": ""}
+        if self.truth_prediction_engine is None:
+            return result
+        try:
+            from aureon.intelligence.aureon_truth_prediction_engine import MarketSnapshot
+            snap = MarketSnapshot(
+                symbol=symbol, price=current_price, volume=0.0,
+                momentum=momentum_pct / 100.0, timestamp=time.time(),
+                bid=current_price, ask=current_price, spread_pct=0.0, hz=432.0,
+            )
+            pred = self.truth_prediction_engine.generate_prediction(snap)
+            if pred is None:
+                return result
+            direction = str(getattr(pred, 'predicted_direction', '') or '').lower()
+            confidence = float(getattr(pred, 'confidence', 0.0) or 0.0)
+            stats = self.truth_prediction_engine.get_accuracy_stats()
+            accuracy = float(stats.get("overall_accuracy", 0.0) or 0.0)
+            bonus = (confidence - 0.5) * 3.0
+            if (direction in {"up", "bullish", "buy"} and side == "buy") or (direction in {"down", "bearish", "sell"} and side == "sell"):
+                bonus = abs(bonus)
+            elif direction not in {"flat", "neutral", ""}:
+                bonus = -abs(bonus) * 0.5
+            if accuracy > 0.6:
+                bonus *= 1.0 + (accuracy - 0.6) * 2.0
+            result.update({"bonus": max(-2.0, min(2.0, bonus)), "accuracy": accuracy, "prediction": direction})
+            self._truth_prediction_snapshot = {"symbol": symbol, "direction": direction, "confidence": confidence, "accuracy": accuracy, "bonus": result["bonus"]}
+        except Exception as e:
+            self._truth_prediction_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_prob_nexus(self, symbol: str, side: str) -> dict:
+        """Enhanced probability nexus: probability bridging signal."""
+        result = {"bonus": 0.0, "signal": "neutral"}
+        if self.prob_nexus is None:
+            return result
+        try:
+            sig = self.prob_nexus.get_signal() if hasattr(self.prob_nexus, 'get_signal') else None
+            if sig is None:
+                return result
+            if isinstance(sig, dict):
+                direction = str(sig.get("direction", "neutral") or "neutral").lower()
+                strength = float(sig.get("strength", 0.0) or 0.0)
+            else:
+                direction = str(getattr(sig, 'direction', 'neutral') or 'neutral').lower()
+                strength = float(getattr(sig, 'strength', 0.0) or 0.0)
+            bonus = strength * 2.0
+            if (direction in {"buy", "bullish"} and side == "sell") or (direction in {"sell", "bearish"} and side == "buy"):
+                bonus *= -0.5
+            result.update({"bonus": max(-1.5, min(1.5, bonus)), "signal": direction})
+            self._prob_nexus_snapshot = {"symbol": symbol, "signal": direction, "strength": strength, "bonus": result["bonus"]}
+        except Exception as e:
+            self._prob_nexus_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    # ── TIER 2 SCORING ──────────────────────────────────────────────────
+
+    def _score_real_intel(self, symbol: str, side: str) -> dict:
+        """Real intelligence engine: bot profiling + whale prediction + momentum."""
+        result = {"bonus": 0.0, "validated_count": 0, "momentum_type": ""}
+        if self.real_intel_engine is None:
+            return result
+        try:
+            intel = self.real_intel_engine.gather_all_intelligence({}, {}) if hasattr(self.real_intel_engine, 'gather_all_intelligence') else {}
+            if not intel:
+                return result
+            validated = int(intel.get("validated_count", 0) or 0)
+            momentum_opps = intel.get("momentum_opportunities", {})
+            best_type = str(intel.get("best_momentum_type", "") or "")
+            bonus = min(validated * 0.3, 1.5)
+            if best_type in {"wolf", "lion"}:
+                bonus += 0.5
+            result.update({"bonus": max(-1.0, min(2.0, bonus)), "validated_count": validated, "momentum_type": best_type})
+            self._real_intel_snapshot = {"symbol": symbol, "validated": validated, "type": best_type, "bonus": result["bonus"]}
+        except Exception as e:
+            self._real_intel_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_market_organism(self, symbol: str, side: str) -> dict:
+        """Market organism: ecosystem health and manipulation detection."""
+        result = {"bonus": 0.0, "health": "unknown", "manipulation": False}
+        if self.market_organism is None:
+            return result
+        try:
+            report = self.market_organism.sense_ecosystem() if hasattr(self.market_organism, 'sense_ecosystem') else None
+            if report is None:
+                return result
+            health = str(getattr(report, 'health', 'unknown') or 'unknown').lower() if not isinstance(report, dict) else str(report.get('health', 'unknown')).lower()
+            manipulated = bool(getattr(report, 'manipulation_detected', False)) if not isinstance(report, dict) else bool(report.get('manipulation_detected', False))
+            bonus = 0.0
+            if health in {"healthy", "strong"}:
+                bonus += 0.5
+            elif health in {"sick", "weak", "critical"}:
+                bonus -= 0.75
+            if manipulated:
+                bonus -= 1.0
+            result.update({"bonus": max(-1.5, min(1.0, bonus)), "health": health, "manipulation": manipulated})
+            self._market_organism_snapshot = {"symbol": symbol, "health": health, "manipulated": manipulated, "bonus": result["bonus"]}
+        except Exception as e:
+            self._market_organism_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_elephant(self, symbol: str, side: str, current_price: float, momentum_pct: float) -> dict:
+        """Elephant learning: long-term pattern memory score for this asset."""
+        result = {"bonus": 0.0, "asset_score": 0.0, "hour_ok": True}
+        if self.elephant_memory is None:
+            return result
+        try:
+            asset_score = self.elephant_memory.get_asset_score(symbol) if hasattr(self.elephant_memory, 'get_asset_score') else 0.0
+            asset_score = float(asset_score or 0.0)
+            patterns = {}
+            if hasattr(self.elephant_memory, 'get_pattern_signals'):
+                patterns = self.elephant_memory.get_pattern_signals(symbol, current_price, momentum_pct / 100.0) or {}
+            import datetime as _dt
+            current_hour = _dt.datetime.utcnow().hour
+            best_hours = self.elephant_memory.get_best_trading_hours() if hasattr(self.elephant_memory, 'get_best_trading_hours') else []
+            worst_hours = self.elephant_memory.get_worst_trading_hours() if hasattr(self.elephant_memory, 'get_worst_trading_hours') else []
+            hour_ok = current_hour not in worst_hours
+            bonus = asset_score * 1.5
+            if current_hour in best_hours:
+                bonus += 0.3
+            if not hour_ok:
+                bonus -= 0.5
+            pattern_dir = str(patterns.get("direction", "") or "").lower()
+            if pattern_dir == side or (pattern_dir == "bullish" and side == "buy") or (pattern_dir == "bearish" and side == "sell"):
+                bonus += 0.4
+            result.update({"bonus": max(-1.5, min(2.0, bonus)), "asset_score": asset_score, "hour_ok": hour_ok})
+            self._elephant_snapshot = {"symbol": symbol, "asset_score": asset_score, "hour_ok": hour_ok, "bonus": result["bonus"]}
+        except Exception as e:
+            self._elephant_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_advanced_intel(self, symbol: str, side: str) -> dict:
+        """Advanced intelligence mycelium network: neural agent consensus."""
+        result = {"bonus": 0.0, "consensus": "neutral"}
+        if self.advanced_intel is None:
+            return result
+        try:
+            if hasattr(self.advanced_intel, 'get_consensus'):
+                consensus = self.advanced_intel.get_consensus(symbol) or {}
+            elif hasattr(self.advanced_intel, 'propagate'):
+                consensus = {"direction": "neutral"}
+            else:
+                return result
+            direction = str(consensus.get("direction", "neutral") or "neutral").lower()
+            confidence = float(consensus.get("confidence", 0.0) or 0.0)
+            bonus = confidence * 1.5
+            if (direction in {"buy", "bullish"} and side == "sell") or (direction in {"sell", "bearish"} and side == "buy"):
+                bonus *= -0.5
+            result.update({"bonus": max(-1.0, min(1.5, bonus)), "consensus": direction})
+            self._advanced_intel_snapshot = {"symbol": symbol, "direction": direction, "confidence": confidence, "bonus": result["bonus"]}
+        except Exception as e:
+            self._advanced_intel_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_reality_detector(self, symbol: str, side: str) -> dict:
+        """Multiversal reality detector: trading permission and reality class."""
+        result = {"bonus": 0.0, "reality": "UNKNOWN", "permitted": True}
+        if self.reality_detector is None:
+            return result
+        try:
+            permitted, reason, confidence = self.reality_detector.get_trading_permission()
+            reality = str(self.reality_detector.current_reality_class.value) if hasattr(self.reality_detector, 'current_reality_class') else "UNKNOWN"
+            bonus = 0.0
+            if not permitted:
+                bonus = -2.0
+            else:
+                bonus = confidence * 1.0
+            if reality == "PRIME":
+                bonus += 0.25
+            result.update({"bonus": max(-2.0, min(1.5, bonus)), "reality": reality, "permitted": permitted})
+            self._reality_detector_snapshot = {"symbol": symbol, "reality": reality, "permitted": permitted, "confidence": confidence, "bonus": result["bonus"]}
+        except Exception as e:
+            self._reality_detector_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_global_wave(self, symbol: str, side: str) -> dict:
+        """Global wave scanner: wave pattern allocation signal."""
+        result = {"bonus": 0.0, "wave_state": "UNKNOWN"}
+        if self.global_wave_scanner is None:
+            return result
+        try:
+            alloc = self.global_wave_scanner.get_wave_allocation() if hasattr(self.global_wave_scanner, 'get_wave_allocation') else {}
+            if not alloc:
+                return result
+            wave_state = str(alloc.get("wave_state", "UNKNOWN") or "UNKNOWN")
+            attention = float(alloc.get("attention_score", 0.0) or 0.0)
+            bonus = attention * 1.0
+            if wave_state in {"RISING", "STRONG"}:
+                bonus += 0.3 if side == "buy" else -0.2
+            elif wave_state in {"FALLING", "WEAK"}:
+                bonus += 0.3 if side == "sell" else -0.2
+            result.update({"bonus": max(-1.0, min(1.5, bonus)), "wave_state": wave_state})
+            self._global_wave_snapshot = {"symbol": symbol, "wave_state": wave_state, "attention": attention, "bonus": result["bonus"]}
+        except Exception as e:
+            self._global_wave_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_obsidian(self, symbol: str, side: str, current_price: float) -> dict:
+        """Obsidian filter: signal purification and noise reduction."""
+        result = {"bonus": 0.0, "clarity": 0.0, "shielded": False}
+        if self.obsidian_filter is None:
+            return result
+        try:
+            if hasattr(self.obsidian_filter, 'filter_signal'):
+                filtered = self.obsidian_filter.filter_signal(current_price) or {}
+            elif hasattr(self.obsidian_filter, 'process'):
+                filtered = self.obsidian_filter.process(current_price) or {}
+            else:
+                return result
+            clarity = float(filtered.get("clarity", 0.0) or filtered.get("snr", 0.0) or 0.0)
+            shielded = bool(filtered.get("shielded", False) or filtered.get("protected", False))
+            bonus = (clarity - 0.5) * 2.0
+            if shielded:
+                bonus -= 0.5
+            result.update({"bonus": max(-1.5, min(1.5, bonus)), "clarity": clarity, "shielded": shielded})
+            self._obsidian_snapshot = {"symbol": symbol, "clarity": clarity, "shielded": shielded, "bonus": result["bonus"]}
+        except Exception as e:
+            self._obsidian_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    # ── TIER 3 SCORING ──────────────────────────────────────────────────
+
+    def _score_schumann(self, symbol: str, side: str) -> dict:
+        """Schumann resonance: earth coherence as a macro timing overlay."""
+        result = {"bonus": 0.0, "coherence": 0.0, "blessing": ""}
+        if self.schumann_bridge is None:
+            return result
+        try:
+            from aureon.harmonic.aureon_schumann_resonance_bridge import get_earth_blessing
+            blessing_score, blessing_label = get_earth_blessing()
+            bonus = (float(blessing_score) - 0.5) * 1.5
+            result.update({"bonus": max(-1.0, min(1.0, bonus)), "coherence": float(blessing_score), "blessing": blessing_label})
+            self._schumann_snapshot = {"symbol": symbol, "coherence": float(blessing_score), "blessing": blessing_label, "bonus": result["bonus"]}
+        except Exception as e:
+            self._schumann_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_harmonic_nexus(self, symbol: str, side: str) -> dict:
+        """Harmonic nexus bridge: cross-domain anomaly detection."""
+        result = {"bonus": 0.0, "anomalies": 0, "coherence": 0.0}
+        if self.harmonic_nexus is None:
+            return result
+        try:
+            analysis = None
+            if hasattr(self.harmonic_nexus, 'analyze'):
+                analysis = self.harmonic_nexus.analyze(symbol) or {}
+            elif hasattr(self.harmonic_nexus, 'get_analysis'):
+                analysis = self.harmonic_nexus.get_analysis(symbol) or {}
+            if not analysis:
+                return result
+            anomalies = int(analysis.get("anomaly_count", 0) or 0) if isinstance(analysis, dict) else int(getattr(analysis, 'anomaly_count', 0) or 0)
+            coherence = float(analysis.get("coherence", 0.0) or 0.0) if isinstance(analysis, dict) else float(getattr(analysis, 'coherence', 0.0) or 0.0)
+            bonus = (coherence - 0.5) * 2.0
+            if anomalies > 2:
+                bonus -= 0.5
+            result.update({"bonus": max(-1.0, min(1.5, bonus)), "anomalies": anomalies, "coherence": coherence})
+            self._harmonic_nexus_snapshot = {"symbol": symbol, "anomalies": anomalies, "coherence": coherence, "bonus": result["bonus"]}
+        except Exception as e:
+            self._harmonic_nexus_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_earth_resonance(self, symbol: str, side: str) -> dict:
+        """Earth resonance engine: planetary coherence for timing."""
+        result = {"bonus": 0.0, "resonance": 0.0}
+        if self.earth_resonance is None:
+            return result
+        try:
+            state = None
+            if hasattr(self.earth_resonance, 'get_coherence'):
+                state = self.earth_resonance.get_coherence()
+            elif hasattr(self.earth_resonance, 'get_state'):
+                state = self.earth_resonance.get_state()
+            if state is None:
+                return result
+            coherence = float(state.get("coherence", 0.5) or 0.5) if isinstance(state, dict) else float(getattr(state, 'coherence', 0.5) or 0.5)
+            bonus = (coherence - 0.5) * 1.5
+            result.update({"bonus": max(-0.75, min(1.0, bonus)), "resonance": coherence})
+            self._earth_resonance_snapshot = {"symbol": symbol, "resonance": coherence, "bonus": result["bonus"]}
+        except Exception as e:
+            self._earth_resonance_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_market_harp(self, symbol: str, side: str) -> dict:
+        """Market harp: harmonic string resonance across markets."""
+        result = {"bonus": 0.0, "ripple": "neutral"}
+        if self.market_harp is None:
+            return result
+        try:
+            ripple = None
+            if hasattr(self.market_harp, 'get_ripple'):
+                ripple = self.market_harp.get_ripple(symbol)
+            elif hasattr(self.market_harp, 'pluck'):
+                ripple = self.market_harp.pluck(symbol)
+            if ripple is None:
+                return result
+            direction = str(ripple.get("direction", "neutral") or "neutral").lower() if isinstance(ripple, dict) else str(getattr(ripple, 'direction', 'neutral') or 'neutral').lower()
+            amplitude = float(ripple.get("amplitude", 0.0) or 0.0) if isinstance(ripple, dict) else float(getattr(ripple, 'amplitude', 0.0) or 0.0)
+            bonus = amplitude * 1.0
+            if (direction in {"buy", "bullish"} and side == "sell") or (direction in {"sell", "bearish"} and side == "buy"):
+                bonus *= -0.5
+            result.update({"bonus": max(-0.75, min(1.0, bonus)), "ripple": direction})
+            self._market_harp_snapshot = {"symbol": symbol, "ripple": direction, "amplitude": amplitude, "bonus": result["bonus"]}
+        except Exception as e:
+            self._market_harp_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_crypto_map(self, symbol: str, side: str) -> dict:
+        """Crypto market map: sector opportunity and correlation data."""
+        result = {"bonus": 0.0, "sector_score": 0.0}
+        if self.crypto_map is None:
+            return result
+        try:
+            summary = self.crypto_map.get_map_summary() if hasattr(self.crypto_map, 'get_map_summary') else {}
+            if not summary:
+                return result
+            sector_score = float(summary.get("sector_opportunity", 0.0) or 0.0)
+            bonus = sector_score * 1.0
+            result.update({"bonus": max(-0.75, min(1.0, bonus)), "sector_score": sector_score})
+            self._crypto_map_snapshot = {"symbol": symbol, "sector_score": sector_score, "bonus": result["bonus"]}
+        except Exception as e:
+            self._crypto_map_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_sensory(self, symbol: str, side: str) -> dict:
+        """Sensory framework: multi-sense data fusion."""
+        result = {"bonus": 0.0, "experience_quality": 0.0}
+        if self.sensory_registry is None:
+            return result
+        try:
+            experience = None
+            if hasattr(self.sensory_registry, 'sense'):
+                experience = self.sensory_registry.sense(symbol)
+            elif hasattr(self.sensory_registry, 'get_experience'):
+                experience = self.sensory_registry.get_experience(symbol)
+            if experience is None:
+                return result
+            quality = float(experience.get("quality", 0.5) or 0.5) if isinstance(experience, dict) else float(getattr(experience, 'quality', 0.5) or 0.5)
+            bonus = (quality - 0.5) * 1.5
+            result.update({"bonus": max(-0.75, min(1.0, bonus)), "experience_quality": quality})
+            self._sensory_snapshot = {"symbol": symbol, "quality": quality, "bonus": result["bonus"]}
+        except Exception as e:
+            self._sensory_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    # ── TIER 4 SCORING (Infrastructure with signal value) ───────────
+
+    def _score_whale_sonar(self, symbol: str, side: str) -> dict:
+        """Mycelium whale sonar: aggregate whale signal score."""
+        result = {"bonus": 0.0, "whale_score": 0.0}
+        if self.whale_sonar is None:
+            return result
+        try:
+            if hasattr(self.whale_sonar, 'get_whale_signal'):
+                sig = self.whale_sonar.get_whale_signal(symbol) or {}
+            elif hasattr(self.whale_sonar, 'get_aggregated'):
+                sig = self.whale_sonar.get_aggregated() or {}
+            else:
+                return result
+            score = float(sig.get("whale_signal_score", 0.0) or 0.0)
+            bonus = score * 1.5
+            result.update({"bonus": max(-1.0, min(1.5, bonus)), "whale_score": score})
+            self._whale_sonar_snapshot = {"symbol": symbol, "score": score, "bonus": result["bonus"]}
+        except Exception as e:
+            self._whale_sonar_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_hive_state(self, symbol: str, side: str) -> dict:
+        """Hive state: cross-system coordination status."""
+        result = {"bonus": 0.0, "coherent": True}
+        if self.hive_state is None:
+            return result
+        try:
+            state = self.hive_state.get_state() if hasattr(self.hive_state, 'get_state') else {}
+            if not state:
+                return result
+            coherent = bool(state.get("coherent", True))
+            mood = str(state.get("mood", "neutral") or "neutral").lower()
+            bonus = 0.0
+            if not coherent:
+                bonus = -0.75
+            if mood in {"bullish", "optimistic"}:
+                bonus += 0.25 if side == "buy" else -0.15
+            elif mood in {"bearish", "fearful"}:
+                bonus += 0.25 if side == "sell" else -0.15
+            result.update({"bonus": max(-1.0, min(0.75, bonus)), "coherent": coherent})
+            self._hive_state_snapshot = {"symbol": symbol, "coherent": coherent, "mood": mood, "bonus": result["bonus"]}
+        except Exception as e:
+            self._hive_state_snapshot = {"symbol": symbol, "error": str(e)}
+        return result
+
+    def _score_inception(self, symbol: str, side: str) -> dict:
+        """Inception engine: Russian-doll dream-layer probability."""
+        result = {"bonus": 0.0, "deepest_signal": "neutral", "limbo_prob": 0.0}
+        if self.inception_engine is None:
+            return result
+        try:
+            insight = None
+            if hasattr(self.inception_engine, 'get_limbo_insight'):
+                insight = self.inception_engine.get_limbo_insight(symbol)
+            elif hasattr(self.inception_engine, 'dream'):
+                insight = self.inception_engine.dream(symbol)
+            if insight is None:
+                return result
+            direction = str(insight.get("direction", "neutral") or "neutral").lower() if isinstance(insight, dict) else str(getattr(insight, 'direction', 'neutral') or 'neutral').lower()
+            probability = float(insight.get("probability", 0.5) or 0.5) if isinstance(insight, dict) else float(getattr(insight, 'probability', 0.5) or 0.5)
+            bonus = (probability - 0.5) * 2.0
+            if (direction in {"buy", "bullish"} and side == "sell") or (direction in {"sell", "bearish"} and side == "buy"):
+                bonus *= -0.5
+            result.update({"bonus": max(-1.0, min(1.0, bonus)), "deepest_signal": direction, "limbo_prob": probability})
+            self._inception_snapshot = {"symbol": symbol, "direction": direction, "probability": probability, "bonus": result["bonus"]}
+        except Exception as e:
+            self._inception_snapshot = {"symbol": symbol, "error": str(e)}
         return result
 
     def _select_new_position(self, positions: list[dict], known_ids: set[str], pair: str, side: str) -> Optional[dict]:
@@ -4624,6 +5563,37 @@ class KrakenMarginArmyTrader:
                 side=side,
             )
 
+            # ── NEW INTELLIGENCE SCORES ─────────────────────────────
+            # Tier 1: High-impact signal producers
+            phase_t = self._score_phase_transition(symbol=info.pair, side=side, current_price=info.last_price)
+            prob_ult = self._score_prob_ultimate(symbol=info.pair, side=side, current_price=info.last_price, momentum_pct=float(info.momentum))
+            news_sig = self._score_news_signal(symbol=info.base_clean or info.base or info.pair, side=side)
+            phantom = self._score_phantom_filter(symbol=info.binance_symbol or info.pair, side=side)
+            global_fin = self._score_global_financial(symbol=info.pair, side=side)
+            whale_beh = self._score_whale_behavior(symbol=info.binance_symbol or info.pair, side=side)
+            kraken_sig = self._score_kraken_signal_bridge(symbol=info.pair, side=side, current_price=info.last_price)
+            truth_pred = self._score_truth_prediction(symbol=info.pair, side=side, current_price=info.last_price, momentum_pct=float(info.momentum))
+            prob_nex = self._score_prob_nexus(symbol=info.pair, side=side)
+            # Tier 2: Market intelligence & context
+            real_int = self._score_real_intel(symbol=info.pair, side=side)
+            organism = self._score_market_organism(symbol=info.pair, side=side)
+            elephant = self._score_elephant(symbol=info.pair, side=side, current_price=info.last_price, momentum_pct=float(info.momentum))
+            adv_int = self._score_advanced_intel(symbol=info.pair, side=side)
+            reality = self._score_reality_detector(symbol=info.pair, side=side)
+            g_wave = self._score_global_wave(symbol=info.pair, side=side)
+            obsidian = self._score_obsidian(symbol=info.pair, side=side, current_price=info.last_price)
+            # Tier 3: Harmonic, resonance & correlation
+            schumann = self._score_schumann(symbol=info.pair, side=side)
+            h_nexus = self._score_harmonic_nexus(symbol=info.pair, side=side)
+            earth_res = self._score_earth_resonance(symbol=info.pair, side=side)
+            m_harp = self._score_market_harp(symbol=info.pair, side=side)
+            c_map = self._score_crypto_map(symbol=info.pair, side=side)
+            sensory = self._score_sensory(symbol=info.pair, side=side)
+            # Tier 4: Infrastructure with signal value
+            w_sonar = self._score_whale_sonar(symbol=info.binance_symbol or info.pair, side=side)
+            hive_st = self._score_hive_state(symbol=info.pair, side=side)
+            incept = self._score_inception(symbol=info.pair, side=side)
+
             total_score = (ease_score * 3 + lev_score * 3 + spread_score * 2
                           + momentum_score + vol_score + conviction_bonus + hive_bonus
                           + goal_score * 2          # weight 2 — quickest profitable signal wins
@@ -4635,7 +5605,37 @@ class KrakenMarginArmyTrader:
                           + fusion["bonus"] * 1.25
                           + whale["bonus"] * 1.25
                           + live_tv["bonus"] * 1.25
-                          + ocean["bonus"] * 1.25)
+                          + ocean["bonus"] * 1.25
+                          # ── Tier 1 new intelligence (high weight) ──
+                          + phase_t["bonus"] * 1.5    # phase transition detector
+                          + prob_ult["bonus"] * 1.5   # probability ultimate intelligence
+                          + news_sig["bonus"] * 1.25  # news sentiment signal
+                          + phantom["bonus"] * 1.5    # phantom signal filter
+                          + global_fin["bonus"] * 1.25  # global financial feed
+                          + whale_beh["bonus"] * 1.25   # whale behavior predictor
+                          + kraken_sig["bonus"] * 1.5   # kraken unified signal bridge
+                          + truth_pred["bonus"] * 1.25  # truth prediction engine
+                          + prob_nex["bonus"] * 1.25    # probability nexus bridge
+                          # ── Tier 2 market intelligence (medium weight) ──
+                          + real_int["bonus"] * 1.0   # real intelligence engine
+                          + organism["bonus"] * 1.0   # market organism
+                          + elephant["bonus"] * 1.0   # elephant learning
+                          + adv_int["bonus"] * 1.0    # advanced intelligence
+                          + reality["bonus"] * 1.0    # reality detector
+                          + g_wave["bonus"] * 1.0     # global wave scanner
+                          + obsidian["bonus"] * 1.0   # obsidian filter
+                          # ── Tier 3 harmonic & resonance (lower weight) ──
+                          + schumann["bonus"] * 0.75  # schumann resonance
+                          + h_nexus["bonus"] * 0.75   # harmonic nexus bridge
+                          + earth_res["bonus"] * 0.75 # earth resonance
+                          + m_harp["bonus"] * 0.75    # market harp
+                          + c_map["bonus"] * 0.75     # crypto market map
+                          + sensory["bonus"] * 0.75   # sensory framework
+                          # ── Tier 4 infrastructure signals ──
+                          + w_sonar["bonus"] * 1.0    # whale sonar
+                          + hive_st["bonus"] * 0.75   # hive state
+                          + incept["bonus"] * 0.75    # inception engine
+                          )
 
             route_to_profit = goal_score / max(required_move_pct, 0.01)
             candidates.append((info, side, vol, trade_val, max_lev,
