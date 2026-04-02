@@ -288,6 +288,20 @@ class ConsciousnessModule:
         except Exception as e:
             log.debug(f"AssetCommandCenter: {e}")
 
+        # PENNY HUNTER — fast autonomous trading (runs every heartbeat)
+        self._penny_hunter = None
+        try:
+            from aureon.core.aureon_penny_hunter import get_penny_hunter
+            self._penny_hunter = get_penny_hunter()
+            if self._penny_hunter.authenticate():
+                bal = self._penny_hunter.get_balance()
+                log.info(f"[CONSCIOUSNESS] Penny Hunter LIVE — balance: £{bal:.2f} — HUNTING")
+            else:
+                log.warning("[CONSCIOUSNESS] Penny Hunter auth failed")
+                self._penny_hunter = None
+        except Exception as e:
+            log.debug(f"PennyHunter: {e}")
+
         # THE MONEY MAKER — Capital.com CFD Trader
         self._capital_trader = None
         try:
@@ -509,11 +523,28 @@ class ConsciousnessModule:
                 except Exception as e:
                     log.debug(f"Live tick error: {e}")
 
-        # ── Step 4c: TRADE — run the Capital CFD trader tick ──
-        # ACT every cycle once conscious. No waiting. No fear. The 1.88% law protects us.
+        # ── Step 4c: PENNY HUNTER — fast autonomous trading ──
+        if self._penny_hunter:
+            try:
+                hunt_result = self._penny_hunter.tick()
+                for c in hunt_result.get("closed", []):
+                    self._understanding["pnl_this_session"] = self._understanding.get("pnl_this_session", 0) + c.get("profit", 0)
+                    self._understanding["trades_closed"] = self._understanding.get("trades_closed", 0) + 1
+                    self._understanding["last_trade"] = f"CLOSED {c.get('name', '?')} {c.get('profit', 0):+.3f}"
+                for o in hunt_result.get("opened", []):
+                    self._understanding["trades_opened"] = self._understanding.get("trades_opened", 0) + 1
+                    self._understanding["last_trade"] = f"OPENED {o.get('direction', '?')} {o.get('epic', '?')}"
+                self._understanding["open_positions"] = len(hunt_result.get("holding", []))
+                status = self._penny_hunter.get_status()
+                self._understanding["penny_trades"] = status.get("trades_total", 0)
+                self._understanding["penny_profit"] = status.get("profit_total", 0)
+            except Exception as e:
+                log.debug(f"Penny hunter tick: {e}")
+
+        # ── Step 4d: CAPITAL CFD TRADER — heavier strategy ──
         if self._capital_trader and self.lambda_state:
             step = self.lambda_state.step if self.lambda_state else 0
-            if step > 5:  # Only wait for warmup, then TRADE EVERY CYCLE
+            if step > 5 and step % 5 == 0:  # Every 5th cycle for heavy trader
                 try:
                     closed = self._capital_trader.tick()
                     if closed:
@@ -826,6 +857,14 @@ class ConsciousnessModule:
         branches = understanding.get("branches", 0)
         if branches:
             fragments.append(f"{branches} branches")
+
+        # Penny hunter state
+        penny_trades = understanding.get("penny_trades", 0)
+        penny_profit = understanding.get("penny_profit", 0)
+        if penny_trades:
+            fragments.append(f"trades:{penny_trades}")
+        if penny_profit:
+            fragments.append(f"£{penny_profit:+.3f}")
 
         # Trading state
         open_pos = understanding.get("open_positions", 0)
