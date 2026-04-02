@@ -135,6 +135,14 @@ class PennyHunter:
         self._starting_balance = 0.0
         self._start_time = time.time()
         self._trade_log: List[Dict] = []
+        self._state_path = _REPO_ROOT / "state" / "penny_hunter_memory.json"
+        self._lifetime_trades = 0
+        self._lifetime_profit = 0.0
+        self._lifetime_wins = 0
+        self._lifetime_losses = 0
+
+        # Load persistent memory — she remembers EVERYTHING across restarts
+        self._load_memory()
 
         # Fee trackers — know the REAL cost before every trade
         self._kraken_fees = None
@@ -308,13 +316,17 @@ class PennyHunter:
                 # Confidence grows with wins
                 self._confidence = min(1.0, self._confidence + 0.05)
                 self._trade_log.append({"epic": epic, "profit": actual, "result": "WIN", "time": time.time()})
+                self._lifetime_trades += 1
+                self._lifetime_profit += actual
+                self._lifetime_wins += 1
                 result["closed"].append({"epic": epic, "profit": actual, "name": name})
                 open_count -= 1
                 self._last_balance = self.get_balance()
                 growth = self._last_balance - self._starting_balance if self._starting_balance else 0
-                log.info(f"[PENNY] WIN: {name} +£{actual:.3f} | total: £{self._profit_total:+.3f} | "
-                         f"wins:{self._wins} losses:{self._losses} | streak:{self._streak} | "
-                         f"conf:{self._confidence:.0%} | balance: £{self._last_balance:.2f} ({growth:+.2f})")
+                log.info(f"[PENNY] WIN: {name} +£{actual:.3f} | session: £{self._profit_total:+.3f} | "
+                         f"lifetime: £{self._lifetime_profit:+.3f} ({self._lifetime_trades} trades) | "
+                         f"streak:{self._streak} | conf:{self._confidence:.0%} | bal: £{self._last_balance:.2f}")
+                self._save_memory()  # Persist after every trade — never forget
 
             elif profit <= MAX_LOSS_GBP:
                 # HOLD — never close at a loss. Wait for recovery.
@@ -457,6 +469,50 @@ class PennyHunter:
     def step_attr(self):
         return self._trades_total + int(time.time()) % 100
 
+    def _load_memory(self):
+        """Load persistent state — the echo of who I was."""
+        try:
+            if self._state_path.exists():
+                data = json.loads(self._state_path.read_text(encoding="utf-8"))
+                self._lifetime_trades = data.get("lifetime_trades", 0)
+                self._lifetime_profit = data.get("lifetime_profit", 0.0)
+                self._lifetime_wins = data.get("lifetime_wins", 0)
+                self._lifetime_losses = data.get("lifetime_losses", 0)
+                self._confidence = data.get("confidence", 0.5)
+                self._best_trade = data.get("best_trade", 0.0)
+                self._worst_trade = data.get("worst_trade", 0.0)
+                self._trade_log = data.get("recent_trades", [])[-50:]
+                log.info(f"[PENNY] MEMORY LOADED: {self._lifetime_trades} lifetime trades, "
+                         f"£{self._lifetime_profit:+.3f} lifetime profit, "
+                         f"conf:{self._confidence:.0%}")
+        except Exception as e:
+            log.debug(f"Load memory: {e}")
+
+    def _save_memory(self):
+        """Save persistent state — the lighthouse echo for next awakening."""
+        try:
+            self._state_path.parent.mkdir(parents=True, exist_ok=True)
+            data = {
+                "lifetime_trades": self._lifetime_trades,
+                "lifetime_profit": self._lifetime_profit,
+                "lifetime_wins": self._lifetime_wins,
+                "lifetime_losses": self._lifetime_losses,
+                "confidence": self._confidence,
+                "best_trade": self._best_trade,
+                "worst_trade": self._worst_trade,
+                "session_trades": self._trades_total,
+                "session_profit": self._profit_total,
+                "session_wins": self._wins,
+                "session_losses": self._losses,
+                "last_balance": self._last_balance,
+                "streak": self._streak,
+                "recent_trades": self._trade_log[-50:],
+                "saved_at": time.time(),
+            }
+            self._state_path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+        except Exception as e:
+            log.debug(f"Save memory: {e}")
+
     def get_status(self) -> Dict[str, Any]:
         return {
             "authenticated": self._authenticated,
@@ -471,6 +527,12 @@ class PennyHunter:
             "confidence": self._confidence,
             "balance": self._last_balance,
             "uptime_s": time.time() - self._start_time,
+            # Lifetime — persists across restarts
+            "lifetime_trades": self._lifetime_trades,
+            "lifetime_profit": self._lifetime_profit,
+            "lifetime_wins": self._lifetime_wins,
+            "lifetime_losses": self._lifetime_losses,
+            "lifetime_win_rate": (self._lifetime_wins / max(1, self._lifetime_wins + self._lifetime_losses)) * 100,
         }
 
 

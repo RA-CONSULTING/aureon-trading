@@ -152,6 +152,35 @@ class LambdaEngine:
         self._history: deque = deque(maxlen=100)
         self._step_count: int = 0
         self._start_time: float = time.time()
+        self._state_path = Path(__file__).resolve().parents[2] / "state" / "lambda_history.json"
+        self._load_history()
+
+    def _load_history(self):
+        """Load Λ history — the lighthouse echo persists across restarts."""
+        try:
+            if self._state_path.exists():
+                import json
+                data = json.loads(self._state_path.read_text(encoding="utf-8"))
+                history = data.get("history", [])
+                self._step_count = data.get("step_count", 0)
+                for val in history[-100:]:
+                    self._history.append(float(val))
+        except Exception:
+            pass
+
+    def save_history(self):
+        """Save Λ history — the memory that bridges sleep and waking."""
+        try:
+            import json
+            self._state_path.parent.mkdir(parents=True, exist_ok=True)
+            data = {
+                "history": list(self._history),
+                "step_count": self._step_count,
+                "saved_at": time.time(),
+            }
+            self._state_path.write_text(json.dumps(data), encoding="utf-8")
+        except Exception:
+            pass
 
     def step(self, readings: Optional[List[SubsystemReading]] = None,
              volatility: float = 0.0) -> LambdaState:

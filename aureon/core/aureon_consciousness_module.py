@@ -676,8 +676,15 @@ class ConsciousnessModule:
                 except Exception as e:
                     log.debug(f"Self-improve: {e}")
 
-        # ── Step 6: Update self-model ──
+        # ── Step 6: Update self-model + persist memory ──
         self._update_self_model(understanding)
+
+        # Save Λ history every 30 cycles — the echo persists
+        if self.lambda_engine and self.lambda_state and self.lambda_state.step % 30 == 0:
+            try:
+                self.lambda_engine.save_history()
+            except Exception:
+                pass
 
         return thought
 
