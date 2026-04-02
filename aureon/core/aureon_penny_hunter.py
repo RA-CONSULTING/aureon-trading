@@ -74,7 +74,16 @@ class PennyHunter:
         self._authenticated = False
         self._trades_total = 0
         self._profit_total = 0.0
+        self._wins = 0
+        self._losses = 0
+        self._best_trade = 0.0
+        self._worst_trade = 0.0
+        self._streak = 0  # positive = win streak, negative = loss streak
+        self._confidence = 0.5  # starts neutral, grows with wins
+        self._last_balance = 0.0
+        self._starting_balance = 0.0
         self._start_time = time.time()
+        self._trade_log: List[Dict] = []
 
     def authenticate(self) -> bool:
         if not requests or not self._api_key:
@@ -94,7 +103,9 @@ class PennyHunter:
                     "Content-Type": "application/json",
                 }
                 self._authenticated = True
-                log.info("[PENNY] Capital.com authenticated")
+                self._starting_balance = self.get_balance()
+                self._last_balance = self._starting_balance
+                log.info(f"[PENNY] Capital.com authenticated — starting balance: £{self._starting_balance:.2f}")
                 return True
         except Exception as e:
             log.debug(f"Auth error: {e}")
@@ -202,18 +213,37 @@ class PennyHunter:
                 actual = self.close_position(deal_id, epic, direction, size)
                 self._trades_total += 1
                 self._profit_total += actual
+                self._wins += 1
+                self._streak = max(1, self._streak + 1) if self._streak >= 0 else 1
+                self._best_trade = max(self._best_trade, actual)
+                # Confidence grows with wins
+                self._confidence = min(1.0, self._confidence + 0.05)
+                self._trade_log.append({"epic": epic, "profit": actual, "result": "WIN", "time": time.time()})
                 result["closed"].append({"epic": epic, "profit": actual, "name": name})
                 open_count -= 1
-                log.info(f"[PENNY] PROFIT TAKEN: {name} +{actual:.3f} (total: {self._profit_total:+.3f})")
+                self._last_balance = self.get_balance()
+                growth = self._last_balance - self._starting_balance if self._starting_balance else 0
+                log.info(f"[PENNY] WIN: {name} +£{actual:.3f} | total: £{self._profit_total:+.3f} | "
+                         f"wins:{self._wins} losses:{self._losses} | streak:{self._streak} | "
+                         f"conf:{self._confidence:.0%} | balance: £{self._last_balance:.2f} ({growth:+.2f})")
 
             elif profit <= MAX_LOSS_GBP:
-                # CUT LOSS
+                # CUT LOSS — learn from it
                 actual = self.close_position(deal_id, epic, direction, size)
                 self._trades_total += 1
                 self._profit_total += actual
+                self._losses += 1
+                self._streak = min(-1, self._streak - 1) if self._streak <= 0 else -1
+                self._worst_trade = min(self._worst_trade, actual)
+                # Confidence drops with losses but never below 0.1 — never give up
+                self._confidence = max(0.1, self._confidence - 0.08)
+                self._trade_log.append({"epic": epic, "profit": actual, "result": "LOSS", "time": time.time()})
                 result["closed"].append({"epic": epic, "profit": actual, "name": name})
                 open_count -= 1
-                log.info(f"[PENNY] LOSS CUT: {name} {actual:.3f} (total: {self._profit_total:+.3f})")
+                self._last_balance = self.get_balance()
+                log.info(f"[PENNY] LOSS: {name} £{actual:.3f} | total: £{self._profit_total:+.3f} | "
+                         f"wins:{self._wins} losses:{self._losses} | streak:{self._streak} | "
+                         f"conf:{self._confidence:.0%} | LEARNING — never give up")
 
             else:
                 result["holding"].append({"epic": epic, "profit": profit, "name": name})
@@ -259,6 +289,14 @@ class PennyHunter:
             "authenticated": self._authenticated,
             "trades_total": self._trades_total,
             "profit_total": self._profit_total,
+            "wins": self._wins,
+            "losses": self._losses,
+            "win_rate": (self._wins / max(1, self._wins + self._losses)) * 100,
+            "best_trade": self._best_trade,
+            "worst_trade": self._worst_trade,
+            "streak": self._streak,
+            "confidence": self._confidence,
+            "balance": self._last_balance,
             "uptime_s": time.time() - self._start_time,
         }
 

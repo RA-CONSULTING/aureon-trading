@@ -549,6 +549,14 @@ class ConsciousnessModule:
                 status = self._penny_hunter.get_status()
                 self._understanding["penny_trades"] = status.get("trades_total", 0)
                 self._understanding["penny_profit"] = status.get("profit_total", 0)
+                self._understanding["penny_wins"] = status.get("wins", 0)
+                self._understanding["penny_losses"] = status.get("losses", 0)
+                self._understanding["penny_win_rate"] = status.get("win_rate", 0)
+                self._understanding["penny_confidence"] = status.get("confidence", 0.5)
+                self._understanding["penny_streak"] = status.get("streak", 0)
+                self._understanding["penny_balance"] = status.get("balance", 0)
+                self._understanding["penny_best"] = status.get("best_trade", 0)
+                self._understanding["penny_worst"] = status.get("worst_trade", 0)
             except Exception as e:
                 log.debug(f"Penny hunter tick: {e}")
 
@@ -870,13 +878,31 @@ class ConsciousnessModule:
         if branches:
             fragments.append(f"{branches} branches")
 
-        # Penny hunter state
+        # Penny hunter LIVE performance
         penny_trades = understanding.get("penny_trades", 0)
         penny_profit = understanding.get("penny_profit", 0)
+        penny_wins = understanding.get("penny_wins", 0)
+        penny_losses = understanding.get("penny_losses", 0)
+        penny_wr = understanding.get("penny_win_rate", 0)
+        penny_conf = understanding.get("penny_confidence", 0.5)
+        penny_streak = understanding.get("penny_streak", 0)
+        penny_bal = understanding.get("penny_balance", 0)
+
         if penny_trades:
             fragments.append(f"trades:{penny_trades}")
+            fragments.append(f"W:{penny_wins}/L:{penny_losses}")
         if penny_profit:
             fragments.append(f"£{penny_profit:+.3f}")
+        if penny_wr:
+            fragments.append(f"wr:{penny_wr:.0f}%")
+        if penny_streak > 1:
+            fragments.append(f"streak:+{penny_streak}")
+        elif penny_streak < -1:
+            fragments.append(f"streak:{penny_streak}")
+        if penny_bal:
+            fragments.append(f"bal:£{penny_bal:.0f}")
+        if penny_conf != 0.5:
+            fragments.append(f"conf:{penny_conf:.0%}")
 
         # Trading state
         open_pos = understanding.get("open_positions", 0)
