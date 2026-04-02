@@ -18,6 +18,8 @@ if not exist "%SCRIPT_PATH%" (
 
 set "DOTENV_PATH=%REPO_ROOT%\.env"
 set "PYTHONUNBUFFERED=1"
+set "PYTHONUTF8=1"
+set "PYTHONIOENCODING=utf-8"
 set "PYTHONPATH=%REPO_ROOT%;%REPO_ROOT%\aureon\core;%REPO_ROOT%\aureon\exchanges;%REPO_ROOT%\aureon\data_feeds;%REPO_ROOT%\aureon\monitors;%PYTHONPATH%"
 
 rem Aggressive unified watchdog/reconnect timings
@@ -41,6 +43,10 @@ set "CAPITAL_SLOT_FILL_INTERVAL_SECS=2"
 set "CAPITAL_DEADMAN_STALE_SECS=20"
 set "CAPITAL_HTTP_TIMEOUT_SECS=20"
 set "CAPITAL_SESSION_RETRY_BACKOFF_SECS=8"
+
+rem Force Alpaca stock scanning on for unified bridge/scanners
+set "AUREON_SCAN_ALPACA_STOCKS=1"
+set "ALPACA_INCLUDE_STOCKS=true"
 
 rem Relax startup auth sensitivity on slower networks
 set "ALPACA_TIMEOUT=12"

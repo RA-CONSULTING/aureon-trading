@@ -18,7 +18,10 @@ Design principles:
 Author: Aureon Trading System  |  March 2026
 """
 
+import contextlib
+import io
 import os
+import sys
 import time
 import logging
 import json
@@ -133,6 +136,28 @@ except Exception:
     HAS_THOUGHT_BUS = False
 
 try:
+    from aureon.command_centers.aureon_system_hub import SystemRegistry
+    HAS_SYSTEM_HUB = True
+except Exception:
+    SystemRegistry = None          # type: ignore
+    HAS_SYSTEM_HUB = False
+
+try:
+    from aureon.core.aureon_mycelium import get_mycelium, MyceliumNetwork
+    HAS_MYCELIUM = True
+except Exception:
+    try:
+        _MYCELIUM_CORE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "core"))
+        if _MYCELIUM_CORE_DIR not in sys.path:
+            sys.path.insert(0, _MYCELIUM_CORE_DIR)
+        from aureon_mycelium import get_mycelium, MyceliumNetwork
+        HAS_MYCELIUM = True
+    except Exception:
+        get_mycelium = None        # type: ignore
+        MyceliumNetwork = None     # type: ignore
+        HAS_MYCELIUM = False
+
+try:
     from aureon.trading.penny_profit_engine import get_penny_engine
     HAS_PENNY_ENGINE = True
 except Exception:
@@ -227,6 +252,9 @@ CAPITAL_LIVE_REFRESH_ENABLED = _env_bool("CAPITAL_LIVE_REFRESH_ENABLED", True)
 CAPITAL_LIVE_REFRESH_INTERVAL_SECS = _env_float("CAPITAL_LIVE_REFRESH_INTERVAL_SECS", 1.0)
 CAPITAL_LIVE_EVENT_TRIGGER_PCT = _env_float("CAPITAL_LIVE_EVENT_TRIGGER_PCT", 0.03)
 CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS = _env_float("CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS", 0.25)
+CAPITAL_MIND_MAP_REFRESH_SECS = _env_float("CAPITAL_MIND_MAP_REFRESH_SECS", 300.0)
+CAPITAL_MYCELIUM_REFRESH_SECS = _env_float("CAPITAL_MYCELIUM_REFRESH_SECS", 15.0)
+CAPITAL_PROBABILITY_FEED_INTERVAL_SECS = _env_float("CAPITAL_PROBABILITY_FEED_INTERVAL_SECS", 15.0)
 CAPITAL_FOCUS_SYMBOLS = tuple(
     symbol.strip().upper()
     for symbol in str(os.getenv("CAPITAL_FOCUS_SYMBOLS", "") or "").split(",")
@@ -385,6 +413,17 @@ class CapitalCFDTrader:
             if HAS_TRADE_PROFIT_VALIDATOR and TradeProfitValidator is not None
             else None
         )
+        self.workspace_root = Path(os.path.join(os.path.dirname(__file__), "..", "..")).resolve()
+        self.system_hub_registry = (
+            SystemRegistry(workspace_path=str(self.workspace_root))
+            if HAS_SYSTEM_HUB and SystemRegistry is not None
+            else None
+        )
+        self.mycelium = (
+            get_mycelium(initial_capital=100.0)
+            if HAS_MYCELIUM and get_mycelium is not None
+            else None
+        )
         self.unified_registry = get_unified_puller() if HAS_UNIFIED_REGISTRY and get_unified_puller is not None else None
         self.unified_decision_engine = UnifiedDecisionEngine() if HAS_UNIFIED_DECISION and UnifiedDecisionEngine is not None else None
         self.orchestrator = (
@@ -403,12 +442,21 @@ class CapitalCFDTrader:
             if HAS_THOUGHT_BUS and get_thought_bus is not None else None
         )
         self._registry_snapshot: Dict[str, Any] = {}
+        self._mind_map_snapshot: Dict[str, Any] = {}
+        self._mind_map_snapshot_at: float = 0.0
         self._decision_snapshot: Dict[str, Any] = {}
         self._orchestrator_snapshot: Dict[str, Any] = {}
         self._timeline_snapshot: Dict[str, Any] = {}
         self._fusion_snapshot: Dict[str, Any] = {}
         self._thought_bus_snapshot: Dict[str, Any] = {}
         self._cognition_snapshot: Dict[str, Any] = {}
+        self._mycelium_snapshot: Dict[str, Any] = {}
+        self._mycelium_snapshot_at: float = 0.0
+        self._live_system_activity_snapshot: Dict[str, Any] = {}
+        self._probability_feed_snapshot: Dict[str, Any] = {}
+        self._last_probability_feed_publish_at: float = 0.0
+        self._last_live_confirmed_key: str = ""
+        self._last_mycelium_message: Dict[str, Any] = {}
         self._swarm_snapshot: Dict[str, Any] = {
             "enabled": True,
             "leader": {},
@@ -562,6 +610,69 @@ class CapitalCFDTrader:
                 snapshot["error"] = str(e)
         self._registry_snapshot = snapshot
 
+    def _refresh_mind_map_snapshot(self, force: bool = False) -> Dict[str, Any]:
+        now = time.time()
+        cached_snapshot = dict(getattr(self, "_mind_map_snapshot", {}) or {})
+        cached_at = float(getattr(self, "_mind_map_snapshot_at", 0.0) or 0.0)
+        workspace_root = Path(
+            getattr(
+                self,
+                "workspace_root",
+                Path(os.path.join(os.path.dirname(__file__), "..", "..")).resolve(),
+            )
+        ).resolve()
+        if not force and cached_snapshot and (now - cached_at) < max(30.0, CAPITAL_MIND_MAP_REFRESH_SECS):
+            return dict(cached_snapshot)
+
+        snapshot: Dict[str, Any] = {
+            "ok": False,
+            "workspace": str(workspace_root),
+            "systems_total": 0,
+            "categories_total": 0,
+            "running_systems": 0,
+            "probability_systems": 0,
+            "neural_systems": 0,
+            "execution_systems": 0,
+            "edges_total": 0,
+            "updated": datetime.now().isoformat(),
+            "reason": "system_hub_unavailable",
+        }
+        registry = getattr(self, "system_hub_registry", None)
+        if registry is not None:
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    registry.scan_workspace()
+                graph = registry.export_mind_map_data()
+                category_stats = registry.get_category_stats()
+                running_nodes = [node for node in graph.get("nodes", []) if bool(node.get("is_running"))]
+                probability_category = registry.categories.get("Probability & Prediction")
+                neural_category = registry.categories.get("Neural Networks")
+                execution_category = registry.categories.get("Execution Engines")
+                snapshot = {
+                    "ok": True,
+                    "workspace": str(registry.workspace_path),
+                    "systems_total": len(registry.systems),
+                    "categories_total": len(registry.categories),
+                    "running_systems": len(running_nodes),
+                    "running_examples": [str(node.get("id") or "") for node in running_nodes[:10]],
+                    "probability_systems": int(category_stats.get("Probability & Prediction", {}).get("count", 0) or 0),
+                    "neural_systems": int(category_stats.get("Neural Networks", {}).get("count", 0) or 0),
+                    "execution_systems": int(category_stats.get("Execution Engines", {}).get("count", 0) or 0),
+                    "probability_examples": [sys.name for sys in (probability_category.systems[:8] if probability_category else [])],
+                    "neural_examples": [sys.name for sys in (neural_category.systems[:8] if neural_category else [])],
+                    "execution_examples": [sys.name for sys in (execution_category.systems[:8] if execution_category else [])],
+                    "categories": category_stats,
+                    "edges_total": len(graph.get("edges", [])),
+                    "updated": datetime.now().isoformat(),
+                    "reason": "ok",
+                }
+            except Exception as e:
+                snapshot["reason"] = f"scan_error:{e}"
+
+        self._mind_map_snapshot = snapshot
+        self._mind_map_snapshot_at = now
+        return dict(snapshot)
+
     def _refresh_thought_bus_snapshot(self) -> None:
         if self.thought_bus is None:
             self._thought_bus_snapshot = {}
@@ -587,6 +698,369 @@ class CapitalCFDTrader:
         except Exception as e:
             self._thought_bus_snapshot = {"error": str(e)}
             self._cognition_snapshot = {"error": str(e)}
+
+    def receive_mycelium_message(self, message_type: str, payload: Dict[str, Any]) -> None:
+        self._last_mycelium_message = {
+            "type": str(message_type or ""),
+            "payload": dict(payload or {}),
+            "received_at": time.time(),
+        }
+
+    def _wire_mycelium_runtime(self) -> None:
+        if self.mycelium is None:
+            return
+        try:
+            mesh = self.mycelium.get_mesh_status() if hasattr(self.mycelium, "get_mesh_status") else {}
+            connected_names = {
+                str(item.get("name") or "")
+                for item in list(mesh.get("connected_systems", []) or [])
+            }
+            targets = (
+                ("capital_cfd_trader", self),
+                ("system_hub_registry", getattr(self, "system_hub_registry", None)),
+                ("capital_thought_bus", getattr(self, "thought_bus", None)),
+            )
+            for name, instance in targets:
+                if not name or instance is None or name in connected_names:
+                    continue
+                if hasattr(self.mycelium, "connect_subsystem"):
+                    self.mycelium.connect_subsystem(name, instance)
+        except Exception as e:
+            logger.debug("Capital Mycelium wiring failed: %s", e)
+
+    def _refresh_mycelium_snapshot(self, force: bool = False) -> Dict[str, Any]:
+        now = time.time()
+        cached_snapshot = dict(getattr(self, "_mycelium_snapshot", {}) or {})
+        cached_at = float(getattr(self, "_mycelium_snapshot_at", 0.0) or 0.0)
+        mind_map_snapshot = dict(getattr(self, "_mind_map_snapshot", {}) or {})
+        last_mycelium_message = dict(getattr(self, "_last_mycelium_message", {}) or {})
+        if not force and cached_snapshot and (now - cached_at) < max(5.0, CAPITAL_MYCELIUM_REFRESH_SECS):
+            return dict(cached_snapshot)
+
+        snapshot: Dict[str, Any] = {
+            "ok": False,
+            "coherence": 0.0,
+            "queen_signal": 0.0,
+            "total_hives": 0,
+            "total_agents": 0,
+            "generation": 0,
+            "connected_count": 0,
+            "connected_systems": [],
+            "external_signals": 0,
+            "broadcasts_pending": 0,
+            "mind_map_attached": False,
+            "updated": datetime.now().isoformat(),
+            "reason": "mycelium_unavailable",
+        }
+        mycelium = getattr(self, "mycelium", None)
+        if mycelium is not None:
+            try:
+                self._wire_mycelium_runtime()
+                capital = self.get_capital_snapshot()
+                growth = self._compute_growth_metrics()
+                drawdown_pct = abs(min(float(growth.get("equity_growth_pct", 0.0) or 0.0), 0.0))
+                governing_metrics = {
+                    "total_equity": float(capital.get("equity_gbp", 0.0) or 0.0),
+                    "total_cash": float(capital.get("free_gbp", 0.0) or 0.0),
+                    "realized_pnl_total": float((self.stats or {}).get("total_pnl_gbp", 0.0) or 0.0),
+                    "win_rate": float(growth.get("win_rate", 0.0) or 0.0),
+                    "drawdown_pct": drawdown_pct,
+                    "positions_count": len(self.positions),
+                }
+                if hasattr(mycelium, "update_governing_metrics"):
+                    mycelium.update_governing_metrics(governing_metrics)
+
+                connection_map = dict(getattr(mycelium, "connection_map", {}) or {})
+                connection_map["mind_map"] = {
+                    "systems_total": int(mind_map_snapshot.get("systems_total", 0) or 0),
+                    "categories_total": int(mind_map_snapshot.get("categories_total", 0) or 0),
+                    "running_systems": int(mind_map_snapshot.get("running_systems", 0) or 0),
+                    "probability_systems": int(mind_map_snapshot.get("probability_systems", 0) or 0),
+                    "updated": mind_map_snapshot.get("updated", ""),
+                }
+                if last_mycelium_message:
+                    connection_map["capital_last_message"] = dict(last_mycelium_message)
+                if hasattr(mycelium, "update_connection_map"):
+                    mycelium.update_connection_map(connection_map)
+
+                target = dict(self._latest_target_snapshot or {})
+                symbol = str(target.get("symbol") or "")
+                score = max(0.0, min(1.0, float(target.get("score", 0.0) or 0.0)))
+                direction = str(target.get("direction") or "").upper()
+                if symbol and hasattr(mycelium, "receive_external_signal"):
+                    signed_signal = score if direction == "BUY" else (-score if direction == "SELL" else 0.0)
+                    mycelium.receive_external_signal("capital_probability", signed_signal, confidence=max(0.25, score))
+
+                mesh = mycelium.get_mesh_status() if hasattr(mycelium, "get_mesh_status") else {}
+                state = mycelium.get_state() if hasattr(mycelium, "get_state") else {}
+                unified = (
+                    mycelium.get_unified_signal(symbol, include_external=True)
+                    if hasattr(mycelium, "get_unified_signal")
+                    else {}
+                )
+                connected_systems = [
+                    str(item.get("name") or "")
+                    for item in list(mesh.get("connected_systems", []) or [])
+                ]
+                snapshot = {
+                    "ok": True,
+                    "coherence": float(mesh.get("coherence", 0.0) or 0.0),
+                    "queen_signal": float(mesh.get("queen_signal", 0.0) or 0.0),
+                    "total_hives": int(state.get("total_hives", 0) or 0),
+                    "total_agents": int(state.get("total_agents", 0) or 0),
+                    "generation": int(state.get("generation", 0) or 0),
+                    "connected_count": len(connected_systems),
+                    "connected_systems": connected_systems,
+                    "external_signals": int(mesh.get("external_signals", 0) or 0),
+                    "broadcasts_pending": int(mesh.get("broadcasts_pending", 0) or 0),
+                    "mind_map_attached": bool(getattr(mycelium, "connection_map", {}).get("mind_map")),
+                    "unified_signal": dict(unified or {}),
+                    "last_received_message": dict(last_mycelium_message),
+                    "updated": datetime.now().isoformat(),
+                    "reason": "ok",
+                }
+            except Exception as e:
+                snapshot["reason"] = f"mycelium_error:{e}"
+
+        self._mycelium_snapshot = snapshot
+        self._mycelium_snapshot_at = now
+        return dict(snapshot)
+
+    def _refresh_live_system_activity_snapshot(self) -> Dict[str, Any]:
+        capital = self.get_capital_snapshot()
+        probability = self._probability_validation_snapshot()
+        target = dict(self._latest_target_snapshot or {})
+        mind_map_snapshot = dict(getattr(self, "_mind_map_snapshot", {}) or {})
+        mycelium_snapshot = dict(getattr(self, "_mycelium_snapshot", {}) or {})
+        decision_snapshot = dict(getattr(self, "_decision_snapshot", {}) or {})
+        systems: List[Dict[str, Any]] = []
+
+        def add_system(
+            name: str,
+            active: bool,
+            role: str,
+            status: str,
+            output_keys: Optional[List[str]] = None,
+        ) -> None:
+            systems.append({
+                "name": name,
+                "active": bool(active),
+                "role": role,
+                "status": status,
+                "output_keys": list(output_keys or []),
+            })
+
+        add_system(
+            "capital_client",
+            self.enabled,
+            "Live exchange execution and pricing",
+            (
+                f"positions={len(self.positions)} free_gbp={float(capital.get('free_gbp', 0.0) or 0.0):.2f} "
+                f"stale={float(capital.get('stale', 0.0) or 0.0):.0f}"
+            ),
+            ["equity_gbp", "free_gbp", "used_gbp", "budget_gbp"],
+        )
+        add_system(
+            "mind_map_registry",
+            bool(mind_map_snapshot.get("ok")),
+            "Exact workspace system census and category map",
+            (
+                f"systems={int(mind_map_snapshot.get('systems_total', 0) or 0)} "
+                f"running={int(mind_map_snapshot.get('running_systems', 0) or 0)} "
+                f"probability={int(mind_map_snapshot.get('probability_systems', 0) or 0)}"
+            ),
+            ["systems_total", "running_systems", "probability_systems", "neural_systems", "execution_systems"],
+        )
+        add_system(
+            "mycelium_network",
+            bool(mycelium_snapshot.get("ok")),
+            "Neural mesh consensus and cross-system signal fusion",
+            (
+                f"hives={int(mycelium_snapshot.get('total_hives', 0) or 0)} "
+                f"agents={int(mycelium_snapshot.get('total_agents', 0) or 0)} "
+                f"coh={float(mycelium_snapshot.get('coherence', 0.0) or 0.0):.2f}"
+            ),
+            ["coherence", "queen_signal", "unified_signal", "external_signals", "connected_count"],
+        )
+        add_system(
+            "probability_validation",
+            bool(probability.get("ok")),
+            "Probability quality gate and validation report",
+            (
+                f"direction_acc={float(probability.get('direction_accuracy', 0.0) or 0.0):.2f} "
+                f"profit_factor={float(probability.get('profit_factor', 0.0) or 0.0):.2f}"
+            ),
+            ["direction_accuracy", "profit_factor", "updated", "reason"],
+        )
+        add_system(
+            "unified_decision_engine",
+            self.unified_decision_engine is not None,
+            "Cross-system coordination and action arbitration",
+            (
+                f"latest={str((decision_snapshot.get('decision') or {}).get('type') or 'idle')} "
+                f"conf={float((decision_snapshot.get('decision') or {}).get('confidence', 0.0) or 0.0):.2f}"
+            ),
+            ["decision.type", "decision.confidence"],
+        )
+        add_system(
+            "timeline_oracle",
+            self.timeline_oracle is not None,
+            "Forward-branch timing and validation",
+            f"target_conf={float(target.get('timeline_confidence', 0.0) or 0.0):.2f}",
+            ["timeline_confidence", "timeline_reason"],
+        )
+        add_system(
+            "harmonic_fusion",
+            self.harmonic_fusion is not None,
+            "Harmonic coherence and symbol phase scoring",
+            f"global_coh={float(target.get('fusion_global_coherence', 0.0) or 0.0):.2f}",
+            ["fusion_global_coherence", "fusion_symbol_phase"],
+        )
+        add_system(
+            "candidate_engine",
+            bool(self._latest_candidate_snapshot),
+            "Ranks live Capital opportunities for the probability layer",
+            f"candidates={len(self._latest_candidate_snapshot)} target={str(target.get('symbol') or 'none')}",
+            ["symbol", "direction", "score", "change_pct", "spread_pct", "expected_net_profit"],
+        )
+
+        snapshot = {
+            "total_systems": len(systems),
+            "active_systems": sum(1 for system in systems if system["active"]),
+            "systems": systems,
+            "updated": datetime.now().isoformat(),
+        }
+        self._live_system_activity_snapshot = snapshot
+        return dict(snapshot)
+
+    def _refresh_probability_feed_snapshot(self) -> Dict[str, Any]:
+        probability = self._probability_validation_snapshot()
+        capital = self.get_capital_snapshot()
+        target = dict(self._latest_target_snapshot or {})
+        mind_map_snapshot = dict(getattr(self, "_mind_map_snapshot", {}) or {})
+        mycelium_snapshot = dict(getattr(self, "_mycelium_snapshot", {}) or {})
+        live_system_activity_snapshot = dict(getattr(self, "_live_system_activity_snapshot", {}) or {})
+        candidates = []
+        for candidate in list(self._latest_candidate_snapshot[:5]):
+            candidates.append({
+                "symbol": str(candidate.get("symbol") or ""),
+                "direction": str(candidate.get("direction") or "").upper(),
+                "score": float(candidate.get("score", 0.0) or 0.0),
+                "change_pct": float(candidate.get("change_pct", 0.0) or 0.0),
+                "spread_pct": float(candidate.get("spread_pct", 0.0) or 0.0),
+                "expected_net_profit": float(candidate.get("expected_net_profit", 0.0) or 0.0),
+                "timeline_confidence": float(candidate.get("timeline_confidence", 0.0) or 0.0),
+                "fusion_global_coherence": float(candidate.get("fusion_global_coherence", 0.0) or 0.0),
+                "brain_coherence": float(candidate.get("brain_coherence", 0.0) or 0.0),
+            })
+
+        live_confirmed = bool(
+            probability.get("ok")
+            and str(target.get("symbol") or "")
+            and float(target.get("score", 0.0) or 0.0) > 0.0
+        )
+        snapshot = {
+            "topic": "probability.capital_feed",
+            "live_confirm_topic": "probability.live_confirmed",
+            "generated_at": datetime.now().isoformat(),
+            "mind_map": {
+                "systems_total": int(mind_map_snapshot.get("systems_total", 0) or 0),
+                "running_systems": int(mind_map_snapshot.get("running_systems", 0) or 0),
+                "probability_systems": int(mind_map_snapshot.get("probability_systems", 0) or 0),
+                "neural_systems": int(mind_map_snapshot.get("neural_systems", 0) or 0),
+            },
+            "mycelium": {
+                "coherence": float(mycelium_snapshot.get("coherence", 0.0) or 0.0),
+                "queen_signal": float(mycelium_snapshot.get("queen_signal", 0.0) or 0.0),
+                "connected_count": int(mycelium_snapshot.get("connected_count", 0) or 0),
+                "external_signals": int(mycelium_snapshot.get("external_signals", 0) or 0),
+                "unified_signal": dict(mycelium_snapshot.get("unified_signal", {}) or {}),
+            },
+            "capital": {
+                "equity_gbp": float(capital.get("equity_gbp", 0.0) or 0.0),
+                "free_gbp": float(capital.get("free_gbp", 0.0) or 0.0),
+                "used_gbp": float(capital.get("used_gbp", 0.0) or 0.0),
+                "budget_gbp": float(capital.get("budget_gbp", 0.0) or 0.0),
+                "positions": len(self.positions),
+                "shadows": len(self.shadow_trades),
+            },
+            "validation": dict(probability),
+            "target": {
+                "symbol": str(target.get("symbol") or ""),
+                "direction": str(target.get("direction") or "").upper(),
+                "score": float(target.get("score", 0.0) or 0.0),
+                "change_pct": float(target.get("change_pct", 0.0) or 0.0),
+                "expected_net_profit": float(target.get("expected_net_profit", 0.0) or 0.0),
+                "timeline_confidence": float(target.get("timeline_confidence", 0.0) or 0.0),
+                "fusion_global_coherence": float(target.get("fusion_global_coherence", 0.0) or 0.0),
+                "brain_coherence": float(target.get("brain_coherence", 0.0) or 0.0),
+            },
+            "candidates": candidates,
+            "systems": list(live_system_activity_snapshot.get("systems", []) or []),
+            "output_keys": [
+                "mind_map.systems_total",
+                "mind_map.running_systems",
+                "mind_map.probability_systems",
+                "mycelium.coherence",
+                "mycelium.queen_signal",
+                "mycelium.unified_signal.signal",
+                "capital.equity_gbp",
+                "capital.free_gbp",
+                "validation.direction_accuracy",
+                "validation.profit_factor",
+                "target.symbol",
+                "target.direction",
+                "target.score",
+                "target.expected_net_profit",
+                "target.timeline_confidence",
+                "target.fusion_global_coherence",
+                "target.brain_coherence",
+            ],
+            "live_confirmed": live_confirmed,
+        }
+        self._probability_feed_snapshot = snapshot
+        return dict(snapshot)
+
+    def _publish_probability_feed(self, force: bool = False) -> None:
+        thought_bus = getattr(self, "thought_bus", None)
+        if thought_bus is None or Thought is None:
+            return
+        now = time.time()
+        if not force and (now - float(getattr(self, "_last_probability_feed_publish_at", 0.0) or 0.0)) < max(5.0, CAPITAL_PROBABILITY_FEED_INTERVAL_SECS):
+            return
+        feed = self._refresh_probability_feed_snapshot()
+        try:
+            thought_bus.publish(Thought(
+                source="capital_cfd_trader",
+                topic="probability.capital_feed",
+                payload=feed,
+                meta={"mode": "capital_cfd"},
+            ))
+            if feed.get("live_confirmed"):
+                target = dict(feed.get("target") or {})
+                key = ":".join([
+                    str(target.get("symbol") or ""),
+                    str(target.get("direction") or ""),
+                    f"{float(target.get('score', 0.0) or 0.0):.4f}",
+                ])
+                if key and key != self._last_live_confirmed_key:
+                    thought_bus.publish(Thought(
+                        source="capital_cfd_trader",
+                        topic="probability.live_confirmed",
+                        payload={
+                            "symbol": str(target.get("symbol") or ""),
+                            "direction": str(target.get("direction") or ""),
+                            "score": float(target.get("score", 0.0) or 0.0),
+                            "timeline_confidence": float(target.get("timeline_confidence", 0.0) or 0.0),
+                            "fusion_global_coherence": float(target.get("fusion_global_coherence", 0.0) or 0.0),
+                            "brain_coherence": float(target.get("brain_coherence", 0.0) or 0.0),
+                        },
+                        meta={"mode": "capital_cfd"},
+                    ))
+                    self._last_live_confirmed_key = key
+            self._last_probability_feed_publish_at = now
+        except Exception as e:
+            logger.debug("Capital probability feed publish failed: %s", e)
 
     def _publish_market_snapshot_to_thought_bus(self) -> None:
         if self.thought_bus is None or Thought is None:
@@ -785,8 +1259,11 @@ class CapitalCFDTrader:
         dealing_rules = market_info.get("dealingRules", {}) if isinstance(market_info.get("dealingRules"), dict) else {}
         candidates = [
             dealing_rules.get("minDealSize", {}).get("value") if isinstance(dealing_rules.get("minDealSize"), dict) else dealing_rules.get("minDealSize"),
+            dealing_rules.get("minimumDealSize", {}).get("value") if isinstance(dealing_rules.get("minimumDealSize"), dict) else dealing_rules.get("minimumDealSize"),
             instrument.get("minDealSize"),
+            instrument.get("minimumDealSize"),
             market_info.get("minDealSize"),
+            market_info.get("minimumDealSize"),
         ]
         for candidate in candidates:
             try:
@@ -797,26 +1274,70 @@ class CapitalCFDTrader:
                 continue
         return 0.0
 
+    @staticmethod
+    def _normalize_capital_margin_pct(candidate: Any, unit: str = "") -> float:
+        """Normalize Capital margin values to a percentage of notional."""
+        try:
+            value = float(candidate or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+        if value <= 0:
+            return 0.0
+        unit_text = str(unit or "").strip().upper()
+        if unit_text in {"PERCENT", "PERCENTAGE", "PCT", "%"}:
+            return value
+        if unit_text in {"FACTOR", "DECIMAL", "FRACTION", "RATIO"}:
+            return value * 100.0
+        if value < 1.0:
+            return value * 100.0
+        return value
+
     def _extract_margin_factor_pct(self, market_info: dict, asset_class: str = "") -> float:
         """Best-effort extraction of Capital margin requirement percentage."""
         if not isinstance(market_info, dict):
             market_info = {}
         instrument = market_info.get("instrument", {}) if isinstance(market_info.get("instrument"), dict) else {}
+        dealing_rules = market_info.get("dealingRules", {}) if isinstance(market_info.get("dealingRules"), dict) else {}
         snapshot = market_info.get("snapshot", {}) if isinstance(market_info.get("snapshot"), dict) else {}
+        margin_factor_unit = str(
+            instrument.get("marginFactorUnit")
+            or dealing_rules.get("marginFactorUnit")
+            or market_info.get("marginFactorUnit")
+            or snapshot.get("marginFactorUnit")
+            or ""
+        )
         candidates = [
-            instrument.get("marginFactor"),
-            instrument.get("marginFactorPercent"),
-            snapshot.get("marginFactor"),
-            market_info.get("marginFactor"),
+            (instrument.get("marginFactor"), margin_factor_unit),
+            (instrument.get("marginFactorPercent"), "PERCENTAGE"),
+            (dealing_rules.get("marginFactor"), dealing_rules.get("marginFactorUnit") or margin_factor_unit),
+            (snapshot.get("marginFactor"), snapshot.get("marginFactorUnit") or margin_factor_unit),
+            (market_info.get("marginFactor"), market_info.get("marginFactorUnit") or margin_factor_unit),
         ]
-        for candidate in candidates:
-            try:
-                value = float(candidate or 0.0)
-                if value > 0:
-                    return value
-            except (TypeError, ValueError):
-                continue
+        margin_bands = instrument.get("marginDepositBands")
+        if isinstance(margin_bands, list):
+            for band in margin_bands:
+                if not isinstance(band, dict):
+                    continue
+                band_unit = str(band.get("marginFactorUnit") or band.get("unit") or margin_factor_unit)
+                candidates.extend([
+                    (band.get("margin"), band_unit),
+                    (band.get("marginFactor"), band_unit),
+                    (band.get("marginRate"), band_unit),
+                    (band.get("value"), band_unit),
+                ])
+        for candidate, unit in candidates:
+            value = self._normalize_capital_margin_pct(candidate, str(unit or ""))
+            if value > 0:
+                return value
         return 0.0
+
+    @staticmethod
+    def _estimate_capital_margin_required(size: float, price: float, margin_factor_pct: float) -> float:
+        notional = max(float(size or 0.0) * float(price or 0.0), 0.0)
+        margin_pct = max(float(margin_factor_pct or 0.0), 0.0)
+        if notional <= 0 or margin_pct <= 0:
+            return 0.0
+        return notional * (margin_pct / 100.0)
 
     def _is_capital_risk_rejection(self, reason: str) -> bool:
         text = str(reason or "").strip().upper()
@@ -952,10 +1473,10 @@ class CapitalCFDTrader:
             preflight.update(cost_profile)
             preflight["effective_tp_pct"] = effective_tp_pct
             margin_factor_pct = float(preflight.get("margin_factor_pct", 0.0) or 0.0)
-            preflight["estimated_margin_required"] = (
-                float(preflight.get("notional", 0.0) or 0.0) * (margin_factor_pct / 100.0)
-                if margin_factor_pct > 0
-                else 0.0
+            preflight["estimated_margin_required"] = self._estimate_capital_margin_required(
+                preflight["requested_size"],
+                price or ask or 0.0,
+                margin_factor_pct,
             )
 
         if preflight["requested_size"] <= 0:
@@ -1011,7 +1532,17 @@ class CapitalCFDTrader:
             return adjusted
         if price <= 0:
             return None
-        if available_balance > 0 and (minimum_size * price) > available_balance:
+        min_margin_required = 0.0
+        margin_factor_pct = float(preflight.get("margin_factor_pct", 0.0) or 0.0)
+        if margin_factor_pct > 0:
+            min_margin_required = self._estimate_capital_margin_required(minimum_size, price, margin_factor_pct)
+        else:
+            reported_margin_required = float(preflight.get("estimated_margin_required", 0.0) or 0.0)
+            if reported_margin_required > 0 and requested_size > 0:
+                min_margin_required = reported_margin_required * (minimum_size / requested_size)
+        if min_margin_required <= 0:
+            min_margin_required = minimum_size * price
+        if available_balance > 0 and min_margin_required > available_balance:
             return None
         adjusted["size"] = minimum_size
         return adjusted
@@ -1782,8 +2313,10 @@ class CapitalCFDTrader:
 
     def _probability_validation_snapshot(self, force: bool = False) -> Dict[str, Any]:
         now = time.time()
-        if not force and self._probability_snapshot and (now - self._probability_snapshot_at) < 30.0:
-            return dict(self._probability_snapshot)
+        cached_snapshot = dict(getattr(self, "_probability_snapshot", {}) or {})
+        cached_at = float(getattr(self, "_probability_snapshot_at", 0.0) or 0.0)
+        if not force and cached_snapshot and (now - cached_at) < 30.0:
+            return dict(cached_snapshot)
 
         payload: Dict[str, Any] = {
             "ok": False,
@@ -2972,6 +3505,7 @@ class CapitalCFDTrader:
         self._sync_positions_from_exchange()
         sync_elapsed = time.time() - stage_started
         self._refresh_unified_intel_snapshot()
+        self._refresh_mind_map_snapshot()
         self._refresh_thought_bus_snapshot()
 
         stage_started = time.time()
@@ -3081,11 +3615,19 @@ class CapitalCFDTrader:
             f"positions={len(self.positions)} shadows_active={len(self.shadow_trades)}"
         )
         self._build_lane_snapshot()
+        self._refresh_mycelium_snapshot(force=True)
+        self._refresh_live_system_activity_snapshot()
+        self._refresh_probability_feed_snapshot()
+        self._publish_probability_feed()
         self.status_lines()
         return closed_this_tick
 
     def status_lines(self) -> List[str]:
         """Return human-readable status lines for orca dashboard / print_status."""
+        mind_map_snapshot = dict(getattr(self, "_mind_map_snapshot", {}) or {})
+        mycelium_snapshot = dict(getattr(self, "_mycelium_snapshot", {}) or {})
+        live_system_activity_snapshot = dict(getattr(self, "_live_system_activity_snapshot", {}) or {})
+        probability_feed_snapshot = dict(getattr(self, "_probability_feed_snapshot", {}) or {})
         w = int(self.stats["winning_trades"])
         l = int(self.stats["losing_trades"])
         c = int(self.stats["trades_closed"])
@@ -3230,6 +3772,37 @@ class CapitalCFDTrader:
             )
         if self._registry_snapshot.get("categories"):
             lines.append(f"  Registry: {len(self._registry_snapshot.get('categories', {}))} categories linked")
+        if mind_map_snapshot:
+            if mind_map_snapshot.get("ok"):
+                lines.append(
+                    f"  MindMap: systems={int(mind_map_snapshot.get('systems_total', 0) or 0)} "
+                    f"running={int(mind_map_snapshot.get('running_systems', 0) or 0)} "
+                    f"prob={int(mind_map_snapshot.get('probability_systems', 0) or 0)} "
+                    f"neural={int(mind_map_snapshot.get('neural_systems', 0) or 0)}"
+                )
+            else:
+                lines.append(f"  MindMap: {mind_map_snapshot.get('reason', 'unavailable')}")
+        if mycelium_snapshot:
+            if mycelium_snapshot.get("ok"):
+                lines.append(
+                    f"  Mycelium: hives={int(mycelium_snapshot.get('total_hives', 0) or 0)} "
+                    f"agents={int(mycelium_snapshot.get('total_agents', 0) or 0)} "
+                    f"coh={float(mycelium_snapshot.get('coherence', 0.0) or 0.0):.2f} "
+                    f"queen={float(mycelium_snapshot.get('queen_signal', 0.0) or 0.0):.2f}"
+                )
+            else:
+                lines.append(f"  Mycelium: {mycelium_snapshot.get('reason', 'unavailable')}")
+        if live_system_activity_snapshot:
+            lines.append(
+                f"  Runtime: {int(live_system_activity_snapshot.get('active_systems', 0) or 0)}/"
+                f"{int(live_system_activity_snapshot.get('total_systems', 0) or 0)} systems active"
+            )
+        if probability_feed_snapshot:
+            lines.append(
+                f"  ProbabilityFeed: topic={probability_feed_snapshot.get('topic', 'probability.capital_feed')} "
+                f"candidates={len(probability_feed_snapshot.get('candidates', []) or [])} "
+                f"live_confirmed={bool(probability_feed_snapshot.get('live_confirmed'))}"
+            )
         if self._decision_snapshot:
             if self._decision_snapshot.get("decision"):
                 decision = self._decision_snapshot.get("decision", {}) or {}
@@ -3327,6 +3900,7 @@ class CapitalCFDTrader:
             "swarm_snapshot": dict(getattr(self, "_swarm_snapshot", {}) or {}),
             "lane_snapshot": dict(getattr(self, "_lane_snapshot", {}) or {}),
             "registry_snapshot": dict(self._registry_snapshot),
+            "mind_map_snapshot": dict(self._mind_map_snapshot),
             "decision_snapshot": dict(self._decision_snapshot),
             "orchestrator_snapshot": dict(getattr(self, "_orchestrator_snapshot", {}) or {}),
             "timeline_snapshot": dict(getattr(self, "_timeline_snapshot", {}) or {}),
@@ -3334,6 +3908,9 @@ class CapitalCFDTrader:
             "harmonic_wiring_audit": dict(getattr(self, "_harmonic_wiring_audit", {}) or {}),
             "thought_bus_snapshot": dict(self._thought_bus_snapshot),
             "cognition_snapshot": dict(self._cognition_snapshot),
+            "mycelium_snapshot": dict(self._mycelium_snapshot),
+            "live_system_activity": dict(self._live_system_activity_snapshot),
+            "probability_feed_snapshot": dict(self._probability_feed_snapshot),
             "recent_closed_trades": list(self._recent_closed_trades[-5:]),
             "shadow_validated": self._shadow_validated_count,
             "shadow_failed": self._shadow_failed_count,

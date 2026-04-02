@@ -22,12 +22,22 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, List
+
+try:
+    # Load repo-local environment variables so users can run this file directly
+    # without pre-exporting keys in their shell.
+    from dotenv import load_dotenv
+
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+except Exception:
+    pass
 
 try:
     from kraken_margin_penny_trader import KrakenMarginArmyTrader
@@ -110,6 +120,44 @@ def _safe_print(*args: Any, **kwargs: Any) -> None:
     except (ValueError, OSError):
         message = " ".join(str(arg) for arg in args)
         logger.info(message)
+
+
+def _repair_stdio() -> None:
+    """Best-effort stdio repair for modules that leave streams invalid on Windows."""
+    def _is_broken(stream: Any) -> bool:
+        if stream is None:
+            return True
+        try:
+            if getattr(stream, "closed", False):
+                return True
+            stream.write("")
+            stream.flush()
+            return False
+        except Exception:
+            return True
+
+    def _open_console(name: str):
+        if sys.platform == "win32":
+            try:
+                return open(name, "w", encoding="utf-8", errors="replace", buffering=1)
+            except Exception:
+                return None
+        return None
+
+    try:
+        if _is_broken(sys.stdout):
+            sys.stdout = _open_console("CONOUT$") or open(os.devnull, "w")
+    except Exception:
+        pass
+    try:
+        if _is_broken(sys.stderr):
+            sys.stderr = _open_console("CONERR$") or open(os.devnull, "w")
+    except Exception:
+        pass
+
+
+def _is_closed_stream_error(exc: Exception) -> bool:
+    return "I/O operation on closed file" in str(exc)
 
 
 class _UnifiedDashboardHandler(BaseHTTPRequestHandler):
@@ -345,10 +393,19 @@ class UnifiedMarketTrader:
         if not force and now - self._last_kraken_init_attempt < EXCHANGE_REINIT_INTERVAL_SEC:
             return
         self._last_kraken_init_attempt = now
+        _repair_stdio()
         try:
             self.kraken = KrakenMarginArmyTrader(dry_run=self.dry_run)
             self.kraken_error = ""
         except Exception as e:
+            if _is_closed_stream_error(e):
+                _repair_stdio()
+                try:
+                    self.kraken = KrakenMarginArmyTrader(dry_run=self.dry_run)
+                    self.kraken_error = ""
+                    return
+                except Exception as retry_error:
+                    e = retry_error
             self.kraken = None
             self.kraken_ready = False
             self.kraken_error = str(e)
@@ -392,6 +449,7 @@ class UnifiedMarketTrader:
             self.binance = None
             self.binance_error = "client_missing"
             return
+        _repair_stdio()
         try:
             self.binance = BinanceClient()
             diag = {}
@@ -406,6 +464,15 @@ class UnifiedMarketTrader:
                 or ""
             )
         except Exception as e:
+            if _is_closed_stream_error(e):
+                _repair_stdio()
+                try:
+                    self.binance = BinanceClient()
+                    self._binance_diag = {}
+                    self.binance_error = ""
+                    return
+                except Exception as retry_error:
+                    e = retry_error
             self.binance = None
             self.binance_error = str(e)
             logger.debug("Binance passive client unavailable: %s", e)

@@ -138,6 +138,8 @@ class CoinAPIClient:
             'X-CoinAPI-Key': self.api_key,
             'Accept': 'application/json',
         })
+        self.last_status_code: Optional[int] = None
+        self.last_error_text: Optional[str] = None
         
         # Rate limiting
         self.last_request_time = 0
@@ -164,16 +166,23 @@ class CoinAPIClient:
         try:
             url = f"{self.base_url}/{endpoint}"
             response = self.session.get(url, params=params, timeout=10)
+            self.last_status_code = int(getattr(response, "status_code", 0) or 0)
             
             if response.status_code == 200:
+                self.last_error_text = None
                 return response.json()
             elif response.status_code == 429:
+                self.last_error_text = str(getattr(response, "text", "") or "")
                 print("⚠️  CoinAPI rate limit hit")
                 return None
             else:
-                print(f"⚠️  CoinAPI error: {response.status_code}")
+                self.last_error_text = str(getattr(response, "text", "") or "")
+                snippet = self.last_error_text[:200].replace("\n", " ")
+                print(f"⚠️  CoinAPI error: {response.status_code} ({snippet})")
                 return None
         except Exception as e:
+            self.last_status_code = None
+            self.last_error_text = str(e)
             print(f"⚠️  CoinAPI request failed: {e}")
             return None
     
@@ -199,6 +208,24 @@ class CoinAPIClient:
         params = {'period_id': period, 'limit': limit}
         data = self._request(endpoint, params)
         return data if data else []
+
+    def get_ohlcv_history(
+        self,
+        symbol_id: str,
+        period: str = "1MIN",
+        time_start: str | None = None,
+        time_end: str | None = None,
+        limit: int = 10000,
+    ) -> List[Dict]:
+        """Get historical OHLCV data (CoinAPI /ohlcv/{symbol_id}/history)."""
+        endpoint = f"ohlcv/{symbol_id}/history"
+        params: Dict[str, Any] = {'period_id': period, 'limit': limit}
+        if time_start:
+            params['time_start'] = time_start
+        if time_end:
+            params['time_end'] = time_end
+        data = self._request(endpoint, params)
+        return data if data else []
     
     def get_quotes_current(self, symbol_id: str = None) -> List[Dict]:
         """Get current quotes (bid/ask)"""
@@ -218,6 +245,33 @@ class CoinAPIClient:
         endpoint = f"trades/{symbol_id}/latest"
         params = {'limit': limit}
         data = self._request(endpoint, params)
+        return data if data else []
+
+    def get_trades_history(
+        self,
+        symbol_id: str,
+        time_start: str | None = None,
+        time_end: str | None = None,
+        limit: int = 10000,
+    ) -> List[Dict]:
+        """Get historical trades (CoinAPI /trades/{symbol_id}/history)."""
+        endpoint = f"trades/{symbol_id}/history"
+        params: Dict[str, Any] = {'limit': limit}
+        if time_start:
+            params['time_start'] = time_start
+        if time_end:
+            params['time_end'] = time_end
+        data = self._request(endpoint, params)
+        return data if data else []
+
+    def get_assets(self) -> List[Dict]:
+        """Get the full CoinAPI assets registry."""
+        data = self._request("assets")
+        return data if data else []
+
+    def get_symbols(self) -> List[Dict]:
+        """Get the full CoinAPI symbols registry."""
+        data = self._request("symbols")
         return data if data else []
 
 

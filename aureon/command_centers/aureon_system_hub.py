@@ -44,6 +44,7 @@ from typing import List, Dict, Optional, Set
 from pathlib import Path
 import json
 import re
+import warnings
 from datetime import datetime
 from collections import defaultdict
 import ast
@@ -253,7 +254,7 @@ class SystemRegistry:
             loc = len(lines)
             
             # Extract imports
-            imports = self._extract_imports(content)
+            imports = self._extract_imports(content, filepath)
             
             # Check for integrations
             has_thought_bus = 'thought_bus' in content.lower() or 'ThoughtBus' in content
@@ -297,11 +298,13 @@ class SystemRegistry:
             return first_line[:200]  # Limit length
         return "No description"
     
-    def _extract_imports(self, content: str) -> List[str]:
+    def _extract_imports(self, content: str, filepath: Optional[Path] = None) -> List[str]:
         """Extract imported modules."""
         imports = []
         try:
-            tree = ast.parse(content)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SyntaxWarning)
+                tree = ast.parse(content, filename=str(filepath) if filepath else "<unknown>")
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
                     for alias in node.names:

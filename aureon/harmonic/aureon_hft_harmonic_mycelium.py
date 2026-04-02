@@ -37,10 +37,10 @@ import numpy as np
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
-        import io
-        if hasattr(sys.stdout, 'buffer'):
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        # Skip stderr wrapping - causes Windows exit errors
+        # Avoid replacing sys.stdout with a new TextIOWrapper around stdout.buffer:
+        # that pattern can close stdout in some Windows shells.
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
 

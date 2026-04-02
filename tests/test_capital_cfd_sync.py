@@ -181,6 +181,33 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertGreater(preflight["spread"], 0.0)
         self.assertIn("market not tradeable", preflight["reason"])
 
+    def test_capital_preflight_reads_margin_from_deposit_bands_and_blocks_if_underfunded(self):
+        trader = self._build_trader(ClientStub(
+            accounts=[{"accountId": "A1", "balance": 20.0, "available": 20.0, "currency": "GBP"}],
+            market_snapshot={
+                "instrument": {
+                    "epic": "EURGBP",
+                    "name": "EUR/GBP",
+                    "marginFactorUnit": "FACTOR",
+                    "marginDepositBands": [{"margin": 0.05}],
+                },
+                "snapshot": {"marketStatus": "TRADEABLE", "bid": 100.0, "offer": 100.0},
+                "dealingRules": {"minDealSize": {"value": 1}},
+            },
+        ))
+
+        preflight = trader._capital_preflight(
+            "EURGBP",
+            5.0,
+            {"price": 100.0, "bid": 100.0, "ask": 100.0, "epic": "EURGBP"},
+            {"class": "forex", "size": 5.0, "tp_pct": 0.35, "sl_pct": 0.2},
+        )
+
+        self.assertFalse(preflight["ok"])
+        self.assertAlmostEqual(preflight["margin_factor_pct"], 5.0)
+        self.assertAlmostEqual(preflight["estimated_margin_required"], 25.0)
+        self.assertIn("insufficient equity for estimated margin", preflight["reason"])
+
     def test_open_position_stops_on_preflight_failure(self):
         client = ClientStub(market_snapshot={
             "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
@@ -219,6 +246,23 @@ class TestCapitalCFDSync(unittest.TestCase):
         )
 
         self.assertIsNone(adjusted)
+
+    def test_sized_cfg_from_preflight_uses_margin_not_notional_for_capital_minimum(self):
+        trader = self._build_trader(ClientStub())
+
+        adjusted = trader._sized_cfg_from_preflight(
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45},
+            {
+                "minimum_deal_size": 2,
+                "requested_size": 1,
+                "price": 1000,
+                "available_balance": 100,
+                "margin_factor_pct": 5.0,
+            },
+        )
+
+        self.assertIsNotNone(adjusted)
+        self.assertEqual(adjusted["size"], 2)
 
     def test_apply_hft_analysis_zeroes_candidate_when_costs_fail(self):
         trader = self._build_trader(ClientStub())

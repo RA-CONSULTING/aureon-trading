@@ -31,16 +31,14 @@ import os
 
 # Windows UTF-8 fix (MANDATORY)
 if sys.platform == 'win32':
+    # Avoid re-wrapping sys.stdout.buffer directly: on CPython this can close the
+    # underlying stream when the original TextIOWrapper is GC'd, causing:
+    #   ValueError: I/O operation on closed file
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
-        import io
-        def _is_utf8_wrapper(stream):
-            return (isinstance(stream, io.TextIOWrapper) and 
-                    hasattr(stream, 'encoding') and stream.encoding and
-                    stream.encoding.lower().replace('-', '') == 'utf8')
-        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
-        # Skip stderr wrapping (causes Windows exit errors)
+        # Python 3.7+: safe in-place reconfigure (does not replace/close stdout).
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
 
@@ -57,6 +55,20 @@ from enum import Enum
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in ("1", "true", "yes", "on")
+
+
+def _env_bool_optional(name: str) -> Optional[bool]:
+    raw = os.getenv(name)
+    if raw is None:
+        return None
+    return str(raw).strip().lower() in ("1", "true", "yes", "on")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # ⚡🧬 HIGH FREQUENCY TRADING - HARMONIC MYCELIUM ENGINE
@@ -241,13 +253,23 @@ class AlpacaScannerBridge:
         alpaca_client=None,
         fee_tracker=None,
         enable_sse: bool = True,
-        enable_stocks: bool = False,
+        enable_stocks: Optional[bool] = None,
         stock_filter: str = "sp500",  # "sp500", "nasdaq100", "all", "high_volume"
     ):
         self.alpaca = alpaca_client
         self.fee_tracker = fee_tracker
         self.enable_sse = enable_sse
-        self.enable_stocks = enable_stocks
+        # Allow runner scripts to force-enable/disable stock scanning regardless of
+        # how this class is instantiated.
+        forced_stocks = _env_bool_optional("AUREON_SCAN_ALPACA_STOCKS")
+        if forced_stocks is None:
+            forced_stocks = _env_bool_optional("ALPACA_INCLUDE_STOCKS")
+
+        if forced_stocks is not None:
+            enable_stocks = forced_stocks
+        elif enable_stocks is None:
+            enable_stocks = True
+        self.enable_stocks = bool(enable_stocks)
         self.stock_filter = stock_filter
         
         # SSE client (lazy init)
@@ -301,7 +323,11 @@ class AlpacaScannerBridge:
         
         logger.info("🦙🌊 Alpaca Scanner Bridge initialized")
         logger.info(f"   📡 SSE Streaming: {'ENABLED' if enable_sse else 'DISABLED'}")
-        logger.info(f"   📈 Stock Scanning: {'ENABLED' if enable_stocks else 'DISABLED'}")
+        logger.info(f"   📈 Stock Scanning: {'ENABLED' if self.enable_stocks else 'DISABLED'}")
+        # ASCII mirror lines for terminals/log sinks that drop emoji glyphs.
+        logger.info("Alpaca Scanner Bridge initialized")
+        logger.info(f"    SSE Streaming: {'ENABLED' if enable_sse else 'DISABLED'}")
+        logger.info(f"    Stock Scanning: {'ENABLED' if self.enable_stocks else 'DISABLED'}")
     
     # ═══════════════════════════════════════════════════════════════════════
     # 📡 SSE STREAMING INTEGRATION

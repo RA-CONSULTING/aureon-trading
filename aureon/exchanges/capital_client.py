@@ -40,7 +40,8 @@ class CapitalClient:
     def __init__(self):
         self.api_key = os.getenv('CAPITAL_API_KEY')
         self.identifier = os.getenv('CAPITAL_IDENTIFIER')
-        self.password = os.getenv('CAPITAL_PASSWORD')
+        # Support both legacy and documented env names.
+        self.password = os.getenv('CAPITAL_PASSWORD') or os.getenv('CAPITAL_API_PASSWORD')
         self.demo_mode = os.getenv('CAPITAL_DEMO', '0') == '1'
         self.init_error = ""
         
@@ -725,14 +726,22 @@ class CapitalClient:
             return {'success': False, 'deal_id': deal_id, 'error': str(e)}
 
     def get_order_history(self, from_date: str = None) -> List[Dict[str, Any]]:
-        """Get order/deal history."""
+        """Get order/deal history.
+
+        Note: Capital's `/history/activity` endpoint expects a *datetime* `from`
+        (e.g. `YYYY-MM-DDTHH:MM:SS`) and supports `detailed=true` for size/side/level.
+        """
         if not self.enabled:
             return []
             
         path = '/history/activity'
-        params = {}
+        params: Dict[str, Any] = {"detailed": "true"}
         if from_date:
-            params['from'] = from_date
+            # API rejects date-only strings; coerce to start-of-day datetime.
+            raw = str(from_date).strip()
+            if raw and "T" not in raw:
+                raw = raw + "T00:00:00"
+            params['from'] = raw
             
         try:
             response = self._request('GET', path, params=params)

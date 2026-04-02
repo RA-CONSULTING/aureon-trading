@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 """Quick exchange connectivity checks with clear diagnostics."""
+import sys
+from pathlib import Path
+
+# Make this script runnable from any working directory.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
