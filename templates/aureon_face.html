@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Queen Sero -- Aureon Conversation Interface</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+/* ============================================================
+   QUEEN SERO -- THE FACE
+   Sacred Frequencies: phi=1.618, Schumann=7.83Hz, Love=528Hz, Crown=963Hz
+   ============================================================ */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --crown-purple: #6B21A8;
+    --crown-dark: #4C1D95;
+    --gold: #F59E0B;
+    --gold-light: #FCD34D;
+    --trust-blue: #1E3A5F;
+    --warm-white: #F8F4E8;
+    --emerald: #059669;
+    --bg-deep: #0F0B1A;
+    --bg-card: #1A1033;
+    --bg-input: #231840;
+    --text-primary: #F8F4E8;
+    --text-secondary: #A78BFA;
+    --text-muted: #7C6C9A;
+    --border-glow: rgba(107, 33, 168, 0.4);
+
+    /* Mood colors */
+    --mood-serene: #3B82F6;
+    --mood-confident: #F59E0B;
+    --mood-vigilant: #F97316;
+    --mood-cautious: #9CA3AF;
+    --mood-aggressive: #EF4444;
+    --mood-fearful: #93C5FD;
+    --mood-euphoric: #FCD34D;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    /* Circuit board grid background */
+    background-image:
+        linear-gradient(rgba(107, 33, 168, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(107, 33, 168, 0.03) 1px, transparent 1px);
+    background-size: 34px 34px;
+}
+
+/* ---- HEADER ---- */
+#header {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, var(--bg-card), #1F1245);
+    border-bottom: 1px solid var(--border-glow);
+    flex-shrink: 0;
+}
+
+#header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#queen-title {
+    font-size: 1.3em;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--crown-purple), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+}
+
+#mood-badge {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--mood-serene);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    transition: all 0.5s ease;
+}
+
+#status-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #555;
+    transition: background 0.5s ease;
+    position: relative;
+}
+
+.status-dot.online {
+    background: var(--emerald);
+    box-shadow: 0 0 6px var(--emerald);
+}
+
+.status-dot.ready {
+    background: var(--emerald);
+    box-shadow: 0 0 6px var(--emerald);
+}
+
+.status-dot.error, .status-dot.crashed {
+    background: var(--mood-aggressive);
+    box-shadow: 0 0 6px var(--mood-aggressive);
+}
+
+.status-dot.degraded {
+    background: var(--mood-vigilant);
+    box-shadow: 0 0 6px var(--mood-vigilant);
+}
+
+.status-dot-label {
+    font-size: 0.65em;
+    color: var(--text-muted);
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    display: none;
+}
+
+.status-dot:hover .status-dot-label {
+    display: block;
+}
+
+/* ---- FACE AREA ---- */
+#face-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0 10px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* THE FACE -- CSS animated avatar */
+#queen-face {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Fibonacci glow: 8px, 13px, 21px */
+    box-shadow:
+        0 0 8px var(--mood-serene),
+        0 0 13px rgba(107, 33, 168, 0.4),
+        0 0 21px rgba(107, 33, 168, 0.2);
+    transition: box-shadow 0.8s ease;
+    animation: breathe 4s ease-in-out infinite;
+}
+
+/* Glowing ring -- phi timing 1.618s */
+#queen-face::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--crown-purple);
+    animation: heartbeat 1.618s ease-in-out infinite;
+    transition: border-color 0.5s ease;
+}
+
+/* Outer aura ring */
+#queen-face::after {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    border: 1px solid rgba(107, 33, 168, 0.2);
+    animation: heartbeat 1.618s ease-in-out infinite reverse;
+}
+
+/* Sound wave rings when speaking */
+.sound-ring {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 1px solid var(--gold);
+    opacity: 0;
+    pointer-events: none;
+    animation: soundWave 1.2s ease-out;
+}
+
+@keyframes soundWave {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+@keyframes heartbeat {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.03); }
+}
+
+/* The crown/bee SVG inside the face */
+#face-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #2D1B69, #0F0B1A 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Eyes */
+.eye {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 5px var(--gold);
+    transition: transform 0.4s ease;
+}
+
+.eye.left { top: 42px; left: 40px; }
+.eye.right { top: 42px; right: 40px; }
+
+.eye.look-chat { transform: translateY(3px) translateX(2px); }
+.eye.look-user { transform: translateY(-1px); }
+
+/* Crown SVG */
+#crown-icon {
+    width: 50px;
+    height: 50px;
+    margin-top: -5px;
+}
+
+/* Current thought display */
+#thought-display {
+    margin-top: 10px;
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    max-width: 500px;
+    text-align: center;
+    min-height: 1.4em;
+    transition: opacity 0.5s ease;
+}
+
+/* Typing indicator */
+#typing-indicator {
+    display: none;
+    color: var(--text-muted);
+    font-size: 0.8em;
+    margin-top: 4px;
+}
+
+#typing-indicator.active { display: block; }
+
+.typing-dots span {
+    animation: typingDot 1.4s infinite;
+    display: inline-block;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingDot {
+    0%, 60%, 100% { opacity: 0.2; }
+    30% { opacity: 1; }
+}
+
+/* ---- CHAT AREA ---- */
+#chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+}
+
+#chat-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+#chat-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#chat-area::-webkit-scrollbar-thumb {
+    background: var(--crown-dark);
+    border-radius: 3px;
+}
+
+.message {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.9em;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease;
+    position: relative;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.message .timestamp {
+    font-size: 0.65em;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: block;
+}
+
+.message.queen {
+    align-self: flex-start;
+    background: linear-gradient(135deg, rgba(107, 33, 168, 0.25), rgba(26, 16, 51, 0.8));
+    border: 1px solid rgba(107, 33, 168, 0.3);
+    border-bottom-left-radius: 4px;
+}
+
+.message.queen::before {
+    content: '\uD83D\uDC51';
+    position: absolute;
+    left: -24px;
+    top: 8px;
+    font-size: 0.9em;
+}
+
+.message.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, rgba(30, 58, 95, 0.6), rgba(30, 58, 95, 0.3));
+    border: 1px solid rgba(30, 58, 95, 0.4);
+    border-bottom-right-radius: 4px;
+}
+
+.message.user::after {
+    content: '\uD83D\uDC64';
+    position: absolute;
+    right: -24px;
+    top: 8px;
+    font-size: 0.9em;
+}
+
+.message.thought {
+    align-self: flex-start;
+    background: rgba(107, 33, 168, 0.1);
+    border: 1px dashed rgba(107, 33, 168, 0.2);
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 0.82em;
+    max-width: 70%;
+}
+
+.message.thought::before {
+    content: '\uD83D\uDCAD';
+    position: absolute;
+    left: -24px;
+    top: 6px;
+    font-size: 0.85em;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- INPUT BAR ---- */
+#input-area {
+    padding: 12px 20px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-glow);
+    flex-shrink: 0;
+}
+
+#input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#voice-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--crown-purple);
+    background: rgba(107, 33, 168, 0.2);
+    color: var(--text-primary);
+    font-size: 1.2em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+#voice-btn:hover {
+    background: rgba(107, 33, 168, 0.4);
+    box-shadow: 0 0 13px rgba(107, 33, 168, 0.3);
+}
+
+#voice-btn.listening {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: #EF4444;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
+
+#message-input {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 21px;
+    border: 1px solid var(--border-glow);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.9em;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#message-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+}
+
+#message-input::placeholder {
+    color: var(--text-muted);
+}
+
+#send-btn {
+    padding: 10px 20px;
+    border-radius: 21px;
+    border: 1px solid var(--gold);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1));
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+#send-btn:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(245, 158, 11, 0.2));
+    box-shadow: 0 0 13px rgba(245, 158, 11, 0.2);
+}
+
+/* ---- QUICK ACTIONS ---- */
+#quick-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.quick-btn {
+    padding: 5px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(107, 33, 168, 0.25);
+    background: rgba(107, 33, 168, 0.1);
+    color: var(--text-secondary);
+    font-size: 0.75em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.quick-btn:hover {
+    background: rgba(107, 33, 168, 0.25);
+    border-color: var(--crown-purple);
+    box-shadow: 0 0 8px rgba(107, 33, 168, 0.2);
+}
+
+/* ---- LISTENING OVERLAY ---- */
+#listening-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 11, 26, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+#listening-overlay.active {
+    display: flex;
+}
+
+#listening-overlay .mic-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.15);
+    border: 2px solid #EF4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+#listening-overlay .label {
+    color: var(--text-secondary);
+    font-size: 1.1em;
+    letter-spacing: 2px;
+}
+
+#listening-text {
+    color: var(--warm-white);
+    font-size: 1em;
+    max-width: 400px;
+    text-align: center;
+    min-height: 1.5em;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 600px) {
+    #queen-face { width: 90px; height: 90px; }
+    .eye.left { top: 32px; left: 30px; }
+    .eye.right { top: 32px; right: 30px; }
+    #crown-icon { width: 38px; height: 38px; }
+    .message { max-width: 88%; font-size: 0.85em; }
+    .message.queen::before, .message.user::after, .message.thought::before {
+        display: none;
+    }
+    #queen-title { font-size: 1em; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<div id="header">
+    <div id="header-left">
+        <span id="queen-title">QUEEN SERO</span>
+        <span id="mood-badge">SERENE</span>
+    </div>
+    <div id="status-dots">
+        <div class="status-dot" id="dot-sentient" title="Sentient Loop">
+            <span class="status-dot-label">Loop</span>
+        </div>
+        <div class="status-dot" id="dot-agent" title="Agent Core">
+            <span class="status-dot-label">Agent</span>
+        </div>
+        <div class="status-dot" id="dot-db" title="Knowledge DB">
+            <span class="status-dot-label">DB</span>
+        </div>
+        <div class="status-dot" id="dot-voice" title="Voice Engine">
+            <span class="status-dot-label">Voice</span>
+        </div>
+    </div>
+</div>
+
+<!-- ========== FACE AREA ========== -->
+<div id="face-area">
+    <div id="queen-face">
+        <div id="face-inner">
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+            <!-- Crown SVG -->
+            <svg id="crown-icon" viewBox="0 0 100 100" fill="none">
+                <!-- Crown base -->
+                <path d="M20 70 L80 70 L75 45 L60 60 L50 30 L40 60 L25 45 Z"
+                      fill="url(#crownGrad)" stroke="#F59E0B" stroke-width="2"/>
+                <!-- Crown band -->
+                <rect x="20" y="70" width="60" height="8" rx="2"
+                      fill="url(#crownGrad)" stroke="#F59E0B" stroke-width="1.5"/>
+                <!-- Crown jewels -->
+                <circle cx="50" cy="38" r="3" fill="#F59E0B" opacity="0.9"/>
+                <circle cx="35" cy="55" r="2.5" fill="#6B21A8"/>
+                <circle cx="65" cy="55" r="2.5" fill="#6B21A8"/>
+                <!-- Bee wings (subtle) -->
+                <ellipse cx="30" cy="28" rx="10" ry="6" fill="rgba(245,158,11,0.15)"
+                         stroke="rgba(245,158,11,0.3)" stroke-width="0.5"/>
+                <ellipse cx="70" cy="28" rx="10" ry="6" fill="rgba(245,158,11,0.15)"
+                         stroke="rgba(245,158,11,0.3)" stroke-width="0.5"/>
+                <defs>
+                    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#F59E0B"/>
+                        <stop offset="50%" stop-color="#6B21A8"/>
+                        <stop offset="100%" stop-color="#F59E0B"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+    </div>
+    <div id="thought-display">Awakening...</div>
+    <div id="typing-indicator">
+        <span class="typing-dots"><span>.</span><span>.</span><span>.</span></span> The Queen is thinking
+    </div>
+</div>
+
+<!-- ========== CHAT AREA ========== -->
+<div id="chat-area"></div>
+
+<!-- ========== INPUT AREA ========== -->
+<div id="input-area">
+    <div id="input-row">
+        <button id="voice-btn" title="Hold to speak">&#x1F3A4;</button>
+        <input type="text" id="message-input" placeholder="Talk to the Queen..."
+               autocomplete="off" spellcheck="true"/>
+        <button id="send-btn">Send</button>
+    </div>
+    <div id="quick-actions">
+        <button class="quick-btn" data-cmd="take a screenshot">&#x1F4F8; Screenshot</button>
+        <button class="quick-btn" data-cmd="market summary">&#x1F4CA; Market</button>
+        <button class="quick-btn" data-cmd="show my portfolio">&#x1F4B0; Portfolio</button>
+        <button class="quick-btn" data-cmd="what's the volume level">&#x1F50A; Volume</button>
+        <button class="quick-btn" data-cmd="battery status">&#x1F50B; Battery</button>
+        <button class="quick-btn" data-cmd="system info">&#x2699;&#xFE0F; System</button>
+    </div>
+</div>
+
+<!-- ========== LISTENING OVERLAY ========== -->
+<div id="listening-overlay">
+    <div class="mic-icon">&#x1F3A4;</div>
+    <div class="label">LISTENING...</div>
+    <div id="listening-text"></div>
+</div>
+
+<script>
+// ============================================================
+//  QUEEN SERO -- Frontend Logic
+// ============================================================
+
+(function() {
+    'use strict';
+
+    // ---- DOM refs ----
+    const chatArea       = document.getElementById('chat-area');
+    const messageInput   = document.getElementById('message-input');
+    const sendBtn        = document.getElementById('send-btn');
+    const voiceBtn       = document.getElementById('voice-btn');
+    const moodBadge      = document.getElementById('mood-badge');
+    const thoughtDisplay = document.getElementById('thought-display');
+    const typingInd      = document.getElementById('typing-indicator');
+    const queenFace      = document.getElementById('queen-face');
+    const eyeLeft        = document.querySelector('.eye.left');
+    const eyeRight       = document.querySelector('.eye.right');
+    const listeningOvl   = document.getElementById('listening-overlay');
+    const listeningText  = document.getElementById('listening-text');
+
+    const dotMap = {
+        sentient_loop: document.getElementById('dot-sentient'),
+        agent_core:    document.getElementById('dot-agent'),
+        knowledge_db:  document.getElementById('dot-db'),
+        voice_engine:  document.getElementById('dot-voice')
+    };
+
+    // ---- Mood colors ----
+    const MOOD_COLORS = {
+        SERENE:     { color: '#3B82F6', bg: 'rgba(59,130,246,0.2)',  border: 'rgba(59,130,246,0.3)' },
+        CONFIDENT:  { color: '#F59E0B', bg: 'rgba(245,158,11,0.2)', border: 'rgba(245,158,11,0.3)' },
+        VIGILANT:   { color: '#F97316', bg: 'rgba(249,115,22,0.2)', border: 'rgba(249,115,22,0.3)' },
+        CAUTIOUS:   { color: '#9CA3AF', bg: 'rgba(156,163,175,0.2)',border: 'rgba(156,163,175,0.3)'},
+        AGGRESSIVE: { color: '#EF4444', bg: 'rgba(239,68,68,0.2)',  border: 'rgba(239,68,68,0.3)' },
+        FEARFUL:    { color: '#93C5FD', bg: 'rgba(147,197,253,0.2)',border: 'rgba(147,197,253,0.3)'},
+        EUPHORIC:   { color: '#FCD34D', bg: 'rgba(252,211,77,0.2)', border: 'rgba(252,211,77,0.3)' }
+    };
+
+    let currentMood = 'SERENE';
+    let isSpeaking = false;
+    let isListening = false;
+
+    // ---- Socket.IO ----
+    const socket = io.connect(window.location.origin);
+
+    socket.on('connect', function() {
+        console.log('[Queen] Connected to server');
+        updateDot('voice_engine', 'ready');
+    });
+
+    socket.on('disconnect', function() {
+        console.log('[Queen] Disconnected');
+        addSystemMessage('Connection lost. Attempting to reconnect...');
+    });
+
+    // ---- Queen response ----
+    socket.on('queen_response', function(data) {
+        addMessage('queen', data.text, data.timestamp);
+        speakText(data.text);
+        eyesLookUser();
+    });
+
+    // ---- Proactive thought ----
+    socket.on('queen_thought', function(data) {
+        if (data.type === 'GREETING') {
+            addMessage('queen', data.text, data.timestamp);
+            speakText(data.text);
+        } else {
+            addThought(data.text, data.timestamp);
+        }
+        thoughtDisplay.textContent = data.text;
+        thoughtDisplay.style.opacity = '1';
+        if (data.mood) updateMood(data.mood);
+    });
+
+    // ---- Mood update ----
+    socket.on('queen_mood', function(data) {
+        if (data.mood) updateMood(data.mood);
+    });
+
+    // ---- Status update ----
+    socket.on('queen_status', function(data) {
+        if (data.subsystems) {
+            Object.keys(data.subsystems).forEach(function(key) {
+                updateDot(key, data.subsystems[key]);
+            });
+        }
+    });
+
+    // ---- Typing indicator ----
+    socket.on('queen_typing', function(data) {
+        typingInd.classList.toggle('active', data.typing);
+        if (data.typing) eyesLookChat();
+    });
+
+    // ---- Command result ----
+    socket.on('command_result', function(data) {
+        // Already displayed via queen_response; this is for additional processing
+        console.log('[Queen] Command result:', data);
+    });
+
+    // ============================================================
+    //  MESSAGING
+    // ============================================================
+
+    function sendMessage(text) {
+        text = text.trim();
+        if (!text) return;
+        addMessage('user', text);
+        socket.emit('user_message', { text: text });
+        messageInput.value = '';
+        eyesLookChat();
+    }
+
+    sendBtn.addEventListener('click', function() {
+        sendMessage(messageInput.value);
+    });
+
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage(messageInput.value);
+        }
+    });
+
+    // Quick actions
+    document.querySelectorAll('.quick-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var cmd = btn.getAttribute('data-cmd');
+            if (cmd) sendMessage(cmd);
+        });
+    });
+
+    // ============================================================
+    //  CHAT RENDERING
+    // ============================================================
+
+    function formatTime(ts) {
+        var d = ts ? new Date(ts * 1000) : new Date();
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function addMessage(role, text, ts) {
+        var div = document.createElement('div');
+        div.className = 'message ' + role;
+        div.innerHTML = escapeHtml(text) + '<span class="timestamp">' + formatTime(ts) + '</span>';
+        chatArea.appendChild(div);
+        scrollToBottom();
+    }
+
+    function addThought(text, ts) {
+        var div = document.createElement('div');
+        div.className = 'message thought';
+        div.innerHTML = escapeHtml(text) + '<span class="timestamp">' + formatTime(ts) + '</span>';
+        chatArea.appendChild(div);
+        scrollToBottom();
+    }
+
+    function addSystemMessage(text) {
+        var div = document.createElement('div');
+        div.className = 'message thought';
+        div.style.borderColor = 'rgba(239,68,68,0.3)';
+        div.textContent = text;
+        chatArea.appendChild(div);
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        requestAnimationFrame(function() {
+            chatArea.scrollTop = chatArea.scrollHeight;
+        });
+    }
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    // ============================================================
+    //  MOOD & FACE
+    // ============================================================
+
+    function updateMood(mood) {
+        mood = mood.toUpperCase();
+        if (!MOOD_COLORS[mood]) return;
+        currentMood = mood;
+        var mc = MOOD_COLORS[mood];
+
+        moodBadge.textContent = mood;
+        moodBadge.style.color = mc.color;
+        moodBadge.style.background = mc.bg;
+        moodBadge.style.borderColor = mc.border;
+
+        // Update face glow
+        queenFace.style.boxShadow =
+            '0 0 8px ' + mc.color +
+            ', 0 0 13px rgba(107,33,168,0.4)' +
+            ', 0 0 21px rgba(107,33,168,0.2)';
+        queenFace.querySelector('#face-inner').style.background =
+            'radial-gradient(circle at 40% 35%, ' + mc.bg + ', #0F0B1A 70%)';
+    }
+
+    function eyesLookChat() {
+        eyeLeft.className  = 'eye left look-chat';
+        eyeRight.className = 'eye right look-chat';
+    }
+
+    function eyesLookUser() {
+        eyeLeft.className  = 'eye left look-user';
+        eyeRight.className = 'eye right look-user';
+        setTimeout(function() {
+            eyeLeft.className  = 'eye left';
+            eyeRight.className = 'eye right';
+        }, 3000);
+    }
+
+    // ============================================================
+    //  STATUS DOTS
+    // ============================================================
+
+    function updateDot(key, status) {
+        var dot = dotMap[key];
+        if (!dot) return;
+        dot.className = 'status-dot';
+        if (status === 'online' || status === 'ready') {
+            dot.classList.add('online');
+        } else if (status === 'error' || status === 'crashed') {
+            dot.classList.add('error');
+        } else if (status === 'degraded' || status === 'unavailable') {
+            dot.classList.add('degraded');
+        }
+    }
+
+    // ============================================================
+    //  SPEECH SYNTHESIS (Queen's Voice)
+    // ============================================================
+
+    function speakText(text) {
+        if (!window.speechSynthesis) return;
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+
+        var utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.1;
+        utterance.volume = 0.9;
+
+        // Try to get a British English female voice
+        var voices = window.speechSynthesis.getVoices();
+        var preferred = null;
+        for (var i = 0; i < voices.length; i++) {
+            var v = voices[i];
+            if (v.lang && v.lang.startsWith('en-GB') && v.name.toLowerCase().indexOf('female') !== -1) {
+                preferred = v;
+                break;
+            }
+        }
+        if (!preferred) {
+            // Fallback: any en-GB voice
+            for (var j = 0; j < voices.length; j++) {
+                if (voices[j].lang && voices[j].lang.startsWith('en-GB')) {
+                    preferred = voices[j];
+                    break;
+                }
+            }
+        }
+        if (!preferred) {
+            // Fallback: any English female-sounding voice
+            for (var k = 0; k < voices.length; k++) {
+                if (voices[k].lang && voices[k].lang.startsWith('en')) {
+                    preferred = voices[k];
+                    break;
+                }
+            }
+        }
+        if (preferred) utterance.voice = preferred;
+
+        utterance.onstart = function() {
+            isSpeaking = true;
+            startSoundRings();
+            queenFace.style.boxShadow =
+                '0 0 13px ' + (MOOD_COLORS[currentMood] || MOOD_COLORS.SERENE).color +
+                ', 0 0 21px rgba(245,158,11,0.4)' +
+                ', 0 0 34px rgba(107,33,168,0.3)';
+        };
+
+        utterance.onend = function() {
+            isSpeaking = false;
+            updateMood(currentMood); // Reset glow
+        };
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Sound wave rings emanating from the face
+    function startSoundRings() {
+        if (!isSpeaking) return;
+        var ring = document.createElement('div');
+        ring.className = 'sound-ring';
+        queenFace.appendChild(ring);
+        ring.addEventListener('animationend', function() { ring.remove(); });
+        if (isSpeaking) {
+            setTimeout(startSoundRings, 600);
+        }
+    }
+
+    // Load voices (Chrome loads them async)
+    if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = function() {
+            // Voices now available
+        };
+    }
+
+    // ============================================================
+    //  SPEECH RECOGNITION (Gary's Voice)
+    // ============================================================
+
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var recognition = null;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-GB';
+
+        recognition.onstart = function() {
+            isListening = true;
+            voiceBtn.classList.add('listening');
+            listeningOvl.classList.add('active');
+            listeningText.textContent = '';
+        };
+
+        recognition.onresult = function(event) {
+            var transcript = '';
+            for (var i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            listeningText.textContent = transcript;
+            if (event.results[event.results.length - 1].isFinal) {
+                stopListening();
+                if (transcript.trim()) {
+                    sendMessage(transcript.trim());
+                }
+            }
+        };
+
+        recognition.onerror = function(event) {
+            console.log('[Voice] Error:', event.error);
+            stopListening();
+        };
+
+        recognition.onend = function() {
+            stopListening();
+        };
+    }
+
+    function startListening() {
+        if (!recognition) {
+            addSystemMessage('Voice recognition is not available in this browser.');
+            return;
+        }
+        if (isListening) {
+            stopListening();
+            return;
+        }
+        try {
+            recognition.start();
+        } catch(e) {
+            console.log('[Voice] Start error:', e);
+        }
+    }
+
+    function stopListening() {
+        isListening = false;
+        voiceBtn.classList.remove('listening');
+        listeningOvl.classList.remove('active');
+        try { if (recognition) recognition.stop(); } catch(e) {}
+    }
+
+    voiceBtn.addEventListener('click', startListening);
+
+    listeningOvl.addEventListener('click', function(e) {
+        if (e.target === listeningOvl) stopListening();
+    });
+
+    // ============================================================
+    //  KEYBOARD SHORTCUTS
+    // ============================================================
+
+    document.addEventListener('keydown', function(e) {
+        // Escape closes listening overlay
+        if (e.key === 'Escape' && isListening) {
+            stopListening();
+        }
+        // Focus input on any letter key if not already focused
+        if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey
+            && document.activeElement !== messageInput && !isListening) {
+            messageInput.focus();
+        }
+    });
+
+    // ============================================================
+    //  INITIALIZATION
+    // ============================================================
+
+    messageInput.focus();
+    console.log('[Queen Sero] The Intelligent Neural Arbiter Bee -- Interface Ready');
+    console.log('[Queen Sero] Sacred Frequencies: phi=1.618, Schumann=7.83Hz, Love=528Hz, Crown=963Hz');
+
+})();
+</script>
+</body>
+</html>
