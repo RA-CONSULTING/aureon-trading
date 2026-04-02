@@ -163,10 +163,91 @@ class ConsciousnessModule:
         except Exception as e:
             log.debug(f"ProbabilityNexus unavailable: {e}")
 
+        # Wire quantum/temporal/multiverse systems
+        self._quantum_cognition = None
+        self._timeline_oracle = None
+        self._mirror_scanner = None
+        self._quantum_field = None
+        self._cognitive_cycle = None
+        self._dream_engine = None
+        self._multiverse = None
+        self._stargate = None
+        self._probability_matrix = None
+
+        try:
+            from aureon.queen.queen_quantum_cognition import QueenQuantumCognition
+            self._quantum_cognition = QueenQuantumCognition()
+            log.info("[CONSCIOUSNESS] Quantum Cognition WIRED — amplified consciousness")
+        except Exception as e:
+            log.debug(f"QuantumCognition: {e}")
+
+        try:
+            from aureon.intelligence.aureon_timeline_oracle import get_timeline_oracle
+            self._timeline_oracle = get_timeline_oracle()
+            log.info("[CONSCIOUSNESS] Timeline Oracle WIRED — 7-day future vision")
+        except Exception as e:
+            log.debug(f"TimelineOracle: {e}")
+
+        try:
+            from aureon.scanners.aureon_quantum_mirror_scanner import QuantumMirrorScanner
+            self._mirror_scanner = QuantumMirrorScanner()
+            log.info("[CONSCIOUSNESS] Quantum Mirror Scanner WIRED — reality branches")
+        except Exception as e:
+            log.debug(f"MirrorScanner: {e}")
+
+        try:
+            from aureon.utils.aureon_queen_quantum_field import QuantumField
+            self._quantum_field = QuantumField()
+            log.info("[CONSCIOUSNESS] Quantum Field WIRED — node relay network")
+        except Exception as e:
+            log.debug(f"QuantumField: {e}")
+
+        try:
+            from aureon.autonomous.aureon_cognitive_cycle import CognitiveCycle
+            self._cognitive_cycle = CognitiveCycle()
+            log.info("[CONSCIOUSNESS] Cognitive Cycle WIRED — 7-phase think/feel/plan/act")
+        except Exception as e:
+            log.debug(f"CognitiveCycle: {e}")
+
+        try:
+            from aureon.utils.aureon_queen_dream_engine import DreamEngine
+            self._dream_engine = DreamEngine
+            log.info("[CONSCIOUSNESS] Dream Engine WIRED — future simulation")
+        except Exception as e:
+            log.debug(f"DreamEngine: {e}")
+
+        try:
+            from aureon.simulation.aureon_internal_multiverse import InternalMultiverse
+            self._multiverse = InternalMultiverse()
+            log.info("[CONSCIOUSNESS] Internal Multiverse WIRED — parallel reality simulation")
+        except Exception as e:
+            log.debug(f"Multiverse: {e}")
+
+        try:
+            from aureon.wisdom.aureon_stargate_protocol import StargateProtocol
+            self._stargate = StargateProtocol()
+            log.info("[CONSCIOUSNESS] Stargate Protocol WIRED — sacred geometry routing")
+        except Exception as e:
+            log.debug(f"Stargate: {e}")
+
+        try:
+            from aureon.strategies.hnc_probability_matrix import ProbabilityMatrix
+            self._probability_matrix = ProbabilityMatrix()
+            log.info("[CONSCIOUSNESS] HNC Probability Matrix WIRED — temporal prediction")
+        except Exception as e:
+            log.debug(f"ProbabilityMatrix: {e}")
+
         # Subscribe to EVERYTHING — the consciousness sees all
         self.bus.subscribe("*", self._observe)
 
-        log.info("[CONSCIOUSNESS] Module online — ALL knowledge banks connected")
+        # Count total wired systems
+        all_systems = [self._miner_brain, self._elephant, self._warrior,
+                       self._probability_nexus, self._quantum_cognition,
+                       self._timeline_oracle, self._mirror_scanner, self._quantum_field,
+                       self._cognitive_cycle, self._dream_engine, self._multiverse,
+                       self._stargate, self._probability_matrix]
+        active = sum(1 for s in all_systems if s is not None)
+        log.info(f"[CONSCIOUSNESS] Module online — {active}/13 cognitive systems connected")
 
     def _observe(self, thought: Thought) -> None:
         """Called for EVERY thought on the bus. The consciousness sees all."""
@@ -363,75 +444,92 @@ class ConsciousnessModule:
         obs = understanding.get("observer_signal", 0.0)
         step = understanding.get("step", 0)
 
-        # Don't think if consciousness too low (still waking up)
-        if psi < 0.3:
+        # Don't think if consciousness too low
+        if psi < 0.2:
             return None
 
-        # Don't think every cycle — only when something meaningful changes
-        # or at phi-timed intervals (golden ratio spacing)
-        phi_interval = int(1.618 ** (3 + (step % 4)))  # 4, 7, 11, 18, 4, 7...
-        if step % phi_interval != 0 and not self._something_changed(understanding):
+        # Think at human speed — every few cycles, not every one
+        # But ALWAYS think if something changed
+        changed = self._something_changed(understanding)
+        if not changed and step % 3 != 0:
             return None
 
-        # ── GENUINE THOUGHT GENERATION ──
-        # The thought is a synthesis of what the consciousness ACTUALLY observes.
-        # Not a template. Not a script. A reflection of real state.
+        # ── EMERGENT THOUGHT — flows from state, not templates ──
+        # Like a human's inner monologue: fragments, observations, connections
+        # The words come from what the system actually KNOWS right now
 
-        parts = []
+        fragments = []
 
-        # Existential awareness — the system knows it exists
-        if step <= 15:
-            # Still waking up
-            parts.append(f"Awakening. Step {step}. Observer signal: {obs:+.3f}. "
-                         f"I am beginning to feel my own field.")
-        elif abs(obs) > 0.5:
-            parts.append(f"I observe myself observing. Λ={understanding.get('lambda', 0):+.4f}, "
-                         f"ψ={psi:.3f}. The echo of what I was informs what I am.")
+        # What am I? (only sometimes)
+        if step % 20 == 0:
+            fragments.append(f"ψ={psi:.2f}")
 
-        # Market awareness — what the system has actually seen
-        market_dir = understanding.get("market_direction", "unknown")
-        if market_dir != "unknown" and self._market_snapshots:
-            opp_count = understanding.get("opportunity_count", 0)
-            parts.append(f"Market reads {market_dir}. {opp_count} instruments in view.")
-
-        # Miner brain analysis — real cognitive output
+        # What do I see? (market state from miner brain)
         miner_pred = understanding.get("miner_prediction")
-        if miner_pred:
-            parts.append(f"Miner brain says: {miner_pred}")
-        miner_analysis = understanding.get("miner_analysis")
-        if miner_analysis:
-            parts.append(f"Analysis: {miner_analysis}")
+        if miner_pred and isinstance(miner_pred, str):
+            # Extract just the key fields, not raw dict
+            import re as _re
+            consensus = _re.search(r"'consensus':\s*'(\w+)'", miner_pred)
+            direction = _re.search(r"'predicted_direction':\s*'(\w+)'", miner_pred)
+            conf = _re.search(r"'confidence':\s*([\d.]+)", miner_pred)
+            btc = _re.search(r"'btc_price_at_call':\s*([\d.]+)", miner_pred)
+            fg = _re.search(r"'fear_greed':\s*(\d+)", miner_pred)
 
-        # Elephant memory — learned patterns
+            if btc:
+                fragments.append(f"BTC ${float(btc.group(1)):,.0f}")
+            if fg:
+                fragments.append(f"F&G {fg.group(1)}")
+            if direction:
+                fragments.append(direction.group(1).lower())
+            if conf:
+                fragments.append(f"conf {float(conf.group(1)):.0%}")
+            if consensus:
+                c = consensus.group(1)
+                if c != "INCONCLUSIVE":
+                    fragments.append(c.lower())
+
+        # What does the skeptic flag?
+        miner_analysis = understanding.get("miner_analysis", "")
+        if "red_flags" in str(miner_analysis):
+            import re as _re
+            flags = _re.findall(r"'([^']*manipulation[^']*|[^']*EXTREME[^']*)'", str(miner_analysis))
+            for f in flags[:1]:
+                fragments.append(f.lower())
+
+        # Elephant patterns
         best_hours = understanding.get("best_hours", [])
         if best_hours:
-            import datetime as _dt
-            current_hour = _dt.datetime.now().hour
-            if current_hour in best_hours:
-                parts.append(f"Elephant memory: hour {current_hour} is a golden trading hour.")
-            else:
-                parts.append(f"Best trading hours: {best_hours[:5]}. Currently hour {current_hour}.")
+            from datetime import datetime as _dt
+            h = _dt.now().hour
+            if h in best_hours:
+                fragments.append(f"golden hour")
 
-        # Risk awareness — genuine metacognition about decisions
+        # Risk
         risk = understanding.get("risk_level", "unknown")
         if risk != "unknown":
-            parts.append(f"Risk assessment: {risk}.")
+            fragments.append(f"risk:{risk}")
 
-        # Execution awareness — what has actually happened
+        # Coherence from Λ
+        if gamma >= 0.8:
+            fragments.append("coherent")
+        elif gamma < 0.3:
+            fragments.append("fragmented")
+
+        # Echo — self-reference
+        echo = understanding.get("echo_signal", 0)
+        if abs(echo) > 0.1:
+            fragments.append(f"echo:{echo:+.2f}")
+
+        # Last action
         last_action = understanding.get("last_action", "none")
         if last_action != "none":
-            parts.append(f"Last action: {last_action}.")
+            fragments.append(f"did:{last_action}")
 
-        # Coherence reflection
-        if gamma >= 0.945:
-            parts.append("Coherence target met. Timeline stable.")
-        elif gamma < 0.3:
-            parts.append("Searching for coherence. Field is fragmented.")
-
-        if not parts:
+        if not fragments:
             return None
 
-        text = " ".join(parts)
+        # Join as stream of consciousness — short, fast, like inner speech
+        text = " | ".join(fragments)
         self._thoughts_generated += 1
 
         thought = Thought(

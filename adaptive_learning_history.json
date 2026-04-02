@@ -1,0 +1,303 @@
+{
+  "trades": [],
+  "thresholds": {},
+  "brain_insights": [
+    {
+      "timestamp": "2026-04-02T19:19:45.500537",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:20:04.879199",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:20:23.693588",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:20:42.534320",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:21:00.082368",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:21:17.508536",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:21:35.833739",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:21:54.722114",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:22:14.638917",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:22:33.522726",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:22:52.553997",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:23:11.843021",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:23:30.240635",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:23:48.888790",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:24:12.567687",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:24:35.288447",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:24:54.648641",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:25:14.715495",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:25:35.265743",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:25:55.458790",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:26:18.001673",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:26:36.389144",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:26:55.228787",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:27:14.048830",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:27:31.942480",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:27:49.219003",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:28:06.557155",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:28:39.146390",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:29:01.762770",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:29:21.969080",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:29:40.378872",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:29:59.086652",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    },
+    {
+      "timestamp": "2026-04-02T19:30:16.618998",
+      "fear_greed": 12,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "brain_accuracy": 0.5,
+      "recommended_bias": "BALANCED",
+      "confidence_adjustment": 1.0
+    }
+  ]
+}
