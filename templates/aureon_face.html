@@ -6,6 +6,10 @@
 <title>Queen Sero -- Aureon Trading Command Center</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.3.0/tsparticles.slim.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
 /* ============================================================
    QUEEN SERO -- THE FACE
@@ -568,6 +572,23 @@ body {
 </style>
 </head>
 <body>
+<!-- Particle consciousness field background -->
+<div id="tsparticles" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;"></div>
+<script>
+if (typeof tsParticles !== 'undefined') {
+    tsParticles.load("tsparticles", {
+        particles: {
+            number: { value: 35, density: { enable: true, area: 800 } },
+            color: { value: "#6B21A8" },
+            opacity: { value: 0.3, random: true },
+            size: { value: 2, random: true },
+            move: { enable: true, speed: 0.3, direction: "none", outModes: "bounce" },
+            links: { enable: false },
+        },
+        detectRetina: false,
+    });
+}
+</script>
 
 <!-- ========== HEADER ========== -->
 <div id="header">
@@ -726,20 +747,20 @@ body {
 <div id="portfolio-strip" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
 
 <!-- Consciousness + Lambda -->
-<div id="consciousness-panel" style="background:#1a0533;border:1px solid #6B21A8;border-radius:8px;padding:10px;">
+<div id="consciousness-panel" style="background:rgba(26,16,51,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(107,33,168,0.3);border-radius:12px;padding:10px;">
   <div style="color:#F59E0B;font-weight:bold;font-size:12px;margin-bottom:6px;">CONSCIOUSNESS</div>
   <div id="level-bar" style="display:flex;gap:2px;margin-bottom:6px;"></div>
   <canvas id="lambda-chart" width="300" height="60" style="width:100%;height:60px;border-radius:4px;background:#0a0118;"></canvas>
 </div>
 
 <!-- Energy Field Heatmap -->
-<div id="energy-panel" style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:8px;padding:10px;">
+<div id="energy-panel" style="background:rgba(13,27,42,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(30,58,95,0.3);border-radius:12px;padding:10px;">
   <div style="color:#60a5fa;font-weight:bold;font-size:12px;margin-bottom:6px;">ENERGY FIELD <span id="energy-count" style="color:#9ca3af;font-weight:normal;"></span></div>
   <div id="energy-heatmap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:3px;"></div>
 </div>
 
 <!-- Trading Signals -->
-<div id="signals-panel" style="background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:10px;">
+<div id="signals-panel" style="background:rgba(10,22,40,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(30,58,95,0.3);border-radius:12px;padding:10px;">
   <div style="color:#34d399;font-weight:bold;font-size:12px;margin-bottom:6px;">SIGNALS</div>
   <div id="signals-list"></div>
 </div>
@@ -1300,7 +1321,57 @@ body {
         loadQueenPanel();
     }
     refreshDashboard();
-    setInterval(refreshDashboard, 8000); // Every 8 seconds
+    setInterval(refreshDashboard, 8000);
+
+    // ═══════ LIGHTWEIGHT CHARTS — Price Chart ═══════
+    let priceChart = null;
+    let priceSeries = null;
+    try {
+        if (typeof LightweightCharts !== 'undefined') {
+            const chartEl = document.getElementById('price-chart');
+            if (chartEl) {
+                priceChart = LightweightCharts.createChart(chartEl, {
+                    width: chartEl.clientWidth, height: 170,
+                    layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#9ca3af' },
+                    grid: { vertLines: { color: 'rgba(107,33,168,0.1)' }, horzLines: { color: 'rgba(107,33,168,0.1)' } },
+                    timeScale: { timeVisible: true, borderColor: 'rgba(107,33,168,0.3)' },
+                    rightPriceScale: { borderColor: 'rgba(107,33,168,0.3)' },
+                });
+                priceSeries = priceChart.addAreaSeries({
+                    lineColor: '#F59E0B', topColor: 'rgba(245,158,11,0.3)',
+                    bottomColor: 'rgba(245,158,11,0.02)', lineWidth: 2,
+                });
+                // Seed with Lambda history as initial data
+                fetch('/api/lambda-history').then(r => r.json()).then(d => {
+                    if (d.history && d.history.length) {
+                        const now = Math.floor(Date.now() / 1000);
+                        const data = d.history.map((v, i) => ({ time: now - (d.history.length - i) * 3, value: v }));
+                        priceSeries.setData(data);
+                    }
+                }).catch(() => {});
+                // Update every 8s
+                setInterval(() => {
+                    fetch('/api/lambda-history').then(r => r.json()).then(d => {
+                        if (d.history && d.history.length && priceSeries) {
+                            const now = Math.floor(Date.now() / 1000);
+                            priceSeries.update({ time: now, value: d.history[d.history.length - 1] });
+                        }
+                    }).catch(() => {});
+                }, 8000);
+            }
+        }
+    } catch(e) { console.log('Chart init:', e); }
+
+    // ═══════ GSAP Entrance Animations ═══════
+    try {
+        if (typeof gsap !== 'undefined') {
+            gsap.from('#portfolio-strip', { opacity: 0, y: -20, duration: 0.8, ease: 'power2.out' });
+            gsap.from('#consciousness-panel', { opacity: 0, x: -30, duration: 0.8, delay: 0.2, ease: 'power2.out' });
+            gsap.from('#energy-panel', { opacity: 0, x: -30, duration: 0.8, delay: 0.4, ease: 'power2.out' });
+            gsap.from('#signals-panel', { opacity: 0, y: 20, duration: 0.8, delay: 0.6, ease: 'power2.out' });
+            gsap.from('#chat-area', { opacity: 0, x: 30, duration: 0.8, delay: 0.3, ease: 'power2.out' });
+        }
+    } catch(e) {}
 
 })();
 </script>
