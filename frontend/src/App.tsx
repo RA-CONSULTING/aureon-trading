@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { LiveTerminalStats } from "@/components/LiveTerminalStats";
 import { useTerminalSync } from "@/hooks/useTerminalSync";
 import { useGlobalState } from "@/hooks/useGlobalState";
+import { CinematicObservatory } from "@/components/cinema/CinematicObservatory";
 
 const queryClient = new QueryClient();
 
@@ -80,13 +82,29 @@ function TerminalMirrorApp() {
 }
 
 const App = () => {
+  const [view, setView] = useState<'terminal' | 'observatory'>('terminal');
+
   return (
     <ThemeProvider defaultTheme="dark">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <TerminalMirrorApp />
+          {view === 'observatory' ? (
+            <CinematicObservatory onExit={() => setView('terminal')} />
+          ) : (
+            <>
+              <TerminalMirrorApp />
+              <div className="fixed bottom-4 right-4 z-50">
+                <button
+                  onClick={() => setView('observatory')}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-xl border border-white/10 text-white/90 text-sm font-medium shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:shadow-[0_4px_30px_rgba(99,102,241,0.5)] hover:scale-105 transition-all cursor-pointer"
+                >
+                  Enter Observatory
+                </button>
+              </div>
+            </>
+          )}
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
