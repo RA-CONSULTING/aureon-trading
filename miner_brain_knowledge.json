@@ -1,509 +1,5 @@
 [
   {
-    "timestamp": "2026-04-02T19:49:57.400370",
-    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-02 19:49:57\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 12 (Extreme Fear)\n   24h Market Cap Change: -1.94%\n   BTC Dominance: 56.2%\n   BTC Price: $66,858.34\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (12) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
-    "processed_data": {
-      "fear_greed": 12,
-      "fng_class": "Extreme Fear",
-      "mcap_change": -1.9395131346293992,
-      "btc_dominance": 56.21636331996559,
-      "eth_dominance": 10.413049987293755,
-      "btc_price": 66858.34,
-      "eth_price": 2053.87
-    },
-    "skeptic_analysis": {
-      "anomalies": [],
-      "red_flags": [
-        "EXTREME sentiment (12) - possible emotional manipulation"
-      ],
-      "green_flags": [
-        "Market cap stable - organic movement"
-      ],
-      "manipulation_probability": 0.2
-    },
-    "council_verdict": {
-      "consensus": "INCONCLUSIVE",
-      "action": "GATHER_MORE_DATA",
-      "truth_score": 0.42622950819672134,
-      "spoof_score": 0.1721311475409836,
-      "votes": [
-        {
-          "advisor": "The Skeptic",
-          "role": "Chief BS Detector",
-          "verdict": "SUSPICIOUS",
-          "confidence": 0.7,
-          "reasoning": "Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-          "weight": 1.5
-        },
-        {
-          "advisor": "The Bull",
-          "role": "Opportunity Finder",
-          "verdict": "OPPORTUNITY",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear (12) = blood in streets. Time to be greedy!",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Bear",
-          "role": "Risk Manager",
-          "verdict": "CAUTIOUS",
-          "confidence": 0.5,
-          "reasoning": "Stay defensive.",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Oracle",
-          "role": "Pattern Reader",
-          "verdict": "BALANCED",
-          "confidence": 0.5,
-          "reasoning": "Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-          "weight": 1.2
-        },
-        {
-          "advisor": "The Harvester",
-          "role": "Profit Reaper",
-          "verdict": "PROTECT_CAPITAL",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear. Take any profit available, even pennies.",
-          "weight": 1.4
-        }
-      ],
-      "arguments": [
-        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!",
-        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
-        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
-      ],
-      "timestamp": "2026-04-02T19:49:57.239394"
-    },
-    "speculations": [
-      "\ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
-      "\ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?",
-      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
-    ]
-  },
-  {
-    "timestamp": "2026-04-02T19:50:19.600389",
-    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-02 19:50:18\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 12 (Extreme Fear)\n   24h Market Cap Change: -1.94%\n   BTC Dominance: 56.2%\n   BTC Price: $66,879.18\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (12) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
-    "processed_data": {
-      "fear_greed": 12,
-      "fng_class": "Extreme Fear",
-      "mcap_change": -1.9395131346293992,
-      "btc_dominance": 56.21636331996559,
-      "eth_dominance": 10.413049987293755,
-      "btc_price": 66879.18,
-      "eth_price": 2054.35
-    },
-    "skeptic_analysis": {
-      "anomalies": [],
-      "red_flags": [
-        "EXTREME sentiment (12) - possible emotional manipulation"
-      ],
-      "green_flags": [
-        "Market cap stable - organic movement"
-      ],
-      "manipulation_probability": 0.2
-    },
-    "council_verdict": {
-      "consensus": "INCONCLUSIVE",
-      "action": "GATHER_MORE_DATA",
-      "truth_score": 0.42622950819672134,
-      "spoof_score": 0.1721311475409836,
-      "votes": [
-        {
-          "advisor": "The Skeptic",
-          "role": "Chief BS Detector",
-          "verdict": "SUSPICIOUS",
-          "confidence": 0.7,
-          "reasoning": "Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-          "weight": 1.5
-        },
-        {
-          "advisor": "The Bull",
-          "role": "Opportunity Finder",
-          "verdict": "OPPORTUNITY",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear (12) = blood in streets. Time to be greedy!",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Bear",
-          "role": "Risk Manager",
-          "verdict": "CAUTIOUS",
-          "confidence": 0.5,
-          "reasoning": "Stay defensive.",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Oracle",
-          "role": "Pattern Reader",
-          "verdict": "BALANCED",
-          "confidence": 0.5,
-          "reasoning": "Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-          "weight": 1.2
-        },
-        {
-          "advisor": "The Harvester",
-          "role": "Profit Reaper",
-          "verdict": "PROTECT_CAPITAL",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear. Take any profit available, even pennies.",
-          "weight": 1.4
-        }
-      ],
-      "arguments": [
-        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!",
-        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
-        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
-      ],
-      "timestamp": "2026-04-02T19:50:18.637298"
-    },
-    "speculations": [
-      "\ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
-      "\ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?",
-      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
-    ]
-  },
-  {
-    "timestamp": "2026-04-02T19:50:41.497753",
-    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-02 19:50:41\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 12 (Extreme Fear)\n   24h Market Cap Change: -1.94%\n   BTC Dominance: 56.2%\n   BTC Price: $66,890.20\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (12) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
-    "processed_data": {
-      "fear_greed": 12,
-      "fng_class": "Extreme Fear",
-      "mcap_change": -1.9395131346293992,
-      "btc_dominance": 56.21636331996559,
-      "eth_dominance": 10.413049987293755,
-      "btc_price": 66890.2,
-      "eth_price": 2054.67
-    },
-    "skeptic_analysis": {
-      "anomalies": [],
-      "red_flags": [
-        "EXTREME sentiment (12) - possible emotional manipulation"
-      ],
-      "green_flags": [
-        "Market cap stable - organic movement"
-      ],
-      "manipulation_probability": 0.2
-    },
-    "council_verdict": {
-      "consensus": "INCONCLUSIVE",
-      "action": "GATHER_MORE_DATA",
-      "truth_score": 0.42622950819672134,
-      "spoof_score": 0.1721311475409836,
-      "votes": [
-        {
-          "advisor": "The Skeptic",
-          "role": "Chief BS Detector",
-          "verdict": "SUSPICIOUS",
-          "confidence": 0.7,
-          "reasoning": "Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-          "weight": 1.5
-        },
-        {
-          "advisor": "The Bull",
-          "role": "Opportunity Finder",
-          "verdict": "OPPORTUNITY",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear (12) = blood in streets. Time to be greedy!",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Bear",
-          "role": "Risk Manager",
-          "verdict": "CAUTIOUS",
-          "confidence": 0.5,
-          "reasoning": "Stay defensive.",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Oracle",
-          "role": "Pattern Reader",
-          "verdict": "BALANCED",
-          "confidence": 0.5,
-          "reasoning": "Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-          "weight": 1.2
-        },
-        {
-          "advisor": "The Harvester",
-          "role": "Profit Reaper",
-          "verdict": "PROTECT_CAPITAL",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear. Take any profit available, even pennies.",
-          "weight": 1.4
-        }
-      ],
-      "arguments": [
-        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!",
-        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
-        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
-      ],
-      "timestamp": "2026-04-02T19:50:41.381278"
-    },
-    "speculations": [
-      "\ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
-      "\ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?",
-      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
-    ]
-  },
-  {
-    "timestamp": "2026-04-02T19:51:01.630490",
-    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-02 19:51:01\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 12 (Extreme Fear)\n   24h Market Cap Change: -1.94%\n   BTC Dominance: 56.2%\n   BTC Price: $66,900.00\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (12) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
-    "processed_data": {
-      "fear_greed": 12,
-      "fng_class": "Extreme Fear",
-      "mcap_change": -1.9395131346293992,
-      "btc_dominance": 56.21636331996559,
-      "eth_dominance": 10.413049987293755,
-      "btc_price": 66900.0,
-      "eth_price": 2054.64
-    },
-    "skeptic_analysis": {
-      "anomalies": [],
-      "red_flags": [
-        "EXTREME sentiment (12) - possible emotional manipulation"
-      ],
-      "green_flags": [
-        "Market cap stable - organic movement"
-      ],
-      "manipulation_probability": 0.2
-    },
-    "council_verdict": {
-      "consensus": "INCONCLUSIVE",
-      "action": "GATHER_MORE_DATA",
-      "truth_score": 0.42622950819672134,
-      "spoof_score": 0.1721311475409836,
-      "votes": [
-        {
-          "advisor": "The Skeptic",
-          "role": "Chief BS Detector",
-          "verdict": "SUSPICIOUS",
-          "confidence": 0.7,
-          "reasoning": "Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-          "weight": 1.5
-        },
-        {
-          "advisor": "The Bull",
-          "role": "Opportunity Finder",
-          "verdict": "OPPORTUNITY",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear (12) = blood in streets. Time to be greedy!",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Bear",
-          "role": "Risk Manager",
-          "verdict": "CAUTIOUS",
-          "confidence": 0.5,
-          "reasoning": "Stay defensive.",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Oracle",
-          "role": "Pattern Reader",
-          "verdict": "BALANCED",
-          "confidence": 0.5,
-          "reasoning": "Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-          "weight": 1.2
-        },
-        {
-          "advisor": "The Harvester",
-          "role": "Profit Reaper",
-          "verdict": "PROTECT_CAPITAL",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear. Take any profit available, even pennies.",
-          "weight": 1.4
-        }
-      ],
-      "arguments": [
-        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!",
-        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
-        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
-      ],
-      "timestamp": "2026-04-02T19:51:01.484411"
-    },
-    "speculations": [
-      "\ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
-      "\ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?",
-      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
-    ]
-  },
-  {
-    "timestamp": "2026-04-02T19:51:21.393752",
-    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-02 19:51:21\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 12 (Extreme Fear)\n   24h Market Cap Change: -1.94%\n   BTC Dominance: 56.2%\n   BTC Price: $66,892.01\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (12) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
-    "processed_data": {
-      "fear_greed": 12,
-      "fng_class": "Extreme Fear",
-      "mcap_change": -1.9395131346293992,
-      "btc_dominance": 56.21636331996559,
-      "eth_dominance": 10.413049987293755,
-      "btc_price": 66892.01,
-      "eth_price": 2054.49
-    },
-    "skeptic_analysis": {
-      "anomalies": [],
-      "red_flags": [
-        "EXTREME sentiment (12) - possible emotional manipulation"
-      ],
-      "green_flags": [
-        "Market cap stable - organic movement"
-      ],
-      "manipulation_probability": 0.2
-    },
-    "council_verdict": {
-      "consensus": "INCONCLUSIVE",
-      "action": "GATHER_MORE_DATA",
-      "truth_score": 0.42622950819672134,
-      "spoof_score": 0.1721311475409836,
-      "votes": [
-        {
-          "advisor": "The Skeptic",
-          "role": "Chief BS Detector",
-          "verdict": "SUSPICIOUS",
-          "confidence": 0.7,
-          "reasoning": "Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-          "weight": 1.5
-        },
-        {
-          "advisor": "The Bull",
-          "role": "Opportunity Finder",
-          "verdict": "OPPORTUNITY",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear (12) = blood in streets. Time to be greedy!",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Bear",
-          "role": "Risk Manager",
-          "verdict": "CAUTIOUS",
-          "confidence": 0.5,
-          "reasoning": "Stay defensive.",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Oracle",
-          "role": "Pattern Reader",
-          "verdict": "BALANCED",
-          "confidence": 0.5,
-          "reasoning": "Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-          "weight": 1.2
-        },
-        {
-          "advisor": "The Harvester",
-          "role": "Profit Reaper",
-          "verdict": "PROTECT_CAPITAL",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear. Take any profit available, even pennies.",
-          "weight": 1.4
-        }
-      ],
-      "arguments": [
-        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!",
-        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
-        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
-      ],
-      "timestamp": "2026-04-02T19:51:21.282101"
-    },
-    "speculations": [
-      "\ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
-      "\ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?",
-      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
-    ]
-  },
-  {
-    "timestamp": "2026-04-02T19:51:41.101112",
-    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-02 19:51:41\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 12 (Extreme Fear)\n   24h Market Cap Change: -1.94%\n   BTC Dominance: 56.2%\n   BTC Price: $66,901.00\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (12) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
-    "processed_data": {
-      "fear_greed": 12,
-      "fng_class": "Extreme Fear",
-      "mcap_change": -1.9395131346293992,
-      "btc_dominance": 56.21636331996559,
-      "eth_dominance": 10.413049987293755,
-      "btc_price": 66901.0,
-      "eth_price": 2055.38
-    },
-    "skeptic_analysis": {
-      "anomalies": [],
-      "red_flags": [
-        "EXTREME sentiment (12) - possible emotional manipulation"
-      ],
-      "green_flags": [
-        "Market cap stable - organic movement"
-      ],
-      "manipulation_probability": 0.2
-    },
-    "council_verdict": {
-      "consensus": "INCONCLUSIVE",
-      "action": "GATHER_MORE_DATA",
-      "truth_score": 0.42622950819672134,
-      "spoof_score": 0.1721311475409836,
-      "votes": [
-        {
-          "advisor": "The Skeptic",
-          "role": "Chief BS Detector",
-          "verdict": "SUSPICIOUS",
-          "confidence": 0.7,
-          "reasoning": "Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-          "weight": 1.5
-        },
-        {
-          "advisor": "The Bull",
-          "role": "Opportunity Finder",
-          "verdict": "OPPORTUNITY",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear (12) = blood in streets. Time to be greedy!",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Bear",
-          "role": "Risk Manager",
-          "verdict": "CAUTIOUS",
-          "confidence": 0.5,
-          "reasoning": "Stay defensive.",
-          "weight": 1.0
-        },
-        {
-          "advisor": "The Oracle",
-          "role": "Pattern Reader",
-          "verdict": "BALANCED",
-          "confidence": 0.5,
-          "reasoning": "Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-          "weight": 1.2
-        },
-        {
-          "advisor": "The Harvester",
-          "role": "Profit Reaper",
-          "verdict": "PROTECT_CAPITAL",
-          "confidence": 0.8,
-          "reasoning": "Extreme fear. Take any profit available, even pennies.",
-          "weight": 1.4
-        }
-      ],
-      "arguments": [
-        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.",
-        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!",
-        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
-        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.",
-        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
-      ],
-      "timestamp": "2026-04-02T19:51:41.013557"
-    },
-    "speculations": [
-      "\ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
-      "\ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?",
-      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
-    ]
-  },
-  {
     "timestamp": "2026-04-02T19:51:58.557509",
     "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-02 19:51:58\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 12 (Extreme Fear)\n   24h Market Cap Change: -1.94%\n   BTC Dominance: 56.2%\n   BTC Price: $66,950.00\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (12) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (12) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (12) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 12 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (12) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
     "processed_data": {
@@ -8382,6 +7878,510 @@
         "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
       ],
       "timestamp": "2026-04-03T08:03:24.196275"
+    },
+    "speculations": [
+      "\ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
+      "\ud83d\udcad SPECULATION: BTC dominance at 56.1% - capital fleeing to safety OR coiling for alt season explosion?",
+      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
+    ]
+  },
+  {
+    "timestamp": "2026-04-03T08:41:59.903453",
+    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-03 08:41:52\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 9 (Extreme Fear)\n   24h Market Cap Change: +0.36%\n   BTC Dominance: 56.2%\n   BTC Price: $67,076.01\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (9) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
+    "processed_data": {
+      "fear_greed": 9,
+      "fng_class": "Extreme Fear",
+      "mcap_change": 0.3633755585926945,
+      "btc_dominance": 56.167606092734054,
+      "eth_dominance": 10.44867885652932,
+      "btc_price": 67076.01,
+      "eth_price": 2069.12
+    },
+    "skeptic_analysis": {
+      "anomalies": [],
+      "red_flags": [
+        "EXTREME sentiment (9) - possible emotional manipulation"
+      ],
+      "green_flags": [
+        "Market cap stable - organic movement"
+      ],
+      "manipulation_probability": 0.2
+    },
+    "council_verdict": {
+      "consensus": "INCONCLUSIVE",
+      "action": "GATHER_MORE_DATA",
+      "truth_score": 0.42622950819672134,
+      "spoof_score": 0.1721311475409836,
+      "votes": [
+        {
+          "advisor": "The Skeptic",
+          "role": "Chief BS Detector",
+          "verdict": "SUSPICIOUS",
+          "confidence": 0.7,
+          "reasoning": "Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+          "weight": 1.5
+        },
+        {
+          "advisor": "The Bull",
+          "role": "Opportunity Finder",
+          "verdict": "OPPORTUNITY",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear (9) = blood in streets. Time to be greedy!",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Bear",
+          "role": "Risk Manager",
+          "verdict": "CAUTIOUS",
+          "confidence": 0.5,
+          "reasoning": "Stay defensive.",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Oracle",
+          "role": "Pattern Reader",
+          "verdict": "BALANCED",
+          "confidence": 0.5,
+          "reasoning": "Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+          "weight": 1.2
+        },
+        {
+          "advisor": "The Harvester",
+          "role": "Profit Reaper",
+          "verdict": "PROTECT_CAPITAL",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear. Take any profit available, even pennies.",
+          "weight": 1.4
+        }
+      ],
+      "arguments": [
+        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!",
+        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
+        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
+      ],
+      "timestamp": "2026-04-03T08:41:52.747283"
+    },
+    "speculations": [
+      "\ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
+      "\ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?",
+      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
+    ]
+  },
+  {
+    "timestamp": "2026-04-03T09:41:58.092989",
+    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-03 09:41:57\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 9 (Extreme Fear)\n   24h Market Cap Change: +0.73%\n   BTC Dominance: 56.2%\n   BTC Price: $66,936.14\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (9) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
+    "processed_data": {
+      "fear_greed": 9,
+      "fng_class": "Extreme Fear",
+      "mcap_change": 0.7260747335300786,
+      "btc_dominance": 56.15972178008377,
+      "eth_dominance": 10.432541029655352,
+      "btc_price": 66936.14,
+      "eth_price": 2060.01
+    },
+    "skeptic_analysis": {
+      "anomalies": [],
+      "red_flags": [
+        "EXTREME sentiment (9) - possible emotional manipulation"
+      ],
+      "green_flags": [
+        "Market cap stable - organic movement"
+      ],
+      "manipulation_probability": 0.2
+    },
+    "council_verdict": {
+      "consensus": "INCONCLUSIVE",
+      "action": "GATHER_MORE_DATA",
+      "truth_score": 0.42622950819672134,
+      "spoof_score": 0.1721311475409836,
+      "votes": [
+        {
+          "advisor": "The Skeptic",
+          "role": "Chief BS Detector",
+          "verdict": "SUSPICIOUS",
+          "confidence": 0.7,
+          "reasoning": "Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+          "weight": 1.5
+        },
+        {
+          "advisor": "The Bull",
+          "role": "Opportunity Finder",
+          "verdict": "OPPORTUNITY",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear (9) = blood in streets. Time to be greedy!",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Bear",
+          "role": "Risk Manager",
+          "verdict": "CAUTIOUS",
+          "confidence": 0.5,
+          "reasoning": "Stay defensive.",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Oracle",
+          "role": "Pattern Reader",
+          "verdict": "BALANCED",
+          "confidence": 0.5,
+          "reasoning": "Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+          "weight": 1.2
+        },
+        {
+          "advisor": "The Harvester",
+          "role": "Profit Reaper",
+          "verdict": "PROTECT_CAPITAL",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear. Take any profit available, even pennies.",
+          "weight": 1.4
+        }
+      ],
+      "arguments": [
+        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!",
+        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
+        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
+      ],
+      "timestamp": "2026-04-03T09:41:57.815323"
+    },
+    "speculations": [
+      "\ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
+      "\ud83d\udcad SPECULATION: BTC dominance at 56.2% - capital fleeing to safety OR coiling for alt season explosion?",
+      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
+    ]
+  },
+  {
+    "timestamp": "2026-04-03T10:23:24.609731",
+    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-03 10:23:23\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 9 (Extreme Fear)\n   24h Market Cap Change: +0.68%\n   BTC Dominance: 56.1%\n   BTC Price: $66,764.05\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (9) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.1% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
+    "processed_data": {
+      "fear_greed": 9,
+      "fng_class": "Extreme Fear",
+      "mcap_change": 0.6797386272588732,
+      "btc_dominance": 56.118521944261936,
+      "eth_dominance": 10.431629571664807,
+      "btc_price": 66764.05,
+      "eth_price": 2058.4
+    },
+    "skeptic_analysis": {
+      "anomalies": [],
+      "red_flags": [
+        "EXTREME sentiment (9) - possible emotional manipulation"
+      ],
+      "green_flags": [
+        "Market cap stable - organic movement"
+      ],
+      "manipulation_probability": 0.2
+    },
+    "council_verdict": {
+      "consensus": "INCONCLUSIVE",
+      "action": "GATHER_MORE_DATA",
+      "truth_score": 0.42622950819672134,
+      "spoof_score": 0.1721311475409836,
+      "votes": [
+        {
+          "advisor": "The Skeptic",
+          "role": "Chief BS Detector",
+          "verdict": "SUSPICIOUS",
+          "confidence": 0.7,
+          "reasoning": "Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+          "weight": 1.5
+        },
+        {
+          "advisor": "The Bull",
+          "role": "Opportunity Finder",
+          "verdict": "OPPORTUNITY",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear (9) = blood in streets. Time to be greedy!",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Bear",
+          "role": "Risk Manager",
+          "verdict": "CAUTIOUS",
+          "confidence": 0.5,
+          "reasoning": "Stay defensive.",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Oracle",
+          "role": "Pattern Reader",
+          "verdict": "BALANCED",
+          "confidence": 0.5,
+          "reasoning": "Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+          "weight": 1.2
+        },
+        {
+          "advisor": "The Harvester",
+          "role": "Profit Reaper",
+          "verdict": "PROTECT_CAPITAL",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear. Take any profit available, even pennies.",
+          "weight": 1.4
+        }
+      ],
+      "arguments": [
+        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!",
+        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
+        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
+      ],
+      "timestamp": "2026-04-03T10:23:23.977143"
+    },
+    "speculations": [
+      "\ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
+      "\ud83d\udcad SPECULATION: BTC dominance at 56.1% - capital fleeing to safety OR coiling for alt season explosion?",
+      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
+    ]
+  },
+  {
+    "timestamp": "2026-04-03T10:47:58.765199",
+    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-03 10:47:58\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 9 (Extreme Fear)\n   24h Market Cap Change: +0.59%\n   BTC Dominance: 56.1%\n   BTC Price: $66,842.16\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (9) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.1% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
+    "processed_data": {
+      "fear_greed": 9,
+      "fng_class": "Extreme Fear",
+      "mcap_change": 0.5883448685409255,
+      "btc_dominance": 56.11113129247275,
+      "eth_dominance": 10.429841373035782,
+      "btc_price": 66842.16,
+      "eth_price": 2060.96
+    },
+    "skeptic_analysis": {
+      "anomalies": [],
+      "red_flags": [
+        "EXTREME sentiment (9) - possible emotional manipulation"
+      ],
+      "green_flags": [
+        "Market cap stable - organic movement"
+      ],
+      "manipulation_probability": 0.2
+    },
+    "council_verdict": {
+      "consensus": "INCONCLUSIVE",
+      "action": "GATHER_MORE_DATA",
+      "truth_score": 0.42622950819672134,
+      "spoof_score": 0.1721311475409836,
+      "votes": [
+        {
+          "advisor": "The Skeptic",
+          "role": "Chief BS Detector",
+          "verdict": "SUSPICIOUS",
+          "confidence": 0.7,
+          "reasoning": "Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+          "weight": 1.5
+        },
+        {
+          "advisor": "The Bull",
+          "role": "Opportunity Finder",
+          "verdict": "OPPORTUNITY",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear (9) = blood in streets. Time to be greedy!",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Bear",
+          "role": "Risk Manager",
+          "verdict": "CAUTIOUS",
+          "confidence": 0.5,
+          "reasoning": "Stay defensive.",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Oracle",
+          "role": "Pattern Reader",
+          "verdict": "BALANCED",
+          "confidence": 0.5,
+          "reasoning": "Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+          "weight": 1.2
+        },
+        {
+          "advisor": "The Harvester",
+          "role": "Profit Reaper",
+          "verdict": "PROTECT_CAPITAL",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear. Take any profit available, even pennies.",
+          "weight": 1.4
+        }
+      ],
+      "arguments": [
+        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!",
+        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
+        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
+      ],
+      "timestamp": "2026-04-03T10:47:58.638644"
+    },
+    "speculations": [
+      "\ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
+      "\ud83d\udcad SPECULATION: BTC dominance at 56.1% - capital fleeing to safety OR coiling for alt season explosion?",
+      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
+    ]
+  },
+  {
+    "timestamp": "2026-04-03T10:55:00.992242",
+    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-03 10:55:00\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 9 (Extreme Fear)\n   24h Market Cap Change: +0.60%\n   BTC Dominance: 56.1%\n   BTC Price: $66,821.49\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (9) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.1% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
+    "processed_data": {
+      "fear_greed": 9,
+      "fng_class": "Extreme Fear",
+      "mcap_change": 0.5988352345943473,
+      "btc_dominance": 56.10801205765591,
+      "eth_dominance": 10.432885585666877,
+      "btc_price": 66821.49,
+      "eth_price": 2060.57
+    },
+    "skeptic_analysis": {
+      "anomalies": [],
+      "red_flags": [
+        "EXTREME sentiment (9) - possible emotional manipulation"
+      ],
+      "green_flags": [
+        "Market cap stable - organic movement"
+      ],
+      "manipulation_probability": 0.2
+    },
+    "council_verdict": {
+      "consensus": "INCONCLUSIVE",
+      "action": "GATHER_MORE_DATA",
+      "truth_score": 0.42622950819672134,
+      "spoof_score": 0.1721311475409836,
+      "votes": [
+        {
+          "advisor": "The Skeptic",
+          "role": "Chief BS Detector",
+          "verdict": "SUSPICIOUS",
+          "confidence": 0.7,
+          "reasoning": "Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+          "weight": 1.5
+        },
+        {
+          "advisor": "The Bull",
+          "role": "Opportunity Finder",
+          "verdict": "OPPORTUNITY",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear (9) = blood in streets. Time to be greedy!",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Bear",
+          "role": "Risk Manager",
+          "verdict": "CAUTIOUS",
+          "confidence": 0.5,
+          "reasoning": "Stay defensive.",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Oracle",
+          "role": "Pattern Reader",
+          "verdict": "BALANCED",
+          "confidence": 0.5,
+          "reasoning": "Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+          "weight": 1.2
+        },
+        {
+          "advisor": "The Harvester",
+          "role": "Profit Reaper",
+          "verdict": "PROTECT_CAPITAL",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear. Take any profit available, even pennies.",
+          "weight": 1.4
+        }
+      ],
+      "arguments": [
+        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!",
+        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
+        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
+      ],
+      "timestamp": "2026-04-03T10:55:00.815966"
+    },
+    "speculations": [
+      "\ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
+      "\ud83d\udcad SPECULATION: BTC dominance at 56.1% - capital fleeing to safety OR coiling for alt season explosion?",
+      "\ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking."
+    ]
+  },
+  {
+    "timestamp": "2026-04-03T11:18:25.841322",
+    "talk": "======================================================================\n\ud83e\udde0 AUREON MINER BRAIN - CRITICAL ANALYSIS REPORT\n\ud83d\udcc5 2026-04-03 11:18:24\n======================================================================\n\n\ud83d\udcca **RAW DATA INGESTION**\n   Fear & Greed Index: 9 (Extreme Fear)\n   24h Market Cap Change: +0.65%\n   BTC Dominance: 56.1%\n   BTC Price: $66,866.00\n\n\ud83d\udd0d **SKEPTICAL ANALYSIS (BS DETECTION)**\n   Manipulation Probability: 20%\n   \ud83d\udea9 EXTREME sentiment (9) - possible emotional manipulation\n   \u2705 Market cap stable - organic movement\n\n\ud83c\udfad **TRUTH COUNCIL VERDICT**\n   Consensus: INCONCLUSIVE\n   Action: GATHER_MORE_DATA\n   Truth Score: 43%\n   Spoof Score: 17%\n   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.\n   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!\n   [The Bear] (CAUTIOUS, 50%): Stay defensive.\n   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.\n   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies.\n\n\ud83d\udcad **SPECULATIVE INSIGHTS**\n   \ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.\n   \ud83d\udcad SPECULATION: BTC dominance at 56.1% - capital fleeing to safety OR coiling for alt season explosion?\n   \ud83d\udcad CONTRARIAN VIEW: Whatever the crowd believes (it's going to zero), consider the opposite. The market rewards independent thinking.\n\n\ud83c\udfaf **BRAIN SYNTHESIS**\n   \ud83e\udd14 Insufficient data for strong conviction.\n   \ud83e\udd14 Posture: Reduce size, raise entry standards.\n   \ud83e\udd14 Execute only when net-after-costs penny objective is viable and approved.\n\n\ud83d\udcda **LEARNING DIRECTIVE**\n   \u2192 Prioritize CONTRARIAN setups that still clear net-penny-after-costs viability\n   \u2192 Require probability matrix approval; avoid forced-loss exits\n\n======================================================================\n\ud83e\udde0 \"Don't believe the hype. Question everything. Trade the truth.\"\n======================================================================",
+    "processed_data": {
+      "fear_greed": 9,
+      "fng_class": "Extreme Fear",
+      "mcap_change": 0.6497201589170292,
+      "btc_dominance": 56.09369259999537,
+      "eth_dominance": 10.431121042398381,
+      "btc_price": 66866.0,
+      "eth_price": 2059.82
+    },
+    "skeptic_analysis": {
+      "anomalies": [],
+      "red_flags": [
+        "EXTREME sentiment (9) - possible emotional manipulation"
+      ],
+      "green_flags": [
+        "Market cap stable - organic movement"
+      ],
+      "manipulation_probability": 0.2
+    },
+    "council_verdict": {
+      "consensus": "INCONCLUSIVE",
+      "action": "GATHER_MORE_DATA",
+      "truth_score": 0.42622950819672134,
+      "spoof_score": 0.1721311475409836,
+      "votes": [
+        {
+          "advisor": "The Skeptic",
+          "role": "Chief BS Detector",
+          "verdict": "SUSPICIOUS",
+          "confidence": 0.7,
+          "reasoning": "Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+          "weight": 1.5
+        },
+        {
+          "advisor": "The Bull",
+          "role": "Opportunity Finder",
+          "verdict": "OPPORTUNITY",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear (9) = blood in streets. Time to be greedy!",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Bear",
+          "role": "Risk Manager",
+          "verdict": "CAUTIOUS",
+          "confidence": 0.5,
+          "reasoning": "Stay defensive.",
+          "weight": 1.0
+        },
+        {
+          "advisor": "The Oracle",
+          "role": "Pattern Reader",
+          "verdict": "BALANCED",
+          "confidence": 0.5,
+          "reasoning": "Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+          "weight": 1.2
+        },
+        {
+          "advisor": "The Harvester",
+          "role": "Profit Reaper",
+          "verdict": "PROTECT_CAPITAL",
+          "confidence": 0.8,
+          "reasoning": "Extreme fear. Take any profit available, even pennies.",
+          "weight": 1.4
+        }
+      ],
+      "arguments": [
+        "   [The Skeptic] (SUSPICIOUS, 70%): Extreme Fear/Greed (9) often precedes reversals. Possible manipulation.",
+        "   [The Bull] (OPPORTUNITY, 80%): Extreme fear (9) = blood in streets. Time to be greedy!",
+        "   [The Bear] (CAUTIOUS, 50%): Stay defensive.",
+        "   [The Oracle] (BALANCED, 50%): Fear/Greed at 9 suggests equilibrium. Watch for catalyst.",
+        "   [The Harvester] (PROTECT_CAPITAL, 80%): Extreme fear. Take any profit available, even pennies."
+      ],
+      "timestamp": "2026-04-03T11:18:24.390907"
     },
     "speculations": [
       "\ud83d\udcad SPECULATION: Extreme fear (9) often marks bottoms. If manipulation probability is 20%, this could be genuine capitulation.",
