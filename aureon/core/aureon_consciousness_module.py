@@ -562,6 +562,54 @@ class ConsciousnessModule:
                 except Exception as e:
                     log.debug(f"Live tick error: {e}")
 
+        # ── Step 4a: GLOBAL ENERGY FIELD — live market mapping ──
+        if self.lambda_state:
+            step = self.lambda_state.step if self.lambda_state else 0
+            if step % 20 == 0 and step > 5:  # Every 20th heartbeat (~60s)
+                try:
+                    if not hasattr(self, '_energy_field') or self._energy_field is None:
+                        from aureon.harmonic.aureon_market_energy_field import MarketEnergyField
+                        self._energy_field = MarketEnergyField()
+
+                    # Feed live prices from CoinGecko
+                    import requests
+                    r = requests.get("https://api.coingecko.com/api/v3/simple/price",
+                        params={"ids": "bitcoin,ethereum,solana,ripple,cardano,dogecoin,binancecoin,chainlink,polkadot,litecoin",
+                                "vs_currencies": "usd", "include_24hr_change": "true", "include_24hr_vol": "true"},
+                        timeout=5)
+                    if r.status_code == 200:
+                        for coin_id, data in r.json().items():
+                            sym = coin_id.upper()[:6]
+                            price = data.get("usd", 0)
+                            vol = data.get("usd_24h_vol", 0)
+                            if price > 0:
+                                self._energy_field.ingest_price(sym, price, vol)
+
+                    # Compute signatures + field
+                    for sym in list(self._energy_field._price_history.keys()):
+                        self._energy_field.compute_signature(sym)
+                    state = self._energy_field.compute_field()
+
+                    # Feed into understanding
+                    self._understanding["energy_instruments"] = len(state.instruments)
+                    self._understanding["energy_accumulating"] = sum(1 for s in state.instruments.values() if s.energy_state == "accumulating")
+                    self._understanding["energy_distributing"] = sum(1 for s in state.instruments.values() if s.energy_state == "distributing")
+                    self._understanding["energy_coherence"] = state.coherence
+                    self._understanding["energy_extraction"] = state.extraction_active
+                    self._understanding["energy_net_flow"] = "INFLOW" if state.net_flow > 0 else "OUTFLOW"
+
+                    # Get trading signals
+                    signals = self._energy_field.get_trading_signals()
+                    if signals:
+                        self._understanding["energy_signals"] = len(signals)
+                        self._understanding["energy_top_signal"] = f"{signals[0]['action']} {signals[0]['symbol']} conf={signals[0]['confidence']:.2f}"
+                        log.info(f"[ENERGY] {len(state.instruments)} instruments | "
+                                 f"{self._understanding['energy_accumulating']} acc / {self._understanding['energy_distributing']} dist | "
+                                 f"top: {self._understanding['energy_top_signal']}")
+
+                except Exception as e:
+                    log.debug(f"Energy field: {e}")
+
         # ── Step 4b2: UNIFIED TRADER — ALL exchanges in one tick ──
         if self._unified_trader and self.lambda_state:
             step = self.lambda_state.step if self.lambda_state else 0
@@ -974,6 +1022,20 @@ class ConsciousnessModule:
         branches = understanding.get("branches", 0)
         if branches:
             fragments.append(f"{branches} branches")
+
+        # Energy field
+        e_inst = understanding.get("energy_instruments", 0)
+        if e_inst:
+            e_acc = understanding.get("energy_accumulating", 0)
+            e_dist = understanding.get("energy_distributing", 0)
+            e_flow = understanding.get("energy_net_flow", "")
+            fragments.append(f"field:{e_inst}")
+            fragments.append(f"acc:{e_acc}/dist:{e_dist}")
+            if e_flow:
+                fragments.append(e_flow)
+            top = understanding.get("energy_top_signal", "")
+            if top:
+                fragments.append(top)
 
         # Total equity across all exchanges
         total_equity = understanding.get("total_equity", 0)
