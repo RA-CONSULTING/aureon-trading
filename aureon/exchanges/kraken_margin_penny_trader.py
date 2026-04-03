@@ -75,7 +75,7 @@ try:
 except ImportError:
     HAS_DTP = False
     DynamicTakeProfit = None
-    DTP_CONFIG = {'activation_threshold': 15.0, 'trailing_distance_pct': 0.02, 'gbp_usd_rate': 1.27}
+    DTP_CONFIG = {'activation_threshold': 1.27, 'trailing_distance_pct': 0.02, 'gbp_usd_rate': 1.27}
 
 # Margin Wave Rider - pre-entry 250% margin safety gate
 try:

@@ -35,7 +35,7 @@ from datetime import datetime
 DTP_CONFIG = {
     # Minimum net profit (after fees) to activate the dead man's switch.
     # Once this is hit the floor is LOCKED - the trade can never close below it.
-    'activation_threshold': 15.0,          # £15 net profit (account currency)
+    'activation_threshold': 1.27,           # £1 net profit — lock in any real profit
     'activation_currency': 'GBP',          # Display label for the threshold
     'trailing_distance_pct': 0.02,         # 2% trailing distance below peak profit
     # Conservative fallback fee rate if no live fee data is available.
