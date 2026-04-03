@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Queen Sero -- Aureon Conversation Interface</title>
+<title>Queen Sero -- Aureon Trading Command Center</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 /* ============================================================
    QUEEN SERO -- THE FACE
@@ -592,36 +593,122 @@ body {
 
 <!-- ========== FACE AREA ========== -->
 <div id="face-area">
-    <div id="queen-face">
-        <div id="face-inner">
-            <div class="eye left"></div>
-            <div class="eye right"></div>
-            <!-- Crown SVG -->
-            <svg id="crown-icon" viewBox="0 0 100 100" fill="none">
-                <!-- Crown base -->
-                <path d="M20 70 L80 70 L75 45 L60 60 L50 30 L40 60 L25 45 Z"
-                      fill="url(#crownGrad)" stroke="#F59E0B" stroke-width="2"/>
-                <!-- Crown band -->
-                <rect x="20" y="70" width="60" height="8" rx="2"
-                      fill="url(#crownGrad)" stroke="#F59E0B" stroke-width="1.5"/>
-                <!-- Crown jewels -->
-                <circle cx="50" cy="38" r="3" fill="#F59E0B" opacity="0.9"/>
-                <circle cx="35" cy="55" r="2.5" fill="#6B21A8"/>
-                <circle cx="65" cy="55" r="2.5" fill="#6B21A8"/>
-                <!-- Bee wings (subtle) -->
-                <ellipse cx="30" cy="28" rx="10" ry="6" fill="rgba(245,158,11,0.15)"
-                         stroke="rgba(245,158,11,0.3)" stroke-width="0.5"/>
-                <ellipse cx="70" cy="28" rx="10" ry="6" fill="rgba(245,158,11,0.15)"
-                         stroke="rgba(245,158,11,0.3)" stroke-width="0.5"/>
-                <defs>
-                    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#F59E0B"/>
-                        <stop offset="50%" stop-color="#6B21A8"/>
-                        <stop offset="100%" stop-color="#F59E0B"/>
-                    </linearGradient>
-                </defs>
-            </svg>
-        </div>
+    <!-- 3D Face rendered with Three.js -->
+    <canvas id="queen-3d-face" width="200" height="200" style="width:200px;height:200px;border-radius:50%;cursor:pointer;"></canvas>
+    <script>
+    (function(){
+        const canvas = document.getElementById('queen-3d-face');
+        if (!canvas || typeof THREE === 'undefined') return;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+        camera.position.z = 3;
+        const renderer = new THREE.WebGLRenderer({canvas, alpha: true, antialias: true});
+        renderer.setSize(200, 200);
+        renderer.setClearColor(0x000000, 0);
+
+        // Head — glowing sphere with crown material
+        const headGeo = new THREE.SphereGeometry(0.8, 64, 64);
+        const headMat = new THREE.MeshStandardMaterial({
+            color: 0x2D1B69, emissive: 0x6B21A8, emissiveIntensity: 0.3,
+            metalness: 0.7, roughness: 0.3,
+        });
+        const head = new THREE.Mesh(headGeo, headMat);
+        scene.add(head);
+
+        // Eyes — golden glowing spheres
+        const eyeGeo = new THREE.SphereGeometry(0.08, 16, 16);
+        const eyeMat = new THREE.MeshStandardMaterial({color: 0xF59E0B, emissive: 0xF59E0B, emissiveIntensity: 1.0});
+        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+        leftEye.position.set(-0.25, 0.15, 0.7);
+        head.add(leftEye);
+        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+        rightEye.position.set(0.25, 0.15, 0.7);
+        head.add(rightEye);
+
+        // Crown — golden torus on top
+        const crownGeo = new THREE.TorusGeometry(0.45, 0.06, 16, 32);
+        const crownMat = new THREE.MeshStandardMaterial({color: 0xF59E0B, emissive: 0xF59E0B, emissiveIntensity: 0.5, metalness: 0.9, roughness: 0.1});
+        const crown = new THREE.Mesh(crownGeo, crownMat);
+        crown.position.y = 0.65;
+        crown.rotation.x = Math.PI / 2;
+        head.add(crown);
+
+        // Crown jewels — 5 points
+        for (let i = 0; i < 5; i++) {
+            const angle = (i / 5) * Math.PI * 2;
+            const jewel = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.06, 0),
+                new THREE.MeshStandardMaterial({color: i%2?0x6B21A8:0xF59E0B, emissive: i%2?0x6B21A8:0xF59E0B, emissiveIntensity: 0.8})
+            );
+            jewel.position.set(Math.cos(angle)*0.45, 0.65, Math.sin(angle)*0.45);
+            head.add(jewel);
+        }
+
+        // Particle ring — consciousness field
+        const particleCount = 200;
+        const particleGeo = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const radius = 1.2 + Math.random() * 0.3;
+            positions[i*3] = Math.cos(angle) * radius;
+            positions[i*3+1] = (Math.random() - 0.5) * 0.8;
+            positions[i*3+2] = Math.sin(angle) * radius;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particleMat = new THREE.PointsMaterial({color: 0x6B21A8, size: 0.02, transparent: true, opacity: 0.6});
+        const particles = new THREE.Points(particleGeo, particleMat);
+        scene.add(particles);
+
+        // Lighting
+        const light1 = new THREE.PointLight(0x6B21A8, 2, 10);
+        light1.position.set(2, 2, 3);
+        scene.add(light1);
+        const light2 = new THREE.PointLight(0xF59E0B, 1.5, 10);
+        light2.position.set(-2, -1, 3);
+        scene.add(light2);
+        scene.add(new THREE.AmbientLight(0x333366, 0.5));
+
+        // Animation loop
+        let mood = 'SERENE';
+        window._setQueenMood = function(m) { mood = m; };
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = Date.now() * 0.001;
+
+            // Breathing — Schumann 7.83Hz scaled
+            head.scale.setScalar(1 + Math.sin(t * 0.5) * 0.02);
+
+            // Slow rotation — golden ratio period
+            head.rotation.y = Math.sin(t * 0.3) * 0.15;
+            head.rotation.x = Math.sin(t * 0.2) * 0.05;
+
+            // Particle ring rotation
+            particles.rotation.y = t * 0.1;
+            particles.rotation.x = Math.sin(t * 0.05) * 0.1;
+
+            // Crown glow pulses at phi timing
+            const pulse = 0.3 + Math.sin(t * (2 * Math.PI / 1.618)) * 0.2;
+            crownMat.emissiveIntensity = pulse;
+
+            // Mood-reactive head color
+            const moodColors = {
+                SERENE: 0x3B82F6, CONFIDENT: 0xF59E0B, VIGILANT: 0xF97316,
+                CAUTIOUS: 0x9CA3AF, AGGRESSIVE: 0xEF4444, FEARFUL: 0x93C5FD,
+                EUPHORIC: 0xFCD34D, FLOWING: 0x8B5CF6, CONNECTED: 0x6366F1,
+                TRANSCENDENT: 0xC084FC, UNIFIED: 0xFFFFF0
+            };
+            const targetColor = moodColors[mood] || 0x6B21A8;
+            headMat.emissive.lerp(new THREE.Color(targetColor), 0.02);
+            light1.color.lerp(new THREE.Color(targetColor), 0.02);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+    })();
+    </script>
+    <div style="display:none"><!-- keep old structure for JS refs -->
     </div>
     <div id="thought-display">Awakening...</div>
     <div id="typing-indicator">
