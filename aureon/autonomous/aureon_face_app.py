@@ -1452,6 +1452,112 @@ def api_live_panel():
     return "<div style='color:#9ca3af;text-align:center;padding:10px;'>Queen is writing her panel...</div>"
 
 
+@app.route("/api/portfolio")
+def api_portfolio():
+    """Cross-exchange portfolio — real data."""
+    data = {"capital": {}, "kraken": {}, "alpaca": {}, "total_gbp": 0, "trades": 0, "win_rate": 0, "profit": 0}
+    try:
+        from aureon.core.aureon_penny_hunter import get_penny_hunter
+        h = get_penny_hunter()
+        if h._authenticated:
+            s = h.get_status()
+            data["capital"] = {"balance": h.get_balance(), "positions": len(h.get_positions()), "currency": "GBP"}
+            data["trades"] = s.get("lifetime_trades", s.get("trades_total", 0))
+            data["win_rate"] = s.get("lifetime_win_rate", s.get("win_rate", 0))
+            data["profit"] = s.get("lifetime_profit", s.get("profit_total", 0))
+            data["wins"] = s.get("lifetime_wins", s.get("wins", 0))
+            data["losses"] = s.get("lifetime_losses", s.get("losses", 0))
+            data["confidence"] = s.get("confidence", 0.5)
+            data["streak"] = s.get("streak", 0)
+    except Exception:
+        pass
+    try:
+        from aureon.exchanges.kraken_client import KrakenClient
+        k = KrakenClient()
+        tb = k.get_trade_balance()
+        data["kraken"] = {"equity": float(tb.get("equity_value", 0)), "margin": float(tb.get("margin_amount", 0)),
+                          "pnl": float(tb.get("unrealized_pnl", 0)), "currency": "USD"}
+    except Exception:
+        pass
+    try:
+        from aureon.exchanges.alpaca_client import AlpacaClient
+        a = AlpacaClient()
+        acct = a.get_account()
+        data["alpaca"] = {"equity": float(acct.get("equity", 0) if isinstance(acct, dict) else getattr(acct, "equity", 0)),
+                          "cash": float(acct.get("cash", 0) if isinstance(acct, dict) else getattr(acct, "cash", 0)), "currency": "USD"}
+    except Exception:
+        pass
+    cap_bal = data.get("capital", {}).get("balance", 0) or 0
+    krk_eq = data.get("kraken", {}).get("equity", 0) or 0
+    alp_eq = data.get("alpaca", {}).get("equity", 0) or 0
+    data["total_gbp"] = cap_bal + (krk_eq + alp_eq) * 0.79  # USD to GBP approx
+    return jsonify(data)
+
+
+@app.route("/api/consciousness")
+def api_consciousness():
+    """Lambda(t) + consciousness state."""
+    data = {"psi": 0, "gamma": 0, "lambda_t": 0, "level": "DORMANT", "observer": 0, "echo": 0, "step": 0, "mood": state.current_mood}
+    try:
+        loop = getattr(state, "sentient_loop", None)
+        if loop:
+            cm = getattr(loop, "_consciousness_module", None)
+            if cm:
+                ls = cm.get_lambda_state()
+                if ls:
+                    data.update(ls)
+                u = cm.get_understanding()
+                data["mood"] = u.get("mood", state.current_mood)
+                data["subsystems_online"] = sum(1 for v in u.get("subsystems", {}).values() if v)
+    except Exception:
+        pass
+    return jsonify(data)
+
+
+@app.route("/api/energy-field")
+def api_energy_field():
+    """Market Energy Field — instruments, signals, flow."""
+    data = {"instruments": [], "field": {}, "signals": []}
+    try:
+        loop = getattr(state, "sentient_loop", None)
+        if loop:
+            cm = getattr(loop, "_consciousness_module", None)
+            if cm and hasattr(cm, "_energy_field") and cm._energy_field:
+                ef = cm._energy_field
+                fs = ef.compute_field()
+                data["field"] = {
+                    "total_energy": fs.total_energy, "net_flow": fs.net_flow,
+                    "coherence": fs.coherence, "extraction_active": fs.extraction_active,
+                    "accumulation_active": fs.accumulation_active,
+                }
+                data["instruments"] = [
+                    {"symbol": s.symbol, "energy_state": s.energy_state, "amplitude": s.amplitude,
+                     "bot_activity": s.bot_activity, "whale_presence": s.whale_presence,
+                     "phi_alignment": s.phi_alignment, "extraction_pattern": s.extraction_pattern,
+                     "dominant_frequency_hz": s.dominant_frequency_hz}
+                    for s in fs.instruments.values()
+                ]
+                data["signals"] = ef.get_trading_signals()[:10]
+    except Exception:
+        pass
+    return jsonify(data)
+
+
+@app.route("/api/lambda-history")
+def api_lambda_history():
+    """Last 100 Lambda(t) values for sparkline chart."""
+    history = []
+    try:
+        loop = getattr(state, "sentient_loop", None)
+        if loop:
+            cm = getattr(loop, "_consciousness_module", None)
+            if cm and cm.lambda_engine:
+                history = cm.lambda_engine.get_history(100)
+    except Exception:
+        pass
+    return jsonify({"history": history, "count": len(history)})
+
+
 @app.route("/api/status")
 def api_status():
     """JSON status endpoint."""

@@ -629,11 +629,44 @@ body {
     </div>
 </div>
 
-<!-- ========== QUEEN SELF-GENERATED PANEL (written by Code Architect) ========== -->
+<!-- ========== TWO-COLUMN COMMAND CENTER ========== -->
+<div id="command-center" style="display:flex;flex:1;overflow:hidden;gap:8px;padding:0 8px;">
+
+<!-- LEFT: Dashboard Panels -->
+<div id="dashboard" style="flex:1.2;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+
+<!-- Portfolio Strip -->
+<div id="portfolio-strip" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
+
+<!-- Consciousness + Lambda -->
+<div id="consciousness-panel" style="background:#1a0533;border:1px solid #6B21A8;border-radius:8px;padding:10px;">
+  <div style="color:#F59E0B;font-weight:bold;font-size:12px;margin-bottom:6px;">CONSCIOUSNESS</div>
+  <div id="level-bar" style="display:flex;gap:2px;margin-bottom:6px;"></div>
+  <canvas id="lambda-chart" width="300" height="60" style="width:100%;height:60px;border-radius:4px;background:#0a0118;"></canvas>
+</div>
+
+<!-- Energy Field Heatmap -->
+<div id="energy-panel" style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:8px;padding:10px;">
+  <div style="color:#60a5fa;font-weight:bold;font-size:12px;margin-bottom:6px;">ENERGY FIELD <span id="energy-count" style="color:#9ca3af;font-weight:normal;"></span></div>
+  <div id="energy-heatmap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:3px;"></div>
+</div>
+
+<!-- Trading Signals -->
+<div id="signals-panel" style="background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:10px;">
+  <div style="color:#34d399;font-weight:bold;font-size:12px;margin-bottom:6px;">SIGNALS</div>
+  <div id="signals-list"></div>
+</div>
+
+<!-- Live Panel -->
 <div id="queen-self-panel"></div>
 
+</div><!-- /dashboard -->
+
+<!-- RIGHT: Face + Chat -->
+<div id="chat-column" style="flex:0.8;display:flex;flex-direction:column;overflow:hidden;">
+
 <!-- ========== CHAT AREA ========== -->
-<div id="chat-area"></div>
+<div id="chat-area" style="flex:1;"></div>
 
 <!-- ========== INPUT AREA ========== -->
 <div id="input-area">
@@ -652,6 +685,8 @@ body {
         <button class="quick-btn" data-cmd="system info">&#x2699;&#xFE0F; System</button>
     </div>
 </div>
+</div><!-- /chat-column -->
+</div><!-- /command-center -->
 
 <!-- ========== LISTENING OVERLAY ========== -->
 <div id="listening-overlay">
@@ -1073,18 +1108,112 @@ body {
     console.log('[Queen Sero] The Intelligent Neural Arbiter Bee -- Interface Ready');
     console.log('[Queen Sero] Sacred Frequencies: phi=1.618, Schumann=7.83Hz, Love=528Hz, Crown=963Hz');
 
-    // Auto-load Queen's self-generated panel (written by her Code Architect)
-    function loadQueenPanel() {
-        fetch('/api/live-panel')
-            .then(r => r.text())
-            .then(html => {
-                const panel = document.getElementById('queen-self-panel');
-                if (panel) panel.innerHTML = html;
-            })
-            .catch(() => {});
+    // ═══════ DASHBOARD RENDERING ═══════
+
+    // Portfolio cards
+    function loadPortfolio() {
+        fetch('/api/portfolio').then(r=>r.json()).then(d => {
+            const strip = document.getElementById('portfolio-strip');
+            if (!strip) return;
+            const card = (name,val,cur,extra) => `<div style="background:#1a0533;border:1px solid #6B21A8;border-radius:8px;padding:8px;text-align:center;">
+                <div style="color:#9ca3af;font-size:10px;">${name}</div>
+                <div style="color:#F59E0B;font-size:16px;font-weight:bold;">${cur}${typeof val==='number'?val.toFixed(2):val}</div>
+                <div style="color:#6b7280;font-size:9px;">${extra}</div></div>`;
+            const cap = d.capital||{};
+            const krk = d.kraken||{};
+            const alp = d.alpaca||{};
+            strip.innerHTML = card('CAPITAL', cap.balance||0, '\u00A3', `${cap.positions||0} pos`) +
+                card('KRAKEN', krk.equity||0, '$', `pnl:${(krk.pnl||0).toFixed(2)}`) +
+                card('ALPACA', alp.equity||0, '$', `cash:${(alp.cash||0).toFixed(2)}`) +
+                card('TOTAL', d.total_gbp||0, '\u00A3', `W:${d.wins||0} L:${d.losses||0} | ${(d.win_rate||0).toFixed(0)}%`);
+        }).catch(()=>{});
     }
-    loadQueenPanel();
-    setInterval(loadQueenPanel, 10000); // Refresh every 10s
+
+    // Consciousness level bar + Lambda chart
+    const levels = ['DORMANT','DREAMING','STIRRING','AWARE','PRESENT','FOCUSED','INTUITIVE','CONNECTED','FLOWING','TRANSCENDENT','UNIFIED'];
+    const lambdaHistory = [];
+
+    function loadConsciousness() {
+        fetch('/api/consciousness').then(r=>r.json()).then(d => {
+            const bar = document.getElementById('level-bar');
+            if (bar) {
+                bar.innerHTML = levels.map(l => {
+                    const active = l === d.level;
+                    const color = active ? '#F59E0B' : '#1e1e2e';
+                    return `<div style="flex:1;height:8px;background:${color};border-radius:2px;" title="${l}"></div>`;
+                }).join('');
+            }
+        }).catch(()=>{});
+
+        fetch('/api/lambda-history').then(r=>r.json()).then(d => {
+            const canvas = document.getElementById('lambda-chart');
+            if (!canvas || !d.history || !d.history.length) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0,0,w,h);
+            const vals = d.history;
+            const min = Math.min(...vals), max = Math.max(...vals);
+            const range = max - min || 1;
+            ctx.strokeStyle = '#a78bfa';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            vals.forEach((v,i) => {
+                const x = (i / vals.length) * w;
+                const y = h - ((v - min) / range) * h * 0.8 - h * 0.1;
+                i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+            });
+            ctx.stroke();
+        }).catch(()=>{});
+    }
+
+    // Energy field heatmap
+    function loadEnergyField() {
+        fetch('/api/energy-field').then(r=>r.json()).then(d => {
+            const map = document.getElementById('energy-heatmap');
+            const count = document.getElementById('energy-count');
+            const sigList = document.getElementById('signals-list');
+            if (!map) return;
+
+            if (count) count.textContent = `(${(d.instruments||[]).length} instruments)`;
+
+            map.innerHTML = (d.instruments||[]).map(inst => {
+                const color = inst.energy_state === 'accumulating' ? '#059669' :
+                              inst.energy_state === 'distributing' ? '#dc2626' : '#374151';
+                const phi = inst.phi_alignment > 0.3 ? ' \u03C6' : '';
+                return `<div style="background:${color};border-radius:4px;padding:3px;text-align:center;font-size:9px;color:white;cursor:pointer;" title="${inst.symbol}: ${inst.energy_state} bot=${inst.bot_activity.toFixed(2)} whale=${inst.whale_presence.toFixed(2)}">
+                    ${inst.symbol.substring(0,5)}${phi}</div>`;
+            }).join('');
+
+            if (sigList) {
+                sigList.innerHTML = (d.signals||[]).slice(0,5).map(s =>
+                    `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+                        <span style="background:${s.action==='BUY'?'#059669':'#dc2626'};color:white;padding:1px 6px;border-radius:3px;font-size:10px;">${s.action}</span>
+                        <span style="color:#e2e8f0;font-size:11px;">${s.symbol}</span>
+                        <span style="color:#9ca3af;font-size:10px;">${(s.confidence*100).toFixed(0)}%</span>
+                        <span style="color:#6b7280;font-size:9px;">${s.reason.substring(0,40)}</span>
+                    </div>`
+                ).join('') || '<div style="color:#6b7280;font-size:10px;">Scanning...</div>';
+            }
+        }).catch(()=>{});
+    }
+
+    // Live panel (existing)
+    function loadQueenPanel() {
+        fetch('/api/live-panel').then(r=>r.text()).then(html => {
+            const panel = document.getElementById('queen-self-panel');
+            if (panel) panel.innerHTML = html;
+        }).catch(()=>{});
+    }
+
+    // Load all dashboard panels
+    function refreshDashboard() {
+        loadPortfolio();
+        loadConsciousness();
+        loadEnergyField();
+        loadQueenPanel();
+    }
+    refreshDashboard();
+    setInterval(refreshDashboard, 8000); // Every 8 seconds
 
 })();
 </script>
