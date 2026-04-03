@@ -1341,8 +1341,20 @@ def on_user_voice(data):
 
 @app.route("/")
 def index():
-    """Serve the Queen's face."""
+    """Redirect to the dream dashboard."""
+    return render_template("queen_sero_dashboard.html")
+
+
+@app.route("/chat")
+def chat_view():
+    """Serve the original chat interface."""
     return render_template("aureon_face.html")
+
+
+@app.route("/dashboard")
+def dashboard_view():
+    """Serve the dream dashboard."""
+    return render_template("queen_sero_dashboard.html")
 
 
 @app.route("/api/live-panel")
