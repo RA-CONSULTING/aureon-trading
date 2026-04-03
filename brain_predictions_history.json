@@ -1,23 +1,6 @@
 {
   "predictions": [
     {
-      "timestamp": "2026-04-02T19:51:58.522638",
-      "validation_time": "2026-04-02T21:51:58.522638",
-      "btc_price_at_call": 66943.56,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "fear_greed": 12,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.42622950819672134,
-      "validated": true,
-      "was_correct": true,
-      "actual_outcome": {
-        "price_at_validation": 66954.03,
-        "price_change_pct": 0.01564004065514467,
-        "direction": "UP"
-      }
-    },
-    {
       "timestamp": "2026-04-02T19:52:15.756217",
       "validation_time": "2026-04-02T21:52:15.756217",
       "btc_price_at_call": 66980.59,
@@ -1624,9 +1607,13 @@
       "fear_greed": 9,
       "predicted_direction": "BULLISH",
       "confidence": 0.42622950819672134,
-      "validated": false,
-      "was_correct": null,
-      "actual_outcome": null
+      "validated": true,
+      "was_correct": false,
+      "actual_outcome": {
+        "price_at_validation": 66844.86,
+        "price_change_pct": -0.17793139926953924,
+        "direction": "DOWN"
+      }
     },
     {
       "timestamp": "2026-04-03T10:23:24.358310",
@@ -1679,15 +1666,28 @@
       "validated": false,
       "was_correct": null,
       "actual_outcome": null
+    },
+    {
+      "timestamp": "2026-04-03T11:52:01.734514",
+      "validation_time": "2026-04-03T13:52:01.734514",
+      "btc_price_at_call": 66844.86,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.2,
+      "fear_greed": 9,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.42622950819672134,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
     }
   ],
   "bias_tracker": {
-    "bullish_calls": 110,
+    "bullish_calls": 111,
     "bullish_correct": 23,
     "bearish_calls": 0,
     "bearish_correct": 0,
     "neutral_calls": 0,
     "neutral_correct": 0
   },
-  "last_updated": "2026-04-03T11:18:25.676070"
+  "last_updated": "2026-04-03T11:52:01.736528"
 }
