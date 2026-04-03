@@ -6231,7 +6231,7 @@ class KrakenMarginArmyTrader:
 
     def _format_dtp_progress_bar(self, validated_net_pnl: float) -> str:
         """Visualize progress toward the first DTP activation threshold."""
-        threshold_gbp = float(DTP_CONFIG.get("activation_threshold", 15.0) or 15.0)
+        threshold_gbp = float(DTP_CONFIG.get("activation_threshold", 1.27) or 1.27)
         gbp_usd_rate = float(DTP_CONFIG.get("gbp_usd_rate", 1.27) or 1.27)
         threshold_usd = threshold_gbp * gbp_usd_rate
         current_usd = max(0.0, float(validated_net_pnl))
