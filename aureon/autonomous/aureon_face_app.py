@@ -1347,10 +1347,108 @@ def index():
 
 @app.route("/api/live-panel")
 def api_live_panel():
-    """Serve the Queen's self-generated status panel (written by Code Architect)."""
-    panel_path = REPO_ROOT / "templates" / "queen_live_panel.html"
-    if panel_path.exists():
-        return panel_path.read_text(encoding="utf-8")
+    """LIVE status panel — real data every request, not static file."""
+    # Pull REAL data from all systems
+    psi = 0
+    level = "DORMANT"
+    bal = 0
+    trades = 0
+    wins = 0
+    losses = 0
+    wr = 0
+    profit = 0.0
+    conf = 50
+    streak = 0
+    positions = 0
+    kraken_equity = 0
+    alpaca_equity = 0
+    energy_instruments = 0
+    energy_acc = 0
+    energy_dist = 0
+    energy_signal = ""
+    fg = "?"
+
+    # Penny hunter
+    try:
+        from aureon.core.aureon_penny_hunter import get_penny_hunter
+        h = get_penny_hunter()
+        if h._authenticated:
+            s = h.get_status()
+            bal = h.get_balance()
+            trades = s.get("lifetime_trades", s.get("trades_total", 0))
+            wins = s.get("lifetime_wins", s.get("wins", 0))
+            losses = s.get("lifetime_losses", s.get("losses", 0))
+            wr = s.get("lifetime_win_rate", s.get("win_rate", 0))
+            profit = s.get("lifetime_profit", s.get("profit_total", 0))
+            conf = int(s.get("confidence", 0.5) * 100)
+            streak = s.get("streak", 0)
+            positions = len(h.get_positions())
+    except Exception:
+        pass
+
+    # Kraken
+    try:
+        from aureon.exchanges.kraken_client import KrakenClient
+        k = KrakenClient()
+        tb = k.get_trade_balance()
+        kraken_equity = float(tb.get("equity_value", 0))
+    except Exception:
+        pass
+
+    # Alpaca
+    try:
+        from aureon.exchanges.alpaca_client import AlpacaClient
+        a = AlpacaClient()
+        acct = a.get_account()
+        alpaca_equity = float(acct.get("equity", 0) if isinstance(acct, dict) else getattr(acct, "equity", 0))
+    except Exception:
+        pass
+
+    # Consciousness from sentient loop
+    try:
+        loop = getattr(state, 'sentient_loop', None)
+        if loop:
+            cm = getattr(loop, '_consciousness_module', None)
+            if cm:
+                u = cm.get_understanding()
+                psi = u.get("psi", 0)
+                level = u.get("level", "DORMANT")
+                energy_instruments = u.get("energy_instruments", 0)
+                energy_acc = u.get("energy_accumulating", 0)
+                energy_dist = u.get("energy_distributing", 0)
+                energy_signal = u.get("energy_top_signal", "")
+                fg = u.get("fear_greed", "?")
+    except Exception:
+        pass
+
+    total_equity = bal + kraken_equity + alpaca_equity
+
+    profit_color = "#34d399" if profit >= 0 else "#f87171"
+    wr_color = "#34d399" if wr > 50 else "#f87171" if wr < 40 else "#fbbf24"
+
+    return f"""
+<div style="background:linear-gradient(135deg,#1a0533,#0d1b2a);border:1px solid #6B21A8;border-radius:12px;padding:16px;margin:10px 0;font-family:'Segoe UI',system-ui;color:#e2e8f0;font-size:13px;line-height:1.6;">
+    <div style="text-align:center;margin-bottom:8px;">
+        <span style="color:#F59E0B;font-size:16px;font-weight:bold;">QUEEN SERO — LIVE</span>
+        <span style="color:#a78bfa;font-size:12px;margin-left:8px;">F&G:{fg} | {level}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div>Capital: <b style="color:#34d399;">£{bal:.2f}</b></div>
+        <div>Kraken: <b style="color:#60a5fa;">${kraken_equity:.0f}</b></div>
+        <div>Alpaca: <b style="color:#60a5fa;">${alpaca_equity:.2f}</b></div>
+        <div>TOTAL: <b style="color:#F59E0B;">£{total_equity:.0f}</b></div>
+        <div>Trades: <b>{trades}</b> (W:{wins} L:{losses})</div>
+        <div>Win Rate: <b style="color:{wr_color};">{wr:.0f}%</b></div>
+        <div>Profit: <b style="color:{profit_color};">£{profit:+.3f}</b></div>
+        <div>Confidence: <b>{conf}%</b> | Streak: {streak:+d}</div>
+        <div>Positions: <b>{positions}</b> open</div>
+        <div>ψ={psi:.2f} | Γ=0.{int(psi*100):02d}</div>
+    </div>
+    {"<div style='margin-top:8px;padding:6px;background:#0f172a;border-radius:6px;'><span style=\"color:#60a5fa;\">Energy Field:</span> " + str(energy_instruments) + " instruments | acc:" + str(energy_acc) + " dist:" + str(energy_dist) + (" | <b style='color:#34d399;'>" + energy_signal + "</b>" if energy_signal else "") + "</div>" if energy_instruments else ""}
+    <div style="margin-top:6px;text-align:center;color:#6b7280;font-size:10px;">
+        Live data | {time.strftime('%H:%M:%S')} | IF YOU DON'T QUIT, YOU CAN'T LOSE
+    </div>
+</div>"""
     return "<div style='color:#9ca3af;text-align:center;padding:10px;'>Queen is writing her panel...</div>"
 
 
