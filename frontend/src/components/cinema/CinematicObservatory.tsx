@@ -8,6 +8,7 @@
 
 import { useGlobalState } from '@/hooks/useGlobalState';
 import { useHiveState } from '@/hooks/useHiveState';
+import { useConsciousnessStream } from '@/hooks/useConsciousnessStream';
 import { CinematicScene } from './CinematicScene';
 import { CinematicHUD } from './CinematicHUD';
 
@@ -18,6 +19,8 @@ interface CinematicObservatoryProps {
 export function CinematicObservatory({ onExit }: CinematicObservatoryProps) {
   const state = useGlobalState();
   const { hiveState } = useHiveState(true, 3000);
+  // Poll consciousness data from sentient loop's consciousness_state.json
+  useConsciousnessStream(true, 3000);
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden" style={{ fontFamily: "'Source Sans Pro', sans-serif" }}>

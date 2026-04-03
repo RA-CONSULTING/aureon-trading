@@ -1,12 +1,13 @@
 /**
  * CinematicHUD - HTML overlay combining all HUD panels
- * Glassmorphic sci-fi cockpit interface
+ * Glassmorphic sci-fi cockpit interface with full consciousness data
  */
 
 import { HUDTopBar } from './HUDTopBar';
 import { HUDQueenVoice } from './HUDQueenVoice';
 import { HUDTradeStream } from './HUDTradeStream';
 import { HUDMetricsPanel } from './HUDMetricsPanel';
+import { HUDConsciousnessPanel } from './HUDConsciousnessPanel';
 import type { GlobalState } from '@/core/globalSystemsManager';
 
 interface CinematicHUDProps {
@@ -20,6 +21,8 @@ export function CinematicHUD({ state, hiveMood, activeScanner }: CinematicHUDPro
     ? (state.winningTrades / state.totalTrades) * 100
     : 0;
 
+  const c = state.consciousness;
+
   return (
     <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
       {/* Top bar */}
@@ -28,7 +31,7 @@ export function CinematicHUD({ state, hiveMood, activeScanner }: CinematicHUDPro
         totalPnl={state.totalPnl}
         cyclePnlPercent={state.cyclePnlPercent}
         winRate={winRate}
-        coherence={state.coherence}
+        coherence={c.available ? c.psi : state.coherence}
         totalTrades={state.totalTrades}
         isActive={state.isActive}
         krakenConnected={state.ecosystemHealth === 'connected'}
@@ -36,21 +39,22 @@ export function CinematicHUD({ state, hiveMood, activeScanner }: CinematicHUDPro
         binanceConnected={false}
       />
 
-      {/* Queen consciousness stream */}
+      {/* Queen consciousness stream - uses full thought stream */}
       <HUDQueenVoice
         queenVoice={state.queenVoice}
-        mood={hiveMood}
+        mood={c.available ? c.mood : hiveMood}
         queenState={state.queenState}
         activeScanner={activeScanner}
+        consciousness={c}
       />
 
       {/* Trade stream */}
       <HUDTradeStream recentTrades={state.recentTrades} />
 
-      {/* Metrics panel */}
+      {/* Metrics panel - original metrics */}
       <HUDMetricsPanel
-        coherence={state.coherence}
-        lambda={state.lambda}
+        coherence={c.available ? c.psi : state.coherence}
+        lambda={c.available ? c.lambdaT : state.lambda}
         lighthouseSignal={state.lighthouseSignal}
         prismState={state.prismState}
         hncFrequency={state.hncFrequency}
@@ -60,9 +64,19 @@ export function CinematicHUD({ state, hiveMood, activeScanner }: CinematicHUDPro
         dominantNode={state.dominantNode}
       />
 
-      {/* Bottom center - title card */}
+      {/* Consciousness deep metrics panel - left side */}
+      {c.available && (
+        <HUDConsciousnessPanel consciousness={c} />
+      )}
+
+      {/* Bottom center - title card with dream progress */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
         <div className="text-center">
+          {c.available && c.dreamProgress > 0 && (
+            <div className="text-[9px] text-white/20 mb-0.5">
+              Dream: {(c.dreamProgress * 100).toFixed(4)}% toward ${(c.dreamTarget / 1e9).toFixed(0)}B
+            </div>
+          )}
           <div className="text-[10px] text-white/15 uppercase tracking-[0.3em] font-light">
             A Song of Space and Time
           </div>

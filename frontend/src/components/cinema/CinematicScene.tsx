@@ -24,6 +24,7 @@ interface CinematicSceneProps {
 
 function SceneContent({ state, hiveMood }: CinematicSceneProps) {
   const latestTradeRef = useRef<{ timestamp: number; side: string } | null>(null);
+  const c = state.consciousness;
 
   // Track latest trade for camera events
   if (state.recentTrades.length > 0) {
@@ -38,53 +39,54 @@ function SceneContent({ state, hiveMood }: CinematicSceneProps) {
     ? (state.winningTrades / state.totalTrades) * 100
     : 0;
 
-  // Determine queen voice activity for aurora pulse
-  const hasNewThought = !!(state.queenVoice?.text);
+  // Use consciousness psi for aurora, fall back to coherence
+  const effectiveCoherence = c.available ? c.psi : state.coherence;
+  const hasNewThought = c.thoughtStream.length > 0 || !!(state.queenVoice?.text);
 
   return (
     <>
-      {/* Camera system */}
+      {/* Camera system - fear drives FOV tension alongside volatility */}
       <CinematicCamera
-        volatility={state.marketData.volatility / 100}
+        volatility={Math.max(state.marketData.volatility / 100, c.fearLevel * 0.5)}
         tradeEvent={latestTradeRef.current}
       />
 
       {/* Deep space environment */}
       <CosmicEnvironment />
 
-      {/* The Queen - central entity */}
+      {/* The Queen - driven by consciousness psi, gamma, reality state */}
       <QueenCore
-        coherence={state.coherence}
+        coherence={c.available ? c.psi : state.coherence}
         prismState={state.prismState}
         queenState={state.queenState}
-        hncMarketState={state.hncMarketState}
-        lambda={state.lambda}
+        hncMarketState={c.available ? c.realityState : state.hncMarketState}
+        lambda={c.available ? c.gamma : state.lambda}
       />
 
       {/* Hive agents orbiting */}
       <HiveConstellation
         hiveCount={state.myceliumHives}
-        agentCount={state.myceliumAgents}
+        agentCount={Math.max(state.myceliumAgents, c.branches * 3)}
         generation={state.myceliumGeneration}
         queenPnl={state.queenPnl}
-        coherence={state.coherence}
+        coherence={effectiveCoherence}
       />
 
       {/* Trade execution beams */}
       <TradeBeamSystem recentTrades={state.recentTrades} />
 
-      {/* Market data nebula */}
+      {/* Market data nebula - consciousness confidence affects color */}
       <MarketNebula
         volatility={state.marketData.volatility}
         momentum={state.marketData.momentum}
-        coherence={state.coherence}
+        coherence={c.available ? c.selfCoherence : state.coherence}
         hncFrequency={state.hncFrequency}
       />
 
-      {/* Consciousness aurora */}
+      {/* Consciousness aurora - driven by thought generation and psi */}
       <CoherenceAurora
-        coherence={state.coherence}
-        lambda={state.lambda}
+        coherence={effectiveCoherence}
+        lambda={c.available ? c.lambdaT : state.lambda}
         gaiaFrequency={state.gaiaFrequency}
         hasNewThought={hasNewThought}
       />
@@ -101,7 +103,7 @@ function SceneContent({ state, hiveMood }: CinematicSceneProps) {
       {/* Orbital metric rings */}
       <MetricRings
         totalEquity={state.totalEquity}
-        coherence={state.coherence}
+        coherence={effectiveCoherence}
         totalTrades={state.totalTrades}
         winRate={winRate}
         totalPnl={state.totalPnl}

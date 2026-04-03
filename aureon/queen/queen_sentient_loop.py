@@ -1689,6 +1689,116 @@ class QueenSentientLoop:
                 json.dump(state, f, indent=2, default=str)
         except Exception as exc:
             log.warning("Failed to save sentient loop state: %s", exc)
+        # Write consciousness snapshot for the cinematic observatory
+        self._write_consciousness_snapshot()
+
+    def _write_consciousness_snapshot(self) -> None:
+        """Write live consciousness data to public/consciousness_state.json for frontend polling."""
+        try:
+            cm = getattr(self, "_consciousness_module", None)
+            if cm is None:
+                return
+
+            snapshot: dict = {
+                "available": True,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            # Lambda(t) equation state
+            try:
+                ls = cm.get_lambda_state()
+                snapshot["lambda_state"] = ls or {}
+            except Exception:
+                snapshot["lambda_state"] = {}
+
+            # Full understanding of the universe
+            try:
+                understanding = cm.get_understanding()
+                snapshot["understanding"] = dict(understanding) if understanding else {}
+            except Exception:
+                snapshot["understanding"] = {}
+
+            # Self model (identity, purpose, dream)
+            try:
+                sm = cm.get_self_model()
+                # Trim to essential fields for the dashboard
+                snapshot["self_model"] = {
+                    "name": sm.get("name", "Queen Sero"),
+                    "identity": sm.get("identity", ""),
+                    "creator": sm.get("creator", "Gary Leckey"),
+                    "purpose": sm.get("purpose", ""),
+                    "core_message": sm.get("core_message", ""),
+                    "dream_target": float(sm.get("dream_target", 0)),
+                    "current_equity": float(sm.get("current_equity", 0)),
+                    "self_coherence_score": float(sm.get("self_coherence_score", 0)),
+                }
+            except Exception:
+                snapshot["self_model"] = {}
+
+            # Recent thought stream (last 20)
+            try:
+                thoughts = list(cm._all_thoughts)[-20:]
+                snapshot["thought_stream"] = [
+                    {
+                        "topic": str(t.get("topic", "")),
+                        "source": str(t.get("source", "")),
+                        "timestamp": float(t.get("timestamp", 0) or 0),
+                        "text": str(
+                            t.get("payload", {}).get("text", "")
+                            or t.get("payload", {}).get("message", "")
+                        )[:300],
+                    }
+                    for t in thoughts
+                    if isinstance(t, dict)
+                ]
+            except Exception:
+                snapshot["thought_stream"] = []
+
+            # Metacognition counters
+            snapshot["observations"] = int(getattr(cm, "_observations_total", 0))
+            snapshot["thoughts_generated"] = int(getattr(cm, "_thoughts_generated", 0))
+            snapshot["uptime_s"] = round(time.time() - getattr(cm, "_start_time", time.time()), 1)
+
+            # Harmonic Reality Field
+            try:
+                fs = getattr(cm, "_field_state", {})
+                if fs and isinstance(fs, dict):
+                    snapshot["harmonic_field"] = {
+                        "lambda_real": float(fs.get("lambda", 0)),
+                        "coherence_real": float(fs.get("coherence", 0)),
+                        "reality_state": str(fs.get("state", "DORMANT")),
+                        "branches": int(fs.get("branches", 0)),
+                        "lev_events": int(fs.get("lev_events", 0)),
+                    }
+                else:
+                    snapshot["harmonic_field"] = {}
+            except Exception:
+                snapshot["harmonic_field"] = {}
+
+            # Emotional/mood state from last emotion
+            try:
+                emotion = self._last_emotion
+                if emotion:
+                    snapshot["emotion"] = {
+                        "mood": str(getattr(emotion, "mood", "NEUTRAL")),
+                        "urgency": float(getattr(emotion, "urgency", 0)),
+                        "excitement": float(getattr(emotion, "excitement", 0)),
+                        "concern": float(getattr(emotion, "concern", 0)),
+                    }
+                else:
+                    snapshot["emotion"] = {"mood": "NEUTRAL", "urgency": 0, "excitement": 0, "concern": 0}
+            except Exception:
+                snapshot["emotion"] = {"mood": "NEUTRAL", "urgency": 0, "excitement": 0, "concern": 0}
+
+            # Write to public directory (same pattern as hive_state.json)
+            public_dir = _REPO_ROOT / "public"
+            public_dir.mkdir(parents=True, exist_ok=True)
+            consciousness_path = public_dir / "consciousness_state.json"
+            with open(consciousness_path, "w", encoding="utf-8") as f:
+                json.dump(snapshot, f, indent=2, default=str)
+
+        except Exception as exc:
+            log.debug("Failed to write consciousness snapshot: %s", exc)
 
     def _record_error(self, phase: str, exc: Exception) -> None:
         """Log and store an error without crashing the loop."""

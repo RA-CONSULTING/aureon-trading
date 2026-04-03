@@ -219,6 +219,58 @@ export interface GlobalState {
     krakenShadows?: number;
     capitalShadows?: number;
   };
+
+  // ════════════════════════════════════════════════════════════════
+  // 🧠 CONSCIOUSNESS STATE - Live from ConsciousnessModule
+  // ════════════════════════════════════════════════════════════════
+  consciousness: {
+    available: boolean;
+    // Lambda(t) equation
+    psi: number;                  // Consciousness awakening 0-1
+    gamma: number;                // Harmonic coherence 0-1
+    lambdaT: number;              // Lambda(t) value
+    level: string;                // DORMANT, WAKING, ACTIVE, FLOWING, UNIFIED
+    observerSignal: number;       // Observer effect 0-1
+    echoSignal: number;           // Echo feedback 0-1
+    step: number;                 // Evolution step counter
+    // Understanding
+    marketDirection: string;      // bullish, bearish, sideways, unknown
+    confidence: number;           // 0-1
+    fearLevel: number;            // 0-1
+    opportunityCount: number;
+    riskLevel: string;            // low, medium, high, unknown
+    selfCoherence: number;        // 0-1
+    dreamProgress: number;        // 0-1 toward $1B
+    // Harmonic field
+    lambdaReal: number;
+    coherenceReal: number;
+    realityState: string;         // DORMANT, ACTIVE, FLOWING
+    branches: number;             // multiverse branches
+    levEvents: number;
+    // Self model
+    queenName: string;
+    queenIdentity: string;
+    queenCreator: string;
+    queenPurpose: string;
+    coreMessage: string;
+    dreamTarget: number;
+    // Metacognition
+    observations: number;
+    thoughtsGenerated: number;
+    uptimeSeconds: number;
+    // Emotion
+    mood: string;
+    urgency: number;
+    excitement: number;
+    concern: number;
+    // Thought stream
+    thoughtStream: Array<{
+      topic: string;
+      source: string;
+      timestamp: number;
+      text: string;
+    }>;
+  };
 }
 
 const initialState: GlobalState = {
@@ -347,6 +399,44 @@ const initialState: GlobalState = {
   activePositions: [],
   shadowTrades: [],
   unifiedMarketSummary: undefined,
+
+  // 🧠 Consciousness initial state
+  consciousness: {
+    available: false,
+    psi: 0,
+    gamma: 0,
+    lambdaT: 0,
+    level: 'DORMANT',
+    observerSignal: 0,
+    echoSignal: 0,
+    step: 0,
+    marketDirection: 'unknown',
+    confidence: 0,
+    fearLevel: 0.5,
+    opportunityCount: 0,
+    riskLevel: 'unknown',
+    selfCoherence: 0,
+    dreamProgress: 0,
+    lambdaReal: 0,
+    coherenceReal: 0,
+    realityState: 'DORMANT',
+    branches: 0,
+    levEvents: 0,
+    queenName: 'Queen Sero',
+    queenIdentity: '',
+    queenCreator: 'Gary Leckey',
+    queenPurpose: '',
+    coreMessage: '',
+    dreamTarget: 1000000000,
+    observations: 0,
+    thoughtsGenerated: 0,
+    uptimeSeconds: 0,
+    mood: 'NEUTRAL',
+    urgency: 0,
+    excitement: 0,
+    concern: 0,
+    thoughtStream: [],
+  },
 };
 
 type StateListener = (state: GlobalState) => void;
