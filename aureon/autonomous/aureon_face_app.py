@@ -1464,9 +1464,16 @@ def api_live_panel():
     return "<div style='color:#9ca3af;text-align:center;padding:10px;'>Queen is writing her panel...</div>"
 
 
+_portfolio_cache = {"data": None, "ts": 0}
+
 @app.route("/api/portfolio")
 def api_portfolio():
-    """Cross-exchange portfolio — real data."""
+    """Cross-exchange portfolio — cached to prevent nonce conflicts."""
+    import time as _t
+    # Cache for 15 seconds to avoid hammering exchange APIs
+    if _portfolio_cache["data"] and _t.time() - _portfolio_cache["ts"] < 15:
+        return jsonify(_portfolio_cache["data"])
+
     data = {"capital": {}, "kraken": {}, "alpaca": {}, "total_gbp": 0, "trades": 0, "win_rate": 0, "profit": 0}
     try:
         from aureon.core.aureon_penny_hunter import get_penny_hunter
@@ -1503,6 +1510,9 @@ def api_portfolio():
     krk_eq = data.get("kraken", {}).get("equity", 0) or 0
     alp_eq = data.get("alpaca", {}).get("equity", 0) or 0
     data["total_gbp"] = cap_bal + (krk_eq + alp_eq) * 0.79  # USD to GBP approx
+    import time as _t
+    _portfolio_cache["data"] = data
+    _portfolio_cache["ts"] = _t.time()
     return jsonify(data)
 
 
