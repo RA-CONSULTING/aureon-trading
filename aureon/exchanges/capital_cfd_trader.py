@@ -247,7 +247,7 @@ CAPITAL_MIN_PROBABILITY_PROFIT_FACTOR = _env_float("CAPITAL_MIN_PROBABILITY_PROF
 CAPITAL_FORCE_SLOT_FILL = _env_bool("CAPITAL_FORCE_SLOT_FILL", True)
 CAPITAL_SLOT_FILL_INTERVAL_SECS = _env_float("CAPITAL_SLOT_FILL_INTERVAL_SECS", 8.0)
 CAPITAL_DEADMAN_ENABLED = _env_bool("CAPITAL_DEADMAN_ENABLED", True)
-CAPITAL_DEADMAN_STALE_SECS = _env_float("CAPITAL_DEADMAN_STALE_SECS", 60.0)
+CAPITAL_DEADMAN_STALE_SECS = _env_float("CAPITAL_DEADMAN_STALE_SECS", 300.0)  # 5 min — give the system time
 CAPITAL_LIVE_REFRESH_ENABLED = _env_bool("CAPITAL_LIVE_REFRESH_ENABLED", True)
 CAPITAL_LIVE_REFRESH_INTERVAL_SECS = _env_float("CAPITAL_LIVE_REFRESH_INTERVAL_SECS", 1.0)
 CAPITAL_LIVE_EVENT_TRIGGER_PCT = _env_float("CAPITAL_LIVE_EVENT_TRIGGER_PCT", 0.03)
@@ -2772,7 +2772,19 @@ class CapitalCFDTrader:
             return []
         if not self.positions:
             return []
-        logger.error("Capital deadman triggered: stale loop age=%.1fs", age)
+        # Don't try to close positions when markets are closed — just reset the timer
+        from datetime import datetime, timezone
+        hour = datetime.now(timezone.utc).hour
+        weekday = datetime.now(timezone.utc).weekday()
+        if weekday >= 5:  # Weekend — most CFD markets closed
+            self._last_deadman_kick_at = now
+            return []
+        # Gold closes 21:00-22:00 UTC daily, all day Saturday
+        # Don't panic-close during known closures
+        if 21 <= hour < 22:
+            self._last_deadman_kick_at = now
+            return []
+        logger.warning("Capital deadman triggered: stale loop age=%.1fs", age)
         return self._deadman_close_all(f"DEADMAN_STALE {age:.1f}s")
 
     def _ranked_opportunities(self) -> List[Tuple[str, dict, dict]]:

@@ -327,6 +327,20 @@ class PennyHunter:
                          f"lifetime: £{self._lifetime_profit:+.3f} ({self._lifetime_trades} trades) | "
                          f"streak:{self._streak} | conf:{self._confidence:.0%} | bal: £{self._last_balance:.2f}")
                 self._save_memory()  # Persist after every trade — never forget
+                # Log to unified DB
+                try:
+                    from aureon.core.aureon_global_history_db import connect, insert_account_trade
+                    conn = connect(check_same_thread=False)
+                    insert_account_trade(conn, {
+                        "venue": "capital", "trade_id": deal_id, "symbol": epic,
+                        "side": direction, "qty": size, "price": 0, "cost": 0,
+                        "fee": 0, "fee_asset": "GBP", "ts_ms": int(time.time() * 1000),
+                        "raw_json": json.dumps({"profit": actual, "result": "WIN"}),
+                    })
+                    conn.commit()
+                    conn.close()
+                except Exception:
+                    pass
 
             elif profit <= MAX_LOSS_GBP:
                 # HOLD — never close at a loss. Wait for recovery.
@@ -462,6 +476,10 @@ class PennyHunter:
                 log.debug(f"Alpaca balance: {e}")
         elif self._alpaca and not _is_market_open("us_stocks"):
             pass  # US market closed — crypto and forex still hunting
+
+        # Save memory every 10th tick — never lose state
+        if self._trades_total % 10 == 0 and self._trades_total > 0:
+            self._save_memory()
 
         return result
 
