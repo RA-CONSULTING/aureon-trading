@@ -1,0 +1,44 @@
+{
+  "duration_s": 900,
+  "baseline": {
+    "start": {
+      "percent": 66,
+      "ac": false,
+      "flag": 0,
+      "time": 1775209825.3041573
+    },
+    "end": {
+      "percent": 60,
+      "ac": false,
+      "flag": 0,
+      "time": 1775210725.3644412
+    },
+    "delta": -6
+  },
+  "field": {
+    "start": {
+      "percent": 60,
+      "ac": false,
+      "flag": 0,
+      "time": 1775210725.4017642
+    },
+    "end": {
+      "percent": 55,
+      "ac": false,
+      "flag": 0,
+      "time": 1775211627.0297406
+    },
+    "delta": -5,
+    "freq_hz": 12.669206131911677
+  },
+  "net_effect": 1,
+  "bt_before": {
+    "devices": 6,
+    "rssi_values": [],
+    "names": []
+  },
+  "bt_after": {
+    "devices": 4,
+    "rssi_values": []
+  }
+}

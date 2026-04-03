@@ -1,0 +1,101 @@
+{
+  "instruments": 69,
+  "accumulating": 22,
+  "distributing": 15,
+  "neutral": 32,
+  "total_energy": 6.204836408647845,
+  "coherence": 0.29867366010992846,
+  "signals": [
+    {
+      "symbol": "GOLDETF",
+      "action": "BUY",
+      "confidence": 0.6374201787994875,
+      "reason": "Schumann-coupled, expecting mean reversion"
+    },
+    {
+      "symbol": "NATGAS",
+      "action": "BUY",
+      "confidence": 0.6003636434539181,
+      "reason": "Schumann-coupled, expecting mean reversion"
+    },
+    {
+      "symbol": "BNB",
+      "action": "BUY",
+      "confidence": 0.5753303102427372,
+      "reason": "PHI-aligned cycle, natural accumulation"
+    },
+    {
+      "symbol": "ADA",
+      "action": "BUY",
+      "confidence": 0.5753303102427372,
+      "reason": "PHI-aligned cycle, natural accumulation"
+    },
+    {
+      "symbol": "LINK",
+      "action": "BUY",
+      "confidence": 0.5753303102427372,
+      "reason": "PHI-aligned cycle, natural accumulation"
+    },
+    {
+      "symbol": "BCH",
+      "action": "BUY",
+      "confidence": 0.5098245664634761,
+      "reason": "PHI-aligned cycle, natural accumulation"
+    },
+    {
+      "symbol": "TSLA",
+      "action": "BUY",
+      "confidence": 0.4496807151979503,
+      "reason": "Schumann-coupled, expecting mean reversion"
+    },
+    {
+      "symbol": "DAX",
+      "action": "BUY",
+      "confidence": 0.42617723396367135,
+      "reason": "Schumann-coupled, expecting mean reversion"
+    },
+    {
+      "symbol": "EMERGING",
+      "action": "BUY",
+      "confidence": 0.38710089399743164,
+      "reason": "Schumann-coupled, expecting mean reversion"
+    },
+    {
+      "symbol": "UNH",
+      "action": "BUY",
+      "confidence": 0.3446920140808105,
+      "reason": "Whale accumulation, low bot activity, energy flowing IN"
+    }
+  ],
+  "phi_aligned": [
+    [
+      "BNB",
+      0.5753303102427372
+    ],
+    [
+      "ADA",
+      0.5753303102427372
+    ],
+    [
+      "BCH",
+      0.5098245664634761
+    ],
+    [
+      "LINK",
+      0.5753303102427372
+    ],
+    [
+      "USDCAD",
+      0.7261882389627866
+    ],
+    [
+      "GOLDETF",
+      0.2705098312484224
+    ],
+    [
+      "BONDS",
+      0.2705098312484224
+    ]
+  ],
+  "timestamp": 1775215437.6312935
+}

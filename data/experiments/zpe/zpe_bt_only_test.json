@@ -1,0 +1,26 @@
+{
+  "baseline": {
+    "start": 70,
+    "end": 70,
+    "delta": 0,
+    "duration_s": 60
+  },
+  "bluetooth": {
+    "start": 70,
+    "end": 69,
+    "delta": -1,
+    "duration_s": 60.18930830000318,
+    "pulses": 120,
+    "pulse_rate_hz": 1.9937095705084498,
+    "transitions": [
+      {
+        "t": 29.502928499998234,
+        "pct": 69,
+        "flag": 1,
+        "pulses": 40
+      }
+    ]
+  },
+  "net_effect": -1,
+  "timestamp": 1775174880.554336
+}
