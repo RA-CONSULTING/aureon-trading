@@ -281,7 +281,6 @@ class QueenCognitiveNarrator:
         if ELEPHANT_AVAILABLE:
             try:
                 self.elephant_memory = ElephantMemory()
-                self.elephant_memory.load_memory()
                 logger.info("🐘 Elephant Memory connected to narrator")
             except Exception as e:
                 logger.warning(f"🐘 Elephant Memory unavailable: {e}")

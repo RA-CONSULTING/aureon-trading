@@ -406,7 +406,7 @@ class RealMomentumScanner:
             return
             
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
             
             # Initialize Alpaca client

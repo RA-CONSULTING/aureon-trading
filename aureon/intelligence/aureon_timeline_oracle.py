@@ -1484,7 +1484,7 @@ class TimelineOracle:
 
             # 2. ChirpBus
             if self.chirp_bus:
-                self.chirp_bus.publish("timeline.prediction", {
+                self.chirp_bus.emit_message("timeline.prediction", {
                     "sym": branch.symbol,
                     "act": branch.action.value,
                     "conf": branch.branch_confidence,
@@ -1506,7 +1506,7 @@ class TimelineOracle:
 
             # 2. ChirpBus
             if self.chirp_bus:
-                self.chirp_bus.publish("timeline.validation", {
+                self.chirp_bus.emit_message("timeline.validation", {
                     "sym": validation.symbol,
                     "pnl": validation.pnl_usd,
                     "acc": validation.timeline_accuracy
