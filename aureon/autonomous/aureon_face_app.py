@@ -20,7 +20,7 @@ try:
     from dotenv import load_dotenv as _load_dotenv
     import pathlib as _pathlib
     _root = _pathlib.Path(__file__).resolve().parent.parent.parent
-    for _env_name in (".env", ".env1"):
+    for _env_name in (".env", ".env1", ".env1.txt"):
         _env_path = _root / _env_name
         if _env_path.exists():
             _load_dotenv(_env_path, override=False)
