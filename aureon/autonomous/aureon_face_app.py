@@ -1679,20 +1679,25 @@ def main():
     if not no_browser:
         threading.Timer(1.5, lambda: webbrowser.open("http://localhost:5299")).start()
 
-    # Suppress Flask/click banner to avoid ValueError on Windows consoles
-    import os as _os
-    _os.environ.setdefault("WERKZEUG_RUN_MAIN", "true")
+    # Monkey-patch click.echo to avoid ValueError on Windows consoles
+    # where stdout fileno() fails with "I/O operation on closed file"
     try:
-        socketio.run(app, host="0.0.0.0", port=5299, debug=False, allow_unsafe_werkzeug=True)
-    except ValueError as _ve:
-        if "I/O operation on closed file" in str(_ve):
-            # click/_winconsole bug — fall back to direct werkzeug serve
-            log.warning("click banner bug detected, falling back to direct serve")
-            from werkzeug.serving import make_server
-            server = make_server("0.0.0.0", 5299, app, threaded=True)
-            server.serve_forever()
-        else:
-            raise
+        import click as _click
+        _orig_echo = _click.echo
+        def _safe_echo(message=None, file=None, nl=True, err=False, color=None):
+            try:
+                _orig_echo(message=message, file=file, nl=nl, err=err, color=color)
+            except (ValueError, OSError):
+                # Fallback: print directly if click's console detection fails
+                try:
+                    print(message or "")
+                except Exception:
+                    pass
+        _click.echo = _safe_echo
+    except ImportError:
+        pass
+
+    socketio.run(app, host="0.0.0.0", port=5299, debug=False, allow_unsafe_werkzeug=True)
 
 if __name__ == "__main__":
     main()
