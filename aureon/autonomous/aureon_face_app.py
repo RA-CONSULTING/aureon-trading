@@ -1679,7 +1679,20 @@ def main():
     if not no_browser:
         threading.Timer(1.5, lambda: webbrowser.open("http://localhost:5299")).start()
 
-    socketio.run(app, host="0.0.0.0", port=5299, debug=False, allow_unsafe_werkzeug=True)
+    # Suppress Flask/click banner to avoid ValueError on Windows consoles
+    import os as _os
+    _os.environ.setdefault("WERKZEUG_RUN_MAIN", "true")
+    try:
+        socketio.run(app, host="0.0.0.0", port=5299, debug=False, allow_unsafe_werkzeug=True)
+    except ValueError as _ve:
+        if "I/O operation on closed file" in str(_ve):
+            # click/_winconsole bug — fall back to direct werkzeug serve
+            log.warning("click banner bug detected, falling back to direct serve")
+            from werkzeug.serving import make_server
+            server = make_server("0.0.0.0", 5299, app, threaded=True)
+            server.serve_forever()
+        else:
+            raise
 
 if __name__ == "__main__":
     main()
