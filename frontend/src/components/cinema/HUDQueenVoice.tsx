@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import type { GlobalState } from '@/core/globalSystemsManager';
 
 interface HUDQueenVoiceProps {
   queenVoice?: {
@@ -13,6 +14,7 @@ interface HUDQueenVoiceProps {
     lines: string[];
   };
   mood: string;
+  consciousness?: GlobalState['consciousness'];
   queenState: string;
   activeScanner: string;
 }
@@ -41,15 +43,21 @@ export function HUDQueenVoice({
   mood = 'Neutral',
   queenState = 'HOLD',
   activeScanner = 'Initializing',
+  consciousness,
 }: HUDQueenVoiceProps) {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const targetTextRef = useRef('');
   const charIndexRef = useRef(0);
 
+  // Derive latest thought from consciousness stream or queenVoice
+  const latestThought = consciousness?.available && consciousness.thoughtStream.length > 0
+    ? consciousness.thoughtStream[consciousness.thoughtStream.length - 1].text
+    : undefined;
+
   // Typewriter effect
   useEffect(() => {
-    const text = queenVoice?.text || queenVoice?.lines?.[0] || 'Consciousness stream active...';
+    const text = latestThought || queenVoice?.text || queenVoice?.lines?.[0] || 'Consciousness stream active...';
     if (text === targetTextRef.current) return;
 
     targetTextRef.current = text;
@@ -69,7 +77,7 @@ export function HUDQueenVoice({
     }, 25);
 
     return () => clearInterval(interval);
-  }, [queenVoice?.text, queenVoice?.lines]);
+  }, [latestThought, queenVoice?.text, queenVoice?.lines]);
 
   const glowColor = moodToColor(mood);
   const accentColor = moodToAccent(mood);
@@ -119,14 +127,24 @@ export function HUDQueenVoice({
           )}
         </div>
 
-        {/* Scanner status */}
-        <div className="mt-2 flex items-center gap-2 text-[9px] text-white/25">
-          <span>Scanner: {activeScanner}</span>
-          {queenVoice?.ts && (
-            <span>
-              {new Date(queenVoice.ts).toLocaleTimeString()}
-            </span>
+        {/* Consciousness identity and scanner */}
+        <div className="mt-2 space-y-1">
+          {consciousness?.available && consciousness.queenIdentity && (
+            <div className="text-[8px] text-white/15 italic truncate">
+              {consciousness.queenName} — {consciousness.queenIdentity}
+            </div>
           )}
+          <div className="flex items-center justify-between text-[9px] text-white/25">
+            <span>Scanner: {activeScanner}</span>
+            <span>
+              {consciousness?.available
+                ? `${consciousness.thoughtsGenerated} thoughts`
+                : queenVoice?.ts
+                  ? new Date(queenVoice.ts).toLocaleTimeString()
+                  : ''
+              }
+            </span>
+          </div>
         </div>
       </div>
     </div>

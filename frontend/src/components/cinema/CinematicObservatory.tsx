@@ -4,12 +4,16 @@
  *
  * Fullscreen cinematic view of the Queens trading system as a living cosmos.
  * Data-driven 3D scene with glassmorphic HUD overlay.
+ * Documentary narrator, intelligent camera director, event spotlight, ambient audio.
  */
 
+import { useState, useCallback } from 'react';
 import { useGlobalState } from '@/hooks/useGlobalState';
 import { useHiveState } from '@/hooks/useHiveState';
+import { useConsciousnessStream } from '@/hooks/useConsciousnessStream';
 import { CinematicScene } from './CinematicScene';
 import { CinematicHUD } from './CinematicHUD';
+import type { NarratorEventType } from './NarratorEngine';
 
 interface CinematicObservatoryProps {
   onExit?: () => void;
@@ -18,20 +22,32 @@ interface CinematicObservatoryProps {
 export function CinematicObservatory({ onExit }: CinematicObservatoryProps) {
   const state = useGlobalState();
   const { hiveState } = useHiveState(true, 3000);
+  useConsciousnessStream(true, 3000);
+
+  // Narrator event bridge: HUD narrator detects events → drives camera + spotlight
+  const [activeEvent, setActiveEvent] = useState<NarratorEventType | null>(null);
+
+  const handleNarratorEvent = useCallback((event: NarratorEventType) => {
+    setActiveEvent(event);
+    // Clear after the event effects have played out
+    setTimeout(() => setActiveEvent(null), 8000);
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden" style={{ fontFamily: "'Source Sans Pro', sans-serif" }}>
-      {/* 3D Scene - full viewport */}
+      {/* 3D Scene - full viewport, receives narrator events for camera + spotlight */}
       <CinematicScene
         state={state}
         hiveMood={hiveState.mood}
+        activeEvent={activeEvent}
       />
 
-      {/* HUD Overlay */}
+      {/* HUD Overlay - narrator fires events back up */}
       <CinematicHUD
         state={state}
         hiveMood={hiveState.mood}
         activeScanner={hiveState.active_scanner}
+        onNarratorEvent={handleNarratorEvent}
       />
 
       {/* Exit button */}
