@@ -5,7 +5,6 @@
 
 import { Suspense, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { CosmicEnvironment } from './CosmicEnvironment';
 import { QueenCore } from './QueenCore';
 import { HiveConstellation } from './HiveConstellation';
@@ -15,15 +14,18 @@ import { CoherenceAurora } from './CoherenceAurora';
 import { ExchangeGateways } from './ExchangeGateways';
 import { MetricRings } from './MetricRings';
 import { CinematicCamera } from './CinematicCamera';
+import { EventSpotlight } from './EventSpotlight';
 import type { GlobalState } from '@/core/globalSystemsManager';
+import type { NarratorEventType } from './NarratorEngine';
 
 interface CinematicSceneProps {
   state: GlobalState;
   hiveMood: string;
+  activeEvent?: NarratorEventType | null;
 }
 
-function SceneContent({ state, hiveMood }: CinematicSceneProps) {
-  const latestTradeRef = useRef<{ timestamp: number; side: string } | null>(null);
+function SceneContent({ state, hiveMood, activeEvent }: CinematicSceneProps) {
+  const latestTradeRef = useRef<{ timestamp: number; side: string; exchange?: string } | null>(null);
   const c = state.consciousness;
 
   // Track latest trade for camera events
@@ -31,7 +33,7 @@ function SceneContent({ state, hiveMood }: CinematicSceneProps) {
     const latest = state.recentTrades[0];
     const ts = new Date(latest.time).getTime();
     if (!latestTradeRef.current || ts !== latestTradeRef.current.timestamp) {
-      latestTradeRef.current = { timestamp: ts, side: latest.side };
+      latestTradeRef.current = { timestamp: ts, side: latest.side, exchange: latest.exchange };
     }
   }
 
@@ -45,10 +47,11 @@ function SceneContent({ state, hiveMood }: CinematicSceneProps) {
 
   return (
     <>
-      {/* Camera system - fear drives FOV tension alongside volatility */}
+      {/* Camera director - responds to narrator events */}
       <CinematicCamera
         volatility={Math.max(state.marketData.volatility / 100, c.fearLevel * 0.5)}
-        tradeEvent={latestTradeRef.current}
+        activeEvent={activeEvent}
+        tradeExchange={latestTradeRef.current?.exchange}
       />
 
       {/* Deep space environment */}
@@ -109,24 +112,13 @@ function SceneContent({ state, hiveMood }: CinematicSceneProps) {
         totalPnl={state.totalPnl}
       />
 
-      {/* Post-processing */}
-      <EffectComposer>
-        <Bloom
-          intensity={0.8}
-          luminanceThreshold={0.3}
-          luminanceSmoothing={0.9}
-          mipmapBlur
-        />
-        <Vignette
-          offset={0.3}
-          darkness={0.7}
-        />
-      </EffectComposer>
+      {/* Dynamic post-processing - responds to events */}
+      <EventSpotlight activeEvent={activeEvent || null} />
     </>
   );
 }
 
-export function CinematicScene({ state, hiveMood }: CinematicSceneProps) {
+export function CinematicScene({ state, hiveMood, activeEvent }: CinematicSceneProps) {
   return (
     <div className="absolute inset-0">
       <Canvas
@@ -142,7 +134,7 @@ export function CinematicScene({ state, hiveMood }: CinematicSceneProps) {
         style={{ background: '#000005' }}
       >
         <Suspense fallback={null}>
-          <SceneContent state={state} hiveMood={hiveMood} />
+          <SceneContent state={state} hiveMood={hiveMood} activeEvent={activeEvent} />
         </Suspense>
       </Canvas>
     </div>

@@ -1,6 +1,7 @@
 /**
  * CinematicHUD - HTML overlay combining all HUD panels
- * Glassmorphic sci-fi cockpit interface with full consciousness data
+ * Glassmorphic sci-fi cockpit interface with full consciousness data,
+ * documentary narrator, and ambient audio controls
  */
 
 import { HUDTopBar } from './HUDTopBar';
@@ -8,15 +9,19 @@ import { HUDQueenVoice } from './HUDQueenVoice';
 import { HUDTradeStream } from './HUDTradeStream';
 import { HUDMetricsPanel } from './HUDMetricsPanel';
 import { HUDConsciousnessPanel } from './HUDConsciousnessPanel';
+import { HUDNarrator } from './HUDNarrator';
+import { AmbientSoundscape } from './AmbientSoundscape';
 import type { GlobalState } from '@/core/globalSystemsManager';
+import type { NarratorEventType } from './NarratorEngine';
 
 interface CinematicHUDProps {
   state: GlobalState;
   hiveMood: string;
   activeScanner: string;
+  onNarratorEvent?: (event: NarratorEventType) => void;
 }
 
-export function CinematicHUD({ state, hiveMood, activeScanner }: CinematicHUDProps) {
+export function CinematicHUD({ state, hiveMood, activeScanner, onNarratorEvent }: CinematicHUDProps) {
   const winRate = state.totalTrades > 0
     ? (state.winningTrades / state.totalTrades) * 100
     : 0;
@@ -39,7 +44,7 @@ export function CinematicHUD({ state, hiveMood, activeScanner }: CinematicHUDPro
         binanceConnected={false}
       />
 
-      {/* Queen consciousness stream - uses full thought stream */}
+      {/* Queen consciousness stream */}
       <HUDQueenVoice
         queenVoice={state.queenVoice}
         mood={c.available ? c.mood : hiveMood}
@@ -51,7 +56,7 @@ export function CinematicHUD({ state, hiveMood, activeScanner }: CinematicHUDPro
       {/* Trade stream */}
       <HUDTradeStream recentTrades={state.recentTrades} />
 
-      {/* Metrics panel - original metrics */}
+      {/* Metrics panel */}
       <HUDMetricsPanel
         coherence={c.available ? c.psi : state.coherence}
         lambda={c.available ? c.lambdaT : state.lambda}
@@ -64,10 +69,22 @@ export function CinematicHUD({ state, hiveMood, activeScanner }: CinematicHUDPro
         dominantNode={state.dominantNode}
       />
 
-      {/* Consciousness deep metrics panel - left side */}
+      {/* Consciousness deep metrics panel */}
       {c.available && (
         <HUDConsciousnessPanel consciousness={c} />
       )}
+
+      {/* Documentary narrator - observational captions */}
+      <HUDNarrator state={state} onEvent={onNarratorEvent} />
+
+      {/* Ambient soundscape controls */}
+      <AmbientSoundscape
+        coherence={c.available ? c.psi : state.coherence}
+        psi={c.psi}
+        fearLevel={c.fearLevel}
+        gaiaFrequency={state.gaiaFrequency}
+        activeEvent={null}
+      />
 
       {/* Bottom center - title card with dream progress */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
