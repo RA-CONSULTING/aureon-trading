@@ -15,6 +15,18 @@ Gary Leckey | April 2026 | The Queen's Face
 
 from __future__ import annotations
 
+# Load environment variables from .env or .env1
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    import pathlib as _pathlib
+    _root = _pathlib.Path(__file__).resolve().parent.parent.parent
+    for _env_name in (".env", ".env1"):
+        _env_path = _root / _env_name
+        if _env_path.exists():
+            _load_dotenv(_env_path, override=False)
+except ImportError:
+    pass
+
 import io
 import json
 import logging
