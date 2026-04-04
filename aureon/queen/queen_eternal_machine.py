@@ -786,7 +786,7 @@ class QueenEternalMachine:
         
         # 1. BINANCE
         try:
-            from binance_client import BinanceClient
+            from aureon.exchanges.binance_client import BinanceClient
             binance = BinanceClient()
             binance_bals = binance.get_balance()
             for asset, qty in binance_bals.items():
@@ -798,7 +798,7 @@ class QueenEternalMachine:
         
         # 2. ALPACA
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             alpaca = AlpacaClient()
             positions = alpaca.get_positions()
             for pos in positions:
@@ -820,7 +820,7 @@ class QueenEternalMachine:
         # 3. KRAKEN - Try live API first, cached snapshot ONLY as emergency fallback
         _kraken_success = False
         try:
-            from kraken_client import KrakenClient
+            from aureon.exchanges.kraken_client import KrakenClient
             kraken = KrakenClient()
             kraken_bals = kraken.get_balance()
             for asset, qty in kraken_bals.items():
@@ -869,13 +869,13 @@ class QueenEternalMachine:
         client = None
         try:
             if exchange == 'binance':
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 client = get_binance_client()
             elif exchange == 'kraken':
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 client = get_kraken_client()
             elif exchange == 'alpaca':
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 client = AlpacaClient()
         except Exception as e:
             logger.warning(f"⚠️ Could not init {exchange} client: {e}")
@@ -1208,15 +1208,15 @@ class QueenEternalMachine:
         _FETCH_TIMEOUT = 20  # seconds per exchange - prevents hang
 
         def _fetch_binance_tickers():
-            from binance_client import BinanceClient
+            from aureon.exchanges.binance_client import BinanceClient
             return BinanceClient().get_24h_tickers() or []
 
         def _fetch_alpaca_tickers():
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             return AlpacaClient().get_24h_tickers() or []
 
         def _fetch_kraken_tickers():
-            from kraken_client import KrakenClient
+            from aureon.exchanges.kraken_client import KrakenClient
             return KrakenClient().get_24h_tickers() or []
 
         # 1) Binance broad market scan (with timeout to prevent hang)
@@ -1294,13 +1294,13 @@ class QueenEternalMachine:
                     elif ex == 'alpaca':
                         pair = f"{friend_symbol}/USD"
                     if ex == 'binance':
-                        from binance_client import BinanceClient
+                        from aureon.exchanges.binance_client import BinanceClient
                         return ('USDC', BinanceClient().get_24h_ticker(pair))
                     elif ex == 'kraken':
-                        from kraken_client import KrakenClient
+                        from aureon.exchanges.kraken_client import KrakenClient
                         return ('USD', KrakenClient().get_24h_ticker(pair))
                     elif ex == 'alpaca':
-                        from alpaca_client import AlpacaClient
+                        from aureon.exchanges.alpaca_client import AlpacaClient
                         t = AlpacaClient().get_ticker(pair)
                         if t and 'price' in t:
                             t = {
