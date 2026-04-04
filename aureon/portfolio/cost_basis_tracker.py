@@ -479,7 +479,7 @@ class CostBasisTracker:
             if self.clients and 'alpaca' in self.clients:
                 client = self.clients['alpaca']
             else:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 client = AlpacaClient()
         except Exception as e:
             print(f"   ⚠️ Failed to initialize Alpaca client: {e}")
@@ -1613,7 +1613,7 @@ class CostBasisTracker:
             if self.clients and 'alpaca' in self.clients:
                 ac = self.clients['alpaca']
             else:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 ac = AlpacaClient()
 
             _safe_print("📜 Pulling Alpaca order fills...")
@@ -1800,7 +1800,7 @@ class CostBasisTracker:
             if self.clients and 'alpaca' in self.clients:
                 ac = self.clients['alpaca']
             else:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 ac = AlpacaClient()
             positions = ac.get_positions()
             for pos in (positions or []):
@@ -2121,7 +2121,7 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     
     # --- Alpaca ---
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alp_client = AlpacaClient()
         alpaca_positions = alp_client.get_positions() or []
         _safe_print(f"   🦙 Alpaca: {len(alpaca_positions)} positions")

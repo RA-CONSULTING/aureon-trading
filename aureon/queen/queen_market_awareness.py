@@ -224,7 +224,7 @@ class QueenMarketAwareness:
                 pass
             
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 exchanges['alpaca'] = AlpacaClient()
             except Exception:
                 pass

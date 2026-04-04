@@ -436,7 +436,7 @@ def load_all_systems():
         SYSTEMS_STATUS['Binance Exchange'] = False
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         SYSTEMS_STATUS['Alpaca Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Alpaca Exchange'] = False
@@ -772,7 +772,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # ALPACA EXCHANGE CHECK
     try:
         start = time.perf_counter()
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         client = AlpacaClient()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -6118,7 +6118,7 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Alpaca Exchange'):
             try:
                 if alpaca_client is None:
-                    from alpaca_client import AlpacaClient
+                    from aureon.exchanges.alpaca_client import AlpacaClient
                     alpaca_client = AlpacaClient()
                 alpaca_bal = alpaca_client.get_account_balance()
                 balances['alpaca'] = _sum_fiat(alpaca_bal) if alpaca_bal else 'offline'

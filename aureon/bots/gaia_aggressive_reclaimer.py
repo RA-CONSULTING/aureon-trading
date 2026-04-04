@@ -31,7 +31,7 @@ class AggressiveReclaimer:
         print("🔥" * 40)
         
         from binance_client import BinanceClient
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         from kraken_client import KrakenClient, get_kraken_client
         
         self.binance = get_binance_client()

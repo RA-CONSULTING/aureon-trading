@@ -86,7 +86,7 @@ async def main():
         print(f"   ⚠️ Queen Neuron V2 not available: {e}")
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca_available = True
         print("   ✅ Alpaca Client loaded")
     except ImportError as e:

@@ -43,7 +43,7 @@ except:
     KRK_AVAILABLE = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALP_AVAILABLE = True
 except:
     ALP_AVAILABLE = False

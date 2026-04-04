@@ -53,7 +53,7 @@ if sys.platform == 'win32':
 import argparse
 from typing import Any, Dict, List, Tuple
 
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 
 def _normalize_side(side: List[Any]) -> List[Tuple[float, float]]:

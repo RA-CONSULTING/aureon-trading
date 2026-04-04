@@ -12,7 +12,7 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 try:
-    from cost_basis_tracker import CostBasisTracker
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker
     from trade_logger import TradeLogger
 except ImportError:
     print("❌ Failed to import trackers. Ensure you are in the project root.")

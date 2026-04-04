@@ -134,7 +134,7 @@ except ImportError:
 
 # Alpaca (stocks + crypto)
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False

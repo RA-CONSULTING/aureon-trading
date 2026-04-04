@@ -1277,7 +1277,7 @@ class AggressiveReclaimer:
         print("   GAIA AGGRESSIVE RECLAIMER - TAKE EVERYTHING")
         print("=" * 40)
         
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         from alpaca_sse_client import AlpacaSSEClient, SSE_AVAILABLE
         from aureon_global_wave_scanner import GlobalWaveScanner
         

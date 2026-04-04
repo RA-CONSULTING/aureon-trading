@@ -180,7 +180,7 @@ class WhaleOrderbookAnalyzer:
         if not orderbook:
             try:
                 # lazy import to avoid circular imports
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 ac = AlpacaClient()
                 orderbook = ac.get_crypto_orderbook(symbol) or {}
             except Exception:

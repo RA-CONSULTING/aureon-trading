@@ -94,7 +94,7 @@ def _get_cost_basis_tracker():
     global _cost_basis_tracker
     if _cost_basis_tracker is None:
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             _cost_basis_tracker = CostBasisTracker()
         except ImportError:
             _cost_basis_tracker = None

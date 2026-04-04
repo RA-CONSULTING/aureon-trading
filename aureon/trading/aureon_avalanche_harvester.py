@@ -212,7 +212,7 @@ class AvalancheHarvester:
         # 💰 COST BASIS TRACKER - Get REAL entry prices!
         self._cost_basis_tracker = None
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             self._cost_basis_tracker = CostBasisTracker()
             logger.info(f"✓ Cost Basis Tracker loaded ({len(self._cost_basis_tracker.positions)} positions)")
         except Exception as e:
@@ -236,7 +236,7 @@ class AvalancheHarvester:
         """Lazy load Alpaca client."""
         if self._alpaca_client is None:
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca_client = AlpacaClient()
                 logger.info("✓ Alpaca client loaded")
             except Exception as e:

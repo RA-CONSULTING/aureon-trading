@@ -194,7 +194,7 @@ class QuantumNodeMonitor:
             pass
         
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.alpaca = AlpacaClient()
         except Exception:
             pass
@@ -206,7 +206,7 @@ class QuantumNodeMonitor:
             pass
         
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             self.cost_basis = CostBasisTracker()
         except Exception:
             pass

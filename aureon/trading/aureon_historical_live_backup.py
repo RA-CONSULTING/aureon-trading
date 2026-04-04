@@ -90,7 +90,7 @@ except ImportError as e:
 # 📡 EXCHANGE CLIENTS
 try:
     from kraken_client import KrakenClient, get_kraken_client
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     from binance_client import BinanceClient
     EXCHANGES_AVAILABLE = True
     print("✅ Exchange Clients: AVAILABLE")

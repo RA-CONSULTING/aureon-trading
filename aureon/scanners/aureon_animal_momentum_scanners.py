@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
 from aureon.exchanges.alpaca_client import AlpacaClient
-from alpaca_fee_tracker import AlpacaFeeTracker
+from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
 from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
 
 logger = logging.getLogger(__name__)

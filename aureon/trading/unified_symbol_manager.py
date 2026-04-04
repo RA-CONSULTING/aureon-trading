@@ -246,7 +246,7 @@ class UnifiedSymbolManager:
     def alpaca(self):
         if self._alpaca is None:
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca = AlpacaClient()
             except Exception as e:
                 logger.debug(f"Alpaca client not available: {e}")

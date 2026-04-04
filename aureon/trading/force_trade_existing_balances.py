@@ -182,7 +182,7 @@ except Exception as e:
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🦙 ALPACA: Testing trade with existing balance...")
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     
     alpaca = AlpacaClient()
     

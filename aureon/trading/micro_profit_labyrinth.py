@@ -100,7 +100,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 # Import Adaptive Prime Profit Gate
 from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
-from cost_basis_tracker import CostBasisTracker
+from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 
 # Quadrumvirate Consensus (Queen + King + Seer + Lyra)
 QUADRUMVIRATE_AVAILABLE = False
@@ -174,7 +174,7 @@ if TYPE_CHECKING:
     except ImportError:
         BinanceClientType = Any
     try:
-        from alpaca_client import AlpacaClient as AlpacaClientType
+        from aureon.exchanges.alpaca_client import AlpacaClient as AlpacaClientType
     except ImportError:
         AlpacaClientType = Any
     try:
@@ -514,7 +514,7 @@ except ImportError as e:
 
 # Alpaca client
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     safe_print("🦙 Alpaca Client LOADED!")
     ALPACA_AVAILABLE = True
 except ImportError as e:
@@ -534,7 +534,7 @@ except ImportError as e:
 
 # Alpaca Fee Tracker - CRITICAL for preventing "death by 1000 cuts"
 try:
-    from alpaca_fee_tracker import AlpacaFeeTracker
+    from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
     safe_print("💰 Alpaca Fee Tracker LOADED!")
     FEE_TRACKER_AVAILABLE = True
 except ImportError as e:
@@ -5758,7 +5758,7 @@ class MicroProfitLabyrinth:
                 # Use existing fee_tracker if available, otherwise create new
                 _fee_tracker = getattr(self, "fee_tracker", None)
                 if not _fee_tracker and FEE_TRACKER_AVAILABLE:
-                    from alpaca_fee_tracker import AlpacaFeeTracker as AFT
+                    from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker as AFT
                     _fee_tracker = AFT(self.alpaca)
                 scanner_bridge = AlpacaScannerBridge(
                     alpaca_client=self.alpaca,

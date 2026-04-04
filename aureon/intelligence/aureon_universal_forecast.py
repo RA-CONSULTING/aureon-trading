@@ -48,7 +48,7 @@ from hnc_probability_matrix import TemporalFrequencyAnalyzer, ProbabilityMatrix,
 # Import all exchange clients
 from binance_client import BinanceClient, get_binance_client
 from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 from capital_client import CapitalClient
 from unified_exchange_client import MultiExchangeClient
 

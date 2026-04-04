@@ -50,7 +50,7 @@ from aureon_queen_true_consciousness import QueenTrueConsciousnessController
 # Import exchange clients
 from kraken_client import KrakenClient, get_kraken_client
 from binance_client import BinanceClient
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

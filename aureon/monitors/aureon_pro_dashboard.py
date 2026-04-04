@@ -3476,7 +3476,7 @@ class AureonProDashboard:
             
             # Try Alpaca - get TOTAL portfolio value (cash + positions)
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 alpaca = AlpacaClient()
                 
                 # Get cash balance
@@ -5921,7 +5921,7 @@ class AureonProDashboard:
                         self.logger.warning(f"⚠️ Kraken: {e}")
                     
                     try:
-                        from alpaca_client import AlpacaClient
+                        from aureon.exchanges.alpaca_client import AlpacaClient
                         exchanges['alpaca'] = AlpacaClient()
                         self.logger.info("✅ Ocean: Alpaca loaded")
                     except Exception as e:

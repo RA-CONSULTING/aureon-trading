@@ -46,7 +46,7 @@ except Exception as e:
 # Step 4
 try:
     print("4. Importing alpaca_client...")
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     print("   ✅ SUCCESS\n")
 except Exception as e:
     print(f"   ❌ FAILED: {e}\n")

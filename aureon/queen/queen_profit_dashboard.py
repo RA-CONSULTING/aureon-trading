@@ -124,7 +124,7 @@ def run_dashboard(auto_sell: bool = False, refresh_interval: float = 5.0):
         kraken = None
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca = AlpacaClient()
         print("✅ Alpaca client connected")
     except Exception as e:

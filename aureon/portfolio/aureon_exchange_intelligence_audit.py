@@ -215,7 +215,7 @@ class AureonExchangeIntelligenceAudit:
         intel = ExchangeIntelligence(exchange='alpaca')
         
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             client = AlpacaClient()
             
             print("🔍 Interrogating Alpaca API...")

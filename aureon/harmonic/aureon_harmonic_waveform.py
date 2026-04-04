@@ -77,9 +77,9 @@ from enum import Enum
 try:
     from binance_client import BinanceClient, get_binance_client
     from kraken_client import KrakenClient, get_kraken_client
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     from capital_client import CapitalClient
-    from cost_basis_tracker import CostBasisTracker
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 except Exception:
     from aureon.exchanges.binance_client import BinanceClient, get_binance_client
     from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client

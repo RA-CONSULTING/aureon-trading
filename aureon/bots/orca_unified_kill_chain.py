@@ -45,7 +45,7 @@ except ImportError:
     BinanceClient = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 except ImportError:
     AlpacaClient = None
 

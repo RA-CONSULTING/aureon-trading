@@ -116,7 +116,7 @@ def get_alpaca_positions():
     positions = []
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca = AlpacaClient()
         
         alpaca_positions = alpaca.get_positions()

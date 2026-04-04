@@ -1013,7 +1013,7 @@ if __name__ == "__main__":
     print("=" * 60)
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         client = AlpacaClient()
         
         tracker = get_fee_tracker(client)

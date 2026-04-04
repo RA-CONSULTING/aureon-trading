@@ -89,7 +89,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from cost_basis_tracker import CostBasisTracker
+from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 from metrics import MetricGauge
 
 # 🇬🇧💎 MISSING PIECES INTEGRATION 💎🇬🇧
@@ -10660,7 +10660,7 @@ Feeling: {thought['emotion']}
                 logger.debug(f"   🔶 Binance: {e}")
             
             try:
-                from alpaca_client import get_alpaca_client
+                from aureon.exchanges.alpaca_client import get_alpaca_client
                 self.alpaca_client = get_alpaca_client()
                 self.controlled_systems['alpaca']['status'] = 'ONLINE'
                 self.controlled_systems['alpaca']['instance'] = self.alpaca_client

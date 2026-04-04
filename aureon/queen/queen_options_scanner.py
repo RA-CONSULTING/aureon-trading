@@ -468,7 +468,7 @@ def scan_options(symbol: str, strategy: str = "all") -> List[OptionsOpportunity]
     scanner = QueenOptionsScanner()
     
     # Get current price from Alpaca
-    from alpaca_client import get_alpaca_client
+    from aureon.exchanges.alpaca_client import get_alpaca_client
     client = get_alpaca_client()
     quote = client.get_stock_quote(symbol)
     
@@ -518,7 +518,7 @@ if __name__ == "__main__":
         current_price = args.price
     else:
         try:
-            from alpaca_client import get_alpaca_client
+            from aureon.exchanges.alpaca_client import get_alpaca_client
             client = get_alpaca_client()
             quote = client.get_stock_quote(args.symbol)
             if quote:

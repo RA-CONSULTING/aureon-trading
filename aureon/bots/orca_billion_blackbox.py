@@ -64,7 +64,7 @@ from metatron_probability_billion_path import (
 
 # Exchange clients
 from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 # 🏴‍☠️👑 QUEEN QUANTUM COGNITION + BARONS BANNER - ELITE WHALE HUNTER
 try:

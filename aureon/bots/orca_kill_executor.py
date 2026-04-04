@@ -144,7 +144,7 @@ class OrcaKillExecutor:
             
         # Alpaca
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.alpaca = AlpacaClient()
             acct = self.alpaca.get_account()
             cash = float(acct.get('cash', 0))

@@ -164,7 +164,7 @@ class LiveMomentumHunter:
     
     def _init_exchange_client(self):
         """Initialize Alpaca client."""
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         self.alpaca = AlpacaClient()
         
         # Get account info
@@ -182,7 +182,7 @@ class LiveMomentumHunter:
         """Initialize fee-aware scanner bridge."""
         try:
             from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
-            from alpaca_fee_tracker import AlpacaFeeTracker
+            from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
             
             self.fee_tracker = AlpacaFeeTracker(self.alpaca)
             self.bridge = AlpacaScannerBridge(

@@ -398,7 +398,7 @@ def main():
     
     # Load Alpaca client
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca = AlpacaClient()
         print("✅ Alpaca client loaded")
     except Exception as e:

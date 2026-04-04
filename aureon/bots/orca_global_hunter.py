@@ -182,7 +182,7 @@ class OrcaGlobalHunter:
             
         # Alpaca (crypto + stocks)
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.exchanges['alpaca'] = AlpacaClient()
             
             # Crypto universe

@@ -79,7 +79,7 @@ except ImportError as e:
     DREAM_ENGINE_AVAILABLE = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"AlpacaClient not available: {e}")

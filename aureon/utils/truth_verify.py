@@ -92,7 +92,7 @@ def get_binance_truth() -> Tuple[float, Dict]:
 
 def get_alpaca_truth() -> Tuple[float, Dict]:
     """Get REAL Alpaca balance - no lies"""
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     try:
         a = AlpacaClient()
         acct = a.get_account()

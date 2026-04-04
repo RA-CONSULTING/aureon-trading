@@ -264,7 +264,7 @@ class AureonUnifiedDashboard:
         """Lazy load Cost Basis Tracker."""
         if self._cost_basis is None:
             try:
-                from cost_basis_tracker import CostBasisTracker
+                from aureon.portfolio.cost_basis_tracker import CostBasisTracker
                 self._cost_basis = CostBasisTracker()
                 logger.info("✓ Cost Basis Tracker loaded")
             except Exception as e:
@@ -300,7 +300,7 @@ class AureonUnifiedDashboard:
         """Lazy load Alpaca client."""
         if self._alpaca is None:
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca = AlpacaClient()
                 logger.info("✓ Alpaca client loaded")
             except Exception as e:

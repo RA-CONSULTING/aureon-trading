@@ -216,7 +216,7 @@ except ImportError:
     KrakenClient = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
     _safe_print("📈 Alpaca Client WIRED!")
 except ImportError:

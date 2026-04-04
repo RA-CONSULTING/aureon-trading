@@ -106,7 +106,7 @@ class OrcaHuntingGrounds:
     def _init_clients(self):
         """Initialize exchange clients."""
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.alpaca = AlpacaClient()
             logger.info("🦙 Alpaca connected")
         except Exception as e:

@@ -15,7 +15,7 @@ except ImportError:
 # Imports deferred to avoid circular dependencies
 # from kraken_client import KrakenClient, get_kraken_client
 # from binance_client import BinanceClient
-# from alpaca_client import AlpacaClient
+# from aureon.exchanges.alpaca_client import AlpacaClient
 # from capital_client import CapitalClient
 
 # Updated FX rates as of November 2025 (approximate mid-market)
@@ -392,7 +392,7 @@ class UnifiedExchangeClient:
             self.client = get_binance_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "alpaca":
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.client = AlpacaClient()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "capital":

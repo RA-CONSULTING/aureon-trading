@@ -61,7 +61,7 @@ from metatron_probability_billion_path import (
 
 # Import exchange clients
 from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 # Import Orca components (if available)
 try:

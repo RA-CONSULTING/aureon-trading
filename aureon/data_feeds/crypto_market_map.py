@@ -393,7 +393,7 @@ class CryptoMarketMap:
         """Load historical data from Alpaca exchange."""
         try:
             if alpaca_client is None:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 alpaca_client = AlpacaClient()
             
             logger.info("🦙 Loading historical data from Alpaca...")

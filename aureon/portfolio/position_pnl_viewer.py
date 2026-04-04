@@ -100,7 +100,7 @@ def get_current_prices(positions: Dict) -> Dict[str, float]:
     
     # Try Alpaca - positions come with current prices
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca = AlpacaClient()
         
         for pos in alpaca.get_positions():

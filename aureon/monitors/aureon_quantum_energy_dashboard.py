@@ -57,9 +57,9 @@ from enum import Enum
 # Exchange clients
 from binance_client import BinanceClient
 from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 from capital_client import CapitalClient
-from cost_basis_tracker import CostBasisTracker
+from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 
 # Sacred constants
 PHI = (1 + math.sqrt(5)) / 2           # 1.618 Golden ratio

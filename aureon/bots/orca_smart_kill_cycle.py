@@ -44,7 +44,7 @@ if sys.platform == 'win32':
 from orca_complete_kill_cycle import OrcaKillCycle
 from aureon_live_momentum_hunter import LiveMomentumHunter, HuntResult
 from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 class OrcaSmartKillCycle:
     """Smart kill cycle that uses momentum hunter data."""
@@ -241,7 +241,7 @@ class OrcaSmartKillCycle:
             
             # Try Alpaca first
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 client = AlpacaClient()
                 ob = client.get_crypto_orderbook(symbol)
                 if ob and ob.get('asks'):

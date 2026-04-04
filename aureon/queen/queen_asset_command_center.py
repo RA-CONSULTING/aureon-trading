@@ -460,7 +460,7 @@ class QueenAssetCommandCenter:
         
         # Alpaca
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.alpaca = AlpacaClient()
             logger.info("   🦙 Alpaca: CONNECTED")
         except Exception as e:
@@ -1316,7 +1316,7 @@ class QueenOceanView:
                 pass
             
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 exchanges['alpaca'] = AlpacaClient()
             except Exception:
                 pass

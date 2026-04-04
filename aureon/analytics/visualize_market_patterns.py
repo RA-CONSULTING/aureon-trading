@@ -38,7 +38,7 @@ except:
     KRAKEN_OK = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_OK = True
 except:
     ALPACA_OK = False

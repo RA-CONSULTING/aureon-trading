@@ -48,7 +48,7 @@ except ImportError:
 
 # Import Alpaca components
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     from alpaca_sse_client import AlpacaStreamingIntegration
     ALPACA_AVAILABLE = True
 except ImportError:

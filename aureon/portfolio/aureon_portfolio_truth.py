@@ -33,7 +33,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple
 from kraken_client import KrakenClient
 from binance_client import BinanceClient
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 
 class PortfolioTruth:

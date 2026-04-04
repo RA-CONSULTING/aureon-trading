@@ -209,7 +209,7 @@ except Exception as e:
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🦙 ALPACA: Testing trade execution...")
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     
     alpaca = AlpacaClient()
     print(f"   Paper Trading: {alpaca.paper}")

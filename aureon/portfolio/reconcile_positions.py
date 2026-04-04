@@ -34,7 +34,7 @@ def reconcile_positions():
     print("=" * 60)
     
     # Load clients
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     from binance_client import BinanceClient, get_binance_client
     from kraken_client import KrakenClient, get_kraken_client
     

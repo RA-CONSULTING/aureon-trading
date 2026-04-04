@@ -99,7 +99,7 @@ except ImportError:
 
 # Alpaca
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
     print("   🦙 Alpaca Client: LOADED")
 except ImportError:

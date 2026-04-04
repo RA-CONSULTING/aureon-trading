@@ -64,7 +64,7 @@ from metatron_probability_billion_path import (
 
 # Exchange clients
 from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 PHI = 1.618033988749895  # Golden Ratio
 GOLDEN_ANGLE = 137.5077640500378  # 360 / φ²

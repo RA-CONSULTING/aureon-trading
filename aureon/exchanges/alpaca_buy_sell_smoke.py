@@ -17,7 +17,7 @@ import os
 import time
 from typing import Any, Dict
 
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 
 def _is_error(payload: Any) -> bool:

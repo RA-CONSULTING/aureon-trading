@@ -987,14 +987,14 @@ def create_scanner_bridge(
     fee_tracker = None
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca_client = AlpacaClient()
         logger.info("🦙 AlpacaClient loaded")
     except Exception as e:
         logger.warning(f"⚠️ Could not load AlpacaClient: {e}")
     
     try:
-        from alpaca_fee_tracker import AlpacaFeeTracker
+        from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
         fee_tracker = AlpacaFeeTracker(alpaca_client)
         logger.info("💰 AlpacaFeeTracker loaded")
     except Exception as e:

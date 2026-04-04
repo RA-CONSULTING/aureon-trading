@@ -31,7 +31,7 @@ import json
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Optional
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 @dataclass
 class TradeFillAnalysis:

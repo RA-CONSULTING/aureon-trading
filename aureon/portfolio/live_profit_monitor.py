@@ -23,7 +23,7 @@ def get_current_price(symbol, exchange):
             ticker = client.get_ticker(symbol)
             return float(ticker.get('price', 0)) if ticker else 0
         elif exchange == 'alpaca':
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             client = AlpacaClient()
             ticker = client.get_ticker(symbol)
             return float(ticker.get('last', 0)) if ticker else 0

@@ -205,7 +205,7 @@ class RealPortfolioTracker:
         """Get REAL Alpaca balance."""
         try:
             if self._alpaca_client is None:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca_client = AlpacaClient()
             
             acc = self._alpaca_client.get_account()

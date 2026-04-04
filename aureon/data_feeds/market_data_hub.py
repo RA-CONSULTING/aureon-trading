@@ -182,7 +182,7 @@ class MarketDataHub:
                 else:
                     # Check if bare symbol is a known crypto
                     try:
-                        from alpaca_client import CRYPTO_BASE_SYMBOLS
+                        from aureon.exchanges.alpaca_client import CRYPTO_BASE_SYMBOLS
                         base_sym = symbol.upper()
                         for suffix in ('USDT', 'USDC', 'USD'):
                             if base_sym.endswith(suffix) and len(base_sym) > len(suffix):

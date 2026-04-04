@@ -79,7 +79,7 @@ class AureonCapitalMobilizer:
         
         # Load cost basis tracker for profit calculations
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             self.cost_basis = CostBasisTracker()
         except:
             self.cost_basis = None
@@ -100,7 +100,7 @@ class AureonCapitalMobilizer:
             print(f"⚠️  Kraken client not available: {e}")
         
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.exchange_clients['alpaca'] = AlpacaClient()
         except Exception as e:
             print(f"⚠️  Alpaca client not available: {e}")

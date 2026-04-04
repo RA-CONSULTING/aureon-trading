@@ -940,7 +940,7 @@ async def main():
         print(f"❌ Kraken: {e}")
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         exchanges['alpaca'] = AlpacaClient()
         print("✅ Alpaca client loaded")
     except Exception as e:

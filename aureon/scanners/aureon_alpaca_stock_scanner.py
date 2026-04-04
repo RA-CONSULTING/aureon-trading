@@ -535,7 +535,7 @@ def test_stock_scanner():
     """Test the stock scanner with sample data."""
     print("🦙📈 Testing Alpaca Stock Scanner...")
     
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     
     alpaca = AlpacaClient()
     scanner = AlpacaStockScanner(alpaca_client=alpaca)

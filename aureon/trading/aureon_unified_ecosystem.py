@@ -690,7 +690,7 @@ except ImportError as e:
 
 # 💰 COST BASIS TRACKER - REAL PURCHASE PRICES 💰
 try:
-    from cost_basis_tracker import CostBasisTracker, get_cost_basis_tracker
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker, get_cost_basis_tracker
     COST_BASIS_AVAILABLE = True
 except ImportError as e:
     COST_BASIS_AVAILABLE = False

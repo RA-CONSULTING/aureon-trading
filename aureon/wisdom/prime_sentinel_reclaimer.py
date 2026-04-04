@@ -98,7 +98,7 @@ class PrimeSentinelReclaimer:
         
         # Alpaca
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.exchanges['alpaca'] = AlpacaClient()
             log("🦙 ALPACA: Connected")
         except Exception as e:

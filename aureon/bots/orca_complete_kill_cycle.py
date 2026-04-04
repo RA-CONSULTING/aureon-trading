@@ -432,7 +432,7 @@ except ImportError:
     Style = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except Exception as e:
     ALPACA_AVAILABLE = False
@@ -594,7 +594,7 @@ except ImportError:
 
 #    AlpacaFeeTracker - Volume-tiered fee detection + spread tracking
 try:
-    from alpaca_fee_tracker import AlpacaFeeTracker
+    from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
     ALPACA_FEE_TRACKER_AVAILABLE = True
 except ImportError:
     ALPACA_FEE_TRACKER_AVAILABLE = False
@@ -664,7 +664,7 @@ except ImportError:
 
 #   CostBasisTracker - FIFO cost basis + can_sell_profitably() check
 try:
-    from cost_basis_tracker import CostBasisTracker
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker
     COST_BASIS_TRACKER_AVAILABLE = True
 except ImportError:
     COST_BASIS_TRACKER_AVAILABLE = False
@@ -3866,7 +3866,7 @@ class OrcaKillCycle:
         else:
             # Initialize Alpaca
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self.clients['alpaca'] = AlpacaClient()
                 _safe_print("  Alpaca: CONNECTED")
             except Exception as e:

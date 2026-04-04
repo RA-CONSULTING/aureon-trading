@@ -121,7 +121,7 @@ except Exception as e:
     traceback.print_exc()
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 
     success("alpaca_client.AlpacaClient")
 except Exception as e:
