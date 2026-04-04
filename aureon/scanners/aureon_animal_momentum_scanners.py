@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 from alpaca_fee_tracker import AlpacaFeeTracker
 from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
 
@@ -840,7 +840,7 @@ class AnimalMomentumScanners:
         
         # Try to initialize with clients if available
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
             
             alpaca = AlpacaClient()
@@ -924,7 +924,7 @@ class AnimalMomentumScanners:
         
         # Try to initialize with clients if available
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
             
             alpaca = AlpacaClient()

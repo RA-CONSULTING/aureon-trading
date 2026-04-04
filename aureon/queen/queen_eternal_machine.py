@@ -673,7 +673,7 @@ class QueenEternalMachine:
         # Initialize cost basis tracker for accurate cost basis calculation
         cost_basis_tracker = None
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             cost_basis_tracker = CostBasisTracker()
             logger.info("📊 Cost Basis Tracker: WIRED for accurate baggage calculation")
         except Exception as e:
@@ -2095,7 +2095,7 @@ class QueenEternalMachine:
         # Initialize cost basis tracker
         cost_basis_tracker = None
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             cost_basis_tracker = CostBasisTracker()
         except Exception as e:
             logger.warning(f"⚠️ Cost basis tracker unavailable for leap recording: {e}")

@@ -46,7 +46,7 @@ except Exception:
     from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader
     from aureon.exchanges.capital_cfd_trader import CAPITAL_UNIVERSE, CapitalCFDTrader
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 except Exception:
     try:
         from aureon.exchanges.alpaca_client import AlpacaClient

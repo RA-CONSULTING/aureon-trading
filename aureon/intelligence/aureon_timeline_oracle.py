@@ -221,7 +221,7 @@ except ImportError:
 
 # 🦙 Alpaca Client - Exchange Integration
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
     _safe_import_print("🦙 Timeline Oracle: Alpaca Exchange WIRED!")
 except ImportError:
