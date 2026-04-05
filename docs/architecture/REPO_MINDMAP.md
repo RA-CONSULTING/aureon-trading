@@ -903,9 +903,16 @@
   - 📄 `supervisord.conf`
   - 📄 `supervisord.master_launcher.conf`
   - 📄 `validate_startup.sh`
-- 📁 **docs/** (183 files)
-  - 📁 **research/** (1 files)
-    - 📄 `research_history.json`
+- 📁 **docs/** (170 files)
+  - 📁 **research/** (see `docs/research/INDEX.md` — full thematic catalog)
+    - 📄 `AUREON_WHITE_PAPER_RESEARCH_HUB.md`
+    - 📄 `THE_PHI_SQUARED_CHAIN_Sumer_to_Rome_to_Now.md`
+    - 📄 `ANCIENT_CONVERGENCE.md`, `BOT_INTELLIGENCE.md`, `COUNTER_STRATEGIES.md`, `FINANCIAL_EXPOSURE.md`, `UNIFIED_FIELD.md`
+    - 📄 `INDEX.md`, `research_history.json`
+    - 📁 `whitepapers/` (20 PDF/DOCX — HNC, EPAS, Sagittarius, LIDAR, etc.)
+    - 📁 `traffic/` (4 GitHub 14-day analytics PNGs)
+    - 📁 `hardware/` (CAD + firmware)
+    - 📁 `images/` (evidence photography)
   - 📄 `ARCHITECTURE.md`
   - 📄 `AUREON_HARMONIC_ALPHABET_EXPANSION.md`
   - 📄 `AUREON_MIND_STATUS.md`
@@ -926,7 +933,6 @@
   - 📄 `CHIRP_BUS_INTEGRATION_STATUS.md`
   - 📄 `COHERENCE_ENGINE_SETUP.md`
   - 📄 `COINAPI_INTEGRATION.md`
-  - 📄 `COMPLETE_EVIDENCE_SYNTHESIS.pdf`
   - 📄 `COMPLETE_LIBERATION_PROTOCOL.md`
   - 📄 `COMPLETE_PREDICTIVE_SYSTEMS_MAP.md`
   - 📄 `COMPLETE_WHALE_PROFILING_SYSTEM.md`
@@ -949,25 +955,19 @@
   - 📄 `EARTH_QUICKSTART.md`
   - 📄 `EMERGENCY_TRADING_HALT.md`
   - 📄 `EMERGENT_COGNITION.md`
-  - 📄 `EPAS_Unified_Architecture_WhitePaper_Lec.docx`
   - 📄 `EPHEMERIS_PIPELINE.md`
   - 📄 `ETA_VERIFICATION_SYSTEM.md`
   - 📄 `FINAL_ROOT_CAUSE_MOMENTUM_NOT_EDGE.md`
   - 📄 `FIRM_CATALOG_QUICKSTART.md`
   - 📄 `FIRM_INTELLIGENCE_CATALOG.md`
   - 📄 `FIX_TRADING_SYSTEM.md`
-  - 📄 `FRESH_DATA_UPDATE_MAR24.pdf`
   - 📄 `FULL_MARKET_EXPANSION.md`
   - 📄 `GARYS_MESSAGE_TO_QUEEN.txt`
   - 📄 `GRAND_BIG_WHEEL_IMPLEMENTATION.md`
   - 📄 `GRAND_BIG_WHEEL_MISSION_COMPLETE.txt`
   - 📄 `GREEN_OLIVE_EXPANSION_COMPLETE.md`
-  - 📄 `Harmonic_Solar_System_Survey_Leckey.docx`
   - 📄 `HARMONIC_TRINITY_SYSTEM.md`
   - 📄 `hive_state.md`
-  - 📄 `HNC_Harmonic_LIDAR_v2_AluminiumFluid_Lec.docx`
-  - 📄 `HNC_Harmonic_LIDAR_WhitePaper_Leckey_202.docx`
-  - 📄 `HNC_Project_Druid_E_P_A_S_technical_Fram.docx`
   - 📄 `HNC_UNIFIED_WHITE_PAPER.md`
   - 📄 `IMPERIAL_PREDICTABILITY_SUMMARY.md`
   - 📄 `IMPERIAL_QUICK_START.md`
@@ -983,7 +983,6 @@
   - 📄 `LIVE_TRADING_RUNBOOK.md`
   - 📄 `local_launcher.md`
   - 📄 `LOSS_PREVENTION_FIX_COMPLETE.md`
-  - 📄 `Maeshowe_Seer_Decode_Report_2026.docx`
   - 📄 `MULTI_BROKER_GUIDE.md`
   - 📄 `MULTI_EXCHANGE_FIX_SUMMARY.md`
   - 📄 `MULTIVERSAL_EXTENSION_SUMMARY.md`
@@ -1064,12 +1063,7 @@
   - 📄 `Technical-Overview.md`
   - 📄 `TEMPORAL_LADDER_HIVE_MIND.md`
   - 📄 `TEMPORAL_QBIT_ROUTING.md`
-  - 📄 `The_Doorbell_Hypothesis_Leckey.docx`
-  - 📄 `The_Dormant_Seed.docx`
   - 📄 `THE_RIVER_AND_THE_KERNEL.md`
-  - 📄 `The_Sagittarius_Convergence_Leckey_2026.docx`
-  - 📄 `The_Sagittarius_Convergence_v2_Corrected.docx`
-  - 📄 `The_Source_Oscillator_Constraint_Whitepa.docx`
   - 📄 `THEORETICAL_INTEGRATION.md`
   - 📄 `TIER_DEPLOYMENT_AUDIT.md`
   - 📄 `TRADING_LIVE_NOW.md`
