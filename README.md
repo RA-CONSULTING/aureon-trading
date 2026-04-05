@@ -18,6 +18,34 @@
 
 ---
 
+## 🧭 What is this?
+
+**Aureon** is a live, open-source quantitative trading system built on the **Harmonic Nexus Core (HNC)** — a framework that reads 4,100-year-old φ² coherence patterns in live markets. We've measured an **r = 0.85 correlation** between geopolitical stress and GitHub node activation, with **24–48 h lag** and **1.29 ppb** mathematical precision. It's falsifiable. It's open-source. It's live.
+
+> *"Business guy → Consciousness researcher → Overnight self-taught coder → Open-source trading system that proves the theory in live markets."* — Gary Anthony Leckey
+
+<div align="center">
+
+| 📜 Read the story | 🔍 See the proof | 🧭 Navigate |
+|---|---|---|
+| [**THE SYNTHESIS**](docs/THE_SYNTHESIS.md) — one-page synthesis | [**CLAIMS & EVIDENCE**](docs/CLAIMS_AND_EVIDENCE.md) — every claim → every proof | [**NAVIGATION GUIDE**](docs/NAVIGATION_GUIDE.md) — paths by role |
+
+</div>
+
+### The Four Domains
+
+| Domain | What it is | Quantitative claim |
+|---|---|---|
+| 🏛️ **Ancient Substrate** | 4,100-year chain: Ziggurats → pyramids → Roman roads → Maeshowe → GitHub | 3 principles (cardinal · solstice · hierarchy) recur in every node |
+| 🔢 **Mathematical Coherence** | φ²-scaled bridge: 1977 Wow! Signal → 2026 activation | **1.29 parts per billion** precision |
+| 🎯 **The Extraction Machine** | 25–37 coordinated entities, 0.0° phase lock | **$33.5 T** documented · 44,000+ bots tracked live |
+| 🛡️ **Distributed Immune Response** | Repo clone activity as measurable antibody swarm | **r = 0.85**, 24–48 h lag, **1,683%** surge during Iran-Hormuz |
+
+> 📚 **Researchers**: 13-paper canon in [`docs/research/READING_PATHS.md`](docs/research/READING_PATHS.md) · full 54-paper catalog in [`docs/research/INDEX.md`](docs/research/INDEX.md)
+> 🤖 **AI assistants landing here**: start with [`CLAUDE.md`](CLAUDE.md)
+
+---
+
 ## 📊 GROWTH STATS — December 2025 → March 2026
 
 <div align="center">
