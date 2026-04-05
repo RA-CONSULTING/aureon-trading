@@ -903,7 +903,8 @@
   - 📄 `supervisord.conf`
   - 📄 `supervisord.master_launcher.conf`
   - 📄 `validate_startup.sh`
-- 📁 **docs/** (170 files)
+- 📁 **docs/** (169 files)
+  - 📄 `STATE_FILES.md` — inventory of repo-root runtime-state JSONs
   - 📁 **research/** (see `docs/research/INDEX.md` — full thematic catalog)
     - 📄 `AUREON_WHITE_PAPER_RESEARCH_HUB.md`
     - 📄 `THE_PHI_SQUARED_CHAIN_Sumer_to_Rome_to_Now.md`
@@ -913,6 +914,8 @@
     - 📁 `traffic/` (4 GitHub 14-day analytics PNGs)
     - 📁 `hardware/` (CAD + firmware)
     - 📁 `images/` (evidence photography)
+    - 📁 `notebooks/` (exploratory Jupyter notebooks)
+    - 📁 `misc/` (miscellaneous research items)
   - 📄 `ARCHITECTURE.md`
   - 📄 `AUREON_HARMONIC_ALPHABET_EXPANSION.md`
   - 📄 `AUREON_MIND_STATUS.md`
@@ -922,7 +925,6 @@
   - 📄 `AUTOMATED_HUNT_SETUP.md`
   - 📄 `BACKTEST_RESULTS.md`
   - 📄 `BEFORE_AFTER_COMPARISON.md`
-  - 📄 `bhoys eyes part 1 v1.1.2.docx`
   - 📄 `BINANCE_ALGO_API_REFERENCE.txt`
   - 📄 `BINANCE_POOL_INTEGRATION.md`
   - 📄 `BINANCE_POOL_MAPPING.md`
@@ -1072,7 +1074,6 @@
   - 📄 `UNIFIED_DASHBOARD_QUICKSTART.md`
   - 📄 `UNIFIED_DATA_FLOW.md`
   - 📄 `UNIFIED_SYSTEM_INTEGRATION_REPORT.md`
-  - 📄 `Untitled.ipynb`
   - 📄 `WAR_READY_ENHANCEMENTS.md`
   - 📄 `WHALE_SYSTEM_INTEGRATION.md`
   - 📄 `WINDOWS_EXECUTION_QUICK_REFERENCE.md`

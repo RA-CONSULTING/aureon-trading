@@ -7,6 +7,8 @@ Central catalog of research materials, white papers, and supporting evidence for
 > - [`traffic/`](traffic/) — GitHub traffic analytics (node activation)
 > - [`hardware/`](hardware/) — CAD, firmware, formula-tree diagrams
 > - [`images/`](images/) — Visual evidence & figures
+> - [`notebooks/`](notebooks/) — Exploratory Jupyter notebooks
+> - [`misc/`](misc/) — Miscellaneous research items
 > - Research notes live as markdown directly in this directory
 
 ---
@@ -107,12 +109,31 @@ Evidence photography and reference imagery (e.g. `kimi-*.jpg`, `IMG-20260404-*`)
 
 ---
 
+## 📓 Notebooks (`notebooks/`)
+
+Exploratory Jupyter notebooks.
+
+| File | Description |
+|------|-------------|
+| [Untitled.ipynb](notebooks/Untitled.ipynb) | Unlabelled exploratory notebook (moved from `docs/`) |
+
+---
+
+## 🗂️ Miscellaneous (`misc/`)
+
+| File | Description |
+|------|-------------|
+| [bhoys_eyes_part_1_v1.1.2.docx](misc/bhoys_eyes_part_1_v1.1.2.docx) | Working notes — "bhoys eyes" series, part 1 v1.1.2 |
+
+---
+
 ## 🔗 Related Data
 
 | Path | Description |
 |------|-------------|
 | [`../../data/simulations/sunbed_chp_simulation.json`](../../data/simulations/sunbed_chp_simulation.json) | CHP (Combined Heat & Power) sunbed simulation output |
 | [`../architecture/`](../architecture/) | System / theory-to-code architecture notes |
+| [`../STATE_FILES.md`](../STATE_FILES.md) | Inventory of repo-root runtime-state JSONs (adaptive_learning_history, bot_army_catalog, brain_predictions_history, miner_brain_knowledge) |
 
 ---
 
