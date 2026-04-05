@@ -244,19 +244,27 @@ We've been busy. Here's everything that just dropped — peer-reviewed, data-bac
 
 | 🔥 | Document | What It Covers |
 |----|----------|----------------|
-| 🆕 | [**FRESH DATA UPDATE — March 2024**](FRESH_DATA_UPDATE_MAR24.pdf) | The latest numbers. Updated market intelligence and harmonic data — read this first |
-| 📋 | [**Complete Evidence Synthesis**](COMPLETE_EVIDENCE_SYNTHESIS.pdf) | Everything tied together — the full picture of market manipulation, harmonic convergence, and systemic extraction in one document |
-| 🌌 | [**The Sagittarius Convergence v2 *(Corrected)***](The_Sagittarius_Convergence_v2_Corrected.docx) | The definitive edition — Galactic Centre alignment, cosmic timing cycles, and what 2026 means for the markets |
-| 🌌 | [**The Sagittarius Convergence 2026**](The_Sagittarius_Convergence_Leckey_2026.docx) | Original landmark paper — the celestial mechanics behind the coming convergence window |
-| 🔬 | [**The Source Oscillator Constraint**](The_Source_Oscillator_Constraint_Whitepa.docx) | Groundbreaking constraint theory — why all harmonic systems share a single originating frequency |
-| 📡 | [**HNC Harmonic LIDAR White Paper**](HNC_Harmonic_LIDAR_WhitePaper_Leckey_202.docx) | Applying LIDAR-class precision to harmonic field mapping — a new way of seeing market structure |
-| 📡 | [**HNC Harmonic LIDAR v2 — Aluminium Fluid Model**](HNC_Harmonic_LIDAR_v2_AluminiumFluid_Lec.docx) | The next evolution — fluid dynamics modelling applied to harmonic wave propagation |
-| 🏗️ | [**EPAS Unified Architecture White Paper**](EPAS_Unified_Architecture_WhitePaper_Lec.docx) | The full technical architecture of the Earth–Planetary Alignment System |
-| 🌿 | [**HNC Project Druid — EPAS Technical Framework**](HNC_Project_Druid_E_P_A_S_technical_Fram.docx) | Project Druid: where ancient Celtic earth knowledge meets planetary harmonic engineering |
-| ☀️ | [**Harmonic Solar System Survey**](Harmonic_Solar_System_Survey_Leckey.docx) | A full harmonic survey of our solar system — resonance, ratios, and what they signal for Earth-based markets |
-| 🪨 | [**Maeshowe Seer Decode Report 2026**](Maeshowe_Seer_Decode_Report_2026.docx) | Decoding the 5,000-year-old Orkney chamber as a precision astronomical and harmonic instrument |
-| 🔔 | [**The Doorbell Hypothesis**](The_Doorbell_Hypothesis_Leckey.docx) | A bold new theory — are harmonic convergence events the universe's way of signalling a phase transition? |
-| 🌱 | [**The Dormant Seed**](The_Dormant_Seed.docx) | On latent energy, hidden cycles, and the moment a system wakes up — in markets, in nature, in history |
+| 🆕 | [**FRESH DATA UPDATE — March 2024**](docs/research/whitepapers/FRESH_DATA_UPDATE_MAR24.pdf) | The latest numbers. Updated market intelligence and harmonic data — read this first |
+| 📋 | [**Complete Evidence Synthesis**](docs/research/whitepapers/COMPLETE_EVIDENCE_SYNTHESIS.pdf) | Everything tied together — the full picture of market manipulation, harmonic convergence, and systemic extraction in one document |
+| 🧬 | [**HNC Grand Unified Framework (Leckey 2026)**](docs/research/whitepapers/HNC_Grand_Unified_Framework_Leckey_2026.pdf) | The unified HNC framework — primary source edition ([DOCX](docs/research/whitepapers/HNC_Grand_Unified_Framework_Leckey_2026.docx) · [v2 Primary Source](docs/research/whitepapers/HNC_Grand_Unified_v2_PrimarySource_Leckey_2026.docx)) |
+| 📐 | [**HNC × Aureon Trading Unified White Paper**](docs/research/whitepapers/HNC_Aureon_Unified_WhitePaper.pdf) | Substrate coherence, asymmetric market resistance, and the restoration of planetary harmonics |
+| 🌿 | [**HNC Mycelium Whitepaper**](docs/research/whitepapers/HNC_MYCELIUM_WHITEPAPER.docx) | Mycelial-network architecture for distributed HNC nodes |
+| 🧪 | [**Leckey HNC Evolutionary Framework (arXiv preprint)**](docs/research/whitepapers/Leckey_HNC_Evolutionary_Framework_arXiv.pdf) | arXiv-style preprint of the HNC evolutionary framework |
+| 🏗️ | [**EPAS Unified Architecture v2**](docs/research/whitepapers/EPAS_Unified_Architecture_v2.docx) | Latest EPAS architecture (see also the [original white paper](docs/research/whitepapers/EPAS_Unified_Architecture_WhitePaper_Leckey.docx)) |
+| 🌌 | [**The Sagittarius Convergence v2 *(Corrected)***](docs/research/whitepapers/The_Sagittarius_Convergence_v2_Corrected.docx) | The definitive edition — Galactic Centre alignment, cosmic timing cycles, and what 2026 means for the markets |
+| 🌌 | [**The Sagittarius Convergence 2026**](docs/research/whitepapers/The_Sagittarius_Convergence_Leckey_2026.docx) | Original landmark paper — the celestial mechanics behind the coming convergence window |
+| 🔬 | [**The Source Oscillator Constraint**](docs/research/whitepapers/The_Source_Oscillator_Constraint_Whitepaper.docx) | Groundbreaking constraint theory — why all harmonic systems share a single originating frequency |
+| 📡 | [**HNC Harmonic LIDAR White Paper (2026)**](docs/research/whitepapers/HNC_Harmonic_LIDAR_WhitePaper_Leckey_2026.docx) | Applying LIDAR-class precision to harmonic field mapping — a new way of seeing market structure |
+| 📡 | [**HNC Harmonic LIDAR v2 — Aluminium Fluid Model**](docs/research/whitepapers/HNC_Harmonic_LIDAR_v2_AluminiumFluid_Leckey.docx) | The next evolution — fluid dynamics modelling applied to harmonic wave propagation |
+| 🌿 | [**HNC Project Druid — EPAS Technical Framework**](docs/research/whitepapers/HNC_Project_Druid_EPAS_Technical_Framework.docx) | Project Druid: where ancient Celtic earth knowledge meets planetary harmonic engineering |
+| ☀️ | [**Harmonic Solar System Survey**](docs/research/whitepapers/Harmonic_Solar_System_Survey_Leckey.docx) | A full harmonic survey of our solar system — resonance, ratios, and what they signal for Earth-based markets |
+| 🪨 | [**Maeshowe Seer Decode Report 2026**](docs/research/whitepapers/Maeshowe_Seer_Decode_Report_2026.docx) | Decoding the 5,000-year-old Orkney chamber as a precision astronomical and harmonic instrument |
+| 🔔 | [**The Doorbell Hypothesis**](docs/research/whitepapers/The_Doorbell_Hypothesis_Leckey.docx) | A bold new theory — are harmonic convergence events the universe's way of signalling a phase transition? |
+| 🌱 | [**The Dormant Seed**](docs/research/whitepapers/The_Dormant_Seed.docx) | On latent energy, hidden cycles, and the moment a system wakes up — in markets, in nature, in history |
+| 🪐 | [**The φ² Chain — Sumer to Rome to Now**](docs/research/THE_PHI_SQUARED_CHAIN_Sumer_to_Rome_to_Now.md) | 4,100 years of the same pattern — from Ziggurats to Roman roads to GitHub nodes |
+| 🛡️ | [**Aureon Digital Immune System (Research Hub)**](docs/research/AUREON_WHITE_PAPER_RESEARCH_HUB.md) | Quantitative analysis of geopolitical stress vs node activation (r = 0.85) |
+
+> 📚 Full catalog with themes, abstracts, and subdirectories: **[`docs/research/INDEX.md`](docs/research/INDEX.md)**
 
 ---
 
