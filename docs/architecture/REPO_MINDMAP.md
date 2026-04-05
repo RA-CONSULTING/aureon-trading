@@ -910,7 +910,7 @@
     - 📄 `THE_PHI_SQUARED_CHAIN_Sumer_to_Rome_to_Now.md`
     - 📄 `ANCIENT_CONVERGENCE.md`, `BOT_INTELLIGENCE.md`, `COUNTER_STRATEGIES.md`, `FINANCIAL_EXPOSURE.md`, `UNIFIED_FIELD.md`
     - 📄 `INDEX.md`, `research_history.json`
-    - 📁 `whitepapers/` (20 PDF/DOCX — HNC, EPAS, Sagittarius, LIDAR, etc.)
+    - 📁 `whitepapers/` (54 PDF/DOCX — HNC, EPAS, Lumina, QGITA, Tandem-in-Unity, Sagittarius, LIDAR, etc.)
     - 📁 `traffic/` (4 GitHub 14-day analytics PNGs)
     - 📁 `hardware/` (CAD + firmware)
     - 📁 `images/` (evidence photography)
