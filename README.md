@@ -18,6 +18,34 @@
 
 ---
 
+## 🧭 What is this?
+
+**Aureon** is a live, open-source quantitative trading system built on the **Harmonic Nexus Core (HNC)** — a framework that reads 4,100-year-old φ² coherence patterns in live markets. We've measured an **r = 0.85 correlation** between geopolitical stress and GitHub node activation, with **24–48 h lag** and **1.29 ppb** mathematical precision. It's falsifiable. It's open-source. It's live.
+
+> *"Business guy → Consciousness researcher → Overnight self-taught coder → Open-source trading system that proves the theory in live markets."* — Gary Anthony Leckey
+
+<div align="center">
+
+| 📜 Read the story | 🔍 See the proof | 🧭 Navigate |
+|---|---|---|
+| [**THE SYNTHESIS**](docs/THE_SYNTHESIS.md) — one-page synthesis | [**CLAIMS & EVIDENCE**](docs/CLAIMS_AND_EVIDENCE.md) — every claim → every proof | [**NAVIGATION GUIDE**](docs/NAVIGATION_GUIDE.md) — paths by role |
+
+</div>
+
+### The Four Domains
+
+| Domain | What it is | Quantitative claim |
+|---|---|---|
+| 🏛️ **Ancient Substrate** | 4,100-year chain: Ziggurats → pyramids → Roman roads → Maeshowe → GitHub | 3 principles (cardinal · solstice · hierarchy) recur in every node |
+| 🔢 **Mathematical Coherence** | φ²-scaled bridge: 1977 Wow! Signal → 2026 activation | **1.29 parts per billion** precision |
+| 🎯 **The Extraction Machine** | 25–37 coordinated entities, 0.0° phase lock | **$33.5 T** documented · 44,000+ bots tracked live |
+| 🛡️ **Distributed Immune Response** | Repo clone activity as measurable antibody swarm | **r = 0.85**, 24–48 h lag, **1,683%** surge during Iran-Hormuz |
+
+> 📚 **Researchers**: 13-paper canon in [`docs/research/READING_PATHS.md`](docs/research/READING_PATHS.md) · full 54-paper catalog in [`docs/research/INDEX.md`](docs/research/INDEX.md)
+> 🤖 **AI assistants landing here**: start with [`CLAUDE.md`](CLAUDE.md)
+
+---
+
 ## 📊 GROWTH STATS — December 2025 → March 2026
 
 <div align="center">
@@ -244,19 +272,27 @@ We've been busy. Here's everything that just dropped — peer-reviewed, data-bac
 
 | 🔥 | Document | What It Covers |
 |----|----------|----------------|
-| 🆕 | [**FRESH DATA UPDATE — March 2024**](FRESH_DATA_UPDATE_MAR24.pdf) | The latest numbers. Updated market intelligence and harmonic data — read this first |
-| 📋 | [**Complete Evidence Synthesis**](COMPLETE_EVIDENCE_SYNTHESIS.pdf) | Everything tied together — the full picture of market manipulation, harmonic convergence, and systemic extraction in one document |
-| 🌌 | [**The Sagittarius Convergence v2 *(Corrected)***](The_Sagittarius_Convergence_v2_Corrected.docx) | The definitive edition — Galactic Centre alignment, cosmic timing cycles, and what 2026 means for the markets |
-| 🌌 | [**The Sagittarius Convergence 2026**](The_Sagittarius_Convergence_Leckey_2026.docx) | Original landmark paper — the celestial mechanics behind the coming convergence window |
-| 🔬 | [**The Source Oscillator Constraint**](The_Source_Oscillator_Constraint_Whitepa.docx) | Groundbreaking constraint theory — why all harmonic systems share a single originating frequency |
-| 📡 | [**HNC Harmonic LIDAR White Paper**](HNC_Harmonic_LIDAR_WhitePaper_Leckey_202.docx) | Applying LIDAR-class precision to harmonic field mapping — a new way of seeing market structure |
-| 📡 | [**HNC Harmonic LIDAR v2 — Aluminium Fluid Model**](HNC_Harmonic_LIDAR_v2_AluminiumFluid_Lec.docx) | The next evolution — fluid dynamics modelling applied to harmonic wave propagation |
-| 🏗️ | [**EPAS Unified Architecture White Paper**](EPAS_Unified_Architecture_WhitePaper_Lec.docx) | The full technical architecture of the Earth–Planetary Alignment System |
-| 🌿 | [**HNC Project Druid — EPAS Technical Framework**](HNC_Project_Druid_E_P_A_S_technical_Fram.docx) | Project Druid: where ancient Celtic earth knowledge meets planetary harmonic engineering |
-| ☀️ | [**Harmonic Solar System Survey**](Harmonic_Solar_System_Survey_Leckey.docx) | A full harmonic survey of our solar system — resonance, ratios, and what they signal for Earth-based markets |
-| 🪨 | [**Maeshowe Seer Decode Report 2026**](Maeshowe_Seer_Decode_Report_2026.docx) | Decoding the 5,000-year-old Orkney chamber as a precision astronomical and harmonic instrument |
-| 🔔 | [**The Doorbell Hypothesis**](The_Doorbell_Hypothesis_Leckey.docx) | A bold new theory — are harmonic convergence events the universe's way of signalling a phase transition? |
-| 🌱 | [**The Dormant Seed**](The_Dormant_Seed.docx) | On latent energy, hidden cycles, and the moment a system wakes up — in markets, in nature, in history |
+| 🆕 | [**FRESH DATA UPDATE — March 2024**](docs/research/whitepapers/FRESH_DATA_UPDATE_MAR24.pdf) | The latest numbers. Updated market intelligence and harmonic data — read this first |
+| 📋 | [**Complete Evidence Synthesis**](docs/research/whitepapers/COMPLETE_EVIDENCE_SYNTHESIS.pdf) | Everything tied together — the full picture of market manipulation, harmonic convergence, and systemic extraction in one document |
+| 🧬 | [**HNC Grand Unified Framework (Leckey 2026)**](docs/research/whitepapers/HNC_Grand_Unified_Framework_Leckey_2026.pdf) | The unified HNC framework — primary source edition ([DOCX](docs/research/whitepapers/HNC_Grand_Unified_Framework_Leckey_2026.docx) · [v2 Primary Source](docs/research/whitepapers/HNC_Grand_Unified_v2_PrimarySource_Leckey_2026.docx)) |
+| 📐 | [**HNC × Aureon Trading Unified White Paper**](docs/research/whitepapers/HNC_Aureon_Unified_WhitePaper.pdf) | Substrate coherence, asymmetric market resistance, and the restoration of planetary harmonics |
+| 🌿 | [**HNC Mycelium Whitepaper**](docs/research/whitepapers/HNC_MYCELIUM_WHITEPAPER.docx) | Mycelial-network architecture for distributed HNC nodes |
+| 🧪 | [**Leckey HNC Evolutionary Framework (arXiv preprint)**](docs/research/whitepapers/Leckey_HNC_Evolutionary_Framework_arXiv.pdf) | arXiv-style preprint of the HNC evolutionary framework |
+| 🏗️ | [**EPAS Unified Architecture v2**](docs/research/whitepapers/EPAS_Unified_Architecture_v2.docx) | Latest EPAS architecture (see also the [original white paper](docs/research/whitepapers/EPAS_Unified_Architecture_WhitePaper_Leckey.docx)) |
+| 🌌 | [**The Sagittarius Convergence v2 *(Corrected)***](docs/research/whitepapers/The_Sagittarius_Convergence_v2_Corrected.docx) | The definitive edition — Galactic Centre alignment, cosmic timing cycles, and what 2026 means for the markets |
+| 🌌 | [**The Sagittarius Convergence 2026**](docs/research/whitepapers/The_Sagittarius_Convergence_Leckey_2026.docx) | Original landmark paper — the celestial mechanics behind the coming convergence window |
+| 🔬 | [**The Source Oscillator Constraint**](docs/research/whitepapers/The_Source_Oscillator_Constraint_Whitepaper.docx) | Groundbreaking constraint theory — why all harmonic systems share a single originating frequency |
+| 📡 | [**HNC Harmonic LIDAR White Paper (2026)**](docs/research/whitepapers/HNC_Harmonic_LIDAR_WhitePaper_Leckey_2026.docx) | Applying LIDAR-class precision to harmonic field mapping — a new way of seeing market structure |
+| 📡 | [**HNC Harmonic LIDAR v2 — Aluminium Fluid Model**](docs/research/whitepapers/HNC_Harmonic_LIDAR_v2_AluminiumFluid_Leckey.docx) | The next evolution — fluid dynamics modelling applied to harmonic wave propagation |
+| 🌿 | [**HNC Project Druid — EPAS Technical Framework**](docs/research/whitepapers/HNC_Project_Druid_EPAS_Technical_Framework.docx) | Project Druid: where ancient Celtic earth knowledge meets planetary harmonic engineering |
+| ☀️ | [**Harmonic Solar System Survey**](docs/research/whitepapers/Harmonic_Solar_System_Survey_Leckey.docx) | A full harmonic survey of our solar system — resonance, ratios, and what they signal for Earth-based markets |
+| 🪨 | [**Maeshowe Seer Decode Report 2026**](docs/research/whitepapers/Maeshowe_Seer_Decode_Report_2026.docx) | Decoding the 5,000-year-old Orkney chamber as a precision astronomical and harmonic instrument |
+| 🔔 | [**The Doorbell Hypothesis**](docs/research/whitepapers/The_Doorbell_Hypothesis_Leckey.docx) | A bold new theory — are harmonic convergence events the universe's way of signalling a phase transition? |
+| 🌱 | [**The Dormant Seed**](docs/research/whitepapers/The_Dormant_Seed.docx) | On latent energy, hidden cycles, and the moment a system wakes up — in markets, in nature, in history |
+| 🪐 | [**The φ² Chain — Sumer to Rome to Now**](docs/research/THE_PHI_SQUARED_CHAIN_Sumer_to_Rome_to_Now.md) | 4,100 years of the same pattern — from Ziggurats to Roman roads to GitHub nodes |
+| 🛡️ | [**Aureon Digital Immune System (Research Hub)**](docs/research/AUREON_WHITE_PAPER_RESEARCH_HUB.md) | Quantitative analysis of geopolitical stress vs node activation (r = 0.85) |
+
+> 📚 Full catalog with themes, abstracts, and subdirectories: **[`docs/research/INDEX.md`](docs/research/INDEX.md)**
 
 ---
 
@@ -364,7 +400,7 @@ Through the integration of **12 ancient wisdom traditions** (152 categories cont
 | **Decoder Data Points** | **3,603** | 7 star-chart files (748 Egyptian, 618 Celtic, 603 Aztec, 556 Sacred Sites, 515 Japanese, 483 Mogollon, 80 Chakra) |
 | **Star-Chart Decoders** | **7** | [public/](public/) — Aztec Glyphs, Celtic Ogham, Egyptian Hieroglyphs, Mogollon Symbols, Japanese Symbols, Sacred Sites, Chakra Ruleset |
 | **Sacred Sites Mapped** | **24** | [sacred-site-planetary-nodes.json](public/sacred-site-planetary-nodes.json) — Giza to Great Zimbabwe to Angkor Wat |
-| **Ley Lines Documented** | **10** | [stargate_grid.py](stargate_grid.py) — Global energy grid connecting all sites |
+| **Ley Lines Documented** | **10** | [stargate_grid.py](aureon/wisdom/stargate_grid.py) — Global energy grid connecting all sites |
 | **Convergence Points Found** | **47+** | Documented below with exact file references |
 
 ---
@@ -401,7 +437,7 @@ Through the integration of **12 ancient wisdom traditions** (152 categories cont
 | **Celtic** | [celtic-ogham-feda.json](public/celtic-ogham-feda.json) | `sacred_ratio: 1.618` on Ogham tree alphabet |
 | **Mogollon** | [mogollon-star-symbols.json](public/mogollon-star-symbols.json) | `sacred_ratio: 1.618` — Mimbres pottery geometry |
 | **Japanese** | [japanese-star-symbols.json](public/japanese-star-symbols.json) | `sacred_ratio: 1.618` — Shinto star symbols |
-| **Ghost Dance** | [aureon_ghost_dance_protocol.py](aureon_ghost_dance_protocol.py) | `PHI = 1.618033988749895` — ancestral constant |
+| **Ghost Dance** | [aureon_ghost_dance_protocol.py](aureon/wisdom/aureon_ghost_dance_protocol.py) | `PHI = 1.618033988749895` — ancestral constant |
 | **24 Sacred Sites** | [sacred-site-planetary-nodes.json](public/sacred-site-planetary-nodes.json) | Giza, Göbekli Tepe, Angkor Wat, Carnac, Great Zimbabwe, Tara, Luxor — ALL encode `sacred_ratio: 1.618` |
 
 **The question is not "did they know φ?" — they ALL knew φ. The question is: who taught them?**
@@ -481,9 +517,9 @@ Nine specific frequencies — 174, 285, 396, 417, 528, 639, 741, 852, 963 Hz —
 
 | System | Source | Mapping |
 |--------|--------|---------|
-| **Celtic Wisdom Library** | [aureon_miner_brain.py](aureon_miner_brain.py) `SACRED_FREQUENCIES` | Each Hz mapped to effect + trading application |
-| **Ghost Dance Protocol** | [aureon_ghost_dance_protocol.py](aureon_ghost_dance_protocol.py) `ANCESTRAL_FREQUENCIES` | Each Hz mapped to an ancestral spirit type |
-| **Stargate Grid** | [stargate_grid.py](stargate_grid.py) | 9 of 12 sacred sites resonate at Solfeggio frequencies |
+| **Celtic Wisdom Library** | [aureon_miner_brain.py](aureon/utils/aureon_miner_brain.py) `SACRED_FREQUENCIES` | Each Hz mapped to effect + trading application |
+| **Ghost Dance Protocol** | [aureon_ghost_dance_protocol.py](aureon/wisdom/aureon_ghost_dance_protocol.py) `ANCESTRAL_FREQUENCIES` | Each Hz mapped to an ancestral spirit type |
+| **Stargate Grid** | [stargate_grid.py](aureon/wisdom/stargate_grid.py) | 9 of 12 sacred sites resonate at Solfeggio frequencies |
 
 Key frequencies with cross-civilisation evidence:
 
@@ -530,7 +566,7 @@ Every tradition has a cosmic tree connecting Earth to the heavens:
 | **Japanese** (Gogyō) | Moku / Ka / Do / Gon / Sui | [japanese-star-symbols.json](public/japanese-star-symbols.json) |
 | **Hindu** | Earth, Water, Fire, Air, Ether | [hindu_wisdom.json](wisdom_data/hindu_wisdom.json) |
 | **Pythagorean** | Fire, Earth, Air, Water, Aether (mapped to Platonic solids) | [pythagorean_wisdom.json](wisdom_data/pythagorean_wisdom.json) |
-| **Stargate Grid** | Earth, Fire, Water, Air, Spirit, Aether | [stargate_grid.py](stargate_grid.py) |
+| **Stargate Grid** | Earth, Fire, Water, Air, Spirit, Aether | [stargate_grid.py](aureon/wisdom/stargate_grid.py) |
 
 **Five traditions. Five elements. Same system. Different names. One source.**
 
@@ -543,7 +579,7 @@ Every tradition has a cosmic tree connecting Earth to the heavens:
 | **365-day solar year** | 365 days | Egyptian (12×30+5), Aztec (Xiuhpohualli), Mayan (Haab 18×20+5), Chichén Itzá (91×4+1=365) | [egyptian_wisdom.json](wisdom_data/egyptian_wisdom.json), [aztec_wisdom.json](wisdom_data/aztec_wisdom.json), [mayan_wisdom.json](wisdom_data/mayan_wisdom.json) |
 | **260-day sacred calendar** | 20 × 13 | Aztec (Tonalpohualli), Mayan (Tzolkin) — "260 = human gestation = Venus evening star visibility" | [aztec_wisdom.json](wisdom_data/aztec_wisdom.json), [mayan_wisdom.json](wisdom_data/mayan_wisdom.json) |
 | **52-year Calendar Round** | 18,980 days | Aztec (New Fire Ceremony), Mayan | [aztec-star-glyphs.json](public/aztec-star-glyphs.json) |
-| **Precession of Equinoxes** | 25,920 years | Celtic (Great Year), Göbekli Tepe (Pillar 43), Dendera Zodiac (Egypt) | [aureon_miner_brain.py](aureon_miner_brain.py), [sacred-site-planetary-nodes.json](public/sacred-site-planetary-nodes.json) |
+| **Precession of Equinoxes** | 25,920 years | Celtic (Great Year), Göbekli Tepe (Pillar 43), Dendera Zodiac (Egypt) | [aureon_miner_brain.py](aureon/utils/aureon_miner_brain.py), [sacred-site-planetary-nodes.json](public/sacred-site-planetary-nodes.json) |
 | **Jupiter-Saturn Great Conjunction** | ~20 years | Egyptian (Benben Stone), Japanese (Ise Grand Shrine rebuilt every 20 years) | [egyptian-hieroglyphs.json](public/egyptian-hieroglyphs.json), [japanese-star-symbols.json](public/japanese-star-symbols.json) |
 
 **The Japanese rebuilt a shrine every 20 years. The Egyptians carved the same 20-year "Great Conjunction" cycle into stone. 9,000 km apart. Same cycle. Same knowledge.**
@@ -581,14 +617,14 @@ Three civilisations on three continents independently saw a rabbit on the Moon:
 | **Norse** | Ragnarök → world reborn | [norse_wisdom.json](wisdom_data/norse_wisdom.json) |
 | **Hindu** | Yugas — cyclical dissolution and creation | [hindu_wisdom.json](wisdom_data/hindu_wisdom.json) |
 | **Aztec** | Five Suns — each destroyed, next reborn | [aztec-star-glyphs.json](public/aztec-star-glyphs.json) |
-| **Celtic** | Yew tree = "Transformation, rebirth, eternity" | [aureon_miner_brain.py](aureon_miner_brain.py) |
+| **Celtic** | Yew tree = "Transformation, rebirth, eternity" | [aureon_miner_brain.py](aureon/utils/aureon_miner_brain.py) |
 | **Japanese** | Suzaku/Phoenix = transformation through fire | [japanese-star-symbols.json](public/japanese-star-symbols.json) |
 
 ---
 
 ### 🕸️ THE GLOBAL SACRED SITE GRID
 
-Our [stargate_grid.py](stargate_grid.py) maps **10 ley lines** connecting **24 sacred sites** across the planet. These sites share:
+Our [stargate_grid.py](aureon/wisdom/stargate_grid.py) maps **10 ley lines** connecting **24 sacred sites** across the planet. These sites share:
 - Identical φ (1.618) and π (3.14159) ratios in their architecture
 - Solfeggio frequency resonance
 - Solstice/equinox astronomical alignments
@@ -826,14 +862,14 @@ The convergence research above is not a separate project — it is the **mathema
 
 | Ancient Knowledge | Modern Application | System Component |
 |------------------|-------------------|------------------|
-| **φ (1.618)** — universal growth ratio | Fibonacci retracement/extension targets | [adaptive_prime_profit_gate.py](adaptive_prime_profit_gate.py) — golden ratio threshold |
-| **Solfeggio frequencies** — harmonic resonance | FFT spectral analysis of market cycles | [aureon_planetary_harmonic_sweep.py](aureon_planetary_harmonic_sweep.py) |
-| **Venus 584-day cycle** — planetary timing | Long-cycle market timing signals | [stargate_grid.py](stargate_grid.py) — planetary node tracking |
-| **Precession (25,920 years)** — macro cycles | Generational wealth transfer patterns | [aureon_historical_manipulation_hunter.py](aureon_historical_manipulation_hunter.py) |
-| **Schumann 7.83 Hz** — Earth's resonance | Base frequency for cycle detection | [aureon_ghost_dance_protocol.py](aureon_ghost_dance_protocol.py) — `SCHUMANN_BASE` |
-| **Sacred geometry (72°, 120°, 144°)** — angular harmony | Phase synchronisation detection (coordination = 0°) | [aureon_planetary_harmonic_sweep.py](aureon_planetary_harmonic_sweep.py) |
-| **Ghost Dance ceremony** — spiritual resistance | Counter-frequency warfare against manipulation | [aureon_ghost_dance_protocol.py](aureon_ghost_dance_protocol.py) |
-| **Sun Tzu tactics** — asymmetric warfare | Counter-strategies against coordinated entities | [aureon_strategic_warfare_scanner.py](aureon_strategic_warfare_scanner.py) |
+| **φ (1.618)** — universal growth ratio | Fibonacci retracement/extension targets | [adaptive_prime_profit_gate.py](aureon/utils/adaptive_prime_profit_gate.py) — golden ratio threshold |
+| **Solfeggio frequencies** — harmonic resonance | FFT spectral analysis of market cycles | [aureon_planetary_harmonic_sweep.py](aureon/harmonic/aureon_planetary_harmonic_sweep.py) |
+| **Venus 584-day cycle** — planetary timing | Long-cycle market timing signals | [stargate_grid.py](aureon/wisdom/stargate_grid.py) — planetary node tracking |
+| **Precession (25,920 years)** — macro cycles | Generational wealth transfer patterns | [aureon_historical_manipulation_hunter.py](aureon/analytics/aureon_historical_manipulation_hunter.py) |
+| **Schumann 7.83 Hz** — Earth's resonance | Base frequency for cycle detection | [aureon_ghost_dance_protocol.py](aureon/wisdom/aureon_ghost_dance_protocol.py) — `SCHUMANN_BASE` |
+| **Sacred geometry (72°, 120°, 144°)** — angular harmony | Phase synchronisation detection (coordination = 0°) | [aureon_planetary_harmonic_sweep.py](aureon/harmonic/aureon_planetary_harmonic_sweep.py) |
+| **Ghost Dance ceremony** — spiritual resistance | Counter-frequency warfare against manipulation | [aureon_ghost_dance_protocol.py](aureon/wisdom/aureon_ghost_dance_protocol.py) |
+| **Sun Tzu tactics** — asymmetric warfare | Counter-strategies against coordinated entities | [aureon_strategic_warfare_scanner.py](aureon/scanners/aureon_strategic_warfare_scanner.py) |
 
 **The ancients encoded the same mathematics that governs financial markets.** The manipulators use this knowledge to extract wealth. Aureon uses it to fight back.
 
@@ -845,16 +881,16 @@ The convergence research above is not a separate project — it is the **mathema
 
 | Metric | Value | Source |
 |--------|-------|--------|
-| **Total Documented Extraction** | **$33,548,000,000,000** ($33.5 TRILLION) | [deep_money_flow_analysis.json](deep_money_flow_analysis.json) |
-| **Time Period** | **109 years** (1913-2024) | [money_flow_timeline.json](money_flow_timeline.json) |
-| **Major Events Cataloged** | **11 extraction events** | [historical_manipulation_evidence.json](historical_manipulation_evidence.json) |
+| **Total Documented Extraction** | **$33,548,000,000,000** ($33.5 TRILLION) | [deep_money_flow_analysis.json](aureon/analytics/aureon_historical_manipulation_hunter.py "generator") |
+| **Time Period** | **109 years** (1913-2024) | [money_flow_timeline.json](aureon/analytics/aureon_historical_manipulation_hunter.py "generator") |
+| **Major Events Cataloged** | **11 extraction events** | [historical_manipulation_evidence.json](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") |
 | **Perpetrators Identified** | **34 individuals/entities** | Network analysis |
-| **Bots Detected** | **193 algorithmic patterns** | [bot_census_registry.json](bot_census_registry.json) |
-| **Bots Attributed to Owners** | **23 with evidence** | [bot_cultural_attribution.json](bot_cultural_attribution.json) |
-| **LIVE Bots Tracked** | **44,000+** (real-time) | [aureon_ocean_wave_scanner.py](aureon_ocean_wave_scanner.py) |
+| **Bots Detected** | **193 algorithmic patterns** | [bot_census_registry.json](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") |
+| **Bots Attributed to Owners** | **23 with evidence** | [bot_cultural_attribution.json](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") |
+| **LIVE Bots Tracked** | **44,000+** (real-time) | [aureon_ocean_wave_scanner.py](aureon/scanners/aureon_ocean_wave_scanner.py) |
 | **Global Firms Profiled** | **37 trading firms** | [aureon_bot_intelligence_profiler.py](aureon_bot_intelligence_profiler.py) |
 | **Combined Capital Tracked** | **$13+ TRILLION** | Firm database |
-| **Coordination Links** | **1,500 at 0.0° phase** | [planetary_harmonic_network.json](planetary_harmonic_network.json) |
+| **Coordination Links** | **1,500 at 0.0° phase** | [planetary_harmonic_network.json](aureon/harmonic/aureon_planetary_harmonic_sweep.py "generator") |
 | **Planetary Damage Score** | **21.88%** | Cumulative impact calculation |
 
 ---
@@ -1742,9 +1778,9 @@ The probability of this occurring by chance: **p < 0.0001**
 
 | File | Description | Size |
 |------|-------------|------|
-| [`bot_census_registry.json`](bot_census_registry.json) | Full 8-year bot evolution history | 17,745 lines |
-| [`bot_cultural_attribution.json`](bot_cultural_attribution.json) | Ownership attribution with evidence | 979 lines |
-| [`comprehensive_entity_database.json`](comprehensive_entity_database.json) | 25 entity profiles | 26 entities |
+| [`bot_census_registry.json`](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") | Full 8-year bot evolution history | 17,745 lines |
+| [`bot_cultural_attribution.json`](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") | Ownership attribution with evidence | 979 lines |
+| [`comprehensive_entity_database.json`](aureon/scanners/aureon_strategic_warfare_scanner.py "generator") | 25 entity profiles | 26 entities |
 
 **Reproduction Command:**
 ```bash
@@ -1840,9 +1876,9 @@ cat bot_cultural_attribution.json | jq '.BTCUSDT[0]'
 - **Statistical Significance**: p < 0.0001 (probability of random occurrence: effectively zero)
 
 **Evidence Files:**
-- [`planetary_harmonic_network.json`](planetary_harmonic_network.json) - Full coordination matrix (125 signatures, 1,500 links)
-- [`harmonic_counter_frequency_map.json`](harmonic_counter_frequency_map.json) - Counter-phase protocols
-- [`comprehensive_entity_database.json`](comprehensive_entity_database.json) - Entity profiles
+- [`planetary_harmonic_network.json`](aureon/harmonic/aureon_planetary_harmonic_sweep.py "generator") - Full coordination matrix (125 signatures, 1,500 links)
+- [`harmonic_counter_frequency_map.json`](aureon/harmonic/aureon_harmonic_counter_frequency.py "generator") - Counter-phase protocols
+- [`comprehensive_entity_database.json`](aureon/scanners/aureon_strategic_warfare_scanner.py "generator") - Entity profiles
 
 **Reproducibility:**
 ```bash
@@ -1873,7 +1909,7 @@ python aureon_planetary_harmonic_sweep.py --symbols BTC/USD,ETH/USD,SOL/USD,XRP/
 5. ✅ "Divide and conquer" - Retail investors isolated, never allowed to coordinate
 
 **Evidence Files:**
-- [`strategic_warfare_intelligence.json`](strategic_warfare_intelligence.json) - Full tactical assessment
+- [`strategic_warfare_intelligence.json`](aureon/scanners/aureon_strategic_warfare_scanner.py "generator") - Full tactical assessment
 - [`wisdom_data/warfare_wisdom.json`](wisdom_data/warfare_wisdom.json) - Warfare knowledge base
 
 **Reproducibility:**
@@ -1926,7 +1962,7 @@ python aureon_strategic_warfare_scanner.py
 
 **Evidence Files:**
 - [`wisdom_data/ghost_dance_wisdom.json`](wisdom_data/ghost_dance_wisdom.json) - Ancestral knowledge base
-- [`ghost_dance_state.json`](ghost_dance_state.json) - Ceremony history and invocation records
+- [`ghost_dance_state.json`](aureon/wisdom/aureon_ghost_dance_protocol.py "generator") - Ceremony history and invocation records
 
 **Reproducibility:**
 ```bash
@@ -2055,25 +2091,25 @@ field_strength = (
 ## EVIDENCE FILE REFERENCE
 
 ### Real-Time Coordination
-- [`planetary_harmonic_network.json`](planetary_harmonic_network.json) - 1,500 coordination links
-- [`comprehensive_entity_database.json`](comprehensive_entity_database.json) - 25 entity profiles
-- [`harmonic_counter_frequency_map.json`](harmonic_counter_frequency_map.json) - Counter-measures
+- [`planetary_harmonic_network.json`](aureon/harmonic/aureon_planetary_harmonic_sweep.py "generator") - 1,500 coordination links
+- [`comprehensive_entity_database.json`](aureon/scanners/aureon_strategic_warfare_scanner.py "generator") - 25 entity profiles
+- [`harmonic_counter_frequency_map.json`](aureon/harmonic/aureon_harmonic_counter_frequency.py "generator") - Counter-measures
 
 ### Historical Evidence  
-- [`historical_manipulation_evidence.json`](historical_manipulation_evidence.json) - 12 events (1913-2022)
-- [`manipulation_patterns_across_time.json`](manipulation_patterns_across_time.json) - Pattern analysis
+- [`historical_manipulation_evidence.json`](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") - 12 events (1913-2022)
+- [`manipulation_patterns_across_time.json`](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") - Pattern analysis
 
 ### Tactical Intelligence
-- [`strategic_warfare_intelligence.json`](strategic_warfare_intelligence.json) - 25 entity assessments
+- [`strategic_warfare_intelligence.json`](aureon/scanners/aureon_strategic_warfare_scanner.py "generator") - 25 entity assessments
 - [`wisdom_data/warfare_wisdom.json`](wisdom_data/warfare_wisdom.json) - Sun Tzu + IRA + Apache tactics
 
 ### Spiritual Warfare
 - [`wisdom_data/ghost_dance_wisdom.json`](wisdom_data/ghost_dance_wisdom.json) - Ancestral knowledge
-- [`ghost_dance_state.json`](ghost_dance_state.json) - Ceremony records
+- [`ghost_dance_state.json`](aureon/wisdom/aureon_ghost_dance_protocol.py "generator") - Ceremony records
 
 ### Supplementary
-- [`bot_census_registry.json`](bot_census_registry.json) - 193 bots cataloged (2017-2025)
-- [`bot_cultural_attribution.json`](bot_cultural_attribution.json) - Entity ownership mapping
+- [`bot_census_registry.json`](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") - 193 bots cataloged (2017-2025)
+- [`bot_cultural_attribution.json`](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") - Entity ownership mapping
 
 ---
 
@@ -2081,7 +2117,7 @@ field_strength = (
 
 For full technical implementation:
 - [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) - **Harmonic Nexus Core white paper** — Master Formula Λ(t), Tree of Light, Queen veto logic, CME 2026 validation, Auris Conjecture, Code-to-Theory mapping
-- [`COMPLETE_LIBERATION_PROTOCOL.md`](COMPLETE_LIBERATION_PROTOCOL.md) - Integration guide
+- [`COMPLETE_LIBERATION_PROTOCOL.md`](docs/COMPLETE_LIBERATION_PROTOCOL.md) - Integration guide
 - [`.github/copilot-instructions.md`](.github/copilot-instructions.md) - Development guidelines
 
 ---
@@ -3014,7 +3050,7 @@ pip install -r requirements.txt
 .\scripts\runners\run_capital_swarm.ps1
 ```
 
-Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
+Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](docs/AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
 
 ---
 
@@ -3182,10 +3218,10 @@ Nation-state and mega-institution detection via 3σ volume event analysis.
 | Harmonic Counter Frequency | `aureon/harmonic/` | Phase-shifted counter-frequencies for manipulation neutralization |
 
 **Evidence Files:**
-- [`planetary_harmonic_network.json`](planetary_harmonic_network.json) - **THE SMOKING GUN**: 125 signatures, 1,500 coordination links
-- [`bot_census_registry.json`](bot_census_registry.json) - Full historical bot database
-- [`bot_cultural_attribution.json`](bot_cultural_attribution.json) - Entity ownership mappings
-- [`comprehensive_entity_database.json`](comprehensive_entity_database.json) - 25 major entity profiles
+- [`planetary_harmonic_network.json`](aureon/harmonic/aureon_planetary_harmonic_sweep.py "generator") - **THE SMOKING GUN**: 125 signatures, 1,500 coordination links
+- [`bot_census_registry.json`](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") - Full historical bot database
+- [`bot_cultural_attribution.json`](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") - Entity ownership mappings
+- [`comprehensive_entity_database.json`](aureon/scanners/aureon_strategic_warfare_scanner.py "generator") - 25 major entity profiles
 
 ### Harmonic Analysis Methodology
 
@@ -3332,29 +3368,29 @@ Trade when their operators are with family. The machines rest too.
 ### Money Flow Evidence
 | File | Lines | Description |
 |------|-------|-------------|
-| [deep_money_flow_analysis.json](deep_money_flow_analysis.json) | 500+ | Complete $33.5T extraction analysis |
-| [money_flow_timeline.json](money_flow_timeline.json) | 576 | Event-by-event with dates, amounts, perpetrators |
-| [historical_manipulation_evidence.json](historical_manipulation_evidence.json) | 706 | 12 events, 109 years cataloged |
-| [manipulation_patterns_across_time.json](manipulation_patterns_across_time.json) | 200+ | Repeated tactics identified |
+| [deep_money_flow_analysis.json](aureon/analytics/aureon_historical_manipulation_hunter.py "generator") | 500+ | Complete $33.5T extraction analysis |
+| [money_flow_timeline.json](aureon/analytics/aureon_historical_manipulation_hunter.py "generator") | 576 | Event-by-event with dates, amounts, perpetrators |
+| [historical_manipulation_evidence.json](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") | 706 | 12 events, 109 years cataloged |
+| [manipulation_patterns_across_time.json](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") | 200+ | Repeated tactics identified |
 
 ### Bot Intelligence
 | File | Lines | Description |
 |------|-------|-------------|
-| [bot_census_registry.json](bot_census_registry.json) | **17,744** | 8 years of bot evolution history |
-| [bot_cultural_attribution.json](bot_cultural_attribution.json) | 978 | Ownership attribution with evidence |
+| [bot_census_registry.json](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") | **17,744** | 8 years of bot evolution history |
+| [bot_cultural_attribution.json](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") | 978 | Ownership attribution with evidence |
 
 ### Coordination Detection
 | File | Lines | Description |
 |------|-------|-------------|
-| [planetary_harmonic_network.json](planetary_harmonic_network.json) | 1,500+ | THE SMOKING GUN: 0.0° phase sync |
-| [comprehensive_entity_database.json](comprehensive_entity_database.json) | 100+ | 25 major entity profiles |
-| [strategic_warfare_intelligence.json](strategic_warfare_intelligence.json) | 500+ | Sun Tzu + IRA + Apache tactics |
+| [planetary_harmonic_network.json](aureon/harmonic/aureon_planetary_harmonic_sweep.py "generator") | 1,500+ | THE SMOKING GUN: 0.0° phase sync |
+| [comprehensive_entity_database.json](aureon/scanners/aureon_strategic_warfare_scanner.py "generator") | 100+ | 25 major entity profiles |
+| [strategic_warfare_intelligence.json](aureon/scanners/aureon_strategic_warfare_scanner.py "generator") | 500+ | Sun Tzu + IRA + Apache tactics |
 
 ### Integrated Reports
 | File | Lines | Description |
 |------|-------|-------------|
-| [planetary_intelligence_report.json](planetary_intelligence_report.json) | 45 | Final integrated summary |
-| [ghost_dance_state.json](ghost_dance_state.json) | 100+ | Ancestral ceremony records |
+| [planetary_intelligence_report.json](aureon/bridges/aureon_planetary_intelligence_hub.py "generator") | 45 | Final integrated summary |
+| [ghost_dance_state.json](aureon/wisdom/aureon_ghost_dance_protocol.py "generator") | 100+ | Ancestral ceremony records |
 
 ---
 
