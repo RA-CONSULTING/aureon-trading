@@ -775,6 +775,16 @@ class QueenSentientLoop:
                     pass
             log.info("Subscribed to trade outcomes for neural learning")
 
+        # Hive Command — the Queen's operational brain (SCAN → VALIDATE → ACT → MONITOR)
+        self._hive_command = None
+        try:
+            from aureon.queen.queen_hive_command import QueenHiveCommand
+            self._hive_command = QueenHiveCommand(thought_bus=self._thought_bus)
+            self._hive_command.start()
+            log.info("Hive Command operational — worker bees scanning")
+        except Exception as exc:
+            log.debug(f"Hive Command unavailable: {exc}")
+
     def _on_trade_outcome(self, thought) -> None:
         """Callback: append trade outcome to pending queue for LEARN phase."""
         try:

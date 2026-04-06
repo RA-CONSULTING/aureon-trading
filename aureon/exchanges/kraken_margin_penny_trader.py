@@ -3300,6 +3300,50 @@ class KrakenMarginArmyTrader:
         if os.getenv("AUREON_DISABLE_LOCAL_DASHBOARD", "0") != "1":
             self._start_local_dashboard_server()
 
+        # Subscribe to Queen Hive Command hunt signals
+        if self.thought_bus is not None:
+            try:
+                self.thought_bus.subscribe("queen.command.hunt", self._on_queen_hunt)
+                logger.info("[QUEEN HIVE] Subscribed to queen.command.hunt")
+            except Exception:
+                pass
+
+    # ----------------------------------------------------------
+    #  QUEEN HIVE COMMAND: Execute hunts issued by the Queen
+    # ----------------------------------------------------------
+
+    def _on_queen_hunt(self, thought) -> None:
+        """Queen issued a hunt command — gate through orchestrator and execute."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            if not isinstance(payload, dict):
+                return
+            pair = str(payload.get("symbol") or "")
+            if not pair:
+                return
+            # Normalize pair to Kraken format if needed
+            if not any(pair.endswith(q) for q in ("USD", "ZUSD", "EUR")):
+                pair = pair + "USD"
+            side = "buy"
+            composite = float(payload.get("composite_score", 0) or 0)
+            consensus = int(payload.get("consensus_count", 0) or 0)
+            logger.info(
+                f"[QUEEN HUNT] Received: {pair} composite={composite:.3f} consensus={consensus}"
+            )
+            # Gate through orchestrator
+            if self.orchestrator is not None:
+                approved, reason, sizing = self.orchestrator.gate_pre_trade(pair, side)
+                if not approved:
+                    logger.info(f"[QUEEN HUNT] Blocked by orchestrator: {reason}")
+                    return
+                logger.info(f"[QUEEN HUNT] Approved: {pair} sizing={sizing:.2f}x reason={reason}")
+                # TODO: Execute margin trade with the approved sizing
+                # self._open_margin_position(pair, side, sizing_modifier=sizing)
+            else:
+                logger.debug("[QUEEN HUNT] No orchestrator — skipping execution")
+        except Exception as e:
+            logger.debug(f"[QUEEN HUNT] Error: {e}")
+
     # ----------------------------------------------------------
     #  ETA PREDICTION: Estimate time to profitability
     # ----------------------------------------------------------
