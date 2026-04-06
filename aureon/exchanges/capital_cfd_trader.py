@@ -2856,6 +2856,23 @@ class CapitalCFDTrader:
             self._last_deadman_kick_at = now
             return []
         logger.warning("Capital deadman triggered: stale loop age=%.1fs", age)
+        # Broadcast to ThoughtBus so Hive Command and other systems know
+        try:
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
+            bus = get_thought_bus()
+            if bus is not None:
+                bus.publish(Thought(
+                    source="capital_cfd_trader",
+                    topic="system.deadman",
+                    payload={
+                        "exchange": "capital",
+                        "stale_age_secs": age,
+                        "positions_held": len(self.positions),
+                    },
+                    meta={"severity": "warning"},
+                ))
+        except Exception:
+            pass
         result = self._deadman_close_all(f"DEADMAN_STALE {age:.1f}s")
         # Reset timer so we don't keep firing every tick while holding losing positions
         self._last_deadman_kick_at = now

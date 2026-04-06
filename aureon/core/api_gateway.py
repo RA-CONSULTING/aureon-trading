@@ -91,6 +91,10 @@ def _get_client(exchange: str) -> Any:
             elif exchange == "capital":
                 from aureon.exchanges.capital_client import CapitalClient
                 client = CapitalClient()
+                # CapitalClient sets self.enabled=False when credentials missing
+                if not getattr(client, 'enabled', True):
+                    log.debug("[GW] CapitalClient disabled (missing credentials)")
+                    return None
             elif exchange == "alpaca":
                 from aureon.exchanges.alpaca_client import get_alpaca_client
                 client = get_alpaca_client()

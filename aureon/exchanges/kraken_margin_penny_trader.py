@@ -6674,7 +6674,13 @@ class KrakenMarginArmyTrader:
                     self._save_state()
 
                 if 0 < ml < LIQUIDATION_FORCE:
-                    return self.close_position(reason=f"LIQUIDATION_RISK (ml={ml:.0f}%)", trade=trade)
+                    if validated_net_pnl >= 0:
+                        return self.close_position(reason=f"LIQUIDATION_RISK (ml={ml:.0f}%)", trade=trade)
+                    else:
+                        logger.error(
+                            f"LIQUIDATION DANGER: ml={ml:.0f}% but position underwater "
+                            f"(validated_net=${validated_net_pnl:+.4f}) — HOLDING to avoid locking in loss"
+                        )
                 elif 0 < ml < LIQUIDATION_WARN:
                     logger.warning(f"WARNING: Margin level {ml:.1f}%")
             except Exception as e:
