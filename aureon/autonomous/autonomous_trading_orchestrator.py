@@ -42,6 +42,27 @@ from typing import Dict, List, Optional, Tuple, Any
 
 logger = logging.getLogger(__name__)
 
+# ── Thought Bus integration (fail-safe import) ───────────────────────────────
+try:
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
+    HAS_THOUGHT_BUS = True
+except Exception:
+    get_thought_bus = None   # type: ignore
+    Thought = None           # type: ignore
+    HAS_THOUGHT_BUS = False
+
+# ── Mycelium integration (fail-safe import) ──────────────────────────────────
+try:
+    from aureon.core.aureon_mycelium import get_mycelium
+    HAS_MYCELIUM = True
+except Exception:
+    try:
+        from aureon_mycelium import get_mycelium
+        HAS_MYCELIUM = True
+    except Exception:
+        get_mycelium = None  # type: ignore
+        HAS_MYCELIUM = False
+
 # ── Queen battle-readiness integration (fail-safe import) ─────────────────────
 try:
     from aureon.queen.queen_warrior_path import QueenWarriorPath
@@ -165,6 +186,18 @@ class AutonomousOrchestrator:
         self._gates_blocked:    int = 0
         self._last_block_reason: str = ''
 
+        # ── Network connections (Thought Bus + Mycelium) ────────────────────
+        self.thought_bus = (
+            get_thought_bus()
+            if HAS_THOUGHT_BUS and get_thought_bus is not None else None
+        )
+        self.mycelium = (
+            get_mycelium(initial_capital=100.0)
+            if HAS_MYCELIUM and get_mycelium is not None else None
+        )
+        self._last_thought_recall: float = 0.0
+        self._last_status_publish: float = 0.0
+
         # ── Unified Position Registry ────────────────────────────────────────
         # Tracks ALL active positions from both spot and margin systems.
         # Key = unique position id (e.g. "spot:BTCUSD" or "margin:XXBTZUSD:long")
@@ -269,6 +302,38 @@ class AutonomousOrchestrator:
         """Return a copy of the full position registry."""
         return dict(self._positions)
 
+    # ── Network helpers (Thought Bus + Mycelium) ────────────────────────────
+
+    def _publish_thought(self, topic: str, payload: Dict[str, Any]) -> None:
+        """Best-effort publish to Thought Bus. Never blocks or raises."""
+        if self.thought_bus is None or Thought is None:
+            return
+        try:
+            self.thought_bus.publish(Thought(
+                source="autonomous_orchestrator",
+                topic=topic,
+                payload=payload,
+                meta={"mode": "orchestrator"},
+            ))
+        except Exception:
+            pass
+
+    def _recall_market_intel(self) -> None:
+        """Recall recent market/queen/probability intel from the Thought Bus (rate-limited 10s)."""
+        if self.thought_bus is None:
+            return
+        now = time.time()
+        if now - self._last_thought_recall < 10.0:
+            return
+        self._last_thought_recall = now
+        try:
+            # These are available for gate_pre_trade and cycle_sync to inspect
+            self._thought_bus_market = self.thought_bus.recall("market.", limit=5)
+            self._thought_bus_probability = self.thought_bus.recall("probability.", limit=5)
+            self._thought_bus_queen = self.thought_bus.recall("queen.", limit=5)
+        except Exception:
+            pass
+
     # ── Per-cycle sync ────────────────────────────────────────────────────────
 
     def cycle_sync(self) -> None:
@@ -305,6 +370,23 @@ class AutonomousOrchestrator:
         if now - self._quick_gate_time >= QUICK_GATE_INTERVAL:
             self._refresh_quick_gates()
             self._quick_gate_time = now
+
+        # 6. Recall market intelligence from Thought Bus (every 10s)
+        self._recall_market_intel()
+
+        # 7. Publish orchestrator status (every 30s)
+        if now - self._last_status_publish >= 30.0:
+            self._last_status_publish = now
+            total = self._gates_passed + self._gates_blocked
+            self._publish_thought("orchestrator.status", {
+                "gates_passed": self._gates_passed,
+                "gates_blocked": self._gates_blocked,
+                "pass_rate": (self._gates_passed / total * 100) if total else 0,
+                "seer_grade": self._seer_grade,
+                "lyra_grade": self._lyra_grade,
+                "margin_level": self._margin_level,
+                "positions_registered": len(self._positions),
+            })
 
     # ── Pre-trade gate ────────────────────────────────────────────────────────
 
@@ -484,6 +566,17 @@ class AutonomousOrchestrator:
             except Exception as e:
                 logger.debug(f"[Orchestrator] Queen warrior check: {e}")
 
+        # ── 7. Mycelium hive consensus (dynamic weight) ─────────────────
+        if self.mycelium is not None:
+            try:
+                mc = self.mycelium.get_consensus(pair, side)
+                agreement = float((mc or {}).get('agreement', 0.5) or 0.5)
+                mycelium_factor = max(0.3, min(1.3, agreement * 1.5))
+                sizing_modifier *= mycelium_factor
+                reasons.append(f"mycelium={agreement:.2f}({mycelium_factor:.2f}x)")
+            except Exception:
+                pass
+
         # ── Clamp final sizing to safe range ─────────────────────────────
         sizing_modifier = max(0.10, min(2.0, sizing_modifier))
 
@@ -494,6 +587,13 @@ class AutonomousOrchestrator:
         logger.info(
             f"[Orchestrator] Gate APPROVED: {pair} {side.upper()} — {final_reason}"
         )
+
+        # Publish gate decision to Thought Bus
+        self._publish_thought("orchestrator.gate.decision", {
+            "pair": pair, "side": side,
+            "sizing_modifier": sizing_modifier,
+        })
+
         return True, final_reason, sizing_modifier
 
     # ── Status display ────────────────────────────────────────────────────────

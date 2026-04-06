@@ -6353,6 +6353,7 @@ class KrakenMarginArmyTrader:
                     activation_threshold_gbp=DTP_CONFIG['activation_threshold'],
                     gbp_usd_rate=DTP_CONFIG['gbp_usd_rate'],
                     trailing_distance_pct=DTP_CONFIG['trailing_distance_pct'],
+                    thought_bus=getattr(self, 'thought_bus', None),
                 )
                 logger.info(
                     f"[DTP] Armed Dead Man's Switch for {trade.pair} "

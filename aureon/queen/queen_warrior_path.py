@@ -80,6 +80,15 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+# ── Thought Bus integration (fail-safe) ──────────────────────────────────────
+try:
+    from aureon.core.aureon_thought_bus import get_thought_bus as _get_thought_bus, Thought as _Thought
+    _HAS_THOUGHT_BUS = True
+except Exception:
+    _get_thought_bus = None  # type: ignore
+    _Thought = None          # type: ignore
+    _HAS_THOUGHT_BUS = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🎵 SACRED CONSTANTS - The frequencies of war and healing
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -337,6 +346,11 @@ class QueenWarriorPath:
         self.ancestors_invoked: List[str] = []
         self.ceremony_count = 0
         
+        # Thought Bus connection
+        self._thought_bus = (
+            _get_thought_bus() if _HAS_THOUGHT_BUS and _get_thought_bus is not None else None
+        )
+
         # Assessment history
         self.assessment_history: List[TacticalAssessment] = []
         
@@ -568,7 +582,25 @@ class QueenWarriorPath:
         
         # Save state
         self._save_state()
-        
+
+        # Publish battle readiness to Thought Bus
+        if self._thought_bus is not None and _HAS_THOUGHT_BUS and _Thought is not None:
+            try:
+                self._thought_bus.publish(_Thought(
+                    source="queen_warrior_path",
+                    topic="queen.battle_readiness",
+                    payload={
+                        "symbol": symbol,
+                        "battle_readiness": battle_readiness,
+                        "combat_mode": str(recommended_mode.value if hasattr(recommended_mode, 'value') else recommended_mode),
+                        "philosophy": str(recommended_philosophy.value if hasattr(recommended_philosophy, 'value') else recommended_philosophy),
+                        "action": str(recommended_action),
+                    },
+                    meta={"mode": "queen_tactical"},
+                ))
+            except Exception:
+                pass
+
         return assessment
     
     # ═══════════════════════════════════════════════════════════════════════

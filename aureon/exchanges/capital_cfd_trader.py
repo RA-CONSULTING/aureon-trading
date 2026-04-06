@@ -3329,6 +3329,7 @@ class CapitalCFDTrader:
                 gbp_usd_rate=1.0,
                 activation_threshold_gbp=CAPITAL_DTP_TRIGGER_GBP,
                 trailing_distance_pct=0.02,
+                thought_bus=getattr(self, 'thought_bus', None),
             )
             self._dtp_trackers[pos.deal_id] = tracker
         return tracker

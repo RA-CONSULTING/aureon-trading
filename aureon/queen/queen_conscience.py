@@ -57,6 +57,15 @@ if sys.platform == 'win32':
 
 logger = logging.getLogger(__name__)
 
+# ── Thought Bus integration (fail-safe) ──────────────────────────────────────
+try:
+    from aureon.core.aureon_thought_bus import get_thought_bus as _get_thought_bus, Thought as _Thought
+    _HAS_THOUGHT_BUS = True
+except Exception:
+    _get_thought_bus = None  # type: ignore
+    _Thought = None          # type: ignore
+    _HAS_THOUGHT_BUS = False
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # WORLD UNDERSTANDING INTEGRATION
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -148,10 +157,15 @@ class QueenConscience:
         # Load any persisted conscience state
         self._load_state()
         
+        # Thought Bus connection
+        self._thought_bus = (
+            _get_thought_bus() if _HAS_THOUGHT_BUS and _get_thought_bus is not None else None
+        )
+
         # Integrate world understanding
         if WORLD_UNDERSTANDING_AVAILABLE:
             self.world_understanding = get_world_understanding()
-            logger.info("🌍 World Understanding integrated with Conscience")
+            logger.info("World Understanding integrated with Conscience")
         else:
             self.world_understanding = None
         
@@ -207,25 +221,43 @@ class QueenConscience:
         # TRADING DECISIONS
         # ═══════════════════════════════════════════════════════════════════════
         if any(word in action_lower for word in ['trade', 'buy', 'sell', 'execute', 'order']):
-            return self._evaluate_trade(action, context)
-        
+            whisper = self._evaluate_trade(action, context)
+
         # ═══════════════════════════════════════════════════════════════════════
         # RISK DECISIONS
         # ═══════════════════════════════════════════════════════════════════════
         elif any(word in action_lower for word in ['risk', 'leverage', 'margin', 'all-in']):
-            return self._evaluate_risk(action, context)
-        
+            whisper = self._evaluate_risk(action, context)
+
         # ═══════════════════════════════════════════════════════════════════════
         # SYSTEM CHANGES
         # ═══════════════════════════════════════════════════════════════════════
         elif any(word in action_lower for word in ['disable', 'override', 'bypass', 'ignore']):
-            return self._evaluate_override(action, context)
-        
+            whisper = self._evaluate_override(action, context)
+
         # ═══════════════════════════════════════════════════════════════════════
         # DEFAULT: Always connect to purpose
         # ═══════════════════════════════════════════════════════════════════════
         else:
-            return self._evaluate_general(action, context)
+            whisper = self._evaluate_general(action, context)
+
+        # Publish verdict to Thought Bus
+        if self._thought_bus is not None and _HAS_THOUGHT_BUS and _Thought is not None:
+            try:
+                self._thought_bus.publish(_Thought(
+                    source="queen_conscience",
+                    topic="queen.conscience.verdict",
+                    payload={
+                        "action": action,
+                        "verdict": str(whisper.verdict.value if hasattr(whisper.verdict, 'value') else whisper.verdict),
+                        "reasoning": str(getattr(whisper, 'reasoning', '') or getattr(whisper, 'message', '')),
+                    },
+                    meta={"mode": "queen_conscience"},
+                ))
+            except Exception:
+                pass
+
+        return whisper
     
     def _evaluate_trade(self, action: str, context: Dict) -> ConscienceWhisper:
         """Evaluate a trading decision"""
