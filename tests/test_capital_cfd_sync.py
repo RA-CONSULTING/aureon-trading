@@ -435,7 +435,8 @@ class TestCapitalCFDSync(unittest.TestCase):
         finally:
             original.CAPITAL_FOCUS_SYMBOLS = old_focus
 
-    def test_deadman_guard_flattens_positions_when_stale(self):
+    def test_deadman_guard_holds_losing_positions_when_stale(self):
+        """Deadman respects profit_only_closes: losing positions are held."""
         trader = self._build_trader(ClientStub())
         trader.positions = [
             CFDPosition("GOLD", "D1", "E1", "BUY", 0.1, 3000.0, 3020.0, 2980.0, "commodity"),
@@ -444,12 +445,43 @@ class TestCapitalCFDSync(unittest.TestCase):
         closed = []
         trader._close_position = lambda pos, reason: closed.append((pos.deal_id, reason)) or {"deal_id": pos.deal_id}
 
-        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_DEADMAN_ENABLED", "CAPITAL_DEADMAN_STALE_SECS"])
+        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_DEADMAN_ENABLED", "CAPITAL_DEADMAN_STALE_SECS", "CFD_FLAGS"])
         old_enabled = original.CAPITAL_DEADMAN_ENABLED
         old_stale = original.CAPITAL_DEADMAN_STALE_SECS
         try:
             original.CAPITAL_DEADMAN_ENABLED = True
             original.CAPITAL_DEADMAN_STALE_SECS = 5.0
+            # With profit_only_closes=True (default), losing positions should be HELD
+            original.CFD_FLAGS["profit_only_closes"] = True
+            trader._last_deadman_kick_at = time.time() - 10.0
+            trader._deadman_guard(time.time())
+        finally:
+            original.CAPITAL_DEADMAN_ENABLED = old_enabled
+            original.CAPITAL_DEADMAN_STALE_SECS = old_stale
+
+        # Positions at zero/negative PnL are held, not closed
+        self.assertEqual(len(closed), 0)
+
+    def test_deadman_guard_closes_profitable_positions_when_stale(self):
+        """Deadman closes positions that are in profit."""
+        trader = self._build_trader(ClientStub())
+        # BUY at 3000, current_price=3010 → profitable
+        pos_buy = CFDPosition("GOLD", "D1", "E1", "BUY", 0.1, 3000.0, 3020.0, 2980.0, "commodity")
+        pos_buy.current_price = 3010.0
+        # SELL at 3000, current_price=2990 → profitable
+        pos_sell = CFDPosition("GOLD", "D2", "E2", "SELL", 0.1, 3000.0, 2980.0, 3020.0, "commodity")
+        pos_sell.current_price = 2990.0
+        trader.positions = [pos_buy, pos_sell]
+        closed = []
+        trader._close_position = lambda pos, reason: closed.append((pos.deal_id, reason)) or {"deal_id": pos.deal_id}
+
+        original = __import__("aureon.exchanges.capital_cfd_trader", fromlist=["CAPITAL_DEADMAN_ENABLED", "CAPITAL_DEADMAN_STALE_SECS", "CFD_FLAGS"])
+        old_enabled = original.CAPITAL_DEADMAN_ENABLED
+        old_stale = original.CAPITAL_DEADMAN_STALE_SECS
+        try:
+            original.CAPITAL_DEADMAN_ENABLED = True
+            original.CAPITAL_DEADMAN_STALE_SECS = 5.0
+            original.CFD_FLAGS["profit_only_closes"] = True
             trader._last_deadman_kick_at = time.time() - 10.0
             trader._deadman_guard(time.time())
         finally:
@@ -480,7 +512,7 @@ class TestCapitalCFDSync(unittest.TestCase):
     def test_handle_live_price_events_triggers_actuation_on_meaningful_move(self):
         trader = self._build_trader(ClientStub())
         calls = []
-        trader._quad_gate = lambda: True
+        trader._quad_gate = lambda: 1.0
         trader._refresh_unified_intel_snapshot = lambda: calls.append("intel")
         trader._refresh_thought_bus_snapshot = lambda: calls.append("thought")
         trader._find_best_opportunity = lambda: calls.append("find")
@@ -504,7 +536,7 @@ class TestCapitalCFDSync(unittest.TestCase):
     def test_handle_live_price_events_force_triggers_without_price_move(self):
         trader = self._build_trader(ClientStub())
         calls = []
-        trader._quad_gate = lambda: True
+        trader._quad_gate = lambda: 1.0
         trader._refresh_unified_intel_snapshot = lambda: calls.append("intel")
         trader._refresh_thought_bus_snapshot = lambda: calls.append("thought")
         trader._find_best_opportunity = lambda: calls.append("find")
@@ -739,7 +771,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._sync_positions_from_exchange = lambda force=False: None
         trader._refresh_prices = lambda: None
         trader._monitor_positions = lambda: []
-        trader._quad_gate = lambda: True
+        trader._quad_gate = lambda: 1.0
         trader.status_lines = lambda: []
         trader._queue_background_shadows = lambda: 0
         trader._find_best_opportunity = lambda: ("SILVER", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9})
@@ -777,7 +809,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._refresh_prices = lambda: None
         trader._update_position_prices = lambda: None
         trader._monitor_positions = lambda: [{"symbol": "SILVER", "pnl_gbp": 0.12}]
-        trader._quad_gate = lambda: True
+        trader._quad_gate = lambda: 1.0
         trader.status_lines = lambda: []
         trader._find_best_opportunity = lambda: ("GOLD", {"class": "commodity", "size": 1}, {"price": 10, "ask": 10, "bid": 9.9})
         trader._ranked_opportunities = lambda: [
@@ -833,7 +865,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._sync_positions_from_exchange = lambda force=False: None
         trader._refresh_prices = lambda: None
         trader._monitor_positions = lambda: []
-        trader._quad_gate = lambda: True
+        trader._quad_gate = lambda: 1.0
         trader.status_lines = lambda: []
         trader._queue_background_shadows = lambda: 0
         trader._find_best_opportunity = lambda: ("SILVER", {"class": "commodity", "size": 1, "direction": "BUY"}, {"price": 10, "ask": 10, "bid": 9.9})

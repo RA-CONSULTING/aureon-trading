@@ -18,14 +18,14 @@
 ║     2. Sync learning bridge → Seer, Lyra, ThoughtBus                       ║
 ║     3. Refresh quick gate flags (Seer + Lyra) every 10 s                   ║
 ║                                                                              ║
-║   PRE-TRADE GATE (called before any shadow is promoted to real capital)     ║
-║     0. Cross-system conflict — spot vs margin directional clash blocked     ║
-║     1. Seer gate      — BLIND vision = no trade                             ║
-║     2. Lyra gate      — SILENCE resonance = no trade                       ║
-║     3. Conviction gate — persistent BUCKING in shadow = caution            ║
-║     4. Quadrumvirate  — all 4 pillars must vote PASS (TTL-cached)          ║
-║        Queen (veto), King (finance), Seer (cosmos), Lyra (emotion)         ║
-║     5. Size modifier  — Seer risk × Lyra position multiplier applied       ║
+║   PRE-TRADE DYNAMIC DOORS (sizing, not blocking)                           ║
+║     0. Cross-system conflict — ONLY hard block (self-hedging)              ║
+║     1. Seer door      — grade → sizing factor (0.15x–1.2x)                ║
+║     2. Lyra door      — grade → sizing factor (0.15x–1.2x)                ║
+║     3. Conviction door — learning bridge → sizing factor (0.15x–1.3x)     ║
+║     4. Quadrumvirate  — consensus → sizing factor (Queen VETO = 0.1x)     ║
+║     5. Scout bonus    — multiverse nomination (informational)              ║
+║     Final sizing = product of all factors, clamped [0.10, 2.0]             ║
 ║                                                                              ║
 ║   STATUS REPORT (printed every 30 cycles alongside print_status())         ║
 ║     Seer grade, Lyra grade, consensus result, sizing modifier,              ║
@@ -41,6 +41,19 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Any
 
 logger = logging.getLogger(__name__)
+
+# ── Queen battle-readiness integration (fail-safe import) ─────────────────────
+try:
+    from aureon.queen.queen_warrior_path import QueenWarriorPath
+    _QUEEN_WARRIOR: Optional[QueenWarriorPath] = None
+    def _get_queen_warrior() -> Optional[QueenWarriorPath]:
+        global _QUEEN_WARRIOR
+        if _QUEEN_WARRIOR is None:
+            _QUEEN_WARRIOR = QueenWarriorPath()
+        return _QUEEN_WARRIOR
+except Exception:
+    def _get_queen_warrior():  # type: ignore[misc]
+        return None
 
 # ── Tuning constants ──────────────────────────────────────────────────────────
 CONSENSUS_TTL        = 120   # seconds between full Quadrumvirate calls (expensive)
@@ -302,19 +315,24 @@ class AutonomousOrchestrator:
         trade_val: float = 0.0,
     ) -> Tuple[bool, str, float]:
         """
-        Full pre-trade intelligence gate.
+        Full pre-trade intelligence gate — DYNAMIC DOORS model.
+
+        Instead of hard-blocking trades, each pillar contributes a sizing
+        factor (0.1–1.3).  The final sizing_modifier is the product of all
+        factors, clamped to [0.10, 2.0].  The Queen controls the weight of
+        every trade — nothing is binary except cross-system conflict.
 
         Returns
         -------
-        approved       : bool  — True = all pillars aligned, deploy capital
+        approved       : bool  — False ONLY for cross-system conflict
         reason         : str   — human-readable explanation
-        sizing_modifier: float — Seer_risk × Lyra_position_multiplier
+        sizing_modifier: float — product of all dynamic door factors
                                  (apply to position sizing)
         """
-        reasons   = []
+        reasons: List[str] = []
         sizing_modifier = 1.0
 
-        # ── 0. Cross-system conflict gate ────────────────────────────────
+        # ── 0. Cross-system conflict gate (ONLY hard block) ──────────────
         # Spot and margin must work in unity: buying spot BTC while a margin
         # SHORT BTC is open (or vice versa) creates a self-hedging conflict
         # that wastes capital and fees.
@@ -347,23 +365,27 @@ class AutonomousOrchestrator:
                     f"${trade_val:.2f}({','.join(systems)})"
                 )
 
-        # ── 1. Seer quick gate ────────────────────────────────────────────
-        if not self._seer_ok:
-            self._gates_blocked += 1
-            reason = f"Seer BLIND (grade={self._seer_grade}) — cosmic conditions unfavorable"
-            self._last_block_reason = reason
-            logger.info(f"[Orchestrator] Gate BLOCKED: {reason}")
-            return False, reason, 1.0
+        # ── 1. Seer dynamic door ─────────────────────────────────────────
+        # Grade → sizing factor (never blocks, just adjusts weight)
+        _SEER_SIZING = {
+            "DIVINE_CLARITY": 1.2, "CLEAR_SIGHT": 1.0,
+            "PARTIAL_VISION": 0.7, "FOG": 0.4, "BLIND": 0.15,
+        }
+        seer_factor = _SEER_SIZING.get(str(self._seer_grade), 1.0 if self._seer_ok else 0.15)
+        sizing_modifier *= seer_factor
+        reasons.append(f"seer={self._seer_grade}({seer_factor:.2f}x)")
 
-        # ── 2. Lyra quick gate ────────────────────────────────────────────
-        if not self._lyra_ok:
-            self._gates_blocked += 1
-            reason = f"Lyra SILENCE (grade={self._lyra_grade}) — emotional resonance too low"
-            self._last_block_reason = reason
-            logger.info(f"[Orchestrator] Gate BLOCKED: {reason}")
-            return False, reason, 1.0
+        # ── 2. Lyra dynamic door ─────────────────────────────────────────
+        _LYRA_SIZING = {
+            "DIVINE_HARMONY": 1.2, "CLEAR_RESONANCE": 1.0,
+            "PARTIAL_HARMONY": 0.7, "DISSONANCE": 0.4, "SILENCE": 0.15,
+        }
+        lyra_factor = _LYRA_SIZING.get(str(self._lyra_grade), 1.0 if self._lyra_ok else 0.15)
+        sizing_modifier *= lyra_factor
+        reasons.append(f"lyra={self._lyra_grade}({lyra_factor:.2f}x)")
 
-        # ── 3. Multiverse conviction / learning gate ──────────────────────
+        # ── 3. Multiverse conviction / learning door ─────────────────────
+        conviction_factor = 1.0
         bridge = getattr(self.trader, 'learning_bridge', None)
         if bridge is not None:
             try:
@@ -373,63 +395,67 @@ class AutonomousOrchestrator:
                 phase      = ctx.get('phase', 'UNKNOWN')
 
                 if rec == 'AVOID':
-                    self._gates_blocked += 1
-                    reason = (
-                        f"Learning bridge AVOID: {pair} phase={phase} "
-                        f"conviction={conviction:.2f} (BUCKING 45+ min)"
-                    )
-                    self._last_block_reason = reason
-                    logger.info(f"[Orchestrator] Gate BLOCKED: {reason}")
-                    return False, reason, 1.0
-
-                if conviction >= 0.70:
-                    reasons.append(f"conviction={conviction:.2f}({rec})")
+                    conviction_factor = 0.15
+                elif conviction >= 0.85:
+                    conviction_factor = 1.3
+                elif conviction >= 0.70:
+                    conviction_factor = 1.0
                 elif conviction >= 0.55:
-                    reasons.append(f"conviction={conviction:.2f}(neutral)")
+                    conviction_factor = 0.7
+                elif conviction >= 0.40:
+                    conviction_factor = 0.4
                 else:
-                    reasons.append(f"conviction={conviction:.2f}(LOW)")
+                    conviction_factor = 0.15
+
+                sizing_modifier *= conviction_factor
+                reasons.append(
+                    f"conviction={conviction:.2f}({rec},{conviction_factor:.2f}x)"
+                )
             except Exception as e:
                 logger.debug(f"[Orchestrator] Conviction check error: {e}")
 
-        # ── 4. Quadrumvirate consensus (TTL-cached, expensive) ────────────
+        # ── 4. Quadrumvirate consensus door (TTL-cached) ─────────────────
         consensus = self._get_consensus()
         if consensus is not None:
-            if not consensus.get('passed', True):
-                queen_veto = consensus.get('queen_vetoed', False)
-                prefix     = "Queen VETO" if queen_veto else "Quadrumvirate"
-                cons_reason = consensus.get('reason', 'unknown')
-                self._gates_blocked += 1
-                reason = f"{prefix}: consensus FAILED — {cons_reason}"
-                self._last_block_reason = reason
-                logger.info(f"[Orchestrator] Gate BLOCKED: {reason}")
-                return False, reason, 1.0
-
             # Extract sizing modifiers from consensus data
             seer_risk  = consensus.get('risk_modifier', 1.0)
             lyra_mult  = consensus.get('position_multiplier', 1.0)
-            sizing_modifier = seer_risk * lyra_mult
+            consensus_sizing = seer_risk * lyra_mult
 
-            # Count aligned pillars for log context
-            pillars    = consensus.get('pillars', {})
-            n_aligned  = sum(
-                1 for d in pillars.values()
-                if d.get('vote') in ('APPROVE', 'GO', True, 'PASS')
-            )
-            alignment  = consensus.get('alignment_score', 0)
-            cons_action = consensus.get('consensus_action', '?')
-            reasons.append(
-                f"consensus={n_aligned}/4 pillars | "
-                f"action={cons_action} | "
-                f"alignment={alignment:.2f} | "
-                f"sizing={sizing_modifier:.2f}x"
-            )
+            if not consensus.get('passed', True):
+                queen_veto = consensus.get('queen_vetoed', False)
+                # Queen VETO → 0.1x, other consensus fail → alignment-based
+                alignment = max(0.10, float(consensus.get('alignment_score', 0) or 0))
+                if queen_veto:
+                    consensus_sizing *= 0.10
+                    reasons.append(f"queen_veto(0.10x)")
+                else:
+                    consensus_sizing *= alignment
+                    cons_reason = consensus.get('reason', 'unknown')
+                    reasons.append(f"consensus_low({alignment:.2f}x,{cons_reason})")
+            else:
+                # Count aligned pillars for log context
+                pillars    = consensus.get('pillars', {})
+                n_aligned  = sum(
+                    1 for d in pillars.values()
+                    if d.get('vote') in ('APPROVE', 'GO', True, 'PASS')
+                )
+                alignment  = consensus.get('alignment_score', 0)
+                cons_action = consensus.get('consensus_action', '?')
+                reasons.append(
+                    f"consensus={n_aligned}/4 | "
+                    f"action={cons_action} | "
+                    f"alignment={alignment:.2f}"
+                )
+
+            sizing_modifier *= max(0.10, consensus_sizing)
 
             # Seer margin conviction
             margin_conviction = consensus.get('margin_conviction')
             if margin_conviction is not None:
                 reasons.append(f"margin_conviction={margin_conviction:.2f}")
 
-        # ── 5. Multiverse scout alignment bonus ───────────────────────────
+        # ── 5. Multiverse scout alignment bonus ──────────────────────────
         mv = getattr(self.trader, 'multiverse', None)
         if mv is not None:
             next_stallion = mv.get_next_stallion()
@@ -439,9 +465,32 @@ class AutonomousOrchestrator:
             if remaining < 300:  # < 5 min left
                 reasons.append(f"rotation_in={int(remaining)}s")
 
-        # ── All gates passed ──────────────────────────────────────────────
+        # ── 6. Queen battle readiness (dynamic weight) ───────────────────
+        queen_warrior = _get_queen_warrior()
+        if queen_warrior is not None:
+            try:
+                tactical = queen_warrior.assess_tactical_situation(
+                    symbol=pair,
+                    price=0.0,
+                    price_change_pct=0.0,
+                    volume=0.0,
+                    market_context={},
+                )
+                br = getattr(tactical, 'battle_readiness', 0.5)
+                # Map 0-1 readiness → 0.15x–1.5x sizing
+                queen_factor = max(0.15, min(1.5, float(br) * 2.0))
+                sizing_modifier *= queen_factor
+                reasons.append(f"queen_readiness={br:.2f}({queen_factor:.2f}x)")
+            except Exception as e:
+                logger.debug(f"[Orchestrator] Queen warrior check: {e}")
+
+        # ── Clamp final sizing to safe range ─────────────────────────────
+        sizing_modifier = max(0.10, min(2.0, sizing_modifier))
+
+        # ── All doors evaluated ──────────────────────────────────────────
         self._gates_passed += 1
-        final_reason = " | ".join(reasons) if reasons else "all gates clear"
+        reasons.append(f"final_sizing={sizing_modifier:.2f}x")
+        final_reason = " | ".join(reasons) if reasons else "all doors clear"
         logger.info(
             f"[Orchestrator] Gate APPROVED: {pair} {side.upper()} — {final_reason}"
         )

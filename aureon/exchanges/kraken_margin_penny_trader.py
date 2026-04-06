@@ -8535,17 +8535,29 @@ class KrakenMarginArmyTrader:
             if shadow.side == "sell" and self.active_short:
                 continue
 
-            # Full Quadrumvirate gate before real capital
+            # Dynamic door: Queen controls sizing, only cross-system conflict blocks
             if self.orchestrator is not None:
                 try:
-                    _ok, _reason, _ = self.orchestrator.gate_pre_trade(
+                    _ok, _reason, sizing_mod = self.orchestrator.gate_pre_trade(
                         shadow.pair, shadow.side, shadow.trade_val
                     )
                     if not _ok:
+                        # Only cross-system conflict returns False
                         logger.info(
-                            f"[tick] Shadow {shadow.pair} HELD by Orchestrator: {_reason}"
+                            f"[tick] Shadow {shadow.pair} BLOCKED by Orchestrator: {_reason}"
                         )
                         continue
+                    # Apply Queen's sizing modifier to trade value
+                    sizing_mod = max(0.10, min(2.0, float(sizing_mod or 1.0)))
+                    if sizing_mod != 1.0:
+                        original_val = shadow.trade_val
+                        shadow.trade_val = shadow.trade_val * sizing_mod
+                        if shadow.entry_price > 0:
+                            shadow.volume = shadow.trade_val / shadow.entry_price
+                        logger.info(
+                            f"[tick] Shadow {shadow.pair} Queen sizing={sizing_mod:.2f}x "
+                            f"(${original_val:.2f} -> ${shadow.trade_val:.2f})"
+                        )
                 except Exception:
                     pass
 
