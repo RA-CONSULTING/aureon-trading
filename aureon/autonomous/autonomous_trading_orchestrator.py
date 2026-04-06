@@ -687,9 +687,12 @@ class AutonomousOrchestrator:
         return price_map
 
     def _fetch_margin_level(self) -> float:
-        """Fetch current margin level from trade balance (cached by TTL)."""
+        """Fetch current margin level from trade balance (via gateway dedup)."""
         try:
-            tb = self.trader.client.get_trade_balance()
+            from aureon.core.api_gateway import gw
+            tb = gw.get_trade_balance("kraken")
+            if tb is None:
+                tb = self.trader.client.get_trade_balance()
             return float(tb.get('margin_level', 0) or 0)
         except Exception:
             return self._margin_level   # return last known

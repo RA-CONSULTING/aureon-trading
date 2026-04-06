@@ -716,7 +716,11 @@ class FireTrader:
         kraken_tusd_cash = 0.0  # TUSD balance
         GBP_TO_USD = 1.27       # approximate conversion for cash comparison
         try:
-            k_balances = self.kraken.get_balance()
+            try:
+                from aureon.core.api_gateway import gw
+                k_balances = gw.get_balance("kraken")
+            except Exception:
+                k_balances = self.kraken.get_balance()
             for asset, amt in k_balances.items():
                 amt = float(amt)
                 if amt > 0:
@@ -745,7 +749,11 @@ class FireTrader:
         tradeable_binance = {}
         binance_cash = 0.0
         try:
-            b_balances = self.binance.get_balance()
+            try:
+                from aureon.core.api_gateway import gw
+                b_balances = gw.get_balance("binance")
+            except Exception:
+                b_balances = self.binance.get_balance()
             for asset, amt in b_balances.items():
                 amt = float(amt)
                 if amt > 0:
