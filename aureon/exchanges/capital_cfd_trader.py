@@ -508,6 +508,44 @@ class CapitalCFDTrader:
             self.init_error = "capital_client_not_installed"
             logger.info("CapitalCFDTrader: capital_client not installed — disabled")
 
+        # Subscribe to Queen Hive Command hunt signals
+        if self.thought_bus is not None:
+            try:
+                self.thought_bus.subscribe("queen.command.hunt", self._on_queen_hunt)
+                logger.info("[QUEEN HIVE] Subscribed to queen.command.hunt")
+            except Exception:
+                pass
+
+    # ── QUEEN HIVE COMMAND ─────────────────────────────────────────────────────
+
+    def _on_queen_hunt(self, thought) -> None:
+        """Queen issued a hunt command — gate through orchestrator and execute."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            if not isinstance(payload, dict):
+                return
+            symbol = str(payload.get("symbol") or "")
+            if not symbol:
+                return
+            composite = float(payload.get("composite_score", 0) or 0)
+            consensus = int(payload.get("consensus_count", 0) or 0)
+            logger.info(
+                f"[QUEEN HUNT] Received: {symbol} composite={composite:.3f} consensus={consensus}"
+            )
+            # Gate through orchestrator sizing
+            if self.orchestrator is not None:
+                approved, reason, sizing = self.orchestrator.gate_pre_trade(symbol, "buy")
+                if not approved:
+                    logger.info(f"[QUEEN HUNT] Blocked by orchestrator: {reason}")
+                    return
+                logger.info(f"[QUEEN HUNT] Approved: {symbol} sizing={sizing:.2f}x reason={reason}")
+                # TODO: Open CFD position with the approved sizing
+                # self._open_cfd_position(symbol, "BUY", queen_sizing=sizing)
+            else:
+                logger.debug("[QUEEN HUNT] No orchestrator — skipping execution")
+        except Exception as e:
+            logger.debug(f"[QUEEN HUNT] Error: {e}")
+
     # ── PROPERTIES ─────────────────────────────────────────────────────────────
     @property
     def enabled(self) -> bool:
@@ -2818,6 +2856,23 @@ class CapitalCFDTrader:
             self._last_deadman_kick_at = now
             return []
         logger.warning("Capital deadman triggered: stale loop age=%.1fs", age)
+        # Broadcast to ThoughtBus so Hive Command and other systems know
+        try:
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
+            bus = get_thought_bus()
+            if bus is not None:
+                bus.publish(Thought(
+                    source="capital_cfd_trader",
+                    topic="system.deadman",
+                    payload={
+                        "exchange": "capital",
+                        "stale_age_secs": age,
+                        "positions_held": len(self.positions),
+                    },
+                    meta={"severity": "warning"},
+                ))
+        except Exception:
+            pass
         result = self._deadman_close_all(f"DEADMAN_STALE {age:.1f}s")
         # Reset timer so we don't keep firing every tick while holding losing positions
         self._last_deadman_kick_at = now

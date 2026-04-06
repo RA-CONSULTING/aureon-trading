@@ -5201,8 +5201,21 @@ class OrcaKillCycle:
                     'timestamp': _time.time()
                 }
             ))
-        except Exception as e:
+        except Exception:
             pass
+
+        # Feed outcome back to Queen-Orca Bridge for neural learning
+        if self.queen_orca_bridge is not None:
+            try:
+                self.queen_orca_bridge.report_trade_outcome({
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'net_pnl': pnl,
+                    'entry_price': entry_price,
+                    'exit_price': exit_price,
+                })
+            except Exception:
+                pass
     
     
     def _ensure_capital_client(self):

@@ -374,9 +374,15 @@ class AutonomousOrchestrator:
         # 6. Recall market intelligence from Thought Bus (every 10s)
         self._recall_market_intel()
 
-        # 7. Publish orchestrator status (every 30s)
+        # 7. Publish orchestrator status + market prices (every 30s)
         if now - self._last_status_publish >= 30.0:
             self._last_status_publish = now
+            # Publish market prices for Hive Command worker bees
+            if price_map:
+                self._publish_thought("market.prices", {
+                    "prices": price_map,
+                    "symbols": list(price_map.keys()),
+                })
             total = self._gates_passed + self._gates_blocked
             self._publish_thought("orchestrator.status", {
                 "gates_passed": self._gates_passed,
@@ -681,9 +687,12 @@ class AutonomousOrchestrator:
         return price_map
 
     def _fetch_margin_level(self) -> float:
-        """Fetch current margin level from trade balance (cached by TTL)."""
+        """Fetch current margin level from trade balance (via gateway dedup)."""
         try:
-            tb = self.trader.client.get_trade_balance()
+            from aureon.core.api_gateway import gw
+            tb = gw.get_trade_balance("kraken")
+            if tb is None:
+                tb = self.trader.client.get_trade_balance()
             return float(tb.get('margin_level', 0) or 0)
         except Exception:
             return self._margin_level   # return last known

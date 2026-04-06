@@ -786,21 +786,27 @@ class QueenEternalMachine:
         
         # 1. BINANCE
         try:
-            from binance_client import BinanceClient
-            binance = BinanceClient()
-            binance_bals = binance.get_balance()
+            try:
+                from aureon.core.api_gateway import gw
+                binance_bals = gw.get_balance("binance")
+            except Exception:
+                from binance_client import get_binance_client
+                binance_bals = get_binance_client().get_balance()
             for asset, qty in binance_bals.items():
                 if qty > 0:
                     balances[asset] = (qty, 'binance')
             logger.info(f"   📍 Binance: {len([q for q in binance_bals.values() if q > 0])} assets")
         except Exception as e:
             logger.warning(f"   ⚠️ Binance unavailable: {e}")
-        
+
         # 2. ALPACA
         try:
-            from alpaca_client import AlpacaClient
-            alpaca = AlpacaClient()
-            positions = alpaca.get_positions()
+            try:
+                from aureon.core.api_gateway import gw
+                positions = gw.get_positions("alpaca")
+            except Exception:
+                from alpaca_client import AlpacaClient
+                positions = AlpacaClient().get_positions()
             for pos in positions:
                 symbol = pos.get('symbol', '')
                 qty = float(pos.get('qty', 0))
@@ -816,13 +822,16 @@ class QueenEternalMachine:
             logger.info(f"   📍 Alpaca: {len(positions)} positions")
         except Exception as e:
             logger.warning(f"   ⚠️ Alpaca unavailable: {e}")
-        
+
         # 3. KRAKEN - Try live API first, cached snapshot ONLY as emergency fallback
         _kraken_success = False
         try:
-            from kraken_client import KrakenClient
-            kraken = KrakenClient()
-            kraken_bals = kraken.get_balance()
+            try:
+                from aureon.core.api_gateway import gw
+                kraken_bals = gw.get_balance("kraken")
+            except Exception:
+                from kraken_client import get_kraken_client
+                kraken_bals = get_kraken_client().get_balance()
             for asset, qty in kraken_bals.items():
                 qty = float(qty)
                 if qty > 0:
@@ -1208,16 +1217,28 @@ class QueenEternalMachine:
         _FETCH_TIMEOUT = 20  # seconds per exchange - prevents hang
 
         def _fetch_binance_tickers():
-            from binance_client import BinanceClient
-            return BinanceClient().get_24h_tickers() or []
+            try:
+                from aureon.core.api_gateway import gw
+                return gw.get_24h_tickers("binance") or []
+            except Exception:
+                from binance_client import get_binance_client
+                return get_binance_client().get_24h_tickers() or []
 
         def _fetch_alpaca_tickers():
-            from alpaca_client import AlpacaClient
-            return AlpacaClient().get_24h_tickers() or []
+            try:
+                from aureon.core.api_gateway import gw
+                return gw.get_24h_tickers("alpaca") or []
+            except Exception:
+                from alpaca_client import AlpacaClient
+                return AlpacaClient().get_24h_tickers() or []
 
         def _fetch_kraken_tickers():
-            from kraken_client import KrakenClient
-            return KrakenClient().get_24h_tickers() or []
+            try:
+                from aureon.core.api_gateway import gw
+                return gw.get_24h_tickers("kraken") or []
+            except Exception:
+                from kraken_client import get_kraken_client
+                return get_kraken_client().get_24h_tickers() or []
 
         # 1) Binance broad market scan (with timeout to prevent hang)
         try:
@@ -1294,14 +1315,26 @@ class QueenEternalMachine:
                     elif ex == 'alpaca':
                         pair = f"{friend_symbol}/USD"
                     if ex == 'binance':
-                        from binance_client import BinanceClient
-                        return ('USDC', BinanceClient().get_24h_ticker(pair))
+                        try:
+                            from aureon.core.api_gateway import gw
+                            return ('USDC', gw.get_24h_ticker("binance", pair))
+                        except Exception:
+                            from binance_client import get_binance_client
+                            return ('USDC', get_binance_client().get_24h_ticker(pair))
                     elif ex == 'kraken':
-                        from kraken_client import KrakenClient
-                        return ('USD', KrakenClient().get_24h_ticker(pair))
+                        try:
+                            from aureon.core.api_gateway import gw
+                            return ('USD', gw.get_24h_ticker("kraken", pair))
+                        except Exception:
+                            from kraken_client import get_kraken_client
+                            return ('USD', get_kraken_client().get_24h_ticker(pair))
                     elif ex == 'alpaca':
-                        from alpaca_client import AlpacaClient
-                        t = AlpacaClient().get_ticker(pair)
+                        try:
+                            from aureon.core.api_gateway import gw
+                            t = gw.get_ticker("alpaca", pair)
+                        except Exception:
+                            from alpaca_client import AlpacaClient
+                            t = AlpacaClient().get_ticker(pair)
                         if t and 'price' in t:
                             t = {
                                 'symbol': f"{friend_symbol}USD",
