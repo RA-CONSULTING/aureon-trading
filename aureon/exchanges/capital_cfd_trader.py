@@ -482,7 +482,7 @@ class CapitalCFDTrader:
         self._last_shadow_scan: float = 0.0
 
         # Cached Seer/Lyra gate result
-        self._quad_gate_ok:  bool  = True   # Fail-open
+        self._quad_gate_modifier: float = 1.0   # Fail-open
         self._quad_gate_at:  float = 0.0
 
         # Hive Mind shared intelligence — set externally by TradingHiveMind
@@ -1707,12 +1707,12 @@ class CapitalCFDTrader:
         try:
             self._refresh_unified_intel_snapshot()
             self._refresh_thought_bus_snapshot()
-            if self._quad_gate():
-                self._find_best_opportunity()
-                self._queue_background_shadows()
-                if len(self.positions) < int(CFD_CONFIG["max_positions"]):
-                    if self._fill_live_monitoring_slots(now):
-                        self._latest_monitor_line = self._latest_monitor_line or "CAPITAL LIVE EVENT FILL"
+            self._quad_gate()  # refresh modifier (always proceeds)
+            self._find_best_opportunity()
+            self._queue_background_shadows()
+            if len(self.positions) < int(CFD_CONFIG["max_positions"]):
+                if self._fill_live_monitoring_slots(now):
+                    self._latest_monitor_line = self._latest_monitor_line or "CAPITAL LIVE EVENT FILL"
         except Exception as e:
             logger.debug("Capital live event actuation error: %s", e)
 
@@ -1817,24 +1817,27 @@ class CapitalCFDTrader:
             logger.debug(f"Capital CFD sync error: {_e}")
 
     # ── QUADRUMVIRATE GATE (lightweight) ───────────────────────────────────────
-    def _quad_gate(self) -> bool:
+    def _quad_gate(self) -> float:
         """
-        Quick Seer + Lyra gate — cached for quad_gate_ttl secs.
-        Returns True if trading is permitted (fail-open if unavailable).
+        Quick Seer + Lyra sizing check — cached for quad_gate_ttl secs.
+        Returns a sizing modifier (0.09–1.0) instead of blocking.
+        Always allows trading; poor conditions just reduce size.
         """
         if not HAS_QUAD_GATES:
-            return True
+            return 1.0
         now = time.time()
         if now - self._quad_gate_at < CFD_CONFIG["quad_gate_ttl"]:
-            return self._quad_gate_ok
+            return self._quad_gate_modifier
         self._quad_gate_at = now
         try:
             seer_ok = seer_should_trade() if seer_should_trade else True   # type: ignore[misc]
             lyra_ok = lyra_should_trade() if lyra_should_trade else True   # type: ignore[misc]
-            self._quad_gate_ok = seer_ok and lyra_ok
+            seer_factor = 1.0 if seer_ok else 0.3
+            lyra_factor = 1.0 if lyra_ok else 0.3
+            self._quad_gate_modifier = seer_factor * lyra_factor
         except Exception:
-            self._quad_gate_ok = True   # Fail-open
-        return self._quad_gate_ok
+            self._quad_gate_modifier = 1.0   # Fail-open
+        return self._quad_gate_modifier
 
     # ── OPPORTUNITY SCANNER ────────────────────────────────────────────────────
     def _score_symbol(self, symbol: str, cfg: dict, ticker: dict) -> Tuple[float, str]:
@@ -2055,7 +2058,13 @@ class CapitalCFDTrader:
             item["orchestrator_reason"] = str(gate.get("reason") or "")
             item["orchestrator_approved"] = bool(gate.get("approved"))
 
+            # Extract Queen's sizing modifier from the orchestrator
+            raw_sizing = gate.get("sizing", 1.0)
+            queen_sizing = max(0.10, min(2.0, float(raw_sizing) if not isinstance(raw_sizing, dict) else 1.0))
+            item["queen_sizing"] = queen_sizing
+
             if not gate.get("approved"):
+                # Cross-system conflict is the only hard block — zero the score
                 item["score"] = 0.0
                 item["intel_reason"] = f"orchestrator_gate:{gate.get('reason') or 'blocked'}"
                 continue
@@ -2718,11 +2727,23 @@ class CapitalCFDTrader:
                 continue
             self._last_slot_fill_attempt[direction] = now
             for sym, cfg, ticker in self._ranked_live_slot_candidates(direction):
-                preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
+                # Get Queen's dynamic sizing for slot fill
+                slot_cfg = dict(cfg)
+                if self.orchestrator is not None:
+                    try:
+                        _ok, _reason, sizing_mod = self.orchestrator.gate_pre_trade(
+                            sym, direction.lower(), float(cfg.get("size", 0.0) or 0.0) * float((ticker or {}).get("price", 0) or 0),
+                        )
+                        if not _ok:
+                            continue  # Cross-system conflict
+                        slot_cfg["queen_sizing"] = max(0.10, min(2.0, float(sizing_mod or 1.0)))
+                    except Exception:
+                        pass  # fail-open
+                preflight = self._capital_preflight(sym, float(slot_cfg.get("size", 0.0) or 0.0), ticker, slot_cfg)
                 if not self._preflight_allows_slot_fill(preflight):
                     self._record_rejection(sym, direction, str(preflight.get("reason") or "preflight_failed"))
                     continue
-                pos = self._open_position(sym, cfg, ticker)
+                pos = self._open_position(sym, slot_cfg, ticker)
                 if pos is not None:
                     self._latest_monitor_line = f"CAPITAL SLOT FILL {sym} {direction} deal={pos.deal_id}"
                     opened_any = True
@@ -2752,7 +2773,17 @@ class CapitalCFDTrader:
 
     def _deadman_close_all(self, reason: str) -> List[dict]:
         closed: List[dict] = []
+        held_count = 0
         for pos in list(self.positions):
+            # Respect profit_only_closes: never close a losing position
+            pnl_gbp = self._position_pnl_gbp(pos)
+            if CFD_FLAGS["profit_only_closes"] and pnl_gbp <= 0:
+                held_count += 1
+                logger.info(
+                    "Capital deadman HOLDING %s pnl=£%.4f (profit_only mode) reason=%s",
+                    pos.symbol, pnl_gbp, reason,
+                )
+                continue
             try:
                 record = self._close_position(pos, reason)
                 if record and not record.get("error"):
@@ -2760,8 +2791,10 @@ class CapitalCFDTrader:
             except Exception as e:
                 logger.warning("Capital deadman close failed for %s: %s", pos.symbol, e)
         self.positions = [pos for pos in self.positions if pos.deal_id not in {str(r.get('deal_id') or '') for r in closed}]
-        if closed:
-            self._latest_monitor_line = f"CAPITAL DEADMAN FLATTEN count={len(closed)} reason={reason}"
+        if closed or held_count:
+            self._latest_monitor_line = (
+                f"CAPITAL DEADMAN closed={len(closed)} held={held_count} reason={reason}"
+            )
         return closed
 
     def _deadman_guard(self, now: float) -> List[dict]:
@@ -2785,7 +2818,10 @@ class CapitalCFDTrader:
             self._last_deadman_kick_at = now
             return []
         logger.warning("Capital deadman triggered: stale loop age=%.1fs", age)
-        return self._deadman_close_all(f"DEADMAN_STALE {age:.1f}s")
+        result = self._deadman_close_all(f"DEADMAN_STALE {age:.1f}s")
+        # Reset timer so we don't keep firing every tick while holding losing positions
+        self._last_deadman_kick_at = now
+        return result
 
     def _ranked_opportunities(self) -> List[Tuple[str, dict, dict]]:
         ranked: List[Tuple[str, dict, dict]] = []
@@ -2921,7 +2957,19 @@ class CapitalCFDTrader:
         direction = str(shadow.direction or "BUY").upper()
         if not self._can_open_candidate(shadow.symbol, direction):
             return None
-        working_cfg = {**dict(cfg), "direction": direction, "size": shadow.size}
+        # Get Queen's dynamic sizing from orchestrator at promotion time
+        queen_sizing = 1.0
+        if self.orchestrator is not None:
+            try:
+                _ok, _reason, sizing_mod = self.orchestrator.gate_pre_trade(
+                    shadow.symbol, direction.lower(), shadow.size * shadow.entry_price,
+                )
+                if not _ok:
+                    return None  # Cross-system conflict only
+                queen_sizing = max(0.10, min(2.0, float(sizing_mod or 1.0)))
+            except Exception:
+                pass  # fail-open
+        working_cfg = {**dict(cfg), "direction": direction, "size": shadow.size, "queen_sizing": queen_sizing}
         pos = self._open_position(shadow.symbol, working_cfg, ticker)
         if pos is not None:
             self._shadow_validated_count += 1
@@ -2963,7 +3011,9 @@ class CapitalCFDTrader:
         if entry_price <= 0:
             return None
 
-        size     = cfg["size"]
+        base_size = float(cfg.get("size", 0.01) or 0.01)
+        queen_sizing = float(cfg.get("queen_sizing", 1.0) or 1.0)
+        size = max(base_size * 0.10, base_size * queen_sizing)  # floor at 10% of base
         effective_tp_pct = self._effective_tp_pct(entry_price, size, cfg)
         if direction == "BUY":
             tp_price = entry_price * (1 + effective_tp_pct / 100)
@@ -3279,6 +3329,7 @@ class CapitalCFDTrader:
                 gbp_usd_rate=1.0,
                 activation_threshold_gbp=CAPITAL_DTP_TRIGGER_GBP,
                 trailing_distance_pct=0.02,
+                thought_bus=getattr(self, 'thought_bus', None),
             )
             self._dtp_trackers[pos.deal_id] = tracker
         return tracker
@@ -3431,61 +3482,59 @@ class CapitalCFDTrader:
             stage_started = time.time()
             self._last_scan = now
 
-            if self._quad_gate():
-                self._find_best_opportunity()
-                self._queue_background_shadows()
-                if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
-                    slot_filled_this_tick = self._fill_live_monitoring_slots(now)
-                    if slot_filled_this_tick:
-                        promoted_this_tick = True
-                    opened_directions = {str(pos.direction or "").upper() for pos in self.positions}
-                    for sym, cfg, ticker in self._ranked_opportunities():
-                        direction = str(cfg.get("direction", "BUY") or "BUY").upper()
-                        if direction in opened_directions:
-                            continue
-                        if CAPITAL_FORCE_SLOT_FILL:
-                            continue
-                        preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
-                        working_cfg = dict(cfg)
-                        if (not preflight.get("ok")) and "below Capital minimum" in str(preflight.get("reason") or ""):
-                            adjusted_cfg = self._sized_cfg_from_preflight(cfg, preflight)
-                            if adjusted_cfg is not None:
-                                adjusted_preflight = self._capital_preflight(
-                                    sym,
-                                    float(adjusted_cfg.get("size", 0.0) or 0.0),
-                                    ticker,
-                                    adjusted_cfg,
-                                )
-                                if adjusted_preflight.get("ok"):
-                                    working_cfg = adjusted_cfg
-                                    preflight = adjusted_preflight
+            self._quad_gate()  # refresh modifier (always proceeds)
+            self._find_best_opportunity()
+            self._queue_background_shadows()
+            if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
+                slot_filled_this_tick = self._fill_live_monitoring_slots(now)
+                if slot_filled_this_tick:
+                    promoted_this_tick = True
+                opened_directions = {str(pos.direction or "").upper() for pos in self.positions}
+                for sym, cfg, ticker in self._ranked_opportunities():
+                    direction = str(cfg.get("direction", "BUY") or "BUY").upper()
+                    if direction in opened_directions:
+                        continue
+                    if CAPITAL_FORCE_SLOT_FILL:
+                        continue
+                    preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
+                    working_cfg = dict(cfg)
+                    if (not preflight.get("ok")) and "below Capital minimum" in str(preflight.get("reason") or ""):
+                        adjusted_cfg = self._sized_cfg_from_preflight(cfg, preflight)
+                        if adjusted_cfg is not None:
+                            adjusted_preflight = self._capital_preflight(
+                                sym,
+                                float(adjusted_cfg.get("size", 0.0) or 0.0),
+                                ticker,
+                                adjusted_cfg,
+                            )
+                            if adjusted_preflight.get("ok"):
+                                working_cfg = adjusted_cfg
+                                preflight = adjusted_preflight
 
-                        self._latest_target_snapshot = {
-                            **dict(self._latest_target_snapshot),
-                            "symbol": sym,
-                            "direction": str(working_cfg.get("direction", "BUY") or "BUY").upper(),
-                            "asset_class": working_cfg.get("class", cfg.get("class", "unknown")),
-                            "size": float(working_cfg.get("size", 0.0) or 0.0),
-                            "preflight_reason": str(preflight.get("reason") or ""),
-                            "market_status": str(preflight.get("market_status") or ""),
-                            "minimum_deal_size": float(preflight.get("minimum_deal_size", 0.0) or 0.0),
-                            "available_balance": float(preflight.get("available_balance", 0.0) or 0.0),
-                        }
+                    self._latest_target_snapshot = {
+                        **dict(self._latest_target_snapshot),
+                        "symbol": sym,
+                        "direction": str(working_cfg.get("direction", "BUY") or "BUY").upper(),
+                        "asset_class": working_cfg.get("class", cfg.get("class", "unknown")),
+                        "size": float(working_cfg.get("size", 0.0) or 0.0),
+                        "preflight_reason": str(preflight.get("reason") or ""),
+                        "market_status": str(preflight.get("market_status") or ""),
+                        "minimum_deal_size": float(preflight.get("minimum_deal_size", 0.0) or 0.0),
+                        "available_balance": float(preflight.get("available_balance", 0.0) or 0.0),
+                    }
 
-                        if not preflight.get("ok"):
-                            self._record_rejection(sym, direction, str(preflight.get("reason") or "preflight_failed"))
-                            self._latest_order_error = f"{sym} preflight failed: {preflight.get('reason') or 'unknown'}"
-                            logger.warning("CFD candidate skipped for %s: %s", sym, preflight.get("reason") or "unknown")
-                            continue
+                    if not preflight.get("ok"):
+                        self._record_rejection(sym, direction, str(preflight.get("reason") or "preflight_failed"))
+                        self._latest_order_error = f"{sym} preflight failed: {preflight.get('reason') or 'unknown'}"
+                        logger.warning("CFD candidate skipped for %s: %s", sym, preflight.get("reason") or "unknown")
+                        continue
 
-                        if self._create_shadow(sym, working_cfg, ticker) is not None:
-                            opened_directions.add(direction)
-                            if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
-                                break
-                        else:
-                            self._record_rejection(sym, direction, "shadow_blocked_or_duplicate")
-                else:
-                    logger.debug("CFD tick: Quadrumvirate gate CLOSED — scan skipped")
+                    if self._create_shadow(sym, working_cfg, ticker) is not None:
+                        opened_directions.add(direction)
+                        if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
+                            break
+                    else:
+                        self._record_rejection(sym, direction, "shadow_blocked_or_duplicate")
 
         if should_scan:
             scan_elapsed = time.time() - stage_started
@@ -3562,61 +3611,59 @@ class CapitalCFDTrader:
             stage_started = time.time()
             self._last_scan = now
 
-            if self._quad_gate():
-                self._find_best_opportunity()
-                self._queue_background_shadows()
-                if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
-                    slot_filled_this_tick = self._fill_live_monitoring_slots(now)
-                    if slot_filled_this_tick:
-                        promoted_this_tick = True
-                    opened_directions = {str(pos.direction or "").upper() for pos in self.positions}
-                    for sym, cfg, ticker in self._ranked_opportunities():
-                        direction = str(cfg.get("direction", "BUY") or "BUY").upper()
-                        if direction in opened_directions:
-                            continue
-                        if CAPITAL_FORCE_SLOT_FILL:
-                            continue
-                        preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
-                        working_cfg = dict(cfg)
-                        if (not preflight.get("ok")) and "below Capital minimum" in str(preflight.get("reason") or ""):
-                            adjusted_cfg = self._sized_cfg_from_preflight(cfg, preflight)
-                            if adjusted_cfg is not None:
-                                adjusted_preflight = self._capital_preflight(
-                                    sym,
-                                    float(adjusted_cfg.get("size", 0.0) or 0.0),
-                                    ticker,
-                                    adjusted_cfg,
-                                )
-                                if adjusted_preflight.get("ok"):
-                                    working_cfg = adjusted_cfg
-                                    preflight = adjusted_preflight
+            self._quad_gate()  # refresh modifier (always proceeds)
+            self._find_best_opportunity()
+            self._queue_background_shadows()
+            if len(self.positions) < int(CFD_CONFIG["max_positions"]) and not promoted_this_tick:
+                slot_filled_this_tick = self._fill_live_monitoring_slots(now)
+                if slot_filled_this_tick:
+                    promoted_this_tick = True
+                opened_directions = {str(pos.direction or "").upper() for pos in self.positions}
+                for sym, cfg, ticker in self._ranked_opportunities():
+                    direction = str(cfg.get("direction", "BUY") or "BUY").upper()
+                    if direction in opened_directions:
+                        continue
+                    if CAPITAL_FORCE_SLOT_FILL:
+                        continue
+                    preflight = self._capital_preflight(sym, float(cfg.get("size", 0.0) or 0.0), ticker, cfg)
+                    working_cfg = dict(cfg)
+                    if (not preflight.get("ok")) and "below Capital minimum" in str(preflight.get("reason") or ""):
+                        adjusted_cfg = self._sized_cfg_from_preflight(cfg, preflight)
+                        if adjusted_cfg is not None:
+                            adjusted_preflight = self._capital_preflight(
+                                sym,
+                                float(adjusted_cfg.get("size", 0.0) or 0.0),
+                                ticker,
+                                adjusted_cfg,
+                            )
+                            if adjusted_preflight.get("ok"):
+                                working_cfg = adjusted_cfg
+                                preflight = adjusted_preflight
 
-                        self._latest_target_snapshot = {
-                            **dict(self._latest_target_snapshot),
-                            "symbol": sym,
-                            "direction": str(working_cfg.get("direction", "BUY") or "BUY").upper(),
-                            "asset_class": working_cfg.get("class", cfg.get("class", "unknown")),
-                            "size": float(working_cfg.get("size", 0.0) or 0.0),
-                            "preflight_reason": str(preflight.get("reason") or ""),
-                            "market_status": str(preflight.get("market_status") or ""),
-                            "minimum_deal_size": float(preflight.get("minimum_deal_size", 0.0) or 0.0),
-                            "available_balance": float(preflight.get("available_balance", 0.0) or 0.0),
-                        }
+                    self._latest_target_snapshot = {
+                        **dict(self._latest_target_snapshot),
+                        "symbol": sym,
+                        "direction": str(working_cfg.get("direction", "BUY") or "BUY").upper(),
+                        "asset_class": working_cfg.get("class", cfg.get("class", "unknown")),
+                        "size": float(working_cfg.get("size", 0.0) or 0.0),
+                        "preflight_reason": str(preflight.get("reason") or ""),
+                        "market_status": str(preflight.get("market_status") or ""),
+                        "minimum_deal_size": float(preflight.get("minimum_deal_size", 0.0) or 0.0),
+                        "available_balance": float(preflight.get("available_balance", 0.0) or 0.0),
+                    }
 
-                        if not preflight.get("ok"):
-                            self._record_rejection(sym, direction, str(preflight.get("reason") or "preflight_failed"))
-                            self._latest_order_error = f"{sym} preflight failed: {preflight.get('reason') or 'unknown'}"
-                            logger.warning("CFD candidate skipped for %s: %s", sym, preflight.get("reason") or "unknown")
-                            continue
+                    if not preflight.get("ok"):
+                        self._record_rejection(sym, direction, str(preflight.get("reason") or "preflight_failed"))
+                        self._latest_order_error = f"{sym} preflight failed: {preflight.get('reason') or 'unknown'}"
+                        logger.warning("CFD candidate skipped for %s: %s", sym, preflight.get("reason") or "unknown")
+                        continue
 
-                        if self._create_shadow(sym, working_cfg, ticker) is not None:
-                            opened_directions.add(direction)
-                            if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
-                                break
-                        else:
-                            self._record_rejection(sym, direction, "shadow_blocked_or_duplicate")
-            else:
-                logger.debug("CFD tick: Quadrumvirate gate CLOSED â€” scan skipped")
+                    if self._create_shadow(sym, working_cfg, ticker) is not None:
+                        opened_directions.add(direction)
+                        if opened_directions >= {"BUY", "SELL"} or len(self.positions) >= int(CFD_CONFIG["max_positions"]):
+                            break
+                    else:
+                        self._record_rejection(sym, direction, "shadow_blocked_or_duplicate")
 
         if should_scan:
             scan_elapsed = time.time() - stage_started

@@ -493,10 +493,34 @@ class QueenNeuronV2:
         
         return stats
     
+    def train_from_trade_outcome(
+        self,
+        trade_data: Dict[str, Any],
+        perception: Dict[str, Any] = None,
+    ) -> float:
+        """
+        Convenience method: train from a raw trade outcome dict.
+        Builds the 7-input neural vector automatically from perception context.
+        Returns the training loss.
+        """
+        perception = perception or {}
+        neural_input = {
+            "probability_score": float(perception.get("sentiment", 0.5) or 0.5),
+            "wisdom_score": float(perception.get("confidence", 0.5) or 0.5),
+            "quantum_signal": 0.0,
+            "gaia_resonance": float(perception.get("schumann", 0.5) or 0.5),
+            "emotional_coherence": float(perception.get("mood_score", 0.5) or 0.5),
+            "mycelium_signal": 0.0,
+            "happiness_pursuit": 0.5,
+        }
+        net_pnl = float(trade_data.get("net_pnl", 0) or 0)
+        outcome = 1.0 if net_pnl > 0 else 0.0
+        return self.train_on_example(neural_input, outcome, profit_usd=net_pnl)
+
     # ════════════════════════════════════════════════════════════════════════════
     # PERSISTENCE
     # ════════════════════════════════════════════════════════════════════════════
-    
+
     def save_weights(self) -> None:
         """Save learned weights to JSON file."""
         weights_data = {

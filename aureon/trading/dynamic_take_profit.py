@@ -24,9 +24,18 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
+import time as _time
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
+
+# ── Thought Bus integration (fail-safe) ──────────────────────────────────────
+try:
+    from aureon.core.aureon_thought_bus import Thought as _Thought
+    _HAS_THOUGHT = True
+except Exception:
+    _Thought = None  # type: ignore
+    _HAS_THOUGHT = False
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DEAD MAN'S SWITCH CONFIGURATION
@@ -109,6 +118,7 @@ class DynamicTakeProfit:
         gbp_usd_rate: float = None,
         activation_threshold_gbp: float = None,
         trailing_distance_pct: float = None,
+        thought_bus: Any = None,
     ):
         self.position_size_usd = position_size_usd
         self.entry_fee_usd = entry_fee_usd
@@ -129,6 +139,10 @@ class DynamicTakeProfit:
         self.activation_threshold_usd = self.activation_threshold_gbp * self.gbp_usd_rate
 
         self.state = DeadManState()
+
+        # ── Thought Bus (optional, rate-limited) ─────────────────────────
+        self._thought_bus = thought_bus
+        self._last_publish_at: float = 0.0
 
     # ------------------------------------------------------------------
     # Public helpers
@@ -167,6 +181,28 @@ class DynamicTakeProfit:
         if self.gbp_usd_rate <= 0:
             return usd_amount
         return usd_amount / self.gbp_usd_rate
+
+    # ------------------------------------------------------------------
+    # Thought Bus publishing (rate-limited)
+    # ------------------------------------------------------------------
+
+    def _publish_dtp_event(self, topic: str, payload: Dict[str, Any]) -> None:
+        """Best-effort publish to Thought Bus. Max 1 event per 5 seconds."""
+        if self._thought_bus is None or not _HAS_THOUGHT or _Thought is None:
+            return
+        now = _time.time()
+        if now - self._last_publish_at < 5.0:
+            return
+        self._last_publish_at = now
+        try:
+            self._thought_bus.publish(_Thought(
+                source="dynamic_take_profit",
+                topic=topic,
+                payload=payload,
+                meta={"mode": "dtp"},
+            ))
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Core update loop
@@ -211,6 +247,11 @@ class DynamicTakeProfit:
                     f"Floor LOCKED at £{self.state.floor_gbp:.2f}. "
                     f"Countdown started - trailing 2% below peak."
                 )
+                self._publish_dtp_event("dtp.activated", {
+                    "floor_gbp": self.state.floor_gbp,
+                    "threshold_gbp": self.activation_threshold_gbp,
+                    "net_profit_gbp": net_gbp,
+                })
                 return False, reason, self.state
 
             # Not yet activated - report progress toward activation
@@ -236,6 +277,11 @@ class DynamicTakeProfit:
                 self.state.floor_usd = new_floor_usd
                 self.state.floor_gbp = new_floor_gbp
                 self.state.trigger_count += 1
+                self._publish_dtp_event("dtp.floor_locked", {
+                    "floor_gbp": new_floor_gbp,
+                    "peak_gbp": self.state.peak_profit_gbp,
+                    "ratchet_count": self.state.trigger_count,
+                })
 
         # ── CHECK IF FLOOR IS HIT ──────────────────────────────────────
         if net_profit_usd <= self.state.floor_usd:
@@ -245,6 +291,11 @@ class DynamicTakeProfit:
                 f"CLOSE NOW - locking in £{self.state.floor_gbp:.2f} profit. "
                 f"(Peak was £{self.state.peak_profit_gbp:.2f})"
             )
+            self._publish_dtp_event("dtp.triggered", {
+                "floor_gbp": self.state.floor_gbp,
+                "profit_gbp": net_gbp,
+                "peak_gbp": self.state.peak_profit_gbp,
+            })
             return True, reason, self.state
 
         # ── HOLDING: above the floor ───────────────────────────────────

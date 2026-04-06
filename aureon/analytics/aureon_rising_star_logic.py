@@ -36,7 +36,16 @@ from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import random
 from dataclasses import dataclass, field
-from typing import List, Dict, Tuple, Optional
+from typing import Any, List, Dict, Tuple, Optional
+
+# ── Thought Bus integration (fail-safe) ──────────────────────────────────────
+try:
+    from aureon.core.aureon_thought_bus import get_thought_bus as _get_thought_bus, Thought as _Thought
+    _HAS_THOUGHT_BUS = True
+except Exception:
+    _get_thought_bus = None  # type: ignore
+    _Thought = None          # type: ignore
+    _HAS_THOUGHT_BUS = False
 
 @dataclass
 class RisingStarCandidate:
@@ -70,6 +79,9 @@ class RisingStarScanner:
         """Initialize with reference to main OrcaKillCycle."""
         self.orca = orca_cycle
         self.simulation_count = 1000
+        self._thought_bus = (
+            _get_thought_bus() if _HAS_THOUGHT_BUS and _get_thought_bus is not None else None
+        )
         
     def scan_entire_market(self, max_candidates: int = 20) -> List[RisingStarCandidate]:
         """
@@ -276,7 +288,32 @@ class RisingStarScanner:
         # Update reasoning
         for c in best:
             c.reasoning += f" | Sim: {c.simulation_win_rate:.0%} win, {c.time_to_profit_avg:.0f}s"
-        
+
+        # Publish selected candidates to Thought Bus
+        if self._thought_bus is not None and _HAS_THOUGHT_BUS and _Thought is not None:
+            try:
+                self._thought_bus.publish(_Thought(
+                    source="rising_star_scanner",
+                    topic="rising_star.candidates_selected",
+                    payload={
+                        "count": len(best),
+                        "candidates": [
+                            {
+                                "symbol": c.symbol,
+                                "exchange": c.exchange,
+                                "score": round(c.score, 4),
+                                "sim_win_rate": round(c.simulation_win_rate, 4),
+                                "sim_confidence": round(c.simulation_confidence, 4),
+                                "time_to_profit": round(c.time_to_profit_avg, 1),
+                            }
+                            for c in best
+                        ],
+                    },
+                    meta={"mode": "rising_star"},
+                ))
+            except Exception:
+                pass
+
         return best
     
     def execute_with_accumulation(self, candidate: RisingStarCandidate, 
@@ -316,7 +353,7 @@ class RisingStarScanner:
                 fee_rate = self.orca.fee_rates.get(candidate.exchange, 0.0025)
                 entry_cost = filled_price * filled_qty * (1 + fee_rate)
                 
-                return {
+                position = {
                     'symbol': candidate.symbol,
                     'exchange': candidate.exchange,
                     'entry_price': filled_price,
@@ -327,6 +364,27 @@ class RisingStarScanner:
                     'accumulation_count': 0,
                     'candidate': candidate
                 }
+
+                # Publish execution to Thought Bus
+                if self._thought_bus is not None and _HAS_THOUGHT_BUS and _Thought is not None:
+                    try:
+                        self._thought_bus.publish(_Thought(
+                            source="rising_star_scanner",
+                            topic="rising_star.executed",
+                            payload={
+                                "symbol": candidate.symbol,
+                                "exchange": candidate.exchange,
+                                "entry_price": filled_price,
+                                "entry_qty": filled_qty,
+                                "score": round(candidate.score, 4),
+                                "sim_confidence": round(candidate.simulation_confidence, 4),
+                            },
+                            meta={"mode": "rising_star"},
+                        ))
+                    except Exception:
+                        pass
+
+                return position
         except Exception as e:
             print(f"Execute failed: {e}")
             return None

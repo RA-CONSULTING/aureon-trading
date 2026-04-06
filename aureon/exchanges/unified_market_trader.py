@@ -71,6 +71,26 @@ except Exception:
 logger = logging.getLogger("unified_market_trader")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
+# ── Network integration (fail-safe) ──────────────────────────────────────────
+try:
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
+    _HAS_THOUGHT_BUS = True
+except Exception:
+    get_thought_bus = None   # type: ignore[assignment]
+    Thought = None           # type: ignore[assignment]
+    _HAS_THOUGHT_BUS = False
+
+try:
+    from aureon.core.aureon_mycelium import get_mycelium
+    _HAS_MYCELIUM = True
+except Exception:
+    try:
+        from aureon_mycelium import get_mycelium
+        _HAS_MYCELIUM = True
+    except Exception:
+        get_mycelium = None  # type: ignore[assignment]
+        _HAS_MYCELIUM = False
+
 def _env_float(name: str, default: float) -> float:
     raw = os.getenv(name)
     if raw is None:
@@ -235,6 +255,15 @@ class UnifiedMarketTrader:
         self._last_tick_error: str = ""
         self._local_dashboard_server: ThreadingHTTPServer | None = None
         self._local_dashboard_thread: threading.Thread | None = None
+        # ── Network connections ────────────────────────────────────────────
+        self._thought_bus = (
+            get_thought_bus() if _HAS_THOUGHT_BUS and get_thought_bus is not None else None
+        )
+        self._mycelium = (
+            get_mycelium(initial_capital=100.0) if _HAS_MYCELIUM and get_mycelium is not None else None
+        )
+        self._last_status_publish: float = 0.0
+
         if self.setup_kraken_cli:
             self._ensure_kraken_cli()
         self._init_exchanges()
@@ -1408,6 +1437,33 @@ class UnifiedMarketTrader:
         _safe_print("=" * 78)
         _safe_print()
 
+    # ── Network helpers ─────────────────────────────────────────────────────
+
+    def _publish_thought(self, topic: str, payload_data: Dict[str, Any]) -> None:
+        if self._thought_bus is None or Thought is None:
+            return
+        try:
+            self._thought_bus.publish(Thought(
+                source="unified_market_trader",
+                topic=topic,
+                payload=payload_data,
+                meta={"mode": "unified"},
+            ))
+        except Exception:
+            pass
+
+    def _record_trade_profit(self, trade: dict) -> None:
+        if self._mycelium is None:
+            return
+        try:
+            if hasattr(self._mycelium, "record_trade_profit"):
+                self._mycelium.record_trade_profit(
+                    net_profit=float(trade.get("net_pnl", 0) or 0),
+                    trade_data=trade,
+                )
+        except Exception:
+            pass
+
     def tick(self) -> Dict[str, Any]:
         self._last_tick_started_at = time.time()
         self._last_tick_error = ""
@@ -1432,6 +1488,35 @@ class UnifiedMarketTrader:
                 self.capital = None
                 self._last_tick_error = str(e)
                 logger.error("Capital tick failed: %s", e)
+
+        # ── Publish closed trades to Thought Bus + record in Mycelium ─────
+        for trade in kraken_closed:
+            self._publish_thought("execution.trade.closed", {
+                "pair": str(trade.get("pair") or trade.get("symbol") or "?"),
+                "net_pnl": float(trade.get("net_pnl", 0) or 0),
+                "reason": str(trade.get("reason") or "?"),
+                "exchange": "kraken",
+            })
+            self._record_trade_profit(trade)
+        for trade in capital_closed:
+            self._publish_thought("execution.trade.closed", {
+                "pair": str(trade.get("symbol") or trade.get("pair") or "?"),
+                "net_pnl": float(trade.get("pnl_gbp", 0) or 0),
+                "reason": str(trade.get("reason") or "?"),
+                "exchange": "capital",
+            })
+            self._record_trade_profit(trade)
+
+        # ── Periodic status publish (every 30s) ──────────────────────────
+        now = time.time()
+        if now - self._last_status_publish >= 30.0:
+            self._last_status_publish = now
+            self._publish_thought("unified.status", {
+                "kraken_ready": self.kraken_ready,
+                "capital_ready": self.capital_ready,
+                "uptime_secs": now - self.start_time,
+            })
+
         payload = self._build_combined_payload()
         self._last_tick_completed_at = time.time()
         self._write_runtime_status_file()
