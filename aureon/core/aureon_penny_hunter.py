@@ -402,55 +402,12 @@ class PennyHunter:
                 except Exception as e:
                     log.debug(f"Market check {epic}: {e}")
 
-        # ── KRAKEN: Use the REAL KrakenMarginArmyTrader — it knows margin fees ──
-        # Margin costs: 0.376% open + 0.26% taker + 0.01%/4hr rollover = ~1%+ round trip
-        # The KrakenMarginArmyTrader.tick() handles all this already.
-        # We just need to call it through the unified trader.
-        # For spot: use USDT to buy crypto only when momentum is strong enough to cover 0.52% fees
-        if self._kraken and self._trades_total % 10 == 0:
-            try:
-                # Get real fee tier from tracker
-                kraken_fee_pct = 0.26
-                if self._kraken_fees:
-                    try:
-                        rates = self._kraken_fees.get_fee_rates()
-                        kraken_fee_pct = float(rates.get("taker_pct", 0.26))
-                    except Exception:
-                        pass
-
-                # MARGIN: opening fee 0.376% + taker + rollover
-                margin_open_fee = 0.376
-                rollover_per_4h = 0.01
-                margin_round_trip = margin_open_fee + (kraken_fee_pct * 2) + rollover_per_4h
-                spot_round_trip = kraken_fee_pct * 2
-
-                bal = self._kraken.get_balance()
-                usdt = float(bal.get("USDT", 0) or 0)
-
-                if usdt > 15:
-                    # SPOT trade (cheaper) — buy crypto with USDT
-                    import random
-                    pair = random.choice(KRAKEN_PAIRS)
-                    trade_pair = pair.replace("USD", "USDT")
-                    trade_amount = min(usdt * 0.05, 15.0)  # 5% of USDT, max $15
-
-                    try:
-                        order = self._kraken.place_market_order(
-                            symbol=trade_pair, side="buy", quote_qty=trade_amount
-                        )
-                        if order and isinstance(order, dict) and order.get("txid"):
-                            self._trades_total += 1
-                            log.info(f"[PENNY-KRAKEN] SPOT BUY {trade_pair} ${trade_amount:.2f} | "
-                                     f"spot fee:{kraken_fee_pct:.2f}% | need {spot_round_trip:.2f}% to profit | "
-                                     f"(margin would need {margin_round_trip:.2f}%)")
-                            result["opened"].append({"epic": trade_pair, "direction": "BUY",
-                                                     "exchange": "kraken", "fee_pct": kraken_fee_pct,
-                                                     "round_trip_cost": spot_round_trip})
-                    except Exception as e:
-                        log.debug(f"Kraken spot buy: {e}")
-
-            except Exception as e:
-                log.debug(f"Kraken cycle: {e}")
+        # ── KRAKEN: Margin-only via KrakenMarginArmyTrader ──────────────────
+        # All Kraken trading is handled by the margin army trader through the
+        # unified market trader.  Do NOT place spot orders here — spot trades
+        # bypass margin leverage and produce unmanaged positions that the
+        # margin trader cannot monitor or close at profit.
+        # (Spot trading path removed — Kraken is margin-only by design.)
 
         # ── ALPACA: Stock trades (US market hours only) ──
         if self._alpaca and self.step_attr % 15 == 0 and _is_market_open("us_stocks"):

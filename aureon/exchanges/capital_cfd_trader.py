@@ -2752,7 +2752,17 @@ class CapitalCFDTrader:
 
     def _deadman_close_all(self, reason: str) -> List[dict]:
         closed: List[dict] = []
+        held_count = 0
         for pos in list(self.positions):
+            # Respect profit_only_closes: never close a losing position
+            pnl_gbp = self._position_pnl_gbp(pos)
+            if CFD_FLAGS["profit_only_closes"] and pnl_gbp <= 0:
+                held_count += 1
+                logger.info(
+                    "Capital deadman HOLDING %s pnl=£%.4f (profit_only mode) reason=%s",
+                    pos.symbol, pnl_gbp, reason,
+                )
+                continue
             try:
                 record = self._close_position(pos, reason)
                 if record and not record.get("error"):
@@ -2760,8 +2770,10 @@ class CapitalCFDTrader:
             except Exception as e:
                 logger.warning("Capital deadman close failed for %s: %s", pos.symbol, e)
         self.positions = [pos for pos in self.positions if pos.deal_id not in {str(r.get('deal_id') or '') for r in closed}]
-        if closed:
-            self._latest_monitor_line = f"CAPITAL DEADMAN FLATTEN count={len(closed)} reason={reason}"
+        if closed or held_count:
+            self._latest_monitor_line = (
+                f"CAPITAL DEADMAN closed={len(closed)} held={held_count} reason={reason}"
+            )
         return closed
 
     def _deadman_guard(self, now: float) -> List[dict]:
@@ -2785,7 +2797,10 @@ class CapitalCFDTrader:
             self._last_deadman_kick_at = now
             return []
         logger.warning("Capital deadman triggered: stale loop age=%.1fs", age)
-        return self._deadman_close_all(f"DEADMAN_STALE {age:.1f}s")
+        result = self._deadman_close_all(f"DEADMAN_STALE {age:.1f}s")
+        # Reset timer so we don't keep firing every tick while holding losing positions
+        self._last_deadman_kick_at = now
+        return result
 
     def _ranked_opportunities(self) -> List[Tuple[str, dict, dict]]:
         ranked: List[Tuple[str, dict, dict]] = []
