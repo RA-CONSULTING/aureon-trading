@@ -997,6 +997,60 @@ class QueenOrcaBridge:
             'total_pnl': self._telemetry['total_pnl'],
         }
     
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠 FEEDBACK LOOP - Learn from trade outcomes
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+    def report_trade_outcome(self, outcome: dict) -> None:
+        """
+        Feed a completed trade outcome back to the Queen for learning.
+        This closes the feedback loop: decision → execution → outcome → learning.
+        """
+        try:
+            net_pnl = float(outcome.get("net_pnl", 0) or 0)
+            is_win = net_pnl > 0
+
+            # Train the neural brain
+            if self.queen_neuron:
+                features = {
+                    "signal_confidence": float(outcome.get("entry_confidence", 0.5) or 0.5),
+                    "win_rate": self._stats['orca_wins'] / max(1, self._stats['orca_kills']),
+                }
+                try:
+                    self.queen_neuron.train_on_example(features, 1.0 if is_win else 0.0)
+                except Exception:
+                    pass
+
+            # Update stats
+            if is_win:
+                self._stats['orca_wins'] = self._stats.get('orca_wins', 0) + 1
+            self._stats['orca_kills'] = self._stats.get('orca_kills', 0) + 1
+            self._telemetry['total_pnl'] = self._telemetry.get('total_pnl', 0.0) + net_pnl
+
+            # Publish to ThoughtBus so Sentient Loop also learns
+            if self.thought_bus and THOUGHT_BUS_AVAILABLE and Thought:
+                try:
+                    self.thought_bus.publish(Thought(
+                        source="queen_orca_bridge",
+                        topic="queen.trade.outcome",
+                        payload={
+                            "symbol": str(outcome.get("symbol") or outcome.get("pair") or "?"),
+                            "net_pnl": net_pnl,
+                            "is_win": is_win,
+                            "source": "orca_bridge",
+                        },
+                        meta={"mode": "queen_orca"},
+                    ))
+                except Exception:
+                    pass
+
+            logger.info(
+                f"[BRIDGE LEARN] {'WIN' if is_win else 'LOSS'} "
+                f"pnl={net_pnl:+.4f} kills={self._stats.get('orca_kills', 0)}"
+            )
+        except Exception as e:
+            logger.debug(f"Bridge outcome learning failed: {e}")
+
     def get_status_summary(self) -> str:
         """Get human-readable status summary."""
         stats = self.get_stats()

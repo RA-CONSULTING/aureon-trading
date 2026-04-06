@@ -561,6 +561,40 @@ class QueenSentientLoop:
                 except Exception as exc:
                     self._record_error("METACOGNITION", exc)
 
+            # --- Phase 2.75: LEARN — Train neural brain from trade outcomes ---
+            # This is the FEEDBACK LOOP: trade outcomes → neural weight updates
+            if self._neuron is not None and self._pending_trade_outcomes:
+                outcomes = list(self._pending_trade_outcomes)
+                self._pending_trade_outcomes.clear()
+                for outcome in outcomes:
+                    try:
+                        net_pnl = float(
+                            outcome.get("net_pnl", 0)
+                            or outcome.get("free_cash", 0)
+                            or outcome.get("pnl_gbp", 0)
+                            or 0
+                        )
+                        is_win = net_pnl > 0
+                        neural_input = self._build_neural_input_from_perception(perception)
+                        self._neuron.train_on_example(neural_input, 1.0 if is_win else 0.0)
+                        symbol = str(outcome.get("pair") or outcome.get("symbol") or "?")
+                        log.info(
+                            f"[LEARN] Trained on {symbol} outcome={'WIN' if is_win else 'LOSS'} "
+                            f"pnl={net_pnl:+.4f}"
+                        )
+                        # Analyse losses for pattern recognition
+                        if not is_win and self._loss_learner is not None:
+                            try:
+                                self._loss_learner.process_loss({
+                                    "symbol": symbol,
+                                    "pnl": net_pnl,
+                                    "reason": str(outcome.get("reason", "unknown")),
+                                })
+                            except Exception:
+                                pass
+                    except Exception as exc:
+                        self._record_error("LEARN", exc)
+
             # --- Phase 3: THINK ---
             thought: Optional[Thought] = None
             if metacognitive_thought:
@@ -694,6 +728,63 @@ class QueenSentientLoop:
                 self._osde = OpenSourceDataEngine()
             except Exception:
                 pass
+
+        # Loss learning system — analyse every loss for pattern recognition
+        self._loss_learner = None
+        try:
+            from aureon.queen.queen_loss_learning import QueenLossLearningSystem
+            self._loss_learner = QueenLossLearningSystem()
+            log.info("Loss learning system wired — every loss will be analysed")
+        except Exception:
+            pass
+
+        # Subscribe to trade outcomes for neural learning (closes the feedback loop)
+        from collections import deque
+        self._pending_trade_outcomes: deque = deque(maxlen=100)
+        if self._thought_bus is not None:
+            try:
+                self._thought_bus.subscribe("execution.trade.closed", self._on_trade_outcome)
+                self._thought_bus.subscribe("fire_trade.scalp_sold", self._on_trade_outcome)
+                self._thought_bus.subscribe("rising_star.executed", self._on_trade_outcome)
+                self._thought_bus.subscribe("queen.trade.outcome", self._on_trade_outcome)
+                log.info("Subscribed to trade outcomes for neural learning")
+            except Exception as exc:
+                log.debug(f"Trade outcome subscription failed: {exc}")
+        elif hasattr(self, '_thought_bus') and self._thought_bus is None:
+            # Try to get the bus if it wasn't available at init time
+            try:
+                from aureon.core.aureon_thought_bus import get_thought_bus
+                self._thought_bus = get_thought_bus()
+                if self._thought_bus is not None:
+                    self._thought_bus.subscribe("execution.trade.closed", self._on_trade_outcome)
+                    self._thought_bus.subscribe("fire_trade.scalp_sold", self._on_trade_outcome)
+                    log.info("Late-bound ThoughtBus for trade outcome learning")
+            except Exception:
+                pass
+
+    def _on_trade_outcome(self, thought) -> None:
+        """Callback: append trade outcome to pending queue for LEARN phase."""
+        try:
+            payload = thought.payload if hasattr(thought, 'payload') else thought
+            if isinstance(payload, dict):
+                self._pending_trade_outcomes.append(payload)
+        except Exception:
+            pass
+
+    def _build_neural_input_from_perception(self, perception) -> dict:
+        """Map perception state to the 7-input vector NeuronV2 expects."""
+        p = perception if isinstance(perception, dict) else {}
+        if hasattr(perception, '__dict__'):
+            p = perception.__dict__
+        return {
+            "probability_score": float(p.get("sentiment", 0.5) or 0.5),
+            "wisdom_score": float(p.get("confidence", 0.5) or 0.5),
+            "quantum_signal": 0.0,
+            "gaia_resonance": float(p.get("schumann", 0.5) or 0.5),
+            "emotional_coherence": float(p.get("mood_score", 0.5) or 0.5),
+            "mycelium_signal": 0.0,
+            "happiness_pursuit": 0.5,
+        }
 
     # ------------------------------------------------------------------
     # Phase 1: PERCEIVE
