@@ -329,6 +329,10 @@ class QueenSentientLoop:
             except Exception:
                 self._agent = None
 
+        # ThoughtBus + learning handles (initialised in _init_subsystems)
+        self._thought_bus: Optional[Any] = None
+        self._loss_learner: Optional[Any] = None
+
         # ================================================================
         # SACRED IDENTITY — Who I Am
         # ================================================================
@@ -582,14 +586,22 @@ class QueenSentientLoop:
                             f"[LEARN] Trained on {symbol} outcome={'WIN' if is_win else 'LOSS'} "
                             f"pnl={net_pnl:+.4f}"
                         )
-                        # Analyse losses for pattern recognition
+                        # Record losses in the loss learner's lesson queue (sync)
                         if not is_win and self._loss_learner is not None:
                             try:
-                                self._loss_learner.process_loss({
+                                reason = str(outcome.get("reason", "unknown"))
+                                lesson = {
+                                    "type": "loss_recorded",
                                     "symbol": symbol,
                                     "pnl": net_pnl,
-                                    "reason": str(outcome.get("reason", "unknown")),
-                                })
+                                    "reason": reason,
+                                    "timestamp": time.time(),
+                                }
+                                self._loss_learner.lesson_queue.append(lesson)
+                                self._loss_learner.stats["total_losses_analyzed"] = (
+                                    self._loss_learner.stats.get("total_losses_analyzed", 0) + 1
+                                )
+                                log.info(f"[LEARN] Loss recorded for {symbol}: {reason}")
                             except Exception:
                                 pass
                     except Exception as exc:
@@ -730,7 +742,6 @@ class QueenSentientLoop:
                 pass
 
         # Loss learning system — analyse every loss for pattern recognition
-        self._loss_learner = None
         try:
             from aureon.queen.queen_loss_learning import QueenLossLearningSystem
             self._loss_learner = QueenLossLearningSystem()
@@ -738,29 +749,31 @@ class QueenSentientLoop:
         except Exception:
             pass
 
-        # Subscribe to trade outcomes for neural learning (closes the feedback loop)
+        # ThoughtBus — get the shared singleton for cross-system communication
         from collections import deque
         self._pending_trade_outcomes: deque = deque(maxlen=100)
-        if self._thought_bus is not None:
-            try:
-                self._thought_bus.subscribe("execution.trade.closed", self._on_trade_outcome)
-                self._thought_bus.subscribe("fire_trade.scalp_sold", self._on_trade_outcome)
-                self._thought_bus.subscribe("rising_star.executed", self._on_trade_outcome)
-                self._thought_bus.subscribe("queen.trade.outcome", self._on_trade_outcome)
-                log.info("Subscribed to trade outcomes for neural learning")
-            except Exception as exc:
-                log.debug(f"Trade outcome subscription failed: {exc}")
-        elif hasattr(self, '_thought_bus') and self._thought_bus is None:
-            # Try to get the bus if it wasn't available at init time
+        if self._thought_bus is None:
             try:
                 from aureon.core.aureon_thought_bus import get_thought_bus
                 self._thought_bus = get_thought_bus()
-                if self._thought_bus is not None:
-                    self._thought_bus.subscribe("execution.trade.closed", self._on_trade_outcome)
-                    self._thought_bus.subscribe("fire_trade.scalp_sold", self._on_trade_outcome)
-                    log.info("Late-bound ThoughtBus for trade outcome learning")
             except Exception:
                 pass
+
+        # Subscribe to trade outcomes for neural learning (closes the feedback loop)
+        if self._thought_bus is not None:
+            _topics = [
+                "execution.trade.closed",
+                "fire_trade.scalp_sold",
+                "rising_star.executed",
+                "queen.trade.outcome",
+                "orca.kill.complete",
+            ]
+            for topic in _topics:
+                try:
+                    self._thought_bus.subscribe(topic, self._on_trade_outcome)
+                except Exception:
+                    pass
+            log.info("Subscribed to trade outcomes for neural learning")
 
     def _on_trade_outcome(self, thought) -> None:
         """Callback: append trade outcome to pending queue for LEARN phase."""

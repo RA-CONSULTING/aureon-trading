@@ -255,7 +255,7 @@ class QueenNeuronV2:
                 gaia_resonance=float(neural_input.get('gaia_resonance', neural_input.get('gaia', 0.5))),
                 emotional_coherence=float(neural_input.get('emotional_coherence', neural_input.get('emotion', 0.5))),
                 mycelium_signal=float(neural_input.get('mycelium_signal', neural_input.get('mycelium', 0.0))),
-                happiness_signal=float(neural_input.get('happiness_signal', happiness)),
+                happiness_pursuit=float(neural_input.get('happiness_pursuit', neural_input.get('happiness_signal', happiness))),
             )
 
         raise TypeError(f"Unsupported neural input type: {type(neural_input).__name__}")
