@@ -1516,6 +1516,13 @@ class UnifiedMarketTrader:
                 "capital_ready": self.capital_ready,
                 "uptime_secs": now - self.start_time,
             })
+            # Publish market feed for Hive Command worker bees
+            if self._shared_market_feed:
+                symbols = list(self._shared_market_feed.keys())
+                self._publish_thought("market.feed", {
+                    "prices": dict(self._shared_market_feed),
+                    "symbols": symbols,
+                })
 
         payload = self._build_combined_payload()
         self._last_tick_completed_at = time.time()

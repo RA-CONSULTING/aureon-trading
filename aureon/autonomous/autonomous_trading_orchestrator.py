@@ -374,9 +374,15 @@ class AutonomousOrchestrator:
         # 6. Recall market intelligence from Thought Bus (every 10s)
         self._recall_market_intel()
 
-        # 7. Publish orchestrator status (every 30s)
+        # 7. Publish orchestrator status + market prices (every 30s)
         if now - self._last_status_publish >= 30.0:
             self._last_status_publish = now
+            # Publish market prices for Hive Command worker bees
+            if price_map:
+                self._publish_thought("market.prices", {
+                    "prices": price_map,
+                    "symbols": list(price_map.keys()),
+                })
             total = self._gates_passed + self._gates_blocked
             self._publish_thought("orchestrator.status", {
                 "gates_passed": self._gates_passed,
