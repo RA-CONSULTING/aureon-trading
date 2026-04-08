@@ -452,6 +452,11 @@ class SourceLawEngine:
 
     def _timer_loop(self) -> None:
         """Check if max superposition age has been reached."""
+        # Initial cogitation after 10s boot accumulation
+        time.sleep(10)
+        if self._running and self._vacuum.size > 0:
+            self.cogitate()
+
         while self._running:
             time.sleep(5)  # Check every 5 seconds
             age = time.time() - self._last_cogitation
