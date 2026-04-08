@@ -57,10 +57,10 @@ DOMAIN_SYSTEMS: List[tuple] = [
     ("timeline_oracle",               "aureon_timeline_oracle",               {"class_name": "TimelineOracle"}),
     ("unified_data_puller",           "aureon_unified_intelligence_registry", {"singleton_fn": "get_unified_puller"}),
     ("unified_decision_engine",       "aureon_unified_decision_engine",       {"class_name": "UnifiedDecisionEngine"}),
-    ("market_pulse",                  "aureon_market_pulse",                  {"class_name": "MarketPulse"}),
+    ("market_pulse",                  "aureon_market_pulse",                  {}),  # needs client arg — import only
     ("phase_transition_detector",     "aureon_phase_transition_detector",     {"class_name": "PhaseTransitionDetector"}),
     ("truth_prediction_engine",       "aureon_truth_prediction_engine",       {"class_name": "TruthPredictionEngine"}),
-    ("integrated_forecast",           "aureon_integrated_forecast",           {"class_name": "IntegratedForecast"}),
+    ("integrated_forecast",           "aureon_integrated_forecast",           {}),  # dataclass — import only
 
     # ── harmonic/ ─────────────────────────────────────────────────────
     ("harmonic_chain_master",         "aureon_harmonic_chain_master",         {"class_name": "HarmonicChainMaster"}),
@@ -78,7 +78,7 @@ DOMAIN_SYSTEMS: List[tuple] = [
     ("ocean_wave_scanner",            "aureon_ocean_wave_scanner",            {"class_name": "OceanWaveScanner"}),
     ("strategic_warfare_scanner",     "aureon_strategic_warfare_scanner",     {"singleton_fn": "get_warfare_scanner"}),
     ("global_wave_scanner",           "aureon_global_wave_scanner",           {"class_name": "GlobalWaveScanner"}),
-    ("obsidian_filter",               "aureon_obsidian_filter",               {"class_name": "ObsidianFilter"}),
+    ("obsidian_filter",               "aureon_obsidian_filter",               {"class_name": "AureonObsidianFilter"}),
     ("phantom_signal_filter",         "aureon_phantom_signal_filter",         {"class_name": "PhantomSignalFilter"}),
     ("alpaca_stock_scanner",          "aureon_alpaca_stock_scanner",          {}),
 
