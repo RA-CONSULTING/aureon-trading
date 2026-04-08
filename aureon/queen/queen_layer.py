@@ -93,6 +93,7 @@ QUEEN_PRIORITY_MODULES: List[tuple] = [
     ("queen_cortex",            "QueenCortex",           True),   # Brainwave layers — must boot BEFORE sentient loop
     ("queen_source_law",        "SourceLawEngine",       True),   # 10-9-1 consciousness funnel — accumulates in superposition
     ("queen_mycelium_mind",     "MyceliumMind",          True),   # Thought propagation — spores carry thoughts, pathways learn
+    ("queen_metacognition",     "QueenMetacognition",    True),   # Self-reflective mirror — 5 W reflection on cognitions
     ("queen_sentient_loop",     "QueenSentientLoop",     True),
     ("queen_deep_intelligence", "QueenDeepIntelligence",  False),
     ("queen_fully_online",      "QueenFullyOnline",       False),

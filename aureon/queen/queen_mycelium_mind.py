@@ -135,6 +135,9 @@ DEFAULT_PATHWAYS = [
     ("hive.scan.",    "intelligence"),
     # Source law cognition flows BACK TO mycelium (the feedback loop)
     ("queen.source_law.", "mycelium"),
+    # Metacognitive insights flow TO source law and cortex (self-awareness loop)
+    ("queen.metacognition.", "source_law"),
+    ("queen.metacognition.", "cortex"),
 ]
 
 

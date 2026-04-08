@@ -62,6 +62,7 @@ BAND_ROUTING: Dict[str, List[str]] = {
         "decoder.",             # ancient pattern decoders
         "elephant.",            # elephant memory
         "queen.conscience.",    # ethical learning
+        "queen.metacognition.", # metacognitive reflections and insights
         "miner.",               # miner brain insights
         "strategy.",            # strategy signals
         "auris.throne.cosmic_state",  # Dr. Auris Throne cosmic analysis
