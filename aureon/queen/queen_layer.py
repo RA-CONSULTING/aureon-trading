@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 DOMAIN_SYSTEMS: List[tuple] = [
     # intelligence/
     ("real_intelligence_engine",      "aureon_real_intelligence_engine",      {"singleton_fn": "get_intelligence_engine"}),
+    ("dr_auris_throne",              "dr_auris_throne",                      {"singleton_fn": "get_dr_auris_throne"}),
     ("timeline_oracle",               "aureon_timeline_oracle",               {"class_name": "TimelineOracle"}),
     ("unified_data_puller",           "aureon_unified_intelligence_registry", {"singleton_fn": "get_unified_puller"}),
 
@@ -372,7 +373,13 @@ class QueenLayer:
             # Skip if already activated in phase 3
             if name in self.registry:
                 continue
-            self._safe_activate(name, module_path, **init_kwargs)
+            instance = self._safe_activate(name, module_path, **init_kwargs)
+            # Start systems that have a lifecycle start() method
+            if instance is not None and hasattr(instance, "start") and callable(instance.start):
+                try:
+                    instance.start()
+                except Exception as e:
+                    logger.debug(f"Could not start {name}: {e}")
 
         domain_online = sum(
             1 for name, _mod, _kw in DOMAIN_SYSTEMS

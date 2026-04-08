@@ -64,11 +64,14 @@ BAND_ROUTING: Dict[str, List[str]] = {
         "queen.conscience.",    # ethical learning
         "miner.",               # miner brain insights
         "strategy.",            # strategy signals
+        "auris.throne.cosmic_state",  # Dr. Auris Throne cosmic analysis
     ],
     # Alpha — awareness/flow (market regime and coherence)
     "alpha": [
         "harmonic.",            # harmonic field snapshots
         "market.",              # market data/regime
+        "auris.throne.advisory",  # Dr. Auris Throne advisory
+        "auris.throne.alert",     # Dr. Auris Throne alerts
         "queen.broadcast",      # queen awareness broadcasts
         "analytics.",           # analytics insights
         "queen.alert.",         # queen alerts
