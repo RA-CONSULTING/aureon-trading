@@ -3,204 +3,6 @@
   "thresholds": {},
   "brain_insights": [
     {
-      "timestamp": "2026-04-03T11:52:01.984243",
-      "fear_greed": 9,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "brain_accuracy": 0.12,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-03T12:07:08.920165",
-      "fear_greed": 50,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.15,
-      "brain_accuracy": 0.12,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-03T12:12:03.895862",
-      "fear_greed": 50,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.12,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-03T12:15:31.639523",
-      "fear_greed": 50,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.12,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-03T12:18:05.419581",
-      "fear_greed": 50,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.12,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:04:34.711732",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:04:48.820108",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:05:03.749869",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:05:18.846417",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:05:33.721269",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:05:48.730198",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:06:03.687426",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:06:18.670925",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:06:33.755484",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:06:48.705106",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:07:03.693387",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:07:18.721583",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:07:33.630265",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:07:48.620379",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:08:03.726829",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:08:18.742189",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-08T14:08:33.657692",
-      "fear_greed": 17,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.0,
-      "brain_accuracy": 0.0,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
       "timestamp": "2026-04-08T14:08:48.764563",
       "fear_greed": 17,
       "consensus": "INCONCLUSIVE",
@@ -445,6 +247,204 @@
     },
     {
       "timestamp": "2026-04-08T14:15:33.712847",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:15:48.790435",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:16:03.841168",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:16:18.702126",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:16:33.667380",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:16:48.720927",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:17:03.733947",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:17:18.772444",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:17:33.755398",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:17:48.838937",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:18:03.667436",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:18:21.447536",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:18:36.564017",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:18:51.547800",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:19:06.486672",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:19:21.466649",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:19:36.553699",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:19:51.563590",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:20:06.544832",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:20:21.579859",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:20:36.523576",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:20:51.473447",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:21:06.530934",
       "fear_greed": 17,
       "consensus": "INCONCLUSIVE",
       "manipulation_probability": 0.0,
