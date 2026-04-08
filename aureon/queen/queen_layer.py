@@ -89,6 +89,7 @@ DOMAIN_SYSTEMS: List[tuple] = [
 # Queen modules that need special handling (class_name, start method)
 QUEEN_PRIORITY_MODULES: List[tuple] = [
     # (module_name, class_name, should_call_start)
+    ("queen_cortex",            "QueenCortex",           True),   # Brainwave layers — must boot BEFORE sentient loop
     ("queen_sentient_loop",     "QueenSentientLoop",     True),
     ("queen_deep_intelligence", "QueenDeepIntelligence",  False),
     ("queen_fully_online",      "QueenFullyOnline",       False),
