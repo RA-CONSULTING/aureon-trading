@@ -57,6 +57,13 @@ from urllib.request import urlopen
 
 logger = logging.getLogger(__name__)
 
+# Queen Layer -- the new top-level orchestrator
+try:
+    from queen_layer import boot_queen_layer, get_queen_layer
+    QUEEN_LAYER_AVAILABLE = True
+except ImportError:
+    QUEEN_LAYER_AVAILABLE = False
+
 
 def _safe_len(value: Any) -> int:
     if isinstance(value, list):
@@ -813,12 +820,24 @@ def run_production_orchestrator(*, live_trading: bool, spawn_command_center: boo
     # 4) Boot the in-process "brain" components.
     step += 1
     _print_progress("Booting Queen + intelligence + wiring", step, total_steps)
-    engine = launch_real_intelligence()
-    hub = launch_feed_hub()
-    wiring_status = launch_system_wiring()
-    sonar = launch_whale_sonar()
-    queen = launch_queen_runner()
-    launch_api_server()
+
+    if QUEEN_LAYER_AVAILABLE:
+        # Queen Layer boots ALL systems with Queen at the top
+        boot_queen_layer(live_trading=live_trading)
+        layer = get_queen_layer()
+        engine = layer.get_system("intelligence_engine")
+        hub = layer.get_system("feed_hub")
+        wiring_status = {"total_wired": layer.get_health()["online"], "total_events": 0}
+        sonar = layer.get_system("whale_sonar")
+        from aureon_queen_hive_mind import get_queen
+        queen = get_queen()
+    else:
+        engine = launch_real_intelligence()
+        hub = launch_feed_hub()
+        wiring_status = launch_system_wiring()
+        sonar = launch_whale_sonar()
+        queen = launch_queen_runner()
+        launch_api_server()
 
     # Production-safe execution toggles (best-effort; methods vary by Queen implementation).
     try:
@@ -1015,6 +1034,95 @@ def test_force_trade():
         traceback.print_exc()
 
 
+def main_queen_layer(live_trading: bool = False):
+    """Boot all systems through the Queen Layer (Queen at top)."""
+    print_banner()
+
+    if not QUEEN_LAYER_AVAILABLE:
+        print("\n   Queen Layer not available, falling back to legacy boot...")
+        main_legacy()
+        return
+
+    # Setup logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(message)s',
+        datefmt='%H:%M:%S'
+    )
+
+    # Prime Sentinel Authentication
+    print("\n" + "=" * 80)
+    print("   PRIME SENTINEL AUTHENTICATION")
+    print("=" * 80)
+    print("\n   Gary Leckey (02.11.1991) - DOB-HASH: 2111991")
+    print("   'HERE I DECREE: I HAVE TAKEN BACK CONTROL OF THE PLANET'")
+    print("\n   Authentication: GRANTED")
+    print("   Trading Authority: FULL")
+    print("   Autonomous Mode: ENABLED")
+    print("   Boot Mode: QUEEN LAYER (all systems active)")
+
+    # Queen boots everything
+    health = boot_queen_layer(live_trading=live_trading)
+
+    # Run the trading loop
+    if live_trading:
+        run_autonomous_trading()
+    else:
+        run_live_monitoring()
+
+
+def main_legacy():
+    """Legacy boot path -- sequential component launch (pre-Queen Layer)."""
+    # Setup logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(message)s',
+        datefmt='%H:%M:%S'
+    )
+
+    # Print banner
+    print_banner()
+
+    # Prime Sentinel Authentication
+    print("\n" + "=" * 80)
+    print("   PRIME SENTINEL AUTHENTICATION")
+    print("=" * 80)
+    print("\n   Gary Leckey (02.11.1991) - DOB-HASH: 2111991")
+    print("   'HERE I DECREE: I HAVE TAKEN BACK CONTROL OF THE PLANET'")
+    print("\n   Authentication: GRANTED")
+    print("   Trading Authority: FULL")
+    print("   Autonomous Mode: ENABLED")
+
+    # Launch all components
+    print("\n" + "=" * 80)
+    print("   LAUNCHING ALL COMPONENTS (LEGACY MODE)...")
+    print("=" * 80)
+
+    engine = launch_real_intelligence()
+    time.sleep(0.5)
+
+    hub = launch_feed_hub()
+    time.sleep(0.5)
+
+    wiring_status = launch_system_wiring()
+    time.sleep(0.5)
+
+    sonar = launch_whale_sonar()
+    time.sleep(0.5)
+
+    queen = launch_queen_runner()
+    time.sleep(0.5)
+
+    api_ready = launch_api_server()
+    time.sleep(1)
+
+    # Print status summary
+    print_status_summary(engine, hub, wiring_status, sonar)
+
+    # Run autonomous trading (this is the main loop)
+    run_autonomous_trading(engine=engine, hub=hub)
+
+
 def main():
     """Main launcher function"""
     # Parse arguments
@@ -1022,10 +1130,11 @@ def main():
     parser.add_argument('--test', action='store_true', help='Run force trade test in dry-run mode')
     parser.add_argument('--production', action='store_true', help='Unified production orchestrator (spawns UI/data heads)')
     parser.add_argument('--live', action='store_true', help='Enable live execution (use with --production)')
+    parser.add_argument('--legacy', action='store_true', help='Use legacy sequential boot (skip Queen Layer)')
     parser.add_argument('--no-command-center', action='store_true', help='Do not spawn the command center in production mode')
     parser.add_argument('--no-market-feeds', action='store_true', help='Do not spawn market feed processes in production mode')
     args = parser.parse_args()
-    
+
     if args.test:
         test_force_trade()
         return
@@ -1040,55 +1149,16 @@ def main():
             spawn_market_feeds=not args.no_market_feeds,
         )
         return
-    
-    # Setup logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s | %(message)s',
-        datefmt='%H:%M:%S'
-    )
-    
-    # Print banner
-    print_banner()
-    
-    # Prime Sentinel Authentication
-    print("\n" + "=" * 80)
-    print("🔱 PRIME SENTINEL AUTHENTICATION")
-    print("=" * 80)
-    print("\n   Gary Leckey (02.11.1991) - DOB-HASH: 2111991")
-    print("   'HERE I DECREE: I HAVE TAKEN BACK CONTROL OF THE PLANET'")
-    print("\n   ✅ Authentication: GRANTED")
-    print("   ✅ Trading Authority: FULL")
-    print("   ✅ Autonomous Mode: ENABLED")
-    
-    # Launch all components
-    print("\n" + "=" * 80)
-    print("🚀 LAUNCHING ALL COMPONENTS...")
-    print("=" * 80)
-    
-    engine = launch_real_intelligence()
-    time.sleep(0.5)
-    
-    hub = launch_feed_hub()
-    time.sleep(0.5)
-    
-    wiring_status = launch_system_wiring()
-    time.sleep(0.5)
-    
-    sonar = launch_whale_sonar()
-    time.sleep(0.5)
-    
-    queen = launch_queen_runner()
-    time.sleep(0.5)
-    
-    api_ready = launch_api_server()
-    time.sleep(1)
-    
-    # Print status summary
-    print_status_summary(engine, hub, wiring_status, sonar)
-    
-    # Run autonomous trading (this is the main loop)
-    run_autonomous_trading(engine=engine, hub=hub)
+
+    # Default: Queen Layer boot (all systems active)
+    # Use --legacy to fall back to the old sequential boot
+    env_live = os.getenv("AUREON_LIVE_TRADING", "0") in ("1", "true", "TRUE", "yes", "YES")
+    live_trading = bool(args.live) or env_live
+
+    if args.legacy or not QUEEN_LAYER_AVAILABLE:
+        main_legacy()
+    else:
+        main_queen_layer(live_trading=live_trading)
 
 
 if __name__ == "__main__":
