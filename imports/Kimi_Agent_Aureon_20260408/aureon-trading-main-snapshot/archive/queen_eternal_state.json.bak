@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-02-18T23:30:00",
+  "initial_vault": 80.0,
+  "available_cash": 0.0,
+  "main_position": null,
+  "breadcrumbs": {},
+  "statistics": {
+    "total_cycles": 22,
+    "total_leaps": 2,
+    "total_breadcrumbs": 2,
+    "total_scalps": 4,
+    "total_profit_realized": 7.67,
+    "start_time": null
+  }
+}

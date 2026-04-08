@@ -15,7 +15,16 @@ This bundle is primarily **research artifacts** (reports, JSON analyses, images)
 The upstream ZIP also contained an embedded snapshot of this repository:
 
 - `aureon-trading.zip`
-- `aureon-trading-main/`
+- `aureon-trading-main/` (extracted copy)
 
-Those are **gitignored** here because they duplicate the repo and (critically) include environment files (example: `.env1.txt`) that may contain live credentials. If you need to preserve them, store them separately in a secure location after sanitizing secrets.
+The raw archive (`aureon-trading.zip`) is **not committed** because it includes `.env*` (live credentials) and is not safe to publish.
 
+## Embedded Snapshot (Sanitized, Committed)
+
+To preserve the snapshot for multi-terminal use without leaking secrets, a **sanitized extraction** is committed here:
+
+- `imports/Kimi_Agent_Aureon_20260408/aureon-trading-main-snapshot/`
+
+Sanitization performed:
+
+- Removed `aureon-trading-main-snapshot/.env1.txt` (contained live credentials).

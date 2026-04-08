@@ -29,6 +29,7 @@ dist-ssr
 !.env.example
 .env.local
 .env.*.local
+.env*.txt
 # *.env  -- REMOVED
 scripts/binanceKeys.json
 .venv/

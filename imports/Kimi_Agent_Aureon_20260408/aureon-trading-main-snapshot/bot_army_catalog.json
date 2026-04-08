@@ -1,0 +1,137 @@
+{
+  "f5a6ffce223d": {
+    "bot_id": "f5a6ffce223d",
+    "firm_id": "retail_swarm",
+    "firm_name": "Retail Swarm",
+    "animal": "\ud83d\udc1c Ants",
+    "band": "market_maker",
+    "first_seen": 1775208265.5495753,
+    "last_seen": 1775208265.5495753,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 1,
+    "confidence": 0.69,
+    "frequency": 0.0521,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 8.7,
+    "last_bsr": 0.63,
+    "action_history": [
+      {
+        "ts": 1775208266,
+        "action": "SELLING",
+        "bsr": 0.63,
+        "power": 8.7,
+        "symbol": "BTCUSDT"
+      }
+    ]
+  },
+  "0ed92f8bbd2f": {
+    "bot_id": "0ed92f8bbd2f",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1775208265.5495753,
+    "last_seen": 1775214589.2518432,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 5,
+    "confidence": 0.91,
+    "frequency": 3.0975,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 90.00115334537291,
+    "last_bsr": 5.47,
+    "action_history": [
+      {
+        "ts": 1775208266,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 91.0,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1775212921,
+        "action": "BUYING",
+        "bsr": 5.47,
+        "power": 90.0,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1775214281,
+        "action": "BUYING",
+        "bsr": 5.47,
+        "power": 90.0,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1775214435,
+        "action": "BUYING",
+        "bsr": 5.47,
+        "power": 90.0,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1775214589,
+        "action": "BUYING",
+        "bsr": 5.47,
+        "power": 90.0,
+        "symbol": "BTCUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "c6b71c6c9010": {
+    "bot_id": "c6b71c6c9010",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1775212921.0568032,
+    "last_seen": 1775214589.2518432,
+    "first_symbol": "BTCUSDT",
+    "last_symbol": "BTCUSDT",
+    "sighting_count": 4,
+    "confidence": 0.8,
+    "frequency": 0.3277,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 9.819422546398382,
+    "last_bsr": 4.18,
+    "action_history": [
+      {
+        "ts": 1775212921,
+        "action": "BUYING",
+        "bsr": 4.18,
+        "power": 9.8,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1775214281,
+        "action": "BUYING",
+        "bsr": 4.18,
+        "power": 9.8,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1775214435,
+        "action": "BUYING",
+        "bsr": 4.18,
+        "power": 9.8,
+        "symbol": "BTCUSDT"
+      },
+      {
+        "ts": 1775214589,
+        "action": "BUYING",
+        "bsr": 4.18,
+        "power": 9.8,
+        "symbol": "BTCUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  }
+}

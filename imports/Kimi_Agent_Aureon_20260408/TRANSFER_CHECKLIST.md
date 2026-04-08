@@ -23,5 +23,15 @@ The outer ZIP contains an embedded repo snapshot:
 
 - `aureon-trading.zip` (embedded copy of the repo)
 
-This is **not committed** because it contains `.env*` files (example: `.env1.txt`) with live credentials and should not be published to GitHub.
+This raw archive is **not committed** because it contains `.env*` files (example: `.env1.txt`) with live credentials and should not be published to GitHub.
+
+## Uploaded Instead (safe)
+
+To preserve the embedded snapshot without leaking credentials, we committed a sanitized extraction:
+
+- `imports/Kimi_Agent_Aureon_20260408/aureon-trading-main-snapshot/`
+
+Sanitization performed:
+
+- Deleted `aureon-trading-main-snapshot/.env1.txt`.
 

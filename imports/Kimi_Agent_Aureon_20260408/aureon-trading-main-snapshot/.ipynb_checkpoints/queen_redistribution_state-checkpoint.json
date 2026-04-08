@@ -1,0 +1,131 @@
+{
+  "last_update": 1769368034.8370266,
+  "total_net_energy_gained": 2.792224136328058,
+  "total_blocked_drains_avoided": 0.0,
+  "decisions_count": 3,
+  "executions_count": 3,
+  "recent_decisions": [
+    {
+      "opportunity": {
+        "relay": "ALP",
+        "source_asset": "USD",
+        "target_asset": "AAVE/USD",
+        "idle_energy": 0.55,
+        "expected_gain_pct": 4.256151874399231,
+        "expected_gain_usd": 0.023408835309195773,
+        "energy_drain": 0.0023650000000000003,
+        "net_energy_gain": 0.021043835309195773,
+        "momentum_score": 0.003796635448,
+        "confidence": 0.7,
+        "source_node": null,
+        "timestamp": 1769368034.8356316
+      },
+      "decision": "EXECUTE",
+      "reasoning": "\u2705 Net energy gain: $0.0219",
+      "queen_confidence": 0.7,
+      "realms_consensus": 5,
+      "timestamp": 1769368034.836253
+    },
+    {
+      "opportunity": {
+        "relay": "BIN",
+        "source_asset": "ENSOUSDT",
+        "target_asset": "ENSOUSDT",
+        "idle_energy": 5.069898028543292,
+        "expected_gain_pct": 41.89671109803342,
+        "expected_gain_usd": 2.124120529983675,
+        "energy_drain": 0.014195714479921219,
+        "net_energy_gain": 2.1099248155037538,
+        "momentum_score": 0.8,
+        "confidence": 0.8,
+        "source_node": {
+          "relay": "BIN",
+          "symbol": "ENSOUSDT",
+          "quantity": 15.8749045,
+          "entry_price": 0.7622688468717034,
+          "current_price": 1.401,
+          "unrealized_pnl": 10.139796057086585,
+          "pnl_percentage": 83.79342219606684,
+          "position_value_usd": 22.2407412045,
+          "is_positive_energy": true,
+          "energy_available_to_redistribute": 5.069898028543292,
+          "timestamp": 1769368033.5223775
+        },
+        "timestamp": 1769368034.8358939
+      },
+      "decision": "EXECUTE",
+      "reasoning": "\u2705 Net energy gain: $2.1150",
+      "queen_confidence": 0.8,
+      "realms_consensus": 5,
+      "timestamp": 1769368034.8363166
+    },
+    {
+      "opportunity": {
+        "relay": "KRK",
+        "source_asset": "DASHUSD",
+        "target_asset": "DASHUSD",
+        "idle_energy": 4.1716788,
+        "expected_gain_pct": 16.481064217003205,
+        "expected_gain_usd": 0.6875370619551087,
+        "energy_drain": 0.02628157644,
+        "net_energy_gain": 0.6612554855151087,
+        "momentum_score": 0.8,
+        "confidence": 0.8,
+        "source_node": {
+          "relay": "KRK",
+          "symbol": "DASHUSD",
+          "quantity": 0.3656,
+          "entry_price": 46.156,
+          "current_price": 61.37,
+          "unrealized_pnl": 5.562238399999999,
+          "pnl_percentage": 32.96212843400641,
+          "position_value_usd": 22.436871999999997,
+          "is_positive_energy": true,
+          "energy_available_to_redistribute": 4.1716788,
+          "timestamp": 1769368033.9769418
+        },
+        "timestamp": 1769368034.8360786
+      },
+      "decision": "EXECUTE",
+      "reasoning": "\u2705 Net energy gain: $0.6717",
+      "queen_confidence": 0.8,
+      "realms_consensus": 5,
+      "timestamp": 1769368034.836372
+    }
+  ],
+  "recent_executions": [
+    {
+      "success": true,
+      "relay": "ALP",
+      "target_asset": "AAVE/USD",
+      "deployed_usd": 0.55,
+      "expected_gain_usd": 0.023408835309195773,
+      "net_energy_gain": 0.021043835309195773,
+      "energy_drain": 0.0023650000000000003,
+      "timestamp": 1769368034.8364866,
+      "dry_run": true
+    },
+    {
+      "success": true,
+      "relay": "BIN",
+      "target_asset": "ENSOUSDT",
+      "deployed_usd": 5.069898028543292,
+      "expected_gain_usd": 2.124120529983675,
+      "net_energy_gain": 2.1099248155037538,
+      "energy_drain": 0.014195714479921219,
+      "timestamp": 1769368034.836534,
+      "dry_run": true
+    },
+    {
+      "success": true,
+      "relay": "KRK",
+      "target_asset": "DASHUSD",
+      "deployed_usd": 4.1716788,
+      "expected_gain_usd": 0.6875370619551087,
+      "net_energy_gain": 0.6612554855151087,
+      "energy_drain": 0.02628157644,
+      "timestamp": 1769368034.8365772,
+      "dry_run": true
+    }
+  ]
+}
