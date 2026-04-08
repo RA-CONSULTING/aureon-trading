@@ -54,6 +54,48 @@ if _SCRIPTS.exists():
 
 os.chdir(str(_REPO_ROOT))  # Runtime JSONs live at repo root
 
+# ============================================================================
+# ENV FILE AUTO-DISCOVERY -- find API keys wherever they live
+# ============================================================================
+
+def _load_env():
+    """Load environment variables from .env, .env1.txt, or .env1 — whichever exists."""
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        # Manual fallback if python-dotenv not installed
+        def load_dotenv(path, **kw):
+            if not path or not Path(path).exists():
+                return
+            for line in Path(path).read_text(errors="replace").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key, val = key.strip(), val.strip().strip("'\"")
+                if key:
+                    os.environ.setdefault(key, val)
+
+    # Try these in order — first one found wins, later ones fill gaps
+    env_candidates = [
+        _REPO_ROOT / ".env",
+        _REPO_ROOT / ".env1.txt",
+        _REPO_ROOT / ".env1",
+        _REPO_ROOT / ".env.local",
+    ]
+    loaded = []
+    for env_file in env_candidates:
+        if env_file.exists():
+            load_dotenv(str(env_file), override=False)  # Don't override already-set vars
+            loaded.append(env_file.name)
+
+    if loaded:
+        print(f"[IGNITION] Loaded env from: {', '.join(loaded)}")
+    else:
+        print("[IGNITION] WARNING: No .env file found — API keys may be missing")
+
+_load_env()
+
 
 # ============================================================================
 # LOGGING
