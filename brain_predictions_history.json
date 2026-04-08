@@ -1,40 +1,6 @@
 {
   "predictions": [
     {
-      "timestamp": "2026-04-02T19:56:47.907359",
-      "validation_time": "2026-04-02T21:56:47.907359",
-      "btc_price_at_call": 66968.0,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "fear_greed": 12,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.42622950819672134,
-      "validated": true,
-      "was_correct": false,
-      "actual_outcome": {
-        "price_at_validation": 66954.03,
-        "price_change_pct": -0.020860709592643,
-        "direction": "DOWN"
-      }
-    },
-    {
-      "timestamp": "2026-04-02T19:57:05.480885",
-      "validation_time": "2026-04-02T21:57:05.480885",
-      "btc_price_at_call": 66973.43,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "fear_greed": 12,
-      "predicted_direction": "BULLISH",
-      "confidence": 0.42622950819672134,
-      "validated": true,
-      "was_correct": false,
-      "actual_outcome": {
-        "price_at_validation": 66954.03,
-        "price_change_pct": -0.028966711127075592,
-        "direction": "DOWN"
-      }
-    },
-    {
       "timestamp": "2026-04-02T19:57:23.762764",
       "validation_time": "2026-04-02T21:57:23.762764",
       "btc_price_at_call": 66997.8,
@@ -1639,6 +1605,32 @@
       "validated": false,
       "was_correct": null,
       "actual_outcome": null
+    },
+    {
+      "timestamp": "2026-04-08T14:07:18.718584",
+      "validation_time": "2026-04-08T16:07:18.718590",
+      "btc_price_at_call": 0.0,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "fear_greed": 17,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.42622950819672134,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
+    },
+    {
+      "timestamp": "2026-04-08T14:07:33.628037",
+      "validation_time": "2026-04-08T16:07:33.628042",
+      "btc_price_at_call": 0.0,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "fear_greed": 17,
+      "predicted_direction": "BULLISH",
+      "confidence": 0.42622950819672134,
+      "validated": false,
+      "was_correct": null,
+      "actual_outcome": null
     }
   ],
   "bias_tracker": {
@@ -1649,5 +1641,5 @@
     "neutral_calls": 0,
     "neutral_correct": 0
   },
-  "last_updated": "2026-04-08T14:07:03.690816"
+  "last_updated": "2026-04-08T14:07:33.628130"
 }
