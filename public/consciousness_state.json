@@ -1,97 +1,57 @@
 {
   "available": true,
-  "generated_at": "2026-04-08T14:07:12.139245+00:00",
+  "generated_at": "2026-04-08T14:14:13.890064+00:00",
   "lambda_state": {
-    "lambda": 0.7592591566968652,
-    "psi": 0.735918467299624,
-    "gamma": 0.2913913260405693,
+    "lambda": 0.5378317598008606,
+    "psi": 0.7233903424942085,
+    "gamma": 0.1058235027489488,
     "level": "CONNECTED",
-    "observer": 0.913422066698173,
-    "echo": 0.7226863864952249,
-    "step": 63
+    "observer": 0.9409154224403137,
+    "echo": 0.8700028359937735,
+    "step": 181
   },
   "understanding": {
-    "market_direction": "sideways",
-    "confidence": 0.20199618037367154,
+    "market_direction": "unknown",
+    "confidence": 0.0,
     "fear_level": 0.5,
-    "opportunity_count": 6,
-    "risk_level": "medium",
+    "opportunity_count": 0,
+    "risk_level": "unknown",
     "last_action": "none",
     "dream_progress": 0.0,
-    "self_coherence": 0.06586110761759478,
+    "self_coherence": 0.2736807775352802,
     "harmonic_guidance": {
       "direction": "UNCERTAIN",
       "confidence": 0.2,
       "action": "WAIT",
-      "reasoning": "Chaotic field (C=48.77%) - Wait for coherence to emerge",
+      "reasoning": "Chaotic field (C=0.00%) - Wait for coherence to emerge",
       "reality_verified": false
     },
-    "harmonic_prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 48.8% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
+    "harmonic_prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 0.0% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
     "open_positions": 0,
-    "kraken_ready": false,
-    "capital_ready": false,
-    "miner_prediction": "{'timestamp': '2026-04-08T14:07:03.690701', 'validation_time': '2026-04-08T16:07:03.690706', 'btc_price_at_call': 0.0, 'consensus': 'INCONCLUSIVE', 'manipulation_probability': 0.0, 'fear_greed': 17, 'predicted_direction': 'BULLISH', 'confidence': 0.5180327868852459, 'validated': False, 'was_correct': None, 'actual_outcome': None}",
-    "miner_analysis": "{'skeptic': {'anomalies': [], 'red_flags': [], 'green_flags': [], 'manipulation_probability': 0.0}, 'council': {'consensus': 'INCONCLUSIVE', 'action': 'GATHER_MORE_DATA', 'truth_score': 0.518032786885",
-    "live_prices": {
-      "BITCOIN": 71643,
-      "CARDANO": 0.257239,
-      "DOGECOIN": 0.094463,
-      "ETHEREUM": 2236.81,
-      "RIPPLE": 1.37
-    },
-    "live_tick": true,
-    "happiness": 0.4376528767526602,
-    "dream_pct": 0,
-    "wheel": 1.0483551123917598,
-    "energy_instruments": 0,
-    "energy_accumulating": 0,
-    "energy_distributing": 0,
-    "energy_coherence": 0.0,
-    "energy_extraction": false,
-    "energy_net_flow": "OUTFLOW",
-    "total_equity": 0,
-    "asset_count": 0,
-    "lambda": 0.7592591566968652,
-    "psi": 0.735918467299624,
-    "gamma": 0.2913913260405693,
+    "lambda": 0.5378317598008606,
+    "psi": 0.7233903424942085,
+    "gamma": 0.1058235027489488,
     "level": "CONNECTED",
-    "observer_signal": 0.913422066698173,
-    "echo_signal": 0.7226863864952249,
-    "step": 63,
+    "observer_signal": 0.9409154224403137,
+    "echo_signal": 0.8700028359937735,
+    "step": 181,
     "lambda_real": 0,
     "coherence_real": 0.0,
     "reality_state": "chaos",
     "branches": 0,
     "lev_events": 0,
-    "prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 48.8% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
+    "prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 0.0% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
     "guidance": {
       "direction": "UNCERTAIN",
       "confidence": 0.2,
       "action": "WAIT",
-      "reasoning": "Chaotic field (C=48.77%) - Wait for coherence to emerge",
+      "reasoning": "Chaotic field (C=0.00%) - Wait for coherence to emerge",
       "reality_verified": false
     },
-    "observations": 2646,
-    "thoughts_generated": 28,
-    "uptime_s": 186.82600831985474,
-    "recent_topics": [
-      "enigma.whale.runtime",
-      "enigma.whale.risk",
-      "whale.sonar.risk",
-      "queen.alert.whale",
-      "whale.sonar.runtime",
-      "enigma.whale.whale_sonar",
-      "whale.sonar.whale_sonar.enigma",
-      "whale.sonar.execution",
-      "whale.sonar.miner",
-      "enigma.whale.miner",
-      "enigma.whale.consciousness",
-      "enigma.whale.execution",
-      "whale.sonar.consciousness",
-      "whale.sonar.whale_sonar",
-      "enigma.whale.whale_sonar.enigma",
-      "queen.consciousness"
-    ]
+    "observations": 0,
+    "thoughts_generated": 0,
+    "uptime_s": 0.9376852512359619,
+    "recent_topics": []
   },
   "self_model": {
     "name": "Queen Sero",
@@ -101,133 +61,12 @@
     "core_message": "",
     "dream_target": 0.0,
     "current_equity": 0.0,
-    "self_coherence_score": 0.2913913260405693
+    "self_coherence_score": 0.1058235027489488
   },
-  "thought_stream": [
-    {
-      "topic": "enigma.whale.risk",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.execution",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.execution",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.consciousness",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.consciousness",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.whale_sonar",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.whale_sonar",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "queen.alert.whale",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.whale_sonar.enigma",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.whale_sonar.enigma",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "queen.alert.whale",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.runtime",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.runtime",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.miner",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.miner",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.risk",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.risk",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.execution",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.execution",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "queen.consciousness",
-      "source": "consciousness",
-      "timestamp": 0.0,
-      "text": ""
-    }
-  ],
-  "observations": 2646,
-  "thoughts_generated": 28,
-  "uptime_s": 186.8,
+  "thought_stream": [],
+  "observations": 0,
+  "thoughts_generated": 0,
+  "uptime_s": 0.9,
   "harmonic_field": {
     "lambda_real": 0.0,
     "coherence_real": 0.0,
