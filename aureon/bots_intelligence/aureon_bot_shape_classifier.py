@@ -83,7 +83,7 @@ class BotShapeClassifier:
         
         # Initialize market connections
         self._init_market_connections()
-        
+
         # 🐦 CHIRP BUS - Emit strong bot patterns to Orca
         self.chirp_bus = None
         if CHIRP_BUS_AVAILABLE and get_chirp_bus:
@@ -102,6 +102,29 @@ class BotShapeClassifier:
             self.thought_bus.subscribe('whale.orderbook.analyzed', self._on_orderbook)
         except Exception:
             logger.debug('BotShapeClassifier: failed to subscribe to whale.orderbook.analyzed')
+
+    def _init_market_connections(self) -> None:
+        """Initialize optional exchange client connections for live data."""
+        if KRAKEN_AVAILABLE and KrakenClient is not None:
+            try:
+                self.kraken_client = KrakenClient()
+                logger.info("BotShapeClassifier: Kraken client connected")
+            except Exception as e:
+                logger.debug(f"BotShapeClassifier: Kraken init failed: {e}")
+
+        if BINANCE_WS_AVAILABLE and BinanceWebSocketClient is not None:
+            try:
+                self.binance_ws = BinanceWebSocketClient()
+                logger.info("BotShapeClassifier: Binance WS connected")
+            except Exception as e:
+                logger.debug(f"BotShapeClassifier: Binance WS init failed: {e}")
+
+        if CAPITAL_AVAILABLE and CapitalClient is not None:
+            try:
+                self.capital_client = CapitalClient()
+                logger.info("BotShapeClassifier: Capital.com client connected")
+            except Exception as e:
+                logger.debug(f"BotShapeClassifier: Capital.com init failed: {e}")
 
     def _on_market(self, thought: Thought) -> None:
         payload = thought.payload or {}
