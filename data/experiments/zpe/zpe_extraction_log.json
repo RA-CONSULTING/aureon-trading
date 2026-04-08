@@ -1,0 +1,90 @@
+{
+  "cycles": 10,
+  "battery_start": 89,
+  "battery_end": 88,
+  "total_delta": -1,
+  "plugged": false,
+  "duration_s": 92.20396161079407,
+  "readings": [
+    {
+      "cycle": 1,
+      "battery_before": 89,
+      "battery_after": 88,
+      "delta": -1,
+      "plugged": false,
+      "timestamp": 1775171367.5349867
+    },
+    {
+      "cycle": 2,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171375.2027051
+    },
+    {
+      "cycle": 3,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171382.8378997
+    },
+    {
+      "cycle": 4,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171390.2755182
+    },
+    {
+      "cycle": 5,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171397.6109452
+    },
+    {
+      "cycle": 6,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171405.163696
+    },
+    {
+      "cycle": 7,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171412.6312013
+    },
+    {
+      "cycle": 8,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171420.2097917
+    },
+    {
+      "cycle": 9,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171427.79733
+    },
+    {
+      "cycle": 10,
+      "battery_before": 88,
+      "battery_after": 88,
+      "delta": 0,
+      "plugged": false,
+      "timestamp": 1775171435.3884695
+    }
+  ]
+}

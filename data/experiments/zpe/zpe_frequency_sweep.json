@@ -1,0 +1,70 @@
+{
+  "results": [
+    {
+      "name": "NONE (baseline)",
+      "freq": 0,
+      "seconds": 47.53042670000286,
+      "from_pct": 77,
+      "to_pct": 78
+    },
+    {
+      "name": "Schumann 7.83Hz",
+      "freq": 7.83,
+      "seconds": 52.16770259999612,
+      "from_pct": 78,
+      "to_pct": 79
+    },
+    {
+      "name": "Love 528Hz",
+      "freq": 528.0,
+      "seconds": 60.9112208999868,
+      "from_pct": 79,
+      "to_pct": 80
+    },
+    {
+      "name": "Crown 963Hz",
+      "freq": 963.0,
+      "seconds": 53.20301679999102,
+      "from_pct": 80,
+      "to_pct": 81
+    },
+    {
+      "name": "Liberation 396Hz",
+      "freq": 396.0,
+      "seconds": 116.96604560001288,
+      "from_pct": 81,
+      "to_pct": 82
+    },
+    {
+      "name": "Harmony 432Hz",
+      "freq": 432.0,
+      "seconds": 69.05395120001049,
+      "from_pct": 82,
+      "to_pct": 83
+    },
+    {
+      "name": "PHI x Schumann",
+      "freq": 12.669206131911677,
+      "seconds": 46.891434100005426,
+      "from_pct": 83,
+      "to_pct": 84
+    },
+    {
+      "name": "ALL combined",
+      "freq": -1,
+      "seconds": 75.81308510000235,
+      "from_pct": 84,
+      "to_pct": 85
+    }
+  ],
+  "sorted": [
+    "PHI x Schumann",
+    "NONE (baseline)",
+    "Schumann 7.83Hz",
+    "Crown 963Hz",
+    "Love 528Hz",
+    "Harmony 432Hz",
+    "ALL combined",
+    "Liberation 396Hz"
+  ]
+}
