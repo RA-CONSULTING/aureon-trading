@@ -120,3 +120,8 @@ sim_mission_out.txt
 # Large runtime thought logs
 state/*_thoughts.jsonl
 state/*_thoughts.json
+
+# Imported research bundles (keep research files, but ignore embedded repo snapshots / archives).
+# NOTE: Some imported bundles include `.env*` files with live credentials; never commit those.
+imports/Kimi_Agent_Aureon_*/aureon-trading-main/
+imports/Kimi_Agent_Aureon_*/aureon-trading.zip
