@@ -1,0 +1,2 @@
+data_source,period,gamma_kp_corr_synth,gamma_kp_corr_real,Q_kp_corr_synth,Q_kp_corr_real,events_real,event_kp_real,background_kp_real,coupling_confirmed
+DE440 + GFZ Kp,2023-2024,-0.07683611306407738,0.05120172412509928,-0.1405021940528663,0.07685962937646758,317,1.883242902208202,1.9043377077865267,False

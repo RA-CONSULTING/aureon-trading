@@ -1,0 +1,60 @@
+#!/bin/bash
+# FINAL LOSS PREVENTION FIX
+# Applies stricter profit requirements and underwater position checks
+
+echo "======================================================================"
+echo "🛡️ APPLYING FINAL LOSS PREVENTION FIX"
+echo "======================================================================"
+
+# 1. Update minimum profit thresholds (10x stricter)
+sed -i 's/ALPACA_MIN_NET_PROFIT_PCT", "0.01"/ALPACA_MIN_NET_PROFIT_PCT", "0.5"/' micro_profit_labyrinth.py
+sed -i 's/ALPACA_MIN_NET_PROFIT_USD", str(EPSILON_PROFIT_USD)/ALPACA_MIN_NET_PROFIT_USD", "0.01"/' micro_profit_labyrinth.py
+
+echo "✅ Updated profit thresholds:"
+echo "   - Minimum profit %: 0.01% → 0.5% (50x stricter)"
+echo "   - Minimum profit $: \$0.001 → \$0.01 (10x stricter)"
+echo ""
+
+# 2. Add underwater position check before safety gate
+cat > /tmp/underwater_check.py << 'EOF'
+            # 🚫 ULTIMATE LOSS PREVENTION: Check if we're already bleeding!
+            # Don't compound losses - if underwater, STOP trading until positions recover!
+            try:
+                if self.alpaca:
+                    positions = self.alpaca.get_positions()
+                    total_unrealized_pl = sum(float(p.get('unrealized_pl', 0)) for p in positions)
+                    if total_unrealized_pl < -0.05:  # More than $0.05 underwater
+                        print(
+                            f"   🚫 POSITIONS UNDERWATER: ${total_unrealized_pl:.4f} unrealized loss. "
+                            f"NOT trading until positions recover!"
+                        )
+                        return False
+            except Exception:
+                pass  # If check fails, continue to safety gate
+
+EOF
+
+# Insert before safety gate check (line 13965)
+sed -i '13964 r /tmp/underwater_check.py' micro_profit_labyrinth.py
+
+echo "✅ Added underwater position check before safety gate"
+echo "   - Blocks ALL trades if unrealized loss > \$0.05"
+echo ""
+
+# 3. Improve safety gate message to show thresholds
+sed -i 's/SAFETY GATE: Net profit \${net_expected_usd:+.4f} below threshold\. Trade BLOCKED\./SAFETY GATE: Net profit ${net_expected_usd:+.4f} ({net_expected_pct:+.2f}%) below threshold (min ${self.alpaca_min_net_profit_usd:.2f} or {self.alpaca_min_net_profit_pct:.2f}%). Trade BLOCKED./' micro_profit_labyrinth.py
+
+echo "✅ Enhanced safety gate messages with threshold details"
+echo ""
+echo "======================================================================"
+echo "✅ FINAL LOSS PREVENTION FIX APPLIED"
+echo "======================================================================"
+echo ""
+echo "New trading requirements:"
+echo "  📊 Minimum net profit: \$0.01 (was \$0.001)"
+echo "  📊 Minimum net profit %: 0.5% (was 0.01%)"
+echo "  🚫 No trading when positions underwater > \$0.05"
+echo "  🛡️ Safety gate shows exact thresholds in messages"
+echo ""
+echo "Result: ONLY trade when we have CLEAR, VERIFIED profit after ALL costs!"
+echo "======================================================================"

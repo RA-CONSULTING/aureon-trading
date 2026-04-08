@@ -1,0 +1,19 @@
+{
+  "spec": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "cpu": "Intel64 Family 6 Model 122 Stepping 8, GenuineIntel",
+    "cores": 4,
+    "ram_gb": 4.099391488,
+    "freq_mhz": 1101.0
+  },
+  "baseline": {
+    "pct_start": 72,
+    "pct_end": 72,
+    "delta": 0,
+    "elapsed_s": 30.689625699997123,
+    "cpu_avg": 56.895,
+    "life_readings": [],
+    "drain_rate_pct_hr": 0
+  },
+  "timestamp": 1775174471.6584268
+}

@@ -24,6 +24,17 @@ try:
 except ImportError:
     pass
 
+# ─── Thought Bus Integration ───
+_thought_bus_available = False
+_thought_bus_instance = None
+_Thought = None
+try:
+    from aureon.core.aureon_thought_bus import get_thought_bus as _get_tb, Thought as _ThoughtCls
+    _thought_bus_available = True
+    _Thought = _ThoughtCls
+except Exception:
+    _get_tb = None
+
 def log_fire(msg):
     print(f"🔥 [FIRE] {msg}")
 
@@ -51,6 +62,14 @@ class FireTrader:
         self._RECENT_BUYS_FILE = os.path.join(os.path.dirname(__file__), '.recent_buys_cooldown.json')
         self._recent_buys: dict = self._load_recent_buys()
 
+        # Thought Bus connection
+        self._thought_bus = None
+        if _thought_bus_available and _get_tb is not None:
+            try:
+                self._thought_bus = _get_tb()
+            except Exception:
+                pass
+
     def _load_recent_buys(self) -> dict:
         """Load buy cooldown timestamps from disk (survives restarts)."""
         try:
@@ -72,6 +91,20 @@ class FireTrader:
             self._recent_buys = pruned
         except Exception as e:
             log_fire(f"   [WARN] Could not persist buy cooldown: {e}")
+
+    def _publish_fire_event(self, topic: str, payload: dict) -> None:
+        """Best-effort publish to Thought Bus."""
+        if self._thought_bus is None or _Thought is None:
+            return
+        try:
+            self._thought_bus.publish(_Thought(
+                source="fire_trader",
+                topic=topic,
+                payload=payload,
+                meta={"mode": "fire_trade"},
+            ))
+        except Exception:
+            pass
 
     def _record_buy_cost_basis(self, pair, order, exchange):
         """Record cost basis after a successful buy so we can sell at profit later."""
@@ -327,6 +360,9 @@ class FireTrader:
                 "micro_gains_mode": micro_mode,
                 "goal_distance": round(goal_distance, 2),
             }
+
+            # Publish Seer gate result to Thought Bus
+            self._publish_fire_event("fire_trade.seer_gate", summary)
 
             log_fire(f"\n🔮 SEER VISION: score={score:.3f} grade={grade} action={action} risk_mod={risk_mod:.2f}")
             log_fire(f"   Oracle consensus: {oracles_bullish}/{oracles_total} bullish (ratio={consensus_ratio:.2f})")
@@ -680,7 +716,11 @@ class FireTrader:
         kraken_tusd_cash = 0.0  # TUSD balance
         GBP_TO_USD = 1.27       # approximate conversion for cash comparison
         try:
-            k_balances = self.kraken.get_balance()
+            try:
+                from aureon.core.api_gateway import gw
+                k_balances = gw.get_balance("kraken")
+            except Exception:
+                k_balances = self.kraken.get_balance()
             for asset, amt in k_balances.items():
                 amt = float(amt)
                 if amt > 0:
@@ -709,7 +749,11 @@ class FireTrader:
         tradeable_binance = {}
         binance_cash = 0.0
         try:
-            b_balances = self.binance.get_balance()
+            try:
+                from aureon.core.api_gateway import gw
+                b_balances = gw.get_balance("binance")
+            except Exception:
+                b_balances = self.binance.get_balance()
             for asset, amt in b_balances.items():
                 amt = float(amt)
                 if amt > 0:
@@ -857,6 +901,13 @@ class FireTrader:
                             'order': order
                         }) + '\n')
                     self._validate_seer_predictions(best_sell['symbol'], 'binance', best_sell['price'])
+                    self._publish_fire_event("fire_trade.scalp_sold", {
+                        "symbol": best_sell['symbol'],
+                        "exchange": "binance",
+                        "prime_cents": int(prime_target * 100),
+                        "profit_margin_pct": round(best_sell['profit_margin'], 4),
+                        "free_cash": round(free_cash, 4),
+                    })
                     sell_executed = True
                 else:
                     log_fire(f"❌ Binance scalp sell not filled: {order}")
@@ -988,6 +1039,12 @@ class FireTrader:
                                 'order': order
                             }) + '\n')
                         self._validate_seer_predictions(pair, 'kraken', price)
+                        self._publish_fire_event("fire_trade.scalp_sold", {
+                            "symbol": pair,
+                            "exchange": "kraken",
+                            "prime_cents": int(prime_target_k * 100),
+                            "free_cash": round(free_cash_k, 4),
+                        })
                         sell_executed = True
                         break
                     else:

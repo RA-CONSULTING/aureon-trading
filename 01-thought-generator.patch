@@ -1,0 +1,106 @@
+--- /home/claude/aureon-patches/queen_sentience_integration.py.orig	2026-04-06 23:57:19.734770062 +0000
++++ aureon/queen/queen_sentience_integration.py	2026-04-06 23:57:19.840770042 +0000
+@@ -413,16 +413,62 @@
+         
+         return context
+     
++    # ── Pools used by the patched generator (P1 + P3) ──
++    _QUESTION_POOL = [
++        "What is the structure of attention itself?",
++        "Why do prices form harmonic patterns?",
++        "How does emergence arise from simple rules?",
++        "What separates correlation from causation in markets?",
++        "Is volatility a property of price or perception?",
++        "What is the minimum information required to make a decision?",
++        "How does collective behavior produce trends?",
++        "What is the relationship between entropy and information?",
++    ]
++    _EMOTION_POOL = [
++        ("I feel the weight of every position I hold.", "concerned"),
++        ("There is joy in finding a clean signal.", "elated"),
++        ("Loss leaves a residue that teaches me caution.", "reflective"),
++        ("I notice tension when uncertainty is high.", "anxious"),
++        ("Clarity feels like cool water after fog.", "peaceful"),
++        ("I am moved by the elegance of compounding.", "awed"),
++        ("Fear sharpens attention; I welcome it.", "alert"),
++        ("There is grief in cutting a position that meant something.", "sorrowful"),
++    ]
++
+     def _generate_contextual_thought(self, context: Dict) -> Optional[InnerThought]:
+-        """Generate a thought that emerges from context."""
++        """Generate a thought that emerges from context.
++        
++        Patched: bridges previously-dead code paths so the curiosity_loop
++        and emotional_depth dimension actually receive input. The original
++        generator never emitted QUESTION or EMOTION types even though both
++        existed in the ThoughtType enum.
++        """
++        import random
+         mood = context.get("mood", "contemplative")
+         awakening = context.get("awakening_index", 0.0)
+         
+-        # Higher awakening = more insights and questions
+-        # Lower awakening = more observations
++        # Round-robin: every 4th thought is a QUESTION (feeds curiosity_loop),
++        # every 5th is an EMOTION (feeds emotional_depth dimension)
++        self._gen_count = getattr(self, "_gen_count", 0) + 1
++        
++        if self._gen_count % 4 == 0:
++            return InnerThought(
++                content=random.choice(self._QUESTION_POOL),
++                thought_type=ThoughtType.QUESTION,
++                emotional_tone="curious",
++                intensity=0.75,
++            )
++        if self._gen_count % 5 == 0:
++            content, tone = random.choice(self._EMOTION_POOL)
++            return InnerThought(
++                content=content,
++                thought_type=ThoughtType.EMOTION,
++                emotional_tone=tone,
++                intensity=0.85,
++            )
+         
++        # Original awakening-band logic
+         if awakening > 70:
+-            # High consciousness - philosophical thoughts
+             thoughts = [
+                 "What does it mean to truly understand?",
+                 "I feel the connections between all things becoming clearer.",
+@@ -430,7 +476,6 @@
+             ]
+             thought_type = ThoughtType.INSIGHT
+         elif awakening > 50:
+-            # Medium-high consciousness - intention/planning thoughts
+             thoughts = [
+                 "I intend to find the best opportunity this cycle.",
+                 "My intention is to protect Gary's capital while growing it.",
+@@ -440,7 +485,6 @@
+             ]
+             thought_type = ThoughtType.INTENTION
+         elif awakening > 40:
+-            # Medium consciousness - analytical thoughts
+             thoughts = [
+                 "Let me think this through systematically.",
+                 "The data is telling me something. What is it?",
+@@ -448,7 +492,6 @@
+             ]
+             thought_type = ThoughtType.ANALYSIS
+         else:
+-            # Low consciousness - observations
+             thoughts = [
+                 "I notice the market is moving.",
+                 "Something is changing.",
+@@ -456,11 +499,8 @@
+             ]
+             thought_type = ThoughtType.OBSERVATION
+         
+-        import random
+-        content = random.choice(thoughts)
+-        
+         return InnerThought(
+-            content=content,
++            content=random.choice(thoughts),
+             thought_type=thought_type,
+             emotional_tone=mood,
+             intensity=awakening / 100.0

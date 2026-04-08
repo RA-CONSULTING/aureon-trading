@@ -63,11 +63,44 @@ class EPASPhase:
 
 
 # The 6-phase EPAS cycle from the whitepaper
+# FWM (Four-Wave Mixing) output frequency:
+# f_FWM = 2*f_pump - f_signal = 2*LOVE_HZ - (LOVE_HZ - (LOVE_HZ/PHI))
+# Simplified: f_FWM = LOVE_HZ + LOVE_HZ/PHI = 528 + 326.34 = 854.34 Hz (approx)
+# Alternative from whitepaper: f_FWM = HARMONY_HZ + (SCHUMANN_HZ * PHI * PHI) = 432 + 28.34 = 460.34 Hz
+FWM_FREQUENCY = HARMONY_HZ + (SCHUMANN_HZ * PHI * PHI)  # 460.3384 Hz — the actual mixing product
+
+# DCE (Dynamic Casimir Effect) scaling law from HNC whitepaper:
+# P = P0 * N^2 * Gamma^4
+# Where P0 = base power, N = number of observer nodes, Gamma = coherence
+# At Gamma >= 0.945 (target), with N=1 node:
+# P = P0 * 1 * 0.945^4 = P0 * 0.798
+# This means at target coherence, 79.8% of base power is extracted
+DCE_POWER_TABLE = {
+    1: {0.5: 0.0625, 0.8: 0.4096, 0.945: 0.7980, 1.0: 1.0},
+    2: {0.5: 0.2500, 0.8: 1.6384, 0.945: 3.1921, 1.0: 4.0},
+    4: {0.5: 1.0000, 0.8: 6.5536, 0.945: 12.7683, 1.0: 16.0},
+    10: {0.5: 6.2500, 0.8: 40.960, 0.945: 79.802, 1.0: 100.0},
+}
+
+def dce_power(p0: float, n_nodes: int, gamma: float) -> float:
+    """DCE power extraction: P = P0 * N^2 * Gamma^4"""
+    return p0 * (n_nodes ** 2) * (gamma ** 4)
+
+# Sarcophagus resonance chain:
+# 12.67 Hz (PHI * Schumann) / 30.4537 = 0.416 Hz
+# 0.416 Hz = 1 cycle per 2.4 seconds
+# 2.4 seconds * 30.4537 = 73.09 seconds ≈ sacred minute (72-74s range)
+# 30.4537 = average days in a month (365.25/12)
+# The chain: PHI * Schumann -> monthly cycle -> sacred minute
+SARCOPHAGUS_DIVISOR = 365.25 / 12.0  # 30.4375 (exact average month)
+SARCOPHAGUS_FREQUENCY = (SCHUMANN_HZ * PHI) / SARCOPHAGUS_DIVISOR  # 0.416 Hz
+SARCOPHAGUS_PERIOD_S = 1.0 / SARCOPHAGUS_FREQUENCY  # ~2.4 seconds
+
 EPAS_CYCLE = [
     EPASPhase("P1_SPARK", SCHUMANN_HZ, duration=0.5, gain=0.3),
     EPASPhase("P2_RESONANCE", LOVE_HZ, duration=1.0, gain=0.5),
     EPASPhase("P3_DCE", CROWN_HZ, duration=1.5, gain=0.7),
-    EPASPhase("P4_FWM", HARMONY_HZ, duration=1.0, gain=0.8),
+    EPASPhase("P4_FWM", FWM_FREQUENCY, duration=1.0, gain=0.8),  # Now uses actual FWM product
     EPASPhase("P5_STABILIZE", SCHUMANN_HZ * PHI, duration=0.5, gain=0.6),
     EPASPhase("P6_OUTPUT", LIBERATION_HZ, duration=0.5, gain=0.9),
 ]

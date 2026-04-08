@@ -1,0 +1,22 @@
+{
+  "collection_duration_days": 30,
+  "schumann_interval_minutes": 10,
+  "ionosonde_interval_minutes": 15,
+  "space_weather_interval_minutes": 60,
+  "stations": {
+    "schumann": {
+      "tomsk": "https://ljnpynnorwveqpsgkxws.supabase.co/storage/v1/object/public/sonograms/"
+    },
+    "ionosonde": {
+      "gakona": "https://www.ngdc.noaa.gov/stp/IONO/rt-iono/latest/GA762.png",
+      "boulder": "https://www.ngdc.noaa.gov/stp/IONO/rt-iono/latest/BC840.png",
+      "wallops": "https://www.ngdc.noaa.gov/stp/IONO/rt-iono/latest/WI937.png",
+      "san_juan": "https://www.ngdc.noaa.gov/stp/IONO/rt-iono/latest/SJJ18.png",
+      "athens": "https://www.ngdc.noaa.gov/stp/IONO/rt-iono/latest/AT138.png",
+      "rome": "https://www.ngdc.noaa.gov/stp/IONO/rt-iono/latest/RO041.png"
+    },
+    "space_weather": {
+      "kp_index": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json"
+    }
+  }
+}
