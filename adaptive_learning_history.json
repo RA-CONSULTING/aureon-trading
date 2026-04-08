@@ -3,24 +3,6 @@
   "thresholds": {},
   "brain_insights": [
     {
-      "timestamp": "2026-04-03T10:55:00.952410",
-      "fear_greed": 9,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "brain_accuracy": 0.13,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
-      "timestamp": "2026-04-03T11:18:25.827553",
-      "fear_greed": 9,
-      "consensus": "INCONCLUSIVE",
-      "manipulation_probability": 0.2,
-      "brain_accuracy": 0.13,
-      "recommended_bias": "TRUST_BULLISH_CALLS",
-      "confidence_adjustment": 0.7
-    },
-    {
       "timestamp": "2026-04-03T11:52:01.984243",
       "fear_greed": 9,
       "consensus": "INCONCLUSIVE",
@@ -445,6 +427,24 @@
     },
     {
       "timestamp": "2026-04-08T14:15:03.851475",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:15:18.692372",
+      "fear_greed": 17,
+      "consensus": "INCONCLUSIVE",
+      "manipulation_probability": 0.0,
+      "brain_accuracy": 0.0,
+      "recommended_bias": "TRUST_BULLISH_CALLS",
+      "confidence_adjustment": 0.7
+    },
+    {
+      "timestamp": "2026-04-08T14:15:33.712847",
       "fear_greed": 17,
       "consensus": "INCONCLUSIVE",
       "manipulation_probability": 0.0,
