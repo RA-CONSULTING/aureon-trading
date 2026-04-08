@@ -51,40 +51,72 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 DOMAIN_SYSTEMS: List[tuple] = [
-    # intelligence/
+    # ── intelligence/ ─────────────────────────────────────────────────
     ("real_intelligence_engine",      "aureon_real_intelligence_engine",      {"singleton_fn": "get_intelligence_engine"}),
     ("dr_auris_throne",              "dr_auris_throne",                      {"singleton_fn": "get_dr_auris_throne"}),
     ("timeline_oracle",               "aureon_timeline_oracle",               {"class_name": "TimelineOracle"}),
     ("unified_data_puller",           "aureon_unified_intelligence_registry", {"singleton_fn": "get_unified_puller"}),
+    ("unified_decision_engine",       "aureon_unified_decision_engine",       {"class_name": "UnifiedDecisionEngine"}),
+    ("market_pulse",                  "aureon_market_pulse",                  {"class_name": "MarketPulse"}),
+    ("phase_transition_detector",     "aureon_phase_transition_detector",     {"class_name": "PhaseTransitionDetector"}),
+    ("truth_prediction_engine",       "aureon_truth_prediction_engine",       {"class_name": "TruthPredictionEngine"}),
+    ("integrated_forecast",           "aureon_integrated_forecast",           {"class_name": "IntegratedForecast"}),
 
-    # harmonic/
+    # ── harmonic/ ─────────────────────────────────────────────────────
     ("harmonic_chain_master",         "aureon_harmonic_chain_master",         {"class_name": "HarmonicChainMaster"}),
     ("harmonic_wave_fusion",          "aureon_harmonic_fusion",               {"singleton_fn": "get_harmonic_fusion"}),
     ("harmonic_signal_chain",         "aureon_harmonic_signal_chain",         {"class_name": "HarmonicSignalChain"}),
     ("harmonic_seed",                 "aureon_harmonic_seed",                 {"class_name": "HarmonicSeedLoader"}),
+    ("harmonic_counter_frequency",    "aureon_harmonic_counter_frequency",    {"singleton_fn": "get_counter_frequency"}),
+    ("harmonic_waveform",             "aureon_harmonic_waveform",             {"class_name": "HarmonicWaveformScanner"}),
+    ("harmonic_momentum_wave",        "aureon_harmonic_momentum_wave",        {"class_name": "HarmonicMomentumWaveScanner"}),
+    ("planetary_harmonic_sweep",      "aureon_planetary_harmonic_sweep",      {}),
+    ("schumann_resonance_bridge",     "aureon_schumann_resonance_bridge",     {}),
+    ("market_energy_field",           "aureon_market_energy_field",           {}),
 
-    # scanners/
+    # ── scanners/ ─────────────────────────────────────────────────────
     ("ocean_wave_scanner",            "aureon_ocean_wave_scanner",            {"class_name": "OceanWaveScanner"}),
     ("strategic_warfare_scanner",     "aureon_strategic_warfare_scanner",     {"singleton_fn": "get_warfare_scanner"}),
     ("global_wave_scanner",           "aureon_global_wave_scanner",           {"class_name": "GlobalWaveScanner"}),
+    ("obsidian_filter",               "aureon_obsidian_filter",               {"class_name": "ObsidianFilter"}),
+    ("phantom_signal_filter",         "aureon_phantom_signal_filter",         {"class_name": "PhantomSignalFilter"}),
+    ("alpaca_stock_scanner",          "aureon_alpaca_stock_scanner",          {}),
 
-    # wisdom/
+    # ── wisdom/ ───────────────────────────────────────────────────────
     ("ghost_dance_protocol",          "aureon_ghost_dance_protocol",          {"singleton_fn": "get_ghost_dance"}),
+    ("enigma_dream",                  "aureon_enigma_dream",                  {}),
+    ("qgita_framework",               "aureon_qgita_framework",               {}),
+    ("plums_guardian",                 "aureon_plums_guardian",                 {}),
 
-    # analytics/
+    # ── analytics/ ────────────────────────────────────────────────────
     ("manipulation_hunter",           "aureon_historical_manipulation_hunter", {"singleton_fn": "get_manipulation_hunter"}),
+    ("lighthouse",                    "aureon_lighthouse",                     {}),
+    ("whale_behavior_predictor",      "aureon_whale_behavior_predictor",      {"class_name": "WhaleBehaviorPredictor"}),
+    ("whale_pattern_mapper",          "aureon_whale_pattern_mapper",          {"class_name": "WhalePatternMapper"}),
+    ("whale_shape_registry",          "aureon_whale_shape_registry",          {"class_name": "WhaleShapeRegistry"}),
 
-    # bots_intelligence/
+    # ── bots_intelligence/ ────────────────────────────────────────────
     ("bot_shape_scanner",             "aureon_bot_shape_scanner",             {"singleton_fn": "get_bot_scanner"}),
     ("orca_intelligence",             "aureon_orca_intelligence",             {"singleton_fn": "get_orca"}),
+    ("bot_shape_classifier",          "aureon_bot_shape_classifier",          {"class_name": "BotShapeClassifier"}),
+    ("global_firm_intelligence",      "aureon_global_firm_intelligence",      {}),
+    ("orca_monitor",                  "aureon_orca_monitor",                  {"class_name": "OrcaMonitor"}),
 
-    # core/ (supplementary -- ThoughtBus and mycelium boot earlier)
+    # ── core/ (supplementary -- ThoughtBus and mycelium boot earlier)
     ("consciousness_module",          "aureon_consciousness_module",          {"class_name": "ConsciousnessModule"}),
     ("immune_system",                 "aureon_immune_system",                 {"class_name": "AureonImmuneSystem"}),
     ("knowledge_base",                "aureon_knowledge_base",                {"singleton_fn": "create_knowledge_base"}),
+    ("lambda_engine",                 "aureon_lambda_engine",                 {"class_name": "LambdaEngine"}),
+    ("memory_core",                   "aureon_memory_core",                   {"class_name": "AureonMemoryCore"}),
+    ("elephant_memory",               "aureon_elephant_memory",               {}),
+    ("system_coordinator",            "aureon_system_coordinator",            {}),
 
-    # strategies/
+    # ── strategies/ ───────────────────────────────────────────────────
     ("probability_ultimate_intelligence", "probability_ultimate_intelligence", {"singleton_fn": "get_ultimate_intelligence"}),
+    ("probability_intelligence_matrix",  "probability_intelligence_matrix",   {"singleton_fn": "get_probability_matrix"}),
+
+    # ── atn/ ──────────────────────────────────────────────────────────
+    ("atn_controller",                "aureon_atn_controller",                {}),
 ]
 
 # Queen modules that need special handling (class_name, start method)
