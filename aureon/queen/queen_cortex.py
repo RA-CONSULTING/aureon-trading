@@ -77,6 +77,8 @@ BAND_ROUTING: Dict[str, List[str]] = {
         "queen.alert.",         # queen alerts
         "chain.",               # harmonic chain signals
         "monitor.",             # monitoring data
+        "mycelium.spore.",      # Mycelium propagated thoughts
+        "mycelium.mind.",       # Mind state updates
     ],
     # Beta — active analysis (scanners, intelligence, detection)
     "beta": [
