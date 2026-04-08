@@ -91,6 +91,7 @@ DOMAIN_SYSTEMS: List[tuple] = [
 QUEEN_PRIORITY_MODULES: List[tuple] = [
     # (module_name, class_name, should_call_start)
     ("queen_cortex",            "QueenCortex",           True),   # Brainwave layers — must boot BEFORE sentient loop
+    ("queen_source_law",        "SourceLawEngine",       True),   # 10-9-1 consciousness funnel — accumulates in superposition
     ("queen_sentient_loop",     "QueenSentientLoop",     True),
     ("queen_deep_intelligence", "QueenDeepIntelligence",  False),
     ("queen_fully_online",      "QueenFullyOnline",       False),

@@ -459,6 +459,20 @@ class QueenCortex:
                     topic="queen.cortex.state",
                     payload=payload,
                 ))
+
+                # Gamma spike detection — triggers Source Law cogitation
+                gamma_amp = band_states["gamma"].amplitude
+                if gamma_amp > 0.3:
+                    self._thought_bus.publish(Thought(
+                        source="queen_cortex",
+                        topic="queen.cortex.gamma_spike",
+                        payload={
+                            "gamma_amplitude": gamma_amp,
+                            "gamma_coherence": band_states["gamma"].coherence,
+                            "gamma_signals": band_states["gamma"].signal_count,
+                            "dominant_signal": band_states["gamma"].dominant_signal,
+                        },
+                    ))
             except Exception:
                 pass
 
