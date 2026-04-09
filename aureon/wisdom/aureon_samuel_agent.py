@@ -21,8 +21,8 @@
 ║       WebSocket      — ws://localhost:8790/command-stream                    ║
 ║       REST           — POST/GET http://localhost:8891/samuel/...             ║
 ║                                                                               ║
-║     Samuel SUBSCRIBES to all live trading signals, REASONS with Claude       ║
-║     Opus 4.6 adaptive thinking, and PUBLISHES real trade commands back       ║
+║     Samuel SUBSCRIBES to all live trading signals, REASONS with             ║
+║     in-house AI (no external dependencies), and PUBLISHES trade commands     ║
 ║     into the system through orca.buy.execute / orca.sell.execute topics.     ║
 ║                                                                               ║
 ║     MODES:                                                                    ║
@@ -50,10 +50,14 @@ import subprocess
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
 
-try:
-    import anthropic
-except ImportError:
-    sys.exit("ERROR: pip install anthropic>=0.40.0")
+# ── In-House AI — no external dependencies ──────────────────────────────────
+from aureon.inhouse_ai.llm_adapter import (
+    LLMAdapter,
+    AureonLocalAdapter,
+    AureonBrainAdapter,
+    AureonHybridAdapter,
+    LLMResponse,
+)
 
 try:
     from dotenv import load_dotenv
@@ -77,7 +81,26 @@ logger = logging.getLogger("samuel")
 # ──────────────────────────────────────────────────────────────────────────────
 # Constants
 # ──────────────────────────────────────────────────────────────────────────────
-MODEL = "claude-opus-4-6"
+def _build_samuel_adapter(mode: str = "hybrid") -> LLMAdapter:
+    """Build the in-house adapter for Samuel."""
+    if mode == "local":
+        return AureonLocalAdapter()
+    elif mode == "brain":
+        return AureonBrainAdapter()
+    else:
+        try:
+            adapter = AureonHybridAdapter()
+            if adapter.health_check():
+                return adapter
+        except Exception:
+            pass
+        try:
+            adapter = AureonLocalAdapter()
+            if adapter.health_check():
+                return adapter
+        except Exception:
+            pass
+        return AureonBrainAdapter()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATE_DIR = os.path.join(BASE_DIR, "state")
 MEMORY_PATH = os.path.join(STATE_DIR, "samuel_memory.json")
@@ -652,16 +675,8 @@ class SamuelHarmonicEntity:
     Decisions flow through the real ThoughtBus and execution layer.
     """
 
-    def __init__(self, api_key: Optional[str] = None):
-        key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
-        if not key or key == "your_anthropic_api_key_here":
-            raise ValueError(
-                "\nANTHROPIC_API_KEY not set.\n"
-                "Add to .env: ANTHROPIC_API_KEY=sk-ant-...\n"
-                "Get a key at https://console.anthropic.com"
-            )
-        self.client = anthropic.Anthropic(api_key=key)
-        self._api_key = key
+    def __init__(self, adapter: Optional[LLMAdapter] = None, mode: str = "hybrid"):
+        self.adapter = adapter or _build_samuel_adapter(mode)
         self._lock = threading.Lock()
         self._running = False
 
@@ -1069,7 +1084,8 @@ class SamuelHarmonicEntity:
     # ── Core agentic loop ──────────────────────────────────────────────────
 
     def reason(self, prompt: str, max_turns: int = 25, stream_text: bool = True) -> str:
-        """Full agentic loop: think → call tools → think → … → answer."""
+        """Full agentic loop: think → call tools → think → … → answer.
+        Now powered by in-house AI — zero external dependencies."""
         messages = [{"role": "user", "content": prompt}]
         turn = 0
 
@@ -1077,46 +1093,73 @@ class SamuelHarmonicEntity:
             turn += 1
             logger.info(f"Reasoning turn {turn}/{max_turns}…")
 
-            with self.client.messages.stream(
-                model=MODEL,
-                max_tokens=8192,
-                thinking={"type": "adaptive"},
-                system=SYSTEM_PROMPT,
-                tools=SAMUEL_TOOLS,
-                messages=messages,
-            ) as stream:
-                if stream_text:
-                    for event in stream:
-                        if (hasattr(event, "type")
-                                and event.type == "content_block_delta"
-                                and hasattr(event.delta, "text")):
-                            print(event.delta.text, end="", flush=True)
-                response = stream.get_final_message()
+            if stream_text:
+                collected_text = ""
+                collected_tool_calls = []
+                for chunk in self.adapter.stream(
+                    messages=messages,
+                    system=SYSTEM_PROMPT,
+                    tools=SAMUEL_TOOLS,
+                    max_tokens=8192,
+                ):
+                    if chunk.text:
+                        collected_text += chunk.text
+                        print(chunk.text, end="", flush=True)
+                    if chunk.tool_call:
+                        collected_tool_calls.append(chunk.tool_call)
+                    if chunk.done:
+                        break
 
-            messages.append({"role": "assistant", "content": response.content})
-
-            if response.stop_reason == "end_turn":
-                if stream_text:
-                    print()
-                return next(
-                    (b.text for b in response.content if hasattr(b, "text")), ""
+                # Build response from collected stream
+                from aureon.inhouse_ai.llm_adapter import LLMResponse, ToolCall
+                response = LLMResponse(
+                    text=collected_text,
+                    tool_calls=collected_tool_calls,
+                    stop_reason="tool_use" if collected_tool_calls else "end_turn",
+                )
+            else:
+                response = self.adapter.prompt(
+                    messages=messages,
+                    system=SYSTEM_PROMPT,
+                    tools=SAMUEL_TOOLS,
+                    max_tokens=8192,
                 )
 
-            if response.stop_reason == "tool_use":
+            # Append assistant response
+            if response.has_tool_calls:
+                content = []
+                if response.text:
+                    content.append({"type": "text", "text": response.text})
+                for tc in response.tool_calls:
+                    content.append({
+                        "type": "tool_use",
+                        "id": tc.id,
+                        "name": tc.name,
+                        "input": tc.arguments,
+                    })
+                messages.append({"role": "assistant", "content": content})
+            else:
+                messages.append({"role": "assistant", "content": response.text})
+
+            if response.stop_reason == "end_turn" or not response.has_tool_calls:
+                if stream_text:
+                    print()
+                return response.text
+
+            if response.has_tool_calls:
                 results = []
-                for b in response.content:
-                    if b.type == "tool_use":
-                        logger.info(f"  → {b.name}({json.dumps(b.input)[:120]})")
-                        results.append({
-                            "type": "tool_result",
-                            "tool_use_id": b.id,
-                            "content": self._dispatch(b.name, b.input),
-                        })
+                for tc in response.tool_calls:
+                    logger.info(f"  → {tc.name}({json.dumps(tc.arguments)[:120]})")
+                    results.append({
+                        "type": "tool_result",
+                        "tool_use_id": tc.id,
+                        "content": self._dispatch(tc.name, tc.arguments),
+                    })
                 if results:
                     messages.append({"role": "user", "content": results})
                 continue
 
-            return next((b.text for b in response.content if hasattr(b, "text")), "")
+            return response.text
 
         return "Samuel: max turns reached."
 
@@ -1351,54 +1394,84 @@ class SamuelHarmonicEntity:
             # Maintain conversation history for context
             history.append({"role": "user", "content": user_input})
 
-            with self.client.messages.stream(
-                model=MODEL,
-                max_tokens=8192,
-                thinking={"type": "adaptive"},
+            # Stream response using in-house adapter
+            collected_text = ""
+            collected_tool_calls = []
+            for chunk in self.adapter.stream(
+                messages=history,
                 system=SYSTEM_PROMPT,
                 tools=SAMUEL_TOOLS,
-                messages=history,
-            ) as stream:
-                for event in stream:
-                    if (hasattr(event, "type")
-                            and event.type == "content_block_delta"
-                            and hasattr(event.delta, "text")):
-                        print(event.delta.text, end="", flush=True)
-                response = stream.get_final_message()
+                max_tokens=8192,
+            ):
+                if chunk.text:
+                    collected_text += chunk.text
+                    print(chunk.text, end="", flush=True)
+                if chunk.tool_call:
+                    collected_tool_calls.append(chunk.tool_call)
+                if chunk.done:
+                    break
 
-            history.append({"role": "assistant", "content": response.content})
+            # Build and store assistant response
+            if collected_tool_calls:
+                content = []
+                if collected_text:
+                    content.append({"type": "text", "text": collected_text})
+                for tc in collected_tool_calls:
+                    content.append({
+                        "type": "tool_use",
+                        "id": tc.id,
+                        "name": tc.name,
+                        "input": tc.arguments,
+                    })
+                history.append({"role": "assistant", "content": content})
+            else:
+                history.append({"role": "assistant", "content": collected_text})
 
             # Handle tool calls
-            while response.stop_reason == "tool_use":
+            while collected_tool_calls:
                 print()  # newline after streamed text
                 results = []
-                for b in response.content:
-                    if b.type == "tool_use":
-                        logger.info(f"  → {b.name}")
-                        results.append({
-                            "type": "tool_result",
-                            "tool_use_id": b.id,
-                            "content": self._dispatch(b.name, b.input),
-                        })
+                for tc in collected_tool_calls:
+                    logger.info(f"  → {tc.name}")
+                    results.append({
+                        "type": "tool_result",
+                        "tool_use_id": tc.id,
+                        "content": self._dispatch(tc.name, tc.arguments),
+                    })
                 history.append({"role": "user", "content": results})
 
-                with self.client.messages.stream(
-                    model=MODEL,
-                    max_tokens=8192,
-                    thinking={"type": "adaptive"},
+                # Continue conversation
+                collected_text = ""
+                collected_tool_calls = []
+                print("\nSamuel > ", end="", flush=True)
+                for chunk in self.adapter.stream(
+                    messages=history,
                     system=SYSTEM_PROMPT,
                     tools=SAMUEL_TOOLS,
-                    messages=history,
-                ) as stream:
-                    print("\nSamuel > ", end="", flush=True)
-                    for event in stream:
-                        if (hasattr(event, "type")
-                                and event.type == "content_block_delta"
-                                and hasattr(event.delta, "text")):
-                            print(event.delta.text, end="", flush=True)
-                    response = stream.get_final_message()
+                    max_tokens=8192,
+                ):
+                    if chunk.text:
+                        collected_text += chunk.text
+                        print(chunk.text, end="", flush=True)
+                    if chunk.tool_call:
+                        collected_tool_calls.append(chunk.tool_call)
+                    if chunk.done:
+                        break
 
-                history.append({"role": "assistant", "content": response.content})
+                if collected_tool_calls:
+                    content = []
+                    if collected_text:
+                        content.append({"type": "text", "text": collected_text})
+                    for tc in collected_tool_calls:
+                        content.append({
+                            "type": "tool_use",
+                            "id": tc.id,
+                            "name": tc.name,
+                            "input": tc.arguments,
+                        })
+                    history.append({"role": "assistant", "content": content})
+                else:
+                    history.append({"role": "assistant", "content": collected_text})
 
             print("\n")
 
@@ -1413,7 +1486,7 @@ class SamuelHarmonicEntity:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Samuel Harmonic Entity — AUREON live autonomous sentinel"
+        description="Samuel Harmonic Entity — AUREON live autonomous sentinel (in-house AI)"
     )
     parser.add_argument("--once", action="store_true",
                         help="Single autonomous cycle then exit")
@@ -1431,9 +1504,11 @@ def main():
                         help="Ask a single question and exit")
     parser.add_argument("--all", action="store_true",
                         help="Start loop + listener + REST server together")
+    parser.add_argument("--mode", choices=["hybrid", "local", "brain"], default="hybrid",
+                        help="In-house AI backend: hybrid|local|brain (default: hybrid)")
     args = parser.parse_args()
 
-    samuel = SamuelHarmonicEntity()
+    samuel = SamuelHarmonicEntity(mode=args.mode)
 
     if args.all:
         # Full-stack mode: loop + listener + REST
