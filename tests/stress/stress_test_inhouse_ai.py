@@ -55,14 +55,9 @@ from aureon.inhouse_ai import (
     Agent,
     AgentPool,
     TaskQueue,
-    Task,
-    TaskStatus,
     Team,
     ToolRegistry,
     AureonBrainAdapter,
-    AureonLocalAdapter,
-    AureonHybridAdapter,
-    LLMResponse,
 )
 from aureon.inhouse_ai.team import MessageBus, SharedMemory
 
@@ -616,7 +611,7 @@ def test_open_multi_agent_full_stack(runner: StressTestRunner):
     first_team = oma.get_team("StackTeam-0")
     t1 = first_team.queue.add("fetch", agent_name="Stack-T0-A0", prompt="fetch")
     t2 = first_team.queue.add("analyse", agent_name="Stack-T0-A1", prompt="analyse", depends_on=[t1.id])
-    t3 = first_team.queue.add("decide", agent_name="Stack-T0-A2", prompt="decide", depends_on=[t2.id])
+    first_team.queue.add("decide", agent_name="Stack-T0-A2", prompt="decide", depends_on=[t2.id])
 
     oma.run_tasks("StackTeam-0")
     total_ops += len(first_team.queue)
@@ -1284,7 +1279,6 @@ def test_pillar_alignment(runner: StressTestRunner):
     from aureon.alignment import (
         PillarAlignment,
         AlignmentConfig,
-        LIGHTHOUSE_THRESHOLD,
     )
 
     n_cycles = runner.scaled(5000)
@@ -1366,7 +1360,6 @@ def test_harmonic_math(runner: StressTestRunner):
         full_harmonic_analysis,
         geometric_mean,
         FUNDAMENTAL_HZ,
-        LIGHTHOUSE_THRESHOLD,
     )
     import math
 
@@ -1750,7 +1743,6 @@ def test_code_architect_full_pipeline(runner: StressTestRunner):
             arch.observer.record_action("vm_left_click", {})
         learned = arch.observe_and_propose()
 
-        stats = arch.get_status()
         final_lib = arch.library.get_stats()
 
         dispatcher.destroy_all()

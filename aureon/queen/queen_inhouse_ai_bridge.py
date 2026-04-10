@@ -344,7 +344,7 @@ class QueenAIBridge:
                 max_tokens=150,
             )
             return response.text
-        except Exception as e:
+        except Exception:
             self._errors += 1
             return None
 
