@@ -887,7 +887,261 @@ def test_miner_quantum_weight_stability(runner: StressTestRunner):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 14: Sustained load soak test
+# Test 14: VM Control dispatch throughput
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_vm_control_dispatch(runner: StressTestRunner):
+    """Hammer the VMControlDispatcher with 10000 concurrent actions."""
+    n_ops = runner.scaled(10000)
+
+    from aureon.autonomous.vm_control import VMControlDispatcher
+
+    dispatcher = VMControlDispatcher()
+    sid = dispatcher.create_session(backend="simulated", name="stress-vm", make_default=True)
+    controller = dispatcher.get_session(sid)
+    controller.arm(dry_run=False)
+
+    errors = 0
+    errors_lock = threading.Lock()
+
+    actions_to_test = [
+        ("screenshot", {}),
+        ("mouse_move", {"x": 500, "y": 300}),
+        ("left_click", {"x": 100, "y": 200}),
+        ("right_click", {}),
+        ("double_click", {"x": 400, "y": 400}),
+        ("type_text", {"text": "hello"}),
+        ("press_key", {"key": "enter"}),
+        ("hotkey", {"keys": ["ctrl", "c"]}),
+        ("scroll", {"x": 500, "y": 500, "direction": "down", "amount": 3}),
+        ("get_cursor_position", {}),
+        ("get_screen_size", {}),
+        ("list_windows", {}),
+        ("get_active_window", {}),
+        ("focus_window", {"title": "File Explorer"}),
+        ("execute_shell", {"command": "whoami"}),
+        ("execute_powershell", {"command": "Get-ComputerInfo"}),
+    ]
+
+    def fire(i: int):
+        nonlocal errors
+        action, params = actions_to_test[i % len(actions_to_test)]
+        try:
+            result = dispatcher.dispatch(action, dict(params))
+            if not result.get("ok"):
+                with errors_lock:
+                    errors += 1
+        except Exception:
+            with errors_lock:
+                errors += 1
+
+    with ThreadPoolExecutor(max_workers=32) as executor:
+        futures = [executor.submit(fire, i) for i in range(n_ops)]
+        for f in as_completed(futures):
+            pass
+
+    status = dispatcher.get_status()
+    dispatcher.destroy_all()
+
+    return {
+        "operations": n_ops,
+        "errors": errors,
+        "dispatch_total": status["total_actions"],
+        "dispatch_errors": status["total_errors"],
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 15: VM multi-session concurrency
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_vm_multi_session(runner: StressTestRunner):
+    """Run 10 simultaneous VM sessions with actions distributed across them."""
+    n_sessions = 10
+    n_ops_per_session = runner.scaled(500)
+
+    from aureon.autonomous.vm_control import VMControlDispatcher
+
+    dispatcher = VMControlDispatcher()
+    session_ids = []
+    for i in range(n_sessions):
+        sid = dispatcher.create_session(
+            backend="simulated",
+            name=f"vm-{i}",
+            host=f"10.0.0.{100 + i}",
+        )
+        session_ids.append(sid)
+        dispatcher.get_session(sid).arm(dry_run=False)
+
+    errors = 0
+    errors_lock = threading.Lock()
+
+    def session_worker(sid: str, count: int):
+        nonlocal errors
+        for i in range(count):
+            try:
+                op = i % 4
+                if op == 0:
+                    r = dispatcher.dispatch("screenshot", {}, session_id=sid)
+                elif op == 1:
+                    r = dispatcher.dispatch("left_click", {"x": i, "y": i * 2}, session_id=sid)
+                elif op == 2:
+                    r = dispatcher.dispatch("type_text", {"text": f"msg-{i}"}, session_id=sid)
+                else:
+                    r = dispatcher.dispatch("execute_shell", {"command": "whoami"}, session_id=sid)
+                if not r.get("ok"):
+                    with errors_lock:
+                        errors += 1
+            except Exception:
+                with errors_lock:
+                    errors += 1
+
+    with ThreadPoolExecutor(max_workers=n_sessions) as executor:
+        futures = [executor.submit(session_worker, sid, n_ops_per_session) for sid in session_ids]
+        for f in as_completed(futures):
+            pass
+
+    total_ops = n_sessions * n_ops_per_session
+
+    # Verify each session saw the correct number of actions
+    per_session_counts = {
+        s["session_id"]: s["action_count"]
+        for s in dispatcher.list_sessions()
+    }
+    min_count = min(per_session_counts.values())
+    max_count = max(per_session_counts.values())
+
+    dispatcher.destroy_all()
+
+    return {
+        "operations": total_ops,
+        "errors": errors,
+        "sessions": n_sessions,
+        "ops_per_session": n_ops_per_session,
+        "min_count": min_count,
+        "max_count": max_count,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 16: VM tools registered with ToolRegistry end-to-end
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_vm_tool_registry_integration(runner: StressTestRunner):
+    """Register VM tools into ToolRegistry and call them as an agent would."""
+    n_ops = runner.scaled(5000)
+
+    from aureon.autonomous.vm_control import VMControlDispatcher, register_vm_tools, VM_TOOL_NAMES
+    from aureon.inhouse_ai import ToolRegistry
+
+    dispatcher = VMControlDispatcher()
+    sid = dispatcher.create_session(backend="simulated", name="registry-vm", make_default=True)
+    dispatcher.get_session(sid).arm(dry_run=False)
+
+    registry = ToolRegistry(include_builtins=True)
+    count = register_vm_tools(registry, dispatcher)
+
+    if count != len(VM_TOOL_NAMES):
+        raise AssertionError(f"Expected {len(VM_TOOL_NAMES)} tools, registered {count}")
+
+    errors = 0
+    errors_lock = threading.Lock()
+
+    tool_call_sequence = [
+        ("vm_screenshot", {}),
+        ("vm_mouse_move", {"x": 500, "y": 300}),
+        ("vm_left_click", {"x": 500, "y": 300}),
+        ("vm_type_text", {"text": "test"}),
+        ("vm_press_key", {"key": "enter"}),
+        ("vm_hotkey", {"keys": ["ctrl", "s"]}),
+        ("vm_get_cursor_position", {}),
+        ("vm_list_windows", {}),
+        ("vm_execute_shell", {"command": "echo hello"}),
+    ]
+
+    def agent_call(i: int):
+        nonlocal errors
+        tool_name, args = tool_call_sequence[i % len(tool_call_sequence)]
+        try:
+            result_str = registry.execute(tool_name, dict(args))
+            result = json.loads(result_str)
+            if not result.get("ok"):
+                with errors_lock:
+                    errors += 1
+        except Exception:
+            with errors_lock:
+                errors += 1
+
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        futures = [executor.submit(agent_call, i) for i in range(n_ops)]
+        for f in as_completed(futures):
+            pass
+
+    dispatcher.destroy_all()
+
+    return {
+        "operations": n_ops,
+        "errors": errors,
+        "vm_tools_registered": count,
+        "total_registry_tools": len(registry),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 17: Agent-driven VM control via full conversation loop
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_agent_driven_vm_control(runner: StressTestRunner):
+    """An in-house agent drives a VM through its tool dispatch loop."""
+    from aureon.inhouse_ai import Agent, AgentConfig, AureonBrainAdapter, ToolRegistry
+    from aureon.autonomous.vm_control import VMControlDispatcher, register_vm_tools
+
+    dispatcher = VMControlDispatcher()
+    sid = dispatcher.create_session(backend="simulated", name="agent-vm", make_default=True)
+    dispatcher.get_session(sid).arm(dry_run=False)
+
+    registry = ToolRegistry(include_builtins=True)
+    register_vm_tools(registry, dispatcher)
+
+    adapter = AureonBrainAdapter()
+    agent = Agent(
+        adapter=adapter,
+        config=AgentConfig(
+            name="VMOperator",
+            system_prompt="You control a Windows VM via the vm_* tools.",
+            max_turns=3,
+        ),
+        tools=registry,
+    )
+
+    n_runs = runner.scaled(100)
+    errors = 0
+
+    for i in range(n_runs):
+        try:
+            result = agent.run(f"Take a screenshot of the VM and tell me what you see, iteration {i}")
+            if not result:
+                errors += 1
+        except Exception:
+            errors += 1
+
+    # Verify the dispatcher saw the actions
+    status = dispatcher.get_status()
+    dispatcher.destroy_all()
+
+    return {
+        "operations": n_runs,
+        "errors": errors,
+        "vm_actions_triggered": status["total_actions"],
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 18: Sustained load soak test
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -979,10 +1233,14 @@ def main():
     runner.run("11. Queen AI Bridge integration",    lambda: test_queen_ai_bridge_integration(runner))
     runner.run("12. Miner AI Bridge integration",    lambda: test_miner_ai_bridge_integration(runner))
     runner.run("13. Miner quantum weight stability", lambda: test_miner_quantum_weight_stability(runner))
+    runner.run("14. VM control dispatch throughput", lambda: test_vm_control_dispatch(runner))
+    runner.run("15. VM multi-session concurrency",   lambda: test_vm_multi_session(runner))
+    runner.run("16. VM tool registry integration",   lambda: test_vm_tool_registry_integration(runner))
+    runner.run("17. Agent-driven VM control",        lambda: test_agent_driven_vm_control(runner))
 
     if not args.skip_soak:
         runner.run(
-            f"14. Sustained soak test ({args.soak}s)",
+            f"18. Sustained soak test ({args.soak}s)",
             lambda: test_sustained_soak(runner, duration_s=args.soak),
         )
 
