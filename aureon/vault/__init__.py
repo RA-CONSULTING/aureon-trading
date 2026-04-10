@@ -49,6 +49,22 @@ from aureon.vault.self_feedback_loop import (
     TickResult,
     get_self_feedback_loop,
 )
+from aureon.vault.voice import (
+    Utterance,
+    VoiceStatement,
+    ChoiceGate,
+    ChoiceGateDecision,
+    VaultVoice,
+    QueenVoice,
+    MinerVoice,
+    ScoutVoice,
+    CouncilVoice,
+    ArchitectVoice,
+    LoverVoice,
+    build_all_voices,
+    SelfDialogueEngine,
+    ThoughtStreamLoop,
+)
 
 __all__ = [
     # Vault core
@@ -88,4 +104,19 @@ __all__ = [
     "AureonSelfFeedbackLoop",
     "TickResult",
     "get_self_feedback_loop",
+    # Voice layer
+    "Utterance",
+    "VoiceStatement",
+    "ChoiceGate",
+    "ChoiceGateDecision",
+    "VaultVoice",
+    "QueenVoice",
+    "MinerVoice",
+    "ScoutVoice",
+    "CouncilVoice",
+    "ArchitectVoice",
+    "LoverVoice",
+    "build_all_voices",
+    "SelfDialogueEngine",
+    "ThoughtStreamLoop",
 ]

@@ -46,6 +46,16 @@ from aureon.vault.white_cell import (
 from aureon.vault.harmonic_pinger import HarmonicPinger
 from aureon.vault.rally_coordinator import RallyCoordinator
 
+# Voice layer (optional — loop runs fine without it)
+try:
+    from aureon.vault.voice.self_dialogue import SelfDialogueEngine
+    from aureon.vault.voice.utterance import Utterance
+    _VOICE_AVAILABLE = True
+except Exception:  # pragma: no cover
+    SelfDialogueEngine = None  # type: ignore[assignment,misc]
+    Utterance = None  # type: ignore[assignment,misc]
+    _VOICE_AVAILABLE = False
+
 logger = logging.getLogger("aureon.vault.loop")
 
 
@@ -71,6 +81,11 @@ class TickResult:
     gratitude_score: float
     ping_sent: bool
     duration_s: float
+    # Voice layer (optional)
+    spoke: bool = False
+    speaker: str = ""
+    listener: str = ""
+    utterance_preview: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -89,6 +104,10 @@ class TickResult:
             "gratitude_score": round(self.gratitude_score, 6),
             "ping_sent": self.ping_sent,
             "duration_s": round(self.duration_s, 4),
+            "spoke": self.spoke,
+            "speaker": self.speaker,
+            "listener": self.listener,
+            "utterance_preview": self.utterance_preview,
         }
 
 
@@ -122,6 +141,7 @@ class AureonSelfFeedbackLoop:
         rally_burst_ticks: int = 20,
         rally_casimir_threshold: float = 5.0,
         auto_wire_bus: bool = True,
+        enable_voice: bool = True,
     ):
         self.loop_id = uuid.uuid4().hex[:8]
         self.vault = vault or AureonVault()
@@ -139,6 +159,15 @@ class AureonSelfFeedbackLoop:
             casimir_threshold=rally_casimir_threshold,
         )
 
+        # Optional voice layer — the vault talks to itself
+        self.voice_engine: Any = None
+        if enable_voice and _VOICE_AVAILABLE:
+            try:
+                self.voice_engine = SelfDialogueEngine(vault=self.vault)
+            except Exception as e:
+                logger.debug("voice engine init failed: %s", e)
+                self.voice_engine = None
+
         self._cycle: int = 0
         self._running: bool = False
         self._thread: Optional[threading.Thread] = None
@@ -147,6 +176,7 @@ class AureonSelfFeedbackLoop:
         self._created_at: float = time.time()
         self._total_cells_deployed: int = 0
         self._total_cells_success: int = 0
+        self._total_utterances: int = 0
         self._last_tick: Optional[TickResult] = None
 
     # ─────────────────────────────────────────────────────────────────────
@@ -238,6 +268,24 @@ class AureonSelfFeedbackLoop:
             },
         )
 
+        # 9. SPEAK — the vault talks to itself (choice gate decides whether)
+        spoke = False
+        speaker_name = ""
+        listener_name = ""
+        utterance_preview = ""
+        if self.voice_engine is not None:
+            try:
+                utterance = self.voice_engine.converse()
+                if utterance is not None:
+                    spoke = True
+                    self._total_utterances += 1
+                    speaker_name = utterance.speaker
+                    listener_name = utterance.listener
+                    if utterance.statement and utterance.statement.text:
+                        utterance_preview = utterance.statement.text.strip().replace("\n", " ")[:120]
+            except Exception as e:
+                logger.debug("voice step error: %s", e)
+
         # Record the tick
         result = TickResult(
             cycle=self._cycle,
@@ -255,6 +303,10 @@ class AureonSelfFeedbackLoop:
             gratitude_score=self.vault.gratitude_score,
             ping_sent=ping_result.sent_thought or ping_result.sent_chirp,
             duration_s=time.time() - start,
+            spoke=spoke,
+            speaker=speaker_name,
+            listener=listener_name,
+            utterance_preview=utterance_preview,
         )
 
         self._tick_history.append(result)
@@ -325,6 +377,12 @@ class AureonSelfFeedbackLoop:
     # ─────────────────────────────────────────────────────────────────────
 
     def get_status(self) -> Dict[str, Any]:
+        voice_status = None
+        if self.voice_engine is not None:
+            try:
+                voice_status = self.voice_engine.get_status()
+            except Exception:
+                voice_status = None
         return {
             "loop_id": self.loop_id,
             "cycles": self._cycle,
@@ -332,6 +390,7 @@ class AureonSelfFeedbackLoop:
             "uptime_s": round(time.time() - self._created_at, 2),
             "total_cells_deployed": self._total_cells_deployed,
             "total_cells_success": self._total_cells_success,
+            "total_utterances": self._total_utterances,
             "cell_success_rate": (
                 self._total_cells_success / max(self._total_cells_deployed, 1)
             ),
@@ -342,6 +401,7 @@ class AureonSelfFeedbackLoop:
             "deployer": self.deployer.get_status(),
             "pinger": self.pinger.get_status(),
             "rally": self.rally.get_status(),
+            "voice": voice_status,
             "last_tick": self._last_tick.to_dict() if self._last_tick else None,
         }
 
