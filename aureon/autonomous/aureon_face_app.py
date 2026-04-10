@@ -629,120 +629,112 @@ def _llm_respond(text: str, *, tools_enabled: bool = True) -> Optional[Dict[str,
     """Use Claude as a language module (optionally with tool-use)."""
     global _conversation_history
 
-    api_key = (os.environ.get("ANTHROPIC_API_KEY", "") or "").strip()
-    if not api_key or api_key == "your_anthropic_api_key_here":
-        return None
-
+    # ── In-House AI — no external dependencies ──
     try:
-        import anthropic  # type: ignore
-        client = anthropic.Anthropic(api_key=api_key)
-    except Exception:
+        from aureon.inhouse_ai.llm_adapter import AureonHybridAdapter, AureonBrainAdapter
+        try:
+            adapter = AureonHybridAdapter()
+            if not adapter.health_check():
+                adapter = AureonBrainAdapter()
+        except Exception:
+            adapter = AureonBrainAdapter()
+    except ImportError:
         return None
 
-    model = (os.getenv("AUREON_CLAUDE_MODEL") or os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-20250514").strip()
-    if not model:
-        model = "claude-sonnet-4-20250514"
+    system = (
+        _QUEEN_SYSTEM_PROMPT
+        + f"\n[State: mood={state.current_mood}, cycles={state.cycle_count}, uptime={state.uptime_str()}]"
+    )
 
-    def _blocks_to_payload(blocks: list) -> list:
-        payload = []
-        for b in blocks:
-            btype = getattr(b, "type", None)
-            if btype == "text":
-                payload.append({"type": "text", "text": getattr(b, "text", "")})
-            elif btype == "tool_use":
-                payload.append(
-                    {
-                        "type": "tool_use",
-                        "id": getattr(b, "id", ""),
-                        "name": getattr(b, "name", ""),
-                        "input": getattr(b, "input", {}) or {},
-                    }
-                )
-        return payload
-
-    def _call(messages: list):
-        system = (
-            _QUEEN_SYSTEM_PROMPT
-            + f"\n[State: mood={state.current_mood}, cycles={state.cycle_count}, uptime={state.uptime_str()}]"
-        )
-        kwargs: Dict[str, Any] = {
-            "model": model,
-            "max_tokens": 1024,
-            "system": system,
-            "messages": messages,
-        }
-        if tools_enabled:
-            kwargs["tools"] = _QUEEN_TOOLS
-        return client.messages.create(**kwargs)
-
-    # Add user message to history (Anthropic format).
+    # Add user message to history.
     _conversation_history.append({"role": "user", "content": [{"type": "text", "text": text}]})
     if len(_conversation_history) > 30:
         _conversation_history = _conversation_history[-30:]
 
     try:
-        response = _call(_conversation_history)
+        response = adapter.prompt(
+            messages=_conversation_history,
+            system=system,
+            tools=_QUEEN_TOOLS if tools_enabled else None,
+            max_tokens=1024,
+        )
     except Exception as e:
-        log.warning(f"Claude API call failed: {e}")
+        log.warning(f"In-House AI call failed: {e}")
         _conversation_history.pop()
         return None
 
     all_text_parts: List[str] = []
     all_tool_results: List[Dict[str, Any]] = []
 
-    if not tools_enabled:
-        all_text_parts.extend([b.text for b in response.content if getattr(b, "type", None) == "text"])
-        _conversation_history.append({"role": "assistant", "content": _blocks_to_payload(list(response.content))})
+    if not tools_enabled or not response.has_tool_calls:
+        all_text_parts.append(response.text)
+        _conversation_history.append({"role": "assistant", "content": response.text})
     else:
         max_rounds = 5
         for _ in range(max_rounds):
-            assistant_payload = _blocks_to_payload(list(response.content))
-            tool_uses = [b for b in response.content if getattr(b, "type", None) == "tool_use"]
-            all_text_parts.extend([b.text for b in response.content if getattr(b, "type", None) == "text"])
+            all_text_parts.append(response.text)
 
-            _conversation_history.append({"role": "assistant", "content": assistant_payload})
+            # Build assistant content
+            if response.has_tool_calls:
+                content = []
+                if response.text:
+                    content.append({"type": "text", "text": response.text})
+                for tc in response.tool_calls:
+                    content.append({
+                        "type": "tool_use",
+                        "id": tc.id,
+                        "name": tc.name,
+                        "input": tc.arguments,
+                    })
+                _conversation_history.append({"role": "assistant", "content": content})
+            else:
+                _conversation_history.append({"role": "assistant", "content": response.text})
+
             if len(_conversation_history) > 30:
                 _conversation_history = _conversation_history[-30:]
 
-            if not tool_uses:
+            if not response.has_tool_calls:
                 break
 
             tool_result_blocks = []
-            for tu in tool_uses:
-                result_str = _execute_tool(getattr(tu, "name", ""), getattr(tu, "input", {}) or {})
-                all_tool_results.append({"tool": getattr(tu, "name", ""), "result": result_str[:500]})
-                tool_result_blocks.append(
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": getattr(tu, "id", ""),
-                        "content": result_str,
-                    }
-                )
+            for tc in response.tool_calls:
+                result_str = _execute_tool(tc.name, tc.arguments)
+                all_tool_results.append({"tool": tc.name, "result": result_str[:500]})
+                tool_result_blocks.append({
+                    "type": "tool_result",
+                    "tool_use_id": tc.id,
+                    "content": result_str,
+                })
 
             _conversation_history.append({"role": "user", "content": tool_result_blocks})
             if len(_conversation_history) > 30:
                 _conversation_history = _conversation_history[-30:]
 
             try:
-                response = _call(_conversation_history)
+                response = adapter.prompt(
+                    messages=_conversation_history,
+                    system=system,
+                    tools=_QUEEN_TOOLS,
+                    max_tokens=1024,
+                )
             except Exception as e:
-                log.warning(f"Claude API continuation failed: {e}")
+                log.warning(f"In-House AI continuation failed: {e}")
                 break
 
-        # Collect any final text.
-        all_text_parts.extend([b.text for b in response.content if getattr(b, "type", None) == "text"])
+        all_text_parts.append(response.text)
 
     final_text = "\n".join([t for t in all_text_parts if t]).strip()
     if not final_text:
         final_text = "Done."
 
+    model_name = type(adapter).__name__
     return {
         "text": final_text,
         "action": "llm" if not all_tool_results else "llm_tool",
         "data": (
-            {"model": model, "tools_enabled": tools_enabled, "tools_used": all_tool_results}
+            {"model": model_name, "tools_enabled": tools_enabled, "tools_used": all_tool_results}
             if tools_enabled
-            else {"model": model}
+            else {"model": model_name}
         ),
     }
 # ============================================================================

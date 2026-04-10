@@ -5,10 +5,15 @@
 ║     AUREON PILLAR AGENTS — FULLY INTEGRATED AUTONOMOUS AGENTS                ║
 ║                                                                               ║
 ║     The 6 Core Pillars of the Aureon Ecosystem                                ║
-║     Each pillar is a sovereign Claude Opus 4.6 agent that:                    ║
+║     Each pillar is a sovereign IN-HOUSE AI agent that:                        ║
 ║       • Reads live state from the unified bus                                 ║
 ║       • Processes market signals through its specialised lens                 ║
 ║       • Returns structured analysis back to Samuel                            ║
+║                                                                               ║
+║     NO EXTERNAL AI DEPENDENCIES — fully in-house via:                         ║
+║       • AureonLocalAdapter  (self-hosted LLM: Ollama/vLLM/llama.cpp)         ║
+║       • AureonBrainAdapter  (AureonBrain intelligence engine)                 ║
+║       • AureonHybridAdapter (local LLM + Brain combined)                      ║
 ║                                                                               ║
 ║     PILLARS:                                                                  ║
 ║       1. NexusAgent     — Central nervous system connector                    ║
@@ -18,7 +23,7 @@
 ║       5. QGITAAgent     — Quantum consciousness + frequency alignment         ║
 ║       6. AurisAgent     — 9-node animal consensus (Tiger, Falcon, etc.)       ║
 ║                                                                               ║
-║     Gary Leckey / Aureon System — 2025                                        ║
+║     Gary Leckey / Aureon System — 2025/2026                                   ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 """
 
@@ -31,12 +36,14 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 from dataclasses import dataclass, asdict
 
-try:
-    import anthropic
-except ImportError:
-    raise ImportError(
-        "anthropic SDK not installed. Run: pip install anthropic>=0.40.0"
-    )
+# ── In-House AI — no external dependencies ──────────────────────────────────
+from aureon.inhouse_ai.llm_adapter import (
+    LLMAdapter,
+    AureonLocalAdapter,
+    AureonBrainAdapter,
+    AureonHybridAdapter,
+    LLMResponse,
+)
 
 try:
     from dotenv import load_dotenv
@@ -46,7 +53,31 @@ except Exception:
 
 logger = logging.getLogger(__name__)
 
-MODEL = "claude-opus-4-6"
+
+def _build_default_adapter() -> LLMAdapter:
+    """Build the default in-house LLM adapter with automatic fallback."""
+    # Try hybrid first (local LLM + AureonBrain)
+    try:
+        adapter = AureonHybridAdapter()
+        if adapter.health_check():
+            logger.info("Pillar agents using AureonHybridAdapter")
+            return adapter
+    except Exception:
+        pass
+
+    # Try local LLM only
+    try:
+        adapter = AureonLocalAdapter()
+        if adapter.health_check():
+            logger.info("Pillar agents using AureonLocalAdapter")
+            return adapter
+    except Exception:
+        pass
+
+    # Fallback to brain-only (always available)
+    logger.info("Pillar agents using AureonBrainAdapter (fully in-house)")
+    return AureonBrainAdapter()
+
 
 STATE_DIR = os.path.join(os.path.dirname(__file__), "state")
 DASHBOARD_SNAPSHOT = os.path.join(STATE_DIR, "dashboard_snapshot.json")
@@ -130,20 +161,21 @@ class PillarAgent:
       - SYSTEM_PROMPT: the agent's identity and operating lens
       - TOOLS        : list of tool defs the agent can call
       - _execute_tool: tool dispatch method
+
+    Now powered by the in-house AI framework — zero external dependencies.
+    Adapter priority: AureonHybridAdapter > AureonLocalAdapter > AureonBrainAdapter
     """
 
     PILLAR_NAME: str = "BasePillar"
     SYSTEM_PROMPT: str = ""
     TOOLS: list = []
 
-    def __init__(self, api_key: Optional[str] = None):
-        key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
-        if not key or key == "your_anthropic_api_key_here":
-            raise ValueError(
-                "ANTHROPIC_API_KEY is not set. "
-                "Add it to .env: ANTHROPIC_API_KEY=sk-ant-..."
-            )
-        self.client = anthropic.Anthropic(api_key=key)
+    def __init__(self, adapter: Optional[LLMAdapter] = None):
+        # Build in-house adapter — no external API keys needed
+        if adapter:
+            self.adapter = adapter
+        else:
+            self.adapter = _build_default_adapter()
         self._snapshot: Dict[str, Any] = {}
 
     def _refresh_snapshot(self):
@@ -155,52 +187,53 @@ class PillarAgent:
 
     def _run_agentic_loop(self, task: str, max_turns: int = 8) -> str:
         """
-        Run Claude with tools in an agentic loop until it reaches end_turn.
+        Run the in-house AI with tools in an agentic loop until it reaches end_turn.
         Returns the final text response.
         """
         self._refresh_snapshot()
         messages = [{"role": "user", "content": task}]
 
         for turn in range(max_turns):
-            with self.client.messages.stream(
-                model=MODEL,
-                max_tokens=4096,
-                thinking={"type": "adaptive"},
-                system=self.SYSTEM_PROMPT,
-                tools=self.TOOLS if self.TOOLS else anthropic.NOT_GIVEN,
+            response = self.adapter.prompt(
                 messages=messages,
-            ) as stream:
-                response = stream.get_final_message()
+                system=self.SYSTEM_PROMPT,
+                tools=self.TOOLS if self.TOOLS else None,
+                max_tokens=4096,
+            )
 
             # Append assistant response
-            messages.append({"role": "assistant", "content": response.content})
+            if response.has_tool_calls:
+                content = []
+                if response.text:
+                    content.append({"type": "text", "text": response.text})
+                for tc in response.tool_calls:
+                    content.append({
+                        "type": "tool_use",
+                        "id": tc.id,
+                        "name": tc.name,
+                        "input": tc.arguments,
+                    })
+                messages.append({"role": "assistant", "content": content})
+            else:
+                messages.append({"role": "assistant", "content": response.text})
 
-            if response.stop_reason == "end_turn":
-                # Extract final text
-                for block in response.content:
-                    if hasattr(block, "text"):
-                        return block.text
-                return ""
+            if response.stop_reason == "end_turn" or not response.has_tool_calls:
+                return response.text
 
-            if response.stop_reason == "tool_use":
+            if response.has_tool_calls:
                 tool_results = []
-                for block in response.content:
-                    if block.type == "tool_use":
-                        result_str = self._execute_tool(block.name, block.input)
-                        tool_results.append({
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": result_str,
-                        })
+                for tc in response.tool_calls:
+                    result_str = self._execute_tool(tc.name, tc.arguments)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": tc.id,
+                        "content": result_str,
+                    })
                 if tool_results:
                     messages.append({"role": "user", "content": tool_results})
                 continue
 
-            # Any other stop reason — return what we have
-            for block in response.content:
-                if hasattr(block, "text"):
-                    return block.text
-            return ""
+            return response.text
 
         return "Max turns reached without final response."
 
@@ -817,9 +850,10 @@ ALL_PILLARS: Dict[str, type] = {
 }
 
 
-def build_all_pillars(api_key: Optional[str] = None) -> Dict[str, PillarAgent]:
-    """Instantiate all six pillar agents and return as a dict."""
-    return {name: cls(api_key=api_key) for name, cls in ALL_PILLARS.items()}
+def build_all_pillars(adapter: Optional[LLMAdapter] = None) -> Dict[str, PillarAgent]:
+    """Instantiate all six pillar agents using in-house AI and return as a dict."""
+    shared_adapter = adapter or _build_default_adapter()
+    return {name: cls(adapter=shared_adapter) for name, cls in ALL_PILLARS.items()}
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -829,10 +863,20 @@ def build_all_pillars(api_key: Optional[str] = None) -> Dict[str, PillarAgent]:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run a single pillar agent")
+    parser = argparse.ArgumentParser(description="Run a single pillar agent (in-house AI)")
     parser.add_argument("pillar", choices=list(ALL_PILLARS.keys()), help="Pillar to run")
+    parser.add_argument("--mode", choices=["hybrid", "local", "brain"], default="hybrid",
+                        help="AI backend mode (default: hybrid)")
     args = parser.parse_args()
 
-    agent = ALL_PILLARS[args.pillar]()
+    # Build adapter based on mode
+    if args.mode == "local":
+        adapter = AureonLocalAdapter()
+    elif args.mode == "brain":
+        adapter = AureonBrainAdapter()
+    else:
+        adapter = _build_default_adapter()
+
+    agent = ALL_PILLARS[args.pillar](adapter=adapter)
     result = agent.analyse(context={"task": "Provide your current signal"})
     print(result.to_json())

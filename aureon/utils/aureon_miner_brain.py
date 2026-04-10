@@ -5354,6 +5354,16 @@ class MinerBrain:
         self.latest_prediction = None
         self.latest_analysis = None
 
+        # In-House AI Bridge — sovereign AI enhancement (no external deps)
+        self.ai_bridge = None
+        try:
+            from aureon.miner.miner_inhouse_ai_bridge import get_miner_ai_bridge
+            self.ai_bridge = get_miner_ai_bridge()
+            self.ai_bridge.start()
+            logger.info("🧠 MinerBrain: In-House AI Bridge ONLINE (sovereign)")
+        except Exception as e:
+            logger.debug(f"Miner AI Bridge unavailable: {e}")
+
     def _connect_to_unity(self):
         """Connect to the Thought Bus to hear other parts of the system."""
         if not self.bus:
@@ -5578,9 +5588,45 @@ class MinerBrain:
         skeptic_result = self.skeptic.analyze(web_data.get("processed", {}))
         council_result = self.council.convene(web_data.get("processed", {}))
         speculations = self.speculator.speculate(web_data.get("processed", {}), skeptic_result)
-        
+
+        # ── In-House AI Enhancement (Phase 3+): sovereign AI augments skeptic + council ──
+        ai_skeptical = None
+        ai_council = None
+        if self.ai_bridge and self.ai_bridge.is_alive:
+            try:
+                ai_skeptical = self.ai_bridge.enhance_skeptical_analysis(
+                    market_data=web_data.get("processed", {}),
+                    existing_red_flags=skeptic_result.get("red_flags", []) if isinstance(skeptic_result, dict) else [],
+                    existing_green_flags=skeptic_result.get("green_flags", []) if isinstance(skeptic_result, dict) else [],
+                )
+                # Merge AI-detected flags into the rule-based result
+                if isinstance(skeptic_result, dict):
+                    skeptic_result.setdefault("red_flags", []).extend(ai_skeptical.red_flags)
+                    skeptic_result.setdefault("green_flags", []).extend(ai_skeptical.green_flags)
+                    skeptic_result["ai_verdict"] = ai_skeptical.verdict
+                    skeptic_result["ai_confidence"] = ai_skeptical.confidence
+
+                ai_council = self.ai_bridge.synthesise_council_verdict(
+                    market_data=web_data.get("processed", {}),
+                    advisor_votes=council_result.get("votes", []) if isinstance(council_result, dict) else [],
+                )
+                # Enrich council result with AI synthesis
+                if isinstance(council_result, dict):
+                    council_result["ai_verdict"] = ai_council.verdict
+                    council_result["ai_confidence"] = ai_council.confidence
+                    council_result["ai_coherence"] = ai_council.coherence
+                    council_result["ai_reasoning"] = ai_council.reasoning
+            except Exception as ai_err:
+                logger.debug(f"Miner AI Bridge Phase 3 enhancement error: {ai_err}")
+
         talk = self.narrator.generate_talk(web_data, coinbase_data, skeptic_result, council_result, speculations)
         print(talk)
+
+        if ai_council:
+            print(f"\n🤖 **IN-HOUSE AI COUNCIL SYNTHESIS**")
+            print(f"   Verdict: {ai_council.verdict}  |  Confidence: {ai_council.confidence:.0%}  |  Coherence: {ai_council.coherence:.2f}")
+            if ai_council.reasoning:
+                print(f"   {ai_council.reasoning[:200]}")
         
         # ═══════════════════════════════════════════════════════════
         # PHASE 3.5: DREAM STATE - SCENARIO SIMULATION
@@ -6136,6 +6182,25 @@ class MinerBrain:
         all_wisdom = self.wisdom_engine.get_all_wisdom_of_day()
         for wisdom in all_wisdom:
             print(f"   {wisdom}")
+
+        # ── In-House AI Wisdom Synthesis: blends all civilisations into a directive ──
+        ai_wisdom = None
+        if self.ai_bridge and self.ai_bridge.is_alive:
+            try:
+                civ_signals = {
+                    civ: {"verdict": action, "confidence": consensus.get('confidence', 50) / 100}
+                    for civ, action in unified_reading.get('actions', {}).items()
+                }
+                ai_wisdom = self.ai_bridge.enhance_wisdom_synthesis(
+                    civilization_signals=civ_signals,
+                    quantum_context=qc_ctx,
+                )
+                print(f"\n🤖 **IN-HOUSE AI WISDOM DIRECTIVE**")
+                print(f"   Verdict: {ai_wisdom.verdict}  |  Confidence: {ai_wisdom.confidence:.0%}  |  Coherence: {ai_wisdom.coherence:.2f}")
+                if ai_wisdom.reasoning:
+                    print(f"   {ai_wisdom.reasoning[:200]}")
+            except Exception as ai_err:
+                logger.debug(f"Miner AI Bridge wisdom synthesis error: {ai_err}")
 
         # ═══════════════════════════════════════════════════════════
         # PHASE 7: RECORD NEW PREDICTION
