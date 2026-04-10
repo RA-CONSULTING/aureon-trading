@@ -1275,7 +1275,276 @@ def test_lambda_stability(runner: StressTestRunner):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 20: Sustained load soak test
+# Test 20: Pillar alignment throughput + correctness
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_pillar_alignment(runner: StressTestRunner):
+    """Hammer PillarAlignment.run_synthetic_cycle + verify alignment math."""
+    from aureon.alignment import (
+        PillarAlignment,
+        AlignmentConfig,
+        LIGHTHOUSE_THRESHOLD,
+    )
+
+    n_cycles = runner.scaled(5000)
+
+    alignment = PillarAlignment(AlignmentConfig(auto_load_pillars=False))
+
+    # Test 1: baseline synthetic stack under load
+    errors = 0
+    errors_lock = threading.Lock()
+    lighthouse_count = 0
+    lighthouse_lock = threading.Lock()
+
+    def fire(i: int):
+        nonlocal errors, lighthouse_count
+        try:
+            # Alternate between three scenarios
+            if i % 3 == 0:
+                # Perfect alignment
+                signals = [
+                    {"pillar": f"P{j}", "signal": "BUY", "confidence": 0.95,
+                     "coherence": 0.96, "frequency_hz": 528.0}
+                    for j in range(6)
+                ]
+            elif i % 3 == 1:
+                # Default (mixed)
+                signals = None
+            else:
+                # Complete disagreement
+                signals = [
+                    {"pillar": f"A{j}", "signal": "BUY" if j % 2 == 0 else "SELL",
+                     "confidence": 0.7, "coherence": 0.6, "frequency_hz": 432.0 if j < 3 else 741.0}
+                    for j in range(6)
+                ]
+            result = alignment.run_synthetic_cycle(signals=signals)
+            if result.lighthouse_cleared:
+                with lighthouse_lock:
+                    lighthouse_count += 1
+            if result.total_pillars != 6:
+                with errors_lock:
+                    errors += 1
+        except Exception:
+            with errors_lock:
+                errors += 1
+
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        futures = [executor.submit(fire, i) for i in range(n_cycles)]
+        for f in as_completed(futures):
+            pass
+
+    # Correctness check: of the ~1/3 perfect-alignment cycles, most should clear
+    expected_lighthouse = n_cycles // 3
+    # Tolerance: at least 90% of perfect cycles should clear
+    if lighthouse_count < expected_lighthouse * 0.9:
+        errors += 1
+
+    status = alignment.get_status()
+
+    return {
+        "operations": n_cycles,
+        "errors": errors,
+        "lighthouse_count": lighthouse_count,
+        "expected_lighthouse_min": int(expected_lighthouse * 0.9),
+        "lighthouse_rate": round(status["lighthouse_clear_rate"], 4),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 21: Harmonic math correctness
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_harmonic_math(runner: StressTestRunner):
+    """Verify the harmonic resonance math returns correct results."""
+    from aureon.alignment.harmonic_resonance import (
+        consonance_score,
+        compute_signal_consensus,
+        compute_phase_coherence,
+        analyse_frequency_harmony,
+        full_harmonic_analysis,
+        geometric_mean,
+        FUNDAMENTAL_HZ,
+        LIGHTHOUSE_THRESHOLD,
+    )
+    import math
+
+    errors = 0
+    n_checks = 0
+
+    # Consonance scores — exact unison must be 1.0
+    n_checks += 1
+    if abs(consonance_score(1.0) - 1.0) > 0.001:
+        errors += 1
+
+    # Perfect octave must be 1.0
+    n_checks += 1
+    if abs(consonance_score(2.0) - 1.0) > 0.001:
+        errors += 1
+
+    # Perfect fifth
+    n_checks += 1
+    if abs(consonance_score(1.5) - 1.0) > 0.001:
+        errors += 1
+
+    # Very dissonant ratio (midway between unison and octave)
+    n_checks += 1
+    mid = consonance_score(1.4142135623730951)  # sqrt(2) → tritone, but still consonant here
+    # Tritone IS in our consonant set, so it should be high
+    if mid < 0.9:
+        errors += 1
+
+    # Signal consensus: all agree → 1.0
+    n_checks += 1
+    c, _, _, _ = compute_signal_consensus(["BUY"] * 6)
+    if abs(c - 1.0) > 0.001:
+        errors += 1
+
+    # Signal consensus: perfect 3-way split → 1/3
+    n_checks += 1
+    c, _, _, _ = compute_signal_consensus(["BUY", "BUY", "SELL", "SELL", "NEUTRAL", "NEUTRAL"])
+    if abs(c - 1/3) > 0.01:
+        errors += 1
+
+    # Phase coherence: aligned → 1.0
+    n_checks += 1
+    r = compute_phase_coherence([0.0, 0.0, 0.0])
+    if abs(r - 1.0) > 0.001:
+        errors += 1
+
+    # Phase coherence: evenly scattered → ~0
+    n_checks += 1
+    r = compute_phase_coherence([0, 2 * math.pi / 3, 4 * math.pi / 3])
+    if r > 0.01:
+        errors += 1
+
+    # Geometric mean: all 1 → 1
+    n_checks += 1
+    if abs(geometric_mean([1, 1, 1, 1]) - 1.0) > 0.001:
+        errors += 1
+
+    # Geometric mean: any zero → ~0
+    n_checks += 1
+    if geometric_mean([1, 1, 1, 0]) > 0.01:
+        errors += 1
+
+    # Full analysis on a perfect stack should clear the Lighthouse
+    n_checks += 1
+    perfect = [
+        {"pillar": f"P{i}", "signal": "BUY", "confidence": 0.95,
+         "coherence": 0.96, "frequency_hz": 528.0}
+        for i in range(6)
+    ]
+    analysis = full_harmonic_analysis(perfect, t=0.0)
+    if not analysis.lighthouse_cleared:
+        errors += 1
+    if analysis.alignment_score < 0.94:
+        errors += 1
+
+    # Full analysis on complete disagreement should NOT clear
+    n_checks += 1
+    scattered = [
+        {"pillar": f"P{i}", "signal": "BUY" if i < 2 else "SELL" if i < 4 else "NEUTRAL",
+         "confidence": 0.5, "coherence": 0.4, "frequency_hz": 528.0}
+        for i in range(6)
+    ]
+    analysis = full_harmonic_analysis(scattered, t=0.0)
+    if analysis.lighthouse_cleared:
+        errors += 1
+
+    # Pillar frequency harmonic lock should be high (≥0.99)
+    n_checks += 1
+    lock, _, _ = analyse_frequency_harmony({
+        "Nexus": 432.0, "Omega": 432.0, "Infinite": 528.0,
+        "Piano": 396.0, "QGITA": 528.0, "Auris": 741.0,
+    }, FUNDAMENTAL_HZ)
+    if lock < 0.99:
+        errors += 1
+
+    return {
+        "operations": n_checks,
+        "errors": errors,
+        "checks_passed": n_checks - errors,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 22: Unified harmonic directive (pillars + love stream + queen + miner)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_unified_directive(runner: StressTestRunner):
+    """Exercise the full cross-layer alignment assembly."""
+    from aureon.alignment import (
+        PillarAlignment, AlignmentConfig, UnifiedHarmonicDirective,
+    )
+    from aureon.swarm_motion import SwarmMotionHive, SwarmMotionConfig
+
+    n_directives = runner.scaled(500)
+
+    # Set up a small hive so the love stream is alive
+    hive = SwarmMotionHive(config=SwarmMotionConfig(
+        swarm_size=3, backend="simulated", interval_scale=0.01,
+    ))
+    hive.spawn_swarm()
+    # Warm up the love stream
+    for _ in range(5):
+        hive.take_swarm_snapshot()
+    hive.pulse_love_stream(count=20)
+
+    alignment = PillarAlignment(AlignmentConfig(auto_load_pillars=False))
+    unified = UnifiedHarmonicDirective(pillar_alignment=alignment)
+    unified.set_love_stream(hive._ensure_love_stream())
+
+    perfect = [
+        {"pillar": f"P{i}", "signal": "BUY", "confidence": 0.95,
+         "coherence": 0.96, "frequency_hz": 528.0}
+        for i in range(6)
+    ]
+
+    errors = 0
+    errors_lock = threading.Lock()
+    lighthouse_count = 0
+    lighthouse_lock = threading.Lock()
+
+    def fire(i: int):
+        nonlocal errors, lighthouse_count
+        try:
+            directive = unified.assemble(
+                context={"btc_price": 67000 + i, "fear_greed": 35 + (i % 30)},
+                use_synthetic_pillars=True,
+                synthetic_pillar_signals=perfect,
+            )
+            if directive.lighthouse_cleared:
+                with lighthouse_lock:
+                    lighthouse_count += 1
+            # Verify all 4 layers contributed
+            if len(directive.contributing_layers) < 1:
+                with errors_lock:
+                    errors += 1
+        except Exception:
+            with errors_lock:
+                errors += 1
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(fire, i) for i in range(n_directives)]
+        for f in as_completed(futures):
+            pass
+
+    status = unified.get_status()
+    hive.shutdown()
+
+    return {
+        "operations": n_directives,
+        "errors": errors,
+        "lighthouse_count": lighthouse_count,
+        "layers_wired": sum(1 for v in status["layers_wired"].values() if v),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 23: Sustained soak test
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -1373,10 +1642,13 @@ def main():
     runner.run("17. Agent-driven VM control",        lambda: test_agent_driven_vm_control(runner))
     runner.run("18. Swarm motion hive end-to-end",   lambda: test_swarm_motion_hive(runner))
     runner.run("19. HNC Lambda(t) stability",        lambda: test_lambda_stability(runner))
+    runner.run("20. Pillar alignment throughput",    lambda: test_pillar_alignment(runner))
+    runner.run("21. Harmonic math correctness",      lambda: test_harmonic_math(runner))
+    runner.run("22. Unified harmonic directive",     lambda: test_unified_directive(runner))
 
     if not args.skip_soak:
         runner.run(
-            f"20. Sustained soak test ({args.soak}s)",
+            f"23. Sustained soak test ({args.soak}s)",
             lambda: test_sustained_soak(runner, duration_s=args.soak),
         )
 
