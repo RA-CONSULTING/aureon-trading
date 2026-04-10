@@ -293,9 +293,12 @@ def test_tool_registry_race(runner: StressTestRunner):
 
 
 def test_agent_parallel_execution(runner: StressTestRunner):
-    """50 agents running 20 tasks each in parallel."""
-    n_agents = runner.scaled(50)
-    n_tasks_per_agent = runner.scaled(20)
+    """Agents running tasks in parallel. Caps agent count to keep memory bounded."""
+    # Cap the number of distinct agent INSTANCES at 500 to avoid
+    # instantiating millions of Agent objects under extreme scale.
+    # Total ops scale linearly via n_tasks_per_agent instead.
+    n_agents = min(runner.scaled(50), 500)
+    n_tasks_per_agent = max(1, (runner.scaled(50) * runner.scaled(20)) // n_agents)
     adapter = AureonBrainAdapter()
 
     agents = [
@@ -345,9 +348,10 @@ def test_agent_parallel_execution(runner: StressTestRunner):
 
 
 def test_agent_pool_saturation(runner: StressTestRunner):
-    """AgentPool with size 8 vs 100 jobs."""
+    """AgentPool with size 8 vs N jobs. Capped at 5000 distinct agents
+    to keep memory bounded under extreme scale."""
     pool_size = 8
-    n_jobs = runner.scaled(100)
+    n_jobs = min(runner.scaled(100), 5000)
     adapter = AureonBrainAdapter()
 
     pool = AgentPool(max_concurrent=pool_size)
@@ -545,9 +549,10 @@ def test_shared_memory_contention(runner: StressTestRunner):
 
 
 def test_team_orchestration(runner: StressTestRunner):
-    """5 teams x 10 agents running in parallel."""
-    n_teams = runner.scaled(5)
-    n_agents_per_team = runner.scaled(10)
+    """N teams x M agents running in parallel. Bounded to keep memory
+    sane when scale factors multiply (5 × 10 × 1000² is untenable)."""
+    n_teams = min(runner.scaled(5), 50)
+    n_agents_per_team = min(runner.scaled(10), 50)
     adapter = AureonBrainAdapter()
 
     teams = []
@@ -1611,7 +1616,10 @@ def test_code_architect_library(runner: StressTestRunner):
     tmp = Path(tempfile.mkdtemp(prefix="aureon_lib_stress_"))
     try:
         lib = SkillLibrary(storage_dir=tmp)
-        n_skills = runner.scaled(500)
+        # Cap skill chain depth at 50,000 — beyond that the JSON
+        # save/load and pure Skill object overhead dominates without
+        # proving anything new.
+        n_skills = min(runner.scaled(500), 50000)
         errors = 0
 
         # Add skills in a chain so each depends on the previous
@@ -1722,8 +1730,10 @@ def test_code_architect_full_pipeline(runner: StressTestRunner):
         total_exec = 0
         total_ok = 0
 
-        # Run the full be_ceo a few times
-        ceo_runs = max(5, runner.scaled(20))
+        # Run the full be_ceo a few times (capped to keep the
+        # per-run execution cost sane — a full CEO run fires
+        # 80 sub-skill calls, so 1000 runs = 80k calls)
+        ceo_runs = min(max(5, runner.scaled(20)), 1000)
         for _ in range(ceo_runs):
             r = arch.execute_skill("be_ceo")
             total_exec += 1
@@ -1732,16 +1742,15 @@ def test_code_architect_full_pipeline(runner: StressTestRunner):
 
         # Run atomic mouse_move lots of times in parallel
         def fire_mouse(i: int):
+            nonlocal total_exec, total_ok
             r = arch.execute_skill("mouse_move", params={"x": i, "y": i * 2},
                                     resolve_deps=False)
+            total_exec += 1
+            if r.ok:
+                total_ok += 1
             return r.ok
 
-        with ThreadPoolExecutor(max_workers=16) as executor:
-            futures = [executor.submit(fire_mouse, i) for i in range(n_runs)]
-            for f in as_completed(futures):
-                total_exec += 1
-                if f.result():
-                    total_ok += 1
+        run_parallel_batched(fire_mouse, n_runs, max_workers=16, batch_size=10000)
 
         # 4. Observer → pattern → skill auto-learn cycle
         for _ in range(3):
