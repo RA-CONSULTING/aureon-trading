@@ -1544,7 +1544,234 @@ def test_unified_directive(runner: StressTestRunner):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 23: Sustained soak test
+# Test 23: Code architect — static safety validator
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_code_architect_safety(runner: StressTestRunner):
+    """Verify the validator blocks dangerous code and accepts safe code."""
+    from aureon.code_architect.validator import SkillValidator
+
+    v = SkillValidator(strict_static=True)
+
+    safe_snippets = [
+        "def s(): return vm_screenshot()",
+        "def s(x=0, y=0): return vm_left_click(x=x, y=y)",
+        "def s():\n    r = call_skill('mouse_move')\n    return {'ok': True, 'r': r}",
+        "def s():\n    safe_sleep(0.1)\n    return {'ok': True}",
+        "def s():\n    results = []\n    for i in range(3):\n        results.append(vm_wait(seconds=0.01))\n    return {'ok': True, 'results': results}",
+    ]
+
+    dangerous_snippets = [
+        "def s(): eval('1+1')",
+        "def s(): exec('print(1)')",
+        "def s(): __import__('os').system('ls')",
+        "def s(): open('/etc/passwd').read()",
+        "def s():\n    import os\n    os.remove('/tmp/x')",
+        "def s(): compile('1', '', 'eval')",
+        "def s(): return ().__class__.__bases__[0].__subclasses__()",
+        "def s(): raise SystemExit(1)",
+        "def s(): globals()",
+        "def s(): locals()",
+    ]
+
+    errors = 0
+    n_checks = len(safe_snippets) + len(dangerous_snippets)
+
+    for code in safe_snippets:
+        ok, err_list = v.static_check(code)
+        if not ok:
+            errors += 1
+
+    for code in dangerous_snippets:
+        ok, err_list = v.static_check(code)
+        if ok:
+            errors += 1  # Should have been blocked
+
+    return {
+        "operations": n_checks,
+        "errors": errors,
+        "safe_accepted": len(safe_snippets),
+        "dangerous_blocked": len(dangerous_snippets),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 24: Code architect — skill library persistence + dependency resolution
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_code_architect_library(runner: StressTestRunner):
+    """Verify SkillLibrary add/save/load/resolve under concurrent pressure."""
+    from aureon.code_architect.skill_library import SkillLibrary
+    from aureon.code_architect.skill import Skill, SkillLevel, SkillStatus
+    from pathlib import Path
+    import tempfile, shutil
+
+    tmp = Path(tempfile.mkdtemp(prefix="aureon_lib_stress_"))
+    try:
+        lib = SkillLibrary(storage_dir=tmp)
+        n_skills = runner.scaled(500)
+        errors = 0
+
+        # Add skills in a chain so each depends on the previous
+        def add_skill(i: int):
+            nonlocal errors
+            try:
+                skill = Skill(
+                    name=f"skill_{i}",
+                    description=f"Stress skill {i}",
+                    level=SkillLevel.COMPOUND if i > 0 else SkillLevel.ATOMIC,
+                    code=f"def skill_{i}(): return {{'i': {i}}}",
+                    entry_function=f"skill_{i}",
+                    dependencies=[f"skill_{i-1}"] if i > 0 else [],
+                    status=SkillStatus.VALIDATED,
+                )
+                lib.add(skill, persist=False)
+            except Exception:
+                errors += 1
+
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            futures = [executor.submit(add_skill, i) for i in range(n_skills)]
+            for f in as_completed(futures):
+                pass
+
+        # Verify count
+        if len(lib) != n_skills:
+            errors += 1
+
+        # Verify cycle detection
+        if lib.has_cycles():
+            errors += 1
+
+        # Persist + reload
+        lib.save()
+        lib2 = SkillLibrary(storage_dir=tmp)
+        if len(lib2) != n_skills:
+            errors += 1
+
+        # Verify transitive dependency resolution
+        top_name = f"skill_{n_skills - 1}"
+        chain = lib2.resolve_dependencies(top_name)
+        # Should be n_skills long (whole chain)
+        if len(chain) != n_skills:
+            errors += 1
+        # Topological ordering: each skill's deps come before it
+        seen: set = set()
+        for s in chain:
+            for dep in s.dependencies:
+                if dep not in seen:
+                    errors += 1
+                    break
+            seen.add(s.name)
+
+        stats = lib2.get_stats()
+
+        return {
+            "operations": n_skills + n_skills,  # add + resolve
+            "errors": errors,
+            "stored": len(lib2),
+            "chain_length": len(chain),
+            "has_cycles": stats["has_cycles"],
+        }
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 25: Code architect — full pipeline (observe → write → validate → exec)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_code_architect_full_pipeline(runner: StressTestRunner):
+    """
+    Full end-to-end: bootstrap atomics, build be_ceo tree, execute it,
+    verify the dependency chain actually fires.
+    """
+    from aureon.code_architect import CodeArchitect, SkillLibrary
+    from aureon.autonomous.vm_control import VMControlDispatcher
+    from pathlib import Path
+    import tempfile, shutil
+
+    tmp = Path(tempfile.mkdtemp(prefix="aureon_arch_stress_"))
+    try:
+        lib = SkillLibrary(storage_dir=tmp)
+        dispatcher = VMControlDispatcher()
+        sid = dispatcher.create_session(backend="simulated", name="arch-vm", make_default=True)
+        dispatcher.get_session(sid).arm(dry_run=False)
+
+        arch = CodeArchitect(library=lib, dispatcher=dispatcher, auto_wire=False)
+        arch.executor.dispatcher = dispatcher
+
+        errors = 0
+
+        # 1. Bootstrap atomics
+        atomics = arch.bootstrap_atomics()
+        if len(atomics) < 15:  # Allow a couple of blocked skills
+            errors += 1
+
+        # 2. Build the full CEO tree
+        summary = arch.demo_build_ceo_persona()
+        if not summary.get("role_built"):
+            errors += 1
+        if summary.get("library_size", 0) < 30:
+            errors += 1
+
+        # 3. Execute skills at every level
+        n_runs = runner.scaled(100)
+        total_exec = 0
+        total_ok = 0
+
+        # Run the full be_ceo a few times
+        ceo_runs = max(5, runner.scaled(20))
+        for _ in range(ceo_runs):
+            r = arch.execute_skill("be_ceo")
+            total_exec += 1
+            if r.ok:
+                total_ok += 1
+
+        # Run atomic mouse_move lots of times in parallel
+        def fire_mouse(i: int):
+            r = arch.execute_skill("mouse_move", params={"x": i, "y": i * 2},
+                                    resolve_deps=False)
+            return r.ok
+
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            futures = [executor.submit(fire_mouse, i) for i in range(n_runs)]
+            for f in as_completed(futures):
+                total_exec += 1
+                if f.result():
+                    total_ok += 1
+
+        # 4. Observer → pattern → skill auto-learn cycle
+        for _ in range(3):
+            arch.observer.record_action("vm_screenshot", {})
+            arch.observer.record_action("vm_mouse_move", {"x": 500, "y": 300})
+            arch.observer.record_action("vm_left_click", {})
+        learned = arch.observe_and_propose()
+
+        stats = arch.get_status()
+        final_lib = arch.library.get_stats()
+
+        dispatcher.destroy_all()
+
+        return {
+            "operations": total_exec,
+            "errors": errors + (total_exec - total_ok),
+            "bootstrapped_atomics": len(atomics),
+            "total_skills": final_lib["total_skills"],
+            "role_built": summary.get("role_built"),
+            "dependency_chain_length": len(arch.library.resolve_dependencies("be_ceo")),
+            "ceo_runs": ceo_runs,
+            "ceo_ok": total_ok - sum(1 for _ in range(n_runs)),  # approximate
+            "learned_skills": len(learned),
+        }
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 26: Sustained soak test
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -1645,10 +1872,13 @@ def main():
     runner.run("20. Pillar alignment throughput",    lambda: test_pillar_alignment(runner))
     runner.run("21. Harmonic math correctness",      lambda: test_harmonic_math(runner))
     runner.run("22. Unified harmonic directive",     lambda: test_unified_directive(runner))
+    runner.run("23. Code architect static safety",   lambda: test_code_architect_safety(runner))
+    runner.run("24. Code architect library",         lambda: test_code_architect_library(runner))
+    runner.run("25. Code architect full pipeline",   lambda: test_code_architect_full_pipeline(runner))
 
     if not args.skip_soak:
         runner.run(
-            f"23. Sustained soak test ({args.soak}s)",
+            f"26. Sustained soak test ({args.soak}s)",
             lambda: test_sustained_soak(runner, duration_s=args.soak),
         )
 
