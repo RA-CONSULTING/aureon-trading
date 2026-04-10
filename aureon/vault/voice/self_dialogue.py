@@ -213,6 +213,206 @@ class SelfDialogueEngine:
         return names[-1]
 
     # ─────────────────────────────────────────────────────────────────────
+    # Human-directed conversation
+    # ─────────────────────────────────────────────────────────────────────
+
+    def respond_to_human(
+        self,
+        message: str,
+        voice_name: Optional[str] = None,
+    ) -> Optional[Utterance]:
+        """
+        The vault responds to a message from a human.
+
+        The message is first ingested into the vault as a `human.message`
+        card with maximum love_weight, so every downstream voice sees it
+        through its own state extraction. Then the chosen voice composes
+        a prompt that includes the human message alongside its live
+        vault state, and generates a response.
+
+        If `voice_name` is None, the gate's current preferred voice is
+        used (derived from vault state).
+        """
+        message = (message or "").strip()
+        if not message:
+            return None
+
+        with self._lock:
+            self._total_decisions += 1
+
+            # 1. Ingest the message into the vault so downstream state
+            # extraction sees it. High love_weight so the Fibonacci
+            # shuffler prioritises it on the next replay.
+            try:
+                pre_love = float(getattr(self.vault, "love_amplitude", 0.0) or 0.0)
+            except Exception:
+                pre_love = 0.0
+            try:
+                self.vault.love_amplitude = max(pre_love, 0.6)  # bump if low
+                self.vault.ingest(
+                    topic="human.message",
+                    payload={
+                        "text": message[:2000],
+                        "timestamp": time.time(),
+                    },
+                    category="human_message",
+                )
+            except Exception as e:
+                logger.debug("human message ingest failed: %s", e)
+
+            # 2. Pick a speaker
+            if voice_name and voice_name in self.voices:
+                speaker_name = voice_name
+            else:
+                decision = self.gate.decide(self.vault)
+                speaker_name = decision.preferred_voice or "vault"
+                if speaker_name not in self.voices:
+                    speaker_name = "vault"
+            speaker = self.voices[speaker_name]
+
+            # 3. Compose a hybrid prompt: persona's usual lines + the human
+            # message. We do this by monkey-augmenting speak() for one call.
+            try:
+                fp_before = self.vault.fingerprint()
+            except Exception:
+                fp_before = ""
+
+            statement = self._speak_with_human_context(speaker, message)
+            if statement is None:
+                return None
+
+            # 4. Feed the response back into the vault
+            self._feedback_into_vault(speaker_name, statement)
+
+            try:
+                fp_after = self.vault.fingerprint()
+            except Exception:
+                fp_after = ""
+
+            # 5. Record the utterance — for a human-directed response we
+            # put "human" as the speaker and the voice as the listener
+            utterance = Utterance(
+                utterance_id=uuid.uuid4().hex[:8],
+                timestamp=time.time(),
+                speaker="human",
+                listener=speaker_name,
+                statement=VoiceStatement(
+                    voice="human",
+                    text=message,
+                    vault_fingerprint=fp_before,
+                    prompt_used=message,
+                ),
+                response=statement,
+                chosen=True,
+                reasoning=f"human_message → {speaker_name}",
+                urgency=1.0,
+                vault_fingerprint_before=fp_before,
+                vault_fingerprint_after=fp_after,
+            )
+
+            self._history.append(utterance)
+            if len(self._history) > self.max_history:
+                self._history = self._history[-self.max_history:]
+            self._total_utterances += 1
+
+            # 6. Publish
+            from aureon.vault.voice.choice_gate import ChoiceGateDecision
+            self._publish(
+                utterance,
+                ChoiceGateDecision(
+                    should_speak=True,
+                    urgency=1.0,
+                    reasoning="human_message",
+                    preferred_voice=speaker_name,
+                ),
+            )
+
+            return utterance
+
+    def _speak_with_human_context(
+        self,
+        voice: VaultVoice,
+        human_message: str,
+    ) -> Optional[VoiceStatement]:
+        """
+        Call `voice.speak(vault)` with the human's message folded into the
+        composed prompt. We do this by temporarily monkey-patching the
+        voice's _compose_prompt_lines to append the human's message as
+        the final line, then restoring the original method.
+        """
+        original = voice._compose_prompt_lines
+
+        def composed_with_human(state):
+            lines = original(state)
+            lines.append("")
+            lines.append("A human is speaking to me now. Their message:")
+            lines.append(f'    "{human_message[:1000]}"')
+            lines.append(
+                "Respond directly to them as this voice, using my current state. "
+                "Keep it to 2–4 sentences."
+            )
+            return lines
+
+        voice._compose_prompt_lines = composed_with_human  # type: ignore[method-assign]
+        try:
+            return voice.speak(self.vault)
+        finally:
+            voice._compose_prompt_lines = original  # type: ignore[method-assign]
+
+    def speak_as(self, voice_name: str) -> Optional[Utterance]:
+        """
+        Force a specific voice to speak right now, bypassing the gate.
+        Useful for UI "nudge this voice to speak" buttons.
+        """
+        if voice_name not in self.voices:
+            return None
+
+        with self._lock:
+            self._total_decisions += 1
+            try:
+                fp_before = self.vault.fingerprint()
+            except Exception:
+                fp_before = ""
+
+            speaker = self.voices[voice_name]
+            statement = speaker.speak(self.vault)
+            if statement is None:
+                return None
+            self._feedback_into_vault(voice_name, statement)
+
+            # Pick a different voice as listener via weighted choice
+            candidates = [n for n in self.voices.keys() if n != voice_name]
+            listener_name = self._weighted_choice(candidates) if candidates else voice_name
+            listener = self.voices.get(listener_name) or self.voices["vault"]
+            response = listener.speak(self.vault)
+            if response is not None:
+                self._feedback_into_vault(listener_name, response)
+
+            try:
+                fp_after = self.vault.fingerprint()
+            except Exception:
+                fp_after = ""
+
+            utterance = Utterance(
+                utterance_id=uuid.uuid4().hex[:8],
+                timestamp=time.time(),
+                speaker=voice_name,
+                listener=listener_name,
+                statement=statement,
+                response=response,
+                chosen=True,
+                reasoning=f"forced_speak({voice_name})",
+                urgency=1.0,
+                vault_fingerprint_before=fp_before,
+                vault_fingerprint_after=fp_after,
+            )
+            self._history.append(utterance)
+            if len(self._history) > self.max_history:
+                self._history = self._history[-self.max_history:]
+            self._total_utterances += 1
+            return utterance
+
+    # ─────────────────────────────────────────────────────────────────────
     # Feedback into vault
     # ─────────────────────────────────────────────────────────────────────
 
