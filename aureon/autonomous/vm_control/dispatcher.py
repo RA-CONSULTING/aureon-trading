@@ -27,16 +27,14 @@ Safety:
 
 from __future__ import annotations
 
-import json
 import logging
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from aureon.autonomous.vm_control.base import (
     VMController,
     VMAction,
-    VMActionResult,
 )
 from aureon.autonomous.vm_control.simulated import SimulatedVMController
 from aureon.autonomous.vm_control.winrm_backend import WinRMVMController

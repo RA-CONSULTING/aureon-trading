@@ -36,12 +36,11 @@ into one standing wave that the system can see, sing, and steer by.
 
 from __future__ import annotations
 
-import json
 import logging
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from aureon.swarm_motion.fibonacci_snapper import (
@@ -120,6 +119,15 @@ class SwarmMotionHive:
         self.config = config or SwarmMotionConfig()
         self.config.validate()
         self.id = str(uuid.uuid4())[:8]
+
+        # S04: Auto-register as the module-level singleton if none exists.
+        # This lets the UnifiedHarmonicDirective pick up the love stream
+        # even when the hive is built via direct instantiation rather than
+        # via get_swarm_hive().
+        global _hive_instance
+        with _hive_lock:
+            if _hive_instance is None:
+                _hive_instance = self
 
         # Subsystems (lazy init)
         self._vm_dispatcher = None

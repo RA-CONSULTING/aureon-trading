@@ -48,7 +48,7 @@ from aureon.code_architect.skill_library import SkillLibrary, get_skill_library
 from aureon.code_architect.primitives import VM_ACTION_NAMES
 from aureon.code_architect.observer import ObservationEngine, ObservedPattern
 from aureon.code_architect.writer import SkillWriter
-from aureon.code_architect.validator import SkillValidator, ValidationResult
+from aureon.code_architect.validator import SkillValidator
 from aureon.code_architect.executor import SkillExecutor, SkillExecutionResult
 
 logger = logging.getLogger("aureon.code_architect.architect")
@@ -114,6 +114,15 @@ class CodeArchitect:
                 self.writer.adapter = AureonBrainAdapter()
             except Exception:
                 pass
+
+        # S03: Eager-wire validator's Queen bridge + pillar alignment.
+        # Without this, the validator only lazy-loads them on first
+        # validate() call, which means an audit right after __init__
+        # sees them as None.
+        try:
+            self.validator._load_subsystems()
+        except Exception:
+            pass
 
     # ─────────────────────────────────────────────────────────────────────
     # Bootstrapping — seed the L0 atomic skills

@@ -20,7 +20,7 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Generator, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 logger = logging.getLogger("aureon.inhouse_ai.llm")
 

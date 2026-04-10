@@ -29,7 +29,7 @@ import traceback
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
-from aureon.code_architect.skill import Skill, SkillStatus, SkillLevel
+from aureon.code_architect.skill import Skill, SkillStatus
 from aureon.code_architect.skill_library import SkillLibrary
 from aureon.code_architect.primitives import get_safe_globals
 from aureon.code_architect.validator import SkillValidator
@@ -183,6 +183,9 @@ class SkillExecutor:
         result = SkillExecutionResult(skill_name=skill.name, depth=_depth)
 
         if skill.status == SkillStatus.BLOCKED:
+            # S20: A skill can flip to BLOCKED after being compiled+cached.
+            # Drop the stale cache so a future un-block rebuilds it fresh.
+            self.invalidate_cache(skill.name)
             result.ok = False
             result.error = "skill_blocked"
             result.duration_s = time.time() - start

@@ -45,7 +45,6 @@ from aureon.alignment.harmonic_resonance import (
 from aureon.alignment.pillar_alignment import (
     PillarAlignment,
     AlignmentCycleResult,
-    AlignmentConfig,
 )
 
 logger = logging.getLogger("aureon.alignment.unified")
@@ -194,7 +193,23 @@ class UnifiedHarmonicDirective:
             logger.debug("Pillar contribution failed: %s", e)
             return None
 
+    def _try_pickup_love_stream(self) -> None:
+        """
+        S04: Retry love-stream auto-discovery. The swarm hive may have
+        been built AFTER the directive was constructed, so we re-probe
+        on every assemble() call when _love_stream is still None.
+        """
+        if self._love_stream is not None:
+            return
+        try:
+            from aureon.swarm_motion.swarm_hive import _hive_instance
+            if _hive_instance is not None and _hive_instance._love_stream is not None:
+                self._love_stream = _hive_instance._love_stream
+        except Exception:
+            pass
+
     def _love_stream_contribution(self) -> Dict[str, Any]:
+        self._try_pickup_love_stream()
         if self._love_stream is None:
             return {"available": False, "coherence": 0.0, "lambda_t": 0.0,
                     "dominant_chakra": "love", "dominant_frequency_hz": FUNDAMENTAL_HZ}

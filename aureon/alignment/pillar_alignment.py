@@ -29,17 +29,15 @@ fires and the Queen / Miner / trading layer know the six have become one.
 
 from __future__ import annotations
 
-import json
 import logging
 import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from aureon.alignment.harmonic_resonance import (
-    HarmonicAnalysis,
     full_harmonic_analysis,
     LIGHTHOUSE_THRESHOLD,
     FUNDAMENTAL_HZ,

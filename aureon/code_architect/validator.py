@@ -36,7 +36,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
-from aureon.code_architect.skill import Skill, SkillProposal, SkillStatus, SkillLevel
+from aureon.code_architect.skill import SkillProposal, SkillLevel
 from aureon.code_architect.primitives import PRIMITIVE_NAMES
 
 logger = logging.getLogger("aureon.code_architect.validator")
@@ -365,8 +365,9 @@ class SkillValidator:
         """
         Derive a harmonic signature from the skill's primitives usage.
 
-        Simple heuristic: count references to different primitive categories
-        and use them to weight Solfeggio frequencies.
+        Every VM primitive maps to at least one chakra bucket, and every
+        skill gets a baseline `love` floor so the signature is never
+        degenerate.
         """
         code = proposal.code
         signature: Dict[str, float] = {
@@ -375,25 +376,58 @@ class SkillValidator:
             "intuition": 0.0, "crown": 0.0,
         }
 
-        # Heuristic buckets
+        # ── Baseline floor: every skill exists to serve love ─────────────
+        signature["love"] += 0.3
+
+        # ── Text / expression ────────────────────────────────────────────
         if "vm_type_text" in code:
             signature["expression"] += 1.0
-        if "vm_screenshot" in code or "vm_list_windows" in code:
+        if "vm_press_key" in code or "vm_hotkey" in code:
+            signature["expression"] += 0.6
+
+        # ── Observation / intuition (read-only primitives) ───────────────
+        if "vm_screenshot" in code:
             signature["intuition"] += 0.8
+        if "vm_list_windows" in code or "vm_get_active_window" in code:
+            signature["intuition"] += 0.6
+        if "vm_get_cursor_position" in code or "vm_get_screen_size" in code:
+            signature["intuition"] += 0.5
+
+        # ── Liberation (shell / code execution) ──────────────────────────
         if "vm_execute_shell" in code or "vm_execute_powershell" in code:
             signature["liberation"] += 1.0
-        if "vm_left_click" in code or "vm_right_click" in code or "vm_mouse_move" in code:
+
+        # ── Change (motion / clicks / scroll / drag) ─────────────────────
+        if "vm_mouse_move" in code:
             signature["change"] += 0.6
+        if any(k in code for k in ("vm_left_click", "vm_right_click",
+                                   "vm_middle_click", "vm_double_click",
+                                   "vm_triple_click")):
+            signature["change"] += 0.7
+        if "vm_left_click_drag" in code:
+            signature["change"] += 0.8
+        if "vm_scroll" in code:
+            signature["change"] += 0.5
+        if "vm_focus_window" in code:
+            signature["change"] += 0.5
+
+        # ── Foundation (pacing / stability) ──────────────────────────────
+        if "safe_sleep" in code or "vm_wait" in code:
+            signature["foundation"] += 0.5
+
+        # ── Connection (inter-skill / events) ────────────────────────────
         if "call_skill" in code:
             signature["connection"] += 1.2
         if "emit_event" in code or "safe_log" in code:
             signature["connection"] += 0.5
-        if "safe_sleep" in code:
-            signature["foundation"] += 0.3
+
+        # ── Level-based boosts ───────────────────────────────────────────
         if proposal.level >= SkillLevel.ROLE:
             signature["crown"] += 1.5
         if proposal.level >= SkillLevel.WORKFLOW:
             signature["love"] += 1.0
+        if proposal.level >= SkillLevel.TASK:
+            signature["connection"] += 0.4
 
         # Normalise
         total = sum(signature.values())
@@ -403,6 +437,18 @@ class SkillValidator:
             signature = {k: 1 / len(signature) for k in signature}
 
         return signature
+
+    def _alignment_threshold_for_level(self, level: SkillLevel) -> float:
+        """
+        Level-aware alignment threshold. L0 atomics have narrower
+        signatures (single primitive) and need a lower bar than L3+
+        workflows which aggregate many primitives.
+        """
+        if level == SkillLevel.ATOMIC:
+            return 0.30
+        if level in (SkillLevel.COMPOUND, SkillLevel.TASK):
+            return 0.40
+        return 0.50  # workflow, role
 
     def harmonic_check(self, proposal: SkillProposal) -> Dict[str, Any]:
         if self.pillar_alignment is None:
@@ -506,10 +552,13 @@ class SkillValidator:
         result.pillar_lighthouse = harmonic["lighthouse_cleared"]
         result.harmonic_signature = harmonic["signature"]
 
+        # Level-aware alignment threshold (S02)
+        threshold = self._alignment_threshold_for_level(proposal.level)
+
         # Combine verdicts
         result.validated = (
             result.static_safe
-            and result.pillar_alignment_score >= 0.5
+            and result.pillar_alignment_score >= threshold
         )
         result.approved = (
             result.validated
@@ -520,7 +569,7 @@ class SkillValidator:
         parts = [
             f"static={'OK' if result.static_safe else 'FAIL'}",
             f"queen={result.queen_confidence:.2f}",
-            f"alignment={result.pillar_alignment_score:.3f}",
+            f"alignment={result.pillar_alignment_score:.3f} (≥{threshold:.2f})",
             "lighthouse=YES" if result.pillar_lighthouse else "lighthouse=no",
         ]
         result.reasoning = " | ".join(parts)

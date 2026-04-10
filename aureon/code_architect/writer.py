@@ -28,11 +28,9 @@ from __future__ import annotations
 import logging
 import re
 import textwrap
-import time
 from typing import Any, Dict, List, Optional
 
 from aureon.code_architect.skill import (
-    Skill,
     SkillProposal,
     SkillLevel,
 )
@@ -245,7 +243,13 @@ class SkillWriter:
         return "\n".join(lines)
 
     def _refine_with_ai(self, proposal: SkillProposal, pattern: ObservedPattern) -> Optional[SkillProposal]:
-        """Ask the adapter to refine the name + description (not the code)."""
+        """
+        Ask the adapter to refine the name + description (not the code).
+
+        Silent no-op is expected when the adapter is rule-based
+        (AureonBrainAdapter) — it returns analytical text, not JSON.
+        Logs are emitted at DEBUG level so the path is observable.
+        """
         try:
             system = (
                 "You are the Aureon code architect. Given an observed action sequence, "
@@ -261,25 +265,38 @@ class SkillWriter:
                 max_tokens=200,
             )
             text = response.text or ""
+
             # Try to extract JSON
             import json, re as _re
             match = _re.search(r"\{[^{}]*\"name\"[^{}]*\}", text, _re.DOTALL)
-            if match:
-                data = json.loads(match.group(0))
-                new_name = sanitise_name(data.get("name", proposal.name))
-                new_desc = str(data.get("description", proposal.description))[:240]
-                if new_name and new_name != proposal.name:
-                    # Regenerate the code with the new function name
-                    new_code = proposal.code.replace(f"def {proposal.name}(", f"def {new_name}(", 1)
-                    proposal.code = new_code
-                    proposal.entry_function = new_name
-                    proposal.name = new_name
-                proposal.description = new_desc
-                proposal.reasoning = (
-                    proposal.reasoning + f" | Refined by in-house AI: {new_desc[:80]}"
+            if not match:
+                logger.debug(
+                    "AI refinement no-op: adapter returned non-JSON text for %s",
+                    proposal.name,
                 )
+                return proposal
+
+            try:
+                data = json.loads(match.group(0))
+            except json.JSONDecodeError as je:
+                logger.debug("AI refinement JSON parse failed for %s: %s", proposal.name, je)
+                return proposal
+
+            new_name = sanitise_name(data.get("name", proposal.name))
+            new_desc = str(data.get("description", proposal.description))[:240]
+            if new_name and new_name != proposal.name:
+                # Regenerate the code with the new function name
+                new_code = proposal.code.replace(f"def {proposal.name}(", f"def {new_name}(", 1)
+                proposal.code = new_code
+                proposal.entry_function = new_name
+                proposal.name = new_name
+            proposal.description = new_desc
+            proposal.reasoning = (
+                proposal.reasoning + f" | Refined by in-house AI: {new_desc[:80]}"
+            )
+            logger.debug("AI refinement applied to %s", proposal.name)
         except Exception as e:
-            logger.debug("AI refinement skipped: %s", e)
+            logger.debug("AI refinement skipped for %s: %s", proposal.name, e)
         return proposal
 
     # ─────────────────────────────────────────────────────────────────────

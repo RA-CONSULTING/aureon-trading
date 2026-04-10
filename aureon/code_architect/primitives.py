@@ -25,7 +25,7 @@ import logging
 import math
 import random
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 logger = logging.getLogger("aureon.code_architect.primitives")
 

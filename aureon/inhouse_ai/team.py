@@ -11,18 +11,16 @@ A Team bundles agents with shared coordination infrastructure:
 
 from __future__ import annotations
 
-import json
 import logging
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
 from aureon.inhouse_ai.llm_adapter import LLMAdapter
 from aureon.inhouse_ai.agent import Agent, AgentConfig
 from aureon.inhouse_ai.agent_pool import AgentPool
-from aureon.inhouse_ai.task_queue import TaskQueue, Task, TaskStatus
+from aureon.inhouse_ai.task_queue import TaskQueue
 from aureon.inhouse_ai.tool_registry import ToolRegistry
 
 logger = logging.getLogger("aureon.inhouse_ai.team")

@@ -17,7 +17,7 @@ import time
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 logger = logging.getLogger("aureon.inhouse_ai.taskqueue")
 
