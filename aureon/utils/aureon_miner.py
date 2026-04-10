@@ -4741,7 +4741,18 @@ class QuantumProcessingBrain:
         
         # Success feedback for weight adaptation
         self._weight_gradients = {k: 0.0 for k in self.weights}
-        
+
+        # In-House AI Bridge — sovereign adaptive weight suggestion
+        self._ai_bridge = None
+        self._ai_weight_cycles = 0
+        try:
+            from aureon.miner.miner_inhouse_ai_bridge import get_miner_ai_bridge
+            self._ai_bridge = get_miner_ai_bridge()
+            self._ai_bridge.start()
+            logger.info("🧠⚛️ Quantum Brain: In-House AI Bridge ONLINE (adaptive weights)")
+        except Exception as e:
+            logger.debug(f"Quantum Brain AI Bridge unavailable: {e}")
+
         logger.info("🧠⚛️ Quantum Processing Brain initialized")
         logger.info(f"   Components: Probability | Planetary | Harmonic | Temporal | Casimir | Coherence | Memory")
         logger.info(f"   Weights: " + " | ".join(f"{k[:4]}={v:.2f}" for k, v in self.weights.items()))
@@ -5011,6 +5022,32 @@ class QuantumProcessingBrain:
         self.state.cascade_multiplier = total_cascade
         self.state.psi_vector = psi_vector
         self.state.last_update = now
+
+        # ═══════════════════════════════════════════════════════════════
+        # PHASE 9: IN-HOUSE AI ADAPTIVE WEIGHT SUGGESTION
+        # Every 10 cycles, consult the AI Bridge to adapt component weights
+        # ═══════════════════════════════════════════════════════════════
+        self._ai_weight_cycles += 1
+        if self._ai_bridge and self._ai_bridge.is_alive and self._ai_weight_cycles % 10 == 0:
+            try:
+                ai_insight = self._ai_bridge.suggest_quantum_weights(
+                    subsystem_states={
+                        "planetary_gamma": gamma,
+                        "coherence_psi": psi,
+                        "probability_edge": prob_edge,
+                        "is_lighthouse": is_lighthouse,
+                        "cascade": total_cascade,
+                        "unified": unified,
+                    },
+                    current_weights=self.weights,
+                )
+                if ai_insight.suggested_weights:
+                    # Blend suggested weights 20% with current 80% for stability
+                    for k, v in ai_insight.suggested_weights.items():
+                        if k in self.weights:
+                            self.weights[k] = self.weights[k] * 0.8 + v * 0.2
+            except Exception:
+                pass
         
         # Record history
         self.history.append({

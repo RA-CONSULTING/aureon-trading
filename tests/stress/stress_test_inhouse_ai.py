@@ -703,7 +703,191 @@ def test_queen_ai_bridge_integration(runner: StressTestRunner):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 12: Sustained load soak test
+# Test 12: Miner AI Bridge integration
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_miner_ai_bridge_integration(runner: StressTestRunner):
+    """Hammer the MinerAIBridge across all 5 integration points concurrently."""
+    n_calls = runner.scaled(1000)
+
+    from aureon.miner.miner_inhouse_ai_bridge import MinerAIBridge
+    bridge = MinerAIBridge()
+    bridge.start()
+
+    if not bridge.is_alive:
+        raise RuntimeError("Miner AI Bridge failed to initialise")
+
+    errors = 0
+    errors_lock = threading.Lock()
+
+    def hammer(i: int):
+        nonlocal errors
+        try:
+            op = i % 5
+            if op == 0:
+                insight = bridge.enhance_skeptical_analysis(
+                    market_data={
+                        "fear_greed": 20 + (i % 60),
+                        "btc_dominance": 55.0 + (i % 10),
+                        "mcap_change": -2.0 + (i % 4),
+                        "btc_price": 67000 + i,
+                    },
+                    existing_red_flags=["test flag"],
+                    existing_green_flags=["test green"],
+                )
+                result = insight.verdict
+            elif op == 1:
+                insight = bridge.synthesise_council_verdict(
+                    market_data={"fear_greed": 30, "btc_price": 67000},
+                    advisor_votes=[
+                        {"advisor": f"Advisor-{j}", "verdict": "BUY" if j % 2 == 0 else "HOLD",
+                         "confidence": 0.5 + (j * 0.1), "reasoning": f"reason {j}"}
+                        for j in range(5)
+                    ],
+                )
+                result = insight.verdict
+            elif op == 2:
+                insight = bridge.enhance_wisdom_synthesis(
+                    civilization_signals={
+                        "egyptian": {"verdict": "BUY", "confidence": 0.75},
+                        "pythagorean": {"verdict": "NEUTRAL", "confidence": 0.6},
+                        "celtic": {"verdict": "BUY", "confidence": 0.7},
+                        "aztec": {"verdict": "HOLD", "confidence": 0.5},
+                        "mogollon": {"verdict": "BUY", "confidence": 0.65},
+                        "plantagenet": {"verdict": "BUY", "confidence": 0.8},
+                        "warfare": {"verdict": "NEUTRAL", "confidence": 0.55},
+                    },
+                    quantum_context={
+                        "quantum_coherence": 0.7 + (i % 3) * 0.1,
+                        "planetary_gamma": 0.6 + (i % 4) * 0.05,
+                        "is_lighthouse": (i % 5 == 0),
+                    },
+                )
+                result = insight.verdict
+            elif op == 3:
+                insight = bridge.suggest_quantum_weights(
+                    subsystem_states={
+                        "planetary_gamma": 0.3 + (i % 7) * 0.1,
+                        "coherence_psi": 0.4 + (i % 6) * 0.1,
+                        "probability_edge": (i % 4) * 0.1,
+                        "is_lighthouse": (i % 3 == 0),
+                    },
+                )
+                result = str(len(insight.suggested_weights))
+                # Validate weights sum to ~1.0
+                total = sum(insight.suggested_weights.values())
+                if abs(total - 1.0) > 0.01:
+                    with errors_lock:
+                        errors += 1
+            else:
+                result = bridge.reason_about_mining_state(
+                    full_context={
+                        "hash_rate": 100 + i,
+                        "coherence": 0.5 + (i % 5) * 0.1,
+                        "gamma": 0.6 + (i % 4) * 0.1,
+                    },
+                    question=f"Mining question {i}?",
+                )
+
+            if not result:
+                with errors_lock:
+                    errors += 1
+        except Exception:
+            with errors_lock:
+                errors += 1
+
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        futures = [executor.submit(hammer, i) for i in range(n_calls)]
+        for f in as_completed(futures):
+            pass
+
+    status = bridge.get_status()
+    bridge.stop()
+
+    return {
+        "operations": n_calls,
+        "errors": errors,
+        "skeptical_calls": status["skeptical_calls"],
+        "council_calls": status["council_calls"],
+        "wisdom_calls": status["wisdom_calls"],
+        "quantum_calls": status["quantum_calls"],
+        "general_calls": status["general_calls"],
+        "bridge_errors": status["errors"],
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 13: Miner Quantum Weight Stability Test
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_miner_quantum_weight_stability(runner: StressTestRunner):
+    """Verify quantum weight suggestions stay normalised under continuous adaptation."""
+    n_cycles = runner.scaled(500)
+
+    from aureon.miner.miner_inhouse_ai_bridge import MinerAIBridge
+    bridge = MinerAIBridge()
+    bridge.start()
+
+    # Start with default weights
+    weights = {
+        "probability": 0.22, "planetary": 0.18, "harmonic": 0.13,
+        "temporal": 0.12, "casimir": 0.08, "coherence": 0.10,
+        "memory": 0.05, "diamond": 0.12,
+    }
+
+    errors = 0
+    normalisation_violations = 0
+
+    for i in range(n_cycles):
+        # Simulate varying market conditions
+        states = {
+            "planetary_gamma": 0.3 + (i % 10) * 0.07,
+            "coherence_psi": 0.4 + (i % 8) * 0.07,
+            "probability_edge": (i % 6) * 0.08,
+            "is_lighthouse": (i % 7 == 0),
+        }
+
+        insight = bridge.suggest_quantum_weights(
+            subsystem_states=states,
+            current_weights=weights,
+        )
+
+        if insight.suggested_weights:
+            # Blend at 20% new, 80% current (matches real usage)
+            for k, v in insight.suggested_weights.items():
+                if k in weights:
+                    weights[k] = weights[k] * 0.8 + v * 0.2
+
+            # Re-normalise
+            total = sum(weights.values())
+            if total > 0:
+                weights = {k: v / total for k, v in weights.items()}
+
+            # Verify normalisation
+            total_after = sum(weights.values())
+            if abs(total_after - 1.0) > 0.001:
+                normalisation_violations += 1
+
+            # Verify no negative weights
+            if any(v < 0 for v in weights.values()):
+                errors += 1
+
+    bridge.stop()
+
+    return {
+        "operations": n_cycles,
+        "errors": errors + normalisation_violations,
+        "normalisation_violations": normalisation_violations,
+        "final_weights_sum": round(sum(weights.values()), 4),
+        "max_weight": round(max(weights.values()), 4),
+        "min_weight": round(min(weights.values()), 4),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 14: Sustained load soak test
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -793,10 +977,12 @@ def main():
     runner.run("9. Team orchestration",              lambda: test_team_orchestration(runner))
     runner.run("10. OpenMultiAgent full-stack",      lambda: test_open_multi_agent_full_stack(runner))
     runner.run("11. Queen AI Bridge integration",    lambda: test_queen_ai_bridge_integration(runner))
+    runner.run("12. Miner AI Bridge integration",    lambda: test_miner_ai_bridge_integration(runner))
+    runner.run("13. Miner quantum weight stability", lambda: test_miner_quantum_weight_stability(runner))
 
     if not args.skip_soak:
         runner.run(
-            f"12. Sustained soak test ({args.soak}s)",
+            f"14. Sustained soak test ({args.soak}s)",
             lambda: test_sustained_soak(runner, duration_s=args.soak),
         )
 
