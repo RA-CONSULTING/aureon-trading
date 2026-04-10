@@ -156,6 +156,40 @@ class StressTestRunner:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Batched parallel runner — keeps memory bounded at extreme scale
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def run_parallel_batched(
+    fn,
+    n_ops: int,
+    max_workers: int = 32,
+    batch_size: int = 20000,
+):
+    """
+    Run `fn(i)` for i in range(n_ops) using a ThreadPoolExecutor, but
+    submit work in batches so only `batch_size` futures exist at any
+    moment. This keeps memory bounded when n_ops is in the millions.
+
+    Returns None — callers use shared state for result collection.
+    """
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        remaining = n_ops
+        start = 0
+        while remaining > 0:
+            chunk = min(batch_size, remaining)
+            futures = [executor.submit(fn, start + j) for j in range(chunk)]
+            for f in as_completed(futures):
+                # Consume the result so the future is released
+                try:
+                    f.result()
+                except Exception:
+                    pass
+            start += chunk
+            remaining -= chunk
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Test 1: LLM adapter throughput
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -189,10 +223,7 @@ def test_llm_adapter_throughput(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=32) as executor:
-        futures = [executor.submit(fire_prompt, i) for i in range(n_prompts)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(fire_prompt, n_prompts, max_workers=32, batch_size=20000)
 
     return {
         "operations": n_prompts,
@@ -247,10 +278,7 @@ def test_tool_registry_race(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=64) as executor:
-        futures = [executor.submit(hammer, i) for i in range(n_calls)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(hammer, n_calls, max_workers=64, batch_size=20000)
 
     return {
         "operations": n_calls,
@@ -464,10 +492,7 @@ def test_message_bus_throughput(runner: StressTestRunner):
     def publisher(idx: int):
         bus.publish("stress.topic", {"msg": idx}, source="stress")
 
-    with ThreadPoolExecutor(max_workers=32) as executor:
-        futures = [executor.submit(publisher, i) for i in range(n_messages)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(publisher, n_messages, max_workers=32, batch_size=20000)
 
     total_received = sum(received.values())
     expected = n_messages * n_subscribers
@@ -505,10 +530,7 @@ def test_shared_memory_contention(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=64) as executor:
-        futures = [executor.submit(hammer, i) for i in range(n_ops)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(hammer, n_ops, max_workers=64, batch_size=20000)
 
     return {
         "operations": n_ops,
@@ -683,10 +705,7 @@ def test_queen_ai_bridge_integration(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(hammer, i) for i in range(n_calls)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(hammer, n_calls, max_workers=16, batch_size=20000)
 
     status = bridge.get_status()
     bridge.stop()
@@ -795,10 +814,7 @@ def test_miner_ai_bridge_integration(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(hammer, i) for i in range(n_calls)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(hammer, n_calls, max_workers=16, batch_size=20000)
 
     status = bridge.get_status()
     bridge.stop()
@@ -934,10 +950,7 @@ def test_vm_control_dispatch(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=32) as executor:
-        futures = [executor.submit(fire, i) for i in range(n_ops)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(fire, n_ops, max_workers=32, batch_size=20000)
 
     status = dispatcher.get_status()
     dispatcher.destroy_all()
@@ -1073,10 +1086,7 @@ def test_vm_tool_registry_integration(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(agent_call, i) for i in range(n_ops)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(agent_call, n_ops, max_workers=16, batch_size=20000)
 
     dispatcher.destroy_all()
 
@@ -1326,10 +1336,7 @@ def test_pillar_alignment(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(fire, i) for i in range(n_cycles)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(fire, n_cycles, max_workers=16, batch_size=20000)
 
     # Correctness check: of the ~1/3 perfect-alignment cycles, most should clear
     expected_lighthouse = n_cycles // 3
@@ -1523,10 +1530,7 @@ def test_unified_directive(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = [executor.submit(fire, i) for i in range(n_directives)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(fire, n_directives, max_workers=8, batch_size=20000)
 
     status = unified.get_status()
     hive.shutdown()
