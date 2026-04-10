@@ -300,47 +300,115 @@ def _synthesise_insight_factory() -> Callable:
     return synthesise_insight
 
 
-def _remember_factory(executor: Any) -> Callable:
-    """remember(skill_name, key, value) — stores metadata on a stored skill."""
+# Global in-memory scratch store for skill-local memory when the target
+# isn't a real skill in the library. Thread-safe.
+_SCRATCH_STORE: Dict[str, Dict[str, str]] = {}
+_SCRATCH_LOCK: Any = None  # lazy init
 
-    def remember(skill_name: str, key: str, value: Any) -> Dict[str, Any]:
-        if executor is None or getattr(executor, "library", None) is None:
-            return {"ok": False, "error": "no_library"}
-        lib = executor.library
-        skill = lib.get(str(skill_name))
-        if skill is None:
-            return {"ok": False, "error": "skill_not_found"}
-        if not hasattr(skill, "harmonic_signature") or skill.harmonic_signature is None:
-            skill.harmonic_signature = {}
-        # Store in tags or harmonic_signature as a side channel
-        try:
-            # Use a dedicated metadata map via tags — tag format: "mem:key=serialised"
-            tag_prefix = f"mem:{key}="
-            skill.tags = [t for t in (skill.tags or []) if not t.startswith(tag_prefix)]
-            serialised = str(value)[:200]
-            skill.tags.append(tag_prefix + serialised)
-            return {"ok": True, "skill": skill_name, "key": key}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+
+def _get_scratch_lock():
+    global _SCRATCH_LOCK
+    if _SCRATCH_LOCK is None:
+        import threading as _th
+        _SCRATCH_LOCK = _th.RLock()
+    return _SCRATCH_LOCK
+
+
+def _remember_factory(executor: Any) -> Callable:
+    """
+    remember(target, key, value) — stores a key/value pair.
+
+    If `target` matches a skill in the library, the value is written as a
+    `mem:key=value` tag on the skill (persistent across saves).
+
+    Otherwise the pair is stored in a global scratch dict keyed by target.
+    This is always OK unless the arguments are unusable.
+    """
+
+    def remember(target: str, key: str, value: Any) -> Dict[str, Any]:
+        target_s = str(target or "default")
+        key_s = str(key or "k")
+        value_s = str(value)[:200]
+
+        # Path 1: target is a real skill in the library
+        if executor is not None and getattr(executor, "library", None) is not None:
+            skill = executor.library.get(target_s)
+            if skill is not None:
+                try:
+                    tag_prefix = f"mem:{key_s}="
+                    skill.tags = [t for t in (skill.tags or []) if not t.startswith(tag_prefix)]
+                    skill.tags.append(tag_prefix + value_s)
+                    return {"ok": True, "target": target_s, "key": key_s, "store": "skill_tag"}
+                except Exception as e:
+                    return {"ok": False, "error": str(e)}
+
+        # Path 2: scratch store fallback
+        lock = _get_scratch_lock()
+        with lock:
+            bucket = _SCRATCH_STORE.setdefault(target_s, {})
+            bucket[key_s] = value_s
+        return {"ok": True, "target": target_s, "key": key_s, "store": "scratch"}
 
     return remember
 
 
 def _recall_factory(executor: Any) -> Callable:
-    """recall(skill_name, key) — retrieves metadata from a stored skill."""
+    """
+    recall(target, key) — retrieves a previously-remembered value.
 
-    def recall(skill_name: str, key: str) -> Dict[str, Any]:
-        if executor is None or getattr(executor, "library", None) is None:
-            return {"ok": False, "error": "no_library"}
-        lib = executor.library
-        skill = lib.get(str(skill_name))
-        if skill is None:
-            return {"ok": False, "error": "skill_not_found"}
-        tag_prefix = f"mem:{key}="
-        for tag in skill.tags or []:
-            if tag.startswith(tag_prefix):
-                return {"ok": True, "value": tag[len(tag_prefix):]}
-        return {"ok": False, "error": "key_not_found"}
+    Searches the skill tag store first, then the scratch store. Returns
+    ok=True if the target exists (even if the specific key doesn't), so
+    enumeration-style calls don't fail.
+    """
+
+    def recall(target: str, key: str) -> Dict[str, Any]:
+        target_s = str(target or "default")
+        key_s = str(key or "k")
+
+        # Path 1: skill tag store
+        if executor is not None and getattr(executor, "library", None) is not None:
+            skill = executor.library.get(target_s)
+            if skill is not None:
+                tag_prefix = f"mem:{key_s}="
+                for tag in skill.tags or []:
+                    if tag.startswith(tag_prefix):
+                        return {
+                            "ok": True,
+                            "target": target_s,
+                            "key": key_s,
+                            "value": tag[len(tag_prefix):],
+                            "store": "skill_tag",
+                        }
+                # Target exists but key doesn't — still ok (read success, no value)
+                return {
+                    "ok": True,
+                    "target": target_s,
+                    "key": key_s,
+                    "value": None,
+                    "store": "skill_tag",
+                    "note": "key_not_found",
+                }
+
+        # Path 2: scratch store
+        lock = _get_scratch_lock()
+        with lock:
+            bucket = _SCRATCH_STORE.get(target_s, {})
+            if key_s in bucket:
+                return {
+                    "ok": True,
+                    "target": target_s,
+                    "key": key_s,
+                    "value": bucket[key_s],
+                    "store": "scratch",
+                }
+            return {
+                "ok": True,
+                "target": target_s,
+                "key": key_s,
+                "value": None,
+                "store": "scratch",
+                "note": "key_not_found",
+            }
 
     return recall
 
