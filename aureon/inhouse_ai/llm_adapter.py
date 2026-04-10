@@ -418,6 +418,11 @@ class AureonBrainAdapter(LLMAdapter):
     This is the fully in-house, zero-external-dependency reasoning path.
     """
 
+    # Class-level caches so the "Brain not available" warning only fires
+    # once per process regardless of how many adapter instances we spin up.
+    _brain_load_attempted: bool = False
+    _brain_load_succeeded: bool = False
+
     def __init__(self):
         self._brain = None
         self._brain_loaded = False
@@ -428,10 +433,20 @@ class AureonBrainAdapter(LLMAdapter):
             from aureon.intelligence.aureon_brain import AureonBrain
             self._brain = AureonBrain()
             self._brain_loaded = True
-            logger.info("AureonBrain loaded as reasoning backend")
+            if not AureonBrainAdapter._brain_load_succeeded:
+                logger.info("AureonBrain loaded as reasoning backend")
+            AureonBrainAdapter._brain_load_succeeded = True
         except Exception as e:
-            logger.warning("AureonBrain not available: %s — falling back to rule engine", e)
+            # Only log the warning the FIRST time — subsequent adapter
+            # instances in the same process silently fall back.
+            if not AureonBrainAdapter._brain_load_attempted:
+                logger.info(
+                    "AureonBrain not available: %s — falling back to rule engine",
+                    e,
+                )
             self._brain_loaded = False
+        finally:
+            AureonBrainAdapter._brain_load_attempted = True
 
     def _extract_context(self, messages: List[Dict[str, Any]], system: str) -> Dict[str, Any]:
         """Extract actionable context from conversation messages."""

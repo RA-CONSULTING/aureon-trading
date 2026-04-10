@@ -382,7 +382,7 @@ class SkillWriter:
         for wf in workflow_skill_names:
             safe_wf = sanitise_name(wf)
             lines.append(f'    r = call_skill("{safe_wf}")')
-            lines.append(f'    results.append(r)')
+            lines.append('    results.append(r)')
             lines.append("    safe_sleep(0.05)  # pacing between workflows")
         lines.append("    emit_event('role.exit', {'role': '" + skill_name + "', 'success': all(r.get('ok', False) for r in results)})")
         lines.append("    return {'ok': all(r.get('ok', False) for r in results), 'role': '" + skill_name + "', 'workflows': len(results), 'results': results}")

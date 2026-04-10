@@ -55,14 +55,9 @@ from aureon.inhouse_ai import (
     Agent,
     AgentPool,
     TaskQueue,
-    Task,
-    TaskStatus,
     Team,
     ToolRegistry,
     AureonBrainAdapter,
-    AureonLocalAdapter,
-    AureonHybridAdapter,
-    LLMResponse,
 )
 from aureon.inhouse_ai.team import MessageBus, SharedMemory
 
@@ -104,10 +99,13 @@ class TestResult:
 class StressTestRunner:
     """Executes stress tests and collects results."""
 
-    def __init__(self, quick: bool = False):
+    def __init__(self, quick: bool = False, scale: float = 1.0):
         self.quick = quick
         self.results: List[TestResult] = []
-        self.scale = 0.1 if quick else 1.0
+        if quick:
+            self.scale = 0.1
+        else:
+            self.scale = float(scale)
 
     def scaled(self, n: int) -> int:
         return max(1, int(n * self.scale))
@@ -616,7 +614,7 @@ def test_open_multi_agent_full_stack(runner: StressTestRunner):
     first_team = oma.get_team("StackTeam-0")
     t1 = first_team.queue.add("fetch", agent_name="Stack-T0-A0", prompt="fetch")
     t2 = first_team.queue.add("analyse", agent_name="Stack-T0-A1", prompt="analyse", depends_on=[t1.id])
-    t3 = first_team.queue.add("decide", agent_name="Stack-T0-A2", prompt="decide", depends_on=[t2.id])
+    first_team.queue.add("decide", agent_name="Stack-T0-A2", prompt="decide", depends_on=[t2.id])
 
     oma.run_tasks("StackTeam-0")
     total_ops += len(first_team.queue)
@@ -1284,7 +1282,6 @@ def test_pillar_alignment(runner: StressTestRunner):
     from aureon.alignment import (
         PillarAlignment,
         AlignmentConfig,
-        LIGHTHOUSE_THRESHOLD,
     )
 
     n_cycles = runner.scaled(5000)
@@ -1366,7 +1363,6 @@ def test_harmonic_math(runner: StressTestRunner):
         full_harmonic_analysis,
         geometric_mean,
         FUNDAMENTAL_HZ,
-        LIGHTHOUSE_THRESHOLD,
     )
     import math
 
@@ -1750,7 +1746,6 @@ def test_code_architect_full_pipeline(runner: StressTestRunner):
             arch.observer.record_action("vm_left_click", {})
         learned = arch.observe_and_propose()
 
-        stats = arch.get_status()
         final_lib = arch.library.get_stats()
 
         dispatcher.destroy_all()
@@ -1838,16 +1833,27 @@ def test_sustained_soak(runner: StressTestRunner, duration_s: float = 10.0):
 def main():
     parser = argparse.ArgumentParser(description="Aureon In-House AI maximum stress test")
     parser.add_argument("--quick", action="store_true", help="Run at 10% scale for quick verification")
+    parser.add_argument("--scale", type=float, default=1.0,
+                        help="Scale factor (1.0 = full, 10.0 = HYPER, 0.1 = quick)")
     parser.add_argument("--soak", type=float, default=10.0, help="Soak test duration seconds (default 10)")
     parser.add_argument("--skip-soak", action="store_true", help="Skip the soak test")
     args = parser.parse_args()
 
+    if args.quick:
+        mode_label = "QUICK MODE (10% scale)"
+    elif args.scale >= 10.0:
+        mode_label = f"HYPER MODE ({args.scale:.0f}× scale)"
+    elif args.scale != 1.0:
+        mode_label = f"SCALED MODE ({args.scale:.1f}× scale)"
+    else:
+        mode_label = "FULL SCALE"
+
     print("=" * 100)
     print("  AUREON IN-HOUSE AI — MAXIMUM STRESS TEST")
-    print("  " + ("QUICK MODE (10% scale)" if args.quick else "FULL SCALE"))
+    print("  " + mode_label)
     print("=" * 100 + "\n")
 
-    runner = StressTestRunner(quick=args.quick)
+    runner = StressTestRunner(quick=args.quick, scale=args.scale)
 
     print("\n[Test Suite]")
     runner.run("1. LLM adapter throughput",          lambda: test_llm_adapter_throughput(runner))

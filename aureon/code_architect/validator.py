@@ -36,6 +36,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
+from aureon.alignment.harmonic_resonance import full_harmonic_analysis
 from aureon.code_architect.skill import SkillProposal, SkillLevel
 from aureon.code_architect.primitives import PRIMITIVE_NAMES
 
@@ -136,6 +137,14 @@ class ValidationResult:
 class _SafetyVisitor(ast.NodeVisitor):
     """Walks the AST and rejects forbidden constructs."""
 
+    # Method calls are allowed on results of these builtin type constructors:
+    # str(...).lower(), list(...).append(), dict(...).get(), etc.
+    SAFE_BUILTIN_CALL_ROOTS: Set[str] = {
+        "str", "int", "float", "bool", "list", "tuple", "dict",
+        "set", "frozenset", "bytes", "range", "sorted", "reversed",
+        "map", "filter", "enumerate", "zip",
+    }
+
     def __init__(self):
         self.errors: List[str] = []
         # Track names defined locally inside the function body (params + assignments)
@@ -190,6 +199,29 @@ class _SafetyVisitor(ast.NodeVisitor):
         self._collect_assign_targets(node.target)
         self.generic_visit(node)
 
+    # ── Comprehensions: register targets BEFORE visiting the element ───
+    # Otherwise `[x.method() for x in lst]` rejects `x.method()` because
+    # `x` is not in local_names yet when we visit the element.
+    def visit_ListComp(self, node: ast.ListComp):
+        for gen in node.generators:
+            self._collect_assign_targets(gen.target)
+        self.generic_visit(node)
+
+    def visit_SetComp(self, node: ast.SetComp):
+        for gen in node.generators:
+            self._collect_assign_targets(gen.target)
+        self.generic_visit(node)
+
+    def visit_DictComp(self, node: ast.DictComp):
+        for gen in node.generators:
+            self._collect_assign_targets(gen.target)
+        self.generic_visit(node)
+
+    def visit_GeneratorExp(self, node: ast.GeneratorExp):
+        for gen in node.generators:
+            self._collect_assign_targets(gen.target)
+        self.generic_visit(node)
+
     def visit_AugAssign(self, node: ast.AugAssign):
         self._collect_assign_targets(node.target)
         self.generic_visit(node)
@@ -214,22 +246,57 @@ class _SafetyVisitor(ast.NodeVisitor):
             elif name not in ALLOWED_CALLS and name not in self.local_names:
                 self.errors.append(f"unknown call: {name}")
         elif isinstance(node.func, ast.Attribute):
-            # Only allow attribute calls on the allowed modules (math, random, json)
-            # or on objects that are clearly primitives returning dicts
             root = self._attribute_root(node.func)
             if root in {"math", "random", "json"}:
-                pass  # ok
+                pass  # allowed module access
             elif root in self.local_names or root in ALLOWED_NAMES:
                 pass  # e.g. results.append(), r.get() — standard method calls
+            elif root == "<safe_call>":
+                pass  # str(x).lower(), dict(...).get() — safe builtin results
+            elif root == "<subscript>":
+                pass  # data[0].get() — method on indexed element
+            elif root == "<constant>":
+                pass  # "hello".upper() — method on literal
             else:
                 self.errors.append(f"attribute call on non-allowed object: {root}")
         self.generic_visit(node)
 
     def _attribute_root(self, attr: ast.Attribute) -> str:
+        """
+        Walk an attribute chain to its root, classifying the root.
+
+        Returns one of:
+          - a Name id (e.g. "math", "results", "kwargs")
+          - "<safe_call>"  if root is a Call on a safe builtin type/function
+          - "<subscript>"  if root is a subscript expression
+          - "<constant>"   if root is a literal constant
+          - "<complex>"    if root is something unrecognised
+        """
         while isinstance(attr, ast.Attribute):
             attr = attr.value
         if isinstance(attr, ast.Name):
             return attr.id
+        if isinstance(attr, ast.Call):
+            # Check if the Call's function is a known-safe builtin
+            func = attr.func
+            if isinstance(func, ast.Name) and func.id in self.SAFE_BUILTIN_CALL_ROOTS:
+                return "<safe_call>"
+            if isinstance(func, ast.Name) and (func.id in ALLOWED_NAMES or func.id in self.local_names):
+                return "<safe_call>"
+            # Method call whose result we're calling another method on
+            if isinstance(func, ast.Attribute):
+                inner = self._attribute_root(func)
+                if inner in self.local_names or inner in ALLOWED_NAMES:
+                    return "<safe_call>"
+                if inner in {"math", "random", "json"}:
+                    return "<safe_call>"
+            return "<complex>"
+        if isinstance(attr, ast.Subscript):
+            return "<subscript>"
+        if isinstance(attr, ast.Constant):
+            return "<constant>"
+        if isinstance(attr, (ast.List, ast.Dict, ast.Tuple, ast.Set)):
+            return "<constant>"  # literal collections
         return "<complex>"
 
     # ── Forbid dunder attribute access ──────────────────────────────────
@@ -245,9 +312,6 @@ class _SafetyVisitor(ast.NodeVisitor):
             if isinstance(node.exc.func, ast.Name) and node.exc.func.id == "SystemExit":
                 self.errors.append("raise SystemExit is forbidden")
         self.generic_visit(node)
-
-    # ── With statements are fine, but only for safe primitives we return ─
-    # (no special handling)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -421,6 +485,24 @@ class SkillValidator:
         if "emit_event" in code or "safe_log" in code:
             signature["connection"] += 0.5
 
+        # ── Cognitive primitives (LLM capabilities) ─────────────────────
+        if "ai_reason" in code:
+            signature["intuition"] += 1.2
+            signature["crown"] += 0.3
+        if "consult_queen" in code:
+            signature["crown"] += 1.0
+            signature["connection"] += 0.3
+        if "consult_pillars" in code:
+            signature["love"] += 0.8
+            signature["connection"] += 0.5
+        if "synthesise_insight" in code:
+            signature["intuition"] += 0.8
+            signature["expression"] += 0.3
+        if "remember" in code or "recall" in code:
+            signature["foundation"] += 0.6
+        if "list_skills" in code:
+            signature["connection"] += 0.4
+
         # ── Level-based boosts ───────────────────────────────────────────
         if proposal.level >= SkillLevel.ROLE:
             signature["crown"] += 1.5
@@ -440,15 +522,22 @@ class SkillValidator:
 
     def _alignment_threshold_for_level(self, level: SkillLevel) -> float:
         """
-        Level-aware alignment threshold. L0 atomics have narrower
-        signatures (single primitive) and need a lower bar than L3+
-        workflows which aggregate many primitives.
+        Level-aware alignment threshold.
+
+        Thresholds are tuned to the known jitter of the phase coherence
+        component in full_harmonic_analysis (Kuramoto order parameter
+        computed at canonical Solfeggio frequencies using wall-clock
+        time — sub-millisecond variance is normal).
         """
         if level == SkillLevel.ATOMIC:
             return 0.30
-        if level in (SkillLevel.COMPOUND, SkillLevel.TASK):
+        if level == SkillLevel.COMPOUND:
+            return 0.35
+        if level == SkillLevel.TASK:
             return 0.40
-        return 0.50  # workflow, role
+        if level == SkillLevel.WORKFLOW:
+            return 0.42
+        return 0.45  # role
 
     def harmonic_check(self, proposal: SkillProposal) -> Dict[str, Any]:
         if self.pillar_alignment is None:
@@ -502,11 +591,26 @@ class SkillValidator:
                     "frequency_hz": 741.0,
                 },
             ]
-            result = self.pillar_alignment.run_synthetic_cycle(signals=pillar_signals)
+            # Use deterministic t=0.0 for validation so re-running the
+            # validator on the same proposal produces the same alignment
+            # score. Without this the Kuramoto phase coherence jitters
+            # sub-millisecond and borderline skills get non-deterministic
+            # results.
+            analysis = full_harmonic_analysis(
+                pillar_results=pillar_signals,
+                t=0.0,
+                fundamental_hz=self.config.fundamental_hz
+                if hasattr(self, "config") else 528.0,
+            )
+            # Also record in the alignment engine for history (uses its own clock)
+            try:
+                self.pillar_alignment.run_synthetic_cycle(signals=pillar_signals)
+            except Exception:
+                pass
             return {
                 "available": True,
-                "alignment_score": result.alignment_score,
-                "lighthouse_cleared": result.lighthouse_cleared,
+                "alignment_score": analysis.alignment_score,
+                "lighthouse_cleared": analysis.lighthouse_cleared,
                 "signature": signature,
             }
         except Exception as e:

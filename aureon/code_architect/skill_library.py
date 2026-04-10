@@ -158,52 +158,94 @@ class SkillLibrary:
     # Dependency resolution
     # ─────────────────────────────────────────────────────────────────────
 
-    def resolve_dependencies(self, name: str, _visited: Optional[set] = None) -> List[Skill]:
+    def resolve_dependencies(self, name: str) -> List[Skill]:
         """
-        Return the full transitive dependency closure of a skill (topologically
-        sorted: dependencies before the skill itself). Detects cycles.
-        """
-        if _visited is None:
-            _visited = set()
-        if name in _visited:
-            return []  # cycle guard
-        _visited.add(name)
+        Return the full transitive dependency closure of a skill
+        topologically sorted (dependencies before the skill itself).
 
-        skill = self.get(name)
-        if not skill:
+        Iterative implementation so very deep chains (thousands of levels)
+        don't hit Python's recursion limit. Handles missing deps and
+        cycles gracefully (missing deps are skipped, cycles are broken).
+        """
+        root = self.get(name)
+        if not root:
             return []
 
+        # Iterative DFS with post-order emit for topological sort.
+        # Stack entries: (skill, child_index)
         ordered: List[Skill] = []
-        for dep_name in skill.dependencies:
-            for dep in self.resolve_dependencies(dep_name, _visited):
-                if dep.name not in {s.name for s in ordered}:
-                    ordered.append(dep)
-        ordered.append(skill)
+        seen_in_order: set = set()  # names already appended to `ordered`
+        on_stack: set = set()       # names currently on the DFS stack (cycle guard)
+        stack: List[Any] = [[root, 0]]
+        on_stack.add(root.name)
+
+        while stack:
+            top = stack[-1]
+            skill, idx = top[0], top[1]
+
+            if idx >= len(skill.dependencies):
+                # All children processed — emit this skill
+                stack.pop()
+                on_stack.discard(skill.name)
+                if skill.name not in seen_in_order:
+                    ordered.append(skill)
+                    seen_in_order.add(skill.name)
+                continue
+
+            # Advance the iterator before descending
+            top[1] = idx + 1
+            dep_name = skill.dependencies[idx]
+
+            if dep_name in seen_in_order:
+                continue  # already emitted
+            if dep_name in on_stack:
+                continue  # cycle — skip the back edge
+
+            dep = self.get(dep_name)
+            if dep is None:
+                continue  # missing dep — skip
+
+            stack.append([dep, 0])
+            on_stack.add(dep_name)
+
         return ordered
 
     def has_cycles(self) -> bool:
-        """Check if the skill graph contains cycles."""
+        """Check if the skill graph contains cycles (iterative DFS)."""
         with self._lock:
-            for name in self._skills:
-                visited: set = set()
-                stack: set = set()
-                if self._detect_cycle(name, visited, stack):
+            visited: set = set()
+            for start_name in list(self._skills.keys()):
+                if start_name in visited:
+                    continue
+                if self._detect_cycle_iterative(start_name, visited):
                     return True
         return False
 
-    def _detect_cycle(self, name: str, visited: set, stack: set) -> bool:
-        if name in stack:
-            return True
-        if name in visited:
-            return False
-        visited.add(name)
-        stack.add(name)
-        skill = self._skills.get(name)
-        if skill:
-            for dep in skill.dependencies:
-                if self._detect_cycle(dep, visited, stack):
-                    return True
-        stack.discard(name)
+    def _detect_cycle_iterative(self, start: str, global_visited: set) -> bool:
+        """Iterative DFS cycle detector for one connected component."""
+        on_stack: set = set()
+        stack: List[Any] = [[start, 0]]
+        on_stack.add(start)
+
+        while stack:
+            top = stack[-1]
+            name, idx = top[0], top[1]
+            skill = self._skills.get(name)
+            if skill is None or idx >= len(skill.dependencies):
+                stack.pop()
+                on_stack.discard(name)
+                global_visited.add(name)
+                continue
+            top[1] = idx + 1
+            dep_name = skill.dependencies[idx]
+            if dep_name in on_stack:
+                return True  # back edge → cycle
+            if dep_name in global_visited:
+                continue
+            if dep_name in self._skills:
+                stack.append([dep_name, 0])
+                on_stack.add(dep_name)
+
         return False
 
     # ─────────────────────────────────────────────────────────────────────
