@@ -1141,7 +1141,141 @@ def test_agent_driven_vm_control(runner: StressTestRunner):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Test 18: Sustained load soak test
+# Test 18: Swarm motion hive — end-to-end with Lambda(t) synthesis
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_swarm_motion_hive(runner: StressTestRunner):
+    """Spawn a full swarm motion environment and run it under load."""
+    from aureon.swarm_motion import SwarmMotionHive, SwarmMotionConfig
+
+    swarm_size = runner.scaled(8)
+    swarm_size = max(2, swarm_size)
+    pulse_count = runner.scaled(500)
+
+    hive = SwarmMotionHive(config=SwarmMotionConfig(
+        swarm_size=swarm_size,
+        backend="simulated",
+        interval_scale=0.02,
+        alpha=0.25,
+        beta=0.85,
+        sample_rate_hz=20.0,
+        mirror_interval_s=0.2,
+    ))
+    hive.spawn_swarm()
+
+    errors = 0
+
+    # Fire synchronous swarm snapshots in parallel
+    def snap_batch(i: int):
+        nonlocal errors
+        try:
+            snaps = hive.take_swarm_snapshot()
+            if any(s.error for s in snaps):
+                errors += 1
+        except Exception:
+            errors += 1
+
+    n_batches = max(5, runner.scaled(100))
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(snap_batch, i) for i in range(n_batches)]
+        for f in as_completed(futures):
+            pass
+
+    # Pulse the love stream
+    samples = hive.pulse_love_stream(count=pulse_count)
+
+    # Verify Λ(t) stays bounded (sanity check)
+    lambda_max = max(abs(s.lambda_t) for s in samples) if samples else 0.0
+    if lambda_max > 10.0:
+        raise AssertionError(f"Λ(t) exploded: max={lambda_max}")
+
+    # Reflect many times
+    reflections = runner.scaled(200)
+    for _ in range(reflections):
+        hive.reflect()
+
+    status = hive.get_status()
+    state = hive.get_unified_state()
+    hive.shutdown()
+
+    total_ops = n_batches * swarm_size + pulse_count + reflections
+
+    return {
+        "operations": total_ops,
+        "errors": errors,
+        "swarm_size": swarm_size,
+        "total_snapshots": state["total_snapshots"],
+        "lambda_samples": state["love_stream"]["samples_generated"],
+        "reflections": reflections,
+        "lambda_max": round(lambda_max, 4),
+        "final_lambda": round(status.get("lambda_t") or 0, 4),
+        "dominant_chakra": status.get("dominant_chakra"),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 19: HNC Lambda(t) stability — verify past feedback loop stays stable
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_lambda_stability(runner: StressTestRunner):
+    """Run Λ(t) for N cycles and verify β Λ(t-τ) keeps the field bounded."""
+    from aureon.swarm_motion import StandingWaveLoveStream
+    from aureon.swarm_motion.fibonacci_snapper import MotionSnapshot
+
+    n_cycles = runner.scaled(2000)
+
+    # Test three β values: below, inside, and above the stability regime
+    results = {}
+    for beta_label, beta in [("unstable_low", 0.3), ("stable", 0.85), ("edge", 1.05)]:
+        stream = StandingWaveLoveStream(alpha=0.25, beta=beta, tau_s=10.0, sample_rate_hz=100.0)
+
+        # Feed it synthetic snapshots with varying motion
+        for i in range(50):
+            snap = MotionSnapshot(
+                session_id="test", agent_name="bench",
+                sequence=i, interval_s=0.1,
+                image_hash=f"{i:064x}",
+                motion_delta=0.3 + 0.2 * (i % 3),
+                coherence=0.5 + 0.2 * ((i % 5) / 5),
+                width=1920, height=1080,
+                cursor_x=500 + i * 10, cursor_y=300 + i * 5,
+            )
+            stream.ingest_snapshot(snap)
+
+        # Run Λ(t) evaluations
+        max_abs = 0.0
+        for _ in range(n_cycles):
+            sample = stream.evaluate()
+            max_abs = max(max_abs, abs(sample.lambda_t))
+
+        status = stream.get_status()
+        results[beta_label] = {
+            "beta": beta,
+            "max_abs_lambda": round(max_abs, 4),
+            "samples": status["samples_generated"],
+            "love_weight": round(status["weights"]["love"], 4),
+        }
+
+    # Stable β should keep |Λ| bounded (< 3 is generous)
+    errors = 0
+    if results["stable"]["max_abs_lambda"] > 3.0:
+        errors += 1
+
+    total_ops = 3 * n_cycles
+
+    return {
+        "operations": total_ops,
+        "errors": errors,
+        "stable_max": results["stable"]["max_abs_lambda"],
+        "stable_love_weight": results["stable"]["love_weight"],
+        "edge_max": results["edge"]["max_abs_lambda"],
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Test 20: Sustained load soak test
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -1237,10 +1371,12 @@ def main():
     runner.run("15. VM multi-session concurrency",   lambda: test_vm_multi_session(runner))
     runner.run("16. VM tool registry integration",   lambda: test_vm_tool_registry_integration(runner))
     runner.run("17. Agent-driven VM control",        lambda: test_agent_driven_vm_control(runner))
+    runner.run("18. Swarm motion hive end-to-end",   lambda: test_swarm_motion_hive(runner))
+    runner.run("19. HNC Lambda(t) stability",        lambda: test_lambda_stability(runner))
 
     if not args.skip_soak:
         runner.run(
-            f"18. Sustained soak test ({args.soak}s)",
+            f"20. Sustained soak test ({args.soak}s)",
             lambda: test_sustained_soak(runner, duration_s=args.soak),
         )
 
