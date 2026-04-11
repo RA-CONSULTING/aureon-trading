@@ -2415,7 +2415,7 @@ class OracleOfMaeshowe:
     def _load(self):
         if self._oracle is None:
             try:
-                from maeshowe_seer_decode import OracleMaeshowe as _OM
+                from aureon.decoders.maeshowe_seer_decode import OracleMaeshowe as _OM
                 self._oracle = _OM()
             except ImportError:
                 pass
