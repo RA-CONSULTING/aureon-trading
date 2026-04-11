@@ -56,6 +56,14 @@ except Exception:  # pragma: no cover
     Utterance = None  # type: ignore[assignment,misc]
     _VOICE_AVAILABLE = False
 
+# Self-enhancement (optional — loop runs fine without it)
+try:
+    from aureon.queen.self_enhancement_engine import get_self_enhancement_engine
+    _ENHANCE_AVAILABLE = True
+except Exception:  # pragma: no cover
+    get_self_enhancement_engine = None  # type: ignore[assignment]
+    _ENHANCE_AVAILABLE = False
+
 logger = logging.getLogger("aureon.vault.loop")
 
 
@@ -142,6 +150,8 @@ class AureonSelfFeedbackLoop:
         rally_casimir_threshold: float = 5.0,
         auto_wire_bus: bool = True,
         enable_voice: bool = True,
+        enable_self_enhancement: bool = True,
+        enhance_every_n_ticks: int = 30,
     ):
         self.loop_id = uuid.uuid4().hex[:8]
         self.vault = vault or AureonVault()
@@ -178,6 +188,20 @@ class AureonSelfFeedbackLoop:
         self._total_cells_success: int = 0
         self._total_utterances: int = 0
         self._last_tick: Optional[TickResult] = None
+
+        # Self-enhancement: Queen writes code to enhance herself.
+        self._enhance_enabled = enable_self_enhancement and _ENHANCE_AVAILABLE
+        self._enhance_every_n = max(1, enhance_every_n_ticks)
+        self._total_enhancements: int = 0
+        if self._enhance_enabled:
+            try:
+                self._enhancer = get_self_enhancement_engine(vault=self.vault)
+            except Exception as e:
+                logger.debug("self_enhancement_engine init failed: %s", e)
+                self._enhancer = None
+                self._enhance_enabled = False
+        else:
+            self._enhancer = None
 
     # ─────────────────────────────────────────────────────────────────────
     # One tick
@@ -285,6 +309,28 @@ class AureonSelfFeedbackLoop:
                         utterance_preview = utterance.statement.text.strip().replace("\n", " ")[:120]
             except Exception as e:
                 logger.debug("voice step error: %s", e)
+
+        # 10. ENHANCE — every N ticks, Queen writes code to enhance herself.
+        # Runs in the same thread but is gated by the cycle counter so it
+        # doesn't slow every tick; heavy LLM work is bounded by the engine.
+        enhancement_registered = False
+        if (
+            self._enhance_enabled
+            and self._enhancer is not None
+            and (self._cycle % self._enhance_every_n) == 0
+        ):
+            try:
+                rec = self._enhancer.enhance_once()
+                if rec.registered:
+                    self._total_enhancements += 1
+                    enhancement_registered = True
+                    logger.info(
+                        "[loop] self-enhancement: new skill '%s' registered "
+                        "(cycle=%d)",
+                        rec.skill_name, self._cycle,
+                    )
+            except Exception as e:
+                logger.debug("enhancement step error: %s", e)
 
         # Record the tick
         result = TickResult(
@@ -394,6 +440,8 @@ class AureonSelfFeedbackLoop:
             "cell_success_rate": (
                 self._total_cells_success / max(self._total_cells_deployed, 1)
             ),
+            "total_enhancements": self._total_enhancements,
+            "enhancement_enabled": self._enhance_enabled,
             "vault": self.vault.get_status(),
             "clock": self.clock.get_status(),
             "casimir": self.casimir.get_status(),

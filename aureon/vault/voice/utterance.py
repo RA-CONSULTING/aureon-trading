@@ -54,6 +54,7 @@ class Utterance:
     speaker: str = ""
     listener: str = ""
     statement: Optional[VoiceStatement] = None
+    chorus: list[VoiceStatement] = field(default_factory=list)
     response: Optional[VoiceStatement] = None
     chosen: bool = True
     reasoning: str = ""                 # why the choice gate let this fire
@@ -68,6 +69,7 @@ class Utterance:
             "speaker": self.speaker,
             "listener": self.listener,
             "statement": self.statement.to_dict() if self.statement else None,
+            "chorus": [item.to_dict() for item in self.chorus],
             "response": self.response.to_dict() if self.response else None,
             "chosen": self.chosen,
             "reasoning": self.reasoning,
@@ -82,6 +84,8 @@ class Utterance:
         parts = []
         if self.statement:
             parts.append(f"[{self.speaker}] {self.statement.text}")
+        for item in self.chorus:
+            parts.append(f"[{item.voice}] {item.text}")
         if self.response:
             parts.append(f"[{self.listener}] {self.response.text}")
         return "\n".join(parts)

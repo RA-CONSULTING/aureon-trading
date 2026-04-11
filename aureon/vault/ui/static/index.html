@@ -112,6 +112,19 @@
   .utterance.response .body {
     background: var(--panel2);
   }
+  .utterance.chorus .body {
+    background: #12182a;
+  }
+  .chorus-line {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 6px 0;
+  }
+  .chorus-line + .chorus-line {
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .chorus-line .text {
+    flex: 1;
+  }
   .utterance .reasoning {
     font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px;
   }
@@ -318,6 +331,25 @@ function addUtterance(u, incremental) {
       </div>
       <div class="body">${esc(u.statement.text)}</div>
       ${u.reasoning ? `<div class="reasoning">${esc(u.reasoning)}</div>` : ""}
+    `;
+    uttDiv.appendChild(div);
+  }
+
+  if (u.chorus && u.chorus.length) {
+    const div = document.createElement("div");
+    div.className = "utterance chorus";
+    div.style.marginLeft = "16px";
+    div.innerHTML = `
+      <div class="header">
+        <span class="voice-badge council">chorus</span>
+        <span>${u.chorus.length} internal voices</span>
+      </div>
+      <div class="body">${u.chorus.map((item) => `
+        <div class="chorus-line">
+          ${voiceBadge(item.voice)}
+          <div class="text">${esc(item.text)}</div>
+        </div>
+      `).join("")}</div>
     `;
     uttDiv.appendChild(div);
   }

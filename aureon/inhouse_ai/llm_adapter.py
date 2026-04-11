@@ -136,8 +136,34 @@ class AureonLocalAdapter(LLMAdapter):
             base_url
             or os.environ.get("AUREON_LLM_BASE_URL", "http://localhost:11434/v1")
         ).rstrip("/")
-        self.model = model or os.environ.get("AUREON_LLM_MODEL", "llama3")
+        # Track whether the caller pinned a specific model. If they didn't,
+        # the health check is allowed to substitute a working installed model
+        # so the voice layer doesn't silently 404 / 500 against a name that
+        # isn't actually loadable on this machine.
+        env_model = os.environ.get("AUREON_LLM_MODEL")
+        self._model_pinned = bool(model or env_model)
+        self.model = model or env_model or "llama3"
         self.api_key = api_key or os.environ.get("AUREON_LLM_API_KEY", "")
+        self._model_verified: bool = False
+
+        # Ollama detection. The OpenAI /v1 shim Ollama ships with silently
+        # drops the ``keep_alive`` payload field, so the model unloads every
+        # 5 min and every follow-up request hits a cold decode. We detect
+        # Ollama by base_url pattern (or env override) and route chat
+        # requests through the NATIVE /api/chat endpoint instead, which
+        # does honour keep_alive. Non-Ollama backends keep the /v1 path.
+        env_prefer = os.environ.get("AUREON_LLM_PREFER_NATIVE", "").lower()
+        default_native = ":11434" in self.base_url
+        if env_prefer in ("1", "true", "yes"):
+            self._prefer_native = True
+        elif env_prefer in ("0", "false", "no"):
+            self._prefer_native = False
+        else:
+            self._prefer_native = default_native
+        # Derive the native root (strip trailing /v1) for Ollama native calls.
+        self._native_root = self.base_url[:-3] if self.base_url.endswith("/v1") else self.base_url
+
+        self._keep_alive = os.environ.get("AUREON_LLM_KEEP_ALIVE", "30m") or None
 
         try:
             import requests
@@ -210,6 +236,14 @@ class AureonLocalAdapter(LLMAdapter):
             "stream": stream,
         }
 
+        # Ollama-specific: pin the model in RAM. The OpenAI shim ignores
+        # unknown fields so this is safe against other backends, and
+        # makes every follow-up call ~3s warm instead of ~8s cold.
+        # Override via AUREON_LLM_KEEP_ALIVE ("5m", "1h", "-1" for forever).
+        keep_alive = os.environ.get("AUREON_LLM_KEEP_ALIVE", "30m")
+        if keep_alive:
+            payload["keep_alive"] = keep_alive
+
         if tools:
             payload["tools"] = self._convert_tools(tools)
 
@@ -229,6 +263,99 @@ class AureonLocalAdapter(LLMAdapter):
             })
         return converted
 
+    def _build_native_payload(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> Dict[str, Any]:
+        """
+        Build an Ollama-native ``/api/chat`` payload. Differences from
+        the OpenAI shim:
+          - ``options.num_predict`` instead of top-level ``max_tokens``
+          - ``options.temperature``
+          - top-level ``keep_alive`` is honoured
+          - ``stream: false`` for one-shot replies
+        """
+        full_messages = []
+        if system:
+            full_messages.append({"role": "system", "content": system})
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            # Normalise list/dict content blocks to a plain string.
+            if isinstance(content, list):
+                text_parts: List[str] = []
+                for c in content:
+                    if isinstance(c, dict):
+                        if c.get("type") == "text":
+                            text_parts.append(str(c.get("text", "")))
+                        elif "text" in c:
+                            text_parts.append(str(c.get("text", "")))
+                    elif isinstance(c, str):
+                        text_parts.append(c)
+                content = "\n".join(p for p in text_parts if p)
+            if role not in ("system", "user", "assistant", "tool"):
+                role = "user"
+            full_messages.append({"role": role, "content": content})
+
+        payload: Dict[str, Any] = {
+            "model": self.model,
+            "messages": full_messages,
+            "stream": False,
+            "options": {
+                "num_predict": int(max_tokens),
+                "temperature": float(temperature),
+            },
+        }
+        if self._keep_alive:
+            payload["keep_alive"] = self._keep_alive
+        return payload
+
+    def _prompt_via_native(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> LLMResponse:
+        """Send a chat request through Ollama's native /api/chat."""
+        payload = self._build_native_payload(messages, system, max_tokens, temperature)
+        url = f"{self._native_root}/api/chat"
+        try:
+            req_timeout = float(
+                os.environ.get("AUREON_LLM_REQUEST_TIMEOUT_S", "60") or 60
+            )
+            resp = self._session.post(
+                url, json=payload, headers=self._headers(), timeout=max(1.0, req_timeout)
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            logger.error("Ollama native request failed: %s", e)
+            return LLMResponse(text=f"[ERROR] {e}", stop_reason="error")
+
+        msg = data.get("message") or {}
+        text = str(msg.get("content", "") or "")
+        done_reason = str(data.get("done_reason", "stop") or "stop")
+        stop_reason = "end_turn" if done_reason == "stop" else (
+            "max_tokens" if done_reason == "length" else "end_turn"
+        )
+        usage = {
+            "input_tokens": int(data.get("prompt_eval_count", 0) or 0),
+            "output_tokens": int(data.get("eval_count", 0) or 0),
+        }
+        usage["total_tokens"] = usage["input_tokens"] + usage["output_tokens"]
+        return LLMResponse(
+            text=text,
+            tool_calls=[],  # Ollama native /api/chat doesn't emit tool_calls
+            stop_reason=stop_reason,
+            usage=usage,
+            model=str(data.get("model", self.model)),
+            raw=data,
+        )
+
     def prompt(
         self,
         messages: List[Dict[str, Any]],
@@ -241,11 +368,22 @@ class AureonLocalAdapter(LLMAdapter):
         if not self._session:
             return LLMResponse(text="[ERROR] requests library not available", stop_reason="error")
 
+        # Ollama-native fast path: only used when we have no tool defs
+        # (the native /api/chat doesn't emit OpenAI-style tool_calls),
+        # and when auto-detected or explicitly enabled.
+        if self._prefer_native and not tools:
+            return self._prompt_via_native(messages, system, max_tokens, temperature)
+
         payload = self._build_payload(messages, system, tools, max_tokens, temperature)
         url = f"{self.base_url}/chat/completions"
 
         try:
-            resp = self._session.post(url, json=payload, headers=self._headers(), timeout=120)
+            req_timeout = float(
+                os.environ.get("AUREON_LLM_REQUEST_TIMEOUT_S", "20") or 20
+            )
+            resp = self._session.post(
+                url, json=payload, headers=self._headers(), timeout=max(1.0, req_timeout)
+            )
             resp.raise_for_status()
             data = resp.json()
         except Exception as e:
@@ -392,8 +530,31 @@ class AureonLocalAdapter(LLMAdapter):
                 return
 
     def health_check(self) -> bool:
+        """
+        Verify the backend is reachable AND that ``self.model`` actually
+        runs on this machine.
+
+        Ollama / vLLM / llama.cpp will all happily return 200 from
+        ``/v1/models`` even when the configured model is missing or too big
+        to load (the real failure surfaces later as a 404 / 500 from
+        ``/v1/chat/completions``). That's how the voice layer ended up
+        thinking it had a working LLM while every utterance silently
+        errored out.
+
+        Behaviour:
+          1. Reach ``/v1/models`` and read the listing.
+          2. If the configured model isn't in the listing, and the caller
+             didn't pin a specific model, pick the smallest installed model
+             whose name shares a family prefix with the requested one
+             (else just the smallest installed model).
+          3. Probe the resolved model with a 1-token chat completion. If
+             it 500s (typically OOM), drop it and try the next candidate.
+          4. Cache the verified model and return True; otherwise False.
+        """
         if not self._session:
             return False
+        if self._model_verified:
+            return True
         try:
             timeout_s = float(os.environ.get("AUREON_LLM_HEALTH_TIMEOUT_S", "2.0") or 2.0)
             resp = self._session.get(
@@ -401,9 +562,88 @@ class AureonLocalAdapter(LLMAdapter):
                 headers=self._headers(),
                 timeout=max(0.1, timeout_s),
             )
-            return resp.status_code == 200
+            if resp.status_code != 200:
+                return False
+            listing = resp.json() or {}
         except Exception:
             return False
+
+        installed: List[str] = []
+        for entry in listing.get("data", []) or []:
+            mid = (entry or {}).get("id") if isinstance(entry, dict) else None
+            if mid:
+                installed.append(str(mid))
+        if not installed:
+            return False
+
+        # Build the ordered list of candidates we'll actually probe.
+        candidates: List[str] = []
+        if self.model in installed:
+            candidates.append(self.model)
+
+        if not self._model_pinned:
+            family = self.model.split(":")[0].split(".")[0].lower()  # "llama3" → "llama"
+            same_family = [m for m in installed if family and family in m.lower()]
+            others = [m for m in installed if m not in same_family]
+            for m in self._sort_by_size(same_family) + self._sort_by_size(others):
+                if m not in candidates:
+                    candidates.append(m)
+
+        for candidate in candidates:
+            if self._probe_model(candidate):
+                if candidate != self.model:
+                    logger.info(
+                        "Local LLM model %r unavailable — using installed model %r instead",
+                        self.model,
+                        candidate,
+                    )
+                self.model = candidate
+                self._model_verified = True
+                return True
+
+        return False
+
+    @staticmethod
+    def _sort_by_size(models: List[str]) -> List[str]:
+        """Order model ids cheapest-first by parsing the size hint in the name."""
+        import re
+
+        def size_key(name: str) -> float:
+            match = re.search(r"(\d+(?:\.\d+)?)\s*([bm])\b", name.lower())
+            if not match:
+                return float("inf")
+            val = float(match.group(1))
+            if match.group(2) == "m":
+                val /= 1000.0
+            return val
+
+        return sorted(models, key=size_key)
+
+    def _probe_model(self, model_id: str) -> bool:
+        """Send a 1-token chat completion to confirm the model actually loads."""
+        try:
+            probe_timeout = float(
+                os.environ.get("AUREON_LLM_PROBE_TIMEOUT_S", "30") or 30
+            )
+            resp = self._session.post(
+                f"{self.base_url}/chat/completions",
+                json={
+                    "model": model_id,
+                    "messages": [{"role": "user", "content": "ping"}],
+                    "max_tokens": 1,
+                    "temperature": 0.0,
+                    "stream": False,
+                },
+                headers=self._headers(),
+                timeout=max(1.0, probe_timeout),
+            )
+        except Exception as e:
+            logger.debug("LLM probe %s failed: %s", model_id, e)
+            return False
+        if resp.status_code != 200:
+            logger.debug("LLM probe %s rejected: %s %s", model_id, resp.status_code, resp.text[:200])
+            return False
+        return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────

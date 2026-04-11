@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ff9f43"/>
+      <stop offset="55%" stop-color="#9b6bff"/>
+      <stop offset="100%" stop-color="#0b0d16"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0b0d16"/>
+  <circle cx="256" cy="256" r="180" fill="url(#g)"/>
+  <g fill="none" stroke="#ffd04f" stroke-width="6" opacity="0.85">
+    <circle cx="256" cy="256" r="120"/>
+    <circle cx="256" cy="256" r="74"/>
+    <circle cx="256" cy="256" r="32"/>
+  </g>
+  <g fill="#ffd04f">
+    <circle cx="256" cy="76"  r="10"/>
+    <circle cx="256" cy="436" r="10"/>
+    <circle cx="76"  cy="256" r="10"/>
+    <circle cx="436" cy="256" r="10"/>
+  </g>
+  <text x="256" y="296" text-anchor="middle"
+        font-family="Georgia, serif" font-size="120" font-weight="bold"
+        fill="#ffffff" opacity="0.95">Φ</text>
+</svg>

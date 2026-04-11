@@ -1,0 +1,20 @@
+{
+  "name": "Aureon Vault — Phi Bridge",
+  "short_name": "Aureon",
+  "description": "Phone bridge into the Aureon Queen / vault over the home WiFi.",
+  "id": "/bridge",
+  "start_url": "/bridge",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0d16",
+  "theme_color": "#9b6bff",
+  "icons": [
+    {
+      "src": "/static/aureon-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

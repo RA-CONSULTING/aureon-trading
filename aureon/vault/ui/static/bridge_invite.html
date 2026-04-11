@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aureon Bridge — Invite Phone</title>
+<style>
+  :root {
+    --bg: #0b0d16;
+    --panel: #141726;
+    --panel2: #1b1f33;
+    --border: #2a2f4a;
+    --text: #e6e8f2;
+    --muted: #7a81a5;
+    --accent: #ff9f43;
+    --queen: #9b6bff;
+    --ok: #4fd19a;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 24px;
+    background: radial-gradient(ellipse at top, #1a1530, var(--bg) 60%);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Inter, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap {
+    max-width: 720px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  h1 {
+    font-size: 28px; margin: 0;
+    background: linear-gradient(90deg, var(--accent), var(--queen));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 22px;
+  }
+  .url-box {
+    font-family: var(--mono);
+    background: var(--panel2); border: 1px dashed #3b2d6a;
+    border-radius: 10px; padding: 18px;
+    font-size: 22px; color: var(--accent);
+    word-break: break-all;
+    margin: 14px 0;
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  button {
+    background: var(--queen); color: #fff;
+    border: none; border-radius: 10px;
+    padding: 12px 18px; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.1); }
+  button.alt { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  .steps { counter-reset: step; padding: 0; list-style: none; margin: 0; }
+  .steps li {
+    counter-increment: step;
+    padding: 10px 0 10px 42px; position: relative;
+    border-bottom: 1px dashed var(--border);
+    font-size: 14px; line-height: 1.5;
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--queen); color: #fff;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 13px;
+    font-family: var(--mono);
+  }
+  .cadence {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-top: 12px; font-family: var(--mono); font-size: 12px;
+  }
+  .cadence .cell {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px;
+  }
+  .cadence .k { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+  .cadence .v { color: var(--text); font-size: 14px; margin-top: 4px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%);
+    background: var(--ok); color: #0b0d16; padding: 10px 18px;
+    border-radius: 20px; font-weight: 600; font-size: 13px;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <h1>Aureon Bridge · Invite a Phone</h1>
+      <div class="sub">
+        Send this URL to any device on the same WiFi as this computer.
+        The phone will open the Aureon substation, couple to this desktop
+        vault over the phi-bridge, and start speaking with the Queen.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="font-size:12px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:1px;">Phone URL</div>
+      <div class="url-box" id="phone-url">detecting…</div>
+      <div class="row">
+        <button id="btn-copy">Copy URL</button>
+        <button class="alt" id="btn-share">Share…</button>
+        <button class="alt" id="btn-open">Open on this device</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="font-size:12px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:1px;">Phone Setup</div>
+      <ol class="steps">
+        <li>Connect the phone to the same WiFi this computer is on.</li>
+        <li>Open the URL above in the phone's browser (Safari / Chrome / Edge).</li>
+        <li>Tap <strong>Share → Add to Home Screen</strong>. The Aureon tile becomes a real launcher on the phone.</li>
+        <li>Open the tile. The status strip turns green when the phi-bridge is coupled.</li>
+        <li>Talk by holding the orange mic, or type to send.</li>
+      </ol>
+    </div>
+
+    <div class="panel">
+      <div style="font-size:12px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:1px;">Phi-Bridge Status</div>
+      <div class="cadence" id="cadence-box">
+        <div class="cell"><div class="k">peers</div><div class="v" id="c-peers">—</div></div>
+        <div class="cell"><div class="k">interval</div><div class="v" id="c-int">—</div></div>
+        <div class="cell"><div class="k">freq</div><div class="v" id="c-freq">—</div></div>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:10px; font-family:var(--mono);">
+        Cadence is φ² ≈ 2.618 s per peer. Every additional coupled device divides the interval by φ.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="font-size:12px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:1px;">Firewall</div>
+      <div class="sub" style="margin-top:6px;">
+        If the phone can see your WiFi but times out opening the URL, Windows
+        Firewall is probably blocking the port. Open an <strong>elevated</strong>
+        PowerShell and run:
+      </div>
+      <pre style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:14px; font-family:var(--mono); font-size:12px; color:var(--accent); overflow-x:auto; white-space:pre-wrap;">New-NetFirewallRule -DisplayName 'Aureon Vault' `
+  -Direction Inbound -Action Allow `
+  -Protocol TCP -LocalPort 5566 -Profile Private</pre>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">copied</div>
+
+<script>
+(function () {
+  const urlBox = document.getElementById("phone-url");
+  const toast = document.getElementById("toast");
+  const btnCopy = document.getElementById("btn-copy");
+  const btnShare = document.getElementById("btn-share");
+  const btnOpen = document.getElementById("btn-open");
+
+  let phoneUrl = "";
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 1400);
+  }
+
+  fetch("/api/bridge/invite")
+    .then(r => r.json())
+    .then(d => {
+      if (d && d.ok && d.phone_url) {
+        phoneUrl = d.phone_url;
+        urlBox.textContent = phoneUrl;
+      } else {
+        urlBox.textContent = "(could not determine LAN IP — check your WiFi)";
+      }
+    })
+    .catch(() => { urlBox.textContent = "(server unreachable)"; });
+
+  fetch("/api/bridge/info")
+    .then(r => r.json())
+    .then(d => {
+      if (!d || !d.ok) return;
+      document.getElementById("c-peers").textContent = d.peer_count;
+      if (d.cadence) {
+        document.getElementById("c-int").textContent = d.cadence.interval_s.toFixed(2) + "s";
+        document.getElementById("c-freq").textContent = d.cadence.frequency_hz.toFixed(3) + " Hz";
+      }
+    });
+
+  btnCopy.addEventListener("click", async () => {
+    if (!phoneUrl) return;
+    try {
+      await navigator.clipboard.writeText(phoneUrl);
+      showToast("copied");
+    } catch (e) {
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = phoneUrl;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); showToast("copied"); }
+      catch (_) { showToast("copy failed"); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  btnShare.addEventListener("click", async () => {
+    if (!phoneUrl) return;
+    if (navigator.share) {
+      try { await navigator.share({ title: "Aureon Bridge", url: phoneUrl }); }
+      catch (e) {}
+    } else {
+      showToast("share API not supported — copy instead");
+    }
+  });
+
+  btnOpen.addEventListener("click", () => {
+    if (phoneUrl) window.open(phoneUrl, "_blank");
+  });
+})();
+</script>
+</body>
+</html>
