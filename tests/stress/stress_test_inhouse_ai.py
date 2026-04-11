@@ -156,6 +156,40 @@ class StressTestRunner:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Batched parallel runner — keeps memory bounded at extreme scale
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def run_parallel_batched(
+    fn,
+    n_ops: int,
+    max_workers: int = 32,
+    batch_size: int = 20000,
+):
+    """
+    Run `fn(i)` for i in range(n_ops) using a ThreadPoolExecutor, but
+    submit work in batches so only `batch_size` futures exist at any
+    moment. This keeps memory bounded when n_ops is in the millions.
+
+    Returns None — callers use shared state for result collection.
+    """
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        remaining = n_ops
+        start = 0
+        while remaining > 0:
+            chunk = min(batch_size, remaining)
+            futures = [executor.submit(fn, start + j) for j in range(chunk)]
+            for f in as_completed(futures):
+                # Consume the result so the future is released
+                try:
+                    f.result()
+                except Exception:
+                    pass
+            start += chunk
+            remaining -= chunk
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Test 1: LLM adapter throughput
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -189,10 +223,7 @@ def test_llm_adapter_throughput(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=32) as executor:
-        futures = [executor.submit(fire_prompt, i) for i in range(n_prompts)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(fire_prompt, n_prompts, max_workers=32, batch_size=20000)
 
     return {
         "operations": n_prompts,
@@ -247,10 +278,7 @@ def test_tool_registry_race(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=64) as executor:
-        futures = [executor.submit(hammer, i) for i in range(n_calls)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(hammer, n_calls, max_workers=64, batch_size=20000)
 
     return {
         "operations": n_calls,
@@ -265,9 +293,12 @@ def test_tool_registry_race(runner: StressTestRunner):
 
 
 def test_agent_parallel_execution(runner: StressTestRunner):
-    """50 agents running 20 tasks each in parallel."""
-    n_agents = runner.scaled(50)
-    n_tasks_per_agent = runner.scaled(20)
+    """Agents running tasks in parallel. Caps agent count to keep memory bounded."""
+    # Cap the number of distinct agent INSTANCES at 500 to avoid
+    # instantiating millions of Agent objects under extreme scale.
+    # Total ops scale linearly via n_tasks_per_agent instead.
+    n_agents = min(runner.scaled(50), 500)
+    n_tasks_per_agent = max(1, (runner.scaled(50) * runner.scaled(20)) // n_agents)
     adapter = AureonBrainAdapter()
 
     agents = [
@@ -317,9 +348,10 @@ def test_agent_parallel_execution(runner: StressTestRunner):
 
 
 def test_agent_pool_saturation(runner: StressTestRunner):
-    """AgentPool with size 8 vs 100 jobs."""
+    """AgentPool with size 8 vs N jobs. Capped at 5000 distinct agents
+    to keep memory bounded under extreme scale."""
     pool_size = 8
-    n_jobs = runner.scaled(100)
+    n_jobs = min(runner.scaled(100), 5000)
     adapter = AureonBrainAdapter()
 
     pool = AgentPool(max_concurrent=pool_size)
@@ -464,10 +496,7 @@ def test_message_bus_throughput(runner: StressTestRunner):
     def publisher(idx: int):
         bus.publish("stress.topic", {"msg": idx}, source="stress")
 
-    with ThreadPoolExecutor(max_workers=32) as executor:
-        futures = [executor.submit(publisher, i) for i in range(n_messages)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(publisher, n_messages, max_workers=32, batch_size=20000)
 
     total_received = sum(received.values())
     expected = n_messages * n_subscribers
@@ -505,10 +534,7 @@ def test_shared_memory_contention(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=64) as executor:
-        futures = [executor.submit(hammer, i) for i in range(n_ops)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(hammer, n_ops, max_workers=64, batch_size=20000)
 
     return {
         "operations": n_ops,
@@ -523,9 +549,10 @@ def test_shared_memory_contention(runner: StressTestRunner):
 
 
 def test_team_orchestration(runner: StressTestRunner):
-    """5 teams x 10 agents running in parallel."""
-    n_teams = runner.scaled(5)
-    n_agents_per_team = runner.scaled(10)
+    """N teams x M agents running in parallel. Bounded to keep memory
+    sane when scale factors multiply (5 × 10 × 1000² is untenable)."""
+    n_teams = min(runner.scaled(5), 50)
+    n_agents_per_team = min(runner.scaled(10), 50)
     adapter = AureonBrainAdapter()
 
     teams = []
@@ -683,10 +710,7 @@ def test_queen_ai_bridge_integration(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(hammer, i) for i in range(n_calls)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(hammer, n_calls, max_workers=16, batch_size=20000)
 
     status = bridge.get_status()
     bridge.stop()
@@ -795,10 +819,7 @@ def test_miner_ai_bridge_integration(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(hammer, i) for i in range(n_calls)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(hammer, n_calls, max_workers=16, batch_size=20000)
 
     status = bridge.get_status()
     bridge.stop()
@@ -934,10 +955,7 @@ def test_vm_control_dispatch(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=32) as executor:
-        futures = [executor.submit(fire, i) for i in range(n_ops)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(fire, n_ops, max_workers=32, batch_size=20000)
 
     status = dispatcher.get_status()
     dispatcher.destroy_all()
@@ -1073,10 +1091,7 @@ def test_vm_tool_registry_integration(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(agent_call, i) for i in range(n_ops)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(agent_call, n_ops, max_workers=16, batch_size=20000)
 
     dispatcher.destroy_all()
 
@@ -1326,10 +1341,7 @@ def test_pillar_alignment(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(fire, i) for i in range(n_cycles)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(fire, n_cycles, max_workers=16, batch_size=20000)
 
     # Correctness check: of the ~1/3 perfect-alignment cycles, most should clear
     expected_lighthouse = n_cycles // 3
@@ -1523,10 +1535,7 @@ def test_unified_directive(runner: StressTestRunner):
             with errors_lock:
                 errors += 1
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = [executor.submit(fire, i) for i in range(n_directives)]
-        for f in as_completed(futures):
-            pass
+    run_parallel_batched(fire, n_directives, max_workers=8, batch_size=20000)
 
     status = unified.get_status()
     hive.shutdown()
@@ -1607,7 +1616,10 @@ def test_code_architect_library(runner: StressTestRunner):
     tmp = Path(tempfile.mkdtemp(prefix="aureon_lib_stress_"))
     try:
         lib = SkillLibrary(storage_dir=tmp)
-        n_skills = runner.scaled(500)
+        # Cap skill chain depth at 50,000 — beyond that the JSON
+        # save/load and pure Skill object overhead dominates without
+        # proving anything new.
+        n_skills = min(runner.scaled(500), 50000)
         errors = 0
 
         # Add skills in a chain so each depends on the previous
@@ -1718,8 +1730,10 @@ def test_code_architect_full_pipeline(runner: StressTestRunner):
         total_exec = 0
         total_ok = 0
 
-        # Run the full be_ceo a few times
-        ceo_runs = max(5, runner.scaled(20))
+        # Run the full be_ceo a few times (capped to keep the
+        # per-run execution cost sane — a full CEO run fires
+        # 80 sub-skill calls, so 1000 runs = 80k calls)
+        ceo_runs = min(max(5, runner.scaled(20)), 1000)
         for _ in range(ceo_runs):
             r = arch.execute_skill("be_ceo")
             total_exec += 1
@@ -1728,16 +1742,15 @@ def test_code_architect_full_pipeline(runner: StressTestRunner):
 
         # Run atomic mouse_move lots of times in parallel
         def fire_mouse(i: int):
+            nonlocal total_exec, total_ok
             r = arch.execute_skill("mouse_move", params={"x": i, "y": i * 2},
                                     resolve_deps=False)
+            total_exec += 1
+            if r.ok:
+                total_ok += 1
             return r.ok
 
-        with ThreadPoolExecutor(max_workers=16) as executor:
-            futures = [executor.submit(fire_mouse, i) for i in range(n_runs)]
-            for f in as_completed(futures):
-                total_exec += 1
-                if f.result():
-                    total_ok += 1
+        run_parallel_batched(fire_mouse, n_runs, max_workers=16, batch_size=10000)
 
         # 4. Observer → pattern → skill auto-learn cycle
         for _ in range(3):

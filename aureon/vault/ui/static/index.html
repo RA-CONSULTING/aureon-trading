@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Aureon Vault — Queen's Voice</title>
+<style>
+  :root {
+    --bg:       #0b0d16;
+    --panel:    #141726;
+    --panel2:   #1b1f33;
+    --border:   #2a2f4a;
+    --text:     #e6e8f2;
+    --muted:    #7a81a5;
+    --accent:   #ff9f43;   /* 528 Hz amber */
+    --love:     #ff5e7a;
+    --queen:    #9b6bff;
+    --miner:    #5ad6ff;
+    --scout:    #4fd19a;
+    --council:  #ffd04f;
+    --architect:#a78bfa;
+    --lover:    #ff85a1;
+    --vault:    #8b95c5;
+    --human:    #4fd19a;
+    --success:  #4fd19a;
+    --warn:     #ffc54a;
+    --err:      #ff5e7a;
+    --mono:     "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+    background: var(--panel);
+  }
+  header h1 {
+    margin: 0; font-size: 18px; font-weight: 600;
+    color: var(--accent);
+  }
+  header .subtitle {
+    color: var(--muted); font-size: 13px; font-family: var(--mono);
+  }
+  main {
+    flex: 1; display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 0;
+  }
+
+  /* sidebar */
+  aside {
+    background: var(--panel); padding: 16px; border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  aside h2 {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    color: var(--muted); margin: 16px 0 8px 0; letter-spacing: 0.08em;
+  }
+  aside h2:first-child { margin-top: 0; }
+  .metric {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; font-size: 13px; font-family: var(--mono);
+  }
+  .metric .key { color: var(--muted); }
+  .metric .val { color: var(--text); }
+  .metric .val.warn { color: var(--warn); }
+  .metric .val.ok { color: var(--success); }
+  .metric .val.err { color: var(--err); }
+  .metric .val.accent { color: var(--accent); }
+  .bar {
+    height: 6px; background: var(--panel2); border-radius: 3px;
+    margin: 4px 0; overflow: hidden;
+  }
+  .bar .fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+
+  /* main column */
+  .stage {
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .utterances {
+    flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .utterance {
+    display: flex; flex-direction: column; gap: 6px; max-width: 720px;
+  }
+  .utterance .header {
+    font-size: 11px; color: var(--muted);
+    font-family: var(--mono); display: flex; gap: 12px; align-items: center;
+  }
+  .voice-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 600; color: #0b0d16;
+    font-family: var(--mono); letter-spacing: 0.02em;
+  }
+  .voice-badge.queen    { background: var(--queen); }
+  .voice-badge.miner    { background: var(--miner); }
+  .voice-badge.scout    { background: var(--scout); }
+  .voice-badge.council  { background: var(--council); }
+  .voice-badge.architect{ background: var(--architect); }
+  .voice-badge.lover    { background: var(--lover); }
+  .voice-badge.vault    { background: var(--vault); }
+  .voice-badge.human    { background: var(--human); }
+  .utterance .body {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px;
+    line-height: 1.5; white-space: pre-wrap; font-size: 14px;
+  }
+  .utterance.response .body {
+    background: var(--panel2);
+  }
+  .utterance .reasoning {
+    font-size: 10px; color: var(--muted); font-family: var(--mono); margin-top: 2px;
+  }
+
+  /* chat input */
+  footer {
+    padding: 16px 24px; background: var(--panel); border-top: 1px solid var(--border);
+  }
+  .chat-row { display: flex; gap: 8px; align-items: stretch; }
+  .chat-row select {
+    background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; font-family: inherit; font-size: 13px;
+  }
+  .chat-row input {
+    flex: 1; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 14px; font-family: inherit; font-size: 14px;
+  }
+  .chat-row input:focus { outline: none; border-color: var(--accent); }
+  .chat-row button {
+    background: var(--accent); color: #0b0d16;
+    border: none; border-radius: 6px; padding: 10px 18px;
+    font-family: inherit; font-weight: 600; cursor: pointer; font-size: 13px;
+  }
+  .chat-row button:hover { filter: brightness(1.1); }
+  .chat-row button.secondary {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+  }
+
+  .controls {
+    margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;
+    font-size: 12px;
+  }
+  .controls button {
+    background: var(--panel2); color: var(--muted);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 5px 10px; font-family: var(--mono); cursor: pointer; font-size: 11px;
+  }
+  .controls button:hover { color: var(--text); border-color: var(--accent); }
+  .controls .led {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted); margin-right: 4px;
+  }
+  .controls .led.on { background: var(--success); }
+
+  .empty { text-align: center; color: var(--muted); padding: 80px 20px; font-size: 14px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>★ AUREON VAULT — Queen's Voice</h1>
+    <span class="subtitle" id="loop-id">loop_id: …</span>
+    <span class="subtitle" id="cycles">cycles: 0</span>
+    <span class="subtitle" id="uptime">uptime: 0s</span>
+  </header>
+
+  <main>
+    <aside>
+      <h2>Harmonic State</h2>
+      <div class="metric"><span class="key">Λ(t)</span><span class="val accent" id="lambda-t">—</span></div>
+      <div class="metric"><span class="key">love amp</span><span class="val" id="love-amp">—</span></div>
+      <div class="bar"><div class="fill" id="love-bar" style="width:0"></div></div>
+      <div class="metric"><span class="key">gratitude</span><span class="val" id="gratitude">—</span></div>
+      <div class="bar"><div class="fill" id="grat-bar" style="width:0;background:#4fd19a"></div></div>
+      <div class="metric"><span class="key">casimir</span><span class="val" id="casimir">—</span></div>
+      <div class="metric"><span class="key">chakra</span><span class="val" id="chakra">—</span></div>
+      <div class="metric"><span class="key">freq</span><span class="val" id="freq">—</span></div>
+
+      <h2>Cortex Bands</h2>
+      <div class="metric"><span class="key">δ delta</span><span class="val" id="cx-delta">—</span></div>
+      <div class="metric"><span class="key">θ theta</span><span class="val" id="cx-theta">—</span></div>
+      <div class="metric"><span class="key">α alpha</span><span class="val" id="cx-alpha">—</span></div>
+      <div class="metric"><span class="key">β beta</span><span class="val" id="cx-beta">—</span></div>
+      <div class="metric"><span class="key">γ gamma</span><span class="val" id="cx-gamma">—</span></div>
+
+      <h2>9-Node Auris</h2>
+      <div class="metric"><span class="key">consensus</span><span class="val" id="auris-consensus">—</span></div>
+      <div class="metric"><span class="key">confidence</span><span class="val" id="auris-conf">—</span></div>
+      <div class="metric"><span class="key">lighthouse</span><span class="val" id="lighthouse">—</span></div>
+
+      <h2>Body</h2>
+      <div class="metric"><span class="key">vault cards</span><span class="val" id="vault-size">—</span></div>
+      <div class="metric"><span class="key">rally</span><span class="val" id="rally">—</span></div>
+      <div class="metric"><span class="key">cells deployed</span><span class="val" id="cells">—</span></div>
+      <div class="metric"><span class="key">utterances</span><span class="val" id="utter-count">—</span></div>
+    </aside>
+
+    <div class="stage">
+      <div class="utterances" id="utterances">
+        <div class="empty">The vault is listening. Send a message or press Converse to begin.</div>
+      </div>
+      <footer>
+        <div class="chat-row">
+          <select id="voice-select">
+            <option value="">(auto)</option>
+          </select>
+          <input id="chat-input" placeholder="Speak to the vault…" autofocus />
+          <button id="send-btn">Send</button>
+        </div>
+        <div class="controls">
+          <button id="converse-btn">Converse (let them talk)</button>
+          <button id="tick-btn">Run one tick</button>
+          <button id="loop-start">▶ start loop</button>
+          <button id="loop-stop">■ stop loop</button>
+          <span class="subtitle" style="margin-left:auto"><span class="led" id="loop-led"></span><span id="loop-status">stopped</span></span>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const uttDiv = $("utterances");
+const seen = new Set();
+
+function esc(s) {
+  return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function fmt(v, digits=3) {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "number") return v.toFixed(digits);
+  return String(v);
+}
+
+function setClass(el, cls, on) {
+  if (!el) return;
+  el.classList.toggle(cls, !!on);
+}
+
+async function refreshStatus() {
+  try {
+    const r = await fetch("/api/status");
+    const data = await r.json();
+    if (!data.ok) return;
+    const s = data.status || {};
+    $("loop-id").textContent = "loop_id: " + (s.loop_id || "…");
+    $("cycles").textContent = "cycles: " + (s.cycles || 0);
+    $("uptime").textContent = "uptime: " + Math.round(s.uptime_s || 0) + "s";
+
+    const v = s.vault || {};
+    $("lambda-t").textContent = fmt(v.last_lambda_t, 4);
+    $("love-amp").textContent = fmt(v.love_amplitude, 3);
+    $("love-bar").style.width = Math.round((v.love_amplitude || 0) * 100) + "%";
+    $("gratitude").textContent = fmt(v.gratitude_score, 3);
+    $("grat-bar").style.width = Math.round((v.gratitude_score || 0) * 100) + "%";
+    $("casimir").textContent = fmt(v.last_casimir_force, 3);
+    $("chakra").textContent = v.dominant_chakra || "—";
+    $("freq").textContent = fmt(v.dominant_frequency_hz, 1) + " Hz";
+    $("vault-size").textContent = v.size || 0;
+    $("rally").textContent = v.rally_active ? "YES" : "no";
+    const rallyEl = $("rally");
+    setClass(rallyEl, "accent", v.rally_active);
+
+    const cx = v.cortex_snapshot || {};
+    $("cx-delta").textContent = fmt(cx.delta, 2);
+    $("cx-theta").textContent = fmt(cx.theta, 2);
+    $("cx-alpha").textContent = fmt(cx.alpha, 2);
+    $("cx-beta").textContent  = fmt(cx.beta, 2);
+    $("cx-gamma").textContent = fmt(cx.gamma, 2);
+
+    const au = s.auris || {};
+    $("auris-consensus").textContent = au.last_consensus || "—";
+    $("auris-conf").textContent = fmt(au.last_confidence, 3);
+    $("lighthouse").textContent = au.last_lighthouse ? "★ CLEARED" : "no";
+    setClass($("lighthouse"), "accent", au.last_lighthouse);
+
+    $("cells").textContent = s.total_cells_deployed || 0;
+    const voice = s.voice || {};
+    $("utter-count").textContent = voice.total_utterances || 0;
+
+    $("loop-status").textContent = s.running ? "running" : "stopped";
+    setClass($("loop-led"), "on", s.running);
+  } catch (e) {
+    // ignore polling errors
+  }
+}
+
+function voiceBadge(name) {
+  name = (name || "vault").toLowerCase();
+  return `<span class="voice-badge ${name}">${name}</span>`;
+}
+
+function addUtterance(u, incremental) {
+  if (!u) return;
+  if (seen.has(u.utterance_id)) return;
+  seen.add(u.utterance_id);
+
+  // Remove "empty" placeholder if present
+  const empty = uttDiv.querySelector(".empty");
+  if (empty) empty.remove();
+
+  // Statement
+  if (u.statement && u.statement.text) {
+    const div = document.createElement("div");
+    div.className = "utterance statement";
+    div.innerHTML = `
+      <div class="header">
+        ${voiceBadge(u.speaker)}
+        <span>→</span>
+        ${voiceBadge(u.listener)}
+        <span style="margin-left:auto">urgency ${fmt(u.urgency, 2)}</span>
+      </div>
+      <div class="body">${esc(u.statement.text)}</div>
+      ${u.reasoning ? `<div class="reasoning">${esc(u.reasoning)}</div>` : ""}
+    `;
+    uttDiv.appendChild(div);
+  }
+
+  // Response
+  if (u.response && u.response.text) {
+    const div = document.createElement("div");
+    div.className = "utterance response";
+    div.style.marginLeft = "32px";
+    div.innerHTML = `
+      <div class="header">${voiceBadge(u.listener)}</div>
+      <div class="body">${esc(u.response.text)}</div>
+    `;
+    uttDiv.appendChild(div);
+  }
+
+  if (incremental) uttDiv.scrollTop = uttDiv.scrollHeight;
+}
+
+async function refreshUtterances() {
+  try {
+    const r = await fetch("/api/utterances?n=50");
+    const data = await r.json();
+    if (!data.ok) return;
+    for (const u of data.utterances || []) {
+      addUtterance(u, false);
+    }
+    uttDiv.scrollTop = uttDiv.scrollHeight;
+  } catch (e) {
+    // ignore
+  }
+}
+
+async function loadVoices() {
+  try {
+    const r = await fetch("/api/voices");
+    const data = await r.json();
+    if (!data.ok) return;
+    const sel = $("voice-select");
+    for (const name of data.voices) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    }
+  } catch (e) {}
+}
+
+async function sendMessage() {
+  const input = $("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const voice = $("voice-select").value || null;
+  input.value = "";
+  try {
+    const r = await fetch("/api/message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, voice }),
+    });
+    const data = await r.json();
+    if (data.ok && data.utterance) {
+      addUtterance(data.utterance, true);
+    }
+  } catch (e) {}
+  refreshStatus();
+}
+
+async function converse() {
+  try {
+    const r = await fetch("/api/converse", { method: "POST" });
+    const data = await r.json();
+    if (data.ok && data.spoke && data.utterance) {
+      addUtterance(data.utterance, true);
+    }
+  } catch (e) {}
+  refreshStatus();
+}
+
+async function runTick() {
+  try {
+    await fetch("/api/tick", { method: "POST" });
+  } catch (e) {}
+  refreshStatus();
+  refreshUtterances();
+}
+
+async function loopStart() {
+  try { await fetch("/api/loop/start", { method: "POST" }); } catch (e) {}
+  refreshStatus();
+}
+async function loopStop() {
+  try { await fetch("/api/loop/stop", { method: "POST" }); } catch (e) {}
+  refreshStatus();
+}
+
+$("send-btn").addEventListener("click", sendMessage);
+$("chat-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+$("converse-btn").addEventListener("click", converse);
+$("tick-btn").addEventListener("click", runTick);
+$("loop-start").addEventListener("click", loopStart);
+$("loop-stop").addEventListener("click", loopStop);
+
+// Initial load
+loadVoices();
+refreshStatus();
+refreshUtterances();
+
+// Poll
+setInterval(refreshStatus, 1500);
+setInterval(refreshUtterances, 2500);
+</script>
+</body>
+</html>
