@@ -122,6 +122,9 @@ sim_mission_out.txt
 state/*_thoughts.jsonl
 state/*_thoughts.json
 
+# Integration audit trail (regenerated on each run)
+integrations_audit.jsonl
+
 # Imported research bundles (keep research files, but ignore embedded repo snapshots / archives).
 # NOTE: Some imported bundles include `.env*` files with live credentials; never commit those.
 imports/Kimi_Agent_Aureon_*/aureon-trading-main/
