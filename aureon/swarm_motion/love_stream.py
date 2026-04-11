@@ -181,8 +181,8 @@ class StandingWaveLoveStream:
 
     def _wire_thought_bus(self):
         try:
-            from aureon.core.aureon_thought_bus import ThoughtBus
-            self._thought_bus = ThoughtBus()
+            from aureon.core.aureon_thought_bus import get_thought_bus
+            self._thought_bus = get_thought_bus()
             logger.info("StandingWaveLoveStream wired to ThoughtBus")
         except Exception:
             pass

@@ -395,7 +395,12 @@ class AureonLocalAdapter(LLMAdapter):
         if not self._session:
             return False
         try:
-            resp = self._session.get(f"{self.base_url}/models", headers=self._headers(), timeout=5)
+            timeout_s = float(os.environ.get("AUREON_LLM_HEALTH_TIMEOUT_S", "2.0") or 2.0)
+            resp = self._session.get(
+                f"{self.base_url}/models",
+                headers=self._headers(),
+                timeout=max(0.1, timeout_s),
+            )
             return resp.status_code == 200
         except Exception:
             return False
@@ -733,3 +738,235 @@ class AureonHybridAdapter(LLMAdapter):
 
     def health_check(self) -> bool:
         return self.local.health_check() or self.brain.health_check()
+
+
+# -----------------------------------------------------------------------------
+# Optional adapters for interactive conversation (Vault UI)
+# -----------------------------------------------------------------------------
+
+
+class AureonStubAdapter(LLMAdapter):
+    """
+    A fast, offline-safe adapter used when no real LLM backend is configured.
+
+    This exists so interactive layers (Vault UI voices) never silently fall back
+    to the market-rule engine and never hang on long HTTP timeouts.
+    """
+
+    def __init__(self, message: str, *, model: str = "aureon-stub"):
+        self._message = str(message or "").strip() or "[AUREON] No backend configured."
+        self._model = model
+
+    def prompt(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> LLMResponse:
+        return LLMResponse(
+            text=self._message,
+            stop_reason="end_turn",
+            usage={},
+            model=self._model,
+            raw=None,
+        )
+
+    def stream(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> Generator[StreamChunk, None, None]:
+        yield StreamChunk(text=self._message)
+        yield StreamChunk(done=True, stop_reason="end_turn")
+
+    def health_check(self) -> bool:
+        return True
+
+
+class AureonAnthropicAdapter(LLMAdapter):
+    """
+    Optional external adapter (Anthropic Messages API).
+
+    Only used when ANTHROPIC_API_KEY is present. This keeps the default path
+    "in-house", but allows the Vault UI to actually converse when the local LLM
+    server is not running.
+    """
+
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
+        self.model = model or os.environ.get("AUREON_ANTHROPIC_MODEL", "claude-3-5-sonnet-latest")
+        self._client = None
+
+        if not self.api_key:
+            return
+        try:
+            from anthropic import Anthropic  # type: ignore
+            self._client = Anthropic(api_key=self.api_key)
+        except Exception as e:
+            logger.debug("Anthropic SDK unavailable: %s", e)
+            self._client = None
+
+    @staticmethod
+    def _coerce_text(content: Any) -> str:
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts: List[str] = []
+            for c in content:
+                if isinstance(c, dict):
+                    if c.get("type") == "text":
+                        parts.append(str(c.get("text", "")))
+                    elif "text" in c:
+                        parts.append(str(c.get("text", "")))
+                elif hasattr(c, "text"):
+                    parts.append(str(getattr(c, "text")))
+                elif isinstance(c, str):
+                    parts.append(c)
+            return "\n".join(p for p in parts if p).strip()
+        if isinstance(content, dict) and "text" in content:
+            return str(content.get("text", ""))
+        return str(content)
+
+    def prompt(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> LLMResponse:
+        if not self._client:
+            return LLMResponse(
+                text="[ERROR] Anthropic adapter not configured (missing ANTHROPIC_API_KEY or SDK).",
+                stop_reason="error",
+                model="anthropic",
+            )
+
+        # Anthropic supports system as a top-level param and messages as role/content.
+        coerced: List[Dict[str, str]] = []
+        for m in messages or []:
+            role = str(m.get("role", "user") or "user")
+            if role not in ("user", "assistant"):
+                role = "user"
+            coerced.append({"role": role, "content": self._coerce_text(m.get("content", ""))})
+
+        try:
+            resp = self._client.messages.create(
+                model=self.model,
+                max_tokens=int(max_tokens),
+                temperature=float(temperature),
+                system=str(system or "") or None,
+                messages=coerced,
+            )
+        except Exception as e:
+            return LLMResponse(text=f"[ERROR] {e}", stop_reason="error", model=self.model, raw=None)
+
+        # Extract text blocks
+        text_parts: List[str] = []
+        try:
+            for b in getattr(resp, "content", []) or []:
+                # SDK returns content blocks with .type and .text
+                if getattr(b, "type", "") == "text":
+                    text_parts.append(str(getattr(b, "text", "")))
+        except Exception:
+            pass
+        text = "\n".join([t for t in text_parts if t]).strip()
+
+        usage: Dict[str, int] = {}
+        try:
+            u = getattr(resp, "usage", None)
+            if u is not None:
+                in_tok = int(getattr(u, "input_tokens", 0) or 0)
+                out_tok = int(getattr(u, "output_tokens", 0) or 0)
+                usage = {"input_tokens": in_tok, "output_tokens": out_tok, "total_tokens": in_tok + out_tok}
+        except Exception:
+            usage = {}
+
+        stop = "end_turn"
+        try:
+            sr = str(getattr(resp, "stop_reason", "") or "")
+            if sr == "max_tokens":
+                stop = "max_tokens"
+        except Exception:
+            stop = "end_turn"
+
+        return LLMResponse(
+            text=text,
+            tool_calls=[],
+            stop_reason=stop,
+            usage=usage,
+            model=str(getattr(resp, "model", "") or self.model),
+            raw=resp,
+        )
+
+    def stream(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> Generator[StreamChunk, None, None]:
+        # Minimal streaming wrapper for callers that expect stream()
+        response = self.prompt(messages, system, tools, max_tokens, temperature, **kwargs)
+        for word in (response.text or "").split(" "):
+            if word:
+                yield StreamChunk(text=word + " ")
+        yield StreamChunk(done=True, stop_reason=response.stop_reason)
+
+    def health_check(self) -> bool:
+        return bool(self._client)
+
+
+def build_voice_adapter() -> LLMAdapter:
+    """
+    Build a safe default adapter for the Vault Voice layer.
+
+    Priority:
+      1. Local OpenAI-compatible server (Ollama/vLLM/llama.cpp) if reachable
+      2. Anthropic if ANTHROPIC_API_KEY is present
+      3. Stub adapter with actionable configuration instructions
+
+    Override with AUREON_VOICE_BACKEND:
+      - local | anthropic | brain
+    """
+    backend = (os.environ.get("AUREON_VOICE_BACKEND", "") or "").strip().lower()
+
+    if backend in ("brain", "aureonbrain", "rule", "rules"):
+        return AureonBrainAdapter()
+
+    if backend in ("anthropic", "claude"):
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            a = AureonAnthropicAdapter()
+            if a.health_check():
+                return a
+        return AureonStubAdapter(
+            "No Anthropic backend configured. Set ANTHROPIC_API_KEY (and optionally AUREON_ANTHROPIC_MODEL).",
+            model="anthropic-unconfigured",
+        )
+
+    # Default or explicitly local: try local first.
+    # Note: we intentionally do NOT auto-fall back to external providers in "auto"
+    # mode, even if API keys are present. External use must be explicit via
+    # AUREON_VOICE_BACKEND=anthropic, so tests/offline runs never hang.
+    local = AureonLocalAdapter()
+    if local.health_check():
+        return local
+
+    return AureonStubAdapter(
+        "No LLM backend is reachable.\n"
+        "To enable real conversation for Vault voices:\n"
+        "  1) Start a local OpenAI-compatible server (recommended: Ollama)\n"
+        "     and ensure http://localhost:11434/v1 is available, or set AUREON_LLM_BASE_URL.\n"
+        "  2) Or set AUREON_VOICE_BACKEND=anthropic and ANTHROPIC_API_KEY.\n",
+        model="no-backend",
+    )

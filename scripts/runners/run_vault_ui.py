@@ -44,6 +44,14 @@ def main() -> None:
         help="base interval seconds for the love+gratitude clock (default 1.0)",
     )
     parser.add_argument(
+        "--no-signals", action="store_true",
+        help="do not start QueenCortex/MyceliumMind/LoveStream signal daemons (metrics may be flat)",
+    )
+    parser.add_argument(
+        "--love-stream-rate", type=float, default=1.0,
+        help="LoveStream publish rate in Hz when signals are enabled (default 1.0)",
+    )
+    parser.add_argument(
         "--no-voice", action="store_true",
         help="disable the voice layer (chat endpoints will 400)",
     )
@@ -63,11 +71,37 @@ def main() -> None:
         enable_voice=not args.no_voice,
     )
 
+    # Optional signal daemons. These publish into the shared ThoughtBus so the
+    # vault state is non-flat even when the UI is run standalone.
+    cortex = None
+    mind = None
+    love_stream = None
+    if not args.no_signals:
+        try:
+            from aureon.queen.queen_cortex import get_cortex
+            cortex = get_cortex()
+            cortex.start()
+        except Exception:
+            cortex = None
+        try:
+            from aureon.queen.queen_mycelium_mind import get_mycelium_mind
+            mind = get_mycelium_mind()
+            mind.start()
+        except Exception:
+            mind = None
+        try:
+            from aureon.swarm_motion.love_stream import StandingWaveLoveStream
+            love_stream = StandingWaveLoveStream(sample_rate_hz=float(args.love_stream_rate))
+            love_stream.start()
+        except Exception:
+            love_stream = None
+
     print("=" * 72)
     print("  AUREON VAULT UI — Queen's Voice")
     print("=" * 72)
     print(f"  Loop ID:     {loop.loop_id}")
     print(f"  Voice layer: {'ENABLED' if loop.voice_engine else 'DISABLED'}")
+    print(f"  Signals:     {'ENABLED' if not args.no_signals else 'disabled'}")
     print(f"  Bind:        http://{args.host}:{args.port}/")
     print(f"  Interval:    {args.interval}s")
     print(f"  Background:  {'YES' if args.start_loop else 'no (use /api/loop/start to wake it)'}")
@@ -91,6 +125,12 @@ def main() -> None:
             loop.stop()
         except Exception:
             pass
+        for daemon in (love_stream, mind, cortex):
+            try:
+                if daemon is not None and hasattr(daemon, "stop"):
+                    daemon.stop()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":

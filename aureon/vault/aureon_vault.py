@@ -163,8 +163,10 @@ class AureonVault:
         if self._subscribed:
             return True
         try:
-            from aureon.core.aureon_thought_bus import ThoughtBus
-            self._thought_bus = ThoughtBus()
+            # Important: use the singleton bus so *all* subsystems share signals.
+            # Instantiating ThoughtBus() directly creates an isolated in-memory bus.
+            from aureon.core.aureon_thought_bus import get_thought_bus
+            self._thought_bus = get_thought_bus()
         except Exception as e:
             logger.debug("ThoughtBus unavailable: %s", e)
             return False
@@ -259,13 +261,29 @@ class AureonVault:
             return
         try:
             if topic.startswith("queen.cortex.state"):
-                for band_name in ("delta", "theta", "alpha", "beta", "gamma"):
-                    band = payload.get(band_name)
-                    if isinstance(band, dict) and "amplitude" in band:
-                        self.cortex_snapshot[band_name] = float(band["amplitude"])
-                # Cortex state also carries psi / coherence
-                if "coherence_gamma_field" in payload:
-                    self.last_lambda_t = float(payload["coherence_gamma_field"])
+                # Support both legacy payload shape:
+                #   {"delta": {"amplitude": ...}, ..., "coherence_gamma_field": ...}
+                # and current QueenCortex payload shape:
+                #   {"bands": {"delta": {"amplitude": ...}, ...}, "coherence_gamma": ...}
+                bands = payload.get("bands")
+                if isinstance(bands, dict):
+                    for band_name in ("delta", "theta", "alpha", "beta", "gamma"):
+                        band = bands.get(band_name)
+                        if isinstance(band, dict) and "amplitude" in band:
+                            self.cortex_snapshot[band_name] = float(band["amplitude"])
+                    # The cortex publishes the master field under coherence_gamma
+                    if "coherence_gamma" in payload:
+                        self.last_lambda_t = float(payload["coherence_gamma"])
+                    elif "coherence_gamma_field" in payload:
+                        self.last_lambda_t = float(payload["coherence_gamma_field"])
+                else:
+                    for band_name in ("delta", "theta", "alpha", "beta", "gamma"):
+                        band = payload.get(band_name)
+                        if isinstance(band, dict) and "amplitude" in band:
+                            self.cortex_snapshot[band_name] = float(band["amplitude"])
+                    # Cortex state also carries psi / coherence
+                    if "coherence_gamma_field" in payload:
+                        self.last_lambda_t = float(payload["coherence_gamma_field"])
             elif topic == "love.stream.528hz":
                 if "lambda_t" in payload:
                     self.last_lambda_t = float(payload["lambda_t"])
@@ -280,8 +298,19 @@ class AureonVault:
                 # Rebuild pathway_graph from the top entries
                 graph: Dict[str, List[str]] = {}
                 for entry in top:
-                    src = entry.get("source_domain", "") if isinstance(entry, dict) else ""
-                    tgt = entry.get("target_domain", "") if isinstance(entry, dict) else ""
+                    src = ""
+                    tgt = ""
+                    if isinstance(entry, dict):
+                        src = str(entry.get("source_domain", "") or "")
+                        tgt = str(entry.get("target_domain", "") or "")
+                    elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
+                        # Current MyceliumMind publishes tuples: (src, tgt, weight, activations)
+                        try:
+                            src = str(entry[0] or "")
+                            tgt = str(entry[1] or "")
+                        except Exception:
+                            src = ""
+                            tgt = ""
                     if src and tgt:
                         graph.setdefault(src, []).append(tgt)
                 if graph:

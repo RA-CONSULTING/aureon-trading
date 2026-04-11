@@ -102,8 +102,8 @@ class SelfDialogueEngine:
 
     def _wire_thought_bus(self) -> None:
         try:
-            from aureon.core.aureon_thought_bus import ThoughtBus
-            self._thought_bus = ThoughtBus()
+            from aureon.core.aureon_thought_bus import get_thought_bus
+            self._thought_bus = get_thought_bus()
         except Exception:
             self._thought_bus = None
 

@@ -16,6 +16,14 @@ Voice layer tests:
 import os
 import sys
 
+# Windows consoles often default to a legacy code page (cp1252) which can't print
+# symbols like "Λ". Force UTF-8 for test output when supported.
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
