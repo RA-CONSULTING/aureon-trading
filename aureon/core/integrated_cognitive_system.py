@@ -119,6 +119,21 @@ except Exception:
     CognitiveDashboard = None  # type: ignore[assignment,misc]
     _HAS_DASHBOARD = False
 
+try:
+    from aureon.harmonic.phi_bridge import get_phi_bridge
+    _HAS_PHI_BRIDGE = True
+except Exception:
+    get_phi_bridge = None  # type: ignore[assignment]
+    _HAS_PHI_BRIDGE = False
+
+try:
+    from aureon.vault.ui.server import create_app as create_vault_app, run_server as _run_vault_server
+    _HAS_VAULT_UI = True
+except Exception:
+    create_vault_app = None  # type: ignore[assignment]
+    _run_vault_server = None  # type: ignore[assignment]
+    _HAS_VAULT_UI = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -146,12 +161,17 @@ class IntegratedCognitiveSystem:
         self.auris: Any = None
         self.goal_engine: Any = None
         self.dashboard: Any = None
+        self.phi_bridge: Any = None
+        self.vault_app: Any = None
 
         # State
         self._running = False
         self._tick_thread: Optional[threading.Thread] = None
+        self._vault_ui_thread: Optional[threading.Thread] = None
         self._boot_status: Dict[str, str] = {}
         self._tick_count = 0
+        self._vault_ui_port: int = 5566
+        self._vault_ui_host: str = "127.0.0.1"
 
     # ------------------------------------------------------------------
     # Boot sequence
@@ -275,6 +295,20 @@ class IntegratedCognitiveSystem:
                 raise RuntimeError("import failed")
             self.auris = AurisMetacognition()
         _boot_phase("auris", boot_auris)
+
+        # Phase 14: Phi Bridge (phone <-> desktop vault sync)
+        def boot_phi_bridge():
+            if not _HAS_PHI_BRIDGE:
+                raise RuntimeError("import failed")
+            self.phi_bridge = get_phi_bridge(vault=self.vault)
+        _boot_phase("phi_bridge", boot_phi_bridge)
+
+        # Phase 15: Vault UI (Flask server for phone bridge + web chat)
+        def boot_vault_ui():
+            if not _HAS_VAULT_UI:
+                raise RuntimeError("import failed")
+            self.vault_app = create_vault_app(loop=self.feedback_loop)
+        _boot_phase("vault_ui", boot_vault_ui)
 
         self._boot_status = status
         return status
@@ -540,12 +574,53 @@ class IntegratedCognitiveSystem:
             return f"Coherence read error: {exc}"
 
     # ------------------------------------------------------------------
+    # Vault UI server (Flask + Phi Bridge for phone)
+    # ------------------------------------------------------------------
+    def _start_vault_ui(self, host: str = "127.0.0.1", port: int = 5566) -> None:
+        """Start the Flask vault UI server in a background thread."""
+        self._vault_ui_host = host
+        self._vault_ui_port = port
+        if self.vault_app is None:
+            return
+
+        def _serve():
+            try:
+                self.vault_app.run(
+                    host=host, port=port, debug=False,
+                    use_reloader=False, threaded=True,
+                )
+            except Exception as exc:
+                logger.warning("Vault UI server error: %s", exc)
+
+        self._vault_ui_thread = threading.Thread(
+            target=_serve, name="ics-vault-ui", daemon=True,
+        )
+        self._vault_ui_thread.start()
+
+    def _detect_lan_ip(self) -> str:
+        """Best-effort LAN IPv4 lookup."""
+        import socket
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "127.0.0.1"
+
+    # ------------------------------------------------------------------
     # Main run loop
     # ------------------------------------------------------------------
-    def run(self) -> None:
+    def run(self, lan: bool = False, port: int = 5566) -> None:
         """
         Main entry point. Boots subsystems, starts dashboard and tick thread,
+        starts the vault UI server (with Phi Bridge for phone access),
         then blocks on stdin input loop.
+
+        Args:
+            lan: If True, bind on 0.0.0.0 so phones on the same WiFi can connect.
+            port: Port for the vault UI / Phi Bridge server (default 5566).
         """
         # Boot
         print("\n  Booting Integrated Cognitive System...\n")
@@ -563,6 +638,17 @@ class IntegratedCognitiveSystem:
         self._start_tick_thread()
         if self.dashboard is not None:
             self.dashboard.start()
+
+        # Start Vault UI + Phi Bridge server
+        ui_host = "0.0.0.0" if lan else "127.0.0.1"
+        if self.vault_app is not None:
+            self._start_vault_ui(host=ui_host, port=port)
+            lan_ip = self._detect_lan_ip() if lan else "127.0.0.1"
+            print(f"  Vault UI:    http://{lan_ip}:{port}/")
+            if lan:
+                print(f"  Phi Bridge:  http://{lan_ip}:{port}/bridge")
+                print(f"  (Phone: open the bridge URL on the same WiFi)")
+            print()
 
         print("  Commands: /status  /goal  /pause  /resume  /cancel  /coherence  /quit")
         print("  Type any text to submit as a goal.\n")
