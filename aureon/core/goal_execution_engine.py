@@ -90,6 +90,13 @@ except Exception:
     get_temporal_ground_station = None  # type: ignore[assignment]
     _HAS_TEMPORAL = False
 
+try:
+    from aureon.inhouse_ai.llm_adapter import LLMAdapter
+    _HAS_LLM_ADAPTER = True
+except Exception:
+    LLMAdapter = None  # type: ignore[assignment,misc]
+    _HAS_LLM_ADAPTER = False
+
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -267,19 +274,27 @@ class GoalExecutionEngine:
         return plan
 
     # ------------------------------------------------------------------
-    # Decomposition
+    # Decomposition (3-tier: LLM -> AgentCore regex -> heuristic)
     # ------------------------------------------------------------------
     def _decompose_goal(self, text: str) -> GoalPlan:
         """
-        Dual-path decomposition:
-          1. AgentCore.plan_task() -- deterministic regex planner
-          2. Heuristic verb->intent mapping fallback
+        Three-tier decomposition:
+          1. LLM adapter (AureonBrain) -- intelligent decomposition
+          2. AgentCore.plan_task() -- deterministic regex planner
+          3. Heuristic verb->intent mapping fallback
         """
         plan = GoalPlan(original_text=text, objective=text)
         steps: List[GoalStep] = []
 
-        # Path 1: AgentCore deterministic planner
-        if self._agent_core is not None:
+        # Path 1: LLM-driven decomposition via swarm adapter
+        if self._swarm is not None and hasattr(self._swarm, 'adapter'):
+            try:
+                steps = self._llm_decompose(text)
+            except Exception as exc:
+                logger.debug("LLM decomposition failed: %s", exc)
+
+        # Path 2: AgentCore deterministic planner
+        if not steps and self._agent_core is not None:
             try:
                 raw_steps = self._agent_core.plan_task(text)
                 if raw_steps:
@@ -293,8 +308,7 @@ class GoalExecutionEngine:
             except Exception as exc:
                 logger.debug("AgentCore.plan_task failed: %s", exc)
 
-        # Path 2: Heuristic fallback if no steps from path 1,
-        # or if path 1 only produced generic "think" intents
+        # Path 3: Heuristic fallback if no steps or only generic "think"
         if not steps or all(s.intent == "think" for s in steps):
             heuristic = self._heuristic_decompose(text)
             if heuristic:
@@ -312,6 +326,83 @@ class GoalExecutionEngine:
         plan.steps = steps
         plan.success_criteria = f"All {len(steps)} steps completed and validated"
         return plan
+
+    def _llm_decompose(self, text: str) -> List[GoalStep]:
+        """
+        Use the LLM adapter to intelligently decompose a goal into steps.
+        Parses the response into GoalSteps mapped to AgentCore intents.
+        """
+        adapter = self._swarm.adapter
+        resp = adapter.prompt(
+            messages=[{"role": "user", "content": (
+                f"Break this goal into 2-5 concrete action steps. "
+                f"For each step, output one line: STEP: <action verb> <details>\n\n"
+                f"Goal: {text}\n\n"
+                f"Available actions: search (web search), read (file), list (directory), "
+                f"check (system/network), write (file), run (shell command), "
+                f"create (script/file), analyse (data)\n\n"
+                f"Output steps now:"
+            )}],
+            system="You are a task planner. Output only STEP: lines, nothing else.",
+            max_tokens=512,
+            temperature=0.3,
+        )
+        response_text = resp.text or ""
+        if not response_text:
+            return []
+
+        # Parse STEP: lines from the response
+        steps: List[GoalStep] = []
+        intent_keywords = {
+            "search": "web_search", "google": "web_search", "find": "find_files",
+            "read": "read_file", "open": "read_file",
+            "list": "list_dir", "show": "list_dir",
+            "check": "system_info", "verify": "system_info",
+            "write": "write_file", "create": "create_script",
+            "run": "execute_shell", "execute": "execute_shell",
+            "analyse": "think", "analyze": "think", "evaluate": "think",
+            "install": "execute_shell",
+        }
+
+        for line in response_text.split("\n"):
+            line = line.strip()
+            # Accept lines starting with STEP: or numbered lines
+            if line.upper().startswith("STEP:"):
+                action = line[5:].strip()
+            elif line and line[0].isdigit() and "." in line[:3]:
+                action = line.split(".", 1)[-1].strip()
+            else:
+                continue
+
+            if not action:
+                continue
+
+            # Map first word to an intent
+            first_word = action.split()[0].lower().rstrip(":")
+            intent = intent_keywords.get(first_word, "think")
+            params: Dict[str, Any] = {}
+
+            remainder = action.split(None, 1)[-1] if " " in action else text
+            if intent == "web_search":
+                params["query"] = remainder
+            elif intent in ("read_file", "find_files", "list_dir"):
+                params["path"] = remainder.split()[0] if remainder.split() else "."
+            elif intent == "execute_shell":
+                params["command"] = remainder
+            elif intent in ("write_file", "create_script"):
+                params["path"] = remainder.split()[0] if remainder.split() else "output.txt"
+                params["content"] = remainder
+            else:
+                params["message"] = remainder
+
+            steps.append(GoalStep(
+                title=action[:80],
+                intent=intent,
+                params=params,
+                expected_outcome=f"Successful {intent}: {action[:40]}",
+            ))
+
+        return steps[:5]  # cap at 5 steps
 
     def _heuristic_decompose(self, text: str) -> List[GoalStep]:
         """Verb-based heuristic decomposition for unrecognised patterns."""
@@ -434,24 +525,33 @@ class GoalExecutionEngine:
             except Exception:
                 pass
 
-        # Build agent configs — one specialist per step
+        # Build agent configs — one specialist per step, each with its own prompt
         configs = []
+        step_prompts: Dict[str, str] = {}  # agent_name -> specific task prompt
         for i, step in enumerate(plan.steps):
+            agent_name = f"agent_{step.step_id}"
             configs.append(AgentConfig(
-                name=f"agent_{step.step_id}",
+                name=agent_name,
                 system_prompt=(
                     f"You are Agent {i+1} of {len(plan.steps)} working on: {plan.objective}\n"
                     f"Your specific task: {step.title}\n"
-                    f"Intent: {step.intent}\n"
-                    f"Execute this task and return the result."
+                    f"Execute this task thoroughly. Return a clear, detailed result."
                 ),
                 max_turns=4,
                 max_tokens=1024,
                 temperature=0.5,
                 metadata={"step_id": step.step_id, "intent": step.intent},
             ))
+            # Build a specific prompt for this agent (not the generic objective)
+            step_prompts[agent_name] = (
+                f"Task: {step.title}\n"
+                f"Context: Part of goal '{plan.objective}'\n"
+                f"Action type: {step.intent}\n"
+                f"Parameters: {step.params}\n"
+                f"Provide your analysis, findings, or execution result."
+            )
 
-        # Create team and run in parallel
+        # Create team and use TaskQueue for per-agent specific prompts
         team_name = f"goal_{plan.goal_id}"
         try:
             team = self._swarm.create_team(
@@ -459,19 +559,36 @@ class GoalExecutionEngine:
                 agent_configs=configs,
                 max_concurrent=min(len(configs), 4),
             )
-            results = self._swarm.run_team(
-                team_name, plan.objective, parallel=True,
-            )
 
-            # Map results back to steps
+            # Add per-agent tasks to the queue (each agent gets its OWN prompt)
+            task_ids: Dict[str, str] = {}
             for i, step in enumerate(plan.steps):
                 agent_name = f"agent_{step.step_id}"
-                agent_result = results.get(agent_name, "")
+                task = team.queue.add(
+                    name=f"step_{step.step_id}",
+                    agent_name=agent_name,
+                    prompt=step_prompts[agent_name],
+                    context={"goal_id": plan.goal_id, "step_index": i},
+                )
+                task_ids[step.step_id] = task.id
 
-                if agent_result:
-                    step.result = {"success": True, "result": agent_result, "tool_used": "swarm_agent"}
+            # Execute all tasks (respects DAG dependencies, runs ready ones in parallel)
+            team.run_tasks()
+
+            # Map task results back to steps
+            for step in plan.steps:
+                agent_name = f"agent_{step.step_id}"
+                task_id = task_ids.get(step.step_id)
+                task_result = ""
+                if task_id:
+                    t = team.queue.get_task(task_id)
+                    if t and t.result:
+                        task_result = t.result
+
+                if task_result:
+                    step.result = {"success": True, "result": task_result, "tool_used": "swarm_agent"}
                     step.status = "completed"
-                    step.validation_result = {"valid": True, "reason": "Swarm agent returned result", "confidence": 0.8}
+                    step.validation_result = {"valid": True, "reason": "Swarm agent reasoned", "confidence": 0.85}
                 else:
                     # Swarm agent returned empty — fall back to AgentCore
                     logger.info("Swarm agent %s returned empty, falling back to AgentCore", agent_name)
@@ -619,7 +736,10 @@ class GoalExecutionEngine:
                     pass
 
     def _execute_step(self, step: GoalStep) -> Dict[str, Any]:
-        """Execute a single step via AgentCore."""
+        """
+        Execute a single step: tool dispatch via AgentCore, then LLM
+        analysis of the result for reasoning-heavy intents.
+        """
         if self._agent_core is None:
             return {
                 "success": False,
@@ -630,14 +750,36 @@ class GoalExecutionEngine:
 
         try:
             result = self._agent_core.execute(step.intent, step.params)
-            return result if isinstance(result, dict) else {"success": True, "result": result}
+            if not isinstance(result, dict):
+                result = {"success": True, "result": result}
         except Exception as exc:
-            return {
+            result = {
                 "success": False,
                 "result": None,
                 "tool_used": step.intent,
                 "error": str(exc),
             }
+
+        # LLM post-analysis: have the brain interpret the tool result
+        if result.get("success") and self._swarm is not None:
+            raw = result.get("result")
+            if raw and step.intent in ("web_search", "read_file", "system_info", "network_status"):
+                try:
+                    analysis = self._swarm.adapter.prompt(
+                        messages=[{"role": "user", "content": (
+                            f"Summarise this result for the goal '{step.title}':\n\n"
+                            f"{str(raw)[:1500]}"
+                        )}],
+                        system="You are a concise analyst. Summarise in 2-3 sentences.",
+                        max_tokens=256,
+                        temperature=0.3,
+                    )
+                    if analysis.text:
+                        result["analysis"] = analysis.text
+                except Exception:
+                    pass
+
+        return result
 
     # ------------------------------------------------------------------
     # Validation (anti-hallucination)
