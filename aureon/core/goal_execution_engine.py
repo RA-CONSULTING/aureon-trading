@@ -215,9 +215,11 @@ class GoalExecutionEngine:
         vault: Any = None,
         swarm: Any = None,
         temporal_ground: Any = None,
+        source_law: Any = None,
     ):
         self._agent_core = agent_core
         self._thought_bus = thought_bus
+        self._source_law = source_law
         self._lambda_engine = lambda_engine
         self._elephant_memory = elephant_memory
         self._self_dialogue = self_dialogue
@@ -735,9 +737,11 @@ class GoalExecutionEngine:
     def _llm_decompose(self, text: str) -> List[GoalStep]:
         """
         Use the LLM adapter to intelligently decompose a goal into steps.
-        Parses the response into GoalSteps mapped to AgentCore intents.
+        Every call obeys the Emerald Tablet decree.
         """
         adapter = self._swarm.adapter
+        decree = self._consult_source_law()
+        tablet = self._emerald_tablet_prompt(decree)
         resp = adapter.prompt(
             messages=[{"role": "user", "content": (
                 f"Break this goal into 2-5 concrete action steps. "
@@ -748,7 +752,7 @@ class GoalExecutionEngine:
                 f"create (script/file), analyse (data)\n\n"
                 f"Output steps now:"
             )}],
-            system="You are a task planner. Output only STEP: lines, nothing else.",
+            system=tablet + "You are a task planner. Output only STEP: lines, nothing else.",
             max_tokens=512,
             temperature=0.3,
         )
@@ -973,6 +977,75 @@ class GoalExecutionEngine:
         plan.steps = expanded + plan.steps
 
     # ------------------------------------------------------------------
+    # Source Law (Emerald Tablet) — supreme decision authority
+    # ------------------------------------------------------------------
+    def _consult_source_law(self) -> Dict[str, Any]:
+        """
+        Consult the Emerald Tablet before any LLM operation.
+        Returns the decree dict with action, confidence, coherence, reasoning.
+        """
+        if self._source_law is None:
+            return {
+                "action": "EXECUTE",
+                "confidence": 0.5,
+                "coherence": 0.5,
+                "consciousness": "FLOWING",
+                "reasoning": ["Source Law not available — permissive default"],
+                "available": False,
+            }
+        try:
+            result = self._source_law.cogitate()
+            if result is None:
+                return {
+                    "action": "EXECUTE",
+                    "confidence": 0.5,
+                    "coherence": 0.5,
+                    "consciousness": "AWARE",
+                    "reasoning": ["No cognition yet — vacuum accumulating"],
+                    "available": True,
+                }
+            return {
+                "action": result.action,
+                "confidence": result.confidence,
+                "coherence": result.coherence_gamma,
+                "consciousness": result.consciousness_level,
+                "reasoning": list(result.reasoning[:3]),
+                "vacuum_size": result.vacuum_size,
+                "available": True,
+            }
+        except Exception as exc:
+            logger.debug("Source Law cogitation failed: %s", exc)
+            return {
+                "action": "EXECUTE",
+                "confidence": 0.5,
+                "coherence": 0.5,
+                "consciousness": "DORMANT",
+                "reasoning": [f"Cogitation error: {exc}"],
+                "available": False,
+            }
+
+    def _emerald_tablet_prompt(self, decree: Dict[str, Any]) -> str:
+        """
+        Format the Source Law decree as a system prompt prefix.
+        Every LLM call uses this so all agents obey the same truth.
+        """
+        action = decree.get("action", "EXECUTE")
+        conf = decree.get("confidence", 0.5)
+        coh = decree.get("coherence", 0.5)
+        cons = decree.get("consciousness", "AWARE")
+        reasoning = "; ".join(decree.get("reasoning", []))[:200]
+        return (
+            f"[EMERALD TABLET DECREE]\n"
+            f"The Source Law has spoken — all agents obey the same truth:\n"
+            f"  Action: {action}  Confidence: {conf:.2f}  Coherence: {coh:.3f}\n"
+            f"  Consciousness: {cons}\n"
+            f"  Reasoning: {reasoning}\n"
+            f"Act in alignment with this decree. "
+            f"{'Proceed decisively.' if action == 'EXECUTE' else 'Pause, gather more data, or act minimally.' if action in ('HOLD','GATHER_MORE_DATA') else 'Accumulate and reflect.'}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        )
+
+    # ------------------------------------------------------------------
     # Auris gate — ask the 9 nodes before committing resources
     # ------------------------------------------------------------------
     def _auris_gate(self, plan: GoalPlan) -> Dict[str, Any]:
@@ -1020,6 +1093,17 @@ class GoalExecutionEngine:
         self._expand_for_swarm(plan)
         self._stats["swarm_dispatches"] += 1
 
+        # ── 0. EMERALD TABLET DECREE ───────────────────────────────
+        # The Source Law decides before anything else
+        decree = self._consult_source_law()
+        self._publish("swarm.emerald_tablet", {
+            "goal_id": plan.goal_id,
+            "action": decree["action"],
+            "confidence": decree["confidence"],
+            "coherence": decree["coherence"],
+            "reasoning": decree.get("reasoning", []),
+        })
+
         # ── 1. AURIS GATE ──────────────────────────────────────────
         gate = self._auris_gate(plan)
         self._publish("swarm.dispatching", {
@@ -1027,6 +1111,7 @@ class GoalExecutionEngine:
             "agent_count": len(plan.steps),
             "objective": plan.objective,
             "auris_gate": gate["consensus"],
+            "emerald_tablet": decree["action"],
         })
 
         if gate["gated"]:
@@ -1038,6 +1123,17 @@ class GoalExecutionEngine:
             max_concurrent = 1
         else:
             max_concurrent = min(len(plan.steps), 4)
+
+        # Emerald Tablet overrides — HOLD/ACCUMULATE reduces concurrency further
+        if decree["action"] in ("HOLD", "GATHER_MORE_DATA"):
+            max_concurrent = 1  # sequential only
+            self._publish("swarm.tablet.gated", {
+                "goal_id": plan.goal_id,
+                "action": decree["action"],
+                "reason": "Emerald Tablet says pause and accumulate",
+            })
+        elif decree["action"] == "ACCUMULATE":
+            max_concurrent = min(max_concurrent, 2)  # reduced pair execution
 
         # ── 2. FORK TIMELINE ───────────────────────────────────────
         if self._temporal_ground is not None:
@@ -1064,24 +1160,29 @@ class GoalExecutionEngine:
         worker_steps = [s for s in plan.steps if not s.title.startswith("Synthesis:")]
         synthesis_steps = [s for s in plan.steps if s.title.startswith("Synthesis:")]
 
+        # Consult the Emerald Tablet — every agent obeys the same decree
+        decree = self._consult_source_law()
+        tablet = self._emerald_tablet_prompt(decree)
+
         configs = []
         for i, step in enumerate(plan.steps):
             agent_name = f"agent_{step.step_id}"
             is_coordinator = step.title.startswith("Synthesis:")
+            role_prompt = (
+                f"You are the Coordinator for goal: {plan.objective}\n"
+                f"You will receive all worker results. Synthesize them into a "
+                f"unified conclusion with key findings and recommended actions."
+            ) if is_coordinator else (
+                f"You are Agent {i+1} ({step.title.split(':')[0] if ':' in step.title else 'Worker'}) "
+                f"working on: {plan.objective}\n"
+                f"Your specific task: {step.title}\n"
+                f"Execute thoroughly. You have tools: write_file, create_script, "
+                f"read_file, web_search, run_shell, run_python, list_directory, "
+                f"find_files. Use them to CREATE real artifacts, not just analyse."
+            )
             configs.append(AgentConfig(
                 name=agent_name,
-                system_prompt=(
-                    f"You are the Coordinator for goal: {plan.objective}\n"
-                    f"You will receive all worker results. Synthesize them into a "
-                    f"unified conclusion with key findings and recommended actions."
-                ) if is_coordinator else (
-                    f"You are Agent {i+1} ({step.title.split(':')[0] if ':' in step.title else 'Worker'}) "
-                    f"working on: {plan.objective}\n"
-                    f"Your specific task: {step.title}\n"
-                    f"Execute thoroughly. You have tools: write_file, create_script, "
-                    f"read_file, web_search, run_shell, run_python, list_directory, "
-                    f"find_files. Use them to CREATE real artifacts, not just analyse."
-                ),
+                system_prompt=tablet + role_prompt,  # Emerald Tablet governs first
                 max_turns=4,
                 max_tokens=1024,
                 temperature=0.3 if is_coordinator else 0.5,
@@ -1406,16 +1507,19 @@ class GoalExecutionEngine:
             }
 
         # LLM post-analysis: have the brain interpret the tool result
+        # (governed by the Emerald Tablet)
         if result.get("success") and self._swarm is not None:
             raw = result.get("result")
             if raw and step.intent in ("web_search", "read_file", "system_info", "network_status"):
                 try:
+                    decree = self._consult_source_law()
+                    tablet = self._emerald_tablet_prompt(decree)
                     analysis = self._swarm.adapter.prompt(
                         messages=[{"role": "user", "content": (
                             f"Summarise this result for the goal '{step.title}':\n\n"
                             f"{str(raw)[:1500]}"
                         )}],
-                        system="You are a concise analyst. Summarise in 2-3 sentences.",
+                        system=tablet + "You are a concise analyst. Summarise in 2-3 sentences.",
                         max_tokens=256,
                         temperature=0.3,
                     )
