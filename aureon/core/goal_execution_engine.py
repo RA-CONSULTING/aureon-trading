@@ -187,6 +187,7 @@ class GoalExecutionEngine:
         self._vault = vault
         self._swarm = swarm
         self._temporal_ground = temporal_ground
+        self._agent_tools = self._build_agent_tools()
 
         self._current_plan: Optional[GoalPlan] = None
         self._lock = threading.Lock()
@@ -203,6 +204,120 @@ class GoalExecutionEngine:
             "swarm_dispatches": 0,
             "timelines_forked": 0,
         }
+
+    # ------------------------------------------------------------------
+    # Tool bridge — AgentCore tools available to swarm agents
+    # ------------------------------------------------------------------
+    def _build_agent_tools(self) -> Any:
+        """
+        Bridge AgentCore's 40+ tools into a ToolRegistry so swarm agents
+        can create files, run commands, search the web, and execute code.
+        """
+        if self._swarm is None or self._agent_core is None:
+            return None
+
+        try:
+            from aureon.inhouse_ai.tool_registry import ToolRegistry
+        except Exception:
+            return None
+
+        registry = ToolRegistry(include_builtins=True)
+        ac = self._agent_core
+
+        # Map of tool_name -> (description, schema, AgentCore intent)
+        TOOLS = {
+            "write_file": {
+                "desc": "Write content to a file at the given path",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string", "description": "File path to write"},
+                    "content": {"type": "string", "description": "Content to write"},
+                }, "required": ["path", "content"]},
+                "intent": "write_file",
+            },
+            "create_script": {
+                "desc": "Create a Python script at the given path",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string", "description": "Script file path"},
+                    "content": {"type": "string", "description": "Script content"},
+                }, "required": ["path", "content"]},
+                "intent": "create_script",
+            },
+            "read_file": {
+                "desc": "Read the contents of a file",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string", "description": "File path to read"},
+                }, "required": ["path"]},
+                "intent": "read_file",
+            },
+            "list_directory": {
+                "desc": "List files in a directory",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string", "description": "Directory path"},
+                }, "required": ["path"]},
+                "intent": "list_dir",
+            },
+            "web_search": {
+                "desc": "Search the web for information",
+                "schema": {"type": "object", "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                }, "required": ["query"]},
+                "intent": "web_search",
+            },
+            "run_shell": {
+                "desc": "Execute a shell command and return output",
+                "schema": {"type": "object", "properties": {
+                    "command": {"type": "string", "description": "Shell command to run"},
+                }, "required": ["command"]},
+                "intent": "shell",
+            },
+            "run_python": {
+                "desc": "Execute Python code and return output",
+                "schema": {"type": "object", "properties": {
+                    "code": {"type": "string", "description": "Python code to execute"},
+                }, "required": ["code"]},
+                "intent": "execute_python",
+            },
+            "create_directory": {
+                "desc": "Create a new directory",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string", "description": "Directory path to create"},
+                }, "required": ["path"]},
+                "intent": "create_dir",
+            },
+            "find_files": {
+                "desc": "Find files matching a pattern",
+                "schema": {"type": "object", "properties": {
+                    "pattern": {"type": "string", "description": "Glob pattern (e.g. *.py)"},
+                    "directory": {"type": "string", "description": "Directory to search in"},
+                }, "required": ["pattern"]},
+                "intent": "find_files",
+            },
+            "system_info": {
+                "desc": "Get system information (platform, hostname, etc.)",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "system_info",
+            },
+        }
+
+        import json as _json
+
+        for tool_name, spec in TOOLS.items():
+            intent = spec["intent"]
+
+            def _make_handler(intent_name):
+                def handler(args):
+                    result = ac.execute(intent_name, args)
+                    return _json.dumps(result, default=str)
+                return handler
+
+            registry.define_tool(
+                name=tool_name,
+                description=spec["desc"],
+                input_schema=spec["schema"],
+                handler=_make_handler(intent),
+            )
+
+        return registry
 
     # ------------------------------------------------------------------
     # Publishing helpers
@@ -314,6 +429,19 @@ class GoalExecutionEngine:
             if heuristic:
                 steps = heuristic
 
+        # Path 4: If we detect a file path but no step writes to it, add write_file
+        extracted_path = self._extract_path(text)
+        if extracted_path:
+            has_write = any(s.intent in ("write_file", "create_script") for s in steps)
+            if not has_write:
+                content = self._extract_content(text, extracted_path)
+                steps = [GoalStep(
+                    title=f"Create {extracted_path}",
+                    intent="write_file",
+                    params={"path": extracted_path, "content": content},
+                    expected_outcome=f"File created at {extracted_path}",
+                )]
+
         # Ensure at least one step
         if not steps:
             steps.append(GoalStep(
@@ -404,10 +532,39 @@ class GoalExecutionEngine:
 
         return steps[:5]  # cap at 5 steps
 
+    @staticmethod
+    def _extract_path(text: str) -> str:
+        """Extract a file path from natural language text."""
+        import re
+        # Match explicit paths like /tmp/foo.py, ./bar.txt, aureon/core/x.py
+        m = re.search(r'(?:at\s+|to\s+|in\s+|from\s+)?(/[\w./\-]+\.\w+|\.[\w./\-]+\.\w+|\w+/[\w./\-]+\.\w+)', text)
+        if m:
+            return m.group(1) if m.group(1).startswith(("/", ".")) else m.group(1)
+        return ""
+
+    @staticmethod
+    def _extract_content(text: str, path: str) -> str:
+        """Extract the content description after 'that' or 'with' or 'containing'."""
+        import re
+        m = re.search(r'(?:that|which|with content|containing)\s+(.+)', text, re.IGNORECASE)
+        if m:
+            return m.group(1).strip()
+        # Fallback: everything after the path
+        if path and path in text:
+            after = text.split(path, 1)[-1].strip()
+            if after.startswith("that "):
+                return after[5:]
+            return after if after else text
+        return text
+
     def _heuristic_decompose(self, text: str) -> List[GoalStep]:
         """Verb-based heuristic decomposition for unrecognised patterns."""
         lower = text.lower().strip()
         steps: List[GoalStep] = []
+
+        # Check for explicit file path in the text
+        extracted_path = self._extract_path(text)
+        extracted_content = self._extract_content(text, extracted_path) if extracted_path else ""
 
         for verb, intents in VERB_INTENT_MAP.items():
             if lower.startswith(verb) or f" {verb} " in f" {lower} ":
@@ -424,12 +581,12 @@ class GoalExecutionEngine:
                     elif intent in ("execute_shell", "run_command"):
                         params["command"] = remainder or text
                     elif intent in ("write_file", "create_script"):
-                        params["path"] = remainder.split()[0] if remainder else "output.txt"
-                        params["content"] = text
+                        params["path"] = extracted_path or (remainder.split()[0] if remainder else "output.txt")
+                        params["content"] = extracted_content or text
                     elif intent in ("list_dir", "ls", "dir"):
                         params["path"] = "."
                     elif intent in ("read_file", "cat"):
-                        params["path"] = remainder.split()[0] if remainder else "."
+                        params["path"] = extracted_path or (remainder.split()[0] if remainder else ".")
                     elif intent in ("speak", "say"):
                         params["text"] = remainder or text
                     elif intent == "think":
@@ -597,7 +754,9 @@ class GoalExecutionEngine:
                     f"You are Agent {i+1} ({step.title.split(':')[0] if ':' in step.title else 'Worker'}) "
                     f"working on: {plan.objective}\n"
                     f"Your specific task: {step.title}\n"
-                    f"Execute thoroughly. Return clear findings."
+                    f"Execute thoroughly. You have tools: write_file, create_script, "
+                    f"read_file, web_search, run_shell, run_python, list_directory, "
+                    f"find_files. Use them to CREATE real artifacts, not just analyse."
                 ),
                 max_turns=4,
                 max_tokens=1024,
@@ -614,12 +773,19 @@ class GoalExecutionEngine:
             team = self._swarm.create_team(
                 name=team_name,
                 agent_configs=configs,
+                tools=self._agent_tools,  # agents can create files, run code, search web
                 max_concurrent=max_concurrent,
             )
 
             # ── 4. EXECUTE — add tasks with dependencies ───────────
             worker_task_ids: List[str] = []
             task_id_map: Dict[str, str] = {}
+
+            # Creation intents — execute tool first, then reason about result
+            CREATION_INTENTS = {
+                "write_file", "create_script", "create_dir", "execute_shell",
+                "execute_python", "run_command", "shell", "copy_file", "move_file",
+            }
 
             # Workers run in parallel (no dependencies on each other)
             for i, step in enumerate(worker_steps):
@@ -631,6 +797,16 @@ class GoalExecutionEngine:
                     "title": step.title,
                     "role": "worker",
                 })
+
+                # For creation intents, execute the tool first
+                tool_output = ""
+                if step.intent in CREATION_INTENTS and self._agent_core is not None:
+                    try:
+                        tool_result = self._agent_core.execute(step.intent, step.params)
+                        tool_output = f"\n\nTool executed: {step.intent}\nResult: {str(tool_result)[:500]}"
+                    except Exception as exc:
+                        tool_output = f"\n\nTool execution failed: {exc}"
+
                 task = team.queue.add(
                     name=f"worker_{step.step_id}",
                     agent_name=agent_name,
@@ -639,7 +815,8 @@ class GoalExecutionEngine:
                         f"Goal: {plan.objective}\n"
                         f"Action: {step.intent}\n"
                         f"Parameters: {step.params}\n"
-                        f"Provide detailed findings."
+                        f"{'Provide detailed findings.' if not tool_output else 'The tool has been executed. Describe what was created and verify the result.'}"
+                        f"{tool_output}"
                     ),
                     context={"goal_id": plan.goal_id, "step_index": i},
                 )
