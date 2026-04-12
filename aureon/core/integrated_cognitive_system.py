@@ -164,6 +164,27 @@ except Exception:
     _QueenMetacognition = None  # type: ignore[assignment,misc]
     _HAS_METACOGNITION = False
 
+try:
+    from aureon.swarm_motion.love_stream import StandingWaveLoveStream
+    _HAS_LOVE_STREAM = True
+except Exception:
+    StandingWaveLoveStream = None  # type: ignore[assignment,misc]
+    _HAS_LOVE_STREAM = False
+
+try:
+    from aureon.integrations import wire_integrations
+    _HAS_INTEGRATIONS = True
+except Exception:
+    wire_integrations = None  # type: ignore[assignment]
+    _HAS_INTEGRATIONS = False
+
+try:
+    from aureon.queen.queen_conscience import QueenConscience as _QueenConscience
+    _HAS_CONSCIENCE = True
+except Exception:
+    _QueenConscience = None  # type: ignore[assignment,misc]
+    _HAS_CONSCIENCE = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -197,6 +218,8 @@ class IntegratedCognitiveSystem:
         self.temporal_ground: Any = None  # TemporalGroundStation
         self.mycelium_mind: Any = None   # Thought propagation + synaptic learning
         self.metacognition: Any = None   # 5W self-reflection loop
+        self.love_stream: Any = None    # 528 Hz love stream + Λ(t) synthesis
+        self.conscience: Any = None     # Ethical compass (Jiminy Cricket)
 
         # State
         self._running = False
@@ -296,7 +319,22 @@ class IntegratedCognitiveSystem:
             self.metacognition.start()
         _boot_phase("metacognition", boot_metacognition)
 
-        # Phase 10: Agent Core
+        # Phase 10: Love Stream (528 Hz love signal → vault love_amplitude)
+        def boot_love_stream():
+            if not _HAS_LOVE_STREAM:
+                raise RuntimeError("import failed")
+            self.love_stream = StandingWaveLoveStream(sample_rate_hz=1.0)
+            self.love_stream.start()
+        _boot_phase("love_stream", boot_love_stream)
+
+        # Phase 11: Conscience (ethical compass — Jiminy Cricket)
+        def boot_conscience():
+            if not _HAS_CONSCIENCE:
+                raise RuntimeError("import failed")
+            self.conscience = _QueenConscience()
+        _boot_phase("conscience", boot_conscience)
+
+        # Phase 12: Agent Core
         def boot_agent():
             if not _HAS_AGENT_CORE:
                 raise RuntimeError("import failed")
@@ -382,6 +420,13 @@ class IntegratedCognitiveSystem:
                 raise RuntimeError("import failed")
             self.vault_app = create_vault_app(loop=self.feedback_loop)
         _boot_phase("vault_ui", boot_vault_ui)
+
+        # Phase 23: Wire integrations (Ollama + Obsidian into vault/loop)
+        def boot_integrations():
+            if not _HAS_INTEGRATIONS:
+                raise RuntimeError("import failed")
+            wire_integrations(vault=self.vault, loop=self.feedback_loop)
+        _boot_phase("integrations", boot_integrations)
 
         self._boot_status = status
         return status
@@ -568,6 +613,19 @@ class IntegratedCognitiveSystem:
             except Exception:
                 pass
 
+        # VAULT FEED: ingest tick state so Auris/Casimir have cards to work with
+        if self.vault is not None:
+            try:
+                self.vault.ingest("ics.tick", {
+                    "lambda_t": source_state.get("lambda_t", 0.0),
+                    "coherence": source_state.get("coherence_gamma", 0.0),
+                    "consciousness": source_state.get("consciousness_level", ""),
+                    "auris": hnc_state.get("auris_consensus", "NEUTRAL"),
+                    "tick": self._tick_count,
+                }, category="ics_tick")
+            except Exception:
+                pass
+
     # ------------------------------------------------------------------
     # User input processing
     # ------------------------------------------------------------------
@@ -663,7 +721,9 @@ class IntegratedCognitiveSystem:
             lines.append(f"  Standalone agents: {len(agents)}")
             if self.temporal_ground is not None:
                 tg = self.temporal_ground
-                lines.append(f"  Timeline chain: length={tg._chain.chain_length if hasattr(tg, '_chain') else '?'}")
+                hc = getattr(tg, '_hash_chain', None)
+                cl = getattr(hc, '_chain_length', '?') if hc else '?'
+                lines.append(f"  Timeline chain: length={cl}")
             return "\n".join(lines)
         except Exception as exc:
             return f"Swarm status error: {exc}"
@@ -717,9 +777,72 @@ class IntegratedCognitiveSystem:
             return "127.0.0.1"
 
     # ------------------------------------------------------------------
+    # Remote tunnel (4G / internet access)
+    # ------------------------------------------------------------------
+    def _start_tunnel(self, port: int) -> Optional[str]:
+        """
+        Start a tunnel so the phone can reach the ICS over 4G / internet.
+        Tries cloudflared → ngrok → pyngrok in order.
+        Returns the public URL or None.
+        """
+        import subprocess as _sp
+        import shutil
+
+        # Try 1: cloudflared (Cloudflare Tunnel — free, no signup)
+        if shutil.which("cloudflared"):
+            try:
+                proc = _sp.Popen(
+                    ["cloudflared", "tunnel", "--url", f"http://127.0.0.1:{port}"],
+                    stdout=_sp.PIPE, stderr=_sp.PIPE, text=True,
+                )
+                self._tunnel_proc = proc
+                # cloudflared prints the URL to stderr
+                import time as _time
+                for _ in range(30):
+                    line = proc.stderr.readline()
+                    if "trycloudflare.com" in line or "cfargotunnel.com" in line:
+                        import re
+                        m = re.search(r'(https://[^\s]+)', line)
+                        if m:
+                            return m.group(1)
+                    _time.sleep(0.5)
+            except Exception as exc:
+                logger.debug("cloudflared failed: %s", exc)
+
+        # Try 2: ngrok CLI
+        if shutil.which("ngrok"):
+            try:
+                proc = _sp.Popen(
+                    ["ngrok", "http", str(port), "--log", "stdout"],
+                    stdout=_sp.PIPE, stderr=_sp.PIPE, text=True,
+                )
+                self._tunnel_proc = proc
+                import time as _time
+                for _ in range(20):
+                    line = proc.stdout.readline()
+                    if "url=" in line and "ngrok" in line:
+                        import re
+                        m = re.search(r'url=(https://[^\s]+)', line)
+                        if m:
+                            return m.group(1)
+                    _time.sleep(0.5)
+            except Exception as exc:
+                logger.debug("ngrok failed: %s", exc)
+
+        # Try 3: pyngrok (Python package)
+        try:
+            from pyngrok import ngrok as _ngrok
+            tunnel = _ngrok.connect(port, "http")
+            return tunnel.public_url
+        except Exception:
+            pass
+
+        return None
+
+    # ------------------------------------------------------------------
     # Main run loop
     # ------------------------------------------------------------------
-    def run(self, lan: bool = False, port: int = 5566) -> None:
+    def run(self, lan: bool = False, remote: bool = False, port: int = 5566) -> None:
         """
         Main entry point. Boots subsystems, starts dashboard and tick thread,
         starts the vault UI server (with Phi Bridge for phone access),
@@ -727,6 +850,7 @@ class IntegratedCognitiveSystem:
 
         Args:
             lan: If True, bind on 0.0.0.0 so phones on the same WiFi can connect.
+            remote: If True, start a tunnel (cloudflared/ngrok) for 4G access.
             port: Port for the vault UI / Phi Bridge server (default 5566).
         """
         # Boot
@@ -748,14 +872,28 @@ class IntegratedCognitiveSystem:
         # Live data is available via /status command, Vault UI web, and phone.
 
         # Start Vault UI + Phi Bridge server
-        ui_host = "0.0.0.0" if lan else "127.0.0.1"
+        ui_host = "0.0.0.0" if (lan or remote) else "127.0.0.1"
         if self.vault_app is not None:
             self._start_vault_ui(host=ui_host, port=port)
-            lan_ip = self._detect_lan_ip() if lan else "127.0.0.1"
+            lan_ip = self._detect_lan_ip() if (lan or remote) else "127.0.0.1"
             print(f"  Vault UI:    http://{lan_ip}:{port}/")
             if lan:
                 print(f"  Phi Bridge:  http://{lan_ip}:{port}/bridge")
-                print(f"  (Phone: open the bridge URL on the same WiFi)")
+                print(f"  (Phone: same WiFi → open the bridge URL)")
+
+            # Remote tunnel for 4G / internet access
+            if remote:
+                print(f"  Starting tunnel for 4G access...")
+                tunnel_url = self._start_tunnel(port)
+                if tunnel_url:
+                    print(f"  Remote URL:  {tunnel_url}")
+                    print(f"  Phone (4G):  {tunnel_url}/bridge")
+                    print(f"  (Open this URL on your phone — works over 4G, anywhere)")
+                else:
+                    print(f"  Tunnel failed. Install one of:")
+                    print(f"    cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/")
+                    print(f"    ngrok:       https://ngrok.com/download")
+                    print(f"    pyngrok:     pip install pyngrok")
             print()
 
         print("  Commands: /status  /goal  /pause  /resume  /cancel  /coherence  /quit")
@@ -817,6 +955,12 @@ class IntegratedCognitiveSystem:
         if self.metacognition is not None:
             try:
                 self.metacognition.stop()
+            except Exception:
+                pass
+
+        if self.love_stream is not None:
+            try:
+                self.love_stream.stop()
             except Exception:
                 pass
 

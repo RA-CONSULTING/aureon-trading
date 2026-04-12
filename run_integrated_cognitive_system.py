@@ -9,6 +9,7 @@ and accepts user goals via stdin.
 Usage:
     python run_integrated_cognitive_system.py
     python run_integrated_cognitive_system.py --lan
+    python run_integrated_cognitive_system.py --remote
     python run_integrated_cognitive_system.py --lan --port 8080
 """
 
@@ -36,6 +37,11 @@ def main() -> None:
              "Phi Bridge at http://<LAN_IP>:<port>/bridge",
     )
     parser.add_argument(
+        "--remote", action="store_true",
+        help="Start a tunnel (cloudflared/ngrok) so your phone on 4G "
+             "can reach the system from anywhere on the internet",
+    )
+    parser.add_argument(
         "--port", type=int, default=5566,
         help="Port for the Vault UI + Phi Bridge server (default 5566)",
     )
@@ -50,7 +56,7 @@ def main() -> None:
 
     ics = IntegratedCognitiveSystem()
     try:
-        ics.run(lan=args.lan, port=args.port)
+        ics.run(lan=args.lan, remote=args.remote, port=args.port)
     except KeyboardInterrupt:
         pass
     finally:

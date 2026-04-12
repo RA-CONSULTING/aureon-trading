@@ -667,11 +667,19 @@ class GoalExecutionEngine:
           2. AgentCore.plan_task() -- deterministic regex planner
           3. Heuristic verb->intent mapping fallback
         """
+        import re as _re
         plan = GoalPlan(original_text=text, objective=text)
         steps: List[GoalStep] = []
 
-        # Path 1: LLM-driven decomposition via swarm adapter
-        if self._swarm is not None and hasattr(self._swarm, 'adapter'):
+        # Path 0: If text contains "and"/"then" chain words, prefer heuristic
+        # split so multi-step desktop commands work ("open X and type Y then press Z")
+        if _re.search(r'\b(?:and then|then|and)\b', text.lower()):
+            heuristic = self._heuristic_decompose(text)
+            if len(heuristic) >= 2:
+                steps = heuristic
+
+        # Path 1: LLM-driven decomposition via swarm adapter (only if no steps yet)
+        if not steps and self._swarm is not None and hasattr(self._swarm, 'adapter'):
             try:
                 steps = self._llm_decompose(text)
             except Exception as exc:
@@ -845,9 +853,14 @@ class GoalExecutionEngine:
         extracted_path = self._extract_path(text)
         extracted_content = self._extract_content(text, extracted_path) if extracted_path else ""
 
+        # For chained clauses (single verbs), take only the first intent.
+        # For full goals ("build a website"), take all intents as steps.
+        is_single_clause = len(lower.split()) <= 5
+
         for verb, intents in VERB_INTENT_MAP.items():
             if lower.startswith(verb) or f" {verb} " in f" {lower} ":
-                for intent in intents:
+                use_intents = intents[:1] if is_single_clause else intents
+                for intent in use_intents:
                     params: Dict[str, Any] = {}
                     # Extract the object of the verb as the primary param
                     remainder = lower.split(verb, 1)[-1].strip().strip('"\'')
