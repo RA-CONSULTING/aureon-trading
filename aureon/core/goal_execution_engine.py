@@ -74,6 +74,22 @@ except Exception:
     AurisMetacognition = None  # type: ignore[assignment,misc]
     _HAS_AURIS = False
 
+try:
+    from aureon.inhouse_ai.orchestrator import OpenMultiAgent
+    from aureon.inhouse_ai.agent import AgentConfig
+    _HAS_SWARM = True
+except Exception:
+    OpenMultiAgent = None  # type: ignore[assignment,misc]
+    AgentConfig = None  # type: ignore[assignment,misc]
+    _HAS_SWARM = False
+
+try:
+    from aureon.queen.temporal_ground import get_temporal_ground_station
+    _HAS_TEMPORAL = True
+except Exception:
+    get_temporal_ground_station = None  # type: ignore[assignment]
+    _HAS_TEMPORAL = False
+
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -152,6 +168,8 @@ class GoalExecutionEngine:
         self_dialogue: Any = None,
         auris: Any = None,
         vault: Any = None,
+        swarm: Any = None,
+        temporal_ground: Any = None,
     ):
         self._agent_core = agent_core
         self._thought_bus = thought_bus
@@ -160,6 +178,8 @@ class GoalExecutionEngine:
         self._self_dialogue = self_dialogue
         self._auris = auris
         self._vault = vault
+        self._swarm = swarm
+        self._temporal_ground = temporal_ground
 
         self._current_plan: Optional[GoalPlan] = None
         self._lock = threading.Lock()
@@ -173,6 +193,8 @@ class GoalExecutionEngine:
             "goals_failed": 0,
             "steps_executed": 0,
             "steps_validated": 0,
+            "swarm_dispatches": 0,
+            "timelines_forked": 0,
         }
 
     # ------------------------------------------------------------------
@@ -335,9 +357,178 @@ class GoalExecutionEngine:
         return steps
 
     # ------------------------------------------------------------------
+    # Swarm dispatch (parallel multi-agent execution)
+    # ------------------------------------------------------------------
+    def _can_swarm(self, plan: GoalPlan) -> bool:
+        """Determine if this plan benefits from swarm (parallel) execution."""
+        if self._swarm is None:
+            return False
+        # Swarm dispatch for plans with 3+ independent steps
+        if len(plan.steps) >= 3:
+            return True
+        # Or if the goal text signals multi-agent intent
+        lower = plan.original_text.lower()
+        swarm_signals = ["compare", "analyse", "analyze", "research", "investigate",
+                         "parallel", "multiple", "agents", "team", "swarm",
+                         "perspectives", "opinions", "evaluate"]
+        return any(sig in lower for sig in swarm_signals)
+
+    def _expand_for_swarm(self, plan: GoalPlan) -> None:
+        """
+        If a plan has fewer than 3 steps but was flagged for swarm,
+        auto-expand into parallel agent perspectives so the swarm
+        has something to parallelize.
+        """
+        if len(plan.steps) >= 3:
+            return
+        # Create specialist agents for the same objective
+        perspectives = [
+            ("Analyst", "Perform quantitative analysis"),
+            ("Scout", "Search for the latest data and news"),
+            ("Architect", "Design a structured approach"),
+        ]
+        expanded: List[GoalStep] = []
+        for role, desc in perspectives:
+            expanded.append(GoalStep(
+                title=f"{role}: {plan.objective[:50]}",
+                intent="think",
+                params={"message": f"[{role}] {desc}: {plan.objective}"},
+                expected_outcome=f"{role} perspective completed",
+            ))
+        # Keep original steps as final synthesis
+        for s in plan.steps:
+            s.title = f"Synthesis: {s.title}"
+        plan.steps = expanded + plan.steps
+
+    def _execute_plan_swarm(self, plan: GoalPlan) -> None:
+        """
+        Execute a plan using the swarm: spawn parallel agents, one per step,
+        fork a timeline, collect results, merge back.
+        """
+        self._expand_for_swarm(plan)
+        self._stats["swarm_dispatches"] += 1
+        self._publish("swarm.dispatching", {
+            "goal_id": plan.goal_id,
+            "agent_count": len(plan.steps),
+            "objective": plan.objective,
+        })
+
+        # Fork timeline
+        if self._temporal_ground is not None:
+            try:
+                coherence = self._get_coherence()
+                report = self._temporal_ground.tick(
+                    lambda_t=0.0,
+                    coherence_gamma=coherence,
+                    consciousness_psi=0.5,
+                    auris_consensus="NEUTRAL",
+                )
+                if report.forked:
+                    self._stats["timelines_forked"] += 1
+                self._publish("swarm.timeline.forked", {
+                    "goal_id": plan.goal_id,
+                    "chain_length": report.chain_length,
+                    "branches": report.active_branches,
+                    "forked": report.forked,
+                })
+            except Exception:
+                pass
+
+        # Build agent configs — one specialist per step
+        configs = []
+        for i, step in enumerate(plan.steps):
+            configs.append(AgentConfig(
+                name=f"agent_{step.step_id}",
+                system_prompt=(
+                    f"You are Agent {i+1} of {len(plan.steps)} working on: {plan.objective}\n"
+                    f"Your specific task: {step.title}\n"
+                    f"Intent: {step.intent}\n"
+                    f"Execute this task and return the result."
+                ),
+                max_turns=4,
+                max_tokens=1024,
+                temperature=0.5,
+                metadata={"step_id": step.step_id, "intent": step.intent},
+            ))
+
+        # Create team and run in parallel
+        team_name = f"goal_{plan.goal_id}"
+        try:
+            team = self._swarm.create_team(
+                name=team_name,
+                agent_configs=configs,
+                max_concurrent=min(len(configs), 4),
+            )
+            results = self._swarm.run_team(
+                team_name, plan.objective, parallel=True,
+            )
+
+            # Map results back to steps
+            for i, step in enumerate(plan.steps):
+                agent_name = f"agent_{step.step_id}"
+                agent_result = results.get(agent_name, "")
+
+                if agent_result:
+                    step.result = {"success": True, "result": agent_result, "tool_used": "swarm_agent"}
+                    step.status = "completed"
+                    step.validation_result = {"valid": True, "reason": "Swarm agent returned result", "confidence": 0.8}
+                else:
+                    # Fallback: try executing via AgentCore
+                    step.result = self._execute_step(step)
+                    step.validation_result = self._validate_step(step)
+                    step.status = "completed" if step.validation_result.get("valid") else "failed"
+
+                step.coherence_at_execution = self._get_coherence()
+                self._stats["steps_executed"] += 1
+                self._stats["steps_validated"] += 1
+
+                status_topic = "goal.step.completed" if step.status == "completed" else "goal.step.failed"
+                self._publish(status_topic, {
+                    "goal_id": plan.goal_id,
+                    "step_id": step.step_id,
+                    "title": step.title,
+                    "via": "swarm",
+                })
+
+        except Exception as exc:
+            logger.warning("Swarm execution failed, falling back to sequential: %s", exc)
+            self._publish("swarm.fallback", {"goal_id": plan.goal_id, "error": str(exc)})
+            self._execute_plan_sequential(plan)
+            return
+
+        # Merge timeline back
+        if self._temporal_ground is not None:
+            try:
+                coherence = self._get_coherence()
+                self._temporal_ground.tick(
+                    lambda_t=0.0,
+                    coherence_gamma=max(coherence, 0.95),
+                    consciousness_psi=0.7,
+                    auris_consensus="BUY",
+                )
+            except Exception:
+                pass
+
+        self._publish("swarm.completed", {
+            "goal_id": plan.goal_id,
+            "agents": len(plan.steps),
+            "completed": sum(1 for s in plan.steps if s.status == "completed"),
+        })
+
+    # ------------------------------------------------------------------
     # Execution
     # ------------------------------------------------------------------
     def _execute_plan(self, plan: GoalPlan) -> None:
+        """
+        Execute plan. If swarm is available and plan qualifies,
+        use parallel multi-agent dispatch. Otherwise sequential.
+        """
+        if self._can_swarm(plan):
+            self._execute_plan_swarm(plan)
+        else:
+            self._execute_plan_sequential(plan)
+
+    def _execute_plan_sequential(self, plan: GoalPlan) -> None:
         """Execute each step: coherence check -> monologue -> execute -> validate -> advance."""
         for i, step in enumerate(plan.steps):
             # Check cancellation

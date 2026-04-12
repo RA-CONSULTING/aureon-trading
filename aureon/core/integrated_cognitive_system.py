@@ -134,6 +134,22 @@ except Exception:
     _run_vault_server = None  # type: ignore[assignment]
     _HAS_VAULT_UI = False
 
+try:
+    from aureon.inhouse_ai.orchestrator import OpenMultiAgent
+    from aureon.inhouse_ai.agent import AgentConfig
+    _HAS_SWARM = True
+except Exception:
+    OpenMultiAgent = None  # type: ignore[assignment,misc]
+    AgentConfig = None  # type: ignore[assignment,misc]
+    _HAS_SWARM = False
+
+try:
+    from aureon.queen.temporal_ground import get_temporal_ground_station
+    _HAS_TEMPORAL = True
+except Exception:
+    get_temporal_ground_station = None  # type: ignore[assignment]
+    _HAS_TEMPORAL = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -163,6 +179,8 @@ class IntegratedCognitiveSystem:
         self.dashboard: Any = None
         self.phi_bridge: Any = None
         self.vault_app: Any = None
+        self.swarm: Any = None           # OpenMultiAgent orchestrator
+        self.temporal_ground: Any = None  # TemporalGroundStation
 
         # State
         self._running = False
@@ -267,7 +285,21 @@ class IntegratedCognitiveSystem:
             self.elephant_memory = ElephantMemory()
         _boot_phase("elephant_memory", boot_elephant)
 
-        # Phase 11: Goal Execution Engine (wired to all above)
+        # Phase 11: Swarm (OpenMultiAgent — parallel agent teams)
+        def boot_swarm():
+            if not _HAS_SWARM:
+                raise RuntimeError("import failed")
+            self.swarm = OpenMultiAgent()
+        _boot_phase("swarm", boot_swarm)
+
+        # Phase 12: Temporal Ground (timeline forking / multiverse hash)
+        def boot_temporal():
+            if not _HAS_TEMPORAL:
+                raise RuntimeError("import failed")
+            self.temporal_ground = get_temporal_ground_station(thought_bus=self.thought_bus)
+        _boot_phase("temporal_ground", boot_temporal)
+
+        # Phase 13: Goal Execution Engine (wired to all above incl. swarm + temporal)
         def boot_goal_engine():
             if not _HAS_GOAL_ENGINE:
                 raise RuntimeError("import failed")
@@ -279,6 +311,8 @@ class IntegratedCognitiveSystem:
                 self_dialogue=self.self_dialogue,
                 auris=self.auris,
                 vault=self.vault,
+                swarm=self.swarm,
+                temporal_ground=self.temporal_ground,
             )
         _boot_phase("goal_engine", boot_goal_engine)
 
@@ -507,6 +541,8 @@ class IntegratedCognitiveSystem:
         # Commands
         if text == "/status":
             return self._cmd_status()
+        elif text == "/swarm":
+            return self._cmd_swarm_status()
         elif text == "/goal":
             return self._cmd_goal_status()
         elif text == "/pause":
@@ -560,6 +596,26 @@ class IntegratedCognitiveSystem:
         if active:
             lines.append(f"Active: {active['title']}")
         return "\n".join(lines)
+
+    def _cmd_swarm_status(self) -> str:
+        if self.swarm is None:
+            return "Swarm (OpenMultiAgent) not available."
+        try:
+            st = self.swarm.get_status()
+            teams = st.get("teams", {})
+            agents = st.get("standalone_agents", [])
+            lines = ["=== SWARM STATUS ==="]
+            lines.append(f"  Adapter: {st.get('adapter', 'unknown')}")
+            lines.append(f"  Teams:   {len(teams)}")
+            for tname, tinfo in teams.items():
+                lines.append(f"    [{tname}] agents={tinfo.get('agents', 0)} tasks={tinfo.get('tasks', {})}")
+            lines.append(f"  Standalone agents: {len(agents)}")
+            if self.temporal_ground is not None:
+                tg = self.temporal_ground
+                lines.append(f"  Timeline chain: length={tg._chain.chain_length if hasattr(tg, '_chain') else '?'}")
+            return "\n".join(lines)
+        except Exception as exc:
+            return f"Swarm status error: {exc}"
 
     def _cmd_coherence(self) -> str:
         if self.lambda_engine is None:
