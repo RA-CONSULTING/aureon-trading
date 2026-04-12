@@ -185,6 +185,20 @@ except Exception:
     _QueenConscience = None  # type: ignore[assignment,misc]
     _HAS_CONSCIENCE = False
 
+try:
+    from aureon.queen.queen_source_law import SourceLawEngine
+    _HAS_SOURCE_LAW = True
+except Exception:
+    SourceLawEngine = None  # type: ignore[assignment,misc]
+    _HAS_SOURCE_LAW = False
+
+try:
+    from aureon.swarm_motion.as_above_so_below import AsAboveSoBelowMirror
+    _HAS_MIRROR = True
+except Exception:
+    AsAboveSoBelowMirror = None  # type: ignore[assignment,misc]
+    _HAS_MIRROR = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -220,6 +234,8 @@ class IntegratedCognitiveSystem:
         self.metacognition: Any = None   # 5W self-reflection loop
         self.love_stream: Any = None    # 528 Hz love stream + Λ(t) synthesis
         self.conscience: Any = None     # Ethical compass (Jiminy Cricket)
+        self.source_law: Any = None    # The Emerald Tablet — 10-9-1 decision funnel
+        self.mirror: Any = None        # As Above So Below — Hermetic reflection
 
         # State
         self._running = False
@@ -334,7 +350,23 @@ class IntegratedCognitiveSystem:
             self.conscience = _QueenConscience()
         _boot_phase("conscience", boot_conscience)
 
-        # Phase 12: Agent Core
+        # Phase 12: Source Law Engine (The Emerald Tablet — 10-9-1 decision funnel)
+        def boot_source_law():
+            if not _HAS_SOURCE_LAW:
+                raise RuntimeError("import failed")
+            self.source_law = SourceLawEngine()
+            self.source_law.start()
+        _boot_phase("source_law", boot_source_law)
+
+        # Phase 13: As Above So Below Mirror (Hermetic reflection)
+        def boot_mirror():
+            if not _HAS_MIRROR or self.love_stream is None:
+                raise RuntimeError("import failed or love_stream not available")
+            self.mirror = AsAboveSoBelowMirror(love_stream=self.love_stream)
+            self.mirror.start()
+        _boot_phase("mirror", boot_mirror)
+
+        # Phase 14: Agent Core
         def boot_agent():
             if not _HAS_AGENT_CORE:
                 raise RuntimeError("import failed")
@@ -626,6 +658,27 @@ class IntegratedCognitiveSystem:
             except Exception:
                 pass
 
+        # SOURCE LAW: The Emerald Tablet — cogitate every 5th tick
+        # (not every tick — cognition needs accumulated signals)
+        if self.source_law is not None and self._tick_count % 5 == 0:
+            try:
+                result = self.source_law.cogitate()
+                if result is not None:
+                    try:
+                        bus.publish("ics.source_law.cognition", {
+                            "action": result.action,
+                            "confidence": result.confidence,
+                            "coherence": result.coherence_gamma,
+                            "consciousness": result.consciousness_level,
+                            "symbol": result.dominant_symbol,
+                            "vacuum_size": result.vacuum_size,
+                            "cycle": result.cogitation_cycle,
+                        }, source="ics")
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
     # ------------------------------------------------------------------
     # User input processing
     # ------------------------------------------------------------------
@@ -668,6 +721,8 @@ class IntegratedCognitiveSystem:
             return "Goal cancelled."
         elif text == "/coherence":
             return self._cmd_coherence()
+        elif text == "/decree":
+            return self._cmd_decree()
         elif text == "/quit":
             return "__QUIT__"
 
@@ -727,6 +782,36 @@ class IntegratedCognitiveSystem:
             return "\n".join(lines)
         except Exception as exc:
             return f"Swarm status error: {exc}"
+
+    def _cmd_decree(self) -> str:
+        """The Emerald Tablet's last decree — Source Law cognition result."""
+        if self.source_law is None:
+            return "Source Law Engine not available."
+        result = getattr(self.source_law, '_last_result', None)
+        if result is None:
+            # Force a cogitation
+            try:
+                result = self.source_law.cogitate()
+            except Exception as exc:
+                return f"Cogitation failed: {exc}"
+        if result is None:
+            return "No cognition yet. Vacuum is accumulating signals."
+        lines = [
+            "=== EMERALD TABLET DECREE ===",
+            f"  Action:        {result.action}",
+            f"  Confidence:    {result.confidence:.2f}",
+            f"  Coherence:     {result.coherence_gamma:.3f}",
+            f"  Consciousness: {result.consciousness_level} (psi={result.consciousness_psi:.3f})",
+            f"  Vacuum size:   {result.vacuum_size} signals accumulated",
+            f"  Cycle:         {result.cogitation_cycle}",
+        ]
+        if result.dominant_symbol:
+            lines.append(f"  Symbol:        {result.dominant_symbol}")
+        if result.reasoning:
+            lines.append(f"  Reasoning:")
+            for r in result.reasoning[:5]:
+                lines.append(f"    - {r}")
+        return "\n".join(lines)
 
     def _cmd_coherence(self) -> str:
         if self.lambda_engine is None:
@@ -961,6 +1046,18 @@ class IntegratedCognitiveSystem:
         if self.love_stream is not None:
             try:
                 self.love_stream.stop()
+            except Exception:
+                pass
+
+        if self.source_law is not None:
+            try:
+                self.source_law.stop()
+            except Exception:
+                pass
+
+        if self.mirror is not None:
+            try:
+                self.mirror.stop()
             except Exception:
                 pass
 
