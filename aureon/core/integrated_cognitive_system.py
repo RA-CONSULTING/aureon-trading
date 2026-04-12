@@ -164,6 +164,27 @@ except Exception:
     _QueenMetacognition = None  # type: ignore[assignment,misc]
     _HAS_METACOGNITION = False
 
+try:
+    from aureon.swarm_motion.love_stream import StandingWaveLoveStream
+    _HAS_LOVE_STREAM = True
+except Exception:
+    StandingWaveLoveStream = None  # type: ignore[assignment,misc]
+    _HAS_LOVE_STREAM = False
+
+try:
+    from aureon.integrations import wire_integrations
+    _HAS_INTEGRATIONS = True
+except Exception:
+    wire_integrations = None  # type: ignore[assignment]
+    _HAS_INTEGRATIONS = False
+
+try:
+    from aureon.queen.queen_conscience import QueenConscience as _QueenConscience
+    _HAS_CONSCIENCE = True
+except Exception:
+    _QueenConscience = None  # type: ignore[assignment,misc]
+    _HAS_CONSCIENCE = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -197,6 +218,8 @@ class IntegratedCognitiveSystem:
         self.temporal_ground: Any = None  # TemporalGroundStation
         self.mycelium_mind: Any = None   # Thought propagation + synaptic learning
         self.metacognition: Any = None   # 5W self-reflection loop
+        self.love_stream: Any = None    # 528 Hz love stream + Λ(t) synthesis
+        self.conscience: Any = None     # Ethical compass (Jiminy Cricket)
 
         # State
         self._running = False
@@ -296,7 +319,22 @@ class IntegratedCognitiveSystem:
             self.metacognition.start()
         _boot_phase("metacognition", boot_metacognition)
 
-        # Phase 10: Agent Core
+        # Phase 10: Love Stream (528 Hz love signal → vault love_amplitude)
+        def boot_love_stream():
+            if not _HAS_LOVE_STREAM:
+                raise RuntimeError("import failed")
+            self.love_stream = StandingWaveLoveStream(sample_rate_hz=1.0)
+            self.love_stream.start()
+        _boot_phase("love_stream", boot_love_stream)
+
+        # Phase 11: Conscience (ethical compass — Jiminy Cricket)
+        def boot_conscience():
+            if not _HAS_CONSCIENCE:
+                raise RuntimeError("import failed")
+            self.conscience = _QueenConscience()
+        _boot_phase("conscience", boot_conscience)
+
+        # Phase 12: Agent Core
         def boot_agent():
             if not _HAS_AGENT_CORE:
                 raise RuntimeError("import failed")
@@ -382,6 +420,13 @@ class IntegratedCognitiveSystem:
                 raise RuntimeError("import failed")
             self.vault_app = create_vault_app(loop=self.feedback_loop)
         _boot_phase("vault_ui", boot_vault_ui)
+
+        # Phase 23: Wire integrations (Ollama + Obsidian into vault/loop)
+        def boot_integrations():
+            if not _HAS_INTEGRATIONS:
+                raise RuntimeError("import failed")
+            wire_integrations(vault=self.vault, loop=self.feedback_loop)
+        _boot_phase("integrations", boot_integrations)
 
         self._boot_status = status
         return status
@@ -568,6 +613,19 @@ class IntegratedCognitiveSystem:
             except Exception:
                 pass
 
+        # VAULT FEED: ingest tick state so Auris/Casimir have cards to work with
+        if self.vault is not None:
+            try:
+                self.vault.ingest("ics.tick", {
+                    "lambda_t": source_state.get("lambda_t", 0.0),
+                    "coherence": source_state.get("coherence_gamma", 0.0),
+                    "consciousness": source_state.get("consciousness_level", ""),
+                    "auris": hnc_state.get("auris_consensus", "NEUTRAL"),
+                    "tick": self._tick_count,
+                }, category="ics_tick")
+            except Exception:
+                pass
+
     # ------------------------------------------------------------------
     # User input processing
     # ------------------------------------------------------------------
@@ -663,7 +721,9 @@ class IntegratedCognitiveSystem:
             lines.append(f"  Standalone agents: {len(agents)}")
             if self.temporal_ground is not None:
                 tg = self.temporal_ground
-                lines.append(f"  Timeline chain: length={tg._chain.chain_length if hasattr(tg, '_chain') else '?'}")
+                hc = getattr(tg, '_hash_chain', None)
+                cl = getattr(hc, '_chain_length', '?') if hc else '?'
+                lines.append(f"  Timeline chain: length={cl}")
             return "\n".join(lines)
         except Exception as exc:
             return f"Swarm status error: {exc}"
@@ -817,6 +877,12 @@ class IntegratedCognitiveSystem:
         if self.metacognition is not None:
             try:
                 self.metacognition.stop()
+            except Exception:
+                pass
+
+        if self.love_stream is not None:
+            try:
+                self.love_stream.stop()
             except Exception:
                 pass
 
