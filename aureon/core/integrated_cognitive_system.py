@@ -777,9 +777,72 @@ class IntegratedCognitiveSystem:
             return "127.0.0.1"
 
     # ------------------------------------------------------------------
+    # Remote tunnel (4G / internet access)
+    # ------------------------------------------------------------------
+    def _start_tunnel(self, port: int) -> Optional[str]:
+        """
+        Start a tunnel so the phone can reach the ICS over 4G / internet.
+        Tries cloudflared → ngrok → pyngrok in order.
+        Returns the public URL or None.
+        """
+        import subprocess as _sp
+        import shutil
+
+        # Try 1: cloudflared (Cloudflare Tunnel — free, no signup)
+        if shutil.which("cloudflared"):
+            try:
+                proc = _sp.Popen(
+                    ["cloudflared", "tunnel", "--url", f"http://127.0.0.1:{port}"],
+                    stdout=_sp.PIPE, stderr=_sp.PIPE, text=True,
+                )
+                self._tunnel_proc = proc
+                # cloudflared prints the URL to stderr
+                import time as _time
+                for _ in range(30):
+                    line = proc.stderr.readline()
+                    if "trycloudflare.com" in line or "cfargotunnel.com" in line:
+                        import re
+                        m = re.search(r'(https://[^\s]+)', line)
+                        if m:
+                            return m.group(1)
+                    _time.sleep(0.5)
+            except Exception as exc:
+                logger.debug("cloudflared failed: %s", exc)
+
+        # Try 2: ngrok CLI
+        if shutil.which("ngrok"):
+            try:
+                proc = _sp.Popen(
+                    ["ngrok", "http", str(port), "--log", "stdout"],
+                    stdout=_sp.PIPE, stderr=_sp.PIPE, text=True,
+                )
+                self._tunnel_proc = proc
+                import time as _time
+                for _ in range(20):
+                    line = proc.stdout.readline()
+                    if "url=" in line and "ngrok" in line:
+                        import re
+                        m = re.search(r'url=(https://[^\s]+)', line)
+                        if m:
+                            return m.group(1)
+                    _time.sleep(0.5)
+            except Exception as exc:
+                logger.debug("ngrok failed: %s", exc)
+
+        # Try 3: pyngrok (Python package)
+        try:
+            from pyngrok import ngrok as _ngrok
+            tunnel = _ngrok.connect(port, "http")
+            return tunnel.public_url
+        except Exception:
+            pass
+
+        return None
+
+    # ------------------------------------------------------------------
     # Main run loop
     # ------------------------------------------------------------------
-    def run(self, lan: bool = False, port: int = 5566) -> None:
+    def run(self, lan: bool = False, remote: bool = False, port: int = 5566) -> None:
         """
         Main entry point. Boots subsystems, starts dashboard and tick thread,
         starts the vault UI server (with Phi Bridge for phone access),
@@ -787,6 +850,7 @@ class IntegratedCognitiveSystem:
 
         Args:
             lan: If True, bind on 0.0.0.0 so phones on the same WiFi can connect.
+            remote: If True, start a tunnel (cloudflared/ngrok) for 4G access.
             port: Port for the vault UI / Phi Bridge server (default 5566).
         """
         # Boot
@@ -808,14 +872,28 @@ class IntegratedCognitiveSystem:
         # Live data is available via /status command, Vault UI web, and phone.
 
         # Start Vault UI + Phi Bridge server
-        ui_host = "0.0.0.0" if lan else "127.0.0.1"
+        ui_host = "0.0.0.0" if (lan or remote) else "127.0.0.1"
         if self.vault_app is not None:
             self._start_vault_ui(host=ui_host, port=port)
-            lan_ip = self._detect_lan_ip() if lan else "127.0.0.1"
+            lan_ip = self._detect_lan_ip() if (lan or remote) else "127.0.0.1"
             print(f"  Vault UI:    http://{lan_ip}:{port}/")
             if lan:
                 print(f"  Phi Bridge:  http://{lan_ip}:{port}/bridge")
-                print(f"  (Phone: open the bridge URL on the same WiFi)")
+                print(f"  (Phone: same WiFi → open the bridge URL)")
+
+            # Remote tunnel for 4G / internet access
+            if remote:
+                print(f"  Starting tunnel for 4G access...")
+                tunnel_url = self._start_tunnel(port)
+                if tunnel_url:
+                    print(f"  Remote URL:  {tunnel_url}")
+                    print(f"  Phone (4G):  {tunnel_url}/bridge")
+                    print(f"  (Open this URL on your phone — works over 4G, anywhere)")
+                else:
+                    print(f"  Tunnel failed. Install one of:")
+                    print(f"    cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/")
+                    print(f"    ngrok:       https://ngrok.com/download")
+                    print(f"    pyngrok:     pip install pyngrok")
             print()
 
         print("  Commands: /status  /goal  /pause  /resume  /cancel  /coherence  /quit")
