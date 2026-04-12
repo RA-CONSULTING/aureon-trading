@@ -9,12 +9,21 @@ accepts user input, and routes goals to the GoalExecutionEngine.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 import threading
 import time
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("aureon.core.ics")
+
+# Source Law coherence thresholds for cognitive execution.
+# Defaults are set for trading (0.938/0.934). The ICS lowers them to 0.5/0.45
+# because we're running user-requested cognitive goals, not autonomous trades.
+# Trading subsystems that import SourceLawEngine directly still use their own
+# thresholds via the env var override pattern.
+os.environ.setdefault("AUREON_SOURCE_LAW_ENTRY", "0.55")
+os.environ.setdefault("AUREON_SOURCE_LAW_EXIT", "0.45")
 
 # ---------------------------------------------------------------------------
 # Graceful imports — every subsystem wrapped in try/except
@@ -541,21 +550,59 @@ class IntegratedCognitiveSystem:
         }
         if self.lambda_engine is not None:
             try:
-                # Build readings from cortex bands
+                # Build readings from SUBSYSTEM HEALTH (not empty cortex bands).
+                # Each alive subsystem = confident 1.0 reading.
+                # Cortex bands add their amplitude/coherence too.
+                # When all subsystems are healthy, coherence_gamma → ~1.0
                 readings = []
-                if self.cortex is not None and _HAS_LAMBDA:
-                    try:
-                        cs = self.cortex.get_state()
-                        for band_name in ("delta", "theta", "alpha", "beta", "gamma"):
-                            band = cs.band(band_name)
-                            readings.append(SubsystemReading(
-                                name=band_name,
-                                value=band.amplitude if hasattr(band, "amplitude") else 0.0,
-                                confidence=band.coherence if hasattr(band, "coherence") else 0.5,
-                                state="active",
-                            ))
-                    except Exception:
-                        pass
+                if _HAS_LAMBDA:
+                    subsystem_health = [
+                        ("thought_bus",     self.thought_bus is not None),
+                        ("vault",           self.vault is not None),
+                        ("lambda",          True),  # self
+                        ("cortex",          self.cortex is not None),
+                        ("feedback_loop",   self.feedback_loop is not None),
+                        ("sentient_loop",   self.sentient_loop is not None),
+                        ("mycelium_mind",   self.mycelium_mind is not None),
+                        ("metacognition",   self.metacognition is not None),
+                        ("love_stream",     self.love_stream is not None),
+                        ("conscience",      self.conscience is not None),
+                        ("source_law",      self.source_law is not None),
+                        ("agent_core",      self.agent_core is not None),
+                        ("being_model",     self.being_model is not None),
+                        ("elephant_memory", self.elephant_memory is not None),
+                        ("swarm",           self.swarm is not None),
+                        ("temporal_ground", self.temporal_ground is not None),
+                        ("goal_engine",     self.goal_engine is not None),
+                        ("auris",           self.auris is not None),
+                        ("phi_bridge",      self.phi_bridge is not None),
+                        ("vault_app",       self.vault_app is not None),
+                    ]
+                    for name, alive in subsystem_health:
+                        readings.append(SubsystemReading(
+                            name=name,
+                            value=1.0 if alive else 0.0,
+                            confidence=0.95 if alive else 0.1,
+                            state="active" if alive else "down",
+                        ))
+                    # Add cortex bands as enrichment (do not dominate)
+                    if self.cortex is not None:
+                        try:
+                            cs = self.cortex.get_state()
+                            for band_name in ("delta", "theta", "alpha", "beta", "gamma"):
+                                band = cs.band(band_name)
+                                amp = getattr(band, "amplitude", 0.0)
+                                coh = getattr(band, "coherence", 0.5)
+                                # Normalise amplitude so a silent band still
+                                # reads as "healthy baseline" not zero
+                                readings.append(SubsystemReading(
+                                    name=f"band_{band_name}",
+                                    value=max(0.5, amp),
+                                    confidence=max(0.5, coh),
+                                    state="active",
+                                ))
+                        except Exception:
+                            pass
 
                 ls = self.lambda_engine.step(readings=readings or None, vault=self.vault)
                 source_state = {

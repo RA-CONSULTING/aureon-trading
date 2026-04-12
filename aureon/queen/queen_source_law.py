@@ -49,8 +49,23 @@ logger = logging.getLogger(__name__)
 
 # Sacred constants
 PHI = 1.618033988749895
-ENTRY_COHERENCE = 0.938
-EXIT_COHERENCE = 0.934
+
+# Coherence thresholds — env-var configurable so cognitive execution can use
+# lower thresholds than trading execution. Trading defaults preserved.
+# AUREON_SOURCE_LAW_ENTRY  — level at which Source Law says EXECUTE (default 0.938)
+# AUREON_SOURCE_LAW_EXIT   — level at which Source Law says HOLD (default 0.934)
+def _resolve_threshold(env_key: str, default: float) -> float:
+    import os
+    val = os.environ.get(env_key)
+    if val:
+        try:
+            return max(0.0, min(1.0, float(val)))
+        except ValueError:
+            pass
+    return default
+
+ENTRY_COHERENCE = _resolve_threshold("AUREON_SOURCE_LAW_ENTRY", 0.938)
+EXIT_COHERENCE = _resolve_threshold("AUREON_SOURCE_LAW_EXIT", 0.934)
 MAX_SUPERPOSITION_AGE = 30.0  # seconds — matches quantum_checkin.py
 
 
