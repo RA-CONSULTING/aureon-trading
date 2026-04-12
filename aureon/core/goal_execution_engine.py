@@ -169,6 +169,27 @@ VERB_INTENT_MAP: Dict[str, List[str]] = {
     "browse":   ["open_url"],
     "navigate": ["open_url"],
     "goto":     ["open_url"],
+    # Trading
+    "buy":      ["place_order"],
+    "sell":     ["place_order"],
+    "trade":    ["place_order"],
+    "balance":  ["get_balances"],
+    "position": ["get_positions"],
+    "portfolio":["get_portfolio_summary"],
+    # Knowledge
+    "query":    ["query_knowledge"],
+    "ask":      ["query_knowledge"],
+    # Communication
+    "notify":   ["notify"],
+    "alert":    ["notify"],
+    "speak":    ["speak"],
+    # Process
+    "stop":     ["close_app", "kill_process"],
+    "process":  ["running_processes"],
+    # Web
+    "fetch":    ["web_fetch"],
+    "download": ["web_fetch"],
+    "get":      ["web_fetch"],
 }
 
 
@@ -384,6 +405,166 @@ class GoalExecutionEngine:
                     "url": {"type": "string", "description": "URL to open"},
                 }, "required": ["url"]},
                 "intent": "open_url",
+            },
+            # ── Trading ────────────────────────────────────────────
+            "get_balances": {
+                "desc": "Get trading account balances across all exchanges",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "get_balances",
+            },
+            "get_positions": {
+                "desc": "Get current open trading positions",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "get_positions",
+            },
+            "place_order": {
+                "desc": "Place a trading order (symbol, side, amount)",
+                "schema": {"type": "object", "properties": {
+                    "symbol": {"type": "string"}, "side": {"type": "string"},
+                    "amount": {"type": "number"},
+                }, "required": ["symbol", "side", "amount"]},
+                "intent": "place_order",
+            },
+            "get_recent_trades": {
+                "desc": "Get recent trade history",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "get_recent_trades",
+            },
+            "get_market_summary": {
+                "desc": "Get market summary (prices, trends, sentiment)",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "market_summary",
+            },
+            "get_portfolio": {
+                "desc": "Get portfolio summary (equity, positions, PnL)",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "portfolio",
+            },
+            # ── Communication ──────────────────────────────────────
+            "speak": {
+                "desc": "Speak text aloud via TTS",
+                "schema": {"type": "object", "properties": {
+                    "text": {"type": "string", "description": "Text to speak"},
+                }, "required": ["text"]},
+                "intent": "speak",
+            },
+            "notify": {
+                "desc": "Send a notification",
+                "schema": {"type": "object", "properties": {
+                    "message": {"type": "string"},
+                }, "required": ["message"]},
+                "intent": "notify",
+            },
+            "publish_thought_bus": {
+                "desc": "Publish a thought to the ThoughtBus",
+                "schema": {"type": "object", "properties": {
+                    "message": {"type": "string"},
+                }, "required": ["message"]},
+                "intent": "think",
+            },
+            # ── Knowledge ──────────────────────────────────────────
+            "query_knowledge": {
+                "desc": "Query the knowledge base / history database",
+                "schema": {"type": "object", "properties": {
+                    "query": {"type": "string"},
+                }, "required": ["query"]},
+                "intent": "query_knowledge",
+            },
+            "search_knowledge": {
+                "desc": "Search knowledge base for a topic",
+                "schema": {"type": "object", "properties": {
+                    "query": {"type": "string"},
+                }, "required": ["query"]},
+                "intent": "search_knowledge",
+            },
+            # ── File operations ────────────────────────────────────
+            "copy_file": {
+                "desc": "Copy a file from source to destination",
+                "schema": {"type": "object", "properties": {
+                    "source": {"type": "string"}, "destination": {"type": "string"},
+                }, "required": ["source", "destination"]},
+                "intent": "copy_file",
+            },
+            "move_file": {
+                "desc": "Move/rename a file",
+                "schema": {"type": "object", "properties": {
+                    "source": {"type": "string"}, "destination": {"type": "string"},
+                }, "required": ["source", "destination"]},
+                "intent": "move_file",
+            },
+            "delete_file": {
+                "desc": "Delete a file",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string"},
+                }, "required": ["path"]},
+                "intent": "delete_file",
+            },
+            "file_info": {
+                "desc": "Get file metadata (size, modified date, type)",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string"},
+                }, "required": ["path"]},
+                "intent": "file_info",
+            },
+            "open_file": {
+                "desc": "Open a file with the system default application",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string"},
+                }, "required": ["path"]},
+                "intent": "open_file",
+            },
+            # ── Web ────────────────────────────────────────────────
+            "fetch_url": {
+                "desc": "Fetch the content of a URL (HTTP GET)",
+                "schema": {"type": "object", "properties": {
+                    "url": {"type": "string"},
+                }, "required": ["url"]},
+                "intent": "web_fetch",
+            },
+            # ── Process / System ───────────────────────────────────
+            "list_processes": {
+                "desc": "List running processes",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "processes",
+            },
+            "kill_process": {
+                "desc": "Kill a process by name or PID",
+                "schema": {"type": "object", "properties": {
+                    "name_or_pid": {"type": "string"},
+                }, "required": ["name_or_pid"]},
+                "intent": "kill_process",
+            },
+            "list_running_apps": {
+                "desc": "List currently running applications",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "list_apps",
+            },
+            "network_status": {
+                "desc": "Check network connectivity and status",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "network_status",
+            },
+            "run_script": {
+                "desc": "Run a script file (Python, shell, etc.)",
+                "schema": {"type": "object", "properties": {
+                    "path": {"type": "string"},
+                }, "required": ["path"]},
+                "intent": "run_script",
+            },
+            # ── Desktop extras ─────────────────────────────────────
+            "right_click": {
+                "desc": "Right-click at screen coordinates",
+                "schema": {"type": "object", "properties": {
+                    "x": {"type": "integer"}, "y": {"type": "integer"},
+                }, "required": ["x", "y"]},
+                "intent": "right_click",
+            },
+            "double_click": {
+                "desc": "Double-click at screen coordinates",
+                "schema": {"type": "object", "properties": {
+                    "x": {"type": "integer"}, "y": {"type": "integer"},
+                }, "required": ["x", "y"]},
+                "intent": "double_click",
             },
         }
 
@@ -914,11 +1095,20 @@ class GoalExecutionEngine:
             # Creation intents — execute tool first, then reason about result
             # Intents that DO something (not just analyse) — execute via AgentCore first
             ACTION_INTENTS = {
+                # File/code
                 "write_file", "create_script", "create_dir", "execute_shell",
                 "execute_python", "run_command", "shell", "copy_file", "move_file",
-                # Desktop actions
+                "delete_file", "run_script",
+                # Desktop
                 "open_app", "close_app", "click", "type_text", "press_key",
                 "hotkey", "screenshot", "move_mouse", "focus_window", "open_url",
+                "right_click", "double_click", "open_file",
+                # Trading
+                "place_order", "get_balances", "get_positions",
+                # Communication
+                "speak", "notify",
+                # Process
+                "kill_process",
             }
 
             # Workers run in parallel (no dependencies on each other)
