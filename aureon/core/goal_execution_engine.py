@@ -271,9 +271,12 @@ class GoalExecutionEngine:
             except Exception as exc:
                 logger.debug("AgentCore.plan_task failed: %s", exc)
 
-        # Path 2: Heuristic fallback if no steps from path 1
-        if not steps:
-            steps = self._heuristic_decompose(text)
+        # Path 2: Heuristic fallback if no steps from path 1,
+        # or if path 1 only produced generic "think" intents
+        if not steps or all(s.intent == "think" for s in steps):
+            heuristic = self._heuristic_decompose(text)
+            if heuristic:
+                steps = heuristic
 
         # Ensure at least one step
         if not steps:
@@ -310,6 +313,8 @@ class GoalExecutionEngine:
                     elif intent in ("write_file", "create_script"):
                         params["path"] = remainder.split()[0] if remainder else "output.txt"
                         params["content"] = text
+                    elif intent in ("list_dir", "ls", "dir"):
+                        params["path"] = "."
                     elif intent in ("read_file", "cat"):
                         params["path"] = remainder.split()[0] if remainder else "."
                     elif intent in ("speak", "say"):
