@@ -134,11 +134,11 @@ class GoalPlan:
 # ---------------------------------------------------------------------------
 
 VERB_INTENT_MAP: Dict[str, List[str]] = {
+    # File / code operations
     "build":    ["web_search", "create_script", "write_file", "execute_python"],
     "create":   ["create_dir", "write_file"],
     "search":   ["web_search"],
     "find":     ["find_files", "web_search"],
-    "open":     ["open_app", "open_url"],
     "read":     ["read_file"],
     "write":    ["write_file"],
     "run":      ["execute_shell"],
@@ -149,9 +149,26 @@ VERB_INTENT_MAP: Dict[str, List[str]] = {
     "check":    ["system_info", "network_status"],
     "show":     ["list_dir", "read_file"],
     "list":     ["list_dir", "list_apps"],
-    "kill":     ["close_app", "kill_process"],
     "say":      ["speak"],
     "tell":     ["speak"],
+    # Desktop / human tasks
+    "open":     ["open_app", "open_url"],
+    "launch":   ["open_app"],
+    "close":    ["close_app"],
+    "kill":     ["close_app", "kill_process"],
+    "click":    ["click"],
+    "type":     ["type_text"],
+    "press":    ["press_key"],
+    "scroll":   ["press_key"],
+    "focus":    ["focus_window"],
+    "switch":   ["focus_window"],
+    "screenshot": ["screenshot"],
+    "capture":  ["screenshot"],
+    "minimize": ["hotkey"],
+    "maximize": ["hotkey"],
+    "browse":   ["open_url"],
+    "navigate": ["open_url"],
+    "goto":     ["open_url"],
 }
 
 
@@ -296,6 +313,77 @@ class GoalExecutionEngine:
                 "desc": "Get system information (platform, hostname, etc.)",
                 "schema": {"type": "object", "properties": {}},
                 "intent": "system_info",
+            },
+            # Desktop / human interaction tools
+            "open_app": {
+                "desc": "Open a desktop application (chrome, notepad, vscode, etc.)",
+                "schema": {"type": "object", "properties": {
+                    "app_name": {"type": "string", "description": "Application name"},
+                }, "required": ["app_name"]},
+                "intent": "open_app",
+            },
+            "close_app": {
+                "desc": "Close a running application",
+                "schema": {"type": "object", "properties": {
+                    "app_name": {"type": "string", "description": "Application name"},
+                }, "required": ["app_name"]},
+                "intent": "close_app",
+            },
+            "click": {
+                "desc": "Click at screen coordinates (x, y)",
+                "schema": {"type": "object", "properties": {
+                    "x": {"type": "integer", "description": "X coordinate"},
+                    "y": {"type": "integer", "description": "Y coordinate"},
+                }, "required": ["x", "y"]},
+                "intent": "click",
+            },
+            "type_text": {
+                "desc": "Type text on the keyboard",
+                "schema": {"type": "object", "properties": {
+                    "text": {"type": "string", "description": "Text to type"},
+                }, "required": ["text"]},
+                "intent": "type_text",
+            },
+            "press_key": {
+                "desc": "Press a keyboard key (enter, tab, escape, etc.)",
+                "schema": {"type": "object", "properties": {
+                    "key": {"type": "string", "description": "Key to press"},
+                }, "required": ["key"]},
+                "intent": "press_key",
+            },
+            "hotkey": {
+                "desc": "Press a keyboard shortcut (e.g. ctrl+c, alt+tab)",
+                "schema": {"type": "object", "properties": {
+                    "keys": {"type": "array", "items": {"type": "string"}, "description": "Keys to press together"},
+                }, "required": ["keys"]},
+                "intent": "hotkey",
+            },
+            "screenshot": {
+                "desc": "Take a screenshot of the desktop",
+                "schema": {"type": "object", "properties": {}},
+                "intent": "screenshot",
+            },
+            "move_mouse": {
+                "desc": "Move the mouse to screen coordinates (x, y)",
+                "schema": {"type": "object", "properties": {
+                    "x": {"type": "integer", "description": "X coordinate"},
+                    "y": {"type": "integer", "description": "Y coordinate"},
+                }, "required": ["x", "y"]},
+                "intent": "move_mouse",
+            },
+            "focus_window": {
+                "desc": "Focus/switch to a window by title",
+                "schema": {"type": "object", "properties": {
+                    "title": {"type": "string", "description": "Window title to focus"},
+                }, "required": ["title"]},
+                "intent": "focus_window",
+            },
+            "open_url": {
+                "desc": "Open a URL in the default browser",
+                "schema": {"type": "object", "properties": {
+                    "url": {"type": "string", "description": "URL to open"},
+                }, "required": ["url"]},
+                "intent": "open_url",
             },
         }
 
@@ -559,8 +647,18 @@ class GoalExecutionEngine:
 
     def _heuristic_decompose(self, text: str) -> List[GoalStep]:
         """Verb-based heuristic decomposition for unrecognised patterns."""
+        import re as _re
         lower = text.lower().strip()
         steps: List[GoalStep] = []
+
+        # Split on "and"/"then"/"," to handle chained tasks:
+        # "open notepad and type hello then press enter" -> 3 sub-tasks
+        clauses = _re.split(r'\s+(?:and then|then|and)\s+|,\s+', lower)
+        if len(clauses) > 1:
+            for clause in clauses:
+                sub_steps = self._heuristic_decompose(clause.strip())
+                steps.extend(sub_steps)
+            return steps
 
         # Check for explicit file path in the text
         extracted_path = self._extract_path(text)
@@ -589,6 +687,38 @@ class GoalExecutionEngine:
                         params["path"] = extracted_path or (remainder.split()[0] if remainder else ".")
                     elif intent in ("speak", "say"):
                         params["text"] = remainder or text
+                    elif intent == "click":
+                        # Try to extract x,y coordinates from text
+                        import re as _re
+                        m = _re.search(r'(\d+)\s*[,x]\s*(\d+)', remainder)
+                        if m:
+                            params["x"] = int(m.group(1))
+                            params["y"] = int(m.group(2))
+                        else:
+                            params["x"] = 500
+                            params["y"] = 500
+                    elif intent == "type_text":
+                        params["text"] = remainder or text
+                    elif intent == "press_key":
+                        params["key"] = remainder.split()[0] if remainder else "enter"
+                    elif intent == "hotkey":
+                        keys = [k.strip() for k in remainder.replace("+", " ").split() if k.strip()]
+                        params["keys"] = keys or ["alt", "tab"]
+                    elif intent == "screenshot":
+                        pass  # no params needed
+                    elif intent == "focus_window":
+                        params["title"] = remainder or ""
+                    elif intent == "close_app":
+                        params["app_name"] = remainder.split()[0] if remainder else ""
+                    elif intent == "move_mouse":
+                        import re as _re
+                        m = _re.search(r'(\d+)\s*[,x]\s*(\d+)', remainder)
+                        if m:
+                            params["x"] = int(m.group(1))
+                            params["y"] = int(m.group(2))
+                        else:
+                            params["x"] = 500
+                            params["y"] = 500
                     elif intent == "think":
                         params["message"] = text
                     else:
@@ -782,9 +912,13 @@ class GoalExecutionEngine:
             task_id_map: Dict[str, str] = {}
 
             # Creation intents — execute tool first, then reason about result
-            CREATION_INTENTS = {
+            # Intents that DO something (not just analyse) — execute via AgentCore first
+            ACTION_INTENTS = {
                 "write_file", "create_script", "create_dir", "execute_shell",
                 "execute_python", "run_command", "shell", "copy_file", "move_file",
+                # Desktop actions
+                "open_app", "close_app", "click", "type_text", "press_key",
+                "hotkey", "screenshot", "move_mouse", "focus_window", "open_url",
             }
 
             # Workers run in parallel (no dependencies on each other)
@@ -800,7 +934,7 @@ class GoalExecutionEngine:
 
                 # For creation intents, execute the tool first
                 tool_output = ""
-                if step.intent in CREATION_INTENTS and self._agent_core is not None:
+                if step.intent in ACTION_INTENTS and self._agent_core is not None:
                     try:
                         tool_result = self._agent_core.execute(step.intent, step.params)
                         tool_output = f"\n\nTool executed: {step.intent}\nResult: {str(tool_result)[:500]}"
