@@ -473,7 +473,8 @@ class GoalExecutionEngine:
                     step.status = "completed"
                     step.validation_result = {"valid": True, "reason": "Swarm agent returned result", "confidence": 0.8}
                 else:
-                    # Fallback: try executing via AgentCore
+                    # Swarm agent returned empty — fall back to AgentCore
+                    logger.info("Swarm agent %s returned empty, falling back to AgentCore", agent_name)
                     step.result = self._execute_step(step)
                     step.validation_result = self._validate_step(step)
                     step.status = "completed" if step.validation_result.get("valid") else "failed"

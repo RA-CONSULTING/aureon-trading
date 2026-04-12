@@ -150,6 +150,20 @@ except Exception:
     get_temporal_ground_station = None  # type: ignore[assignment]
     _HAS_TEMPORAL = False
 
+try:
+    from aureon.queen.queen_mycelium_mind import get_mycelium_mind
+    _HAS_MYCELIUM = True
+except Exception:
+    get_mycelium_mind = None  # type: ignore[assignment]
+    _HAS_MYCELIUM = False
+
+try:
+    from aureon.queen.queen_metacognition import QueenMetacognition as _QueenMetacognition
+    _HAS_METACOGNITION = True
+except Exception:
+    _QueenMetacognition = None  # type: ignore[assignment,misc]
+    _HAS_METACOGNITION = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -181,6 +195,8 @@ class IntegratedCognitiveSystem:
         self.vault_app: Any = None
         self.swarm: Any = None           # OpenMultiAgent orchestrator
         self.temporal_ground: Any = None  # TemporalGroundStation
+        self.mycelium_mind: Any = None   # Thought propagation + synaptic learning
+        self.metacognition: Any = None   # 5W self-reflection loop
 
         # State
         self._running = False
@@ -226,14 +242,21 @@ class IntegratedCognitiveSystem:
             self.vault.wire_thought_bus()
         _boot_phase("vault", boot_vault)
 
-        # Phase 3: Lambda Engine
+        # Phase 3: Self-Dialogue Engine (needs vault)
+        def boot_self_dialogue():
+            if not _HAS_SELF_DIALOGUE:
+                raise RuntimeError("import failed")
+            self.self_dialogue = SelfDialogueEngine(vault=self.vault)
+        _boot_phase("self_dialogue", boot_self_dialogue)
+
+        # Phase 4: Lambda Engine
         def boot_lambda():
             if not _HAS_LAMBDA:
                 raise RuntimeError("import failed")
             self.lambda_engine = LambdaEngine()
         _boot_phase("lambda_engine", boot_lambda)
 
-        # Phase 4: Queen Cortex
+        # Phase 5: Queen Cortex
         def boot_cortex():
             if not _HAS_CORTEX:
                 raise RuntimeError("import failed")
@@ -241,7 +264,7 @@ class IntegratedCognitiveSystem:
             self.cortex.start()
         _boot_phase("cortex", boot_cortex)
 
-        # Phase 5: Self-Feedback Loop
+        # Phase 6: Self-Feedback Loop
         def boot_feedback():
             if not _HAS_FEEDBACK_LOOP:
                 raise RuntimeError("import failed")
@@ -249,7 +272,7 @@ class IntegratedCognitiveSystem:
             self.feedback_loop.start()
         _boot_phase("feedback_loop", boot_feedback)
 
-        # Phase 6: Sentient Loop
+        # Phase 7: Sentient Loop
         def boot_sentient():
             if not _HAS_SENTIENT:
                 raise RuntimeError("import failed")
@@ -257,49 +280,65 @@ class IntegratedCognitiveSystem:
             self.sentient_loop.start()
         _boot_phase("sentient_loop", boot_sentient)
 
-        # Phase 7: Agent Core
+        # Phase 8: Mycelium Mind (thought propagation + synaptic learning)
+        def boot_mycelium():
+            if not _HAS_MYCELIUM:
+                raise RuntimeError("import failed")
+            self.mycelium_mind = get_mycelium_mind()
+            self.mycelium_mind.start()
+        _boot_phase("mycelium_mind", boot_mycelium)
+
+        # Phase 9: Queen Metacognition (5W self-reflection loop)
+        def boot_metacognition():
+            if not _HAS_METACOGNITION:
+                raise RuntimeError("import failed")
+            self.metacognition = _QueenMetacognition()
+            self.metacognition.start()
+        _boot_phase("metacognition", boot_metacognition)
+
+        # Phase 10: Agent Core
         def boot_agent():
             if not _HAS_AGENT_CORE:
                 raise RuntimeError("import failed")
             self.agent_core = AureonAgentCore()
         _boot_phase("agent_core", boot_agent)
 
-        # Phase 8: Action Bridge
+        # Phase 11: Action Bridge
         def boot_bridge():
             if not _HAS_ACTION_BRIDGE:
                 raise RuntimeError("import failed")
             self.action_bridge = get_queen_action_bridge()
         _boot_phase("action_bridge", boot_bridge)
 
-        # Phase 9: Being Model
+        # Phase 12: Being Model
         def boot_being():
             if not _HAS_BEING_MODEL:
                 raise RuntimeError("import failed")
             self.being_model = get_being_model()
         _boot_phase("being_model", boot_being)
 
-        # Phase 10: Elephant Memory
+        # Phase 13: Elephant Memory
         def boot_elephant():
             if not _HAS_ELEPHANT:
                 raise RuntimeError("import failed")
             self.elephant_memory = ElephantMemory()
         _boot_phase("elephant_memory", boot_elephant)
 
-        # Phase 11: Swarm (OpenMultiAgent — parallel agent teams)
+        # Phase 14: Swarm (OpenMultiAgent — parallel agent teams)
         def boot_swarm():
             if not _HAS_SWARM:
                 raise RuntimeError("import failed")
             self.swarm = OpenMultiAgent()
         _boot_phase("swarm", boot_swarm)
 
-        # Phase 12: Temporal Ground (timeline forking / multiverse hash)
+        # Phase 15: Temporal Ground (timeline forking / multiverse hash)
         def boot_temporal():
             if not _HAS_TEMPORAL:
                 raise RuntimeError("import failed")
             self.temporal_ground = get_temporal_ground_station(thought_bus=self.thought_bus)
         _boot_phase("temporal_ground", boot_temporal)
 
-        # Phase 13: Goal Execution Engine (wired to all above incl. swarm + temporal)
+        # Phase 16: Goal Engine (wired to all above)
         def boot_goal_engine():
             if not _HAS_GOAL_ENGINE:
                 raise RuntimeError("import failed")
@@ -316,28 +355,28 @@ class IntegratedCognitiveSystem:
             )
         _boot_phase("goal_engine", boot_goal_engine)
 
-        # Phase 12: Dashboard
+        # Phase 17: Dashboard (state collector via ThoughtBus)
         def boot_dashboard():
             if not _HAS_DASHBOARD:
                 raise RuntimeError("import failed")
             self.dashboard = CognitiveDashboard(thought_bus=self.thought_bus)
         _boot_phase("dashboard", boot_dashboard)
 
-        # Phase 13: Auris Metacognition
+        # Phase 18: Auris Metacognition (9-node voter)
         def boot_auris():
             if not _HAS_AURIS:
                 raise RuntimeError("import failed")
             self.auris = AurisMetacognition()
         _boot_phase("auris", boot_auris)
 
-        # Phase 14: Phi Bridge (phone <-> desktop vault sync)
+        # Phase 19: Phi Bridge (phone <-> desktop vault sync)
         def boot_phi_bridge():
             if not _HAS_PHI_BRIDGE:
                 raise RuntimeError("import failed")
             self.phi_bridge = get_phi_bridge(vault=self.vault)
         _boot_phase("phi_bridge", boot_phi_bridge)
 
-        # Phase 15: Vault UI (Flask server for phone bridge + web chat)
+        # Phase 20: Vault UI (Flask server for phone bridge + web chat)
         def boot_vault_ui():
             if not _HAS_VAULT_UI:
                 raise RuntimeError("import failed")
@@ -517,6 +556,18 @@ class IntegratedCognitiveSystem:
         except Exception:
             pass
 
+        # TEMPORAL GROUND: maintain multiverse hash chain continuously
+        if self.temporal_ground is not None:
+            try:
+                self.temporal_ground.tick(
+                    lambda_t=source_state.get("lambda_t", 0.0),
+                    coherence_gamma=source_state.get("coherence_gamma", 0.0),
+                    consciousness_psi=source_state.get("consciousness_psi", 0.0),
+                    auris_consensus=hnc_state.get("auris_consensus", "NEUTRAL"),
+                )
+            except Exception:
+                pass
+
     # ------------------------------------------------------------------
     # User input processing
     # ------------------------------------------------------------------
@@ -692,8 +743,9 @@ class IntegratedCognitiveSystem:
 
         # Start background threads
         self._start_tick_thread()
-        if self.dashboard is not None:
-            self.dashboard.start()
+        # Dashboard collects state via ThoughtBus subscriptions but does not
+        # start its render thread — Rich Live would conflict with stdin input().
+        # Live data is available via /status command, Vault UI web, and phone.
 
         # Start Vault UI + Phi Bridge server
         ui_host = "0.0.0.0" if lan else "127.0.0.1"
@@ -753,6 +805,18 @@ class IntegratedCognitiveSystem:
         if self.cortex is not None:
             try:
                 self.cortex.stop()
+            except Exception:
+                pass
+
+        if self.mycelium_mind is not None:
+            try:
+                self.mycelium_mind.stop()
+            except Exception:
+                pass
+
+        if self.metacognition is not None:
+            try:
+                self.metacognition.stop()
             except Exception:
                 pass
 
