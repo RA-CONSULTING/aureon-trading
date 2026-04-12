@@ -422,6 +422,7 @@ class IntegratedCognitiveSystem:
                 vault=self.vault,
                 swarm=self.swarm,
                 temporal_ground=self.temporal_ground,
+                source_law=self.source_law,
             )
         _boot_phase("goal_engine", boot_goal_engine)
 
