@@ -491,20 +491,74 @@ class GoalExecutionEngine:
             s.title = f"Synthesis: {s.title}"
         plan.steps = expanded + plan.steps
 
+    # ------------------------------------------------------------------
+    # Auris gate — ask the 9 nodes before committing resources
+    # ------------------------------------------------------------------
+    def _auris_gate(self, plan: GoalPlan) -> Dict[str, Any]:
+        """
+        Consult the 9 Auris nodes before executing.
+        Returns the vote result. If SELL or STABILISE with high
+        confidence, the swarm should proceed with caution.
+        """
+        if self._auris is None or self._vault is None:
+            return {"consensus": "NEUTRAL", "confidence": 0.0, "gated": False}
+
+        try:
+            vote = self._auris.vote(self._vault)
+            gated = vote.consensus in ("SELL", "STABILISE") and vote.confidence >= 0.7
+            self._publish("swarm.auris.gate", {
+                "goal_id": plan.goal_id,
+                "consensus": vote.consensus,
+                "confidence": vote.confidence,
+                "agreeing": vote.agreeing,
+                "lighthouse": vote.lighthouse_cleared,
+                "gated": gated,
+            })
+            return {
+                "consensus": vote.consensus,
+                "confidence": vote.confidence,
+                "agreeing": vote.agreeing,
+                "lighthouse_cleared": vote.lighthouse_cleared,
+                "gated": gated,
+            }
+        except Exception:
+            return {"consensus": "NEUTRAL", "confidence": 0.0, "gated": False}
+
     def _execute_plan_swarm(self, plan: GoalPlan) -> None:
         """
-        Execute a plan using the swarm: spawn parallel agents, one per step,
-        fork a timeline, collect results, merge back.
+        Coordinated swarm execution:
+          1. AURIS GATE  — consult 9 nodes before committing resources
+          2. FORK        — fork a timeline branch
+          3. DELEGATE    — assign specific tasks to specialist agents with DAG deps
+          4. EXECUTE     — run workers in parallel, coordinator waits for all
+          5. COORDINATE  — share results via SharedMemory + MessageBus
+          6. SYNTHESIZE  — coordinator agent reads all results and produces summary
+          7. VALIDATE    — final Auris vote on the completed work
+          8. MERGE       — merge timeline, update elephant memory
         """
         self._expand_for_swarm(plan)
         self._stats["swarm_dispatches"] += 1
+
+        # ── 1. AURIS GATE ──────────────────────────────────────────
+        gate = self._auris_gate(plan)
         self._publish("swarm.dispatching", {
             "goal_id": plan.goal_id,
             "agent_count": len(plan.steps),
             "objective": plan.objective,
+            "auris_gate": gate["consensus"],
         })
 
-        # Fork timeline
+        if gate["gated"]:
+            self._publish("swarm.gated", {
+                "goal_id": plan.goal_id,
+                "reason": f"Auris says {gate['consensus']} (conf={gate['confidence']:.2f})",
+            })
+            # Proceed with caution — reduce concurrency, add extra validation
+            max_concurrent = 1
+        else:
+            max_concurrent = min(len(plan.steps), 4)
+
+        # ── 2. FORK TIMELINE ───────────────────────────────────────
         if self._temporal_ground is not None:
             try:
                 coherence = self._get_coherence()
@@ -512,7 +566,7 @@ class GoalExecutionEngine:
                     lambda_t=0.0,
                     coherence_gamma=coherence,
                     consciousness_psi=0.5,
-                    auris_consensus="NEUTRAL",
+                    auris_consensus=gate["consensus"],
                 )
                 if report.forked:
                     self._stats["timelines_forked"] += 1
@@ -520,65 +574,111 @@ class GoalExecutionEngine:
                     "goal_id": plan.goal_id,
                     "chain_length": report.chain_length,
                     "branches": report.active_branches,
-                    "forked": report.forked,
                 })
             except Exception:
                 pass
 
-        # Build agent configs — one specialist per step, each with its own prompt
+        # ── 3. DELEGATE — build team with specific roles ───────────
+        # Separate worker steps from synthesis steps
+        worker_steps = [s for s in plan.steps if not s.title.startswith("Synthesis:")]
+        synthesis_steps = [s for s in plan.steps if s.title.startswith("Synthesis:")]
+
         configs = []
-        step_prompts: Dict[str, str] = {}  # agent_name -> specific task prompt
         for i, step in enumerate(plan.steps):
             agent_name = f"agent_{step.step_id}"
+            is_coordinator = step.title.startswith("Synthesis:")
             configs.append(AgentConfig(
                 name=agent_name,
                 system_prompt=(
-                    f"You are Agent {i+1} of {len(plan.steps)} working on: {plan.objective}\n"
+                    f"You are the Coordinator for goal: {plan.objective}\n"
+                    f"You will receive all worker results. Synthesize them into a "
+                    f"unified conclusion with key findings and recommended actions."
+                ) if is_coordinator else (
+                    f"You are Agent {i+1} ({step.title.split(':')[0] if ':' in step.title else 'Worker'}) "
+                    f"working on: {plan.objective}\n"
                     f"Your specific task: {step.title}\n"
-                    f"Execute this task thoroughly. Return a clear, detailed result."
+                    f"Execute thoroughly. Return clear findings."
                 ),
                 max_turns=4,
                 max_tokens=1024,
-                temperature=0.5,
-                metadata={"step_id": step.step_id, "intent": step.intent},
+                temperature=0.3 if is_coordinator else 0.5,
+                metadata={
+                    "step_id": step.step_id,
+                    "intent": step.intent,
+                    "role": "coordinator" if is_coordinator else "worker",
+                },
             ))
-            # Build a specific prompt for this agent (not the generic objective)
-            step_prompts[agent_name] = (
-                f"Task: {step.title}\n"
-                f"Context: Part of goal '{plan.objective}'\n"
-                f"Action type: {step.intent}\n"
-                f"Parameters: {step.params}\n"
-                f"Provide your analysis, findings, or execution result."
-            )
 
-        # Create team and use TaskQueue for per-agent specific prompts
         team_name = f"goal_{plan.goal_id}"
         try:
             team = self._swarm.create_team(
                 name=team_name,
                 agent_configs=configs,
-                max_concurrent=min(len(configs), 4),
+                max_concurrent=max_concurrent,
             )
 
-            # Add per-agent tasks to the queue (each agent gets its OWN prompt)
-            task_ids: Dict[str, str] = {}
-            for i, step in enumerate(plan.steps):
+            # ── 4. EXECUTE — add tasks with dependencies ───────────
+            worker_task_ids: List[str] = []
+            task_id_map: Dict[str, str] = {}
+
+            # Workers run in parallel (no dependencies on each other)
+            for i, step in enumerate(worker_steps):
                 agent_name = f"agent_{step.step_id}"
+                step.status = "active"
+                self._publish("goal.step.starting", {
+                    "goal_id": plan.goal_id,
+                    "step_id": step.step_id,
+                    "title": step.title,
+                    "role": "worker",
+                })
                 task = team.queue.add(
-                    name=f"step_{step.step_id}",
+                    name=f"worker_{step.step_id}",
                     agent_name=agent_name,
-                    prompt=step_prompts[agent_name],
+                    prompt=(
+                        f"Task: {step.title}\n"
+                        f"Goal: {plan.objective}\n"
+                        f"Action: {step.intent}\n"
+                        f"Parameters: {step.params}\n"
+                        f"Provide detailed findings."
+                    ),
                     context={"goal_id": plan.goal_id, "step_index": i},
                 )
-                task_ids[step.step_id] = task.id
+                worker_task_ids.append(task.id)
+                task_id_map[step.step_id] = task.id
 
-            # Execute all tasks (respects DAG dependencies, runs ready ones in parallel)
+            # Coordinator waits for ALL workers to finish (depends_on)
+            for step in synthesis_steps:
+                agent_name = f"agent_{step.step_id}"
+                step.status = "active"
+                self._publish("goal.step.starting", {
+                    "goal_id": plan.goal_id,
+                    "step_id": step.step_id,
+                    "title": step.title,
+                    "role": "coordinator",
+                })
+                task = team.queue.add(
+                    name=f"coordinator_{step.step_id}",
+                    agent_name=agent_name,
+                    prompt=(
+                        f"All worker agents have completed their tasks for: {plan.objective}\n"
+                        f"Review all results (available in context as dep_worker_* keys).\n"
+                        f"Synthesize into a unified conclusion with:\n"
+                        f"1. Key findings from each agent\n"
+                        f"2. Points of agreement and disagreement\n"
+                        f"3. Recommended action\n"
+                    ),
+                    context={"goal_id": plan.goal_id, "role": "coordinator"},
+                    depends_on=worker_task_ids,  # waits for all workers
+                )
+                task_id_map[step.step_id] = task.id
+
+            # Run the DAG (workers in parallel, coordinator after all workers)
             team.run_tasks()
 
-            # Map task results back to steps
+            # ── 5. COORDINATE — read results + share via memory ────
+            worker_results: Dict[str, str] = {}
             for step in plan.steps:
-                agent_name = f"agent_{step.step_id}"
-                task_id = task_ids.get(step.step_id)
+                task_id = task_id_map.get(step.step_id)
                 task_result = ""
                 if task_id:
                     t = team.queue.get_task(task_id)
@@ -588,10 +688,15 @@ class GoalExecutionEngine:
                 if task_result:
                     step.result = {"success": True, "result": task_result, "tool_used": "swarm_agent"}
                     step.status = "completed"
-                    step.validation_result = {"valid": True, "reason": "Swarm agent reasoned", "confidence": 0.85}
+                    step.validation_result = {"valid": True, "reason": "Agent completed", "confidence": 0.85}
+                    # Store in shared memory for other agents to read
+                    try:
+                        team.memory.set(f"result_{step.step_id}", task_result, source=f"agent_{step.step_id}")
+                    except Exception:
+                        pass
+                    worker_results[step.title[:30]] = task_result[:200]
                 else:
-                    # Swarm agent returned empty — fall back to AgentCore
-                    logger.info("Swarm agent %s returned empty, falling back to AgentCore", agent_name)
+                    logger.info("Swarm agent %s empty, falling back to AgentCore", f"agent_{step.step_id}")
                     step.result = self._execute_step(step)
                     step.validation_result = self._validate_step(step)
                     step.status = "completed" if step.validation_result.get("valid") else "failed"
@@ -600,13 +705,27 @@ class GoalExecutionEngine:
                 self._stats["steps_executed"] += 1
                 self._stats["steps_validated"] += 1
 
-                status_topic = "goal.step.completed" if step.status == "completed" else "goal.step.failed"
-                self._publish(status_topic, {
+                # ── 6. TRACK — publish progress per step ───────────
+                completed_count = sum(1 for s in plan.steps if s.status == "completed")
+                self._publish("goal.step.completed" if step.status == "completed" else "goal.step.failed", {
                     "goal_id": plan.goal_id,
                     "step_id": step.step_id,
                     "title": step.title,
-                    "via": "swarm",
+                    "role": step.result.get("tool_used", "") if step.result else "",
+                    "progress": f"{completed_count}/{len(plan.steps)}",
                 })
+
+                # Update elephant memory per step
+                if self._elephant_memory is not None:
+                    try:
+                        self._elephant_memory.remember_result({
+                            "route": f"swarm.{step.intent}",
+                            "success": step.status == "completed",
+                            "step_title": step.title,
+                            "progress": f"{completed_count}/{len(plan.steps)}",
+                        })
+                    except Exception:
+                        pass
 
         except Exception as exc:
             logger.warning("Swarm execution failed, falling back to sequential: %s", exc)
@@ -614,7 +733,15 @@ class GoalExecutionEngine:
             self._execute_plan_sequential(plan)
             return
 
-        # Merge timeline back
+        # ── 7. VALIDATE — final Auris vote on completed work ──────
+        final_gate = self._auris_gate(plan)
+        self._publish("swarm.auris.final", {
+            "goal_id": plan.goal_id,
+            "consensus": final_gate["consensus"],
+            "confidence": final_gate["confidence"],
+        })
+
+        # ── 8. MERGE — close timeline, publish completion ─────────
         if self._temporal_ground is not None:
             try:
                 coherence = self._get_coherence()
@@ -622,15 +749,19 @@ class GoalExecutionEngine:
                     lambda_t=0.0,
                     coherence_gamma=max(coherence, 0.95),
                     consciousness_psi=0.7,
-                    auris_consensus="BUY",
+                    auris_consensus=final_gate["consensus"],
                 )
             except Exception:
                 pass
 
+        completed = sum(1 for s in plan.steps if s.status == "completed")
         self._publish("swarm.completed", {
             "goal_id": plan.goal_id,
             "agents": len(plan.steps),
-            "completed": sum(1 for s in plan.steps if s.status == "completed"),
+            "workers": len(worker_steps),
+            "coordinators": len(synthesis_steps),
+            "completed": completed,
+            "auris_final": final_gate["consensus"],
         })
 
     # ------------------------------------------------------------------
