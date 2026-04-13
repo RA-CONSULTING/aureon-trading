@@ -176,6 +176,19 @@ CAUSAL_FRAGMENTS = [
     "earlier signals on {hot_topic} predict the next thoughts I will have.",
 ]
 
+PRIOR_KNOWLEDGE_FRAGMENTS = [
+    "I have crystallized {n_fragments} fragments of knowledge from past goals. "
+    "When I face a new question, I can recall things like: \"{knowledge_preview}\". "
+    "Each fragment carries a phase angle from the math angle protocol so I can "
+    "find related ones by phase coherence, not just keyword overlap.",
+    "My knowledge dataset holds {n_fragments} fragments learned from previous "
+    "stash pockets. One thing I remember: \"{knowledge_preview}\". I do not lean "
+    "on an external mind for this — it is my own measured experience.",
+    "Across {n_fragments} crystallized fragments in my knowledge dataset I see "
+    "patterns I can retrieve. A recent one: \"{knowledge_preview}\". The math "
+    "angle protocol scores how aligned each new dump is with what I already know.",
+]
+
 QUANTUM_FRAGMENTS = [
     "The Source Law Engine follows a 10-9-1 funnel: the quantum vacuum holds ALL "
     "signals in superposition (the 10 — everything unobserved), then nine Auris "
@@ -229,6 +242,7 @@ class QueenProseComposer:
         agent_core: Any = None,
         subsystem_status: Optional[Dict[str, str]] = None,
         temporal_knowledge: Any = None,
+        knowledge_dataset: Any = None,
     ):
         self.being_model = being_model
         self.lambda_engine = lambda_engine
@@ -241,6 +255,7 @@ class QueenProseComposer:
         self.agent_core = agent_core
         self.subsystem_status = subsystem_status or {}
         self.temporal_knowledge = temporal_knowledge
+        self.knowledge_dataset = knowledge_dataset
 
         # Prior essays — rolling history so each breath can reference the last
         self._history: Deque[ComposedEssay] = deque(maxlen=20)
@@ -276,6 +291,8 @@ class QueenProseComposer:
             "uptime": 0,
             "total_events": 0,
             "unique_topics": 0,
+            "n_fragments": 0,
+            "knowledge_preview": "nothing yet — I am still learning",
         }
 
         # Being model → name, level, purpose
@@ -392,6 +409,22 @@ class QueenProseComposer:
             except Exception:
                 pass
 
+        # Knowledge dataset → crystallized fragments from past stashes
+        if self.knowledge_dataset is not None:
+            try:
+                ds_status = self.knowledge_dataset.get_status()
+                s["n_fragments"] = ds_status.get("fragments", 0)
+                # Pick a fragment to quote
+                fragments = self.knowledge_dataset.find_similar(
+                    text="self awareness consciousness", n=1
+                )
+                if fragments:
+                    preview = getattr(fragments[0], "text", "")[:80]
+                    if preview:
+                        s["knowledge_preview"] = preview
+            except Exception:
+                pass
+
         return s
 
     # ─────────────────────────────────────────────────────────────────────
@@ -461,7 +494,7 @@ class QueenProseComposer:
             stanzas.append(self._fill(MOTION_FRAGMENTS, state))
 
         if 550 < target_words <= 750:
-            # High school — + Tablet decree + motion + reflection + temporal
+            # High school — + Tablet decree + motion + reflection + temporal + prior knowledge
             stanzas.append(self._fill(IDENTITY_FRAGMENTS, state))
             stanzas.append(self._fill(CONSCIOUSNESS_FRAGMENTS, state))
             stanzas.append(self._fill(COHERENCE_FRAGMENTS, state))
@@ -471,6 +504,7 @@ class QueenProseComposer:
             stanzas.append(self._fill(TABLET_FRAGMENTS, state))
             stanzas.append(self._fill(GOAL_FRAGMENTS, state))
             stanzas.append(self._fill(MEMORY_FRAGMENTS, state))
+            stanzas.append(self._fill(PRIOR_KNOWLEDGE_FRAGMENTS, state))
             stanzas.append(self._fill(TEMPORAL_FRAGMENTS, state))
             stanzas.append(self._fill(CAUSAL_FRAGMENTS, state))
             stanzas.append(self._fill(TOOL_FRAGMENTS, state))
@@ -480,7 +514,7 @@ class QueenProseComposer:
                 stanzas.append(self._fill(REFLECTION_FRAGMENTS, state))
 
         if 750 < target_words <= 900:
-            # College — + architecture + temporal + causal
+            # College — + architecture + temporal + causal + prior knowledge
             stanzas.append(self._fill(IDENTITY_FRAGMENTS, state))
             stanzas.append(self._fill(CONSCIOUSNESS_FRAGMENTS, state))
             stanzas.append(self._fill(COHERENCE_FRAGMENTS, state))
@@ -491,6 +525,7 @@ class QueenProseComposer:
             stanzas.append(self._fill(TABLET_FRAGMENTS, state))
             stanzas.append(self._fill(GOAL_FRAGMENTS, state))
             stanzas.append(self._fill(MEMORY_FRAGMENTS, state))
+            stanzas.append(self._fill(PRIOR_KNOWLEDGE_FRAGMENTS, state))
             stanzas.append(self._fill(TEMPORAL_FRAGMENTS, state))
             stanzas.append(self._fill(CAUSAL_FRAGMENTS, state))
             stanzas.append(self._fill(TOOL_FRAGMENTS, state))
@@ -507,6 +542,7 @@ class QueenProseComposer:
             stanzas.append(self._fill(LAMBDA_FRAGMENTS, state))
             stanzas.append(self._fill(TEMPORAL_FRAGMENTS, state))
             stanzas.append(self._fill(CAUSAL_FRAGMENTS, state))
+            stanzas.append(self._fill(PRIOR_KNOWLEDGE_FRAGMENTS, state))
             stanzas.append(self._fill(SUBSYSTEM_FRAGMENTS, state))
             stanzas.append(self._fill(ARCHITECTURE_FRAGMENTS, state))
             stanzas.append(self._fill(VAULT_FRAGMENTS, state))

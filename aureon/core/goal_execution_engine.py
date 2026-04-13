@@ -220,11 +220,15 @@ class GoalExecutionEngine:
         temporal_ground: Any = None,
         source_law: Any = None,
         temporal_knowledge: Any = None,
+        stash_pockets: Any = None,
+        knowledge_dataset: Any = None,
     ):
         self._agent_core = agent_core
         self._thought_bus = thought_bus
         self._source_law = source_law
         self._temporal_knowledge = temporal_knowledge
+        self._stash_pockets = stash_pockets
+        self._knowledge_dataset = knowledge_dataset
         self._lambda_engine = lambda_engine
         self._elephant_memory = elephant_memory
         self._self_dialogue = self_dialogue
@@ -612,6 +616,9 @@ class GoalExecutionEngine:
         """
         Entry point: accept a natural-language goal, decompose it,
         execute each step, validate, and return the completed plan.
+
+        Wraps execution in a stash pocket so all intermediate dumps
+        accumulate and crystallize into the knowledge dataset on close.
         """
         with self._lock:
             self._cancelled = False
@@ -619,6 +626,26 @@ class GoalExecutionEngine:
 
         self._stats["goals_submitted"] += 1
         self._publish("goal.submitted", {"text": text})
+
+        # ── Retrieve prior knowledge from the dataset ────────────
+        # The system asks itself "what have I learned about this before?"
+        # instead of leaning on an LLM.
+        prior_knowledge: List[Any] = []
+        if self._knowledge_dataset is not None:
+            try:
+                prior_knowledge = self._knowledge_dataset.relevant_for_goal(
+                    text, n=5,
+                )
+                if prior_knowledge:
+                    self._publish("goal.prior_knowledge", {
+                        "goal_text": text[:80],
+                        "fragment_count": len(prior_knowledge),
+                        "previews": [
+                            f.text[:60] for f in prior_knowledge[:3]
+                        ],
+                    })
+            except Exception:
+                pass
 
         # Decompose
         plan = self._decompose_goal(text)
@@ -628,6 +655,35 @@ class GoalExecutionEngine:
             "objective": plan.objective,
             "steps": [{"step_id": s.step_id, "title": s.title, "intent": s.intent} for s in plan.steps],
         })
+
+        # ── Open a stash pocket for this goal ────────────────────
+        pocket = None
+        if self._stash_pockets is not None:
+            try:
+                pocket = self._stash_pockets.open_pocket(
+                    goal_id=plan.goal_id,
+                    owner="goal_engine",
+                )
+                # Dump the prior knowledge into the pocket so retrieval
+                # during steps can reference it
+                for frag in prior_knowledge:
+                    try:
+                        pocket.dump(
+                            key="prior_knowledge",
+                            value=getattr(frag, "text", ""),
+                            tags=["prior"] + list(getattr(frag, "tags", [])),
+                            phase_angle=getattr(frag, "phase_angle", 0.0),
+                        )
+                    except Exception:
+                        pass
+                # Dump the goal text itself for self-reference
+                pocket.dump(
+                    key="goal_text",
+                    value=text,
+                    tags=["goal", "input"],
+                )
+            except Exception:
+                pocket = None
 
         # Set elephant memory objective
         if self._elephant_memory is not None:
@@ -643,8 +699,38 @@ class GoalExecutionEngine:
         plan.status = "active"
         self._execute_plan(plan)
 
+        # ── Dump each step's outcome into the pocket ─────────────
+        if pocket is not None:
+            try:
+                for step in plan.steps:
+                    result_str = ""
+                    if step.result:
+                        if isinstance(step.result, dict):
+                            r = step.result.get("result") or step.result.get("analysis", "")
+                            result_str = str(r)[:500]
+                        else:
+                            result_str = str(step.result)[:500]
+                    tags = [step.intent, step.status]
+                    # Add words from the goal text as tags for retrieval
+                    goal_words = [w for w in text.lower().split() if len(w) > 3][:5]
+                    tags.extend(goal_words)
+                    pocket.dump(
+                        key=f"step_{step.step_id}_{step.intent}",
+                        value=f"{step.title}: {result_str}",
+                        tags=tags,
+                    )
+            except Exception:
+                pass
+
         # Final validation
         self._validate_goal(plan)
+
+        # ── Close the pocket — flush to elephant memory + crystallize ──
+        if pocket is not None and self._stash_pockets is not None:
+            try:
+                self._stash_pockets.close_pocket(pocket)
+            except Exception:
+                pass
 
         if plan.status == "completed":
             self._stats["goals_completed"] += 1
@@ -742,13 +828,30 @@ class GoalExecutionEngine:
     def _llm_decompose(self, text: str) -> List[GoalStep]:
         """
         Use the LLM adapter to intelligently decompose a goal into steps.
-        Every call obeys the Emerald Tablet decree.
+        Every call obeys the Emerald Tablet decree and includes any
+        prior knowledge retrieved from the dataset for puzzle-piecing.
         """
         adapter = self._swarm.adapter
         decree = self._consult_source_law()
         tablet = self._emerald_tablet_prompt(decree)
+
+        # Retrieve prior knowledge from the dataset (no LLM)
+        prior_block = ""
+        if self._knowledge_dataset is not None:
+            try:
+                prior = self._knowledge_dataset.relevant_for_goal(text, n=3)
+                if prior:
+                    lines = ["[PRIOR KNOWLEDGE — what I learned before]"]
+                    for f in prior:
+                        snippet = getattr(f, "text", "")[:120]
+                        lines.append(f"  - {snippet}")
+                    prior_block = "\n".join(lines) + "\n\n"
+            except Exception:
+                pass
+
         resp = adapter.prompt(
             messages=[{"role": "user", "content": (
+                f"{prior_block}"
                 f"Break this goal into 2-5 concrete action steps. "
                 f"For each step, output one line: STEP: <action verb> <details>\n\n"
                 f"Goal: {text}\n\n"

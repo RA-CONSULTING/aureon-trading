@@ -230,6 +230,27 @@ except Exception:
     DialMode = None  # type: ignore[assignment,misc]
     _HAS_DIALER = False
 
+try:
+    from aureon.wisdom.aureon_math_angel import NexusSystem
+    _HAS_NEXUS = True
+except Exception:
+    NexusSystem = None  # type: ignore[assignment,misc]
+    _HAS_NEXUS = False
+
+try:
+    from aureon.queen.knowledge_dataset import get_knowledge_dataset
+    _HAS_KNOWLEDGE_DATASET = True
+except Exception:
+    get_knowledge_dataset = None  # type: ignore[assignment]
+    _HAS_KNOWLEDGE_DATASET = False
+
+try:
+    from aureon.queen.queen_stash_pockets import get_stash_pockets
+    _HAS_STASH_POCKETS = True
+except Exception:
+    get_stash_pockets = None  # type: ignore[assignment]
+    _HAS_STASH_POCKETS = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -270,6 +291,9 @@ class IntegratedCognitiveSystem:
         self.prose_composer: Any = None # Queen's self-description in natural language
         self.temporal_knowledge: Any = None # Time-indexed event knowledge for agents
         self.temporal_dialer: Any = None # HNC frequency tuner — closes the feedback loop
+        self.nexus_system: Any = None    # Math angle protocol — coherence + phase
+        self.knowledge_dataset: Any = None # Crystallized knowledge from stash pockets
+        self.stash_pockets: Any = None   # Per-goal scratch pads — stop leaning on LLM
 
         # State
         self._running = False
@@ -461,6 +485,39 @@ class IntegratedCognitiveSystem:
             self.temporal_ground = get_temporal_ground_station(thought_bus=self.thought_bus)
         _boot_phase("temporal_ground", boot_temporal)
 
+        # Phase 15.5: Math Angle Protocol (NexusSystem) — coherence math
+        # used by knowledge dataset to score fragment alignment WITHOUT LLM
+        def boot_nexus():
+            if not _HAS_NEXUS:
+                raise RuntimeError("import failed")
+            self.nexus_system = NexusSystem(n_observers=7)
+        _boot_phase("nexus_system", boot_nexus)
+
+        # Phase 15.6: Knowledge Dataset — crystallizes stash pocket dumps
+        # into a queryable, persistent, phase-coherent knowledge base
+        def boot_knowledge_dataset():
+            if not _HAS_KNOWLEDGE_DATASET:
+                raise RuntimeError("import failed")
+            self.knowledge_dataset = get_knowledge_dataset(
+                nexus_system=self.nexus_system,
+            )
+        _boot_phase("knowledge_dataset", boot_knowledge_dataset)
+
+        # Phase 15.7: Stash Pockets — per-goal scratch pads. Agents dump
+        # intermediate findings here, on close they crystallize into the
+        # knowledge dataset and feed back to elephant memory.
+        def boot_stash_pockets():
+            if not _HAS_STASH_POCKETS:
+                raise RuntimeError("import failed")
+            self.stash_pockets = get_stash_pockets(
+                elephant_memory=self.elephant_memory,
+                knowledge_dataset=self.knowledge_dataset,
+                nexus_system=self.nexus_system,
+                temporal_knowledge=self.temporal_knowledge,
+                thought_bus=self.thought_bus,
+            )
+        _boot_phase("stash_pockets", boot_stash_pockets)
+
         # Phase 16: Goal Engine (wired to all above)
         def boot_goal_engine():
             if not _HAS_GOAL_ENGINE:
@@ -477,6 +534,8 @@ class IntegratedCognitiveSystem:
                 temporal_ground=self.temporal_ground,
                 source_law=self.source_law,
                 temporal_knowledge=self.temporal_knowledge,
+                stash_pockets=self.stash_pockets,
+                knowledge_dataset=self.knowledge_dataset,
             )
         _boot_phase("goal_engine", boot_goal_engine)
 
@@ -531,6 +590,7 @@ class IntegratedCognitiveSystem:
                 agent_core=self.agent_core,
                 subsystem_status=status,
                 temporal_knowledge=self.temporal_knowledge,
+                knowledge_dataset=self.knowledge_dataset,
             )
         _boot_phase("prose_composer", boot_prose)
 
@@ -905,6 +965,8 @@ class IntegratedCognitiveSystem:
             return self._cmd_essay(text)
         elif text == "/ladder":
             return self._cmd_ladder()
+        elif text == "/stash":
+            return self._cmd_stash()
         elif text == "/quit":
             return "__QUIT__"
 
@@ -964,6 +1026,26 @@ class IntegratedCognitiveSystem:
             return "\n".join(lines)
         except Exception as exc:
             return f"Swarm status error: {exc}"
+
+    def _cmd_stash(self) -> str:
+        """Show stash pocket + knowledge dataset status."""
+        lines = ["=== STASH POCKETS + KNOWLEDGE DATASET ==="]
+        if self.stash_pockets is not None:
+            sp = self.stash_pockets.get_status()
+            lines.append(f"  Pockets:    {sp['open_pockets']} open / {sp['closed_pockets']} closed")
+            lines.append(f"  Lifetime:   {sp['total_opened']} opened / {sp['total_closed']} closed")
+            lines.append(f"  Crystallized: {sp['fragments_crystallized']} fragments")
+        else:
+            lines.append("  Stash pockets not available.")
+        if self.knowledge_dataset is not None:
+            kd = self.knowledge_dataset.get_status()
+            lines.append(f"  Dataset:    {kd['fragments']} fragments, {kd['unique_tags']} tags")
+            lines.append(f"  Activity:   {kd['absorptions']} absorbs / {kd['retrievals']} retrieves")
+            lines.append(f"  Persisted:  {kd['path']}")
+        else:
+            lines.append("  Knowledge dataset not available.")
+        lines.append("  (Math angle protocol scores fragment coherence — not LLM)")
+        return "\n".join(lines)
 
     def _cmd_ladder(self) -> str:
         """Show the HNC feedback ladder — TKB events → Lambda → Dialer → bus."""
@@ -1322,6 +1404,12 @@ class IntegratedCognitiveSystem:
         if self.lambda_engine is not None:
             try:
                 self.lambda_engine.save_history()
+            except Exception:
+                pass
+
+        if self.knowledge_dataset is not None:
+            try:
+                self.knowledge_dataset.save()
             except Exception:
                 pass
 
