@@ -205,6 +205,156 @@ class Interpretation:
     related_indices: List[int] = field(default_factory=list)
     interpretation_source: str = "deterministic"  # or "swarm"
     confidence: float = 0.5
+    # ── 5W1H structured tagging ──
+    who: List[str] = field(default_factory=list)
+    what: str = ""
+    where: List[str] = field(default_factory=list)
+    when_rel: str = ""
+    why: str = ""
+    how: str = ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5W1H extractor — deterministic, no LLM
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+# Common country / city / place names for WHERE extraction
+KNOWN_PLACES = frozenset([
+    "united states", "usa", "u.s.", "china", "russia", "japan", "germany",
+    "france", "uk", "united kingdom", "england", "scotland", "wales", "ireland",
+    "india", "brazil", "canada", "australia", "mexico", "spain", "italy",
+    "london", "new york", "tokyo", "paris", "berlin", "moscow", "beijing",
+    "dublin", "sydney", "rome", "madrid", "los angeles", "san francisco",
+    "chicago", "boston", "seattle", "austin", "toronto", "vancouver",
+    "hong kong", "singapore", "seoul", "mumbai", "delhi", "cairo",
+    "africa", "europe", "asia", "america", "antarctica", "arctic",
+    "pacific", "atlantic", "mediterranean",
+])
+
+# Common entity prefixes for WHO extraction (organisations, titles)
+ENTITY_PREFIXES = frozenset([
+    "mr", "mrs", "ms", "dr", "prof", "president", "minister", "ceo",
+    "senator", "governor", "king", "queen", "pope",
+])
+
+
+def _extract_who(text: str) -> List[str]:
+    """Find likely named entities: capitalised multi-word phrases."""
+    if not text:
+        return []
+    # Match sequences like "Named Entity" (two+ capitalised words) or
+    # "President Smith" (title + name)
+    entities: List[str] = []
+    # Pattern 1: two+ consecutive capitalised words
+    for m in re.finditer(r"(?:[A-Z][a-z]{2,}\s+){1,3}[A-Z][a-z]{2,}", text):
+        candidate = m.group(0).strip()
+        if len(candidate) > 3 and candidate.lower() not in KNOWN_PLACES:
+            entities.append(candidate)
+    # Pattern 2: organisation acronyms (3+ uppercase letters)
+    for m in re.finditer(r"\b[A-Z]{3,}\b", text):
+        acro = m.group(0)
+        if acro not in ("THE", "AND", "FOR", "UTC", "USD", "EUR", "GBP", "BTC", "ETH"):
+            entities.append(acro)
+    # Dedupe preserving order
+    seen = set()
+    unique: List[str] = []
+    for e in entities:
+        if e.lower() not in seen:
+            seen.add(e.lower())
+            unique.append(e)
+    return unique[:5]
+
+
+def _extract_where(text: str) -> List[str]:
+    """Match text against known place names."""
+    if not text:
+        return []
+    lower = text.lower()
+    found: List[str] = []
+    for place in KNOWN_PLACES:
+        if place in lower:
+            found.append(place.title())
+    return found[:5]
+
+
+def _extract_what(text: str, data_type: str) -> str:
+    """Extract the main action/event from the text."""
+    if not text:
+        return ""
+    # Strip boilerplate
+    cleaned = re.sub(r"Aureon In-House Analysis[^\n]*", "", text)
+    cleaned = re.sub(r"Query:[^\n]*", "", cleaned)
+    cleaned = re.sub(r"Signal:[^\n]*", "", cleaned)
+    cleaned = cleaned.strip()
+    # First sentence
+    first = re.split(r"[.!?]\s+", cleaned, maxsplit=1)[0] if cleaned else ""
+    words = first.split()
+    if len(words) > 15:
+        first = " ".join(words[:15]) + "..."
+    return first
+
+
+def _extract_when_rel(timestamp: float, now: Optional[float] = None) -> str:
+    """Convert a timestamp to a relative string ("2h ago")."""
+    if now is None:
+        now = time.time()
+    delta = now - timestamp
+    if delta < 0:
+        return "in the future"
+    if delta < 60:
+        return f"{int(delta)}s ago"
+    if delta < 3600:
+        return f"{int(delta / 60)}m ago"
+    if delta < 86400:
+        return f"{int(delta / 3600)}h ago"
+    return f"{int(delta / 86400)}d ago"
+
+
+def _extract_why(text: str, tags: List[str]) -> str:
+    """
+    Heuristic WHY: look for causal phrases ('because', 'due to', 'caused by')
+    or fall back to reason-like tags.
+    """
+    if not text:
+        return ""
+    lower = text.lower()
+    patterns = [
+        r"because\s+([^.]+)",
+        r"due to\s+([^.]+)",
+        r"caused by\s+([^.]+)",
+        r"as a result of\s+([^.]+)",
+        r"in order to\s+([^.]+)",
+    ]
+    for pat in patterns:
+        m = re.search(pat, lower)
+        if m:
+            return m.group(1).strip()[:80]
+    # Fallback: look for reason-like tags
+    reason_tags = [t for t in tags if t in ("error", "failed", "completed", "success")]
+    if reason_tags:
+        return f"tagged as {reason_tags[0]}"
+    return ""
+
+
+def _extract_how(text: str, source: str = "") -> str:
+    """HOW = the method / source of observation."""
+    if source:
+        return source
+    if not text:
+        return ""
+    lower = text.lower()
+    if "wikipedia" in lower:
+        return "via wikipedia"
+    if "yahoo" in lower or "finance" in lower:
+        return "via yahoo finance"
+    if "reddit" in lower:
+        return "via reddit"
+    if "agent" in lower:
+        return "via swarm agent"
+    if "tool" in lower:
+        return "via tool dispatch"
+    return "via observation"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -249,10 +399,12 @@ class KnowledgeInterpreter:
         text: str,
         tags: List[str],
         existing_fragments: Optional[List[Any]] = None,
+        timestamp: Optional[float] = None,
     ) -> Interpretation:
         """
-        Run all 4 interpretive passes over one raw dump entry.
-        Returns a structured Interpretation.
+        Run all interpretive passes over one raw dump entry.
+        Returns a structured Interpretation with data_type, category,
+        meaning, related indices, AND 5W1H breakdown.
         """
         # Pass 1: Classification — what KIND of data is this?
         data_type = classify_data_type(text)
@@ -268,6 +420,14 @@ class KnowledgeInterpreter:
         if existing_fragments:
             related = find_related_keywords(text, existing_fragments, n=3)
 
+        # Pass 5: 5W1H structured tagging
+        who = _extract_who(text)
+        what = _extract_what(text, data_type)
+        where = _extract_where(text)
+        when_rel = _extract_when_rel(timestamp or time.time())
+        why = _extract_why(text, tags)
+        how = _extract_how(text)
+
         interpretation = Interpretation(
             data_type=data_type,
             category=category,
@@ -275,6 +435,12 @@ class KnowledgeInterpreter:
             related_indices=related,
             interpretation_source="deterministic",
             confidence=0.7,
+            who=who,
+            what=what,
+            where=where,
+            when_rel=when_rel,
+            why=why,
+            how=how,
         )
 
         # Optional LLM enrichment pass — purely additive, never blocking
@@ -347,10 +513,12 @@ class KnowledgeInterpreter:
             for i, entry in enumerate(entries):
                 text = getattr(entry, "value", "") or ""
                 tags = list(getattr(entry, "tags", []) or [])
+                ts = getattr(entry, "timestamp", None)
                 interpretation = self.interpret_entry(
                     text=text,
                     tags=tags,
                     existing_fragments=existing_fragments,
+                    timestamp=ts,
                 )
                 results[i] = interpretation
         except Exception as exc:

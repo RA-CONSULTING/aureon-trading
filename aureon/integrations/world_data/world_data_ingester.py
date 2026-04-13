@@ -89,6 +89,17 @@ class WorldDataIngester:
             "hackernews_calls": 0,
             "reddit_calls": 0,
             "gdelt_calls": 0,
+            "open_meteo_calls": 0,
+            "rest_countries_calls": 0,
+            "usgs_calls": 0,
+            "arxiv_calls": 0,
+            "world_bank_calls": 0,
+            "fred_calls": 0,
+            "open_library_calls": 0,
+            "wikidata_calls": 0,
+            "duckduckgo_calls": 0,
+            "pubmed_calls": 0,
+            "rss_calls": 0,
             "items_ingested": 0,
             "errors": 0,
         }
@@ -349,47 +360,503 @@ class WorldDataIngester:
         return items
 
     # ─────────────────────────────────────────────────────────────────────
+    # Open-Meteo (free, no key — weather)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_open_meteo(self, lat: float = 51.5074, lon: float = -0.1278) -> Optional[WorldDataItem]:
+        """Fetch current weather for a lat/lon. Defaults to London."""
+        with self._lock:
+            self._stats["open_meteo_calls"] += 1
+        url = (
+            f"https://api.open-meteo.com/v1/forecast"
+            f"?latitude={lat}&longitude={lon}"
+            f"&current_weather=true&timezone=UTC"
+        )
+        data = self._http_get(url)
+        if not data:
+            return None
+        try:
+            cw = data.get("current_weather", {})
+            temp = cw.get("temperature", "?")
+            wind = cw.get("windspeed", "?")
+            code = cw.get("weathercode", "?")
+            text = f"Weather at ({lat:.2f}, {lon:.2f}): {temp}°C wind={wind}km/h code={code}"
+            return WorldDataItem(
+                source="open_meteo",
+                topic=f"{lat},{lon}",
+                title=f"Weather ({lat:.2f},{lon:.2f})",
+                text=text,
+                url="https://open-meteo.com",
+                raw=cw,
+                category="temporal",
+            )
+        except Exception:
+            return None
+
+    # ─────────────────────────────────────────────────────────────────────
+    # REST Countries (free, no key — country facts)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_rest_countries(self, name: str) -> Optional[WorldDataItem]:
+        """Fetch country facts (population, capital, region, currencies)."""
+        with self._lock:
+            self._stats["rest_countries_calls"] += 1
+        safe = urllib.parse.quote(name)
+        url = f"https://restcountries.com/v3.1/name/{safe}?fields=name,capital,region,population,currencies,languages"
+        data = self._http_get(url)
+        if not data or not isinstance(data, list) or not data:
+            return None
+        try:
+            c = data[0]
+            cname = c.get("name", {}).get("common", name)
+            capital = ", ".join(c.get("capital", []))
+            region = c.get("region", "")
+            pop = c.get("population", 0)
+            currencies = list(c.get("currencies", {}).keys())
+            text = (
+                f"{cname}: capital={capital} region={region} "
+                f"population={pop:,} currencies={currencies}"
+            )
+            return WorldDataItem(
+                source="rest_countries",
+                topic=name,
+                title=cname,
+                text=text,
+                url=f"https://en.wikipedia.org/wiki/{cname.replace(' ', '_')}",
+                raw=c,
+                category="user_input",
+            )
+        except Exception:
+            return None
+
+    # ─────────────────────────────────────────────────────────────────────
+    # USGS Earthquakes (free, no key)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_usgs_earthquakes(self, n: int = 5, period: str = "day") -> List[WorldDataItem]:
+        """Fetch recent significant earthquakes (past hour/day/week)."""
+        with self._lock:
+            self._stats["usgs_calls"] += 1
+        period = period if period in ("hour", "day", "week", "month") else "day"
+        url = f"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_{period}.geojson"
+        data = self._http_get(url)
+        if not data:
+            return []
+        items: List[WorldDataItem] = []
+        try:
+            for feat in data.get("features", [])[:n]:
+                props = feat.get("properties", {})
+                place = props.get("place", "")
+                mag = props.get("mag", 0)
+                time_ms = props.get("time", 0)
+                ts = time_ms / 1000.0 if time_ms else time.time()
+                text = f"Magnitude {mag} earthquake — {place}"
+                items.append(WorldDataItem(
+                    source="usgs",
+                    topic=f"M{mag}",
+                    title=f"M{mag} {place}",
+                    text=text,
+                    url=props.get("url", ""),
+                    timestamp=ts,
+                    raw={"mag": mag, "place": place, "time_ms": time_ms},
+                    category="temporal",
+                ))
+        except Exception:
+            pass
+        return items
+
+    # ─────────────────────────────────────────────────────────────────────
+    # arXiv (free, no key — scientific papers)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_arxiv(self, query: str, n: int = 3) -> List[WorldDataItem]:
+        """Search arXiv for recent papers matching a query."""
+        with self._lock:
+            self._stats["arxiv_calls"] += 1
+        safe = urllib.parse.quote(query)
+        url = (
+            f"http://export.arxiv.org/api/query?search_query=all:{safe}"
+            f"&start=0&max_results={n}&sortBy=submittedDate&sortOrder=descending"
+        )
+        # arXiv returns Atom XML, not JSON — parse with regex (light touch)
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT})
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                body = resp.read().decode("utf-8")
+        except Exception:
+            with self._lock:
+                self._stats["errors"] += 1
+            return []
+        import re as _re
+        entries = _re.findall(r"<entry>(.*?)</entry>", body, _re.DOTALL)
+        items: List[WorldDataItem] = []
+        for ent in entries[:n]:
+            title_m = _re.search(r"<title>(.*?)</title>", ent, _re.DOTALL)
+            summary_m = _re.search(r"<summary>(.*?)</summary>", ent, _re.DOTALL)
+            link_m = _re.search(r"<id>(.*?)</id>", ent)
+            if not title_m:
+                continue
+            items.append(WorldDataItem(
+                source="arxiv",
+                topic=query,
+                title=title_m.group(1).strip()[:200],
+                text=(summary_m.group(1).strip() if summary_m else "")[:500],
+                url=link_m.group(1).strip() if link_m else "",
+                raw={},
+                category="knowledge",
+            ))
+        return items
+
+    # ─────────────────────────────────────────────────────────────────────
+    # World Bank (free, no key — economic indicators)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_world_bank(self, country: str = "US", indicator: str = "NY.GDP.MKTP.CD") -> Optional[WorldDataItem]:
+        """Fetch an economic indicator for a country. Defaults to US GDP."""
+        with self._lock:
+            self._stats["world_bank_calls"] += 1
+        url = (
+            f"https://api.worldbank.org/v2/country/{country}/indicator/{indicator}"
+            f"?format=json&per_page=1"
+        )
+        data = self._http_get(url)
+        if not data or not isinstance(data, list) or len(data) < 2:
+            return None
+        try:
+            records = data[1]
+            if not records:
+                return None
+            rec = records[0]
+            value = rec.get("value", "?")
+            year = rec.get("date", "?")
+            ind_name = rec.get("indicator", {}).get("value", indicator)
+            ctry_name = rec.get("country", {}).get("value", country)
+            text = f"{ctry_name} {ind_name} {year}: {value}"
+            return WorldDataItem(
+                source="world_bank",
+                topic=f"{country}/{indicator}",
+                title=f"{ctry_name} {ind_name}",
+                text=text,
+                url="https://data.worldbank.org",
+                raw=rec,
+                category="market",
+            )
+        except Exception:
+            return None
+
+    # ─────────────────────────────────────────────────────────────────────
+    # FRED (free, limited — Federal Reserve economic data)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_fred(self, series_id: str = "GDP") -> Optional[WorldDataItem]:
+        """Fetch latest value for a FRED series (no key needed for public endpoint)."""
+        with self._lock:
+            self._stats["fred_calls"] += 1
+        # FRED's free CSV endpoint doesn't need a key for a single series download
+        url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}&cosd=2023-01-01"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT})
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                body = resp.read().decode("utf-8")
+        except Exception:
+            with self._lock:
+                self._stats["errors"] += 1
+            return None
+        # Parse CSV — take last non-empty row
+        lines = [ln for ln in body.strip().split("\n") if ln]
+        if len(lines) < 2:
+            return None
+        last = lines[-1].split(",")
+        if len(last) < 2:
+            return None
+        date = last[0]
+        value = last[1]
+        return WorldDataItem(
+            source="fred",
+            topic=series_id,
+            title=f"FRED {series_id}",
+            text=f"{series_id} on {date}: {value}",
+            url=f"https://fred.stlouisfed.org/series/{series_id}",
+            raw={"date": date, "value": value},
+            category="market",
+        )
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Open Library (free, no key — books)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_open_library(self, query: str, n: int = 3) -> List[WorldDataItem]:
+        """Search Open Library for books matching a query."""
+        with self._lock:
+            self._stats["open_library_calls"] += 1
+        safe = urllib.parse.quote(query)
+        url = f"https://openlibrary.org/search.json?q={safe}&limit={n}"
+        data = self._http_get(url)
+        if not data:
+            return []
+        items: List[WorldDataItem] = []
+        try:
+            for doc in data.get("docs", [])[:n]:
+                title = doc.get("title", "")
+                authors = ", ".join(doc.get("author_name", [])[:3])
+                first_pub = doc.get("first_publish_year", "")
+                if not title:
+                    continue
+                items.append(WorldDataItem(
+                    source="open_library",
+                    topic=query,
+                    title=title,
+                    text=f"{title} by {authors} ({first_pub})",
+                    url=f"https://openlibrary.org{doc.get('key', '')}",
+                    raw={"authors": doc.get("author_name", []), "year": first_pub},
+                    category="knowledge",
+                ))
+        except Exception:
+            pass
+        return items
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Wikidata (free, no key — structured semantic data)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_wikidata(self, query: str, n: int = 3) -> List[WorldDataItem]:
+        """Search Wikidata for entities matching a query."""
+        with self._lock:
+            self._stats["wikidata_calls"] += 1
+        safe = urllib.parse.quote(query)
+        url = (
+            f"https://www.wikidata.org/w/api.php?action=wbsearchentities"
+            f"&search={safe}&language=en&format=json&limit={n}"
+        )
+        data = self._http_get(url)
+        if not data:
+            return []
+        items: List[WorldDataItem] = []
+        try:
+            for ent in data.get("search", [])[:n]:
+                label = ent.get("label", "")
+                desc = ent.get("description", "")
+                qid = ent.get("id", "")
+                if not label:
+                    continue
+                items.append(WorldDataItem(
+                    source="wikidata",
+                    topic=query,
+                    title=label,
+                    text=f"{label}: {desc}",
+                    url=f"https://www.wikidata.org/wiki/{qid}",
+                    raw={"qid": qid, "desc": desc},
+                    category="knowledge",
+                ))
+        except Exception:
+            pass
+        return items
+
+    # ─────────────────────────────────────────────────────────────────────
+    # DuckDuckGo Instant Answer (free, no key)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_duckduckgo(self, query: str) -> Optional[WorldDataItem]:
+        """Fetch DuckDuckGo instant answer for a query."""
+        with self._lock:
+            self._stats["duckduckgo_calls"] += 1
+        safe = urllib.parse.quote(query)
+        url = f"https://api.duckduckgo.com/?q={safe}&format=json&no_html=1&skip_disambig=1"
+        data = self._http_get(url)
+        if not data:
+            return None
+        abstract = data.get("AbstractText", "") or data.get("Abstract", "")
+        if not abstract:
+            return None
+        return WorldDataItem(
+            source="duckduckgo",
+            topic=query,
+            title=data.get("Heading", query),
+            text=abstract[:800],
+            url=data.get("AbstractURL", ""),
+            raw={"type": data.get("Type", "")},
+            category="knowledge",
+        )
+
+    # ─────────────────────────────────────────────────────────────────────
+    # PubMed (free, no key — biomedical papers)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_pubmed(self, query: str, n: int = 3) -> List[WorldDataItem]:
+        """Search PubMed/NCBI for recent biomedical papers."""
+        with self._lock:
+            self._stats["pubmed_calls"] += 1
+        safe = urllib.parse.quote(query)
+        url = (
+            f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+            f"?db=pubmed&term={safe}&retmax={n}&retmode=json"
+        )
+        data = self._http_get(url)
+        if not data:
+            return []
+        items: List[WorldDataItem] = []
+        try:
+            ids = data.get("esearchresult", {}).get("idlist", [])
+            for pid in ids[:n]:
+                items.append(WorldDataItem(
+                    source="pubmed",
+                    topic=query,
+                    title=f"PubMed {pid}",
+                    text=f"PubMed paper id {pid} matching query '{query}'",
+                    url=f"https://pubmed.ncbi.nlm.nih.gov/{pid}/",
+                    raw={"pubmed_id": pid},
+                    category="knowledge",
+                ))
+        except Exception:
+            pass
+        return items
+
+    # ─────────────────────────────────────────────────────────────────────
+    # RSS (free, no key — BBC / Reuters / AP news)
+    # ─────────────────────────────────────────────────────────────────────
+    def fetch_rss(self, feed_url: str = "http://feeds.bbci.co.uk/news/world/rss.xml", n: int = 5) -> List[WorldDataItem]:
+        """Fetch items from an RSS feed (BBC World News by default)."""
+        with self._lock:
+            self._stats["rss_calls"] += 1
+        try:
+            req = urllib.request.Request(feed_url, headers={"User-Agent": self.USER_AGENT})
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                body = resp.read().decode("utf-8", errors="replace")
+        except Exception:
+            with self._lock:
+                self._stats["errors"] += 1
+            return []
+        import re as _re
+        items: List[WorldDataItem] = []
+        # Simple RSS 2.0 parsing
+        entries = _re.findall(r"<item>(.*?)</item>", body, _re.DOTALL)
+        for ent in entries[:n]:
+            title_m = _re.search(r"<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>", ent, _re.DOTALL)
+            desc_m = _re.search(r"<description>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</description>", ent, _re.DOTALL)
+            link_m = _re.search(r"<link>(.*?)</link>", ent, _re.DOTALL)
+            if not title_m:
+                continue
+            title = title_m.group(1).strip()
+            desc = (desc_m.group(1).strip() if desc_m else "")[:300]
+            items.append(WorldDataItem(
+                source="rss",
+                topic=feed_url,
+                title=title,
+                text=f"{title} — {desc}",
+                url=link_m.group(1).strip() if link_m else feed_url,
+                raw={"feed": feed_url},
+                category="user_input",
+            ))
+        return items
+
+    # ─────────────────────────────────────────────────────────────────────
     # Universal search — answers a question from multiple sources
     # ─────────────────────────────────────────────────────────────────────
     def answer_question(self, question: str, n_per_source: int = 2) -> List[WorldDataItem]:
         """
-        Try to answer a question by searching multiple sources.
-        Returns aggregated WorldDataItems.
+        Try to answer a question by searching many free open-source APIs.
+        Returns aggregated WorldDataItems — more sources = richer answer.
         """
         results: List[WorldDataItem] = []
+        lower = question.lower()
 
-        # 1. Wikipedia (most reliable for facts)
+        # 1. Wikipedia — always try for facts
         try:
             results.extend(self.search_wikipedia(question, n=n_per_source))
         except Exception:
             pass
 
-        # 2. Reddit r/worldnews if question mentions news/world/politics
-        lower = question.lower()
-        if any(w in lower for w in ["news", "world", "politic", "election", "war", "crisis"]):
+        # 2. Wikidata — structured semantic data
+        try:
+            results.extend(self.fetch_wikidata(question, n=n_per_source))
+        except Exception:
+            pass
+
+        # 3. DuckDuckGo — instant answers
+        try:
+            ddg = self.fetch_duckduckgo(question)
+            if ddg:
+                results.append(ddg)
+        except Exception:
+            pass
+
+        # 4. News / world / politics
+        if any(w in lower for w in ["news", "world", "politic", "election", "war",
+                                      "crisis", "event", "today"]):
             try:
                 results.extend(self.fetch_reddit("worldnews", n=n_per_source))
             except Exception:
                 pass
+            try:
+                results.extend(self.fetch_rss(n=n_per_source))
+            except Exception:
+                pass
 
-        # 3. GDELT for geopolitical questions
-        if any(w in lower for w in ["politic", "geopolit", "country", "war", "diplom", "treaty"]):
+        # 5. Geopolitics — GDELT + REST Countries
+        if any(w in lower for w in ["politic", "geopolit", "country", "war",
+                                      "diplom", "treaty", "nation"]):
             try:
                 results.extend(self.fetch_gdelt(question, n=n_per_source))
             except Exception:
                 pass
+            # Extract a country name heuristically
+            country_hints = ["united states", "china", "russia", "uk", "france",
+                             "germany", "japan", "india", "brazil", "canada"]
+            for hint in country_hints:
+                if hint in lower:
+                    c = self.fetch_rest_countries(hint)
+                    if c:
+                        results.append(c)
+                    break
 
-        # 4. Yahoo Finance / CoinGecko for market questions
-        if any(w in lower for w in ["price", "market", "stock", "trade", "btc", "eth", "bitcoin", "ethereum"]):
+        # 6. Markets — Yahoo + CoinGecko + World Bank + FRED
+        if any(w in lower for w in ["price", "market", "stock", "trade", "btc",
+                                      "eth", "bitcoin", "ethereum", "economy",
+                                      "gdp", "inflation", "rate"]):
             symbols = []
+            coin_ids = []
             if "btc" in lower or "bitcoin" in lower:
                 symbols.append("BTC-USD")
+                coin_ids.append("bitcoin")
             if "eth" in lower or "ethereum" in lower:
                 symbols.append("ETH-USD")
+                coin_ids.append("ethereum")
             for sym in symbols[:n_per_source]:
                 item = self.fetch_yahoo_quote(sym)
                 if item:
                     results.append(item)
+            for cid in coin_ids[:n_per_source]:
+                item = self.fetch_coingecko(cid)
+                if item:
+                    results.append(item)
+            if any(w in lower for w in ["gdp", "economy", "indicator"]):
+                wb = self.fetch_world_bank("US", "NY.GDP.MKTP.CD")
+                if wb:
+                    results.append(wb)
+
+        # 7. Science / research — arXiv + PubMed + Open Library
+        if any(w in lower for w in ["research", "paper", "study", "science",
+                                      "journal", "academic", "theory"]):
+            try:
+                results.extend(self.fetch_arxiv(question, n=n_per_source))
+            except Exception:
+                pass
+            if any(w in lower for w in ["medical", "health", "disease", "drug", "bio"]):
+                try:
+                    results.extend(self.fetch_pubmed(question, n=n_per_source))
+                except Exception:
+                    pass
+            if any(w in lower for w in ["book", "author", "novel", "literature"]):
+                try:
+                    results.extend(self.fetch_open_library(question, n=n_per_source))
+                except Exception:
+                    pass
+
+        # 8. Weather / location
+        if any(w in lower for w in ["weather", "temperature", "climate", "forecast"]):
+            try:
+                w = self.fetch_open_meteo()
+                if w:
+                    results.append(w)
+            except Exception:
+                pass
+
+        # 9. Natural events
+        if any(w in lower for w in ["earthquake", "seismic", "quake"]):
+            try:
+                results.extend(self.fetch_usgs_earthquakes(n=n_per_source))
+            except Exception:
+                pass
 
         return results
 

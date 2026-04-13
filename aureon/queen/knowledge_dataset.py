@@ -59,6 +59,14 @@ class KnowledgeFragment:
     interpretation_source: str = "raw"   # "deterministic" or "swarm" once interpreted
     interpretation_confidence: float = 0.0
 
+    # ── 5W1H structured tagging ──
+    who: List[str] = field(default_factory=list)    # entities
+    what: str = ""                                   # event / action
+    where: List[str] = field(default_factory=list)  # locations
+    when_rel: str = ""                               # relative time ("2h ago")
+    why: str = ""                                    # causal context / parent
+    how: str = ""                                    # source / method
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
@@ -253,6 +261,12 @@ class KnowledgeDataset:
                     related = list(getattr(interp, "related_indices", []) or []) if interp else []
                     src = getattr(interp, "interpretation_source", "raw") if interp else "raw"
                     conf = getattr(interp, "confidence", 0.0) if interp else 0.0
+                    who = list(getattr(interp, "who", []) or []) if interp else []
+                    what = getattr(interp, "what", "") if interp else ""
+                    where = list(getattr(interp, "where", []) or []) if interp else []
+                    when_rel = getattr(interp, "when_rel", "") if interp else ""
+                    why = getattr(interp, "why", "") if interp else ""
+                    how = getattr(interp, "how", "") if interp else ""
 
                     fragment = KnowledgeFragment(
                         text=text[:1000],  # cap fragment length
@@ -268,6 +282,12 @@ class KnowledgeDataset:
                         related_indices=related,
                         interpretation_source=src,
                         interpretation_confidence=conf,
+                        who=who,
+                        what=what,
+                        where=where,
+                        when_rel=when_rel,
+                        why=why,
+                        how=how,
                     )
                     self._fragments.append(fragment)
                     idx = len(self._fragments) - 1
