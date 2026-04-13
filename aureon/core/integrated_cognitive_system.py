@@ -208,6 +208,13 @@ except Exception:
     AsAboveSoBelowMirror = None  # type: ignore[assignment,misc]
     _HAS_MIRROR = False
 
+try:
+    from aureon.queen.queen_prose_composer import QueenProseComposer
+    _HAS_PROSE = True
+except Exception:
+    QueenProseComposer = None  # type: ignore[assignment,misc]
+    _HAS_PROSE = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -245,6 +252,7 @@ class IntegratedCognitiveSystem:
         self.conscience: Any = None     # Ethical compass (Jiminy Cricket)
         self.source_law: Any = None    # The Emerald Tablet — 10-9-1 decision funnel
         self.mirror: Any = None        # As Above So Below — Hermetic reflection
+        self.prose_composer: Any = None # Queen's self-description in natural language
 
         # State
         self._running = False
@@ -469,6 +477,24 @@ class IntegratedCognitiveSystem:
                 raise RuntimeError("import failed")
             wire_integrations(vault=self.vault, loop=self.feedback_loop)
         _boot_phase("integrations", boot_integrations)
+
+        # Phase 26: Prose Composer (self-description from real state)
+        def boot_prose():
+            if not _HAS_PROSE:
+                raise RuntimeError("import failed")
+            self.prose_composer = QueenProseComposer(
+                being_model=self.being_model,
+                lambda_engine=self.lambda_engine,
+                vault=self.vault,
+                elephant_memory=self.elephant_memory,
+                auris=self.auris,
+                source_law=self.source_law,
+                cortex=self.cortex,
+                goal_engine=self.goal_engine,
+                agent_core=self.agent_core,
+                subsystem_status=status,
+            )
+        _boot_phase("prose_composer", boot_prose)
 
         self._boot_status = status
         return status
@@ -771,6 +797,8 @@ class IntegratedCognitiveSystem:
             return self._cmd_coherence()
         elif text == "/decree":
             return self._cmd_decree()
+        elif text.startswith("/essay"):
+            return self._cmd_essay(text)
         elif text == "/quit":
             return "__QUIT__"
 
@@ -830,6 +858,30 @@ class IntegratedCognitiveSystem:
             return "\n".join(lines)
         except Exception as exc:
             return f"Swarm status error: {exc}"
+
+    def _cmd_essay(self, text: str) -> str:
+        """Compose a self-description essay at the requested word count.
+
+        Usage: /essay [word_count]   (default 600)
+        """
+        if self.prose_composer is None:
+            return "Prose composer not available."
+        # Parse word count
+        parts = text.split()
+        target = 600
+        if len(parts) >= 2:
+            try:
+                target = int(parts[1])
+            except ValueError:
+                pass
+        try:
+            essay = self.prose_composer.compose(
+                topic="self-description",
+                target_words=target,
+            )
+            return f"[{essay.word_count} words]\n\n{essay.text}"
+        except Exception as exc:
+            return f"Compose error: {exc}"
 
     def _cmd_decree(self) -> str:
         """The Emerald Tablet's last decree — Source Law cognition result."""
