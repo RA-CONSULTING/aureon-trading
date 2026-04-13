@@ -258,6 +258,20 @@ except Exception:
     get_knowledge_interpreter = None  # type: ignore[assignment]
     _HAS_INTERPRETER = False
 
+try:
+    from aureon.integrations.world_data import get_world_data_ingester
+    _HAS_WORLD_DATA = True
+except Exception:
+    get_world_data_ingester = None  # type: ignore[assignment]
+    _HAS_WORLD_DATA = False
+
+try:
+    from aureon.queen.self_research_loop import get_self_research_loop
+    _HAS_SELF_RESEARCH = True
+except Exception:
+    get_self_research_loop = None  # type: ignore[assignment]
+    _HAS_SELF_RESEARCH = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -302,6 +316,8 @@ class IntegratedCognitiveSystem:
         self.knowledge_dataset: Any = None # Crystallized knowledge from stash pockets
         self.stash_pockets: Any = None   # Per-goal scratch pads — stop leaning on LLM
         self.knowledge_interpreter: Any = None # Swarm-driven understanding pass
+        self.world_data_ingester: Any = None # Free-API world news / wiki / yahoo
+        self.self_research_loop: Any = None # Active self-question research loop
 
         # State
         self._running = False
@@ -590,6 +606,36 @@ class IntegratedCognitiveSystem:
                 raise RuntimeError("import failed")
             self.vault_app = create_vault_app(loop=self.feedback_loop)
         _boot_phase("vault_ui", boot_vault_ui)
+
+        # Phase 22.5: World Data Ingester — pulls live data from FREE
+        # APIs (Wikipedia, Yahoo Finance, CoinGecko, Hacker News, Reddit,
+        # GDELT) into the vault. No keys required.
+        def boot_world_data():
+            if not _HAS_WORLD_DATA:
+                raise RuntimeError("import failed")
+            self.world_data_ingester = get_world_data_ingester(
+                vault=self.vault,
+                thought_bus=self.thought_bus,
+            )
+        _boot_phase("world_data_ingester", boot_world_data)
+
+        # Phase 22.6: Self-Research Loop — actively researches the system's
+        # own questions. Background thread that finds question-type
+        # fragments, generates queries, pulls answers via the ingester,
+        # and crystallizes results back into the knowledge dataset.
+        def boot_self_research():
+            if not _HAS_SELF_RESEARCH:
+                raise RuntimeError("import failed")
+            self.self_research_loop = get_self_research_loop(
+                knowledge_dataset=self.knowledge_dataset,
+                world_data_ingester=self.world_data_ingester,
+                stash_pockets=self.stash_pockets,
+                thought_bus=self.thought_bus,
+                interval_s=120.0,  # research every 2 minutes
+                max_questions_per_cycle=2,
+            )
+            self.self_research_loop.start()
+        _boot_phase("self_research_loop", boot_self_research)
 
         # Phase 23: Wire integrations (Ollama + Obsidian into vault/loop)
         def boot_integrations():
@@ -991,6 +1037,8 @@ class IntegratedCognitiveSystem:
             return self._cmd_ladder()
         elif text == "/stash":
             return self._cmd_stash()
+        elif text.startswith("/research"):
+            return self._cmd_research(text)
         elif text == "/quit":
             return "__QUIT__"
 
@@ -1050,6 +1098,42 @@ class IntegratedCognitiveSystem:
             return "\n".join(lines)
         except Exception as exc:
             return f"Swarm status error: {exc}"
+
+    def _cmd_research(self, text: str) -> str:
+        """Manually trigger research. Usage: /research [query]
+        With no query, runs one cycle of the self-research loop.
+        With a query, fetches answers immediately from external APIs.
+        """
+        if self.world_data_ingester is None:
+            return "World data ingester not available."
+
+        parts = text.split(maxsplit=1)
+        if len(parts) > 1:
+            query = parts[1].strip()
+            try:
+                items = self.world_data_ingester.answer_question(query, n_per_source=2)
+                if not items:
+                    return f"No external results found for: {query}"
+                self.world_data_ingester.ingest_to_vault(items)
+                lines = [f"=== RESEARCH: {query} ==="]
+                lines.append(f"  Found {len(items)} items, ingested into vault")
+                for it in items[:5]:
+                    lines.append(f"  [{it.source:18}] {it.title[:60]}")
+                return "\n".join(lines)
+            except Exception as exc:
+                return f"Research error: {exc}"
+
+        # No query — run one cycle of the loop
+        if self.self_research_loop is None:
+            return "Self-research loop not available."
+        try:
+            result = self.self_research_loop.run_one_cycle()
+            return (f"Research cycle {result['cycle']}: "
+                    f"{result['questions_processed']} questions, "
+                    f"{result['items_pulled']} items pulled, "
+                    f"{result['fragments_added']} fragments added")
+        except Exception as exc:
+            return f"Cycle error: {exc}"
 
     def _cmd_stash(self) -> str:
         """Show stash pocket + knowledge dataset status with taxonomy."""
@@ -1447,6 +1531,12 @@ class IntegratedCognitiveSystem:
         if self.knowledge_dataset is not None:
             try:
                 self.knowledge_dataset.save()
+            except Exception:
+                pass
+
+        if self.self_research_loop is not None:
+            try:
+                self.self_research_loop.stop()
             except Exception:
                 pass
 
