@@ -51,6 +51,14 @@ class KnowledgeFragment:
     timestamp: float = field(default_factory=time.time)
     times_retrieved: int = 0       # popularity counter
 
+    # ── Structured understanding (added by KnowledgeInterpreter) ──
+    data_type: str = "fact"        # fact, observation, decision, result, error, ...
+    category: str = "other"        # market, system, memory, code, self, swarm, ...
+    meaning: str = ""              # 1-sentence semantic summary
+    related_indices: List[int] = field(default_factory=list)  # graph edges
+    interpretation_source: str = "raw"   # "deterministic" or "swarm" once interpreted
+    interpretation_confidence: float = 0.0
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
@@ -201,10 +209,22 @@ class KnowledgeDataset:
     # ─────────────────────────────────────────────────────────────────────
     # Absorption — crystallize a stash pocket into fragments
     # ─────────────────────────────────────────────────────────────────────
-    def absorb(self, pocket: Any) -> int:
+    def absorb(
+        self,
+        pocket: Any,
+        interpretations: Optional[Dict[int, Any]] = None,
+    ) -> int:
         """
         Crystallize all entries in a stash pocket into KnowledgeFragments.
-        Returns the number of fragments added.
+
+        Args:
+            pocket: a StashPocket
+            interpretations: optional dict of {entry_index: Interpretation}
+                from KnowledgeInterpreter — if given, fragments get
+                structured fields (data_type, category, meaning, etc.)
+
+        Returns:
+            Number of fragments added.
         """
         added = 0
         try:
@@ -213,7 +233,7 @@ class KnowledgeDataset:
             owner = getattr(pocket, "owner", "")
 
             with self._lock:
-                for entry in entries:
+                for i, entry in enumerate(entries):
                     text = getattr(entry, "value", "") or ""
                     tags = list(getattr(entry, "tags", []) or [])
                     phase = getattr(entry, "phase_angle", 0.0)
@@ -225,6 +245,15 @@ class KnowledgeDataset:
                     # Compute coherence with existing dataset
                     coherence = self._coherence_with_dataset(phase)
 
+                    # Apply interpretation if provided
+                    interp = interpretations.get(i) if interpretations else None
+                    data_type = getattr(interp, "data_type", "fact") if interp else "fact"
+                    category = getattr(interp, "category", "other") if interp else "other"
+                    meaning = getattr(interp, "meaning", "") if interp else ""
+                    related = list(getattr(interp, "related_indices", []) or []) if interp else []
+                    src = getattr(interp, "interpretation_source", "raw") if interp else "raw"
+                    conf = getattr(interp, "confidence", 0.0) if interp else 0.0
+
                     fragment = KnowledgeFragment(
                         text=text[:1000],  # cap fragment length
                         tags=tags,
@@ -233,6 +262,12 @@ class KnowledgeDataset:
                         phase_angle=phase,
                         coherence_score=coherence,
                         timestamp=getattr(entry, "timestamp", time.time()),
+                        data_type=data_type,
+                        category=category,
+                        meaning=meaning,
+                        related_indices=related,
+                        interpretation_source=src,
+                        interpretation_confidence=conf,
                     )
                     self._fragments.append(fragment)
                     idx = len(self._fragments) - 1
@@ -256,6 +291,113 @@ class KnowledgeDataset:
         except Exception as exc:
             logger.debug("KnowledgeDataset absorb failed: %s", exc)
         return added
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Structured queries (use the interpretation fields)
+    # ─────────────────────────────────────────────────────────────────────
+    def find_by_category(self, category: str, n: int = 10) -> List[KnowledgeFragment]:
+        with self._lock:
+            results = [f for f in self._fragments if f.category == category]
+            for r in results[-n:]:
+                r.times_retrieved += 1
+            self._retrieve_count += 1
+            return results[-n:]
+
+    def find_by_data_type(self, data_type: str, n: int = 10) -> List[KnowledgeFragment]:
+        with self._lock:
+            results = [f for f in self._fragments if f.data_type == data_type]
+            for r in results[-n:]:
+                r.times_retrieved += 1
+            self._retrieve_count += 1
+            return results[-n:]
+
+    def get_taxonomy(self) -> Dict[str, Dict[str, int]]:
+        """Auto-built taxonomy: {category: {data_type: count}}."""
+        taxonomy: Dict[str, Dict[str, int]] = {}
+        with self._lock:
+            for frag in self._fragments:
+                cat = frag.category or "other"
+                dt = frag.data_type or "fact"
+                if cat not in taxonomy:
+                    taxonomy[cat] = {}
+                taxonomy[cat][dt] = taxonomy[cat].get(dt, 0) + 1
+        return taxonomy
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Self-organization — periodic structure pass
+    # ─────────────────────────────────────────────────────────────────────
+    def self_organize(self) -> Dict[str, Any]:
+        """
+        Walk the dataset and self-organize:
+          1. Build/refresh tag index
+          2. Compute taxonomy
+          3. Detect duplicate fragments (same meaning + same category)
+          4. Strengthen related_indices via keyword overlap
+        Returns a status dict.
+        """
+        result = {
+            "tags_reindexed": 0,
+            "duplicates_marked": 0,
+            "links_added": 0,
+            "taxonomy": {},
+        }
+        try:
+            with self._lock:
+                # 1. Rebuild tag index from scratch
+                self._tag_index.clear()
+                for i, frag in enumerate(self._fragments):
+                    for tag in frag.tags:
+                        self._tag_index[tag].append(i)
+                result["tags_reindexed"] = len(self._tag_index)
+
+                # 2. Taxonomy
+                result["taxonomy"] = self.get_taxonomy()
+
+                # 3. Duplicate detection — same meaning + category
+                seen: Dict[Tuple[str, str], int] = {}
+                duplicates = 0
+                for i, frag in enumerate(self._fragments):
+                    key = (frag.category, frag.meaning[:50])
+                    if key in seen and frag.meaning:
+                        duplicates += 1
+                        # Mark the duplicate by adding a tag
+                        if "duplicate" not in frag.tags:
+                            frag.tags.append("duplicate")
+                    else:
+                        seen[key] = i
+                result["duplicates_marked"] = duplicates
+
+                # 4. Strengthen links — for each fragment, find top-3 keyword neighbours
+                links_added = 0
+                # Sample to keep this fast
+                sample_size = min(50, len(self._fragments))
+                for i in range(sample_size):
+                    frag = self._fragments[i]
+                    if frag.related_indices:
+                        continue
+                    # Find related by keyword overlap
+                    target_words = set(re.findall(r"[a-zA-Z]{4,}", (frag.text or "").lower()))
+                    if not target_words:
+                        continue
+                    scored = []
+                    for j, other in enumerate(self._fragments):
+                        if i == j:
+                            continue
+                        other_words = set(re.findall(r"[a-zA-Z]{4,}", (other.text or "").lower()))
+                        overlap = len(target_words & other_words)
+                        if overlap >= 2:
+                            scored.append((overlap, j))
+                    scored.sort(key=lambda x: -x[0])
+                    new_related = [j for _, j in scored[:3]]
+                    if new_related:
+                        frag.related_indices = new_related
+                        links_added += len(new_related)
+                result["links_added"] = links_added
+
+            self.save()
+        except Exception as exc:
+            logger.debug("self_organize failed: %s", exc)
+        return result
 
     # ─────────────────────────────────────────────────────────────────────
     # Query API

@@ -251,6 +251,13 @@ except Exception:
     get_stash_pockets = None  # type: ignore[assignment]
     _HAS_STASH_POCKETS = False
 
+try:
+    from aureon.queen.knowledge_interpreter import get_knowledge_interpreter
+    _HAS_INTERPRETER = True
+except Exception:
+    get_knowledge_interpreter = None  # type: ignore[assignment]
+    _HAS_INTERPRETER = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -294,6 +301,7 @@ class IntegratedCognitiveSystem:
         self.nexus_system: Any = None    # Math angle protocol — coherence + phase
         self.knowledge_dataset: Any = None # Crystallized knowledge from stash pockets
         self.stash_pockets: Any = None   # Per-goal scratch pads — stop leaning on LLM
+        self.knowledge_interpreter: Any = None # Swarm-driven understanding pass
 
         # State
         self._running = False
@@ -503,9 +511,24 @@ class IntegratedCognitiveSystem:
             )
         _boot_phase("knowledge_dataset", boot_knowledge_dataset)
 
+        # Phase 15.65: Knowledge Interpreter — turns raw dumps into
+        # structured logic (data_type, category, meaning, related)
+        # via 4 deterministic passes. No LLM dependency.
+        def boot_interpreter():
+            if not _HAS_INTERPRETER:
+                raise RuntimeError("import failed")
+            self.knowledge_interpreter = get_knowledge_interpreter(
+                swarm=self.swarm,
+                knowledge_dataset=self.knowledge_dataset,
+                nexus_system=self.nexus_system,
+                use_llm=False,  # deterministic by default
+            )
+        _boot_phase("knowledge_interpreter", boot_interpreter)
+
         # Phase 15.7: Stash Pockets — per-goal scratch pads. Agents dump
-        # intermediate findings here, on close they crystallize into the
-        # knowledge dataset and feed back to elephant memory.
+        # intermediate findings here, on close they pass through the
+        # interpreter, crystallize into the dataset, and flow into
+        # elephant memory.
         def boot_stash_pockets():
             if not _HAS_STASH_POCKETS:
                 raise RuntimeError("import failed")
@@ -515,6 +538,7 @@ class IntegratedCognitiveSystem:
                 nexus_system=self.nexus_system,
                 temporal_knowledge=self.temporal_knowledge,
                 thought_bus=self.thought_bus,
+                knowledge_interpreter=self.knowledge_interpreter,
             )
         _boot_phase("stash_pockets", boot_stash_pockets)
 
@@ -1028,7 +1052,7 @@ class IntegratedCognitiveSystem:
             return f"Swarm status error: {exc}"
 
     def _cmd_stash(self) -> str:
-        """Show stash pocket + knowledge dataset status."""
+        """Show stash pocket + knowledge dataset status with taxonomy."""
         lines = ["=== STASH POCKETS + KNOWLEDGE DATASET ==="]
         if self.stash_pockets is not None:
             sp = self.stash_pockets.get_status()
@@ -1042,9 +1066,22 @@ class IntegratedCognitiveSystem:
             lines.append(f"  Dataset:    {kd['fragments']} fragments, {kd['unique_tags']} tags")
             lines.append(f"  Activity:   {kd['absorptions']} absorbs / {kd['retrievals']} retrieves")
             lines.append(f"  Persisted:  {kd['path']}")
-        else:
-            lines.append("  Knowledge dataset not available.")
-        lines.append("  (Math angle protocol scores fragment coherence — not LLM)")
+            # Auto-taxonomy
+            try:
+                taxonomy = self.knowledge_dataset.get_taxonomy()
+                if taxonomy:
+                    lines.append("  Taxonomy (category → data_type → count):")
+                    for cat, types in sorted(taxonomy.items()):
+                        type_str = ", ".join(f"{dt}({n})" for dt, n in types.items())
+                        lines.append(f"    {cat:12} {type_str}")
+            except Exception:
+                pass
+        if self.knowledge_interpreter is not None:
+            ki = self.knowledge_interpreter.get_status()
+            lines.append(f"  Interpreter: {ki['interpretations']} runs, "
+                         f"{ki['deterministic_passes']} deterministic / "
+                         f"{ki['swarm_passes']} swarm")
+        lines.append("  (Math angle protocol + structured interpretation — not LLM)")
         return "\n".join(lines)
 
     def _cmd_ladder(self) -> str:

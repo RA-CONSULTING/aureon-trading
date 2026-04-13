@@ -161,12 +161,14 @@ class KnowledgeStashPockets:
         nexus_system: Any = None,
         temporal_knowledge: Any = None,
         thought_bus: Any = None,
+        knowledge_interpreter: Any = None,
     ):
         self._elephant_memory = elephant_memory
         self._knowledge_dataset = knowledge_dataset
         self._nexus_system = nexus_system
         self._temporal_knowledge = temporal_knowledge
         self._thought_bus = thought_bus
+        self._knowledge_interpreter = knowledge_interpreter
 
         self._open_pockets: Dict[str, StashPocket] = {}
         self._closed_pockets: List[StashPocket] = []
@@ -237,10 +239,22 @@ class KnowledgeStashPockets:
             except Exception as exc:
                 logger.debug("ElephantMemory flush failed: %s", exc)
 
-        # 2. Crystallize into knowledge dataset
+        # 2a. Interpret the pocket — turn random dumps into structured logic
+        interpretations = None
+        if self._knowledge_interpreter is not None:
+            try:
+                interpretations = self._knowledge_interpreter.interpret_pocket(pocket)
+                result["interpretations"] = len(interpretations)
+            except Exception as exc:
+                logger.debug("Interpreter failed: %s", exc)
+
+        # 2b. Crystallize into knowledge dataset (with interpretations if any)
         if self._knowledge_dataset is not None:
             try:
-                added = self._knowledge_dataset.absorb(pocket)
+                added = self._knowledge_dataset.absorb(
+                    pocket,
+                    interpretations=interpretations,
+                )
                 result["fragments_crystallized"] = added
                 self._fragments_crystallized += added
             except Exception as exc:
