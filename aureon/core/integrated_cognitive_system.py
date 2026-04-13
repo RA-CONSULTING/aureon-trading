@@ -222,6 +222,14 @@ except Exception:
     get_temporal_knowledge = None  # type: ignore[assignment]
     _HAS_TKB = False
 
+try:
+    from aureon.intelligence.aureon_temporal_dialer import TemporalDialer, DialMode
+    _HAS_DIALER = True
+except Exception:
+    TemporalDialer = None  # type: ignore[assignment,misc]
+    DialMode = None  # type: ignore[assignment,misc]
+    _HAS_DIALER = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -261,6 +269,7 @@ class IntegratedCognitiveSystem:
         self.mirror: Any = None        # As Above So Below — Hermetic reflection
         self.prose_composer: Any = None # Queen's self-description in natural language
         self.temporal_knowledge: Any = None # Time-indexed event knowledge for agents
+        self.temporal_dialer: Any = None # HNC frequency tuner — closes the feedback loop
 
         # State
         self._running = False
@@ -315,6 +324,15 @@ class IntegratedCognitiveSystem:
             if self.thought_bus is not None:
                 self.temporal_knowledge.subscribe_to(self.thought_bus)
         _boot_phase("temporal_knowledge", boot_tkb)
+
+        # Phase 2.6: Temporal Dialer (HNC frequency tuner — closes the
+        # feedback loop between TKB and the Lambda field)
+        def boot_dialer():
+            if not _HAS_DIALER:
+                raise RuntimeError("import failed")
+            self.temporal_dialer = TemporalDialer(name="ICS_Dialer")
+            self.temporal_dialer.calibrate()
+        _boot_phase("temporal_dialer", boot_dialer)
 
         # Phase 3: Self-Dialogue Engine (needs vault)
         def boot_self_dialogue():
@@ -650,6 +668,39 @@ class IntegratedCognitiveSystem:
                         except Exception:
                             pass
 
+                    # ── HNC FEEDBACK LADDER (UP) ─────────────────────
+                    # Feed temporal patterns from TKB as harmonic readings
+                    # into the Lambda field. Hot topics become subsystem
+                    # readings whose value reflects their burst rate.
+                    if self.temporal_knowledge is not None:
+                        try:
+                            hot = self.temporal_knowledge.hottest_topics(n=5, window_s=60.0)
+                            if hot:
+                                # Normalise rates against the hottest topic
+                                max_count = max(c for _, c in hot)
+                                for topic, count in hot:
+                                    norm = count / max_count if max_count > 0 else 0.5
+                                    readings.append(SubsystemReading(
+                                        name=f"tkb_{topic[:20]}",
+                                        value=max(0.4, norm),
+                                        confidence=0.85,
+                                        state="active",
+                                    ))
+                            bursts = self.temporal_knowledge.bursting_topics(window_s=60.0)
+                            if bursts:
+                                # Bursting topics inject high-confidence high-value readings
+                                # (this raises Lambda coherence when something is happening)
+                                for topic, recent_rate, base_rate in bursts[:3]:
+                                    burst_strength = min(1.0, recent_rate / max(base_rate, 1.0))
+                                    readings.append(SubsystemReading(
+                                        name=f"burst_{topic[:20]}",
+                                        value=min(1.0, 0.7 + burst_strength * 0.3),
+                                        confidence=0.95,
+                                        state="bursting",
+                                    ))
+                        except Exception:
+                            pass
+
                 ls = self.lambda_engine.step(readings=readings or None, vault=self.vault)
                 source_state = {
                     "lambda_t": ls.lambda_t,
@@ -752,6 +803,39 @@ class IntegratedCognitiveSystem:
             except Exception:
                 pass
 
+        # ── HNC FEEDBACK LADDER (DOWN) ──────────────────────────────
+        # Tune the Temporal Dialer to a frequency derived from the new
+        # Lambda gamma (coherence) × 528Hz love frequency. Pull a quantum
+        # packet and publish it back to ThoughtBus. The packet will be
+        # captured by the TKB on its next event, completing the loop.
+        if self.temporal_dialer is not None and self._tick_count % 3 == 0:
+            try:
+                # Map gamma [0..1] to a frequency on the love-Schumann lattice:
+                #   gamma=0 -> 7.83 Hz (Schumann)
+                #   gamma=1 -> 528 Hz (Love)
+                gamma = source_state.get("coherence_gamma", 0.5)
+                target_hz = 7.83 + (528.0 - 7.83) * gamma
+                resonance = self.temporal_dialer.tune_frequency(
+                    frequency_hz=target_hz,
+                    bandwidth=10.0,
+                )
+                packet = self.temporal_dialer.pull_quantum_data()
+                if packet is not None:
+                    try:
+                        bus.publish("temporal.dialer.packet", {
+                            "frequency_hz": packet.frequency,
+                            "intensity": packet.intensity,
+                            "coherence": packet.coherence,
+                            "resonance": resonance,
+                            "source_layer": packet.source_layer,
+                            "lambda_gamma": gamma,
+                            "tick": self._tick_count,
+                        }, source="ics.dialer")
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
         # SOURCE LAW: The Emerald Tablet — cogitate every 5th tick
         # (not every tick — cognition needs accumulated signals)
         if self.source_law is not None and self._tick_count % 5 == 0:
@@ -819,6 +903,8 @@ class IntegratedCognitiveSystem:
             return self._cmd_decree()
         elif text.startswith("/essay"):
             return self._cmd_essay(text)
+        elif text == "/ladder":
+            return self._cmd_ladder()
         elif text == "/quit":
             return "__QUIT__"
 
@@ -878,6 +964,58 @@ class IntegratedCognitiveSystem:
             return "\n".join(lines)
         except Exception as exc:
             return f"Swarm status error: {exc}"
+
+    def _cmd_ladder(self) -> str:
+        """Show the HNC feedback ladder — TKB events → Lambda → Dialer → bus."""
+        lines = ["=== HNC FEEDBACK LADDER ==="]
+
+        # UP: TKB feeding Lambda
+        if self.temporal_knowledge:
+            tkb_status = self.temporal_knowledge.get_status()
+            hot = self.temporal_knowledge.hottest_topics(n=3, window_s=60.0)
+            bursts = self.temporal_knowledge.bursting_topics(window_s=60.0)
+            lines.append(f"  ↑ TKB:    {tkb_status['total_events']} events, "
+                         f"{tkb_status['unique_topics']} topics, "
+                         f"{tkb_status['uptime_s']:.0f}s uptime")
+            if hot:
+                lines.append(f"    hot:    {', '.join(f'{t}({c})' for t, c in hot)}")
+            if bursts:
+                lines.append(f"    burst:  {len(bursts)} topics bursting")
+
+        # MIDDLE: Lambda
+        if self.lambda_engine:
+            try:
+                ls = self.lambda_engine.step()
+                lines.append(f"  Λ Lambda: gamma={ls.coherence_gamma:.3f} "
+                             f"psi={ls.consciousness_psi:.3f} "
+                             f"level={ls.consciousness_level}")
+            except Exception:
+                pass
+
+        # DOWN: Dialer
+        if self.temporal_dialer:
+            ds = self.temporal_dialer.get_status()
+            state = ds.get("state", {})
+            if isinstance(state, dict):
+                freq = state.get("frequency", 0)
+                res = state.get("resonance", 0)
+                mode = state.get("mode", "?")
+                lines.append(f"  ↓ Dialer: freq={freq:.2f}Hz "
+                             f"resonance={res:.3f} mode={mode}")
+                lines.append(f"    packets: {ds.get('packets_received', 0)}")
+
+        # Source Law (the Tablet at the apex)
+        if self.source_law:
+            try:
+                result = getattr(self.source_law, '_last_result', None) or self.source_law.cogitate()
+                if result:
+                    lines.append(f"  ☉ Tablet: {result.action} "
+                                 f"coh={result.coherence_gamma:.3f}")
+            except Exception:
+                pass
+
+        lines.append("  (TKB → Lambda → Dialer → ThoughtBus → TKB) — closed loop")
+        return "\n".join(lines)
 
     def _cmd_essay(self, text: str) -> str:
         """Compose a self-description essay at the requested word count.

@@ -118,9 +118,9 @@ class TemporalKnowledgeBase:
             parent_id = getattr(thought, "parent_id", None)
             payload = getattr(thought, "payload", {})
 
-            # Avoid recursive feedback from temporal events themselves
-            if topic.startswith("temporal."):
-                return
+            # TKB does not publish anything itself, so it is safe to
+            # capture every event including temporal.dialer.packet which
+            # closes the HNC feedback loop.
 
             # Compact payload summary
             if isinstance(payload, dict):
