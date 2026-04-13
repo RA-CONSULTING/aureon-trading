@@ -272,6 +272,13 @@ except Exception:
     get_self_research_loop = None  # type: ignore[assignment]
     _HAS_SELF_RESEARCH = False
 
+try:
+    from aureon.queen.vault_knowledge_bridge import get_vault_knowledge_bridge
+    _HAS_VAULT_BRIDGE = True
+except Exception:
+    get_vault_knowledge_bridge = None  # type: ignore[assignment]
+    _HAS_VAULT_BRIDGE = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -318,6 +325,7 @@ class IntegratedCognitiveSystem:
         self.knowledge_interpreter: Any = None # Swarm-driven understanding pass
         self.world_data_ingester: Any = None # Free-API world news / wiki / yahoo
         self.self_research_loop: Any = None # Active self-question research loop
+        self.vault_knowledge_bridge: Any = None # Vault -> interpreter -> dataset sync
 
         # State
         self._running = False
@@ -636,6 +644,24 @@ class IntegratedCognitiveSystem:
             )
             self.self_research_loop.start()
         _boot_phase("self_research_loop", boot_self_research)
+
+        # Phase 22.7: Vault Knowledge Bridge — continuous vault → dataset
+        # sync so every new card flows through the interpreter and gets
+        # self-organised against the existing structure in real time.
+        def boot_vault_bridge():
+            if not _HAS_VAULT_BRIDGE:
+                raise RuntimeError("import failed")
+            self.vault_knowledge_bridge = get_vault_knowledge_bridge(
+                vault=self.vault,
+                knowledge_dataset=self.knowledge_dataset,
+                knowledge_interpreter=self.knowledge_interpreter,
+                stash_pockets=self.stash_pockets,
+                thought_bus=self.thought_bus,
+                sync_interval_s=30.0,
+                self_organize_every_n_absorbs=15,
+            )
+            self.vault_knowledge_bridge.start()
+        _boot_phase("vault_knowledge_bridge", boot_vault_bridge)
 
         # Phase 23: Wire integrations (Ollama + Obsidian into vault/loop)
         def boot_integrations():
@@ -1039,6 +1065,8 @@ class IntegratedCognitiveSystem:
             return self._cmd_stash()
         elif text.startswith("/research"):
             return self._cmd_research(text)
+        elif text == "/organize":
+            return self._cmd_organize()
         elif text == "/quit":
             return "__QUIT__"
 
@@ -1098,6 +1126,38 @@ class IntegratedCognitiveSystem:
             return "\n".join(lines)
         except Exception as exc:
             return f"Swarm status error: {exc}"
+
+    def _cmd_organize(self) -> str:
+        """Manually trigger vault→dataset sync + self-organize."""
+        lines = ["=== VAULT KNOWLEDGE BRIDGE ==="]
+        if self.vault_knowledge_bridge is None:
+            lines.append("  Bridge not available.")
+            return "\n".join(lines)
+
+        # Run one sync cycle immediately
+        try:
+            result = self.vault_knowledge_bridge.run_one_cycle()
+            lines.append(f"  Cycle examined:    {result['examined']} cards")
+            lines.append(f"  Cards absorbed:    {result['absorbed']}")
+            lines.append(f"  Fragments added:   {result['fragments_added']}")
+            lines.append(f"  Self-organised:    {result['self_organized']}")
+            if result.get("self_organize_result"):
+                so = result["self_organize_result"]
+                lines.append(f"    tags reindexed:  {so['tags_reindexed']}")
+                lines.append(f"    duplicates:      {so['duplicates_marked']}")
+                lines.append(f"    links added:     {so['links_added']}")
+        except Exception as exc:
+            lines.append(f"  Cycle error: {exc}")
+
+        # Show bridge status
+        status = self.vault_knowledge_bridge.get_status()
+        lines.append("  Bridge lifetime:")
+        lines.append(f"    cycles:          {status['cycles']}")
+        lines.append(f"    cards examined:  {status['cards_examined']}")
+        lines.append(f"    cards absorbed:  {status['cards_absorbed']}")
+        lines.append(f"    fragments added: {status['fragments_added']}")
+        lines.append(f"    self-organises:  {status['self_organize_runs']}")
+        return "\n".join(lines)
 
     def _cmd_research(self, text: str) -> str:
         """Manually trigger research. Usage: /research [query]
@@ -1537,6 +1597,12 @@ class IntegratedCognitiveSystem:
         if self.self_research_loop is not None:
             try:
                 self.self_research_loop.stop()
+            except Exception:
+                pass
+
+        if self.vault_knowledge_bridge is not None:
+            try:
+                self.vault_knowledge_bridge.stop()
             except Exception:
                 pass
 
