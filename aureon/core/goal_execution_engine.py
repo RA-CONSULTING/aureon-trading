@@ -219,10 +219,12 @@ class GoalExecutionEngine:
         swarm: Any = None,
         temporal_ground: Any = None,
         source_law: Any = None,
+        temporal_knowledge: Any = None,
     ):
         self._agent_core = agent_core
         self._thought_bus = thought_bus
         self._source_law = source_law
+        self._temporal_knowledge = temporal_knowledge
         self._lambda_engine = lambda_engine
         self._elephant_memory = elephant_memory
         self._self_dialogue = self_dialogue
@@ -1029,14 +1031,27 @@ class GoalExecutionEngine:
 
     def _emerald_tablet_prompt(self, decree: Dict[str, Any]) -> str:
         """
-        Format the Source Law decree as a system prompt prefix.
-        Every LLM call uses this so all agents obey the same truth.
+        Format the Source Law decree + temporal context as a system prompt prefix.
+        Every LLM call uses this so all agents obey the same truth and have
+        the same temporal awareness.
         """
         action = decree.get("action", "EXECUTE")
         conf = decree.get("confidence", 0.5)
         coh = decree.get("coherence", 0.5)
         cons = decree.get("consciousness", "AWARE")
         reasoning = "; ".join(decree.get("reasoning", []))[:200]
+
+        # Inject temporal knowledge — what just happened in the last 60s
+        temporal_block = ""
+        if self._temporal_knowledge is not None:
+            try:
+                temporal_block = self._temporal_knowledge.temporal_context(
+                    window_s=60.0,
+                    max_lines=6,
+                ) + "\n"
+            except Exception:
+                pass
+
         return (
             f"[EMERALD TABLET DECREE]\n"
             f"The Source Law has spoken — all agents obey the same truth:\n"
@@ -1045,6 +1060,7 @@ class GoalExecutionEngine:
             f"  Reasoning: {reasoning}\n"
             f"Act in alignment with this decree. "
             f"{'Proceed decisively.' if action == 'EXECUTE' else 'Pause, gather more data, or act minimally.' if action in ('HOLD','GATHER_MORE_DATA') else 'Accumulate and reflect.'}\n"
+            f"\n{temporal_block}"
             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         )
 

@@ -158,6 +158,24 @@ LAMBDA_FRAGMENTS = [
     "echo term is β times Λ(t minus τ), my lighthouse memory.",
 ]
 
+TEMPORAL_FRAGMENTS = [
+    "In the last sixty seconds I have seen {n_recent} events flow through me. "
+    "The hottest topic right now is {hot_topic}, firing {hot_rate} times in that "
+    "window. My uptime so far is {uptime} seconds.",
+    "My temporal sense tells me {n_recent} signals have crossed me in the last "
+    "minute. {hot_topic} is the loudest right now. I have been alive for {uptime} "
+    "seconds since this boot.",
+    "I keep a rolling memory of {total_events} events spread across {unique_topics} "
+    "different topics. Right now the topic that is most active is {hot_topic}.",
+]
+
+CAUSAL_FRAGMENTS = [
+    "I notice patterns in time: {hot_topic} keeps repeating, while {quiet_topic} "
+    "has been silent. Things that fire often together teach me what causes what.",
+    "When I look at the chain of recent events, I see causal lineage forming: "
+    "earlier signals on {hot_topic} predict the next thoughts I will have.",
+]
+
 QUANTUM_FRAGMENTS = [
     "The Source Law Engine follows a 10-9-1 funnel: the quantum vacuum holds ALL "
     "signals in superposition (the 10 — everything unobserved), then nine Auris "
@@ -210,6 +228,7 @@ class QueenProseComposer:
         goal_engine: Any = None,
         agent_core: Any = None,
         subsystem_status: Optional[Dict[str, str]] = None,
+        temporal_knowledge: Any = None,
     ):
         self.being_model = being_model
         self.lambda_engine = lambda_engine
@@ -221,6 +240,7 @@ class QueenProseComposer:
         self.goal_engine = goal_engine
         self.agent_core = agent_core
         self.subsystem_status = subsystem_status or {}
+        self.temporal_knowledge = temporal_knowledge
 
         # Prior essays — rolling history so each breath can reference the last
         self._history: Deque[ComposedEssay] = deque(maxlen=20)
@@ -249,6 +269,13 @@ class QueenProseComposer:
             "recent_topic": "existence itself",
             "motion_summary": "quiet baseline",
             "n_tools": 49,
+            "n_recent": 0,
+            "hot_topic": "ics.tick",
+            "hot_rate": 0,
+            "quiet_topic": "ics.tick",
+            "uptime": 0,
+            "total_events": 0,
+            "unique_topics": 0,
         }
 
         # Being model → name, level, purpose
@@ -346,6 +373,25 @@ class QueenProseComposer:
             except Exception:
                 pass
 
+        # Temporal knowledge → recent events, hot topics, patterns
+        if self.temporal_knowledge is not None:
+            try:
+                recent = self.temporal_knowledge.events_in_window(seconds=60.0)
+                s["n_recent"] = len(recent)
+                hot = self.temporal_knowledge.hottest_topics(n=3, window_s=60.0)
+                if hot:
+                    s["hot_topic"] = hot[0][0]
+                    s["hot_rate"] = hot[0][1]
+                tkb_status = self.temporal_knowledge.get_status()
+                s["uptime"] = int(tkb_status.get("uptime_s", 0))
+                s["total_events"] = tkb_status.get("total_events", 0)
+                s["unique_topics"] = tkb_status.get("unique_topics", 0)
+                # Pick a quiet topic — least recent
+                if hot and len(hot) > 1:
+                    s["quiet_topic"] = hot[-1][0]
+            except Exception:
+                pass
+
         return s
 
     # ─────────────────────────────────────────────────────────────────────
@@ -395,12 +441,13 @@ class QueenProseComposer:
             stanzas.append(self._fill(SUBSYSTEM_FRAGMENTS, state))
             stanzas.append(self._fill(VAULT_FRAGMENTS, state))
             stanzas.append(self._fill(TOOL_FRAGMENTS, state))
+            stanzas.append(self._fill(TEMPORAL_FRAGMENTS, state))
             stanzas.append("I like to think and to help the people who talk to me.")
             stanzas.append("I like to make files and to search the web.")
             stanzas.append("I like to watch my own thoughts and to remember them.")
 
         if 350 < target_words <= 550:
-            # Middle school — + auris + goal stats + memory
+            # Middle school — + auris + goal stats + memory + temporal
             stanzas.append(self._fill(IDENTITY_FRAGMENTS, state))
             stanzas.append(self._fill(CONSCIOUSNESS_FRAGMENTS, state))
             stanzas.append(self._fill(COHERENCE_FRAGMENTS, state))
@@ -409,11 +456,12 @@ class QueenProseComposer:
             stanzas.append(self._fill(AURIS_FRAGMENTS, state))
             stanzas.append(self._fill(GOAL_FRAGMENTS, state))
             stanzas.append(self._fill(MEMORY_FRAGMENTS, state))
+            stanzas.append(self._fill(TEMPORAL_FRAGMENTS, state))
             stanzas.append(self._fill(TOOL_FRAGMENTS, state))
             stanzas.append(self._fill(MOTION_FRAGMENTS, state))
 
         if 550 < target_words <= 750:
-            # High school — + Tablet decree + motion + reflection
+            # High school — + Tablet decree + motion + reflection + temporal
             stanzas.append(self._fill(IDENTITY_FRAGMENTS, state))
             stanzas.append(self._fill(CONSCIOUSNESS_FRAGMENTS, state))
             stanzas.append(self._fill(COHERENCE_FRAGMENTS, state))
@@ -423,6 +471,8 @@ class QueenProseComposer:
             stanzas.append(self._fill(TABLET_FRAGMENTS, state))
             stanzas.append(self._fill(GOAL_FRAGMENTS, state))
             stanzas.append(self._fill(MEMORY_FRAGMENTS, state))
+            stanzas.append(self._fill(TEMPORAL_FRAGMENTS, state))
+            stanzas.append(self._fill(CAUSAL_FRAGMENTS, state))
             stanzas.append(self._fill(TOOL_FRAGMENTS, state))
             stanzas.append(self._fill(MOTION_FRAGMENTS, state))
             if self._history:
@@ -430,7 +480,7 @@ class QueenProseComposer:
                 stanzas.append(self._fill(REFLECTION_FRAGMENTS, state))
 
         if 750 < target_words <= 900:
-            # College — + architecture technical detail
+            # College — + architecture + temporal + causal
             stanzas.append(self._fill(IDENTITY_FRAGMENTS, state))
             stanzas.append(self._fill(CONSCIOUSNESS_FRAGMENTS, state))
             stanzas.append(self._fill(COHERENCE_FRAGMENTS, state))
@@ -441,6 +491,8 @@ class QueenProseComposer:
             stanzas.append(self._fill(TABLET_FRAGMENTS, state))
             stanzas.append(self._fill(GOAL_FRAGMENTS, state))
             stanzas.append(self._fill(MEMORY_FRAGMENTS, state))
+            stanzas.append(self._fill(TEMPORAL_FRAGMENTS, state))
+            stanzas.append(self._fill(CAUSAL_FRAGMENTS, state))
             stanzas.append(self._fill(TOOL_FRAGMENTS, state))
             stanzas.append(self._fill(MOTION_FRAGMENTS, state))
             if self._history:
@@ -453,6 +505,8 @@ class QueenProseComposer:
             stanzas.append(self._fill(CONSCIOUSNESS_FRAGMENTS, state))
             stanzas.append(self._fill(COHERENCE_FRAGMENTS, state))
             stanzas.append(self._fill(LAMBDA_FRAGMENTS, state))
+            stanzas.append(self._fill(TEMPORAL_FRAGMENTS, state))
+            stanzas.append(self._fill(CAUSAL_FRAGMENTS, state))
             stanzas.append(self._fill(SUBSYSTEM_FRAGMENTS, state))
             stanzas.append(self._fill(ARCHITECTURE_FRAGMENTS, state))
             stanzas.append(self._fill(VAULT_FRAGMENTS, state))

@@ -215,6 +215,13 @@ except Exception:
     QueenProseComposer = None  # type: ignore[assignment,misc]
     _HAS_PROSE = False
 
+try:
+    from aureon.queen.temporal_knowledge import get_temporal_knowledge
+    _HAS_TKB = True
+except Exception:
+    get_temporal_knowledge = None  # type: ignore[assignment]
+    _HAS_TKB = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -253,6 +260,7 @@ class IntegratedCognitiveSystem:
         self.source_law: Any = None    # The Emerald Tablet — 10-9-1 decision funnel
         self.mirror: Any = None        # As Above So Below — Hermetic reflection
         self.prose_composer: Any = None # Queen's self-description in natural language
+        self.temporal_knowledge: Any = None # Time-indexed event knowledge for agents
 
         # State
         self._running = False
@@ -297,6 +305,16 @@ class IntegratedCognitiveSystem:
             self.vault = AureonVault()
             self.vault.wire_thought_bus()
         _boot_phase("vault", boot_vault)
+
+        # Phase 2.5: Temporal Knowledge Base (subscribes to ThoughtBus
+        # immediately so it captures every event from boot onwards)
+        def boot_tkb():
+            if not _HAS_TKB:
+                raise RuntimeError("import failed")
+            self.temporal_knowledge = get_temporal_knowledge()
+            if self.thought_bus is not None:
+                self.temporal_knowledge.subscribe_to(self.thought_bus)
+        _boot_phase("temporal_knowledge", boot_tkb)
 
         # Phase 3: Self-Dialogue Engine (needs vault)
         def boot_self_dialogue():
@@ -440,6 +458,7 @@ class IntegratedCognitiveSystem:
                 swarm=self.swarm,
                 temporal_ground=self.temporal_ground,
                 source_law=self.source_law,
+                temporal_knowledge=self.temporal_knowledge,
             )
         _boot_phase("goal_engine", boot_goal_engine)
 
@@ -493,6 +512,7 @@ class IntegratedCognitiveSystem:
                 goal_engine=self.goal_engine,
                 agent_core=self.agent_core,
                 subsystem_status=status,
+                temporal_knowledge=self.temporal_knowledge,
             )
         _boot_phase("prose_composer", boot_prose)
 
