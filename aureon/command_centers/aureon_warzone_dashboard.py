@@ -107,31 +107,34 @@ PENDING_7D_PATH = BASE_DIR / "7day_pending_validations.json"
 THOUGHT_BUS_PATH = BASE_DIR / "aureon_thought_bus.jsonl"
 WARZONE_PORT = int(os.environ.get("WARZONE_PORT", 8877))
 
-# ─── Anthropic (optional — graceful degradation) ─────────────────────────────
-ANTHROPIC_AVAILABLE = False
-_anthropic_client = None
+# ─── In-House AI (no external dependencies) ─────────────────────────────────
+INHOUSE_AI_AVAILABLE = False
+_inhouse_adapter = None
 try:
-    import anthropic
-    from dotenv import load_dotenv
-    load_dotenv()
-    _key = os.environ.get("ANTHROPIC_API_KEY", "")
-    if _key and _key != "your_anthropic_api_key_here" and _key.startswith("sk-"):
-        _anthropic_client = anthropic.Anthropic(api_key=_key)
-        ANTHROPIC_AVAILABLE = True
-        logger.info("🧠 Anthropic Claude connected — Samuel AI ONLINE")
-    else:
-        logger.warning("🧠 Anthropic key not set — Samuel AI in LOCAL mode")
+    from aureon.inhouse_ai.llm_adapter import AureonHybridAdapter, AureonBrainAdapter
+    try:
+        _inhouse_adapter = AureonHybridAdapter()
+        if _inhouse_adapter.health_check():
+            INHOUSE_AI_AVAILABLE = True
+            logger.info("In-House AI connected (Hybrid) — Samuel AI ONLINE")
+        else:
+            _inhouse_adapter = AureonBrainAdapter()
+            INHOUSE_AI_AVAILABLE = True
+            logger.info("In-House AI connected (Brain) — Samuel AI ONLINE")
+    except Exception:
+        _inhouse_adapter = AureonBrainAdapter()
+        INHOUSE_AI_AVAILABLE = True
+        logger.info("In-House AI connected (Brain fallback) — Samuel AI ONLINE")
 except ImportError:
-    logger.warning("🧠 anthropic package not installed — Samuel AI in LOCAL mode")
+    logger.warning("In-House AI not available — Samuel AI in LOCAL mode")
 except Exception as e:
-    logger.warning(f"🧠 Anthropic init error: {e} — Samuel AI in LOCAL mode")
+    logger.warning(f"In-House AI init error: {e} — Samuel AI in LOCAL mode")
 
-# ─── API Key Validation ───────────────────────────────────────────────────────
-# Validates the Anthropic API key on startup and caches the result.
-# Uses a minimal API call (1-token response) to confirm the key is live.
+# ─── In-House AI Status ──────────────────────────────────────────────────────
+# Validates the in-house AI adapter on startup and caches the result.
 
 _api_key_status: Dict[str, Any] = {
-    "status": "unknown",       # unknown | active | invalid | missing | placeholder | error
+    "status": "unknown",       # unknown | active | error
     "checked_at": None,
     "partial_hint": None,
     "error": None,
@@ -140,75 +143,34 @@ _api_key_status: Dict[str, Any] = {
 
 
 async def _validate_api_key_async() -> Dict[str, Any]:
-    """Validate the Anthropic API key with a lightweight probe."""
+    """Validate the in-house AI adapter health."""
     global _api_key_status
-    raw_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
-    if not raw_key:
-        _api_key_status = {"status": "missing", "checked_at": time.time(),
-                          "partial_hint": None, "error": "No ANTHROPIC_API_KEY env var",
-                          "model_access": None}
-        return _api_key_status
-
-    if raw_key == "your_anthropic_api_key_here":
-        _api_key_status = {"status": "placeholder", "checked_at": time.time(),
-                          "partial_hint": "your_ant...here", "error": "Placeholder — set a real key",
-                          "model_access": None}
-        return _api_key_status
-
-    # Build a partial hint: first 7 chars + ... + last 4 chars
-    hint = f"{raw_key[:7]}...{raw_key[-4:]}" if len(raw_key) > 12 else "***"
-
-    if not _anthropic_client:
-        _api_key_status = {"status": "error", "checked_at": time.time(),
-                          "partial_hint": hint, "error": "Client not initialised",
-                          "model_access": None}
-        return _api_key_status
-
-    # Probe with a minimal messages.create call (max_tokens=1)
-    try:
-        loop = asyncio.get_event_loop()
-        resp = await loop.run_in_executor(None, lambda: _anthropic_client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1,
-            messages=[{"role": "user", "content": "ping"}],
-        ))
+    if _inhouse_adapter and _inhouse_adapter.health_check():
+        adapter_name = type(_inhouse_adapter).__name__
         _api_key_status = {
             "status": "active",
             "checked_at": time.time(),
-            "partial_hint": hint,
+            "partial_hint": f"in-house:{adapter_name}",
             "error": None,
-            "model_access": resp.model if hasattr(resp, 'model') else "claude",
+            "model_access": adapter_name,
         }
-        logger.info(f"🔑 API key validated — ACTIVE (model: {_api_key_status['model_access']})")
-    except Exception as e:
-        err_str = str(e)
-        # Classify the error
-        if "authentication" in err_str.lower() or "401" in err_str or "invalid" in err_str.lower():
-            status = "invalid"
-        elif "rate" in err_str.lower() or "429" in err_str:
-            status = "active"  # Rate-limited means the key IS valid
-        elif "permission" in err_str.lower() or "403" in err_str:
-            status = "inactive"
-        else:
-            status = "error"
+        logger.info(f"In-House AI validated — ACTIVE ({adapter_name})")
+    else:
         _api_key_status = {
-            "status": status,
+            "status": "active",
             "checked_at": time.time(),
-            "partial_hint": hint,
-            "error": err_str[:200],
-            "model_access": None,
+            "partial_hint": "in-house:brain",
+            "error": None,
+            "model_access": "AureonBrainAdapter",
         }
-        if status == "active":
-            logger.info(f"🔑 API key validated — ACTIVE (rate-limited but valid)")
-        else:
-            logger.warning(f"🔑 API key validation: {status} — {err_str[:120]}")
+        logger.info("In-House AI validated — Brain adapter (always available)")
 
     return _api_key_status
 
 
 def get_api_key_status() -> Dict[str, Any]:
-    """Return cached API key status (non-blocking)."""
+    """Return cached AI adapter status (non-blocking)."""
     return _api_key_status.copy()
 
 
@@ -486,20 +448,19 @@ Queen Message: {intel.get('queen_message', 'N/A')}
         if len(self.conversation_history) > self.max_history:
             self.conversation_history = self.conversation_history[-self.max_history:]
 
-        if ANTHROPIC_AVAILABLE and _anthropic_client:
+        if INHOUSE_AI_AVAILABLE and _inhouse_adapter:
             try:
-                response = _anthropic_client.messages.create(
-                    model="claude-sonnet-4-20250514",
-                    max_tokens=1024,
-                    system=WARZONE_SYSTEM_PROMPT,
+                response = _inhouse_adapter.prompt(
                     messages=self.conversation_history,
+                    system=WARZONE_SYSTEM_PROMPT,
+                    max_tokens=1024,
                 )
-                reply = response.content[0].text
+                reply = response.text
                 self.conversation_history.append({"role": "assistant", "content": reply})
 
                 return reply
             except Exception as e:
-                logger.error(f"Claude API error: {e}")
+                logger.error(f"In-House AI error: {e}")
                 return self._local_response(user_message, intel)
         else:
             return self._local_response(user_message, intel)

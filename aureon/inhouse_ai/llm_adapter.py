@@ -1,0 +1,1212 @@
+"""
+LLM Adapter Layer — In-House Sovereign AI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Replaces Anthropic / OpenAI / Copilot with fully in-house alternatives:
+
+  AureonLocalAdapter   — self-hosted LLM via HTTP (Ollama, vLLM, llama.cpp, HF TGI)
+  AureonBrainAdapter   — existing AureonBrain intelligence as reasoning engine
+  AureonHybridAdapter  — local LLM + AureonBrain combined
+
+All adapters implement the same LLMAdapter interface so agents are backend-agnostic.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import time
+import uuid
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any, Dict, Generator, List, Optional
+
+logger = logging.getLogger("aureon.inhouse_ai.llm")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Response types
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class ToolCall:
+    """A tool invocation requested by the model."""
+
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    name: str = ""
+    arguments: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class LLMResponse:
+    """Unified response from any adapter."""
+
+    text: str = ""
+    tool_calls: List[ToolCall] = field(default_factory=list)
+    stop_reason: str = "end_turn"  # end_turn | tool_use | max_tokens
+    usage: Dict[str, int] = field(default_factory=dict)
+    model: str = ""
+    raw: Any = None  # adapter-specific raw response
+
+    @property
+    def has_tool_calls(self) -> bool:
+        return len(self.tool_calls) > 0
+
+
+@dataclass
+class StreamChunk:
+    """A single chunk during streaming."""
+
+    text: str = ""
+    tool_call: Optional[ToolCall] = None
+    done: bool = False
+    stop_reason: str = ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Base adapter
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class LLMAdapter(ABC):
+    """
+    Abstract base for all LLM backends.
+    Every adapter must implement prompt() and stream().
+    """
+
+    @abstractmethod
+    def prompt(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> LLMResponse:
+        """Send a prompt and return the complete response."""
+
+    @abstractmethod
+    def stream(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> Generator[StreamChunk, None, None]:
+        """Stream response token-by-token."""
+
+    def health_check(self) -> bool:
+        """Return True if the backend is reachable."""
+        return True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AureonLocalAdapter — self-hosted model server
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class AureonLocalAdapter(LLMAdapter):
+    """
+    Connects to a self-hosted LLM server via HTTP.
+
+    Supported backends (all expose an OpenAI-compatible /v1/chat/completions):
+      - Ollama        (default: http://localhost:11434/v1)
+      - vLLM          (default: http://localhost:8000/v1)
+      - llama.cpp     (default: http://localhost:8080/v1)
+      - HuggingFace TGI (default: http://localhost:8080/v1)
+      - LocalAI       (default: http://localhost:8080/v1)
+
+    Environment variables:
+      AUREON_LLM_BASE_URL   — override base URL
+      AUREON_LLM_MODEL      — override model name
+      AUREON_LLM_API_KEY    — optional API key for the local server
+    """
+
+    def __init__(
+        self,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
+        api_key: Optional[str] = None,
+    ):
+        self.base_url = (
+            base_url
+            or os.environ.get("AUREON_LLM_BASE_URL", "http://localhost:11434/v1")
+        ).rstrip("/")
+        # Track whether the caller pinned a specific model. If they didn't,
+        # the health check is allowed to substitute a working installed model
+        # so the voice layer doesn't silently 404 / 500 against a name that
+        # isn't actually loadable on this machine.
+        env_model = os.environ.get("AUREON_LLM_MODEL")
+        self._model_pinned = bool(model or env_model)
+        self.model = model or env_model or "llama3"
+        self.api_key = api_key or os.environ.get("AUREON_LLM_API_KEY", "")
+        self._model_verified: bool = False
+
+        # Ollama detection. The OpenAI /v1 shim Ollama ships with silently
+        # drops the ``keep_alive`` payload field, so the model unloads every
+        # 5 min and every follow-up request hits a cold decode. We detect
+        # Ollama by base_url pattern (or env override) and route chat
+        # requests through the NATIVE /api/chat endpoint instead, which
+        # does honour keep_alive. Non-Ollama backends keep the /v1 path.
+        env_prefer = os.environ.get("AUREON_LLM_PREFER_NATIVE", "").lower()
+        default_native = ":11434" in self.base_url
+        if env_prefer in ("1", "true", "yes"):
+            self._prefer_native = True
+        elif env_prefer in ("0", "false", "no"):
+            self._prefer_native = False
+        else:
+            self._prefer_native = default_native
+        # Derive the native root (strip trailing /v1) for Ollama native calls.
+        self._native_root = self.base_url[:-3] if self.base_url.endswith("/v1") else self.base_url
+
+        self._keep_alive = os.environ.get("AUREON_LLM_KEEP_ALIVE", "30m") or None
+
+        try:
+            import requests
+
+            self._session = requests.Session()
+        except ImportError:
+            self._session = None
+            logger.warning("requests not installed — HTTP adapter degraded")
+
+    def _headers(self) -> Dict[str, str]:
+        h = {"Content-Type": "application/json"}
+        if self.api_key:
+            h["Authorization"] = f"Bearer {self.api_key}"
+        return h
+
+    def _build_payload(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str,
+        tools: Optional[List[Dict[str, Any]]],
+        max_tokens: int,
+        temperature: float,
+        stream: bool = False,
+    ) -> Dict[str, Any]:
+        """Build an OpenAI-compatible chat completion payload."""
+        full_messages = []
+        if system:
+            full_messages.append({"role": "system", "content": system})
+
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+
+            # Handle tool_result messages → assistant tool response format
+            if isinstance(content, list):
+                # Check if it's tool results
+                tool_results = [
+                    c for c in content if isinstance(c, dict) and c.get("type") == "tool_result"
+                ]
+                if tool_results:
+                    for tr in tool_results:
+                        full_messages.append({
+                            "role": "tool",
+                            "tool_call_id": tr.get("tool_use_id", ""),
+                            "content": tr.get("content", ""),
+                        })
+                    continue
+
+                # Extract text from content blocks
+                text_parts = []
+                for c in content:
+                    if isinstance(c, dict):
+                        if c.get("type") == "text":
+                            text_parts.append(c.get("text", ""))
+                        elif hasattr(c, "text"):
+                            text_parts.append(c.text)
+                    elif isinstance(c, str):
+                        text_parts.append(c)
+                    elif hasattr(c, "text"):
+                        text_parts.append(c.text)
+                content = "\n".join(text_parts) if text_parts else str(content)
+
+            full_messages.append({"role": role, "content": content})
+
+        payload: Dict[str, Any] = {
+            "model": self.model,
+            "messages": full_messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "stream": stream,
+        }
+
+        # Ollama-specific: pin the model in RAM. The OpenAI shim ignores
+        # unknown fields so this is safe against other backends, and
+        # makes every follow-up call ~3s warm instead of ~8s cold.
+        # Override via AUREON_LLM_KEEP_ALIVE ("5m", "1h", "-1" for forever).
+        keep_alive = os.environ.get("AUREON_LLM_KEEP_ALIVE", "30m")
+        if keep_alive:
+            payload["keep_alive"] = keep_alive
+
+        if tools:
+            payload["tools"] = self._convert_tools(tools)
+
+        return payload
+
+    def _convert_tools(self, tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Convert Aureon tool defs to OpenAI function-calling format."""
+        converted = []
+        for t in tools:
+            converted.append({
+                "type": "function",
+                "function": {
+                    "name": t["name"],
+                    "description": t.get("description", ""),
+                    "parameters": t.get("input_schema", {"type": "object", "properties": {}}),
+                },
+            })
+        return converted
+
+    def _build_native_payload(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> Dict[str, Any]:
+        """
+        Build an Ollama-native ``/api/chat`` payload. Differences from
+        the OpenAI shim:
+          - ``options.num_predict`` instead of top-level ``max_tokens``
+          - ``options.temperature``
+          - top-level ``keep_alive`` is honoured
+          - ``stream: false`` for one-shot replies
+        """
+        full_messages = []
+        if system:
+            full_messages.append({"role": "system", "content": system})
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            # Normalise list/dict content blocks to a plain string.
+            if isinstance(content, list):
+                text_parts: List[str] = []
+                for c in content:
+                    if isinstance(c, dict):
+                        if c.get("type") == "text":
+                            text_parts.append(str(c.get("text", "")))
+                        elif "text" in c:
+                            text_parts.append(str(c.get("text", "")))
+                    elif isinstance(c, str):
+                        text_parts.append(c)
+                content = "\n".join(p for p in text_parts if p)
+            if role not in ("system", "user", "assistant", "tool"):
+                role = "user"
+            full_messages.append({"role": role, "content": content})
+
+        payload: Dict[str, Any] = {
+            "model": self.model,
+            "messages": full_messages,
+            "stream": False,
+            "options": {
+                "num_predict": int(max_tokens),
+                "temperature": float(temperature),
+            },
+        }
+        if self._keep_alive:
+            payload["keep_alive"] = self._keep_alive
+        return payload
+
+    def _prompt_via_native(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> LLMResponse:
+        """Send a chat request through Ollama's native /api/chat."""
+        payload = self._build_native_payload(messages, system, max_tokens, temperature)
+        url = f"{self._native_root}/api/chat"
+        try:
+            req_timeout = float(
+                os.environ.get("AUREON_LLM_REQUEST_TIMEOUT_S", "60") or 60
+            )
+            resp = self._session.post(
+                url, json=payload, headers=self._headers(), timeout=max(1.0, req_timeout)
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            logger.error("Ollama native request failed: %s", e)
+            return LLMResponse(text=f"[ERROR] {e}", stop_reason="error")
+
+        msg = data.get("message") or {}
+        text = str(msg.get("content", "") or "")
+        done_reason = str(data.get("done_reason", "stop") or "stop")
+        stop_reason = "end_turn" if done_reason == "stop" else (
+            "max_tokens" if done_reason == "length" else "end_turn"
+        )
+        usage = {
+            "input_tokens": int(data.get("prompt_eval_count", 0) or 0),
+            "output_tokens": int(data.get("eval_count", 0) or 0),
+        }
+        usage["total_tokens"] = usage["input_tokens"] + usage["output_tokens"]
+        return LLMResponse(
+            text=text,
+            tool_calls=[],  # Ollama native /api/chat doesn't emit tool_calls
+            stop_reason=stop_reason,
+            usage=usage,
+            model=str(data.get("model", self.model)),
+            raw=data,
+        )
+
+    def prompt(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> LLMResponse:
+        if not self._session:
+            return LLMResponse(text="[ERROR] requests library not available", stop_reason="error")
+
+        # Ollama-native fast path: only used when we have no tool defs
+        # (the native /api/chat doesn't emit OpenAI-style tool_calls),
+        # and when auto-detected or explicitly enabled.
+        if self._prefer_native and not tools:
+            return self._prompt_via_native(messages, system, max_tokens, temperature)
+
+        payload = self._build_payload(messages, system, tools, max_tokens, temperature)
+        url = f"{self.base_url}/chat/completions"
+
+        try:
+            req_timeout = float(
+                os.environ.get("AUREON_LLM_REQUEST_TIMEOUT_S", "20") or 20
+            )
+            resp = self._session.post(
+                url, json=payload, headers=self._headers(), timeout=max(1.0, req_timeout)
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        except Exception as e:
+            logger.error("Local LLM request failed: %s", e)
+            return LLMResponse(text=f"[ERROR] {e}", stop_reason="error")
+
+        choice = data.get("choices", [{}])[0]
+        message = choice.get("message", {})
+
+        tool_calls = []
+        for tc in message.get("tool_calls", []):
+            func = tc.get("function", {})
+            args = func.get("arguments", "{}")
+            if isinstance(args, str):
+                try:
+                    args = json.loads(args)
+                except json.JSONDecodeError:
+                    args = {"raw": args}
+            tool_calls.append(ToolCall(
+                id=tc.get("id", str(uuid.uuid4())),
+                name=func.get("name", ""),
+                arguments=args,
+            ))
+
+        stop_reason = "tool_use" if tool_calls else "end_turn"
+        if choice.get("finish_reason") == "length":
+            stop_reason = "max_tokens"
+
+        return LLMResponse(
+            text=message.get("content", "") or "",
+            tool_calls=tool_calls,
+            stop_reason=stop_reason,
+            usage=data.get("usage", {}),
+            model=data.get("model", self.model),
+            raw=data,
+        )
+
+    def stream(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> Generator[StreamChunk, None, None]:
+        if not self._session:
+            yield StreamChunk(text="[ERROR] requests library not available", done=True)
+            return
+
+        payload = self._build_payload(messages, system, tools, max_tokens, temperature, stream=True)
+        url = f"{self.base_url}/chat/completions"
+
+        try:
+            resp = self._session.post(
+                url, json=payload, headers=self._headers(), stream=True, timeout=300
+            )
+            resp.raise_for_status()
+        except Exception as e:
+            logger.error("Local LLM stream failed: %s", e)
+            yield StreamChunk(text=f"[ERROR] {e}", done=True)
+            return
+
+        pending_tool: Optional[Dict[str, Any]] = None
+
+        for line in resp.iter_lines():
+            if not line:
+                continue
+            decoded = line.decode("utf-8", errors="replace").strip()
+            if not decoded.startswith("data: "):
+                continue
+            data_str = decoded[6:]
+            if data_str == "[DONE]":
+                if pending_tool:
+                    args_str = pending_tool.get("arguments_buffer", "")
+                    try:
+                        args = json.loads(args_str)
+                    except json.JSONDecodeError:
+                        args = {"raw": args_str}
+                    yield StreamChunk(
+                        tool_call=ToolCall(
+                            id=pending_tool.get("id", str(uuid.uuid4())),
+                            name=pending_tool.get("name", ""),
+                            arguments=args,
+                        ),
+                        done=False,
+                    )
+                yield StreamChunk(done=True, stop_reason="end_turn")
+                return
+
+            try:
+                chunk_data = json.loads(data_str)
+            except json.JSONDecodeError:
+                continue
+
+            delta = chunk_data.get("choices", [{}])[0].get("delta", {})
+            finish = chunk_data.get("choices", [{}])[0].get("finish_reason")
+
+            # Handle tool call deltas
+            if delta.get("tool_calls"):
+                tc_delta = delta["tool_calls"][0]
+                if tc_delta.get("function", {}).get("name"):
+                    if pending_tool:
+                        args_str = pending_tool.get("arguments_buffer", "")
+                        try:
+                            args = json.loads(args_str)
+                        except json.JSONDecodeError:
+                            args = {"raw": args_str}
+                        yield StreamChunk(
+                            tool_call=ToolCall(
+                                id=pending_tool.get("id", str(uuid.uuid4())),
+                                name=pending_tool.get("name", ""),
+                                arguments=args,
+                            ),
+                        )
+                    pending_tool = {
+                        "id": tc_delta.get("id", str(uuid.uuid4())),
+                        "name": tc_delta["function"]["name"],
+                        "arguments_buffer": tc_delta.get("function", {}).get("arguments", ""),
+                    }
+                elif pending_tool:
+                    pending_tool["arguments_buffer"] += tc_delta.get("function", {}).get("arguments", "")
+                continue
+
+            content = delta.get("content", "")
+            if content:
+                yield StreamChunk(text=content)
+
+            if finish:
+                if pending_tool:
+                    args_str = pending_tool.get("arguments_buffer", "")
+                    try:
+                        args = json.loads(args_str)
+                    except json.JSONDecodeError:
+                        args = {"raw": args_str}
+                    yield StreamChunk(
+                        tool_call=ToolCall(
+                            id=pending_tool.get("id", str(uuid.uuid4())),
+                            name=pending_tool.get("name", ""),
+                            arguments=args,
+                        ),
+                    )
+                yield StreamChunk(done=True, stop_reason=finish)
+                return
+
+    def health_check(self) -> bool:
+        """
+        Verify the backend is reachable AND that ``self.model`` actually
+        runs on this machine.
+
+        Ollama / vLLM / llama.cpp will all happily return 200 from
+        ``/v1/models`` even when the configured model is missing or too big
+        to load (the real failure surfaces later as a 404 / 500 from
+        ``/v1/chat/completions``). That's how the voice layer ended up
+        thinking it had a working LLM while every utterance silently
+        errored out.
+
+        Behaviour:
+          1. Reach ``/v1/models`` and read the listing.
+          2. If the configured model isn't in the listing, and the caller
+             didn't pin a specific model, pick the smallest installed model
+             whose name shares a family prefix with the requested one
+             (else just the smallest installed model).
+          3. Probe the resolved model with a 1-token chat completion. If
+             it 500s (typically OOM), drop it and try the next candidate.
+          4. Cache the verified model and return True; otherwise False.
+        """
+        if not self._session:
+            return False
+        if self._model_verified:
+            return True
+        try:
+            timeout_s = float(os.environ.get("AUREON_LLM_HEALTH_TIMEOUT_S", "2.0") or 2.0)
+            resp = self._session.get(
+                f"{self.base_url}/models",
+                headers=self._headers(),
+                timeout=max(0.1, timeout_s),
+            )
+            if resp.status_code != 200:
+                return False
+            listing = resp.json() or {}
+        except Exception:
+            return False
+
+        installed: List[str] = []
+        for entry in listing.get("data", []) or []:
+            mid = (entry or {}).get("id") if isinstance(entry, dict) else None
+            if mid:
+                installed.append(str(mid))
+        if not installed:
+            return False
+
+        # Build the ordered list of candidates we'll actually probe.
+        candidates: List[str] = []
+        if self.model in installed:
+            candidates.append(self.model)
+
+        if not self._model_pinned:
+            family = self.model.split(":")[0].split(".")[0].lower()  # "llama3" → "llama"
+            same_family = [m for m in installed if family and family in m.lower()]
+            others = [m for m in installed if m not in same_family]
+            for m in self._sort_by_size(same_family) + self._sort_by_size(others):
+                if m not in candidates:
+                    candidates.append(m)
+
+        for candidate in candidates:
+            if self._probe_model(candidate):
+                if candidate != self.model:
+                    logger.info(
+                        "Local LLM model %r unavailable — using installed model %r instead",
+                        self.model,
+                        candidate,
+                    )
+                self.model = candidate
+                self._model_verified = True
+                return True
+
+        return False
+
+    @staticmethod
+    def _sort_by_size(models: List[str]) -> List[str]:
+        """Order model ids cheapest-first by parsing the size hint in the name."""
+        import re
+
+        def size_key(name: str) -> float:
+            match = re.search(r"(\d+(?:\.\d+)?)\s*([bm])\b", name.lower())
+            if not match:
+                return float("inf")
+            val = float(match.group(1))
+            if match.group(2) == "m":
+                val /= 1000.0
+            return val
+
+        return sorted(models, key=size_key)
+
+    def _probe_model(self, model_id: str) -> bool:
+        """Send a 1-token chat completion to confirm the model actually loads."""
+        try:
+            probe_timeout = float(
+                os.environ.get("AUREON_LLM_PROBE_TIMEOUT_S", "30") or 30
+            )
+            resp = self._session.post(
+                f"{self.base_url}/chat/completions",
+                json={
+                    "model": model_id,
+                    "messages": [{"role": "user", "content": "ping"}],
+                    "max_tokens": 1,
+                    "temperature": 0.0,
+                    "stream": False,
+                },
+                headers=self._headers(),
+                timeout=max(1.0, probe_timeout),
+            )
+        except Exception as e:
+            logger.debug("LLM probe %s failed: %s", model_id, e)
+            return False
+        if resp.status_code != 200:
+            logger.debug("LLM probe %s rejected: %s %s", model_id, resp.status_code, resp.text[:200])
+            return False
+        return True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AureonBrainAdapter — use existing AureonBrain as reasoning engine
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class AureonBrainAdapter(LLMAdapter):
+    """
+    Uses the existing AureonBrain intelligence layer as a reasoning backend.
+
+    Instead of an external LLM, this adapter:
+      1. Parses the user message to extract intent (symbol, action, context)
+      2. Runs AureonBrain.decide() with market data
+      3. Formats the Brain's BrainDecision as an LLM-like response
+
+    This is the fully in-house, zero-external-dependency reasoning path.
+    """
+
+    # Class-level caches so the "Brain not available" warning only fires
+    # once per process regardless of how many adapter instances we spin up.
+    _brain_load_attempted: bool = False
+    _brain_load_succeeded: bool = False
+
+    def __init__(self):
+        self._brain = None
+        self._brain_loaded = False
+        self._load_brain()
+
+    def _load_brain(self):
+        try:
+            from aureon.intelligence.aureon_brain import AureonBrain
+            self._brain = AureonBrain()
+            self._brain_loaded = True
+            if not AureonBrainAdapter._brain_load_succeeded:
+                logger.info("AureonBrain loaded as reasoning backend")
+            AureonBrainAdapter._brain_load_succeeded = True
+        except Exception as e:
+            # Only log the warning the FIRST time — subsequent adapter
+            # instances in the same process silently fall back.
+            if not AureonBrainAdapter._brain_load_attempted:
+                logger.info(
+                    "AureonBrain not available: %s — falling back to rule engine",
+                    e,
+                )
+            self._brain_loaded = False
+        finally:
+            AureonBrainAdapter._brain_load_attempted = True
+
+    def _extract_context(self, messages: List[Dict[str, Any]], system: str) -> Dict[str, Any]:
+        """Extract actionable context from conversation messages."""
+        context: Dict[str, Any] = {"system": system, "query": "", "symbols": [], "action": None}
+
+        for msg in messages:
+            if msg.get("role") == "user":
+                content = msg.get("content", "")
+                if isinstance(content, list):
+                    parts = []
+                    for c in content:
+                        if isinstance(c, dict) and c.get("type") == "text":
+                            parts.append(c["text"])
+                        elif isinstance(c, str):
+                            parts.append(c)
+                    content = " ".join(parts)
+                context["query"] = str(content)
+
+        # Extract symbols mentioned
+        text = context["query"].upper()
+        common_symbols = [
+            "BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT",
+            "DOGEUSDT", "AVAXUSDT", "DOTUSDT", "MATICUSDT", "LINKUSDT",
+        ]
+        for sym in common_symbols:
+            if sym in text or sym.replace("USDT", "") in text:
+                context["symbols"].append(sym)
+
+        # Detect action intent
+        lower = context["query"].lower()
+        if any(w in lower for w in ["buy", "long", "enter", "open"]):
+            context["action"] = "BUY"
+        elif any(w in lower for w in ["sell", "short", "exit", "close"]):
+            context["action"] = "SELL"
+        elif any(w in lower for w in ["analyse", "analyze", "signal", "status", "check"]):
+            context["action"] = "ANALYSE"
+
+        return context
+
+    def _brain_reason(self, context: Dict[str, Any]) -> str:
+        """Use AureonBrain to generate a reasoning response."""
+        if not self._brain_loaded or not self._brain:
+            return self._rule_engine_reason(context)
+
+        try:
+            # Build features dict for brain
+            features = {
+                "query": context.get("query", ""),
+                "symbols": context.get("symbols", []),
+                "action": context.get("action"),
+                "timestamp": time.time(),
+            }
+
+            # If brain has a decide method, use it
+            if hasattr(self._brain, "decide"):
+                decision = self._brain.decide(features)
+                if decision and hasattr(decision, "__dict__"):
+                    return json.dumps({
+                        "signal": getattr(decision, "signal", "NEUTRAL"),
+                        "confidence": getattr(decision, "confidence", 0.5),
+                        "coherence": getattr(decision, "coherence", 0.5),
+                        "reasoning": getattr(decision, "reasoning", str(decision)),
+                        "source": "AureonBrain",
+                    }, indent=2)
+                return str(decision)
+
+            # Fallback to any available method
+            if hasattr(self._brain, "analyse"):
+                return str(self._brain.analyse(features))
+            if hasattr(self._brain, "predict"):
+                return str(self._brain.predict(features))
+
+        except Exception as e:
+            logger.warning("AureonBrain reasoning failed: %s", e)
+
+        return self._rule_engine_reason(context)
+
+    def _rule_engine_reason(self, context: Dict[str, Any]) -> str:
+        """Deterministic rule-based reasoning when Brain is unavailable."""
+        query = context.get("query", "")
+        action = context.get("action", "ANALYSE")
+        symbols = context.get("symbols", [])
+
+        response_parts = []
+        response_parts.append(f"Aureon In-House Analysis — {time.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        response_parts.append(f"Query: {query}")
+
+        if symbols:
+            response_parts.append(f"Symbols detected: {', '.join(symbols)}")
+
+        if action == "BUY":
+            response_parts.append(
+                "Signal: NEUTRAL — Requires live market data + coherence gate (Gamma > 0.945) "
+                "before confirming BUY. Run through full pillar consensus."
+            )
+        elif action == "SELL":
+            response_parts.append(
+                "Signal: NEUTRAL — SELL signals require Auris 9-node consensus. "
+                "Check stop-loss levels and current position state."
+            )
+        else:
+            response_parts.append(
+                "Signal: NEUTRAL — System is in analysis mode. "
+                "All 6 pillar agents should be consulted for a full signal."
+            )
+
+        return "\n".join(response_parts)
+
+    def prompt(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> LLMResponse:
+        context = self._extract_context(messages, system)
+        response_text = self._brain_reason(context)
+
+        # If tools are available and action is detected, generate tool calls
+        tool_calls = []
+        if tools and context.get("action"):
+            for tool in tools:
+                tool_name = tool.get("name", "")
+                # Auto-invoke relevant tools based on context
+                if context["action"] == "ANALYSE" and "read" in tool_name.lower():
+                    tool_calls.append(ToolCall(
+                        name=tool_name,
+                        arguments=self._auto_tool_args(tool, context),
+                    ))
+                    break
+                if context["action"] in ("BUY", "SELL") and "position" in tool_name.lower():
+                    tool_calls.append(ToolCall(
+                        name=tool_name,
+                        arguments=self._auto_tool_args(tool, context),
+                    ))
+                    break
+
+        return LLMResponse(
+            text=response_text,
+            tool_calls=tool_calls,
+            stop_reason="tool_use" if tool_calls else "end_turn",
+            model="aureon-brain-v1",
+        )
+
+    def _auto_tool_args(self, tool: Dict, context: Dict) -> Dict[str, Any]:
+        """Generate sensible default arguments for a tool."""
+        schema = tool.get("input_schema", {})
+        props = schema.get("properties", {})
+        args = {}
+        for key, prop in props.items():
+            ptype = prop.get("type", "string")
+            if ptype == "string":
+                if "symbol" in key.lower():
+                    args[key] = context.get("symbols", ["BTCUSDT"])[0] if context.get("symbols") else "all"
+                elif "exchange" in key.lower():
+                    args[key] = "all"
+                elif "format" in key.lower():
+                    args[key] = "json"
+                else:
+                    args[key] = "default"
+            elif ptype == "integer":
+                args[key] = 10
+            elif ptype == "number":
+                args[key] = 0.945
+            elif ptype == "boolean":
+                args[key] = True
+        return args
+
+    def stream(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> Generator[StreamChunk, None, None]:
+        # Brain responses are fast — simulate streaming by chunking the response
+        response = self.prompt(messages, system, tools, max_tokens, temperature, **kwargs)
+
+        # Stream tool calls first
+        for tc in response.tool_calls:
+            yield StreamChunk(tool_call=tc)
+
+        # Stream text in word-sized chunks
+        words = response.text.split(" ")
+        for i, word in enumerate(words):
+            suffix = " " if i < len(words) - 1 else ""
+            yield StreamChunk(text=word + suffix)
+
+        yield StreamChunk(done=True, stop_reason=response.stop_reason)
+
+    def health_check(self) -> bool:
+        return self._brain_loaded
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AureonHybridAdapter — local LLM + AureonBrain combined
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class AureonHybridAdapter(LLMAdapter):
+    """
+    Chains AureonLocalAdapter (for language generation) with AureonBrainAdapter
+    (for market-specific reasoning). The Brain enriches the system prompt with
+    live intelligence before the local LLM generates the final response.
+
+    Fallback chain:
+      1. Try local LLM with Brain-enriched context
+      2. If local LLM is down → fall back to Brain-only
+      3. If Brain is down → fall back to local LLM alone
+      4. If both are down → rule engine
+    """
+
+    def __init__(
+        self,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
+        api_key: Optional[str] = None,
+    ):
+        self.local = AureonLocalAdapter(base_url=base_url, model=model, api_key=api_key)
+        self.brain = AureonBrainAdapter()
+
+    def _enrich_system(self, system: str, messages: List[Dict[str, Any]]) -> str:
+        """Prepend Brain intelligence to the system prompt."""
+        if not self.brain.health_check():
+            return system
+
+        context = self.brain._extract_context(messages, system)
+        brain_intel = self.brain._brain_reason(context)
+
+        enriched = (
+            f"{system}\n\n"
+            f"── AUREON BRAIN INTELLIGENCE ──\n"
+            f"{brain_intel}\n"
+            f"── END BRAIN INTELLIGENCE ──"
+        )
+        return enriched
+
+    def prompt(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> LLMResponse:
+        enriched_system = self._enrich_system(system, messages)
+
+        # Try local LLM first
+        if self.local.health_check():
+            response = self.local.prompt(
+                messages, enriched_system, tools, max_tokens, temperature, **kwargs
+            )
+            if response.stop_reason != "error":
+                return response
+
+        # Fallback to brain-only
+        logger.info("Local LLM unavailable — falling back to AureonBrain")
+        return self.brain.prompt(messages, system, tools, max_tokens, temperature, **kwargs)
+
+    def stream(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> Generator[StreamChunk, None, None]:
+        enriched_system = self._enrich_system(system, messages)
+
+        if self.local.health_check():
+            yield from self.local.stream(
+                messages, enriched_system, tools, max_tokens, temperature, **kwargs
+            )
+        else:
+            yield from self.brain.stream(
+                messages, system, tools, max_tokens, temperature, **kwargs
+            )
+
+    def health_check(self) -> bool:
+        return self.local.health_check() or self.brain.health_check()
+
+
+# -----------------------------------------------------------------------------
+# Optional adapters for interactive conversation (Vault UI)
+# -----------------------------------------------------------------------------
+
+
+class AureonStubAdapter(LLMAdapter):
+    """
+    A fast, offline-safe adapter used when no real LLM backend is configured.
+
+    This exists so interactive layers (Vault UI voices) never silently fall back
+    to the market-rule engine and never hang on long HTTP timeouts.
+    """
+
+    def __init__(self, message: str, *, model: str = "aureon-stub"):
+        self._message = str(message or "").strip() or "[AUREON] No backend configured."
+        self._model = model
+
+    def prompt(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> LLMResponse:
+        return LLMResponse(
+            text=self._message,
+            stop_reason="end_turn",
+            usage={},
+            model=self._model,
+            raw=None,
+        )
+
+    def stream(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> Generator[StreamChunk, None, None]:
+        yield StreamChunk(text=self._message)
+        yield StreamChunk(done=True, stop_reason="end_turn")
+
+    def health_check(self) -> bool:
+        return True
+
+
+class AureonAnthropicAdapter(LLMAdapter):
+    """
+    Optional external adapter (Anthropic Messages API).
+
+    Only used when ANTHROPIC_API_KEY is present. This keeps the default path
+    "in-house", but allows the Vault UI to actually converse when the local LLM
+    server is not running.
+    """
+
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
+        self.model = model or os.environ.get("AUREON_ANTHROPIC_MODEL", "claude-3-5-sonnet-latest")
+        self._client = None
+
+        if not self.api_key:
+            return
+        try:
+            from anthropic import Anthropic  # type: ignore
+            self._client = Anthropic(api_key=self.api_key)
+        except Exception as e:
+            logger.debug("Anthropic SDK unavailable: %s", e)
+            self._client = None
+
+    @staticmethod
+    def _coerce_text(content: Any) -> str:
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts: List[str] = []
+            for c in content:
+                if isinstance(c, dict):
+                    if c.get("type") == "text":
+                        parts.append(str(c.get("text", "")))
+                    elif "text" in c:
+                        parts.append(str(c.get("text", "")))
+                elif hasattr(c, "text"):
+                    parts.append(str(getattr(c, "text")))
+                elif isinstance(c, str):
+                    parts.append(c)
+            return "\n".join(p for p in parts if p).strip()
+        if isinstance(content, dict) and "text" in content:
+            return str(content.get("text", ""))
+        return str(content)
+
+    def prompt(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> LLMResponse:
+        if not self._client:
+            return LLMResponse(
+                text="[ERROR] Anthropic adapter not configured (missing ANTHROPIC_API_KEY or SDK).",
+                stop_reason="error",
+                model="anthropic",
+            )
+
+        # Anthropic supports system as a top-level param and messages as role/content.
+        coerced: List[Dict[str, str]] = []
+        for m in messages or []:
+            role = str(m.get("role", "user") or "user")
+            if role not in ("user", "assistant"):
+                role = "user"
+            coerced.append({"role": role, "content": self._coerce_text(m.get("content", ""))})
+
+        try:
+            resp = self._client.messages.create(
+                model=self.model,
+                max_tokens=int(max_tokens),
+                temperature=float(temperature),
+                system=str(system or "") or None,
+                messages=coerced,
+            )
+        except Exception as e:
+            return LLMResponse(text=f"[ERROR] {e}", stop_reason="error", model=self.model, raw=None)
+
+        # Extract text blocks
+        text_parts: List[str] = []
+        try:
+            for b in getattr(resp, "content", []) or []:
+                # SDK returns content blocks with .type and .text
+                if getattr(b, "type", "") == "text":
+                    text_parts.append(str(getattr(b, "text", "")))
+        except Exception:
+            pass
+        text = "\n".join([t for t in text_parts if t]).strip()
+
+        usage: Dict[str, int] = {}
+        try:
+            u = getattr(resp, "usage", None)
+            if u is not None:
+                in_tok = int(getattr(u, "input_tokens", 0) or 0)
+                out_tok = int(getattr(u, "output_tokens", 0) or 0)
+                usage = {"input_tokens": in_tok, "output_tokens": out_tok, "total_tokens": in_tok + out_tok}
+        except Exception:
+            usage = {}
+
+        stop = "end_turn"
+        try:
+            sr = str(getattr(resp, "stop_reason", "") or "")
+            if sr == "max_tokens":
+                stop = "max_tokens"
+        except Exception:
+            stop = "end_turn"
+
+        return LLMResponse(
+            text=text,
+            tool_calls=[],
+            stop_reason=stop,
+            usage=usage,
+            model=str(getattr(resp, "model", "") or self.model),
+            raw=resp,
+        )
+
+    def stream(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str = "",
+        tools: Optional[List[Dict[str, Any]]] = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.7,
+        **kwargs,
+    ) -> Generator[StreamChunk, None, None]:
+        # Minimal streaming wrapper for callers that expect stream()
+        response = self.prompt(messages, system, tools, max_tokens, temperature, **kwargs)
+        for word in (response.text or "").split(" "):
+            if word:
+                yield StreamChunk(text=word + " ")
+        yield StreamChunk(done=True, stop_reason=response.stop_reason)
+
+    def health_check(self) -> bool:
+        return bool(self._client)
+
+
+def build_voice_adapter() -> LLMAdapter:
+    """
+    Build a safe default adapter for the Vault Voice layer.
+
+    Priority:
+      1. Local OpenAI-compatible server (Ollama/vLLM/llama.cpp) if reachable
+      2. Anthropic if ANTHROPIC_API_KEY is present
+      3. Stub adapter with actionable configuration instructions
+
+    Override with AUREON_VOICE_BACKEND:
+      - local | anthropic | brain
+    """
+    backend = (os.environ.get("AUREON_VOICE_BACKEND", "") or "").strip().lower()
+
+    if backend in ("brain", "aureonbrain", "rule", "rules"):
+        return AureonBrainAdapter()
+
+    if backend in ("anthropic", "claude"):
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            a = AureonAnthropicAdapter()
+            if a.health_check():
+                return a
+        return AureonStubAdapter(
+            "No Anthropic backend configured. Set ANTHROPIC_API_KEY (and optionally AUREON_ANTHROPIC_MODEL).",
+            model="anthropic-unconfigured",
+        )
+
+    # Default or explicitly local: try local first.
+    # Note: we intentionally do NOT auto-fall back to external providers in "auto"
+    # mode, even if API keys are present. External use must be explicit via
+    # AUREON_VOICE_BACKEND=anthropic, so tests/offline runs never hang.
+    local = AureonLocalAdapter()
+    if local.health_check():
+        return local
+
+    return AureonStubAdapter(
+        "No LLM backend is reachable.\n"
+        "To enable real conversation for Vault voices:\n"
+        "  1) Start a local OpenAI-compatible server (recommended: Ollama)\n"
+        "     and ensure http://localhost:11434/v1 is available, or set AUREON_LLM_BASE_URL.\n"
+        "  2) Or set AUREON_VOICE_BACKEND=anthropic and ANTHROPIC_API_KEY.\n",
+        model="no-backend",
+    )

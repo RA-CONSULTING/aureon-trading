@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#9b6bff">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/static/aureon-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/aureon-icon.svg">
+<title>Aureon Bridge</title>
+<style>
+  :root {
+    --bg: #0b0d16;
+    --panel: #141726;
+    --panel2: #1b1f33;
+    --border: #2a2f4a;
+    --text: #e6e8f2;
+    --muted: #7a81a5;
+    --accent: #ff9f43;
+    --queen: #9b6bff;
+    --love: #ff5e7a;
+    --ok: #4fd19a;
+    --warn: #ffc54a;
+    --err: #ff5e7a;
+    --mono: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    overscroll-behavior: contain;
+  }
+  header {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #161a2c, #0b0d16);
+  }
+  header .row { display: flex; align-items: center; gap: 10px; }
+  header .logo {
+    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+    background: radial-gradient(circle at 40% 35%, var(--accent), var(--queen) 60%, #0b0d16);
+    display: grid; place-items: center; color: #fff;
+    font-family: Georgia, serif; font-size: 22px; font-weight: bold;
+  }
+  header h1 { margin: 0; font-size: 16px; letter-spacing: 0.3px; }
+  header .sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+
+  .status-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+    padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 10px;
+  }
+  .status-strip .cell {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 8px;
+  }
+  .status-strip .cell .k { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-strip .cell .v { color: var(--text); font-size: 12px; margin-top: 1px; }
+  .status-strip .cell.ok .v { color: var(--ok); }
+  .status-strip .cell.warn .v { color: var(--warn); }
+  .status-strip .cell.err .v { color: var(--err); }
+
+  .sensor-strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    padding: 6px 12px 8px; background: var(--panel); border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 10px;
+  }
+  .sensor-strip .cell {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 7px;
+  }
+  .sensor-strip .cell .k { color: var(--muted); font-size: 9px; }
+  .sensor-strip .cell .v { color: var(--text); font-size: 11px; }
+
+  main {
+    flex: 1; overflow-y: auto; padding: 12px 14px 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .msg {
+    border-radius: 12px; padding: 10px 12px; margin: 8px 0;
+    background: var(--panel); border: 1px solid var(--border);
+    font-size: 14px; line-height: 1.45;
+  }
+  .msg.me {
+    background: linear-gradient(180deg, #2a2240, #1b1f33);
+    border-color: #3b2d6a;
+    margin-left: 32px;
+  }
+  .msg.them {
+    background: var(--panel);
+    margin-right: 32px;
+  }
+  .msg .who {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 4px;
+  }
+  .msg.them .who { color: var(--queen); }
+  .msg.me .who { color: var(--love); }
+  .chorus-detail {
+    margin-top: 6px; padding: 6px 8px;
+    background: rgba(0,0,0,0.25); border-radius: 8px;
+    font-size: 11px; color: var(--muted); font-family: var(--mono);
+    max-height: 180px; overflow-y: auto;
+  }
+  .chorus-detail .name { color: var(--accent); }
+  .coherence {
+    margin-top: 6px; padding: 6px 8px;
+    background: rgba(155, 107, 255, 0.08);
+    border: 1px solid rgba(155, 107, 255, 0.25);
+    border-radius: 8px;
+    font-size: 10px; font-family: var(--mono); color: var(--muted);
+  }
+  .coherence .row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  }
+  .coherence .bar {
+    flex: 1; height: 6px; border-radius: 3px;
+    background: rgba(255,255,255,0.08); overflow: hidden;
+  }
+  .coherence .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--ok), var(--accent), var(--queen));
+  }
+  .coherence .tag {
+    background: var(--panel2); color: var(--text); padding: 1px 6px;
+    border-radius: 10px; font-size: 9px; text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .coherence .tag.lighthouse { background: var(--ok); color: #0b0d16; }
+  .coherence .tag.mode { background: var(--accent); color: #0b0d16; }
+  .coherence .tag.cons { background: var(--queen); color: #fff; }
+  .actions {
+    margin-top: 6px; padding: 6px 8px;
+    background: rgba(79, 209, 154, 0.08);
+    border: 1px solid rgba(79, 209, 154, 0.25);
+    border-radius: 8px;
+    font-size: 10px; font-family: var(--mono); color: var(--muted);
+  }
+  .action-row {
+    display: flex; align-items: flex-start; gap: 6px;
+    padding: 4px 0;
+  }
+  .action-row + .action-row { border-top: 1px dashed rgba(255,255,255,0.05); }
+  .action-row .tool {
+    background: var(--panel2); color: var(--ok); padding: 2px 6px;
+    border-radius: 8px; font-size: 10px; flex-shrink: 0;
+  }
+  .action-row .tool.live { background: var(--ok); color: #0b0d16; }
+  .action-row .tool.dry { background: var(--panel2); color: var(--muted); }
+  .action-row .tool.fail { background: var(--err); color: #fff; }
+  .action-row .body { flex: 1; color: var(--text); font-size: 10px; }
+
+  .permission-bar {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: 8px 12px; background: rgba(155, 107, 255, 0.08);
+    border-bottom: 1px solid var(--border);
+  }
+  .permission-bar button {
+    width: auto; height: auto; border-radius: 14px;
+    padding: 6px 12px; font-size: 11px; font-weight: 500;
+    background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .permission-bar button.granted { background: var(--ok); color: #0b0d16; border-color: var(--ok); }
+  .permission-bar button.denied { background: var(--panel2); color: var(--muted); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 10px 12px 14px;
+    background: linear-gradient(180deg, #0b0d16, #141726);
+  }
+  .composer {
+    display: flex; align-items: flex-end; gap: 8px;
+  }
+  textarea {
+    flex: 1; resize: none; min-height: 46px; max-height: 140px;
+    background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 14px; font-size: 15px; line-height: 1.35;
+    font-family: inherit;
+  }
+  textarea:focus { outline: none; border-color: var(--queen); }
+  button {
+    flex-shrink: 0;
+    background: var(--queen); color: #fff; border: none;
+    width: 50px; height: 50px; border-radius: 25px;
+    font-size: 22px; font-weight: bold;
+    display: grid; place-items: center;
+    cursor: pointer; transition: transform 0.1s, background 0.15s;
+  }
+  button:active { transform: scale(0.93); }
+  button.mic { background: var(--accent); }
+  button.mic.recording { background: var(--err); animation: pulse 1.1s infinite; }
+  button:disabled { background: var(--border); color: var(--muted); }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 94, 122, 0.55); }
+    50%      { box-shadow: 0 0 0 12px rgba(255, 94, 122, 0); }
+  }
+
+  .voice-pick {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 8px; font-family: var(--mono); font-size: 11px;
+  }
+  .voice-pick .chip {
+    background: var(--panel2); border: 1px solid var(--border);
+    color: var(--muted); padding: 4px 9px; border-radius: 12px;
+    cursor: pointer;
+  }
+  .voice-pick .chip.active {
+    background: var(--queen); border-color: var(--queen); color: #fff;
+  }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%);
+    background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 14px; border-radius: 18px;
+    font-size: 12px; font-family: var(--mono);
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none; z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div class="logo">Φ</div>
+    <div>
+      <h1>Aureon Bridge</h1>
+      <div class="sub" id="header-sub">connecting…</div>
+    </div>
+  </div>
+</header>
+
+<div class="status-strip">
+  <div class="cell" id="cell-bridge"><div class="k">bridge</div><div class="v">…</div></div>
+  <div class="cell" id="cell-cadence"><div class="k">cadence</div><div class="v">…</div></div>
+  <div class="cell" id="cell-love"><div class="k">love</div><div class="v">…</div></div>
+  <div class="cell" id="cell-fp"><div class="k">desktop fp</div><div class="v">…</div></div>
+</div>
+
+<div class="sensor-strip">
+  <div class="cell"><div class="k">battery</div><div class="v" id="sen-bat">—</div></div>
+  <div class="cell"><div class="k">motion</div><div class="v" id="sen-mot">—</div></div>
+  <div class="cell"><div class="k">orient</div><div class="v" id="sen-ori">—</div></div>
+  <div class="cell"><div class="k">light</div><div class="v" id="sen-lux">—</div></div>
+  <div class="cell"><div class="k">geo</div><div class="v" id="sen-geo">—</div></div>
+  <div class="cell"><div class="k">net</div><div class="v" id="sen-net">—</div></div>
+</div>
+
+<div class="permission-bar">
+  <button id="perm-motion">Motion</button>
+  <button id="perm-geo">Location</button>
+  <button id="perm-mic">Mic</button>
+</div>
+
+<main id="thread">
+  <div class="msg them">
+    <div class="who">aureon</div>
+    The bridge is opening. When the strip above goes green you are coupled — every packet the phi-bridge sends carries this phone's sensor readings into the desktop vault. The Queen speaks back through the same interval.
+  </div>
+</main>
+
+<footer>
+  <div class="voice-pick" id="voice-pick"></div>
+  <div class="composer">
+    <button class="mic" id="btn-mic" title="hold to speak">🎙</button>
+    <textarea id="composer" placeholder="speak to the vault…" rows="1"></textarea>
+    <button id="btn-send" title="send">➤</button>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ───────── Service worker registration ─────────
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+    });
+  }
+
+  const PHI_SQUARED = 2.6180339887;
+
+  // ───────── Peer identity ─────────
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    return Math.random().toString(36).slice(2, 14);
+  }
+  let peerId = localStorage.getItem("aureon.peer_id");
+  if (!peerId) {
+    peerId = uuid();
+    localStorage.setItem("aureon.peer_id", peerId);
+  }
+  const peerLabel = localStorage.getItem("aureon.peer_label") || "phone-" + peerId.slice(0, 4);
+
+  // ───────── UI handles ─────────
+  const headerSub = document.getElementById("header-sub");
+  const thread = document.getElementById("thread");
+  const composer = document.getElementById("composer");
+  const btnSend = document.getElementById("btn-send");
+  const btnMic = document.getElementById("btn-mic");
+  const toastEl = document.getElementById("toast");
+  const cellBridge = document.getElementById("cell-bridge");
+  const cellCadence = document.getElementById("cell-cadence");
+  const cellLove = document.getElementById("cell-love");
+  const cellFp = document.getElementById("cell-fp");
+
+  const senBat = document.getElementById("sen-bat");
+  const senMot = document.getElementById("sen-mot");
+  const senOri = document.getElementById("sen-ori");
+  const senLux = document.getElementById("sen-lux");
+  const senGeo = document.getElementById("sen-geo");
+  const senNet = document.getElementById("sen-net");
+
+  const btnPermMotion = document.getElementById("perm-motion");
+  const btnPermGeo = document.getElementById("perm-geo");
+  const btnPermMic = document.getElementById("perm-mic");
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    setTimeout(() => toastEl.classList.remove("show"), 1600);
+  }
+  function addMsg(side, who, body, chorus, coherence, actions) {
+    const div = document.createElement("div");
+    div.className = "msg " + side;
+    let html = `<div class="who">${esc(who)}</div>${esc(body)}`;
+    if (chorus && chorus.length) {
+      const lines = chorus.map(c =>
+        `<div><span class="name">${esc(c.voice)}:</span> ${esc((c.text || "").slice(0, 180))}</div>`
+      ).join("");
+      html += `<div class="chorus-detail">${lines}</div>`;
+    }
+    if (actions && actions.actions && actions.actions.length) {
+      const rows = actions.actions.slice(0, 6).map(a => {
+        const cls = !a.ok ? "fail" : (a.mode === "live" ? "live" : "dry");
+        const params = a.params ? JSON.stringify(a.params).slice(0, 60) : "";
+        const summary = a.stdout || a.message || a.result_summary || (a.error || "");
+        const summaryStr = typeof summary === "string" ? summary.slice(0, 140) : JSON.stringify(summary).slice(0, 140);
+        return `
+          <div class="action-row">
+            <span class="tool ${cls}">${esc(a.tool)}</span>
+            <div class="body">
+              <div>${esc(params)}</div>
+              <div style="color: var(--muted)">${esc(summaryStr)}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+      html += `<div class="actions">${rows}</div>`;
+    }
+    if (coherence && typeof coherence.coherence === "number") {
+      const pct = Math.round(coherence.coherence * 100);
+      const auris = (coherence.auris) || {};
+      const field = (coherence.field) || {};
+      const text_ = (coherence.text) || {};
+      const lighthouseTag = auris.lighthouse_cleared
+        ? '<span class="tag lighthouse">lighthouse</span>' : "";
+      const modeTag = text_.dominant_mode
+        ? `<span class="tag mode">${esc(text_.dominant_mode)}</span>` : "";
+      const consTag = auris.consensus
+        ? `<span class="tag cons">${esc(auris.consensus)} ${Math.round((auris.confidence||0)*100)}%</span>` : "";
+      html += `
+        <div class="coherence">
+          <div class="row">
+            <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+            <span>Γ ${pct}%</span>
+            ${lighthouseTag}
+          </div>
+          <div class="row" style="margin:0">
+            ${consTag}
+            ${modeTag}
+            <span>${auris.agreeing || 0}/9 nodes</span>
+            <span>love ${Number(field.love || 0).toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+    }
+    div.innerHTML = html;
+    thread.appendChild(div);
+    thread.scrollTop = thread.scrollHeight;
+    // Local history mirror
+    try {
+      const log = JSON.parse(localStorage.getItem("aureon.log") || "[]");
+      log.push({
+        side, who, body,
+        chorus: (chorus || []).map(c => ({ voice: c.voice, text: c.text })),
+        coherence: coherence || null,
+        actions: actions || null,
+        ts: Date.now(),
+      });
+      if (log.length > 80) log.splice(0, log.length - 80);
+      localStorage.setItem("aureon.log", JSON.stringify(log));
+    } catch (e) {}
+  }
+  // Restore local history on boot
+  try {
+    const log = JSON.parse(localStorage.getItem("aureon.log") || "[]");
+    log.slice(-12).forEach(m => addMsg(m.side, m.who, m.body, m.chorus, m.coherence, m.actions));
+  } catch (e) {}
+
+  // ───────── Voice picker ─────────
+  let chosenVoice = localStorage.getItem("aureon.voice") || "queen";
+  function renderVoicePicker(voices) {
+    const container = document.getElementById("voice-pick");
+    container.innerHTML = "";
+    voices.forEach(v => {
+      const chip = document.createElement("div");
+      chip.className = "chip" + (v === chosenVoice ? " active" : "");
+      chip.textContent = v;
+      chip.addEventListener("click", () => {
+        chosenVoice = v;
+        localStorage.setItem("aureon.voice", v);
+        renderVoicePicker(voices);
+      });
+      container.appendChild(chip);
+    });
+  }
+  fetch("/api/voices").then(r => r.json()).then(d => {
+    if (d && d.ok && Array.isArray(d.voices)) renderVoicePicker(d.voices);
+  }).catch(() => {});
+
+  // ───────── Sensor state (updated live, read by sync loop) ─────────
+  const sensors = {
+    battery: null,
+    charging: null,
+    motion: null,        // { ax, ay, az, mag }
+    orientation: null,   // { alpha, beta, gamma }
+    orientation_type: null,
+    lux: null,
+    geo: null,           // { lat, lon, acc }
+    network: null,
+    online: true,
+  };
+
+  // Battery
+  if (navigator.getBattery) {
+    navigator.getBattery().then(b => {
+      const upd = () => {
+        sensors.battery = Math.round(b.level * 100) / 100;
+        sensors.charging = b.charging;
+        senBat.textContent = Math.round(b.level * 100) + "%" + (b.charging ? "⚡" : "");
+      };
+      upd();
+      b.addEventListener("levelchange", upd);
+      b.addEventListener("chargingchange", upd);
+    }).catch(() => {});
+  }
+
+  // Network
+  function readNetwork() {
+    if (navigator.connection && navigator.connection.effectiveType) {
+      sensors.network = navigator.connection.effectiveType;
+    }
+    sensors.online = navigator.onLine;
+    senNet.textContent = (sensors.online ? (sensors.network || "on") : "off");
+  }
+  readNetwork();
+  window.addEventListener("online", readNetwork);
+  window.addEventListener("offline", readNetwork);
+  if (navigator.connection) navigator.connection.addEventListener("change", readNetwork);
+
+  // Orientation
+  if (screen && screen.orientation) {
+    const upd = () => {
+      sensors.orientation_type = screen.orientation.type;
+      senOri.textContent = sensors.orientation_type;
+    };
+    upd();
+    screen.orientation.addEventListener("change", upd);
+  }
+
+  // Device motion / orientation with explicit permission on iOS 13+
+  function attachMotionListeners() {
+    window.addEventListener("devicemotion", (e) => {
+      const a = e.accelerationIncludingGravity || e.acceleration;
+      if (!a) return;
+      const mag = Math.sqrt((a.x || 0) ** 2 + (a.y || 0) ** 2 + (a.z || 0) ** 2);
+      sensors.motion = {
+        ax: a.x == null ? null : Math.round(a.x * 100) / 100,
+        ay: a.y == null ? null : Math.round(a.y * 100) / 100,
+        az: a.z == null ? null : Math.round(a.z * 100) / 100,
+        mag: Math.round(mag * 100) / 100,
+      };
+      senMot.textContent = sensors.motion.mag.toFixed(2);
+    }, true);
+    window.addEventListener("deviceorientation", (e) => {
+      sensors.orientation = {
+        alpha: e.alpha == null ? null : Math.round(e.alpha),
+        beta: e.beta == null ? null : Math.round(e.beta),
+        gamma: e.gamma == null ? null : Math.round(e.gamma),
+      };
+    }, true);
+  }
+
+  btnPermMotion.addEventListener("click", async () => {
+    const DMclass = window.DeviceMotionEvent;
+    if (DMclass && typeof DMclass.requestPermission === "function") {
+      try {
+        const r = await DMclass.requestPermission();
+        if (r === "granted") {
+          attachMotionListeners();
+          btnPermMotion.classList.add("granted"); btnPermMotion.textContent = "Motion ✓";
+          toast("motion enabled");
+        } else {
+          btnPermMotion.classList.add("denied"); btnPermMotion.textContent = "Motion ✗";
+        }
+      } catch (e) {
+        btnPermMotion.classList.add("denied");
+      }
+    } else {
+      attachMotionListeners();
+      btnPermMotion.classList.add("granted"); btnPermMotion.textContent = "Motion ✓";
+      toast("motion enabled");
+    }
+  });
+
+  // Geolocation
+  btnPermGeo.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      btnPermGeo.classList.add("denied"); btnPermGeo.textContent = "Location ✗";
+      return;
+    }
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        sensors.geo = {
+          lat: Math.round(pos.coords.latitude * 10000) / 10000,
+          lon: Math.round(pos.coords.longitude * 10000) / 10000,
+          acc: Math.round(pos.coords.accuracy),
+        };
+        senGeo.textContent = sensors.geo.lat + "," + sensors.geo.lon;
+        btnPermGeo.classList.add("granted"); btnPermGeo.textContent = "Location ✓";
+      },
+      () => {
+        btnPermGeo.classList.add("denied"); btnPermGeo.textContent = "Location ✗";
+      },
+      { enableHighAccuracy: false, maximumAge: 30000, timeout: 15000 }
+    );
+  });
+
+  // Ambient light (Chromium-only, behind a flag on most devices)
+  try {
+    if ("AmbientLightSensor" in window) {
+      const ls = new window.AmbientLightSensor();
+      ls.addEventListener("reading", () => {
+        sensors.lux = Math.round(ls.illuminance);
+        senLux.textContent = sensors.lux + " lx";
+      });
+      ls.start();
+    }
+  } catch (e) {}
+
+  btnPermMic.addEventListener("click", () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      btnPermMic.classList.add("denied"); btnPermMic.textContent = "Mic ✗";
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      stream.getTracks().forEach(t => t.stop());
+      btnPermMic.classList.add("granted"); btnPermMic.textContent = "Mic ✓";
+      toast("mic allowed");
+    }).catch(() => {
+      btnPermMic.classList.add("denied"); btnPermMic.textContent = "Mic ✗";
+    });
+  });
+
+  // ───────── Phi-cadenced sync loop ─────────
+  let cadenceMs = PHI_SQUARED * 1000;
+  let syncTimer = null;
+  let lastFingerprint = "";
+
+  function buildStatePacket() {
+    return {
+      label: peerLabel,
+      kind: "phone",
+      ts: Date.now(),
+      online: sensors.online,
+      ua: navigator.userAgent,
+      battery: sensors.battery,
+      charging: sensors.charging,
+      motion: sensors.motion,
+      orientation: sensors.orientation,
+      orientation_type: sensors.orientation_type,
+      lux: sensors.lux,
+      geo: sensors.geo,
+      network: sensors.network,
+    };
+  }
+
+  async function sync() {
+    try {
+      const res = await fetch("/api/bridge/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          peer_id: peerId,
+          fingerprint: lastFingerprint,
+          state: buildStatePacket(),
+        }),
+      });
+      const data = await res.json();
+      if (!data || !data.ok) {
+        cellBridge.classList.remove("ok"); cellBridge.classList.add("err");
+        cellBridge.querySelector(".v").textContent = "down";
+        headerSub.textContent = "bridge down";
+        return;
+      }
+      cellBridge.classList.remove("err"); cellBridge.classList.add("ok");
+      cellBridge.querySelector(".v").textContent = "live";
+      headerSub.textContent = `coupled · ${peerLabel}`;
+      const c = data.cadence || {};
+      const interval = c.interval_s || PHI_SQUARED;
+      cellCadence.querySelector(".v").textContent = interval.toFixed(2) + "s";
+      cadenceMs = Math.max(500, interval * 1000);
+      const desk = data.desktop || {};
+      lastFingerprint = desk.fingerprint || "";
+      cellFp.querySelector(".v").textContent = (desk.fingerprint || "—").slice(0, 8);
+      if (typeof desk.love_amplitude === "number") {
+        cellLove.querySelector(".v").textContent = desk.love_amplitude.toFixed(2);
+      }
+      // Surface any new utterance that wasn't from our own send()
+      if (desk.last_utterance && desk.last_utterance.text &&
+          desk.last_utterance.text !== window.__lastSeenUtterance) {
+        window.__lastSeenUtterance = desk.last_utterance.text;
+        // Only show if speaker was not "human" (avoid echoing our own posts)
+        if (desk.last_utterance.speaker !== "human") {
+          addMsg("them", desk.last_utterance.listener || "vault", desk.last_utterance.text);
+        }
+      }
+    } catch (e) {
+      cellBridge.classList.remove("ok"); cellBridge.classList.add("err");
+      cellBridge.querySelector(".v").textContent = "err";
+      headerSub.textContent = "no link";
+    } finally {
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(sync, cadenceMs);
+    }
+  }
+
+  // Register, then start syncing.
+  fetch("/api/bridge/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ peer_id: peerId, label: peerLabel, kind: "phone" }),
+  }).then(r => r.json()).then(d => {
+    if (d && d.ok) toast("bridge open · " + peerLabel);
+  }).catch(() => {}).finally(sync);
+
+  // Page visibility — pause sync when backgrounded, resume on foreground
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") sync();
+  });
+
+  // ───────── Send a message (async + fast) ─────────
+  // The LLM is slow on-device so we never block the phone's fetch.
+  // We POST with {async:true, fast:true}, get a job_id immediately,
+  // show a "thinking…" bubble, then poll /api/message/<job_id> at the
+  // phi-bridge cadence until it resolves.
+  let pendingMsgDiv = null;
+
+  function showThinking() {
+    if (pendingMsgDiv) return;
+    pendingMsgDiv = document.createElement("div");
+    pendingMsgDiv.className = "msg them";
+    pendingMsgDiv.innerHTML = `<div class="who">vault</div><em style="color:var(--muted)">thinking…</em>`;
+    thread.appendChild(pendingMsgDiv);
+    thread.scrollTop = thread.scrollHeight;
+  }
+  function resolveThinking(who, text, chorus, coherence, actions) {
+    if (pendingMsgDiv) {
+      pendingMsgDiv.remove();
+      pendingMsgDiv = null;
+    }
+    addMsg("them", who || "vault", text, chorus, coherence, actions);
+  }
+
+  async function pollJob(jobId, attempts) {
+    attempts = attempts || 0;
+    if (attempts > 120) { // ~60s max at 500ms each
+      resolveThinking("vault", "[still thinking — reply will appear when ready]");
+      return;
+    }
+    try {
+      const r = await fetch("/api/message/" + encodeURIComponent(jobId));
+      const d = await r.json();
+      if (!d || !d.ok) {
+        setTimeout(() => pollJob(jobId, attempts + 1), 500);
+        return;
+      }
+      if (d.status === "pending") {
+        setTimeout(() => pollJob(jobId, attempts + 1), 500);
+        return;
+      }
+      if (d.status === "done" && d.utterance) {
+        const u = d.utterance;
+        const replyText = (u.response && u.response.text) || "(silent)";
+        window.__lastSeenUtterance = replyText;
+        resolveThinking(u.listener || "vault", replyText, u.chorus || [], u.coherence || null, u.actions || null);
+        return;
+      }
+      if (d.status === "error") {
+        resolveThinking("vault", "[error: " + (d.error || "unknown") + "]");
+        return;
+      }
+      resolveThinking("vault", "[no reply]");
+    } catch (e) {
+      setTimeout(() => pollJob(jobId, attempts + 1), 800);
+    }
+  }
+
+  async function sendMessage() {
+    const text = composer.value.trim();
+    if (!text) return;
+    composer.value = "";
+    btnSend.disabled = true;
+    addMsg("me", "you", text);
+    showThinking();
+    try {
+      const res = await fetch("/api/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          voice: chosenVoice,
+          peer_id: peerId,          // thread conversation memory per device
+          async: true,
+          fast: true,               // single-voice fast path, skip the 8-call chorus
+        }),
+      });
+      const data = await res.json();
+      if (data && data.ok && data.job_id) {
+        pollJob(data.job_id, 0);
+      } else if (data && data.ok && data.utterance) {
+        // Server returned synchronously anyway — render immediately.
+        const u = data.utterance;
+        const replyText = (u.response && u.response.text) || "(silent)";
+        window.__lastSeenUtterance = replyText;
+        resolveThinking(u.listener || "vault", replyText, u.chorus || [], u.coherence || null, u.actions || null);
+      } else {
+        resolveThinking("vault", "[no response — " + ((data && data.error) || "unknown") + "]");
+      }
+    } catch (e) {
+      resolveThinking("vault", "[network error: " + e.message + "]");
+    } finally {
+      btnSend.disabled = false;
+      composer.focus();
+      sync();
+    }
+  }
+
+  btnSend.addEventListener("click", sendMessage);
+  composer.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  // ───────── Voice input (Web Speech API) ─────────
+  const Recog = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recog) {
+    btnMic.disabled = true;
+    btnMic.title = "Web Speech API not available on this device";
+  } else {
+    let recog = null;
+    let recording = false;
+    function startRec() {
+      recog = new Recog();
+      recog.lang = (navigator.language || "en-US");
+      recog.continuous = false;
+      recog.interimResults = true;
+      let finalText = "";
+      recog.onresult = (ev) => {
+        let interim = "";
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          if (ev.results[i].isFinal) finalText += ev.results[i][0].transcript;
+          else interim += ev.results[i][0].transcript;
+        }
+        composer.value = (finalText + " " + interim).trim();
+      };
+      recog.onerror = (ev) => { toast("mic: " + ev.error); stopRec(); };
+      recog.onend = () => {
+        recording = false;
+        btnMic.classList.remove("recording");
+        if (composer.value.trim()) sendMessage();
+      };
+      recog.start();
+      recording = true;
+      btnMic.classList.add("recording");
+    }
+    function stopRec() {
+      try { if (recog) recog.stop(); } catch (e) {}
+      recording = false;
+      btnMic.classList.remove("recording");
+    }
+    btnMic.addEventListener("click", () => { recording ? stopRec() : startRec(); });
+  }
+})();
+</script>
+</body>
+</html>

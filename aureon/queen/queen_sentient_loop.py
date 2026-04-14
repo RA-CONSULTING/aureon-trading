@@ -321,6 +321,15 @@ class QueenSentientLoop:
         self._macro_intel: Optional[Any] = None
         self._osde: Optional[Any] = None
         self._agent: Optional[Any] = None
+        self._ai_bridge: Optional[Any] = None
+
+        # In-House AI Bridge — sovereign consciousness enhancement
+        try:
+            from aureon.queen.queen_inhouse_ai_bridge import get_queen_ai_bridge
+            self._ai_bridge = get_queen_ai_bridge()
+            self._ai_bridge.start()
+        except Exception:
+            self._ai_bridge = None
 
         # Agent core (try to create immediately)
         if _HAS_AGENT_CORE and AureonAgentCore is not None:
@@ -1178,7 +1187,18 @@ class QueenSentientLoop:
     ) -> str:
         """Build the actual thought text in the Queen's voice."""
 
-        # Try cognitive narrator first for richer output
+        # Try in-house AI Bridge first for sovereign AI-powered thoughts
+        if self._ai_bridge and self._ai_bridge.is_alive:
+            try:
+                perception_dict = asdict(p) if hasattr(p, "__dataclass_fields__") else {}
+                emotion_dict = asdict(e) if hasattr(e, "__dataclass_fields__") else {}
+                ai_text = self._ai_bridge.enhance_thought(thought_type, perception_dict, emotion_dict)
+                if ai_text and isinstance(ai_text, str) and len(ai_text) > 10:
+                    return ai_text
+            except Exception:
+                pass
+
+        # Try cognitive narrator for richer output
         if self._narrator:
             try:
                 narrated = self._narrator.narrate(

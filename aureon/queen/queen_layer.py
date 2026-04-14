@@ -392,11 +392,24 @@ class QueenLayer:
             self._safe_activate(module_name, module_name)
             activated += 1
 
+        # In-House AI Bridge — sovereign consciousness enhancement
+        try:
+            from aureon.queen.queen_inhouse_ai_bridge import get_queen_ai_bridge
+            bridge = get_queen_ai_bridge()
+            bridge.start()
+            if self.thought_bus is not None and hasattr(bridge, "_thought_bus"):
+                bridge._thought_bus = self.thought_bus
+            self._register("queen_inhouse_ai_bridge", bridge)
+            print("   Queen AI Bridge: ONLINE (sovereign in-house AI)")
+        except Exception as e:
+            self._register("queen_inhouse_ai_bridge", None, error=str(e))
+            logger.debug("Queen AI Bridge unavailable: %s", e)
+
         online = sum(
             1 for k, v in self.registry.items()
             if k.startswith("queen_") and v.get("status") == "ONLINE"
         )
-        print(f"   Queen modules: {online} ONLINE (of {len(priority_names) + activated} attempted)")
+        print(f"   Queen modules: {online} ONLINE (of {len(priority_names) + activated + 1} attempted)")
 
         self._publish("queen.layer.phase4_complete", {"queen_modules_online": online})
 
