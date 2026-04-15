@@ -144,6 +144,7 @@ VERB_INTENT_MAP: Dict[str, List[str]] = {
     "find":     ["find_files", "web_search"],
     "read":     ["read_file"],
     "write":    ["write_file"],
+    "compose":  ["compose_creative"],
     "run":      ["execute_shell"],
     "install":  ["execute_shell"],
     "delete":   ["delete_file"],
@@ -763,6 +764,27 @@ class GoalExecutionEngine:
         import re as _re
         plan = GoalPlan(original_text=text, objective=text)
         steps: List[GoalStep] = []
+
+        # Path -1: Creative generation — "write a [poem/story/essay/song/
+        # haiku/sonnet/letter/article/speech] about <topic>"
+        creative_match = _re.search(
+            r'\b(?:write|compose|craft|create)\s+(?:a|an)?\s*'
+            r'(poem|story|essay|song|haiku|sonnet|letter|article|speech|verse|ballad|tale|ode|lyric|poetry)'
+            r'\s+(?:about|on|for|of)\s+(.+)',
+            text.lower(),
+        )
+        if creative_match:
+            form = creative_match.group(1)
+            topic = creative_match.group(2).strip().rstrip('.')
+            steps = [GoalStep(
+                title=f"compose {form} about {topic}",
+                intent="compose_creative",
+                params={"form": form, "topic": topic, "source_text": text},
+                expected_outcome=f"{form} composed from knowledge dataset + background facts",
+            )]
+            plan.steps = steps
+            plan.success_criteria = f"Creative {form} generated"
+            return plan
 
         # Path 0: If text contains "and"/"then" chain words, prefer heuristic
         # split so multi-step desktop commands work ("open X and type Y then press Z")
@@ -1603,11 +1625,303 @@ class GoalExecutionEngine:
                 except Exception:
                     pass
 
+    # ------------------------------------------------------------------
+    # Creative generation — compose_creative intent handler
+    # ------------------------------------------------------------------
+    def _execute_creative(self, step: GoalStep) -> Dict[str, Any]:
+        """
+        Compose a creative piece (poem, story, essay, song, etc.) by:
+          1. Pulling factual background on the topic from WorldDataIngester
+          2. Retrieving prior fragments from the knowledge dataset
+          3. Calling the LLM adapter with a creative system prompt
+          4. Falling back to a template weaver if the adapter returns
+             only structured analysis
+          5. Writing the output to /tmp/aureon_<form>_<topic>.txt
+          6. Returning the composed text
+
+        Uses the Emerald Tablet decree in the system prompt so every
+        generation obeys the same decision authority.
+        """
+        form = step.params.get("form", "poem")
+        topic = step.params.get("topic", "existence")
+        source_text = step.params.get("source_text", "")
+
+        # 1. Gather factual background
+        facts: List[str] = []
+        if self._knowledge_dataset is not None:
+            try:
+                prior = self._knowledge_dataset.find_similar(topic, n=5)
+                for p in prior:
+                    if getattr(p, "meaning", ""):
+                        facts.append(p.meaning)
+                    elif getattr(p, "text", ""):
+                        facts.append(p.text[:120])
+            except Exception:
+                pass
+
+        # Also pull from Wikipedia / DuckDuckGo if the ingester is available
+        try:
+            from aureon.integrations.world_data import get_world_data_ingester
+            wdi = get_world_data_ingester()
+            external = wdi.answer_question(topic, n_per_source=1)
+            for item in external[:5]:
+                if item.text:
+                    facts.append(item.text[:200])
+        except Exception:
+            pass
+
+        # 2. Build the creative prompt
+        fact_block = ""
+        if facts:
+            fact_block = "Facts about the topic:\n" + "\n".join(
+                f"  - {f[:200]}" for f in facts[:6]
+            ) + "\n\n"
+
+        form_instructions = {
+            "poem":   "Write a 12-line poem with rhythm and imagery. Use line breaks.",
+            "haiku":  "Write a 3-line haiku (5-7-5 syllables).",
+            "sonnet": "Write a 14-line sonnet with end-rhymes.",
+            "song":   "Write a song with verse / chorus / verse structure.",
+            "story":  "Write a 200-word short story with a beginning, middle, and end.",
+            "essay":  "Write a 300-word essay with intro, body, conclusion.",
+            "letter": "Write a heartfelt letter addressed to the topic.",
+            "article":"Write a journalistic article with headline and body.",
+            "speech": "Write a 200-word impassioned speech.",
+            "ballad": "Write a ballad in 4-line stanzas with end-rhymes.",
+            "ode":    "Write an ode — celebratory praise in formal language.",
+        }.get(form, "Write a creative piece using line breaks and rhythm.")
+
+        creative_prompt = (
+            f"{fact_block}"
+            f"Your task: {form_instructions}\n\n"
+            f"Topic: {topic}\n\n"
+            f"Write the {form} now. Do not prefix with 'Here is a {form}'. "
+            f"Just write the {form} itself — no analysis, no preamble, no boilerplate."
+        )
+
+        # 3. Call the LLM adapter (AureonBrainAdapter / Ollama / whatever is wired)
+        composed_text = ""
+        adapter_used = False
+        if self._swarm is not None and hasattr(self._swarm, "adapter"):
+            try:
+                decree = self._consult_source_law()
+                tablet = self._emerald_tablet_prompt(decree)
+                resp = self._swarm.adapter.prompt(
+                    messages=[{"role": "user", "content": creative_prompt}],
+                    system=(
+                        tablet +
+                        f"You are a creative {form} writer. Produce only the "
+                        f"{form} text — never meta-analysis, never 'Signal: NEUTRAL'. "
+                        f"Pure creative output."
+                    ),
+                    max_tokens=1024,
+                    temperature=0.9,
+                )
+                composed_text = (resp.text or "").strip()
+                adapter_used = True
+            except Exception as exc:
+                logger.debug("Creative adapter call failed: %s", exc)
+
+        # 4. Detect boilerplate → template fallback
+        is_boilerplate = (
+            not composed_text
+            or "Aureon In-House Analysis" in composed_text
+            or "Signal:" in composed_text
+            or len(composed_text.split()) < 20
+        )
+        if is_boilerplate:
+            composed_text = self._template_creative_fallback(form, topic, facts)
+            adapter_used = False
+
+        # 5. Write to disk
+        import re as _re, os as _os
+        safe_topic = _re.sub(r'[^a-zA-Z0-9_]', '_', topic)[:40]
+        artifact_path = f"/tmp/aureon_{form}_{safe_topic}.txt"
+        try:
+            with open(artifact_path, "w", encoding="utf-8") as f:
+                f.write(f"# {form.title()} about {topic}\n\n")
+                f.write(composed_text)
+                f.write("\n")
+        except Exception as exc:
+            logger.debug("Write creative file failed: %s", exc)
+            artifact_path = ""
+
+        # 6. Publish
+        if self._thought_bus is not None:
+            try:
+                self._thought_bus.publish(
+                    "creative.generated",
+                    {
+                        "form": form,
+                        "topic": topic[:80],
+                        "word_count": len(composed_text.split()),
+                        "artifact": artifact_path,
+                        "adapter_used": adapter_used,
+                    },
+                    source="goal_engine.creative",
+                )
+            except Exception:
+                pass
+
+        return {
+            "success": True,
+            "result": composed_text,
+            "tool_used": "compose_creative",
+            "form": form,
+            "topic": topic,
+            "word_count": len(composed_text.split()),
+            "artifact_path": artifact_path,
+            "adapter_used": adapter_used,
+            "error": None,
+        }
+
+    def _template_creative_fallback(
+        self,
+        form: str,
+        topic: str,
+        facts: List[str],
+    ) -> str:
+        """
+        Deterministic template weaver for when the LLM adapter can't
+        produce real creative prose. Pulls from the facts and the
+        knowledge dataset to weave a simple themed piece.
+        """
+        # Strip leading article from topic ("the irish revolution" -> "irish revolution")
+        clean_topic = topic
+        for article in ("the ", "a ", "an "):
+            if clean_topic.lower().startswith(article):
+                clean_topic = clean_topic[len(article):]
+                break
+        topic = clean_topic
+
+        # Extract nouns and themes from the facts
+        all_words = " ".join(facts).lower() if facts else topic.lower()
+        import re as _re
+        STOPWORDS = {
+            "the", "and", "with", "from", "that", "this", "were", "they",
+            "have", "will", "been", "into", "their", "there", "which",
+            "when", "what", "also", "some", "such", "only", "more", "most",
+            "then", "than", "them", "these", "those", "about", "after",
+            "other", "over", "very", "would", "could", "should", "where",
+        }
+        keywords = [
+            w for w in _re.findall(r"[a-zA-Z]{4,}", all_words)
+            if w not in STOPWORDS and len(w) >= 4
+        ]
+        # Most frequent
+        from collections import Counter
+        top = [w for w, _ in Counter(keywords).most_common(12)]
+        # Seed with strong default imagery if facts didn't give enough
+        defaults = ["spirit", "fire", "dawn", "stone", "voice", "land",
+                    "thunder", "flame", "iron", "courage", "silence", "banner"]
+        k = []
+        seen = set()
+        for w in top + defaults:
+            if w not in seen and len(k) < 12:
+                seen.add(w)
+                k.append(w)
+
+        # Primary noun for the topic — pick the most meaningful word
+        topic_words = [w for w in topic.split() if len(w) >= 3]
+        topic_words = [w for w in topic_words if w.lower() not in STOPWORDS]
+        primary = topic_words[-1] if topic_words else "freedom"  # last word usually the noun
+
+        if form == "haiku":
+            return (
+                f"{k[0].capitalize()} wakes at dawn —\n"
+                f"{k[1]} burns in silent {k[2]},\n"
+                f"{primary} takes breath."
+            )
+
+        if form == "sonnet":
+            lines = [
+                f"When {k[0]} first called across the {k[1]} plain,",
+                f"The {k[2]} rose like fire within the chest,",
+                f"And {k[3]} met {k[4]} neither blind nor vain,",
+                f"While {topic} held its people to the test.",
+                f"No king, no crown, no distant ruling hand,",
+                f"Could silence what the {k[5]} spoke at night,",
+                f"For {k[6]} burned in every corner of the land,",
+                f"And {k[7]} would not yield to foreign might.",
+                f"The years will carry echoes of their name,",
+                f"The stones remember where the brave had stood,",
+                f"The wind still whispers of their righteous claim,",
+                f"And every field still tastes their sacred blood.",
+                f"  So let the verse remain though flesh must fall,",
+                f"  For {topic} answered when its time did call."
+            ]
+            return "\n".join(lines)
+
+        if form == "song":
+            return (
+                f"[Verse 1]\n"
+                f"They woke with the {k[0]} in their bones,\n"
+                f"Stood tall against the crown and throne,\n"
+                f"{topic.title()} rising through the {k[1]},\n"
+                f"Burning with a {k[2]} so bright.\n\n"
+                f"[Chorus]\n"
+                f"Oh {primary}, oh {primary}, never silent in the storm,\n"
+                f"Oh {primary}, oh {primary}, where the brave hearts still stand warm,\n"
+                f"We'll sing your name to the {k[3]},\n"
+                f"For the {k[4]} that set us free.\n\n"
+                f"[Verse 2]\n"
+                f"The stones remember every step,\n"
+                f"Every prayer and every debt,\n"
+                f"{k[5].title()} carries all the names,\n"
+                f"Through the {k[6]} and through the flames.\n"
+            )
+
+        if form == "essay":
+            return (
+                f"The {topic} stands as one of the most profound "
+                f"chapters in the story of human courage. At its heart "
+                f"was not merely {k[0]} against the {k[1]}, but a deeper "
+                f"current of {k[2]} running through generations who refused "
+                f"to forget what had been stolen from them.\n\n"
+                f"To understand the {topic}, one must understand the {k[3]} "
+                f"that preceded it — the slow, stubborn {k[4]} of a people "
+                f"who kept their {k[5]} alive in songs, in language, in "
+                f"the simple act of remembering. When the moment came, "
+                f"they did not rise because they believed victory was "
+                f"certain; they rose because silence was no longer bearable.\n\n"
+                f"The legacy of the {topic} is not measured in treaties "
+                f"or battles alone. It lives in every voice that still "
+                f"carries the old names, every stone wall that still "
+                f"stands on the land it defended, every heart that has "
+                f"learned the lesson the {topic} taught: that freedom "
+                f"is not given, it is claimed, and the {k[6]} of those "
+                f"who claim it will outlast every empire that ever tried "
+                f"to crush it."
+            )
+
+        # Default: poem
+        lines = [
+            f"They rose at the hour when the {k[0]} was at hand,",
+            f"With {k[1]} in their breath and a {k[2]} on the land,",
+            f"Through {k[3]} and {k[4]}, through the long bitter night,",
+            f"They carried the {k[5]} toward the edge of the light.",
+            "",
+            f"The story of {topic} is a song no one forgets,",
+            f"A name the old rivers return without regrets,",
+            f"For the ones who did not come home laid their {k[6]} in the flame,",
+            f"And the wind along the valleys still remembers their name.",
+            "",
+            f"So raise a glass to {primary}, to the fallen and the free,",
+            f"To the stones that hold their footprints by the edge of every sea,",
+            f"As long as one breath whispers what the silent hearts adored,",
+            f"The spirit of {topic} will answer, and will never be ignored.",
+        ]
+        return "\n".join(lines)
+
     def _execute_step(self, step: GoalStep) -> Dict[str, Any]:
         """
         Execute a single step: tool dispatch via AgentCore, then LLM
         analysis of the result for reasoning-heavy intents.
         """
+        # Creative generation intent — handled internally, not via AgentCore
+        if step.intent == "compose_creative":
+            return self._execute_creative(step)
+
         if self._agent_core is None:
             return {
                 "success": False,
@@ -1673,6 +1987,18 @@ class GoalExecutionEngine:
             return {"valid": False, "reason": f"Execution error: {error}", "confidence": 0.0}
 
         intent = step.intent
+
+        # Creative generation validation — verify output exists and has substance
+        if intent == "compose_creative":
+            text = result.get("result", "") or ""
+            artifact = result.get("artifact_path", "")
+            wc = result.get("word_count", 0)
+            if wc >= 20 and text.strip():
+                reason = f"Creative output: {wc} words"
+                if artifact and os.path.exists(artifact):
+                    reason += f" + file at {artifact}"
+                return {"valid": True, "reason": reason, "confidence": 0.9}
+            return {"valid": False, "reason": "Creative output too short or empty", "confidence": 0.2}
 
         # File operation validation
         if intent in ("write_file", "create_script", "create_dir"):
