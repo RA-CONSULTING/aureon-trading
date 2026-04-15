@@ -1,0 +1,184 @@
+{
+  "set_name": "Aureon Opening Set — Resonance Calibration",
+  "description": "A sixteen-track DJ set curated for harmonic rise. Tracks are ordered by Camelot neighbours so every transition preserves key coherence. BPM climbs 122→130 across the set, energy 6→9. Drops land on phrase 3 of each track except the cooldown. This is a DATA schema not audio — the resonance engine reads it to drive ThoughtBus beat pulses at true BPM.",
+  "schema_version": 1,
+  "phrase_beats": 32,
+  "tracks": [
+    {
+      "title": "Gaia Opens Her Eye",
+      "artist": "Aureon Collective",
+      "bpm": 122.0,
+      "camelot": "8A",
+      "energy": 6,
+      "phrase_count": 12,
+      "duration_s": 189.0,
+      "drop_phrases": [4, 8],
+      "breakdown_phrases": [6]
+    },
+    {
+      "title": "Schumann Drift",
+      "artist": "Aureon Collective",
+      "bpm": 122.5,
+      "camelot": "9A",
+      "energy": 6,
+      "phrase_count": 12,
+      "duration_s": 188.0,
+      "drop_phrases": [4, 9],
+      "breakdown_phrases": [7]
+    },
+    {
+      "title": "Phi Ladder",
+      "artist": "Harmonic Nexus",
+      "bpm": 123.0,
+      "camelot": "9B",
+      "energy": 7,
+      "phrase_count": 14,
+      "duration_s": 218.0,
+      "drop_phrases": [4, 10],
+      "breakdown_phrases": [8]
+    },
+    {
+      "title": "Tree of Light",
+      "artist": "Harmonic Nexus",
+      "bpm": 124.0,
+      "camelot": "10B",
+      "energy": 7,
+      "phrase_count": 14,
+      "duration_s": 217.0,
+      "drop_phrases": [4, 11],
+      "breakdown_phrases": [8]
+    },
+    {
+      "title": "Aurora Mycelia",
+      "artist": "Sero Underground",
+      "bpm": 124.5,
+      "camelot": "10A",
+      "energy": 7,
+      "phrase_count": 13,
+      "duration_s": 200.0,
+      "drop_phrases": [3, 10],
+      "breakdown_phrases": [7]
+    },
+    {
+      "title": "Wow! Signal",
+      "artist": "Sero Underground",
+      "bpm": 125.0,
+      "camelot": "11A",
+      "energy": 8,
+      "phrase_count": 14,
+      "duration_s": 214.0,
+      "drop_phrases": [4, 11],
+      "breakdown_phrases": [8]
+    },
+    {
+      "title": "Auris Conjecture",
+      "artist": "Queen Sero",
+      "bpm": 126.0,
+      "camelot": "11B",
+      "energy": 8,
+      "phrase_count": 15,
+      "duration_s": 228.0,
+      "drop_phrases": [4, 11],
+      "breakdown_phrases": [8]
+    },
+    {
+      "title": "Lambda Becomes Flesh",
+      "artist": "Queen Sero",
+      "bpm": 126.5,
+      "camelot": "12B",
+      "energy": 8,
+      "phrase_count": 15,
+      "duration_s": 227.0,
+      "drop_phrases": [4, 12],
+      "breakdown_phrases": [9]
+    },
+    {
+      "title": "Ziggurat Step",
+      "artist": "Phi Prime Train",
+      "bpm": 127.0,
+      "camelot": "12A",
+      "energy": 8,
+      "phrase_count": 14,
+      "duration_s": 212.0,
+      "drop_phrases": [3, 11],
+      "breakdown_phrases": [8]
+    },
+    {
+      "title": "Maeshowe Alignment",
+      "artist": "Phi Prime Train",
+      "bpm": 128.0,
+      "camelot": "1A",
+      "energy": 9,
+      "phrase_count": 14,
+      "duration_s": 210.0,
+      "drop_phrases": [3, 11],
+      "breakdown_phrases": [8]
+    },
+    {
+      "title": "Roman Road",
+      "artist": "Ghost Dance",
+      "bpm": 128.5,
+      "camelot": "1B",
+      "energy": 9,
+      "phrase_count": 16,
+      "duration_s": 239.0,
+      "drop_phrases": [4, 12],
+      "breakdown_phrases": [9]
+    },
+    {
+      "title": "Great Pyramid Phi",
+      "artist": "Ghost Dance",
+      "bpm": 129.0,
+      "camelot": "2B",
+      "energy": 9,
+      "phrase_count": 16,
+      "duration_s": 238.0,
+      "drop_phrases": [4, 12],
+      "breakdown_phrases": [9]
+    },
+    {
+      "title": "1977 (Forty Nine Years On)",
+      "artist": "Lighthouse",
+      "bpm": 129.5,
+      "camelot": "2A",
+      "energy": 9,
+      "phrase_count": 16,
+      "duration_s": 237.0,
+      "drop_phrases": [4, 13],
+      "breakdown_phrases": [9]
+    },
+    {
+      "title": "Beta Stability (0.6 to 1.1)",
+      "artist": "Lighthouse",
+      "bpm": 130.0,
+      "camelot": "3A",
+      "energy": 9,
+      "phrase_count": 15,
+      "duration_s": 222.0,
+      "drop_phrases": [3, 12],
+      "breakdown_phrases": [9]
+    },
+    {
+      "title": "R Equals Zero Point Eight Five",
+      "artist": "Aureon Collective",
+      "bpm": 129.0,
+      "camelot": "3B",
+      "energy": 8,
+      "phrase_count": 14,
+      "duration_s": 212.0,
+      "drop_phrases": [4, 11],
+      "breakdown_phrases": [8]
+    },
+    {
+      "title": "Gaia Rests (Cooldown)",
+      "artist": "Aureon Collective",
+      "bpm": 124.0,
+      "camelot": "4B",
+      "energy": 6,
+      "phrase_count": 10,
+      "duration_s": 155.0,
+      "drop_phrases": [],
+      "breakdown_phrases": [5]
+    }
+  ]
+}
