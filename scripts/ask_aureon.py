@@ -38,6 +38,7 @@ import os
 import random
 import re
 import sys
+import threading
 import time
 from typing import Any, Dict, List, Optional
 
@@ -151,7 +152,7 @@ class PersonaResponseAdapter(LLMAdapter):
         reply_bits: List[str] = [opener]
         if cue:
             reply_bits.append(cue)
-        continuity = self._continuity_bit()
+        continuity = self._continuity_bit(current_persona=name)
         if continuity:
             reply_bits.append(continuity)
         if self.question:
@@ -165,16 +166,53 @@ class PersonaResponseAdapter(LLMAdapter):
         text = " ".join(bit.rstrip() for bit in reply_bits if bit).strip()
         return LLMResponse(text=text, stop_reason="end_turn", model="persona-voice-local")
 
-    def _continuity_bit(self) -> str:
-        """If we're past turn 1, remind the operator what was said before."""
-        if self.session is None or len(self.session.transcript) == 0:
+    def _continuity_bit(self, current_persona: str = "") -> str:
+        """Remind the operator of context from earlier turns.
+
+        Three layers (kept to one short sentence so answers aren't buried):
+          1. Self-memory — if THIS persona has spoken before, they
+             acknowledge their own prior turn.
+          2. Cross-memory — reference the previous user turn's speaker
+             and question so the conversation feels continuous.
+          3. Ambient memory — if the ambient engine has run and produced
+             idle collapses, surface the most recent one.
+        """
+        if self.session is None:
             return ""
-        last = self.session.transcript[-1]
-        last_q = (last.get("question") or "").strip()
-        last_persona = last.get("persona", "")
-        if not last_q or not last_persona:
-            return ""
-        return f"Earlier you asked \u201c{last_q}\u201d and {last_persona} answered."
+
+        # Layer 1: this persona's own prior turn, if any.
+        if current_persona and self.session.transcript:
+            mine = self.session.recent_for_persona(current_persona, n=1)
+            if mine:
+                prev = mine[-1]
+                prev_q = (prev.get("question") or "").strip()
+                prev_turn = prev.get("turn", 0)
+                if prev_q and prev_turn and prev_turn != len(self.session.transcript) + 1:
+                    return (f"I return — on turn {prev_turn} you asked me "
+                            f"\u201c{prev_q}\u201d and I answered then.")
+
+        # Layer 2: previous user turn overall.
+        bit = ""
+        if self.session.transcript:
+            last = self.session.transcript[-1]
+            last_q = (last.get("question") or "").strip()
+            last_persona = last.get("persona", "")
+            if last_q and last_persona:
+                bit = (f"Just before me, you asked \u201c{last_q}\u201d and "
+                       f"{last_persona} answered.")
+
+        # Layer 3: latest ambient (idle) collapse, if any.
+        if (self.session.ambient is not None
+                and self.session.ambient.ambient_transcript):
+            idle = self.session.ambient.ambient_transcript[-1]
+            idle_voice = idle.get("persona", "")
+            idle_mood = idle.get("mood", "")
+            if idle_voice:
+                amb = (f"While you were quiet, {idle_voice} drifted "
+                       f"through (mood={idle_mood}).")
+                return (bit + " " + amb).strip() if bit else amb
+
+        return bit
 
     def stream(self, *a, **kw):
         r = self.prompt(*a, **kw)
@@ -307,22 +345,42 @@ def apply_mood(vault: AureonVault, mood: str, bus: ThoughtBus) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def inject_question_into_prompts(personas: Dict[str, ResonantPersona], question: str) -> None:
-    """Wrap each persona's `_compose_prompt_lines` so the operator's question
-    appears at the end of the state-derived prompt. The adapter then sees
-    both the state cues AND the question when composing the reply."""
-    if not question:
+_INJECTED_FLAG = "_ask_aureon_injected"
+
+
+def _install_question_reader(persona: ResonantPersona) -> None:
+    """Install a stable wrapper on `_compose_prompt_lines` that reads the
+    persona's current `_ask_question` attribute. Installed once per persona
+    — subsequent calls via `inject_question_into_prompts` only update the
+    attribute, so the wrapper never stacks."""
+    if getattr(persona, _INJECTED_FLAG, False):
         return
-    q_line = f"An operator asks: \u201c{question}\u201d — answer in your voice."
-    for name, persona in personas.items():
-        original = persona._compose_prompt_lines
+    original = persona._compose_prompt_lines
 
-        def wrapped(state, _orig=original, _q=q_line):
-            lines = list(_orig(state))
-            lines.append(_q)
-            return lines
+    def wrapped(state, _orig=original, _persona=persona):
+        lines = list(_orig(state))
+        q = getattr(_persona, "_ask_question", "") or ""
+        if q:
+            lines.append(f"An operator asks: \u201c{q}\u201d — answer in your voice.")
+        return lines
 
-        persona._compose_prompt_lines = wrapped  # type: ignore[attr-defined]
+    persona._compose_prompt_lines = wrapped  # type: ignore[attr-defined]
+    setattr(persona, _INJECTED_FLAG, True)
+
+
+def inject_question_into_prompts(personas: Dict[str, ResonantPersona], question: str) -> None:
+    """Set the current question on every persona. The stable wrapper picks
+    it up at compose time."""
+    for persona in personas.values():
+        _install_question_reader(persona)
+        persona._ask_question = str(question or "")  # type: ignore[attr-defined]
+
+
+def _clear_question_injection(personas: Dict[str, ResonantPersona]) -> None:
+    """Clear the pending question on every persona so the next prompt
+    composition uses only state cues."""
+    for persona in personas.values():
+        persona._ask_question = ""  # type: ignore[attr-defined]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -348,6 +406,10 @@ class ConversationSession:
         self.adapter.session = self
         self.transcript: List[Dict[str, Any]] = []
         self.current_mood = current_mood or ""
+        # Serialise foreground (ask) and background (ambient) observes so
+        # they don't collide on the adapter's question field.
+        self.lock = threading.RLock()
+        self.ambient: Optional["AmbientEngine"] = None
 
     # ─── turn mechanics ──────────────────────────────────────────────────
 
@@ -355,40 +417,44 @@ class ConversationSession:
         question = (question or "").strip()
         if not question:
             return {}
+        with self.lock:
+            # Re-apply the mood at each turn so the vault state reflects
+            # the intended regime; otherwise ride whatever ambient state
+            # has drifted to since the last turn.
+            if self.current_mood:
+                apply_mood(self.vault, self.current_mood, self.bus)
 
-        # Re-apply the mood at each turn so the vault state reflects the
-        # intended regime (or run on whatever accumulated state there is
-        # when mood is None).
-        if self.current_mood:
-            apply_mood(self.vault, self.current_mood, self.bus)
+            # Update the adapter's question and re-inject the question
+            # line into every persona's composed prompt.
+            self.adapter.question = question
+            inject_question_into_prompts(self.vacuum._personas, question)
 
-        # Update the adapter's question and re-inject the question line
-        # into every persona's composed prompt.
-        self.adapter.question = question
-        inject_question_into_prompts(self.vacuum._personas, question)
+            # Tighten softmax when a mood is set so the intended persona
+            # wins reliably; otherwise let the state decide.
+            self.vacuum._temperature = 0.25 if self.current_mood else 1.0
 
-        # Tighten the softmax when a mood is set so the intended persona
-        # wins reliably; otherwise let the state speak.
-        self.vacuum._temperature = 0.25 if self.current_mood else 1.0
+            statement = self.vacuum.observe(self.vault)
+            winner = self.vacuum.last_winner or "?"
+            prob = self.vacuum.last_probabilities.get(winner, 0.0)
+            action_rec = self.vacuum.last_action_execution
+            text = statement.text if statement is not None else "(silence)"
 
-        statement = self.vacuum.observe(self.vault)
-        winner = self.vacuum.last_winner or "?"
-        prob = self.vacuum.last_probabilities.get(winner, 0.0)
-        action_rec = self.vacuum.last_action_execution
-        text = statement.text if statement is not None else "(silence)"
-
-        turn_rec: Dict[str, Any] = {
-            "turn": len(self.transcript) + 1,
-            "ts": time.time(),
-            "mood": self.current_mood or "neutral",
-            "question": question,
-            "persona": winner,
-            "probability": prob,
-            "response": text,
-            "action_kind": action_rec.action.kind if action_rec else "",
-            "action_topic": action_rec.action.topic if action_rec else "",
-        }
-        self.transcript.append(turn_rec)
+            turn_rec: Dict[str, Any] = {
+                "turn": len(self.transcript) + 1,
+                "ts": time.time(),
+                "mood": self.current_mood or "neutral",
+                "question": question,
+                "persona": winner,
+                "probability": prob,
+                "response": text,
+                "action_kind": action_rec.action.kind if action_rec else "",
+                "action_topic": action_rec.action.topic if action_rec else "",
+            }
+            self.transcript.append(turn_rec)
+            # Clear the injected question so an ambient observe doesn't
+            # accidentally re-ask it.
+            self.adapter.question = ""
+            _clear_question_injection(self.vacuum._personas)
 
         # Persist the exchange as a vault card so memory accumulates.
         try:
@@ -421,6 +487,120 @@ class ConversationSession:
     def recent(self, n: int = 10) -> List[Dict[str, Any]]:
         return list(self.transcript[-int(max(1, n)):])
 
+    def recent_for_persona(self, name: str, n: int = 1) -> List[Dict[str, Any]]:
+        """Turns in which the given persona was the winner, oldest → newest."""
+        if not name:
+            return []
+        hits = [t for t in self.transcript if t.get("persona") == name]
+        return hits[-int(max(1, n)):]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AmbientEngine — keeps the system moving between user turns
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+PHI = (1 + 5 ** 0.5) / 2
+PHI_SQUARED = PHI * PHI
+
+
+class AmbientEngine:
+    """Drives mood cycles + optional idle observes on a background thread.
+
+    The engine:
+      1. Picks a random mood every `mood_interval_s`.
+      2. Applies it to the vault (which publishes cognition / drops).
+      3. Every Nth beat, performs an "idle observe" on the vacuum — a
+         persona collapses, speaks from pure state (no user question),
+         and the turn is stored as an ambient turn so later user turns
+         can reference it.
+    Serialises with the session lock so user turns never collide with
+    background work.
+    """
+
+    def __init__(
+        self,
+        session: "ConversationSession",
+        *,
+        mood_interval_s: float = PHI_SQUARED,
+        observe_every: int = 3,
+        seed: Optional[int] = None,
+    ):
+        self.session = session
+        self.mood_interval_s = float(mood_interval_s)
+        self.observe_every = max(1, int(observe_every))
+        self._rng = random.Random(seed)
+        self._running = False
+        self._thread: Optional[threading.Thread] = None
+        self._tick = 0
+        self.ambient_transcript: List[Dict[str, Any]] = []
+
+    def start(self) -> None:
+        if self._running:
+            return
+        self._running = True
+        self._thread = threading.Thread(
+            target=self._loop, name="AmbientEngine", daemon=True,
+        )
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._running = False
+        if self._thread is not None and self._thread.is_alive():
+            self._thread.join(timeout=2.0)
+
+    @property
+    def running(self) -> bool:
+        return self._running
+
+    def _loop(self) -> None:
+        while self._running:
+            time.sleep(self.mood_interval_s)
+            if not self._running:
+                break
+            try:
+                self._beat()
+            except Exception:
+                # Never crash the background thread.
+                pass
+
+    def _beat(self) -> None:
+        mood = self._rng.choice(ConversationSession.MOODS)
+        with self.session.lock:
+            # Apply a random mood so cognition / drop state evolves.
+            apply_mood(self.session.vault, mood, self.session.bus)
+            self._tick += 1
+
+            # Idle observe every Nth beat — no question, pure-state voice.
+            if self._tick % self.observe_every != 0:
+                return
+            self.session.adapter.question = ""
+            _clear_question_injection(self.session.vacuum._personas)
+            self.session.vacuum._temperature = 0.25
+
+            statement = self.session.vacuum.observe(self.session.vault)
+            winner = self.session.vacuum.last_winner or "?"
+            prob = self.session.vacuum.last_probabilities.get(winner, 0.0)
+            action_rec = self.session.vacuum.last_action_execution
+            text = statement.text if statement is not None else "(silence)"
+            rec = {
+                "turn": self._tick,
+                "ts": time.time(),
+                "mood": mood,
+                "persona": winner,
+                "probability": prob,
+                "response": text,
+                "action_kind": action_rec.action.kind if action_rec else "",
+                "action_topic": action_rec.action.topic if action_rec else "",
+                "ambient": True,
+            }
+            self.ambient_transcript.append(rec)
+            try:
+                self.session.vault.ingest(topic="conversation.ambient",
+                                          payload=dict(rec))
+            except Exception:
+                pass
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # REPL — commands and loop
@@ -431,11 +611,15 @@ _HELP = """\
   /help                  this help
   /stats                 show conversation + vault stats
   /history [n]           show last n exchanges (default 10)
+  /ambient [n]           show last n ambient (idle) collapses (default 5)
   /mood <name|none>      change or clear mood
                          moods: gate_clean lambda_drift dawning rally_drop
                                 mystic_love heart_paint velocity heart_field
                                 curiosity recurrence
-  /forget                clear transcript (vault cards are kept)
+  /live on|off           start/stop the ambient background engine —
+                         when ON, the system keeps moving between your
+                         questions; mood cycles, idle observes, state drifts
+  /forget                clear transcript (vault + ambient cards are kept)
   /bye  /quit  /exit     exit
 """
 
@@ -501,11 +685,15 @@ def run_repl(session: ConversationSession) -> int:
             if turn:
                 _print_turn(turn)
     finally:
+        if session.ambient is not None and session.ambient.running:
+            session.ambient.stop()
         print()
         print("\u2501" * 72)
         print("session summary")
         print("\u2501" * 72)
         _print_stats(session)
+        if session.ambient is not None and session.ambient.ambient_transcript:
+            print(f"ambient turns: {len(session.ambient.ambient_transcript)}")
     return 0
 
 
@@ -540,7 +728,38 @@ def _dispatch_command(session: ConversationSession, line: str) -> bool:
                 print(f"unknown mood {target!r}. valid: {', '.join(ConversationSession.MOODS)}")
     elif cmd == "forget":
         session.transcript.clear()
+        if session.ambient is not None:
+            session.ambient.ambient_transcript.clear()
         print("transcript cleared; vault cards kept.")
+    elif cmd == "ambient":
+        n = int(rest[0]) if rest and rest[0].isdigit() else 5
+        if session.ambient is None or not session.ambient.ambient_transcript:
+            print("(no ambient turns — use /live on to start the ambient engine)")
+        else:
+            for t in session.ambient.ambient_transcript[-n:]:
+                snippet = (t["response"] or "").replace("\n", " ")
+                if len(snippet) > 140:
+                    snippet = snippet[:137] + "..."
+                print(f"  [{t['turn']:3d}] ({t['persona']:<18s}, mood={t['mood']})")
+                print(f"          {snippet}")
+    elif cmd == "live":
+        target = (rest[0].lower() if rest else "")
+        if target == "on":
+            if session.ambient is None:
+                session.ambient = AmbientEngine(session)
+            if not session.ambient.running:
+                session.ambient.start()
+            print(f"ambient engine ON  (mood cycle ≈ {PHI_SQUARED:.2f}s, observe every "
+                  f"{session.ambient.observe_every} beats)")
+        elif target == "off":
+            if session.ambient is not None and session.ambient.running:
+                session.ambient.stop()
+                print("ambient engine OFF")
+            else:
+                print("ambient engine already off")
+        else:
+            state = "ON" if (session.ambient and session.ambient.running) else "OFF"
+            print(f"ambient engine is {state}. use /live on or /live off")
     else:
         print(f"unknown command: /{cmd}. try /help")
     return True
@@ -597,10 +816,16 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0, help="RNG seed for reproducible collapse")
     ap.add_argument("--repl", action="store_true",
                     help="force REPL mode even if a question was provided")
+    ap.add_argument("--live", action="store_true",
+                    help="start the ambient background engine at session launch")
     args = ap.parse_args()
 
     question = " ".join(args.question).strip()
     session = _build_session(seed=args.seed, mood=args.mood)
+
+    if args.live:
+        session.ambient = AmbientEngine(session, seed=args.seed)
+        session.ambient.start()
 
     if question and not args.repl:
         # One-shot mode — stage 1 behaviour.
