@@ -163,7 +163,7 @@ class PersonaVacuum:
             return None
 
         persona = self._personas[winner_name]
-        statement = self._safe_speak(persona, vault)
+        statement = self._safe_speak(persona, vault, state)
 
         with self._lock:
             self._collapse_count += 1
@@ -242,12 +242,71 @@ class PersonaVacuum:
         score_dict = {n: s for n, s in zip(names, raw)}
         return winner, prob_dict, score_dict
 
-    def _safe_speak(self, persona: ResonantPersona, vault: Any) -> Optional[VoiceStatement]:
+    def _safe_speak(
+        self,
+        persona: ResonantPersona,
+        vault: Any,
+        state: Optional[Dict[str, Any]] = None,
+    ) -> Optional[VoiceStatement]:
+        """Compose the persona's prompt from the *enriched* state the vacuum
+        built (vault slice ∪ latest cognition ∪ latest DJ drop) and call the
+        adapter directly, so cognition / drop fields appear in the prompt.
+
+        Falls back to `persona.speak(vault)` if no state was supplied — this
+        preserves the original behaviour for callers that don't build state.
+        """
+        if state is None:
+            try:
+                return persona.speak(vault)
+            except Exception as e:
+                logger.debug("PersonaVacuum: %s speak failed: %s", persona.NAME, e)
+                return None
+
         try:
-            return persona.speak(vault)
+            prompt_lines = persona._compose_prompt_lines(state)
         except Exception as e:
-            logger.debug("PersonaVacuum: %s speak failed: %s", persona.NAME, e)
+            logger.debug("PersonaVacuum: %s compose failed: %s", persona.NAME, e)
             return None
+        if not prompt_lines:
+            return None
+        prompt = "\n".join(prompt_lines).strip()
+        system_prompt = persona._system_prompt()
+
+        response_text = ""
+        model_name = ""
+        tokens = 0
+        if persona.adapter is not None:
+            try:
+                response = persona.adapter.prompt(
+                    messages=[{"role": "user", "content": prompt}],
+                    system=system_prompt,
+                    max_tokens=persona.max_tokens,
+                )
+                response_text = (getattr(response, "text", "") or "").strip()
+                model_name = getattr(response, "model", "") or ""
+                usage = getattr(response, "usage", None)
+                if isinstance(usage, dict):
+                    tokens = int(usage.get("total_tokens", 0) or 0)
+            except Exception as e:
+                logger.debug("PersonaVacuum: %s adapter failed: %s", persona.NAME, e)
+                response_text = f"[{persona.NAME}] adapter failed: {e}"
+        else:
+            response_text = f"[{persona.NAME}] no adapter."
+
+        try:
+            fp = vault.fingerprint() if vault is not None and hasattr(vault, "fingerprint") else ""
+        except Exception:
+            fp = ""
+
+        return VoiceStatement(
+            voice=persona.NAME,
+            text=response_text,
+            vault_fingerprint=str(fp or ""),
+            prompt_used=prompt,
+            system_prompt=system_prompt,
+            model=model_name,
+            tokens=tokens,
+        )
 
     # ─────────────────────────────────────────────────────────────────────
     # Publishing + vault feedback
