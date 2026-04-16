@@ -43,6 +43,25 @@ from aureon.vault.voice.thought_stream_loop import (
     ThoughtStreamLoop,
     ThoughtStreamStatus,
 )
+from aureon.vault.voice.aureon_personas import (
+    ResonantPersona,
+    PainterVoice,
+    ArtistVoice,
+    QuantumPhysicistVoice,
+    PhilosopherVoice,
+    ChildVoice,
+    ElderVoice,
+    MysticVoice,
+    EngineerVoice,
+    LeftVoice,
+    RightVoice,
+    AUREON_PERSONA_REGISTRY,
+    build_aureon_personas,
+)
+from aureon.vault.voice.persona_vacuum import (
+    PersonaVacuum,
+    get_persona_vacuum,
+)
 
 __all__ = [
     # Utterance
@@ -67,4 +86,20 @@ __all__ = [
     # Thought stream loop
     "ThoughtStreamLoop",
     "ThoughtStreamStatus",
+    # Resonant personas (quantum superposition layer)
+    "ResonantPersona",
+    "PainterVoice",
+    "ArtistVoice",
+    "QuantumPhysicistVoice",
+    "PhilosopherVoice",
+    "ChildVoice",
+    "ElderVoice",
+    "MysticVoice",
+    "EngineerVoice",
+    "LeftVoice",
+    "RightVoice",
+    "AUREON_PERSONA_REGISTRY",
+    "build_aureon_personas",
+    "PersonaVacuum",
+    "get_persona_vacuum",
 ]
