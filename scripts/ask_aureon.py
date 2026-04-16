@@ -49,6 +49,7 @@ if REPO_ROOT not in sys.path:
 from aureon.core.aureon_thought_bus import Thought, ThoughtBus
 from aureon.inhouse_ai.llm_adapter import LLMAdapter, LLMResponse
 from aureon.vault.aureon_vault import AureonVault
+from aureon.vault.obsidian_adapter import ObsidianVaultAdapter
 from aureon.vault.voice.aureon_personas import (
     AUREON_PERSONA_REGISTRY,
     ResonantPersona,
@@ -410,6 +411,46 @@ class ConversationSession:
         # they don't collide on the adapter's question field.
         self.lock = threading.RLock()
         self.ambient: Optional["AmbientEngine"] = None
+        self.obsidian: Optional[ObsidianVaultAdapter] = None
+        # Track files we've written so /stats can report them.
+        self._obsidian_written: int = 0
+
+    def attach_obsidian(self, root: str) -> str:
+        """Enable Obsidian mirroring against the folder at `root`.
+
+        Creates the folder if it doesn't exist. Returns the absolute path
+        it's writing into.
+        """
+        from pathlib import Path
+        p = Path(root).expanduser().resolve()
+        p.mkdir(parents=True, exist_ok=True)
+        self.obsidian = ObsidianVaultAdapter(vault=self.vault, obsidian_root=p)
+        return str(p)
+
+    def detach_obsidian(self) -> None:
+        self.obsidian = None
+
+    def mirror_to_obsidian(self, card: Any) -> None:
+        """Write a VaultContent to the Obsidian folder, if one is attached.
+
+        Augments the card's payload with a `title` and a formatted `body`
+        so the exported markdown note is human-readable rather than a
+        JSON dump.
+        """
+        if self.obsidian is None or card is None:
+            return
+        try:
+            topic = getattr(card, "source_topic", "") or ""
+            payload = dict(getattr(card, "payload", {}) or {})
+            if topic in ("conversation.turn", "conversation.ambient"):
+                payload.setdefault("title", _format_turn_title(payload))
+                payload.setdefault("body", _format_turn_body(payload))
+                card.payload = payload
+            out_path = self.obsidian.sync_out(card)
+            if out_path is not None:
+                self._obsidian_written += 1
+        except Exception:
+            pass
 
     # ─── turn mechanics ──────────────────────────────────────────────────
 
@@ -457,10 +498,12 @@ class ConversationSession:
             _clear_question_injection(self.vacuum._personas)
 
         # Persist the exchange as a vault card so memory accumulates.
+        card = None
         try:
-            self.vault.ingest(topic="conversation.turn", payload=dict(turn_rec))
+            card = self.vault.ingest(topic="conversation.turn", payload=dict(turn_rec))
         except Exception:
             pass
+        self.mirror_to_obsidian(card)
         return turn_rec
 
     # ─── introspection ───────────────────────────────────────────────────
@@ -482,6 +525,8 @@ class ConversationSession:
             "winner_histogram": dict(sorted(winners.items(), key=lambda kv: -kv[1])),
             "action_kinds": kinds,
             "action_topics": topics,
+            "obsidian_path": str(self.obsidian.obsidian_root) if self.obsidian else "",
+            "obsidian_written": self._obsidian_written,
         }
 
     def recent(self, n: int = 10) -> List[Dict[str, Any]]:
@@ -493,6 +538,49 @@ class ConversationSession:
             return []
         hits = [t for t in self.transcript if t.get("persona") == name]
         return hits[-int(max(1, n)):]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Obsidian mirror formatting
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _format_turn_title(turn: Dict[str, Any]) -> str:
+    persona = str(turn.get("persona") or "voice")
+    n = turn.get("turn")
+    if turn.get("ambient"):
+        return f"ambient {n} · {persona}"
+    q = (turn.get("question") or "").strip()
+    q_short = (q[:48] + "…") if len(q) > 48 else q
+    return f"turn {n} · {persona} · {q_short}" if q_short else f"turn {n} · {persona}"
+
+
+def _format_turn_body(turn: Dict[str, Any]) -> str:
+    persona = str(turn.get("persona") or "voice")
+    mood = str(turn.get("mood") or "neutral")
+    prob = float(turn.get("probability") or 0.0)
+    response = str(turn.get("response") or "").strip()
+    action_kind = str(turn.get("action_kind") or "")
+    action_topic = str(turn.get("action_topic") or "")
+    is_ambient = bool(turn.get("ambient"))
+    lines: List[str] = []
+    header = f"### {'Ambient' if is_ambient else 'Turn'} {turn.get('turn','?')} — {persona}"
+    if mood and mood != "neutral":
+        header += f"  *(mood: {mood})*"
+    lines.append(header)
+    lines.append("")
+    if not is_ambient:
+        q = (turn.get("question") or "").strip()
+        if q:
+            lines.append(f"**You:** {q}")
+            lines.append("")
+    lines.append(f"**{persona} answered** *(p={prob:.3f})*:")
+    lines.append("")
+    lines.append("> " + response.replace("\n", "\n> "))
+    lines.append("")
+    if action_kind:
+        lines.append(f"*action:* `{action_kind}` → `{action_topic}`")
+    return "\n".join(lines)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -595,11 +683,14 @@ class AmbientEngine:
                 "ambient": True,
             }
             self.ambient_transcript.append(rec)
+            card = None
             try:
-                self.session.vault.ingest(topic="conversation.ambient",
-                                          payload=dict(rec))
+                card = self.session.vault.ingest(
+                    topic="conversation.ambient", payload=dict(rec),
+                )
             except Exception:
                 pass
+            self.session.mirror_to_obsidian(card)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -619,6 +710,8 @@ _HELP = """\
   /live on|off           start/stop the ambient background engine —
                          when ON, the system keeps moving between your
                          questions; mood cycles, idle observes, state drifts
+  /obsidian <path|off>   enable/disable mirroring every turn to an
+                         Obsidian folder as a markdown note
   /forget                clear transcript (vault + ambient cards are kept)
   /bye  /quit  /exit     exit
 """
@@ -650,6 +743,8 @@ def _print_stats(session: ConversationSession) -> None:
         print("action topics:")
         for topic, count in sorted(s["action_topics"].items(), key=lambda kv: -kv[1]):
             print(f"  {topic:<40s} {count:4d}")
+    if s["obsidian_path"]:
+        print(f"obsidian:     {s['obsidian_path']}  (written: {s['obsidian_written']})")
 
 
 def _print_history(session: ConversationSession, n: int) -> None:
@@ -742,6 +837,22 @@ def _dispatch_command(session: ConversationSession, line: str) -> bool:
                     snippet = snippet[:137] + "..."
                 print(f"  [{t['turn']:3d}] ({t['persona']:<18s}, mood={t['mood']})")
                 print(f"          {snippet}")
+    elif cmd == "obsidian":
+        if not rest:
+            if session.obsidian is None:
+                print("obsidian mirror is OFF. use /obsidian <path> to enable.")
+            else:
+                print(f"obsidian mirror → {session.obsidian.obsidian_root}  "
+                      f"(written: {session._obsidian_written})")
+        elif rest[0].lower() in ("off", "none", "disable"):
+            if session.obsidian is None:
+                print("already off.")
+            else:
+                session.detach_obsidian()
+                print("obsidian mirror OFF.")
+        else:
+            path = session.attach_obsidian(rest[0])
+            print(f"obsidian mirror ON → {path}")
     elif cmd == "live":
         target = (rest[0].lower() if rest else "")
         if target == "on":
@@ -818,6 +929,8 @@ def main() -> int:
                     help="force REPL mode even if a question was provided")
     ap.add_argument("--live", action="store_true",
                     help="start the ambient background engine at session launch")
+    ap.add_argument("--obsidian", default="",
+                    help="folder to mirror every conversation turn into as markdown")
     args = ap.parse_args()
 
     question = " ".join(args.question).strip()
@@ -826,6 +939,10 @@ def main() -> int:
     if args.live:
         session.ambient = AmbientEngine(session, seed=args.seed)
         session.ambient.start()
+
+    if args.obsidian:
+        path = session.attach_obsidian(args.obsidian)
+        print(f"obsidian mirror enabled → {path}")
 
     if question and not args.repl:
         # One-shot mode — stage 1 behaviour.
