@@ -1,27 +1,34 @@
 #!/usr/bin/env python3
 """
-ask_aureon.py — stage 1: ask the system one question, get one persona's reply.
+ask_aureon.py — talk to the Aureon persona vacuum.
 
-No API keys needed. A lightweight, deterministic PersonaResponseAdapter
-generates persona-voiced text from (a) the persona identity embedded in
-the system prompt and (b) the state cues the persona already composed
-into its user-prompt, augmented with the operator's question.
+Two modes. ONE-SHOT (pass a question as an argument):
 
-Flow:
-
-    your question  ─▶  PersonaVacuum.observe()  ─▶  a persona collapses
-                                                    and speaks, with the
-                                                    response adapter shaping
-                                                    the reply around your
-                                                    question in that voice.
-
-Usage:
     python scripts/ask_aureon.py "are we in a coherent state?"
     python scripts/ask_aureon.py "what should I pay attention to?" --mood mystic_love
 
---mood presets the vault state so you can steer which persona is likely
-to collapse (same ten moods the live runner cycles through). Omit --mood
-to let the vault's current attribute state decide.
+REPL (no question argument — drops you into a conversational loop):
+
+    python scripts/ask_aureon.py
+    python scripts/ask_aureon.py --mood recurrence            # start in a mood
+    echo -e "what is this?\\n/stats\\n/bye" | python scripts/ask_aureon.py
+
+In REPL mode every turn grows the vault: the exchange is ingested as a
+`conversation.turn` card, so later collapses see an ever-larger memory
+and the personas can quote what was said earlier. Meta-commands:
+
+    /help            list commands
+    /stats           vault + winner histogram + action counters
+    /history [n]     show the last n exchanges (default 10)
+    /mood <name>     switch mood presets (ten available, 'none' to clear)
+    /forget          wipe the conversation transcript (vault cards stay)
+    /bye  or  /quit  exit with a summary
+
+No API keys. A lightweight, deterministic PersonaResponseAdapter generates
+persona-voiced text from (a) the persona identity embedded in the system
+prompt, (b) the state cues the persona composed into its user-prompt,
+and (c) if the conversation has run more than one turn, a tail of the
+transcript so the answer stays continuous.
 """
 
 from __future__ import annotations
@@ -107,11 +114,17 @@ class PersonaResponseAdapter(LLMAdapter):
     """Builds a reply from the state cues already present in the prompt +
     the operator's question, in the voice declared by the system prompt.
     No network, no LLM. Deterministic under a fixed RNG seed.
+
+    The `session` reference (set by ConversationSession.attach) lets the
+    adapter look at previous turns so the reply can echo continuity —
+    e.g. "earlier Mystic answered you this: ..." — when we're past
+    turn 1.
     """
 
     def __init__(self, question: str, seed: int = 0):
         self.question = str(question or "").strip()
         self._rng = random.Random(seed)
+        self.session: Optional["ConversationSession"] = None
 
     def prompt(
         self,
@@ -138,6 +151,9 @@ class PersonaResponseAdapter(LLMAdapter):
         reply_bits: List[str] = [opener]
         if cue:
             reply_bits.append(cue)
+        continuity = self._continuity_bit()
+        if continuity:
+            reply_bits.append(continuity)
         if self.question:
             reply_bits.append(f"You asked: \u201c{self.question}\u201d")
             reply_bits.append(answer)
@@ -148,6 +164,17 @@ class PersonaResponseAdapter(LLMAdapter):
 
         text = " ".join(bit.rstrip() for bit in reply_bits if bit).strip()
         return LLMResponse(text=text, stop_reason="end_turn", model="persona-voice-local")
+
+    def _continuity_bit(self) -> str:
+        """If we're past turn 1, remind the operator what was said before."""
+        if self.session is None or len(self.session.transcript) == 0:
+            return ""
+        last = self.session.transcript[-1]
+        last_q = (last.get("question") or "").strip()
+        last_persona = last.get("persona", "")
+        if not last_q or not last_persona:
+            return ""
+        return f"Earlier you asked \u201c{last_q}\u201d and {last_persona} answered."
 
     def stream(self, *a, **kw):
         r = self.prompt(*a, **kw)
@@ -299,25 +326,233 @@ def inject_question_into_prompts(personas: Dict[str, ResonantPersona], question:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ConversationSession — carries memory across turns
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class ConversationSession:
+    """Ties together the bus, vault, vacuum, and adapter across turns."""
+
+    MOODS = (
+        "gate_clean", "lambda_drift", "dawning", "rally_drop", "mystic_love",
+        "heart_paint", "velocity", "heart_field", "curiosity", "recurrence",
+    )
+
+    def __init__(self, bus: ThoughtBus, vault: AureonVault,
+                 vacuum: PersonaVacuum, adapter: "PersonaResponseAdapter",
+                 current_mood: Optional[str] = None):
+        self.bus = bus
+        self.vault = vault
+        self.vacuum = vacuum
+        self.adapter = adapter
+        self.adapter.session = self
+        self.transcript: List[Dict[str, Any]] = []
+        self.current_mood = current_mood or ""
+
+    # ─── turn mechanics ──────────────────────────────────────────────────
+
+    def ask(self, question: str) -> Dict[str, Any]:
+        question = (question or "").strip()
+        if not question:
+            return {}
+
+        # Re-apply the mood at each turn so the vault state reflects the
+        # intended regime (or run on whatever accumulated state there is
+        # when mood is None).
+        if self.current_mood:
+            apply_mood(self.vault, self.current_mood, self.bus)
+
+        # Update the adapter's question and re-inject the question line
+        # into every persona's composed prompt.
+        self.adapter.question = question
+        inject_question_into_prompts(self.vacuum._personas, question)
+
+        # Tighten the softmax when a mood is set so the intended persona
+        # wins reliably; otherwise let the state speak.
+        self.vacuum._temperature = 0.25 if self.current_mood else 1.0
+
+        statement = self.vacuum.observe(self.vault)
+        winner = self.vacuum.last_winner or "?"
+        prob = self.vacuum.last_probabilities.get(winner, 0.0)
+        action_rec = self.vacuum.last_action_execution
+        text = statement.text if statement is not None else "(silence)"
+
+        turn_rec: Dict[str, Any] = {
+            "turn": len(self.transcript) + 1,
+            "ts": time.time(),
+            "mood": self.current_mood or "neutral",
+            "question": question,
+            "persona": winner,
+            "probability": prob,
+            "response": text,
+            "action_kind": action_rec.action.kind if action_rec else "",
+            "action_topic": action_rec.action.topic if action_rec else "",
+        }
+        self.transcript.append(turn_rec)
+
+        # Persist the exchange as a vault card so memory accumulates.
+        try:
+            self.vault.ingest(topic="conversation.turn", payload=dict(turn_rec))
+        except Exception:
+            pass
+        return turn_rec
+
+    # ─── introspection ───────────────────────────────────────────────────
+
+    def stats(self) -> Dict[str, Any]:
+        winners: Dict[str, int] = {}
+        kinds: Dict[str, int] = {}
+        topics: Dict[str, int] = {}
+        for t in self.transcript:
+            winners[t["persona"]] = winners.get(t["persona"], 0) + 1
+            if t["action_kind"]:
+                kinds[t["action_kind"]] = kinds.get(t["action_kind"], 0) + 1
+            if t["action_topic"]:
+                topics[t["action_topic"]] = topics.get(t["action_topic"], 0) + 1
+        return {
+            "turns": len(self.transcript),
+            "vault_cards": len(self.vault),
+            "current_mood": self.current_mood or "neutral",
+            "winner_histogram": dict(sorted(winners.items(), key=lambda kv: -kv[1])),
+            "action_kinds": kinds,
+            "action_topics": topics,
+        }
+
+    def recent(self, n: int = 10) -> List[Dict[str, Any]]:
+        return list(self.transcript[-int(max(1, n)):])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REPL — commands and loop
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+_HELP = """\
+  /help                  this help
+  /stats                 show conversation + vault stats
+  /history [n]           show last n exchanges (default 10)
+  /mood <name|none>      change or clear mood
+                         moods: gate_clean lambda_drift dawning rally_drop
+                                mystic_love heart_paint velocity heart_field
+                                curiosity recurrence
+  /forget                clear transcript (vault cards are kept)
+  /bye  /quit  /exit     exit
+"""
+
+
+def _print_turn(turn: Dict[str, Any]) -> None:
+    mood = turn["mood"] if turn["mood"] != "neutral" else ""
+    mood_s = f"  (mood={mood})" if mood else ""
+    prob = turn["probability"]
+    print()
+    print(f"[{turn['persona']}]{mood_s}  p={prob:.3f}  turn={turn['turn']}")
+    print(turn["response"])
+    if turn["action_kind"]:
+        print(f"\u25b8 action: {turn['action_kind']}  \u2192  {turn['action_topic']}")
+
+
+def _print_stats(session: ConversationSession) -> None:
+    s = session.stats()
+    print()
+    print(f"turns:        {s['turns']}")
+    print(f"vault cards:  {s['vault_cards']}")
+    print(f"current mood: {s['current_mood']}")
+    if s["winner_histogram"]:
+        print("winners:")
+        for name, count in s["winner_histogram"].items():
+            bar = "\u2588" * count
+            print(f"  {name:<20s} {count:4d}  {bar}")
+    if s["action_topics"]:
+        print("action topics:")
+        for topic, count in sorted(s["action_topics"].items(), key=lambda kv: -kv[1]):
+            print(f"  {topic:<40s} {count:4d}")
+
+
+def _print_history(session: ConversationSession, n: int) -> None:
+    if not session.transcript:
+        print("(no exchanges yet)")
+        return
+    for t in session.recent(n):
+        snippet = (t["response"] or "").replace("\n", " ")
+        if len(snippet) > 140:
+            snippet = snippet[:137] + "..."
+        print(f"  [{t['turn']:3d}] ({t['persona']:<18s}) {t['question']}")
+        print(f"          {snippet}")
+
+
+def run_repl(session: ConversationSession) -> int:
+    print("aureon persona vacuum — REPL. type /help for commands, /bye to exit.")
+    if session.current_mood:
+        print(f"starting mood: {session.current_mood}")
+    try:
+        while True:
+            try:
+                line = input("> ").strip()
+            except EOFError:
+                print()
+                break
+            if not line:
+                continue
+            if line.startswith("/"):
+                if not _dispatch_command(session, line):
+                    break
+                continue
+            turn = session.ask(line)
+            if turn:
+                _print_turn(turn)
+    finally:
+        print()
+        print("\u2501" * 72)
+        print("session summary")
+        print("\u2501" * 72)
+        _print_stats(session)
+    return 0
+
+
+def _dispatch_command(session: ConversationSession, line: str) -> bool:
+    """Run a /slash command. Return False to exit the REPL."""
+    parts = line[1:].split()
+    if not parts:
+        return True
+    cmd = parts[0].lower()
+    rest = parts[1:]
+    if cmd in ("bye", "quit", "exit"):
+        return False
+    if cmd == "help":
+        print(_HELP)
+    elif cmd == "stats":
+        _print_stats(session)
+    elif cmd == "history":
+        n = int(rest[0]) if rest and rest[0].isdigit() else 10
+        _print_history(session, n)
+    elif cmd == "mood":
+        if not rest:
+            print(f"current mood: {session.current_mood or 'neutral'}")
+        else:
+            target = rest[0].lower()
+            if target in ("none", "neutral", "clear"):
+                session.current_mood = ""
+                print("mood cleared.")
+            elif target in ConversationSession.MOODS:
+                session.current_mood = target
+                print(f"mood set to {target}.")
+            else:
+                print(f"unknown mood {target!r}. valid: {', '.join(ConversationSession.MOODS)}")
+    elif cmd == "forget":
+        session.transcript.clear()
+        print("transcript cleared; vault cards kept.")
+    else:
+        print(f"unknown command: /{cmd}. try /help")
+    return True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description="Ask the Aureon persona vacuum a question.")
-    ap.add_argument("question", nargs="*", help="the question — free text")
-    ap.add_argument("--mood", default="", help="optional preset: gate_clean | lambda_drift | "
-                                              "dawning | rally_drop | mystic_love | heart_paint | "
-                                              "velocity | heart_field | curiosity | recurrence")
-    ap.add_argument("--seed", type=int, default=0, help="RNG seed for reproducible collapse")
-    args = ap.parse_args()
-
-    question = " ".join(args.question).strip()
-    if not question:
-        print("usage: ask_aureon.py \"your question here\" [--mood MOOD]", file=sys.stderr)
-        return 2
-
-    bus = ThoughtBus(max_memory=1000)
+def _build_session(seed: int, mood: str) -> ConversationSession:
+    bus = ThoughtBus(max_memory=2000)
     vault = AureonVault()
     vault.love_amplitude = 0.4
     vault.gratitude_score = 0.5
@@ -325,73 +560,68 @@ def main() -> int:
     vault.dominant_frequency_hz = 432.0
     vault.cortex_snapshot = {"delta": 0.1, "theta": 0.1, "alpha": 0.1, "beta": 0.1, "gamma": 0.1}
 
-    adapter = PersonaResponseAdapter(question=question, seed=args.seed)
-
-    # Build all ten personas with our conversational adapter, then inject
-    # the question into each persona's composed prompt.
-    personas: Dict[str, ResonantPersona] = {}
-    for name, cls in AUREON_PERSONA_REGISTRY.items():
-        personas[name] = cls(adapter=adapter)
-    inject_question_into_prompts(personas, question)
-
-    # When the operator pre-selects a mood, sharpen the softmax so the
-    # intended persona wins reliably. Without a mood, keep temperature=1
-    # so the system surprises you with whichever voice the state called.
-    temperature = 0.25 if args.mood else 1.0
+    adapter = PersonaResponseAdapter(question="", seed=seed)
+    personas: Dict[str, ResonantPersona] = {
+        name: cls(adapter=adapter) for name, cls in AUREON_PERSONA_REGISTRY.items()
+    }
     vacuum = PersonaVacuum(
         personas=personas,
         thought_bus=bus,
         vault=vault,
-        rng=random.Random(args.seed),
-        temperature=temperature,
+        rng=random.Random(seed),
+        temperature=1.0,
     )
-
-    applied = args.mood if args.mood else "neutral"
-
-    # Wire the vacuum's cognition + drop subscribers BEFORE we publish, so
-    # both kinds of signal reach the state enrichment path.
+    # Wire subscribers once; subsequent mood applications hit live subs.
     bus.subscribe("queen.source_law.cognition", vacuum._on_cognition)
     bus.subscribe("dj.track.drop", vacuum._on_drop)
 
-    if args.mood:
-        # Re-publish now that subscribers are live.
-        apply_mood(vault, args.mood, bus)
-    else:
-        bus.publish(Thought(
-            source="ask",
-            topic="queen.source_law.cognition",
-            payload={
-                "coherence_gamma": 0.6, "consciousness_psi": 0.6,
-                "consciousness_level": "AWARE", "confidence": 0.5,
-                "node_readings": {"tiger": 0.4, "falcon": 0.4, "dolphin": 0.4, "panda": 0.4},
-            },
-        ))
+    # Baseline cognition so the very first collapse has something to read.
+    bus.publish(Thought(
+        source="ask",
+        topic="queen.source_law.cognition",
+        payload={
+            "coherence_gamma": 0.5, "consciousness_psi": 0.5,
+            "consciousness_level": "AWARE", "confidence": 0.5,
+            "node_readings": {"tiger": 0.4, "falcon": 0.4, "dolphin": 0.4, "panda": 0.4},
+        },
+    ))
 
-    statement = vacuum.observe(vault)
-    winner = vacuum.last_winner or "?"
-    probs = vacuum.last_probabilities
-    action_rec = vacuum.last_action_execution
+    return ConversationSession(bus=bus, vault=vault, vacuum=vacuum,
+                               adapter=adapter, current_mood=mood or "")
 
-    print()
-    print("━" * 78)
-    print(f"You: {question}")
-    if args.mood:
-        print(f"(mood preset: {applied})")
-    print("━" * 78)
-    print(f"[{winner}]  collapse probability: {probs.get(winner, 0.0):.3f}")
-    print()
-    if statement is None:
-        print("(no statement — persona had nothing to compose)")
-    else:
-        print(statement.text)
-    print()
-    if action_rec is not None:
-        print(f"▸ action: {action_rec.action.kind}  →  {action_rec.action.topic}")
-        print(f"  reason: {action_rec.action.reason}")
-    else:
-        print("▸ action: none — this persona chose silence on top of its speech")
-    print("━" * 78)
-    return 0
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Talk to the Aureon persona vacuum.")
+    ap.add_argument("question", nargs="*", help="question — free text; omit to enter REPL")
+    ap.add_argument("--mood", default="", help="optional mood preset")
+    ap.add_argument("--seed", type=int, default=0, help="RNG seed for reproducible collapse")
+    ap.add_argument("--repl", action="store_true",
+                    help="force REPL mode even if a question was provided")
+    args = ap.parse_args()
+
+    question = " ".join(args.question).strip()
+    session = _build_session(seed=args.seed, mood=args.mood)
+
+    if question and not args.repl:
+        # One-shot mode — stage 1 behaviour.
+        turn = session.ask(question)
+        print()
+        print("\u2501" * 72)
+        print(f"You: {question}")
+        if session.current_mood:
+            print(f"(mood preset: {session.current_mood})")
+        print("\u2501" * 72)
+        _print_turn(turn)
+        print()
+        return 0
+
+    # REPL mode.
+    if question:
+        # User passed both a question and --repl — answer it first, then
+        # drop into the loop.
+        turn = session.ask(question)
+        _print_turn(turn)
+    return run_repl(session)
 
 
 if __name__ == "__main__":
