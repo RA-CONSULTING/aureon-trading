@@ -62,6 +62,11 @@ from aureon.vault.voice.persona_vacuum import (
     PersonaVacuum,
     get_persona_vacuum,
 )
+from aureon.vault.voice.persona_action import (
+    PersonaAction,
+    ActionExecution,
+    PersonaActuator,
+)
 
 __all__ = [
     # Utterance
@@ -102,4 +107,8 @@ __all__ = [
     "build_aureon_personas",
     "PersonaVacuum",
     "get_persona_vacuum",
+    # Action layer (speak → act)
+    "PersonaAction",
+    "ActionExecution",
+    "PersonaActuator",
 ]

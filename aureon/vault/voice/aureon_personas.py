@@ -32,8 +32,9 @@ Gary Leckey · Aureon Institute — April 2026
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from aureon.vault.voice.persona_action import PersonaAction
 from aureon.vault.voice.vault_voice import VaultVoice
 
 
@@ -55,6 +56,15 @@ class ResonantPersona(VaultVoice):
         absolute magnitude only matters relative to peers.
         """
         return 1.0
+
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        """Return a concrete PersonaAction when this persona's trigger fires.
+
+        The PersonaVacuum calls this after the persona is chosen and speaks,
+        and hands the result to a PersonaActuator. Default is `None` —
+        silent observation with no side effect. Subclasses override.
+        """
+        return None
 
     @staticmethod
     def _cortex_band(state: Dict[str, Any], band: str) -> float:
@@ -112,6 +122,23 @@ class PainterVoice(ResonantPersona):
         ]
         return lines
 
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        love = float(state.get("love_amplitude", 0.0) or 0.0)
+        chakra = str(state.get("dominant_chakra", "") or "")
+        if chakra not in ("heart", "third_eye", "crown") or love <= 0.7:
+            return None
+        return PersonaAction(
+            kind="vault.ingest",
+            topic="persona.painter.composition",
+            payload={
+                "chakra": chakra,
+                "love_amplitude": love,
+                "gamma": self._cortex_band(state, "gamma"),
+            },
+            reason="high-love composition at heart-family chakra",
+            urgency=min(1.0, love),
+        )
+
 
 class ArtistVoice(ResonantPersona):
     NAME = "artist"
@@ -144,6 +171,24 @@ class ArtistVoice(ResonantPersona):
             lines.append("Say what this groove is painting in me.")
         return lines
 
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        drop = state.get("dj_drop") or {}
+        energy = float(drop.get("energy", 0.0) or 0.0)
+        rally = bool(state.get("rally_active"))
+        if energy <= 0.7 and not rally:
+            return None
+        return PersonaAction(
+            kind="bus.publish",
+            topic="persona.intent.rally",
+            payload={
+                "drop_energy": energy,
+                "bpm": float(drop.get("bpm", 0.0) or 0.0),
+                "rally_active": rally,
+            },
+            reason="drop energy / rally — intent signal",
+            urgency=max(energy, 0.8 if rally else 0.0),
+        )
+
 
 class QuantumPhysicistVoice(ResonantPersona):
     NAME = "quantum_physicist"
@@ -169,6 +214,23 @@ class QuantumPhysicistVoice(ResonantPersona):
             "State in one sentence what this configuration means physically.",
         ]
         return lines
+
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        lam_abs = self._abs_lambda(state)
+        psi = float(state.get("consciousness_psi", 0.0) or 0.0)
+        if lam_abs <= 1.0 and psi <= 0.85:
+            return None
+        return PersonaAction(
+            kind="bus.publish",
+            topic="auris.throne.alert",
+            payload={
+                "lambda_t": float(state.get("last_lambda_t", 0.0) or 0.0),
+                "consciousness_psi": psi,
+                "coherence_gamma": float(state.get("coherence_gamma", 0.0) or 0.0),
+            },
+            reason="Λ drift or high ψ — ask SourceLaw to cogitate",
+            urgency=min(1.0, max(lam_abs / 3.0, psi)),
+        )
 
 
 class PhilosopherVoice(ResonantPersona):
@@ -196,6 +258,22 @@ class PhilosopherVoice(ResonantPersona):
         ]
         return lines
 
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        level = str(state.get("consciousness_level", "") or "")
+        if level not in ("DAWNING", "UNIFIED", "AWARE"):
+            return None
+        return PersonaAction(
+            kind="bus.publish",
+            topic="queen.request_cognition",
+            payload={
+                "consciousness_level": level,
+                "theta": self._cortex_band(state, "theta"),
+                "consciousness_psi": float(state.get("consciousness_psi", 0.0) or 0.0),
+            },
+            reason=f"philosopher sees {level} — ask SourceLaw to reflect",
+            urgency=0.6,
+        )
+
 
 class ChildVoice(ResonantPersona):
     NAME = "child"
@@ -221,6 +299,23 @@ class ChildVoice(ResonantPersona):
             "Say what I am noticing for the first time, plainly.",
         ]
         return lines
+
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        size = int(state.get("vault_size", 0) or 0)
+        delta = self._cortex_band(state, "delta")
+        if size >= 20 and delta < 0.6:
+            return None
+        return PersonaAction(
+            kind="vault.ingest",
+            topic="persona.child.curiosity",
+            payload={
+                "vault_size": size,
+                "delta": delta,
+                "note": "first-noticing",
+            },
+            reason="small vault or high delta — curiosity seed",
+            urgency=0.3,
+        )
 
 
 class ElderVoice(ResonantPersona):
@@ -248,6 +343,23 @@ class ElderVoice(ResonantPersona):
             "Name what this recurrence is teaching, in one calm sentence.",
         ]
         return lines
+
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        psi = float(state.get("consciousness_psi", 0.0) or 0.0)
+        theta = self._cortex_band(state, "theta")
+        if psi <= 0.8 or theta <= 0.4:
+            return None
+        return PersonaAction(
+            kind="vault.ingest",
+            topic="persona.elder.recurrence",
+            payload={
+                "theta": theta,
+                "consciousness_psi": psi,
+                "vault_size": int(state.get("vault_size", 0) or 0),
+            },
+            reason="high ψ + theta — mark a recurrence",
+            urgency=0.5,
+        )
 
 
 class MysticVoice(ResonantPersona):
@@ -277,6 +389,24 @@ class MysticVoice(ResonantPersona):
         ]
         return lines
 
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        love = float(state.get("love_amplitude", 0.0) or 0.0)
+        freq = float(state.get("dominant_frequency_hz", 0.0) or 0.0)
+        if love <= 0.85 or abs(freq - 528.0) > 30.0:
+            return None
+        return PersonaAction(
+            kind="bus.publish",
+            topic="love.stream.528hz",
+            payload={
+                "love_amplitude": love,
+                "gratitude_score": float(state.get("gratitude_score", 0.0) or 0.0),
+                "frequency_hz": freq,
+                "source": "persona.mystic",
+            },
+            reason="love > 0.85 at 528 Hz — feed the stream",
+            urgency=love,
+        )
+
 
 class EngineerVoice(ResonantPersona):
     NAME = "engineer"
@@ -301,6 +431,23 @@ class EngineerVoice(ResonantPersona):
             "State plainly whether this gate is clean or not.",
         ]
         return lines
+
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        gamma = float(state.get("coherence_gamma", 0.0) or 0.0)
+        tiger = self._node_value(state, "tiger")
+        if gamma < 0.938 or tiger < 0.6:
+            return None
+        return PersonaAction(
+            kind="bus.publish",
+            topic="queen.request_cognition",
+            payload={
+                "coherence_gamma": gamma,
+                "tiger_noise_cut": tiger,
+                "gate_clean": True,
+            },
+            reason="Γ ≥ 0.938 + Tiger clear — gate is clean, cogitate",
+            urgency=min(1.0, gamma),
+        )
 
 
 class LeftVoice(ResonantPersona):
@@ -328,6 +475,23 @@ class LeftVoice(ResonantPersona):
         ]
         return lines
 
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        falcon = self._node_value(state, "falcon")
+        conf = float(state.get("confidence", 0.0) or 0.0)
+        if falcon <= 0.8 or conf <= 0.7:
+            return None
+        return PersonaAction(
+            kind="bus.publish",
+            topic="persona.intent.velocity_alert",
+            payload={
+                "falcon_velocity": falcon,
+                "confidence": conf,
+                "beta": self._cortex_band(state, "beta"),
+            },
+            reason="falcon surging + high confidence",
+            urgency=min(1.0, (falcon + conf) / 2.0),
+        )
+
 
 class RightVoice(ResonantPersona):
     NAME = "right"
@@ -353,6 +517,23 @@ class RightVoice(ResonantPersona):
             "Say what the relations in this field are doing.",
         ]
         return lines
+
+    def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
+        dolphin = self._node_value(state, "dolphin")
+        panda = self._node_value(state, "panda")
+        if (dolphin + panda) <= 1.6:
+            return None
+        return PersonaAction(
+            kind="vault.ingest",
+            topic="persona.right.field",
+            payload={
+                "dolphin": dolphin,
+                "panda": panda,
+                "love_amplitude": float(state.get("love_amplitude", 0.0) or 0.0),
+            },
+            reason="dolphin + panda coherent — field card",
+            urgency=min(1.0, (dolphin + panda) / 2.0),
+        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

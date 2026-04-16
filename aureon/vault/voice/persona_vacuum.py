@@ -34,6 +34,7 @@ from aureon.vault.voice.aureon_personas import (
     ResonantPersona,
     build_aureon_personas,
 )
+from aureon.vault.voice.persona_action import ActionExecution, PersonaActuator
 from aureon.vault.voice.utterance import VoiceStatement
 
 logger = logging.getLogger("aureon.vault.voice.persona_vacuum")
@@ -65,6 +66,9 @@ class PersonaVacuum:
         thought_bus: Any = None,
         rng: Optional[random.Random] = None,
         temperature: Optional[float] = None,
+        vault: Any = None,
+        actuator: Optional[PersonaActuator] = None,
+        actuator_dry_run: bool = False,
     ):
         self._personas: Dict[str, ResonantPersona] = (
             personas if personas is not None else build_aureon_personas(adapter=adapter)
@@ -81,6 +85,13 @@ class PersonaVacuum:
         if self._thought_bus is None:
             self._thought_bus = self._load_thought_bus()
         self._subscribed = False
+        self._vault_ref = vault
+        self._actuator: PersonaActuator = actuator if actuator is not None else PersonaActuator(
+            vault=vault,
+            thought_bus=self._thought_bus,
+            dry_run=bool(actuator_dry_run),
+        )
+        self._last_action_execution: Optional[ActionExecution] = None
 
     @staticmethod
     def _resolve_temperature(explicit: Optional[float]) -> float:
@@ -163,6 +174,23 @@ class PersonaVacuum:
         if statement is not None:
             self._publish_thought(statement)
             self._feed_vault(vault, statement)
+
+        # Act, don't just speak. If the winning persona has a live trigger
+        # for this state, hand its PersonaAction to the actuator.
+        try:
+            action = persona.propose_action(state)
+        except Exception as e:
+            logger.debug("PersonaVacuum: %s propose_action failed: %s", persona.NAME, e)
+            action = None
+        if action is not None:
+            # The observe-time vault takes precedence over any init-time
+            # vault — callers may observe against a different AureonVault
+            # per call (mesh peers, embedded copies, test fixtures).
+            if vault is not None:
+                self._actuator.vault = vault
+            self._last_action_execution = self._actuator.dispatch(
+                persona.NAME, action, dict(state, persona=persona.NAME),
+            )
         return statement
 
     def _build_state(self, vault: Any) -> Dict[str, Any]:
@@ -282,6 +310,14 @@ class PersonaVacuum:
     # ─────────────────────────────────────────────────────────────────────
     # Introspection
     # ─────────────────────────────────────────────────────────────────────
+
+    @property
+    def actuator(self) -> PersonaActuator:
+        return self._actuator
+
+    @property
+    def last_action_execution(self) -> Optional[ActionExecution]:
+        return self._last_action_execution
 
     @property
     def last_winner(self) -> Optional[str]:
