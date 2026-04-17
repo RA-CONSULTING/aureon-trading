@@ -35,6 +35,10 @@ Phi-bridge (phone ↔ desktop intranet sync):
   POST /api/bridge/sync        — peer pushes state, gets desktop view back
   POST /api/bridge/drop        — explicit peer disconnect
 
+Phi-bridge mesh (P2P card-level gossip between desktops on the LAN):
+  POST /api/bridge/cards       — peers exchange VaultContent cards here
+  GET  /api/bridge/mesh/info   — mesh stats (cycles, cards in/out, peers)
+
 Usage:
     from aureon.vault.ui import create_app, run_server
     run_server(host="127.0.0.1", port=5566)
@@ -68,6 +72,7 @@ except Exception:  # pragma: no cover
 
 from aureon.harmonic.auris_voice_filter import get_auris_voice_filter
 from aureon.harmonic.phi_bridge import get_phi_bridge
+from aureon.harmonic.phi_bridge_mesh import get_phi_bridge_mesh
 from aureon.harmonic.phi_swarm_router import get_phi_swarm_router
 from aureon.queen.conversation_memory import get_conversation_memory
 from aureon.queen.meaning_resolver import get_meaning_resolver
@@ -1087,6 +1092,37 @@ def create_app(
             return jsonify({"ok": False, "error": "missing peer_id"}), 400
         dropped = bridge.drop_peer(peer_id)
         return jsonify({"ok": True, "dropped": dropped})
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Phi-bridge mesh — P2P card-level gossip
+    # ─────────────────────────────────────────────────────────────────────
+    #
+    # Peers discovered over the LAN (PhiBridgeDiscovery) POST here to
+    # exchange VaultContent cards. PhiBridgeMesh.handle_inbound consumes
+    # their batch (deduped by harmonic_hash), and returns the cards we
+    # have that they haven't listed in `our_hashes`. Eventually consistent
+    # union — any two nodes converge by replaying each other's history.
+
+    mesh = get_phi_bridge_mesh(vault=loop.vault)
+    app.config["AUREON_PHI_BRIDGE_MESH"] = mesh
+
+    @app.route("/api/bridge/cards", methods=["POST"])
+    def api_bridge_cards():
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return jsonify({"ok": False, "error": "body must be a JSON object"}), 400
+        try:
+            reply = mesh.handle_inbound(data)
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify(reply)
+
+    @app.route("/api/bridge/mesh/info")
+    def api_bridge_mesh_info():
+        try:
+            return jsonify({"ok": True, **mesh.info()})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
 
     # ─────────────────────────────────────────────────────────────────────
     # Queen action bridge — tools, skills, arming, action log

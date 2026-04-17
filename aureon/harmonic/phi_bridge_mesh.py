@@ -94,6 +94,17 @@ class _PeerSync:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+class _NullDiscovery:
+    """No-op discovery used when the mesh is instantiated server-side for
+    inbound exchange only (the Flask endpoint needs handle_inbound but
+    does not need to enumerate peers for outbound gossip)."""
+
+    peer_id: str = ""
+
+    def known_peers(self) -> List[Any]:
+        return []
+
+
 class PhiBridgeMesh:
     """Card-level P2P gossip over the mesh discovered by PhiBridgeDiscovery."""
 
@@ -101,7 +112,7 @@ class PhiBridgeMesh:
         self,
         *,
         vault: Any,
-        discovery: Any,
+        discovery: Any = None,
         bridge: Any = None,
         client: Optional[Any] = None,
         interval_s: Optional[float] = None,
@@ -109,7 +120,7 @@ class PhiBridgeMesh:
         cards_path: str = CARDS_PATH,
     ):
         self.vault = vault
-        self.discovery = discovery
+        self.discovery = discovery if discovery is not None else _NullDiscovery()
         self.bridge = bridge
         self.client = client or HTTPPeerClient()
         self.interval_s = float(interval_s) if interval_s else None
@@ -422,9 +433,52 @@ def _short_id() -> str:
     return uuid.uuid4().hex[:10]
 
 
+_mesh_singleton: Optional[PhiBridgeMesh] = None
+_mesh_lock = __import__("threading").Lock()
+
+
+def get_phi_bridge_mesh(
+    vault: Any = None,
+    *,
+    discovery: Any = None,
+    client: Optional[Any] = None,
+) -> PhiBridgeMesh:
+    """Return the process-wide PhiBridgeMesh, creating it on first call.
+
+    Used by the Flask server so the POST /api/bridge/cards handler talks
+    to the same mesh any background gossip loop would use. Pass `vault`
+    on the first call so handle_inbound can add received cards into the
+    right vault; subsequent calls pick up the existing mesh.
+    """
+    global _mesh_singleton
+    with _mesh_lock:
+        if _mesh_singleton is None:
+            _mesh_singleton = PhiBridgeMesh(
+                vault=vault,
+                discovery=discovery,
+                client=client,
+            )
+        else:
+            # Late-bind vault / discovery if they weren't known at first use.
+            if vault is not None and _mesh_singleton.vault is None:
+                _mesh_singleton.vault = vault
+            if discovery is not None and isinstance(_mesh_singleton.discovery, _NullDiscovery):
+                _mesh_singleton.discovery = discovery
+        return _mesh_singleton
+
+
+def reset_phi_bridge_mesh() -> None:
+    """Drop the singleton — tests use this to start from a clean slate."""
+    global _mesh_singleton
+    with _mesh_lock:
+        _mesh_singleton = None
+
+
 __all__ = [
     "PhiBridgeMesh",
     "HTTPPeerClient",
     "BATCH_LIMIT",
     "CARDS_PATH",
+    "get_phi_bridge_mesh",
+    "reset_phi_bridge_mesh",
 ]
