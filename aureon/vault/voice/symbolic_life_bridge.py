@@ -99,6 +99,7 @@ class SymbolicLifeBridge:
         "goal_commitment",
         "life_resonance",
         "mesh_unity",
+        "goal_lighthouse",   # 5.1 — goal-echo health (completion_rate - orphan_rate)
     )
 
     # Topics the bridge subscribes to.
@@ -106,6 +107,8 @@ class SymbolicLifeBridge:
         "persona.collapse",
         "persona.thought",
         "goal.submit.request",
+        "goal.echo.summary",
+        "goal.echo.orphaned",
         "life.event",
         "bridge.peer.state",
         "conversation.turn",
@@ -137,6 +140,9 @@ class SymbolicLifeBridge:
         }
         self._winner_buffer: Deque[str] = deque(maxlen=self.horizon)
         self._hash_buffer: Deque[str] = deque(maxlen=256)
+        # Most recent goal.echo.summary — its completion_rate minus
+        # orphan_rate is the lighthouse health signal (4.3/5.1 wiring).
+        self._latest_goal_summary: Dict[str, Any] = {}
         self._subscribed = False
 
         self._last_state: Any = None
@@ -163,6 +169,8 @@ class SymbolicLifeBridge:
             self.thought_bus.subscribe("bridge.peer.state", self._on_peer_state)
             self.thought_bus.subscribe("conversation.turn", self._on_conversation_turn)
             self.thought_bus.subscribe("conversation.ambient", self._on_conversation_turn)
+            self.thought_bus.subscribe("goal.echo.summary", self._on_goal_echo_summary)
+            self.thought_bus.subscribe("goal.echo.orphaned", self._on_goal_echo_orphaned)
             self._subscribed = True
         except Exception as e:
             logger.debug("SymbolicLifeBridge: subscribe failed: %s", e)
@@ -232,6 +240,30 @@ class SymbolicLifeBridge:
             if payload.get("question"):
                 # Operator engagement lights meaning propagation too.
                 self._rolling["life_resonance"].bump(0.6)
+
+    def _on_goal_echo_summary(self, thought: Any) -> None:
+        """The TemporalCausalityLaw pulses this every τ. Convert it into
+        a lighthouse-health signal in [0, 1]: completion_rate minus
+        orphan_rate, clamped. A closed causal line lifts it; a broken
+        lighthouse pulls it toward zero."""
+        payload = getattr(thought, "payload", {}) or {}
+        if not isinstance(payload, dict):
+            return
+        try:
+            completion = float(payload.get("completion_rate", 0.0) or 0.0)
+            orphan = float(payload.get("orphan_rate", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            return
+        health = max(0.0, min(1.0, completion - orphan + 0.5))
+        with self._lock:
+            self._latest_goal_summary = dict(payload)
+            self._rolling["goal_lighthouse"].bump(health)
+
+    def _on_goal_echo_orphaned(self, thought: Any) -> None:
+        """An orphaned goal is a broken lighthouse — register it as a
+        zero contribution to goal_lighthouse so the rolling mean drops."""
+        with self._lock:
+            self._rolling["goal_lighthouse"].bump(0.0)
 
     # ─── Λ engine pulse ──────────────────────────────────────────────────
 

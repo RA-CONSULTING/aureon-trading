@@ -80,6 +80,13 @@ from aureon.vault.voice.opportunity_scanner import (
     OpportunityHit,
 )
 from aureon.vault.voice.symbolic_life_bridge import SymbolicLifeBridge
+from aureon.vault.voice.temporal_causality import (
+    GoalEcho,
+    GoalState,
+    TemporalCausalityLaw,
+    get_temporal_causality_law,
+    reset_temporal_causality_law,
+)
 
 __all__ = [
     # Utterance
@@ -136,4 +143,9 @@ __all__ = [
     "OpportunityScanner",
     "OpportunityHit",
     "SymbolicLifeBridge",
+    "GoalEcho",
+    "GoalState",
+    "TemporalCausalityLaw",
+    "get_temporal_causality_law",
+    "reset_temporal_causality_law",
 ]
