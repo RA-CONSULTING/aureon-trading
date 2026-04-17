@@ -109,6 +109,19 @@ from aureon.vault.voice.meta_cognition_observer import (
     get_meta_cognition_observer,
     reset_meta_cognition_observer,
 )
+from aureon.vault.voice.persona_miner_bridge import (
+    PersonaMinerBridge,
+    MinerPacket,
+    PersonaStats,
+    IntentStats,
+    get_persona_miner_bridge,
+    reset_persona_miner_bridge,
+)
+from aureon.vault.voice.goal_skill_aligner import (
+    GoalSkillAligner,
+    get_goal_skill_aligner,
+    reset_goal_skill_aligner,
+)
 
 __all__ = [
     # Utterance
@@ -184,4 +197,13 @@ __all__ = [
     "ReflectionCard",
     "get_meta_cognition_observer",
     "reset_meta_cognition_observer",
+    "PersonaMinerBridge",
+    "MinerPacket",
+    "PersonaStats",
+    "IntentStats",
+    "get_persona_miner_bridge",
+    "reset_persona_miner_bridge",
+    "GoalSkillAligner",
+    "get_goal_skill_aligner",
+    "reset_goal_skill_aligner",
 ]
