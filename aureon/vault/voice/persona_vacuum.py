@@ -27,8 +27,10 @@ import math
 import os
 import random
 import threading
+import uuid
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from aureon.vault.voice.affinity_chorus import AffinityChorus
 from aureon.vault.voice.aureon_personas import (
     AUREON_PERSONA_REGISTRY,
     ResonantPersona,
@@ -40,6 +42,20 @@ from aureon.vault.voice.utterance import VoiceStatement
 logger = logging.getLogger("aureon.vault.voice.persona_vacuum")
 
 _DEFAULT_TEMPERATURE = 1.0
+
+
+def _seed_from_scores(scores: Dict[str, float]) -> int:
+    """Stable integer seed derived from a merged affinity map.
+
+    Two vacuums that see the same map produce the same seed, so their
+    softmax sampling agrees. Independent of transient vault state.
+    """
+    if not scores:
+        return 0
+    import hashlib
+    canonical = ",".join(f"{k}:{scores[k]:.9f}" for k in sorted(scores.keys()))
+    digest = hashlib.sha256(canonical.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big", signed=False)
 
 
 def _softmax(scores: List[float], temperature: float) -> List[float]:
@@ -69,6 +85,9 @@ class PersonaVacuum:
         vault: Any = None,
         actuator: Optional[PersonaActuator] = None,
         actuator_dry_run: bool = False,
+        chorus: Optional[AffinityChorus] = None,
+        peer_id: Optional[str] = None,
+        seed_fn: Optional[Callable[[], int]] = None,
     ):
         self._personas: Dict[str, ResonantPersona] = (
             personas if personas is not None else build_aureon_personas(adapter=adapter)
@@ -92,6 +111,20 @@ class PersonaVacuum:
             dry_run=bool(actuator_dry_run),
         )
         self._last_action_execution: Optional[ActionExecution] = None
+
+        # Unified-collapse wiring — when a chorus is attached, affinity
+        # vectors from all participating vacuums merge before softmax.
+        # Combined with a seed_fn derived from a shared signal (usually
+        # the vault fingerprint), two vacuums seeing the same merged
+        # affinity will sample the same winner.
+        self._chorus: Optional[AffinityChorus] = chorus
+        self._seed_fn: Optional[Callable[[], int]] = seed_fn
+        self._peer_id: str = str(peer_id) if peer_id else f"vacuum-{uuid.uuid4().hex[:8]}"
+        if self._chorus is not None:
+            # Ensure the chorus is listening on whichever bus we're using.
+            if self._chorus.thought_bus is None and self._thought_bus is not None:
+                self._chorus.thought_bus = self._thought_bus
+            self._chorus.start()
 
     @staticmethod
     def _resolve_temperature(explicit: Optional[float]) -> float:
@@ -215,22 +248,92 @@ class PersonaVacuum:
     def _any_persona(self) -> ResonantPersona:
         return next(iter(self._personas.values()))
 
+    # ─────────────────────────────────────────────────────────────────────
+    # Unified collapse (quorum phase)
+    # ─────────────────────────────────────────────────────────────────────
+
+    def contribute_affinity(self, vault: Any = None) -> Dict[str, float]:
+        """Compute this vacuum's per-persona affinity for the current
+        state and publish it to the chorus. This is the "many thoughts"
+        phase — call it on every participating vacuum BEFORE any of
+        them collapses, so each sampler sees the complete merged map.
+
+        Returns the local score vector for inspection.
+        """
+        state = self._build_state(vault)
+        scores: Dict[str, float] = {}
+        for name, persona in self._personas.items():
+            try:
+                v = float(persona.compute_affinity(state))
+            except Exception:
+                v = 0.0
+            scores[name] = max(0.0, v)
+        if self._chorus is not None:
+            try:
+                self._chorus.publish(self._peer_id, scores)
+            except Exception as e:
+                logger.debug("PersonaVacuum: chorus publish failed: %s", e)
+        return scores
+
     def _sample(
         self, state: Dict[str, Any]
     ) -> Tuple[Optional[str], Dict[str, float], Dict[str, float]]:
         names: List[str] = list(self._personas.keys())
         if not names:
             return None, {}, {}
-        raw: List[float] = []
+
+        # 1. Local per-persona affinity — this vacuum's own "thought".
+        local_scores: Dict[str, float] = {}
         for name in names:
             try:
-                score = float(self._personas[name].compute_affinity(state))
+                v = float(self._personas[name].compute_affinity(state))
             except Exception as e:
                 logger.debug("PersonaVacuum: %s affinity failed: %s", name, e)
-                score = 0.0
-            raw.append(max(0.0, score))
+                v = 0.0
+            local_scores[name] = max(0.0, v)
+
+        # 2. If a chorus is attached, publish our vector so other vacuums
+        #    can see it, then ask the chorus for the merged score map —
+        #    many thoughts summed into one.
+        if self._chorus is not None:
+            try:
+                self._chorus.publish(self._peer_id, local_scores)
+            except Exception as e:
+                logger.debug("PersonaVacuum: chorus publish failed: %s", e)
+            try:
+                merged_map = self._chorus.merged(
+                    self_scores=local_scores,
+                    self_peer_id=self._peer_id,
+                )
+            except Exception as e:
+                logger.debug("PersonaVacuum: chorus merge failed: %s", e)
+                merged_map = dict(local_scores)
+        else:
+            merged_map = dict(local_scores)
+
+        raw: List[float] = [max(0.0, float(merged_map.get(n, 0.0))) for n in names]
         probs = _softmax(raw, self._temperature)
-        r = self._rng.random()
+
+        # 3. RNG for sampling.
+        #    - Explicit seed_fn takes precedence (e.g. a shared tick
+        #      counter, or an operator-supplied fingerprint).
+        #    - Otherwise, if a chorus is attached, derive the seed from
+        #      the merged affinity vector. Two vacuums that see the same
+        #      merged map (what the chorus is FOR) get the same seed and
+        #      collapse to the same winner — "one softmax, one draw,
+        #      one voice".
+        #    - Falling back to the vacuum's own rng means classical
+        #      independent sampling.
+        rng: random.Random = self._rng
+        if self._seed_fn is not None:
+            try:
+                rng = random.Random(int(self._seed_fn()))
+            except Exception as e:
+                logger.debug("PersonaVacuum: seed_fn failed: %s", e)
+        elif self._chorus is not None:
+            rng = random.Random(_seed_from_scores(merged_map))
+
+        r = rng.random()
         cum = 0.0
         winner = names[-1]
         for name, p in zip(names, probs):
@@ -369,6 +472,14 @@ class PersonaVacuum:
     # ─────────────────────────────────────────────────────────────────────
     # Introspection
     # ─────────────────────────────────────────────────────────────────────
+
+    @property
+    def chorus(self) -> Optional[AffinityChorus]:
+        return self._chorus
+
+    @property
+    def peer_id(self) -> str:
+        return self._peer_id
 
     @property
     def actuator(self) -> PersonaActuator:

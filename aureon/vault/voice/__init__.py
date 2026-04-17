@@ -67,6 +67,13 @@ from aureon.vault.voice.persona_action import (
     ActionExecution,
     PersonaActuator,
 )
+from aureon.vault.voice.affinity_chorus import (
+    AffinityChorus,
+    AffinityContribution,
+    DEFAULT_TTL_S as CHORUS_DEFAULT_TTL_S,
+    vault_fingerprint_seed,
+    make_vault_seed_fn,
+)
 
 __all__ = [
     # Utterance
@@ -111,4 +118,10 @@ __all__ = [
     "PersonaAction",
     "ActionExecution",
     "PersonaActuator",
+    # Unified-collapse layer
+    "AffinityChorus",
+    "AffinityContribution",
+    "CHORUS_DEFAULT_TTL_S",
+    "vault_fingerprint_seed",
+    "make_vault_seed_fn",
 ]
