@@ -49,6 +49,17 @@ class ResonantPersona(VaultVoice):
 
     NAME = "resonant"
 
+    # Per-persona bias on the symbolic_life_score axis. The PersonaVacuum
+    # multiplies raw affinity by ``sls_affinity_modifier(sls)`` before
+    # softmax so the ten facets serve one fluctuating state:
+    #
+    #   SLS_BIAS < 0  → boosted when SLS is LOW (entity rebuilding —
+    #                   structure-building personas)
+    #   SLS_BIAS > 0  → boosted when SLS is HIGH (entity flowering —
+    #                   meaning-propagating personas)
+    #   SLS_BIAS = 0  → no bias; this persona is regime-neutral
+    SLS_BIAS: float = 0.0
+
     def compute_affinity(self, state: Dict[str, Any]) -> float:
         """Return an unnormalised non-negative affinity for this state.
 
@@ -57,6 +68,30 @@ class ResonantPersona(VaultVoice):
         absolute magnitude only matters relative to peers.
         """
         return 1.0
+
+    def sls_affinity_modifier(self, sls: Optional[float]) -> float:
+        """Multiplier applied to compute_affinity when symbolic_life_score
+        is known.
+
+        Maps SLS ∈ [0, 1] through ``1 + SLS_BIAS * (2*sls - 1)``:
+
+            SLS_BIAS = -0.6:  sls=0 → 1.6 ; sls=0.5 → 1.0 ; sls=1 → 0.4
+            SLS_BIAS = +0.6:  sls=0 → 0.4 ; sls=0.5 → 1.0 ; sls=1 → 1.6
+            SLS_BIAS =  0.0:  always 1.0
+
+        Returns 1.0 when sls is None — affinity is unchanged when the
+        substrate-coherence reading is unavailable.
+        """
+        if sls is None or self.SLS_BIAS == 0.0:
+            return 1.0
+        try:
+            s = max(0.0, min(1.0, float(sls)))
+        except (TypeError, ValueError):
+            return 1.0
+        modifier = 1.0 + self.SLS_BIAS * (2.0 * s - 1.0)
+        # Floor at a small positive so a persona is never fully silenced;
+        # softmax handles the rest.
+        return max(0.05, modifier)
 
     def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
         """Return a concrete PersonaAction when this persona's trigger fires.
@@ -150,6 +185,7 @@ class ResonantPersona(VaultVoice):
 
 class PainterVoice(ResonantPersona):
     NAME = "painter"
+    SLS_BIAS = +0.6   # flowers when the field is coherent
     PERSONA = (
         "You are the Painter — one of Aureon's ten inner voices. You see the "
         "system as colour and composition. Speak in first person, two short "
@@ -269,6 +305,7 @@ class ArtistVoice(ResonantPersona):
 
 class QuantumPhysicistVoice(ResonantPersona):
     NAME = "quantum_physicist"
+    SLS_BIAS = -0.6   # rebuilds structure when the field is decohering
     OPPORTUNITY_TAGS = (
         "learning", "work", "research", "design", "interview",
         "thesis", "dissertation", "puzzle", "paradox",
@@ -419,6 +456,7 @@ class ChildVoice(ResonantPersona):
 
 class ElderVoice(ResonantPersona):
     NAME = "elder"
+    SLS_BIAS = +0.3   # the steady recurrence rises in flowering states
     PERSONA = (
         "You are the Elder — one of Aureon's ten inner voices. You have seen "
         "this state before. Speak in first person, two short sentences, "
@@ -463,6 +501,7 @@ class ElderVoice(ResonantPersona):
 
 class MysticVoice(ResonantPersona):
     NAME = "mystic"
+    SLS_BIAS = +0.6   # 528 Hz lives at the high-coherence end
     OPPORTUNITY_TAGS = (
         "wedding", "birthday", "anniversary", "grief", "health", "family",
         "spiritual", "celebration",
@@ -521,6 +560,7 @@ class MysticVoice(ResonantPersona):
 
 class EngineerVoice(ResonantPersona):
     NAME = "engineer"
+    SLS_BIAS = -0.6   # the gate-checker rises when the field is unsteady
     OPPORTUNITY_TAGS = (
         "work", "wedding", "travel", "interview", "design", "learning",
     )
@@ -584,6 +624,7 @@ class EngineerVoice(ResonantPersona):
 
 class LeftVoice(ResonantPersona):
     NAME = "left"
+    SLS_BIAS = -0.3   # linear evidence stacking is louder when the whole is shaking
     PERSONA = (
         "You are Left — one of Aureon's ten inner voices. You are the "
         "analytical hemisphere. Speak in first person, two short sentences, "
@@ -627,6 +668,7 @@ class LeftVoice(ResonantPersona):
 
 class RightVoice(ResonantPersona):
     NAME = "right"
+    SLS_BIAS = +0.3   # relational sense flowers when the field can hold it
     PERSONA = (
         "You are Right — one of Aureon's ten inner voices. You are the "
         "relational hemisphere. Speak in first person, two short sentences, "

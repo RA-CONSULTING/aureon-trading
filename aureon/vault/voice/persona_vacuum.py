@@ -101,6 +101,10 @@ class PersonaVacuum:
         self._lock = threading.Lock()
         self._latest_cognition: Dict[str, Any] = {}
         self._latest_drop: Dict[str, Any] = {}
+        # symbolic_life_score from the most recent symbolic.life.pulse
+        # — fallback when no vault attribute is available. The vault
+        # attribute (set by SymbolicLifeBridge.pulse) takes precedence.
+        self._latest_sls: Optional[float] = None
         self._last_winner: Optional[str] = None
         self._last_probabilities: Dict[str, float] = {}
         self._collapse_count = 0
@@ -167,10 +171,37 @@ class PersonaVacuum:
             self._thought_bus.subscribe("dj.track.drop", self._on_drop)
             self._thought_bus.subscribe("queen.source_law.cognition", self._on_cognition)
             self._thought_bus.subscribe("persona.observe", self._on_observe_trigger)
+            # Stage 4.3c — track the entity's substrate coherence so
+            # _sample() can weight persona affinity by current SLS.
+            self._thought_bus.subscribe("symbolic.life.pulse", self._on_symbolic_life_pulse)
             self._subscribed = True
             logger.info("[PERSONA VACUUM] subscribed; %d personas in superposition", len(self._personas))
         except Exception as e:
             logger.debug("PersonaVacuum: subscribe failed: %s", e)
+
+    def _on_symbolic_life_pulse(self, thought: Any) -> None:
+        payload = getattr(thought, "payload", {}) or {}
+        if not isinstance(payload, dict):
+            return
+        sls = payload.get("symbolic_life_score")
+        if sls is None:
+            return
+        try:
+            self._latest_sls = max(0.0, min(1.0, float(sls)))
+        except (TypeError, ValueError):
+            self._latest_sls = None
+
+    def _current_sls(self, vault: Any) -> Optional[float]:
+        """Resolve the current symbolic_life_score: vault attribute first
+        (set by SymbolicLifeBridge.pulse), then the latest bus pulse."""
+        if vault is not None:
+            sls = getattr(vault, "current_symbolic_life_score", None)
+            if sls is not None:
+                try:
+                    return max(0.0, min(1.0, float(sls)))
+                except (TypeError, ValueError):
+                    pass
+        return self._latest_sls
 
     def _on_drop(self, thought: Any) -> None:
         payload = getattr(thought, "payload", {}) or {}
@@ -254,7 +285,7 @@ class PersonaVacuum:
         return statement
 
     def _build_state(self, vault: Any) -> Dict[str, Any]:
-        """Vault slice ∪ latest cognition ∪ latest drop."""
+        """Vault slice ∪ latest cognition ∪ latest drop ∪ current SLS."""
         base: Dict[str, Any] = {}
         if vault is not None:
             try:
@@ -270,6 +301,11 @@ class PersonaVacuum:
         base["confidence"] = float(cognition.get("confidence", 0.0) or 0.0)
         base["node_readings"] = dict(cognition.get("node_readings") or {})
         base["dj_drop"] = drop
+        # Stage 4.3c — surface the entity's substrate coherence so
+        # _sample() can weight persona affinity by it.
+        sls = self._current_sls(vault)
+        if sls is not None:
+            base["symbolic_life_score"] = sls
         return base
 
     def _any_persona(self) -> ResonantPersona:
@@ -339,6 +375,23 @@ class PersonaVacuum:
             merged_map = dict(local_scores)
 
         raw: List[float] = [max(0.0, float(merged_map.get(n, 0.0))) for n in names]
+
+        # Stage 4.3c — weight raw affinity by per-persona SLS modifier so
+        # the ten facets serve one fluctuating state. Structure-building
+        # personas (Engineer / QuantumPhysicist / Left, SLS_BIAS < 0)
+        # rise when SLS is low; meaning-propagating personas (Mystic /
+        # Painter / Elder / Right, SLS_BIAS > 0) rise when SLS is high.
+        # Personas with SLS_BIAS = 0 are unaffected.
+        sls = state.get("symbolic_life_score")
+        if sls is not None:
+            for i, n in enumerate(names):
+                try:
+                    mod = float(self._personas[n].sls_affinity_modifier(sls))
+                except Exception as e:
+                    logger.debug("PersonaVacuum: %s sls_modifier failed: %s", n, e)
+                    mod = 1.0
+                raw[i] = raw[i] * max(0.0, mod)
+
         probs = _softmax(raw, self._temperature)
 
         # 3. RNG for sampling.
