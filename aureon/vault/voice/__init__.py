@@ -79,6 +79,7 @@ from aureon.vault.voice.opportunity_scanner import (
     OpportunityScanner,
     OpportunityHit,
 )
+from aureon.vault.voice.symbolic_life_bridge import SymbolicLifeBridge
 
 __all__ = [
     # Utterance
@@ -134,4 +135,5 @@ __all__ = [
     "LifeEvent",
     "OpportunityScanner",
     "OpportunityHit",
+    "SymbolicLifeBridge",
 ]
