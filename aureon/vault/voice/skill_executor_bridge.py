@@ -27,13 +27,11 @@ real CodeArchitect hooked up, the system demonstrably builds files on
 disk. A CodeArchitect adapter can be passed to route into the real
 skill library.
 
-Safety:
-  AUREON_SKILL_EXECUTION_ENABLED  "1"/"0"   master switch (default 1)
-  AUREON_SKILL_EXECUTION_DRY_RUN  "1"/"0"   record intent, no file I/O
-                                             (default 0)
-  conscience=QueenConscience → VETO gate runs before every execution.
-  GoalClaims coordinates with GoalDispatchBridge so exactly one path
-  runs per goal_id.
+Safety: the QueenConscience 4th-pass veto from the HNC white paper is
+the only gate on this bridge. When ``conscience`` is attached, every
+aligned request passes through ``ask_why`` before any skill runs; a
+VETO short-circuits to ``goal.abandoned`` with the substrate-coherence
+reason. No other rails.
 
 Publishes per execution:
   skill.execution.started   {goal_id, skill_name, params}
@@ -50,7 +48,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import threading
 import time
 import uuid
@@ -162,20 +159,12 @@ class SkillExecutorBridge:
         executor: Optional[Callable] = None,
         conscience: Any = None,
         output_root: Optional[str] = None,
-        enabled: Optional[bool] = None,
-        dry_run: Optional[bool] = None,
         run_in_thread: bool = True,
     ):
         self.thought_bus = thought_bus
         self.vault = vault
         self.conscience = conscience
         self.output_root = Path(output_root or "data/skill_outputs").resolve()
-        self.enabled = self._resolve_bool_env(
-            "AUREON_SKILL_EXECUTION_ENABLED", enabled, True,
-        )
-        self.dry_run = self._resolve_bool_env(
-            "AUREON_SKILL_EXECUTION_DRY_RUN", dry_run, False,
-        )
         self._run_in_thread = bool(run_in_thread)
 
         # Default executor wraps the output_root so it writes to the
@@ -189,17 +178,8 @@ class SkillExecutorBridge:
         self._history: List[_ExecutionRecord] = []
         self._stats = {
             "claimed": 0, "vetoed": 0, "executed": 0,
-            "failed": 0, "abandoned": 0, "dry_run": 0,
+            "failed": 0, "abandoned": 0,
         }
-
-    @staticmethod
-    def _resolve_bool_env(env_key: str, override: Optional[bool], default: bool) -> bool:
-        if override is not None:
-            return bool(override)
-        raw = os.environ.get(env_key)
-        if raw is None:
-            return default
-        return raw.strip().lower() in ("1", "true", "yes", "on")
 
     def _build_default_executor(self) -> Callable:
         output_root = self.output_root
@@ -211,9 +191,6 @@ class SkillExecutorBridge:
 
     def start(self) -> None:
         if self._subscribed or self.thought_bus is None:
-            return
-        if not self.enabled:
-            logger.info("SkillExecutorBridge: disabled (AUREON_SKILL_EXECUTION_ENABLED=0)")
             return
         try:
             self.thought_bus.subscribe(
@@ -312,20 +289,6 @@ class SkillExecutorBridge:
                 "ts": time.time(),
             }
             self._publish("skill.execution.started", started_payload)
-
-            if self.dry_run:
-                with self._lock:
-                    self._stats["dry_run"] += 1
-                # Record a dry-run "artefact" — synthetic path string
-                fake = f"<dry_run:{skill_name}>"
-                all_artefacts.append(fake)
-                self._publish("skill.execution.completed", {
-                    "goal_id": goal_id, "skill_name": skill_name,
-                    "artefacts": [fake], "dry_run": True,
-                    "ts": time.time(),
-                })
-                self._record(goal_id, persona, skill_name, [fake], True, "")
-                continue
 
             params = {"intent_text": text, "persona": persona, "goal_id": goal_id}
             try:
@@ -451,7 +414,6 @@ class SkillExecutorBridge:
     def stats(self) -> Dict[str, Any]:
         with self._lock:
             return dict(self._stats, subscribed=self._subscribed,
-                        enabled=self.enabled, dry_run=self.dry_run,
                         output_root=str(self.output_root))
 
     def history(self, n: int = 32) -> List[Dict[str, Any]]:

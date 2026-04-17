@@ -55,8 +55,7 @@ def _fresh_claims():
     GoalClaims.clear()
 
 
-def _build(executor=None, conscience=None, enabled=True, dry_run=False,
-           output_root=None):
+def _build(executor=None, conscience=None, output_root=None):
     _fresh_claims()
     bus = ThoughtBus()
     vault = AureonVault()
@@ -65,7 +64,7 @@ def _build(executor=None, conscience=None, enabled=True, dry_run=False,
     bridge = SkillExecutorBridge(
         thought_bus=bus, vault=vault, executor=executor,
         conscience=conscience, output_root=tmp,
-        enabled=enabled, dry_run=dry_run, run_in_thread=False,
+        run_in_thread=False,
     )
     bridge.start()
     return bridge, bus, vault, Path(tmp)
@@ -90,11 +89,6 @@ def _aligned_request(bus, goal_id, persona, text, skills):
 def test_subscribes_to_aligned_topic():
     bridge, bus, _, _ = _build()
     assert "goal.submit.request.aligned" in bus._subs
-
-
-def test_disabled_does_not_subscribe():
-    bridge, bus, _, _ = _build(enabled=False)
-    assert "goal.submit.request.aligned" not in bus._subs
 
 
 def test_only_subscribes_to_aligned_not_raw():
@@ -225,19 +219,6 @@ def test_no_recommended_skills_is_abandoned():
 # ─────────────────────────────────────────────────────────────────────────────
 # Dry-run
 # ─────────────────────────────────────────────────────────────────────────────
-
-
-def test_dry_run_does_not_write_files():
-    bridge, bus, vault, out = _build(dry_run=True)
-    completions = []
-    bus.subscribe("goal.completed", lambda t: completions.append(t))
-    _aligned_request(bus, "g1", "engineer", "build X", ["s1", "s2"])
-    # No files on disk
-    assert list(out.glob("*")) == []
-    # But goal.completed still fires so TemporalCausalityLaw closes.
-    assert len(completions) == 1
-    # Artefacts list contains the synthetic dry-run markers
-    assert all("<dry_run:" in a for a in completions[0].payload["artefacts"])
 
 
 # ─────────────────────────────────────────────────────────────────────────────
