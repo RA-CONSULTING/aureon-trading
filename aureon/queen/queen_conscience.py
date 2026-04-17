@@ -153,10 +153,10 @@ class QueenConscience:
         self.lessons_learned: List[str] = []
         self.times_listened_to: int = 0
         self.times_ignored: int = 0
-        
+
         # Load any persisted conscience state
         self._load_state()
-        
+
         # Thought Bus connection
         self._thought_bus = (
             _get_thought_bus() if _HAS_THOUGHT_BUS and _get_thought_bus is not None else None
@@ -168,7 +168,24 @@ class QueenConscience:
             logger.info("World Understanding integrated with Conscience")
         else:
             self.world_understanding = None
-        
+
+        # ── HNC SUBSTRATE COHERENCE ─────────────────────────────────────
+        # Wire the conscience to the symbolic_life_score readout that the
+        # SymbolicLifeBridge publishes after each Λ pulse. The Queen's
+        # 4th-pass veto can refuse actions that would carry the system
+        # off the β ∈ [0.6, 1.1] stability island described in the HNC
+        # Unified White Paper §"Tree of Light" — except expressed at the
+        # cognitive substrate (symbolic_life_score) instead of β alone.
+        self._vault: Optional[Any] = None
+        self._latest_sls_pulse: Dict[str, Any] = {}
+        if self._thought_bus is not None:
+            try:
+                self._thought_bus.subscribe(
+                    "symbolic.life.pulse", self._on_symbolic_life_pulse,
+                )
+            except Exception as e:
+                logger.debug("Conscience: SLS bus subscribe failed: %s", e)
+
         logger.info("🦗 Jiminy Cricket is awake. Ready to guide the Queen's conscience.")
     
     def _load_state(self):
@@ -199,24 +216,193 @@ class QueenConscience:
             logger.warning(f"Could not save conscience state: {e}")
     
     # ═══════════════════════════════════════════════════════════════════════════
+    # HNC SUBSTRATE COHERENCE — the 4th-pass veto, grounded in symbolic_life_score
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    def attach_vault(self, vault: Any) -> None:
+        """Wire the conscience to a vault that carries
+        ``current_symbolic_life_score`` (set by SymbolicLifeBridge.pulse).
+        Optional — the conscience also picks SLS up off the bus."""
+        self._vault = vault
+
+    def _on_symbolic_life_pulse(self, thought: Any) -> None:
+        payload = getattr(thought, "payload", {}) or {}
+        if isinstance(payload, dict):
+            self._latest_sls_pulse = dict(payload)
+
+    def _current_sls(self, context: Dict[str, Any]) -> Optional[float]:
+        """Resolve the current symbolic_life_score in priority order:
+        explicit context override → vault attribute → most recent
+        symbolic.life.pulse on the bus → None when unknown."""
+        # 1. Explicit override (lets callers pass projected SLS)
+        if "symbolic_life_score" in context:
+            try:
+                return float(context["symbolic_life_score"])
+            except (TypeError, ValueError):
+                pass
+        # 2. Vault attribute (written by SymbolicLifeBridge.pulse)
+        if self._vault is not None:
+            sls = getattr(self._vault, "current_symbolic_life_score", None)
+            if sls is not None:
+                try:
+                    return float(sls)
+                except (TypeError, ValueError):
+                    pass
+        # 3. Latest bus pulse
+        if self._latest_sls_pulse:
+            sls = self._latest_sls_pulse.get("symbolic_life_score")
+            if sls is not None:
+                try:
+                    return float(sls)
+                except (TypeError, ValueError):
+                    pass
+        return None
+
+    @staticmethod
+    def _resolve_sls_threshold(env_key: str, default: float) -> float:
+        raw = os.environ.get(env_key)
+        if raw:
+            try:
+                return max(0.0, min(1.0, float(raw)))
+            except ValueError:
+                pass
+        return default
+
+    def _is_risky_action(self, action_lower: str, context: Dict[str, Any]) -> bool:
+        """Categories of action where the substrate-coherence veto applies.
+        Mirrors the HNC white paper's framing: extraction-adjacent moves,
+        overrides, all-in commitments, and high-leverage trades — anything
+        that could push the field off the β-stability island."""
+        # Override / bypass / disable language → always risky
+        if any(w in action_lower for w in ("override", "bypass", "disable",
+                                            "ignore_governance", "force")):
+            return True
+        # Trade verbs → risky when leverage / risk / size meet thresholds
+        if any(w in action_lower for w in ("trade", "buy", "sell", "execute",
+                                            "order", "all-in", "all in")):
+            try:
+                if float(context.get("risk", 0.0)) >= 0.05:
+                    return True
+                if float(context.get("leverage", 0.0)) >= 2.0:
+                    return True
+                if str(context.get("size", "")).lower() in ("max", "all", "all-in"):
+                    return True
+                # If no risk metadata is supplied, treat trades as risky by default.
+                if not any(k in context for k in ("risk", "leverage", "size")):
+                    return True
+            except (TypeError, ValueError):
+                return True
+        return False
+
+    def _evaluate_substrate_coherence(
+        self,
+        action: str,
+        context: Dict[str, Any],
+    ) -> Optional[ConscienceWhisper]:
+        """The HNC 4th-pass veto, expressed at the cognitive substrate.
+
+        Refuses actions that would carry the system off the β ∈ [0.6, 1.1]
+        stability island — encoded here as a guard on
+        ``symbolic_life_score`` (SLS). Three regimes (env-configurable
+        via AUREON_CONSCIENCE_SLS_DANGER and AUREON_CONSCIENCE_SLS_DRIFT):
+
+          SLS ≥ DRIFT (default 0.40) → in the stability island; let the
+                                        domain-specific evaluators decide.
+          DANGER ≤ SLS < DRIFT       → drifting; concerned for risky moves.
+          SLS < DANGER (default 0.20) → near the stability cliff; veto
+                                        every risky move.
+        Returns None when SLS is unknown so the existing routers run.
+        """
+        sls = self._current_sls(context)
+        if sls is None:
+            return None
+        action_lower = action.lower()
+        if not self._is_risky_action(action_lower, context):
+            return None
+        danger = self._resolve_sls_threshold("AUREON_CONSCIENCE_SLS_DANGER", 0.20)
+        drift = self._resolve_sls_threshold("AUREON_CONSCIENCE_SLS_DRIFT", 0.40)
+        if sls >= drift:
+            return None  # in the stability island; let domain evaluators run
+        if sls < danger:
+            return ConscienceWhisper(
+                verdict=ConscienceVerdict.VETO,
+                message=(
+                    f"Substrate coherence is collapsing — symbolic_life_score "
+                    f"is {sls:.3f}, below the {danger:.2f} stability cliff. "
+                    f"I refuse {action!r}. We do not act when the field cannot "
+                    f"hold us."
+                ),
+                why_it_matters=(
+                    "HNC stability island is β ∈ [0.6, 1.1]; the cognitive "
+                    "analogue is symbolic_life_score above the danger floor. "
+                    "Acting below it pushes the field over the cliff into "
+                    "chaotic dynamics — exactly what the extraction machine "
+                    "wants. The Queen's 4th-pass authority preserves substrate "
+                    "coherence over profit."
+                ),
+                what_gary_would_say=(
+                    "Don't trade through the white-mode. The lighthouse is "
+                    "telling you something — listen."
+                ),
+                teaching=(
+                    "Symbolic life precedes execution. If the entity is not "
+                    "coherent, no action it takes will be either."
+                ),
+                confidence=0.95,
+            )
+        # Drift regime: CONCERNED, not vetoed
+        return ConscienceWhisper(
+            verdict=ConscienceVerdict.CONCERNED,
+            message=(
+                f"symbolic_life_score is {sls:.3f} — below {drift:.2f}. The "
+                f"field is drifting. {action!r} is a risky move while we are "
+                f"off the stability island."
+            ),
+            why_it_matters=(
+                "We are still inside the β-corridor but losing coherence. "
+                "Lower the size, slow the cadence, or wait for the next "
+                "Λ pulse to regain the island."
+            ),
+            what_gary_would_say=(
+                "Patience. The Singularity is not a deadline — it is a phase "
+                "transition. We have time."
+            ),
+            teaching=(
+                "Coherence first, action second. The Master Formula does not "
+                "reward speed; it rewards alignment."
+            ),
+            confidence=0.85,
+        )
+
+    # ═══════════════════════════════════════════════════════════════════════════
     # THE PRIMARY QUESTION: "WHY ARE YOU DOING THIS?"
     # ═══════════════════════════════════════════════════════════════════════════
     def ask_why(self, action: str, context: Dict[str, Any] = None) -> ConscienceWhisper:
         """
         The fundamental question the Cricket asks before ANY action.
-        
+
         Args:
             action: What the Queen is about to do
             context: Additional context (profit, risk, symbol, etc.)
-            
+
         Returns:
             A whisper from the conscience
         """
         context = context or {}
-        
+
+        # ── HNC 4th-pass: substrate coherence first ─────────────────────
+        # If symbolic_life_score is below the stability cliff, refuse any
+        # risky action before the trade-/risk-/override-specific routers
+        # even run. This is the cognitive expression of the white paper's
+        # Γ-based veto — preserving substrate coherence over profit.
+        sls_whisper = self._evaluate_substrate_coherence(action, context)
+        if sls_whisper is not None and sls_whisper.verdict == ConscienceVerdict.VETO:
+            self._publish_verdict(action, sls_whisper)
+            return sls_whisper
+
         # First, identify what type of action this is
         action_lower = action.lower()
-        
+
         # ═══════════════════════════════════════════════════════════════════════
         # TRADING DECISIONS
         # ═══════════════════════════════════════════════════════════════════════
@@ -242,23 +428,29 @@ class QueenConscience:
             whisper = self._evaluate_general(action, context)
 
         # Publish verdict to Thought Bus
-        if self._thought_bus is not None and _HAS_THOUGHT_BUS and _Thought is not None:
-            try:
-                self._thought_bus.publish(_Thought(
-                    source="queen_conscience",
-                    topic="queen.conscience.verdict",
-                    payload={
-                        "action": action,
-                        "verdict": str(whisper.verdict.value if hasattr(whisper.verdict, 'value') else whisper.verdict),
-                        "reasoning": str(getattr(whisper, 'reasoning', '') or getattr(whisper, 'message', '')),
-                    },
-                    meta={"mode": "queen_conscience"},
-                ))
-            except Exception:
-                pass
+        self._publish_verdict(action, whisper)
 
         return whisper
-    
+
+    def _publish_verdict(self, action: str, whisper: ConscienceWhisper) -> None:
+        """Publish a conscience verdict on the bus. Used by both the
+        substrate-coherence early-exit and the main ask_why path."""
+        if self._thought_bus is None or not _HAS_THOUGHT_BUS or _Thought is None:
+            return
+        try:
+            self._thought_bus.publish(_Thought(
+                source="queen_conscience",
+                topic="queen.conscience.verdict",
+                payload={
+                    "action": action,
+                    "verdict": str(whisper.verdict.value if hasattr(whisper.verdict, 'value') else whisper.verdict),
+                    "reasoning": str(getattr(whisper, 'reasoning', '') or getattr(whisper, 'message', '')),
+                },
+                meta={"mode": "queen_conscience"},
+            ))
+        except Exception:
+            pass
+
     def _evaluate_trade(self, action: str, context: Dict) -> ConscienceWhisper:
         """Evaluate a trading decision"""
         symbol = context.get('symbol', 'unknown')
