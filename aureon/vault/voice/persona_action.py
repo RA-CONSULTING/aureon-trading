@@ -1,0 +1,291 @@
+"""
+PersonaAction & PersonaActuator — turn persona collapses into real actions
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Speaking is not enough. When the PersonaVacuum collapses to a winner, the
+winner may also carry an *intention* — a structured PersonaAction that the
+Actuator executes. Four built-in action kinds are wired by default:
+
+    bus.publish    — emit a Thought on the ThoughtBus, with a chosen topic
+                     and payload, so every subsystem that subscribes can
+                     react (Queen cognition, rally coordinator, miner).
+    vault.ingest   — write a VaultContent card into the vault directly
+                     (useful for persisting a persona's observation as
+                     durable memory even if no downstream reacts).
+    file.append    — append a JSONL line to a named file (so the action
+                     is visible on disk across restarts).
+    skill.request  — emit ``skill.author.request`` for the Code Architect
+                     to pick up, carrying a short natural-language brief.
+
+Every handler respects ``dry_run``: when enabled the Actuator records the
+action it would have taken without calling the real side-effecting path,
+which is how tests verify wiring without touching the bus / vault / disk.
+
+Safety: these are all in-process or bus-internal. No exchange calls, no
+trade execution, no network I/O. Exchange-side governance lives in the
+Queen's 4th-pass veto path and stays untouched.
+
+Gary Leckey · Aureon Institute — April 2026
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import threading
+import time
+from collections import deque
+from dataclasses import dataclass, field
+from typing import Any, Callable, Deque, Dict, List, Optional
+
+logger = logging.getLogger("aureon.vault.voice.persona_action")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PersonaAction
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class PersonaAction:
+    """A structured intention a persona wants executed after it speaks."""
+
+    kind: str                                         # handler key, e.g. "bus.publish"
+    topic: str = ""                                   # target topic / skill name / file path
+    payload: Dict[str, Any] = field(default_factory=dict)
+    target: str = ""                                  # optional sub-address for the handler
+    reason: str = ""                                  # human-readable rationale
+    urgency: float = 0.5                              # [0,1] — hints to handlers / governance
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "kind": self.kind,
+            "topic": self.topic,
+            "payload": dict(self.payload),
+            "target": self.target,
+            "reason": self.reason,
+            "urgency": float(self.urgency),
+        }
+
+
+@dataclass
+class ActionExecution:
+    """Record of one actuator dispatch — what persona, what action, what result."""
+
+    ts: float
+    persona: str
+    action: PersonaAction
+    ok: bool
+    dry_run: bool
+    result: Any = None
+    error: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "ts": self.ts,
+            "persona": self.persona,
+            "action": self.action.to_dict(),
+            "ok": self.ok,
+            "dry_run": self.dry_run,
+            "result": self.result,
+            "error": self.error,
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PersonaActuator
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+HandlerFn = Callable[[PersonaAction, Dict[str, Any]], Any]
+
+
+class PersonaActuator:
+    """Registry of action handlers. Dispatches PersonaActions from the vacuum."""
+
+    def __init__(
+        self,
+        *,
+        vault: Any = None,
+        thought_bus: Any = None,
+        dry_run: bool = False,
+        history_size: int = 256,
+        file_root: Optional[str] = None,
+    ):
+        self.vault = vault
+        self.thought_bus = thought_bus
+        self.dry_run = bool(dry_run)
+        self.file_root = file_root
+        self._history: Deque[ActionExecution] = deque(maxlen=int(history_size))
+        self._handlers: Dict[str, HandlerFn] = {}
+        self._lock = threading.Lock()
+        self._register_defaults()
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Handler registry
+    # ─────────────────────────────────────────────────────────────────────
+
+    def register(self, kind: str, handler: HandlerFn) -> None:
+        with self._lock:
+            self._handlers[kind] = handler
+
+    def unregister(self, kind: str) -> None:
+        with self._lock:
+            self._handlers.pop(kind, None)
+
+    def handler(self, kind: str) -> Optional[HandlerFn]:
+        with self._lock:
+            return self._handlers.get(kind)
+
+    def _register_defaults(self) -> None:
+        self.register("bus.publish", self._handle_bus_publish)
+        self.register("vault.ingest", self._handle_vault_ingest)
+        self.register("file.append", self._handle_file_append)
+        self.register("skill.request", self._handle_skill_request)
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Dispatch
+    # ─────────────────────────────────────────────────────────────────────
+
+    def dispatch(
+        self,
+        persona: str,
+        action: Optional[PersonaAction],
+        state: Optional[Dict[str, Any]] = None,
+    ) -> Optional[ActionExecution]:
+        """Execute an action. Records the outcome in history regardless of success."""
+        if action is None:
+            return None
+        state_dict = dict(state or {})
+        exec_record = ActionExecution(
+            ts=time.time(),
+            persona=str(persona),
+            action=action,
+            ok=False,
+            dry_run=self.dry_run,
+        )
+        handler = self.handler(action.kind)
+        if handler is None:
+            exec_record.error = f"no handler registered for kind={action.kind!r}"
+            self._record(exec_record)
+            return exec_record
+
+        if self.dry_run:
+            exec_record.ok = True
+            exec_record.result = {"note": "dry_run — handler not invoked"}
+            self._record(exec_record)
+            return exec_record
+
+        try:
+            exec_record.result = handler(action, state_dict)
+            exec_record.ok = True
+        except Exception as e:
+            exec_record.error = f"{type(e).__name__}: {e}"
+            logger.debug("PersonaActuator: handler %s raised: %s", action.kind, e)
+        self._record(exec_record)
+        return exec_record
+
+    def _record(self, exec_record: ActionExecution) -> None:
+        with self._lock:
+            self._history.append(exec_record)
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Default handlers
+    # ─────────────────────────────────────────────────────────────────────
+
+    def _handle_bus_publish(self, action: PersonaAction, state: Dict[str, Any]) -> Dict[str, Any]:
+        if self.thought_bus is None:
+            return {"ok": False, "reason": "no thought_bus"}
+        if not action.topic:
+            return {"ok": False, "reason": "action.topic empty"}
+        # Avoid a hard import at module load so this module stays cheap to import.
+        try:
+            from aureon.core.aureon_thought_bus import Thought  # type: ignore
+        except Exception:
+            Thought = None  # type: ignore
+        payload = dict(action.payload)
+        payload.setdefault("reason", action.reason)
+        payload.setdefault("urgency", action.urgency)
+        if Thought is not None:
+            self.thought_bus.publish(Thought(
+                source="persona_actuator",
+                topic=action.topic,
+                payload=payload,
+            ))
+        else:
+            self.thought_bus.publish(topic=action.topic, payload=payload, source="persona_actuator")
+        return {"ok": True, "topic": action.topic}
+
+    def _handle_vault_ingest(self, action: PersonaAction, state: Dict[str, Any]) -> Dict[str, Any]:
+        if self.vault is None or not hasattr(self.vault, "ingest"):
+            return {"ok": False, "reason": "vault has no ingest"}
+        topic = action.topic or "persona.action.vault"
+        self.vault.ingest(topic=topic, payload=dict(action.payload) or {"reason": action.reason})
+        return {"ok": True, "topic": topic}
+
+    def _handle_file_append(self, action: PersonaAction, state: Dict[str, Any]) -> Dict[str, Any]:
+        raw_path = action.target or action.topic
+        if not raw_path:
+            return {"ok": False, "reason": "action.target/topic missing"}
+        path = raw_path
+        if self.file_root and not os.path.isabs(raw_path):
+            path = os.path.join(self.file_root, raw_path)
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        line = json.dumps({
+            "ts": time.time(),
+            "reason": action.reason,
+            "urgency": action.urgency,
+            **action.payload,
+        }, default=str)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+        return {"ok": True, "path": path, "bytes": len(line) + 1}
+
+    def _handle_skill_request(self, action: PersonaAction, state: Dict[str, Any]) -> Dict[str, Any]:
+        if self.thought_bus is None:
+            return {"ok": False, "reason": "no thought_bus"}
+        try:
+            from aureon.core.aureon_thought_bus import Thought  # type: ignore
+        except Exception:
+            Thought = None  # type: ignore
+        payload = {
+            "brief": action.topic or action.reason,
+            "parameters": action.payload,
+            "requested_by_persona": state.get("persona", ""),
+            "urgency": action.urgency,
+        }
+        thought_topic = "skill.author.request"
+        if Thought is not None:
+            self.thought_bus.publish(Thought(
+                source="persona_actuator",
+                topic=thought_topic,
+                payload=payload,
+            ))
+        else:
+            self.thought_bus.publish(topic=thought_topic, payload=payload, source="persona_actuator")
+        return {"ok": True, "topic": thought_topic}
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Introspection
+    # ─────────────────────────────────────────────────────────────────────
+
+    def history(self, n: int = 32) -> List[Dict[str, Any]]:
+        with self._lock:
+            tail = list(self._history)[-int(max(1, n)):]
+        return [e.to_dict() for e in tail]
+
+    def last(self) -> Optional[Dict[str, Any]]:
+        with self._lock:
+            if not self._history:
+                return None
+            return self._history[-1].to_dict()
+
+
+__all__ = [
+    "PersonaAction",
+    "ActionExecution",
+    "PersonaActuator",
+]

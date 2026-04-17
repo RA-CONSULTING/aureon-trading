@@ -35,6 +35,14 @@ Phi-bridge (phone ↔ desktop intranet sync):
   POST /api/bridge/sync        — peer pushes state, gets desktop view back
   POST /api/bridge/drop        — explicit peer disconnect
 
+Phi-bridge mesh (P2P card-level gossip between desktops on the LAN):
+  POST /api/bridge/cards           — peers exchange VaultContent cards here
+  GET  /api/bridge/mesh/info       — mesh stats (cycles, cards in/out, peers)
+  GET  /api/bridge/discovery/peers — peers discovered via UDP LAN broadcast
+
+The discovery + gossip loop auto-starts when AUREON_MESH_AUTOSTART=1 is set
+or ``create_app(mesh_autostart=True)`` is passed.
+
 Usage:
     from aureon.vault.ui import create_app, run_server
     run_server(host="127.0.0.1", port=5566)
@@ -68,6 +76,11 @@ except Exception:  # pragma: no cover
 
 from aureon.harmonic.auris_voice_filter import get_auris_voice_filter
 from aureon.harmonic.phi_bridge import get_phi_bridge
+from aureon.harmonic.phi_bridge_discovery import (
+    DEFAULT_PORT as _DISCOVERY_PORT,
+    PhiBridgeDiscovery,
+)
+from aureon.harmonic.phi_bridge_mesh import get_phi_bridge_mesh
 from aureon.harmonic.phi_swarm_router import get_phi_swarm_router
 from aureon.queen.conversation_memory import get_conversation_memory
 from aureon.queen.meaning_resolver import get_meaning_resolver
@@ -100,11 +113,27 @@ def create_app(
     loop: Optional[AureonSelfFeedbackLoop] = None,
     base_interval_s: float = 1.0,
     enable_voice: bool = True,
+    *,
+    mesh_autostart: Optional[bool] = None,
+    mesh_discovery: Optional[PhiBridgeDiscovery] = None,
+    mesh_port: Optional[int] = None,
+    mesh_label: str = "aureon",
+    mesh_kind: str = "desktop",
 ) -> "Flask":
     """
     Create a Flask app bound to a SelfFeedbackLoop.
 
     If no loop is provided, a fresh one is constructed.
+
+    Mesh auto-wiring (off by default):
+      - ``mesh_autostart=True`` (or env AUREON_MESH_AUTOSTART=1) starts
+        PhiBridgeDiscovery (UDP LAN broadcast) and the card-level gossip
+        loop at app boot, so two nodes on the same WiFi find each other
+        and converge without any operator wiring.
+      - ``mesh_discovery`` lets tests inject a pre-built discovery with
+        a stub transport instead of binding real sockets.
+      - ``mesh_port`` is the HTTP port this app will be reachable on —
+        announced in UDP packets so peers know where to POST.
     """
     _check_flask()
 
@@ -1089,6 +1118,37 @@ def create_app(
         return jsonify({"ok": True, "dropped": dropped})
 
     # ─────────────────────────────────────────────────────────────────────
+    # Phi-bridge mesh — P2P card-level gossip
+    # ─────────────────────────────────────────────────────────────────────
+    #
+    # Peers discovered over the LAN (PhiBridgeDiscovery) POST here to
+    # exchange VaultContent cards. PhiBridgeMesh.handle_inbound consumes
+    # their batch (deduped by harmonic_hash), and returns the cards we
+    # have that they haven't listed in `our_hashes`. Eventually consistent
+    # union — any two nodes converge by replaying each other's history.
+
+    mesh = get_phi_bridge_mesh(vault=loop.vault)
+    app.config["AUREON_PHI_BRIDGE_MESH"] = mesh
+
+    @app.route("/api/bridge/cards", methods=["POST"])
+    def api_bridge_cards():
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return jsonify({"ok": False, "error": "body must be a JSON object"}), 400
+        try:
+            reply = mesh.handle_inbound(data)
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify(reply)
+
+    @app.route("/api/bridge/mesh/info")
+    def api_bridge_mesh_info():
+        try:
+            return jsonify({"ok": True, **mesh.info()})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # ─────────────────────────────────────────────────────────────────────
     # Queen action bridge — tools, skills, arming, action log
     # ─────────────────────────────────────────────────────────────────────
 
@@ -1208,6 +1268,75 @@ def create_app(
             "voice_enabled": loop.voice_engine is not None,
             "timestamp": time.time(),
         })
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Mesh auto-start — UDP discovery + φ²-cadenced card gossip
+    # ─────────────────────────────────────────────────────────────────────
+
+    if mesh_autostart is None:
+        env = (os.environ.get("AUREON_MESH_AUTOSTART") or "").strip().lower()
+        mesh_autostart = env in ("1", "true", "yes", "on")
+
+    http_port = int(mesh_port or os.environ.get("AUREON_UI_PORT") or 8000)
+    discovery = mesh_discovery
+    if mesh_autostart and discovery is None:
+        discovery = PhiBridgeDiscovery(
+            host="",  # auto-detect the LAN IP
+            port=http_port,
+            label=str(mesh_label),
+            kind=str(mesh_kind),
+            fingerprint_fn=lambda: str(loop.vault.fingerprint()) if hasattr(loop.vault, "fingerprint") else "",
+        )
+
+    if discovery is not None:
+        mesh.discovery = discovery
+        app.config["AUREON_PHI_BRIDGE_DISCOVERY"] = discovery
+
+        if mesh_autostart:
+            try:
+                discovery.start()
+            except Exception as e:
+                logger.warning("phi-bridge discovery failed to start: %s", e)
+            try:
+                mesh.start()
+            except Exception as e:
+                logger.warning("phi-bridge mesh failed to start: %s", e)
+
+            # Stop the background threads cleanly on interpreter shutdown.
+            import atexit as _atexit
+            def _shutdown_mesh():
+                try:
+                    discovery.stop()
+                except Exception:
+                    pass
+                try:
+                    mesh.stop()
+                except Exception:
+                    pass
+            _atexit.register(_shutdown_mesh)
+
+    @app.route("/api/bridge/discovery/peers")
+    def api_bridge_discovery_peers():
+        disc = app.config.get("AUREON_PHI_BRIDGE_DISCOVERY")
+        if disc is None:
+            return jsonify({
+                "ok": True, "running": False,
+                "peers": [],
+                "note": "discovery is not wired; start with mesh_autostart=True or AUREON_MESH_AUTOSTART=1",
+            })
+        try:
+            return jsonify({
+                "ok": True,
+                "running": True,
+                "self_peer_id": disc.peer_id,
+                "host": disc.host,
+                "port": disc.port,
+                "announce_count": disc.announce_count,
+                "recv_count": disc.recv_count,
+                "peers": disc.known_peers_dict(),
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
 
     return app
 
