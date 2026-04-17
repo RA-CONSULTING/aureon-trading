@@ -87,6 +87,11 @@ from aureon.vault.voice.temporal_causality import (
     get_temporal_causality_law,
     reset_temporal_causality_law,
 )
+from aureon.vault.voice.goal_dispatch_bridge import (
+    GoalDispatchBridge,
+    get_goal_dispatch_bridge,
+    reset_goal_dispatch_bridge,
+)
 
 __all__ = [
     # Utterance
@@ -148,4 +153,7 @@ __all__ = [
     "TemporalCausalityLaw",
     "get_temporal_causality_law",
     "reset_temporal_causality_law",
+    "GoalDispatchBridge",
+    "get_goal_dispatch_bridge",
+    "reset_goal_dispatch_bridge",
 ]
