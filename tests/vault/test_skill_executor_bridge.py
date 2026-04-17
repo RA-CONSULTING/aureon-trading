@@ -11,8 +11,6 @@ What's being proved:
     goal.completed with artefacts list
   - any skill failure → skill.execution.failed + goal.abandoned, chain
     aborts (subsequent skills don't run)
-  - dry_run doesn't write files but still publishes completed
-  - enabled=False doesn't subscribe
   - conscience VETO blocks execution before any skill runs
   - GoalClaims coordinates with GoalDispatchBridge:
       • skill_executor.claim succeeds first → GDB skips
@@ -82,7 +80,7 @@ def _aligned_request(bus, goal_id, persona, text, skills):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Subscription + enable flag
+# Subscription
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -325,7 +323,7 @@ def test_goal_dispatch_bridge_skips_claimed_goal():
         thought_bus=bus,
         conscience=_ApproveConscience2(),
         goal_engine=_StubEngine(),
-        enabled=True, dry_run=False,
+        
     )
     gdb._run_in_thread = False
     gdb.start()
@@ -374,7 +372,7 @@ def test_gdb_runs_normally_for_unclaimed_goal():
         thought_bus=bus,
         conscience=_ApproveConscience2(),
         goal_engine=_StubEngine(),
-        enabled=True, dry_run=False,
+        
     )
     gdb._run_in_thread = False
     gdb.start()

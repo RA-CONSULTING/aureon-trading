@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import logging
 import math
-import os
 import random
 import threading
 import uuid
@@ -88,7 +87,6 @@ class PersonaVacuum:
         temperature: Optional[float] = None,
         vault: Any = None,
         actuator: Optional[PersonaActuator] = None,
-        actuator_dry_run: bool = False,
         chorus: Optional[AffinityChorus] = None,
         peer_id: Optional[str] = None,
         seed_fn: Optional[Callable[[], int]] = None,
@@ -116,7 +114,6 @@ class PersonaVacuum:
         self._actuator: PersonaActuator = actuator if actuator is not None else PersonaActuator(
             vault=vault,
             thought_bus=self._thought_bus,
-            dry_run=bool(actuator_dry_run),
         )
         self._last_action_execution: Optional[ActionExecution] = None
         self._last_goal_execution: Optional[ActionExecution] = None
@@ -141,12 +138,6 @@ class PersonaVacuum:
             try:
                 return max(1e-6, float(explicit))
             except (TypeError, ValueError):
-                pass
-        raw = os.environ.get("AUREON_PERSONA_TEMPERATURE")
-        if raw:
-            try:
-                return max(1e-6, float(raw))
-            except ValueError:
                 pass
         return _DEFAULT_TEMPERATURE
 

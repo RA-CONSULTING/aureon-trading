@@ -226,16 +226,6 @@ def test_actuator_goal_submit_without_bus_records_failure():
     assert "no thought_bus" in rec.result.get("reason", "")
 
 
-def test_actuator_goal_submit_dry_run_does_not_publish():
-    bus = _StubBus()
-    actuator = PersonaActuator(thought_bus=bus, dry_run=True)
-    action = PersonaAction(kind="goal.submit", topic="do something", urgency=0.5)
-    rec = actuator.dispatch("x", action)
-    assert rec is not None
-    assert rec.ok is True and rec.dry_run is True
-    assert [t.topic for t in bus.published] == []
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # PersonaVacuum wiring
 # ─────────────────────────────────────────────────────────────────────────────

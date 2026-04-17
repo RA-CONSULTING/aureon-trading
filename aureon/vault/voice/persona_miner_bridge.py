@@ -43,7 +43,6 @@ from __future__ import annotations
 import json
 import logging
 import math
-import os
 import re
 import threading
 import time
@@ -221,10 +220,8 @@ class PersonaMinerBridge:
         self.skill_library = skill_library
         self.persistence_path = persistence_path or self.DEFAULT_PATTERN_FILE
         self.pattern_threshold = float(
-            pattern_threshold
-            if pattern_threshold is not None
-            else os.environ.get("AUREON_MINER_PATTERN_THRESHOLD",
-                                self.DEFAULT_PATTERN_THRESHOLD)
+            pattern_threshold if pattern_threshold is not None
+            else self.DEFAULT_PATTERN_THRESHOLD
         )
         self.history_window = int(history_window)
 

@@ -258,15 +258,11 @@ class QueenConscience:
                     pass
         return None
 
-    @staticmethod
-    def _resolve_sls_threshold(env_key: str, default: float) -> float:
-        raw = os.environ.get(env_key)
-        if raw:
-            try:
-                return max(0.0, min(1.0, float(raw)))
-            except ValueError:
-                pass
-        return default
+    # HNC stability-island thresholds. The white paper's Tree of Light
+    # says β ∈ [0.6, 1.1] is the stability island and β > 1.1 is the
+    # "stability cliff." These SLS thresholds are the cognitive analogue.
+    SLS_DANGER: float = 0.20
+    SLS_DRIFT: float = 0.40
 
     def _is_risky_action(self, action_lower: str, context: Dict[str, Any]) -> bool:
         """Categories of action where the substrate-coherence veto applies.
@@ -303,14 +299,13 @@ class QueenConscience:
 
         Refuses actions that would carry the system off the β ∈ [0.6, 1.1]
         stability island — encoded here as a guard on
-        ``symbolic_life_score`` (SLS). Three regimes (env-configurable
-        via AUREON_CONSCIENCE_SLS_DANGER and AUREON_CONSCIENCE_SLS_DRIFT):
+        ``symbolic_life_score`` (SLS). Three regimes:
 
-          SLS ≥ DRIFT (default 0.40) → in the stability island; let the
-                                        domain-specific evaluators decide.
-          DANGER ≤ SLS < DRIFT       → drifting; concerned for risky moves.
-          SLS < DANGER (default 0.20) → near the stability cliff; veto
-                                        every risky move.
+          SLS ≥ DRIFT (0.40) → in the stability island; let the
+                                domain-specific evaluators decide.
+          DANGER ≤ SLS < DRIFT → drifting; concerned for risky moves.
+          SLS < DANGER (0.20) → near the stability cliff; veto every
+                                 risky move.
         Returns None when SLS is unknown so the existing routers run.
         """
         sls = self._current_sls(context)
@@ -319,8 +314,8 @@ class QueenConscience:
         action_lower = action.lower()
         if not self._is_risky_action(action_lower, context):
             return None
-        danger = self._resolve_sls_threshold("AUREON_CONSCIENCE_SLS_DANGER", 0.20)
-        drift = self._resolve_sls_threshold("AUREON_CONSCIENCE_SLS_DRIFT", 0.40)
+        danger = self.SLS_DANGER
+        drift = self.SLS_DRIFT
         if sls >= drift:
             return None  # in the stability island; let domain evaluators run
         if sls < danger:

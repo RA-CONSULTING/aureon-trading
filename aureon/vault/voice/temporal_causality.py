@@ -60,7 +60,6 @@ Gary Leckey · Aureon Institute — April 2026
 from __future__ import annotations
 
 import logging
-import os
 import threading
 import time
 import uuid
@@ -146,9 +145,8 @@ class TemporalCausalityLaw:
     SymbolicLifeBridge folds into the five Auris Conjecture pillars.
     """
 
-    # Default τ budgets — env-overridable via AUREON_GOAL_ACK_BUDGET_TAU
-    # and AUREON_GOAL_COMPLETE_BUDGET_TAU. φ-aligned defaults match the
-    # Fibonacci cadence used elsewhere (3, 144).
+    # Default τ budgets. φ-aligned / Fibonacci defaults (3, 144). Override
+    # per-instance via the constructor kwargs if your cadence differs.
     DEFAULT_ACK_BUDGET_TAU: int = 3
     DEFAULT_COMPLETE_BUDGET_TAU: int = 144
 
@@ -170,35 +168,19 @@ class TemporalCausalityLaw:
     ):
         self.thought_bus = thought_bus
         self.vault = vault
-        self.ack_budget_tau = self._resolve_int_env(
-            "AUREON_GOAL_ACK_BUDGET_TAU", ack_budget_tau, self.DEFAULT_ACK_BUDGET_TAU,
-        )
-        self.complete_budget_tau = self._resolve_int_env(
-            "AUREON_GOAL_COMPLETE_BUDGET_TAU", complete_budget_tau,
-            self.DEFAULT_COMPLETE_BUDGET_TAU,
-        )
+        self.ack_budget_tau = max(1, int(
+            ack_budget_tau if ack_budget_tau is not None
+            else self.DEFAULT_ACK_BUDGET_TAU
+        ))
+        self.complete_budget_tau = max(1, int(
+            complete_budget_tau if complete_budget_tau is not None
+            else self.DEFAULT_COMPLETE_BUDGET_TAU
+        ))
 
         self._lock = threading.RLock()
         self._goals: Dict[str, GoalEcho] = {}
         self._pulse_count: int = 0
         self._subscribed: bool = False
-
-    # ─── resolve helpers ─────────────────────────────────────────────────
-
-    @staticmethod
-    def _resolve_int_env(env_key: str, override: Optional[int], default: int) -> int:
-        if override is not None:
-            try:
-                return max(1, int(override))
-            except (TypeError, ValueError):
-                pass
-        raw = os.environ.get(env_key)
-        if raw:
-            try:
-                return max(1, int(raw))
-            except ValueError:
-                pass
-        return default
 
     # ─── lifecycle ───────────────────────────────────────────────────────
 

@@ -11,8 +11,7 @@ From the HNC Unified White Paper §Master Formula:
 
 The observer term integrates the field over a finite temporal horizon.
 This module operationalises it at the persona layer. For every
-persona.collapse, a **window** of length ``AUREON_META_WINDOW_S``
-(default φ = 1.618s, env-overridable) is opened, every downstream
+persona.collapse, a **window** of length ``window_s`` (default φ = 1.618s) is opened, every downstream
 event inside that window is accumulated, and when the window closes a
 ``ReflectionCard`` is assembled:
 
@@ -47,7 +46,6 @@ from __future__ import annotations
 
 import logging
 import math
-import os
 import threading
 import time
 import uuid
@@ -162,9 +160,7 @@ class MetaCognitionObserver:
         self.hri = hash_resonance_index
         self.qmc = queen_metacognition
         self.window_s = float(
-            window_s
-            if window_s is not None
-            else os.environ.get("AUREON_META_WINDOW_S", self.DEFAULT_WINDOW_S)
+            window_s if window_s is not None else self.DEFAULT_WINDOW_S
         )
 
         self._lock = threading.RLock()

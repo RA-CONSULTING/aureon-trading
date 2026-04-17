@@ -109,13 +109,11 @@ class PersonaActuator:
         *,
         vault: Any = None,
         thought_bus: Any = None,
-        dry_run: bool = False,
         history_size: int = 256,
         file_root: Optional[str] = None,
     ):
         self.vault = vault
         self.thought_bus = thought_bus
-        self.dry_run = bool(dry_run)
         self.file_root = file_root
         self._history: Deque[ActionExecution] = deque(maxlen=int(history_size))
         self._handlers: Dict[str, HandlerFn] = {}
@@ -164,17 +162,11 @@ class PersonaActuator:
             persona=str(persona),
             action=action,
             ok=False,
-            dry_run=self.dry_run,
+            dry_run=False,
         )
         handler = self.handler(action.kind)
         if handler is None:
             exec_record.error = f"no handler registered for kind={action.kind!r}"
-            self._record(exec_record)
-            return exec_record
-
-        if self.dry_run:
-            exec_record.ok = True
-            exec_record.result = {"note": "dry_run — handler not invoked"}
             self._record(exec_record)
             return exec_record
 

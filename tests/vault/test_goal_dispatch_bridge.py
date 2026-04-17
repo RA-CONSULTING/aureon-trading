@@ -169,11 +169,9 @@ def _bridge(**overrides) -> Any:
     conscience = overrides.pop("conscience", None)
     engine = overrides.pop("engine", None)
     vault = overrides.pop("vault", None)
-    dry_run = overrides.pop("dry_run", False)
-    enabled = overrides.pop("enabled", True)
     b = GoalDispatchBridge(
         thought_bus=bus, conscience=conscience, goal_engine=engine,
-        vault=vault, enabled=enabled, dry_run=dry_run,
+        vault=vault,
     )
     b._run_in_thread = False  # deterministic tests
     b.start()
@@ -190,35 +188,13 @@ def _submit(bus, goal_id="g1", text="draft a research note", persona="engineer",
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Subscription + enable flag
+# Subscription
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def test_enabled_bridge_subscribes():
+def test_bridge_subscribes():
     b, bus, _, _ = _bridge()
     assert "goal.submit.request" in bus._subs
-
-
-def test_disabled_bridge_does_not_subscribe():
-    b, bus, _, _ = _bridge(enabled=False)
-    assert "goal.submit.request" not in bus._subs
-    assert b.stats()["subscribed"] is False
-
-
-def test_env_disabled(monkeypatch):
-    monkeypatch.setenv("AUREON_GOAL_ENGINE_ENABLED", "0")
-    bus = _StubBus()
-    b = GoalDispatchBridge(thought_bus=bus)
-    b._run_in_thread = False
-    b.start()
-    assert "goal.submit.request" not in bus._subs
-
-
-def test_env_dry_run(monkeypatch):
-    monkeypatch.setenv("AUREON_GOAL_ENGINE_DRY_RUN", "1")
-    bus = _StubBus()
-    b = GoalDispatchBridge(thought_bus=bus)
-    assert b.dry_run is True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -283,38 +259,6 @@ def test_veto_updates_stats():
     s = b.stats()
     assert s["vetoed"] == 1
     assert s["abandoned"] == 1
-
-
-def test_veto_path_does_not_call_engine_even_if_dry_run_is_true():
-    conscience = _StubConscience(verdict="VETO")
-    engine = _StubGoalEngine()
-    b, bus, _, _ = _bridge(conscience=conscience, engine=engine, dry_run=True)
-    _submit(bus, text="risky thing")
-    # VETO is terminal; no synthetic ack either.
-    assert engine.submissions == []
-    submitted = [t for t in bus.published if t.topic == "goal.submitted"]
-    assert submitted == []
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Dry-run
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-def test_dry_run_publishes_synthetic_ack_and_completion():
-    conscience = _StubConscience(verdict="APPROVED")
-    engine = _StubGoalEngine()
-    b, bus, _, _ = _bridge(conscience=conscience, engine=engine, dry_run=True)
-    bus.published.clear()
-    _submit(bus, text="design an invitation")
-    # No real engine call in dry-run mode.
-    assert engine.submissions == []
-    submitted = [t for t in bus.published if t.topic == "goal.submitted"]
-    completed = [t for t in bus.published if t.topic == "goal.completed"]
-    assert len(submitted) == 1
-    assert submitted[0].payload.get("dry_run") is True
-    assert len(completed) == 1
-    assert completed[0].payload.get("dry_run") is True
 
 
 def test_no_engine_publishes_submitted_without_completion():

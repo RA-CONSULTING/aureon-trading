@@ -214,30 +214,16 @@ def test_non_risky_action_below_danger_is_not_vetoed(conscience):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Env-var overrides
+# HNC stability thresholds (hardcoded per the Tree of Light)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def test_env_var_lowers_danger_floor(monkeypatch, conscience):
-    c, _ = conscience
-    c.attach_vault(_SLSVault(sls=0.10))
-    # Lower the floor so 0.10 is now ABOVE danger.
-    monkeypatch.setenv("AUREON_CONSCIENCE_SLS_DANGER", "0.05")
-    monkeypatch.setenv("AUREON_CONSCIENCE_SLS_DRIFT", "0.06")
-    w = c.ask_why("execute trade", {"symbol": "BTC", "risk": 0.08})
-    # No longer in the cliff zone (0.10 >= 0.06 drift threshold).
-    # Substrate path returns None and the trade evaluator decides.
-    assert "stability cliff" not in (w.message or "").lower()
-
-
-def test_env_var_raises_danger_floor(monkeypatch, conscience):
-    c, _ = conscience
-    c.attach_vault(_SLSVault(sls=0.55))
-    monkeypatch.setenv("AUREON_CONSCIENCE_SLS_DANGER", "0.60")
-    monkeypatch.setenv("AUREON_CONSCIENCE_SLS_DRIFT", "0.65")
-    w = c.ask_why("execute trade", {"symbol": "BTC", "risk": 0.08})
-    # 0.55 is now below the (raised) danger floor → VETO.
-    assert w.verdict == ConscienceVerdict.VETO
+def test_threshold_constants_match_hnc_tree_of_light():
+    """β ∈ [0.6, 1.1] is the stability island per the HNC white paper.
+    SLS analogues on [0, 1]: DRIFT=0.40, DANGER=0.20."""
+    from aureon.queen.queen_conscience import QueenConscience
+    assert QueenConscience.SLS_DANGER == 0.20
+    assert QueenConscience.SLS_DRIFT == 0.40
 
 
 # ─────────────────────────────────────────────────────────────────────────────

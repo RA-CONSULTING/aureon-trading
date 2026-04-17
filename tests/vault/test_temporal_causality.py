@@ -355,26 +355,21 @@ def test_every_transition_lands_on_vault():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Env-var budgets
+# τ budgets via constructor kwargs
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def test_env_var_overrides_ack_budget(monkeypatch):
-    monkeypatch.setenv("AUREON_GOAL_ACK_BUDGET_TAU", "5")
+def test_defaults_are_fibonacci():
+    """φ-aligned defaults: 3 (ack) and 144 (complete)."""
     law = TemporalCausalityLaw()
-    assert law.ack_budget_tau == 5
+    assert law.ack_budget_tau == 3
+    assert law.complete_budget_tau == 144
 
 
-def test_env_var_overrides_complete_budget(monkeypatch):
-    monkeypatch.setenv("AUREON_GOAL_COMPLETE_BUDGET_TAU", "9")
-    law = TemporalCausalityLaw()
-    assert law.complete_budget_tau == 9
-
-
-def test_explicit_override_beats_env(monkeypatch):
-    monkeypatch.setenv("AUREON_GOAL_ACK_BUDGET_TAU", "99")
-    law = TemporalCausalityLaw(ack_budget_tau=7)
+def test_kwargs_override_defaults():
+    law = TemporalCausalityLaw(ack_budget_tau=7, complete_budget_tau=21)
     assert law.ack_budget_tau == 7
+    assert law.complete_budget_tau == 21
 
 
 # ─────────────────────────────────────────────────────────────────────────────

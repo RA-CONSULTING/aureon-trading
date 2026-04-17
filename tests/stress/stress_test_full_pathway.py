@@ -158,7 +158,7 @@ def run(n_events: int = 1000) -> int:
     idx.start()
 
     # Actuator — personas' actions flow through here.
-    actuator = PersonaActuator(vault=vault, thought_bus=bus, dry_run=False)
+    actuator = PersonaActuator(vault=vault, thought_bus=bus)
 
     # TemporalCausalityLaw — goals' β Λ(t-τ) lighthouse.
     reset_temporal_causality_law()

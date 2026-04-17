@@ -25,19 +25,12 @@ Flow for every ``goal.submit.request``:
   6. If the engine raises, publish ``goal.abandoned`` with the
      exception message so the causal line closes cleanly.
 
-Env controls:
-  AUREON_GOAL_ENGINE_ENABLED  "1"/"0"  — enable this bridge (default 1)
-  AUREON_GOAL_ENGINE_DRY_RUN  "1"/"0"  — emit synthetic submitted/completed
-                                          without actually running the
-                                          engine (default 0)
-
 Gary Leckey · Aureon Institute — April 2026
 """
 
 from __future__ import annotations
 
 import logging
-import os
 import threading
 import time
 import uuid
@@ -57,19 +50,11 @@ class GoalDispatchBridge:
         conscience: Any = None,
         goal_engine: Any = None,
         vault: Any = None,
-        enabled: Optional[bool] = None,
-        dry_run: Optional[bool] = None,
     ):
         self.thought_bus = thought_bus
         self.conscience = conscience
         self.goal_engine = goal_engine
         self.vault = vault
-        self.enabled = self._resolve_bool_env(
-            "AUREON_GOAL_ENGINE_ENABLED", enabled, True,
-        )
-        self.dry_run = self._resolve_bool_env(
-            "AUREON_GOAL_ENGINE_DRY_RUN", dry_run, False,
-        )
 
         self._lock = threading.RLock()
         self._dispatched: Set[str] = set()
@@ -79,22 +64,8 @@ class GoalDispatchBridge:
         self._abandon_count = 0
         self._run_in_thread = True  # toggle off for deterministic tests
 
-    # ─── helpers ─────────────────────────────────────────────────────────
-
-    @staticmethod
-    def _resolve_bool_env(env_key: str, override: Optional[bool], default: bool) -> bool:
-        if override is not None:
-            return bool(override)
-        raw = os.environ.get(env_key)
-        if raw is None:
-            return default
-        return raw.strip().lower() in ("1", "true", "yes", "on")
-
     def start(self) -> None:
         if self._subscribed or self.thought_bus is None:
-            return
-        if not self.enabled:
-            logger.info("GoalDispatchBridge: disabled (AUREON_GOAL_ENGINE_ENABLED=0)")
             return
         try:
             self.thought_bus.subscribe("goal.submit.request", self._on_submit_request)
@@ -202,18 +173,13 @@ class GoalDispatchBridge:
             # continue the dispatch — the TemporalCausalityLaw will still
             # see the downstream state.
 
-        # Actually dispatch.
-        if self.dry_run or self.goal_engine is None:
-            # Publish a synthetic ack so the TemporalCausalityLaw
-            # progresses the echo. When the operator asked for dry_run
-            # we also publish a synthetic completion; when the engine is
-            # simply absent we do NOT close the line — the operator sees
-            # a broken lighthouse (goal stuck at ACKNOWLEDGED → orphans
-            # at the complete_budget_tau).
+        # Actually dispatch. If no engine is wired the operator sees a
+        # broken lighthouse — goal stuck at ACKNOWLEDGED → orphans at
+        # complete_budget_tau. That's the honest signal; nothing runs
+        # where nothing is wired.
+        if self.goal_engine is None:
             self._publish_submitted_synthetic(
-                goal_id, text,
-                dry_run=self.dry_run,
-                has_engine=self.goal_engine is not None,
+                goal_id, text, has_engine=False,
             )
             return
 
@@ -262,29 +228,20 @@ class GoalDispatchBridge:
         goal_id: str,
         text: str,
         *,
-        dry_run: bool,
         has_engine: bool,
     ) -> None:
+        """Emit goal.submitted so the TemporalCausalityLaw sees the
+        intake even though no engine is wired. The line stays open — it
+        will orphan at complete_budget_tau, which is the honest signal
+        that nothing picked it up."""
         payload = {
             "goal_id": goal_id,
             "text": text,
             "source": "goal_dispatch_bridge",
-            "dry_run": bool(dry_run),
             "has_engine": bool(has_engine),
             "ts": time.time(),
         }
         self._publish("goal.submitted", payload)
-        # Dry-run goals close immediately so the temporal law doesn't
-        # orphan them. A missing engine, by contrast, stays open so the
-        # operator sees the broken lighthouse.
-        if dry_run:
-            self._publish("goal.completed", {
-                "goal_id": goal_id,
-                "text": text,
-                "result_summary": "dry_run — synthetic completion",
-                "dry_run": True,
-                "ts": time.time(),
-            })
 
     def _publish(self, topic: str, payload: Dict[str, Any]) -> None:
         if self.thought_bus is None:
@@ -336,8 +293,6 @@ class GoalDispatchBridge:
 
     def stats(self) -> Dict[str, Any]:
         return {
-            "enabled": self.enabled,
-            "dry_run": self.dry_run,
             "dispatched": self._dispatch_count,
             "vetoed": self._veto_count,
             "abandoned": self._abandon_count,
