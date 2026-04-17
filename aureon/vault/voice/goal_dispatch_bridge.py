@@ -109,6 +109,17 @@ class GoalDispatchBridge:
         if not isinstance(payload, dict):
             return
         goal_id = str(payload.get("goal_id") or "") or uuid.uuid4().hex[:10]
+        # If the SkillExecutorBridge has already claimed this goal_id
+        # (because the aligner fired before us and matched a pattern),
+        # defer — the skill executor will run the chain AND publish the
+        # terminal goal.completed / goal.abandoned. Running the engine
+        # here too would cause double execution.
+        try:
+            from aureon.vault.voice._goal_claims import GoalClaims
+            if GoalClaims.is_claimed(goal_id):
+                return
+        except Exception:
+            pass
         with self._lock:
             if goal_id in self._dispatched:
                 return

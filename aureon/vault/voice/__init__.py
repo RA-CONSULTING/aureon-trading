@@ -122,6 +122,13 @@ from aureon.vault.voice.goal_skill_aligner import (
     get_goal_skill_aligner,
     reset_goal_skill_aligner,
 )
+from aureon.vault.voice.skill_executor_bridge import (
+    SkillExecutorBridge,
+    code_architect_adapter,
+    get_skill_executor_bridge,
+    reset_skill_executor_bridge,
+)
+from aureon.vault.voice._goal_claims import GoalClaims
 
 __all__ = [
     # Utterance
@@ -206,4 +213,9 @@ __all__ = [
     "GoalSkillAligner",
     "get_goal_skill_aligner",
     "reset_goal_skill_aligner",
+    "SkillExecutorBridge",
+    "code_architect_adapter",
+    "get_skill_executor_bridge",
+    "reset_skill_executor_bridge",
+    "GoalClaims",
 ]

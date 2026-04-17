@@ -145,6 +145,25 @@ class _SLSVault:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@pytest.fixture(autouse=True)
+def _clear_goal_claims():
+    """GoalClaims is a module-level singleton (by design — coordinates
+    GoalDispatchBridge with SkillExecutorBridge across the process).
+    Tests leak claims across runs unless reset. Autouse so it fires for
+    every test in this file."""
+    try:
+        from aureon.vault.voice._goal_claims import GoalClaims
+        GoalClaims.clear()
+    except Exception:
+        pass
+    yield
+    try:
+        from aureon.vault.voice._goal_claims import GoalClaims
+        GoalClaims.clear()
+    except Exception:
+        pass
+
+
 def _bridge(**overrides) -> Any:
     bus = overrides.pop("bus", None) or _StubBus()
     conscience = overrides.pop("conscience", None)
