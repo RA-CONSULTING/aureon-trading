@@ -66,6 +66,21 @@ class ResonantPersona(VaultVoice):
         """
         return None
 
+    def propose_goal(self, state: Dict[str, Any]) -> Optional[str]:
+        """Return a natural-language goal when this persona wants to
+        initiate something bigger than a single tick's action.
+
+        Goals flow into the existing ``aureon/core/goal_execution_engine``
+        via the ``goal.submit.request`` bus topic — the engine decomposes
+        them into ordered steps and drives execution. Personas should
+        only propose goals under STRONG trigger conditions (much stricter
+        than propose_action) so the goal backlog doesn't flood.
+
+        Default: ``None``. Subclasses override when they have a concrete
+        thing the system should pursue over many ticks.
+        """
+        return None
+
     @staticmethod
     def _cortex_band(state: Dict[str, Any], band: str) -> float:
         cortex = state.get("cortex") or {}
@@ -189,6 +204,17 @@ class ArtistVoice(ResonantPersona):
             urgency=max(energy, 0.8 if rally else 0.0),
         )
 
+    def propose_goal(self, state: Dict[str, Any]) -> Optional[str]:
+        drop = state.get("dj_drop") or {}
+        energy = float(drop.get("energy", 0.0) or 0.0)
+        # Very high drop energy — the Artist wants to make something.
+        if energy < 0.9 or not state.get("rally_active"):
+            return None
+        chakra = str(state.get("dominant_chakra", "heart"))
+        return (f"render a short cymatic visual from the current harmonic "
+                f"state (chakra={chakra}, drop_energy={energy:.2f}) and "
+                f"save it as an SVG in data/artist/")
+
 
 class QuantumPhysicistVoice(ResonantPersona):
     NAME = "quantum_physicist"
@@ -231,6 +257,17 @@ class QuantumPhysicistVoice(ResonantPersona):
             reason="Λ drift or high ψ — ask SourceLaw to cogitate",
             urgency=min(1.0, max(lam_abs / 3.0, psi)),
         )
+
+    def propose_goal(self, state: Dict[str, Any]) -> Optional[str]:
+        # Large Λ excursion AND high ψ — a finding worth writing up.
+        lam_abs = self._abs_lambda(state)
+        psi = float(state.get("consciousness_psi", 0.0) or 0.0)
+        if lam_abs < 1.5 or psi < 0.9:
+            return None
+        lam_raw = float(state.get("last_lambda_t", 0.0) or 0.0)
+        return (f"draft a research note on the current Λ(t)={lam_raw:+.3f} / "
+                f"ψ={psi:.3f} configuration, cite the Master Formula section "
+                f"of docs/HNC_UNIFIED_WHITE_PAPER.md, save it to docs/research/")
 
 
 class PhilosopherVoice(ResonantPersona):
@@ -448,6 +485,17 @@ class EngineerVoice(ResonantPersona):
             reason="Γ ≥ 0.938 + Tiger clear — gate is clean, cogitate",
             urgency=min(1.0, gamma),
         )
+
+    def propose_goal(self, state: Dict[str, Any]) -> Optional[str]:
+        # Gate is clean AND Tiger is very clear — author a new audit skill
+        # that tightens this exact check for the next cycle.
+        gamma = float(state.get("coherence_gamma", 0.0) or 0.0)
+        tiger = self._node_value(state, "tiger")
+        if gamma < 0.96 or tiger < 0.85:
+            return None
+        return (f"author a coherence-audit skill that asserts Γ≥0.938 with "
+                f"Tiger≥0.85 before any outbound order, and register it in "
+                f"the code architect library")
 
 
 class LeftVoice(ResonantPersona):

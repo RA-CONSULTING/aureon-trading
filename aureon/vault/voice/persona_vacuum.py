@@ -36,7 +36,11 @@ from aureon.vault.voice.aureon_personas import (
     ResonantPersona,
     build_aureon_personas,
 )
-from aureon.vault.voice.persona_action import ActionExecution, PersonaActuator
+from aureon.vault.voice.persona_action import (
+    ActionExecution,
+    PersonaAction,
+    PersonaActuator,
+)
 from aureon.vault.voice.utterance import VoiceStatement
 
 logger = logging.getLogger("aureon.vault.voice.persona_vacuum")
@@ -111,6 +115,7 @@ class PersonaVacuum:
             dry_run=bool(actuator_dry_run),
         )
         self._last_action_execution: Optional[ActionExecution] = None
+        self._last_goal_execution: Optional[ActionExecution] = None
 
         # Unified-collapse wiring — when a chorus is attached, affinity
         # vectors from all participating vacuums merge before softmax.
@@ -223,6 +228,28 @@ class PersonaVacuum:
                 self._actuator.vault = vault
             self._last_action_execution = self._actuator.dispatch(
                 persona.NAME, action, dict(state, persona=persona.NAME),
+            )
+
+        # Goals — strictly-triggered multi-step intentions. Under much
+        # stricter conditions than propose_action so the backlog doesn't
+        # flood. The actuator publishes ``goal.submit.request`` on the bus
+        # for the existing aureon/core/goal_execution_engine to pick up.
+        try:
+            goal_text = persona.propose_goal(state)
+        except Exception as e:
+            logger.debug("PersonaVacuum: %s propose_goal failed: %s", persona.NAME, e)
+            goal_text = None
+        if goal_text:
+            self._last_goal_execution = self._actuator.dispatch(
+                persona.NAME,
+                PersonaAction(
+                    kind="goal.submit",
+                    topic=str(goal_text),
+                    payload={},
+                    reason=f"{persona.NAME} proposes goal under strict trigger",
+                    urgency=0.9,
+                ),
+                dict(state, persona=persona.NAME),
             )
         return statement
 
@@ -488,6 +515,10 @@ class PersonaVacuum:
     @property
     def last_action_execution(self) -> Optional[ActionExecution]:
         return self._last_action_execution
+
+    @property
+    def last_goal_execution(self) -> Optional[ActionExecution]:
+        return self._last_goal_execution
 
     @property
     def last_winner(self) -> Optional[str]:

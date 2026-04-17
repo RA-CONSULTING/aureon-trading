@@ -143,6 +143,7 @@ class PersonaActuator:
         self.register("vault.ingest", self._handle_vault_ingest)
         self.register("file.append", self._handle_file_append)
         self.register("skill.request", self._handle_skill_request)
+        self.register("goal.submit", self._handle_goal_submit)
 
     # ─────────────────────────────────────────────────────────────────────
     # Dispatch
@@ -243,6 +244,44 @@ class PersonaActuator:
         with open(path, "a", encoding="utf-8") as fh:
             fh.write(line + "\n")
         return {"ok": True, "path": path, "bytes": len(line) + 1}
+
+    def _handle_goal_submit(self, action: PersonaAction, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Publish a goal request on the bus for GoalExecutionEngine to pick up.
+
+        We route through ``goal.submit.request`` rather than calling the
+        engine directly so:
+          - a system without the engine booted still records the intent
+          - the existing goal.* namespace (goal.submitted / goal.progress)
+            on the bus stays the engine's output contract
+          - stage 4.3 can insert a human-approval gate between this
+            publication and the engine's intake
+        """
+        if self.thought_bus is None:
+            return {"ok": False, "reason": "no thought_bus"}
+        goal_text = action.topic or action.reason
+        if not goal_text:
+            return {"ok": False, "reason": "action.topic / reason must carry the goal text"}
+        try:
+            from aureon.core.aureon_thought_bus import Thought  # type: ignore
+        except Exception:
+            Thought = None  # type: ignore
+        payload = {
+            "text": goal_text,
+            "proposed_by_persona": state.get("persona", ""),
+            "urgency": action.urgency,
+            "parameters": dict(action.payload),
+        }
+        topic = "goal.submit.request"
+        if Thought is not None:
+            self.thought_bus.publish(Thought(
+                source="persona_actuator",
+                topic=topic,
+                payload=payload,
+            ))
+        else:
+            self.thought_bus.publish(topic=topic, payload=payload,
+                                     source="persona_actuator")
+        return {"ok": True, "topic": topic, "goal_text": goal_text}
 
     def _handle_skill_request(self, action: PersonaAction, state: Dict[str, Any]) -> Dict[str, Any]:
         if self.thought_bus is None:
