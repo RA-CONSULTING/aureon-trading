@@ -74,6 +74,11 @@ from aureon.vault.voice.affinity_chorus import (
     vault_fingerprint_seed,
     make_vault_seed_fn,
 )
+from aureon.vault.voice.life_context import LifeContext, LifeEvent
+from aureon.vault.voice.opportunity_scanner import (
+    OpportunityScanner,
+    OpportunityHit,
+)
 
 __all__ = [
     # Utterance
@@ -124,4 +129,9 @@ __all__ = [
     "CHORUS_DEFAULT_TTL_S",
     "vault_fingerprint_seed",
     "make_vault_seed_fn",
+    # Life context + opportunity scanning
+    "LifeContext",
+    "LifeEvent",
+    "OpportunityScanner",
+    "OpportunityHit",
 ]

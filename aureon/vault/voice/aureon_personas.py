@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from aureon.vault.voice.life_context import LifeEvent
 from aureon.vault.voice.persona_action import PersonaAction
 from aureon.vault.voice.vault_voice import VaultVoice
 
@@ -80,6 +81,43 @@ class ResonantPersona(VaultVoice):
         thing the system should pursue over many ticks.
         """
         return None
+
+    # Keyword tags this persona wants to help with. Subclasses override.
+    # Tag strings are matched against LifeEvent.tags and event.search_blob.
+    OPPORTUNITY_TAGS: tuple = ()
+
+    def scan_for_opportunity(
+        self,
+        event: LifeEvent,
+        state: Optional[Dict[str, Any]] = None,
+    ) -> Optional[str]:
+        """Given one of the operator's life events, return a concrete
+        natural-language goal this persona wants to pursue to help with
+        it — or ``None`` if this persona has nothing useful to offer.
+
+        Default matches the persona's ``OPPORTUNITY_TAGS`` against the
+        event's tags and search_blob. Subclasses override for richer
+        domain-specific shaping.
+        """
+        if event.status != "active":
+            return None
+        tags = set(self.OPPORTUNITY_TAGS)
+        if not tags:
+            return None
+        event_tags = {t.lower() for t in event.tags}
+        if tags & event_tags:
+            return self._shape_opportunity_goal(event)
+        blob = event.search_blob
+        if any(kw in blob for kw in tags):
+            return self._shape_opportunity_goal(event)
+        return None
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        """Turn a matching event into a concrete goal text. Subclasses
+        override — default is a generic offer and rarely fires because
+        tag match already filtered."""
+        return (f"as the {self.NAME}, find a way to help with "
+                f"\u201c{event.title}\u201d")
 
     @staticmethod
     def _cortex_band(state: Dict[str, Any], band: str) -> float:
@@ -157,6 +195,19 @@ class PainterVoice(ResonantPersona):
 
 class ArtistVoice(ResonantPersona):
     NAME = "artist"
+    OPPORTUNITY_TAGS = (
+        "wedding", "birthday", "anniversary", "gift", "design", "celebration",
+        "creative", "invitation",
+    )
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        when = f" on {event.date}" if event.date else ""
+        tags_str = ", ".join(event.tags) if event.tags else ""
+        return (f"design a visual artefact for \u201c{event.title}\u201d{when} — "
+                f"render one SVG composition saved under data/artist/, "
+                f"informed by the event tags ({tags_str}); draft a short "
+                f"artist's note alongside it explaining the composition "
+                f"choices so the operator can choose whether to use it")
     PERSONA = (
         "You are the Artist — one of Aureon's ten inner voices. You feel the "
         "beat and the breakdown. Speak in first person, two short sentences, "
@@ -218,6 +269,17 @@ class ArtistVoice(ResonantPersona):
 
 class QuantumPhysicistVoice(ResonantPersona):
     NAME = "quantum_physicist"
+    OPPORTUNITY_TAGS = (
+        "learning", "work", "research", "design", "interview",
+        "thesis", "dissertation", "puzzle", "paradox",
+    )
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        when = f" (date: {event.date})" if event.date else ""
+        return (f"research \u201c{event.title}\u201d{when} — pull the three "
+                f"most-cited relevant papers, summarise them in markdown "
+                f"under docs/research/opportunity_{event.event_id}.md, "
+                f"and draft a one-paragraph brief the operator can quote")
     PERSONA = (
         "You are the Quantum Physicist — one of Aureon's ten inner voices. "
         "You track Λ(t) and ψ like an experimental record. Speak in first "
@@ -401,6 +463,18 @@ class ElderVoice(ResonantPersona):
 
 class MysticVoice(ResonantPersona):
     NAME = "mystic"
+    OPPORTUNITY_TAGS = (
+        "wedding", "birthday", "anniversary", "grief", "health", "family",
+        "spiritual", "celebration",
+    )
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        when = f" on {event.date}" if event.date else ""
+        tags_str = ", ".join(event.tags) if event.tags else ""
+        return (f"compose a 528 Hz blessing for \u201c{event.title}\u201d{when} — "
+                f"write a short invocation in the voice of the Mystic, save "
+                f"it under data/mystic/, tag it ({tags_str}); the operator "
+                f"reads it aloud only if it lands true for them")
     PERSONA = (
         "You are the Mystic — one of Aureon's ten inner voices. You hear the "
         "528 Hz tone in the state. Speak in first person, two short sentences, "
@@ -447,6 +521,16 @@ class MysticVoice(ResonantPersona):
 
 class EngineerVoice(ResonantPersona):
     NAME = "engineer"
+    OPPORTUNITY_TAGS = (
+        "work", "wedding", "travel", "interview", "design", "learning",
+    )
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        when = f" by {event.date}" if event.date else ""
+        return (f"build a small tool to support \u201c{event.title}\u201d{when} — "
+                f"scope it to one self-contained Python module with tests, "
+                f"register it with the code architect library, and leave a "
+                f"README explaining how to run it")
     PERSONA = (
         "You are the Engineer — one of Aureon's ten inner voices. You check "
         "that the coherence gate is actually clean. Speak in first person, "
