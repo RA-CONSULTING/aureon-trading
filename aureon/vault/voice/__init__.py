@@ -92,6 +92,23 @@ from aureon.vault.voice.goal_dispatch_bridge import (
     get_goal_dispatch_bridge,
     reset_goal_dispatch_bridge,
 )
+from aureon.vault.voice.bus_flight_check import (
+    BusFlightCheck,
+    get_bus_flight_check,
+    reset_bus_flight_check,
+)
+from aureon.vault.voice.vault_feed_audit import VaultFeedAudit
+from aureon.vault.voice.hash_resonance_index import (
+    HashResonanceIndex,
+    BondRecord,
+    bond_strength,
+)
+from aureon.vault.voice.meta_cognition_observer import (
+    MetaCognitionObserver,
+    ReflectionCard,
+    get_meta_cognition_observer,
+    reset_meta_cognition_observer,
+)
 
 __all__ = [
     # Utterance
@@ -156,4 +173,15 @@ __all__ = [
     "GoalDispatchBridge",
     "get_goal_dispatch_bridge",
     "reset_goal_dispatch_bridge",
+    "BusFlightCheck",
+    "get_bus_flight_check",
+    "reset_bus_flight_check",
+    "VaultFeedAudit",
+    "HashResonanceIndex",
+    "BondRecord",
+    "bond_strength",
+    "MetaCognitionObserver",
+    "ReflectionCard",
+    "get_meta_cognition_observer",
+    "reset_meta_cognition_observer",
 ]

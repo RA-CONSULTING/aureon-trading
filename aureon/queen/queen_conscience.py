@@ -569,10 +569,21 @@ class QueenConscience:
     # ═══════════════════════════════════════════════════════════════════════════
     # AFTER A DECISION - DID SHE LISTEN?
     # ═══════════════════════════════════════════════════════════════════════════
-    def record_decision(self, whisper: ConscienceWhisper, queen_listened: bool, outcome: str = None):
+    def record_decision(
+        self,
+        whisper: ConscienceWhisper,
+        queen_listened: bool,
+        outcome: str = None,
+        reflection_card_id: str = "",
+    ):
         """
         Track whether the Queen listened to her conscience.
         This helps the conscience grow wiser.
+
+        Stage 6.5 — ``reflection_card_id`` threads the verdict trail
+        into MetaCognitionObserver's reflection card so a subsequent
+        review can join (verdict → outcome → reflection) without
+        guessing at correlation.
         """
         if queen_listened:
             self.times_listened_to += 1
@@ -584,7 +595,15 @@ class QueenConscience:
             if outcome and 'fail' in outcome.lower():
                 lesson = f"Ignored conscience on {whisper.verdict.name} → FAILURE (should have listened)"
                 self.lessons_learned.append(lesson)
-        
+
+        # Stage 6.5 — stamp the whisper with the reflection thread so
+        # the observer can walk the chain backward.
+        if reflection_card_id:
+            try:
+                setattr(whisper, "reflection_card_id", str(reflection_card_id))
+            except Exception:
+                pass
+
         self.whisper_history.append(whisper)
         self._save_state()
     

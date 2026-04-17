@@ -1375,6 +1375,64 @@ class QueenMetacognition:
             for r in refs[-n:]
         ]
 
+    # ─────────────────────────────────────────────────────────────────
+    # Stage 6.5 — external reflection ingest
+    # ─────────────────────────────────────────────────────────────────
+    #
+    # MetaCognitionObserver assembles ReflectionCards from the persona
+    # layer (decision → action → outcome window). Feed those into the
+    # existing 5-W analyzer so a single Queen-side history holds both
+    # the cognition-cycle reflections and the persona-window ones.
+
+    def ingest_external_reflection(self, card: Dict[str, Any]) -> None:
+        """Accept a ReflectionCard dict from MetaCognitionObserver and
+        fold it into the rolling reflection history. Mirrors the shape
+        of an internal Reflection so downstream pattern detectors
+        (stagnation / oscillation / coherence-drift / dominance) treat
+        it consistently."""
+        if not isinstance(card, dict):
+            return
+        try:
+            persona = str(card.get("persona") or "")
+            outcome = str(card.get("outcome") or "SILENT")
+            sls_after = card.get("sls_after")
+            sls_delta = float(card.get("sls_delta") or 0.0)
+            bond_count = int(card.get("bond_count") or 0)
+            decision = str(card.get("decision") or "silence")
+            action_topic = str(card.get("action_topic") or "")
+            reasoning = str(card.get("reasoning") or "")
+            window_s = float(card.get("window_s") or 0.0)
+
+            # Map outcome to the action vocabulary the existing analyzer
+            # uses (HOLD / EXECUTE) so its drift / stagnation detectors
+            # can score these alongside cognition reflections without
+            # special-casing.
+            mapped_action = "EXECUTE" if outcome == "COMPLETED" else "HOLD"
+            ref = Reflection(
+                cycle=self._reflection_count + 1,
+                timestamp=float(card.get("closed_ts")
+                                or card.get("collapse_ts") or 0.0),
+                action=mapped_action,
+                coherence_gamma=float(sls_after) if sls_after is not None else 0.0,
+                consciousness_psi=0.0,
+                dominant_nodes=[persona] if persona else [],
+                weakest_nodes=[],
+                reasoning_summary=(
+                    f"persona={persona} decision={decision} outcome={outcome} "
+                    f"Δsls={sls_delta:+.3f} bond_count={bond_count}"
+                ),
+                strong_signals=[],
+                weak_signals=[],
+                noise_level=0.0,
+                guidance=[reasoning] if reasoning else [],
+            )
+            with self._lock:
+                self._reflections.append(ref)
+                self._reflection_count += 1
+                self._last_reflection_time = ref.timestamp or 0.0
+        except Exception as e:
+            logger.debug("QueenMetacognition: ingest_external_reflection failed: %s", e)
+
 
 # ============================================================================
 # SINGLETON
