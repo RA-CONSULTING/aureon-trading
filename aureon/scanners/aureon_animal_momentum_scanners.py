@@ -17,7 +17,7 @@ This is a *smoke-first* implementation focusing on readability and safe dry-run 
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import logging
@@ -28,9 +28,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
-from alpaca_client import AlpacaClient
-from alpaca_fee_tracker import AlpacaFeeTracker
-from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+from aureon.exchanges.alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
+from aureon.bridges.aureon_alpaca_scanner_bridge import AlpacaScannerBridge
 
 logger = logging.getLogger(__name__)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
@@ -41,7 +41,7 @@ logging.getLogger('urllib3').setLevel(logging.WARNING)
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon.core.aureon_chirp_bus import get_chirp_bus
     CHIRP_BUS_AVAILABLE = True
     logger.info("🐦 Chirp Bus CONNECTED - Momentum scanners can hear Orca whale signals!")
 except ImportError:
@@ -51,7 +51,7 @@ except ImportError:
 # 📡 THOUGHT BUS INTEGRATION - Neural Persistence
 THOUGHT_BUS_AVAILABLE = False
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -61,7 +61,7 @@ except ImportError:
 # ════════════════════════════════════════════════════════════════════════════════
 # Kraken (crypto)
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -69,7 +69,7 @@ except ImportError:
 
 # Binance streaming (crypto real-time)
 try:
-    from binance_ws_client import BinanceWebSocketClient
+    from aureon.exchanges.binance_ws_client import BinanceWebSocketClient
     BINANCE_WS_AVAILABLE = True
 except ImportError:
     BINANCE_WS_AVAILABLE = False
@@ -77,7 +77,7 @@ except ImportError:
 
 # Capital.com (CFDs + stocks)
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CAPITAL_AVAILABLE = False
@@ -85,7 +85,7 @@ except ImportError:
 
 # Market scanners (global intelligence)
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
     WAVE_SCANNER_AVAILABLE = True
 except ImportError:
     WAVE_SCANNER_AVAILABLE = False
@@ -840,8 +840,8 @@ class AnimalMomentumScanners:
         
         # Try to initialize with clients if available
         try:
-            from alpaca_client import AlpacaClient
-            from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+            from aureon.exchanges.alpaca_client import AlpacaClient
+            from aureon.bridges.aureon_alpaca_scanner_bridge import AlpacaScannerBridge
             
             alpaca = AlpacaClient()
             bridge = AlpacaScannerBridge(alpaca)
@@ -924,8 +924,8 @@ class AnimalMomentumScanners:
         
         # Try to initialize with clients if available
         try:
-            from alpaca_client import AlpacaClient
-            from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+            from aureon.exchanges.alpaca_client import AlpacaClient
+            from aureon.bridges.aureon_alpaca_scanner_bridge import AlpacaScannerBridge
             
             alpaca = AlpacaClient()
             bridge = AlpacaScannerBridge(alpaca)

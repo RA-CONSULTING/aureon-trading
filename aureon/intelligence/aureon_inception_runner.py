@@ -27,7 +27,7 @@ Like dreams within dreams, each layer is deeper, smarter, faster.
 "The seed that we plant in this man's mind will grow into an idea." - Cobb 🎬
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -50,7 +50,7 @@ logger = logging.getLogger("InceptionRunner")
 # LAYER 1: INCEPTION ENGINE
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_inception_engine import (
+    from aureon.intelligence.aureon_inception_engine import (
         get_inception_engine, inception_dive, get_limbo_insight,
         InceptionLevel, TIME_DILATION
     )
@@ -64,7 +64,7 @@ except ImportError as e:
 # LAYER 3: INTERNAL MULTIVERSE
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_internal_multiverse import (
+    from aureon.simulation.aureon_internal_multiverse import (
         get_multiverse, multiverse_predict, InternalMultiverse
     )
     MULTIVERSE_READY = True
@@ -77,7 +77,7 @@ except ImportError as e:
 # LAYER 4: COMMANDO DOCTRINE
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_conversion_commando import (
+    from aureon.conversion.aureon_conversion_commando import (
         ZERO_FEAR, ONE_GOAL, GROWTH_AGGRESSION
     )
     COMMANDO_READY = True
@@ -93,7 +93,7 @@ except ImportError:
 # LAYER 5: PROBABILITY INTELLIGENCE
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, ultimate_predict
     )
     PROBABILITY_READY = True
@@ -106,7 +106,7 @@ except ImportError:
 # LAYER 6: AURIS NODES
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_nexus import AURIS_NODES
+    from aureon.core.aureon_nexus import AURIS_NODES
     AURIS_READY = True
     print(f"🎵 LAYER 6: Auris Nodes READY ({len(AURIS_NODES)} nodes)")
 except ImportError:
@@ -118,7 +118,7 @@ except ImportError:
 # LAYER 7: MYCELIUM
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     MYCELIUM_READY = True
     print("🍄 LAYER 7: Mycelium Network READY")
 except ImportError:

@@ -10,7 +10,7 @@ The rhythm never stops.
 "Follow the rhythm, dance on net profit, using every available move"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -25,8 +25,8 @@ import random
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kraken_client import KrakenClient, get_kraken_client
-from binance_client import BinanceClient
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.binance_client import BinanceClient
 
 
 @dataclass

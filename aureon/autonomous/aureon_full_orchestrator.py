@@ -13,7 +13,7 @@ Hooks up ALL systems:
 ONE SYSTEM TO RULE THEM ALL
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -104,7 +104,7 @@ class AureonFullOrchestrator:
         # 1. Kraken Client
         print("\n📡 Loading Kraken Client...")
         try:
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             self.client = get_kraken_client()
             print("   ✅ Kraken connected")
         except Exception as e:
@@ -114,7 +114,7 @@ class AureonFullOrchestrator:
         # 2. Stargate Protocol
         print("\n🌌 Loading Stargate Protocol...")
         try:
-            from aureon_stargate_protocol import create_stargate_engine
+            from aureon.wisdom.aureon_stargate_protocol import create_stargate_engine
             self.stargate = create_stargate_engine(with_integrations=False)
             self.state.stargate_active = True
             print(f"   ✅ {len(self.stargate.stargates)} planetary nodes active")
@@ -125,7 +125,7 @@ class AureonFullOrchestrator:
         # 3. Quantum Mirror Scanner
         print("\n🔮 Loading Quantum Mirror Scanner...")
         try:
-            from aureon_quantum_mirror_scanner import QuantumMirrorScanner
+            from aureon.scanners.aureon_quantum_mirror_scanner import QuantumMirrorScanner
             self.quantum_mirror = QuantumMirrorScanner()
             self.state.quantum_mirror_active = True
             print("   ✅ Quantum mirrors initialized")
@@ -136,7 +136,7 @@ class AureonFullOrchestrator:
         # 4. Timeline Anchor Validator
         print("\n⚓ Loading Timeline Anchor Validator...")
         try:
-            from aureon_timeline_anchor_validator import TimelineAnchorValidator
+            from aureon.intelligence.aureon_timeline_anchor_validator import TimelineAnchorValidator
             self.timeline_validator = TimelineAnchorValidator()
             self.state.timeline_validator_active = True
             print("   ✅ Timeline validator ready")
@@ -147,7 +147,7 @@ class AureonFullOrchestrator:
         # 5. Queen Hive Mind
         print("\n👑 Loading Queen Hive Mind...")
         try:
-            from aureon_queen_hive_mind import QueenHiveMind
+            from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
             self.queen = QueenHiveMind()
             print("   ✅ Queen awakened")
         except Exception as e:

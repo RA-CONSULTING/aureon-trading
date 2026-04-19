@@ -15,7 +15,7 @@ Tracks:
 Integrates with: Black Box, Orca, Queen, Auris
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -57,18 +57,18 @@ PERFECTION_ANGLE = 306.0  # 360 - 54 (golden angle complement)
 
 # Import exchange clients
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 except ImportError:
     KrakenClient = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 except ImportError:
     AlpacaClient = None
 
 # Try to import Queen + Auris consciousness
 try:
-    from metatron_probability_billion_path import QueenAurisPingPong
+    from aureon.wisdom.metatron_probability_billion_path import QueenAurisPingPong
     CONSCIOUSNESS_AVAILABLE = True
 except ImportError:
     CONSCIOUSNESS_AVAILABLE = False

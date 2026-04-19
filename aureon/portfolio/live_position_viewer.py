@@ -50,7 +50,7 @@ def get_binance_positions():
     positions = []
     
     try:
-        from binance_client import get_binance_client
+        from aureon.exchanges.binance_client import get_binance_client
         client = get_binance_client()
         if not client:
             print("⚠️ Binance client not available")
@@ -116,7 +116,7 @@ def get_alpaca_positions():
     positions = []
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca = AlpacaClient()
         
         alpaca_positions = alpaca.get_positions()
@@ -153,7 +153,7 @@ def get_kraken_positions():
     """Get Kraken positions - REAL positions from Kraken API using get_balance()"""
     positions = []
     
-    from kraken_client import get_kraken_client
+    from aureon.exchanges.kraken_client import get_kraken_client
     kraken = get_kraken_client()
     
     # Get account balances using get_balance() - returns {asset: qty}

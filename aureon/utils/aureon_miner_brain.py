@@ -26,7 +26,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "The Miner doesn't just read - it THINKS."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -42,7 +42,7 @@ from collections import deque
 
 # Import Thought Bus for Unity
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
 except ImportError:
     ThoughtBus = None
     Thought = None
@@ -66,15 +66,15 @@ if sys.platform == 'win32':
 
 # Import existing feeds if available
 try:
-    from coinbase_historical_feed import CoinbaseHistoricalFeed
-    from global_financial_feed import GlobalFinancialFeed
+    from aureon.exchanges.coinbase_historical_feed import CoinbaseHistoricalFeed
+    from aureon.data_feeds.global_financial_feed import GlobalFinancialFeed
 except ImportError:
     CoinbaseHistoricalFeed = None
     GlobalFinancialFeed = None
 
 # ⏳🔮 TIMELINE ORACLE - 7-day future validation
 try:
-    from aureon_timeline_oracle import (
+    from aureon.intelligence.aureon_timeline_oracle import (
         TimelineOracle, TimelineBranch, TimelineAction,
         timeline_select, timeline_validate, get_timeline_oracle
     )
@@ -284,7 +284,7 @@ class SandboxEvolution:
         """
         # Try to import penny profit math
         try:
-            from aureon_unified_ecosystem import get_penny_threshold
+            from aureon.trading.aureon_unified_ecosystem import get_penny_threshold
             
             penny = get_penny_threshold(exchange, trade_size)
             if penny:

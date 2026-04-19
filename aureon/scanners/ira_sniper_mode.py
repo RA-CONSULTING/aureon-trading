@@ -38,7 +38,7 @@ One bullet. One kill. NO MISSES. EVER.
 # "The flame ignited cannot be extinguished - it only grows stronger."
 # """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
 from typing import Dict, Any, Optional, Tuple, List
@@ -240,7 +240,7 @@ class IRAKillScanner:
 # =============================================================================
 
 try:
-    from eta_verification_system import (
+    from aureon.analytics.eta_verification_system import (
         get_eta_verifier, register_eta, verify_kill as eta_verify_kill,
         check_expired, get_corrected_eta, ETAOutcome
     )
@@ -255,7 +255,7 @@ except ImportError:
 # =============================================================================
 
 try:
-    from improved_eta_calculator import ImprovedETACalculator, ImprovedETA
+    from aureon.analytics.improved_eta_calculator import ImprovedETACalculator, ImprovedETA
     IMPROVED_ETA_ENABLED = True
     IMPROVED_ETA_CALC = ImprovedETACalculator()
     print("🔬 Improved ETA Calculator WIRED! (velocity decay model)")
@@ -269,7 +269,7 @@ except ImportError:
 # =============================================================================
 
 try:
-    from probability_intelligence_matrix import (
+    from aureon.strategies.probability_intelligence_matrix import (
         get_probability_matrix, calculate_intelligent_probability,
         record_outcome, ProbabilityIntelligence
     )
@@ -286,7 +286,7 @@ except ImportError:
 # =============================================================================
 
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, ultimate_predict, record_ultimate_outcome,
         UltimatePrediction
     )
@@ -310,7 +310,7 @@ def _check_ecosystem_available():
     global ECOSYSTEM_WIRED
     if ECOSYSTEM_WIRED is None:
         try:
-            from aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
+            from aureon.trading.aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
             get_ultimate_ecosystem()  # Test that it works
             ECOSYSTEM_WIRED = True
         except ImportError:
@@ -320,7 +320,7 @@ def _check_ecosystem_available():
 def _get_ecosystem_functions():
     """Get ecosystem functions lazily."""
     try:
-        from aureon_ultimate_ecosystem_wiring import (
+        from aureon.trading.aureon_ultimate_ecosystem_wiring import (
             get_ultimate_ecosystem, ecosystem_predict, ecosystem_record_outcome,
             EcosystemPrediction, AureonUltimateEcosystem
         )
@@ -340,7 +340,7 @@ def _get_ecosystem_functions():
 
 # Wire Guerrilla Warfare Engine
 try:
-    from guerrilla_warfare_engine import (
+    from aureon.wisdom.guerrilla_warfare_engine import (
         IntelligenceNetwork, FlyingColumn, BattlefrontStatus,
         TacticalMode, IntelligenceReport, GUERRILLA_CONFIG, get_celtic_wisdom
     )
@@ -351,7 +351,7 @@ except ImportError:
 
 # Wire Preemptive Strike Engine
 try:
-    from celtic_preemptive_strike import (
+    from aureon.wisdom.celtic_preemptive_strike import (
         PreemptiveExitEngine, DawnRaidDetector,
         PreemptiveSignal, PreemptiveSignalType
     )
@@ -362,7 +362,7 @@ except ImportError:
 
 # Wire Multi-Battlefront Coordinator
 try:
-    from multi_battlefront_coordinator import (
+    from aureon.wisdom.multi_battlefront_coordinator import (
         MultiBattlefrontWarRoom, CampaignPhase, ArbitrageOpportunity
     )
     COORDINATOR_WIRED = True
@@ -372,7 +372,7 @@ except ImportError:
 
 # Wire War Strategy
 try:
-    from war_strategy import WarStrategy
+    from aureon.command_centers.war_strategy import WarStrategy
     WAR_STRATEGY_WIRED = True
 except ImportError:
     WAR_STRATEGY_WIRED = False
@@ -380,7 +380,7 @@ except ImportError:
 
 # Wire Irish Patriot Scouts
 try:
-    from irish_patriot_scouts import PatriotScoutNetwork, PatriotScout, PATRIOT_CONFIG
+    from aureon.wisdom.irish_patriot_scouts import PatriotScoutNetwork, PatriotScout, PATRIOT_CONFIG
     PATRIOTS_WIRED = True
     print("☘️ Irish Patriot Scouts import successful!")
 except ImportError as e:
@@ -394,7 +394,7 @@ except Exception as e:
 
 # Wire Mycelium Network
 try:
-    from aureon_mycelium import MyceliumNetwork, Synapse, Neuron
+    from aureon.core.aureon_mycelium import MyceliumNetwork, Synapse, Neuron
     MYCELIUM_WIRED = True
 except ImportError:
     MYCELIUM_WIRED = False
@@ -565,7 +565,7 @@ class MyceliumStateAggregator:
             tb = self.systems.get('thought_bus') if isinstance(getattr(self, 'systems', None), dict) else None
             if tb is not None and hasattr(tb, 'publish'):
                 try:
-                    from aureon_thought_bus import Thought
+                    from aureon.core.aureon_thought_bus import Thought
                     tb.publish(Thought(
                         source='mycelium_state',
                         topic=f'mycelium_state.event.{event}',
@@ -1316,7 +1316,7 @@ def sniper_authorizes_kill(
         
         # Add Celtic wisdom for the kill
         try:
-            from bhoys_wisdom import get_battle_wisdom
+            from aureon.wisdom.bhoys_wisdom import get_battle_wisdom
             wisdom = get_battle_wisdom()
             verdict += f"\n   📜 \"{wisdom}\""
         except ImportError:
@@ -2950,7 +2950,7 @@ def get_scanner_learning_stats() -> Dict:
 def celebrate_sniper_kill(pnl_usd: float, symbol: str, kills_today: int = 0) -> None:
     """Display sniper kill celebration."""
     try:
-        from bhoys_wisdom import get_victory_quote
+        from aureon.wisdom.bhoys_wisdom import get_victory_quote
         quote = get_victory_quote()
     except ImportError:
         import random
@@ -3101,7 +3101,7 @@ class IraCelticSniper:
         
         # Wire Queen Hive Mind
         try:
-            from aureon_queen_hive_mind import get_queen
+            from aureon.utils.aureon_queen_hive_mind import get_queen
             self.queen_hive = get_queen()
             print("   👑 Queen Hive Mind: ✅ WIRED")
         except Exception as e:
@@ -3109,7 +3109,7 @@ class IraCelticSniper:
         
         # Wire Queen Asset Monitor (use Elephant Memory as fallback)
         try:
-            from aureon_elephant_learning import ElephantMemory
+            from aureon.intelligence.aureon_elephant_learning import ElephantMemory
             self.queen_asset_monitor = ElephantMemory()
             print("   👑 Queen Asset Monitor (Elephant): ✅ WIRED")
         except Exception as e:
@@ -3117,7 +3117,7 @@ class IraCelticSniper:
         
         # Wire Queen Quantum Cognition
         try:
-            from queen_quantum_cognition import get_quantum_cognition
+            from aureon.queen.queen_quantum_cognition import get_quantum_cognition
             self.queen_cognition = get_quantum_cognition()
             print("   👑 Queen Quantum Cognition: ✅ WIRED")
         except Exception as e:
@@ -3125,7 +3125,7 @@ class IraCelticSniper:
         
         # Wire ThoughtBus
         try:
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             if ThoughtBus is not None:
                 self.thoughtbus = True
                 print("   🧠 ThoughtBus: ✅ WIRED")
@@ -3185,7 +3185,7 @@ class IraCelticSniper:
         # Emit to ThoughtBus
         if self.thoughtbus:
             try:
-                from aureon_thought_bus import ThoughtBus
+                from aureon.core.aureon_thought_bus import ThoughtBus
                 if ThoughtBus:
                     ThoughtBus.emit(f'ira_sniper.{event_type}', {
                         'timestamp': timestamp,

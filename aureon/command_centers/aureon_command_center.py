@@ -34,7 +34,7 @@ Features:
 ONE DASHBOARD TO RULE THEM ALL!
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import atexit
@@ -245,7 +245,7 @@ except ImportError:
 
 # Thought Bus (needed for type annotations)
 try:
-    from aureon_thought_bus import Thought
+    from aureon.core.aureon_thought_bus import Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -275,33 +275,33 @@ def load_all_systems():
     
     # Core Intelligence
     try:
-        from aureon_thought_bus import Thought, get_thought_bus
+        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
         SYSTEMS_STATUS['Thought Bus'] = True
         thought_bus = get_thought_bus()
     except ImportError:
         SYSTEMS_STATUS['Thought Bus'] = False
     
     try:
-        from aureon_mycelium import MyceliumNetwork
+        from aureon.core.aureon_mycelium import MyceliumNetwork
         SYSTEMS_STATUS['Mycelium Network'] = True
     except ImportError:
         SYSTEMS_STATUS['Mycelium Network'] = False
     
     try:
-        from aureon_enigma import AureonEnigma
+        from aureon.wisdom.aureon_enigma import AureonEnigma
         SYSTEMS_STATUS['Enigma Decoder'] = True
     except ImportError:
         SYSTEMS_STATUS['Enigma Decoder'] = False
     
     try:
-        from aureon_probability_nexus import AureonProbabilityNexus
+        from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
         SYSTEMS_STATUS['Probability Nexus'] = True
     except ImportError:
         SYSTEMS_STATUS['Probability Nexus'] = False
     
     # 🛡️ SOUL SHIELD - Active Protection
     try:
-        from queen_soul_shield import QueenSoulShield
+        from aureon.queen.queen_soul_shield import QueenSoulShield
         SYSTEMS_STATUS['Soul Shield'] = True
         # Initialize shield but don't start monitoring (dashboard will trigger)
         queen_shield_instance = QueenSoulShield(gary_frequency=528.422, verbose=False)
@@ -311,74 +311,74 @@ def load_all_systems():
         SYSTEMS_STATUS['Soul Shield Status'] = 'Unavailable'
     
     try:
-        from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+        from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
         SYSTEMS_STATUS['Ultimate Intelligence'] = True
     except ImportError:
         SYSTEMS_STATUS['Ultimate Intelligence'] = False
     
     try:
-        from aureon_elephant_learning import ElephantMemory
+        from aureon.intelligence.aureon_elephant_learning import ElephantMemory
         SYSTEMS_STATUS['Elephant Memory'] = True
     except ImportError:
         SYSTEMS_STATUS['Elephant Memory'] = False
     
     try:
-        from aureon_quantum_telescope import QuantumPrism
+        from aureon.simulation.aureon_quantum_telescope import QuantumPrism
         SYSTEMS_STATUS['Quantum Telescope'] = True
     except ImportError:
         SYSTEMS_STATUS['Quantum Telescope'] = False
     
     try:
-        from aureon_timeline_oracle import TimelineOracle
+        from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
         SYSTEMS_STATUS['Timeline Oracle'] = True
     except ImportError:
         SYSTEMS_STATUS['Timeline Oracle'] = False
     
     try:
-        from aureon_miner_brain import MinerBrain
+        from aureon.utils.aureon_miner_brain import MinerBrain
         SYSTEMS_STATUS['Miner Brain'] = True
     except ImportError:
         SYSTEMS_STATUS['Miner Brain'] = False
     
     try:
-        from aureon_harmonic_fusion import HarmonicWaveFusion
+        from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
         SYSTEMS_STATUS['Harmonic Fusion'] = True
     except ImportError:
         SYSTEMS_STATUS['Harmonic Fusion'] = False
     
     try:
-        from aureon_global_wave_scanner import GlobalWaveScanner
+        from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
         SYSTEMS_STATUS['Global Wave Scanner'] = True
     except ImportError:
         SYSTEMS_STATUS['Global Wave Scanner'] = False
     
     try:
-        import aureon_whale_integration
+        import aureon.analytics.aureon_whale_integration as aureon_whale_integration
         SYSTEMS_STATUS['Whale Integration'] = True
     except ImportError:
         SYSTEMS_STATUS['Whale Integration'] = False
     
     try:
-        from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
+        from aureon.bots_intelligence.aureon_orca_intelligence import OrcaKillerWhaleIntelligence
         SYSTEMS_STATUS['Orca Intelligence'] = True
     except ImportError:
         SYSTEMS_STATUS['Orca Intelligence'] = False
     
     try:
-        from aureon_queen_hive_mind import QueenHiveMind
+        from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
         SYSTEMS_STATUS['Queen Hive Mind'] = True
     except ImportError:
         SYSTEMS_STATUS['Queen Hive Mind'] = False
     
     try:
-        from aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES as TFS
+        from aureon.bots_intelligence.aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES as TFS
         SYSTEMS_STATUS['Bot Intelligence'] = True
         TRADING_FIRM_SIGNATURES = TFS
     except ImportError:
         SYSTEMS_STATUS['Bot Intelligence'] = False
     
     try:
-        from aureon_internal_multiverse import InternalMultiverse
+        from aureon.simulation.aureon_internal_multiverse import InternalMultiverse
         SYSTEMS_STATUS['Internal Multiverse'] = True
     except ImportError:
         SYSTEMS_STATUS['Internal Multiverse'] = False
@@ -386,63 +386,63 @@ def load_all_systems():
     SYSTEMS_STATUS['Stargate Protocol'] = False
     
     try:
-        from aureon_memory_core import AureonMemoryCore
+        from aureon.core.aureon_memory_core import AureonMemoryCore
         SYSTEMS_STATUS['Memory Core'] = True
     except ImportError:
         SYSTEMS_STATUS['Memory Core'] = False
     
     try:
-        from aureon_immune_system import AureonImmuneSystem
+        from aureon.core.aureon_immune_system import AureonImmuneSystem
         SYSTEMS_STATUS['Immune System'] = True
     except ImportError:
         SYSTEMS_STATUS['Immune System'] = False
     
     try:
-        from aureon_chirp_bus import get_chirp_bus, ChirpType
+        from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpType
         SYSTEMS_STATUS['Chirp Bus'] = True
     except ImportError:
         SYSTEMS_STATUS['Chirp Bus'] = False
     
     try:
-        from queen_voice_engine import QueenVoiceEngine, queen_voice as qv
+        from aureon.queen.queen_voice_engine import QueenVoiceEngine, queen_voice as qv
         SYSTEMS_STATUS['Queen Voice'] = True
         queen_voice = qv
     except ImportError:
         SYSTEMS_STATUS['Queen Voice'] = False
     
     try:
-        from aureon_lighthouse import LighthousePatternDetector
+        from aureon.analytics.aureon_lighthouse import LighthousePatternDetector
         SYSTEMS_STATUS['Lighthouse'] = True
     except ImportError:
         SYSTEMS_STATUS['Lighthouse'] = False
     
     try:
-        from aureon_harmonic_signal_chain import HarmonicSignalChain
+        from aureon.harmonic.aureon_harmonic_signal_chain import HarmonicSignalChain
         SYSTEMS_STATUS['Harmonic Signal Chain'] = True
     except ImportError:
         SYSTEMS_STATUS['Harmonic Signal Chain'] = False
     
     # Exchange clients
     try:
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         SYSTEMS_STATUS['Kraken Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Kraken Exchange'] = False
     
     try:
-        from binance_client import BinanceClient
+        from aureon.exchanges.binance_client import BinanceClient
         SYSTEMS_STATUS['Binance Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Binance Exchange'] = False
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         SYSTEMS_STATUS['Alpaca Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Alpaca Exchange'] = False
     
     try:
-        from capital_client import CapitalClient
+        from aureon.exchanges.capital_client import CapitalClient
         SYSTEMS_STATUS['Capital Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Capital Exchange'] = False
@@ -528,7 +528,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # THOUGHT BUS CHECK
     try:
         start = time.perf_counter()
-        from aureon_thought_bus import get_thought_bus, Thought
+        from aureon.core.aureon_thought_bus import get_thought_bus, Thought
         bus = get_thought_bus()
         # Send a ping thought using think()
         ping_ts = datetime.now().isoformat()
@@ -546,7 +546,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # MYCELIUM NETWORK CHECK
     try:
         start = time.perf_counter()
-        from aureon_mycelium import MyceliumNetwork
+        from aureon.core.aureon_mycelium import MyceliumNetwork
         myc = MyceliumNetwork(initial_capital=100.0)  # Default initial capital for flight check
         ping_ts = datetime.now().isoformat()
         node_count = len(myc.nodes) if hasattr(myc, 'nodes') else 'active'
@@ -563,7 +563,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # PROBABILITY NEXUS CHECK
     try:
         start = time.perf_counter()
-        from aureon_probability_nexus import AureonProbabilityNexus
+        from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
         nexus = AureonProbabilityNexus()
         ping_ts = datetime.now().isoformat()
         win_rate = getattr(nexus, 'win_rate', 0.796)
@@ -580,7 +580,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # ULTIMATE INTELLIGENCE CHECK
     try:
         start = time.perf_counter()
-        from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+        from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
         intel = ProbabilityUltimateIntelligence()
         ping_ts = datetime.now().isoformat()
         patterns = getattr(intel, 'patterns_loaded', 0)
@@ -597,7 +597,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # MEMORY CORE CHECK
     try:
         start = time.perf_counter()
-        from aureon_memory_core import AureonMemoryCore
+        from aureon.core.aureon_memory_core import AureonMemoryCore
         mem = AureonMemoryCore()
         ping_ts = datetime.now().isoformat()
         stones = len(mem.stepping_stones) if hasattr(mem, 'stepping_stones') else 0
@@ -614,7 +614,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # IMMUNE SYSTEM CHECK
     try:
         start = time.perf_counter()
-        from aureon_immune_system import AureonImmuneSystem
+        from aureon.core.aureon_immune_system import AureonImmuneSystem
         immune = AureonImmuneSystem()
         ping_ts = datetime.now().isoformat()
         health = immune.get_system_health() if hasattr(immune, 'get_system_health') else 1.0
@@ -631,7 +631,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # LIGHTHOUSE CHECK
     try:
         start = time.perf_counter()
-        from aureon_lighthouse import LighthousePatternDetector
+        from aureon.analytics.aureon_lighthouse import LighthousePatternDetector
         lighthouse = LighthousePatternDetector()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -647,7 +647,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # WHALE INTEGRATION CHECK
     try:
         start = time.perf_counter()
-        import aureon_whale_integration
+        import aureon.analytics.aureon_whale_integration as aureon_whale_integration
         ping_ts = datetime.now().isoformat()
         latest = aureon_whale_integration.get_latest_prediction('BTC/USD')
         ping_ms = (time.perf_counter() - start) * 1000
@@ -663,7 +663,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # ORCA INTELLIGENCE CHECK
     try:
         start = time.perf_counter()
-        from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
+        from aureon.bots_intelligence.aureon_orca_intelligence import OrcaKillerWhaleIntelligence
         orca = OrcaKillerWhaleIntelligence()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -679,7 +679,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # QUEEN HIVE MIND CHECK
     try:
         start = time.perf_counter()
-        from aureon_queen_hive_mind import QueenHiveMind
+        from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
         queen = QueenHiveMind()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -687,7 +687,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
         # Attempt to wire Orca to Queen here
         if 'Orca Intelligence' in results and results['Orca Intelligence'].status == 'GO':
             try:
-                from aureon_orca_intelligence import get_orca
+                from aureon.bots_intelligence.aureon_orca_intelligence import get_orca
                 orca = get_orca()
                 if hasattr(orca, 'wire_queen'):
                     if orca.wire_queen(queen):
@@ -722,7 +722,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # TIMELINE ORACLE CHECK
     try:
         start = time.perf_counter()
-        from aureon_timeline_oracle import TimelineOracle
+        from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
         oracle = TimelineOracle()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -738,7 +738,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # KRAKEN EXCHANGE CHECK
     try:
         start = time.perf_counter()
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         client = get_kraken_client()
         ping_ts = datetime.now().isoformat()
         # Try to get server time (proves connectivity)
@@ -756,7 +756,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # BINANCE EXCHANGE CHECK
     try:
         start = time.perf_counter()
-        from binance_client import BinanceClient
+        from aureon.exchanges.binance_client import BinanceClient
         client = get_binance_client()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -772,7 +772,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # ALPACA EXCHANGE CHECK
     try:
         start = time.perf_counter()
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         client = AlpacaClient()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -6084,7 +6084,7 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Kraken Exchange'):
             try:
                 if kraken_client is None:
-                    from kraken_client import KrakenClient, get_kraken_client
+                    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                     kraken_client = get_kraken_client()
                 kraken_bal = kraken_client.get_account_balance()
                 balances['kraken'] = _sum_fiat(kraken_bal) if kraken_bal else 'offline'
@@ -6096,7 +6096,7 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Binance Exchange'):
             try:
                 if binance_client is None:
-                    from binance_client import BinanceClient
+                    from aureon.exchanges.binance_client import BinanceClient
                     binance_client = get_binance_client()
                 acct = binance_client.account()
                 fiat = {}
@@ -6118,7 +6118,7 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Alpaca Exchange'):
             try:
                 if alpaca_client is None:
-                    from alpaca_client import AlpacaClient
+                    from aureon.exchanges.alpaca_client import AlpacaClient
                     alpaca_client = AlpacaClient()
                 alpaca_bal = alpaca_client.get_account_balance()
                 balances['alpaca'] = _sum_fiat(alpaca_bal) if alpaca_bal else 'offline'
@@ -6130,7 +6130,7 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Capital Exchange'):
             try:
                 if capital_client is None:
-                    from capital_client import CapitalClient
+                    from aureon.exchanges.capital_client import CapitalClient
                     capital_client = CapitalClient()
                 capital_bal = capital_client.get_account_balance()
                 balances['capital'] = _sum_fiat(capital_bal) if capital_bal else 'offline'

@@ -19,7 +19,7 @@ Commands:
 Gary Leckey | January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -32,7 +32,7 @@ from typing import Dict, Any
 from pathlib import Path
 
 try:
-    from aureon_firm_intelligence_catalog import get_firm_catalog, FirmIntelligenceCatalog
+    from aureon.bots_intelligence.aureon_firm_intelligence_catalog import get_firm_catalog, FirmIntelligenceCatalog
     CATALOG_AVAILABLE = True
 except ImportError:
     print("❌ ERROR: Firm Intelligence Catalog not available")

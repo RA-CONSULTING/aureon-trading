@@ -32,7 +32,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import math
 import sys
@@ -1363,8 +1363,8 @@ def patch_world_simulator() -> None:
     The WorldSimulator auto-cycles it alongside the existing 5 views.
     """
     try:
-        import aureon_world_simulator as ws
-        from aureon_world_simulator import WorldView, VIEW_ICONS, WorldSimulator
+        import aureon.simulation.aureon_world_simulator as aureon_world_simulator as ws
+        from aureon.simulation.aureon_world_simulator import WorldView, VIEW_ICONS, WorldSimulator
 
         # Add GEOMETRY to the enum (dynamic enum extension)
         # Since we can't easily extend Enum, we patch the view cycle directly

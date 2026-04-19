@@ -12,7 +12,7 @@ The Queen uses her built-in intelligence to:
 6. Execute ONLY when (gain - drain) > 0
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -45,12 +45,12 @@ from dataclasses import dataclass, asdict
 import logging
 
 # Import Queen's consciousness
-from aureon_queen_true_consciousness import QueenTrueConsciousnessController
+from aureon.utils.aureon_queen_true_consciousness import QueenTrueConsciousnessController
 
 # Import exchange clients
-from kraken_client import KrakenClient, get_kraken_client
-from binance_client import BinanceClient
-from alpaca_client import AlpacaClient
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.binance_client import BinanceClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -206,8 +206,8 @@ class QueenPowerRedistribution:
         # Momentum scanner integration
         self.momentum_scanner = None
         try:
-            from aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
-            from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+            from aureon.scanners.aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
+            from aureon.bridges.aureon_alpaca_scanner_bridge import AlpacaScannerBridge
             # Initialize bridge and orchestrator
             bridge = AlpacaScannerBridge(self.alpaca)
             self.momentum_scanner = AlpacaSwarmOrchestrator(self.alpaca, bridge)

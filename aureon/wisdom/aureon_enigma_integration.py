@@ -28,7 +28,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import time
@@ -41,7 +41,7 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 # Import Enigma core
-from aureon_enigma import (
+from aureon.wisdom.aureon_enigma import (
     AureonEnigma, UniversalTranslator,
     InterceptedSignal, DecodedIntelligence,
     SignalType, IntelligenceGrade,
@@ -51,14 +51,14 @@ from aureon_enigma import (
 
 # Try to import existing systems
 try:
-    from validator_auris import schumann_lock, coh_score, prime_alignment
+    from aureon.utils.validator_auris import schumann_lock, coh_score, prime_alignment
     AURIS_VALIDATOR_AVAILABLE = True
 except ImportError:
     AURIS_VALIDATOR_AVAILABLE = False
     logger.warning("⚠️ validator_auris not available")
 
 try:
-    from aureon_harmonic_fusion import get_fusion, HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import get_fusion, HarmonicWaveFusion
     HARMONIC_FUSION_AVAILABLE = True
 except ImportError:
     HARMONIC_FUSION_AVAILABLE = False
@@ -69,14 +69,14 @@ except ImportError:
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon.core.aureon_chirp_bus import get_chirp_bus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
     logger.warning("⚠️ aureon_harmonic_fusion not available")
 
 try:
-    from aureon_probability_nexus import EnhancedProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
     PROBABILITY_NEXUS_AVAILABLE = True
 except ImportError:
     PROBABILITY_NEXUS_AVAILABLE = False
@@ -92,7 +92,7 @@ def _lazy_load_mycelium():
     if _mycelium_module is not None:
         return MYCELIUM_AVAILABLE
     try:
-        import aureon_mycelium as _mycelium_mod
+        import aureon.core.aureon_mycelium as aureon_mycelium as _mycelium_mod
         _mycelium_module = _mycelium_mod
         MYCELIUM_AVAILABLE = True
         return True
@@ -114,14 +114,14 @@ def get_mycelium_network_class():
     return None
 
 try:
-    from aureon_timeline_oracle import TimelineOracle
+    from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
     TIMELINE_ORACLE_AVAILABLE = True
 except ImportError:
     TIMELINE_ORACLE_AVAILABLE = False
     logger.warning("⚠️ aureon_timeline_oracle not available")
 
 try:
-    from aureon_thought_bus import ThoughtBus, ThoughtSignal
+    from aureon.core.aureon_thought_bus import ThoughtBus, ThoughtSignal
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -129,7 +129,7 @@ except ImportError:
 
 # Import Dream Engine
 try:
-    from aureon_enigma_dream import EnigmaDreamer, get_dreamer, Dream, Prophecy
+    from aureon.wisdom.aureon_enigma_dream import EnigmaDreamer, get_dreamer, Dream, Prophecy
     DREAM_ENGINE_AVAILABLE = True
 except ImportError:
     DREAM_ENGINE_AVAILABLE = False
@@ -138,7 +138,7 @@ except ImportError:
 
 # Import Coherence Mandala System
 try:
-    from queen_coherence_mandala import (
+    from aureon.queen.queen_coherence_mandala import (
         QueenCoherenceSystem, MarketCoherenceAdapter, MandalaRenderer,
         CoherenceMetrics, CompositeOperatorR
     )
@@ -152,7 +152,7 @@ except ImportError:
 
 # Import Barons Banner System
 try:
-    from barons_banner import (
+    from aureon.wisdom.barons_banner import (
         BaronsBannerAnalyzer, BaronsBannerRenderer, BaronsMarketAdapter,
         BaronsAnalysis, MathematicalPattern
     )
@@ -166,7 +166,7 @@ except ImportError:
 
 # Import Math Angel Protocol - Consciousness as Fundamental Reality
 try:
-    from aureon_math_angel import (
+    from aureon.wisdom.aureon_math_angel import (
         MathAngelProtocol, MathAngelAnalyzer, NexusSystem,
         RealityField, UnityEvent, AngelState,
         PHI, SCHUMANN_RESONANCE, UNITY_FREQUENCY,
@@ -182,7 +182,7 @@ except ImportError:
 
 # Import Harmonic Reality Framework - Master Equations Tree
 try:
-    from aureon_harmonic_reality import (
+    from aureon.harmonic.aureon_harmonic_reality import (
         HarmonicRealityField, HarmonicRealityAnalyzer, HarmonicSubstrate,
         CausalEcho, ObserverNode, MultiversalCoupling, UnifiedPotential,
         RealityState, RealityBranch, LEVEvent,
@@ -199,7 +199,7 @@ except ImportError:
 
 # Import QGITA Framework - Quantum Gravity in the Act
 try:
-    from aureon_qgita_framework import (
+    from aureon.wisdom.aureon_qgita_framework import (
         QGITAMarketAnalyzer, FibonacciTimeLattice, FTCPDetector, LighthouseModel,
         FTCP, LighthouseEvent, EventType,
         PHI as QGITA_PHI, PHI_INVERSE, PHI_SQUARED
@@ -368,7 +368,7 @@ class EnigmaIntegration:
         # Wire Thought Bus
         if THOUGHT_BUS_AVAILABLE:
             try:
-                from aureon_thought_bus import get_thought_bus
+                from aureon.core.aureon_thought_bus import get_thought_bus
                 self.thought_bus = get_thought_bus()
                 logger.info("      📡 Thought Bus: WIRED → Signal Broadcast")
             except Exception as e:

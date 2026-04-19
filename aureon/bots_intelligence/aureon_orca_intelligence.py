@@ -26,7 +26,7 @@ Gary Leckey | January 2026 | ORCA MODE ACTIVATED
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -68,20 +68,20 @@ except ImportError:
 # 📡 THOUGHT BUS INTEGRATION - Neural Persistence
 THOUGHT_BUS_AVAILABLE = False
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
 
 # Counter-intelligence integration
 try:
-    from aureon_queen_counter_intelligence import (
+    from aureon.utils.aureon_queen_counter_intelligence import (
         queen_counter_intelligence,
         CounterIntelligenceSignal,
         CounterStrategy
     )
-    from aureon_global_firm_intelligence import get_attribution_engine
-    from firm_name_matcher import match_firm_name_simple, match_firm_name
+    from aureon.bots_intelligence.aureon_global_firm_intelligence import get_attribution_engine
+    from aureon.bots_intelligence.firm_name_matcher import match_firm_name_simple, match_firm_name
     COUNTER_INTEL_AVAILABLE = True
 except ImportError:
     COUNTER_INTEL_AVAILABLE = False
@@ -92,7 +92,7 @@ except ImportError:
 
 # 💰👁️ REAL PORTFOLIO TRACKER - NO PHANTOM NUMBERS! 👁️💰
 try:
-    from aureon_real_portfolio_tracker import (
+    from aureon.portfolio.aureon_real_portfolio_tracker import (
         RealPortfolioTracker,
         get_real_portfolio_tracker,
         get_real_balance,
@@ -111,7 +111,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 # Kraken (crypto)
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -119,14 +119,14 @@ except ImportError:
 
 # Binance (REST + WebSocket)
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
     BinanceClient = None
 
 try:
-    from binance_ws_client import BinanceWebSocketClient
+    from aureon.exchanges.binance_ws_client import BinanceWebSocketClient
     BINANCE_WS_AVAILABLE = True
 except ImportError:
     BINANCE_WS_AVAILABLE = False
@@ -134,7 +134,7 @@ except ImportError:
 
 # Alpaca (stocks + crypto)
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
@@ -142,7 +142,7 @@ except ImportError:
 
 # Capital.com (CFDs + stocks)
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CAPITAL_AVAILABLE = False
@@ -150,7 +150,7 @@ except ImportError:
 
 # Market scanners (global intelligence)
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
     WAVE_SCANNER_AVAILABLE = True
 except ImportError:
     WAVE_SCANNER_AVAILABLE = False
@@ -158,7 +158,7 @@ except ImportError:
 
 # Movers & Shakers Scanner (unified whale detection)
 try:
-    from aureon_movers_shakers_scanner import (
+    from aureon.scanners.aureon_movers_shakers_scanner import (
         MoversShakersScanner, MoverShaker, WaveReport, WaveType
     )
     MOVERS_SHAKERS_AVAILABLE = True
@@ -171,7 +171,7 @@ except ImportError:
 
 # Moby Dick Whale Hunter (legendary strategies)
 try:
-    from aureon_moby_dick_whale_hunter import MobyDickWhaleHunter
+    from aureon.analytics.aureon_moby_dick_whale_hunter import MobyDickWhaleHunter
     MOBY_DICK_AVAILABLE = True
 except ImportError:
     MOBY_DICK_AVAILABLE = False
@@ -1127,7 +1127,7 @@ class OrcaKillerWhaleIntelligence:
             
             # Fallback: Check Queen's state
             if hasattr(self.queen, 'state'):
-                from aureon_queen_hive_mind import QueenState
+                from aureon.utils.aureon_queen_hive_mind import QueenState
                 if self.queen.state == QueenState.HUNTING:
                     return {'approved': True, 'reason': 'Queen in HUNTING mode', 'confidence': 0.8}
                 elif self.queen.state == QueenState.RESTING:
@@ -2052,7 +2052,7 @@ class OrcaKillerWhaleIntelligence:
         if self.queen_connected and self.queen:
             try:
                 if hasattr(self.queen, 'state'):
-                    from aureon_queen_hive_mind import QueenState
+                    from aureon.utils.aureon_queen_hive_mind import QueenState
                     if self.queen.state == QueenState.RESTING:
                         logger.info(f"🦈👑 Hunt BLOCKED - Queen is RESTING")
                         return False

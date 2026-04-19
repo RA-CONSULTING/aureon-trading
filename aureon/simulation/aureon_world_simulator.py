@@ -38,7 +38,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import argparse
 import math
@@ -506,8 +506,8 @@ class LiveDataEngine:
     """Pulls real data from QueenSensorySystem + GlobalMarketOrganism."""
 
     def __init__(self):
-        from aureon_sensory_framework import get_queen_senses, SensoryStimulus
-        from aureon_market_organism import (
+        from aureon.intelligence.aureon_sensory_framework import get_queen_senses, SensoryStimulus
+        from aureon.intelligence.aureon_market_organism import (
             get_organism, register_manipulation_sense,
         )
         self._senses   = get_queen_senses()
@@ -660,7 +660,7 @@ def render_sense_bar(label: str, hz: float, quality: float,
 
 def render_senses(state: WorldState, focused_symbol: str = "BTC") -> List[str]:
     """Render the full 9-channel sensory HUD."""
-    from aureon_market_organism import ManipulationDetector
+    from aureon.intelligence.aureon_market_organism import ManipulationDetector
     channel_order = [
         "touch", "taste", "smell", "sound",
         "sight", "balance", "intuition", "ancestral", "manipulation"

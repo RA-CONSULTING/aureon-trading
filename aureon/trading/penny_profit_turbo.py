@@ -23,7 +23,7 @@ Gary Leckey | January 2026 | TURBO MODE
 ═══════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -693,13 +693,13 @@ class PennyProfitTurbo:
     def _load_integrations(self):
         """Load existing profit engines for enhancement."""
         try:
-            from adaptive_prime_profit_gate import get_adaptive_gate
+            from aureon.utils.adaptive_prime_profit_gate import get_adaptive_gate
             self.adaptive_gate = get_adaptive_gate()
         except ImportError:
             pass
         
         try:
-            from penny_profit_engine import get_penny_engine
+            from aureon.trading.penny_profit_engine import get_penny_engine
             self.penny_engine = get_penny_engine()
         except ImportError:
             pass

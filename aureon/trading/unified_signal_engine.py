@@ -378,7 +378,7 @@ class UnifiedSignalEngine:
 
         # Try cross_asset_correlator categories if available
         try:
-            from cross_asset_correlator import ASSET_CATEGORIES, _norm
+            from aureon.analytics.cross_asset_correlator import ASSET_CATEGORIES, _norm
             cat = ASSET_CATEGORIES.get(symbol, ASSET_CATEGORIES.get(_norm(symbol), ''))
             if cat:
                 return cat

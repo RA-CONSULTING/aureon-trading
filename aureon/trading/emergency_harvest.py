@@ -11,7 +11,7 @@ Notes:
 - Routes sells through MultiExchangeClient so it works across exchanges
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import sys
@@ -55,8 +55,8 @@ def main() -> Tuple[int, float]:
     dry_run = '--dry-run' in sys.argv
 
     try:
-        from unified_exchange_client import MultiExchangeClient
-        from penny_profit_engine import get_penny_engine, check_penny_exit
+        from aureon.trading.unified_exchange_client import MultiExchangeClient
+        from aureon.trading.penny_profit_engine import get_penny_engine, check_penny_exit
     except ImportError as e:
         print(f"❌ Import error: {e}")
         sys.exit(1)

@@ -33,7 +33,7 @@ Gary Leckey | Prime Sentinel Decree | January 2026
 ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -68,7 +68,7 @@ THE_DREAM = 1_000_000_000.0  # $1 Billion - The Ultimate Goal
 def get_happiness_engine():
     """Get the Grand Big Wheel - Pursuit of Happiness engine."""
     try:
-        from queen_pursuit_of_happiness import get_pursuit_of_happiness
+        from aureon.queen.queen_pursuit_of_happiness import get_pursuit_of_happiness
         return get_pursuit_of_happiness()
     except ImportError:
         return None
@@ -178,7 +178,7 @@ class QueenVoiceStream:
     def _init_thought_bus(self):
         """Connect to ThoughtBus for metric feeds."""
         try:
-            from aureon_thought_bus import ThoughtBus, get_thought_bus
+            from aureon.core.aureon_thought_bus import ThoughtBus, get_thought_bus
             try:
                 self.thought_bus = get_thought_bus()
             except:
@@ -191,7 +191,7 @@ class QueenVoiceStream:
     def _init_queen(self):
         """Connect to Queen consciousness for deeper integration."""
         try:
-            from aureon_queen_consciousness import QueenSeroConsciousness
+            from aureon.utils.aureon_queen_consciousness import QueenSeroConsciousness
             self.queen = QueenSeroConsciousness(dry_run=True, stream_interval_ms=1000)
             logger.info("   ✅ Voice Stream connected to Queen Consciousness")
         except ImportError:

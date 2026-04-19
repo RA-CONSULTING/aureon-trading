@@ -1,4 +1,4 @@
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -31,9 +31,9 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 # Assuming these imports from the existing system. We will validate and adjust as we build.
-# from aureon_barter_navigator import BarterNavigator
+# from aureon.trading.aureon_barter_navigator import BarterNavigator
 # from exchange_clients import UnifiedExchangeClient # Placeholder
-# from queen_loss_learning import WinOutcome 
+# from aureon.queen.queen_loss_learning import WinOutcome 
 # from real_portfolio_tracker import RealPortfolioSnapshot
 
 logger = logging.getLogger(__name__)

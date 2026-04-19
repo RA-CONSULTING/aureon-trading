@@ -560,7 +560,7 @@ class CivilizationalDNADecoder:
                 pass
 
     def _load_maeshowe(self, seq_id: str):
-        from maeshowe_seer_decode import MaeshoweDecoder
+        from aureon.wisdom.maeshowe_seer_decode import MaeshoweDecoder
         dec     = MaeshoweDecoder()
         score   = dec.get_oracle_score()
         lattice = dec.read()

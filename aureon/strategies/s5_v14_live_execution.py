@@ -20,7 +20,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import json
 import time
@@ -44,17 +44,17 @@ except ImportError:
 import requests
 
 # Import V14 Dance Enhancements
-from s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14Position
+from aureon.strategies.s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14Position
 
 # Import our systems
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     MYCELIUM_AVAILABLE = True
 except ImportError:
     MYCELIUM_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False

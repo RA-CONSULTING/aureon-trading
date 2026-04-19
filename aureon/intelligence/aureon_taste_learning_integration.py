@@ -29,7 +29,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import time
 import logging
@@ -37,7 +37,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from aureon_blind_taste_trial import TrialStatistics
+    from aureon.intelligence.aureon_blind_taste_trial import TrialStatistics
 
 logger = logging.getLogger("taste_learning_integration")
 
@@ -46,31 +46,31 @@ logger = logging.getLogger("taste_learning_integration")
 # ─────────────────────────────────────────────────────────────────────────────
 
 try:
-    from queen_sentience_integration import get_sentience_engine, InnerThought, ThoughtType
+    from aureon.queen.queen_sentience_integration import get_sentience_engine, InnerThought, ThoughtType
     _SENTIENCE = True
 except ImportError:
     _SENTIENCE = False
 
 try:
-    from queen_consciousness_model import QueenConsciousness, BrainInput
+    from aureon.queen.queen_consciousness_model import QueenConsciousness, BrainInput
     _CONSCIOUSNESS_MODEL = True
 except ImportError:
     _CONSCIOUSNESS_MODEL = False
 
 try:
-    from queen_consciousness_measurement import get_consciousness_measurement
+    from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
     _CONSCIOUSNESS_MEASUREMENT = True
 except ImportError:
     _CONSCIOUSNESS_MEASUREMENT = False
 
 try:
-    from aureon_elephant_learning import ElephantMemory, LearnedPattern, TradingWisdom
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory, LearnedPattern, TradingWisdom
     _ELEPHANT = True
 except ImportError:
     _ELEPHANT = False
 
 try:
-    from queen_neuron_v2 import QueenNeuronV2, NeuralInputV2
+    from aureon.queen.queen_neuron_v2 import QueenNeuronV2, NeuralInputV2
     _NEURON = True
 except ImportError:
     _NEURON = False

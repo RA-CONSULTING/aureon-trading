@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Relay-style validation monitor for ThoughtBus systems."""
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import threading
@@ -10,7 +10,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
-from aureon_thought_bus import Thought, get_thought_bus
+from aureon.core.aureon_thought_bus import Thought, get_thought_bus
 
 
 DEFAULT_LOG_PATH = Path("state/baton_relay.jsonl")
@@ -88,7 +88,7 @@ class BatonRelayMonitor:
 
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            from aureon_queen_hive_mind import get_queen
+            from aureon.utils.aureon_queen_hive_mind import get_queen
             queen = get_queen()
             try:
                 queen.enable_full_autonomous_control()

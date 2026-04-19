@@ -10,7 +10,7 @@ Gary Leckey | January 2026 | PROVE IT WORKS
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -60,7 +60,7 @@ results = {
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🐙 KRAKEN: Testing SELL with existing balance...")
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     
     kraken = get_kraken_client()
     print(f"   Dry Run Mode: {kraken.dry_run}")
@@ -133,7 +133,7 @@ except Exception as e:
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🟡 BINANCE: Testing SELL with existing balance...")
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     
     binance = get_binance_client()
     print(f"   Dry Run Mode: {binance.dry_run}")
@@ -182,7 +182,7 @@ except Exception as e:
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🦙 ALPACA: Testing trade with existing balance...")
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     
     alpaca = AlpacaClient()
     

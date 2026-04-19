@@ -15,7 +15,7 @@
 ║    - Minimum order validation                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════════════════╝
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -226,7 +226,7 @@ class UnifiedSymbolManager:
     def kraken(self):
         if self._kraken is None:
             try:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 self._kraken = get_kraken_client()
             except Exception as e:
                 logger.debug(f"Kraken client not available: {e}")
@@ -236,7 +236,7 @@ class UnifiedSymbolManager:
     def binance(self):
         if self._binance is None:
             try:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 self._binance = get_binance_client()
             except Exception as e:
                 logger.debug(f"Binance client not available: {e}")
@@ -246,7 +246,7 @@ class UnifiedSymbolManager:
     def alpaca(self):
         if self._alpaca is None:
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca = AlpacaClient()
             except Exception as e:
                 logger.debug(f"Alpaca client not available: {e}")
@@ -256,7 +256,7 @@ class UnifiedSymbolManager:
     def capital(self):
         if self._capital is None:
             try:
-                from capital_client import CapitalClient
+                from aureon.exchanges.capital_client import CapitalClient
                 self._capital = CapitalClient()
             except Exception as e:
                 logger.debug(f"Capital client not available: {e}")

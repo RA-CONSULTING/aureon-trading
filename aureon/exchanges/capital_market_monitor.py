@@ -18,8 +18,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from capital_client import CapitalClient
-from capital_cfd_trader import CAPITAL_UNIVERSE
+from aureon.exchanges.capital_client import CapitalClient
+from aureon.exchanges.capital_cfd_trader import CAPITAL_UNIVERSE
 
 
 DEFAULT_UNIVERSE_PATH = Path(os.getenv("CAPITAL_UNIVERSE_CACHE_PATH", "ws_cache/capital_universe.json"))

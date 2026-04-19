@@ -1,10 +1,10 @@
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time
 import sys
 import random
-from capital_client import CapitalClient
+from aureon.exchanges.capital_client import CapitalClient
 
 # ==========================================
 # 🔄 AUREON AUTONOMOUS CYCLE (Infinite Loop)

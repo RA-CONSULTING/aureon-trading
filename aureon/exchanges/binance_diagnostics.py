@@ -15,7 +15,7 @@ Gary Leckey | Aureon Trading | January 2026
 """
 
 try:
-    from aureon_baton_link import link_system as _baton_link
+    from aureon.core.aureon_baton_link import link_system as _baton_link
     _baton_link(__name__)
 except Exception:
     pass
@@ -71,7 +71,7 @@ def main():
     # 2. Test client initialization
     print("\n🔗 Client Configuration:")
     try:
-        from binance_client import BinanceClient, get_binance_client
+        from aureon.exchanges.binance_client import BinanceClient, get_binance_client
         client = get_binance_client()
         if client is None:
             print("  ❌ Client initialization failed: client unavailable")

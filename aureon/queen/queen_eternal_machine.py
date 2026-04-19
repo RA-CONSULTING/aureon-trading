@@ -52,7 +52,7 @@ if sys.platform == 'win32':
 
 # Optional: Ocean Wave Scanner for whale detection
 try:
-    from aureon_ocean_wave_scanner import OceanWaveScanner
+    from aureon.scanners.aureon_ocean_wave_scanner import OceanWaveScanner
     OCEAN_SCANNER_AVAILABLE = True
 except ImportError:
     OCEAN_SCANNER_AVAILABLE = False
@@ -60,7 +60,7 @@ except ImportError:
 
 # 👑🧠 QUEEN HIVE MIND - Full Autonomous Consciousness
 try:
-    from aureon_queen_hive_mind import QueenHiveMind, get_queen
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind, get_queen
     QUEEN_HIVE_AVAILABLE = True
 except ImportError:
     QUEEN_HIVE_AVAILABLE = False
@@ -69,7 +69,7 @@ except ImportError:
 
 # ⚛️🧠 QUANTUM COGNITION - Amplified Consciousness & Autonomous Control
 try:
-    from queen_quantum_cognition import (
+    from aureon.queen.queen_quantum_cognition import (
         QueenQuantumCognition, 
         get_quantum_cognition,
         QuantumCognitionState
@@ -83,7 +83,7 @@ except ImportError:
 
 # 🍄 MYCELIUM NETWORK - Underground Signal Network
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     MYCELIUM_AVAILABLE = True
 except ImportError:
     MYCELIUM_AVAILABLE = False
@@ -91,7 +91,7 @@ except ImportError:
 
 # 👑🎮 QUEEN AUTONOMOUS CONTROL - Sovereign Authority
 try:
-    from aureon_queen_autonomous_control import (
+    from aureon.autonomous.aureon_queen_autonomous_control import (
         QueenAutonomousControl,
         create_queen_autonomous_control
     )
@@ -103,7 +103,7 @@ except ImportError:
 
 # 🤖 BOT INTELLIGENCE PROFILER - Market Structure & Competition Analysis
 try:
-    from aureon_bot_intelligence_profiler import BotIntelligenceProfiler
+    from aureon.bots_intelligence.aureon_bot_intelligence_profiler import BotIntelligenceProfiler
     BOT_INTELLIGENCE_AVAILABLE = True
 except ImportError:
     BOT_INTELLIGENCE_AVAILABLE = False
@@ -111,7 +111,7 @@ except ImportError:
 
 # 📺 LIVE TV STATION - Truth Prediction Engine with Real Data Streaming
 try:
-    from aureon_truth_prediction_engine import TruthPredictionEngine, MarketSnapshot
+    from aureon.intelligence.aureon_truth_prediction_engine import TruthPredictionEngine, MarketSnapshot
     LIVE_TV_AVAILABLE = True
 except ImportError:
     LIVE_TV_AVAILABLE = False
@@ -119,7 +119,7 @@ except ImportError:
 
 # ⛰️ MOUNTAIN CLIMBER - Learn Optimal Climbing & Profit-Taking Strategies
 try:
-    from aureon_mountain_climber import MountainClimber
+    from aureon.conversion.aureon_mountain_climber import MountainClimber
     MOUNTAIN_CLIMBER_AVAILABLE = True
 except ImportError:
     MOUNTAIN_CLIMBER_AVAILABLE = False
@@ -673,7 +673,7 @@ class QueenEternalMachine:
         # Initialize cost basis tracker for accurate cost basis calculation
         cost_basis_tracker = None
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             cost_basis_tracker = CostBasisTracker()
             logger.info("📊 Cost Basis Tracker: WIRED for accurate baggage calculation")
         except Exception as e:
@@ -790,7 +790,7 @@ class QueenEternalMachine:
                 from aureon.core.api_gateway import gw
                 binance_bals = gw.get_balance("binance")
             except Exception:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 binance_bals = get_binance_client().get_balance()
             for asset, qty in binance_bals.items():
                 if qty > 0:
@@ -805,7 +805,7 @@ class QueenEternalMachine:
                 from aureon.core.api_gateway import gw
                 positions = gw.get_positions("alpaca")
             except Exception:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 positions = AlpacaClient().get_positions()
             for pos in positions:
                 symbol = pos.get('symbol', '')
@@ -830,7 +830,7 @@ class QueenEternalMachine:
                 from aureon.core.api_gateway import gw
                 kraken_bals = gw.get_balance("kraken")
             except Exception:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 kraken_bals = get_kraken_client().get_balance()
             for asset, qty in kraken_bals.items():
                 qty = float(qty)
@@ -878,13 +878,13 @@ class QueenEternalMachine:
         client = None
         try:
             if exchange == 'binance':
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 client = get_binance_client()
             elif exchange == 'kraken':
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 client = get_kraken_client()
             elif exchange == 'alpaca':
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 client = AlpacaClient()
         except Exception as e:
             logger.warning(f"⚠️ Could not init {exchange} client: {e}")
@@ -1221,7 +1221,7 @@ class QueenEternalMachine:
                 from aureon.core.api_gateway import gw
                 return gw.get_24h_tickers("binance") or []
             except Exception:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 return get_binance_client().get_24h_tickers() or []
 
         def _fetch_alpaca_tickers():
@@ -1229,7 +1229,7 @@ class QueenEternalMachine:
                 from aureon.core.api_gateway import gw
                 return gw.get_24h_tickers("alpaca") or []
             except Exception:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 return AlpacaClient().get_24h_tickers() or []
 
         def _fetch_kraken_tickers():
@@ -1237,7 +1237,7 @@ class QueenEternalMachine:
                 from aureon.core.api_gateway import gw
                 return gw.get_24h_tickers("kraken") or []
             except Exception:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 return get_kraken_client().get_24h_tickers() or []
 
         # 1) Binance broad market scan (with timeout to prevent hang)
@@ -1319,21 +1319,21 @@ class QueenEternalMachine:
                             from aureon.core.api_gateway import gw
                             return ('USDC', gw.get_24h_ticker("binance", pair))
                         except Exception:
-                            from binance_client import get_binance_client
+                            from aureon.exchanges.binance_client import get_binance_client
                             return ('USDC', get_binance_client().get_24h_ticker(pair))
                     elif ex == 'kraken':
                         try:
                             from aureon.core.api_gateway import gw
                             return ('USD', gw.get_24h_ticker("kraken", pair))
                         except Exception:
-                            from kraken_client import get_kraken_client
+                            from aureon.exchanges.kraken_client import get_kraken_client
                             return ('USD', get_kraken_client().get_24h_ticker(pair))
                     elif ex == 'alpaca':
                         try:
                             from aureon.core.api_gateway import gw
                             t = gw.get_ticker("alpaca", pair)
                         except Exception:
-                            from alpaca_client import AlpacaClient
+                            from aureon.exchanges.alpaca_client import AlpacaClient
                             t = AlpacaClient().get_ticker(pair)
                         if t and 'price' in t:
                             t = {
@@ -2128,7 +2128,7 @@ class QueenEternalMachine:
         # Initialize cost basis tracker
         cost_basis_tracker = None
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             cost_basis_tracker = CostBasisTracker()
         except Exception as e:
             logger.warning(f"⚠️ Cost basis tracker unavailable for leap recording: {e}")

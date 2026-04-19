@@ -38,7 +38,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 # 🍄 MYCELIUM NETWORK - The Foundation
 try:
-    from aureon_mycelium import MyceliumNetwork, Synapse, Neuron, Hive, Agent
+    from aureon.core.aureon_mycelium import MyceliumNetwork, Synapse, Neuron, Hive, Agent
     MYCELIUM_AVAILABLE = True
     print("🍄 Mycelium Network LOADED - Neural mesh ready!")
 except ImportError as e:
@@ -69,7 +69,7 @@ except ImportError as e:
 
 # 🔮 PROBABILITY NEXUS - 80%+ Win Rate
 try:
-    from aureon_probability_nexus import (
+    from aureon.bridges.aureon_probability_nexus import (
         EnhancedProbabilityNexus, AureonProbabilityNexus,
         ProfitFilter, CompoundingEngine
     )
@@ -80,7 +80,7 @@ except ImportError:
 
 # 💎 ULTIMATE INTELLIGENCE - 95% Accuracy
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, ultimate_predict, record_ultimate_outcome
     )
     ULTIMATE_INTELLIGENCE_AVAILABLE = True
@@ -90,7 +90,7 @@ except ImportError:
 
 # 🌌 INTERNAL MULTIVERSE - 10 Worlds
 try:
-    from aureon_internal_multiverse import (
+    from aureon.simulation.aureon_internal_multiverse import (
         InternalMultiverse, World, OmegaConverter, ConsensusEngine
     )
     MULTIVERSE_AVAILABLE = True
@@ -100,7 +100,7 @@ except ImportError:
 
 # 🧠 MINER BRAIN - Cognitive Intelligence
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     MINER_BRAIN_AVAILABLE = True
     print("🧠 Miner Brain LOADED - Cognitive intelligence!")
 except ImportError:
@@ -108,7 +108,7 @@ except ImportError:
 
 # 🧠 AUREON BRAIN - Core Decision Engine
 try:
-    from aureon_brain import AureonBrain
+    from aureon.intelligence.aureon_brain import AureonBrain
     AUREON_BRAIN_AVAILABLE = True
     print("🧠 Aureon Brain LOADED - Core decisions!")
 except ImportError:
@@ -116,14 +116,14 @@ except ImportError:
 
 # 🌊 HARMONIC SYSTEMS
 try:
-    from aureon_harmonic_seed import HarmonicSeedLoader
+    from aureon.harmonic.aureon_harmonic_seed import HarmonicSeedLoader
     HARMONIC_SEED_AVAILABLE = True
     print("🌊 Harmonic Seed LOADED!")
 except ImportError:
     HARMONIC_SEED_AVAILABLE = False
 
 try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
     HARMONIC_FUSION_AVAILABLE = True
     print("🌊 Harmonic Fusion LOADED!")
 except ImportError:
@@ -131,7 +131,7 @@ except ImportError:
 
 # 🗼 LIGHTHOUSE - Pattern Detection
 try:
-    from aureon_lighthouse import AureonLighthouse
+    from aureon.analytics.aureon_lighthouse import AureonLighthouse
     LIGHTHOUSE_AVAILABLE = True
     print("🗼 Lighthouse LOADED - Pattern detection!")
 except ImportError:
@@ -139,7 +139,7 @@ except ImportError:
 
 # 🧠 MEMORY CORE - Hippocampus
 try:
-    from aureon_memory_core import memory
+    from aureon.core.aureon_memory_core import memory
     MEMORY_AVAILABLE = True
     print("🧠 Memory Core LOADED!")
 except ImportError:
@@ -147,7 +147,7 @@ except ImportError:
 
 # 📡 THOUGHT BUS - Unity Consciousness
 try:
-    from aureon_thought_bus import ThoughtBus
+    from aureon.core.aureon_thought_bus import ThoughtBus
     THOUGHT_BUS_AVAILABLE = True
     print("📡 Thought Bus LOADED!")
 except ImportError:
@@ -155,7 +155,7 @@ except ImportError:
 
 # 🛡️ IMMUNE SYSTEM - Self Healing
 try:
-    from aureon_immune_system import AureonImmuneSystem
+    from aureon.core.aureon_immune_system import AureonImmuneSystem
     IMMUNE_AVAILABLE = True
     print("🛡️ Immune System LOADED!")
 except ImportError:
@@ -163,7 +163,7 @@ except ImportError:
 
 # 🌍 UNIFIED ECOSYSTEM - Master Orchestrator
 try:
-    from aureon_unified_ecosystem import (
+    from aureon.trading.aureon_unified_ecosystem import (
         AureonUnifiedEcosystem, AdaptiveLearner, 
         StateAggregator, EcosystemBrainBridge
     )
@@ -174,7 +174,7 @@ except ImportError:
 
 # 🦅 CONVERSION COMMANDO - 1885 CAPM Game
 try:
-    from aureon_conversion_commando import AdaptiveConversionCommando
+    from aureon.conversion.aureon_conversion_commando import AdaptiveConversionCommando
     CONVERSION_COMMANDO_AVAILABLE = True
     print("🦅 Conversion Commando LOADED!")
 except ImportError:
@@ -182,7 +182,7 @@ except ImportError:
 
 # 🎯 V14 SCORING - 100% Win Rate Logic
 try:
-    from s5_v14_dance_enhancements import V14DanceEnhancer, V14ScoringEngine
+    from aureon.strategies.s5_v14_dance_enhancements import V14DanceEnhancer, V14ScoringEngine
     V14_AVAILABLE = True
     print("🎯 V14 Scoring LOADED - 100% win rate!")
 except ImportError:
@@ -190,7 +190,7 @@ except ImportError:
 
 # 🔱 OMEGA - Complete Orchestrator
 try:
-    from aureon_omega import AureonOmega
+    from aureon.trading.aureon_omega import AureonOmega
     OMEGA_AVAILABLE = True
     print("🔱 Omega LOADED!")
 except ImportError:
@@ -198,7 +198,7 @@ except ImportError:
 
 # 9️⃣ QGITA - 9 Auris Operators
 try:
-    from aureon_qgita import run_qgita_state
+    from aureon.wisdom.aureon_qgita import run_qgita_state
     QGITA_AVAILABLE = True
     print("9️⃣ QGITA LOADED - 9 Auris operators!")
 except ImportError:
@@ -206,7 +206,7 @@ except ImportError:
 
 # 📊 HNC PROBABILITY MATRIX
 try:
-    from hnc_probability_matrix import HNCProbabilityIntegration
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
     HNC_MATRIX_AVAILABLE = True
     print("📊 HNC Probability Matrix LOADED!")
 except ImportError:

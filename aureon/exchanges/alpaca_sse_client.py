@@ -19,7 +19,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time
@@ -680,7 +680,7 @@ class AlpacaStreamingIntegration:
 
         # Feed into Autonomy Hub (The Big Wheel) for unified data capture
         try:
-            from aureon_autonomy_hub import get_autonomy_hub
+            from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
             hub = get_autonomy_hub()
             hub.data_bridge.ingest_market_tick(
                 symbol, trade.price, metrics['momentum'], metrics['volume'], 'alpaca'

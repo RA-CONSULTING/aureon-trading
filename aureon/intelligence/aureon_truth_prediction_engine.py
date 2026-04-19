@@ -14,7 +14,7 @@ Purpose:
 ⚠️ REAL DATA ONLY. NO SIMULATIONS. NO LINEAR GUESSES.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -57,7 +57,7 @@ STATE_FILE = Path("aureon_truth_prediction_state.json")
 
 # Import Queen's intelligence
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         ProbabilityUltimateIntelligence,
         UltimatePrediction
     )
@@ -68,7 +68,7 @@ except ImportError:
 
 # Import Queen↔Auris validation
 try:
-    from metatrons_cube_knowledge_exchange import QueenAurisPingPong
+    from aureon.wisdom.metatrons_cube_knowledge_exchange import QueenAurisPingPong
     PINGPONG_AVAILABLE = True
 except ImportError:
     PINGPONG_AVAILABLE = False

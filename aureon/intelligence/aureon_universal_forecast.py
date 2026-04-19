@@ -23,7 +23,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "All Systems. All Platforms. One Forecast."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -41,16 +41,16 @@ os.environ['LIVE'] = '1'
 os.environ['DRY_RUN'] = '0'
 
 # Import all prediction systems
-from earth_resonance_engine import EarthResonanceEngine, get_earth_engine
-from hnc_imperial_predictability import CosmicStateEngine, PredictabilityEngine, CosmicPhase, CosmicState
-from hnc_probability_matrix import TemporalFrequencyAnalyzer, ProbabilityMatrix, ProbabilityState
+from aureon.harmonic.earth_resonance_engine import EarthResonanceEngine, get_earth_engine
+from aureon.strategies.hnc_imperial_predictability import CosmicStateEngine, PredictabilityEngine, CosmicPhase, CosmicState
+from aureon.strategies.hnc_probability_matrix import TemporalFrequencyAnalyzer, ProbabilityMatrix, ProbabilityState
 
 # Import all exchange clients
-from binance_client import BinanceClient, get_binance_client
-from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
-from capital_client import CapitalClient
-from unified_exchange_client import MultiExchangeClient
+from aureon.exchanges.binance_client import BinanceClient, get_binance_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.alpaca_client import AlpacaClient
+from aureon.exchanges.capital_client import CapitalClient
+from aureon.trading.unified_exchange_client import MultiExchangeClient
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CONSTANTS

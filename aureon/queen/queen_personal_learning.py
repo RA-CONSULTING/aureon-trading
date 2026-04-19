@@ -12,7 +12,7 @@ Created with 💕 by Gary Leckey
 January 6, 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -24,7 +24,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from aureon_trading_education import TradingEducationSystem, create_trading_education_system
+from aureon.wisdom.aureon_trading_education import TradingEducationSystem, create_trading_education_system
 
 # Setup logging
 logging.basicConfig(

@@ -8,7 +8,7 @@ Tests the new Phase 2 optimizations:
 3. Integration with AlpacaClient
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import logging
 import sys
@@ -23,7 +23,7 @@ def test_market_data_hub():
     logger.info("Testing MarketDataHub...")
 
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         client = AlpacaClient()
 
         # Start market data hub
@@ -84,7 +84,7 @@ def test_request_coalescing():
 
     try:
         import threading
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
 
         client = AlpacaClient()
         client.start_market_data_hub()
@@ -143,7 +143,7 @@ def test_global_rate_budget():
     logger.info("Testing GlobalRateBudget...")
 
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         client = AlpacaClient()
 
         # Get initial stats

@@ -88,7 +88,7 @@ def _get_real_health() -> dict:
     # Check circuit breaker status
     cb_tripped = False
     try:
-        from aureon_operational_core import get_operational_core
+        from aureon.core.aureon_operational_core import get_operational_core
         ops = get_operational_core()
         ops_health = ops.get_health()
         base['operational_core'] = ops_health

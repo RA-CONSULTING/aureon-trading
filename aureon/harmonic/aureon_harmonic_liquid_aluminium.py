@@ -47,7 +47,7 @@ Gary Leckey | Harmonic Liquid Aluminium | January 2026
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -383,7 +383,7 @@ class HarmonicLiquidAluminiumField:
     def _init_thought_bus(self):
         """Initialize ThoughtBus connection."""
         try:
-            from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+            from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
             # Try to get existing bus or create new
             try:
                 self.thought_bus = get_thought_bus()
@@ -934,7 +934,7 @@ class HarmonicKillChainAdapter:
         
         # Import and wrap the kill chain
         try:
-            from unified_kill_chain import UnifiedKillChain
+            from aureon.trading.unified_kill_chain import UnifiedKillChain
             self.kill_chain = UnifiedKillChain()
             logger.info("🔗 HarmonicKillChainAdapter initialized")
         except Exception as e:

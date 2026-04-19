@@ -40,20 +40,20 @@ except Exception:
     pass
 
 try:
-    from kraken_margin_penny_trader import KrakenMarginArmyTrader
-    from capital_cfd_trader import CAPITAL_UNIVERSE, CapitalCFDTrader
+    from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader
+    from aureon.exchanges.capital_cfd_trader import CAPITAL_UNIVERSE, CapitalCFDTrader
 except Exception:
     from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader
     from aureon.exchanges.capital_cfd_trader import CAPITAL_UNIVERSE, CapitalCFDTrader
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 except Exception:
     try:
         from aureon.exchanges.alpaca_client import AlpacaClient
     except Exception:
         AlpacaClient = None  # type: ignore[assignment]
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
 except Exception:
     try:
         from aureon.exchanges.binance_client import BinanceClient
@@ -64,7 +64,7 @@ try:
     from aureon.utils.aureon_sero_client import get_sero_client
 except Exception:
     try:
-        from aureon_sero_client import get_sero_client
+        from aureon.utils.aureon_sero_client import get_sero_client
     except Exception:
         get_sero_client = None  # type: ignore[assignment]
 
@@ -85,7 +85,7 @@ try:
     _HAS_MYCELIUM = True
 except Exception:
     try:
-        from aureon_mycelium import get_mycelium
+        from aureon.core.aureon_mycelium import get_mycelium
         _HAS_MYCELIUM = True
     except Exception:
         get_mycelium = None  # type: ignore[assignment]

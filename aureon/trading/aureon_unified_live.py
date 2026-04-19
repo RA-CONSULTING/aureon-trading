@@ -18,7 +18,7 @@ ONE SYSTEM. ALL THE POWER.
 Gary Leckey | November 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, time, math, json, logging, tempfile
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
@@ -29,9 +29,9 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 
-from binance_client import BinanceClient
-from hnc_probability_matrix import HNCProbabilityIntegration
-from aureon_memory_core import memory as spiral_memory
+from aureon.exchanges.binance_client import BinanceClient
+from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
+from aureon.core.aureon_memory_core import memory as spiral_memory
 
 logging.basicConfig(
     level=logging.INFO,

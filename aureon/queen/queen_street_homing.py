@@ -16,7 +16,7 @@ import time
 import random
 sys.path.insert(0, '/workspaces/aureon-trading')
 
-from aureon_live_aura_location_tracker import LiveAuraLocationTracker
+from aureon.utils.aureon_live_aura_location_tracker import LiveAuraLocationTracker
 
 
 class QueenStreetLevelHoming:

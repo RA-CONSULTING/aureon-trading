@@ -18,7 +18,7 @@ Simulates the quantum-enhanced miner with FULL 12-DIMENSION ecosystem:
 Gary Leckey & GitHub Copilot | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import logging
 import sys
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 # Import miner components
 try:
-    from aureon_miner import (
+    from aureon.utils.aureon_miner import (
         HarmonicMiningOptimizer, 
         QuantumMirrorArray,
         QuantumLatticeAmplifier,
@@ -56,7 +56,7 @@ except ImportError as e:
 
 # Try to import enhancement layer
 try:
-    from aureon_enhancements import EnhancementLayer
+    from aureon.core.aureon_enhancements import EnhancementLayer
     ENHANCEMENTS_AVAILABLE = True
 except ImportError:
     ENHANCEMENTS_AVAILABLE = False
@@ -64,7 +64,7 @@ except ImportError:
 
 # Try to import bridge for ecosystem
 try:
-    from aureon_bridge import AureonBridge
+    from aureon.bridges.aureon_bridge import AureonBridge
     BRIDGE_AVAILABLE = True
 except ImportError:
     BRIDGE_AVAILABLE = False
@@ -72,7 +72,7 @@ except ImportError:
 
 # Try to import HNC probability matrix
 try:
-    from hnc_probability_matrix import HNCProbabilityIntegration
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
     HNC_AVAILABLE = True
 except ImportError:
     HNC_AVAILABLE = False

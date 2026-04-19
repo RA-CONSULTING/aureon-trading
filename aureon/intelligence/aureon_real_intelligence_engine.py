@@ -15,7 +15,7 @@ All validated data flows to Queen for REAL trade decisions.
 Gary Leckey & Tina Brown | January 2026 | REAL INTELLIGENCE
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -59,7 +59,7 @@ _WHALE_PREDICTOR_AVAILABLE = False
 _MOMENTUM_SCANNERS_AVAILABLE = False
 
 try:
-    from aureon_bot_intelligence_profiler import (
+    from aureon.bots_intelligence.aureon_bot_intelligence_profiler import (
         TRADING_FIRM_SIGNATURES,
         BotIntelligenceProfiler,
     )
@@ -72,7 +72,7 @@ except ImportError as e:
     _bot_profiler = None
 
 try:
-    from aureon_whale_behavior_predictor import (
+    from aureon.analytics.aureon_whale_behavior_predictor import (
         WhaleBehaviorPredictor,
         default_predictor as _whale_predictor
     )
@@ -83,7 +83,7 @@ except ImportError as e:
     _whale_predictor = None
 
 try:
-    from aureon_animal_momentum_scanners import (
+    from aureon.scanners.aureon_animal_momentum_scanners import (
         AlpacaSwarmOrchestrator,
         AlpacaLoneWolf,
         AlpacaLionHunt,
@@ -406,8 +406,8 @@ class RealMomentumScanner:
             return
             
         try:
-            from alpaca_client import AlpacaClient
-            from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+            from aureon.exchanges.alpaca_client import AlpacaClient
+            from aureon.bridges.aureon_alpaca_scanner_bridge import AlpacaScannerBridge
             
             # Initialize Alpaca client
             alpaca = AlpacaClient()

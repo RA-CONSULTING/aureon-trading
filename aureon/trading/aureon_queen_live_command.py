@@ -13,7 +13,7 @@
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -57,7 +57,7 @@ QUEEN_AVAILABLE = False
 queen_hive = None
 
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     queen_hive = QueenHiveMind()
     QUEEN_AVAILABLE = True
     logger.info("👑 QUEEN HIVE MIND LOADED!")
@@ -65,7 +65,7 @@ except ImportError:
     logger.warning("Queen Hive Mind not available")
     
 try:
-    from aureon_enigma import Enigma
+    from aureon.wisdom.aureon_enigma import Enigma
     enigma = Enigma()
     ENIGMA_AVAILABLE = True
     logger.info("🔐 ENIGMA DECODER LOADED!")
@@ -74,7 +74,7 @@ except:
     enigma = None
 
 try:
-    from aureon_elephant_learning import ElephantMemory
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
     elephant = ElephantMemory()
     ELEPHANT_AVAILABLE = True
     logger.info("🐘 ELEPHANT MEMORY LOADED!")
@@ -83,7 +83,7 @@ except:
     elephant = None
 
 try:
-    from aureon_probability_nexus import ProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import ProbabilityNexus
     nexus = ProbabilityNexus()
     NEXUS_AVAILABLE = True
     logger.info("🎯 PROBABILITY NEXUS LOADED!")

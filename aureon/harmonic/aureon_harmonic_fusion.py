@@ -20,7 +20,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
 import logging
@@ -44,14 +44,14 @@ QUEEN_MIN_COP = 1.0188               # 👑 1.88% minimum realized profit
 QUEEN_MIN_PROFIT_PCT = 1.88          # 👑 The sacred number as percentage
 
 # Import components
-from aureon_harmonic_seed import (
+from aureon.harmonic.aureon_harmonic_seed import (
     HarmonicSeedLoader,
     HarmonicGrowthEngine,
     GlobalHarmonicState,
     SymbolWaveState,
     SCHUMANN_BASE
 )
-from aureon_lighthouse import (
+from aureon.analytics.aureon_lighthouse import (
     LighthousePatternDetector,
     LighthouseMyceliumBridge,
     LighthouseEvent,
@@ -61,7 +61,7 @@ from aureon_lighthouse import (
 
 # ⏳🔮 TIMELINE ORACLE - 7-day future validation (branching timelines)
 try:
-    from aureon_timeline_oracle import (
+    from aureon.intelligence.aureon_timeline_oracle import (
         TimelineOracle, TimelineBranch, TimelineAction,
         timeline_select, timeline_validate
     )

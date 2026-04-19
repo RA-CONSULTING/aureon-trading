@@ -33,17 +33,17 @@ from typing import Dict, List, Any, Tuple
 import numpy as np
 
 # Import the Pillar Council directly (no lazy loading needed)
-from aureon_triumvirate import (
+from aureon.utils.aureon_triumvirate import (
     TriumvirateEngine, PillarCouncil,
     PillarVote, TriumvirateConsensus,
     QUEEN_CONNECTED_SYSTEMS, LYRA_CONNECTED_SYSTEMS,
 )
 
 # Import QGITA framework — structural event detection through Fibonacci geometry
-from aureon_qgita_framework import QGITAMarketAnalyzer
+from aureon.wisdom.aureon_qgita_framework import QGITAMarketAnalyzer
 
 # Import Lighthouse Metrics — spectral analysis for emotional frequency
-from lighthouse_metrics import LighthouseMetricsEngine
+from aureon.analytics.lighthouse_metrics import LighthouseMetricsEngine
 
 PHI = (1 + math.sqrt(5)) / 2
 SCHUMANN_HZ = 7.83

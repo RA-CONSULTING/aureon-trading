@@ -19,7 +19,7 @@ Author: Aureon Trading System
 Date: January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -37,9 +37,9 @@ if sys.platform == 'win32':
         pass
 
 from flask import Flask, render_template_string, jsonify, request
-from aureon_system_hub import SystemRegistry
-from aureon_thought_bus import get_thought_bus
-from metrics import dump_metrics
+from aureon.command_centers.aureon_system_hub import SystemRegistry
+from aureon.core.aureon_thought_bus import get_thought_bus
+from aureon.core.metrics import dump_metrics
 import json
 from pathlib import Path
 import subprocess
@@ -64,7 +64,7 @@ SYSTEMS_STATUS = {}
 
 # Core Intelligence Layer
 try:
-    from aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES
+    from aureon.bots_intelligence.aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES
     SYSTEMS_STATUS['Bot Intelligence'] = True
 except ImportError:
     SYSTEMS_STATUS['Bot Intelligence'] = False
@@ -72,7 +72,7 @@ except ImportError:
 
 # Queen Voice Engine (from queen_web_dashboard)
 try:
-    from queen_voice_engine import QueenVoiceEngine, queen_voice
+    from aureon.queen.queen_voice_engine import QueenVoiceEngine, queen_voice
     SYSTEMS_STATUS['Voice Engine'] = True
 except ImportError:
     SYSTEMS_STATUS['Voice Engine'] = False
@@ -80,119 +80,119 @@ except ImportError:
 
 # Open Source Data Engine (from queen_web_dashboard)
 try:
-    from queen_open_source_data_engine import OpenSourceDataEngine, get_data_engine
+    from aureon.queen.queen_open_source_data_engine import OpenSourceDataEngine, get_data_engine
     SYSTEMS_STATUS['Open Data Engine'] = True
 except ImportError:
     SYSTEMS_STATUS['Open Data Engine'] = False
 
 # Deep Intelligence (from queen_web_dashboard)
 try:
-    from queen_deep_intelligence import QueenDeepIntelligence, DeepInsight
+    from aureon.queen.queen_deep_intelligence import QueenDeepIntelligence, DeepInsight
     SYSTEMS_STATUS['Deep Intelligence'] = True
 except ImportError:
     SYSTEMS_STATUS['Deep Intelligence'] = False
 
 # Orca Intelligence
 try:
-    from aureon_orca_intelligence import get_orca
+    from aureon.bots_intelligence.aureon_orca_intelligence import get_orca
     SYSTEMS_STATUS['Orca Intelligence'] = True
 except ImportError:
     SYSTEMS_STATUS['Orca Intelligence'] = False
 
 # Counter-Intelligence
 try:
-    from aureon_queen_counter_intelligence import QueenCounterIntelligence
+    from aureon.utils.aureon_queen_counter_intelligence import QueenCounterIntelligence
     SYSTEMS_STATUS['Counter Intelligence'] = True
 except ImportError:
     SYSTEMS_STATUS['Counter Intelligence'] = False
 
 # Whale Tracker
 try:
-    from aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
+    from aureon.analytics.aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
     SYSTEMS_STATUS['Whale Analyzer'] = True
 except ImportError:
     SYSTEMS_STATUS['Whale Analyzer'] = False
 
 # Wave Scanner
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
     SYSTEMS_STATUS['Wave Scanner'] = True
 except ImportError:
     SYSTEMS_STATUS['Wave Scanner'] = False
 
 # Timeline Oracle
 try:
-    from aureon_timeline_oracle import TimelineOracle
+    from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
     SYSTEMS_STATUS['Timeline Oracle'] = True
 except ImportError:
     SYSTEMS_STATUS['Timeline Oracle'] = False
 
 # Quantum Telescope
 try:
-    from aureon_quantum_telescope import QuantumPrism
+    from aureon.simulation.aureon_quantum_telescope import QuantumPrism
     SYSTEMS_STATUS['Quantum Telescope'] = True
 except ImportError:
     SYSTEMS_STATUS['Quantum Telescope'] = False
 
 # Elephant Memory
 try:
-    from aureon_elephant_learning import ElephantMemory
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
     SYSTEMS_STATUS['Elephant Memory'] = True
 except ImportError:
     SYSTEMS_STATUS['Elephant Memory'] = False
 
 # Queen Hive Mind
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     SYSTEMS_STATUS['Queen Hive Mind'] = True
 except ImportError:
     SYSTEMS_STATUS['Queen Hive Mind'] = False
 
 # Probability Nexus
 try:
-    from aureon_probability_nexus import AureonProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
     SYSTEMS_STATUS['Probability Nexus'] = True
 except ImportError:
     SYSTEMS_STATUS['Probability Nexus'] = False
 
 # Ultimate Intelligence
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
     SYSTEMS_STATUS['Ultimate Intelligence'] = True
 except ImportError:
     SYSTEMS_STATUS['Ultimate Intelligence'] = False
 
 # Enigma Decoder
 try:
-    from aureon_enigma import AureonEnigma
+    from aureon.wisdom.aureon_enigma import AureonEnigma
     SYSTEMS_STATUS['Enigma Decoder'] = True
 except ImportError:
     SYSTEMS_STATUS['Enigma Decoder'] = False
 
 # Mycelium Network
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     SYSTEMS_STATUS['Mycelium Network'] = True
 except ImportError:
     SYSTEMS_STATUS['Mycelium Network'] = False
 
 # Miner Brain
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     SYSTEMS_STATUS['Miner Brain'] = True
 except ImportError:
     SYSTEMS_STATUS['Miner Brain'] = False
 
 # Harmonic Fusion
 try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
     SYSTEMS_STATUS['Harmonic Fusion'] = True
 except ImportError:
     SYSTEMS_STATUS['Harmonic Fusion'] = False
 
 # Firm Geocoder (from queen_web_dashboard)
 try:
-    from queen_firm_geocoder import get_firm_coordinates, get_all_firm_locations
+    from aureon.queen.queen_firm_geocoder import get_firm_coordinates, get_all_firm_locations
     SYSTEMS_STATUS['Firm Geocoder'] = True
 except ImportError:
     SYSTEMS_STATUS['Firm Geocoder'] = False
@@ -2513,7 +2513,7 @@ def get_unified_margin_telemetry():
 def get_registry():
     """API endpoint for the unified intelligence registry."""
     try:
-        from aureon_unified_intelligence_registry import get_unified_puller
+        from aureon.intelligence.aureon_unified_intelligence_registry import get_unified_puller
         puller = get_unified_puller()
         return jsonify(puller.get_category_summary())
     except ImportError:
@@ -2524,7 +2524,7 @@ def get_registry():
 def get_chain_flow():
     """API endpoint for the chain-link data flow diagram."""
     try:
-        from aureon_unified_intelligence_registry import get_unified_puller
+        from aureon.intelligence.aureon_unified_intelligence_registry import get_unified_puller
         puller = get_unified_puller()
         return jsonify(puller.get_chain_flow())
     except ImportError:
@@ -2535,7 +2535,7 @@ def get_chain_flow():
 def get_registry_category(category_name):
     """API endpoint for pulling data from a specific category."""
     try:
-        from aureon_unified_intelligence_registry import get_unified_puller
+        from aureon.intelligence.aureon_unified_intelligence_registry import get_unified_puller
         puller = get_unified_puller()
         return jsonify(puller.pull_category(category_name))
     except ImportError:
@@ -2574,7 +2574,7 @@ def get_thoughts():
 def get_registry_unified():
     """API endpoint for unified data pull across all categories."""
     try:
-        from aureon_unified_intelligence_registry import get_unified_puller
+        from aureon.intelligence.aureon_unified_intelligence_registry import get_unified_puller
         puller = get_unified_puller()
         return jsonify(puller.pull_unified())
     except ImportError:

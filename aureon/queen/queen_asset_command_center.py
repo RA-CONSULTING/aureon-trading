@@ -14,7 +14,7 @@ Queen Sero takes command of:
 Gary Leckey | The Math Works | February 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -444,7 +444,7 @@ class QueenAssetCommandCenter:
         """Connect to all available exchanges."""
         # Kraken
         try:
-            from kraken_client import get_kraken_client
+            from aureon.exchanges.kraken_client import get_kraken_client
             self.kraken = get_kraken_client()
             logger.info("   🐙 Kraken: CONNECTED")
         except Exception as e:
@@ -452,7 +452,7 @@ class QueenAssetCommandCenter:
         
         # Binance
         try:
-            from binance_client import get_binance_client
+            from aureon.exchanges.binance_client import get_binance_client
             self.binance = get_binance_client()
             logger.info("   🟡 Binance: CONNECTED")
         except Exception as e:
@@ -460,7 +460,7 @@ class QueenAssetCommandCenter:
         
         # Alpaca
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.alpaca = AlpacaClient()
             logger.info("   🦙 Alpaca: CONNECTED")
         except Exception as e:
@@ -468,7 +468,7 @@ class QueenAssetCommandCenter:
         
         # Capital.com
         try:
-            from capital_client import CapitalClient
+            from aureon.exchanges.capital_client import CapitalClient
             self.capital = CapitalClient()
             logger.info("   💷 Capital.com: CONNECTED")
         except Exception as e:
@@ -1299,24 +1299,24 @@ class QueenOceanView:
     def _connect_ocean_scanner(self):
         """Connect to Ocean Scanner."""
         try:
-            from aureon_ocean_scanner import OceanScanner
+            from aureon.scanners.aureon_ocean_scanner import OceanScanner
             
             # Get exchange clients for the scanner
             exchanges = {}
             try:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 exchanges['kraken'] = get_kraken_client()
             except Exception:
                 pass
             
             try:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 exchanges['binance'] = get_binance_client()
             except Exception:
                 pass
             
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 exchanges['alpaca'] = AlpacaClient()
             except Exception:
                 pass

@@ -13,7 +13,7 @@ Visualizes market patterns from collected snapshots with:
 Gary Leckey | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import math
 import time
@@ -26,25 +26,25 @@ from collections import deque
 
 # Try to import all clients
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_OK = True
 except:
     BINANCE_OK = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_OK = True
 except:
     KRAKEN_OK = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_OK = True
 except:
     ALPACA_OK = False
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_OK = True
 except:
     CAPITAL_OK = False

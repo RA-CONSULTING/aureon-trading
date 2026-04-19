@@ -350,7 +350,7 @@ def _fetch_space_weather() -> StreamResult:
 
     # ── try the existing bridge first ──────────────────────────────────────
     try:
-        from aureon_space_weather_bridge import get_space_weather_bridge
+        from aureon.data_feeds.aureon_space_weather_bridge import get_space_weather_bridge
         bridge = get_space_weather_bridge()
         sw = bridge.get_reading()
         kp   = float(sw.kp_index)
@@ -529,7 +529,7 @@ def _fetch_schumann() -> StreamResult:
     name = "schumann"
     alerts: List[str] = []
     try:
-        from aureon_schumann_resonance_bridge import get_schumann_bridge
+        from aureon.harmonic.aureon_schumann_resonance_bridge import get_schumann_bridge
         bridge = get_schumann_bridge()
         reading = bridge.get_reading()
 

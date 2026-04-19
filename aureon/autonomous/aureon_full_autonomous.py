@@ -34,7 +34,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -72,9 +72,9 @@ import json
 
 # 💰 BILLION DOLLAR GOAL TRACKER
 try:
-    from aureon_billion_goal_tracker import get_goal_tracker, BillionDollarGoalTracker
-    from aureon_quantum_goal_engine import get_goal_engine
-    from aureon_queen_research_engine import get_research_engine
+    from aureon.portfolio.aureon_billion_goal_tracker import get_goal_tracker, BillionDollarGoalTracker
+    from aureon.simulation.aureon_quantum_goal_engine import get_goal_engine
+    from aureon.utils.aureon_queen_research_engine import get_research_engine
     GOAL_TRACKER_AVAILABLE = True
 except ImportError:
     get_goal_tracker = None
@@ -85,14 +85,14 @@ except ImportError:
 
 # 🪞 SELF-AWARENESS - THE SYSTEM KNOWS ITSELF
 try:
-    from aureon_self_awareness import AUREON_SELF
+    from aureon.intelligence.aureon_self_awareness import AUREON_SELF
     print(AUREON_SELF.awaken())
 except ImportError:
     pass
 
 # 🌀 PHASE TRANSITION DETECTOR - Geometric Regime Change Detection
 try:
-    from aureon_phase_transition_detector import PhaseTransitionDetector as _PhaseTransitionDetector  # noqa: F401
+    from aureon.intelligence.aureon_phase_transition_detector import PhaseTransitionDetector as _PhaseTransitionDetector  # noqa: F401
     PHASE_DETECTOR_BOOT = True
     print("🌀 Phase Transition Detector: LOADED (Takens embedding + curvature analysis)")
 except ImportError:
@@ -100,7 +100,7 @@ except ImportError:
 
 # ☀️ CROSS-SUBSTRATE SOLAR MONITOR
 try:
-    from aureon_cross_substrate_monitor import CrossSubstrateMonitor as _CrossSubstrateMonitor  # noqa: F401
+    from aureon.monitors.aureon_cross_substrate_monitor import CrossSubstrateMonitor as _CrossSubstrateMonitor  # noqa: F401
     SOLAR_MONITOR_BOOT = True
     print("☀️ Cross-Substrate Solar Monitor: LOADED (NOAA SWPC + Granger causality)")
 except ImportError:
@@ -249,7 +249,7 @@ class QueenFullAutonomous:
     def _init_thought_bus(self) -> bool:
         """Initialize the central nervous system."""
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self._thought_bus = get_thought_bus()
             
             # Subscribe Queen to ALL autonomous signals
@@ -274,7 +274,7 @@ class QueenFullAutonomous:
     def _init_queen(self) -> bool:
         """Initialize the Queen Hive Mind (SINGLETON)."""
         try:
-            from aureon_queen_hive_mind import get_queen
+            from aureon.utils.aureon_queen_hive_mind import get_queen
             self._queen = get_queen()
             
             # Wire ThoughtBus to Queen
@@ -291,7 +291,7 @@ class QueenFullAutonomous:
     def _init_wave_scanner(self) -> bool:
         """Initialize the Global Wave Scanner."""
         try:
-            from aureon_global_wave_scanner import GlobalWaveScanner
+            from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
             self._wave_scanner = GlobalWaveScanner()
             logger.info("✅ Global Wave Scanner: ARMED")
             return True
@@ -302,7 +302,7 @@ class QueenFullAutonomous:
     def _init_miner_brain(self) -> bool:
         """Initialize the Miner Brain (cognitive intelligence)."""
         try:
-            from aureon_miner_brain import MinerBrain
+            from aureon.utils.aureon_miner_brain import MinerBrain
             self._miner_brain = MinerBrain()
             logger.info("✅ Miner Brain: THINKING")
             return True
@@ -313,7 +313,7 @@ class QueenFullAutonomous:
     def _init_mycelium(self) -> bool:
         """Initialize the Mycelium Network."""
         try:
-            from aureon_mycelium import MyceliumNetwork
+            from aureon.core.aureon_mycelium import MyceliumNetwork
             self._mycelium = MyceliumNetwork()
             logger.info("✅ Mycelium Network: CONNECTED")
             return True
@@ -324,7 +324,7 @@ class QueenFullAutonomous:
     def _init_intelligence_engine(self) -> bool:
         """Initialize the Real Intelligence Engine."""
         try:
-            from aureon_real_intelligence_engine import RealIntelligenceEngine
+            from aureon.intelligence.aureon_real_intelligence_engine import RealIntelligenceEngine
             self._intelligence_engine = RealIntelligenceEngine()
             logger.info("✅ Intelligence Engine: ACTIVE")
             return True
@@ -335,7 +335,7 @@ class QueenFullAutonomous:
     def _init_counter_intelligence(self) -> bool:
         """Initialize the Counter-Intelligence System."""
         try:
-            from aureon_queen_counter_intelligence import QueenCounterIntelligence
+            from aureon.utils.aureon_queen_counter_intelligence import QueenCounterIntelligence
             self._counter_intelligence = QueenCounterIntelligence()
             logger.info("✅ Counter-Intelligence: ARMED")
             return True
@@ -346,7 +346,7 @@ class QueenFullAutonomous:
     def _init_avalanche(self) -> bool:
         """Initialize the Avalanche Harvester."""
         try:
-            from aureon_avalanche_harvester import AvalancheHarvester
+            from aureon.trading.aureon_avalanche_harvester import AvalancheHarvester
             self._avalanche = AvalancheHarvester()
             logger.info("✅ Avalanche Harvester: READY")
             return True
@@ -357,7 +357,7 @@ class QueenFullAutonomous:
     def _init_orca(self) -> bool:
         """Initialize the Orca Kill Cycle (uses SHARED Queen)."""
         try:
-            from orca_complete_kill_cycle import OrcaKillCycle
+            from aureon.bots.orca_complete_kill_cycle import OrcaKillCycle
             self._orca = OrcaKillCycle()
             # Wire shared ThoughtBus if Orca exposes it
             if self._thought_bus:
@@ -898,7 +898,7 @@ class QueenFullAutonomous:
                     
                     # Publish status to ThoughtBus
                     if self._thought_bus:
-                        from aureon_thought_bus import Thought
+                        from aureon.core.aureon_thought_bus import Thought
                         self._thought_bus.publish(Thought(
                             source="goal_engine",
                             topic="goal_engine.status",
@@ -942,7 +942,7 @@ class QueenFullAutonomous:
                     actionable = self._research_engine.get_actionable_insights(min_relevance=0.75)
                     
                     if actionable and self._thought_bus:
-                        from aureon_thought_bus import Thought
+                        from aureon.core.aureon_thought_bus import Thought
                         self._thought_bus.publish(Thought(
                             source="research_engine",
                             topic="research.actionable_insights",

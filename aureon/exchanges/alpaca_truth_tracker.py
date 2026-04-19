@@ -16,7 +16,7 @@ This module tracks EVERY interaction with Alpaca API and verifies:
 TRUST BUT VERIFY.
 
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -398,7 +398,7 @@ def main():
     
     # Load Alpaca client
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca = AlpacaClient()
         print("✅ Alpaca client loaded")
     except Exception as e:

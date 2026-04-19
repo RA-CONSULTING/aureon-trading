@@ -2,7 +2,7 @@
 """
 Minimal test - Import each component step by step
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import traceback
@@ -26,7 +26,7 @@ except Exception as e:
 # Step 2
 try:
     print("2. Importing binance_client...")
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     print("   ✅ SUCCESS\n")
 except Exception as e:
     print(f"   ❌ FAILED: {e}\n")
@@ -36,7 +36,7 @@ except Exception as e:
 # Step 3
 try:
     print("3. Importing kraken_client...")
-    from kraken_client import KrakenClient
+    from aureon.exchanges.kraken_client import KrakenClient
     print("   ✅ SUCCESS\n")
 except Exception as e:
     print(f"   ❌ FAILED: {e}\n")
@@ -46,7 +46,7 @@ except Exception as e:
 # Step 4
 try:
     print("4. Importing alpaca_client...")
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     print("   ✅ SUCCESS\n")
 except Exception as e:
     print(f"   ❌ FAILED: {e}\n")
@@ -56,7 +56,7 @@ except Exception as e:
 # Step 5
 try:
     print("5. Importing capital_client...")
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     print("   ✅ SUCCESS\n")
 except Exception as e:
     print(f"   ❌ FAILED: {e}\n")
@@ -66,7 +66,7 @@ except Exception as e:
 # Step 6
 try:
     print("6. Importing unified_exchange_client...")
-    from unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
+    from aureon.trading.unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
     print("   ✅ SUCCESS\n")
 except Exception as e:
     print(f"   ❌ FAILED: {e}\n")
@@ -77,7 +77,7 @@ except Exception as e:
 try:
     print("7. Importing aureon_unified_ecosystem...")
     print("   (This may take a moment...)\n")
-    from aureon_unified_ecosystem import AureonKrakenEcosystem
+    from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem
     print("   ✅ SUCCESS\n")
 except Exception as e:
     print(f"   ❌ FAILED: {e}\n")

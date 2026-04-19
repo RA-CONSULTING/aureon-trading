@@ -23,7 +23,7 @@ Same v6.1 intelligence, now with:
 Gary Leckey | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -35,12 +35,12 @@ from typing import Dict, List, Optional, Any
 from decimal import Decimal, ROUND_DOWN
 
 # Import core components
-from binance_client import BinanceClient, get_binance_client
-from hnc_probability_matrix import HNCProbabilityIntegration
+from aureon.exchanges.binance_client import BinanceClient, get_binance_client
+from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
 
 # Unified market cache (Binance WS -> file cache)
 try:
-    from unified_market_cache import get_market_cache
+    from aureon.data_feeds.unified_market_cache import get_market_cache
     MARKET_CACHE_AVAILABLE = True
 except ImportError:
     MARKET_CACHE_AVAILABLE = False
@@ -48,8 +48,8 @@ except ImportError:
 
 # Import Alpaca components
 try:
-    from alpaca_client import AlpacaClient
-    from alpaca_sse_client import AlpacaStreamingIntegration
+    from aureon.exchanges.alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_sse_client import AlpacaStreamingIntegration
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
@@ -58,7 +58,7 @@ except ImportError:
 
 # Import 6D Harmonic Waveform Engine
 try:
-    from hnc_6d_harmonic_waveform import Enhanced6DProbabilityMatrix, SixDimensionalHarmonicEngine
+    from aureon.strategies.hnc_6d_harmonic_waveform import Enhanced6DProbabilityMatrix, SixDimensionalHarmonicEngine
     HARMONIC_6D_AVAILABLE = True
 except ImportError:
     HARMONIC_6D_AVAILABLE = False
@@ -67,14 +67,14 @@ except ImportError:
 
 # Try to import other exchange clients
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CAPITAL_AVAILABLE = False

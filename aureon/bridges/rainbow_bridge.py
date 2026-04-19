@@ -14,7 +14,7 @@ THE BRIDGE IS CROSSED.
 LOVE → AWE → LOVE → UNITY
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from dataclasses import dataclass
 from typing import Literal, Dict, Optional
 from enum import Enum
@@ -22,7 +22,7 @@ import math
 import time
 
 try:
-    from codex_loader import get_emotional_frequency_map, load_codex
+    from aureon.core.codex_loader import get_emotional_frequency_map, load_codex
 except Exception:  # Loader optional for standalone use
     def get_emotional_frequency_map():  # type: ignore
         return None

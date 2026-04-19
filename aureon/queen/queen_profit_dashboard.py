@@ -16,7 +16,7 @@ Gary Leckey & GitHub Copilot | 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -116,7 +116,7 @@ def run_dashboard(auto_sell: bool = False, refresh_interval: float = 5.0):
     
     # Import clients and profit gate
     try:
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         kraken = get_kraken_client()
         print("✅ Kraken client connected")
     except Exception as e:
@@ -124,7 +124,7 @@ def run_dashboard(auto_sell: bool = False, refresh_interval: float = 5.0):
         kraken = None
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca = AlpacaClient()
         print("✅ Alpaca client connected")
     except Exception as e:
@@ -133,7 +133,7 @@ def run_dashboard(auto_sell: bool = False, refresh_interval: float = 5.0):
     
     # Load profit gate
     try:
-        from adaptive_prime_profit_gate import is_real_win, get_fee_profile
+        from aureon.utils.adaptive_prime_profit_gate import is_real_win, get_fee_profile
         print("✅ Profit gate CONNECTED (no phantom profits!)")
     except Exception as e:
         print(f"❌ Profit gate not available: {e}")

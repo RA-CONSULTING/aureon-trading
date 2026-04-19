@@ -15,7 +15,7 @@ Gary Leckey | December 2025
 "All Systems Aligned - From Cosmos to Profit"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -31,9 +31,9 @@ os.environ['LIVE'] = '1'
 os.environ['DRY_RUN'] = '0'
 
 # Import all prediction systems
-from binance_client import BinanceClient
-from earth_resonance_engine import EarthResonanceEngine
-from hnc_imperial_predictability import CosmicStateEngine, PredictabilityEngine, CosmicPhase
+from aureon.exchanges.binance_client import BinanceClient
+from aureon.harmonic.earth_resonance_engine import EarthResonanceEngine
+from aureon.strategies.hnc_imperial_predictability import CosmicStateEngine, PredictabilityEngine, CosmicPhase
 
 # ═══════════════════════════════════════════════════════════════
 # CONSTANTS

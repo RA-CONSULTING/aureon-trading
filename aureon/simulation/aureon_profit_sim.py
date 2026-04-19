@@ -13,7 +13,7 @@ To profit 2p after fees on a £10 trade:
 Strategy: Only enter when coherence > 0.938 (high-conviction setup)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -23,7 +23,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from collections import deque
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 
 logging.basicConfig(
     level=logging.INFO,

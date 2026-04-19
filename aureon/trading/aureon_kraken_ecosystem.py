@@ -27,7 +27,7 @@ Gary Leckey & GitHub Copilot | November 2025
 "From Atom to Multiverse - We don't quit!"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -48,8 +48,8 @@ from collections import deque
 from threading import Thread, Lock
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import get_kraken_client
-from aureon_lattice import LatticeEngine
+from aureon.exchanges.kraken_client import get_kraken_client
+from aureon.core.aureon_lattice import LatticeEngine
 
 _QUIET_STARTUP = os.getenv("AUREON_QUIET_STARTUP", "0").lower() in ("1", "true", "yes", "on")
 
@@ -59,7 +59,7 @@ def _startup_print(*args, **kwargs):
 
 # 🧬 SANDBOX EVOLVED PARAMETERS - 454 Generations of Learning
 try:
-    from penny_profit_engine import get_evolved_exits, check_penny_exit, get_penny_engine
+    from aureon.trading.penny_profit_engine import get_evolved_exits, check_penny_exit, get_penny_engine
     SANDBOX_EVOLVED_AVAILABLE = True
     PENNY_PROFIT_AVAILABLE = True
     _evolved = get_evolved_exits()
@@ -75,7 +75,7 @@ except ImportError:
 
 # 🔮 NEXUS PREDICTOR - 79.6% Win Rate Validated Over 11 Years!
 try:
-    from nexus_predictor import NexusPredictor
+    from aureon.intelligence.nexus_predictor import NexusPredictor
     NEXUS_AVAILABLE = True
     _startup_print("🔮 Nexus Predictor loaded - 79.6% win rate validated!")
 except ImportError:
@@ -84,7 +84,7 @@ except ImportError:
 
 # 💎 TRADE PROFIT VALIDATOR - NO PHANTOM GAINS!
 try:
-    from trade_profit_validator import validate_buy, validate_sell, is_real_profit, get_validator
+    from aureon.portfolio.trade_profit_validator import validate_buy, validate_sell, is_real_profit, get_validator
     TRADE_VALIDATOR_AVAILABLE = True
     _startup_print("💎 Trade Profit Validator loaded - no phantom gains!")
 except ImportError:
@@ -96,7 +96,7 @@ except ImportError:
 
 # 🦑💰 KRAKEN FEE TRACKER - Dynamic volume-tiered fees
 try:
-    from kraken_fee_tracker import get_kraken_fee_tracker
+    from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker
     _KRAKEN_FEE_TRACKER_AVAILABLE = True
     _startup_print("🦑💰 Kraken Fee Tracker loaded - dynamic tier fees active!")
 except ImportError:
@@ -105,7 +105,7 @@ except ImportError:
 
 # 👑 THE KING - Autonomous Accounting AI
 try:
-    from king_integration import king_on_buy, king_on_sell, start_king
+    from aureon.bots.king_integration import king_on_buy, king_on_sell, start_king
     KING_AVAILABLE = True
     _startup_print("👑 The King loaded - autonomous accounting active!")
 except ImportError:
@@ -116,7 +116,7 @@ except ImportError:
 
 # 👁 AUREON THE SEER - Autonomous Coherence & Cosmic Intelligence
 try:
-    from aureon_seer_integration import (
+    from aureon.intelligence.aureon_seer_integration import (
         start_seer, seer_update_context, seer_get_vision,
         seer_get_risk_modifier, seer_should_trade, get_triumvirate_consensus,
     )
@@ -133,7 +133,7 @@ except ImportError:
 
 # AUREON LYRA - Emotional Frequency & Harmonics Engine
 try:
-    from aureon_lyra_integration import (
+    from aureon.trading.aureon_lyra_integration import (
         start_lyra, lyra_update_context, lyra_get_resonance,
         lyra_get_position_multiplier, lyra_should_trade,
     )
@@ -149,7 +149,7 @@ except ImportError:
 
 # ⚔️ WAR STRATEGY - Quick Kill Probability & Attack Signals
 try:
-    from war_strategy import should_attack, get_quick_kill_estimate
+    from aureon.command_centers.war_strategy import should_attack, get_quick_kill_estimate
     WAR_STRATEGY_AVAILABLE = True
     _startup_print("⚔️ War Strategy loaded - quick kill probability active!")
 except ImportError:
@@ -159,7 +159,7 @@ except ImportError:
 
 # 🎯 UNIFIED SNIPER BRAIN - Million Kill Training
 try:
-    from unified_sniper_brain import get_entry_signal as sniper_get_entry_signal, get_unified_brain
+    from aureon.trading.unified_sniper_brain import get_entry_signal as sniper_get_entry_signal, get_unified_brain
     SNIPER_BRAIN_AVAILABLE = True
     _startup_print("🎯 Unified Sniper Brain loaded - million kill training active!")
 except ImportError:
@@ -169,7 +169,7 @@ except ImportError:
 
 # 🧠 MINER BRAIN - Timeline Oracle & Wisdom Engine
 try:
-    from aureon_miner_brain import MinerBrain as _MinerBrainClass
+    from aureon.utils.aureon_miner_brain import MinerBrain as _MinerBrainClass
     MINER_BRAIN_AVAILABLE = True
     _startup_print("🧠 Miner Brain loaded - timeline oracle & wisdom active!")
 except ImportError:

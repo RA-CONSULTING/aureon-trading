@@ -31,7 +31,7 @@ Gary Leckey | Sero Full Control | January 2026
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import asyncio
 import logging
@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -62,7 +62,7 @@ ThoughtBus = None
 Thought = None
 get_thought_bus = None
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False

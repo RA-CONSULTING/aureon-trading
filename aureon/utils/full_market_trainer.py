@@ -20,7 +20,7 @@ Gary Leckey & GitHub Copilot | January 2026
 "Train the Brain with the Entire Market"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -41,7 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Crypto Market Map
 try:
-    from crypto_market_map import CryptoMarketMap, SYMBOL_TO_SECTOR, CRYPTO_SECTORS
+    from aureon.data_feeds.crypto_market_map import CryptoMarketMap, SYMBOL_TO_SECTOR, CRYPTO_SECTORS
     MARKET_MAP_AVAILABLE = True
 except ImportError:
     CryptoMarketMap = None
@@ -50,7 +50,7 @@ except ImportError:
 
 # Coinbase Historical Feed
 try:
-    from coinbase_historical_feed import CoinbaseHistoricalFeed, CandleData
+    from aureon.exchanges.coinbase_historical_feed import CoinbaseHistoricalFeed, CandleData
     COINBASE_AVAILABLE = True
 except ImportError:
     CoinbaseHistoricalFeed = None
@@ -59,7 +59,7 @@ except ImportError:
 
 # Kraken Client
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KrakenClient = None
@@ -68,7 +68,7 @@ except ImportError:
 
 # Binance Client
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BinanceClient = None
@@ -77,7 +77,7 @@ except ImportError:
 
 # Alpaca Client
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     AlpacaClient = None

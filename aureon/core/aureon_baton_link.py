@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 try:
-    from aureon_thought_bus import Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except Exception:
     Thought = None
@@ -18,7 +18,7 @@ except Exception:
     THOUGHT_BUS_AVAILABLE = False
 
 try:
-    from mycelium_whale_sonar import ensure_sonar
+    from aureon.core.mycelium_whale_sonar import ensure_sonar
     SONAR_AVAILABLE = True
 except Exception:
     ensure_sonar = None
@@ -142,7 +142,7 @@ def link_system(module_name: str) -> None:
     if not _AUTO_CONTROL_DONE:
         _AUTO_CONTROL_DONE = True
         try:
-            from aureon_queen_hive_mind import get_queen
+            from aureon.utils.aureon_queen_hive_mind import get_queen
             queen = get_queen()
             try:
                 queen.enable_full_autonomous_control()

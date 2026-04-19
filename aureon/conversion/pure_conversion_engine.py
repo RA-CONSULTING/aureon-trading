@@ -30,7 +30,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -62,7 +62,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # V14 Scoring
 try:
-    from s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14ScoringEngine
+    from aureon.strategies.s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14ScoringEngine
     V14_AVAILABLE = True
 except ImportError:
     V14_AVAILABLE = False
@@ -70,35 +70,35 @@ except ImportError:
 
 # Mycelium Network
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     MYCELIUM_AVAILABLE = True
 except ImportError:
     MYCELIUM_AVAILABLE = False
 
 # Probability Matrix  
 try:
-    from hnc_probability_matrix import HNCProbabilityIntegration
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
     PROB_MATRIX_AVAILABLE = True
 except ImportError:
     PROB_MATRIX_AVAILABLE = False
 
 # Adaptive Learning
 try:
-    from aureon_unified_ecosystem import AdaptiveLearner
+    from aureon.trading.aureon_unified_ecosystem import AdaptiveLearner
     ADAPTIVE_AVAILABLE = True
 except ImportError:
     ADAPTIVE_AVAILABLE = False
 
 # Miner Brain
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     MINER_BRAIN_AVAILABLE = True
 except ImportError:
     MINER_BRAIN_AVAILABLE = False
 
 # Kraken Client
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -107,7 +107,7 @@ except ImportError:
 # 🍄 MYCELIUM CONVERSION HUB - ALL SYSTEMS WIRED THROUGH ONE PLACE
 # ═══════════════════════════════════════════════════════════════════════════════════
 try:
-    from mycelium_conversion_hub import (
+    from aureon.conversion.mycelium_conversion_hub import (
         MyceliumConversionHub, get_conversion_hub,
         MyceliumSignal, ConversionSignal, SystemSignal
     )
@@ -119,37 +119,37 @@ except ImportError as e:
 
 # Additional ecosystem systems
 try:
-    from aureon_internal_multiverse import InternalMultiverse
+    from aureon.simulation.aureon_internal_multiverse import InternalMultiverse
     MULTIVERSE_AVAILABLE = True
 except ImportError:
     MULTIVERSE_AVAILABLE = False
 
 try:
-    from aureon_probability_nexus import EnhancedProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
     PROBABILITY_NEXUS_AVAILABLE = True
 except ImportError:
     PROBABILITY_NEXUS_AVAILABLE = False
 
 try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
     HARMONIC_AVAILABLE = True
 except ImportError:
     HARMONIC_AVAILABLE = False
 
 try:
-    from aureon_lighthouse import AureonLighthouse
+    from aureon.analytics.aureon_lighthouse import AureonLighthouse
     LIGHTHOUSE_AVAILABLE = True
 except ImportError:
     LIGHTHOUSE_AVAILABLE = False
 
 try:
-    from aureon_thought_bus import ThoughtBus, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
 
 try:
-    from aureon_conversion_commando import AdaptiveConversionCommando
+    from aureon.conversion.aureon_conversion_commando import AdaptiveConversionCommando
     CONVERSION_COMMANDO_AVAILABLE = True
 except ImportError:
     CONVERSION_COMMANDO_AVAILABLE = False

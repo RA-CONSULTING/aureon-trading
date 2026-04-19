@@ -33,7 +33,7 @@ Gary Leckey | December 2025
 "Tiocfaidh ár lá" - Our day will come
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -45,19 +45,19 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 # Celtic warfare systems
-from guerrilla_warfare_engine import (
+from aureon.wisdom.guerrilla_warfare_engine import (
     get_guerrilla_commander,
     FlyingColumn,
     get_celtic_wisdom,
     GUERRILLA_CONFIG
 )
 
-from celtic_preemptive_strike import (
+from aureon.wisdom.celtic_preemptive_strike import (
     get_preemptive_controller,
     PreemptiveSignal
 )
 
-from multi_battlefront_coordinator import (
+from aureon.wisdom.multi_battlefront_coordinator import (
     get_war_room,
     MultiBattlefrontWarRoom,
     CampaignPhase
@@ -65,37 +65,37 @@ from multi_battlefront_coordinator import (
 
 # Existing Aureon systems
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
 
 try:
-    from ira_sniper_mode import get_sniper_config, SNIPER_CONFIG
+    from aureon.scanners.ira_sniper_mode import get_sniper_config, SNIPER_CONFIG
     SNIPER_AVAILABLE = True
 except ImportError:
     SNIPER_AVAILABLE = False
 
 try:
-    from penny_profit_engine import get_penny_engine, check_penny_exit
+    from aureon.trading.penny_profit_engine import get_penny_engine, check_penny_exit
     PENNY_AVAILABLE = True
 except ImportError:
     PENNY_AVAILABLE = False
 
 try:
-    from war_strategy import get_quick_kill_estimate, should_attack as war_should_attack
+    from aureon.command_centers.war_strategy import get_quick_kill_estimate, should_attack as war_should_attack
     WAR_STRATEGY_AVAILABLE = True
 except ImportError:
     WAR_STRATEGY_AVAILABLE = False
 
 try:
-    from unified_sniper_brain import get_unified_brain, get_entry_signal, check_exit_signal
+    from aureon.trading.unified_sniper_brain import get_unified_brain, get_entry_signal, check_exit_signal
     UNIFIED_BRAIN_AVAILABLE = True
 except ImportError:
     UNIFIED_BRAIN_AVAILABLE = False

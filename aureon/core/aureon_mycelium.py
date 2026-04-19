@@ -58,7 +58,7 @@ MYCELIUM FEATURES:
 Gary Leckey & GitHub Copilot | November 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import math
 import time
 import random
@@ -66,7 +66,7 @@ import logging
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from collections import deque
-from aureon_memory_core import memory  # 🧠 MEMORY CORE INTEGRATION
+from aureon.core.aureon_memory_core import memory  # 🧠 MEMORY CORE INTEGRATION
 
 # 🔱🔮 ENHANCED PROBABILITY NEXUS - Lazy load to avoid circular imports
 ENHANCED_NEXUS_AVAILABLE = False
@@ -81,7 +81,7 @@ def _lazy_load_probability_nexus():
     if EnhancedProbabilityNexus is not None:
         return ENHANCED_NEXUS_AVAILABLE
     try:
-        from aureon_probability_nexus import (
+        from aureon.bridges.aureon_probability_nexus import (
             EnhancedProbabilityNexus as _EnhancedProbabilityNexus,
             ProfitFilter as _ProfitFilter,
             CompoundingEngine as _CompoundingEngine,
@@ -99,7 +99,7 @@ def _lazy_load_probability_nexus():
 
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, ultimate_predict, record_ultimate_outcome,
         UltimatePrediction
     )
@@ -127,7 +127,7 @@ def _lazy_load_timeline_oracle():
         return TIMELINE_ORACLE_AVAILABLE
     _timeline_oracle_loaded = True
     try:
-        from aureon_timeline_oracle import (
+        from aureon.intelligence.aureon_timeline_oracle import (
             TimelineOracle as _TimelineOracle,
             TimelineBranch as _TimelineBranch,
             TimelineAction as _TimelineAction,
@@ -162,7 +162,7 @@ def _lazy_load_queen():
         return QUEEN_HIVE_MIND_AVAILABLE
     _queen_loaded = True
     try:
-        from aureon_queen_hive_mind import (
+        from aureon.utils.aureon_queen_hive_mind import (
             QueenHiveMind as _QueenHiveMind,
             QueenWisdom as _QueenWisdom,
             get_queen as _get_queen

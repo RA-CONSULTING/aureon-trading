@@ -21,7 +21,7 @@ vs our current "puddle":
   • 28 opportunities (only from 5 held positions)
 
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -61,20 +61,20 @@ OPEN_SOURCE_FEEDS = {
 
 # Optional Capital.com stock feed (off by default)
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
 except Exception:
     CapitalClient = None
 
 # 🚌 Communication Buses
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
 
 try:
-    from aureon_chirp_bus import ChirpBus
+    from aureon.core.aureon_chirp_bus import ChirpBus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -933,14 +933,14 @@ async def main():
     exchanges = {}
     
     try:
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         exchanges['kraken'] = get_kraken_client()
         print("✅ Kraken client loaded")
     except Exception as e:
         print(f"❌ Kraken: {e}")
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         exchanges['alpaca'] = AlpacaClient()
         print("✅ Alpaca client loaded")
     except Exception as e:

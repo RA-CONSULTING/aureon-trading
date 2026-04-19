@@ -17,7 +17,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -32,7 +32,7 @@ from collections import defaultdict
 os.environ['PAPER_MODE'] = 'true'
 
 # Import the main trader
-from aureon_multi_exchange_live import (
+from aureon.trading.aureon_multi_exchange_live import (
     AureonMultiExchangeTrader, 
     CONFIG, 
     calculate_coherence,

@@ -52,7 +52,7 @@ def _load_data_engine():
         return True
     
     try:
-        from queen_open_source_data_engine import (
+        from aureon.queen.queen_open_source_data_engine import (
             OpenSourceDataEngine as OSE, 
             get_data_engine as get_engine,
             MarketData as MD,
@@ -212,25 +212,25 @@ class QueenMarketAwareness:
     def _wire_ocean_scanner(self):
         """Wire the Ocean Scanner for full market opportunity scanning"""
         try:
-            from aureon_ocean_scanner import OceanScanner
+            from aureon.scanners.aureon_ocean_scanner import OceanScanner
             
             # Load exchange clients
             exchanges = {}
             
             try:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 exchanges['kraken'] = get_kraken_client()
             except Exception:
                 pass
             
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 exchanges['alpaca'] = AlpacaClient()
             except Exception:
                 pass
             
             try:
-                from binance_client import BinanceClient
+                from aureon.exchanges.binance_client import BinanceClient
                 exchanges['binance'] = BinanceClient()
             except Exception:
                 pass
@@ -335,7 +335,7 @@ class QueenMarketAwareness:
     def _wire_solar_awareness(self):
         """Wire the Solar System Awareness for cosmic counter-intelligence"""
         try:
-            from queen_solar_system_awareness import QueenSolarSystemAwareness
+            from aureon.queen.queen_solar_system_awareness import QueenSolarSystemAwareness
             
             self.solar_awareness = QueenSolarSystemAwareness()
             logger.info("☀️🌍 Solar System Awareness WIRED!")
@@ -385,7 +385,7 @@ class QueenMarketAwareness:
     def _wire_warrior_path(self):
         """Wire the Warrior Path for all tactical systems"""
         try:
-            from queen_warrior_path import QueenWarriorPath
+            from aureon.queen.queen_warrior_path import QueenWarriorPath
             
             self.warrior_path = QueenWarriorPath()
             logger.info("⚔️🦅 Warrior Path WIRED!")

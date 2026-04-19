@@ -55,7 +55,7 @@ Gary Leckey | Prime Sentinel Decree | January 2026
 ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -93,36 +93,36 @@ from enum import Enum
 from pathlib import Path
 
 # Import Queen's consciousness
-from aureon_queen_consciousness import QueenSeroConsciousness, Realm, RealmInterpreter, RealmPerspective
+from aureon.utils.aureon_queen_consciousness import QueenSeroConsciousness, Realm, RealmInterpreter, RealmPerspective
 
 # Import exchange clients for opportunity detection
 try:
-    from binance_client import BinanceClient, get_binance_client
+    from aureon.exchanges.binance_client import BinanceClient, get_binance_client
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
 
 try:
-    from aureon_micro_momentum_goal import MicroMomentumScanner
+    from aureon.conversion.aureon_micro_momentum_goal import MicroMomentumScanner
     MOMENTUM_SCANNER_AVAILABLE = True
 except ImportError:
     MOMENTUM_SCANNER_AVAILABLE = False
 
 # Import Profit Gate - THE ENERGY MONITOR
 try:
-    from adaptive_prime_profit_gate import AdaptivePrimeProfitGate, ExchangeFeeProfile, AdaptiveGateResult
+    from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate, ExchangeFeeProfile, AdaptiveGateResult
     PROFIT_GATE_AVAILABLE = True
 except ImportError:
     PROFIT_GATE_AVAILABLE = False

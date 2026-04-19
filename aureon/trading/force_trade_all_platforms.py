@@ -13,7 +13,7 @@ Gary Leckey | January 2026 | FORCE THE ISSUE
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -46,7 +46,7 @@ import time
 import json
 from datetime import datetime
 
-from queen_force_trade_governance import evaluate_queen_force_trade_authority
+from aureon.queen.queen_force_trade_governance import evaluate_queen_force_trade_authority
 
 print("\n" + "=" * 70)
 print("🔥🔥🔥 FORCE TRADE ALL PLATFORMS - LIVE VERIFICATION 🔥🔥🔥")
@@ -78,7 +78,7 @@ results = {
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🐙 KRAKEN: Testing trade execution...")
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     
     kraken = get_kraken_client()
     print(f"   Dry Run Mode: {kraken.dry_run}")
@@ -133,7 +133,7 @@ except Exception as e:
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🟡 BINANCE: Testing trade execution...")
 try:
-    from binance_client import get_binance_client
+    from aureon.exchanges.binance_client import get_binance_client
 
     binance = get_binance_client()
     print(f"   Dry Run Mode: {binance.dry_run}")
@@ -209,7 +209,7 @@ except Exception as e:
 # ════════════════════════════════════════════════════════════════════════════
 print("\n🦙 ALPACA: Testing trade execution...")
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     
     alpaca = AlpacaClient()
     print(f"   Paper Trading: {alpaca.paper}")
@@ -265,7 +265,7 @@ except Exception as e:
 # ════════════════════════════════════════════════════════════════════════════
 print("\n💼 CAPITAL.COM: Testing trade execution...")
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     
     capital = CapitalClient()
     print(f"   Enabled: {capital.enabled}")

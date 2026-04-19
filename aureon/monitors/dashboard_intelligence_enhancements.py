@@ -21,7 +21,7 @@ INTEGRATION INSTRUCTIONS:
 REAL DATA ONLY - NO SIMULATIONS!
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import logging
 from typing import Dict, List, Optional
@@ -33,21 +33,21 @@ logger = logging.getLogger(__name__)
 
 # Import intelligence systems (with fallbacks for unavailable modules)
 try:
-    from orca_predator_detection import OrcaPredatorDetector
+    from aureon.bots.orca_predator_detection import OrcaPredatorDetector
     PREDATOR_AVAILABLE = True
 except ImportError:
     PREDATOR_AVAILABLE = False
     logger.warning("Predator Detection not available")
 
 try:
-    from aureon_timeline_anchor_validator import TimelineAnchorValidator
+    from aureon.intelligence.aureon_timeline_anchor_validator import TimelineAnchorValidator
     TIMELINE_AVAILABLE = True
 except ImportError:
     TIMELINE_AVAILABLE = False
     logger.warning("Timeline Oracle not available")
 
 try:
-    from aureon_elephant_learning import ElephantMemory
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
     ELEPHANT_AVAILABLE = True
 except ImportError:
     ELEPHANT_AVAILABLE = False

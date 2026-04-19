@@ -20,7 +20,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -534,7 +534,7 @@ class LiveSacredWaveformVisualizer:
         
         # Try to import obsidian filter
         try:
-            from aureon_obsidian_filter import AureonObsidianFilter
+            from aureon.scanners.aureon_obsidian_filter import AureonObsidianFilter
             self.obsidian_filter = AureonObsidianFilter()
             print("🔮 Obsidian Filter connected")
         except ImportError:
@@ -543,7 +543,7 @@ class LiveSacredWaveformVisualizer:
             
         # Try to import Global Wave Scanner
         try:
-            from aureon_global_wave_scanner import GlobalWaveScanner, WaveState, WaveAnalysis
+            from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner, WaveState, WaveAnalysis
             self.wave_scanner = GlobalWaveScanner()
             self.WaveState = WaveState
             self.WaveAnalysis = WaveAnalysis
@@ -562,7 +562,7 @@ class LiveSacredWaveformVisualizer:
         
         # Try to import Quantum Mirror Scanner
         try:
-            from aureon_quantum_mirror_scanner import QuantumMirrorScanner, RealityBranch, BranchPhase
+            from aureon.scanners.aureon_quantum_mirror_scanner import QuantumMirrorScanner, RealityBranch, BranchPhase
             self.quantum_mirror = QuantumMirrorScanner()
             self.RealityBranch = RealityBranch
             self.BranchPhase = BranchPhase
@@ -584,7 +584,7 @@ class LiveSacredWaveformVisualizer:
         
         # Try to import Quantum Telescope
         try:
-            from aureon_quantum_telescope import QuantumTelescope, GeometricSolid, LightBeam
+            from aureon.simulation.aureon_quantum_telescope import QuantumTelescope, GeometricSolid, LightBeam
             self.quantum_telescope = QuantumTelescope()
             self.GeometricSolid = GeometricSolid
             self._telescope_telemetry: Dict[str, Any] = {
@@ -603,9 +603,9 @@ class LiveSacredWaveformVisualizer:
         
         # Try to import Queen's Harmonic Voice
         try:
-            from queen_harmonic_voice import QueenHarmonicVoice, QueenCommand, SystemResponse
+            from aureon.queen.queen_harmonic_voice import QueenHarmonicVoice, QueenCommand, SystemResponse
             try:
-                from aureon_queen_hive_mind import get_queen
+                from aureon.utils.aureon_queen_hive_mind import get_queen
                 queen = get_queen()
             except Exception:
                 queen = None
@@ -632,7 +632,7 @@ class LiveSacredWaveformVisualizer:
         
         # Try to import Volume Hunter for Queen's market insight
         try:
-            from queen_volume_hunter import QueenVolumeHunter, VolumeSignal
+            from aureon.queen.queen_volume_hunter import QueenVolumeHunter, VolumeSignal
             self.volume_hunter = QueenVolumeHunter(live_mode=False)  # Read-only for visualization
             self.VolumeSignal = VolumeSignal
             self._volume_telemetry: Dict[str, Any] = {

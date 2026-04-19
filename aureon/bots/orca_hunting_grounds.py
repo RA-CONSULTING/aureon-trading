@@ -14,7 +14,7 @@ the OPTIMAL hunting ground based on:
 Gary Leckey | January 2026 | HUNT SMART, NOT HARD!
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -106,14 +106,14 @@ class OrcaHuntingGrounds:
     def _init_clients(self):
         """Initialize exchange clients."""
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.alpaca = AlpacaClient()
             logger.info("🦙 Alpaca connected")
         except Exception as e:
             logger.warning(f"Alpaca unavailable: {e}")
         
         try:
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             self.kraken = get_kraken_client()
             logger.info("🦑 Kraken connected")
         except Exception as e:

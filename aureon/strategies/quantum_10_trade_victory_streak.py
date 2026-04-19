@@ -14,7 +14,7 @@ TARGET: 10/10 wins (100% success rate)
 "What a day for humanity!" 🚀
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -48,16 +48,16 @@ from datetime import datetime
 from pathlib import Path
 
 # Import exchange clients
-from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 # Import quantum prediction system
-from metatron_probability_billion_path import (
+from aureon.wisdom.metatron_probability_billion_path import (
     QueenAurisPingPong, ProbabilityMatrix, ProbabilityPrediction
 )
 
 # Import profit gate
-from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
+from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate
 
 PHI = (1 + math.sqrt(5)) / 2  # 1.618 Golden Ratio
 

@@ -5,16 +5,16 @@ Usage:
     python aureon_whale_agent.py BTC/USD ETH/USD --interval 1.0
 """
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import argparse
 import logging
 import time
 from typing import List
 
-from aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
-from aureon_whale_pattern_mapper import default_mapper
-from aureon_whale_behavior_predictor import default_predictor
+from aureon.analytics.aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
+from aureon.analytics.aureon_whale_pattern_mapper import default_mapper
+from aureon.analytics.aureon_whale_behavior_predictor import default_predictor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

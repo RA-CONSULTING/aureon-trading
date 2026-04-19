@@ -14,7 +14,7 @@ Strategy:
 - Zero fear, maximum aggression
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -27,9 +27,9 @@ from decimal import Decimal
 
 # Import existing exchange clients
 try:
-    from unified_exchange_client import MultiExchangeClient
-    from binance_client import BinanceClient
-    from kraken_client import KrakenClient
+    from aureon.trading.unified_exchange_client import MultiExchangeClient
+    from aureon.exchanges.binance_client import BinanceClient
+    from aureon.exchanges.kraken_client import KrakenClient
     EXCHANGES_AVAILABLE = True
 except ImportError:
     EXCHANGES_AVAILABLE = False

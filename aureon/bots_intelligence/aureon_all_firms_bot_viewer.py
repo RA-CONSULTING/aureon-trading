@@ -16,7 +16,7 @@ Shows:
 Gary Leckey | January 2026 | See Everyone's Algos
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json
@@ -44,7 +44,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 try:
-    from aureon_global_firm_intelligence import (
+    from aureon.bots_intelligence.aureon_global_firm_intelligence import (
         get_attribution_engine, GLOBAL_FIRM_INTELLIGENCE,
         TradingFirmIntelligence, BotSignature
     )

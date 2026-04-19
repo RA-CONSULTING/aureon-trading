@@ -8,7 +8,7 @@ No perfect start - just start with what you've got!
 YOUR HOLDINGS → LABYRINTH PATHS → PROFIT → REPEAT
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -26,8 +26,8 @@ import requests
 # Add parent directory for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kraken_client import KrakenClient, get_kraken_client
-from aureon_mycelium import MyceliumNetwork
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.core.aureon_mycelium import MyceliumNetwork
 
 
 @dataclass

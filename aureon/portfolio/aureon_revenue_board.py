@@ -24,7 +24,7 @@ Gary Leckey & GitHub Copilot | January 2026
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -52,28 +52,28 @@ logger = logging.getLogger("RevenueBoard")
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
     BinanceClient = None
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
     AlpacaClient = None
 
 try:
-    from unified_exchange_client import UnifiedExchangeClient
+    from aureon.trading.unified_exchange_client import UnifiedExchangeClient
     UNIFIED_AVAILABLE = True
 except ImportError:
     UNIFIED_AVAILABLE = False

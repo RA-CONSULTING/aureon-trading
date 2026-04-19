@@ -19,7 +19,7 @@ load_dotenv()
 # ─── Seer Integration (Third Pillar) ───
 _seer_available = False
 try:
-    from aureon_seer import get_seer
+    from aureon.intelligence.aureon_seer import get_seer
     _seer_available = True
 except ImportError:
     pass
@@ -49,8 +49,8 @@ class FireTrader:
 
     def __init__(self, kraken_client=None, binance_client=None):
         try:
-            from kraken_client import get_kraken_client
-            from binance_client import BinanceClient
+            from aureon.exchanges.kraken_client import get_kraken_client
+            from aureon.exchanges.binance_client import BinanceClient
             self.kraken = kraken_client if kraken_client else get_kraken_client()
             self.binance = binance_client if binance_client else BinanceClient()
         except ImportError:
@@ -146,7 +146,7 @@ class FireTrader:
             fee = fill_price * fill_qty * fee_rate
             
             # Record in cost_basis_history.json
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             tracker = CostBasisTracker()
             tracker.set_entry_price(pair, fill_price, fill_qty, exchange, fee, str(order_id))
             
@@ -774,7 +774,7 @@ class FireTrader:
         # Use CostBasisTracker for accurate 6-strategy matching
         _fire_tracker = None
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             _fire_tracker = CostBasisTracker()
         except Exception:
             pass

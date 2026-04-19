@@ -20,7 +20,7 @@ Author: Aureon Trading System
 Date: January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -36,21 +36,21 @@ if sys.platform == 'win32':
 
 # Import Base System Hub
 try:
-    from aureon_system_hub import SystemRegistry, SystemInfo, SystemCategory
+    from aureon.command_centers.aureon_system_hub import SystemRegistry, SystemInfo, SystemCategory
 except ImportError:
     print("❌ ERROR: aureon_system_hub.py not found. Cannot integrate.")
     sys.exit(1)
 
 # Import ThoughtBus
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
 except ImportError:
     print("⚠️ WARNING: aureon_thought_bus.py not found. Bus integration disabled.")
     ThoughtBus = None
 
 # Import Mycelium Network
 try:
-    from aureon_mycelium import MyceliumNetwork, Agent, Neuron, Synapse
+    from aureon.core.aureon_mycelium import MyceliumNetwork, Agent, Neuron, Synapse
 except ImportError:
     print("⚠️ WARNING: aureon_mycelium.py not found. Neural mapping disabled.")
     MyceliumNetwork = None

@@ -5,7 +5,7 @@
 This bypasses all the ecosystem complexity and directly places a Binance order.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dotenv import load_dotenv
 load_dotenv()
 
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 from datetime import datetime
 
 def direct_trade(symbol: str = None, amount_usdt: float = 15.0):

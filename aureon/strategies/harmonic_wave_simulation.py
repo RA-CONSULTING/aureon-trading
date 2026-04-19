@@ -13,7 +13,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From Chaos to Coherence - The Wave Reveals All"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import math
@@ -30,7 +30,7 @@ from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field
 
 try:
-    from codex_loader import (
+    from aureon.core.codex_loader import (
         get_emotional_frequency_map,
         get_auris_codex,
         get_emotional_spectrum,

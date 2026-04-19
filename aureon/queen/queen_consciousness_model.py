@@ -16,7 +16,7 @@ This model allows the Queen to:
 "The Why Behind Everything"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 from datetime import datetime
@@ -304,7 +304,7 @@ class QueenConsciousness:
         
         # Integrate into consciousness measurement if available
         try:
-            from queen_consciousness_measurement import get_consciousness_measurement
+            from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
             cm = get_consciousness_measurement()
             
             # Experience integration

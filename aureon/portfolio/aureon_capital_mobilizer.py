@@ -12,7 +12,7 @@ This solves: "System has $2.03 USDC but skipping trades needing $5.50"
 Reality: May have $50 USDT + profitable positions worth $200
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -79,7 +79,7 @@ class AureonCapitalMobilizer:
         
         # Load cost basis tracker for profit calculations
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             self.cost_basis = CostBasisTracker()
         except:
             self.cost_basis = None
@@ -88,25 +88,25 @@ class AureonCapitalMobilizer:
     def _load_exchange_clients(self):
         """Load exchange clients dynamically."""
         try:
-            from binance_client import BinanceClient, get_binance_client
+            from aureon.exchanges.binance_client import BinanceClient, get_binance_client
             self.exchange_clients['binance'] = BinanceClient()
         except Exception as e:
             print(f"⚠️  Binance client not available: {e}")
         
         try:
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             self.exchange_clients['kraken'] = get_kraken_client()
         except Exception as e:
             print(f"⚠️  Kraken client not available: {e}")
         
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.exchange_clients['alpaca'] = AlpacaClient()
         except Exception as e:
             print(f"⚠️  Alpaca client not available: {e}")
         
         try:
-            from capital_client import CapitalClient
+            from aureon.exchanges.capital_client import CapitalClient
             self.exchange_clients['capital'] = CapitalClient()
         except Exception as e:
             print(f"⚠️  Capital.com client not available: {e}")

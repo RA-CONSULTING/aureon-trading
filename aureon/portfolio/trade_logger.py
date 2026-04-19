@@ -17,7 +17,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time
@@ -262,7 +262,7 @@ class TradeLogger:
 
         # Feed outcome into Autonomy Hub feedback loop (closes the learning circle)
         try:
-            from aureon_autonomy_hub import get_autonomy_hub
+            from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
             hub = get_autonomy_hub()
             hub.record_trade_outcome({
                 'symbol': exit_record.symbol,
@@ -276,7 +276,7 @@ class TradeLogger:
 
         # Feed outcome into War Planner (adversarial chess learning)
         try:
-            from aureon_strategic_war_planner import get_war_planner
+            from aureon.command_centers.aureon_strategic_war_planner import get_war_planner
             planner = get_war_planner()
             planner.record_outcome(exit_record.symbol, exit_record.net_pnl)
         except Exception:

@@ -12,20 +12,20 @@ Features:
 - Background thread operation
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import threading
 import logging
 import os
 from typing import Dict, List, Optional, Set
 try:
-    from rate_limiter import TTLCache
+    from aureon.core.rate_limiter import TTLCache
 except ImportError:
     from aureon.core.rate_limiter import TTLCache
 
 # Metrics (optional)
 try:
-    from metrics import market_data_prefetch_cycles, market_data_cache_hits, market_data_api_calls_saved
+    from aureon.core.metrics import market_data_prefetch_cycles, market_data_cache_hits, market_data_api_calls_saved
     METRICS_AVAILABLE = True
 except Exception:
     METRICS_AVAILABLE = False
@@ -182,7 +182,7 @@ class MarketDataHub:
                 else:
                     # Check if bare symbol is a known crypto
                     try:
-                        from alpaca_client import CRYPTO_BASE_SYMBOLS
+                        from aureon.exchanges.alpaca_client import CRYPTO_BASE_SYMBOLS
                         base_sym = symbol.upper()
                         for suffix in ('USDT', 'USDC', 'USD'):
                             if base_sym.endswith(suffix) and len(base_sym) > len(suffix):

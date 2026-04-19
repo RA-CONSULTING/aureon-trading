@@ -9,7 +9,7 @@ Based on the WORKING rotations from this chat:
 - Deploy ALL cash immediately
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 os.environ['PYTHONUNBUFFERED'] = '1'
 
@@ -32,38 +32,38 @@ except Exception:
     websockets = None
 
 try:
-    from probability_ultimate_intelligence import ultimate_predict
+    from aureon.strategies.probability_ultimate_intelligence import ultimate_predict
 except Exception:
     ultimate_predict = None
 
 try:
-    from probability_intelligence_matrix import calculate_intelligent_probability
+    from aureon.strategies.probability_intelligence_matrix import calculate_intelligent_probability
 except Exception:
     calculate_intelligent_probability = None
 
 try:
-    from probability_loader import ProbabilityLoader
+    from aureon.strategies.probability_loader import ProbabilityLoader
 except Exception:
     ProbabilityLoader = None
 
 try:
-    from hnc_probability_matrix import HNCProbabilityIntegration
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
 except Exception:
     HNCProbabilityIntegration = None
 
 try:
-    from aureon_barter_navigator import BarterNavigator, get_barter_score
+    from aureon.trading.aureon_barter_navigator import BarterNavigator, get_barter_score
 except Exception:
     BarterNavigator = None
     get_barter_score = None
 
 try:
-    from aureon_conversion_ladder import ConversionLadder
+    from aureon.conversion.aureon_conversion_ladder import ConversionLadder
 except Exception:
     ConversionLadder = None
 
 try:
-    from aureon_bridge import AureonBridge, Opportunity, CapitalState, Position as BridgePosition
+    from aureon.bridges.aureon_bridge import AureonBridge, Opportunity, CapitalState, Position as BridgePosition
 except Exception:
     AureonBridge = None
     Opportunity = None
@@ -71,35 +71,35 @@ except Exception:
     BridgePosition = None
 
 try:
-    from aureon_thought_bus import get_thought_bus, Thought
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
 except Exception:
     get_thought_bus = None
     Thought = None
 
 try:
-    from aureon_mycelium import get_mycelium
+    from aureon.core.aureon_mycelium import get_mycelium
 except Exception:
     get_mycelium = None
 
 try:
-    from aureon_market_pulse import MarketPulse
+    from aureon.intelligence.aureon_market_pulse import MarketPulse
 except Exception:
     MarketPulse = None
 
 try:
-    from aureon_commandos import PrideScanner, LionHunt
+    from aureon.trading.aureon_commandos import PrideScanner, LionHunt
 except Exception:
     PrideScanner = None
     LionHunt = None
 
 try:
-    from aureon_auris_trader import AurisEngine, MarketSnapshot
+    from aureon.trading.aureon_auris_trader import AurisEngine, MarketSnapshot
 except Exception:
     AurisEngine = None
     MarketSnapshot = None
 
 try:
-    from aureon_probability_nexus import MeanReversionDetector, PhaseAligner, ProbabilityMatrix, HarmonicAnalyzer
+    from aureon.bridges.aureon_probability_nexus import MeanReversionDetector, PhaseAligner, ProbabilityMatrix, HarmonicAnalyzer
 except Exception:
     MeanReversionDetector = None
     PhaseAligner = None
@@ -107,27 +107,27 @@ except Exception:
     HarmonicAnalyzer = None
 
 try:
-    from aureon_advanced_intelligence import calculate_golden_ratio_alignment
+    from aureon.intelligence.aureon_advanced_intelligence import calculate_golden_ratio_alignment
 except Exception:
     calculate_golden_ratio_alignment = None
 
 try:
-    from unified_exchange_client import MultiExchangeClient
+    from aureon.trading.unified_exchange_client import MultiExchangeClient
 except Exception:
     MultiExchangeClient = None
 
 try:
-    from aureon_lattice import LatticeEngine
+    from aureon.core.aureon_lattice import LatticeEngine
 except Exception:
     LatticeEngine = None
 
 try:
-    from aureon_luck_field_mapper import get_luck_mapper
+    from aureon.utils.aureon_luck_field_mapper import get_luck_mapper
 except Exception:
     get_luck_mapper = None
 
 try:
-    from mycelium_whale_sonar import ensure_sonar
+    from aureon.core.mycelium_whale_sonar import ensure_sonar
 except Exception:
     ensure_sonar = None
 
@@ -1277,9 +1277,9 @@ class AggressiveReclaimer:
         print("   GAIA AGGRESSIVE RECLAIMER - TAKE EVERYTHING")
         print("=" * 40)
         
-        from alpaca_client import AlpacaClient
-        from alpaca_sse_client import AlpacaSSEClient, SSE_AVAILABLE
-        from aureon_global_wave_scanner import GlobalWaveScanner
+        from aureon.exchanges.alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_sse_client import AlpacaSSEClient, SSE_AVAILABLE
+        from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
         
         self.binance = None
         self.alpaca = AlpacaClient()

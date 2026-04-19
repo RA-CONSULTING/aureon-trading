@@ -11,7 +11,7 @@ from typing import Dict, Any, Set, List, Optional
 
 # Rate limiting utilities (TokenBucket, TTLCache)
 try:
-    from rate_limiter import TokenBucket, TTLCache
+    from aureon.core.rate_limiter import TokenBucket, TTLCache
 except Exception:
     TokenBucket = None
     TTLCache = None
@@ -251,7 +251,7 @@ class BinanceClient:
             if resp.status_code == 429:
                 # Metric: API 429
                 try:
-                    from metrics import api_429_counter
+                    from aureon.core.metrics import api_429_counter
                     api_429_counter.inc(1, exchange='binance', endpoint=path)
                 except Exception:
                     pass

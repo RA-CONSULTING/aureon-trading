@@ -10,7 +10,7 @@ Publishes:
 - topic: `whale.external.detected` (when strong whale activity detected)
 """
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import hashlib
 import logging
@@ -21,10 +21,10 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from aureon_thought_bus import get_thought_bus, Thought
+from aureon.core.aureon_thought_bus import get_thought_bus, Thought
 
 try:
-    from whale_metrics import (
+    from aureon.bots.whale_metrics import (
         whale_wall_detected_total,
         whale_layering_score,
         whale_depth_imbalance,
@@ -42,7 +42,7 @@ except ImportError:
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon.core.aureon_chirp_bus import get_chirp_bus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -51,21 +51,21 @@ except ImportError:
 # 🌐 GLOBAL MARKET INTEGRATION - Exchange Coverage
 # ════════════════════════════════════════════════════════════════════════════════
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
 try:
-    from binance_ws_client import BinanceWebSocketClient
+    from aureon.exchanges.binance_ws_client import BinanceWebSocketClient
     BINANCE_WS_AVAILABLE = True
 except ImportError:
     BINANCE_WS_AVAILABLE = False
     BinanceWebSocketClient = None
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CAPITAL_AVAILABLE = False
@@ -180,7 +180,7 @@ class WhaleOrderbookAnalyzer:
         if not orderbook:
             try:
                 # lazy import to avoid circular imports
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 ac = AlpacaClient()
                 orderbook = ac.get_crypto_orderbook(symbol) or {}
             except Exception:

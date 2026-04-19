@@ -13,7 +13,7 @@ Uses:
 This simulation PROVES whether £76 → £100K in 24 hours is achievable
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -26,7 +26,7 @@ from dataclasses import dataclass
 
 # Import our existing probability systems
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, 
         UltimatePrediction,
         PatternStats
@@ -38,7 +38,7 @@ except ImportError:
     print("⚠️ Running without Ultimate Intelligence")
 
 try:
-    from probability_intelligence_matrix import (
+    from aureon.strategies.probability_intelligence_matrix import (
         get_probability_matrix,
         calculate_intelligent_probability
     )

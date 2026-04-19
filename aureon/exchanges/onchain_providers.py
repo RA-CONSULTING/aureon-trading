@@ -11,7 +11,7 @@ Architecture:
 - Known exchange wallet registry
 """
 try:
-    from aureon_baton_link import link_system as _baton_link
+    from aureon.core.aureon_baton_link import link_system as _baton_link
     _baton_link(__name__)
 except Exception:
     pass

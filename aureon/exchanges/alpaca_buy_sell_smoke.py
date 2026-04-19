@@ -10,14 +10,14 @@ Examples:
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import argparse
 import os
 import time
 from typing import Any, Dict
 
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 
 def _is_error(payload: Any) -> bool:

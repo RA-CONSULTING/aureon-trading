@@ -45,7 +45,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import abc
 import time
@@ -304,7 +304,7 @@ class SensoryChannel(abc.ABC):
                           experience: SensoryExperience) -> Any:
         """Build a BrainInput from a SensoryExperience (lazy import)."""
         try:
-            from queen_consciousness_model import BrainInput
+            from aureon.queen.queen_consciousness_model import BrainInput
             return BrainInput(
                 source=source,
                 timestamp=experience.timestamp,
@@ -521,7 +521,7 @@ class QueenSensorySystem:
     def _publish(exp: SensoryExperience) -> None:
         """Publish to ThoughtBus + QueenConsciousness (both optional/graceful)."""
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             tb = get_thought_bus()
             tb.publish(Thought(
                 source=f"sensory.{exp.channel_id}",
@@ -542,7 +542,7 @@ class QueenSensorySystem:
 
         if exp.brain_input is not None:
             try:
-                from queen_consciousness_model import QueenConsciousness
+                from aureon.queen.queen_consciousness_model import QueenConsciousness
                 QueenConsciousness().perceive_input(exp.brain_input)
             except Exception:
                 pass
@@ -567,7 +567,7 @@ class MarketTasteChannel(SensoryChannel):
 
     def __init__(self):
         try:
-            from aureon_market_taste_sense import get_market_taste_sense
+            from aureon.intelligence.aureon_market_taste_sense import get_market_taste_sense
             self._inner = get_market_taste_sense()
         except ImportError as e:
             logger.warning(f"[TasteChannel] MarketTasteSense not available: {e}")
@@ -641,7 +641,7 @@ class SoundChannel(SensoryChannel):
 
     def __init__(self):
         try:
-            from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
+            from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
             self._field_cls = HarmonicLiquidAluminiumField
         except ImportError:
             self._field_cls = None
@@ -1087,7 +1087,7 @@ class IntuitionChannel(SensoryChannel):
         intuition_strength = 0.5
         awakening_index    = 50.0
         try:
-            from queen_consciousness_measurement import get_consciousness_measurement
+            from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
             cm = get_consciousness_measurement()
             metrics = cm.measure_consciousness()
             intuition_strength = float(metrics.intuition_strength)
@@ -1169,7 +1169,7 @@ class AncestralChannel(SensoryChannel):
         cosmic_conn     = 0.5
         earth_conn      = 0.5
         try:
-            from queen_consciousness_measurement import get_consciousness_measurement
+            from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
             cm = get_consciousness_measurement()
             metrics = cm.measure_consciousness()
             ancestral_conn = float(metrics.ancestral_connection)

@@ -17,7 +17,7 @@ Best Hunting Grounds (by hunt score):
 - ETH: 2.2 (3% volatility)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -73,7 +73,7 @@ KRAKEN_FEE_PCT = 0.0022      # 0.22% per side (Tier 4 default, updated dynamical
 
 # Import dynamic Kraken fee tracker (optional — falls back to KRAKEN_FEE_PCT)
 try:
-    from kraken_fee_tracker import get_kraken_fee_tracker as _get_kft
+    from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker as _get_kft
     _KRAKEN_FEE_TRACKER_AVAILABLE = True
 except ImportError:
     _get_kft = None
@@ -223,7 +223,7 @@ class OrcaDualHunter:
         
         # Kraken (using our adapter — already wires KrakenFeeTracker internally)
         try:
-            from kraken_trading_adapter import KrakenTradingAdapter
+            from aureon.exchanges.kraken_trading_adapter import KrakenTradingAdapter
             self.kraken = KrakenTradingAdapter()
             self.kraken_status.connected = True
             # Refresh the module-level fallback with the live tier rate

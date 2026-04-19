@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 except ImportError:
     AlpacaClient = None  # type: ignore
 
@@ -46,7 +46,7 @@ except Exception:
     HAS_UNIFIED_DECISION = False
 
 try:
-    from autonomous_trading_orchestrator import AutonomousOrchestrator
+    from aureon.autonomous.autonomous_trading_orchestrator import AutonomousOrchestrator
     HAS_ALPACA_ORCHESTRATOR = True
 except Exception:
     AutonomousOrchestrator = None  # type: ignore

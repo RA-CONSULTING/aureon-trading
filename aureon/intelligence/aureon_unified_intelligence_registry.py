@@ -19,7 +19,7 @@
 """
 
 try:
-    from aureon_baton_link import link_system as _baton_link
+    from aureon.core.aureon_baton_link import link_system as _baton_link
     _baton_link(__name__)
 except Exception:
     pass
@@ -605,7 +605,7 @@ class UnifiedDataPuller:
     def initialize(self):
         """Initialize ThoughtBus connection and load available systems."""
         try:
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             self.thought_bus = ThoughtBus.instance() if hasattr(ThoughtBus, 'instance') else ThoughtBus()
             logger.info("✅ ThoughtBus connected for unified data pulling")
         except ImportError:

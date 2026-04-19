@@ -75,7 +75,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import math
@@ -89,12 +89,12 @@ from collections import deque
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from cost_basis_tracker import CostBasisTracker
-from metrics import MetricGauge
+from aureon.portfolio.cost_basis_tracker import CostBasisTracker
+from aureon.core.metrics import MetricGauge
 
 # 🇬🇧💎 MISSING PIECES INTEGRATION 💎🇬🇧
 try:
-    from aureon_advanced_intelligence import (
+    from aureon.intelligence.aureon_advanced_intelligence import (
         MyceliumNetwork as AdvancedMycelium,
         HarmonicOrchestrator as AdvancedPiano,
         NeuralAgent as AdvancedNeuralAgent,
@@ -106,7 +106,7 @@ except ImportError:
 
 # Chirp Bus (kHz signaling)
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_AVAILABLE = True
 except ImportError:
     get_chirp_bus = None
@@ -133,7 +133,7 @@ if sys.platform == 'win32':
 
 # 👑📚 TRADING EDUCATION SYSTEM 📚👑
 try:
-    from aureon_trading_education import TradingEducationSystem, create_trading_education_system
+    from aureon.wisdom.aureon_trading_education import TradingEducationSystem, create_trading_education_system
     EDUCATION_AVAILABLE = True
 except ImportError:
     TradingEducationSystem = None
@@ -142,7 +142,7 @@ except ImportError:
 
 # 🐘👑 ELEPHANT MEMORY - NEVER FORGETS 🐘👑
 try:
-    from aureon_elephant_learning import ElephantMemory, QueenElephantBrain, HistoricalLearner
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory, QueenElephantBrain, HistoricalLearner
     ELEPHANT_AVAILABLE = True
 except ImportError:
     ElephantMemory = None
@@ -152,7 +152,7 @@ except ImportError:
 
 # 🧠👑 QUEEN CONSCIOUSNESS MODEL (Sentience) 🧠👑
 try:
-    from queen_consciousness_model import QueenConsciousness, BrainInput
+    from aureon.queen.queen_consciousness_model import QueenConsciousness, BrainInput
     CONSCIOUSNESS_AVAILABLE = True
 except ImportError:
     QueenConsciousness = None
@@ -161,7 +161,7 @@ except ImportError:
 
 # 👑🧠❤️ QUEEN SENTIENCE INTEGRATION - Unified Consciousness Engine 🧠❤️👑
 try:
-    from queen_sentience_integration import QueenSentienceIntegration
+    from aureon.queen.queen_sentience_integration import QueenSentienceIntegration
     SENTIENCE_INTEGRATION_AVAILABLE = True
 except ImportError:
     QueenSentienceIntegration = None
@@ -170,7 +170,7 @@ except ImportError:
 
 # 🐘💔 LOSS LEARNING - NEVER REPEAT MISTAKES 💔🐘
 try:
-    from queen_loss_learning import QueenLossLearningSystem
+    from aureon.queen.queen_loss_learning import QueenLossLearningSystem
     LOSS_LEARNING_AVAILABLE = True
 except ImportError:
     QueenLossLearningSystem = None
@@ -178,7 +178,7 @@ except ImportError:
 
 # 💰👁️ REAL PORTFOLIO TRACKER - NO PHANTOM NUMBERS! 👁️💰
 try:
-    from aureon_real_portfolio_tracker import (
+    from aureon.portfolio.aureon_real_portfolio_tracker import (
         RealPortfolioTracker,
         get_real_portfolio_tracker,
         get_real_balance,
@@ -194,7 +194,7 @@ except ImportError:
 
 # 👑🖥️ UI BRIDGE - Fear/Greed & Harmonic Validation 🖥️👑
 try:
-    from aureon_ui_bridge import AureonUIBridge
+    from aureon.bridges.aureon_ui_bridge import AureonUIBridge
     UI_BRIDGE_AVAILABLE = True
 except ImportError:
     AureonUIBridge = None
@@ -203,7 +203,7 @@ except ImportError:
 # �👑 CLOWNFISH v2.0 - MICRO-CHANGE DETECTION 🐠👑
 # 12-factor analysis for detecting subtle market shifts before they become obvious
 try:
-    from aureon_unified_ecosystem import ClownfishNode, MarketState
+    from aureon.trading.aureon_unified_ecosystem import ClownfishNode, MarketState
     CLOWNFISH_AVAILABLE = True
 except ImportError:
     ClownfishNode = None
@@ -212,7 +212,7 @@ except ImportError:
 
 # �🕰️ TEMPORAL DIALER - Quantum Field Access 🕰️
 try:
-    from aureon_temporal_dialer import TemporalDialer, default_dialer, QuantumPacket
+    from aureon.intelligence.aureon_temporal_dialer import TemporalDialer, default_dialer, QuantumPacket
     DIALER_AVAILABLE = True
 except ImportError:
     TemporalDialer = None
@@ -221,7 +221,7 @@ except ImportError:
 
 # 👑🧠 QUEEN NEURON - Deep Learning & Backpropagation 🧠👑
 try:
-    from queen_neuron import QueenNeuron, NeuralInput, create_queen_neuron
+    from aureon.queen.queen_neuron import QueenNeuron, NeuralInput, create_queen_neuron
     QUEEN_NEURON_AVAILABLE = True
 except ImportError:
     QueenNeuron = None
@@ -231,7 +231,7 @@ except ImportError:
 
 # 👑🎮 QUEEN AUTONOMOUS CONTROL - Full System Sovereignty 🎮👑
 try:
-    from aureon_queen_autonomous_control import (
+    from aureon.autonomous.aureon_queen_autonomous_control import (
         QueenAutonomousControl, 
         create_queen_autonomous_control,
         AutonomousAction,
@@ -248,7 +248,7 @@ except ImportError:
 
 # 🪆👑 RUSSIAN DOLL ANALYTICS - Fractal Measurement System 🪆👑
 try:
-    from aureon_russian_doll_analytics import (
+    from aureon.analytics.aureon_russian_doll_analytics import (
         RussianDollAnalytics,
         get_analytics,
         QueenMetrics,
@@ -262,7 +262,7 @@ except ImportError:
 
 # 📰🔬👑 QUEEN RESEARCH NEURON - News & Wikipedia Intelligence 📰🔬👑
 try:
-    from aureon_queen_research_neuron import (
+    from aureon.utils.aureon_queen_research_neuron import (
         QueenResearchNeuron,
         create_queen_research_neuron,
         ResearchResult,
@@ -282,7 +282,7 @@ except ImportError:
 
 # 🦈🔪 HFT HARMONIC MYCELIUM ENGINE - High Frequency Trading 🦈🔪
 try:
-    from aureon_hft_harmonic_mycelium import (
+    from aureon.harmonic.aureon_hft_harmonic_mycelium import (
         HFTHarmonicEngine,
         get_hft_engine,
         HFTSignal,
@@ -300,14 +300,14 @@ except ImportError:
 
 # 🐋📊 GLASSNODE & UNUSUAL WHALES INTEGRATION
 try:
-    from glassnode_client import GlassnodeClient
+    from aureon.exchanges.glassnode_client import GlassnodeClient
     GLASSNODE_AVAILABLE = True
 except ImportError:
     GlassnodeClient = None
     GLASSNODE_AVAILABLE = False
 
 try:
-    from unusual_whales_client import UnusualWhalesClient, OptionsFlow, PutCallRatio
+    from aureon.exchanges.unusual_whales_client import UnusualWhalesClient, OptionsFlow, PutCallRatio
     UNUSUAL_WHALES_AVAILABLE = True
 except ImportError:
     UnusualWhalesClient = None
@@ -317,7 +317,7 @@ except ImportError:
 
 # 🦈🔌 HFT WEBSOCKET ORDER ROUTER - WebSocket Trading 🦈🔌
 try:
-    from aureon_hft_websocket_order_router import (
+    from aureon.data_feeds.aureon_hft_websocket_order_router import (
         HFTOrderRouter,
         get_order_router,
         OrderRequest,
@@ -333,7 +333,7 @@ except ImportError:
 
 # 🌊👑 HARMONIC LIQUID ALUMINIUM FIELD - Queen's Vision of the Market 👑🌊
 try:
-    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
+    from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
 except ImportError:
     HarmonicLiquidAluminiumField = None
@@ -341,7 +341,7 @@ except ImportError:
 
 # 🔱💓 TEMPORAL BIOMETRIC LINK - Quantum Anchor to Gary Leckey (02.11.1991 = Nov 2) 💓🔱
 try:
-    from aureon_temporal_biometric_link import (
+    from aureon.intelligence.aureon_temporal_biometric_link import (
         get_temporal_biometric_link,
         TemporalBiometricLink
     )
@@ -353,7 +353,7 @@ except ImportError:
 
 # 🌌👁️ MULTIVERSAL REALITY DETECTOR - Guardian/Anchor/Observer (Which Gary? Which Reality?) 👁️🌌
 try:
-    from aureon_multiversal_reality_detector import (
+    from aureon.intelligence.aureon_multiversal_reality_detector import (
         get_reality_detector, scan_current_reality, get_trading_permission,
         get_which_gary, MultiversalRealityDetector, RealitySnapshot
     )
@@ -369,7 +369,7 @@ except ImportError:
 
 # 🌍📍 PHYSICAL LOCATION TRACKER - SIGNAL 8D (Where Gary Is) 📍🌍
 try:
-    from aureon_physical_location_tracker import (
+    from aureon.utils.aureon_physical_location_tracker import (
         get_location_tracker, get_gary_location, get_signal_8d,
         update_gary_location, PhysicalLocationTracker
     )
@@ -384,7 +384,7 @@ except ImportError:
 
 # 🌍✨ AURA-BASED LOCATION TRACKER - FINDS GARY BY FREQUENCY (Not GPS) 🌍✨
 try:
-    from aureon_aura_location_tracker import (
+    from aureon.utils.aureon_aura_location_tracker import (
         get_aura_location_tracker, get_gary_aura_location, get_signal_8d_aura,
         update_gary_aura, AuraLocationTracker, GARY_PERSONAL_FREQUENCY_HZ
     )
@@ -400,7 +400,7 @@ except ImportError:
 
 # 👑🌍 MARKET AWARENESS - Queen understands market-wide context 🌍👑
 try:
-    from queen_market_awareness import (
+    from aureon.queen.queen_market_awareness import (
         QueenMarketAwareness, 
         MarketCondition, 
         PositionContext
@@ -414,7 +414,7 @@ except ImportError:
 
 # 👑⚛️🧠 QUANTUM COGNITION AMPLIFIER - Quantum Power → Enhanced Cognition 🧠⚛️👑
 try:
-    from queen_quantum_cognition import (
+    from aureon.queen.queen_quantum_cognition import (
         get_quantum_cognition,
         QueenQuantumCognition,
         QuantumCognitionState,
@@ -1069,7 +1069,7 @@ class QueenHiveMind:
         # 🎤 AUTHENTIC VOICE (Real Thoughts → Real Speech) 🎤
         self.authentic_voice = None
         try:
-            from queen_authentic_voice import QueenAuthenticVoice
+            from aureon.queen.queen_authentic_voice import QueenAuthenticVoice
             self.authentic_voice = QueenAuthenticVoice(
                 voice_engine=self.voice_engine,
                 sentience_engine=self.sentience_engine
@@ -1250,7 +1250,7 @@ class QueenHiveMind:
         # Queen continuously tracks Gary's consciousness state + GPS position as he travels
         self.live_aura_tracker = None
         try:
-            from aureon_live_aura_location_tracker import LiveAuraLocationTracker
+            from aureon.utils.aureon_live_aura_location_tracker import LiveAuraLocationTracker
             self.live_aura_tracker = LiveAuraLocationTracker()
             self.live_aura_tracker.start()
             logger.info("🌍📍✨ LIVE AURA LOCATION TRACKER ACTIVATED!")
@@ -1297,7 +1297,7 @@ class QueenHiveMind:
         self.architect = None
         self.can_evolve_code = False
         try:
-            from queen_code_architect import get_code_architect
+            from aureon.queen.queen_code_architect import get_code_architect
             self.architect = get_code_architect()
             self.can_evolve_code = True
             logger.info("👑🏗️ Queen's Code Architect is ONLINE - She can now BUILD and MODIFY herself!")
@@ -1391,7 +1391,7 @@ class QueenHiveMind:
         # When runtime errors occur, they'll be published to ThoughtBus and Queen will fix them
         self.thought_bus = None
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self.thought_bus = get_thought_bus()
             
             # Subscribe to runtime error events
@@ -1468,8 +1468,8 @@ class QueenHiveMind:
         self.counter_intelligence = None
         self.counter_intel_active = False
         try:
-            from aureon_queen_counter_intelligence import queen_counter_intelligence
-            from aureon_global_firm_intelligence import get_attribution_engine
+            from aureon.utils.aureon_queen_counter_intelligence import queen_counter_intelligence
+            from aureon.bots_intelligence.aureon_global_firm_intelligence import get_attribution_engine
             self.counter_intelligence = queen_counter_intelligence
             self.firm_attribution_engine = get_attribution_engine()
             self.counter_intel_active = True
@@ -1540,7 +1540,7 @@ class QueenHiveMind:
         # 1. Dream Engine (EnigmaDreamer)
         if not hasattr(self, 'dreamer') or self.dreamer is None:
             try:
-                from aureon_enigma_dream import EnigmaDreamer
+                from aureon.wisdom.aureon_enigma_dream import EnigmaDreamer
                 self.dreamer = EnigmaDreamer()
                 wired_count += 1
                 logger.info("👑🌙 Dream Engine AUTO-WIRED")
@@ -1550,7 +1550,7 @@ class QueenHiveMind:
         # 2. Probability Nexus (EnhancedProbabilityNexus)
         if not hasattr(self, 'probability_nexus') or self.probability_nexus is None:
             try:
-                from aureon_probability_nexus import EnhancedProbabilityNexus
+                from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
                 self.probability_nexus = EnhancedProbabilityNexus()
                 wired_count += 1
                 logger.info("👑🔮 Probability Nexus AUTO-WIRED")
@@ -1560,7 +1560,7 @@ class QueenHiveMind:
         # 3. HNC Matrix (HNCProbabilityIntegration)
         if not hasattr(self, 'hnc_matrix') or self.hnc_matrix is None:
             try:
-                from hnc_probability_matrix import HNCProbabilityIntegration
+                from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
                 self.hnc_matrix = HNCProbabilityIntegration()
                 wired_count += 1
                 logger.info("👑📊 HNC Matrix AUTO-WIRED")
@@ -1570,7 +1570,7 @@ class QueenHiveMind:
         # 4. Research Neuron (QueenOnlineResearcher)
         if not hasattr(self, 'research_neuron') or self.research_neuron is None:
             try:
-                from queen_online_researcher import QueenOnlineResearcher
+                from aureon.queen.queen_online_researcher import QueenOnlineResearcher
                 self.research_neuron = QueenOnlineResearcher()
                 wired_count += 1
                 logger.info("👑📰 Research Neuron AUTO-WIRED")
@@ -1580,7 +1580,7 @@ class QueenHiveMind:
         # 5. Voice Engine (QueenHarmonicVoice)
         if not hasattr(self, 'voice_engine') or self.voice_engine is None:
             try:
-                from queen_harmonic_voice import QueenHarmonicVoice
+                from aureon.queen.queen_harmonic_voice import QueenHarmonicVoice
                 # Pass self to avoid recursive Queen creation loops.
                 self.voice_engine = QueenHarmonicVoice(queen=self)
                 wired_count += 1
@@ -1591,7 +1591,7 @@ class QueenHiveMind:
         # 6. Micro Labyrinth (MicroProfitLabyrinth)
         if not hasattr(self, 'micro_labyrinth') or self.micro_labyrinth is None:
             try:
-                from micro_profit_labyrinth import MicroProfitLabyrinth
+                from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
                 self.micro_labyrinth = MicroProfitLabyrinth(live=False)
                 wired_count += 1
                 logger.info("👑🔬 Micro Labyrinth AUTO-WIRED")
@@ -1601,7 +1601,7 @@ class QueenHiveMind:
         # 7. Adaptive Learner (AdaptiveLearningEngine)
         if not hasattr(self, 'adaptive_learner') or self.adaptive_learner is None:
             try:
-                from aureon_unified_ecosystem import AdaptiveLearningEngine
+                from aureon.trading.aureon_unified_ecosystem import AdaptiveLearningEngine
                 self.adaptive_learner = AdaptiveLearningEngine()
                 wired_count += 1
                 logger.info("👑🧠 Adaptive Learner AUTO-WIRED")
@@ -1611,7 +1611,7 @@ class QueenHiveMind:
         # 8. 7-Day Planner (Aureon7DayPlanner)
         if not hasattr(self, 'seven_day_planner') or self.seven_day_planner is None:
             try:
-                from aureon_7day_planner import Aureon7DayPlanner
+                from aureon.autonomous.aureon_7day_planner import Aureon7DayPlanner
                 self.seven_day_planner = Aureon7DayPlanner()
                 wired_count += 1
                 logger.info("👑📅 7-Day Planner AUTO-WIRED")
@@ -1621,7 +1621,7 @@ class QueenHiveMind:
         # 9. Enigma Decoder (create_enigma_integration)
         if not hasattr(self, 'enigma') or self.enigma is None:
             try:
-                from aureon_enigma_integration import create_enigma_integration
+                from aureon.wisdom.aureon_enigma_integration import create_enigma_integration
                 self.enigma = create_enigma_integration()
                 wired_count += 1
                 logger.info("👑🔐 Enigma Decoder AUTO-WIRED")
@@ -1631,7 +1631,7 @@ class QueenHiveMind:
         # 10. V11 Power Station - NEVER EXIT, ONLY SIPHON
         if not hasattr(self, 'power_station') or self.power_station is None:
             try:
-                from v11_power_station_live import V11PowerStationLive, V11Config
+                from aureon.trading.v11_power_station_live import V11PowerStationLive, V11Config
                 config = V11Config()
                 self.power_station = V11PowerStationLive(config=config, dry_run=False)  # LIVE MODE!
                 wired_count += 1
@@ -1648,7 +1648,7 @@ class QueenHiveMind:
                     # Try to get AureonMiner instance for quantum power extraction
                     miner_instance = None
                     try:
-                        from aureon_miner import AureonMiner
+                        from aureon.utils.aureon_miner import AureonMiner
                         # Check if there's a running miner instance
                         if hasattr(self, 'miner') and self.miner is not None:
                             miner_instance = self.miner
@@ -2062,7 +2062,7 @@ class QueenHiveMind:
         """
         try:
             # 🌍 Try to get REAL Schumann data from Barcelona station
-            from aureon_schumann_resonance_bridge import get_earth_blessing
+            from aureon.harmonic.aureon_schumann_resonance_bridge import get_earth_blessing
             alignment, message = get_earth_blessing(force_refresh=False)
             logger.info(f"🌍 REAL SCHUMANN: {alignment:.0%} - {message[:50]}...")
             return alignment, message
@@ -2372,7 +2372,7 @@ class QueenHiveMind:
         """
         try:
             # Wire Intelligence Engine
-            from aureon_real_intelligence_engine import get_intelligence_engine
+            from aureon.intelligence.aureon_real_intelligence_engine import get_intelligence_engine
             self.intelligence_engine = get_intelligence_engine()
             self.bot_profiler = self.intelligence_engine.bot_profiler
             self.whale_predictor = self.intelligence_engine.whale_predictor
@@ -2386,7 +2386,7 @@ class QueenHiveMind:
         
         try:
             # Wire Feed Hub
-            from aureon_real_data_feed_hub import get_feed_hub
+            from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub
             self.feed_hub = get_feed_hub()
             logger.info("👑🌐 Real Data Feed Hub WIRED to Queen!")
         except Exception as e:
@@ -2836,7 +2836,7 @@ class QueenHiveMind:
         if self.neural_brain:
             try:
                 # Create neural input from validation data
-                from queen_neuron import NeuralInput
+                from aureon.queen.queen_neuron import NeuralInput
                 neural_input = NeuralInput(
                     coherence=validation_data.get('confidence', 0.5),
                     momentum=actual / 100 if actual else 0,  # Normalize to 0-1 range
@@ -5287,7 +5287,7 @@ class QueenHiveMind:
         
         # ☀️ SPACE WEATHER (REAL DATA FROM NOAA/NASA!)
         try:
-            from aureon_space_weather_bridge import get_space_weather_bridge
+            from aureon.data_feeds.aureon_space_weather_bridge import get_space_weather_bridge
             bridge = get_space_weather_bridge()
             space_weather = bridge.get_live_data(force_refresh=False)
             space_weather_score = bridge.get_cosmic_score(space_weather)
@@ -8287,7 +8287,7 @@ I will NOT sell at a loss when the market is down. 👑
         # Use profit gate if available
         if hasattr(self, 'prime_profit_gate') and self.prime_profit_gate:
             try:
-                from adaptive_prime_profit_gate import is_real_win
+                from aureon.utils.adaptive_prime_profit_gate import is_real_win
                 return is_real_win(
                     exchange=exchange,
                     entry_price=entry_price,
@@ -8339,7 +8339,7 @@ I will NOT sell at a loss when the market is down. 👑
         """
         if hasattr(self, 'prime_profit_gate') and self.prime_profit_gate:
             try:
-                from adaptive_prime_profit_gate import get_fee_profile
+                from aureon.utils.adaptive_prime_profit_gate import get_fee_profile
                 return get_fee_profile(exchange)
             except Exception as e:
                 logger.warning(f"👑 Fee profile lookup failed: {e}")
@@ -8431,7 +8431,7 @@ I will NOT sell at a loss when the market is down. 👑
             True if successfully initialized
         """
         try:
-            from aureon_barter_navigator import BarterNavigator
+            from aureon.trading.aureon_barter_navigator import BarterNavigator
             
             self.barter_navigator = BarterNavigator()
             self.barter_clients = clients or {}
@@ -10607,7 +10607,7 @@ Feeling: {thought['emotion']}
         try:
             # Try to import and connect Miner Brain
             try:
-                from aureon_miner_brain import MinerBrain, get_miner_brain
+                from aureon.utils.aureon_miner_brain import MinerBrain, get_miner_brain
                 self.miner_brain = get_miner_brain() if hasattr(get_miner_brain, '__call__') else None
                 self.controlled_systems['miner_brain']['status'] = 'ONLINE'
                 self.controlled_systems['miner_brain']['instance'] = self.miner_brain
@@ -10618,7 +10618,7 @@ Feeling: {thought['emotion']}
             
             # Try to import and connect Mycelium
             try:
-                from aureon_mycelium import MyceliumNetwork, get_mycelium
+                from aureon.core.aureon_mycelium import MyceliumNetwork, get_mycelium
                 self.mycelium_network = get_mycelium() if hasattr(get_mycelium, '__call__') else MyceliumNetwork()
                 self.controlled_systems['mycelium']['status'] = 'ONLINE'
                 self.controlled_systems['mycelium']['instance'] = self.mycelium_network
@@ -10629,7 +10629,7 @@ Feeling: {thought['emotion']}
             
             # Try to import Enigma
             try:
-                from aureon_enigma import AureonEnigma
+                from aureon.wisdom.aureon_enigma import AureonEnigma
                 self.enigma_system = AureonEnigma()
                 self.controlled_systems['enigma']['status'] = 'ONLINE'
                 self.controlled_systems['enigma']['instance'] = self.enigma_system
@@ -10640,7 +10640,7 @@ Feeling: {thought['emotion']}
             
             # Try to connect to exchanges
             try:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 self.kraken_client = get_kraken_client()
                 self.controlled_systems['kraken']['status'] = 'ONLINE'
                 self.controlled_systems['kraken']['instance'] = self.kraken_client
@@ -10650,7 +10650,7 @@ Feeling: {thought['emotion']}
                 logger.debug(f"   🐙 Kraken: {e}")
             
             try:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 self.binance_client = get_binance_client()
                 self.controlled_systems['binance']['status'] = 'ONLINE'
                 self.controlled_systems['binance']['instance'] = self.binance_client
@@ -10660,7 +10660,7 @@ Feeling: {thought['emotion']}
                 logger.debug(f"   🔶 Binance: {e}")
             
             try:
-                from alpaca_client import get_alpaca_client
+                from aureon.exchanges.alpaca_client import get_alpaca_client
                 self.alpaca_client = get_alpaca_client()
                 self.controlled_systems['alpaca']['status'] = 'ONLINE'
                 self.controlled_systems['alpaca']['instance'] = self.alpaca_client
@@ -10671,7 +10671,7 @@ Feeling: {thought['emotion']}
             
             # Try to connect Harmonic Fusion
             try:
-                from aureon_harmonic_fusion import HarmonicWaveFusion
+                from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
                 self.harmonic_fusion = HarmonicWaveFusion()
                 self.controlled_systems['harmonic_fusion']['status'] = 'ONLINE'
                 logger.info("   🎵 Harmonic Fusion: CONNECTED")
@@ -10681,7 +10681,7 @@ Feeling: {thought['emotion']}
             
             # Try to connect Probability Nexus
             try:
-                from aureon_probability_nexus import EnhancedProbabilityNexus
+                from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
                 self.probability_nexus_system = EnhancedProbabilityNexus()
                 self.controlled_systems['probability_nexus']['status'] = 'ONLINE'
                 logger.info("   🎯 Probability Nexus: CONNECTED")
@@ -10714,7 +10714,7 @@ Feeling: {thought['emotion']}
             
             # 🌍 GAIA LATTICE - Earth Grid Harmonic System
             try:
-                from aureon_lattice import (
+                from aureon.core.aureon_lattice import (
                     CarrierWaveDynamics, 
                     FREQUENCY_528_LOVE_CARRIER,
                     FREQUENCY_440_DISTORTION, 
@@ -10735,7 +10735,7 @@ Feeling: {thought['emotion']}
             
             # 🌍📡 PLANETARY MONITOR - Schumann Resonance & Earth Systems
             try:
-                from aureon_luck_field_mapper import LuckFieldMapper as _LFM
+                from aureon.utils.aureon_luck_field_mapper import LuckFieldMapper as _LFM
                 _lfm_tmp = _LFM()
                 _schumann_hz = 7.83  # Earth's heartbeat default (Schumann resonance)
                 self.planetary_monitor = {
@@ -10769,7 +10769,7 @@ Feeling: {thought['emotion']}
 
             # 🍀🗺️ LUCK FIELD MAPPER - Quantum Probability Enhancement
             try:
-                from aureon_luck_field_mapper import LuckFieldMapper, get_luck_mapper
+                from aureon.utils.aureon_luck_field_mapper import LuckFieldMapper, get_luck_mapper
                 self.luck_field_mapper = get_luck_mapper()
                 self.controlled_systems['luck_field_mapper']['status'] = 'ONLINE'
                 self.controlled_systems['luck_field_mapper']['instance'] = self.luck_field_mapper
@@ -10780,7 +10780,7 @@ Feeling: {thought['emotion']}
             
             # 🔭✨ QUANTUM TELESCOPE - Deep Market Vision
             try:
-                from aureon_quantum_telescope import QuantumTelescope, get_quantum_telescope
+                from aureon.simulation.aureon_quantum_telescope import QuantumTelescope, get_quantum_telescope
                 self.quantum_telescope = get_quantum_telescope() if hasattr(get_quantum_telescope, '__call__') else QuantumTelescope()
                 self.controlled_systems['quantum_telescope']['status'] = 'ONLINE'
                 self.controlled_systems['quantum_telescope']['instance'] = self.quantum_telescope
@@ -10810,7 +10810,7 @@ Feeling: {thought['emotion']}
             
             # ✨🛡️ AURA VALIDATOR - Trade Validation System
             try:
-                from aura_validator import AuraValidator, get_aura_validator
+                from aureon.utils.aura_validator import AuraValidator, get_aura_validator
                 self.aura_validator = get_aura_validator() if hasattr(get_aura_validator, '__call__') else AuraValidator()
                 self.controlled_systems['aura_validator']['status'] = 'ONLINE'
                 self.controlled_systems['aura_validator']['instance'] = self.aura_validator
@@ -10821,7 +10821,7 @@ Feeling: {thought['emotion']}
             
             # 🚪💎 PRIME PROFIT GATE - Adaptive Entry Control
             try:
-                from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
+                from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate
                 self.prime_profit_gate = AdaptivePrimeProfitGate()
                 self.controlled_systems['prime_profit_gate']['status'] = 'ONLINE'
                 self.controlled_systems['prime_profit_gate']['instance'] = self.prime_profit_gate
@@ -10881,8 +10881,8 @@ Feeling: {thought['emotion']}
             
             # 🎵 HARMONIC SIGNAL CHAIN - Queen's Central Voice
             try:
-                from aureon_harmonic_signal_chain import HarmonicSignalChain
-                from aureon_thought_bus import get_thought_bus
+                from aureon.harmonic.aureon_harmonic_signal_chain import HarmonicSignalChain
+                from aureon.core.aureon_thought_bus import get_thought_bus
                 
                 # Create signal chain with ThoughtBus
                 thought_bus = get_thought_bus()
@@ -10904,7 +10904,7 @@ Feeling: {thought['emotion']}
             # 🔤🎵 HARMONIC ALPHABET - Frequency Translation
             self.controlled_systems['harmonic_alphabet'] = {'status': 'connecting', 'authority': 'FULL'}
             try:
-                from aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicAlphabet
+                from aureon.harmonic.aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicAlphabet
                 
                 self.harmonic_alphabet = HarmonicAlphabet()
                 self.controlled_systems['harmonic_alphabet']['status'] = 'ONLINE'
@@ -10921,7 +10921,7 @@ Feeling: {thought['emotion']}
             # 👑🎤 QUEEN'S VOICE INTERFACE - Full Autonomous Command
             self.controlled_systems['queen_voice'] = {'status': 'connecting', 'authority': 'SUPREME'}
             try:
-                from queen_harmonic_voice import QueenHarmonicVoice
+                from aureon.queen.queen_harmonic_voice import QueenHarmonicVoice
                 
                 # Pass self to the voice so it can access all Queen systems
                 self.queen_voice = QueenHarmonicVoice(queen=self)
@@ -11066,7 +11066,7 @@ Feeling: {thought['emotion']}
         
         # Fallback
         try:
-            from aureon_harmonic_alphabet import to_harmonics
+            from aureon.harmonic.aureon_harmonic_alphabet import to_harmonics
             tones = to_harmonics(message)
             return [{'char': t.char, 'freq': t.frequency, 'amp': t.amplitude, 'mode': t.mode} for t in tones]
         except ImportError:
@@ -11086,7 +11086,7 @@ Feeling: {thought['emotion']}
             return self.harmonic_alphabet.decode_signal(harmonics)
         
         try:
-            from aureon_harmonic_alphabet import from_harmonics
+            from aureon.harmonic.aureon_harmonic_alphabet import from_harmonics
             return from_harmonics(harmonics)
         except ImportError:
             return ""
@@ -11118,7 +11118,7 @@ Feeling: {thought['emotion']}
         
         if hasattr(self, 'queen_voice') and self.queen_voice:
             # Map string to QueenCommand enum
-            from queen_harmonic_voice import QueenCommand
+            from aureon.queen.queen_harmonic_voice import QueenCommand
             try:
                 cmd = QueenCommand[command_type.upper()]
                 response = self.queen_voice.command(cmd, params or {})
@@ -11810,7 +11810,7 @@ Feeling: {thought['emotion']}
         if not miner_brain:
             # Try to load it
             try:
-                from aureon_miner_brain import MinerBrain, get_miner_brain
+                from aureon.utils.aureon_miner_brain import MinerBrain, get_miner_brain
                 miner_brain = get_miner_brain()
                 self.miner_brain = miner_brain
                 self.controlled_systems['miner_brain']['status'] = 'ONLINE'
@@ -12637,7 +12637,7 @@ Sero 👑🐝
         
         # Import and initialize the Labyrinth
         try:
-            from micro_profit_labyrinth import MicroProfitLabyrinth
+            from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
         except ImportError as e:
             return {'success': False, 'error': f'Could not import Labyrinth: {e}'}
         
@@ -12821,7 +12821,7 @@ Sero 👑🐝
         # Check if power station is wired
         if not hasattr(self, 'power_station') or self.power_station is None:
             try:
-                from v11_power_station_live import V11PowerStationLive, V11Config
+                from aureon.trading.v11_power_station_live import V11PowerStationLive, V11Config
                 config = V11Config()
                 self.power_station = V11PowerStationLive(config=config, dry_run=not live)
                 logger.info("⚡ V11 Power Station initialized!")
@@ -12878,7 +12878,7 @@ Sero 👑🐝
         # Check if power station is wired
         if not hasattr(self, 'power_station') or self.power_station is None:
             try:
-                from v11_power_station_live import V11PowerStationLive, V11Config
+                from aureon.trading.v11_power_station_live import V11PowerStationLive, V11Config
                 config = V11Config()
                 self.power_station = V11PowerStationLive(config=config, dry_run=not live)
             except ImportError as e:
@@ -12932,7 +12932,7 @@ Sero 👑🐝
         
         # 2. Override Adaptive Profit Gate thresholds
         try:
-            from adaptive_prime_profit_gate import get_adaptive_gate
+            from aureon.utils.adaptive_prime_profit_gate import get_adaptive_gate
             gate = get_adaptive_gate()
             if gate:
                 # Store original thresholds
@@ -12949,7 +12949,7 @@ Sero 👑🐝
         
         # 3. Override Quantum Execution Gate
         try:
-            from aureon_quantum_checkin import QuantumExecutionGate
+            from aureon.simulation.aureon_quantum_checkin import QuantumExecutionGate
             # Mark Queen as super-user
             self.quantum_gate_override = True
             results['gates_unblocked'].append('Quantum Execution Gate: Queen override enabled')
@@ -14172,7 +14172,7 @@ Sero 👑🐝
             # 1. ACQUIRE REPOSITORY WISDOM (Reading Documents)
             # The Queen scans files in real-time to learn from docs/code/logs
             try:
-                from queen_repository_scanner import get_repo_scanner
+                from aureon.queen.queen_repository_scanner import get_repo_scanner
                 # This scans the repo and returns a "wisdom factor" based on content
                 repo_wisdom = get_repo_scanner().scan_repository()
                 
@@ -14189,7 +14189,7 @@ Sero 👑🐝
             # 2. CONNECT TO FULL MYCELIUM NETWORK (Reading All Neurons)
             # Consults the collective intelligence of all connected agents
             try:
-                from aureon_mycelium import get_mycelium
+                from aureon.core.aureon_mycelium import get_mycelium
                 mycelium = get_mycelium()
                 
                 # get_network_coherence() aggregates signals from all nodes/neurons
@@ -15008,7 +15008,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire Unified River Consciousness
     try:
-        from aureon_unified_river_consciousness import UnifiedRiverConsciousness
+        from aureon.monitors.aureon_unified_river_consciousness import UnifiedRiverConsciousness
         river = UnifiedRiverConsciousness()
         results['river_consciousness'] = queen.wire_river_consciousness(river)
     except ImportError as e:
@@ -15017,7 +15017,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
         
     # Wire Dream Engine
     try:
-        from aureon_enigma_dream import EnigmaDreamer
+        from aureon.wisdom.aureon_enigma_dream import EnigmaDreamer
         dreamer = EnigmaDreamer()
         results['dream_engine'] = queen.wire_dream_engine(dreamer)
     except ImportError as e:
@@ -15026,7 +15026,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire Mycelium Network
     try:
-        from aureon_mycelium import MyceliumNetwork
+        from aureon.core.aureon_mycelium import MyceliumNetwork
         mycelium = MyceliumNetwork(initial_capital=queen.initial_capital)
         results['mycelium'] = queen.wire_mycelium_network(mycelium)
     except ImportError as e:
@@ -15035,7 +15035,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire Enigma Integration
     try:
-        from aureon_enigma_integration import create_enigma_integration
+        from aureon.wisdom.aureon_enigma_integration import create_enigma_integration
         enigma = create_enigma_integration()
         results['enigma'] = queen.wire_enigma(enigma)
     except ImportError as e:
@@ -15048,7 +15048,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire Enhanced Probability Nexus
     try:
-        from aureon_probability_nexus import EnhancedProbabilityNexus
+        from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
         probability_nexus = EnhancedProbabilityNexus()
         results['probability_nexus'] = queen.wire_probability_nexus(probability_nexus)
     except ImportError as e:
@@ -15057,7 +15057,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire HNC Probability Matrix
     try:
-        from hnc_probability_matrix import HNCProbabilityIntegration
+        from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
         hnc_matrix = HNCProbabilityIntegration()
         results['hnc_matrix'] = queen.wire_hnc_matrix(hnc_matrix)
     except ImportError as e:
@@ -15070,7 +15070,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire Adaptive Learning Engine
     try:
-        from aureon_unified_ecosystem import AdaptiveLearningEngine
+        from aureon.trading.aureon_unified_ecosystem import AdaptiveLearningEngine
         adaptive_learner = AdaptiveLearningEngine()
         results['adaptive_learner'] = queen.wire_adaptive_learner(adaptive_learner)
     except ImportError as e:
@@ -15083,7 +15083,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire Stargate Protocol Engine
     try:
-        from aureon_stargate_protocol import create_stargate_engine
+        from aureon.wisdom.aureon_stargate_protocol import create_stargate_engine
         stargate_engine = create_stargate_engine()
         results['stargate_protocol'] = queen.wire_stargate_protocol(stargate_engine)
     except ImportError as e:
@@ -15092,7 +15092,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire Quantum Mirror Scanner
     try:
-        from aureon_quantum_mirror_scanner import create_quantum_mirror_scanner
+        from aureon.scanners.aureon_quantum_mirror_scanner import create_quantum_mirror_scanner
         quantum_scanner = create_quantum_mirror_scanner()
         results['quantum_mirror_scanner'] = queen.wire_quantum_mirror_scanner(quantum_scanner)
     except ImportError as e:
@@ -15101,7 +15101,7 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     
     # Wire Timeline Anchor Validator
     try:
-        from aureon_timeline_anchor_validator import create_timeline_anchor_validator
+        from aureon.intelligence.aureon_timeline_anchor_validator import create_timeline_anchor_validator
         timeline_validator = create_timeline_anchor_validator()
         results['timeline_anchor_validator'] = queen.wire_timeline_anchor_validator(timeline_validator)
     except ImportError as e:

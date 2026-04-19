@@ -15,7 +15,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import asyncio
@@ -54,7 +54,7 @@ async def main():
     
     # Import systems
     try:
-        from aureon_quantum_telescope import QuantumTelescope
+        from aureon.simulation.aureon_quantum_telescope import QuantumTelescope
         telescope_available = True
         print("   ✅ Quantum Telescope loaded")
     except ImportError as e:
@@ -62,7 +62,7 @@ async def main():
         print(f"   ⚠️ Quantum Telescope not available: {e}")
     
     try:
-        from aureon_qgita_framework import QGITAMarketAnalyzer
+        from aureon.wisdom.aureon_qgita_framework import QGITAMarketAnalyzer
         qgita_available = True
         print("   ✅ QGITA Framework loaded")
     except ImportError as e:
@@ -70,7 +70,7 @@ async def main():
         print(f"   ⚠️ QGITA not available: {e}")
     
     try:
-        from queen_pursuit_of_happiness import get_pursuit_of_happiness
+        from aureon.queen.queen_pursuit_of_happiness import get_pursuit_of_happiness
         happiness_available = True
         print("   ✅ Grand Big Wheel loaded")
     except ImportError as e:
@@ -78,7 +78,7 @@ async def main():
         print(f"   ⚠️ Grand Big Wheel not available: {e}")
     
     try:
-        from queen_neuron_v2 import get_queen_neuron, NeuralInputV2
+        from aureon.queen.queen_neuron_v2 import get_queen_neuron, NeuralInputV2
         neuron_v2_available = True
         print("   ✅ Queen Neuron V2 loaded")
     except ImportError as e:
@@ -86,7 +86,7 @@ async def main():
         print(f"   ⚠️ Queen Neuron V2 not available: {e}")
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alpaca_available = True
         print("   ✅ Alpaca Client loaded")
     except ImportError as e:

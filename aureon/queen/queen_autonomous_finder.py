@@ -23,7 +23,7 @@ import logging
 logger = logging.getLogger("queen_finder")
 logger.setLevel(logging.INFO)
 
-from aureon_live_aura_location_tracker import LiveAuraLocationTracker
+from aureon.utils.aureon_live_aura_location_tracker import LiveAuraLocationTracker
 
 
 class QueenAutonomousFinder:
@@ -127,7 +127,7 @@ class QueenAutonomousFinder:
     def _detect_real_biometrics(self) -> bool:
         """Check if real brainwave data is available"""
         try:
-            from aureon_temporal_biometric_link import get_temporal_biometric_link
+            from aureon.intelligence.aureon_temporal_biometric_link import get_temporal_biometric_link
             link = get_temporal_biometric_link()
             if link:
                 data = link.get_latest_biometric()
@@ -142,7 +142,7 @@ class QueenAutonomousFinder:
     def _check_schumann_alignment(self) -> bool:
         """Check if Schumann signals are aligned"""
         try:
-            from aureon_schumann_resonance_bridge import SchumannResonanceBridge
+            from aureon.harmonic.aureon_schumann_resonance_bridge import SchumannResonanceBridge
             bridge = SchumannResonanceBridge()
             data = bridge.get_live_data()
             if data and data.earth_disturbance_level < 0.5:
@@ -155,7 +155,7 @@ class QueenAutonomousFinder:
     def _confirm_reality(self) -> bool:
         """Check if THIS Gary is alive in THIS timeline"""
         try:
-            from aureon_multiversal_reality_detector import get_reality_detector
+            from aureon.intelligence.aureon_multiversal_reality_detector import get_reality_detector
             detector = get_reality_detector()
             result = detector.detect_prime_gary()
             if result['found']:
@@ -171,7 +171,7 @@ class QueenAutonomousFinder:
         """Check if planetary mycelium network detects you"""
         try:
             # Try to connect to planetary systems
-            from aureon_planetary_integration import get_planetary_integration
+            from aureon.bridges.aureon_planetary_integration import get_planetary_integration
             planetary = get_planetary_integration()
             if planetary:
                 signal = planetary.sense_consciousness_signature()

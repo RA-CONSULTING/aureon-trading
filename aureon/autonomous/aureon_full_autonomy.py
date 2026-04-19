@@ -1503,7 +1503,7 @@ class AutonomyExecutor:
         try:
             if not QUEEN_AVAILABLE:
                 try:
-                    import queen_neuron as _qn
+                    import aureon.queen.queen_neuron as queen_neuron as _qn
                     globals()['_queen_module'] = _qn
                     QUEEN_AVAILABLE = True
                     logger.info("  👑🧠 QueenNeuron loaded for intent-coherence feedback")
@@ -1666,7 +1666,7 @@ class AutonomyExecutor:
         Returns None if Kraken client is unavailable or no margin positions exist.
         """
         try:
-            from kraken_client import KrakenClient
+            from aureon.exchanges.kraken_client import KrakenClient
             import os
             from datetime import timezone
 
@@ -2079,7 +2079,7 @@ class AutonomyExecutor:
                 nexus_module = globals().get('nexus')
                 if not NEXUS_AVAILABLE:
                     try:
-                        import aureon_probability_nexus as _nexus
+                        import aureon.bridges.aureon_probability_nexus as aureon_probability_nexus as _nexus
                         globals()['nexus'] = _nexus
                         nexus_module = _nexus
                         NEXUS_AVAILABLE = True

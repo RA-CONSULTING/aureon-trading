@@ -20,7 +20,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 from dataclasses import dataclass, field
@@ -29,7 +29,7 @@ from datetime import datetime
 from collections import deque
 import numpy as np
 
-from dynamic_take_profit import DynamicTakeProfit, create_dtp_for_position, DTP_CONFIG
+from aureon.trading.dynamic_take_profit import DynamicTakeProfit, create_dtp_for_position, DTP_CONFIG
 
 # ═══════════════════════════════════════════════════════════════════════════════════
 # V14 PROVEN PARAMETERS - 100% WIN RATE

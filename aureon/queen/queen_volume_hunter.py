@@ -15,7 +15,7 @@ Now she HUNTS - FULLY INTEGRATED with:
   🦙 Multi-Exchange - Binance, Kraken, Alpaca
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -47,19 +47,19 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 
 # Exchange clients
-from binance_client import BinanceClient, get_binance_client
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.binance_client import BinanceClient, get_binance_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 
 # Optional: Alpaca client
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
 
 # 🚌 Communication Buses
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -67,28 +67,28 @@ except ImportError:
 
 # Optional: ChirpBus for signal emission
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
 
 # Optional: Queen Hive Mind for approval gating
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     QUEEN_AVAILABLE = True
 except ImportError:
     QUEEN_AVAILABLE = False
 
 # Optional: Ocean Wave Scanner for whale detection
 try:
-    from aureon_ocean_wave_scanner import OceanWaveScanner, BotProfile
+    from aureon.scanners.aureon_ocean_wave_scanner import OceanWaveScanner, BotProfile
     OCEAN_SCANNER_AVAILABLE = True
 except ImportError:
     OCEAN_SCANNER_AVAILABLE = False
 
 # Optional: Global Wave Scanner for A-Z sweeps
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner, WaveState
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner, WaveState
     GLOBAL_SCANNER_AVAILABLE = True
 except ImportError:
     GLOBAL_SCANNER_AVAILABLE = False

@@ -50,7 +50,7 @@ Gary Leckey | Parallel Intelligence | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -206,7 +206,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_thought_bus import get_thought_bus, ThoughtBus
+            from aureon.core.aureon_thought_bus import get_thought_bus, ThoughtBus
             self.thought_bus = get_thought_bus()
             state.instance = self.thought_bus
             state.status = SystemStatus.RUNNING
@@ -226,7 +226,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_queen_hive_mind import get_queen, QueenHiveMind
+            from aureon.utils.aureon_queen_hive_mind import get_queen, QueenHiveMind
             self.queen = get_queen()
             state.instance = self.queen
             state.status = SystemStatus.RUNNING
@@ -251,7 +251,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_memory_core import spiral_memory
+            from aureon.core.aureon_memory_core import spiral_memory
             state.instance = spiral_memory
             state.status = SystemStatus.RUNNING
             state.last_heartbeat = time.time()
@@ -270,7 +270,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_probability_nexus import ProbabilityNexus, get_nexus
+            from aureon.bridges.aureon_probability_nexus import ProbabilityNexus, get_nexus
             nexus = get_nexus()
             state.instance = nexus
             state.status = SystemStatus.WARMING_UP
@@ -305,7 +305,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_global_wave_scanner import GlobalWaveScanner, get_global_scanner
+            from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner, get_global_scanner
             scanner = get_global_scanner()
             state.instance = scanner
             state.status = SystemStatus.WARMING_UP
@@ -340,7 +340,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_miner_brain import MinerBrain, get_miner_brain
+            from aureon.utils.aureon_miner_brain import MinerBrain, get_miner_brain
             brain = get_miner_brain()
             state.instance = brain
             state.status = SystemStatus.RUNNING
@@ -365,7 +365,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_mycelium import MyceliumNetwork, get_mycelium
+            from aureon.core.aureon_mycelium import MyceliumNetwork, get_mycelium
             network = get_mycelium()
             state.instance = network
             state.status = SystemStatus.RUNNING
@@ -390,7 +390,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_timeline_oracle import TimelineOracle, get_timeline_oracle
+            from aureon.intelligence.aureon_timeline_oracle import TimelineOracle, get_timeline_oracle
             oracle = get_timeline_oracle()
             state.instance = oracle
             state.status = SystemStatus.RUNNING
@@ -415,7 +415,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_quantum_mirror_scanner import QuantumMirrorScanner, create_quantum_scanner
+            from aureon.scanners.aureon_quantum_mirror_scanner import QuantumMirrorScanner, create_quantum_scanner
             scanner = create_quantum_scanner()
             state.instance = scanner
             state.status = SystemStatus.RUNNING
@@ -440,7 +440,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from mycelium_whale_sonar import create_and_start_sonar
+            from aureon.core.mycelium_whale_sonar import create_and_start_sonar
             sonar = create_and_start_sonar()
             state.instance = sonar
             state.status = SystemStatus.RUNNING
@@ -465,7 +465,7 @@ class ParallelOrchestrator:
         state.started_at = time.time()
         
         try:
-            from aureon_avalanche_harvester import AvalancheHarvester
+            from aureon.trading.aureon_avalanche_harvester import AvalancheHarvester
             harvester = AvalancheHarvester(
                 min_profit_pct=0.5,
                 harvest_pct=30.0,

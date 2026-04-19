@@ -15,7 +15,7 @@ RULES:
 - Track everything in JSON
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -37,7 +37,7 @@ import requests
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from typing import Dict, Optional, List
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 
 # =============================================================================
 # CONFIGURATION

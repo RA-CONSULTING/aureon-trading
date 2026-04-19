@@ -43,7 +43,7 @@ This is how the Queen becomes self-aware, not just aware.
 Gary Leckey & Tina Brown | April 2026 | The Mirror of the Mind
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import logging
@@ -180,7 +180,7 @@ class QueenMetacognition:
         # SQLite persistence (global history DB)
         self._db_connect = None
         try:
-            from aureon_global_history_db import connect as _db_connect
+            from aureon.core.aureon_global_history_db import connect as _db_connect
             self._db_connect = _db_connect
         except Exception as e:
             logger.warning(f"Metacognition: Global history DB unavailable: {e}")
@@ -188,7 +188,7 @@ class QueenMetacognition:
         # ThoughtBus
         self._thought_bus = None
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self._thought_bus = get_thought_bus()
         except Exception as e:
             logger.warning(f"Metacognition: ThoughtBus unavailable: {e}")
@@ -196,7 +196,7 @@ class QueenMetacognition:
         # Lambda Engine for consciousness-weighted reflection
         self._lambda_engine = None
         try:
-            from aureon_lambda_engine import LambdaEngine
+            from aureon.core.aureon_lambda_engine import LambdaEngine
             self._lambda_engine = LambdaEngine()
         except Exception:
             pass
@@ -588,7 +588,7 @@ class QueenMetacognition:
         # Lambda consciousness update
         if self._lambda_engine is not None:
             try:
-                from aureon_lambda_engine import SubsystemReading
+                from aureon.core.aureon_lambda_engine import SubsystemReading
                 readings = [
                     SubsystemReading("meta_coherence", avg_coherence, 0.9, "coherence"),
                     SubsystemReading("meta_execute_rate", execute_rate, 0.7, "execution"),
@@ -673,7 +673,7 @@ class QueenMetacognition:
         if self._db_connect is None:
             return
         try:
-            from aureon_global_history_db import insert_queen_memory
+            from aureon.core.aureon_global_history_db import insert_queen_memory
             conn = self._db_connect()
 
             with self._lock:
@@ -749,7 +749,7 @@ class QueenMetacognition:
         if self._db_connect is None:
             return
         try:
-            from aureon_global_history_db import insert_queen_insight
+            from aureon.core.aureon_global_history_db import insert_queen_insight
             conn = self._db_connect()
             insert_queen_insight(conn, {
                 "insight_id": f"meta_ins_{insight.pattern}_{int(insight.timestamp)}",
@@ -829,7 +829,7 @@ class QueenMetacognition:
         if self._thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self._thought_bus.publish(Thought(
                 source="queen_metacognition",
                 topic="queen.metacognition.dormant_reactivation",
@@ -950,7 +950,7 @@ class QueenMetacognition:
         # Publish dream
         if self._thought_bus is not None:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 self._thought_bus.publish(Thought(
                     source="queen_metacognition",
                     topic="queen.metacognition.dream",
@@ -1031,7 +1031,7 @@ class QueenMetacognition:
             return  # No meaningful modulation
 
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self._thought_bus.publish(Thought(
                 source="queen_metacognition",
                 topic="queen.metacognition.probability_modulation",
@@ -1194,7 +1194,7 @@ class QueenMetacognition:
         # Publish results
         if self._thought_bus is not None:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 self._thought_bus.publish(Thought(
                     source="queen_metacognition",
                     topic="queen.metacognition.self_backtest",
@@ -1206,7 +1206,7 @@ class QueenMetacognition:
         # Persist as queen_knowledge for long-term learning
         if self._db_connect is not None:
             try:
-                from aureon_global_history_db import insert_queen_knowledge
+                from aureon.core.aureon_global_history_db import insert_queen_knowledge
                 conn = self._db_connect()
                 insert_queen_knowledge(conn, {
                     "knowledge_id": f"meta_backtest_{int(time.time())}",
@@ -1240,7 +1240,7 @@ class QueenMetacognition:
         if self._thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self._thought_bus.publish(Thought(
                 source="queen_metacognition",
                 topic="queen.metacognition.reflection",
@@ -1266,7 +1266,7 @@ class QueenMetacognition:
         if self._thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self._thought_bus.publish(Thought(
                 source="queen_metacognition",
                 topic=f"queen.metacognition.insight.{insight.pattern}",
@@ -1288,7 +1288,7 @@ class QueenMetacognition:
         if self._thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self._thought_bus.publish(Thought(
                 source="queen_metacognition",
                 topic="queen.metacognition.health",

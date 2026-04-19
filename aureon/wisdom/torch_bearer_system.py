@@ -24,7 +24,7 @@
 +============================================================================+
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import time
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 THOUGHT_BUS_AVAILABLE = False
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -52,7 +52,7 @@ except ImportError:
 # CHIRP BUS INTEGRATION
 CHIRP_BUS_AVAILABLE = False
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon.core.aureon_chirp_bus import get_chirp_bus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False

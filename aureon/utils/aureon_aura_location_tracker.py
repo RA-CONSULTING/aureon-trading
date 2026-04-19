@@ -241,7 +241,7 @@ class AuraLocationTracker:
         schumann = 7.83  # Default
         try:
             # Try to get real Schumann data
-            from aureon_schumann_resonance_bridge import get_earth_blessing
+            from aureon.harmonic.aureon_schumann_resonance_bridge import get_earth_blessing
             result = get_earth_blessing()
             if result and isinstance(result, (int, float)):
                 schumann = float(result)

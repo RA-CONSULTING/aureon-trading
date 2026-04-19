@@ -35,7 +35,7 @@ Architecture:
 Gary Leckey & Tina Brown | April 2026 | Source Law
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import math
@@ -306,7 +306,7 @@ class CognitionOutput:
     def __init__(self):
         self._lambda_engine = None
         try:
-            from aureon_lambda_engine import LambdaEngine
+            from aureon.core.aureon_lambda_engine import LambdaEngine
             self._lambda_engine = LambdaEngine()
         except Exception:
             pass
@@ -336,7 +336,7 @@ class CognitionOutput:
         # Run through Lambda Engine if available
         if self._lambda_engine is not None:
             try:
-                from aureon_lambda_engine import SubsystemReading
+                from aureon.core.aureon_lambda_engine import SubsystemReading
                 lambda_readings = [
                     SubsystemReading(
                         name=r["name"],
@@ -405,7 +405,7 @@ class SourceLawEngine:
         # ThoughtBus
         self._thought_bus = None
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self._thought_bus = get_thought_bus()
         except Exception:
             pass
@@ -524,7 +524,7 @@ class SourceLawEngine:
         if self._thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self._thought_bus.publish(Thought(
                 source="source_law_engine",
                 topic="queen.source_law.cognition",

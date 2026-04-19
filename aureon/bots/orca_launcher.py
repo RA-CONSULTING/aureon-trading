@@ -26,7 +26,7 @@ Gary Leckey | January 2026 | THE HUNT BEGINS!
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import subprocess
@@ -95,7 +95,7 @@ def start_parallel_orchestrator():
     print("🌐" * 30 + "\n")
     
     try:
-        from aureon_parallel_orchestrator import get_orchestrator, start_all_parallel_systems
+        from aureon.autonomous.aureon_parallel_orchestrator import get_orchestrator, start_all_parallel_systems
         
         # Get the orchestrator singleton
         _orchestrator = get_orchestrator()

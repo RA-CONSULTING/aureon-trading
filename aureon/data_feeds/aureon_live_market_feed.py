@@ -15,7 +15,7 @@
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -65,7 +65,7 @@ except ImportError:
 
 # Import our surveillance system
 try:
-    from aureon_realtime_surveillance import (
+    from aureon.monitors.aureon_realtime_surveillance import (
         AureonSurveillanceSystem, 
         MarketTick, 
         FlowEvent, 
@@ -485,7 +485,7 @@ async def run_live_surveillance():
     web_server = None
     if AIOHTTP_AVAILABLE:
         try:
-            from aureon_surveillance_dashboard import SurveillanceWebServer
+            from aureon.monitors.aureon_surveillance_dashboard import SurveillanceWebServer
             web_server = SurveillanceWebServer(port=8888)
         except ImportError:
             logger.warning("Dashboard not available")

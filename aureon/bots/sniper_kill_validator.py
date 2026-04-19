@@ -13,7 +13,7 @@ This module validates the kill BEFORE execution:
 Gary Leckey | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 from dataclasses import dataclass
@@ -247,7 +247,7 @@ class SniperKillValidator:
         
         # Try to get corrected ETA from verification system
         try:
-            from eta_verification_system import get_eta_verifier
+            from aureon.analytics.eta_verification_system import get_eta_verifier
             verifier = get_eta_verifier()
             
             proximity = 1.0 - abs(validation.price_gap_pct) / 100 if validation.price_gap_pct < 0 else 1.0

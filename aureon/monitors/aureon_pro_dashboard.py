@@ -17,7 +17,7 @@ Features:
 PORT: 14000
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 
 # Load environment variables from .env file FIRST
@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 # Import cognitive narrator
 try:
-    from queen_cognitive_narrator import QueenCognitiveNarrator
+    from aureon.queen.queen_cognitive_narrator import QueenCognitiveNarrator
     NARRATOR_AVAILABLE = True
 except ImportError:
     NARRATOR_AVAILABLE = False
@@ -65,7 +65,7 @@ except ImportError:
 
 # Import Binance WebSocket for live market data
 try:
-    from binance_ws_client import BinanceWebSocketClient, WSTicker, WSTrade
+    from aureon.exchanges.binance_ws_client import BinanceWebSocketClient, WSTicker, WSTrade
     BINANCE_WS_AVAILABLE = True
 except ImportError:
     BINANCE_WS_AVAILABLE = False
@@ -73,7 +73,7 @@ except ImportError:
 
 # Import unified market cache for reading cached prices
 try:
-    from unified_market_cache import get_market_cache, get_all_prices, get_ticker, DEFAULT_SYMBOLS
+    from aureon.data_feeds.unified_market_cache import get_market_cache, get_all_prices, get_ticker, DEFAULT_SYMBOLS
     MARKET_CACHE_AVAILABLE = True
 except ImportError:
     MARKET_CACHE_AVAILABLE = False
@@ -82,7 +82,7 @@ except ImportError:
 
 # Import Ocean Scanner for global market scanning
 try:
-    from aureon_ocean_scanner import OceanScanner
+    from aureon.scanners.aureon_ocean_scanner import OceanScanner
     OCEAN_SCANNER_AVAILABLE = True
 except ImportError:
     OCEAN_SCANNER_AVAILABLE = False
@@ -91,7 +91,7 @@ except ImportError:
 
 # Import Harmonic Liquid Aluminium Field for live visualization
 try:
-    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
+    from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
     HARMONIC_FIELD_AVAILABLE = True
 except ImportError:
     HARMONIC_FIELD_AVAILABLE = False
@@ -101,7 +101,7 @@ except ImportError:
 # ⚡ V11 POWER STATION - Compound Engine (SIPHON + COMPOUND + REINVEST)
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from v11_power_station_live import V11PowerStationLive, V11Config, PowerGridState
+    from aureon.trading.v11_power_station_live import V11PowerStationLive, V11Config, PowerGridState
     V11_AVAILABLE = True
     logger.info("⚡ V11 Power Station: AVAILABLE")
 except ImportError:
@@ -115,7 +115,7 @@ except ImportError:
 # 🌐 OPEN SOURCE DATA FEEDS - Fear & Greed, CoinGecko, etc.
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from queen_open_source_data_engine import OpenSourceDataEngine, get_data_engine
+    from aureon.queen.queen_open_source_data_engine import OpenSourceDataEngine, get_data_engine
     OPEN_DATA_AVAILABLE = True
     logger.info("🌐 Open Source Data Engine: AVAILABLE")
 except ImportError:
@@ -128,7 +128,7 @@ except ImportError:
 # 📡 THOUGHTBUS - Event bridge for system communication
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_thought_bus import ThoughtBus, get_thought_bus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, get_thought_bus, Thought
     THOUGHTBUS_AVAILABLE = True
     logger.info("📡 ThoughtBus: AVAILABLE")
 except ImportError:
@@ -142,7 +142,7 @@ except ImportError:
 # ⚛️ QUEEN QUANTUM COGNITION - Enhanced quantum-powered cognition amplifier
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from queen_quantum_cognition import get_quantum_cognition, QueenQuantumCognition
+    from aureon.queen.queen_quantum_cognition import get_quantum_cognition, QueenQuantumCognition
     QUANTUM_COGNITION_AVAILABLE = True
     logger.info("⚛️ Queen Quantum Cognition: AVAILABLE")
 except ImportError:
@@ -155,7 +155,7 @@ except ImportError:
 # 👑💰 QUEEN ASSET COMMAND CENTER - Full portfolio visibility
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from queen_asset_command_center import (
+    from aureon.queen.queen_asset_command_center import (
         get_asset_command_center, 
         get_asset_monitor,
         get_ocean_view,
@@ -175,7 +175,7 @@ except ImportError:
 # 🔤 UNIFIED SYMBOL MANAGER - Correct symbols & quantities per exchange
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from unified_symbol_manager import get_symbol_manager, UnifiedSymbolManager
+    from aureon.trading.unified_symbol_manager import get_symbol_manager, UnifiedSymbolManager
     SYMBOL_MANAGER_AVAILABLE = True
     logger.info("🔤 Unified Symbol Manager: AVAILABLE")
 except ImportError:
@@ -188,7 +188,7 @@ except ImportError:
 # 👑🧠 QUEEN HIVE MIND - Central consciousness
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_queen_hive_mind import get_queen, QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import get_queen, QueenHiveMind
     QUEEN_HIVE_AVAILABLE = True
     logger.info("👑🧠 Queen Hive Mind: AVAILABLE")
 except ImportError:
@@ -3383,7 +3383,7 @@ class AureonProDashboard:
         try:
             # Try Binance - calculate TOTAL portfolio value (not just stablecoins!)
             try:
-                from binance_client import BinanceClient, get_binance_client
+                from aureon.exchanges.binance_client import BinanceClient, get_binance_client
                 binance = get_binance_client()
                 bin_balance = await asyncio.to_thread(binance.get_balance)
                 if isinstance(bin_balance, dict):
@@ -3418,7 +3418,7 @@ class AureonProDashboard:
             
             # Try Kraken - calculate TOTAL portfolio value
             try:
-                from kraken_client import KrakenClient, get_kraken_client
+                from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                 kraken = get_kraken_client()
                 krk_balance = await asyncio.to_thread(kraken.get_balance)
                 if isinstance(krk_balance, dict) and krk_balance:
@@ -3476,7 +3476,7 @@ class AureonProDashboard:
             
             # Try Alpaca - get TOTAL portfolio value (cash + positions)
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 alpaca = AlpacaClient()
                 
                 # Get cash balance
@@ -4149,7 +4149,7 @@ class AureonProDashboard:
             # 4. Emit to ThoughtBus for cross-system awareness
             if THOUGHTBUS_AVAILABLE:
                 try:
-                    from aureon_thought_bus import get_thought_bus, Thought
+                    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
                     bus = get_thought_bus()
                     if bus:
                         thought = Thought(
@@ -4190,7 +4190,7 @@ class AureonProDashboard:
             # Try to use live_position_viewer for real data
             try:
                 self.logger.info("📦 Importing live_position_viewer...")
-                from live_position_viewer import get_binance_positions, get_alpaca_positions, get_kraken_positions
+                from aureon.portfolio.live_position_viewer import get_binance_positions, get_alpaca_positions, get_kraken_positions
                 self.logger.info("✅ live_position_viewer imported successfully")
                 
                 positions = []
@@ -5463,7 +5463,7 @@ class AureonProDashboard:
             
             # Check Capital.com from rate limit state
             try:
-                from capital_client import CapitalClient
+                from aureon.exchanges.capital_client import CapitalClient
                 import time
                 if CapitalClient._shared_rate_limit_until > time.time():
                     status['Capital.com'] = 'rate_limited'
@@ -5914,21 +5914,21 @@ class AureonProDashboard:
                     
                     # Load exchange clients
                     try:
-                        from kraken_client import get_kraken_client
+                        from aureon.exchanges.kraken_client import get_kraken_client
                         exchanges['kraken'] = get_kraken_client()
                         self.logger.info("✅ Ocean: Kraken loaded")
                     except Exception as e:
                         self.logger.warning(f"⚠️ Kraken: {e}")
                     
                     try:
-                        from alpaca_client import AlpacaClient
+                        from aureon.exchanges.alpaca_client import AlpacaClient
                         exchanges['alpaca'] = AlpacaClient()
                         self.logger.info("✅ Ocean: Alpaca loaded")
                     except Exception as e:
                         self.logger.warning(f"⚠️ Alpaca: {e}")
                     
                     try:
-                        from binance_client import BinanceClient
+                        from aureon.exchanges.binance_client import BinanceClient
                         exchanges['binance'] = BinanceClient()
                         self.logger.info("✅ Ocean: Binance loaded")
                     except Exception as e:

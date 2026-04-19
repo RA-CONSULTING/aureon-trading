@@ -29,7 +29,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -436,7 +436,7 @@ class V11PowerStationLive:
         """Lazy load Kraken client"""
         if self._kraken is None:
             try:
-                from kraken_client import KrakenClient, get_kraken_client
+                from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                 self._kraken = get_kraken_client()
             except ImportError:
                 logger.warning("Kraken client not available")
@@ -447,7 +447,7 @@ class V11PowerStationLive:
         """Lazy load Alpaca client"""
         if self._alpaca is None:
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca = AlpacaClient()
             except ImportError:
                 logger.warning("Alpaca client not available")
@@ -458,7 +458,7 @@ class V11PowerStationLive:
         """Lazy load cost basis tracker"""
         if self._cost_basis is None:
             try:
-                from cost_basis_tracker import CostBasisTracker
+                from aureon.portfolio.cost_basis_tracker import CostBasisTracker
                 self._cost_basis = CostBasisTracker()
             except ImportError:
                 logger.warning("Cost basis tracker not available")

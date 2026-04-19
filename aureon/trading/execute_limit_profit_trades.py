@@ -10,7 +10,7 @@ This script executes 3 real money trades designed for NET PROFIT using:
 Gary Leckey | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -19,8 +19,8 @@ import time
 os.environ['LIVE'] = '1'
 os.environ['DRY_RUN'] = '0'
 
-from binance_client import BinanceClient
-from aureon_unified_ecosystem import CONFIG, get_platform_fee
+from aureon.exchanges.binance_client import BinanceClient
+from aureon.trading.aureon_unified_ecosystem import CONFIG, get_platform_fee
 
 def get_ticker(client, symbol: str):
     """Get current ticker data"""

@@ -198,7 +198,7 @@ class QueenAutonomyConfig:
         # Check 2: Autonomy module availability
         logger.info("\n✓ Check 2: Autonomy Module Availability")
         try:
-            from aureon_queen_autonomous_control import (
+            from aureon.autonomous.aureon_queen_autonomous_control import (
                 QueenAutonomousControl,
                 create_queen_autonomous_control
             )
@@ -211,7 +211,7 @@ class QueenAutonomyConfig:
         # Check 3: Queen Hive Mind availability
         logger.info("\n✓ Check 3: Queen Hive Mind Availability")
         try:
-            from aureon_queen_hive_mind import QueenHiveMind, get_queen
+            from aureon.utils.aureon_queen_hive_mind import QueenHiveMind, get_queen
             logger.info("  ✅ QueenHiveMind module available")
             status["checks"]["queen_hive"] = True
         except ImportError:
@@ -221,7 +221,7 @@ class QueenAutonomyConfig:
         # Check 4: Trading module availability
         logger.info("\n✓ Check 4: Trading Module Availability")
         try:
-            from micro_profit_labyrinth import MicroProfitLabyrinth
+            from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
             logger.info("  ✅ MicroProfitLabyrinth module available")
             status["checks"]["trading_module"] = True
         except ImportError:

@@ -14,7 +14,7 @@ This models ACTUAL trading constraints:
 £76 → Maximum achievable in 24 hours WITHIN REAL LIMITS
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 import time
 from dataclasses import dataclass
@@ -23,8 +23,8 @@ import json
 import os
 
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
-    from probability_intelligence_matrix import ProbabilityIntelligenceMatrix
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_intelligence_matrix import ProbabilityIntelligenceMatrix
 except ImportError:
     ProbabilityUltimateIntelligence = None
     ProbabilityIntelligenceMatrix = None

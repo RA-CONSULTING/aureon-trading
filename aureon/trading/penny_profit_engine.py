@@ -13,7 +13,7 @@ NOW ENHANCED with Sandbox Evolution parameters from 454 generations of learning!
 Gary Leckey & GitHub Copilot | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import logging
@@ -536,7 +536,7 @@ def get_wisdom_guidance(fear_greed: int = 50, btc_price: float = 100000, btc_cha
     
     try:
         if _wisdom_engine is None:
-            from aureon_miner_brain import WisdomCognitionEngine
+            from aureon.utils.aureon_miner_brain import WisdomCognitionEngine
             _wisdom_engine = WisdomCognitionEngine()
         
         reading = _wisdom_engine.get_unified_reading(fear_greed, btc_price, btc_change)

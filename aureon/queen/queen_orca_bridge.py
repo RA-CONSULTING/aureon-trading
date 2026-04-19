@@ -28,7 +28,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 
 # ThoughtBus - Central nervous system
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -75,7 +75,7 @@ except ImportError:
 
 # Queen's Harmonic Voice
 try:
-    from queen_harmonic_voice import QueenHarmonicVoice, QueenCommand, QueenOrder, SystemResponse
+    from aureon.queen.queen_harmonic_voice import QueenHarmonicVoice, QueenCommand, QueenOrder, SystemResponse
     QUEEN_VOICE_AVAILABLE = True
 except ImportError:
     QUEEN_VOICE_AVAILABLE = False
@@ -86,7 +86,7 @@ except ImportError:
 
 # Queen Hive Mind
 try:
-    from aureon_queen_hive_mind import QueenHiveMind, create_queen_hive_mind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind, create_queen_hive_mind
     QUEEN_HIVE_AVAILABLE = True
 except ImportError:
     QUEEN_HIVE_AVAILABLE = False
@@ -95,14 +95,14 @@ except ImportError:
 
 # Queen Neuron (Neural Brain)
 try:
-    from queen_neuron import QueenNeuron, create_queen_neuron
+    from aureon.queen.queen_neuron import QueenNeuron, create_queen_neuron
     NEURON_AVAILABLE = True
 except ImportError:
     NEURON_AVAILABLE = False
 
 # Queen Conscience (Ethical Compass - can VETO trades)
 try:
-    from queen_conscience import QueenConscience, ConscienceVerdict
+    from aureon.queen.queen_conscience import QueenConscience, ConscienceVerdict
     CONSCIENCE_AVAILABLE = True
 except ImportError:
     CONSCIENCE_AVAILABLE = False
@@ -113,7 +113,7 @@ except ImportError:
 
 # Orca Kill Cycle
 try:
-    from orca_complete_kill_cycle import OrcaKillCycle
+    from aureon.bots.orca_complete_kill_cycle import OrcaKillCycle
     ORCA_KILL_AVAILABLE = True
 except ImportError:
     ORCA_KILL_AVAILABLE = False
@@ -121,7 +121,7 @@ except ImportError:
 
 # Orca Predator Detection
 try:
-    from orca_predator_detection import OrcaPredatorDetector
+    from aureon.bots.orca_predator_detection import OrcaPredatorDetector
     PREDATOR_AVAILABLE = True
 except ImportError:
     PREDATOR_AVAILABLE = False
@@ -129,7 +129,7 @@ except ImportError:
 
 # Orca Stealth Execution
 try:
-    from orca_stealth_execution import OrcaStealthExecution, stealth_order, StealthConfig
+    from aureon.bots.orca_stealth_execution import OrcaStealthExecution, stealth_order, StealthConfig
     STEALTH_AVAILABLE = True
 except ImportError:
     STEALTH_AVAILABLE = False
@@ -139,7 +139,7 @@ except ImportError:
 
 # Whale Profiler
 try:
-    from aureon_whale_profiler_system import WhaleProfilerSystem, WhaleClass
+    from aureon.analytics.aureon_whale_profiler_system import WhaleProfilerSystem, WhaleClass
     WHALE_PROFILER_AVAILABLE = True
 except ImportError:
     WHALE_PROFILER_AVAILABLE = False
@@ -148,7 +148,7 @@ except ImportError:
 
 # Firm Intelligence
 try:
-    from aureon_firm_intelligence_catalog import FirmIntelligenceCatalog, FirmActivityType
+    from aureon.bots_intelligence.aureon_firm_intelligence_catalog import FirmIntelligenceCatalog, FirmActivityType
     FIRM_INTEL_AVAILABLE = True
 except ImportError:
     FIRM_INTEL_AVAILABLE = False
@@ -157,7 +157,7 @@ except ImportError:
 
 # Counter Intelligence
 try:
-    from aureon_queen_counter_intelligence import QueenCounterIntelligence, CounterIntelligenceSignal
+    from aureon.utils.aureon_queen_counter_intelligence import QueenCounterIntelligence, CounterIntelligenceSignal
     COUNTER_INTEL_AVAILABLE = True
 except ImportError:
     COUNTER_INTEL_AVAILABLE = False

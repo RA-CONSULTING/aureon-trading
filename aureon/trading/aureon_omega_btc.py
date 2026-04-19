@@ -13,7 +13,7 @@ This system trades on 194 BTC pairs. Strategy:
 The cycle: BTC → ALT → BTC (with profit)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import math
 import time
@@ -24,13 +24,13 @@ from datetime import datetime
 from urllib.parse import urlencode
 from typing import Dict, List, Optional, Tuple
 import requests
-from binance_client import get_binance_client
+from aureon.exchanges.binance_client import get_binance_client
 
 # 🪙 PENNY PROFIT ENGINE
 try:
     import sys
     sys.path.insert(0, '/workspaces/aureon-trading')
-    from penny_profit_engine import check_penny_exit, get_penny_engine
+    from aureon.trading.penny_profit_engine import check_penny_exit, get_penny_engine
     PENNY_PROFIT_AVAILABLE = True
     _penny_engine = get_penny_engine()
     print("🪙 Penny Profit Engine loaded for Omega BTC")
@@ -41,7 +41,7 @@ except ImportError:
 
 # 🧠 WISDOM COGNITION ENGINE - 11 Civilizations
 try:
-    from aureon_miner_brain import WisdomCognitionEngine
+    from aureon.utils.aureon_miner_brain import WisdomCognitionEngine
     WISDOM_AVAILABLE = True
     _wisdom_engine = WisdomCognitionEngine()
     print("🧠 Wisdom Engine loaded - 11 civilizations ready")

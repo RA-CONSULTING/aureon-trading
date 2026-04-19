@@ -263,7 +263,7 @@ class HarmonicMarginWaveformScanner:
     def _init_lighthouse(self):
         """Initialize the Lighthouse metrics engine."""
         try:
-            from lighthouse_metrics import LighthouseMetricsEngine
+            from aureon.analytics.lighthouse_metrics import LighthouseMetricsEngine
             self.lighthouse = LighthouseMetricsEngine(
                 restoration_freq=LOVE_FREQ,
                 distortion_freq=440.0
@@ -275,7 +275,7 @@ class HarmonicMarginWaveformScanner:
     def _init_probability(self):
         """Initialize the probability nexus."""
         try:
-            from aureon_probability_nexus import EnhancedProbabilityNexus
+            from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
             self.probability_nexus = EnhancedProbabilityNexus()
             logger.info("Probability nexus ONLINE")
         except Exception as e:
@@ -284,7 +284,7 @@ class HarmonicMarginWaveformScanner:
     def _init_aluminium_field(self):
         """Initialize the liquid aluminium harmonic field."""
         try:
-            from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
+            from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
             self.aluminium_field = HarmonicLiquidAluminiumField()
             logger.info("Liquid aluminium field ONLINE")
         except Exception as e:
@@ -293,7 +293,7 @@ class HarmonicMarginWaveformScanner:
     def _init_lyra_observer(self):
         """Initialize Lyra — the emotional frequency engine — as the observer."""
         try:
-            from aureon_lyra import get_lyra
+            from aureon.trading.aureon_lyra import get_lyra
             self.lyra = get_lyra()
             logger.info("LYRA Observer ONLINE — The Fourth Pillar observes the waveform")
         except Exception as e:
@@ -302,7 +302,7 @@ class HarmonicMarginWaveformScanner:
     def _init_math_angel(self):
         """Initialize the Math Angel for Reality Field Ψ computation."""
         try:
-            from aureon_math_angel import MathAngelProtocol
+            from aureon.wisdom.aureon_math_angel import MathAngelProtocol
             self.observer_field = MathAngelProtocol()
             self.observer_field.awaken()
             logger.info("Math Angel Reality Field ONLINE — Ψ = α(M+F)·O·T + βG + γS")
@@ -1281,7 +1281,7 @@ def main():
       5. Generate LONG/SHORT/HOLD signal from lighthouse consensus
       6. Stream the living waveform to terminal
     """
-    from kraken_client import KrakenClient
+    from aureon.exchanges.kraken_client import KrakenClient
     client = KrakenClient()
     assert not client.dry_run, "ERROR: Client is in dry-run mode!"
     

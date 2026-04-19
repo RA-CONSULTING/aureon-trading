@@ -211,7 +211,7 @@ class CognitiveCycle:
     def _get_lyra_fn(self):
         if self._lyra_fn is None:
             try:
-                from aureon_lyra_integration import lyra_get_resonance
+                from aureon.trading.aureon_lyra_integration import lyra_get_resonance
                 self._lyra_fn = lyra_get_resonance
             except ImportError:
                 pass
@@ -220,7 +220,7 @@ class CognitiveCycle:
     def _get_bridge(self):
         if self._bridge is None:
             try:
-                from aureon_lyra_vision_bridge import LyraVisionBridge
+                from aureon.trading.aureon_lyra_vision_bridge import LyraVisionBridge
                 self._bridge = LyraVisionBridge()
             except ImportError:
                 pass
@@ -303,7 +303,7 @@ class CognitiveCycle:
         # ── ATN Monitor: Earth hazard field ─────────────────────────────────
         # Pulls from cache (7 streams, TTL per stream).  Never blocks.
         try:
-            from aureon_atn_monitor import get_atn_monitor
+            from aureon.atn.aureon_atn_monitor import get_atn_monitor
             earth = get_atn_monitor().get_state()
             state.earth_risk_factor = earth.risk_factor
             state.earth_veto        = earth.veto

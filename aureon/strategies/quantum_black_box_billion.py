@@ -23,7 +23,7 @@ MATHEMATICAL TRUTH:
 Gary Leckey | Black Box Perfection | January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -58,13 +58,13 @@ from datetime import datetime
 from pathlib import Path
 
 # Quantum consciousness system
-from metatron_probability_billion_path import (
+from aureon.wisdom.metatron_probability_billion_path import (
     QueenAurisPingPong, ProbabilityMatrix, ProbabilityPrediction, QuantumSpace
 )
 
 # Exchange clients
-from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 PHI = 1.618033988749895  # Golden Ratio
 GOLDEN_ANGLE = 137.5077640500378  # 360 / φ²

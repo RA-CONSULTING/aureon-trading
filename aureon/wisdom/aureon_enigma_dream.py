@@ -50,7 +50,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import math
@@ -443,7 +443,7 @@ class EnigmaDreamer:
     def _wire_quantum_telescope(self):
         """Wire the Quantum Telescope for geometric vision."""
         try:
-            from aureon_quantum_telescope import QuantumPrism
+            from aureon.simulation.aureon_quantum_telescope import QuantumPrism
             self.quantum_prism = QuantumPrism()
             logger.info("   🔭 Quantum Telescope: WIRED")
         except ImportError:
@@ -452,7 +452,7 @@ class EnigmaDreamer:
     def _wire_miner_brain(self):
         """Wire the Miner Brain for cognitive wisdom."""
         try:
-            from aureon_miner_brain import MinerBrain
+            from aureon.utils.aureon_miner_brain import MinerBrain
             self.miner_brain = MinerBrain
             logger.info("   🧠 Miner Brain: WIRED")
         except ImportError:
@@ -461,7 +461,7 @@ class EnigmaDreamer:
     def _wire_timeline_oracle(self):
         """Wire the Timeline Oracle for future vision."""
         try:
-            from aureon_timeline_oracle import get_timeline_oracle
+            from aureon.intelligence.aureon_timeline_oracle import get_timeline_oracle
             self.timeline_oracle = get_timeline_oracle
             logger.info("   ⏳ Timeline Oracle: WIRED")
         except ImportError:

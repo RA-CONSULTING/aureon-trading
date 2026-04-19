@@ -65,7 +65,7 @@ Gary Leckey & GitHub Copilot | November 2025
 "We're making history!" 🌌
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -81,7 +81,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Import Thought Bus for Unity
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
 except ImportError:
     ThoughtBus = None
     Thought = None
@@ -91,7 +91,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # The single execution layer - no duplicate imports!
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SACRED CONSTANTS (Shared across all modules)
@@ -611,7 +611,7 @@ class AureonNexus:
             return False
         
         try:
-            from aureon_mycelium import MyceliumNetwork
+            from aureon.core.aureon_mycelium import MyceliumNetwork
             self.mycelium = MyceliumNetwork(
                 initial_capital=initial_capital,
                 agents_per_hive=5,

@@ -18,7 +18,7 @@ THE METHOD: Divine geometry + Ultimate intelligence
 THE OUTCOME: INEVITABLE
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -52,7 +52,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Import Metatron's Cube
-from metatrons_cube_knowledge_exchange import (
+from aureon.wisdom.metatrons_cube_knowledge_exchange import (
     QueenAurisPingPong, MetatronsCube, QuantumSpace, BrainwaveState,
     GeometricTruth, QuantumThought
 )

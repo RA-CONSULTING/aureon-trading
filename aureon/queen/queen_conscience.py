@@ -22,7 +22,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -70,7 +70,7 @@ except Exception:
 # WORLD UNDERSTANDING INTEGRATION
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from queen_world_understanding import get_world_understanding, QueensWorldUnderstanding
+    from aureon.queen.queen_world_understanding import get_world_understanding, QueensWorldUnderstanding
     WORLD_UNDERSTANDING_AVAILABLE = True
 except ImportError:
     WORLD_UNDERSTANDING_AVAILABLE = False

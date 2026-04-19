@@ -32,7 +32,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -117,7 +117,7 @@ TIER_3_THRESHOLD = 2.60          # > 2.6% gross = VALID (nets ~1.88% after fees 
 
 # Micro-Momentum Scanner (THE GOAL)
 try:
-    from aureon_micro_momentum_goal import MicroMomentumScanner, MomentumTier, MomentumSignal
+    from aureon.conversion.aureon_micro_momentum_goal import MicroMomentumScanner, MomentumTier, MomentumSignal
     MICRO_MOMENTUM_OK = True
 except ImportError:
     MICRO_MOMENTUM_OK = False
@@ -125,7 +125,7 @@ except ImportError:
 
 # Global Wave Scanner
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner, WaveState, WaveAnalysis
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner, WaveState, WaveAnalysis
     WAVE_SCANNER_OK = True
 except ImportError:
     WAVE_SCANNER_OK = False
@@ -133,7 +133,7 @@ except ImportError:
 
 # Harmonic Chain Master
 try:
-    from aureon_harmonic_chain_master import HarmonicChainMaster
+    from aureon.harmonic.aureon_harmonic_chain_master import HarmonicChainMaster
     CHAIN_MASTER_OK = True
 except ImportError:
     CHAIN_MASTER_OK = False
@@ -141,7 +141,7 @@ except ImportError:
 
 # Global Harmonic Field
 try:
-    from global_harmonic_field import GlobalHarmonicField
+    from aureon.harmonic.global_harmonic_field import GlobalHarmonicField
     HARMONIC_FIELD_OK = True
 except ImportError:
     HARMONIC_FIELD_OK = False
@@ -149,7 +149,7 @@ except ImportError:
 
 # Harmonic Fusion
 try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
     HARMONIC_FUSION_OK = True
 except ImportError:
     HARMONIC_FUSION_OK = False
@@ -157,7 +157,7 @@ except ImportError:
 
 # 6D Waveform
 try:
-    from hnc_6d_harmonic_waveform import SixDimensionalHarmonicEngine
+    from aureon.strategies.hnc_6d_harmonic_waveform import SixDimensionalHarmonicEngine
     WAVEFORM_6D_OK = True
 except ImportError:
     WAVEFORM_6D_OK = False
@@ -165,7 +165,7 @@ except ImportError:
 
 # Queen Dream Engine
 try:
-    from aureon_queen_dream_engine import QueenDreamEngine
+    from aureon.utils.aureon_queen_dream_engine import QueenDreamEngine
     QUEEN_DREAM_OK = True
 except ImportError:
     QUEEN_DREAM_OK = False
@@ -173,7 +173,7 @@ except ImportError:
 
 # Queen Autonomous Controller
 try:
-    from aureon_queen_autonomous import QueenAutonomousController
+    from aureon.autonomous.aureon_queen_autonomous import QueenAutonomousController
     QUEEN_AUTONOMOUS_OK = True
 except ImportError:
     QUEEN_AUTONOMOUS_OK = False

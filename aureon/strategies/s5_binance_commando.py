@@ -14,7 +14,7 @@ Features:
 Run with --dry-run for simulation
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -28,7 +28,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 
 
 class BinanceConversionCommando:

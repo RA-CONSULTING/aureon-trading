@@ -4,7 +4,7 @@
 Quick diagnostic to see system health and positions.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -94,7 +94,7 @@ def check_status():
                 
                 # Try to get current prices
                 try:
-                    from kraken_client import KrakenClient, get_kraken_client
+                    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                     client = get_kraken_client()
                     can_price = True
                 except:

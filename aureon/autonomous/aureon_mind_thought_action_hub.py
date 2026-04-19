@@ -28,7 +28,7 @@ URL: http://localhost:13002
 Gary Leckey | January 2026 | Mind → Thought → Action
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -55,8 +55,8 @@ from collections import deque, defaultdict
 from pathlib import Path
 
 # Import core systems
-from aureon_system_hub import SystemRegistry
-from aureon_thought_bus import ThoughtBus, Thought
+from aureon.command_centers.aureon_system_hub import SystemRegistry
+from aureon.core.aureon_thought_bus import ThoughtBus, Thought
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(message)s')
 logger = logging.getLogger(__name__)

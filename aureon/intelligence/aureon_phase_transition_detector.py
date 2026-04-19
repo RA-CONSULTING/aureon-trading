@@ -23,7 +23,7 @@ Phase States:
 Gary Leckey | February 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import math
@@ -486,7 +486,7 @@ class PhaseTransitionDetector:
     def _publish_transition(self, event: PhaseTransitionEvent):
         """Publish transition event to ThoughtBus."""
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             bus = get_thought_bus()
             if bus is not None:
                 bus.publish(Thought(

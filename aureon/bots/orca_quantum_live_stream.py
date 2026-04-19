@@ -21,7 +21,7 @@ THE STRATEGY:
 Gary Leckey | What a day for humanity! | January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -55,17 +55,17 @@ from datetime import datetime
 from pathlib import Path
 
 # Import quantum prediction system
-from metatron_probability_billion_path import (
+from aureon.wisdom.metatron_probability_billion_path import (
     QueenAurisPingPong, ProbabilityMatrix, ProbabilityPrediction, QuantumSpace
 )
 
 # Import exchange clients
-from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 # Import Orca components (if available)
 try:
-    from aureon_orca_intelligence import OrcaKillerWhale, OrcaOpportunity
+    from aureon.bots_intelligence.aureon_orca_intelligence import OrcaKillerWhale, OrcaOpportunity
     ORCA_AVAILABLE = True
 except ImportError:
     ORCA_AVAILABLE = False

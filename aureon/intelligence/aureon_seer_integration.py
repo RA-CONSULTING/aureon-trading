@@ -163,7 +163,7 @@ def _wire_enigma_subscription() -> None:
     if _enigma_bus_wired:
         return
     try:
-        from aureon_thought_bus import ThoughtBus as _TB
+        from aureon.core.aureon_thought_bus import ThoughtBus as _TB
         bus = _TB.get_instance() if hasattr(_TB, "get_instance") else None
         if bus and hasattr(bus, "subscribe"):
             bus.subscribe("symbol.new_discoveries", _on_enigma_discovery)
@@ -221,7 +221,7 @@ def flush_pillar_snipe_requests() -> List[Dict[str, Any]]:
 def _get_seer():
     global _seer
     if _seer is None:
-        from aureon_seer import get_seer
+        from aureon.intelligence.aureon_seer import get_seer
         _seer = get_seer()
     return _seer
 
@@ -230,7 +230,7 @@ def _get_king():
     global _king
     if _king is None:
         try:
-            from king_accounting import get_king
+            from aureon.bots.king_accounting import get_king
             _king = get_king()
         except ImportError:
             _king = None
@@ -241,7 +241,7 @@ def _get_lyra():
     global _lyra
     if _lyra is None:
         try:
-            from aureon_lyra import get_lyra
+            from aureon.trading.aureon_lyra import get_lyra
             _lyra = get_lyra()
         except ImportError:
             _lyra = None
@@ -251,7 +251,7 @@ def _get_lyra():
 def _get_triumvirate():
     global _triumvirate
     if _triumvirate is None:
-        from aureon_triumvirate import get_triumvirate
+        from aureon.utils.aureon_triumvirate import get_triumvirate
         _triumvirate = get_triumvirate()
     return _triumvirate
 
@@ -1199,7 +1199,7 @@ def print_seer_report():
 def _broadcast(event_type: str, data: Dict):
     """Broadcast to ThoughtBus if available."""
     try:
-        from aureon_mind_thought_action_hub import ThoughtBus
+        from aureon.autonomous.aureon_mind_thought_action_hub import ThoughtBus
         bus = ThoughtBus.get_instance() if hasattr(ThoughtBus, "get_instance") else None
         if bus and hasattr(bus, "emit"):
             bus.emit({

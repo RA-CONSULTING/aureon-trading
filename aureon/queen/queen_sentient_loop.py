@@ -25,7 +25,7 @@ from __future__ import annotations
 # Baton link (standard Aureon pattern)
 # ---------------------------------------------------------------------------
 try:
-    from aureon_baton_link import link_system as _baton_link
+    from aureon.core.aureon_baton_link import link_system as _baton_link
     _baton_link(__name__)
 except Exception:
     pass

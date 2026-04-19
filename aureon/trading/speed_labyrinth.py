@@ -5,9 +5,9 @@ Fractions of pennies - SPEED + VOLUME = WIN!
 
 Gary Leckey & GitHub Copilot | January 2026
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
-from micro_profit_labyrinth import MicroProfitLabyrinth
+from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
 
 async def run_speed_labyrinth():
     print("\n" + "⚡" * 35)

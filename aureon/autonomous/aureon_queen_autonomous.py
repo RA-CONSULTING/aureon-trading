@@ -24,7 +24,7 @@ Gary Leckey | Aureon Trading System | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 if sys.platform == 'win32':
@@ -65,21 +65,21 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_micro_momentum_goal import MicroMomentumScanner, MomentumTier, MomentumSignal
+    from aureon.conversion.aureon_micro_momentum_goal import MicroMomentumScanner, MomentumTier, MomentumSignal
     MOMENTUM_AVAILABLE = True
 except ImportError as e:
     logger.error(f"MicroMomentumScanner not available: {e}")
     MOMENTUM_AVAILABLE = False
 
 try:
-    from aureon_queen_dream_engine import QueenDreamEngine
+    from aureon.utils.aureon_queen_dream_engine import QueenDreamEngine
     DREAM_ENGINE_AVAILABLE = True
 except ImportError as e:
     logger.error(f"QueenDreamEngine not available: {e}")
     DREAM_ENGINE_AVAILABLE = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"AlpacaClient not available: {e}")

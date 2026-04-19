@@ -23,7 +23,7 @@ Gary Leckey | Orca Never Sleeps | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -171,7 +171,7 @@ class OrcaGlobalHunter:
         
         # Kraken (24/7 crypto)
         try:
-            from kraken_client import get_kraken_client
+            from aureon.exchanges.kraken_client import get_kraken_client
             self.exchanges['kraken'] = get_kraken_client()
             if self.exchanges['kraken']:
                 pairs = self.exchanges['kraken']._load_asset_pairs()
@@ -182,7 +182,7 @@ class OrcaGlobalHunter:
             
         # Alpaca (crypto + stocks)
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.exchanges['alpaca'] = AlpacaClient()
             
             # Crypto universe
@@ -220,7 +220,7 @@ class OrcaGlobalHunter:
             
         # Binance (data only for UK)
         try:
-            from binance_client import BinanceClient, get_binance_client
+            from aureon.exchanges.binance_client import BinanceClient, get_binance_client
             self.exchanges['binance'] = BinanceClient()
             info = self.exchanges['binance'].exchange_info()
             symbols = [s['symbol'] for s in info.get('symbols', []) if s.get('status') == 'TRADING']

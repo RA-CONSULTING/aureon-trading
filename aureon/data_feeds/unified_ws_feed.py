@@ -22,7 +22,7 @@ Gary Leckey | January 2026
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 # Lazy load HFT engine for graceful degradation
 try:
-    from aureon_hft_harmonic_mycelium import get_hft_engine
+    from aureon.harmonic.aureon_hft_harmonic_mycelium import get_hft_engine
     HFT_ENGINE_AVAILABLE = True
 except ImportError:
     get_hft_engine = None
@@ -62,7 +62,7 @@ except ImportError:
 
 # 🌊 Harmonic Liquid Aluminium Field - market visualization as dancing waveforms
 try:
-    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
 except ImportError:
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = False
@@ -232,7 +232,7 @@ class UnifiedWSFeed:
         # ThoughtBus integration
         self.thought_bus = None
         try:
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             self.thought_bus = ThoughtBus(persist_path="ws_feed_thoughts.jsonl")
         except ImportError:
             pass
@@ -300,7 +300,7 @@ class UnifiedWSFeed:
         
         if self.thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 self.thought_bus.publish(Thought(
                     source=f"ws_{tick.exchange}",
                     topic="tick",

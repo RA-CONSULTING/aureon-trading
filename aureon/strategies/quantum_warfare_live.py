@@ -9,7 +9,7 @@ in the calm nodes while HFTs fight each other.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -25,7 +25,7 @@ from typing import Dict, List, Optional
 from collections import deque
 
 # Import our quantum arsenal
-from aureon_quantum_warfare_engine import (
+from aureon.simulation.aureon_quantum_warfare_engine import (
     QuantumWarfareEngine, 
     QuantumTradeState,
     HFTInterferencePattern
@@ -42,20 +42,20 @@ BOT_SCANNER_AVAILABLE = True
 
 # Import Queen
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     QUEEN_AVAILABLE = True
 except ImportError:
     QUEEN_AVAILABLE = False
 
 # Import exchange clients
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False

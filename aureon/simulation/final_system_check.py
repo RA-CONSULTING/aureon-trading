@@ -3,7 +3,7 @@
 ✅ FINAL SYSTEM CHECK - All Systems Operational
 Verifies: API keys, balances, modules, readiness to trade
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -132,14 +132,14 @@ print("   " + "-"*50)
 sys.path.insert(0, '/workspaces/aureon-trading')
 
 try:
-    from unified_exchange_client import MultiExchangeClient
+    from aureon.trading.unified_exchange_client import MultiExchangeClient
 
     print("   ✅ MultiExchangeClient")
 except ImportError as e:
     print(f"   ❌ MultiExchangeClient: {e}")
 
 try:
-    from aureon_unified_ecosystem import AureonKrakenEcosystem
+    from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem
 
     print("   ✅ AureonKrakenEcosystem")
 except ImportError as e:

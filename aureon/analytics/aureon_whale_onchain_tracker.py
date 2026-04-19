@@ -10,7 +10,7 @@ Publishes `whale.onchain.detected` for transfers >= threshold.
 Note: Uses exchange APIs instead of blockchain providers (no extra API keys needed).
 """
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import time
@@ -18,25 +18,25 @@ import threading
 from typing import Any, Dict, List, Optional, Set, Tuple
 from collections import deque, defaultdict
 
-from aureon_thought_bus import get_thought_bus, Thought
+from aureon.core.aureon_thought_bus import get_thought_bus, Thought
 
 logger = logging.getLogger(__name__)
 
 # Import exchange clients
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
 
 try:
-    from binance_client import BinanceClient, get_binance_client
+    from aureon.exchanges.binance_client import BinanceClient, get_binance_client
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False

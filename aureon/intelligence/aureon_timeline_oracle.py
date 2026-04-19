@@ -53,7 +53,7 @@ Gary Leckey & GitHub Copilot | January 2026
 
 from __future__ import annotations
 try:
-    from aureon_baton_link import link_system as _baton_link
+    from aureon.core.aureon_baton_link import link_system as _baton_link
     _baton_link(__name__)
 except Exception:
     pass
@@ -143,7 +143,7 @@ def _lazy_load_mycelium():
     if MyceliumNetwork is not None:
         return MYCELIUM_AVAILABLE
     try:
-        from aureon_mycelium import MyceliumNetwork as _MyceliumNetwork, Synapse as _Synapse, Hive as _Hive, Neuron as _Neuron
+        from aureon.core.aureon_mycelium import MyceliumNetwork as _MyceliumNetwork, Synapse as _Synapse, Hive as _Hive, Neuron as _Neuron
         MyceliumNetwork = _MyceliumNetwork
         Synapse = _Synapse
         Hive = _Hive
@@ -177,7 +177,7 @@ except ImportError:
 
 # 💎 Ultimate Intelligence - Pattern Recognition
 try:
-    from probability_ultimate_intelligence import get_ultimate_intelligence, ultimate_predict
+    from aureon.strategies.probability_ultimate_intelligence import get_ultimate_intelligence, ultimate_predict
     ULTIMATE_INTEL_AVAILABLE = True
     _safe_import_print("💎 Timeline Oracle: Ultimate Intelligence WIRED!")
 except ImportError:
@@ -186,7 +186,7 @@ except ImportError:
 
 # 📡 Thought Bus - Neural Communication
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -194,7 +194,7 @@ except ImportError:
 
 # 🐦 Chirp Bus - High Speed Signaling
 try:
-    from aureon_chirp_bus import ChirpBus
+    from aureon.core.aureon_chirp_bus import ChirpBus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -202,7 +202,7 @@ except ImportError:
 
 # 🐙 Kraken Client - Exchange Integration
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
     _safe_import_print("🐙 Timeline Oracle: Kraken Exchange WIRED!")
 except ImportError:
@@ -211,7 +211,7 @@ except ImportError:
 
 # 🟡 Binance Client - Exchange Integration
 try:
-    from binance_client import BinanceClient, get_binance_client
+    from aureon.exchanges.binance_client import BinanceClient, get_binance_client
     BINANCE_AVAILABLE = True
     _safe_import_print("🟡 Timeline Oracle: Binance Exchange WIRED!")
 except ImportError:
@@ -221,7 +221,7 @@ except ImportError:
 
 # 🦙 Alpaca Client - Exchange Integration
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
     _safe_import_print("🦙 Timeline Oracle: Alpaca Exchange WIRED!")
 except ImportError:
@@ -230,7 +230,7 @@ except ImportError:
 
 # 🌍 Global Financial State - Market Pulse
 try:
-    from aureon_market_pulse import MarketPulse
+    from aureon.intelligence.aureon_market_pulse import MarketPulse
     MARKET_PULSE_AVAILABLE = True
     _safe_import_print("🌍 Timeline Oracle: Global Market Pulse WIRED!")
 except ImportError:
@@ -239,7 +239,7 @@ except ImportError:
 
 # 📊 HNC Probability Matrix
 try:
-    from hnc_probability_matrix import HNCProbabilityMatrix
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityMatrix
     HNC_AVAILABLE = True
     _safe_import_print("📊 Timeline Oracle: HNC Probability Matrix WIRED!")
 except ImportError:

@@ -10,7 +10,7 @@ This script retrieves recent trade fills from Alpaca and compares:
 Goal: Find WHERE the $0.71 loss came from and FIX the cost model.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -31,7 +31,7 @@ import json
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Optional
-from alpaca_client import AlpacaClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 @dataclass
 class TradeFillAnalysis:

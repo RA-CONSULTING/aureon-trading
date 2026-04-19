@@ -49,7 +49,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From pattern to profit - the machine never stops learning."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
 import json
@@ -70,7 +70,7 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence,
         ultimate_predict,
         record_ultimate_outcome,
@@ -92,7 +92,7 @@ except ImportError as e:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from probability_intelligence_matrix import (
+    from aureon.strategies.probability_intelligence_matrix import (
         get_probability_matrix,
         calculate_intelligent_probability,
         record_outcome as matrix_record_outcome,
@@ -111,7 +111,7 @@ except ImportError as e:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from eta_verification_system import (
+    from aureon.analytics.eta_verification_system import (
         get_eta_verifier,
         register_eta,
         verify_kill as eta_verify_kill,
@@ -132,7 +132,7 @@ except ImportError as e:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from improved_eta_calculator import ImprovedETACalculator, ImprovedETA
+    from aureon.analytics.improved_eta_calculator import ImprovedETACalculator, ImprovedETA
     IMPROVED_ETA_AVAILABLE = True
     IMPROVED_ETA_CALC = ImprovedETACalculator()
     logger.info("🔬 Improved ETA Calculator WIRED! (velocity decay model)")
@@ -153,7 +153,7 @@ def _get_patriot_scouts():
     global PATRIOTS_AVAILABLE, PatriotScoutNetwork
     if PATRIOTS_AVAILABLE is None:
         try:
-            from irish_patriot_scouts import PatriotScoutNetwork as _PSN, PatriotScout, PATRIOT_CONFIG
+            from aureon.wisdom.irish_patriot_scouts import PatriotScoutNetwork as _PSN, PatriotScout, PATRIOT_CONFIG
             PatriotScoutNetwork = _PSN
             PATRIOTS_AVAILABLE = True
             logger.info("☘️ Irish Patriot Scouts WIRED! (Celtic warfare)")
@@ -167,7 +167,7 @@ def _get_patriot_scouts():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from ira_sniper_mode import (
+    from aureon.scanners.ira_sniper_mode import (
         SNIPER_CONFIG,
         apply_sniper_mode,
         IRA_SNIPER_MODE,
@@ -187,7 +187,7 @@ except ImportError as e:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_mycelium import MyceliumNetwork, Synapse, Neuron
+    from aureon.core.aureon_mycelium import MyceliumNetwork, Synapse, Neuron
     MYCELIUM_AVAILABLE = True
     logger.info("🍄 Mycelium Neural Network WIRED! (distributed intelligence)")
 except ImportError as e:

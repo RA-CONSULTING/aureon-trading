@@ -38,7 +38,7 @@ CAPITAL_PROMOTION_LOG_PATH = Path(os.getenv("CAPITAL_PROMOTION_LOG_PATH", os.pat
 
 # ── IMPORT GUARDS ──────────────────────────────────────────────────────────────
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     HAS_CAPITAL = True
 except ImportError:
     try:
@@ -76,7 +76,7 @@ try:
     HAS_CAPITAL_DTP = True
 except Exception:
     try:
-        from dynamic_take_profit import DynamicTakeProfit
+        from aureon.trading.dynamic_take_profit import DynamicTakeProfit
         HAS_CAPITAL_DTP = True
     except Exception:
         DynamicTakeProfit = None   # type: ignore
@@ -107,7 +107,7 @@ except Exception:
     HAS_UNIFIED_DECISION = False
 
 try:
-    from autonomous_trading_orchestrator import AutonomousOrchestrator
+    from aureon.autonomous.autonomous_trading_orchestrator import AutonomousOrchestrator
     HAS_CAPITAL_ORCHESTRATOR = True
 except Exception:
     AutonomousOrchestrator = None   # type: ignore
@@ -150,7 +150,7 @@ except Exception:
         _MYCELIUM_CORE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "core"))
         if _MYCELIUM_CORE_DIR not in sys.path:
             sys.path.insert(0, _MYCELIUM_CORE_DIR)
-        from aureon_mycelium import get_mycelium, MyceliumNetwork
+        from aureon.core.aureon_mycelium import get_mycelium, MyceliumNetwork
         HAS_MYCELIUM = True
     except Exception:
         get_mycelium = None        # type: ignore
@@ -162,7 +162,7 @@ try:
     HAS_PENNY_ENGINE = True
 except Exception:
     try:
-        from penny_profit_engine import get_penny_engine
+        from aureon.trading.penny_profit_engine import get_penny_engine
         HAS_PENNY_ENGINE = True
     except Exception:
         get_penny_engine = None     # type: ignore

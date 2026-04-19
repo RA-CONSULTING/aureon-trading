@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
 import json
@@ -8,8 +8,8 @@ import numpy as np
 
 os.environ.setdefault('LIVE','1')
 
-from binance_client import BinanceClient
-from hnc_probability_matrix import HNCProbabilityIntegration
+from aureon.exchanges.binance_client import BinanceClient
+from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
 
 # 🔶 COMPREHENSIVE BINANCE SYMBOLS (70+)
 DEFAULT_SYMBOLS = [

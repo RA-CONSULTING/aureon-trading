@@ -339,7 +339,7 @@ def get_runes_oracle():
     """Lazy load the OracleOfRunes."""
     global _runes_oracle
     if _runes_oracle is None:
-        from aureon_seer import OracleOfRunes
+        from aureon.intelligence.aureon_seer import OracleOfRunes
         _runes_oracle = OracleOfRunes()
     return _runes_oracle
 

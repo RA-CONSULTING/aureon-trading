@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from capital_cfd_trader import CapitalCFDTrader
+from aureon.exchanges.capital_cfd_trader import CapitalCFDTrader
 
 
 logger = logging.getLogger("capital_swarm_runner")

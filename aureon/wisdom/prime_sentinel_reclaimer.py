@@ -8,7 +8,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -98,7 +98,7 @@ class PrimeSentinelReclaimer:
         
         # Alpaca
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.exchanges['alpaca'] = AlpacaClient()
             log("🦙 ALPACA: Connected")
         except Exception as e:
@@ -106,7 +106,7 @@ class PrimeSentinelReclaimer:
             
         # Binance
         try:
-            from binance_client import BinanceClient, get_binance_client
+            from aureon.exchanges.binance_client import BinanceClient, get_binance_client
             self.exchanges['binance'] = BinanceClient()
             log("🟡 BINANCE: Connected")
         except Exception as e:
@@ -114,7 +114,7 @@ class PrimeSentinelReclaimer:
             
         # Kraken
         try:
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             self.exchanges['kraken'] = get_kraken_client()
             log("🐙 KRAKEN: Connected")
         except Exception as e:

@@ -25,7 +25,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From Atom to Multiverse - The Imperial Protocol Unfolds"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -782,7 +782,7 @@ class ImperialTradingIntegration:
         
         # Get distortion limit from CONFIG or use default
         try:
-            from aureon_unified_ecosystem import CONFIG
+            from aureon.trading.aureon_unified_ecosystem import CONFIG
             distortion_limit = CONFIG.get('IMPERIAL_DISTORTION_LIMIT', 0.15)
         except:
             distortion_limit = 0.15

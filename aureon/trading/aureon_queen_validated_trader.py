@@ -15,7 +15,7 @@ allowing the portfolio to grow faster with zero losses.
 ═══════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -64,7 +64,7 @@ logger = logging.getLogger(__name__)
 
 # Import our systems
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     QUEEN_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"Queen Hive Mind not available: {e}")
@@ -80,19 +80,19 @@ except ImportError as e:
     MYCELIUM_AVAILABLE = False
 
 try:
-    from aureon_stargate_protocol import create_stargate_engine, TimelinePhase
+    from aureon.wisdom.aureon_stargate_protocol import create_stargate_engine, TimelinePhase
     STARGATE_AVAILABLE = True
 except ImportError:
     STARGATE_AVAILABLE = False
 
 try:
-    from kraken_client import get_kraken_client
+    from aureon.exchanges.kraken_client import get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
 
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False

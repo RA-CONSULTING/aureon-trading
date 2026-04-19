@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 from enum import Enum
 
-from kraken_client import KrakenClient
+from aureon.exchanges.kraken_client import KrakenClient
 
 
 class TradeQualityMetric(Enum):

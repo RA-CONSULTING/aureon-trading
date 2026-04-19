@@ -18,7 +18,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import math
 import time
 import logging
@@ -37,7 +37,7 @@ QUEEN_LIGHTHOUSE_PROFIT_FREQ = 188.0  # Hz - Sacred frequency guiding the lighth
 
 # Import harmonic types
 try:
-    from aureon_harmonic_seed import GlobalHarmonicState, SymbolWaveState, SCHUMANN_BASE
+    from aureon.harmonic.aureon_harmonic_seed import GlobalHarmonicState, SymbolWaveState, SCHUMANN_BASE
 except ImportError:
     # Fallback definitions
     SCHUMANN_BASE = 7.83
@@ -562,7 +562,7 @@ if __name__ == "__main__":
     """)
     
     # Create mock harmonic state
-    from aureon_harmonic_seed import GlobalHarmonicState, SymbolWaveState
+    from aureon.harmonic.aureon_harmonic_seed import GlobalHarmonicState, SymbolWaveState
     
     state = GlobalHarmonicState()
     state.global_coherence = 0.6

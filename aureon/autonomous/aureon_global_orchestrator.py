@@ -9,7 +9,7 @@ Single unified startup and control point for:
 ONE SWITCH TO RULE THEM ALL! 🎚️
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -86,7 +86,7 @@ class GlobalAureonOrchestrator:
         """Step 1: Initialize the Quantum Processing Brain (global state)."""
         logger.info("🧠 Initializing Quantum Processing Brain...")
         try:
-            from aureon_miner import QuantumProcessingBrain
+            from aureon.utils.aureon_miner import QuantumProcessingBrain
             self.brain = QuantumProcessingBrain()
             # Bootstrap brain state
             self.brain.compute_with_ecosystem()
@@ -103,7 +103,7 @@ class GlobalAureonOrchestrator:
         """Step 2: Initialize Harmonic Mining Optimizer (reads brain state)."""
         logger.info("⛏️  Initializing Harmonic Mining Optimizer...")
         try:
-            from aureon_miner import HarmonicMiningOptimizer
+            from aureon.utils.aureon_miner import HarmonicMiningOptimizer
             self.miner_optimizer = HarmonicMiningOptimizer()
             # Miner bootstrap sync will read latest brain state
             self.system_health['miner'] = 'ACTIVE'
@@ -118,7 +118,7 @@ class GlobalAureonOrchestrator:
         """Step 3: Initialize Trading Ecosystem (links to miner)."""
         logger.info("🐙 Initializing Aureon Kraken Unified Ecosystem...")
         try:
-            from aureon_unified_ecosystem import AureonKrakenEcosystem
+            from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem
             self.ecosystem = AureonKrakenEcosystem(
                 initial_balance=self.initial_balance,
                 dry_run=self.dry_run

@@ -13,7 +13,7 @@ Using minimal position sizes (~$5-10) with tight TP targets.
 Gary Leckey | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -24,7 +24,7 @@ os.environ['LIVE'] = '1'
 os.environ['DRY_RUN'] = '0'
 
 from binance.client import Client as BinanceClientRaw
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 
 # Get API keys
 BINANCE_KEY = os.getenv('BINANCE_API_KEY')

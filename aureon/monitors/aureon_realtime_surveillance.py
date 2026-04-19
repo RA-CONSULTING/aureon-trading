@@ -21,7 +21,7 @@
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -515,7 +515,7 @@ class AureonSurveillanceSystem:
 
         # Feed into Autonomy Hub (The Big Wheel) for unified decision making
         try:
-            from aureon_autonomy_hub import get_autonomy_hub
+            from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
             hub = get_autonomy_hub()
             hub.data_bridge.ingest_surveillance_alert({
                 'alert_type': alert.alert_type,

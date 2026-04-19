@@ -31,7 +31,7 @@ Gary Leckey & GitHub Copilot | 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -202,7 +202,7 @@ class AvalancheHarvester:
         # ThoughtBus integration (optional)
         self._thought_bus = None
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             self._thought_bus = get_thought_bus()
             self._Thought = Thought
             logger.info("✓ ThoughtBus integration enabled")
@@ -212,7 +212,7 @@ class AvalancheHarvester:
         # 💰 COST BASIS TRACKER - Get REAL entry prices!
         self._cost_basis_tracker = None
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             self._cost_basis_tracker = CostBasisTracker()
             logger.info(f"✓ Cost Basis Tracker loaded ({len(self._cost_basis_tracker.positions)} positions)")
         except Exception as e:
@@ -223,7 +223,7 @@ class AvalancheHarvester:
         """Lazy load Kraken client."""
         if self._kraken_client is None:
             try:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 self._kraken_client = get_kraken_client()
                 logger.info("✓ Kraken client loaded")
             except Exception as e:
@@ -236,7 +236,7 @@ class AvalancheHarvester:
         """Lazy load Alpaca client."""
         if self._alpaca_client is None:
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca_client = AlpacaClient()
                 logger.info("✓ Alpaca client loaded")
             except Exception as e:
@@ -249,7 +249,7 @@ class AvalancheHarvester:
         """Lazy load Binance client."""
         if self._binance_client is None:
             try:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 self._binance_client = get_binance_client()
                 logger.info("✓ Binance client loaded")
             except Exception as e:
@@ -262,7 +262,7 @@ class AvalancheHarvester:
         """Lazy load Capital.com client."""
         if self._capital_client is None:
             try:
-                from capital_client import CapitalClient
+                from aureon.exchanges.capital_client import CapitalClient
                 self._capital_client = CapitalClient()
                 logger.info("✓ Capital.com client loaded")
             except Exception as e:

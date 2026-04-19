@@ -98,7 +98,7 @@ class UnifiedDashboardServer:
     async def get_orca_status(self, request: web.Request) -> web.Response:
         """GET /api/orca-status - Orca execution status."""
         try:
-            from aureon_system_coordinator import SystemCoordinator
+            from aureon.core.aureon_system_coordinator import SystemCoordinator
 
             coordinator = SystemCoordinator()
             orca_state = coordinator.get_system_state("orca_complete_kill_cycle")
@@ -145,7 +145,7 @@ class UnifiedDashboardServer:
     async def get_system_coordination(self, request: web.Request) -> web.Response:
         """GET /api/system-coordination - System coordination state."""
         try:
-            from aureon_system_coordinator import SystemCoordinator
+            from aureon.core.aureon_system_coordinator import SystemCoordinator
 
             coordinator = SystemCoordinator()
             state = coordinator.get_coordination_state()
@@ -157,7 +157,7 @@ class UnifiedDashboardServer:
     async def get_system_health(self, request: web.Request) -> web.Response:
         """GET /api/system-health - System health."""
         try:
-            from aureon_system_coordinator import SystemCoordinator
+            from aureon.core.aureon_system_coordinator import SystemCoordinator
 
             coordinator = SystemCoordinator()
             health = coordinator.check_system_health()
@@ -178,9 +178,9 @@ class UnifiedDashboardServer:
     async def get_unified_state(self, request: web.Request) -> web.Response:
         """GET /api/unified-state - Complete unified state."""
         try:
-            from aureon_system_coordinator import SystemCoordinator
-            from aureon_unified_decision_engine import UnifiedDecisionEngine
-            from aureon_real_data_feed_hub import get_feed_hub
+            from aureon.core.aureon_system_coordinator import SystemCoordinator
+            from aureon.intelligence.aureon_unified_decision_engine import UnifiedDecisionEngine
+            from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub
 
             coordinator = SystemCoordinator()
             decision_engine = UnifiedDecisionEngine()
@@ -214,7 +214,7 @@ class UnifiedDashboardServer:
     async def get_feed_status(self, request: web.Request) -> web.Response:
         """GET /api/feed-status - Feed stream status."""
         try:
-            from aureon_real_data_feed_hub import get_feed_hub
+            from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub
 
             feed_hub = get_feed_hub()
             status = feed_hub.get_consolidated_feeds_status()
@@ -226,7 +226,7 @@ class UnifiedDashboardServer:
     async def get_decisions(self, request: web.Request) -> web.Response:
         """GET /api/decisions - All trading decisions."""
         try:
-            from aureon_unified_decision_engine import UnifiedDecisionEngine
+            from aureon.intelligence.aureon_unified_decision_engine import UnifiedDecisionEngine
 
             engine = UnifiedDecisionEngine()
             decisions = engine.get_all_decisions()
@@ -258,7 +258,7 @@ class UnifiedDashboardServer:
         """GET /api/decisions/{symbol} - Decision for symbol."""
         try:
             symbol = request.match_info['symbol']
-            from aureon_unified_decision_engine import UnifiedDecisionEngine
+            from aureon.intelligence.aureon_unified_decision_engine import UnifiedDecisionEngine
 
             engine = UnifiedDecisionEngine()
             decision = engine.get_latest_decision(symbol)

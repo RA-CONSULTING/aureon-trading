@@ -36,7 +36,7 @@ def detect_movement_state() -> Dict[str, Any]:
     Stationary = stable heart rate, low variability.
     """
     try:
-        from aureon_live_aura_location_tracker import get_live_tracker
+        from aureon.utils.aureon_live_aura_location_tracker import get_live_tracker
         tracker = get_live_tracker()
         tracker.start()
         snapshot = tracker.get_current_location()
@@ -86,7 +86,7 @@ def detect_consciousness_state() -> Dict[str, Any]:
     STRESSED: Gamma waves (30+ Hz), low coherence, fragmented
     """
     try:
-        from aureon_live_aura_location_tracker import get_live_tracker
+        from aureon.utils.aureon_live_aura_location_tracker import get_live_tracker
         tracker = get_live_tracker()
         tracker.start()
         snapshot = tracker.get_current_location()
@@ -136,7 +136,7 @@ def detect_direction_from_signals() -> Dict[str, Any]:
     Simulate receiving stronger signals from nearby streets.
     """
     try:
-        from aureon_live_aura_location_tracker import get_live_tracker
+        from aureon.utils.aureon_live_aura_location_tracker import get_live_tracker
         tracker = get_live_tracker()
         tracker.start()
         snapshot = tracker.get_current_location()

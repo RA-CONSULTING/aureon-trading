@@ -6,7 +6,7 @@ Runs on localhost with live WebSocket feeds
 WITH TEXT-TO-SPEECH VOICE ENGINE + OPEN SOURCE DATA
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # QUEEN VOICE ENGINE - TEXT TO SPEECH
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from queen_voice_engine import QueenVoiceEngine, queen_voice
+    from aureon.queen.queen_voice_engine import QueenVoiceEngine, queen_voice
     VOICE_ENGINE_AVAILABLE = True
     print("🔊 Queen Voice Engine LOADED - She can speak now!")
 except ImportError:
@@ -39,7 +39,7 @@ except ImportError:
 # OPEN SOURCE DATA ENGINE - FREE DATA FEEDS
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from queen_open_source_data_engine import OpenSourceDataEngine, get_data_engine
+    from aureon.queen.queen_open_source_data_engine import OpenSourceDataEngine, get_data_engine
     OPEN_DATA_AVAILABLE = True
     print("🌐 Open Source Data Engine LOADED - Free data incoming!")
 except ImportError:
@@ -47,7 +47,7 @@ except ImportError:
     print("⚠️ Open source data engine not available")
 
 try:
-    from queen_auto_tagger import QueenAutoTagger, get_auto_tagger
+    from aureon.queen.queen_auto_tagger import QueenAutoTagger, get_auto_tagger
     AUTO_TAGGER_AVAILABLE = True
     print("🏷️ Auto-Tagger LOADED - Intelligent bot classification!")
 except ImportError:
@@ -55,7 +55,7 @@ except ImportError:
     print("⚠️ Auto-tagger not available")
 
 try:
-    from queen_firm_geocoder import get_firm_coordinates, get_all_firm_locations, get_regional_summary
+    from aureon.queen.queen_firm_geocoder import get_firm_coordinates, get_all_firm_locations, get_regional_summary
     GEOCODER_AVAILABLE = True
     print("🌍 Firm Geocoder LOADED - World map ready!")
 except ImportError:
@@ -69,7 +69,7 @@ SYSTEMS_STATUS = {}
 
 # Core Intelligence Layer
 try:
-    from aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES
+    from aureon.bots_intelligence.aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES
     SYSTEMS_STATUS['Bot Intelligence'] = True
 except ImportError:
     SYSTEMS_STATUS['Bot Intelligence'] = False
@@ -77,154 +77,154 @@ except ImportError:
 
 # Communication & Consciousness Layer
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     SYSTEMS_STATUS['Thought Bus'] = True
 except ImportError:
     SYSTEMS_STATUS['Thought Bus'] = False
     ThoughtBus = None
 
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     SYSTEMS_STATUS['Mycelium Network'] = True
 except ImportError:
     SYSTEMS_STATUS['Mycelium Network'] = False
 
 # Signal Processing Layer
 try:
-    from aureon_enigma import AureonEnigma
+    from aureon.wisdom.aureon_enigma import AureonEnigma
     SYSTEMS_STATUS['Enigma Decoder'] = True
 except ImportError:
     SYSTEMS_STATUS['Enigma Decoder'] = False
 
 # Analysis & Prediction Layer
 try:
-    from aureon_quantum_telescope import QuantumPrism
+    from aureon.simulation.aureon_quantum_telescope import QuantumPrism
     SYSTEMS_STATUS['Quantum Telescope'] = True
 except ImportError:
     SYSTEMS_STATUS['Quantum Telescope'] = False
 
 try:
-    from aureon_elephant_learning import ElephantMemory
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
     SYSTEMS_STATUS['Elephant Memory'] = True
 except ImportError:
     SYSTEMS_STATUS['Elephant Memory'] = False
 
 try:
-    from aureon_probability_nexus import AureonProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
     SYSTEMS_STATUS['Probability Nexus'] = True
 except ImportError:
     SYSTEMS_STATUS['Probability Nexus'] = False
 
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
     SYSTEMS_STATUS['Ultimate Intelligence'] = True
 except ImportError:
     SYSTEMS_STATUS['Ultimate Intelligence'] = False
 
 # Timeline & Quantum Layer
 try:
-    from aureon_timeline_oracle import TimelineOracle
+    from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
     SYSTEMS_STATUS['Timeline Oracle'] = True
 except ImportError:
     SYSTEMS_STATUS['Timeline Oracle'] = False
 
 try:
-    from aureon_quantum_mirror_scanner import QuantumMirrorScanner
+    from aureon.scanners.aureon_quantum_mirror_scanner import QuantumMirrorScanner
     SYSTEMS_STATUS['Quantum Mirror'] = True
 except ImportError:
     SYSTEMS_STATUS['Quantum Mirror'] = False
 
 try:
-    from aureon_timeline_anchor_validator import TimelineAnchorValidator
+    from aureon.intelligence.aureon_timeline_anchor_validator import TimelineAnchorValidator
     SYSTEMS_STATUS['Timeline Anchor'] = True
 except ImportError:
     SYSTEMS_STATUS['Timeline Anchor'] = False
 
 try:
-    from aureon_stargate_protocol import ActivationCeremony
+    from aureon.wisdom.aureon_stargate_protocol import ActivationCeremony
     SYSTEMS_STATUS['Stargate Protocol'] = True
 except ImportError:
     SYSTEMS_STATUS['Stargate Protocol'] = False
 
 # Tracking & Surveillance Layer
 try:
-    from aureon_whale_onchain_tracker import WhaleExchangeTracker
+    from aureon.analytics.aureon_whale_onchain_tracker import WhaleExchangeTracker
     SYSTEMS_STATUS['Whale Onchain Tracker'] = True
 except ImportError:
     SYSTEMS_STATUS['Whale Onchain Tracker'] = False
 
 try:
-    from aureon_strategic_warfare_scanner import StrategicWarfareScanner
+    from aureon.scanners.aureon_strategic_warfare_scanner import StrategicWarfareScanner
     SYSTEMS_STATUS['Strategic Warfare'] = True
 except ImportError:
     SYSTEMS_STATUS['Strategic Warfare'] = False
 
 try:
-    from aureon_planetary_bot_tracker import PlanetaryBotTracker
+    from aureon.bots_intelligence.aureon_planetary_bot_tracker import PlanetaryBotTracker
     SYSTEMS_STATUS['Planetary Bot Tracker'] = True
 except ImportError:
     SYSTEMS_STATUS['Planetary Bot Tracker'] = False
 
 try:
-    from aureon_wisdom_scanner import AureonWisdomScanner
+    from aureon.scanners.aureon_wisdom_scanner import AureonWisdomScanner
     SYSTEMS_STATUS['Wisdom Scanner'] = True
 except ImportError:
     SYSTEMS_STATUS['Wisdom Scanner'] = False
 
 # Wave & Market Scanning Layer
 try:
-    from aureon_ocean_wave_scanner import OceanWaveScanner
+    from aureon.scanners.aureon_ocean_wave_scanner import OceanWaveScanner
     SYSTEMS_STATUS['Ocean Wave Scanner'] = True
 except ImportError:
     SYSTEMS_STATUS['Ocean Wave Scanner'] = False
 
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
     SYSTEMS_STATUS['Global Wave Scanner'] = True
 except ImportError:
     SYSTEMS_STATUS['Global Wave Scanner'] = False
 
 # Harmonic & Frequency Layer
 try:
-    from aureon_harmonic_chain_master import HarmonicChainMaster
+    from aureon.harmonic.aureon_harmonic_chain_master import HarmonicChainMaster
     SYSTEMS_STATUS['Harmonic Chain'] = True
 except ImportError:
     SYSTEMS_STATUS['Harmonic Chain'] = False
 
 try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
     SYSTEMS_STATUS['Harmonic Fusion'] = True
 except ImportError:
     SYSTEMS_STATUS['Harmonic Fusion'] = False
 
 # Control & Execution Layer
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     SYSTEMS_STATUS['Miner Brain'] = True
 except ImportError:
     SYSTEMS_STATUS['Miner Brain'] = False
 
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     SYSTEMS_STATUS['Queen Hive Mind'] = True
 except ImportError:
     SYSTEMS_STATUS['Queen Hive Mind'] = False
 
 # Infrastructure Layer
 try:
-    from aureon_immune_system import AureonImmuneSystem
+    from aureon.core.aureon_immune_system import AureonImmuneSystem
     SYSTEMS_STATUS['Immune System'] = True
 except ImportError:
     SYSTEMS_STATUS['Immune System'] = False
 
 try:
-    from aureon_memory_core import AureonMemoryCore
+    from aureon.core.aureon_memory_core import AureonMemoryCore
     SYSTEMS_STATUS['Memory Core'] = True
 except ImportError:
     SYSTEMS_STATUS['Memory Core'] = False
 
 try:
-    from aureon_internal_multiverse import InternalMultiverse
+    from aureon.simulation.aureon_internal_multiverse import InternalMultiverse
     SYSTEMS_STATUS['Internal Multiverse'] = True
 except ImportError:
     SYSTEMS_STATUS['Internal Multiverse'] = False
@@ -233,7 +233,7 @@ except ImportError:
 # DEEP INTELLIGENCE LAYER - Autonomous Thinking & Deep Attribution
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from queen_deep_intelligence import QueenDeepIntelligence, DeepInsight, MarketThesis, InsightType
+    from aureon.queen.queen_deep_intelligence import QueenDeepIntelligence, DeepInsight, MarketThesis, InsightType
     SYSTEMS_STATUS['Deep Intelligence'] = True
     DEEP_INTELLIGENCE_AVAILABLE = True
     print("🧠 Queen Deep Intelligence LOADED - Autonomous thinking enabled!")
@@ -307,7 +307,7 @@ class GlobalState:
         # ═══════════════════════════════════════════════════════════════════════════
         self.orca = None
         try:
-            from aureon_orca_intelligence import get_orca, OrcaKillerWhaleIntelligence
+            from aureon.bots_intelligence.aureon_orca_intelligence import get_orca, OrcaKillerWhaleIntelligence
             self.orca = get_orca()
             print("🦈🔪 ORCA KILLER WHALE INTELLIGENCE LOADED!")
             SYSTEMS_STATUS['Orca Intelligence'] = True

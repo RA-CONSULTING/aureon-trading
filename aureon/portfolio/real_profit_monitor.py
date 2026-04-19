@@ -201,7 +201,7 @@ class RealProfitMonitor:
 
             # For active trades, we need to fetch current price from Kraken
             try:
-                from kraken_client import KrakenClient
+                from aureon.exchanges.kraken_client import KrakenClient
                 kraken = KrakenClient()
                 pair = active_trade.get('pair', 'UNKNOWN')
                 ticker = kraken.get_ticker(pair)

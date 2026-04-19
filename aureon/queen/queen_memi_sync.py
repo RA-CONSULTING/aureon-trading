@@ -28,7 +28,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -536,7 +536,7 @@ class QueenMemiSync:
         # Broadcast to thought bus
         if self.thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 self.thought_bus.publish(Thought(
                     source="QueenMemiSync",
                     topic="memi_sync_complete",
@@ -601,7 +601,7 @@ class QueenMemiSync:
         # Broadcast sync completion
         if self.thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 self.thought_bus.publish(Thought(
                     source="QueenMemiSync",
                     topic="memi_sync_complete",

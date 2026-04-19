@@ -204,19 +204,19 @@ class OracleOfGaia:
     def _load(self):
         if self._lattice is None:
             try:
-                from aureon_lattice import LatticeEngine
+                from aureon.core.aureon_lattice import LatticeEngine
                 self._lattice = LatticeEngine()
             except ImportError:
                 pass
         if self._schumann is None:
             try:
-                from aureon_schumann_resonance_bridge import SchumannResonanceBridge
+                from aureon.harmonic.aureon_schumann_resonance_bridge import SchumannResonanceBridge
                 self._schumann = SchumannResonanceBridge()
             except ImportError:
                 pass
         if self._earth_engine is None:
             try:
-                from earth_resonance_engine import EarthResonanceEngine
+                from aureon.harmonic.earth_resonance_engine import EarthResonanceEngine
                 self._earth_engine = EarthResonanceEngine()
             except ImportError:
                 pass
@@ -334,7 +334,7 @@ class OracleOfCosmos:
     def _load(self):
         if self._bridge is None:
             try:
-                from aureon_space_weather_bridge import SpaceWeatherBridge
+                from aureon.data_feeds.aureon_space_weather_bridge import SpaceWeatherBridge
                 self._bridge = SpaceWeatherBridge()
             except ImportError:
                 pass
@@ -417,7 +417,7 @@ class OracleOfHarmony:
     def _load(self):
         if self._scanner is None:
             try:
-                from aureon_harmonic_waveform import HarmonicWaveformScanner
+                from aureon.harmonic.aureon_harmonic_waveform import HarmonicWaveformScanner
                 self._scanner = HarmonicWaveformScanner()
             except ImportError:
                 pass
@@ -601,7 +601,7 @@ class OracleOfSpirits:
     def _load(self):
         if self._auris_engine is None:
             try:
-                from aureon_kraken_ecosystem import AurisEngine
+                from aureon.trading.aureon_kraken_ecosystem import AurisEngine
                 self._auris_engine = AurisEngine()
             except ImportError:
                 pass
@@ -784,7 +784,7 @@ class OracleOfTime:
     def _load(self):
         if self._enigma_dreamer is None:
             try:
-                from aureon_enigma_dream import EnigmaDreamer
+                from aureon.wisdom.aureon_enigma_dream import EnigmaDreamer
                 self._enigma_dreamer = EnigmaDreamer()
             except ImportError:
                 pass
@@ -1660,7 +1660,7 @@ class OracleOfSentiment:
         """Lazy-load the FearGreedFetcher from Lyra."""
         if self._fg_fetcher is None:
             try:
-                from aureon_lyra import get_fear_greed_fetcher
+                from aureon.trading.aureon_lyra import get_fear_greed_fetcher
                 self._fg_fetcher = get_fear_greed_fetcher()
             except ImportError:
                 pass
@@ -1836,7 +1836,7 @@ class OracleOfSentiment:
         """Read the King's Order Flow Velocity."""
         details = {}
         try:
-            from king_accounting import get_order_flow_velocity
+            from aureon.bots.king_accounting import get_order_flow_velocity
             ofv = get_order_flow_velocity()
             report = ofv.get_velocity_report()
             details["flow_pressure"] = report.get("pressure_ratio", 0.5)
@@ -1857,7 +1857,7 @@ class OracleOfSentiment:
         """Read Lyra's latest emotional resonance."""
         details = {}
         try:
-            from aureon_lyra import get_lyra
+            from aureon.trading.aureon_lyra import get_lyra
             lyra = get_lyra()
             if lyra.latest_resonance:
                 r = lyra.latest_resonance
@@ -2116,19 +2116,19 @@ class WarCounsel:
         """Lazy-load war systems."""
         if self._sniper is None:
             try:
-                from ira_sniper_mode import get_sniper_config
+                from aureon.scanners.ira_sniper_mode import get_sniper_config
                 self._sniper = get_sniper_config()
             except ImportError:
                 pass
         if self._guerrilla is None:
             try:
-                from guerrilla_warfare_engine import GUERRILLA_CONFIG
+                from aureon.wisdom.guerrilla_warfare_engine import GUERRILLA_CONFIG
                 self._guerrilla = GUERRILLA_CONFIG
             except ImportError:
                 pass
         if self._war_strategy is None:
             try:
-                from war_strategy import WarStrategy
+                from aureon.command_centers.war_strategy import WarStrategy
                 self._war_strategy = WarStrategy()
             except (ImportError, Exception):
                 pass
@@ -2268,7 +2268,7 @@ class OracleOfMargin:
     def _load_kraken(self):
         if self._kraken is None:
             try:
-                from kraken_client import KrakenClient
+                from aureon.exchanges.kraken_client import KrakenClient
                 self._kraken = KrakenClient()
             except ImportError:
                 pass
@@ -2490,7 +2490,7 @@ class OracleOfMaeshowe:
     def _load(self):
         if self._oracle is None:
             try:
-                from maeshowe_seer_decode import OracleMaeshowe as _OM
+                from aureon.wisdom.maeshowe_seer_decode import OracleMaeshowe as _OM
                 self._oracle = _OM()
             except ImportError:
                 pass

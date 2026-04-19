@@ -42,7 +42,7 @@ def _get_kraken_fee_tracker():
     global _kraken_fee_tracker
     if _kraken_fee_tracker is None:
         try:
-            from kraken_fee_tracker import get_kraken_fee_tracker
+            from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker
             _kraken_fee_tracker = get_kraken_fee_tracker()
         except ImportError:
             pass
@@ -77,7 +77,7 @@ _validator = None
 def _get_king():
     global _king
     if _king is None:
-        from king_accounting import get_king
+        from aureon.bots.king_accounting import get_king
         _king = get_king()
     return _king
 
@@ -85,7 +85,7 @@ def _get_king():
 def _get_ledger():
     global _ledger
     if _ledger is None:
-        from king_ledger import get_ledger
+        from aureon.bots.king_ledger import get_ledger
         _ledger = get_ledger()
     return _ledger
 
@@ -94,7 +94,7 @@ def _get_cost_basis_tracker():
     global _cost_basis_tracker
     if _cost_basis_tracker is None:
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             _cost_basis_tracker = CostBasisTracker()
         except ImportError:
             _cost_basis_tracker = None
@@ -105,7 +105,7 @@ def _get_validator():
     global _validator
     if _validator is None:
         try:
-            from trade_profit_validator import get_validator
+            from aureon.portfolio.trade_profit_validator import get_validator
             _validator = get_validator()
         except ImportError:
             _validator = None
@@ -308,7 +308,7 @@ def sync_king_from_exchanges():
 
     # Sync from Kraken
     try:
-        from kraken_client import get_kraken_client
+        from aureon.exchanges.kraken_client import get_kraken_client
         client = get_kraken_client()
         if client and not client.dry_run:
             # Get trade history from Kraken
@@ -351,7 +351,7 @@ def reconcile_all_exchanges() -> Dict[str, Any]:
 
     for exchange_name in ["kraken", "binance", "alpaca", "capital"]:
         try:
-            from unified_exchange_client import UnifiedExchangeClient
+            from aureon.trading.unified_exchange_client import UnifiedExchangeClient
             client = UnifiedExchangeClient(exchange_name)
             balances = client.get_all_balances()
             if balances:
@@ -458,7 +458,7 @@ def _fetch_current_prices() -> Dict[str, float]:
     """Fetch current prices from exchanges for portfolio valuation."""
     prices = {}
     try:
-        from unified_exchange_client import UnifiedExchangeClient
+        from aureon.trading.unified_exchange_client import UnifiedExchangeClient
         for exchange_name in ["kraken", "binance"]:
             try:
                 client = UnifiedExchangeClient(exchange_name)
@@ -495,7 +495,7 @@ def _fetch_current_prices() -> Dict[str, float]:
 def _broadcast_financial_event(event_type: str, data: Dict):
     """Broadcast a financial event to the ThoughtBus if available."""
     try:
-        from aureon_mind_thought_action_hub import ThoughtBus
+        from aureon.autonomous.aureon_mind_thought_action_hub import ThoughtBus
         bus = ThoughtBus.get_instance() if hasattr(ThoughtBus, "get_instance") else None
         if bus and hasattr(bus, "emit"):
             bus.emit({

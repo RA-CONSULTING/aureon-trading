@@ -24,7 +24,7 @@ Gary Leckey | December 2025
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -167,8 +167,8 @@ class AureonWatchdog:
         """Check for positions that should have been closed"""
         try:
             # Import here to avoid circular imports
-            from kraken_client import KrakenClient, get_kraken_client
-            from penny_profit_engine import get_penny_engine, check_penny_exit
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+            from aureon.trading.penny_profit_engine import get_penny_engine, check_penny_exit
             
             with open(self.state_file) as f:
                 state = json.load(f)

@@ -11,7 +11,7 @@ This script:
 4. Saves immutable truth log
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 
 # Windows UTF-8 Fix
@@ -36,7 +36,7 @@ TRUTH_FILE = "truth_checkpoints.json"
 
 def get_binance_truth() -> Tuple[float, Dict]:
     """Get REAL Binance balance - no lies"""
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     try:
         b = get_binance_client()
         total = 0
@@ -92,7 +92,7 @@ def get_binance_truth() -> Tuple[float, Dict]:
 
 def get_alpaca_truth() -> Tuple[float, Dict]:
     """Get REAL Alpaca balance - no lies"""
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     try:
         a = AlpacaClient()
         acct = a.get_account()
@@ -114,7 +114,7 @@ def get_alpaca_truth() -> Tuple[float, Dict]:
 
 def get_kraken_truth() -> Tuple[float, Dict]:
     """Get REAL Kraken balance - no lies"""
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     try:
         k = get_kraken_client()
         total = 0

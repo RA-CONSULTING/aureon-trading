@@ -11,7 +11,7 @@ Integrates ALL Aureon sacred systems:
 "Take back the planet's energy - Unity is the key"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 os.environ['PYTHONUNBUFFERED'] = '1'
 
@@ -127,9 +127,9 @@ class GaiaUnityTrader:
         print("🌍 GAIA UNITY PROTOCOL INITIALIZING 🌍")
         print("=" * 60)
         
-        from binance_client import BinanceClient
-        from alpaca_client import AlpacaClient
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.binance_client import BinanceClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         
         self.binance = get_binance_client()
         self.alpaca = AlpacaClient()

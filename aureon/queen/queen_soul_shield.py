@@ -152,7 +152,7 @@ class QueenSoulShield:
 
         # Optional ThoughtBus integration for external attack signals
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self._thought_bus = get_thought_bus()
             if self._thought_bus:
                 self._thought_bus.subscribe("shield.attack", self._on_attack_signal)

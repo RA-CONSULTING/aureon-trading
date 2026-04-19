@@ -1,10 +1,10 @@
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import time
 from typing import Any, Dict, List, Optional
 
-from aureon_thought_bus import ThoughtBus, Thought
+from aureon.core.aureon_thought_bus import ThoughtBus, Thought
 
 Json = Dict[str, Any]
 

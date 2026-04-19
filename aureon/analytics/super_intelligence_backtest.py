@@ -24,7 +24,7 @@ PRINCIPLE: Independent validators compound accuracy.
 The key: ONLY trade when ALL systems AGREE on high-confidence.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -54,7 +54,7 @@ from collections import defaultdict
 # 1. Probability Ultimate Intelligence (95% accuracy)
 PROB_INTEL_AVAILABLE = False
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
     PROB_INTEL_AVAILABLE = True
     print("💎 Probability Ultimate Intelligence: LOADED")
 except ImportError as e:
@@ -63,7 +63,7 @@ except ImportError as e:
 # 2. QGITA Framework (Fibonacci structural)
 QGITA_AVAILABLE = False
 try:
-    from aureon_qgita_framework import QGITAMarketAnalyzer
+    from aureon.wisdom.aureon_qgita_framework import QGITAMarketAnalyzer
     QGITA_AVAILABLE = True
     print("⚗️ QGITA Framework: LOADED")
 except ImportError as e:
@@ -72,7 +72,7 @@ except ImportError as e:
 # 3. Lighthouse Metrics (spectral analysis)
 LIGHTHOUSE_AVAILABLE = False
 try:
-    from lighthouse_metrics import LighthouseMetricsEngine
+    from aureon.analytics.lighthouse_metrics import LighthouseMetricsEngine
     LIGHTHOUSE_AVAILABLE = True
     print("🗼 Lighthouse Metrics: LOADED")
 except ImportError as e:
@@ -81,7 +81,7 @@ except ImportError as e:
 # 4. Elephant Memory (pattern memory)
 ELEPHANT_AVAILABLE = False
 try:
-    from aureon_elephant_learning import ElephantMemory
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
     ELEPHANT_AVAILABLE = True
     print("🐘 Elephant Memory: LOADED")
 except ImportError as e:
@@ -90,7 +90,7 @@ except ImportError as e:
 # 5. Unified Sniper Brain (100% trained parameters)
 SNIPER_AVAILABLE = False
 try:
-    from unified_sniper_brain import TrainedSniperParams, UnifiedSniperBrain
+    from aureon.trading.unified_sniper_brain import TrainedSniperParams, UnifiedSniperBrain
     SNIPER_AVAILABLE = True
     print("🔫 Unified Sniper Brain: LOADED")
 except ImportError as e:
@@ -99,7 +99,7 @@ except ImportError as e:
 # 6. Truth Prediction Engine
 TRUTH_AVAILABLE = False
 try:
-    from aureon_truth_prediction_engine import TruthPredictionEngine
+    from aureon.intelligence.aureon_truth_prediction_engine import TruthPredictionEngine
     TRUTH_AVAILABLE = True
     print("🎯 Truth Prediction Engine: LOADED")
 except ImportError as e:
@@ -108,7 +108,7 @@ except ImportError as e:
 # 7. Pillar Council (Quadrumvirate)
 COUNCIL_AVAILABLE = False
 try:
-    from aureon_triumvirate import TriumvirateEngine
+    from aureon.utils.aureon_triumvirate import TriumvirateEngine
     COUNCIL_AVAILABLE = True
     print("👑 Pillar Council: LOADED")
 except ImportError as e:
@@ -117,7 +117,7 @@ except ImportError as e:
 # 8. Real Intelligence Engine
 REAL_INTEL_AVAILABLE = False
 try:
-    from aureon_real_intelligence_engine import RealIntelligenceEngine
+    from aureon.intelligence.aureon_real_intelligence_engine import RealIntelligenceEngine
     REAL_INTEL_AVAILABLE = True
     print("🧠 Real Intelligence Engine: LOADED")
 except ImportError as e:

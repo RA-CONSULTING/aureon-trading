@@ -22,7 +22,7 @@ Gary Leckey | January 2026 | SNOWBALL MODE | ALPACA-FOCUSED
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -99,13 +99,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 # Import Adaptive Prime Profit Gate
-from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
-from cost_basis_tracker import CostBasisTracker
+from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate
+from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 
 # Quadrumvirate Consensus (Queen + King + Seer + Lyra)
 QUADRUMVIRATE_AVAILABLE = False
 try:
-    from aureon_seer_integration import quadrumvirate_should_trade, collapse_probability_field, get_temporal_consensus
+    from aureon.intelligence.aureon_seer_integration import quadrumvirate_should_trade, collapse_probability_field, get_temporal_consensus
     QUADRUMVIRATE_AVAILABLE = True
 except ImportError:
     pass
@@ -113,7 +113,7 @@ except ImportError:
 # 💎 Super Intelligence Gate (100% Win Rate Layer)
 SUPER_INTELLIGENCE_AVAILABLE = False
 try:
-    from super_intelligence_gate import get_super_intelligence_gate, SuperIntelligenceGate as _SuperIntelligenceGate
+    from aureon.utils.super_intelligence_gate import get_super_intelligence_gate, SuperIntelligenceGate as _SuperIntelligenceGate
     SUPER_INTELLIGENCE_AVAILABLE = True
 except ImportError:
     pass
@@ -144,15 +144,15 @@ class TradeAuditRecord:
 
 if TYPE_CHECKING:
     try:
-        from mycelium_conversion_hub import MyceliumConversionHub as MyceliumConversionHubType
+        from aureon.conversion.mycelium_conversion_hub import MyceliumConversionHub as MyceliumConversionHubType
     except ImportError:
         MyceliumConversionHubType = Any
     try:
-        from s5_v14_labyrinth import V14DanceEnhancer as V14DanceEnhancerType
+        from aureon.strategies.s5_v14_labyrinth import V14DanceEnhancer as V14DanceEnhancerType
     except ImportError:
         V14DanceEnhancerType = Any
     try:
-        from aureon_conversion_commando import (
+        from aureon.conversion.aureon_conversion_commando import (
             AdaptiveConversionCommando as AdaptiveConversionCommandoType,
             PairScanner as PairScannerType,
             DualProfitPathEvaluator as DualProfitPathEvaluatorType,
@@ -162,27 +162,27 @@ if TYPE_CHECKING:
         PairScannerType = Any
         DualProfitPathEvaluatorType = Any
     try:
-        from aureon_conversion_ladder import ConversionLadder as ConversionLadderType
+        from aureon.conversion.aureon_conversion_ladder import ConversionLadder as ConversionLadderType
     except ImportError:
         ConversionLadderType = Any
     try:
-        from kraken_client import KrakenClient as KrakenClientType
+        from aureon.exchanges.kraken_client import KrakenClient as KrakenClientType
     except ImportError:
         KrakenClientType = Any
     try:
-        from binance_client import BinanceClient as BinanceClientType
+        from aureon.exchanges.binance_client import BinanceClient as BinanceClientType
     except ImportError:
         BinanceClientType = Any
     try:
-        from alpaca_client import AlpacaClient as AlpacaClientType
+        from aureon.exchanges.alpaca_client import AlpacaClient as AlpacaClientType
     except ImportError:
         AlpacaClientType = Any
     try:
-        from aureon_thought_bus import ThoughtBus as ThoughtBusType
+        from aureon.core.aureon_thought_bus import ThoughtBus as ThoughtBusType
     except ImportError:
         ThoughtBusType = Any
     try:
-        from adaptive_prime_profit_gate import AdaptivePrimeProfitGate as AdaptivePrimeProfitGateType
+        from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate as AdaptivePrimeProfitGateType
     except ImportError:
         AdaptivePrimeProfitGateType = Any
     try:
@@ -190,7 +190,7 @@ if TYPE_CHECKING:
     except ImportError:
         PathMemoryType = Any
     try:
-        from dust_converter import DustConverter as DustConverterType, DustCandidate
+        from aureon.conversion.dust_converter import DustConverter as DustConverterType, DustCandidate
     except ImportError:
         DustConverterType = Any
         DustCandidate = Any
@@ -224,7 +224,7 @@ except ImportError:
             return self._store.get(key, default)
 
 try:
-    from aureon_barter_navigator import BarterMatrix
+    from aureon.trading.aureon_barter_navigator import BarterMatrix
 except ImportError:
     BarterMatrix = Any
 
@@ -232,7 +232,7 @@ except ImportError:
 # By default: Use Kraken/Binance for heavy lifting, Alpaca for execution only
 if os.getenv("ALPACA_INCLUDE_STOCKS", "false").lower() == "true":
     try:
-        from aureon_alpaca_stock_scanner import AlpacaStockScanner, StockOpportunity
+        from aureon.scanners.aureon_alpaca_stock_scanner import AlpacaStockScanner, StockOpportunity
         STOCK_SCANNER_AVAILABLE = True
     except ImportError:
         AlpacaStockScanner = None
@@ -325,7 +325,7 @@ MIN_SYMBOL_LEN = 3           # Ignore obviously invalid short symbols
 # EXISTING SYSTEMS - ALL OF THEM!
 # ════════════════════════════════════════════════════════════════════════════
 try:
-    from global_financial_feed import GlobalFinancialFeed
+    from aureon.data_feeds.global_financial_feed import GlobalFinancialFeed
     safe_print("🌍 Global Financial Feed LOADED!")
     GLOBAL_FEED_AVAILABLE = True
 except ImportError as e:
@@ -334,7 +334,7 @@ except ImportError as e:
     GLOBAL_FEED_AVAILABLE = False
 
 try:
-    from mycelium_conversion_hub import get_conversion_hub, MyceliumConversionHub
+    from aureon.conversion.mycelium_conversion_hub import get_conversion_hub, MyceliumConversionHub
     safe_print("🍄 Mycelium Conversion Hub LOADED!")
 except ImportError as e:
     safe_print(f"⚠️ Mycelium Conversion Hub not available: {e}")
@@ -343,7 +343,7 @@ except ImportError as e:
 
 # Adaptive profit gate (dynamic fees/targets)
 try:
-    from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
+    from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate
     ADAPTIVE_GATE_AVAILABLE = True
     safe_print("💰 Adaptive Prime Profit Gate LOADED!")
 except ImportError as e:
@@ -353,7 +353,7 @@ except ImportError as e:
 
 # 🧹 Dust Converter (sweep small balances to stablecoins)
 try:
-    from dust_converter import DustConverter, DustCandidate
+    from aureon.conversion.dust_converter import DustConverter, DustCandidate
     DUST_CONVERTER_AVAILABLE = True
     safe_print("🧹 Dust Converter LOADED!")
 except ImportError as e:
@@ -364,7 +364,7 @@ except ImportError as e:
 
 # 🪙⚡ Penny Profit Turbo (enhanced profit math)
 try:
-    from penny_profit_turbo import get_penny_turbo, PennyProfitTurbo
+    from aureon.trading.penny_profit_turbo import get_penny_turbo, PennyProfitTurbo
     PENNY_TURBO_AVAILABLE = True
     safe_print("🪙⚡ Penny Profit TURBO LOADED!")
 except ImportError as e:
@@ -375,7 +375,7 @@ except ImportError as e:
 
 # Lightweight Thought Bus for observability
 try:
-    from aureon_thought_bus import ThoughtBus
+    from aureon.core.aureon_thought_bus import ThoughtBus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError as e:
     ThoughtBus = None
@@ -384,7 +384,7 @@ except ImportError as e:
 
 # 🪆 Russian Doll Analytics - Fractal measurement system (Queen→Hive→Bee)
 try:
-    from aureon_russian_doll_analytics import (
+    from aureon.analytics.aureon_russian_doll_analytics import (
         RussianDollAnalytics, 
         get_analytics, 
         record_scan, 
@@ -407,7 +407,7 @@ except ImportError as e:
     safe_print(f"⚠️ Russian Doll Analytics not available: {e}")
 
 try:
-    from s5_v14_labyrinth import V14DanceEnhancer, V14_CONFIG
+    from aureon.strategies.s5_v14_labyrinth import V14DanceEnhancer, V14_CONFIG
     safe_print("🏆 V14 Labyrinth LOADED!")
 except ImportError as e:
     safe_print(f"⚠️ V14 Labyrinth not available: {e}")
@@ -415,7 +415,7 @@ except ImportError as e:
     V14_CONFIG = {}
 
 try:
-    from aureon_conversion_commando import (
+    from aureon.conversion.aureon_conversion_commando import (
         AdaptiveConversionCommando,
         PairScanner,
         DualProfitPathEvaluator,
@@ -430,7 +430,7 @@ except ImportError as e:
     MIN_PROFIT_TARGET = 0.0001  # Epsilon mode: accept any net-positive trade
 
 try:
-    from aureon_conversion_ladder import ConversionLadder
+    from aureon.conversion.aureon_conversion_ladder import ConversionLadder
     safe_print("🪜 Conversion Ladder LOADED!")
 except ImportError as e:
     safe_print(f"⚠️ Conversion Ladder not available: {e}")
@@ -438,7 +438,7 @@ except ImportError as e:
 
 # 🐝 HIVE STATE PUBLISHER - Live status & Queen's voice
 try:
-    from aureon_hive_state import get_hive, QueenVoiceBridge
+    from aureon.core.aureon_hive_state import get_hive, QueenVoiceBridge
     HIVE_STATE_AVAILABLE = True
     safe_print("🐝 Hive State Publisher LOADED!")
 except ImportError as e:
@@ -448,7 +448,7 @@ except ImportError as e:
     safe_print(f"⚠️ Hive State Publisher not available: {e}")
 
 try:
-    from pure_conversion_engine import UnifiedConversionBrain, ConversionOpportunity
+    from aureon.conversion.pure_conversion_engine import UnifiedConversionBrain, ConversionOpportunity
     safe_print("🔄 Pure Conversion Engine LOADED!")
 except ImportError as e:
     safe_print(f"⚠️ Pure Conversion Engine not available: {e}")
@@ -456,7 +456,7 @@ except ImportError as e:
     ConversionOpportunity = None
 
 try:
-    from rapid_conversion_stream import RapidConversionStream
+    from aureon.conversion.rapid_conversion_stream import RapidConversionStream
     safe_print("⚡ Rapid Conversion Stream LOADED!")
 except ImportError as e:
     safe_print(f"⚠️ Rapid Conversion Stream not available: {e}")
@@ -464,7 +464,7 @@ except ImportError as e:
 
 # 🌊⚡ MOMENTUM SNOWBALL ENGINE - Wave riding + momentum tracking
 try:
-    from momentum_snowball_engine import MomentumSnowball, MomentumTracker
+    from aureon.trading.momentum_snowball_engine import MomentumSnowball, MomentumTracker
     safe_print("🌊⚡ Momentum Snowball Engine LOADED!")
     MOMENTUM_SNOWBALL_AVAILABLE = True
 except ImportError as e:
@@ -475,7 +475,7 @@ except ImportError as e:
 
 # 🏆🌀 LABYRINTH SNOWBALL ENGINE - V14 + All systems combined
 try:
-    from labyrinth_snowball_engine import LabyrinthSnowball, LabyrinthStep as _LabyrinthStep, LabyrinthState as _LabyrinthState
+    from aureon.trading.labyrinth_snowball_engine import LabyrinthSnowball, LabyrinthStep as _LabyrinthStep, LabyrinthState as _LabyrinthState
     safe_print("🏆🌀 Labyrinth Snowball Engine LOADED!")
     LABYRINTH_SNOWBALL_AVAILABLE = True
 except ImportError as e:
@@ -484,14 +484,14 @@ except ImportError as e:
     LABYRINTH_SNOWBALL_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     safe_print("🐙 Kraken Client LOADED!")
     KRAKEN_AVAILABLE = True
 except ImportError as e:
     safe_print(f"⚠️ Kraken Client not available: {e}")
     # Try direct instantiation
     try:
-        from kraken_client import KrakenClient
+        from aureon.exchanges.kraken_client import KrakenClient
         def get_kraken_client():
             return get_kraken_client()
         safe_print("🐙 Kraken Client LOADED (direct)!")
@@ -503,7 +503,7 @@ except ImportError as e:
 
 # Binance client
 try:
-    from binance_client import BinanceClient, get_binance_client
+    from aureon.exchanges.binance_client import BinanceClient, get_binance_client
     safe_print("🟡 Binance Client LOADED!")
     BINANCE_AVAILABLE = True
 except ImportError as e:
@@ -514,7 +514,7 @@ except ImportError as e:
 
 # Alpaca client
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     safe_print("🦙 Alpaca Client LOADED!")
     ALPACA_AVAILABLE = True
 except ImportError as e:
@@ -524,7 +524,7 @@ except ImportError as e:
 
 # Capital.com client
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     safe_print("🏛️ Capital.com Client LOADED!")
     CAPITAL_AVAILABLE = True
 except ImportError as e:
@@ -534,7 +534,7 @@ except ImportError as e:
 
 # Alpaca Fee Tracker - CRITICAL for preventing "death by 1000 cuts"
 try:
-    from alpaca_fee_tracker import AlpacaFeeTracker
+    from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
     safe_print("💰 Alpaca Fee Tracker LOADED!")
     FEE_TRACKER_AVAILABLE = True
 except ImportError as e:
@@ -544,13 +544,13 @@ except ImportError as e:
 
 # Additional signal sources
 try:
-    from aureon_probability_nexus import EnhancedProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
     safe_print("🔮 Probability Nexus LOADED!")
 except ImportError:
     EnhancedProbabilityNexus = None
 
 try:
-    from aureon_internal_multiverse import InternalMultiverse
+    from aureon.simulation.aureon_internal_multiverse import InternalMultiverse
     # INTERNAL_MULTIVERSE_AVAILABLE = True
     # safe_print("🌌 Internal Multiverse LOADED!")
     safe_print("🌌 Internal Multiverse DISBALED FOR SPEED!")
@@ -559,14 +559,14 @@ except ImportError:
     InternalMultiverse = None
 
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     safe_print("🧠 Miner Brain LOADED!")
 except ImportError:
     MinerBrain = None
 
 # � DYNAMIC COST ESTIMATOR - Learn from actual fees/spreads
 try:
-    from dynamic_cost_estimator import get_cost_estimator, CostEstimate
+    from aureon.portfolio.dynamic_cost_estimator import get_cost_estimator, CostEstimate
     DYNAMIC_COST_AVAILABLE = True
     safe_print("💰 Dynamic Cost Estimator LOADED!")
 except ImportError:
@@ -577,7 +577,7 @@ except ImportError:
 
 # �👑🏗️ QUEEN CODE ARCHITECT - Self-Evolution Engine
 try:
-    from queen_code_architect import QueenCodeArchitect, get_code_architect
+    from aureon.queen.queen_code_architect import QueenCodeArchitect, get_code_architect
     CODE_ARCHITECT_AVAILABLE = True
     safe_print("👑🏗️ Queen Code Architect LOADED!")
 except ImportError as e:
@@ -587,14 +587,14 @@ except ImportError as e:
     safe_print(f"⚠️ Queen Code Architect not available: {e}")
 
 try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
     safe_print("🌊 Harmonic Fusion LOADED!")
 except ImportError:
     HarmonicWaveFusion = None
 
 # 🌊🔭 GLOBAL WAVE SCANNER - A-Z / Z-A Full Market Coverage
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner, WaveState, WaveAnalysis, run_bee_sweep
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner, WaveState, WaveAnalysis, run_bee_sweep
     GLOBAL_WAVE_SCANNER_AVAILABLE = True
     safe_print("🌊🔭 Global Wave Scanner LOADED!")
 except ImportError as e:
@@ -607,7 +607,7 @@ except ImportError as e:
 
 # 🐺🦁🐜🐦 ANIMAL MOMENTUM SCANNERS - Wolf, Lion, Ants, Hummingbird
 try:
-    from aureon_animal_momentum_scanners import (
+    from aureon.scanners.aureon_animal_momentum_scanners import (
         AlpacaSwarmOrchestrator, AlpacaLoneWolf, AlpacaLionHunt,
         AlpacaArmyAnts, AlpacaHummingbird, AnimalOpportunity
     )
@@ -624,7 +624,7 @@ except ImportError as e:
     safe_print(f"⚠️ Animal Momentum Scanners not available: {e}")
 
 try:
-    from aureon_omega import Omega
+    from aureon.trading.aureon_omega import Omega
     safe_print("🔱 Omega LOADED!")
 except ImportError:
     Omega = None
@@ -633,7 +633,7 @@ except ImportError:
 # 🗺️ CRYPTO MARKET MAP - LABYRINTH PATHFINDER
 # ════════════════════════════════════════════════════════════════════════════
 try:
-    from crypto_market_map import CryptoMarketMap, SYMBOL_TO_SECTOR, CRYPTO_SECTORS
+    from aureon.data_feeds.crypto_market_map import CryptoMarketMap, SYMBOL_TO_SECTOR, CRYPTO_SECTORS
     MARKET_MAP_AVAILABLE = True
     safe_print("🗺️ Crypto Market Map LOADED!")
 except ImportError:
@@ -648,7 +648,7 @@ except ImportError:
 
 # Mycelium Neural Network (core hive intelligence)
 try:
-    from aureon_mycelium import MyceliumNetwork, Synapse, Hive
+    from aureon.core.aureon_mycelium import MyceliumNetwork, Synapse, Hive
     MYCELIUM_NETWORK_AVAILABLE = True
     safe_print("🍄 Mycelium Neural Network LOADED!")
 except ImportError:
@@ -659,7 +659,7 @@ except ImportError:
 
 # Unified Ecosystem (full orchestrator read-only)
 try:
-    from aureon_unified_ecosystem import AureonKrakenEcosystem as AureonUnifiedEcosystem, AdaptiveLearningEngine as AdaptiveLearner
+    from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem as AureonUnifiedEcosystem, AdaptiveLearningEngine as AdaptiveLearner
     UNIFIED_ECOSYSTEM_AVAILABLE = True
     safe_print("🌍 Unified Ecosystem LOADED!")
 except Exception as e:
@@ -670,7 +670,7 @@ except Exception as e:
 
 # Memory Core (spiral memory)
 try:
-    from aureon_memory_core import memory as spiral_memory
+    from aureon.core.aureon_memory_core import memory as spiral_memory
     MEMORY_CORE_AVAILABLE = True
     safe_print("🧠 Memory Core (Spiral) LOADED!")
 except ImportError:
@@ -679,7 +679,7 @@ except ImportError:
 
 # Lighthouse (consensus validation)
 try:
-    from aureon_lighthouse import LighthousePatternDetector as Lighthouse
+    from aureon.analytics.aureon_lighthouse import LighthousePatternDetector as Lighthouse
     LIGHTHOUSE_AVAILABLE = True
     safe_print("🗼 Lighthouse LOADED!")
 except Exception as e:
@@ -689,7 +689,7 @@ except Exception as e:
 
 # HNC Probability Matrix (pattern recognition)
 try:
-    from hnc_probability_matrix import HNCProbabilityIntegration as HNCProbabilityMatrix
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration as HNCProbabilityMatrix
     HNC_MATRIX_AVAILABLE = True
     safe_print("📊 HNC Probability Matrix LOADED!")
 except Exception as e:
@@ -699,7 +699,7 @@ except Exception as e:
 
 # Ultimate Intelligence (95% accuracy patterns)
 try:
-    from probability_ultimate_intelligence import get_ultimate_intelligence, ultimate_predict
+    from aureon.strategies.probability_ultimate_intelligence import get_ultimate_intelligence, ultimate_predict
     ULTIMATE_INTEL_AVAILABLE = True
     safe_print("💎 Ultimate Intelligence LOADED!")
 except ImportError:
@@ -710,7 +710,7 @@ except ImportError:
 # ⏳🔮 Timeline Oracle - 7-day future validation (branching timelines)
 # ENHANCED: 3-move ahead prediction with unity validation
 try:
-    from aureon_timeline_oracle import (
+    from aureon.intelligence.aureon_timeline_oracle import (
         TimelineOracle, TimelineBranch, TimelineAction,
         timeline_select, timeline_validate, get_timeline_oracle,
         timeline_select_3move, timeline_validate_move
@@ -726,7 +726,7 @@ except ImportError:
 
 # 📅🔮 7-Day Planner - Plans ahead & validates after each conversion
 try:
-    from aureon_7day_planner import (
+    from aureon.autonomous.aureon_7day_planner import (
         Aureon7DayPlanner, get_planner_score,
         record_labyrinth_conversion, validate_labyrinth_conversion
     )
@@ -741,7 +741,7 @@ except ImportError:
 
 # 🫒🔄 Barter Navigator - Trade through intermediaries to reach any asset
 try:
-    from aureon_barter_navigator import (
+    from aureon.trading.aureon_barter_navigator import (
         BarterNavigator, BarterPath as _BarterPath, get_navigator,
         find_barter_path, get_barter_score
     )
@@ -756,7 +756,7 @@ except ImportError:
 
 # 🍀⚛️ Luck Field Mapper - Quantum probability mapping
 try:
-    from aureon_luck_field_mapper import (
+    from aureon.utils.aureon_luck_field_mapper import (
         LuckFieldMapper, LuckFieldReading, LuckState,
         read_luck_field, is_blessed, get_luck_score
     )
@@ -771,9 +771,9 @@ except ImportError:
 
 # 👑🍄 Queen Hive Mind - The Dreaming Queen who guides all children
 try:
-    from aureon_queen_hive_mind import QueenHiveMind, QueenWisdom as _QueenWisdom, get_queen
-    from queen_harmonic_voice import QueenHarmonicVoice
-    from aureon_harmonic_signal_chain import HarmonicSignalChain, HarmonicSignal as _HarmonicSignal
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind, QueenWisdom as _QueenWisdom, get_queen
+    from aureon.queen.queen_harmonic_voice import QueenHarmonicVoice
+    from aureon.harmonic.aureon_harmonic_signal_chain import HarmonicSignalChain, HarmonicSignal as _HarmonicSignal
     QUEEN_HIVE_MIND_AVAILABLE = True
     safe_print("👑🍄 Queen Hive Mind LOADED! (The Dreaming Queen + Harmonic Voice)")
 except Exception as e:
@@ -788,7 +788,7 @@ except Exception as e:
 
 # 👑🎮 Queen Autonomous Control - SOVEREIGN AUTHORITY over ALL systems
 try:
-    from aureon_queen_autonomous_control import (
+    from aureon.autonomous.aureon_queen_autonomous_control import (
         QueenAutonomousControl, create_queen_autonomous_control,
         AutonomousAction, AutonomousDecision, SovereigntyLevel
     )
@@ -806,7 +806,7 @@ except ImportError as e:
 
 # �🎓 Queen Loss Learning System - Learns from every loss, never forgets
 try:
-    from queen_loss_learning import QueenLossLearningSystem
+    from aureon.queen.queen_loss_learning import QueenLossLearningSystem
     QUEEN_LOSS_LEARNING_AVAILABLE = True
     safe_print("👑🎓 Queen Loss Learning LOADED! (Learns from every loss)")
 except ImportError:
@@ -815,7 +815,7 @@ except ImportError:
 
 # 👑🔐🌐 Enigma Integration - Universal Translator Bridge
 try:
-    from aureon_enigma_integration import (
+    from aureon.wisdom.aureon_enigma_integration import (
         EnigmaIntegration, get_enigma_integration, wire_enigma_to_ecosystem
     )
     ENIGMA_INTEGRATION_AVAILABLE = True
@@ -828,7 +828,7 @@ except ImportError:
 
 # 👑🧠 Queen Memi Sync - CIA Declassified Intelligence Learning
 try:
-    from queen_memi_sync import QueenMemiSync, get_memi_sync
+    from aureon.queen.queen_memi_sync import QueenMemiSync, get_memi_sync
     MEMI_SYNC_AVAILABLE = True
     safe_print("👑🧠 Queen Memi Sync LOADED! (CIA Declassified Intelligence)")
 except ImportError:
@@ -838,7 +838,7 @@ except ImportError:
 
 # 🦆⚔️ QUANTUM QUACKERS COMMANDOS - Animal Army under Queen's control!
 try:
-    from aureon_commandos import (
+    from aureon.trading.aureon_commandos import (
         QuackCommandos, PrideScanner, LoneWolf, ArmyAnts, Hummingbird, LionHunt
     )
     QUACK_COMMANDOS_AVAILABLE = True
@@ -861,7 +861,7 @@ StargateNode = None
 QuantumMirror = None
 ConsciousNode = None
 # try:
-#     from aureon_stargate_protocol import (
+#     from aureon.wisdom.aureon_stargate_protocol import (
 #         StargateProtocolEngine, create_stargate_engine,
 #         StargateNode, QuantumMirror, ConsciousNode
 #     )
@@ -878,7 +878,7 @@ ConsciousNode = None
 
 # 🔮 QUANTUM MIRROR SCANNER - Reality Branch Validation
 try:
-    from aureon_quantum_mirror_scanner import (
+    from aureon.scanners.aureon_quantum_mirror_scanner import (
         QuantumMirrorScanner, create_quantum_mirror_scanner,
         RealityBranch, TimelineConvergence
     )
@@ -894,7 +894,7 @@ except ImportError as e:
 
 # 🌊 OCEAN SCANNER - Multi-Exchange Wave Detection
 try:
-    from aureon_ocean_scanner import OceanScanner
+    from aureon.scanners.aureon_ocean_scanner import OceanScanner
     OCEAN_SCANNER_AVAILABLE = True
     safe_print("🌊 Ocean Scanner LOADED! (Multi-exchange wave patterns)")
 except ImportError as e:
@@ -904,7 +904,7 @@ except ImportError as e:
 
 # 🎖️⚡ STRATEGIC WARFARE SCANNER - Sun Tzu Intelligence
 try:
-    from aureon_strategic_warfare_scanner import StrategicWarfareScanner
+    from aureon.scanners.aureon_strategic_warfare_scanner import StrategicWarfareScanner
     STRATEGIC_WARFARE_SCANNER_AVAILABLE = True
     safe_print("🎖️ Strategic Warfare Scanner LOADED! (Sun Tzu + IRA tactics)")
 except ImportError as e:
@@ -914,7 +914,7 @@ except ImportError as e:
 
 # 📊 QUEEN VOLUME HUNTER - Breakout Detection
 try:
-    from queen_volume_hunter import QueenVolumeHunter
+    from aureon.queen.queen_volume_hunter import QueenVolumeHunter
     QUEEN_VOLUME_HUNTER_AVAILABLE = True
     safe_print("📊 Queen Volume Hunter LOADED! (Breakout detection)")
 except ImportError as e:
@@ -924,7 +924,7 @@ except ImportError as e:
 
 # 🔗 GLASSNODE API - Real On-Chain Whale Intelligence
 try:
-    from glassnode_client import GlassnodeClient
+    from aureon.exchanges.glassnode_client import GlassnodeClient
     GLASSNODE_AVAILABLE = True
     safe_print("🐋 Glassnode Client LOADED!")
 except ImportError as e:
@@ -934,7 +934,7 @@ except ImportError as e:
 
 # 🐳 Unusual Whales Client (Options Flow)
 try:
-    from unusual_whales_client import UnusualWhalesClient
+    from aureon.exchanges.unusual_whales_client import UnusualWhalesClient
     UNUSUAL_WHALES_AVAILABLE = True
     safe_print("🐳 Unusual Whales Client LOADED!")
 except ImportError as e:
@@ -949,7 +949,7 @@ create_timeline_anchor_validator = None
 TimelineAnchor = None
 ValidationRecord = None
 # try:
-#     from aureon_timeline_anchor_validator import (
+#     from aureon.intelligence.aureon_timeline_anchor_validator import (
 #         TimelineAnchorValidator, create_timeline_anchor_validator,
 #         TimelineAnchor, ValidationRecord
 #     )
@@ -965,7 +965,7 @@ ValidationRecord = None
 
 # 🌍✨ PLANET SAVER INTEGRATION - Save the Planet, Free Every Soul
 try:
-    from aureon_planet_saver_integration import (
+    from aureon.bridges.aureon_planet_saver_integration import (
         PlanetSaverEngine, create_planet_saver,
         LiberationMetrics, PlanetSaverState,
         FREEDOM_GOAL_GBP, FREEDOM_GOAL_USD
@@ -1262,7 +1262,7 @@ logger = logging.getLogger(__name__)
 # WebSocket Order Router: Multi-exchange execution with circuit breakers
 
 try:
-    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
+    from aureon.harmonic.aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
     HFT_ENGINE_AVAILABLE = True
     safe_print("⚡🧬 HFT Harmonic Mycelium Engine LOADED!")
 except ImportError as e:
@@ -1272,7 +1272,7 @@ except ImportError as e:
     HFTHarmonicEngine = None
 
 try:
-    from aureon_hft_websocket_order_router import get_order_router, HFTOrderRouter
+    from aureon.data_feeds.aureon_hft_websocket_order_router import get_order_router, HFTOrderRouter
     HFT_ORDER_ROUTER_AVAILABLE = True
     safe_print("🌐⚡ HFT WebSocket Order Router LOADED!")
 except ImportError as e:
@@ -1283,7 +1283,7 @@ except ImportError as e:
 
 # Chirp Bus (kHz signaling)
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_AVAILABLE = True
 except ImportError:
     get_chirp_bus = None
@@ -3354,7 +3354,7 @@ class LiveBarterMatrix:
 
             # Broadcast a canonical WinOutcome and ThoughtBus message so all systems receive harmonically-encoded outcome
             try:
-                from aureon_queen_hive_mind import WinOutcome
+                from aureon.utils.aureon_queen_hive_mind import WinOutcome
                 win = WinOutcome.from_trade(
                     from_asset=from_asset,
                     to_asset=to_asset,
@@ -3376,7 +3376,7 @@ class LiveBarterMatrix:
 
                 # Also publish to ThoughtBus if available
                 try:
-                    from aureon_thought_bus import Thought, get_thought_bus
+                    from aureon.core.aureon_thought_bus import Thought, get_thought_bus
                     tb = get_thought_bus()
                     if tb:
                         t = Thought(source='micro_profit_labyrinth', topic=('outcome.win' if win.is_win else 'outcome.loss'), payload={'win': win.to_dict()})
@@ -5754,11 +5754,11 @@ class MicroProfitLabyrinth:
         self.animal_swarm = None
         if ANIMAL_SCANNERS_AVAILABLE and AlpacaSwarmOrchestrator and self.alpaca:
             try:
-                from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+                from aureon.bridges.aureon_alpaca_scanner_bridge import AlpacaScannerBridge
                 # Use existing fee_tracker if available, otherwise create new
                 _fee_tracker = getattr(self, "fee_tracker", None)
                 if not _fee_tracker and FEE_TRACKER_AVAILABLE:
-                    from alpaca_fee_tracker import AlpacaFeeTracker as AFT
+                    from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker as AFT
                     _fee_tracker = AFT(self.alpaca)
                 scanner_bridge = AlpacaScannerBridge(
                     alpaca_client=self.alpaca,
@@ -5985,7 +5985,7 @@ class MicroProfitLabyrinth:
                 
                 # Wire Quantum Telescope (geometric vision)
                 try:
-                    from aureon_quantum_telescope import QuantumTelescope
+                    from aureon.simulation.aureon_quantum_telescope import QuantumTelescope
                     self.quantum_telescope = QuantumTelescope()
                     self.queen.wire_quantum_telescope(self.quantum_telescope)
                 except Exception as e:
@@ -5998,7 +5998,7 @@ class MicroProfitLabyrinth:
                 # 🧠📚 Wire Historical Wisdom Systems
                 # Miner Brain (11 Civilizations)
                 try:
-                    from aureon_miner_brain import WisdomCognitionEngine, SandboxEvolution
+                    from aureon.utils.aureon_miner_brain import WisdomCognitionEngine, SandboxEvolution
                     self.wisdom_engine = WisdomCognitionEngine()  # Store on self!
                     self.queen.wire_wisdom_cognition_engine(self.wisdom_engine)
                     
@@ -6010,7 +6010,7 @@ class MicroProfitLabyrinth:
                 
                 # Wire Unified River Consciousness (The Flow)
                 try:
-                    from aureon_unified_river_consciousness import UnifiedRiverConsciousness
+                    from aureon.monitors.aureon_unified_river_consciousness import UnifiedRiverConsciousness
                     self.river_consciousness = UnifiedRiverConsciousness()
                     if hasattr(self.queen, 'wire_river_consciousness'):
                         self.queen.wire_river_consciousness(self.river_consciousness)
@@ -6020,7 +6020,7 @@ class MicroProfitLabyrinth:
                 
                 # 👑🔮 Wire Queen's Dream Engine (Monte Carlo Simulation + Validation)
                 try:
-                    from aureon_queen_dream_engine import QueenDreamEngine as _QueenDreamEngine, create_queen_dream_engine
+                    from aureon.utils.aureon_queen_dream_engine import QueenDreamEngine as _QueenDreamEngine, create_queen_dream_engine
                     self.dream_engine = create_queen_dream_engine()
                     if hasattr(self.queen, 'wire_dream_engine_simulation'):
                         self.queen.wire_dream_engine_simulation(self.dream_engine)
@@ -6031,7 +6031,7 @@ class MicroProfitLabyrinth:
 
                 # Dream Memory & Wisdom Collector
                 try:
-                    from aureon_enigma_dream import DreamMemory, WisdomCollector, EnigmaDreamer
+                    from aureon.wisdom.aureon_enigma_dream import DreamMemory, WisdomCollector, EnigmaDreamer
                     dream_memory = DreamMemory()
                     self.queen.wire_dream_memory(dream_memory)
                     
@@ -6250,7 +6250,7 @@ class MicroProfitLabyrinth:
         # Initialize outside Queen block so it works even if Queen fails
         if self.wisdom_engine is None:
             try:
-                from aureon_miner_brain import WisdomCognitionEngine
+                from aureon.utils.aureon_miner_brain import WisdomCognitionEngine
                 self.wisdom_engine = WisdomCognitionEngine()
                 safe_print(f"📚🧠 Wisdom Engine: WIRED (11 Civilizations ready)")
             except Exception as e:
@@ -6302,7 +6302,7 @@ class MicroProfitLabyrinth:
         self.orca = None
         self.orca_pending_orders = []  # Queue for Orca hunt orders
         try:
-            from aureon_orca_intelligence import get_orca
+            from aureon.bots_intelligence.aureon_orca_intelligence import get_orca
             self.orca = get_orca()
             if self.orca:
                 safe_print("🦈🔪 Orca Intelligence: WIRED (Killer Whale Profit Hunter)")
@@ -6356,7 +6356,7 @@ class MicroProfitLabyrinth:
 
         # 🍄🐋 WHALE SONAR - Start per-system sonar to send compact signals to Queen
         try:
-            from mycelium_whale_sonar import create_and_start_sonar
+            from aureon.core.mycelium_whale_sonar import create_and_start_sonar
             if self.thought_bus:
                 self.whale_sonar = create_and_start_sonar()
                 safe_print("🍄🐋 Whale Sonar: STARTED (listening for subsystem signals)")
@@ -6370,7 +6370,7 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════════════════
         self.whale_orderbook_analyzer = None
         try:
-            from aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
+            from aureon.analytics.aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
             # Poll top crypto symbols for whale walls
             whale_symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BTCUSD', 'ETHUSD']
             self.whale_orderbook_analyzer = WhaleOrderbookAnalyzer(
@@ -6390,7 +6390,7 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════════════════
         self.whale_pattern_mapper = None
         try:
-            from aureon_whale_pattern_mapper import WhalePatternMapper
+            from aureon.analytics.aureon_whale_pattern_mapper import WhalePatternMapper
             self.whale_pattern_mapper = WhalePatternMapper()
             safe_print("🐋🔮 Whale Pattern Mapper: WIRED (classifying accumulation/distribution)")
         except Exception as e:
@@ -6401,7 +6401,7 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════════════════
         self.whale_behavior_predictor = None
         try:
-            from aureon_whale_behavior_predictor import WhaleBehaviorPredictor
+            from aureon.analytics.aureon_whale_behavior_predictor import WhaleBehaviorPredictor
             elephant_mem = self.queen.elephant_brain if self.queen and hasattr(self.queen, 'elephant_brain') else None
             self.whale_behavior_predictor = WhaleBehaviorPredictor(elephant=elephant_mem)
             safe_print("🐋🔭 Whale Behavior Predictor: WIRED (predicting next whale moves)")
@@ -6415,7 +6415,7 @@ class MicroProfitLabyrinth:
         # ════════════════════════════════════════════════════════════════════════════
         self.bot_profiler = None
         try:
-            from aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES
+            from aureon.bots_intelligence.aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES
             self.bot_profiler = BotIntelligenceProfiler()
             safe_print("🤖🔍 Bot Intelligence Profiler: WIRED")
             safe_print(f"   🏢 Tracking {len(TRADING_FIRM_SIGNATURES)} trading firms (Citadel, Jane Street, etc.)")
@@ -6424,7 +6424,7 @@ class MicroProfitLabyrinth:
         
         # 🤖🔭 BOT SHAPE SCANNER - Run a background BotShapeScanner (Binance) for bot fingerprints
         try:
-            from aureon_bot_shape_scanner import BotShapeScanner
+            from aureon.bots_intelligence.aureon_bot_shape_scanner import BotShapeScanner
             # Start on a small symbol set to conserve resources
             bot_symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT']
             self.bot_shape_scanner = BotShapeScanner(symbols=bot_symbols)
@@ -6441,7 +6441,7 @@ class MicroProfitLabyrinth:
         if self.orca:
             # Wire whale integration to Orca for whale wake riding
             try:
-                import aureon_whale_integration
+                import aureon.analytics.aureon_whale_integration as aureon_whale_integration
                 if hasattr(aureon_whale_integration, 'subscribe_to_whale_predictions'):
                     def on_whale_signal(symbol, prediction):
                         if not self.orca:
@@ -9867,7 +9867,7 @@ class MicroProfitLabyrinth:
                 prediction = None
                 if hasattr(self.probability_nexus, 'predict'):
                     # Build minimal market state
-                    from aureon_probability_nexus import MarketState
+                    from aureon.bridges.aureon_probability_nexus import MarketState
                     state = MarketState(
                         timestamp=datetime.now(),
                         price=price,
@@ -12732,7 +12732,7 @@ if __name__ == "__main__":
         # 1. 🧠 NEURAL BRAIN - Backpropagation
         if self.queen and hasattr(self.queen, 'neural_brain') and self.queen.neural_brain:
             try:
-                from queen_neuron import NeuralInput
+                from aureon.queen.queen_neuron import NeuralInput
                 neural_input = NeuralInput(
                     probability_score=getattr(opportunity, 'score', 0.5),
                     wisdom_score=getattr(opportunity, 'wisdom_score', 0.5),
@@ -16667,7 +16667,7 @@ if __name__ == "__main__":
         
         # 🇮🇪🎯 IRA SNIPER EXECUTION - Celtic precision
         try:
-            from ira_sniper_mode import get_celtic_sniper, IraCelticSniper as _IraCelticSniper
+            from aureon.scanners.ira_sniper_mode import get_celtic_sniper, IraCelticSniper as _IraCelticSniper
             sniper = get_celtic_sniper(dry_run=False)
             
             # Validate entry with Celtic intelligence
@@ -20308,8 +20308,8 @@ if __name__ == "__main__":
         The Queen becomes smarter by learning from the internet!
         """
         try:
-            from queen_online_researcher import get_online_researcher, queen_research_and_enhance
-            from queen_code_architect import get_code_architect
+            from aureon.queen.queen_online_researcher import get_online_researcher, queen_research_and_enhance
+            from aureon.queen.queen_code_architect import get_code_architect
         except ImportError as e:
             logger.warning(f"👑⚠️ Online researcher not available: {e}")
             return {'status': 'error', 'reason': str(e)}
@@ -20469,7 +20469,7 @@ async def main():
     
     # Handle CIA sync commands (standalone, no trading)
     if args.sync_cia or args.cia_report or args.cia_wisdom:
-        from queen_memi_sync import get_memi_sync
+        from aureon.queen.queen_memi_sync import get_memi_sync
         memi = get_memi_sync()
         
         if args.sync_cia:

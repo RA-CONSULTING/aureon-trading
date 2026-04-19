@@ -13,7 +13,7 @@ This is the PRODUCTION predictor that combines ALL subsystems:
 - Combo patterns (up to 85.7% edge!)
 
 Usage:
-    from nexus_predictor import NexusPredictor
+    from aureon.intelligence.nexus_predictor import NexusPredictor
     
     predictor = NexusPredictor()
     predictor.update(candle)  # Feed candles
@@ -27,7 +27,7 @@ Usage:
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import numpy as np
 from datetime import datetime
 from typing import Dict, List, Optional, Any

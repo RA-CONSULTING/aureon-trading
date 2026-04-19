@@ -21,7 +21,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time
@@ -34,7 +34,7 @@ from datetime import datetime
 
 # Import existing commando classes
 try:
-    from aureon_commandos import (
+    from aureon.trading.aureon_commandos import (
         PrideScanner,
         LoneWolf,
         ArmyAnts,

@@ -17,7 +17,7 @@ Strategy:
 £76 → £100,000 in 24 hours using HISTORICAL INTELLIGENCE
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 import time
 import json
@@ -26,8 +26,8 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional
 
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
-    from probability_intelligence_matrix import ProbabilityIntelligenceMatrix
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_intelligence_matrix import ProbabilityIntelligenceMatrix
 except ImportError:
     ProbabilityUltimateIntelligence = None
     ProbabilityIntelligenceMatrix = None

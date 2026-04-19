@@ -23,7 +23,7 @@ Usage:
         print(f"Would lose ${info['potential_loss']}")
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import time
@@ -299,7 +299,7 @@ class CostBasisTracker:
             if self.clients and 'binance' in self.clients:
                 client = self.clients['binance']
             else:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 client = get_binance_client()
         except Exception as e:
             print(f"⚠️ Failed to initialize Binance client: {e}")
@@ -369,7 +369,7 @@ class CostBasisTracker:
             if self.clients and 'kraken' in self.clients:
                 client = self.clients['kraken']
             else:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 client = get_kraken_client()
 
             if getattr(client, 'dry_run', False):
@@ -479,7 +479,7 @@ class CostBasisTracker:
             if self.clients and 'alpaca' in self.clients:
                 client = self.clients['alpaca']
             else:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 client = AlpacaClient()
         except Exception as e:
             print(f"   ⚠️ Failed to initialize Alpaca client: {e}")
@@ -534,7 +534,7 @@ class CostBasisTracker:
             if self.clients and 'capital' in self.clients:
                 client = self.clients['capital']
             else:
-                from capital_client import CapitalClient
+                from aureon.exchanges.capital_client import CapitalClient
                 client = CapitalClient()
             
             if not getattr(client, 'enabled', False):
@@ -1463,7 +1463,7 @@ class CostBasisTracker:
             if self.clients and 'binance' in self.clients:
                 client = self.clients['binance']
             else:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 client = get_binance_client()
             
             account = client.account()
@@ -1541,7 +1541,7 @@ class CostBasisTracker:
             if self.clients and 'kraken' in self.clients:
                 kc = self.clients['kraken']
             else:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 kc = get_kraken_client()
 
             if not getattr(kc, 'dry_run', False):
@@ -1580,7 +1580,7 @@ class CostBasisTracker:
             if self.clients and 'binance' in self.clients:
                 bc = self.clients['binance']
             else:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 bc = get_binance_client()
 
             _safe_print("📜 Pulling Binance trade history...")
@@ -1613,7 +1613,7 @@ class CostBasisTracker:
             if self.clients and 'alpaca' in self.clients:
                 ac = self.clients['alpaca']
             else:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 ac = AlpacaClient()
 
             _safe_print("📜 Pulling Alpaca order fills...")
@@ -1800,7 +1800,7 @@ class CostBasisTracker:
             if self.clients and 'alpaca' in self.clients:
                 ac = self.clients['alpaca']
             else:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 ac = AlpacaClient()
             positions = ac.get_positions()
             for pos in (positions or []):
@@ -2091,7 +2091,7 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     
     # --- Kraken ---
     try:
-        from kraken_client import get_kraken_client
+        from aureon.exchanges.kraken_client import get_kraken_client
         kraken_client = get_kraken_client()
         if not getattr(kraken_client, 'dry_run', False):
             raw_bal = kraken_client.get_balance()
@@ -2107,7 +2107,7 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     
     # --- Binance ---
     try:
-        from binance_client import get_binance_client
+        from aureon.exchanges.binance_client import get_binance_client
         bin_client = get_binance_client()
         account = bin_client.account()
         for bal in account.get('balances', []):
@@ -2121,7 +2121,7 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     
     # --- Alpaca ---
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         alp_client = AlpacaClient()
         alpaca_positions = alp_client.get_positions() or []
         _safe_print(f"   🦙 Alpaca: {len(alpaca_positions)} positions")
@@ -2137,7 +2137,7 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     kraken_ledgers = []
     
     try:
-        from kraken_client import get_kraken_client  # type: ignore[import]
+        from aureon.exchanges.kraken_client import get_kraken_client  # type: ignore[import]
         kc = get_kraken_client()
         if not getattr(kc, 'dry_run', False):
             # Try trades first
@@ -2460,7 +2460,7 @@ def find_cost_basis_truth(tracker: 'CostBasisTracker' = None) -> dict:
     _safe_print("\n🟡 STEP 6: Reconciling Binance positions...")
     
     try:
-        from binance_client import get_binance_client  # type: ignore[import]
+        from aureon.exchanges.binance_client import get_binance_client  # type: ignore[import]
         bc = get_binance_client()
         
         for asset, qty in binance_balances.items():

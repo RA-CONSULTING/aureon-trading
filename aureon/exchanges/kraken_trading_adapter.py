@@ -11,7 +11,7 @@ This adapter tracks "positions" by monitoring balance changes.
 Gary Leckey | January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -30,14 +30,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
 try:
-    from kraken_fee_tracker import get_kraken_fee_tracker
+    from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker
     _FEE_TRACKER_AVAILABLE = True
 except ImportError:
     _FEE_TRACKER_AVAILABLE = False

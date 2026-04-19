@@ -10,7 +10,7 @@ Implements priority buckets for API requests:
 Ensures critical operations get priority during rate limit pressure.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import threading
 import logging
@@ -18,13 +18,13 @@ import os
 from enum import Enum
 from typing import Dict, Optional
 try:
-    from rate_limiter_v2 import AdaptiveRateLimiter
+    from aureon.core.rate_limiter_v2 import AdaptiveRateLimiter
 except ImportError:
     from aureon.core.rate_limiter_v2 import AdaptiveRateLimiter
 
 # Metrics (optional)
 try:
-    from metrics import global_budget_requests_total
+    from aureon.core.metrics import global_budget_requests_total
     METRICS_AVAILABLE = True
 except Exception:
     METRICS_AVAILABLE = False

@@ -53,7 +53,7 @@ Gary Leckey & GitHub Copilot | January 2026
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -112,7 +112,7 @@ def _safe_print(*args, **kwargs):
 
 # Memory Core
 try:
-    from aureon_memory_core import memory
+    from aureon.core.aureon_memory_core import memory
     MEMORY_AVAILABLE = True
 except ImportError:
     memory = None
@@ -120,7 +120,7 @@ except ImportError:
 
 # Thought Bus for Unity Consciousness
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS = ThoughtBus(persist_path="multiverse_live_thoughts.jsonl")
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
@@ -131,7 +131,7 @@ except ImportError:
 # 🌌 INTERNAL MULTIVERSE - 10-9-1-10 Architecture
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_internal_multiverse import (
+    from aureon.simulation.aureon_internal_multiverse import (
         get_multiverse, multiverse_predict, multiverse_record_outcome,
         InternalMultiverse, World, OmegaConverter, ConsensusEngine
     )
@@ -145,7 +145,7 @@ except ImportError as e:
 # 🦅 COMMANDO DOCTRINE - Zero Fear Trading
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_conversion_commando import (
+    from aureon.conversion.aureon_conversion_commando import (
         DualProfitPathDecision, DualProfitPathEvaluator,
         ZERO_FEAR, ONE_GOAL, GROWTH_AGGRESSION, COMPOUND_RATE, MIN_PROFIT_TARGET
     )
@@ -164,7 +164,7 @@ except ImportError:
 # 🧠 MINER BRAIN - Critical Thinking & Speculation
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_miner_brain import MinerBrain, SandboxEvolution
+    from aureon.utils.aureon_miner_brain import MinerBrain, SandboxEvolution
     MINER_BRAIN_AVAILABLE = True
     _miner_brain = MinerBrain() if hasattr(MinerBrain, '__init__') else None
     _safe_print("🧠 Miner Brain WIRED! (Critical thinking engine)")
@@ -176,7 +176,7 @@ except ImportError:
 # 💎 NEXUS - The Signal Hub
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_nexus import AURIS_NODES, RAINBOW_STATES, PHI, LOVE_FREQUENCY
+    from aureon.core.aureon_nexus import AURIS_NODES, RAINBOW_STATES, PHI, LOVE_FREQUENCY
     NEXUS_AVAILABLE = True
     _safe_print("💎 Nexus WIRED! (9 Auris nodes active)")
 except ImportError:
@@ -190,7 +190,7 @@ except ImportError:
 # 🍄 MYCELIUM NETWORK
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_mycelium import Synapse, Neuron, Agent, Hive, MyceliumNetwork
+    from aureon.core.aureon_mycelium import Synapse, Neuron, Agent, Hive, MyceliumNetwork
     MYCELIUM_AVAILABLE = True
     _safe_print("🍄 Mycelium Network WIRED! (Neural substrate)")
 except ImportError:
@@ -200,7 +200,7 @@ except ImportError:
 # 💰 EXCHANGE CLIENTS
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
     _safe_print("📈 Binance Client WIRED!")
 except ImportError:
@@ -208,7 +208,7 @@ except ImportError:
     BinanceClient = None
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
     _safe_print("📈 Kraken Client WIRED!")
 except ImportError:
@@ -216,7 +216,7 @@ except ImportError:
     KrakenClient = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
     _safe_print("📈 Alpaca Client WIRED!")
 except ImportError:
@@ -224,7 +224,7 @@ except ImportError:
     AlpacaClient = None
 
 try:
-    from unified_exchange_client import UnifiedExchangeClient
+    from aureon.trading.unified_exchange_client import UnifiedExchangeClient
     UNIFIED_CLIENT_AVAILABLE = True
     _safe_print("📈 Unified Exchange Client WIRED!")
 except ImportError:
@@ -235,7 +235,7 @@ except ImportError:
 # ⛏️ QUANTUM MINER INTEGRATION
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_miner import AureonMiner, KNOWN_POOLS, BINANCE_COINS
+    from aureon.utils.aureon_miner import AureonMiner, KNOWN_POOLS, BINANCE_COINS
     MINER_AVAILABLE = True
     _safe_print("⛏️ Quantum Miner WIRED!")
 except ImportError:
@@ -246,7 +246,7 @@ except ImportError:
 # 🎵 QGITA ENGINE - Quantum Auris
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_qgita import AurisState, CONFIG as QGITA_CONFIG
+    from aureon.wisdom.aureon_qgita import AurisState, CONFIG as QGITA_CONFIG
     QGITA_AVAILABLE = True
     _safe_print("🎵 QGITA Engine WIRED! (Quantum Auris)")
 except ImportError:
@@ -256,7 +256,7 @@ except ImportError:
 # 🔱 PROBABILITY INTELLIGENCE
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, ultimate_predict, record_ultimate_outcome,
         UltimatePrediction
     )
@@ -270,7 +270,7 @@ except ImportError:
 # 🎬 INCEPTION ENGINE - Russian Doll Probability Architecture
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_inception_engine import (
+    from aureon.intelligence.aureon_inception_engine import (
         InceptionEngine, get_inception_engine, inception_dive, get_limbo_insight,
         InceptionLevel, LimboProbabilityMatrix, RussianDoll
     )
@@ -286,7 +286,7 @@ except ImportError as e:
 # 🪜 CONVERSION LADDER - A-Z / Z-A Full Spectrum Sweep
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_conversion_ladder import ConversionLadder, LadderDecision
+    from aureon.conversion.aureon_conversion_ladder import ConversionLadder, LadderDecision
     LADDER_AVAILABLE = True
     _safe_print("🪜 Conversion Ladder WIRED! (A-Z / Z-A Full Spectrum Sweep)")
 except ImportError as e:
@@ -298,7 +298,7 @@ except ImportError as e:
 # 🛡️ COGNITION RUNTIME
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_cognition_runtime import MinerModule, RiskModule, ExecutionModule, AureonRuntime
+    from aureon.autonomous.aureon_cognition_runtime import MinerModule, RiskModule, ExecutionModule, AureonRuntime
     COGNITION_AVAILABLE = True
     _safe_print("🛡️ Cognition Runtime WIRED!")
 except ImportError:
@@ -308,7 +308,7 @@ except ImportError:
 # 💰 REVENUE BOARD - Real-Time Portfolio Tracker
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_revenue_board import RevenueBoard, get_revenue_board, print_revenue_board
+    from aureon.portfolio.aureon_revenue_board import RevenueBoard, get_revenue_board, print_revenue_board
     REVENUE_BOARD_AVAILABLE = True
     _safe_print("💰 Revenue Board WIRED! (Live portfolio tracking)")
 except ImportError as e:
@@ -320,7 +320,7 @@ except ImportError as e:
 # 🎯 UNIFIED SNIPER BRAIN - Million Kill Training
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from unified_sniper_brain import (
+    from aureon.trading.unified_sniper_brain import (
         UnifiedSniperBrain, UnifiedSignal, TrainedSniperParams,
         SNIPER_AVAILABLE, PENNY_AVAILABLE
     )
@@ -336,7 +336,7 @@ except ImportError as e:
 # ☘️ IRISH PATRIOT SCOUTS - Force Scouts with Celtic Intelligence
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from irish_patriot_scouts import (
+    from aureon.wisdom.irish_patriot_scouts import (
         PatriotScoutNetwork, PatriotScout, PatriotScoutDeployer,
         PATRIOT_CONFIG, PATRIOT_WISDOM
     )
@@ -351,7 +351,7 @@ except ImportError as e:
 # 🔭 QUANTUM TELESCOPE - Multi-Dimensional Geometric Analysis
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
+    from aureon.simulation.aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
     QUANTUM_TELESCOPE_AVAILABLE = True
     _safe_print("🔭 Quantum Telescope WIRED! (5 Platonic Lenses)")
 except ImportError as e:

@@ -364,7 +364,7 @@ class ThoughtBus:
         # 🐳 Auto-wire Whale Sonar for every ThoughtBus instance
         # This ensures every subsystem (Queen, Scanner, Feed) has sonar capabilities.
         try:
-            from mycelium_whale_sonar import ensure_sonar
+            from aureon.core.mycelium_whale_sonar import ensure_sonar
             try:
                 ensure_sonar(self)
             except Exception:

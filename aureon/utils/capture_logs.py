@@ -2,7 +2,7 @@
 """
 Capture detailed error logs from ecosystem startup
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import subprocess
 import sys
 import os
@@ -34,7 +34,7 @@ print("="*70)
 sys.path.insert(0, '/workspaces/aureon-trading')
 
 try:
-    from aureon_unified_ecosystem import AureonKrakenEcosystem
+    from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem
     print("✅ Import successful")
     
     # Try to initialize

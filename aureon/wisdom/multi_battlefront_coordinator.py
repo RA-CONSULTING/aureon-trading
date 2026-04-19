@@ -62,7 +62,7 @@ Gary Leckey | December 2025
 "United we stand, divided we fall - but united, we NEVER fall."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -77,7 +77,7 @@ from collections import defaultdict
 from enum import Enum
 
 # Import our warfare engines
-from guerrilla_warfare_engine import (
+from aureon.wisdom.guerrilla_warfare_engine import (
     get_guerrilla_commander,
     FlyingColumn,
     BattlefrontStatus,
@@ -85,7 +85,7 @@ from guerrilla_warfare_engine import (
     GUERRILLA_CONFIG
 )
 
-from celtic_preemptive_strike import (
+from aureon.wisdom.celtic_preemptive_strike import (
     get_preemptive_controller,
     PreemptiveSignal,
     PreemptiveSignalType
@@ -93,28 +93,28 @@ from celtic_preemptive_strike import (
 
 # Import exchange clients
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
     BinanceClient = None
 
 try:
-    from kraken_client import KrakenClient
+    from aureon.exchanges.kraken_client import KrakenClient
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
     AlpacaClient = None
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CAPITAL_AVAILABLE = False
@@ -122,7 +122,7 @@ except ImportError:
 
 # Import penny profit engine
 try:
-    from penny_profit_engine import get_penny_engine, check_penny_exit
+    from aureon.trading.penny_profit_engine import get_penny_engine, check_penny_exit
     PENNY_AVAILABLE = True
 except ImportError:
     PENNY_AVAILABLE = False

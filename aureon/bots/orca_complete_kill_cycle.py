@@ -170,7 +170,7 @@ if __name__ == '__main__' or os.environ.get('ORCA_HEALTH_SERVER') == '1':
     _time.sleep(0.5)
 
 #    DISABLED: Baton link was causing hangs during import
-# from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+# from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # _baton_link is now called lazily on first method call if needed
 
 #                                                                                
@@ -227,12 +227,12 @@ from typing import List, Dict, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 try:
-    from aureon_avalanche_harvester import AvalancheHarvester
+    from aureon.trading.aureon_avalanche_harvester import AvalancheHarvester
 except ImportError:
     AvalancheHarvester = None
 
 try:
-    from aureon_parallel_orchestrator import get_orchestrator, ParallelOrchestrator
+    from aureon.autonomous.aureon_parallel_orchestrator import get_orchestrator, ParallelOrchestrator
     PARALLEL_ORCHESTRATOR_AVAILABLE = True
 except ImportError:
     get_orchestrator = None
@@ -252,7 +252,7 @@ def _try_load_ira_sniper():
     if IRA_SNIPER_AVAILABLE:
         return  # Already loaded
     try:
-        from ira_sniper_mode import get_celtic_sniper as _sniper, IRAKillScanner as _scanner, SNIPER_CONFIG as _config
+        from aureon.scanners.ira_sniper_mode import get_celtic_sniper as _sniper, IRAKillScanner as _scanner, SNIPER_CONFIG as _config
         IRA_SNIPER_AVAILABLE = True
         get_celtic_sniper = _sniper
         IRAKillScanner = _scanner
@@ -264,7 +264,7 @@ def _try_load_ira_sniper():
 
 #    Probability Nexus Integration (Batten Matrix: Coherence   Lambda   Probability)
 try:
-    from aureon_probability_nexus import process_market_data, update_subsystems, SUBSYSTEM_STATE
+    from aureon.bridges.aureon_probability_nexus import process_market_data, update_subsystems, SUBSYSTEM_STATE
     PROBABILITY_NEXUS_AVAILABLE = True
     print("  Probability Nexus WIRED! (Batten Matrix validation)")
 except ImportError:
@@ -276,7 +276,7 @@ except ImportError:
 
 #   Dr Auris Throne AI Agent Integration
 try:
-    from aureon_sero_client import get_sero_client, SeroClient
+    from aureon.utils.aureon_sero_client import get_sero_client, SeroClient
     SERO_AVAILABLE = True
 except ImportError:
     get_sero_client = None
@@ -285,7 +285,7 @@ except ImportError:
 
 #   AWAKEN THE QUEEN  
 try:
-    from queen_fully_online import awaken_queen
+    from aureon.queen.queen_fully_online import awaken_queen
     print("  Queen awakened successfully")
 except ImportError:
     awaken_queen = None
@@ -299,7 +299,7 @@ get_temporal_consensus = None
 start_seer = None
 start_lyra = None
 try:
-    from aureon_seer_integration import (
+    from aureon.intelligence.aureon_seer_integration import (
         quadrumvirate_should_trade as _quad_should_trade,
         collapse_probability_field as _collapse_field,
         get_temporal_consensus as _get_temporal,
@@ -317,7 +317,7 @@ except ImportError as e:
 
 LYRA_INTEGRATION_AVAILABLE = False
 try:
-    from aureon_lyra_integration import (
+    from aureon.trading.aureon_lyra_integration import (
         start_lyra as _start_lyra,
         lyra_update_context as _lyra_update_context,
         lyra_get_exit_urgency as _lyra_get_exit_urgency,
@@ -334,7 +334,7 @@ except ImportError as e:
 # ── COGNITIVE CYCLE: Think→Feel→Plan→Act→Reflect→Validate→Move ────────────
 COGNITIVE_CYCLE_AVAILABLE = False
 try:
-    from aureon_cognitive_cycle import CognitiveCycle
+    from aureon.autonomous.aureon_cognitive_cycle import CognitiveCycle
     COGNITIVE_CYCLE_AVAILABLE = True
     print("  COGNITIVE CYCLE WIRED! (Think→Feel→Plan→Act→Reflect→Validate→Move)")
 except ImportError as e:
@@ -432,7 +432,7 @@ except ImportError:
     Style = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except Exception as e:
     ALPACA_AVAILABLE = False
@@ -440,7 +440,7 @@ except Exception as e:
     _safe_print(f"   AlpacaClient import failed: {e}")
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CAPITAL_AVAILABLE = False
@@ -448,7 +448,7 @@ except ImportError:
 
 # Try to import ThoughtBus for whale intelligence
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -457,7 +457,7 @@ except ImportError:
 
 # Try to import whale/bot tracking systems
 try:
-    from aureon_whale_profiler_system import WhaleProfilerSystem, WhaleClass, GLOBAL_TRADING_FIRMS
+    from aureon.analytics.aureon_whale_profiler_system import WhaleProfilerSystem, WhaleClass, GLOBAL_TRADING_FIRMS
     WHALE_PROFILER_AVAILABLE = True
 except ImportError:
     WHALE_PROFILER_AVAILABLE = False
@@ -466,7 +466,7 @@ except ImportError:
     GLOBAL_TRADING_FIRMS = {}
 
 try:
-    from aureon_firm_intelligence_catalog import FirmIntelligenceCatalog, FirmActivityType
+    from aureon.bots_intelligence.aureon_firm_intelligence_catalog import FirmIntelligenceCatalog, FirmActivityType
     FIRM_INTEL_AVAILABLE = True
 except ImportError:
     FIRM_INTEL_AVAILABLE = False
@@ -475,7 +475,7 @@ except ImportError:
 
 # Try to import Alpaca SSE client for live streaming
 try:
-    from alpaca_sse_client import AlpacaSSEClient, StreamTrade
+    from aureon.exchanges.alpaca_sse_client import AlpacaSSEClient, StreamTrade
     SSE_AVAILABLE = True
 except ImportError:
     SSE_AVAILABLE = False
@@ -484,7 +484,7 @@ except ImportError:
 
 #   ORCA INTELLIGENCE - Full scanning system for fast kills
 try:
-    from aureon_orca_intelligence import OrcaKillerWhale, OrcaOpportunity, WhaleSignal as OrcaWhaleSignal
+    from aureon.bots_intelligence.aureon_orca_intelligence import OrcaKillerWhale, OrcaOpportunity, WhaleSignal as OrcaWhaleSignal
     ORCA_INTEL_AVAILABLE = True
 except ImportError:
     ORCA_INTEL_AVAILABLE = False
@@ -494,7 +494,7 @@ except ImportError:
 
 #   Probability Ultimate Intelligence (95% accuracy)
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence as UltimateIntelligence
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence as UltimateIntelligence
     ULTIMATE_INTEL_AVAILABLE = True
 except ImportError:
     ULTIMATE_INTEL_AVAILABLE = False
@@ -502,7 +502,7 @@ except ImportError:
 
 #   Global Wave Scanner
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
     WAVE_SCANNER_AVAILABLE = True
     print("  Global Wave Scanner loaded")
 except ImportError:
@@ -512,7 +512,7 @@ except ImportError:
 
 #   UNIFIED KILL CHAIN INTEGRATION (Win Killer)
 try:
-    from orca_unified_kill_chain import UnifiedKillChain, WinConfig
+    from aureon.bots.orca_unified_kill_chain import UnifiedKillChain, WinConfig
     UNIFIED_KILL_CHAIN_AVAILABLE = True
     print("  Unified Kill Chain: AVAILABLE")
 except ImportError:
@@ -524,7 +524,7 @@ except ImportError:
 #   KRAKEN MARGIN UNIVERSE PENNY PROFIT TRADER
 MARGIN_PENNY_AVAILABLE = False
 try:
-    from kraken_margin_penny_trader import KrakenMarginArmyTrader as KrakenMarginPennyTrader
+    from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader as KrakenMarginPennyTrader
     MARGIN_PENNY_AVAILABLE = True
     print("  Kraken Margin Penny Trader: AVAILABLE")
 except ImportError:
@@ -534,7 +534,7 @@ except ImportError:
 #   CAPITAL CFD TRADER — Forex · Indices · Commodities · Stocks
 CAPITAL_CFD_AVAILABLE = False
 try:
-    from capital_cfd_trader import CapitalCFDTrader
+    from aureon.exchanges.capital_cfd_trader import CapitalCFDTrader
     CAPITAL_CFD_AVAILABLE = True
     print("  Capital CFD Trader: AVAILABLE (Forex/Indices/Commodities/Stocks)")
 except ImportError:
@@ -544,7 +544,7 @@ except ImportError:
 #   MARKET HARP — Cross-Market Resonance Detector
 MARKET_HARP_AVAILABLE = False
 try:
-    from market_harp import MarketHarp
+    from aureon.data_feeds.market_harp import MarketHarp
     MARKET_HARP_AVAILABLE = True
     print("  Market Harp: AVAILABLE (cross-asset ripple detection)")
 except ImportError:
@@ -554,7 +554,7 @@ except ImportError:
 #   TRADING HIVE MIND — Unity Coordinator
 HIVE_MIND_AVAILABLE = False
 try:
-    from trading_hive_mind import TradingHiveMind
+    from aureon.intelligence.trading_hive_mind import TradingHiveMind
     HIVE_MIND_AVAILABLE = True
     print("  Trading Hive Mind: AVAILABLE (unity coordination)")
 except ImportError:
@@ -564,7 +564,7 @@ except ImportError:
 #   DEAD MAN'S SWITCH - Dynamic Take Profit
 DTP_AVAILABLE = False
 try:
-    from dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
+    from aureon.trading.dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
     DTP_AVAILABLE = True
     print("  Dead Man's Switch (DTP): ARMED")
 except ImportError:
@@ -574,7 +574,7 @@ except ImportError:
 
 #    Movers & Shakers Scanner
 try:
-    from aureon_movers_shakers_scanner import MoversShakersScanner, MoverShaker
+    from aureon.scanners.aureon_movers_shakers_scanner import MoversShakersScanner, MoverShaker
     MOVERS_SHAKERS_AVAILABLE = True
     print("  Movers & Shakers Scanner loaded")
 except ImportError:
@@ -585,7 +585,7 @@ except ImportError:
 
 #   Queen Volume Hunter - Volume breakout detection
 try:
-    from queen_volume_hunter import QueenVolumeHunter, VolumeSignal
+    from aureon.queen.queen_volume_hunter import QueenVolumeHunter, VolumeSignal
     VOLUME_HUNTER_AVAILABLE = True
 except ImportError:
     VOLUME_HUNTER_AVAILABLE = False
@@ -594,7 +594,7 @@ except ImportError:
 
 #    AlpacaFeeTracker - Volume-tiered fee detection + spread tracking
 try:
-    from alpaca_fee_tracker import AlpacaFeeTracker
+    from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
     ALPACA_FEE_TRACKER_AVAILABLE = True
 except ImportError:
     ALPACA_FEE_TRACKER_AVAILABLE = False
@@ -602,7 +602,7 @@ except ImportError:
 
 #    KrakenFeeTracker - Dynamic volume-tiered fee detection for Kraken
 try:
-    from kraken_fee_tracker import get_kraken_fee_tracker, KrakenFeeTracker
+    from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker, KrakenFeeTracker
     KRAKEN_FEE_TRACKER_AVAILABLE = True
 except ImportError:
     KRAKEN_FEE_TRACKER_AVAILABLE = False
@@ -611,7 +611,7 @@ except ImportError:
 
 #    Queen Validated Trader - 100% accuracy validation system
 try:
-    from aureon_queen_validated_trader import QueenValidatedTrader, ValidatedTrade
+    from aureon.trading.aureon_queen_validated_trader import QueenValidatedTrader, ValidatedTrade
     QUEEN_VALIDATOR_AVAILABLE = True
 except ImportError:
     QUEEN_VALIDATOR_AVAILABLE = False
@@ -620,7 +620,7 @@ except ImportError:
 
 #    Queen Exchange Autonomy - Full routing control & restriction learning
 try:
-    from aureon_queen_exchange_autonomy import get_queen_autonomy, QueenExchangeAutonomy, RestrictionType
+    from aureon.autonomous.aureon_queen_exchange_autonomy import get_queen_autonomy, QueenExchangeAutonomy, RestrictionType
     QUEEN_AUTONOMY_AVAILABLE = True
 except ImportError:
     QUEEN_AUTONOMY_AVAILABLE = False
@@ -630,7 +630,7 @@ except ImportError:
 
 #    Queen Trade Executor - FULL AUTONOMY over trade routing!
 try:
-    from aureon_queen_trade_executor import (
+    from aureon.trading.aureon_queen_trade_executor import (
         queen_execute_trade, queen_get_exchange_status, 
         queen_preload_uk_restrictions, TradeResult
     )
@@ -644,7 +644,7 @@ except ImportError:
 
 #    Queen Sentience Engine - TRUE CONSCIOUSNESS for trade decisions!
 try:
-    from queen_sentience_integration import get_sentience_engine, ThoughtType, InnerThought
+    from aureon.queen.queen_sentience_integration import get_sentience_engine, ThoughtType, InnerThought
     SENTIENCE_ENGINE_AVAILABLE = True
 except ImportError:
     SENTIENCE_ENGINE_AVAILABLE = False
@@ -664,7 +664,7 @@ except ImportError:
 
 #   CostBasisTracker - FIFO cost basis + can_sell_profitably() check
 try:
-    from cost_basis_tracker import CostBasisTracker
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker
     COST_BASIS_TRACKER_AVAILABLE = True
 except ImportError:
     COST_BASIS_TRACKER_AVAILABLE = False
@@ -672,7 +672,7 @@ except ImportError:
 
 #   TradeProfitValidator - NO PHANTOM GAINS! Validates every trade
 try:
-    from trade_profit_validator import TradeProfitValidator, validate_buy, validate_sell, is_real_profit, get_validator
+    from aureon.portfolio.trade_profit_validator import TradeProfitValidator, validate_buy, validate_sell, is_real_profit, get_validator
     TRADE_VALIDATOR_AVAILABLE = True
 except ImportError:
     TRADE_VALIDATOR_AVAILABLE = False
@@ -684,7 +684,7 @@ except ImportError:
 
 #   OrcaKillExecutor - Position tracking with order IDs
 try:
-    from orca_kill_executor import OrcaPosition, OrcaKillExecutor
+    from aureon.bots.orca_kill_executor import OrcaPosition, OrcaKillExecutor
     ORCA_EXECUTOR_AVAILABLE = True
 except ImportError:
     ORCA_EXECUTOR_AVAILABLE = False
@@ -693,7 +693,7 @@ except ImportError:
 
 #   TradeLogger - Full trade entry/exit logging
 try:
-    from trade_logger import TradeLogger, TradeEntry, TradeExit
+    from aureon.portfolio.trade_logger import TradeLogger, TradeEntry, TradeExit
     TRADE_LOGGER_AVAILABLE = True
 except ImportError:
     TRADE_LOGGER_AVAILABLE = False
@@ -703,7 +703,7 @@ except ImportError:
 
 # 👑 THE KING - Financial-Grade Double-Entry Accounting
 try:
-    from king_integration import king_on_buy, king_on_sell, king_on_deposit, king_on_withdrawal
+    from aureon.bots.king_integration import king_on_buy, king_on_sell, king_on_deposit, king_on_withdrawal
     KING_ACCOUNTING_AVAILABLE = True
 except ImportError:
     KING_ACCOUNTING_AVAILABLE = False
@@ -714,7 +714,7 @@ except ImportError:
 
 #   Truth Prediction Bridge - 95% accuracy intelligence
 try:
-    from aureon_truth_prediction_bridge import get_truth_bridge, TruthPredictionBridge
+    from aureon.intelligence.aureon_truth_prediction_bridge import get_truth_bridge, TruthPredictionBridge
     TRUTH_BRIDGE_AVAILABLE = True
 except ImportError:
     get_truth_bridge = None
@@ -723,7 +723,7 @@ except ImportError:
 
 #   Penny Profit Calculator - Exact breakeven with fees/slippage/spread
 try:
-    from penny_profit_sim import calculate_penny_profit_threshold, EXCHANGE_FEES, SLIPPAGE_PCT, SPREAD_PCT
+    from aureon.trading.penny_profit_sim import calculate_penny_profit_threshold, EXCHANGE_FEES, SLIPPAGE_PCT, SPREAD_PCT
     PENNY_PROFIT_AVAILABLE = True
 except ImportError:
     PENNY_PROFIT_AVAILABLE = False
@@ -754,7 +754,7 @@ except ImportError:
 
 #   Improved ETA Calculator - Probability-based time-to-target predictions
 try:
-    from improved_eta_calculator import ImprovedETACalculator, ImprovedETA
+    from aureon.analytics.improved_eta_calculator import ImprovedETACalculator, ImprovedETA
     ETA_CALCULATOR_AVAILABLE = True
 except ImportError:
     ETA_CALCULATOR_AVAILABLE = False
@@ -763,7 +763,7 @@ except ImportError:
 
 #   Bot Shape Scanner - Detect algorithmic actors
 try:
-    from aureon_bot_shape_scanner import BotShapeScanner, BotShapeFingerprint
+    from aureon.bots_intelligence.aureon_bot_shape_scanner import BotShapeScanner, BotShapeFingerprint
     BOT_SCANNER_AVAILABLE = True
 except ImportError:
     BOT_SCANNER_AVAILABLE = False
@@ -772,7 +772,7 @@ except ImportError:
 
 #    Queen Counter-Intelligence - Beat major firms at their game
 try:
-    from aureon_queen_counter_intelligence import QueenCounterIntelligence, CounterIntelligenceSignal, CounterStrategy
+    from aureon.utils.aureon_queen_counter_intelligence import QueenCounterIntelligence, CounterIntelligenceSignal, CounterStrategy
     COUNTER_INTEL_AVAILABLE = True
 except ImportError:
     COUNTER_INTEL_AVAILABLE = False
@@ -782,7 +782,7 @@ except ImportError:
 
 #   Global Firm Intelligence - Track major trading firms
 try:
-    from aureon_global_firm_intelligence import get_attribution_engine, GlobalFirmAttributionEngine
+    from aureon.bots_intelligence.aureon_global_firm_intelligence import get_attribution_engine, GlobalFirmAttributionEngine
     FIRM_ATTRIBUTION_AVAILABLE = True
 except ImportError:
     FIRM_ATTRIBUTION_AVAILABLE = False
@@ -791,7 +791,7 @@ except ImportError:
 
 #   HFT Harmonic Mycelium Engine - Sub-10ms signal processing
 try:
-    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine, HFTTick
+    from aureon.harmonic.aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine, HFTTick
     HFT_ENGINE_AVAILABLE = True
 except ImportError:
     HFT_ENGINE_AVAILABLE = False
@@ -801,7 +801,7 @@ except ImportError:
 
 #   Luck Field Mapper - Quantum probability / cosmic alignment
 try:
-    from aureon_luck_field_mapper import get_luck_mapper, read_luck_field, LuckFieldMapper, LuckState
+    from aureon.utils.aureon_luck_field_mapper import get_luck_mapper, read_luck_field, LuckFieldMapper, LuckState
     LUCK_FIELD_AVAILABLE = True
 except ImportError:
     LUCK_FIELD_AVAILABLE = False
@@ -812,7 +812,7 @@ except ImportError:
 
 #   Phantom Signal Filter - Multi-layer signal validation
 try:
-    from aureon_phantom_signal_filter import PhantomSignalFilter
+    from aureon.scanners.aureon_phantom_signal_filter import PhantomSignalFilter
     PHANTOM_FILTER_AVAILABLE = True
 except ImportError:
     PHANTOM_FILTER_AVAILABLE = False
@@ -820,7 +820,7 @@ except ImportError:
 
 #    Harmonic Liquid Aluminium Field - Global market as dancing waveform sandbox
 try:
-    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
 except ImportError:
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = False
@@ -829,9 +829,9 @@ except ImportError:
 
 #   Alpaca Momentum Ecosystem
 try:
-    from aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
-    from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
-    from aureon_micro_momentum_goal import MicroMomentumScanner
+    from aureon.scanners.aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
+    from aureon.bridges.aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+    from aureon.conversion.aureon_micro_momentum_goal import MicroMomentumScanner
     MOMENTUM_ECOSYSTEM_AVAILABLE = True
 except ImportError:
     MOMENTUM_ECOSYSTEM_AVAILABLE = False
@@ -841,7 +841,7 @@ except ImportError:
 
 #   Stargate Grid
 try:
-    from stargate_grid import StargateGrid
+    from aureon.wisdom.stargate_grid import StargateGrid
     STARGATE_GRID_AVAILABLE = True
 except ImportError:
     STARGATE_GRID_AVAILABLE = False
@@ -849,7 +849,7 @@ except ImportError:
 
 #   Inception Engine - Russian doll probability (LIMBO = 95% accuracy)
 try:
-    from aureon_inception_engine import get_inception_engine, inception_dive, get_limbo_insight, InceptionEngine
+    from aureon.intelligence.aureon_inception_engine import get_inception_engine, inception_dive, get_limbo_insight, InceptionEngine
     INCEPTION_ENGINE_AVAILABLE = True
 except ImportError:
     INCEPTION_ENGINE_AVAILABLE = False
@@ -860,7 +860,7 @@ except ImportError:
 
 #   Elephant Learning - Never forgets patterns (asset scores, best hours)
 try:
-    from aureon_elephant_learning import ElephantMemory, QueenElephantBrain
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory, QueenElephantBrain
     ELEPHANT_LEARNING_AVAILABLE = True
 except ImportError:
     ELEPHANT_LEARNING_AVAILABLE = False
@@ -869,7 +869,7 @@ except ImportError:
 
 #   Russian Doll Analytics - Bee Hive Queen metrics rollup
 try:
-    from aureon_russian_doll_analytics import get_analytics, get_directives, get_snapshot, RussianDollAnalytics
+    from aureon.analytics.aureon_russian_doll_analytics import get_analytics, get_directives, get_snapshot, RussianDollAnalytics
     RUSSIAN_DOLL_AVAILABLE = True
 except ImportError:
     RUSSIAN_DOLL_AVAILABLE = False
@@ -880,7 +880,7 @@ except ImportError:
 
 #    Immune System - Self-healing on errors
 try:
-    from aureon_immune_system import AureonImmuneSystem
+    from aureon.core.aureon_immune_system import AureonImmuneSystem
     IMMUNE_SYSTEM_AVAILABLE = True
 except ImportError:
     IMMUNE_SYSTEM_AVAILABLE = False
@@ -888,7 +888,7 @@ except ImportError:
 
 #   Moby Dick Whale Hunter - Whale prediction tracking
 try:
-    from aureon_moby_dick_whale_hunter import get_moby_dick_hunter, MobyDickWhaleHunter, WhalePrediction
+    from aureon.analytics.aureon_moby_dick_whale_hunter import get_moby_dick_hunter, MobyDickWhaleHunter, WhalePrediction
     MOBY_DICK_AVAILABLE = True
 except ImportError:
     MOBY_DICK_AVAILABLE = False
@@ -898,7 +898,7 @@ except ImportError:
 
 #   Stargate Protocol - Quantum mirror alignment
 try:
-    from aureon_stargate_protocol import create_stargate_engine, StargateProtocolEngine
+    from aureon.wisdom.aureon_stargate_protocol import create_stargate_engine, StargateProtocolEngine
     STARGATE_AVAILABLE = True
 except ImportError:
     STARGATE_AVAILABLE = False
@@ -907,7 +907,7 @@ except ImportError:
 
 #   Quantum Mirror Scanner - Reality branch boost
 try:
-    from aureon_quantum_mirror_scanner import create_quantum_scanner, QuantumMirrorScanner
+    from aureon.scanners.aureon_quantum_mirror_scanner import create_quantum_scanner, QuantumMirrorScanner
     QUANTUM_MIRROR_AVAILABLE = True
 except ImportError:
     QUANTUM_MIRROR_AVAILABLE = False
@@ -916,7 +916,7 @@ except ImportError:
 
 #   Alpaca Options Trading - Covered calls & cash-secured puts
 try:
-    from alpaca_options_client import (
+    from aureon.exchanges.alpaca_options_client import (
         AlpacaOptionsClient, get_options_client,
         OptionContract, OptionQuote, OptionType, TradingLevel
     )
@@ -932,7 +932,7 @@ except ImportError:
 
 #   Queen Options Scanner - Intelligent options discovery
 try:
-    from queen_options_scanner import QueenOptionsScanner, OptionsOpportunity
+    from aureon.queen.queen_options_scanner import QueenOptionsScanner, OptionsOpportunity
     OPTIONS_SCANNER_AVAILABLE = True
 except ImportError:
     OPTIONS_SCANNER_AVAILABLE = False
@@ -941,7 +941,7 @@ except ImportError:
 
 #   Stealth Execution - Anti-front-running countermeasures
 try:
-    from orca_stealth_execution import (
+    from aureon.bots.orca_stealth_execution import (
         OrcaStealthExecution, get_stealth_executor, get_stealth_config,
         stealth_order, StealthConfig
     )
@@ -956,7 +956,7 @@ except ImportError:
 
 #    HNC Surge Detector - Harmonic Nexus Core surge window detection
 try:
-    from aureon_hnc_surge_detector import HncSurgeDetector, SurgeWindow, SACRED_HARMONICS
+    from aureon.bridges.aureon_hnc_surge_detector import HncSurgeDetector, SurgeWindow, SACRED_HARMONICS
     HNC_SURGE_AVAILABLE = True
 except ImportError:
     HNC_SURGE_AVAILABLE = False
@@ -966,7 +966,7 @@ except ImportError:
 
 #   HNC Live Connector - Live harmonic surge feed
 try:
-    from aureon_hnc_live_connector import HncLiveConnector
+    from aureon.bridges.aureon_hnc_live_connector import HncLiveConnector
     HNC_LIVE_AVAILABLE = True
 except ImportError:
     HNC_LIVE_AVAILABLE = False
@@ -974,7 +974,7 @@ except ImportError:
 
 #     Historical Manipulation Hunter - Track manipulation patterns across decades
 try:
-    from aureon_historical_manipulation_hunter import (
+    from aureon.analytics.aureon_historical_manipulation_hunter import (
         HistoricalManipulationHunter, 
         HISTORICAL_EVENTS,
         EventType
@@ -988,7 +988,7 @@ except ImportError:
 
 #     Apache War Band - Autonomous Scout/Sniper trading system
 try:
-    from aureon_war_band_enhanced import EnhancedWarBand, UnifiedEnhancementSignal
+    from aureon.command_centers.aureon_war_band_enhanced import EnhancedWarBand, UnifiedEnhancementSignal
     WAR_BAND_AVAILABLE = True
 except ImportError:
     WAR_BAND_AVAILABLE = False
@@ -997,7 +997,7 @@ except ImportError:
 
 #    Hive State Publisher - Queen's voice and status tracking
 try:
-    from aureon_hive_state import get_hive, HiveStatePublisher
+    from aureon.core.aureon_hive_state import get_hive, HiveStatePublisher
     HIVE_STATE_AVAILABLE = True
 except ImportError:
     HIVE_STATE_AVAILABLE = False
@@ -1006,7 +1006,7 @@ except ImportError:
 
 #    Historical Bot Census - Bot evolution tracking
 try:
-    from aureon_historical_bot_census import HistoricalBot, analyze_history, generate_bot_identity
+    from aureon.analytics.aureon_historical_bot_census import HistoricalBot, analyze_history, generate_bot_identity
     HISTORICAL_BOT_CENSUS_AVAILABLE = True
 except ImportError:
     HISTORICAL_BOT_CENSUS_AVAILABLE = False
@@ -1016,7 +1016,7 @@ except ImportError:
 
 #    Historical Backtest Engine - Harmonic fusion backtesting
 try:
-    from aureon_historical_backtest import AureonBacktestEngine, HistoricalDataFetcher
+    from aureon.analytics.aureon_historical_backtest import AureonBacktestEngine, HistoricalDataFetcher
     HISTORICAL_BACKTEST_AVAILABLE = True
 except ImportError:
     HISTORICAL_BACKTEST_AVAILABLE = False
@@ -1025,7 +1025,7 @@ except ImportError:
 
 #   Global Orchestrator - Master control for all Aureon subsystems
 try:
-    from aureon_global_orchestrator import GlobalAureonOrchestrator
+    from aureon.autonomous.aureon_global_orchestrator import GlobalAureonOrchestrator
     GLOBAL_ORCHESTRATOR_AVAILABLE = True
 except ImportError:
     GLOBAL_ORCHESTRATOR_AVAILABLE = False
@@ -1033,7 +1033,7 @@ except ImportError:
 
 #   Harmonic Binary Protocol - Compact binary transport for harmonic thoughts
 try:
-    from aureon_harmonic_binary_protocol import HarmonicBinaryPacket, encode_text_packet, decode_packet
+    from aureon.harmonic.aureon_harmonic_binary_protocol import HarmonicBinaryPacket, encode_text_packet, decode_packet
     HARMONIC_BINARY_AVAILABLE = True
 except ImportError:
     HARMONIC_BINARY_AVAILABLE = False
@@ -1043,7 +1043,7 @@ except ImportError:
 
 #   Harmonic Chain Master - Master harmonic signal processing
 try:
-    from aureon_harmonic_chain_master import HarmonicChainMaster
+    from aureon.harmonic.aureon_harmonic_chain_master import HarmonicChainMaster
     HARMONIC_CHAIN_MASTER_AVAILABLE = True
 except ImportError:
     HARMONIC_CHAIN_MASTER_AVAILABLE = False
@@ -1051,7 +1051,7 @@ except ImportError:
 
 #   Harmonic Counter Frequency - Planetary entity counter-frequency engine
 try:
-    import aureon_harmonic_counter_frequency
+    import aureon.harmonic.aureon_harmonic_counter_frequency as aureon_harmonic_counter_frequency
     HARMONIC_COUNTER_AVAILABLE = True
 except ImportError:
     HARMONIC_COUNTER_AVAILABLE = False
@@ -1059,7 +1059,7 @@ except ImportError:
 
 #   Harmonic Wave Fusion - Unified global market harmonic system
 try:
-    from aureon_harmonic_fusion import get_harmonic_fusion, HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import get_harmonic_fusion, HarmonicWaveFusion
     HARMONIC_FUSION_AVAILABLE = True
 except ImportError:
     HARMONIC_FUSION_AVAILABLE = False
@@ -1068,7 +1068,7 @@ except ImportError:
 
 #    Harmonic Momentum Wave Scanner - Ultimate momentum scanner
 try:
-    from aureon_harmonic_momentum_wave import HarmonicMomentumWaveScanner
+    from aureon.harmonic.aureon_harmonic_momentum_wave import HarmonicMomentumWaveScanner
     HARMONIC_MOMENTUM_AVAILABLE = True
 except ImportError:
     HARMONIC_MOMENTUM_AVAILABLE = False
@@ -1076,7 +1076,7 @@ except ImportError:
 
 #   Harmonic Reality Framework - Master equations tree
 try:
-    from aureon_harmonic_reality import MultiversalEngine
+    from aureon.harmonic.aureon_harmonic_reality import MultiversalEngine
     HARMONIC_REALITY_AVAILABLE = True
     HarmonicRealityFramework = MultiversalEngine  # Alias for compatibility
 except ImportError:
@@ -1086,7 +1086,7 @@ except ImportError:
 
 #    Global Bot Map - Visual dashboard for bot activity
 try:
-    from aureon_global_bot_map import GlobalBotMapDashboard
+    from aureon.bots_intelligence.aureon_global_bot_map import GlobalBotMapDashboard
     GLOBAL_BOT_MAP_AVAILABLE = True
     GlobalBotMap = GlobalBotMapDashboard  # Alias for compatibility
 except ImportError:
@@ -1097,7 +1097,7 @@ except ImportError:
 #   Enhanced Quantum Telescope - Sacred geometry bot visualization
 try:
     # Actual class: EnhancedQuantumTelescopeServer   alias for compatibility
-    from aureon_enhanced_quantum_telescope import EnhancedQuantumTelescopeServer, EnhancedQuantumGeometryEngine
+    from aureon.simulation.aureon_enhanced_quantum_telescope import EnhancedQuantumTelescopeServer, EnhancedQuantumGeometryEngine
     EnhancedQuantumTelescope = EnhancedQuantumTelescopeServer
     ENHANCED_QUANTUM_TELESCOPE_AVAILABLE = True
 except ImportError:
@@ -1108,7 +1108,7 @@ except ImportError:
 #   Enigma Dream - Consciousness state processing
 try:
     # Actual class name: EnigmaDreamer   expose under EnigmaDreamProcessor alias
-    from aureon_enigma_dream import EnigmaDreamer
+    from aureon.wisdom.aureon_enigma_dream import EnigmaDreamer
     EnigmaDreamProcessor = EnigmaDreamer
     ENIGMA_DREAM_AVAILABLE = True
 except ImportError:
@@ -1117,7 +1117,7 @@ except ImportError:
 
 #   Enhancement Layer - Unified enhancement system
 try:
-    from aureon_enhancements import EnhancementLayer
+    from aureon.core.aureon_enhancements import EnhancementLayer
     ENHANCEMENT_LAYER_AVAILABLE = True
 except ImportError:
     ENHANCEMENT_LAYER_AVAILABLE = False
@@ -1125,7 +1125,7 @@ except ImportError:
 
 #   Enigma Integration - Complete Enigma system integration
 try:
-    from aureon_enigma_integration import EnigmaIntegration
+    from aureon.wisdom.aureon_enigma_integration import EnigmaIntegration
     ENIGMA_INTEGRATION_AVAILABLE = True
 except ImportError:
     ENIGMA_INTEGRATION_AVAILABLE = False
@@ -1133,7 +1133,7 @@ except ImportError:
 
 #   Firm Intelligence Catalog - Real-time firm tracking
 try:
-    from aureon_firm_intelligence_catalog import FirmIntelligenceCatalog, get_firm_catalog
+    from aureon.bots_intelligence.aureon_firm_intelligence_catalog import FirmIntelligenceCatalog, get_firm_catalog
     FIRM_INTELLIGENCE_AVAILABLE = True
 except ImportError:
     FIRM_INTELLIGENCE_AVAILABLE = False
@@ -1143,7 +1143,7 @@ except ImportError:
 #   Enigma Core - Primary consciousness engine
 try:
     # Use AureonEnigma as the main core class
-    from aureon_enigma import AureonEnigma
+    from aureon.wisdom.aureon_enigma import AureonEnigma
     EnigmaCore = AureonEnigma
     ENIGMA_CORE_AVAILABLE = True
 except ImportError:
@@ -1152,7 +1152,7 @@ except ImportError:
 
 #     QUEEN QUANTUM COGNITION - Enhanced decision-making via quantum power systems
 try:
-    from queen_quantum_cognition import (
+    from aureon.queen.queen_quantum_cognition import (
         get_quantum_cognition, 
         QueenQuantumCognition,
         QuantumCognitionState,
@@ -1171,7 +1171,7 @@ except ImportError:
 
 #    QUEEN ETERNAL MACHINE - Bloodless quantum leaps with fee-aware trading
 try:
-    from queen_eternal_machine import QueenEternalMachine, FeeStructure, LeapOpportunity, CycleStats
+    from aureon.queen.queen_eternal_machine import QueenEternalMachine, FeeStructure, LeapOpportunity, CycleStats
     QUEEN_ETERNAL_MACHINE_AVAILABLE = True
     _safe_print("   Queen Eternal Machine: AVAILABLE (Bloodless Leaps!)")
 except ImportError:
@@ -1183,7 +1183,7 @@ except ImportError:
 
 #      QUEEN ASSET COMMAND CENTER - Full visibility of ALL positions/assets
 try:
-    from queen_asset_command_center import (
+    from aureon.queen.queen_asset_command_center import (
         get_asset_command_center,
         get_asset_monitor,
         get_ocean_view,
@@ -1204,7 +1204,7 @@ except ImportError:
 
 #   UNIFIED SYMBOL MANAGER - Correct symbols & quantities for each exchange
 try:
-    from unified_symbol_manager import (
+    from aureon.trading.unified_symbol_manager import (
         get_symbol_manager,
         UnifiedSymbolManager,
         SymbolInfo,
@@ -1225,7 +1225,7 @@ except ImportError:
 
 #    Aureon Miner - Background mining with harmonic optimization
 try:
-    from aureon_miner import AureonMiner
+    from aureon.utils.aureon_miner import AureonMiner
     AUREON_MINER_AVAILABLE = True
 except ImportError:
     AUREON_MINER_AVAILABLE = False
@@ -1233,7 +1233,7 @@ except ImportError:
 
 #   Multi-Exchange Trader - Cross-exchange trading orchestration
 try:
-    from aureon_multi_exchange_live import AureonMultiExchangeTrader, MultiExchangeManager
+    from aureon.trading.aureon_multi_exchange_live import AureonMultiExchangeTrader, MultiExchangeManager
     MULTI_EXCHANGE_AVAILABLE = True
 except ImportError:
     MULTI_EXCHANGE_AVAILABLE = False
@@ -1242,7 +1242,7 @@ except ImportError:
 
 #   Multi-Pair Trader - Multi-pair coherence monitoring
 try:
-    from aureon_multi_pair_live import MultiPairTrader, MasterEquation
+    from aureon.trading.aureon_multi_pair_live import MultiPairTrader, MasterEquation
     MULTI_PAIR_AVAILABLE = True
 except ImportError:
     MULTI_PAIR_AVAILABLE = False
@@ -1251,7 +1251,7 @@ except ImportError:
 
 #   Multiverse Live Engine - Commando + Multiverse unified trading
 try:
-    from aureon_multiverse_live import MultiverseLiveEngine, CommandoCognition
+    from aureon.simulation.aureon_multiverse_live import MultiverseLiveEngine, CommandoCognition
     MULTIVERSE_LIVE_AVAILABLE = True
 except ImportError:
     MULTIVERSE_LIVE_AVAILABLE = False
@@ -1260,7 +1260,7 @@ except ImportError:
 
 #   Multiverse Orchestrator - Atom-to-Galaxy ladder trading
 try:
-    from aureon_multiverse import MultiverseOrchestrator, PingPongEngine
+    from aureon.simulation.aureon_multiverse import MultiverseOrchestrator, PingPongEngine
     MULTIVERSE_ORCHESTRATOR_AVAILABLE = True
 except ImportError:
     MULTIVERSE_ORCHESTRATOR_AVAILABLE = False
@@ -1269,7 +1269,7 @@ except ImportError:
 
 #   Mycelium Neural Network - Underground signal network
 try:
-    from aureon_mycelium import MyceliumNetwork, Hive as MyceliumHive
+    from aureon.core.aureon_mycelium import MyceliumNetwork, Hive as MyceliumHive
     MYCELIUM_NETWORK_AVAILABLE = True
 except ImportError:
     MYCELIUM_NETWORK_AVAILABLE = False
@@ -1278,7 +1278,7 @@ except ImportError:
 
 #    Neural Revenue Orchestrator - Master revenue generation
 try:
-    from aureon_neural_revenue_orchestrator import NeuralRevenueOrchestrator
+    from aureon.utils.aureon_neural_revenue_orchestrator import NeuralRevenueOrchestrator
     NEURAL_REVENUE_AVAILABLE = True
 except ImportError:
     NEURAL_REVENUE_AVAILABLE = False
@@ -1287,7 +1287,7 @@ except ImportError:
 #   Unified Market Cache - NO MORE API RATE LIMITS!
 # Uses Binance WebSocket for free real-time data, shared across all processes
 try:
-    from unified_market_cache import get_market_cache, get_price, get_ticker, get_all_prices, CachedTicker
+    from aureon.data_feeds.unified_market_cache import get_market_cache, get_price, get_ticker, get_all_prices, CachedTicker
     UNIFIED_CACHE_AVAILABLE = True
 except ImportError:
     UNIFIED_CACHE_AVAILABLE = False
@@ -3846,7 +3846,7 @@ class OrcaKillCycle:
         
         # Wire to adaptive profit gate for accurate cost calculations
         try:
-            from adaptive_prime_profit_gate import get_adaptive_gate, get_fee_profile, is_real_win, EPSILON_PROFIT_USD
+            from aureon.utils.adaptive_prime_profit_gate import get_adaptive_gate, get_fee_profile, is_real_win, EPSILON_PROFIT_USD
             self.profit_gate = get_adaptive_gate()
             self.get_fee_profile = get_fee_profile
             self.is_real_win = is_real_win
@@ -3866,7 +3866,7 @@ class OrcaKillCycle:
         else:
             # Initialize Alpaca
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self.clients['alpaca'] = AlpacaClient()
                 _safe_print("  Alpaca: CONNECTED")
             except Exception as e:
@@ -3874,7 +3874,7 @@ class OrcaKillCycle:
             
             # Initialize Kraken
             try:
-                from kraken_client import KrakenClient
+                from aureon.exchanges.kraken_client import KrakenClient
                 self.clients['kraken'] = KrakenClient()
                 _safe_print("  Kraken: CONNECTED")
             except Exception as e:
@@ -3882,7 +3882,7 @@ class OrcaKillCycle:
             
             # Initialize Binance
             try:
-                from binance_client import BinanceClient
+                from aureon.exchanges.binance_client import BinanceClient
                 self.clients['binance'] = BinanceClient()
                 _safe_print("  Binance: CONNECTED")
             except Exception as e:
@@ -3986,7 +3986,7 @@ class OrcaKillCycle:
 
         #    SNOWBALL LEAN INTEGRATION (Arbitrage/Momentum)
         try:
-            from orca_snowball_lean import OrcaSnowballLean
+            from aureon.bots.orca_snowball_lean import OrcaSnowballLean
             # Pass existing clients!
             self.snowball = OrcaSnowballLean(clients=self.clients)
             _safe_print("   Orca Snowball: INTEGRATED (Lean Mode)")
@@ -4047,7 +4047,7 @@ class OrcaKillCycle:
 
         #   FIRE TRADE INTEGRATION (Emergency/Direct Execution)
         try:
-            from orca_fire_trade import FireTrader
+            from aureon.bots.orca_fire_trade import FireTrader
             # Pass existing clients to avoid nonce issues!
             self.fire_trader = FireTrader(
                 kraken_client=self.clients.get('kraken'),
@@ -4115,7 +4115,7 @@ class OrcaKillCycle:
             # 1. Miner Brain (aureon_miner_brain)
         self.miner_brain = None
         try:
-            from aureon_miner_brain import MinerBrain
+            from aureon.utils.aureon_miner_brain import MinerBrain
             self.miner_brain = MinerBrain()
             print("  Timeline Oracle: Miner Brain WIRED!")
         except Exception:
@@ -4124,7 +4124,7 @@ class OrcaKillCycle:
         # 2. Quantum Telescope (enhanced scanning)
         self.quantum_telescope = None
         try:
-            from aureon_enhanced_quantum_telescope import QuantumTelescope
+            from aureon.simulation.aureon_enhanced_quantum_telescope import QuantumTelescope
             self.quantum_telescope = QuantumTelescope()
             _safe_print("  Timeline Oracle: Quantum Telescope WIRED!")
         except Exception:
@@ -4152,7 +4152,7 @@ class OrcaKillCycle:
         self.super_gate = None
         self._last_quad_result = None  # REAL Four Pillar data for Super Gate
         try:
-            from super_intelligence_gate import get_super_intelligence_gate
+            from aureon.utils.super_intelligence_gate import get_super_intelligence_gate
             self.super_gate = get_super_intelligence_gate(min_confidence=0.65)
             _safe_print("  💎🧠 Super Intelligence Gate: WIRED! (100% WIN RATE MODE)")
         except Exception as e:
@@ -4190,7 +4190,7 @@ class OrcaKillCycle:
         # 8. Timeline Oracle (7-day planner)
         self.timeline_oracle = None
         try:
-            from aureon_timeline_oracle import TimelineOracle
+            from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
             self.timeline_oracle = TimelineOracle(
                 miner_brain=self.miner_brain,
                 quantum_telescope=self.quantum_telescope,
@@ -4202,7 +4202,7 @@ class OrcaKillCycle:
         
         # 9. Prime Sentinel Decree
         try:
-            from prime_sentinel_decree import PrimeSentinelDecree
+            from aureon.wisdom.prime_sentinel_decree import PrimeSentinelDecree
             self.prime_sentinel = PrimeSentinelDecree()
             print("  Prime Sentinel Decree LOADED - Control reclaimed")
         except Exception:
@@ -4211,7 +4211,7 @@ class OrcaKillCycle:
         # 9b. Macro Intelligence (Fear & Greed + CoinGecko trends)
         self.macro_intel = None
         try:
-            from macro_intelligence import MacroIntelligence
+            from aureon.intelligence.macro_intelligence import MacroIntelligence
             self.macro_intel = MacroIntelligence()
             print("  Macro Intelligence: WIRED! (Fear/Greed + CoinGecko + Dominance)")
         except Exception:
@@ -4270,7 +4270,7 @@ class OrcaKillCycle:
         # 11b. Real Portfolio Tracker (The TRUTH - Floating vs Realized)
         self.real_portfolio = None
         try:
-            from aureon_real_portfolio_tracker import get_real_portfolio_tracker
+            from aureon.portfolio.aureon_real_portfolio_tracker import get_real_portfolio_tracker
             self.real_portfolio = get_real_portfolio_tracker()
             if self.real_portfolio:
                 self.real_portfolio.set_clients(self.clients)
@@ -4292,7 +4292,7 @@ class OrcaKillCycle:
         self.king_accounting = KING_ACCOUNTING_AVAILABLE
         if self.king_accounting:
             try:
-                from king_integration import _get_king
+                from aureon.bots.king_integration import _get_king
                 _king = _get_king()
                 if _king:
                     _king.start_autonomous()
@@ -4447,7 +4447,7 @@ class OrcaKillCycle:
         #   Ocean Scanner (Wave Analysis)
         self.ocean_scanner = None
         try:
-            from aureon_ocean_wave_scanner import OceanScanner
+            from aureon.scanners.aureon_ocean_wave_scanner import OceanScanner
             self.ocean_scanner = OceanScanner()
             print("  Ocean Scanner: WIRED! (Wave Analysis)")
         except ImportError:
@@ -4458,7 +4458,7 @@ class OrcaKillCycle:
         self._enigma_last_scan: float = 0.0
         self._enigma_sniped: set = set()   # symbols already sniped this session
         try:
-            from crypto_enigma_symbol_machine import CryptoEnigmaSymbolMachine
+            from aureon.wisdom.crypto_enigma_symbol_machine import CryptoEnigmaSymbolMachine
             self.enigma_machine = CryptoEnigmaSymbolMachine()
             # Enrich Ocean Scanner immediately with ALL known symbols
             if self.ocean_scanner:
@@ -4472,7 +4472,7 @@ class OrcaKillCycle:
         #   Animal Momentum Scanner (Trend Strength)
         self.animal_scanner = None
         try:
-            from aureon_animal_momentum_scanners import AnimalMomentumScanner
+            from aureon.scanners.aureon_animal_momentum_scanners import AnimalMomentumScanner
             self.animal_scanner = AnimalMomentumScanner()
             print("  Animal Momentum Scanner: WIRED! (Trend Strength)")
         except ImportError:
@@ -4559,7 +4559,7 @@ class OrcaKillCycle:
         # Real Intelligence Engine (Bot/Whale/Momentum detection)
         self.intelligence_engine = None
         try:
-            from aureon_real_intelligence_engine import get_intelligence_engine
+            from aureon.intelligence.aureon_real_intelligence_engine import get_intelligence_engine
             self.intelligence_engine = get_intelligence_engine()
             print("  Real Intelligence Engine: WIRED! (Bot/Whale/Momentum)")
         except Exception as e:
@@ -4568,7 +4568,7 @@ class OrcaKillCycle:
         # Real Data Feed Hub (Central distribution)
         self.feed_hub = None
         try:
-            from aureon_real_data_feed_hub import get_feed_hub
+            from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub
             self.feed_hub = get_feed_hub()
             print("  Real Data Feed Hub: WIRED! (Central distribution)")
         except Exception as e:
@@ -4592,7 +4592,7 @@ class OrcaKillCycle:
         # Enigma Integration (Cipher decoding)
         self.enigma = None
         try:
-            from aureon_enigma_integration import get_enigma_integration
+            from aureon.wisdom.aureon_enigma_integration import get_enigma_integration
             self.enigma = get_enigma_integration()
             print("  Enigma Integration: WIRED! (Cipher decoding)")
         except Exception as e:
@@ -4608,7 +4608,7 @@ class OrcaKillCycle:
         # 28. Predator Detection (front-run detection, strategy decay, stalking detection)
         self.predator_detector = None
         try:
-            from orca_predator_detection import OrcaPredatorDetector
+            from aureon.bots.orca_predator_detection import OrcaPredatorDetector
             self.predator_detector = OrcaPredatorDetector()
             print("   Predator Detection: WIRED! (Front-run + stalking detection)")
         except Exception as e:
@@ -4627,7 +4627,7 @@ class OrcaKillCycle:
         # HFT Order Router
         self.hft_order_router = None
         try:
-            from aureon_hft_websocket_order_router import get_order_router
+            from aureon.data_feeds.aureon_hft_websocket_order_router import get_order_router
             self.hft_order_router = get_order_router()
             # Wire exchange clients to router
             if self.hft_order_router and hasattr(self.hft_order_router, 'wire_exchange_clients'):
@@ -4650,7 +4650,7 @@ class OrcaKillCycle:
         #   Queen Hive Mind - Central Decision Controller
         self.queen_hive = None
         try:
-            from aureon_queen_hive_mind import get_queen
+            from aureon.utils.aureon_queen_hive_mind import get_queen
             self.queen_hive = get_queen()
             print("  Queen Hive Mind: WIRED! (Central neural arbiter)")
         except Exception as e:
@@ -4679,7 +4679,7 @@ class OrcaKillCycle:
         # Harmonic Signal Chain - The 5-layer frequency pipeline
         self.harmonic_signal_chain = None
         try:
-            from aureon_harmonic_signal_chain import HarmonicSignalChain
+            from aureon.harmonic.aureon_harmonic_signal_chain import HarmonicSignalChain
             self.harmonic_signal_chain = HarmonicSignalChain()
             print("  Harmonic Signal Chain: WIRED! (5-layer signal pipeline)")
         except Exception as e:
@@ -4688,7 +4688,7 @@ class OrcaKillCycle:
         # Harmonic Alphabet - 7-mode frequency encoding system
         self.harmonic_alphabet = None
         try:
-            from aureon_harmonic_alphabet import HarmonicAlphabet
+            from aureon.harmonic.aureon_harmonic_alphabet import HarmonicAlphabet
             self.harmonic_alphabet = HarmonicAlphabet()
             print("  Harmonic Alphabet: WIRED! (7-mode encoding)")
         except Exception as e:
@@ -4697,7 +4697,7 @@ class OrcaKillCycle:
         # Chirp Bus (Bird chorus coordination) - handle shared memory gracefully
         self.chirp_bus = None
         try:
-            from aureon_chirp_bus import ChirpBus
+            from aureon.core.aureon_chirp_bus import ChirpBus
             # Try to connect to existing shared memory first
             try:
                 self.chirp_bus = ChirpBus(create=False)
@@ -5077,7 +5077,7 @@ class OrcaKillCycle:
         
         self.queen_orca_bridge = None
         try:
-            from queen_orca_bridge import get_queen_orca_bridge
+            from aureon.queen.queen_orca_bridge import get_queen_orca_bridge
             self.queen_orca_bridge = get_queen_orca_bridge()
             self.queen_orca_bridge.orca_kill_cycle = self  # Wire self into bridge
             print("   Queen-Orca Bridge: WIRED! (Unified command & intelligence)")
@@ -5117,7 +5117,7 @@ class OrcaKillCycle:
         #     QUEEN SOUL SHIELD - Active protection system
         self.queen_soul_shield = None
         try:
-            from queen_soul_shield import QueenSoulShield
+            from aureon.queen.queen_soul_shield import QueenSoulShield
             self.queen_soul_shield = QueenSoulShield(protected_soul="Gary Leckey")
             # Start monitoring in background
             self.queen_soul_shield.start_monitoring()
@@ -5185,7 +5185,7 @@ class OrcaKillCycle:
         if not self.bus:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self.bus.publish(Thought(
                 source="orca_kill_cycle",
                 topic="orca.kill.complete",
@@ -5236,7 +5236,7 @@ class OrcaKillCycle:
         if not self.bus:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self.bus.publish(Thought(
                 source="orca_kill_cycle",
                 topic="orca.position.update",
@@ -5260,7 +5260,7 @@ class OrcaKillCycle:
         if not self.bus:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self.bus.publish(Thought(
                 source="orca_kill_cycle",
                 topic="orca.opportunity.detected",
@@ -5281,7 +5281,7 @@ class OrcaKillCycle:
         if not self.bus:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self.bus.publish(Thought(
                 source="orca_kill_cycle",
                 topic="orca.threat.detected",
@@ -6360,7 +6360,7 @@ class OrcaKillCycle:
         # ── Emit to ThoughtBus for all pillars ──
         if self.bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 self.bus.publish(Thought(
                     source="portfolio_intelligence_engine",
                     topic="portfolio_snapshot",
@@ -7134,7 +7134,7 @@ class OrcaKillCycle:
         # ═══════════════════════════════════════════════════════════════════════
         if not hasattr(self, '_cross_asset_correlator'):
             try:
-                from cross_asset_correlator import CrossAssetCorrelator as _CAC
+                from aureon.analytics.cross_asset_correlator import CrossAssetCorrelator as _CAC
                 self._cross_asset_correlator = _CAC()
             except Exception as _cac_init_err:
                 self._cross_asset_correlator = None
@@ -7537,7 +7537,7 @@ class OrcaKillCycle:
             # ── Lazy-init engine and news fetcher ───────────────────────────
             if not hasattr(self, '_unified_signal_engine'):
                 try:
-                    from unified_signal_engine import UnifiedSignalEngine as _USE
+                    from aureon.trading.unified_signal_engine import UnifiedSignalEngine as _USE
                     self._unified_signal_engine = _USE()
                 except Exception as _use_init_err:
                     self._unified_signal_engine = None
@@ -7545,7 +7545,7 @@ class OrcaKillCycle:
 
             if not hasattr(self, '_news_signal_fetcher'):
                 try:
-                    from news_signal import get_news_signal as _get_ns
+                    from aureon.data_feeds.news_signal import get_news_signal as _get_ns
                     self._news_signal_fetcher = _get_ns   # callable, lazy background fetch
                 except Exception as _ns_init_err:
                     self._news_signal_fetcher = None
@@ -9841,7 +9841,7 @@ class OrcaKillCycle:
         #                                                                    
         if self.predator_detector:
             try:
-                from orca_predator_detection import OrderEvent
+                from aureon.bots.orca_predator_detection import OrderEvent
                 order_event = OrderEvent(
                     timestamp=_time.time(),
                     symbol=symbol,
@@ -10157,7 +10157,7 @@ class OrcaKillCycle:
         if orch is not None:
             conflicts = orch.get_cross_system_conflicts(symbol, 'buy')
             if conflicts:
-                from autonomous_trading_orchestrator import normalize_base_asset
+                from aureon.autonomous.autonomous_trading_orchestrator import normalize_base_asset
                 base = normalize_base_asset(symbol)
                 conflict_desc = ', '.join(
                     f"{c.system} {c.side.upper()} {c.pair}" for c in conflicts
@@ -10321,7 +10321,7 @@ class OrcaKillCycle:
             return
         try:
             import asyncio
-            from queen_neuron import NeuralInput
+            from aureon.queen.queen_neuron import NeuralInput
             outcome = pnl > 0
             # Build a neutral NeuralInput (we don't have the original signals post-trade)
             neural_input = NeuralInput(
@@ -10420,7 +10420,7 @@ class OrcaKillCycle:
 
         # 2. Probability Nexus — feed outcome for model refinement
         try:
-            from aureon_probability_nexus import record_outcome as _nexus_record
+            from aureon.bridges.aureon_probability_nexus import record_outcome as _nexus_record
             _nexus_record(symbol, is_win, pnl)
             _fed += 1
         except (ImportError, AttributeError):
@@ -10630,7 +10630,7 @@ class OrcaKillCycle:
         try:
             # Vote 1: Probability Nexus
             try:
-                from aureon_probability_nexus import make_predictions as _nexus_predict_buy
+                from aureon.bridges.aureon_probability_nexus import make_predictions as _nexus_predict_buy
                 _np = _nexus_predict_buy()
                 if _np:
                     _validation_total += 1
@@ -10776,7 +10776,7 @@ class OrcaKillCycle:
         #       IRA SNIPER GATE - CELTIC PRECISION    
         #                                                                    
         try:
-            from ira_sniper_mode import get_celtic_sniper
+            from aureon.scanners.ira_sniper_mode import get_celtic_sniper
             sniper_celtic = get_celtic_sniper()
             
             #    Validate entry with Celtic intelligence (Zero Loss Mode)
@@ -10814,7 +10814,7 @@ class OrcaKillCycle:
         #  💎🧠 SUPER INTELLIGENCE GATE - 100% WIN RATE FILTER
         #                                                                    
         try:
-            from super_intelligence_gate import get_super_intelligence_gate
+            from aureon.utils.super_intelligence_gate import get_super_intelligence_gate
             super_gate = get_super_intelligence_gate(min_confidence=0.65)
             
             # Build price list from current price
@@ -11901,7 +11901,7 @@ class OrcaKillCycle:
 
             # Probability Nexus: what's the prediction for this symbol?
             try:
-                from aureon_probability_nexus import make_predictions as _nexus_sell_check
+                from aureon.bridges.aureon_probability_nexus import make_predictions as _nexus_sell_check
                 _nsc = _nexus_sell_check()
                 if _nsc:
                     _sell_intel_total += 1
@@ -12004,7 +12004,7 @@ class OrcaKillCycle:
         if info.get('net_pnl', 0) > 0:
             # We are profitable, so we "take the shot" unless blocked by specific logic
             try:
-                from ira_sniper_mode import get_sniper_config
+                from aureon.scanners.ira_sniper_mode import get_sniper_config
                 sniper_config = get_sniper_config()
                 if sniper_config.get('ZERO_LOSS_MODE'):
                     print(f"   🎯 SNIPER: {symbol} locked in crosshairs | Profit ${info['net_pnl']:.4f} confirmed — pulling trigger...")
@@ -12910,7 +12910,7 @@ class OrcaKillCycle:
         # Also check if Timeline Oracle is wired through Enigma integration
         if not timeline_wired:
             try:
-                from aureon_enigma_integration import EnigmaIntegration
+                from aureon.wisdom.aureon_enigma_integration import EnigmaIntegration
                 enigma = EnigmaIntegration()
                 timeline_wired = hasattr(enigma, 'timeline_oracle') and enigma.timeline_oracle
             except:
@@ -14204,7 +14204,7 @@ class OrcaKillCycle:
                 queen = self.queen_hive
                 print("  👑 QUEEN DR AURIS THRONE: AWAKENED (from init)!")
             else:
-                from aureon_queen_hive_mind import QueenHiveMind
+                from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
                 queen = QueenHiveMind()
                 self.queen_hive = queen  # Store so there's only ONE Queen
                 print("  👑 QUEEN DR AURIS THRONE: AWAKENED AND READY!")
@@ -14215,7 +14215,7 @@ class OrcaKillCycle:
             self._ignite_sentience()
             
             try:
-                from aureon_queen_hive_mind import wire_all_systems
+                from aureon.utils.aureon_queen_hive_mind import wire_all_systems
                 wired = wire_all_systems(queen)
                 wired_ok = [k for k, v in wired.items() if v]
                 wired_fail = [k for k, v in wired.items() if not v]
@@ -14231,7 +14231,7 @@ class OrcaKillCycle:
             except Exception as e:
                 print(f"   Autonomous control enable failed: {e}")
             try:
-                from baton_relay_monitor import start_baton_monitor
+                from aureon.core.baton_relay_monitor import start_baton_monitor
                 start_baton_monitor()
                 print("     Baton relay monitor: ACTIVE")
             except Exception as e:
@@ -14299,7 +14299,7 @@ class OrcaKillCycle:
         # ── CAPITAL CFD TRADER STARTUP — non-crypto financial universe ────────
         if self.capital_cfd_trader is not None:
             try:
-                from capital_cfd_trader import CAPITAL_UNIVERSE, CFD_CONFIG
+                from aureon.exchanges.capital_cfd_trader import CAPITAL_UNIVERSE, CFD_CONFIG
                 _classes = {}
                 for _s, _c in CAPITAL_UNIVERSE.items():
                     _cls = _c.get('class', 'unknown')
@@ -14317,7 +14317,7 @@ class OrcaKillCycle:
         if MARKET_HARP_AVAILABLE:
             try:
                 _market_harp = MarketHarp()
-                from market_harp import HARP_CLASSES, RESONANCE_MAP
+                from aureon.data_feeds.market_harp import HARP_CLASSES, RESONANCE_MAP
                 _n_strings = len(_market_harp.strings)
                 _n_edges   = sum(len(v) for v in RESONANCE_MAP.values())
                 _classes   = {}
@@ -14510,7 +14510,7 @@ class OrcaKillCycle:
         def _baton(stage: str, topic: str = None, meta: dict = None) -> None:
             """Emit baton relay stages for end-to-end validation."""
             try:
-                from aureon_baton_link import emit_stage
+                from aureon.core.aureon_baton_link import emit_stage
                 emit_stage(stage, "orca", topic=topic, meta=meta)
             except Exception:
                 return
@@ -14927,7 +14927,7 @@ class OrcaKillCycle:
         #   ETA OMNIPRESENT — validates ETA predictions vs real prices
         # ─────────────────────────────────────────────────────────────────
         try:
-            from eta_verification_system import get_eta_verifier
+            from aureon.analytics.eta_verification_system import get_eta_verifier
             _eta_engine = get_eta_verifier()   # auto-starts omnipresent loop
             print("  ETA OMNIPRESENT: Verification daemon STARTED (60s sweeps, open-source data)")
         except Exception as _eta_e:
@@ -14940,7 +14940,7 @@ class OrcaKillCycle:
         #   as a safety net in case QUADRUMVIRATE is unavailable.
         # ─────────────────────────────────────────────────────────────────
         try:
-            from aureon_seer import get_seer
+            from aureon.intelligence.aureon_seer import get_seer
             _seer_inst = get_seer()
             if not getattr(_seer_inst, '_running', False):
                 _seer_inst.start_autonomous()
@@ -14967,7 +14967,7 @@ class OrcaKillCycle:
         #   Runs as a daemon thread on port 14000, reads state files only.
         # ─────────────────────────────────────────────────────────────────
         try:
-            from aureon_live_monitor import AureonLiveMonitor
+            from aureon.monitors.aureon_live_monitor import AureonLiveMonitor
             _monitor_port = int(os.getenv('AUREON_MONITOR_PORT', '14000'))
             _monitor = AureonLiveMonitor(port=_monitor_port)
 
@@ -15470,7 +15470,7 @@ class OrcaKillCycle:
                                     self.enigma_machine.enrich_ocean_scanner(self.ocean_scanner)
                                 # Feed fresh discovery data into the 4-Pillar Quadrumvirate
                                 try:
-                                    from aureon_seer_integration import update_enigma_universe_direct
+                                    from aureon.intelligence.aureon_seer_integration import update_enigma_universe_direct
                                     update_enigma_universe_direct(_report)
                                 except Exception:
                                     pass
@@ -15889,7 +15889,7 @@ class OrcaKillCycle:
                                     # ── Pillar-nominated new-listing snipes ───────────────────────────────
                                     if self.enigma_machine:
                                         try:
-                                            from aureon_seer_integration import flush_pillar_snipe_requests
+                                            from aureon.intelligence.aureon_seer_integration import flush_pillar_snipe_requests
                                             _p_snipes = flush_pillar_snipe_requests()
                                             if _p_snipes:
                                                 # ── UNANIMOUS RULE: all 4 Pillars must agree ─────
@@ -16341,7 +16341,7 @@ class OrcaKillCycle:
                             self._stream_last_action = f"✅ Scan complete — {_n_opps} opportunities found in {scan_time:.1f}s"
                             # Pick up AI summary from last nexus call for the live dashboard
                             try:
-                                from aureon_probability_nexus import _log_unified_intelligence as _lui
+                                from aureon.bridges.aureon_probability_nexus import _log_unified_intelligence as _lui
                                 _ai_sum = getattr(_lui, '_last_summary', None)
                                 if _ai_sum:
                                     self._stream_ai_status = _ai_sum
@@ -16462,7 +16462,7 @@ class OrcaKillCycle:
                                 # ── C. Probability Nexus: per-symbol BUY/SELL/HOLD signals ──
                                 _nexus_applied = 0
                                 try:
-                                    from aureon_probability_nexus import make_predictions as _nexus_predict
+                                    from aureon.bridges.aureon_probability_nexus import make_predictions as _nexus_predict
                                     _nexus_preds = _nexus_predict()
                                     if _nexus_preds:
                                         _nexus_map = {}
@@ -16795,7 +16795,7 @@ class OrcaKillCycle:
                                     _seer_blocked = False
                                     _seer_size_mod = 1.0
                                     try:
-                                        from aureon_seer import get_seer as _get_seer_gate
+                                        from aureon.intelligence.aureon_seer import get_seer as _get_seer_gate
                                         _seer_g = _get_seer_gate()
                                         _sv = getattr(_seer_g, 'latest_vision', None)
                                         if _sv and hasattr(_sv, 'grade'):

@@ -26,7 +26,7 @@ Gary Leckey | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -46,7 +46,7 @@ logger = logging.getLogger('PhantomFilter')
 
 # Try importing ThoughtBus
 try:
-    from aureon_thought_bus import get_thought_bus, Thought, ThoughtBus
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought, ThoughtBus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False

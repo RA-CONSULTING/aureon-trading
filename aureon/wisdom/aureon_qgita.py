@@ -19,11 +19,11 @@ Key Features:
 Author: Gary Leckey / Aureon System
 Date: November 28, 2025
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, json, time, logging, argparse, random, math
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 from decimal import Decimal, ROUND_DOWN
 
 # Safe print for Windows multi-module imports
@@ -35,7 +35,7 @@ def _safe_print(*args, **kwargs):
 
 # 🪙 PENNY PROFIT ENGINE
 try:
-    from penny_profit_engine import check_penny_exit, get_penny_engine
+    from aureon.trading.penny_profit_engine import check_penny_exit, get_penny_engine
     PENNY_PROFIT_AVAILABLE = True
     _penny_engine = get_penny_engine()
     _safe_print("🪙 Penny Profit Engine loaded for QGITA")
@@ -46,7 +46,7 @@ except ImportError:
 
 # 🧠 WISDOM COGNITION ENGINE - 11 Civilizations
 try:
-    from aureon_miner_brain import WisdomCognitionEngine
+    from aureon.utils.aureon_miner_brain import WisdomCognitionEngine
     WISDOM_AVAILABLE = True
     _wisdom_engine = WisdomCognitionEngine()
     _safe_print("🧠 Wisdom Engine loaded - 11 civilizations ready")

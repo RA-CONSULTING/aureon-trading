@@ -21,7 +21,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -47,7 +47,7 @@ print("="*80)
 
 # Mycelium Conversion Hub - THE CENTRAL NERVOUS SYSTEM
 try:
-    from mycelium_conversion_hub import (
+    from aureon.conversion.mycelium_conversion_hub import (
         MyceliumConversionHub, get_conversion_hub,
         MyceliumSignal, ConversionSignal, SystemSignal
     )
@@ -59,7 +59,7 @@ except ImportError as e:
 
 # V14 Labyrinth - 100% WIN RATE
 try:
-    from s5_v14_labyrinth import V14LabyrinthEngine, V14_LABYRINTH_CONFIG
+    from aureon.strategies.s5_v14_labyrinth import V14LabyrinthEngine, V14_LABYRINTH_CONFIG
     V14_LABYRINTH_AVAILABLE = True
     print("🏆 V14 Labyrinth LOADED!")
 except ImportError:
@@ -67,7 +67,7 @@ except ImportError:
 
 # V14 Scoring
 try:
-    from s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14ScoringEngine
+    from aureon.strategies.s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14ScoringEngine
     V14_AVAILABLE = True
     print("🎯 V14 Scoring LOADED - 100% win rate!")
 except ImportError:
@@ -75,7 +75,7 @@ except ImportError:
 
 # Pure Conversion Engine
 try:
-    from pure_conversion_engine import (
+    from aureon.conversion.pure_conversion_engine import (
         UnifiedConversionBrain, ConversionOpportunity, 
         ConversionType, Asset, CompletedConversion
     )
@@ -86,7 +86,7 @@ except ImportError:
 
 # Conversion Commando
 try:
-    from aureon_conversion_commando import AdaptiveConversionCommando
+    from aureon.conversion.aureon_conversion_commando import AdaptiveConversionCommando
     COMMANDO_AVAILABLE = True
     print("🦅 Conversion Commando LOADED!")
 except ImportError:
@@ -94,7 +94,7 @@ except ImportError:
 
 # Conversion Ladder
 try:
-    from aureon_conversion_ladder import ConversionLadder
+    from aureon.conversion.aureon_conversion_ladder import ConversionLadder
     LADDER_AVAILABLE = True
     print("🪜 Conversion Ladder LOADED!")
 except ImportError:
@@ -102,7 +102,7 @@ except ImportError:
 
 # Rapid Conversion Stream
 try:
-    from rapid_conversion_stream import RapidConversionStream
+    from aureon.conversion.rapid_conversion_stream import RapidConversionStream
     RAPID_STREAM_AVAILABLE = True
     print("⚡ Rapid Conversion Stream LOADED!")
 except ImportError:
@@ -110,7 +110,7 @@ except ImportError:
 
 # Kraken Client
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
     print("🐙 Kraken Client LOADED!")
 except ImportError:
@@ -118,7 +118,7 @@ except ImportError:
 
 # Ultra Labyrinth
 try:
-    from s5_ultra_labyrinth import UltraLabyrinth
+    from aureon.strategies.s5_ultra_labyrinth import UltraLabyrinth
     ULTRA_LABYRINTH_AVAILABLE = True
     print("🌀 Ultra Labyrinth LOADED!")
 except ImportError:

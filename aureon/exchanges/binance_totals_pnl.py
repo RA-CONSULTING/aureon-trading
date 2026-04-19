@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import sys
 from datetime import datetime, timezone
 from typing import Dict, Tuple
 
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 
 BASELINE_FILE = "pnl_baseline.json"
 

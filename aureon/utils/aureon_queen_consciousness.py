@@ -51,7 +51,7 @@ Gary Leckey | Prime Sentinel Decree | January 2026
 ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -94,10 +94,10 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Exchange clients
-from binance_client import BinanceClient, get_binance_client
-from kraken_client import KrakenClient, get_kraken_client
-from alpaca_client import AlpacaClient
-from cost_basis_tracker import CostBasisTracker
+from aureon.exchanges.binance_client import BinanceClient, get_binance_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.alpaca_client import AlpacaClient
+from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 # 👑 SACRED CONSTANTS - THE FREQUENCIES OF CONSCIOUSNESS
@@ -503,7 +503,7 @@ class QueenSeroConsciousness:
     def _init_thought_bus(self):
         """Initialize ThoughtBus connection for live streaming."""
         try:
-            from aureon_thought_bus import ThoughtBus, Thought as TBThought, get_thought_bus
+            from aureon.core.aureon_thought_bus import ThoughtBus, Thought as TBThought, get_thought_bus
             try:
                 self.thought_bus = get_thought_bus()
             except:

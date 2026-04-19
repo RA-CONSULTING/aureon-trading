@@ -20,7 +20,7 @@ Gary Leckey | January 2026 | UNLEASH THE BEAST!
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 # Real portfolio tracker
 try:
-    from aureon_real_portfolio_tracker import get_real_portfolio_tracker, RealPortfolioSnapshot
+    from aureon.portfolio.aureon_real_portfolio_tracker import get_real_portfolio_tracker, RealPortfolioSnapshot
     PORTFOLIO_TRACKER_AVAILABLE = True
 except ImportError:
     PORTFOLIO_TRACKER_AVAILABLE = False
@@ -61,7 +61,7 @@ except ImportError:
 
 # 🔮 PROBABILITY NEXUS - For smart kill decisions!
 try:
-    from aureon_probability_nexus import AureonProbabilityNexus, Prediction
+    from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus, Prediction
     PROBABILITY_NEXUS_AVAILABLE = True
     logger.info("🔮 Probability Nexus CONNECTED - Smart kill decisions enabled!")
 except ImportError:
@@ -71,7 +71,7 @@ except ImportError:
 
 # 🎯 HUNTING GROUNDS - Find best places to hunt!
 try:
-    from orca_hunting_grounds import OrcaHuntingGrounds, HuntingGround
+    from aureon.bots.orca_hunting_grounds import OrcaHuntingGrounds, HuntingGround
     HUNTING_GROUNDS_AVAILABLE = True
     logger.info("🎯 Hunting Grounds CONNECTED - Smart venue selection enabled!")
 except ImportError:
@@ -81,21 +81,21 @@ except ImportError:
 
 # Exchange clients
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
     AlpacaClient = None
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False

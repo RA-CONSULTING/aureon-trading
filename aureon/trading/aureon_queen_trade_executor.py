@@ -15,7 +15,7 @@ No more manual exchange selection - QUEEN DECIDES.
 Author: Aureon Trading System
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -60,7 +60,7 @@ def _safe_print(*args, **kwargs):
 
 # Import Queen Autonomy
 try:
-    from aureon_queen_exchange_autonomy import get_queen_autonomy, QueenExchangeAutonomy, RestrictionType
+    from aureon.autonomous.aureon_queen_exchange_autonomy import get_queen_autonomy, QueenExchangeAutonomy, RestrictionType
     QUEEN_AUTONOMY_AVAILABLE = True
 except ImportError:
     QUEEN_AUTONOMY_AVAILABLE = False

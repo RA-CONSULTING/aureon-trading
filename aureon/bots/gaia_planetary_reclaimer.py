@@ -12,7 +12,7 @@ UPGRADES:
 "SAVE THE PLANET - ONE TRADE AT A TIME"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 
 # Windows UTF-8 Fix (MANDATORY for Windows compatibility)
@@ -401,26 +401,26 @@ QUEEN_LOSS_LEARNING_AVAILABLE = False
 THOUGHT_BUS_AVAILABLE = False
 
 try:
-    from queen_neuron import QueenNeuron, NeuralInput
+    from aureon.queen.queen_neuron import QueenNeuron, NeuralInput
     QUEEN_NEURON_AVAILABLE = True
 except ImportError:
     QueenNeuron = None
     NeuralInput = None
 
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     QUEEN_HIVE_AVAILABLE = True
 except ImportError:
     QueenHiveMind = None
 
 try:
-    from queen_loss_learning import QueenLossLearningSystem
+    from aureon.queen.queen_loss_learning import QueenLossLearningSystem
     QUEEN_LOSS_LEARNING_AVAILABLE = True
 except ImportError:
     QueenLossLearningSystem = None
 
 try:
-    from aureon_thought_bus import get_thought_bus, Thought
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     get_thought_bus = None
@@ -440,7 +440,7 @@ def _lazy_import_mycelium():
     if MyceliumNetwork is not None:
         return True
     try:
-        from aureon_mycelium import MyceliumNetwork as MN, get_mycelium as gm
+        from aureon.core.aureon_mycelium import MyceliumNetwork as MN, get_mycelium as gm
         MyceliumNetwork = MN
         get_mycelium = gm
         MYCELIUM_AVAILABLE = True
@@ -455,19 +455,19 @@ def _lazy_import_mycelium():
 REVENUE_BOARD_AVAILABLE = False
 SNIPER_VALIDATOR_AVAILABLE = False
 try:
-    from aureon_revenue_board import RevenueBoard
+    from aureon.portfolio.aureon_revenue_board import RevenueBoard
     REVENUE_BOARD_AVAILABLE = True
 except ImportError:
     RevenueBoard = None
 
 try:
-    from sniper_kill_validator import SniperKillValidator
+    from aureon.bots.sniper_kill_validator import SniperKillValidator
     SNIPER_VALIDATOR_AVAILABLE = True
 except ImportError:
     SniperKillValidator = None
 
 try:
-    from truth_verify import verify_truth
+    from aureon.utils.truth_verify import verify_truth
     TRUTH_VERIFY_AVAILABLE = True
 except ImportError:
     verify_truth = None
@@ -479,7 +479,7 @@ except ImportError:
 
 PATH_MEMORY_AVAILABLE = False
 try:
-    from micro_profit_labyrinth import PathMemory
+    from aureon.trading.micro_profit_labyrinth import PathMemory
     PATH_MEMORY_AVAILABLE = True
 except ImportError:
     PathMemory = None
@@ -490,7 +490,7 @@ except ImportError:
 
 ULTIMATE_INTEL_AVAILABLE = False
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
     ULTIMATE_INTEL_AVAILABLE = True
 except ImportError:
     ProbabilityUltimateIntelligence = None
@@ -501,7 +501,7 @@ except ImportError:
 
 MINER_BRAIN_AVAILABLE = False
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     MINER_BRAIN_AVAILABLE = True
 except ImportError:
     MinerBrain = None
@@ -512,7 +512,7 @@ except ImportError:
 
 MOMENTUM_AVAILABLE = False
 try:
-    from momentum_snowball_engine import MomentumTracker, CONFIG as MOMENTUM_CONFIG
+    from aureon.trading.momentum_snowball_engine import MomentumTracker, CONFIG as MOMENTUM_CONFIG
     MOMENTUM_AVAILABLE = True
 except ImportError:
     MomentumTracker = None
@@ -524,7 +524,7 @@ except ImportError:
 
 PENNY_PROFIT_AVAILABLE = False
 try:
-    from penny_profit_engine import PennyProfitEngine, get_penny_engine
+    from aureon.trading.penny_profit_engine import PennyProfitEngine, get_penny_engine
     PENNY_PROFIT_AVAILABLE = True
 except ImportError:
     PennyProfitEngine = None
@@ -536,7 +536,7 @@ except ImportError:
 
 SNOWBALL_ENGINE_AVAILABLE = False
 try:
-    from snowball_conversion_engine import SnowballEngine, SNOWBALL_CONFIG
+    from aureon.conversion.snowball_conversion_engine import SnowballEngine, SNOWBALL_CONFIG
     SNOWBALL_ENGINE_AVAILABLE = True
 except ImportError:
     SnowballEngine = None
@@ -548,7 +548,7 @@ except ImportError:
 
 DUST_CONVERTER_AVAILABLE = False
 try:
-    from dust_converter import DustConverter
+    from aureon.conversion.dust_converter import DustConverter
     DUST_CONVERTER_AVAILABLE = True
 except ImportError:
     DustConverter = None
@@ -559,7 +559,7 @@ except ImportError:
 
 INCEPTION_ENGINE_AVAILABLE = False
 try:
-    from aureon_inception_engine import InceptionEngine, InceptionLevel
+    from aureon.intelligence.aureon_inception_engine import InceptionEngine, InceptionLevel
     INCEPTION_ENGINE_AVAILABLE = True
 except ImportError:
     InceptionEngine = None
@@ -571,7 +571,7 @@ except ImportError:
 
 PLANET_SAVER_AVAILABLE = False
 try:
-    from aureon_planet_saver_integration import PlanetSaverEngine
+    from aureon.bridges.aureon_planet_saver_integration import PlanetSaverEngine
     PLANET_SAVER_AVAILABLE = True
 except ImportError:
     PlanetSaverEngine = None
@@ -582,7 +582,7 @@ except ImportError:
 
 PURE_CONVERSION_AVAILABLE = False
 try:
-    from pure_conversion_engine import PureConversionEngine
+    from aureon.conversion.pure_conversion_engine import PureConversionEngine
     PURE_CONVERSION_AVAILABLE = True
 except ImportError:
     PureConversionEngine = None
@@ -593,7 +593,7 @@ except ImportError:
 
 BHOYS_WISDOM_AVAILABLE = False
 try:
-    from bhoys_wisdom import (
+    from aureon.wisdom.bhoys_wisdom import (
         get_victory_quote, get_patience_wisdom, get_resilience_message,
         get_strategy_guidance, celebrate_penny_profit, get_contextual_wisdom
     )
@@ -612,7 +612,7 @@ except ImportError:
 
 IRA_SNIPER_AVAILABLE = True  # 🎯 ENABLED - Queen has full autonomous control
 try:
-    from ira_sniper_mode import (
+    from aureon.scanners.ira_sniper_mode import (
         SNIPER_CONFIG, apply_sniper_mode, IRA_SNIPER_MODE,
         MyceliumStateAggregator, ActiveKillScanner
     )
@@ -633,7 +633,7 @@ except ImportError as e:
 
 RAPID_STREAM_AVAILABLE = False
 try:
-    from rapid_conversion_stream import SPEED_CONFIG
+    from aureon.conversion.rapid_conversion_stream import SPEED_CONFIG
     RAPID_STREAM_AVAILABLE = True
 except ImportError:
     SPEED_CONFIG = None
@@ -644,8 +644,8 @@ except ImportError:
 
 WAR_BAND_AVAILABLE = False
 try:
-    from aureon_war_band import WarBand
-    from aureon_war_band_enhanced import EnhancedWarBand, enhance_war_band
+    from aureon.command_centers.aureon_war_band import WarBand
+    from aureon.command_centers.aureon_war_band_enhanced import EnhancedWarBand, enhance_war_band
     WAR_BAND_AVAILABLE = True
 except ImportError:
     WarBand = None
@@ -658,7 +658,7 @@ except ImportError:
 
 LUCK_FIELD_AVAILABLE = False
 try:
-    from aureon_luck_field_mapper import LuckFieldMapper, LuckState
+    from aureon.utils.aureon_luck_field_mapper import LuckFieldMapper, LuckState
     LUCK_FIELD_AVAILABLE = True
 except ImportError:
     LuckFieldMapper = None
@@ -670,7 +670,7 @@ except ImportError:
 
 LIGHTHOUSE_AVAILABLE = False
 try:
-    from aureon_lighthouse import LighthousePatternDetector, LighthouseEventType
+    from aureon.analytics.aureon_lighthouse import LighthousePatternDetector, LighthouseEventType
     LIGHTHOUSE_AVAILABLE = True
 except ImportError:
     LighthousePatternDetector = None
@@ -682,7 +682,7 @@ except ImportError:
 
 AURIS_AVAILABLE = False
 try:
-    from aureon_auris_trader import AurisEngine, MarketSnapshot
+    from aureon.trading.aureon_auris_trader import AurisEngine, MarketSnapshot
     AURIS_AVAILABLE = True
 except ImportError:
     AurisEngine = None
@@ -694,7 +694,7 @@ except ImportError:
 
 WAVE_SCANNER_AVAILABLE = False
 try:
-    from aureon_global_wave_scanner import GlobalWaveScanner, WaveState
+    from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner, WaveState
     WAVE_SCANNER_AVAILABLE = True
 except ImportError:
     GlobalWaveScanner = None
@@ -1407,9 +1407,9 @@ class PlanetaryReclaimer:
         print("🌍" * 40)
         print()
         
-        from binance_client import BinanceClient
-        from alpaca_client import AlpacaClient
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.binance_client import BinanceClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         
         self.binance = get_binance_client()
         self.alpaca = AlpacaClient()
@@ -1538,7 +1538,7 @@ class PlanetaryReclaimer:
     def _run_truth_checkpoint(self, initial=False):
         """Run truth verification checkpoint - verify REAL balances"""
         try:
-            from truth_verify import verify_truth
+            from aureon.utils.truth_verify import verify_truth
             checkpoint, stats = verify_truth(verbose=False)
             
             if initial:

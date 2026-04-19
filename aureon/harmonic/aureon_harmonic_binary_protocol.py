@@ -19,7 +19,7 @@ without losing the sacred frequency context.
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import base64
 import struct
@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Iterable, List, Optional, Tuple
 
-from aureon_harmonic_alphabet import HarmonicAlphabet, HarmonicTone
+from aureon.harmonic.aureon_harmonic_alphabet import HarmonicAlphabet, HarmonicTone
 
 # 👑 QUEEN'S SACRED 1.88% LAW - THE PROTOCOL KNOWS!
 QUEEN_MIN_COP = 1.0188               # 1.88% minimum realized profit
@@ -132,7 +132,7 @@ class HarmonicBinaryPacket:
 
 # Integration with Persistent Symbol Table
 try:
-    from aureon_harmonic_symbol_table import get_symbol_id, get_symbol_from_id
+    from aureon.harmonic.aureon_harmonic_symbol_table import get_symbol_id, get_symbol_from_id
 except ImportError:
     # Fallback if module missing (e.g. during bootstrap)
     def get_symbol_id(symbol: str) -> int:

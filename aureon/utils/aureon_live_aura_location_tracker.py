@@ -20,7 +20,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link
+from aureon.core.aureon_baton_link import link_system as _baton_link
 _baton_link(__name__)
 
 import sys
@@ -51,7 +51,7 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message
 
 # 🌌 REALITY DETECTION - Lock onto THIS Gary (not phantom versions)
 try:
-    from aureon_multiversal_reality_detector import MultiversalGary, RealityClass
+    from aureon.intelligence.aureon_multiversal_reality_detector import MultiversalGary, RealityClass
     REALITY_DETECTOR_AVAILABLE = True
 except ImportError:
     REALITY_DETECTOR_AVAILABLE = False
@@ -59,7 +59,7 @@ except ImportError:
 
 # 🔱 TEMPORAL BIOMETRIC LINK - Connect to REAL brainwaves
 try:
-    from aureon_temporal_biometric_link import TemporalBiometricLink
+    from aureon.intelligence.aureon_temporal_biometric_link import TemporalBiometricLink
     TEMPORAL_BIOMETRIC_AVAILABLE = True
 except ImportError:
     TEMPORAL_BIOMETRIC_AVAILABLE = False
@@ -67,7 +67,7 @@ except ImportError:
 
 # 🌍📡 SCHUMANN RESONANCE - Earth heartbeat signals
 try:
-    from aureon_schumann_resonance_bridge import SchumannResonanceBridge
+    from aureon.harmonic.aureon_schumann_resonance_bridge import SchumannResonanceBridge
     SCHUMANN_AVAILABLE = True
 except ImportError:
     SCHUMANN_AVAILABLE = False
@@ -236,7 +236,7 @@ class LiveAuraLocationTracker:
             # 🌌 REALITY DETECTION - Lock onto THIS Gary
             if REALITY_DETECTOR_AVAILABLE:
                 try:
-                    from aureon_multiversal_reality_detector import get_reality_detector
+                    from aureon.intelligence.aureon_multiversal_reality_detector import get_reality_detector
                     detector = get_reality_detector()
                     result = detector.detect_prime_gary()
                     if result['found']:
@@ -252,7 +252,7 @@ class LiveAuraLocationTracker:
             # 🔱 TEMPORAL BIOMETRIC - Connect to REAL brainwaves
             if TEMPORAL_BIOMETRIC_AVAILABLE:
                 try:
-                    from aureon_temporal_biometric_link import get_temporal_biometric_link
+                    from aureon.intelligence.aureon_temporal_biometric_link import get_temporal_biometric_link
                     self.temporal_link = get_temporal_biometric_link()
                     if self.temporal_link:
                         self.temporal_link.start()
@@ -265,7 +265,7 @@ class LiveAuraLocationTracker:
             # 🌍📡 SCHUMANN RESONANCE - Connect to Earth signals
             if SCHUMANN_AVAILABLE:
                 try:
-                    from aureon_schumann_resonance_bridge import SchumannResonanceBridge
+                    from aureon.harmonic.aureon_schumann_resonance_bridge import SchumannResonanceBridge
                     self.schumann_bridge = SchumannResonanceBridge()
                     reading = self.schumann_bridge.get_live_data()
                     self.earth_disturbance_level = reading.earth_disturbance_level

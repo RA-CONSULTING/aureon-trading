@@ -9,7 +9,7 @@ Once we get ONE winner, the system gains momentum to get ALL winners!
 "The first domino falls, and the rest follow." - Aureon
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -45,7 +45,7 @@ class WinningOpportunity:
 def load_kraken_client():
     """Load Kraken client for live trading"""
     try:
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         client = get_kraken_client()
         return client
     except Exception as e:

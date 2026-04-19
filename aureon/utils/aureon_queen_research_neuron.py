@@ -25,7 +25,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -64,7 +64,7 @@ if sys.platform == 'win32':
 # IMPORTS - ThoughtBus Integration
 # ═══════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     ThoughtBus = None
@@ -73,7 +73,7 @@ except ImportError:
 
 # Existing News Feed integration
 try:
-    from aureon_news_feed import NewsFeed, NewsFeedConfig, NewsArticle, create_news_feed
+    from aureon.data_feeds.aureon_news_feed import NewsFeed, NewsFeedConfig, NewsArticle, create_news_feed
     NEWS_FEED_AVAILABLE = True
 except ImportError:
     NewsFeed = None

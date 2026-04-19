@@ -6,7 +6,7 @@ Fast simulation using current market snapshot to evaluate strategies.
 Runs 50 simulated cycles per strategy to give quick flavor of Kraken ecosystem.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import random
@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 
 # Kraken fees
 TAKER_FEE = 0.0026  # 0.26%

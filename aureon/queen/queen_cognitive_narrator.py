@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════════
 ELEPHANT_AVAILABLE = False
 try:
-    from aureon_elephant_learning import ElephantMemory, LearnedPattern
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory, LearnedPattern
     ELEPHANT_AVAILABLE = True
 except ImportError:
     ElephantMemory = None
@@ -52,7 +52,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 MYCELIUM_AVAILABLE = False
 try:
-    from aureon_mycelium import get_mycelium_network
+    from aureon.core.aureon_mycelium import get_mycelium_network
     MYCELIUM_AVAILABLE = True
 except ImportError:
     get_mycelium_network = None
@@ -62,7 +62,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 WHALE_SONAR_AVAILABLE = False
 try:
-    from mycelium_whale_sonar import WhaleSonar
+    from aureon.core.mycelium_whale_sonar import WhaleSonar
     WHALE_SONAR_AVAILABLE = True
 except ImportError:
     WhaleSonar = None
@@ -72,7 +72,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 ORCA_AVAILABLE = False
 try:
-    from aureon_orca_intelligence import OrcaKillerWhaleIntelligence, OrcaOpportunity, WhaleSignal
+    from aureon.bots_intelligence.aureon_orca_intelligence import OrcaKillerWhaleIntelligence, OrcaOpportunity, WhaleSignal
     ORCA_AVAILABLE = True
 except ImportError:
     OrcaKillerWhaleIntelligence = None
@@ -84,7 +84,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 TIMELINE_AVAILABLE = False
 try:
-    from aureon_timeline_anchor_validator import TimelineAnchorValidator
+    from aureon.intelligence.aureon_timeline_anchor_validator import TimelineAnchorValidator
     TIMELINE_AVAILABLE = True
 except ImportError:
     TimelineAnchorValidator = None

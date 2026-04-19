@@ -1,5 +1,5 @@
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Capital.com stock snapshot cache feeder.
@@ -57,7 +57,7 @@ import json
 import time
 from typing import Any, Dict
 
-from capital_client import CapitalClient
+from aureon.exchanges.capital_client import CapitalClient
 
 
 def _atomic_write_json(path: str, data: Dict[str, Any]) -> None:

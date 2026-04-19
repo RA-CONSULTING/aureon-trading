@@ -23,7 +23,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -57,7 +57,7 @@ except ImportError:
 
 # Try to import Bot Intelligence Profiler
 try:
-    from aureon_bot_intelligence_profiler import (
+    from aureon.bots_intelligence.aureon_bot_intelligence_profiler import (
         BotIntelligenceProfiler, 
         TRADING_FIRM_SIGNATURES
     )

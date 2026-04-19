@@ -38,7 +38,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -108,7 +108,7 @@ def queen_profit_gate(potential_move_pct: float, fee_rate: float = 0.0026) -> tu
 
 # LAYER 8: HFT Harmonic Mycelium (Sub-10ms Execution)
 try:
-    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
+    from aureon.harmonic.aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
     HFT_ENGINE_AVAILABLE = True
     print("⚡🧬 Layer 8: HFT Harmonic Mycelium LOADED!")
 except ImportError as e:
@@ -119,7 +119,7 @@ except ImportError as e:
 
 # LAYER 7: Queen Harmonic Voice
 try:
-    from queen_harmonic_voice import QueenHarmonicVoice
+    from aureon.queen.queen_harmonic_voice import QueenHarmonicVoice
     QUEEN_VOICE_AVAILABLE = True
     print("👑🎵 Layer 7: Queen Harmonic Voice LOADED!")
 except ImportError:
@@ -128,7 +128,7 @@ except ImportError:
 
 # LAYER 6: Harmonic Alphabet (7-Mode Auris Encoding)
 try:
-    from aureon_harmonic_alphabet import (
+    from aureon.harmonic.aureon_harmonic_alphabet import (
         HarmonicAlphabet, HarmonicTone, to_harmonics, from_harmonics,
         SOLFEGGIO as SOLFEGGIO_FREQS, SCHUMANN as SCHUMANN_FREQS,
         INTENT_FREQUENCIES, AURIS_NODES, BRAINWAVE_STATES
@@ -141,7 +141,7 @@ except ImportError:
 
 # LAYER 5: Harmonic Signal Chain
 try:
-    from aureon_harmonic_signal_chain import (
+    from aureon.harmonic.aureon_harmonic_signal_chain import (
         HarmonicSignalChain, ChainSignal, SignalDirection,
         QueenNode, EnigmaNode, ScannerNode, EcosystemNode, WhaleNode,
         CHAIN_FREQUENCIES, CHAIN_ORDER_DOWN, CHAIN_ORDER_UP
@@ -154,7 +154,7 @@ except ImportError:
 
 # LAYER 4: Harmonic Reality Framework
 try:
-    from aureon_harmonic_reality import (
+    from aureon.harmonic.aureon_harmonic_reality import (
         HarmonicRealityField as HarmonicReality, RealityState, ObserverNode,
         COHERENCE_CRITICAL, COHERENCE_HIGH, COHERENCE_UNITY,
         SUBSTRATE_FREQUENCIES
@@ -168,7 +168,7 @@ except ImportError:
 
 # LAYER 3: Global Harmonic Field
 try:
-    from global_harmonic_field import (
+    from aureon.harmonic.global_harmonic_field import (
         GlobalHarmonicField, GlobalHarmonicFieldState, HarmonicLayerState,
         get_global_field
     )
@@ -180,7 +180,7 @@ except ImportError:
 
 # LAYER 2: 6D Harmonic Waveform
 try:
-    from hnc_6d_harmonic_waveform import (
+    from aureon.strategies.hnc_6d_harmonic_waveform import (
         SixDimensionalHarmonicEngine, WaveState, MarketPhase, Dimension
     )
     WAVEFORM_6D_AVAILABLE = True
@@ -191,7 +191,7 @@ except ImportError:
 
 # LAYER 1: Harmonic Seed + Fusion + Underlay
 try:
-    from aureon_harmonic_seed import (
+    from aureon.harmonic.aureon_harmonic_seed import (
         HarmonicSeedLoader, HarmonicGrowthEngine, GlobalHarmonicState, SymbolWaveState
     )
     HARMONIC_SEED_AVAILABLE = True
@@ -201,7 +201,7 @@ except ImportError:
     HarmonicSeedLoader = None
 
 try:
-    from aureon_harmonic_fusion import (
+    from aureon.harmonic.aureon_harmonic_fusion import (
         HarmonicWaveFusion, HarmonicFusionConfig, SchumannState
     )
     HARMONIC_FUSION_AVAILABLE = True
@@ -211,7 +211,7 @@ except ImportError:
     HarmonicWaveFusion = None
 
 try:
-    from aureon_harmonic_underlay import HarmonicUnderlay
+    from aureon.harmonic.aureon_harmonic_underlay import HarmonicUnderlay
     HARMONIC_UNDERLAY_AVAILABLE = True
     print("🌌👁️ Layer 1c: Harmonic Underlay LOADED!")
 except ImportError:
@@ -220,7 +220,7 @@ except ImportError:
 
 # LAYER 0: Harmonic Wave Simulation
 try:
-    from harmonic_wave_simulation import HarmonicWaveSimulator as HarmonicWaveSimulation
+    from aureon.strategies.harmonic_wave_simulation import HarmonicWaveSimulator as HarmonicWaveSimulation
     WAVE_SIMULATION_AVAILABLE = True
     print("🌊📈 Layer 0: Harmonic Wave Simulation LOADED!")
 except ImportError as e:
@@ -234,14 +234,14 @@ except Exception as e:
 
 # Support Systems
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
 
 try:
-    from aureon_enigma import AureonEnigma
+    from aureon.wisdom.aureon_enigma import AureonEnigma
     ENIGMA_AVAILABLE = True
 except ImportError:
     ENIGMA_AVAILABLE = False
@@ -440,7 +440,7 @@ class HarmonicChainMaster:
         if QUEEN_VOICE_AVAILABLE:
             try:
                 try:
-                    from aureon_queen_hive_mind import get_queen
+                    from aureon.utils.aureon_queen_hive_mind import get_queen
                     queen = get_queen()
                 except Exception:
                     queen = None

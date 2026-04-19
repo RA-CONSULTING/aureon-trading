@@ -32,7 +32,7 @@ Integration:
 - Drives continuous improvement in strategy
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -142,7 +142,7 @@ class QueenResearchEngine:
         
         # Wire to thought bus if available
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             self.thought_bus = get_thought_bus()
             self.Thought = Thought
             logger.info("🔍 Research Engine: WIRED to ThoughtBus")
@@ -157,7 +157,7 @@ class QueenResearchEngine:
         
         # Wire to goal engine if available
         try:
-            from aureon_quantum_goal_engine import get_goal_engine
+            from aureon.simulation.aureon_quantum_goal_engine import get_goal_engine
             self.goal_engine = get_goal_engine()
             logger.info("🔍 Research Engine: WIRED to Goal Engine")
         except Exception as e:

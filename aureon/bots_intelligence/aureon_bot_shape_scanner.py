@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Windows UTF-8 fix - MANDATORY for all Aureon modules
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -54,9 +54,9 @@ from dataclasses import dataclass, asdict
 from typing import Dict, List, Optional, Tuple
 
 # Internal imports
-from binance_ws_client import BinanceWebSocketClient, WSTrade, WSOrderBook
+from aureon.exchanges.binance_ws_client import BinanceWebSocketClient, WSTrade, WSOrderBook
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -64,7 +64,7 @@ except ImportError:
 
 # Chirp Bus - High Speed Signaling
 try:
-    from aureon_chirp_bus import ChirpBus
+    from aureon.core.aureon_chirp_bus import ChirpBus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -72,8 +72,8 @@ except ImportError:
 
 # Counter-intelligence integration
 try:
-    from aureon_queen_counter_intelligence import queen_counter_intelligence, CounterIntelligenceSignal
-    from aureon_global_firm_intelligence import get_attribution_engine
+    from aureon.utils.aureon_queen_counter_intelligence import queen_counter_intelligence, CounterIntelligenceSignal
+    from aureon.bots_intelligence.aureon_global_firm_intelligence import get_attribution_engine
     COUNTER_INTELLIGENCE_AVAILABLE = True
 except ImportError:
     COUNTER_INTELLIGENCE_AVAILABLE = False
@@ -82,7 +82,7 @@ except ImportError:
 
 # Firm intelligence catalog
 try:
-    from aureon_firm_intelligence_catalog import get_firm_catalog
+    from aureon.bots_intelligence.aureon_firm_intelligence_catalog import get_firm_catalog
     CATALOG_AVAILABLE = True
 except ImportError:
     CATALOG_AVAILABLE = False
@@ -585,7 +585,7 @@ class BotShapeScanner:
         # (Would be wired externally if Queen is available)
         try:
             # Look for global queen instance
-            from aureon_queen_hive_mind import QueenHiveMind
+            from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
             if hasattr(QueenHiveMind, '_global_instance') and QueenHiveMind._global_instance:
                 queen = QueenHiveMind._global_instance
                 if hasattr(queen, 'receive_counter_intelligence_signal'):

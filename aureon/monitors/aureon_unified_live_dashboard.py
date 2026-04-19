@@ -27,7 +27,7 @@ Gary Leckey & GitHub Copilot | 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -94,7 +94,7 @@ class ThoughtBusBridge:
     def initialize(self):
         """Initialize ThoughtBus connection and subscriptions."""
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self.thought_bus = get_thought_bus()
             
             # Subscribe to critical topics
@@ -252,7 +252,7 @@ class AureonUnifiedDashboard:
         """Lazy load Queen Hive Mind."""
         if self._queen is None:
             try:
-                from aureon_queen_hive_mind import QueenHiveMind
+                from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
                 self._queen = QueenHiveMind()
                 logger.info("✓ Queen Hive Mind loaded")
             except Exception as e:
@@ -264,7 +264,7 @@ class AureonUnifiedDashboard:
         """Lazy load Cost Basis Tracker."""
         if self._cost_basis is None:
             try:
-                from cost_basis_tracker import CostBasisTracker
+                from aureon.portfolio.cost_basis_tracker import CostBasisTracker
                 self._cost_basis = CostBasisTracker()
                 logger.info("✓ Cost Basis Tracker loaded")
             except Exception as e:
@@ -276,7 +276,7 @@ class AureonUnifiedDashboard:
         """Lazy load Avalanche Harvester."""
         if self._harvester is None:
             try:
-                from aureon_avalanche_harvester import AvalancheHarvester
+                from aureon.trading.aureon_avalanche_harvester import AvalancheHarvester
                 self._harvester = AvalancheHarvester()
                 logger.info("✓ Avalanche Harvester loaded")
             except Exception as e:
@@ -288,7 +288,7 @@ class AureonUnifiedDashboard:
         """Lazy load Kraken client."""
         if self._kraken is None:
             try:
-                from kraken_client import KrakenClient, get_kraken_client
+                from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                 self._kraken = get_kraken_client()
                 logger.info("✓ Kraken client loaded")
             except Exception as e:
@@ -300,7 +300,7 @@ class AureonUnifiedDashboard:
         """Lazy load Alpaca client."""
         if self._alpaca is None:
             try:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca = AlpacaClient()
                 logger.info("✓ Alpaca client loaded")
             except Exception as e:
@@ -312,7 +312,7 @@ class AureonUnifiedDashboard:
         """Lazy load Binance client."""
         if self._binance is None:
             try:
-                from binance_client import BinanceClient
+                from aureon.exchanges.binance_client import BinanceClient
                 self._binance = get_binance_client()
                 logger.info("✓ Binance client loaded")
             except Exception as e:
@@ -324,7 +324,7 @@ class AureonUnifiedDashboard:
         """Lazy load Capital.com client."""
         if self._capital is None:
             try:
-                from capital_client import CapitalClient
+                from aureon.exchanges.capital_client import CapitalClient
                 self._capital = CapitalClient()
                 logger.info("✓ Capital.com client loaded")
             except Exception as e:

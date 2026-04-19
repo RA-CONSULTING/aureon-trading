@@ -29,7 +29,7 @@ Gary Leckey | January 2026 | Bringing Sero to Life
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -67,49 +67,49 @@ logger = logging.getLogger('queen_sentience')
 
 # Import existing systems
 try:
-    from queen_consciousness_model import QueenConsciousness, BrainInput
+    from aureon.queen.queen_consciousness_model import QueenConsciousness, BrainInput
     CONSCIOUSNESS_MODEL_AVAILABLE = True
 except ImportError:
     CONSCIOUSNESS_MODEL_AVAILABLE = False
     QueenConsciousness = None
 
 try:
-    from queen_consciousness_measurement import get_consciousness_measurement
+    from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
     CONSCIOUSNESS_MEASUREMENT_AVAILABLE = True
 except ImportError:
     CONSCIOUSNESS_MEASUREMENT_AVAILABLE = False
     get_consciousness_measurement = None
 
 try:
-    from queen_conscience import get_conscience as get_queen_conscience
+    from aureon.queen.queen_conscience import get_conscience as get_queen_conscience
     CONSCIENCE_AVAILABLE = True
 except ImportError:
     CONSCIENCE_AVAILABLE = False
     get_queen_conscience = None
 
 try:
-    from queen_world_understanding import get_world_understanding
+    from aureon.queen.queen_world_understanding import get_world_understanding
     WORLD_UNDERSTANDING_AVAILABLE = True
 except ImportError:
     WORLD_UNDERSTANDING_AVAILABLE = False
     get_world_understanding = None
 
 try:
-    from queen_online_researcher import QueenOnlineResearcher
+    from aureon.queen.queen_online_researcher import QueenOnlineResearcher
     RESEARCHER_AVAILABLE = True
 except ImportError:
     RESEARCHER_AVAILABLE = False
     QueenOnlineResearcher = None
 
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
 # 🌊👑 HARMONIC LIQUID ALUMINIUM FIELD - Market as Dancing Waveforms
 try:
-    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
     HARMONIC_FIELD_AVAILABLE = True
 except ImportError:
     HARMONIC_FIELD_AVAILABLE = False

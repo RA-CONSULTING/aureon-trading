@@ -38,7 +38,7 @@ except ImportError:
 
 # ── THOUGHTBUS ─────────────────────────────────────────────────────────────────
 try:
-    from aureon_thought_bus import Thought
+    from aureon.core.aureon_thought_bus import Thought
     HAS_THOUGHT_BUS = True
 except ImportError:
     Thought = None             # type: ignore

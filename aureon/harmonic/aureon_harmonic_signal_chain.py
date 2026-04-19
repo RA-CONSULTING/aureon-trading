@@ -35,7 +35,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -85,7 +85,7 @@ QUEEN_SIGNAL_PROFIT_FREQ = 188.0     # 👑 Profit frequency in signal chain (Hz
 
 # ThoughtBus
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -95,7 +95,7 @@ except ImportError:
 
 # Harmonic Alphabet
 try:
-    from aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicTone, HarmonicAlphabet
+    from aureon.harmonic.aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicTone, HarmonicAlphabet
     HARMONIC_ALPHABET_AVAILABLE = True
 except ImportError:
     HARMONIC_ALPHABET_AVAILABLE = False
@@ -104,7 +104,7 @@ except ImportError:
 
 # Harmonic Binary Protocol
 try:
-    from aureon_harmonic_binary_protocol import (
+    from aureon.harmonic.aureon_harmonic_binary_protocol import (
         encode_text_packet,
         decode_packet_from_base64,
         HarmonicBinaryPacket,
@@ -122,7 +122,7 @@ except ImportError:
 
 # Chirp Bus (kHz signaling)
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection
     CHIRP_AVAILABLE = True
 except ImportError:
     get_chirp_bus = None
@@ -131,7 +131,7 @@ except ImportError:
 
 # Enigma
 try:
-    from aureon_enigma import AureonEnigma, InterceptedSignal, SignalType, DecodedIntelligence
+    from aureon.wisdom.aureon_enigma import AureonEnigma, InterceptedSignal, SignalType, DecodedIntelligence
     ENIGMA_AVAILABLE = True
 except ImportError:
     ENIGMA_AVAILABLE = False
@@ -139,7 +139,7 @@ except ImportError:
 
 # Adaptive Learning
 try:
-    from aureon_elephant_learning import LearnedPattern, TradingWisdom
+    from aureon.intelligence.aureon_elephant_learning import LearnedPattern, TradingWisdom
     ELEPHANT_AVAILABLE = True
 except ImportError:
     ELEPHANT_AVAILABLE = False

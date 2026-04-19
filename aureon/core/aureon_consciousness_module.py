@@ -66,7 +66,7 @@ except Exception:
 try:
     from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
 except Exception:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
 
 
 # ═══════════════════════════════════════════════════════════════════

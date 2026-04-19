@@ -21,7 +21,7 @@ LAYERED SYSTEMS:
 8. 🔄 Momentum Gate (directional alignment)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -50,42 +50,42 @@ logger = logging.getLogger(__name__)
 
 PROB_INTEL_AVAILABLE = False
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
     PROB_INTEL_AVAILABLE = True
 except ImportError:
     pass
 
 QGITA_AVAILABLE = False
 try:
-    from aureon_qgita_framework import QGITAMarketAnalyzer
+    from aureon.wisdom.aureon_qgita_framework import QGITAMarketAnalyzer
     QGITA_AVAILABLE = True
 except ImportError:
     pass
 
 LIGHTHOUSE_AVAILABLE = False
 try:
-    from lighthouse_metrics import LighthouseMetricsEngine
+    from aureon.analytics.lighthouse_metrics import LighthouseMetricsEngine
     LIGHTHOUSE_AVAILABLE = True
 except ImportError:
     pass
 
 ELEPHANT_AVAILABLE = False
 try:
-    from aureon_elephant_learning import ElephantMemory
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
     ELEPHANT_AVAILABLE = True
 except ImportError:
     pass
 
 SNIPER_AVAILABLE = False
 try:
-    from unified_sniper_brain import TrainedSniperParams
+    from aureon.trading.unified_sniper_brain import TrainedSniperParams
     SNIPER_AVAILABLE = True
 except ImportError:
     pass
 
 COUNCIL_AVAILABLE = False
 try:
-    from aureon_triumvirate import TriumvirateEngine
+    from aureon.utils.aureon_triumvirate import TriumvirateEngine
     COUNCIL_AVAILABLE = True
 except ImportError:
     pass

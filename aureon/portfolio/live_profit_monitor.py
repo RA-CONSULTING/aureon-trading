@@ -13,17 +13,17 @@ def get_current_price(symbol, exchange):
     """Get current price from exchange."""
     try:
         if exchange == 'kraken':
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             client = get_kraken_client()
             ticker = client.get_ticker(symbol)
             return float(ticker.get('last', 0)) if ticker else 0
         elif exchange == 'binance':
-            from binance_client import BinanceClient
+            from aureon.exchanges.binance_client import BinanceClient
             client = get_binance_client()
             ticker = client.get_ticker(symbol)
             return float(ticker.get('price', 0)) if ticker else 0
         elif exchange == 'alpaca':
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             client = AlpacaClient()
             ticker = client.get_ticker(symbol)
             return float(ticker.get('last', 0)) if ticker else 0
@@ -115,7 +115,7 @@ def monitor_live():
         print("=" * 90)
         
         try:
-            from aureon_probability_nexus import SUBSYSTEM_STATE
+            from aureon.bridges.aureon_probability_nexus import SUBSYSTEM_STATE
             
             if SUBSYSTEM_STATE and len(SUBSYSTEM_STATE) > 0:
                 print(f"\n✅ {len(SUBSYSTEM_STATE)} symbols with metrics:\n")

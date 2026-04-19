@@ -21,7 +21,7 @@ URL: http://localhost:13333
 Gary Leckey | January 2026 | UNIFIED MASTER HUB
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -48,9 +48,9 @@ from collections import deque, defaultdict
 from pathlib import Path
 
 # Core systems
-from aureon_system_hub import SystemRegistry
-from aureon_thought_bus import ThoughtBus, Thought
-from binance_client import get_binance_client
+from aureon.command_centers.aureon_system_hub import SystemRegistry
+from aureon.core.aureon_thought_bus import ThoughtBus, Thought
+from aureon.exchanges.binance_client import get_binance_client
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(message)s')
 logger = logging.getLogger(__name__)
@@ -98,14 +98,14 @@ OrcaKillCycle = safe_import('OrcaKillCycle', 'orca_complete_kill_cycle', 'OrcaKi
 
 # Firm Intelligence - 50+ Global Trading Firms
 try:
-    from aureon_bot_intelligence_profiler import TRADING_FIRM_SIGNATURES
+    from aureon.bots_intelligence.aureon_bot_intelligence_profiler import TRADING_FIRM_SIGNATURES
     FIRM_SIGNATURES_AVAILABLE = True
 except ImportError:
     TRADING_FIRM_SIGNATURES = {}
     FIRM_SIGNATURES_AVAILABLE = False
 
 try:
-    from aureon_stargate_protocol import PLANETARY_STARGATES
+    from aureon.wisdom.aureon_stargate_protocol import PLANETARY_STARGATES
 except ImportError:
     PLANETARY_STARGATES = {}
 

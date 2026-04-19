@@ -31,7 +31,7 @@ Gary Leckey & GitHub Copilot | November 2025
 "From Atom to Multiverse - We don't quit!"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - MUST BE AT VERY TOP BEFORE ALL OTHER IMPORTS
 # ═══════════════════════════════════════════════════════════════════════════
@@ -71,11 +71,11 @@ import random
 import asyncio
 import tempfile
 import logging
-from aureon_memory_core import memory as spiral_memory  # 🧠 MEMORY CORE INTEGRATION
+from aureon.core.aureon_memory_core import memory as spiral_memory  # 🧠 MEMORY CORE INTEGRATION
 
 # 🪞 SELF-AWARENESS - I KNOW WHAT I AM 🪞
 try:
-    from aureon_self_awareness import AUREON_SELF, AureonSelfMap
+    from aureon.intelligence.aureon_self_awareness import AUREON_SELF, AureonSelfMap
     SELF_AWARE = True
 except ImportError:
     AUREON_SELF = None
@@ -83,7 +83,7 @@ except ImportError:
 
 # 🧠 THOUGHT BUS - UNITY CONSCIOUSNESS 🧠
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS = ThoughtBus(persist_path="thoughts.jsonl")
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
@@ -93,7 +93,7 @@ except ImportError:
 
 # 🛡️ IMMUNE SYSTEM - SELF-HEALING INTELLIGENCE 🛡️
 try:
-    from aureon_immune_system import AureonImmuneSystem
+    from aureon.core.aureon_immune_system import AureonImmuneSystem
     IMMUNE_SYSTEM_AVAILABLE = True
 except Exception as e:
     AureonImmuneSystem = None
@@ -104,7 +104,7 @@ except Exception as e:
 
 # 🌀 PHASE TRANSITION DETECTOR - Geometric Regime Change Detection 🌀
 try:
-    from aureon_phase_transition_detector import PhaseTransitionDetector, PhaseState
+    from aureon.intelligence.aureon_phase_transition_detector import PhaseTransitionDetector, PhaseState
     PHASE_DETECTOR = PhaseTransitionDetector()
     PHASE_DETECTOR_AVAILABLE = True
     print("🌀 Phase Transition Detector: ONLINE (Takens embedding + Frenet-Serret curvature)")
@@ -115,7 +115,7 @@ except ImportError:
 
 # ☀️ CROSS-SUBSTRATE SOLAR MONITOR - Solar-Market Correlation Research ☀️
 try:
-    from aureon_cross_substrate_monitor import CrossSubstrateMonitor, CrossSubstrateAnalyzer
+    from aureon.monitors.aureon_cross_substrate_monitor import CrossSubstrateMonitor, CrossSubstrateAnalyzer
     SOLAR_MONITOR = CrossSubstrateMonitor()
     SOLAR_ANALYZER = CrossSubstrateAnalyzer()
     SOLAR_MONITOR_AVAILABLE = True
@@ -128,7 +128,7 @@ except ImportError:
 
 # 🔧 OPERATIONAL CORE — The 9 Surgical Fixes (Brain→Body, Circuit Breaker, etc.)
 try:
-    from aureon_operational_core import get_operational_core, AureonOperationalCore
+    from aureon.core.aureon_operational_core import get_operational_core, AureonOperationalCore
     OPS_CORE = get_operational_core(
         phase_detector=PHASE_DETECTOR if PHASE_DETECTOR_AVAILABLE else None,
         solar_monitor=SOLAR_MONITOR if SOLAR_MONITOR_AVAILABLE else None,
@@ -142,7 +142,7 @@ except ImportError as e:
 
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning 💎
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, ultimate_predict, record_ultimate_outcome,
         UltimatePrediction
     )
@@ -156,7 +156,7 @@ except ImportError:
 
 # 🌍🍄 AUREON ULTIMATE ECOSYSTEM WIRING - Full Integration 🍄🌍
 try:
-    from aureon_ultimate_ecosystem_wiring import (
+    from aureon.trading.aureon_ultimate_ecosystem_wiring import (
         get_ultimate_ecosystem, ecosystem_predict, ecosystem_record_outcome,
         EcosystemPrediction, AureonUltimateEcosystem
     )
@@ -168,7 +168,7 @@ except ImportError:
 
 # 💰🎯 ADAPTIVE PRIME PROFIT GATE - Dynamic Break-Even Intelligence 💰🎯
 try:
-    from adaptive_prime_profit_gate import (
+    from aureon.utils.adaptive_prime_profit_gate import (
         get_adaptive_gate, get_adaptive_threshold,
         AdaptivePrimeProfitGate, AdaptiveGateResult,
         wire_to_probability_matrix, wire_to_mycelium, wire_all_integrations
@@ -192,7 +192,7 @@ except ImportError as e:
 
 # 🌌✨ INTERNAL MULTIVERSE - 10-9-1-10 Many Worlds Architecture ✨🌌
 try:
-    from aureon_internal_multiverse import (
+    from aureon.simulation.aureon_internal_multiverse import (
         get_multiverse, multiverse_predict, multiverse_record_outcome,
         InternalMultiverse, World, OmegaConverter, ConsensusEngine
     )
@@ -214,7 +214,7 @@ except ImportError as e:
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon.core.aureon_chirp_bus import get_chirp_bus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -369,7 +369,7 @@ PSI_FILTER = 0.037          # Top 3.7% opportunities only
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT_DIR)
 try:
-    from unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
+    from aureon.trading.unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
 except ImportError as e:
     print(f"⚠️  Unified Exchange Client not available: {e}")
     # Define dummy classes to prevent crash if critical module is missing
@@ -386,7 +386,7 @@ except ImportError as e:
         def convert_to_quote(self, *args): return 0.0
 
 # 🇮🇪🎯 IRA SNIPER MODE - Core imports (top-level for reliability)
-from ira_sniper_mode import (
+from aureon.scanners.ira_sniper_mode import (
     apply_sniper_mode,
     check_sniper_exit,
     get_sniper_config,
@@ -410,7 +410,7 @@ from ira_sniper_mode import (
 
 # ⚔️ WAR STRATEGY - QUICK KILL ENGINE
 try:
-    from war_strategy import QuickKillEngine, get_war_strategy
+    from aureon.command_centers.war_strategy import QuickKillEngine, get_war_strategy
     WAR_ENGINE_AVAILABLE = True
 except ImportError:
     WAR_ENGINE_AVAILABLE = False
@@ -418,7 +418,7 @@ except ImportError:
     get_war_strategy = lambda: None
 
 try:
-    from aureon_lattice import GaiaLatticeEngine, CarrierWaveDynamics  # 🌍 GAIA FREQUENCY PHYSICS
+    from aureon.core.aureon_lattice import GaiaLatticeEngine, CarrierWaveDynamics  # 🌍 GAIA FREQUENCY PHYSICS
     LATTICE_AVAILABLE = True
 except ImportError:
     LATTICE_AVAILABLE = False
@@ -431,7 +431,7 @@ except ImportError:
         def get_field_purity(self): return 1.0
 
 try:
-    from aureon_enhancements import EnhancementLayer
+    from aureon.core.aureon_enhancements import EnhancementLayer
     ENHANCEMENTS_AVAILABLE = True
 except ImportError:
     ENHANCEMENTS_AVAILABLE = False
@@ -443,7 +443,7 @@ except ImportError:
 
 # Optional helper functions from `aureon_enhancements` (do not override ENHANCEMENTS_AVAILABLE)
 try:
-    from aureon_enhancements import apply_enhancement_to_signal, get_emotional_color
+    from aureon.core.aureon_enhancements import apply_enhancement_to_signal, get_emotional_color
     ENHANCEMENT_HELPERS_AVAILABLE = True
 except ImportError:
     ENHANCEMENT_HELPERS_AVAILABLE = False
@@ -454,7 +454,7 @@ except ImportError:
 
 # 🔱 PRIME SENTINEL DECREE - Gary Leckey | 02.11.1991 | KEEPER OF THE FLAME
 try:
-    from prime_sentinel_decree import (
+    from aureon.wisdom.prime_sentinel_decree import (
         PrimeSentinelDecree,
         FlameProtocol,
         BreathReader,
@@ -473,8 +473,8 @@ except ImportError:
     print("⚠️  Prime Sentinel Decree not available")
 
 try:
-    from aureon_market_pulse import MarketPulse
-    from aureon_war_band import WarBand
+    from aureon.intelligence.aureon_market_pulse import MarketPulse
+    from aureon.command_centers.aureon_war_band import WarBand
 except ImportError:
     print("⚠️  Market Pulse/War Band not available: Running in degraded mode")
     class MarketPulse:
@@ -486,7 +486,7 @@ except ImportError:
 
 # 🔮 NEXUS PREDICTOR - 79.6% Win Rate Validated Over 11 Years!
 try:
-    from nexus_predictor import NexusPredictor
+    from aureon.intelligence.nexus_predictor import NexusPredictor
     NEXUS_PREDICTOR_AVAILABLE = True
     print("🔮 Nexus Predictor loaded - 79.6% win rate validated!")
 except ImportError:
@@ -507,7 +507,7 @@ def _lazy_load_enhanced_nexus():
     if EnhancedProbabilityNexus is not None:
         return ENHANCED_NEXUS_AVAILABLE
     try:
-        from aureon_probability_nexus import (
+        from aureon.bridges.aureon_probability_nexus import (
             EnhancedProbabilityNexus as _EnhancedProbabilityNexus,
             ProfitFilter as _ProfitFilter,
             CompoundingEngine as _CompoundingEngine,
@@ -528,7 +528,7 @@ def _lazy_load_enhanced_nexus():
 
 # 🧠 MINER BRAIN - COGNITIVE TRADING INTELLIGENCE 🧠
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     BRAIN_AVAILABLE = True
     print("🧠 Miner Brain loaded - Cognitive Intelligence Active!")
 except ImportError:
@@ -537,7 +537,7 @@ except ImportError:
 
 # 🌐⚡ GLOBAL HARMONIC FIELD - UNIFIED 42-SOURCE FIELD ⚡🌐
 try:
-    from global_harmonic_field import GlobalHarmonicField, get_global_field, compute_global_omega
+    from aureon.harmonic.global_harmonic_field import GlobalHarmonicField, get_global_field, compute_global_omega
     HARMONIC_FIELD_AVAILABLE = True
     print("🌐⚡ Global Harmonic Field loaded - 42 sources → 7 layers → Ω")
 except ImportError as e:
@@ -546,7 +546,7 @@ except ImportError as e:
 
 # 🌍⚡ HNC FREQUENCY INTEGRATION ⚡🌍
 try:
-    from hnc_master_protocol import HarmonicNexusCore, HNCTradingBridge, LiveMarketFrequencyFeed
+    from aureon.strategies.hnc_master_protocol import HarmonicNexusCore, HNCTradingBridge, LiveMarketFrequencyFeed
     HNC_AVAILABLE = True
 except ImportError as e:
     HNC_AVAILABLE = False
@@ -554,7 +554,7 @@ except ImportError as e:
 
 # 🌍⚡ HNC PROBABILITY MATRIX INTEGRATION ⚡🌍
 try:
-    from hnc_probability_matrix import HNCProbabilityIntegration, ProbabilityMatrix
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration, ProbabilityMatrix
     PROB_MATRIX_AVAILABLE = True
 except ImportError as e:
     PROB_MATRIX_AVAILABLE = False
@@ -563,7 +563,7 @@ except ImportError as e:
 
 # 🌍⚡ COINAPI ANOMALY DETECTION ⚡🌍
 try:
-    from coinapi_anomaly_detector import CoinAPIClient, AnomalyDetector, AnomalyType
+    from aureon.exchanges.coinapi_anomaly_detector import CoinAPIClient, AnomalyDetector, AnomalyType
     COINAPI_AVAILABLE = True
 except ImportError as e:
     COINAPI_AVAILABLE = False
@@ -571,7 +571,7 @@ except ImportError as e:
 
 # 🌉 AUREON BRIDGE - ULTIMATE ↔ UNIFIED COMMUNICATION 🌉
 try:
-    from aureon_bridge import AureonBridge, Opportunity as BridgeOpportunity, CapitalState, Position as BridgePosition
+    from aureon.bridges.aureon_bridge import AureonBridge, Opportunity as BridgeOpportunity, CapitalState, Position as BridgePosition
     BRIDGE_AVAILABLE = True
 except ImportError as e:
     BRIDGE_AVAILABLE = False
@@ -579,7 +579,7 @@ except ImportError as e:
 
 # 🌐 AUREON UI BRIDGE - LIVE DATA VALIDATOR FROM aureoninstitute.com 🌐
 try:
-    from aureon_ui_bridge import (
+    from aureon.bridges.aureon_ui_bridge import (
         AureonUIBridge, AureonUIValidator, UIMyceliumConnector,
         get_ui_bridge, get_ui_connector, validate_trade_against_ui,
         get_harmonic_field_status, get_fear_greed_status,
@@ -592,7 +592,7 @@ except ImportError as e:
 
 # 🌌⚡ HNC IMPERIAL PREDICTABILITY ENGINE ⚡🌌
 try:
-    from hnc_imperial_predictability import (
+    from aureon.strategies.hnc_imperial_predictability import (
         ImperialTradingIntegration, PredictabilityEngine, CosmicStateEngine,
         CosmicPhase, MarketTorque, ImperialPredictabilityMatrix
     )
@@ -603,8 +603,8 @@ except ImportError as e:
 
 # 🔭 QUANTUM TELESCOPE & HARMONIC UNDERLAY 🔭
 try:
-    from aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
-    from hnc_6d_harmonic_waveform import SixDimensionalHarmonicEngine, WaveState
+    from aureon.simulation.aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
+    from aureon.strategies.hnc_6d_harmonic_waveform import SixDimensionalHarmonicEngine, WaveState
     QUANTUM_AVAILABLE = True
 except ImportError as e:
     QUANTUM_AVAILABLE = False
@@ -612,7 +612,7 @@ except ImportError as e:
 
 # 🌊 HARMONIC WAVE FUSION - 7-DAY SEED + LIVE GROWTH + LIGHTHOUSE 🌊
 try:
-    from aureon_harmonic_fusion import (
+    from aureon.harmonic.aureon_harmonic_fusion import (
         HarmonicWaveFusion, HarmonicFusionConfig, get_harmonic_fusion,
         initialize_harmonic_fusion
     )
@@ -624,7 +624,7 @@ except ImportError as e:
 
 # 🪜 CONVERSION LADDER - Capital Momentum Builder (Mycelium-directed) 🪜
 try:
-    from aureon_conversion_ladder import ConversionLadder
+    from aureon.conversion.aureon_conversion_ladder import ConversionLadder
     CONVERSION_LADDER_AVAILABLE = True
     print("🪜 Conversion Ladder loaded - capital momentum builder")
 except ImportError as e:
@@ -633,7 +633,7 @@ except ImportError as e:
 
 # 🦅⚔️ ADAPTIVE CONVERSION COMMANDO - 1885 CAPM Game ⚔️🦅
 try:
-    from aureon_conversion_commando import AdaptiveConversionCommando
+    from aureon.conversion.aureon_conversion_commando import AdaptiveConversionCommando
     CONVERSION_COMMANDO_AVAILABLE = True
     print("🦅⚔️ Adaptive Conversion Commando loaded - 1885 CAPM Game")
 except ImportError as e:
@@ -642,7 +642,7 @@ except ImportError as e:
 
 # 🌍⚡ EARTH RESONANCE ENGINE ⚡🌍
 try:
-    from earth_resonance_engine import EarthResonanceEngine, get_earth_engine
+    from aureon.harmonic.earth_resonance_engine import EarthResonanceEngine, get_earth_engine
     EARTH_RESONANCE_AVAILABLE = True
 except ImportError as e:
     EARTH_RESONANCE_AVAILABLE = False
@@ -650,7 +650,7 @@ except ImportError as e:
 
 # 🌌⚡ AUREON NEXUS - UNIFIED NEURAL TRADING ENGINE ⚡🌌
 try:
-    from aureon_nexus import NexusBus, MasterEquation, QueenHive, AureonNexus, NEXUS as NEXUS_BUS
+    from aureon.core.aureon_nexus import NexusBus, MasterEquation, QueenHive, AureonNexus, NEXUS as NEXUS_BUS
     NEXUS_AVAILABLE = True
     # 🧠 UNITY: Connect Nexus to Thought Bus
     if NEXUS_BUS and THOUGHT_BUS_AVAILABLE:
@@ -663,7 +663,7 @@ except ImportError as e:
 
 # 🎯 PROBABILITY LOADER & POSITION HYGIENE 🎯
 try:
-    from probability_loader import ProbabilityLoader, PositionHygieneChecker, load_position_state
+    from aureon.strategies.probability_loader import ProbabilityLoader, PositionHygieneChecker, load_position_state
     PROBABILITY_LOADER_AVAILABLE = True
 except ImportError as e:
     PROBABILITY_LOADER_AVAILABLE = False
@@ -680,7 +680,7 @@ except ImportError as e:
 
 # 📊 TRADE LOGGER - COMPREHENSIVE DATA LOGGING 📊
 try:
-    from trade_logger import get_trade_logger, TradeLogger
+    from aureon.portfolio.trade_logger import get_trade_logger, TradeLogger
     TRADE_LOGGER_AVAILABLE = True
     trade_logger = get_trade_logger()
 except ImportError as e:
@@ -690,7 +690,7 @@ except ImportError as e:
 
 # 💰 COST BASIS TRACKER - REAL PURCHASE PRICES 💰
 try:
-    from cost_basis_tracker import CostBasisTracker, get_cost_basis_tracker
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker, get_cost_basis_tracker
     COST_BASIS_AVAILABLE = True
 except ImportError as e:
     COST_BASIS_AVAILABLE = False
@@ -709,7 +709,7 @@ except ImportError as e:
 
 # 🌍⚡ GLOBAL FINANCIAL ECOSYSTEM FEED ⚡🌍
 try:
-    from global_financial_feed import GlobalFinancialFeed, MacroSnapshot
+    from aureon.data_feeds.global_financial_feed import GlobalFinancialFeed, MacroSnapshot
     GLOBAL_FEED_AVAILABLE = True
     print("   🌍 Global Financial Ecosystem Feed ACTIVE")
 except ImportError as e:
@@ -724,7 +724,7 @@ except ImportError as e:
 
 # 📊 PROBABILITY VALIDATION ENGINE 📊
 try:
-    from probability_validator import ProbabilityValidator, get_validator
+    from aureon.strategies.probability_validator import ProbabilityValidator, get_validator
     VALIDATOR_AVAILABLE = True
     print("   📊 Probability Validation Engine ACTIVE")
 except ImportError as e:
@@ -740,7 +740,7 @@ except ImportError as e:
 
 # 🌅 LIGHTHOUSE PROTOCOL METRICS (spectral coherence/distortion)
 try:
-    from lighthouse_metrics import LighthouseMetricsEngine
+    from aureon.analytics.lighthouse_metrics import LighthouseMetricsEngine
     LIGHTHOUSE_AVAILABLE = True
     LIGHTHOUSE_ENGINE = LighthouseMetricsEngine()
     print("   🌅 Lighthouse Metrics ACTIVE")
@@ -752,12 +752,12 @@ except Exception as e:
 
 
 # ==== AUREON COGNITION BUS (self-talking JSON thoughts) ====
-from aureon_thought_bus import ThoughtBus, Thought
-from aureon_cognition_runtime import MinerModule, RiskModule, ExecutionModule
+from aureon.core.aureon_thought_bus import ThoughtBus, Thought
+from aureon.autonomous.aureon_cognition_runtime import MinerModule, RiskModule, ExecutionModule
 
 # ==== WORLD NEWS FEED (external data gathering) ====
 try:
-    from aureon_news_feed import NewsFeed, NewsFeedConfig, create_news_feed
+    from aureon.data_feeds.aureon_news_feed import NewsFeed, NewsFeedConfig, create_news_feed
     NEWS_FEED_AVAILABLE = True
 except ImportError:
     NEWS_FEED_AVAILABLE = False
@@ -765,7 +765,7 @@ except ImportError:
 
 # ==== WIKIPEDIA KNOWLEDGE BASE (autonomous knowledge gathering) ====
 try:
-    from aureon_knowledge_base import KnowledgeBase, create_knowledge_base
+    from aureon.core.aureon_knowledge_base import KnowledgeBase, create_knowledge_base
     KNOWLEDGE_BASE_AVAILABLE = True
 except ImportError:
     KNOWLEDGE_BASE_AVAILABLE = False
@@ -773,7 +773,7 @@ except ImportError:
 
 # ==== WISDOM SCANNER - CONSCIOUSNESS EXPANSION ENGINE ====
 try:
-    from aureon_wisdom_scanner import AureonWisdomScanner, ScannerConfig, WisdomScannerThoughtBusAdapter
+    from aureon.scanners.aureon_wisdom_scanner import AureonWisdomScanner, ScannerConfig, WisdomScannerThoughtBusAdapter
     WISDOM_SCANNER_AVAILABLE = True
     print("   📚 Wisdom Scanner loaded - Consciousness Expansion Active!")
 except ImportError as e:
@@ -782,7 +782,7 @@ except ImportError as e:
 
 # ==== 🇮🇪🎯 UNIFIED SNIPER BRAIN - THE KILL SHOT ENGINE ====
 try:
-    from unified_sniper_brain import get_unified_brain, UnifiedSniperBrain
+    from aureon.trading.unified_sniper_brain import get_unified_brain, UnifiedSniperBrain
     SNIPER_BRAIN_AVAILABLE = True
     print("   🎯 UNIFIED SNIPER BRAIN LOADED - Ready for kills!")
 except ImportError as e:
@@ -792,7 +792,7 @@ except ImportError as e:
 
 # ==== ⚔️ WAR STRATEGY - QUICK KILL PROBABILITY ENGINE ====
 try:
-    from war_strategy import (
+    from aureon.command_centers.war_strategy import (
         WAR_STRATEGIST, get_quick_kill_estimate, should_attack, 
         start_raid, complete_raid, get_raid_status, get_war_briefing,
         REQUIRED_R, WIN_THRESHOLD, NET_PENNY_TARGET, IDEAL_BARS, MAX_ACCEPTABLE_BARS
@@ -806,7 +806,7 @@ except ImportError as e:
 
 # ==== 🇮🇪 BHOY'S WISDOM - STRATEGIC QUOTES ====
 try:
-    from bhoys_wisdom import celebrate_penny_profit, get_contextual_wisdom
+    from aureon.wisdom.bhoys_wisdom import celebrate_penny_profit, get_contextual_wisdom
     BHOYS_WISDOM_AVAILABLE = True
     print("   🍀 Bhoy's Wisdom loaded - Through a Bhoy's Eyes Active!")
 except ImportError as e:
@@ -821,7 +821,7 @@ except ImportError as e:
 
 # ==== ☘️ GUERRILLA WARFARE ENGINE ====
 try:
-    from guerrilla_warfare_engine import (
+    from aureon.wisdom.guerrilla_warfare_engine import (
         IntelligenceNetwork, FlyingColumn, BattlefrontStatus,
         TacticalMode, IntelligenceReport, GUERRILLA_CONFIG, get_celtic_wisdom
     )
@@ -834,7 +834,7 @@ except ImportError as e:
 
 # ==== ⚡ CELTIC PREEMPTIVE STRIKE ENGINE ====
 try:
-    from celtic_preemptive_strike import (
+    from aureon.wisdom.celtic_preemptive_strike import (
         PreemptiveExitEngine, DawnRaidDetector,
         PreemptiveSignal, PreemptiveSignalType
     )
@@ -847,7 +847,7 @@ except ImportError as e:
 
 # ==== 🌐 MULTI-BATTLEFRONT COORDINATOR ====
 try:
-    from multi_battlefront_coordinator import (
+    from aureon.wisdom.multi_battlefront_coordinator import (
         MultiBattlefrontWarRoom, CampaignPhase, ArbitrageOpportunity
     )
     BATTLEFRONT_COORDINATOR_AVAILABLE = True
@@ -859,7 +859,7 @@ except ImportError as e:
 
 # ==== 🇮🇪 IRISH PATRIOT SCOUTS ====
 try:
-    from irish_patriot_scouts import (
+    from aureon.wisdom.irish_patriot_scouts import (
         PatriotScoutNetwork, PatriotScout, PatriotScoutDeployer,
         PATRIOT_CONFIG, get_patriot_wisdom
     )
@@ -873,7 +873,7 @@ except ImportError as e:
 
 # ==== 🎯 IRA CELTIC SNIPER ====
 try:
-    from ira_sniper_mode import (
+    from aureon.scanners.ira_sniper_mode import (
         IraCelticSniper, get_celtic_sniper, SNIPER_CONFIG,
         check_sniper_exit, celebrate_sniper_kill,
         get_sniper_config, map_sniper_platform_assets, apply_sniper_mode
@@ -6247,7 +6247,7 @@ class AdaptiveLearningEngine:
         - AUREON_AUTO_RESET_LEARNED_ANALYTICS_NO_ARCHIVE=1
         """
         try:
-            from learned_analytics_reset import auto_reset_config, reset_learned_analytics_if_needed
+            from aureon.utils.learned_analytics_reset import auto_reset_config, reset_learned_analytics_if_needed
         except Exception:
             return
 
@@ -7542,7 +7542,7 @@ def sync_exchange_trades_to_brain():
     # 🟡 BINANCE TRADE SYNC
     # ═══════════════════════════════════════════════════════════════
     try:
-        from binance_client import BinanceClient, get_binance_client
+        from aureon.exchanges.binance_client import BinanceClient, get_binance_client
         
         binance_key = os.getenv('BINANCE_API_KEY')
         binance_secret = os.getenv('BINANCE_API_SECRET')
@@ -8686,7 +8686,7 @@ class UniversalMarketIntelligence:
         """Emit a thought to the bus."""
         if self.bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source='universal_intel',
                     topic=f'universal_intel.{topic}',
@@ -9473,7 +9473,7 @@ class NexusIntegration:
     def _initialize_nexus(self):
         """Initialize Nexus components."""
         try:
-            from aureon_nexus import MasterEquation, QueenHive
+            from aureon.core.aureon_nexus import MasterEquation, QueenHive
             self.master_equation = MasterEquation()
             self.queen_hive = QueenHive(initial_capital=0.0)
             logger.info("🌌 NEXUS Integration initialized")
@@ -12098,7 +12098,7 @@ class Synapse:
 # ══════════════════════════════════════════════════════════════
 # Import the full neural network if available
 try:
-    from aureon_mycelium import MyceliumNetwork as FullMyceliumNetwork, Hive, Agent, Neuron
+    from aureon.core.aureon_mycelium import MyceliumNetwork as FullMyceliumNetwork, Hive, Agent, Neuron
     FULL_MYCELIUM_AVAILABLE = True
     logger.info("🍄🧠 Full Mycelium Neural Network loaded - Hives & Queen Neuron ACTIVE")
 except ImportError:
@@ -12198,7 +12198,7 @@ class MyceliumNetwork:
         """Emit a thought to the bus."""
         if self.bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source='mycelium',
                     topic=f'mycelium.{topic}',
@@ -13455,7 +13455,7 @@ class AureonKrakenEcosystem:
         # ⚙️ THE BIG WHEEL - Autonomy Hub connects Data -> Predictions -> Decisions -> Feedback
         self.autonomy_hub = None
         try:
-            from aureon_autonomy_hub import get_autonomy_hub
+            from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
             self.autonomy_hub = get_autonomy_hub()
             print("⚙️  THE BIG WHEEL: Autonomy Hub connected (Data->Predictions->Decisions->Feedback)")
         except Exception as e:
@@ -13464,7 +13464,7 @@ class AureonKrakenEcosystem:
         # ⚔️ THE MIND - Strategic War Planner (adversarial chess engine)
         self.war_planner = None
         try:
-            from aureon_strategic_war_planner import get_war_planner
+            from aureon.command_centers.aureon_strategic_war_planner import get_war_planner
             self.war_planner = get_war_planner()
             print("⚔️  THE MIND: War Planner connected (Sun Tzu + IRA + Boyd OODA)")
         except Exception as e:
@@ -23828,7 +23828,7 @@ class AureonKrakenEcosystem:
                         
                         # 🔗 Domino chain indicator
                         try:
-                            from ira_sniper_mode import DOMINO_ENGINE
+                            from aureon.scanners.ira_sniper_mode import DOMINO_ENGINE
                             domino_boost, domino_active = DOMINO_ENGINE.get_domino_boost(symbol)
                             if domino_active and domino_boost > 1.0:
                                 ladders.append(f'🔗↑')  # Domino chain boost active
@@ -24153,7 +24153,7 @@ def main():
     # Start background miner if enabled
     if enable_mining:
         try:
-            from aureon_miner import AureonMiner, resolve_pool_config, KNOWN_POOLS
+            from aureon.utils.aureon_miner import AureonMiner, resolve_pool_config, KNOWN_POOLS
             
             worker = os.getenv('MINING_WORKER', '')
             password = os.getenv('MINING_PASSWORD', 'x')

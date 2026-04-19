@@ -15,7 +15,7 @@ Hooks up ALL of Binance:
 "A song of space and time" - converting endlessly through the labyrinth
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -31,7 +31,7 @@ from decimal import Decimal
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from binance_client import BinanceClient, BinancePoolClient
+from aureon.exchanges.binance_client import BinanceClient, BinancePoolClient
 
 
 @dataclass

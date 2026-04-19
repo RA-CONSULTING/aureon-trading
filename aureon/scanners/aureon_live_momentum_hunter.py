@@ -29,7 +29,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -164,7 +164,7 @@ class LiveMomentumHunter:
     
     def _init_exchange_client(self):
         """Initialize Alpaca client."""
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         self.alpaca = AlpacaClient()
         
         # Get account info
@@ -181,8 +181,8 @@ class LiveMomentumHunter:
     def _init_scanner_bridge(self):
         """Initialize fee-aware scanner bridge."""
         try:
-            from aureon_alpaca_scanner_bridge import AlpacaScannerBridge
-            from alpaca_fee_tracker import AlpacaFeeTracker
+            from aureon.bridges.aureon_alpaca_scanner_bridge import AlpacaScannerBridge
+            from aureon.exchanges.alpaca_fee_tracker import AlpacaFeeTracker
             
             self.fee_tracker = AlpacaFeeTracker(self.alpaca)
             self.bridge = AlpacaScannerBridge(
@@ -199,7 +199,7 @@ class LiveMomentumHunter:
     def _init_animal_swarm(self):
         """Initialize animal momentum scanners."""
         try:
-            from aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
+            from aureon.scanners.aureon_animal_momentum_scanners import AlpacaSwarmOrchestrator
             
             self.swarm = AlpacaSwarmOrchestrator(self.alpaca, self.bridge)
             self.swarm.dry_run = self.dry_run
@@ -211,7 +211,7 @@ class LiveMomentumHunter:
     def _init_probability_nexus(self):
         """Initialize probability prediction engine."""
         try:
-            from aureon_probability_nexus import AureonProbabilityNexus
+            from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
             
             self.nexus = AureonProbabilityNexus(exchange='alpaca')
             logger.info("🔮 Probability Nexus initialized (3-validation pipeline)")
@@ -222,7 +222,7 @@ class LiveMomentumHunter:
     def _init_queen(self):
         """Initialize Queen Hive Mind."""
         try:
-            from aureon_queen_hive_mind import QueenHiveMind, create_queen_hive_mind
+            from aureon.utils.aureon_queen_hive_mind import QueenHiveMind, create_queen_hive_mind
             
             self.queen = create_queen_hive_mind(initial_capital=self.equity or 100.0)
             
@@ -241,7 +241,7 @@ class LiveMomentumHunter:
     def _init_orca(self):
         """Initialize Orca Killer Whale Intelligence."""
         try:
-            from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
+            from aureon.bots_intelligence.aureon_orca_intelligence import OrcaKillerWhaleIntelligence
             
             self.orca = OrcaKillerWhaleIntelligence()
             
@@ -257,7 +257,7 @@ class LiveMomentumHunter:
     def _init_ocean(self):
         """Initialize Ocean Scanner for 13,000+ symbol scanning."""
         try:
-            from aureon_ocean_scanner import OceanScanner
+            from aureon.scanners.aureon_ocean_scanner import OceanScanner
             
             # Pass exchange clients to ocean scanner
             exchanges = {}
@@ -273,7 +273,7 @@ class LiveMomentumHunter:
     def _init_hunting_grounds(self):
         """Initialize Orca Hunting Grounds for venue scoring."""
         try:
-            from orca_hunting_grounds import OrcaHuntingGrounds
+            from aureon.bots.orca_hunting_grounds import OrcaHuntingGrounds
             
             self.hunting_grounds = OrcaHuntingGrounds()
             logger.info("🎯 Hunting Grounds initialized - venue scoring ready")
@@ -284,7 +284,7 @@ class LiveMomentumHunter:
     def _init_barter_matrix(self):
         """Initialize Barter Matrix for multi-hop conversion paths."""
         try:
-            from aureon_barter_navigator import BarterNavigator
+            from aureon.trading.aureon_barter_navigator import BarterNavigator
             
             self.barter = BarterNavigator()
             
@@ -300,7 +300,7 @@ class LiveMomentumHunter:
     def _init_global_hunter(self):
         """Initialize Orca Global Hunter for 3,000+ symbol worldwide scanning."""
         try:
-            from orca_global_hunter import OrcaGlobalHunter
+            from aureon.bots.orca_global_hunter import OrcaGlobalHunter
             
             self.global_hunter = OrcaGlobalHunter()
             logger.info("🦈🌍 Global Hunter initialized - 3,000+ symbols across all exchanges")
@@ -515,7 +515,7 @@ class LiveMomentumHunter:
         # Merge global opportunities into scan results
         if global_opportunities:
             # Convert GlobalOpportunity to AnimalOpportunity format
-            from aureon_animal_momentum_scanners import AnimalOpportunity
+            from aureon.scanners.aureon_animal_momentum_scanners import AnimalOpportunity
             global_as_animal = []
             for gopp in global_opportunities[:10]:  # Top 10 global
                 try:
@@ -714,7 +714,7 @@ class LiveMomentumHunter:
             
             # Execute via bridge with trailing stop
             if self.bridge and best.side == 'buy':
-                from aureon_animal_momentum_scanners import AnimalOpportunity
+                from aureon.scanners.aureon_animal_momentum_scanners import AnimalOpportunity
                 opp = AnimalOpportunity(
                     symbol=alpaca_symbol,
                     side=best.side,

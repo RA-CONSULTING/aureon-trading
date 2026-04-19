@@ -61,7 +61,7 @@ try:
     HAS_ETA_PREDICTOR = True
 except ImportError:
     try:
-        from margin_eta_predictor import MarginETAPredictor
+        from aureon.monitors.margin_eta_predictor import MarginETAPredictor
         HAS_ETA_PREDICTOR = True
     except ImportError:
         HAS_ETA_PREDICTOR = False
@@ -70,7 +70,7 @@ except ImportError:
 
 # Dead Man's Switch - Dynamic Take Profit
 try:
-    from dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
+    from aureon.trading.dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
     HAS_DTP = True
 except ImportError:
     HAS_DTP = False
@@ -79,7 +79,7 @@ except ImportError:
 
 # Margin Wave Rider - pre-entry 250% margin safety gate
 try:
-    from margin_wave_rider import MarginWaveRider, WAVE_CONFIG
+    from aureon.trading.margin_wave_rider import MarginWaveRider, WAVE_CONFIG
     HAS_WAVE_RIDER = True
 except ImportError:
     HAS_WAVE_RIDER = False
@@ -88,7 +88,7 @@ except ImportError:
 
 # Stallion Tracker - Apache phase intelligence (ROPING→BUCKING→TIRING→TAMED)
 try:
-    from stallion_tracker import classify_phase, StallionPhase
+    from aureon.utils.stallion_tracker import classify_phase, StallionPhase
     HAS_STALLION = True
 except ImportError:
     HAS_STALLION = False
@@ -97,7 +97,7 @@ except ImportError:
 
 # Stallion Multiverse - parallel shadow rides + 1-hour rotation
 try:
-    from stallion_multiverse import StallionMultiverse, MULTIVERSE_CONFIG
+    from aureon.simulation.stallion_multiverse import StallionMultiverse, MULTIVERSE_CONFIG
     HAS_MULTIVERSE = True
 except ImportError:
     HAS_MULTIVERSE = False
@@ -106,7 +106,7 @@ except ImportError:
 
 # Multiverse Learning Bridge - adaptive learning → Seer, Lyra, pre-trade
 try:
-    from multiverse_learning_bridge import MultiverseLearningBridge
+    from aureon.bridges.multiverse_learning_bridge import MultiverseLearningBridge
     HAS_LEARNING_BRIDGE = True
 except ImportError:
     HAS_LEARNING_BRIDGE = False
@@ -114,7 +114,7 @@ except ImportError:
 
 # Autonomous Trading Orchestrator - central nervous system for all systems
 try:
-    from autonomous_trading_orchestrator import AutonomousOrchestrator
+    from aureon.autonomous.autonomous_trading_orchestrator import AutonomousOrchestrator
     HAS_ORCHESTRATOR = True
 except ImportError:
     HAS_ORCHESTRATOR = False
@@ -122,7 +122,7 @@ except ImportError:
 
 # Goal Recorder — proof file for entry goal vs actual outcome
 try:
-    from margin_goal_recorder import MarginGoalRecorder
+    from aureon.monitors.margin_goal_recorder import MarginGoalRecorder
     HAS_GOAL_RECORDER = True
 except ImportError:
     HAS_GOAL_RECORDER = False
@@ -130,7 +130,7 @@ except ImportError:
 
 # Macro Intelligence — pre-execution market context (F&G, BTC trend, dominance, news)
 try:
-    from macro_intelligence import MacroIntelligence
+    from aureon.intelligence.macro_intelligence import MacroIntelligence
     HAS_MACRO_INTEL = True
 except ImportError:
     HAS_MACRO_INTEL = False
@@ -138,14 +138,14 @@ except ImportError:
 
 # Additional repo scanners for mission selection enrichment
 try:
-    from aureon_seer import get_seer
+    from aureon.intelligence.aureon_seer import get_seer
     HAS_SEER = True
 except ImportError:
     HAS_SEER = False
     get_seer = None
 
 try:
-    from war_strategy import should_attack, get_quick_kill_estimate
+    from aureon.command_centers.war_strategy import should_attack, get_quick_kill_estimate
     HAS_WAR_STRATEGY = True
 except ImportError:
     HAS_WAR_STRATEGY = False
@@ -153,42 +153,42 @@ except ImportError:
     get_quick_kill_estimate = None
 
 try:
-    from unified_sniper_brain import get_unified_brain
+    from aureon.trading.unified_sniper_brain import get_unified_brain
     HAS_SNIPER_BRAIN = True
 except ImportError:
     HAS_SNIPER_BRAIN = False
     get_unified_brain = None
 
 try:
-    from nexus_predictor import NexusPredictor
+    from aureon.intelligence.nexus_predictor import NexusPredictor
     HAS_NEXUS_PREDICTOR = True
 except ImportError:
     HAS_NEXUS_PREDICTOR = False
     NexusPredictor = None
 
 try:
-    from aureon_lattice import LatticeEngine
+    from aureon.core.aureon_lattice import LatticeEngine
     HAS_LATTICE = True
 except ImportError:
     HAS_LATTICE = False
     LatticeEngine = None
 
 try:
-    from aureon_seer_integration import seer_get_vision
+    from aureon.intelligence.aureon_seer_integration import seer_get_vision
     HAS_SEER_INTEGRATION = True
 except ImportError:
     HAS_SEER_INTEGRATION = False
     seer_get_vision = None
 
 try:
-    from aureon_lyra_integration import lyra_get_resonance
+    from aureon.trading.aureon_lyra_integration import lyra_get_resonance
     HAS_LYRA_INTEGRATION = True
 except ImportError:
     HAS_LYRA_INTEGRATION = False
     lyra_get_resonance = None
 
 try:
-    from aureon_atn_monitor import get_atn_monitor
+    from aureon.atn.aureon_atn_monitor import get_atn_monitor
     HAS_ATN_MONITOR = True
 except ImportError:
     HAS_ATN_MONITOR = False
@@ -266,7 +266,7 @@ try:
     HAS_KRAKEN_FEE_TRACKER = True
 except ImportError:
     try:
-        from kraken_fee_tracker import get_kraken_fee_tracker
+        from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker
         HAS_KRAKEN_FEE_TRACKER = True
     except ImportError:
         HAS_KRAKEN_FEE_TRACKER = False
@@ -3036,7 +3036,7 @@ class KrakenMarginArmyTrader:
         if dry_run:
             os.environ["KRAKEN_DRY_RUN"] = "true"
         try:
-            from kraken_client import KrakenClient
+            from aureon.exchanges.kraken_client import KrakenClient
         except ImportError:
             from aureon.exchanges.kraken_client import KrakenClient
         self.client = KrakenClient()

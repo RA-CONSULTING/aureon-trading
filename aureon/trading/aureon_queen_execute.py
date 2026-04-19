@@ -15,7 +15,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -61,7 +61,7 @@ MIN_TRADE_USD = 1.00          # Minimum trade size
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_harmonic_momentum_wave import HarmonicMomentumWaveScanner, HarmonicMomentumSignal
+    from aureon.harmonic.aureon_harmonic_momentum_wave import HarmonicMomentumWaveScanner, HarmonicMomentumSignal
     SCANNER_OK = True
 except ImportError:
     SCANNER_OK = False
@@ -74,7 +74,7 @@ except ImportError:
 
 # Import Kraken client
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_OK = True
 except ImportError:
     KRAKEN_OK = False
@@ -85,35 +85,35 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_war_band_enhanced import EnhancedWarBand, UnifiedEnhancementSignal
+    from aureon.command_centers.aureon_war_band_enhanced import EnhancedWarBand, UnifiedEnhancementSignal
     WAR_BAND_OK = True
 except ImportError:
     WAR_BAND_OK = False
     EnhancedWarBand = None
 
 try:
-    from queen_loss_learning import QueenLossLearningSystem
+    from aureon.queen.queen_loss_learning import QueenLossLearningSystem
     LOSS_LEARNING_OK = True
 except ImportError:
     LOSS_LEARNING_OK = False
     QueenLossLearningSystem = None
 
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     MYCELIUM_OK = True
 except ImportError:
     MYCELIUM_OK = False
     MyceliumNetwork = None
 
 try:
-    from aureon_market_pulse import MarketPulse
+    from aureon.intelligence.aureon_market_pulse import MarketPulse
     MARKET_PULSE_OK = True
 except ImportError:
     MARKET_PULSE_OK = False
     MarketPulse = None
 
 try:
-    from unified_exchange_client import MultiExchangeClient
+    from aureon.trading.unified_exchange_client import MultiExchangeClient
     UNIFIED_CLIENT_OK = True
 except ImportError:
     UNIFIED_CLIENT_OK = False
@@ -124,7 +124,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from rainbow_bridge import RainbowBridge, EMOTIONAL_FREQUENCIES, THE_VOW
+    from aureon.bridges.rainbow_bridge import RainbowBridge, EMOTIONAL_FREQUENCIES, THE_VOW
     RAINBOW_OK = True
 except ImportError:
     RAINBOW_OK = False
@@ -135,14 +135,14 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_wisdom_scanner import AureonWisdomScanner, ScannerConfig
+    from aureon.scanners.aureon_wisdom_scanner import AureonWisdomScanner, ScannerConfig
     WISDOM_SCANNER_OK = True
 except ImportError:
     WISDOM_SCANNER_OK = False
     AureonWisdomScanner = None
 
 try:
-    from bhoys_wisdom import get_victory_quote, get_patience_wisdom, get_resilience_message, BHOYS_WISDOM
+    from aureon.wisdom.bhoys_wisdom import get_victory_quote, get_patience_wisdom, get_resilience_message, BHOYS_WISDOM
     BHOYS_WISDOM_OK = True
 except ImportError:
     BHOYS_WISDOM_OK = False
@@ -153,7 +153,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
+    from aureon.harmonic.aureon_hft_harmonic_mycelium import get_hft_engine, HFTHarmonicEngine
     HFT_ENGINE_AVAILABLE = True
 except ImportError as e:
     HFT_ENGINE_AVAILABLE = False
@@ -162,7 +162,7 @@ except ImportError as e:
     print(f"⚠️ HFT Engine not available: {e}")
 
 try:
-    from aureon_hft_websocket_order_router import get_order_router, HFTOrderRouter
+    from aureon.data_feeds.aureon_hft_websocket_order_router import get_order_router, HFTOrderRouter
     HFT_ORDER_ROUTER_AVAILABLE = True
 except ImportError as e:
     HFT_ORDER_ROUTER_AVAILABLE = False
@@ -171,7 +171,7 @@ except ImportError as e:
     print(f"⚠️ HFT Order Router not available: {e}")
 
 try:
-    from queen_repository_scanner import QueenRepositoryScanner
+    from aureon.queen.queen_repository_scanner import QueenRepositoryScanner
     REPO_SCANNER_OK = True
 except ImportError:
     REPO_SCANNER_OK = False
@@ -182,7 +182,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from ira_sniper_mode import (
+    from aureon.scanners.ira_sniper_mode import (
         IRA_SNIPER_MODE, SNIPER_CONFIG, apply_sniper_mode,
         MyceliumStateAggregator, MyceliumSynapse
     )
@@ -196,7 +196,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_OK = True
 except ImportError:
     THOUGHT_BUS_OK = False
@@ -208,14 +208,14 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_miner_brain import (
+    from aureon.utils.aureon_miner_brain import (
         MinerBrain, SpeculationEngine, WisdomCognitionEngine,
         WebKnowledgeMiner
     )
     MINER_BRAIN_OK = True
 except ImportError:
     try:
-        from aureon_miner_brain import MinerBrain
+        from aureon.utils.aureon_miner_brain import MinerBrain
         MINER_BRAIN_OK = True
         SpeculationEngine = None
         WisdomCognitionEngine = None
@@ -229,7 +229,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 try:
-    from mycelium_whale_sonar import WhaleSonar, create_and_start_sonar
+    from aureon.core.mycelium_whale_sonar import WhaleSonar, create_and_start_sonar
     WHALE_SONAR_OK = True
 except ImportError:
     WHALE_SONAR_OK = False
@@ -1201,7 +1201,7 @@ class QueenExecutionEngine:
 
         # Consult Autonomy Hub (Big Wheel) for cross-system validation
         try:
-            from aureon_autonomy_hub import get_autonomy_hub
+            from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
             hub = get_autonomy_hub()
             hub_decision = hub.spin_cycle(signal.symbol)
             if hub_decision and hub_decision.direction == "HOLD" and hub_decision.confidence > 0.5:
@@ -1214,7 +1214,7 @@ class QueenExecutionEngine:
 
         # Consult War Planner (adversarial chess mind)
         try:
-            from aureon_strategic_war_planner import get_war_planner
+            from aureon.command_centers.aureon_strategic_war_planner import get_war_planner
             planner = get_war_planner()
             war_plan = planner.plan(
                 symbol=signal.symbol, price=signal.price,
@@ -1268,7 +1268,7 @@ class QueenExecutionEngine:
                     print(f"   ⚡ Using HFT Order Router (WebSocket execution)...")
                     
                     # Create HFT order request
-                    from aureon_hft_websocket_order_router import OrderRequest
+                    from aureon.data_feeds.aureon_hft_websocket_order_router import OrderRequest
                     
                     order_request = OrderRequest(
                         symbol=signal.symbol,

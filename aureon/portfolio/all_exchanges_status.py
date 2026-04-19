@@ -4,7 +4,7 @@ COMPREHENSIVE ACCOUNT STATUS - ALL EXCHANGES
 Check which exchanges have liquid funds available for trading
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 from dotenv import load_dotenv
 
@@ -73,7 +73,7 @@ print()
 print("3️⃣  CAPITAL.COM (CFD/Forex)")
 print("-" * 70)
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     capital = CapitalClient(os.getenv('CAPITAL_USER'), os.getenv('CAPITAL_PASSWORD'))
     balance = capital.get_account_info()
     

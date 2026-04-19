@@ -44,7 +44,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # Stem → Spore phase aliases for the mushroom branching metaphor
 PHASE_ALIAS = {
     "STEM_GATHERING": "PHASE 1: HISTORICAL ANALYSIS (7-Day Backward)",
@@ -96,7 +96,7 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════
 
 try:
-    from aureon_micro_momentum_goal import MicroMomentumScanner, MomentumTier, MomentumSignal
+    from aureon.conversion.aureon_micro_momentum_goal import MicroMomentumScanner, MomentumTier, MomentumSignal
     MICRO_MOMENTUM_AVAILABLE = True
 except ImportError:
     MICRO_MOMENTUM_AVAILABLE = False
@@ -409,7 +409,7 @@ class DreamOpportunity:
             (stem, prediction_data) tuple, or (None, None) if not eligible
         """
         try:
-            from aureon_stargate_protocol import RealityStem
+            from aureon.wisdom.aureon_stargate_protocol import RealityStem
             
             # Create the stem (historical data anchor)
             stem = RealityStem(
@@ -494,7 +494,7 @@ class QueenDreamEngine:
         # 🌌 Stargate Protocol integration
         self.stargate_engine = None
         try:
-            from aureon_stargate_protocol import create_stargate_engine
+            from aureon.wisdom.aureon_stargate_protocol import create_stargate_engine
             self.stargate_engine = create_stargate_engine(with_integrations=False)
             logger.info("🌌 Stargate Protocol integrated - spore projection enabled!")
         except ImportError:

@@ -27,7 +27,7 @@ class TokenBucket:
         self.name = name or 'unknown'
         # metrics
         try:
-            from metrics import rate_limiter_tokens, rate_limiter_waits
+            from aureon.core.metrics import rate_limiter_tokens, rate_limiter_waits
             # set initial tokens metric
             rate_limiter_tokens.set(self._tokens, exchange=self.name)
         except Exception:
@@ -48,7 +48,7 @@ class TokenBucket:
                 self._tokens -= tokens
                 # update tokens gauge
                 try:
-                    from metrics import rate_limiter_tokens
+                    from aureon.core.metrics import rate_limiter_tokens
                     rate_limiter_tokens.set(self._tokens, exchange=self.name)
                 except Exception:
                     pass
@@ -66,7 +66,7 @@ class TokenBucket:
                     self._tokens -= tokens
                     # update tokens gauge
                     try:
-                        from metrics import rate_limiter_tokens
+                        from aureon.core.metrics import rate_limiter_tokens
                         rate_limiter_tokens.set(self._tokens, exchange=self.name)
                     except Exception:
                         pass
@@ -98,7 +98,7 @@ class TTLCache:
             item = self._store.get(key)
             if not item:
                 try:
-                    from metrics import cache_miss_counter
+                    from aureon.core.metrics import cache_miss_counter
                     cache_miss_counter.inc(1, cache=self.name)
                 except Exception:
                     pass
@@ -107,13 +107,13 @@ class TTLCache:
             if time.time() > expires:
                 del self._store[key]
                 try:
-                    from metrics import cache_miss_counter as _cache_miss_counter
+                    from aureon.core.metrics import cache_miss_counter as _cache_miss_counter
                     _cache_miss_counter.inc(1, cache=self.name)
                 except Exception:
                     pass
                 return None
             try:
-                from metrics import cache_hit_counter
+                from aureon.core.metrics import cache_hit_counter
                 cache_hit_counter.inc(1, cache=self.name)
             except Exception:
                 pass

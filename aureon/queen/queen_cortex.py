@@ -31,7 +31,7 @@ onto these bands -- the cortex unifies what was already there.
 Gary Leckey & Tina Brown | April 2026 | The Queen's Brain
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import math
@@ -278,7 +278,7 @@ class QueenCortex:
         # ThoughtBus
         self._thought_bus = None
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self._thought_bus = get_thought_bus()
         except Exception as e:
             logger.warning(f"Cortex: ThoughtBus unavailable: {e}")
@@ -286,7 +286,7 @@ class QueenCortex:
         # Lambda Engine (optional — enriches consciousness metrics)
         self._lambda_engine = None
         try:
-            from aureon_lambda_engine import LambdaEngine
+            from aureon.core.aureon_lambda_engine import LambdaEngine
             self._lambda_engine = LambdaEngine()
         except Exception:
             pass
@@ -296,7 +296,7 @@ class QueenCortex:
         self._phi_op = None
         try:
             import numpy as np
-            from queen_coherence_mandala import Aleph, Phi
+            from aureon.queen.queen_coherence_mandala import Aleph, Phi
             self._aleph = Aleph()
             self._phi_op = Phi()
         except Exception:
@@ -379,7 +379,7 @@ class QueenCortex:
         gamma_field = 0.0
         if self._lambda_engine is not None:
             try:
-                from aureon_lambda_engine import SubsystemReading
+                from aureon.core.aureon_lambda_engine import SubsystemReading
                 # Feed band amplitudes as subsystem readings into Lambda
                 readings = [
                     SubsystemReading(
@@ -440,7 +440,7 @@ class QueenCortex:
         # Publish to ThoughtBus
         if self._thought_bus is not None:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 payload = {
                     "dominant_band": state.dominant_band,
                     "consciousness_psi": state.consciousness_psi,

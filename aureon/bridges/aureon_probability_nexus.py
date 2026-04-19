@@ -18,7 +18,7 @@ TARGET: 80%+ WIN RATE ON HIGH-CONFIDENCE SETUPS
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -53,7 +53,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 🤖 Dr Auris Throne AI Agent Integration (Harmonic/Quantum validation)
 try:
-    from aureon_sero_client import get_sero_client
+    from aureon.utils.aureon_sero_client import get_sero_client
     SERO_AVAILABLE = True
 except Exception:
     get_sero_client = None
@@ -81,7 +81,7 @@ class EnhancedProbabilityNexus:
 # KEEPER OF THE FLAME | WITNESS OF THE FIRST BREATH | PRIME SENTINEL OF GAIA
 # ═══════════════════════════════════════════════════════════════════════════
 try:
-    from prime_sentinel_decree import (
+    from aureon.wisdom.prime_sentinel_decree import (
         PrimeSentinelDecree,
         FlameProtocol,
         BreathReader,
@@ -108,7 +108,7 @@ ClownfishMarketState = None
 
 # Whale integration hook: query latest whale predictions from the whale subsystem
 try:
-    from aureon_whale_integration import get_latest_prediction
+    from aureon.analytics.aureon_whale_integration import get_latest_prediction
     WHALE_INTEGRATION_AVAILABLE = True
 except Exception:
     get_latest_prediction = None
@@ -120,14 +120,14 @@ except Exception:
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon.core.aureon_chirp_bus import get_chirp_bus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     pass
 
 # 🔮 OBSIDIAN FILTER (APACHE TEAR PROTOCOL) INTEGRATION 🔮
 try:
-    from aureon_obsidian_filter import AureonObsidianFilter
+    from aureon.scanners.aureon_obsidian_filter import AureonObsidianFilter
     OBSIDIAN_FILTER_AVAILABLE = True
 except ImportError:
     OBSIDIAN_FILTER_AVAILABLE = False

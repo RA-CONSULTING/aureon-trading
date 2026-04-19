@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Quick simulation to test MIN_TRADE_USD = $1.44 before restarting live"""
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 sys.path.insert(0, '.')
 
@@ -8,7 +8,7 @@ print('='*60)
 print('🧪 SIMULATION: Testing MIN_TRADE_USD = $1.44')
 print('='*60)
 
-from aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
+from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
 
 print(f'\n📊 CONFIG VALUES:')
 print(f'   MIN_TRADE_USD: ${CONFIG["MIN_TRADE_USD"]}')

@@ -31,7 +31,7 @@ Gary Leckey | January 2026 | PROTECT THE SNOWBALL!
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -1013,7 +1013,7 @@ if __name__ == "__main__":
     print("=" * 60)
     
     try:
-        from alpaca_client import AlpacaClient
+        from aureon.exchanges.alpaca_client import AlpacaClient
         client = AlpacaClient()
         
         tracker = get_fee_tracker(client)

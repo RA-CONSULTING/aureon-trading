@@ -8,14 +8,14 @@ Provides:
 
 This builds on the simple TokenBucket but adds production-ready features.
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import threading
 from typing import Any, Dict, Optional, Tuple
 import math
 
 try:
-    from rate_limiter import TokenBucket
+    from aureon.core.rate_limiter import TokenBucket
 except ImportError:
     from aureon.core.rate_limiter import TokenBucket
 
@@ -71,7 +71,7 @@ class AdaptiveRateLimiter:
     def _init_metrics(self):
         """Initialize metrics if available."""
         try:
-            from metrics import (
+            from aureon.core.metrics import (
                 rate_limiter_backoff_seconds,
                 rate_limiter_429_count,
                 rate_limiter_recovery_count
@@ -84,7 +84,7 @@ class AdaptiveRateLimiter:
     def _update_metrics(self, metric_name: str, value: float = 1.0, **labels):
         """Update metrics if available."""
         try:
-            from metrics import get_metric
+            from aureon.core.metrics import get_metric
             metric = get_metric(metric_name)
             if metric:
                 if hasattr(metric, 'set'):

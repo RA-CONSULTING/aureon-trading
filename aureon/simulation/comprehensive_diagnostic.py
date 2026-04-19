@@ -3,7 +3,7 @@
 🔧 COMPREHENSIVE SYSTEM DIAGNOSTIC
 Tests all components step by step to find the issue
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -105,7 +105,7 @@ except ImportError as e:
 # Step 3: Exchange Clients
 step(3, "Exchange Client Imports")
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
 
     success("binance_client.BinanceClient")
 except Exception as e:
@@ -113,7 +113,7 @@ except Exception as e:
     traceback.print_exc()
 
 try:
-    from kraken_client import KrakenClient
+    from aureon.exchanges.kraken_client import KrakenClient
 
     success("kraken_client.KrakenClient")
 except Exception as e:
@@ -121,7 +121,7 @@ except Exception as e:
     traceback.print_exc()
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 
     success("alpaca_client.AlpacaClient")
 except Exception as e:
@@ -129,7 +129,7 @@ except Exception as e:
     traceback.print_exc()
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
 
     success("capital_client.CapitalClient")
 except Exception as e:
@@ -139,7 +139,7 @@ except Exception as e:
 # Step 4: Unified Client
 step(4, "Unified Exchange Client")
 try:
-    from unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
+    from aureon.trading.unified_exchange_client import UnifiedExchangeClient, MultiExchangeClient
 
     success("unified_exchange_client.UnifiedExchangeClient")
     success("unified_exchange_client.MultiExchangeClient")
@@ -150,7 +150,7 @@ except Exception as e:
 # Step 5: Multi-exchange Orchestrator
 step(5, "Multi-Exchange Orchestrator")
 try:
-    from aureon_unified_ecosystem import MultiExchangeOrchestrator
+    from aureon.trading.aureon_unified_ecosystem import MultiExchangeOrchestrator
 
     success("MultiExchangeOrchestrator imported")
 except Exception as e:
@@ -160,7 +160,7 @@ except Exception as e:
 # Step 6: Main Ecosystem Import
 step(6, "Main Ecosystem Import")
 try:
-    from aureon_unified_ecosystem import AureonKrakenEcosystem
+    from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem
 
     success("AureonKrakenEcosystem imported")
 except Exception as e:

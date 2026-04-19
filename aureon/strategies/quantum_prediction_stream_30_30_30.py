@@ -15,7 +15,7 @@ Integrates:
 - 4 quantum space propagation (Beta, Alpha, Theta, Delta)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -50,7 +50,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Import our consciousness system
-from metatron_probability_billion_path import (
+from aureon.wisdom.metatron_probability_billion_path import (
     QueenAurisPingPong, ProbabilityMatrix, BrainwaveState, QuantumSpace
 )
 

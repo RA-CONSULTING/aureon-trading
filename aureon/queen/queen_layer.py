@@ -30,7 +30,7 @@ is available -- offline systems are logged but never crash the boot.
 Gary Leckey & Tina Brown | April 2026 | Queen at the Top
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import importlib
 import logging
@@ -234,7 +234,7 @@ class QueenLayer:
 
         # ThoughtBus first -- the nervous system
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self.thought_bus = get_thought_bus()
             self._register("thought_bus", self.thought_bus)
             print("   ThoughtBus: ONLINE")
@@ -244,7 +244,7 @@ class QueenLayer:
 
         # Chirp Bus
         try:
-            from aureon_chirp_bus import get_chirp_bus
+            from aureon.core.aureon_chirp_bus import get_chirp_bus
             chirp = get_chirp_bus()
             self._register("chirp_bus", chirp)
             print("   ChirpBus: ONLINE")
@@ -253,7 +253,7 @@ class QueenLayer:
 
         # Queen singleton
         try:
-            from aureon_queen_hive_mind import get_queen
+            from aureon.utils.aureon_queen_hive_mind import get_queen
             self.queen = get_queen()
             self._register("queen_hive_mind", self.queen)
             print("   Queen Hive Mind: ONLINE")
@@ -283,7 +283,7 @@ class QueenLayer:
 
         # Use the existing wire_all_systems from queen_hive_mind module
         try:
-            from aureon_queen_hive_mind import wire_all_systems
+            from aureon.utils.aureon_queen_hive_mind import wire_all_systems
             results = wire_all_systems(self.queen)
             wired = sum(1 for v in results.values() if v)
             total = len(results)
@@ -325,7 +325,7 @@ class QueenLayer:
 
         # Start global feed
         try:
-            from aureon_real_data_feed_hub import start_global_feed
+            from aureon.data_feeds.aureon_real_data_feed_hub import start_global_feed
             start_global_feed(interval=2.0)
             print("   Global feed: STARTED (2s interval)")
         except Exception as e:
@@ -333,7 +333,7 @@ class QueenLayer:
 
         # System Wiring (wire all 178+ systems to feed hub)
         try:
-            from aureon_system_wiring import wire_all_systems as wire_all_feed_systems
+            from aureon.core.aureon_system_wiring import wire_all_systems as wire_all_feed_systems
             wired_count = wire_all_feed_systems()
             self._register("system_wiring", True)
             print(f"   System wiring: {wired_count} systems connected")
@@ -350,7 +350,7 @@ class QueenLayer:
 
         # Mycelium Network
         try:
-            from aureon_mycelium import MyceliumNetwork
+            from aureon.core.aureon_mycelium import MyceliumNetwork
             initial_cap = getattr(self.queen, "initial_capital", 100.0) if self.queen else 100.0
             mycelium = MyceliumNetwork(initial_capital=initial_cap)
             self._register("mycelium_network", mycelium)
@@ -443,7 +443,7 @@ class QueenLayer:
 
         # Micro Profit Labyrinth
         try:
-            from micro_profit_labyrinth import MicroProfitLabyrinth
+            from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
             self.labyrinth = MicroProfitLabyrinth()
             self.labyrinth.dry_run = not self.live_trading
             self._register("micro_profit_labyrinth", self.labyrinth)
@@ -462,7 +462,7 @@ class QueenLayer:
         if self.queen and self.labyrinth:
             try:
                 # Reuse the master launcher's wire_queen_systems for HFT + enigma
-                from aureon_master_launcher import wire_queen_systems
+                from aureon.autonomous.aureon_master_launcher import wire_queen_systems
                 summary = wire_queen_systems(self.queen, self.labyrinth)
                 for k, v in summary.items():
                     if v and k not in self.registry:
@@ -472,7 +472,7 @@ class QueenLayer:
 
         # API Server (best-effort, in background thread)
         try:
-            from aureon_frontend_bridge import start_api_server
+            from aureon.bridges.aureon_frontend_bridge import start_api_server
             api_thread = threading.Thread(target=start_api_server, daemon=True)
             api_thread.start()
             self._register("api_server", True)
@@ -545,7 +545,7 @@ class QueenLayer:
         if self.thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             thought = Thought(
                 source="queen_layer",
                 topic=topic,

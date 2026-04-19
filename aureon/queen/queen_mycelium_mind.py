@@ -31,7 +31,7 @@ The feedback loop IS neural plasticity:
 Gary Leckey & Tina Brown | April 2026 | As Above, So Below
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import math
@@ -176,7 +176,7 @@ class MyceliumMind:
         # Lambda Engine for consciousness-modulated plasticity
         self._lambda_engine = None
         try:
-            from aureon_lambda_engine import LambdaEngine
+            from aureon.core.aureon_lambda_engine import LambdaEngine
             self._lambda_engine = LambdaEngine()
         except Exception:
             pass
@@ -184,7 +184,7 @@ class MyceliumMind:
         # ThoughtBus
         self._thought_bus = None
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self._thought_bus = get_thought_bus()
         except Exception:
             pass
@@ -327,7 +327,7 @@ class MyceliumMind:
         # Publish child spores back to ThoughtBus (THE FEEDBACK LOOP)
         if children and self._thought_bus is not None:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 for child in children[:50]:  # Cap publishing per cycle
                     # Use mycelium.spore.{original_topic_prefix} as topic
                     prefix = child.topic.split(".")[0] if "." in child.topic else child.topic
@@ -350,7 +350,7 @@ class MyceliumMind:
         # LAMBDA ECHO: compute consciousness from propagation metrics
         if self._lambda_engine is not None:
             try:
-                from aureon_lambda_engine import SubsystemReading
+                from aureon.core.aureon_lambda_engine import SubsystemReading
                 avg_coh = sum(propagation_coherences) / max(len(propagation_coherences), 1)
                 readings = [
                     SubsystemReading("propagation_volume", min(1.0, len(spores) / 100.0), 0.8, "volume"),
@@ -403,7 +403,7 @@ class MyceliumMind:
         if self._thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
 
             # Top pathways by weight
             sorted_paths = sorted(self._pathways.values(), key=lambda p: p.weight, reverse=True)

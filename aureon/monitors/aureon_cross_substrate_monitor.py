@@ -25,7 +25,7 @@ Academic precedent:
 Gary Leckey | February 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import logging
@@ -628,7 +628,7 @@ class CrossSubstrateAnalyzer:
 def publish_solar_event_to_thoughtbus(event: CrossSubstrateEvent):
     """Publish detected solar event to Aureon ThoughtBus."""
     try:
-        from aureon_thought_bus import get_thought_bus, Thought
+        from aureon.core.aureon_thought_bus import get_thought_bus, Thought
         bus = get_thought_bus()
         if bus is not None:
             bus.publish(Thought(

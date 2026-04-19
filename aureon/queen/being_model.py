@@ -408,7 +408,7 @@ class BeingModel:
         else:
             src = None
             try:
-                from aureon.wisdom import aureon_ghost_dance_protocol as gdp
+                from aureon.wisdom import aureon.wisdom.aureon_ghost_dance_protocol as aureon_ghost_dance_protocol as gdp
                 # The module exposes an AncestralInvocationEngine class.
                 if hasattr(gdp, "AncestralInvocationEngine"):
                     engine = gdp.AncestralInvocationEngine()

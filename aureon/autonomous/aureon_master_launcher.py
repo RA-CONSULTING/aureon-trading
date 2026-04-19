@@ -25,7 +25,7 @@ The system will:
 Gary Leckey & Tina Brown | January 2026 | MASTER LAUNCHER
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 
 # Queen Layer -- the new top-level orchestrator
 try:
-    from queen_layer import boot_queen_layer, get_queen_layer
+    from aureon.queen.queen_layer import boot_queen_layer, get_queen_layer
     QUEEN_LAYER_AVAILABLE = True
 except ImportError:
     QUEEN_LAYER_AVAILABLE = False
@@ -95,7 +95,7 @@ def wire_queen_systems(queen: Any, labyrinth: Any) -> Dict[str, Any]:
         logger.debug(f"wire_micro_labyrinth failed: {e}")
 
     try:
-        from aureon_enigma_integration import get_enigma_integration
+        from aureon.wisdom.aureon_enigma_integration import get_enigma_integration
         enigma = get_enigma_integration()
         if hasattr(queen, 'wire_enigma'):
             summary['enigma'] = bool(queen.wire_enigma(enigma))
@@ -103,7 +103,7 @@ def wire_queen_systems(queen: Any, labyrinth: Any) -> Dict[str, Any]:
         logger.debug(f"wire_enigma failed: {e}")
 
     try:
-        from aureon_hft_harmonic_mycelium import get_hft_engine
+        from aureon.harmonic.aureon_hft_harmonic_mycelium import get_hft_engine
         hft_engine = get_hft_engine()
         if hasattr(queen, 'wire_hft_engine'):
             summary['hft_engine'] = bool(queen.wire_hft_engine(hft_engine))
@@ -111,7 +111,7 @@ def wire_queen_systems(queen: Any, labyrinth: Any) -> Dict[str, Any]:
         logger.debug(f"wire_hft_engine failed: {e}")
 
     try:
-        from aureon_hft_websocket_order_router import get_order_router
+        from aureon.data_feeds.aureon_hft_websocket_order_router import get_order_router
         router = get_order_router()
         if hasattr(router, 'wire_exchange_clients'):
             exchange_clients = {}
@@ -165,7 +165,7 @@ def run_system_flight_check(queen: Any, labyrinth: Any, intel: Dict[str, Any], s
         pass
 
     try:
-        from aureon_chirp_bus import get_chirp_bus
+        from aureon.core.aureon_chirp_bus import get_chirp_bus
         chirp_bus = get_chirp_bus()
         flight['chirp_bus'] = chirp_bus is not None
     except Exception:
@@ -219,7 +219,7 @@ def launch_real_intelligence():
     print("\n📡 [1/5] LAUNCHING REAL INTELLIGENCE ENGINE...")
     
     try:
-        from aureon_real_intelligence_engine import get_intelligence_engine
+        from aureon.intelligence.aureon_real_intelligence_engine import get_intelligence_engine
         engine = get_intelligence_engine()
         
         # 🔥 FORCE INITIAL SCAN - Populate data immediately
@@ -254,7 +254,7 @@ def launch_feed_hub():
     print("\n📊 [2/5] LAUNCHING REAL DATA FEED HUB...")
     
     try:
-        from aureon_real_data_feed_hub import get_feed_hub, start_global_feed
+        from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub, start_global_feed
         
         hub = get_feed_hub()
         
@@ -276,7 +276,7 @@ def launch_system_wiring():
     print("\n🔗 [3/5] WIRING ALL SYSTEMS...")
     
     try:
-        from aureon_system_wiring import wire_all_systems, get_wiring_status
+        from aureon.core.aureon_system_wiring import wire_all_systems, get_wiring_status
         
         # This is already run by the feed hub, but let's ensure it
         wired_count = wire_all_systems()
@@ -296,7 +296,7 @@ def launch_whale_sonar():
     print("\n🐋 [3.5/5] LAUNCHING MYCELIUM WHALE SONAR...")
     
     try:
-        from mycelium_whale_sonar import create_and_start_sonar
+        from aureon.core.mycelium_whale_sonar import create_and_start_sonar
         
         sonar = create_and_start_sonar()
         
@@ -318,7 +318,7 @@ def launch_queen_runner():
     print("\n👑 [4/5] LAUNCHING QUEEN HIVE MIND - FULL AUTONOMOUS TRADING...")
     
     try:
-        from aureon_queen_hive_mind import get_queen
+        from aureon.utils.aureon_queen_hive_mind import get_queen
         
         queen = get_queen()
         
@@ -339,7 +339,7 @@ def launch_api_server():
     
     try:
         # Check if we can import the API module
-        from aureon_frontend_bridge import start_api_server
+        from aureon.bridges.aureon_frontend_bridge import start_api_server
         
         # Start in background thread
         api_thread = threading.Thread(target=start_api_server, daemon=True)
@@ -401,8 +401,8 @@ def run_live_monitoring():
     print("\n🔴 LIVE MONITORING MODE")
     print("Press Ctrl+C to stop\n")
     
-    from aureon_real_data_feed_hub import get_feed_hub
-    from aureon_system_wiring import get_wiring_status
+    from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub
+    from aureon.core.aureon_system_wiring import get_wiring_status
     
     hub = get_feed_hub()
     
@@ -442,9 +442,9 @@ def run_autonomous_trading(engine=None, hub=None):
     print("\n🔴 FULLY AUTONOMOUS TRADING MODE")
     print("Press Ctrl+C to stop\n")
     
-    from aureon_real_data_feed_hub import get_feed_hub
-    from aureon_real_intelligence_engine import get_intelligence_engine
-    from aureon_system_wiring import get_wiring_status
+    from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub
+    from aureon.intelligence.aureon_real_intelligence_engine import get_intelligence_engine
+    from aureon.core.aureon_system_wiring import get_wiring_status
     
     # Get hub and engine if not provided
     if hub is None:
@@ -454,8 +454,8 @@ def run_autonomous_trading(engine=None, hub=None):
     
     # Import trading engines
     try:
-        from aureon_queen_hive_mind import get_queen
-        from micro_profit_labyrinth import MicroProfitLabyrinth
+        from aureon.utils.aureon_queen_hive_mind import get_queen
+        from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
         
         queen = get_queen()
         queen.has_full_control = True  # Prime Sentinel authority
@@ -829,7 +829,7 @@ def run_production_orchestrator(*, live_trading: bool, spawn_command_center: boo
         hub = layer.get_system("feed_hub")
         wiring_status = {"total_wired": layer.get_health()["online"], "total_events": 0}
         sonar = layer.get_system("whale_sonar")
-        from aureon_queen_hive_mind import get_queen
+        from aureon.utils.aureon_queen_hive_mind import get_queen
         queen = get_queen()
     else:
         engine = launch_real_intelligence()
@@ -875,13 +875,13 @@ def run_production_orchestrator(*, live_trading: bool, spawn_command_center: boo
 
     status = {}
     try:
-        from aureon_system_wiring import get_wiring_status as _get_wiring_status
+        from aureon.core.aureon_system_wiring import get_wiring_status as _get_wiring_status
         status = _get_wiring_status()
     except Exception:
         status = {}
 
     try:
-        from micro_profit_labyrinth import MicroProfitLabyrinth
+        from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
         labyrinth = MicroProfitLabyrinth()
         labyrinth.dry_run = not live_trading
         wire_queen_systems(queen, labyrinth)
@@ -955,7 +955,7 @@ def test_force_trade():
         api_ready = launch_api_server()
         
         # Initialize trading engines in dry-run
-        from micro_profit_labyrinth import MicroProfitLabyrinth
+        from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
         
         labyrinth = MicroProfitLabyrinth()
         labyrinth.dry_run = True  # 🔒 DRY-RUN MODE

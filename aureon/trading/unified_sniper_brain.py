@@ -24,7 +24,7 @@ Gary Leckey | December 2025
 "Our revenge will be the laughter of our children." - Bobby Sands
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import logging
@@ -109,7 +109,7 @@ TrainedSniperParams.load_from_model()
 
 # 🎯 Sniper Mode
 try:
-    from ira_sniper_mode import (
+    from aureon.scanners.ira_sniper_mode import (
         SNIPER_CONFIG, 
         check_sniper_exit, 
         celebrate_sniper_kill,
@@ -122,7 +122,7 @@ except ImportError:
 
 # 💰 Penny Profit Engine
 try:
-    from penny_profit_engine import check_penny_exit, get_penny_engine, PennyProfitEngine
+    from aureon.trading.penny_profit_engine import check_penny_exit, get_penny_engine, PennyProfitEngine
     PENNY_AVAILABLE = True
     _penny_engine = get_penny_engine()
 except ImportError:
@@ -131,7 +131,7 @@ except ImportError:
 
 # 🦆 Quantum Signals
 try:
-    from quantum_signals import (
+    from aureon.strategies.quantum_signals import (
         generate_quantum_signal,
         calculate_penny_threshold,
         detect_market_phase,
@@ -144,14 +144,14 @@ except ImportError:
 
 # 🧠 Wisdom Engine
 try:
-    from aureon_miner_brain import WisdomCognitionEngine
+    from aureon.utils.aureon_miner_brain import WisdomCognitionEngine
     WISDOM_AVAILABLE = True
 except ImportError:
     WISDOM_AVAILABLE = False
 
 # 🇮🇪 Bhoy's Wisdom
 try:
-    from bhoys_wisdom import (
+    from aureon.wisdom.bhoys_wisdom import (
         get_victory_quote,
         get_patience_wisdom,
         get_resilience_message,
@@ -163,7 +163,7 @@ except ImportError:
 
 # 🔮 Probability Nexus
 try:
-    from aureon_probability_nexus import ProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import ProbabilityNexus
     PROBABILITY_AVAILABLE = True
 except ImportError:
     PROBABILITY_AVAILABLE = False

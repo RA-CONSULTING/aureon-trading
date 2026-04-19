@@ -3,7 +3,7 @@
 AUREON LIVE TRADING MONITOR - Production Ready
 Real-time display of Queen's decisions and realized P&L
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -44,7 +44,7 @@ class LiveMonitor:
         
         # Try to read alpaca balance
         try:
-            import alpaca_client
+            import aureon.exchanges.alpaca_client as alpaca_client
             client = alpaca_client.AlpacaClient()
             if hasattr(client, 'get_account'):
                 acc = client.get_account()

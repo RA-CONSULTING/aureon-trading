@@ -3,7 +3,7 @@
 AUREON POWER STATION TURBO - MAXIMUM ENERGY THROUGHPUT
 No talk. Pure execution. Results only.
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -31,25 +31,25 @@ log = logging.getLogger('TURBO')
 
 # Import all relay clients
 try:
-    from binance_client import BinanceClient, get_binance_client
+    from aureon.exchanges.binance_client import BinanceClient, get_binance_client
     BIN_AVAILABLE = True
 except:
     BIN_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRK_AVAILABLE = True
 except:
     KRK_AVAILABLE = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALP_AVAILABLE = True
 except:
     ALP_AVAILABLE = False
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAP_AVAILABLE = True
 except:
     CAP_AVAILABLE = False

@@ -103,13 +103,13 @@ class LyraVisionBridge:
 
     def _get_lyra(self):
         if self._lyra is None:
-            from aureon_lyra import get_lyra
+            from aureon.trading.aureon_lyra import get_lyra
             self._lyra = get_lyra()
         return self._lyra
 
     def _get_bridge(self):
         if self._bridge is None:
-            from aureon_geometric_renderer import EagleBridge
+            from aureon.utils.aureon_geometric_renderer import EagleBridge
             self._bridge = EagleBridge()
         return self._bridge
 
@@ -141,7 +141,7 @@ class LyraVisionBridge:
         -------
         List[str]  — ANSI-coloured lines of the painting
         """
-        from aureon_geometric_renderer import render_painting
+        from aureon.utils.aureon_geometric_renderer import render_painting
 
         lyra = self._get_lyra()
 
@@ -224,7 +224,7 @@ class LyraVisionBridge:
 
         # Append Lyra's song below the canvas
         if song:
-            from aureon_geometric_renderer import _dim, _bold_hz
+            from aureon.utils.aureon_geometric_renderer import _dim, _bold_hz
             lines.append(_bold_hz(dominant_hz, f"  ♫  {song}"))
             lines.append("")
 
@@ -283,7 +283,7 @@ class LyraVisionBridge:
 
     def diagnose(self) -> None:
         """Print Lyra's resonance summary + the painting to the terminal."""
-        from aureon_geometric_renderer import _bold_hz, _dim
+        from aureon.utils.aureon_geometric_renderer import _bold_hz, _dim
         lyra    = self._get_lyra()
         summary = lyra.get_resonance_summary()
 

@@ -29,7 +29,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -59,21 +59,21 @@ logger = logging.getLogger(__name__)
 # ─── Thought Bus ──────────────────────────────────────────────────────────────
 THOUGHT_BUS_AVAILABLE = False
 try:
-    from aureon_thought_bus import get_thought_bus, Thought
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     pass
 
 # ─── Exchange clients (optional - public APIs used if unavailable) ─────────────
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     AlpacaClient = None
     ALPACA_AVAILABLE = False
 
 try:
-    from kraken_client import get_kraken_client
+    from aureon.exchanges.kraken_client import get_kraken_client
     KRAKEN_CLIENT_AVAILABLE = True
 except ImportError:
     get_kraken_client = None
@@ -551,7 +551,7 @@ class CryptoEnigmaSymbolMachine:
         if not hasattr(scanner, "__class__"):
             return 0
 
-        import aureon_ocean_wave_scanner as _ows
+        import aureon.scanners.aureon_ocean_wave_scanner as aureon_ocean_wave_scanner as _ows
         existing = set(getattr(_ows, "CRYPTO_PAIRS", []))
         new_pairs = self.get_for_ocean_scanner("binance", stable_only=True, limit=1000)
         added = 0

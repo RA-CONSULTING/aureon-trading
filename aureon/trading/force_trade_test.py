@@ -13,7 +13,7 @@ Under the authority of:
 The system will NOT stop until trading is VERIFIED.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -73,7 +73,7 @@ async def test_1_queen_status():
     print("🔱 TEST 1: QUEEN STATUS")
     print("=" * 70)
     
-    from aureon_queen_hive_mind import get_queen
+    from aureon.utils.aureon_queen_hive_mind import get_queen
     
     queen = get_queen()
     queen.has_full_control = True
@@ -94,7 +94,7 @@ async def test_2_labyrinth_status():
     print("🔱 TEST 2: LABYRINTH STATUS")
     print("=" * 70)
     
-    from micro_profit_labyrinth import MicroProfitLabyrinth
+    from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
     
     labyrinth = MicroProfitLabyrinth()
     

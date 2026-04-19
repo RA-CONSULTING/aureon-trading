@@ -1,4 +1,4 @@
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
 import sys
@@ -8,17 +8,17 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 
 # Import Clients
-from capital_client import CapitalClient
-from alpaca_client import AlpacaClient
-from binance_client import BinanceClient, get_binance_client
-from kraken_client import KrakenClient, get_kraken_client
-from aureon_sero_client import SeroClient
+from aureon.exchanges.capital_client import CapitalClient
+from aureon.exchanges.alpaca_client import AlpacaClient
+from aureon.exchanges.binance_client import BinanceClient, get_binance_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.utils.aureon_sero_client import SeroClient
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 # 🔩 HARMONIC LIQUID ALUMINIUM FIELD - Live Streaming Integration
 # ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
     HARMONIC_FIELD_AVAILABLE = True
 except ImportError:
     HARMONIC_FIELD_AVAILABLE = False

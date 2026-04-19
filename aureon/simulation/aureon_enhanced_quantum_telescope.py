@@ -14,7 +14,7 @@
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -33,7 +33,7 @@ from collections import deque, defaultdict
 import numpy as np
 
 # Import existing Quantum Telescope
-from aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
+from aureon.simulation.aureon_quantum_telescope import QuantumTelescope, LightBeam, GeometricSolid
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(message)s')
 logger = logging.getLogger(__name__)

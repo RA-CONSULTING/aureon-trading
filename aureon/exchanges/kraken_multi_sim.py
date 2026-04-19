@@ -12,7 +12,7 @@ Tracks ALL metrics for net profit optimization:
 - Win rate, profit factor, Sharpe ratio
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -28,7 +28,7 @@ import random
 # Add project root
 sys.path.insert(0, '/workspaces/aureon-trading')
 
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 
 # Kraken fee structure (taker fees for market orders)
 KRAKEN_TAKER_FEE = 0.0026  # 0.26%

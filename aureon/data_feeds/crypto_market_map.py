@@ -21,7 +21,7 @@ Gary Leckey & GitHub Copilot | January 2026
 "Mapping the Crypto Labyrinth for Maximum Profit"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -249,7 +249,7 @@ class CryptoMarketMap:
     def load_from_coinbase_historical(self):
         """Load data from Coinbase Historical Feed."""
         try:
-            from coinbase_historical_feed import CoinbaseHistoricalFeed, CandleData
+            from aureon.exchanges.coinbase_historical_feed import CoinbaseHistoricalFeed, CandleData
             
             feed = CoinbaseHistoricalFeed()
             
@@ -288,7 +288,7 @@ class CryptoMarketMap:
         """Load historical data from Kraken exchange."""
         try:
             if kraken_client is None:
-                from kraken_client import KrakenClient, get_kraken_client
+                from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                 kraken_client = get_kraken_client()
             
             logger.info("🐙 Loading pairs from Kraken...")
@@ -329,7 +329,7 @@ class CryptoMarketMap:
         """Load historical data from Binance exchange."""
         try:
             if binance_client is None:
-                from binance_client import BinanceClient
+                from aureon.exchanges.binance_client import BinanceClient
                 binance_client = get_binance_client()
             
             logger.info("🟡 Loading historical data from Binance...")
@@ -393,7 +393,7 @@ class CryptoMarketMap:
         """Load historical data from Alpaca exchange."""
         try:
             if alpaca_client is None:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 alpaca_client = AlpacaClient()
             
             logger.info("🦙 Loading historical data from Alpaca...")

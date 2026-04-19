@@ -192,7 +192,7 @@ class SamuelThoughtBus:
 
     def _init_bus(self):
         try:
-            from aureon_thought_bus import get_thought_bus, Thought, think
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought, think
             self._bus = get_thought_bus()
             self._Thought = Thought
             self._think_fn = think
@@ -256,7 +256,7 @@ class QueenConnector:
 
     def _init(self):
         try:
-            from aureon_queen_hive_mind import QueenHiveMind
+            from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
             self._queen = QueenHiveMind()
             self._available = True
             logger.info("Queen SERO connected (live).")
@@ -324,7 +324,7 @@ class KingConnector:
 
     def _init(self):
         try:
-            import king_integration as ki  # noqa
+            import aureon.bots.king_integration as king_integration as ki  # noqa
             self._ki = ki
             self._available = True
             logger.info("King connected (live).")
@@ -374,7 +374,7 @@ class LyraConnector:
 
     def _init(self):
         try:
-            from aureon_lyra_integration import (
+            from aureon.trading.aureon_lyra_integration import (
                 start_lyra, lyra_get_resonance, lyra_should_trade,
                 lyra_get_position_multiplier, lyra_get_exit_urgency,
                 lyra_update_context,
@@ -914,7 +914,7 @@ class SamuelHarmonicEntity:
 
         # 3. ChirpBus — ultra-fast 8-byte signal (shared memory, kHz-rate)
         try:
-            from aureon_chirp_bus import ChirpRingBuffer, ChirpPacket, ChirpType, ChirpDirection
+            from aureon.core.aureon_chirp_bus import ChirpRingBuffer, ChirpPacket, ChirpType, ChirpDirection
             ring = ChirpRingBuffer(name="aureon_main", create=False)
             pkt = ChirpPacket(
                 message_type=ChirpType.EXECUTE,

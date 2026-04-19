@@ -17,7 +17,7 @@ Runs as a background service with no web interface.
 Gary Leckey | January 2026 | AUTONOMOUS TRADING ENGINE
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -79,10 +79,10 @@ class AureonAutonomousWorker:
         # Import and start parallel orchestrator
         try:
             try:
-                from aureon_parallel_orchestrator import get_parallel_orchestrator
+                from aureon.autonomous.aureon_parallel_orchestrator import get_parallel_orchestrator
                 self.orchestrator = get_parallel_orchestrator()
             except Exception:
-                from aureon_parallel_orchestrator import get_orchestrator
+                from aureon.autonomous.aureon_parallel_orchestrator import get_orchestrator
                 self.orchestrator = get_orchestrator()
             orchestrator_thread = threading.Thread(
                 target=self._run_orchestrator,
@@ -96,7 +96,7 @@ class AureonAutonomousWorker:
 
         # Import and start full autonomous controller
         try:
-            from aureon_full_autonomous import get_autonomous_controller
+            from aureon.autonomous.aureon_full_autonomous import get_autonomous_controller
             self.autonomous_controller = get_autonomous_controller()
             autonomous_thread = threading.Thread(
                 target=self._run_autonomous_controller,

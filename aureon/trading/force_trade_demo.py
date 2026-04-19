@@ -4,14 +4,14 @@
 ==========================================
 Forces a small profitable trade to demonstrate the system is working.
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 import asyncio
-from micro_profit_labyrinth import MicroProfitLabyrinth
+from aureon.trading.micro_profit_labyrinth import MicroProfitLabyrinth
 
 async def force_demo_trade():
     """Force a demonstration trade"""

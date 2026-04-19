@@ -26,7 +26,7 @@ Gary Leckey & GitHub Copilot | January 2026
 "Trade the olive for a bean, the bean for a carrot..."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -46,21 +46,21 @@ logger = logging.getLogger(__name__)
 
 # Exchange clients
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KrakenClient = None
     KRAKEN_AVAILABLE = False
 
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BinanceClient = None
     BINANCE_AVAILABLE = False
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     AlpacaClient = None

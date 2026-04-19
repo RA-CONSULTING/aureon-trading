@@ -38,7 +38,7 @@ DISPLAYS:
 Gary Leckey | January 2026 | Live Whale Tracking
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json
@@ -69,7 +69,7 @@ logger = logging.getLogger(__name__)
 
 # Import profiling systems
 try:
-    from aureon_complete_profiler_integration import (
+    from aureon.analytics.aureon_complete_profiler_integration import (
         get_complete_profiler, CompleteIntelligenceReport
     )
 except ImportError as e:

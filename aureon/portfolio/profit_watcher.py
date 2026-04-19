@@ -2,7 +2,7 @@
 """
 🎯 PROFIT WATCHER - Monitor position and sell at target
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 os.chdir('/workspaces/aureon-trading')
@@ -10,7 +10,7 @@ os.chdir('/workspaces/aureon-trading')
 from dotenv import load_dotenv
 load_dotenv('/workspaces/aureon-trading/.env')
 
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 import time
 import json
 

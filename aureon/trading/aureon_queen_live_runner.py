@@ -18,7 +18,7 @@ All data flows through ThoughtBus in REAL-TIME for Queen to make trades.
 Gary Leckey & Tina Brown | January 2026 | LIVE STREAMING MODE
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -72,7 +72,7 @@ def get_thought_bus():
     global _thought_bus
     if _thought_bus is None:
         try:
-            from aureon_thought_bus import get_thought_bus as _get_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus as _get_bus
             _thought_bus = _get_bus()
         except ImportError:
             _thought_bus = SimpleThoughtBus()
@@ -189,7 +189,7 @@ class LiveScannerEngine:
         
         # 🧠 LOAD REAL INTELLIGENCE ENGINE
         try:
-            from aureon_real_intelligence_engine import get_intelligence_engine
+            from aureon.intelligence.aureon_real_intelligence_engine import get_intelligence_engine
             self.intelligence_engine = get_intelligence_engine()
             logger.info("🧠 REAL Intelligence Engine LOADED - No more random simulation!")
         except Exception as e:
@@ -197,14 +197,14 @@ class LiveScannerEngine:
         
         # Try to load real scanners as backup
         try:
-            from aureon_global_wave_scanner import GlobalWaveScanner
+            from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
             self.wave_scanner = GlobalWaveScanner()
             logger.info("🌊 Wave Scanner loaded")
         except:
             pass
         
         try:
-            from aureon_orca_intelligence import OrcaIntelligence
+            from aureon.bots_intelligence.aureon_orca_intelligence import OrcaIntelligence
             self.orca = OrcaIntelligence()
             logger.info("🦈 Orca Intelligence loaded")
         except:
@@ -323,7 +323,7 @@ class LiveWhaleTracker:
         
         # 🐋 LOAD REAL WHALE PREDICTOR
         try:
-            from aureon_whale_behavior_predictor import WhaleBehaviorPredictor
+            from aureon.analytics.aureon_whale_behavior_predictor import WhaleBehaviorPredictor
             self.whale_predictor = WhaleBehaviorPredictor()
             logger.info("🐋 REAL Whale Predictor LOADED - 3-pass validation enabled!")
         except Exception as e:
@@ -406,7 +406,7 @@ class LiveBotTracker:
         
         # 🤖 LOAD REAL BOT PROFILER
         try:
-            from aureon_bot_intelligence_profiler import TRADING_FIRM_SIGNATURES, BotIntelligenceProfiler
+            from aureon.bots_intelligence.aureon_bot_intelligence_profiler import TRADING_FIRM_SIGNATURES, BotIntelligenceProfiler
             self.firm_signatures = TRADING_FIRM_SIGNATURES
             try:
                 self.bot_profiler = BotIntelligenceProfiler()
@@ -534,7 +534,7 @@ class QueenBrain:
         
         # Try to load real Queen
         try:
-            from aureon_queen_hive_mind import QueenHiveMind
+            from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
             self.queen_hive = QueenHiveMind()
             logger.info("👑 Queen Hive Mind loaded")
         except:

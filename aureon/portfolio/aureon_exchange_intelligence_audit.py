@@ -13,7 +13,7 @@ This is QUEEN-LEVEL INTELLIGENCE - understanding the full picture
 by interrogating the APIs for historical data, not just balances.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -93,7 +93,7 @@ class AureonExchangeIntelligenceAudit:
         intel = ExchangeIntelligence(exchange='binance')
         
         try:
-            from binance_client import BinanceClient
+            from aureon.exchanges.binance_client import BinanceClient
             client = get_binance_client()
             
             print("🔍 Interrogating Binance API...")
@@ -156,7 +156,7 @@ class AureonExchangeIntelligenceAudit:
         intel = ExchangeIntelligence(exchange='kraken')
         
         try:
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             client = get_kraken_client()
             
             print("🔍 Interrogating Kraken API...")
@@ -215,7 +215,7 @@ class AureonExchangeIntelligenceAudit:
         intel = ExchangeIntelligence(exchange='alpaca')
         
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             client = AlpacaClient()
             
             print("🔍 Interrogating Alpaca API...")
@@ -280,7 +280,7 @@ class AureonExchangeIntelligenceAudit:
         intel = ExchangeIntelligence(exchange='capital')
         
         try:
-            from capital_client import CapitalClient
+            from aureon.exchanges.capital_client import CapitalClient
             client = CapitalClient()
             
             print("🔍 Interrogating Capital.com API...")

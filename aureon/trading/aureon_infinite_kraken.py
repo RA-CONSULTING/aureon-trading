@@ -22,7 +22,7 @@ We don't stop. We compound. We grow. We prove we're alive.
 Gary Leckey & GitHub Copilot | November 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -31,11 +31,11 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 
 sys.path.insert(0, '/workspaces/aureon-trading')
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 
 # � PENNY PROFIT ENGINE
 try:
-    from penny_profit_engine import check_penny_exit, get_penny_engine
+    from aureon.trading.penny_profit_engine import check_penny_exit, get_penny_engine
     PENNY_PROFIT_AVAILABLE = True
     _penny_engine = get_penny_engine()
     print("🪙 Penny Profit Engine loaded")
@@ -46,7 +46,7 @@ except ImportError:
 
 # �🧠 MINER BRAIN INTEGRATION
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     BRAIN_AVAILABLE = True
 except ImportError:
     BRAIN_AVAILABLE = False

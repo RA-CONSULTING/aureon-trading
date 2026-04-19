@@ -15,7 +15,7 @@ Features:
 From $7.39 → Billions through hive coordination!
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -53,23 +53,23 @@ PHI = (1 + math.sqrt(5)) / 2  # 1.618033989 - Golden Ratio
 PERFECTION_ANGLE = 306.0  # 360 - 54 (golden angle complement)
 
 # Import our systems
-from live_portfolio_growth_tracker import LivePortfolioTracker
-from quantum_black_box_billion import QuantumBlackBox
+from aureon.portfolio.live_portfolio_growth_tracker import LivePortfolioTracker
+from aureon.strategies.quantum_black_box_billion import QuantumBlackBox
 
 # Import exchange clients
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 except ImportError:
     KrakenClient = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 except ImportError:
     AlpacaClient = None
 

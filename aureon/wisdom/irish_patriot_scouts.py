@@ -57,7 +57,7 @@ Gary Leckey | December 2025
 "Turn scouts into warriors, warriors into legends."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -76,7 +76,7 @@ from enum import Enum
 # =============================================================================
 
 try:
-    from guerrilla_warfare_engine import (
+    from aureon.wisdom.guerrilla_warfare_engine import (
         IntelligenceNetwork, FlyingColumn, BattlefrontStatus,
         TacticalMode, IntelligenceReport, GUERRILLA_CONFIG, get_celtic_wisdom
     )
@@ -87,7 +87,7 @@ except ImportError:
 
 # 🎯⏱️ ETA VERIFICATION SYSTEM - Track and verify kill predictions
 try:
-    from eta_verification_system import (
+    from aureon.analytics.eta_verification_system import (
         get_eta_verifier, register_eta, verify_kill as eta_verify_kill,
         check_expired, get_corrected_eta, ETAOutcome
     )
@@ -99,7 +99,7 @@ except ImportError:
 
 # 🔬 IMPROVED ETA CALCULATOR - Fixes naive velocity decay assumptions
 try:
-    from improved_eta_calculator import ImprovedETACalculator, ImprovedETA
+    from aureon.analytics.improved_eta_calculator import ImprovedETACalculator, ImprovedETA
     IMPROVED_ETA_AVAILABLE = True
     IMPROVED_ETA_CALC = ImprovedETACalculator()
     print("🔬 Improved ETA Calculator WIRED to Patriots! (velocity decay model)")
@@ -109,7 +109,7 @@ except ImportError:
     print("⚠️ Improved ETA Calculator not available - using naive ETA")
 
 try:
-    from celtic_preemptive_strike import (
+    from aureon.wisdom.celtic_preemptive_strike import (
         PreemptiveExitEngine, DawnRaidDetector, 
         PreemptiveSignal, PreemptiveSignalType
     )
@@ -120,7 +120,7 @@ except ImportError as e:
 
 # 🧠 PROBABILITY INTELLIGENCE MATRIX - Stops Mistakes Before They Happen
 try:
-    from probability_intelligence_matrix import (
+    from aureon.strategies.probability_intelligence_matrix import (
         get_probability_matrix, calculate_intelligent_probability,
         record_outcome as prob_record_outcome, ProbabilityIntelligence
     )
@@ -134,7 +134,7 @@ except ImportError:
 
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE - 95% Accuracy Pattern Learning
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, ultimate_predict, record_ultimate_outcome,
         UltimatePrediction
     )
@@ -156,7 +156,7 @@ def _get_ecosystem():
     global _ECOSYSTEM_INSTANCE, ECOSYSTEM_AVAILABLE
     if _ECOSYSTEM_INSTANCE is None:
         try:
-            from aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
+            from aureon.trading.aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
             _ECOSYSTEM_INSTANCE = get_ultimate_ecosystem()
             ECOSYSTEM_AVAILABLE = True
         except ImportError:
@@ -166,7 +166,7 @@ def _get_ecosystem():
 def ecosystem_predict(*args, **kwargs):
     """Lazy wrapper for ecosystem predict"""
     try:
-        from aureon_ultimate_ecosystem_wiring import ecosystem_predict as _eco_predict
+        from aureon.trading.aureon_ultimate_ecosystem_wiring import ecosystem_predict as _eco_predict
         return _eco_predict(*args, **kwargs)
     except ImportError:
         return None
@@ -174,7 +174,7 @@ def ecosystem_predict(*args, **kwargs):
 def ecosystem_record_outcome(*args, **kwargs):
     """Lazy wrapper for ecosystem record outcome"""
     try:
-        from aureon_ultimate_ecosystem_wiring import ecosystem_record_outcome as _eco_record
+        from aureon.trading.aureon_ultimate_ecosystem_wiring import ecosystem_record_outcome as _eco_record
         return _eco_record(*args, **kwargs)
     except ImportError:
         pass
@@ -187,7 +187,7 @@ def _check_ecosystem():
     global ECOSYSTEM_AVAILABLE
     if ECOSYSTEM_AVAILABLE is None:
         try:
-            from aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
+            from aureon.trading.aureon_ultimate_ecosystem_wiring import get_ultimate_ecosystem
             _test_eco = get_ultimate_ecosystem()
             ECOSYSTEM_AVAILABLE = True
         except ImportError:
@@ -195,7 +195,7 @@ def _check_ecosystem():
     return ECOSYSTEM_AVAILABLE
 
 try:
-    from multi_battlefront_coordinator import (
+    from aureon.wisdom.multi_battlefront_coordinator import (
         MultiBattlefrontWarRoom, CampaignPhase, ArbitrageOpportunity
     )
     COORDINATOR_AVAILABLE = True
@@ -214,7 +214,7 @@ def _get_ira_sniper():
     global IRA_SNIPER_MODE, IRA_SNIPER_AVAILABLE
     if IRA_SNIPER_MODE is None and not IRA_SNIPER_AVAILABLE:
         try:
-            from ira_sniper_mode import IRA_SNIPER_MODE as sniper
+            from aureon.scanners.ira_sniper_mode import IRA_SNIPER_MODE as sniper
             IRA_SNIPER_MODE = sniper
             IRA_SNIPER_AVAILABLE = True
         except ImportError:
@@ -222,13 +222,13 @@ def _get_ira_sniper():
     return IRA_SNIPER_MODE
 
 try:
-    from penny_profit_engine import get_penny_engine, check_penny_exit
+    from aureon.trading.penny_profit_engine import get_penny_engine, check_penny_exit
     PENNY_ENGINE_AVAILABLE = True
 except ImportError:
     PENNY_ENGINE_AVAILABLE = False
 
 try:
-    from war_strategy import WarStrategy
+    from aureon.command_centers.war_strategy import WarStrategy
     WAR_STRATEGY_AVAILABLE = True
     # Initialize global war strategist
     _GLOBAL_WAR_STRATEGIST = WarStrategy()
@@ -678,7 +678,7 @@ class PatriotScout:
 
             if PATRIOT_CONFIG.get('USE_DYNAMIC_PENNY_MATH', True):
                 try:
-                    from aureon_unified_ecosystem import get_penny_threshold
+                    from aureon.trading.aureon_unified_ecosystem import get_penny_threshold
                     penny = get_penny_threshold(self.exchange, self.entry_value_usd)
                     if penny:
                         target_gross = float(penny.get('win_gte', 0) or 0)

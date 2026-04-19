@@ -3,7 +3,7 @@
 Direct check - what is ACTUALLY wrong with the trading system?
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -59,7 +59,7 @@ print()
 print("4. TESTING SYSTEM IMPORTS:")
 try:
     sys.path.insert(0, '/workspaces/aureon-trading')
-    from aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
+    from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
     print("   ✅ Main ecosystem imports successfully")
     print(f"   MIN_SCORE configured: {CONFIG.get('MIN_SCORE', 'not set')}")
     print(f"   MIN_MOMENTUM configured: {CONFIG.get('MIN_MOMENTUM', 'not set')}")

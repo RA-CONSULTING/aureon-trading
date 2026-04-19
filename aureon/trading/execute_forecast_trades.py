@@ -14,7 +14,7 @@ Gary Leckey | December 2025
 "From Prime to Probability - The Frequency Unfolds"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -29,8 +29,8 @@ from collections import deque
 os.environ['LIVE'] = '1'
 os.environ['DRY_RUN'] = '0'
 
-from binance_client import BinanceClient
-from aureon_unified_ecosystem import get_platform_fee
+from aureon.exchanges.binance_client import BinanceClient
+from aureon.trading.aureon_unified_ecosystem import get_platform_fee
 
 # ═══════════════════════════════════════════════════════════════
 # PROBABILITY FORECAST ENGINE
@@ -364,7 +364,7 @@ def execute_forecast_trade(client: BinanceClient, engine: ProbabilityForecastEng
     
     # Phase 2.5: Consult Autonomy Hub (Big Wheel cross-validation)
     try:
-        from aureon_autonomy_hub import get_autonomy_hub
+        from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
         hub = get_autonomy_hub()
         hub.data_bridge.ingest_market_tick(
             symbol, forecast.current_price, forecast.price_change_pct, 0, 'binance'
@@ -380,7 +380,7 @@ def execute_forecast_trade(client: BinanceClient, engine: ProbabilityForecastEng
 
     # Phase 2.6: Consult War Planner (adversarial chess validation)
     try:
-        from aureon_strategic_war_planner import get_war_planner
+        from aureon.command_centers.aureon_strategic_war_planner import get_war_planner
         planner = get_war_planner()
         war_plan = planner.plan(
             symbol=symbol, price=forecast.current_price,

@@ -420,7 +420,7 @@ class ChamberOfEmotion:
     def _load(self):
         if self._earth_engine is None:
             try:
-                from earth_resonance_engine import EarthResonanceEngine
+                from aureon.harmonic.earth_resonance_engine import EarthResonanceEngine
                 self._earth_engine = EarthResonanceEngine()
             except ImportError:
                 pass
@@ -568,7 +568,7 @@ class ChamberOfEarth:
     def _load(self):
         if self._bridge is None:
             try:
-                from aureon_schumann_resonance_bridge import SchumannResonanceBridge
+                from aureon.harmonic.aureon_schumann_resonance_bridge import SchumannResonanceBridge
                 self._bridge = SchumannResonanceBridge()
             except ImportError:
                 pass
@@ -659,19 +659,19 @@ class ChamberOfHarmony:
     def _load(self):
         if self._scanner is None:
             try:
-                from aureon_harmonic_waveform import HarmonicWaveformScanner
+                from aureon.harmonic.aureon_harmonic_waveform import HarmonicWaveformScanner
                 self._scanner = HarmonicWaveformScanner()
             except ImportError:
                 pass
         if self._fusion is None:
             try:
-                from aureon_harmonic_fusion import HarmonicWaveFusion
+                from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
                 self._fusion = HarmonicWaveFusion()
             except ImportError:
                 pass
         if self._global_field is None:
             try:
-                from global_harmonic_field import get_global_harmonic_field
+                from aureon.harmonic.global_harmonic_field import get_global_harmonic_field
                 self._global_field = get_global_harmonic_field()
             except (ImportError, Exception):
                 pass
@@ -850,13 +850,13 @@ class ChamberOfVoice:
     def _load(self):
         if self._chain is None:
             try:
-                from aureon_harmonic_signal_chain import HarmonicSignalChain
+                from aureon.harmonic.aureon_harmonic_signal_chain import HarmonicSignalChain
                 self._chain = HarmonicSignalChain()
             except ImportError:
                 pass
         if self._chain_master is None:
             try:
-                from aureon_harmonic_chain_master import HarmonicChainMaster
+                from aureon.harmonic.aureon_harmonic_chain_master import HarmonicChainMaster
                 self._chain_master = HarmonicChainMaster()
             except ImportError:
                 pass

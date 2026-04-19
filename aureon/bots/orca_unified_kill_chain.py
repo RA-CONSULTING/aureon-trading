@@ -18,7 +18,7 @@ BY ANY MEANS NECESSARY - ONLY WINS COUNT
 Refactored from `orca_complete_kill_cycle.py` and `live_kill_chain_demo.py`.
 ═══════════════════════════════════════════════════════════════════════════════
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import time
 import json
@@ -30,27 +30,27 @@ from dataclasses import dataclass, asdict
 
 # Clients
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
 except ImportError:
     CapitalClient = None
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 except ImportError:
     KrakenClient = None
 
 try:
-    from binance_client import BinanceClient, get_binance_client
+    from aureon.exchanges.binance_client import BinanceClient, get_binance_client
 except ImportError:
     BinanceClient = None
 
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
 except ImportError:
     AlpacaClient = None
 
 try:
-    from aureon_real_portfolio_tracker import get_real_portfolio_tracker
+    from aureon.portfolio.aureon_real_portfolio_tracker import get_real_portfolio_tracker
 except ImportError:
     get_real_portfolio_tracker = None
 

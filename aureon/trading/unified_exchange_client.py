@@ -1,4 +1,4 @@
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import logging
 import time
@@ -13,10 +13,10 @@ except ImportError:
     pass
 
 # Imports deferred to avoid circular dependencies
-# from kraken_client import KrakenClient, get_kraken_client
-# from binance_client import BinanceClient
-# from alpaca_client import AlpacaClient
-# from capital_client import CapitalClient
+# from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+# from aureon.exchanges.binance_client import BinanceClient
+# from aureon.exchanges.alpaca_client import AlpacaClient
+# from aureon.exchanges.capital_client import CapitalClient
 
 # Updated FX rates as of November 2025 (approximate mid-market)
 # These are used for Capital.com equity conversion to base currency
@@ -384,19 +384,19 @@ class UnifiedExchangeClient:
         self.kraken_min_notional = float(os.getenv("KRAKEN_MIN_NOTIONAL", "5"))
         
         if self.exchange_id == "kraken":
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             self.client = get_kraken_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "binance":
-            from binance_client import BinanceClient, get_binance_client
+            from aureon.exchanges.binance_client import BinanceClient, get_binance_client
             self.client = get_binance_client()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "alpaca":
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.client = AlpacaClient()
             self.dry_run = self.client.dry_run
         elif self.exchange_id == "capital":
-            from capital_client import CapitalClient
+            from aureon.exchanges.capital_client import CapitalClient
             self.client = CapitalClient()
             self.dry_run = self.client.dry_run
         else:

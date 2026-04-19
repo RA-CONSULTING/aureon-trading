@@ -1,5 +1,5 @@
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -12,8 +12,8 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 try:
-    from cost_basis_tracker import CostBasisTracker
-    from trade_logger import TradeLogger
+    from aureon.portfolio.cost_basis_tracker import CostBasisTracker
+    from aureon.portfolio.trade_logger import TradeLogger
 except ImportError:
     print("❌ Failed to import trackers. Ensure you are in the project root.")
     sys.exit(1)
@@ -71,13 +71,13 @@ def repair():
     # 4. Final Connectivity Check
     print("\n📡 100% CONNECTIVITY VERIFICATION...")
     try:
-        from binance_client import BinanceClient
+        from aureon.exchanges.binance_client import BinanceClient
         bc = get_binance_client()
         print("   ✅ BINANCE: Connected")
     except: print("   ❌ BINANCE: Failed")
     
     try:
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         kc = get_kraken_client()
         print("   ✅ KRAKEN: Connected")
     except: print("   ❌ KRAKEN: Failed")

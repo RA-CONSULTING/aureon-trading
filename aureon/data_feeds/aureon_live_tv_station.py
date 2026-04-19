@@ -13,7 +13,7 @@ Purpose:
 ⚠️ REAL DATA ONLY. Queen + Auris + Harmonic validation REQUIRED.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -46,8 +46,8 @@ from typing import Dict, List, Deque, Tuple
 from collections import deque
 from datetime import datetime
 
-from metatrons_cube_knowledge_exchange import QueenAurisPingPong
-from aureon_truth_prediction_engine import (
+from aureon.wisdom.metatrons_cube_knowledge_exchange import QueenAurisPingPong
+from aureon.intelligence.aureon_truth_prediction_engine import (
     TruthPredictionEngine,
     MarketSnapshot
 )

@@ -18,7 +18,7 @@ Gary Leckey & GitHub Copilot | 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -179,7 +179,7 @@ class QueenProfitMonitor:
         
         # Wire profit gate
         try:
-            from adaptive_prime_profit_gate import is_real_win, get_fee_profile, get_adaptive_gate
+            from aureon.utils.adaptive_prime_profit_gate import is_real_win, get_fee_profile, get_adaptive_gate
             self.is_real_win = is_real_win
             self.get_fee_profile = get_fee_profile
             self.profit_gate = get_adaptive_gate()

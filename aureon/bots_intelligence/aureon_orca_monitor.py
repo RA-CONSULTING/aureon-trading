@@ -26,7 +26,7 @@ import logging
 
 # Import ThoughtBus for pub/sub messaging
 try:
-    from aureon_thought_bus import ThoughtBus
+    from aureon.core.aureon_thought_bus import ThoughtBus
 except ImportError:
     ThoughtBus = None
 
@@ -263,7 +263,7 @@ class OrcaMonitor:
     def register_with_coordinator(self):
         """Register Orca with the system coordinator."""
         try:
-            from aureon_system_coordinator import SystemCoordinator
+            from aureon.core.aureon_system_coordinator import SystemCoordinator
 
             coordinator = SystemCoordinator()
             coordinator.set_system_state(

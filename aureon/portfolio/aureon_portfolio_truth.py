@@ -12,7 +12,7 @@ Real-time portfolio tracking with ACCURATE data:
 This is the SINGLE SOURCE OF TRUTH for portfolio status.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 
 # Windows UTF-8 fix
@@ -31,9 +31,9 @@ import json
 import requests
 from datetime import datetime
 from typing import Dict, List, Tuple
-from kraken_client import KrakenClient
-from binance_client import BinanceClient
-from alpaca_client import AlpacaClient
+from aureon.exchanges.kraken_client import KrakenClient
+from aureon.exchanges.binance_client import BinanceClient
+from aureon.exchanges.alpaca_client import AlpacaClient
 
 
 class PortfolioTruth:

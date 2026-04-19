@@ -169,7 +169,7 @@ def _kraken_ohlc(pair: str, interval: int = 60, n: int = 72) -> List[Dict]:
 def _layer_past(days: int = 365) -> LayerResult:
     t0 = time.time()
     try:
-        from aureon_atn_backtest import (
+        from aureon.atn.aureon_atn_backtest import (
             fetch_earthquakes, fetch_solar_flares, fetch_geomagnetic_storms
         )
         end   = datetime.now(timezone.utc)
@@ -248,7 +248,7 @@ def _layer_past(days: int = 365) -> LayerResult:
 def _layer_schumann() -> LayerResult:
     t0 = time.time()
     try:
-        from aureon_schumann_resonance_bridge import get_live_schumann_data, get_earth_blessing
+        from aureon.harmonic.aureon_schumann_resonance_bridge import get_live_schumann_data, get_earth_blessing
         reading = get_live_schumann_data(force_refresh=True)
         blessing_val, blessing_msg = get_earth_blessing(force_refresh=False)
         return LayerResult(name="SCHUMANN", status="OK", elapsed=time.time()-t0, data={
@@ -276,7 +276,7 @@ def _layer_spectrum(pair: str, candles: List[Dict]) -> LayerResult:
     t0 = time.time()
     try:
         import numpy as np
-        from aureon_harmonic_counter_frequency import HarmonicCounterFrequency, SACRED_FREQUENCIES
+        from aureon.harmonic.aureon_harmonic_counter_frequency import HarmonicCounterFrequency, SACRED_FREQUENCIES
 
         if len(candles) < 24:
             raise ValueError("Insufficient candle data for FFT")
@@ -362,7 +362,7 @@ def _layer_spectrum(pair: str, candles: List[Dict]) -> LayerResult:
 def _layer_counter_intel(pair: str, price: float, candles: List[Dict]) -> LayerResult:
     t0 = time.time()
     try:
-        from aureon_queen_counter_intelligence import QueenCounterIntelligence, CounterStrategy
+        from aureon.utils.aureon_queen_counter_intelligence import QueenCounterIntelligence, CounterStrategy
 
         qci = QueenCounterIntelligence()
 

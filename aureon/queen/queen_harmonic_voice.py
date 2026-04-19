@@ -26,7 +26,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -63,7 +63,7 @@ if sys.platform == 'win32':
 
 # Core chain
 try:
-    from aureon_harmonic_signal_chain import (
+    from aureon.harmonic.aureon_harmonic_signal_chain import (
         HarmonicSignalChain, ChainSignal, SignalDirection,
         QueenNode, EnigmaNode, ScannerNode, EcosystemNode, WhaleNode
     )
@@ -73,35 +73,35 @@ except ImportError:
 
 # ThoughtBus
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
 
 # Harmonic Alphabet
 try:
-    from aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicTone
+    from aureon.harmonic.aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicTone
     HARMONIC_AVAILABLE = True
 except ImportError:
     HARMONIC_AVAILABLE = False
 
 # Enigma
 try:
-    from aureon_enigma import AureonEnigma
+    from aureon.wisdom.aureon_enigma import AureonEnigma
     ENIGMA_AVAILABLE = True
 except ImportError:
     ENIGMA_AVAILABLE = False
 
 # Queen Hive Mind
 try:
-    from aureon_queen_hive_mind import QueenHiveMind, create_queen_hive_mind, get_queen
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind, create_queen_hive_mind, get_queen
     QUEEN_AVAILABLE = True
 except ImportError:
     QUEEN_AVAILABLE = False
 
 # Queen Neuron
 try:
-    from queen_neuron import QueenNeuron, create_queen_neuron
+    from aureon.queen.queen_neuron import QueenNeuron, create_queen_neuron
     NEURON_AVAILABLE = True
 except ImportError:
     NEURON_AVAILABLE = False
@@ -323,7 +323,7 @@ class QueenHarmonicVoice:
         
         # 👑🦈 Wire Queen-Orca Bridge
         try:
-            from queen_orca_bridge import get_queen_orca_bridge
+            from aureon.queen.queen_orca_bridge import get_queen_orca_bridge
             self.orca_bridge = get_queen_orca_bridge()
             self.orca_bridge.queen_voice = self  # Wire self into bridge
             self.controlled_systems['orca_bridge'] = {

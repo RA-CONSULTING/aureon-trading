@@ -12,7 +12,7 @@ Usage:
     python binance_uk_allowed_pairs.py
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time
@@ -42,7 +42,7 @@ def fetch_uk_allowed_pairs() -> Dict[str, Any]:
         pass
     
     try:
-        from binance_client import BinanceClient
+        from aureon.exchanges.binance_client import BinanceClient
         client = get_binance_client()
     except Exception as e:
         print(f"❌ Failed to create Binance client: {e}")

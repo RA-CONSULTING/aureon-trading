@@ -19,7 +19,7 @@ Detects:
 Shows WHO OWNS WHO - big whales commanding smaller bot armies
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -64,7 +64,7 @@ print = _safe_print
 
 # Import Bot Intelligence Profiler
 try:
-    from aureon_bot_intelligence_profiler import BotIntelligenceProfiler
+    from aureon.bots_intelligence.aureon_bot_intelligence_profiler import BotIntelligenceProfiler
     PROFILER_AVAILABLE = True
 except ImportError:
     PROFILER_AVAILABLE = False
@@ -76,7 +76,7 @@ except ImportError:
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -84,7 +84,7 @@ except ImportError:
 # 📡 THOUGHT BUS INTEGRATION - Neural Persistence
 THOUGHT_BUS_AVAILABLE = False
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -94,7 +94,7 @@ except ImportError:
 # ════════════════════════════════════════════════════════════════════════════════
 # Kraken (crypto)
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -102,7 +102,7 @@ except ImportError:
 
 # Binance streaming (crypto real-time)
 try:
-    from binance_ws_client import BinanceWebSocketClient
+    from aureon.exchanges.binance_ws_client import BinanceWebSocketClient
     BINANCE_WS_AVAILABLE = True
 except ImportError:
     BINANCE_WS_AVAILABLE = False
@@ -110,7 +110,7 @@ except ImportError:
 
 # Alpaca (stocks + crypto)
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
 except ImportError:
     ALPACA_AVAILABLE = False
@@ -118,7 +118,7 @@ except ImportError:
 
 # Capital.com (CFDs + stocks)
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CAPITAL_AVAILABLE = False

@@ -15,7 +15,7 @@ Gary Leckey | January 2026 | REALITY CHECK SYSTEM
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -205,7 +205,7 @@ class RealPortfolioTracker:
         """Get REAL Alpaca balance."""
         try:
             if self._alpaca_client is None:
-                from alpaca_client import AlpacaClient
+                from aureon.exchanges.alpaca_client import AlpacaClient
                 self._alpaca_client = AlpacaClient()
             
             acc = self._alpaca_client.get_account()
@@ -276,7 +276,7 @@ class RealPortfolioTracker:
         """Get REAL Kraken balance (stablecoins + crypto priced via tickers)."""
         try:
             if self._kraken_client is None:
-                from kraken_client import get_kraken_client
+                from aureon.exchanges.kraken_client import get_kraken_client
                 self._kraken_client = get_kraken_client()
             
             balances = self._kraken_client.get_balance()
@@ -321,7 +321,7 @@ class RealPortfolioTracker:
         """Get REAL Binance balance (stablecoins + crypto priced via tickers)."""
         try:
             if self._binance_client is None:
-                from binance_client import get_binance_client
+                from aureon.exchanges.binance_client import get_binance_client
                 self._binance_client = get_binance_client()
             
             # get_balance() returns Dict[str, float] = {asset: free_amount}
@@ -367,7 +367,7 @@ class RealPortfolioTracker:
         """Get REAL Capital.com balance."""
         try:
             if self._capital_client is None:
-                from capital_client import CapitalClient
+                from aureon.exchanges.capital_client import CapitalClient
                 self._capital_client = CapitalClient()
             
             acc = self._capital_client.get_accounts()
@@ -444,7 +444,7 @@ class RealPortfolioTracker:
         if self._kraken_trades_cache and (time.time() - self._kraken_trades_cache_time) < self._kraken_trades_cache_ttl:
             return self._kraken_trades_cache
         if self._kraken_client is None:
-            from kraken_client import get_kraken_client
+            from aureon.exchanges.kraken_client import get_kraken_client
             self._kraken_client = get_kraken_client()
         try:
             trades = self._kraken_client.get_trades_history(

@@ -16,7 +16,7 @@ PHILOSOPHY:
 No stop losses. No forced exits. Quantum consciousness network.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -182,31 +182,31 @@ class QuantumNodeMonitor:
     def _load_clients(self):
         """Lazy load exchange clients"""
         try:
-            from binance_client import BinanceClient
+            from aureon.exchanges.binance_client import BinanceClient
             self.binance = get_binance_client()
         except Exception:
             pass
         
         try:
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             self.kraken = get_kraken_client()
         except Exception:
             pass
         
         try:
-            from alpaca_client import AlpacaClient
+            from aureon.exchanges.alpaca_client import AlpacaClient
             self.alpaca = AlpacaClient()
         except Exception:
             pass
         
         try:
-            from capital_client import CapitalClient
+            from aureon.exchanges.capital_client import CapitalClient
             self.capital = CapitalClient()
         except Exception:
             pass
         
         try:
-            from cost_basis_tracker import CostBasisTracker
+            from aureon.portfolio.cost_basis_tracker import CostBasisTracker
             self.cost_basis = CostBasisTracker()
         except Exception:
             pass

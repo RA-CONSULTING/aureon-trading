@@ -26,7 +26,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("queen_live_tracker")
 
-from aureon_live_aura_location_tracker import LiveAuraLocationTracker
+from aureon.utils.aureon_live_aura_location_tracker import LiveAuraLocationTracker
 
 
 class LiveSignalEmitter:

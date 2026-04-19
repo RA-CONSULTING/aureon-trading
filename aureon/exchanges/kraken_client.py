@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 # Import TokenBucket for proper rate limiting
 try:
-    from rate_limiter import TokenBucket
+    from aureon.core.rate_limiter import TokenBucket
     _RATE_LIMITER_AVAILABLE = True
 except ImportError:
     _RATE_LIMITER_AVAILABLE = False

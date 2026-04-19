@@ -30,7 +30,7 @@ FRONTEND OUTPUT:
 Gary Leckey | January 2026 | ALL PLATFORMS → FRONTEND
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import json
 import os
@@ -77,7 +77,7 @@ print("\n🔌 LOADING EXCHANGE CLIENTS...")
 
 # Kraken
 try:
-    from kraken_client import KrakenClient
+    from aureon.exchanges.kraken_client import KrakenClient
     def get_kraken_client():
         return KrakenClient()
     KRAKEN_AVAILABLE = True
@@ -88,7 +88,7 @@ except ImportError as e:
 
 # Binance
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     def get_binance_client():
         return BinanceClient()
     BINANCE_AVAILABLE = True
@@ -99,7 +99,7 @@ except ImportError:
 
 # Alpaca
 try:
-    from alpaca_client import AlpacaClient
+    from aureon.exchanges.alpaca_client import AlpacaClient
     ALPACA_AVAILABLE = True
     print("   🦙 Alpaca Client: LOADED")
 except ImportError:
@@ -113,7 +113,7 @@ print("\n🧠 LOADING TRADING SYSTEMS...")
 
 # Mycelium Conversion Hub
 try:
-    from mycelium_conversion_hub import get_conversion_hub, MyceliumConversionHub
+    from aureon.conversion.mycelium_conversion_hub import get_conversion_hub, MyceliumConversionHub
     MYCELIUM_AVAILABLE = True
     print("   🍄 Mycelium Conversion Hub: LOADED")
 except ImportError:
@@ -122,7 +122,7 @@ except ImportError:
 
 # V14 Labyrinth
 try:
-    from s5_v14_labyrinth import V14DanceEnhancer, V14_CONFIG
+    from aureon.strategies.s5_v14_labyrinth import V14DanceEnhancer, V14_CONFIG
     V14_AVAILABLE = True
     print("   🏆 V14 Labyrinth: LOADED")
 except ImportError:
@@ -131,7 +131,7 @@ except ImportError:
 
 # Conversion Commando
 try:
-    from aureon_conversion_commando import AdaptiveConversionCommando, PairScanner
+    from aureon.conversion.aureon_conversion_commando import AdaptiveConversionCommando, PairScanner
     COMMANDO_AVAILABLE = True
     print("   🦅 Conversion Commando: LOADED")
 except ImportError:
@@ -140,7 +140,7 @@ except ImportError:
 
 # Probability Nexus
 try:
-    from aureon_probability_nexus import EnhancedProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
     NEXUS_AVAILABLE = True
     print("   🔮 Probability Nexus: LOADED")
 except ImportError:
@@ -149,7 +149,7 @@ except ImportError:
 
 # Internal Multiverse
 try:
-    from aureon_internal_multiverse import InternalMultiverse
+    from aureon.simulation.aureon_internal_multiverse import InternalMultiverse
     MULTIVERSE_AVAILABLE = True
     print("   🌌 Internal Multiverse: LOADED")
 except ImportError:
@@ -158,7 +158,7 @@ except ImportError:
 
 # Miner Brain
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     MINER_AVAILABLE = True
     print("   🧠 Miner Brain: LOADED")
 except ImportError:
@@ -167,7 +167,7 @@ except ImportError:
 
 # Harmonic Fusion
 try:
-    from aureon_harmonic_fusion import HarmonicWaveFusion
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
     HARMONIC_AVAILABLE = True
     print("   🌊 Harmonic Fusion: LOADED")
 except ImportError:
@@ -176,7 +176,7 @@ except ImportError:
 
 # Omega
 try:
-    from aureon_omega import Omega
+    from aureon.trading.aureon_omega import Omega
     OMEGA_AVAILABLE = True
     print("   🔱 Omega: LOADED")
 except ImportError:

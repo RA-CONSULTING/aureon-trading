@@ -33,7 +33,7 @@ Gary Leckey & GitHub Copilot | 2025-2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link
+from aureon.core.aureon_baton_link import link_system as _baton_link
 import time
 import json
 import os
@@ -793,7 +793,7 @@ def wire_to_probability_matrix():
     - Adjust confidence based on how close we are to gates
     """
     try:
-        from probability_intelligence_matrix import get_probability_matrix, ProbabilityIntelligence
+        from aureon.strategies.probability_intelligence_matrix import get_probability_matrix, ProbabilityIntelligence
         
         matrix = get_probability_matrix()
         gate = get_adaptive_gate()
@@ -874,7 +874,7 @@ def wire_to_mycelium(goal_target: float = 100000.0, goal_currency: str = 'GBP'):
     - Coordinate all systems toward the same profit math
     """
     try:
-        from ira_sniper_mode import register_to_mycelium, mycelium_sync, get_mycelium_aggregator
+        from aureon.scanners.ira_sniper_mode import register_to_mycelium, mycelium_sync, get_mycelium_aggregator
         
         gate = get_adaptive_gate()
         
@@ -937,7 +937,7 @@ def wire_to_mycelium(goal_target: float = 100000.0, goal_currency: str = 'GBP'):
             def sync_goal_to_thought_bus(self, current_capital: float):
                 """Sync goal progress to ThoughtBus."""
                 try:
-                    from aureon_thought_bus import ThoughtBus, Thought
+                    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
                     
                     progress = self.calculate_trades_to_goal(current_capital)
                     

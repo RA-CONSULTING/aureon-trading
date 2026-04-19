@@ -16,7 +16,7 @@ Gary Leckey | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import math
@@ -63,13 +63,13 @@ import builtins
 
 # 1. Load HNC Surge Detector
 try:
-    import aureon_hnc_surge_detector as hnc
+    import aureon.bridges.aureon_hnc_surge_detector as aureon_hnc_surge_detector as hnc
 except ImportError:
     # If not found (path issues), we assume we are in root
     pass
 
 # 2. Load Phantom Filter
-import aureon_phantom_signal_filter as pf
+import aureon.scanners.aureon_phantom_signal_filter as aureon_phantom_signal_filter as pf
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - SIM - %(message)s')

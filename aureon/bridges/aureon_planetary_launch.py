@@ -10,7 +10,7 @@ ONE COMMAND TO START EVERYTHING:
 - Shows planetary overview with countries, clans, tidal waves
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -35,7 +35,7 @@ from typing import Dict, Set
 from collections import defaultdict
 
 # Import dashboard HTML
-from aureon_global_bot_map import DASHBOARD_HTML
+from aureon.bots_intelligence.aureon_global_bot_map import DASHBOARD_HTML
 
 class SimplePlanetaryDashboard:
     """Simplified planetary dashboard that works with existing systems."""

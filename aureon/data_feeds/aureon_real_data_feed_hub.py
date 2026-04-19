@@ -19,7 +19,7 @@ Topics Published:
 Gary Leckey & Tina Brown | January 2026 | REAL DATA DISTRIBUTION
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -192,7 +192,7 @@ class RealDataFeedHub:
         """Initialize ThoughtBus and Intelligence Engine"""
         # Get ThoughtBus
         try:
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             # Use global thoughts file
             self.thought_bus = ThoughtBus(
                 max_memory=5000,
@@ -204,7 +204,7 @@ class RealDataFeedHub:
             
         # Get Intelligence Engine
         try:
-            from aureon_real_intelligence_engine import get_intelligence_engine
+            from aureon.intelligence.aureon_real_intelligence_engine import get_intelligence_engine
             self.intelligence_engine = get_intelligence_engine()
             logger.info("🧠 Real Intelligence Engine connected")
         except Exception as e:
@@ -221,7 +221,7 @@ class RealDataFeedHub:
         """Publish data to ThoughtBus"""
         if self.thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source="real_data_feed_hub",
                     topic=topic,

@@ -27,7 +27,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From Prime to Probability - The Frequency Unfolds Across Time"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -39,7 +39,7 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from collections import deque
 from enum import Enum
-from lighthouse_metrics import LighthouseMetricsEngine
+from aureon.analytics.lighthouse_metrics import LighthouseMetricsEngine
 
 # ═══════════════════════════════════════════════════════════════
 # CONSTANTS - PROBABILITY MATRIX PARAMETERS

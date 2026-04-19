@@ -18,7 +18,7 @@ Where:
 - E(t) = Echo (feedback that travels back through mycelium)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import time
 import uuid
@@ -238,7 +238,7 @@ class QuantumCheckInProtocol:
         # Send through thought bus if available
         if self.thought_bus and hasattr(self.thought_bus, 'publish'):
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 self.thought_bus.publish(Thought(
                     source='quantum_checkin',
                     topic='quantum.echo.request',

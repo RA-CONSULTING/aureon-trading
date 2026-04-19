@@ -25,7 +25,7 @@ WAR RULES:
 "Our revenge will be the laughter of our children." - Bobby Sands
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import time
 import os
@@ -47,7 +47,7 @@ NET_PENNY_TARGET = 0.01  # $0.01 net profit goal (🪙 SHARED GOAL)
 def get_dynamic_penny_threshold(exchange: str = 'binance', trade_size: float = 10.0) -> float:
     """🪙 SHARED GOAL: Get dynamic penny threshold from ecosystem."""
     try:
-        from aureon_unified_ecosystem import get_penny_threshold
+        from aureon.trading.aureon_unified_ecosystem import get_penny_threshold
         penny = get_penny_threshold(exchange, trade_size)
         if penny:
             return penny['win_gte']
@@ -59,7 +59,7 @@ def get_dynamic_penny_threshold(exchange: str = 'binance', trade_size: float = 1
 def get_dynamic_required_r(exchange: str = 'binance', trade_size: float = 10.0) -> float:
     """🪙 SHARED GOAL: Get the dynamic required move (r) for net penny profit."""
     try:
-        from aureon_unified_ecosystem import get_penny_threshold
+        from aureon.trading.aureon_unified_ecosystem import get_penny_threshold
         penny = get_penny_threshold(exchange, trade_size)
         if penny:
             return float(penny.get('required_r', REQUIRED_R) or REQUIRED_R)
