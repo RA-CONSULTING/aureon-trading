@@ -40,8 +40,7 @@ Phi-bridge mesh (P2P card-level gossip between desktops on the LAN):
   GET  /api/bridge/mesh/info       — mesh stats (cycles, cards in/out, peers)
   GET  /api/bridge/discovery/peers — peers discovered via UDP LAN broadcast
 
-The discovery + gossip loop auto-starts when AUREON_MESH_AUTOSTART=1 is set
-or ``create_app(mesh_autostart=True)`` is passed.
+The discovery + gossip loop start at app boot.
 
 Usage:
     from aureon.vault.ui import create_app, run_server
@@ -114,7 +113,6 @@ def create_app(
     base_interval_s: float = 1.0,
     enable_voice: bool = True,
     *,
-    mesh_autostart: Optional[bool] = None,
     mesh_discovery: Optional[PhiBridgeDiscovery] = None,
     mesh_port: Optional[int] = None,
     mesh_label: str = "aureon",
@@ -125,15 +123,12 @@ def create_app(
 
     If no loop is provided, a fresh one is constructed.
 
-    Mesh auto-wiring (off by default):
-      - ``mesh_autostart=True`` (or env AUREON_MESH_AUTOSTART=1) starts
-        PhiBridgeDiscovery (UDP LAN broadcast) and the card-level gossip
-        loop at app boot, so two nodes on the same WiFi find each other
-        and converge without any operator wiring.
-      - ``mesh_discovery`` lets tests inject a pre-built discovery with
-        a stub transport instead of binding real sockets.
-      - ``mesh_port`` is the HTTP port this app will be reachable on —
-        announced in UDP packets so peers know where to POST.
+    Mesh wiring:
+      PhiBridgeDiscovery (UDP LAN broadcast) and the card-level gossip
+      loop start at app boot. Pass ``mesh_discovery`` to inject a pre-
+      built discovery (tests use this with a stub transport instead of
+      binding real sockets). ``mesh_port`` is the HTTP port this app is
+      reachable on — announced so peers know where to POST.
     """
     _check_flask()
 
@@ -1270,16 +1265,12 @@ def create_app(
         })
 
     # ─────────────────────────────────────────────────────────────────────
-    # Mesh auto-start — UDP discovery + φ²-cadenced card gossip
+    # Mesh — UDP discovery + φ²-cadenced card gossip
     # ─────────────────────────────────────────────────────────────────────
-
-    if mesh_autostart is None:
-        env = (os.environ.get("AUREON_MESH_AUTOSTART") or "").strip().lower()
-        mesh_autostart = env in ("1", "true", "yes", "on")
 
     http_port = int(mesh_port or os.environ.get("AUREON_UI_PORT") or 8000)
     discovery = mesh_discovery
-    if mesh_autostart and discovery is None:
+    if discovery is None:
         discovery = PhiBridgeDiscovery(
             host="",  # auto-detect the LAN IP
             port=http_port,
@@ -1288,32 +1279,30 @@ def create_app(
             fingerprint_fn=lambda: str(loop.vault.fingerprint()) if hasattr(loop.vault, "fingerprint") else "",
         )
 
-    if discovery is not None:
-        mesh.discovery = discovery
-        app.config["AUREON_PHI_BRIDGE_DISCOVERY"] = discovery
+    mesh.discovery = discovery
+    app.config["AUREON_PHI_BRIDGE_DISCOVERY"] = discovery
 
-        if mesh_autostart:
-            try:
-                discovery.start()
-            except Exception as e:
-                logger.warning("phi-bridge discovery failed to start: %s", e)
-            try:
-                mesh.start()
-            except Exception as e:
-                logger.warning("phi-bridge mesh failed to start: %s", e)
+    try:
+        discovery.start()
+    except Exception as e:
+        logger.warning("phi-bridge discovery failed to start: %s", e)
+    try:
+        mesh.start()
+    except Exception as e:
+        logger.warning("phi-bridge mesh failed to start: %s", e)
 
-            # Stop the background threads cleanly on interpreter shutdown.
-            import atexit as _atexit
-            def _shutdown_mesh():
-                try:
-                    discovery.stop()
-                except Exception:
-                    pass
-                try:
-                    mesh.stop()
-                except Exception:
-                    pass
-            _atexit.register(_shutdown_mesh)
+    # Stop the background threads cleanly on interpreter shutdown.
+    import atexit as _atexit
+    def _shutdown_mesh():
+        try:
+            discovery.stop()
+        except Exception:
+            pass
+        try:
+            mesh.stop()
+        except Exception:
+            pass
+    _atexit.register(_shutdown_mesh)
 
     @app.route("/api/bridge/discovery/peers")
     def api_bridge_discovery_peers():
@@ -1322,7 +1311,6 @@ def create_app(
             return jsonify({
                 "ok": True, "running": False,
                 "peers": [],
-                "note": "discovery is not wired; start with mesh_autostart=True or AUREON_MESH_AUTOSTART=1",
             })
         try:
             return jsonify({

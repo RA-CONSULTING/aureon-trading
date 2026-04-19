@@ -67,6 +67,68 @@ from aureon.vault.voice.persona_action import (
     ActionExecution,
     PersonaActuator,
 )
+from aureon.vault.voice.affinity_chorus import (
+    AffinityChorus,
+    AffinityContribution,
+    DEFAULT_TTL_S as CHORUS_DEFAULT_TTL_S,
+    vault_fingerprint_seed,
+    make_vault_seed_fn,
+)
+from aureon.vault.voice.life_context import LifeContext, LifeEvent
+from aureon.vault.voice.opportunity_scanner import (
+    OpportunityScanner,
+    OpportunityHit,
+)
+from aureon.vault.voice.symbolic_life_bridge import SymbolicLifeBridge
+from aureon.vault.voice.temporal_causality import (
+    GoalEcho,
+    GoalState,
+    TemporalCausalityLaw,
+    get_temporal_causality_law,
+    reset_temporal_causality_law,
+)
+from aureon.vault.voice.goal_dispatch_bridge import (
+    GoalDispatchBridge,
+    get_goal_dispatch_bridge,
+    reset_goal_dispatch_bridge,
+)
+from aureon.vault.voice.bus_flight_check import (
+    BusFlightCheck,
+    get_bus_flight_check,
+    reset_bus_flight_check,
+)
+from aureon.vault.voice.vault_feed_audit import VaultFeedAudit
+from aureon.vault.voice.hash_resonance_index import (
+    HashResonanceIndex,
+    BondRecord,
+    bond_strength,
+)
+from aureon.vault.voice.meta_cognition_observer import (
+    MetaCognitionObserver,
+    ReflectionCard,
+    get_meta_cognition_observer,
+    reset_meta_cognition_observer,
+)
+from aureon.vault.voice.persona_miner_bridge import (
+    PersonaMinerBridge,
+    MinerPacket,
+    PersonaStats,
+    IntentStats,
+    get_persona_miner_bridge,
+    reset_persona_miner_bridge,
+)
+from aureon.vault.voice.goal_skill_aligner import (
+    GoalSkillAligner,
+    get_goal_skill_aligner,
+    reset_goal_skill_aligner,
+)
+from aureon.vault.voice.skill_executor_bridge import (
+    SkillExecutorBridge,
+    code_architect_adapter,
+    get_skill_executor_bridge,
+    reset_skill_executor_bridge,
+)
+from aureon.vault.voice._goal_claims import GoalClaims
 
 __all__ = [
     # Utterance
@@ -111,4 +173,49 @@ __all__ = [
     "PersonaAction",
     "ActionExecution",
     "PersonaActuator",
+    # Unified-collapse layer
+    "AffinityChorus",
+    "AffinityContribution",
+    "CHORUS_DEFAULT_TTL_S",
+    "vault_fingerprint_seed",
+    "make_vault_seed_fn",
+    # Life context + opportunity scanning
+    "LifeContext",
+    "LifeEvent",
+    "OpportunityScanner",
+    "OpportunityHit",
+    "SymbolicLifeBridge",
+    "GoalEcho",
+    "GoalState",
+    "TemporalCausalityLaw",
+    "get_temporal_causality_law",
+    "reset_temporal_causality_law",
+    "GoalDispatchBridge",
+    "get_goal_dispatch_bridge",
+    "reset_goal_dispatch_bridge",
+    "BusFlightCheck",
+    "get_bus_flight_check",
+    "reset_bus_flight_check",
+    "VaultFeedAudit",
+    "HashResonanceIndex",
+    "BondRecord",
+    "bond_strength",
+    "MetaCognitionObserver",
+    "ReflectionCard",
+    "get_meta_cognition_observer",
+    "reset_meta_cognition_observer",
+    "PersonaMinerBridge",
+    "MinerPacket",
+    "PersonaStats",
+    "IntentStats",
+    "get_persona_miner_bridge",
+    "reset_persona_miner_bridge",
+    "GoalSkillAligner",
+    "get_goal_skill_aligner",
+    "reset_goal_skill_aligner",
+    "SkillExecutorBridge",
+    "code_architect_adapter",
+    "get_skill_executor_bridge",
+    "reset_skill_executor_bridge",
+    "GoalClaims",
 ]

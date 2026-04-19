@@ -24,22 +24,41 @@ from __future__ import annotations
 
 import logging
 import math
-import os
 import random
 import threading
+import uuid
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from aureon.vault.voice.affinity_chorus import AffinityChorus
 from aureon.vault.voice.aureon_personas import (
     AUREON_PERSONA_REGISTRY,
     ResonantPersona,
     build_aureon_personas,
 )
-from aureon.vault.voice.persona_action import ActionExecution, PersonaActuator
+from aureon.vault.voice.persona_action import (
+    ActionExecution,
+    PersonaAction,
+    PersonaActuator,
+)
 from aureon.vault.voice.utterance import VoiceStatement
 
 logger = logging.getLogger("aureon.vault.voice.persona_vacuum")
 
 _DEFAULT_TEMPERATURE = 1.0
+
+
+def _seed_from_scores(scores: Dict[str, float]) -> int:
+    """Stable integer seed derived from a merged affinity map.
+
+    Two vacuums that see the same map produce the same seed, so their
+    softmax sampling agrees. Independent of transient vault state.
+    """
+    if not scores:
+        return 0
+    import hashlib
+    canonical = ",".join(f"{k}:{scores[k]:.9f}" for k in sorted(scores.keys()))
+    digest = hashlib.sha256(canonical.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big", signed=False)
 
 
 def _softmax(scores: List[float], temperature: float) -> List[float]:
@@ -68,7 +87,9 @@ class PersonaVacuum:
         temperature: Optional[float] = None,
         vault: Any = None,
         actuator: Optional[PersonaActuator] = None,
-        actuator_dry_run: bool = False,
+        chorus: Optional[AffinityChorus] = None,
+        peer_id: Optional[str] = None,
+        seed_fn: Optional[Callable[[], int]] = None,
     ):
         self._personas: Dict[str, ResonantPersona] = (
             personas if personas is not None else build_aureon_personas(adapter=adapter)
@@ -78,6 +99,10 @@ class PersonaVacuum:
         self._lock = threading.Lock()
         self._latest_cognition: Dict[str, Any] = {}
         self._latest_drop: Dict[str, Any] = {}
+        # symbolic_life_score from the most recent symbolic.life.pulse
+        # — fallback when no vault attribute is available. The vault
+        # attribute (set by SymbolicLifeBridge.pulse) takes precedence.
+        self._latest_sls: Optional[float] = None
         self._last_winner: Optional[str] = None
         self._last_probabilities: Dict[str, float] = {}
         self._collapse_count = 0
@@ -89,9 +114,23 @@ class PersonaVacuum:
         self._actuator: PersonaActuator = actuator if actuator is not None else PersonaActuator(
             vault=vault,
             thought_bus=self._thought_bus,
-            dry_run=bool(actuator_dry_run),
         )
         self._last_action_execution: Optional[ActionExecution] = None
+        self._last_goal_execution: Optional[ActionExecution] = None
+
+        # Unified-collapse wiring — when a chorus is attached, affinity
+        # vectors from all participating vacuums merge before softmax.
+        # Combined with a seed_fn derived from a shared signal (usually
+        # the vault fingerprint), two vacuums seeing the same merged
+        # affinity will sample the same winner.
+        self._chorus: Optional[AffinityChorus] = chorus
+        self._seed_fn: Optional[Callable[[], int]] = seed_fn
+        self._peer_id: str = str(peer_id) if peer_id else f"vacuum-{uuid.uuid4().hex[:8]}"
+        if self._chorus is not None:
+            # Ensure the chorus is listening on whichever bus we're using.
+            if self._chorus.thought_bus is None and self._thought_bus is not None:
+                self._chorus.thought_bus = self._thought_bus
+            self._chorus.start()
 
     @staticmethod
     def _resolve_temperature(explicit: Optional[float]) -> float:
@@ -99,12 +138,6 @@ class PersonaVacuum:
             try:
                 return max(1e-6, float(explicit))
             except (TypeError, ValueError):
-                pass
-        raw = os.environ.get("AUREON_PERSONA_TEMPERATURE")
-        if raw:
-            try:
-                return max(1e-6, float(raw))
-            except ValueError:
                 pass
         return _DEFAULT_TEMPERATURE
 
@@ -129,10 +162,37 @@ class PersonaVacuum:
             self._thought_bus.subscribe("dj.track.drop", self._on_drop)
             self._thought_bus.subscribe("queen.source_law.cognition", self._on_cognition)
             self._thought_bus.subscribe("persona.observe", self._on_observe_trigger)
+            # Stage 4.3c — track the entity's substrate coherence so
+            # _sample() can weight persona affinity by current SLS.
+            self._thought_bus.subscribe("symbolic.life.pulse", self._on_symbolic_life_pulse)
             self._subscribed = True
             logger.info("[PERSONA VACUUM] subscribed; %d personas in superposition", len(self._personas))
         except Exception as e:
             logger.debug("PersonaVacuum: subscribe failed: %s", e)
+
+    def _on_symbolic_life_pulse(self, thought: Any) -> None:
+        payload = getattr(thought, "payload", {}) or {}
+        if not isinstance(payload, dict):
+            return
+        sls = payload.get("symbolic_life_score")
+        if sls is None:
+            return
+        try:
+            self._latest_sls = max(0.0, min(1.0, float(sls)))
+        except (TypeError, ValueError):
+            self._latest_sls = None
+
+    def _current_sls(self, vault: Any) -> Optional[float]:
+        """Resolve the current symbolic_life_score: vault attribute first
+        (set by SymbolicLifeBridge.pulse), then the latest bus pulse."""
+        if vault is not None:
+            sls = getattr(vault, "current_symbolic_life_score", None)
+            if sls is not None:
+                try:
+                    return max(0.0, min(1.0, float(sls)))
+                except (TypeError, ValueError):
+                    pass
+        return self._latest_sls
 
     def _on_drop(self, thought: Any) -> None:
         payload = getattr(thought, "payload", {}) or {}
@@ -191,10 +251,32 @@ class PersonaVacuum:
             self._last_action_execution = self._actuator.dispatch(
                 persona.NAME, action, dict(state, persona=persona.NAME),
             )
+
+        # Goals — strictly-triggered multi-step intentions. Under much
+        # stricter conditions than propose_action so the backlog doesn't
+        # flood. The actuator publishes ``goal.submit.request`` on the bus
+        # for the existing aureon/core/goal_execution_engine to pick up.
+        try:
+            goal_text = persona.propose_goal(state)
+        except Exception as e:
+            logger.debug("PersonaVacuum: %s propose_goal failed: %s", persona.NAME, e)
+            goal_text = None
+        if goal_text:
+            self._last_goal_execution = self._actuator.dispatch(
+                persona.NAME,
+                PersonaAction(
+                    kind="goal.submit",
+                    topic=str(goal_text),
+                    payload={},
+                    reason=f"{persona.NAME} proposes goal under strict trigger",
+                    urgency=0.9,
+                ),
+                dict(state, persona=persona.NAME),
+            )
         return statement
 
     def _build_state(self, vault: Any) -> Dict[str, Any]:
-        """Vault slice ∪ latest cognition ∪ latest drop."""
+        """Vault slice ∪ latest cognition ∪ latest drop ∪ current SLS."""
         base: Dict[str, Any] = {}
         if vault is not None:
             try:
@@ -210,10 +292,42 @@ class PersonaVacuum:
         base["confidence"] = float(cognition.get("confidence", 0.0) or 0.0)
         base["node_readings"] = dict(cognition.get("node_readings") or {})
         base["dj_drop"] = drop
+        # Stage 4.3c — surface the entity's substrate coherence so
+        # _sample() can weight persona affinity by it.
+        sls = self._current_sls(vault)
+        if sls is not None:
+            base["symbolic_life_score"] = sls
         return base
 
     def _any_persona(self) -> ResonantPersona:
         return next(iter(self._personas.values()))
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Unified collapse (quorum phase)
+    # ─────────────────────────────────────────────────────────────────────
+
+    def contribute_affinity(self, vault: Any = None) -> Dict[str, float]:
+        """Compute this vacuum's per-persona affinity for the current
+        state and publish it to the chorus. This is the "many thoughts"
+        phase — call it on every participating vacuum BEFORE any of
+        them collapses, so each sampler sees the complete merged map.
+
+        Returns the local score vector for inspection.
+        """
+        state = self._build_state(vault)
+        scores: Dict[str, float] = {}
+        for name, persona in self._personas.items():
+            try:
+                v = float(persona.compute_affinity(state))
+            except Exception:
+                v = 0.0
+            scores[name] = max(0.0, v)
+        if self._chorus is not None:
+            try:
+                self._chorus.publish(self._peer_id, scores)
+            except Exception as e:
+                logger.debug("PersonaVacuum: chorus publish failed: %s", e)
+        return scores
 
     def _sample(
         self, state: Dict[str, Any]
@@ -221,16 +335,76 @@ class PersonaVacuum:
         names: List[str] = list(self._personas.keys())
         if not names:
             return None, {}, {}
-        raw: List[float] = []
+
+        # 1. Local per-persona affinity — this vacuum's own "thought".
+        local_scores: Dict[str, float] = {}
         for name in names:
             try:
-                score = float(self._personas[name].compute_affinity(state))
+                v = float(self._personas[name].compute_affinity(state))
             except Exception as e:
                 logger.debug("PersonaVacuum: %s affinity failed: %s", name, e)
-                score = 0.0
-            raw.append(max(0.0, score))
+                v = 0.0
+            local_scores[name] = max(0.0, v)
+
+        # 2. If a chorus is attached, publish our vector so other vacuums
+        #    can see it, then ask the chorus for the merged score map —
+        #    many thoughts summed into one.
+        if self._chorus is not None:
+            try:
+                self._chorus.publish(self._peer_id, local_scores)
+            except Exception as e:
+                logger.debug("PersonaVacuum: chorus publish failed: %s", e)
+            try:
+                merged_map = self._chorus.merged(
+                    self_scores=local_scores,
+                    self_peer_id=self._peer_id,
+                )
+            except Exception as e:
+                logger.debug("PersonaVacuum: chorus merge failed: %s", e)
+                merged_map = dict(local_scores)
+        else:
+            merged_map = dict(local_scores)
+
+        raw: List[float] = [max(0.0, float(merged_map.get(n, 0.0))) for n in names]
+
+        # Stage 4.3c — weight raw affinity by per-persona SLS modifier so
+        # the ten facets serve one fluctuating state. Structure-building
+        # personas (Engineer / QuantumPhysicist / Left, SLS_BIAS < 0)
+        # rise when SLS is low; meaning-propagating personas (Mystic /
+        # Painter / Elder / Right, SLS_BIAS > 0) rise when SLS is high.
+        # Personas with SLS_BIAS = 0 are unaffected.
+        sls = state.get("symbolic_life_score")
+        if sls is not None:
+            for i, n in enumerate(names):
+                try:
+                    mod = float(self._personas[n].sls_affinity_modifier(sls))
+                except Exception as e:
+                    logger.debug("PersonaVacuum: %s sls_modifier failed: %s", n, e)
+                    mod = 1.0
+                raw[i] = raw[i] * max(0.0, mod)
+
         probs = _softmax(raw, self._temperature)
-        r = self._rng.random()
+
+        # 3. RNG for sampling.
+        #    - Explicit seed_fn takes precedence (e.g. a shared tick
+        #      counter, or an operator-supplied fingerprint).
+        #    - Otherwise, if a chorus is attached, derive the seed from
+        #      the merged affinity vector. Two vacuums that see the same
+        #      merged map (what the chorus is FOR) get the same seed and
+        #      collapse to the same winner — "one softmax, one draw,
+        #      one voice".
+        #    - Falling back to the vacuum's own rng means classical
+        #      independent sampling.
+        rng: random.Random = self._rng
+        if self._seed_fn is not None:
+            try:
+                rng = random.Random(int(self._seed_fn()))
+            except Exception as e:
+                logger.debug("PersonaVacuum: seed_fn failed: %s", e)
+        elif self._chorus is not None:
+            rng = random.Random(_seed_from_scores(merged_map))
+
+        r = rng.random()
         cum = 0.0
         winner = names[-1]
         for name, p in zip(names, probs):
@@ -371,12 +545,24 @@ class PersonaVacuum:
     # ─────────────────────────────────────────────────────────────────────
 
     @property
+    def chorus(self) -> Optional[AffinityChorus]:
+        return self._chorus
+
+    @property
+    def peer_id(self) -> str:
+        return self._peer_id
+
+    @property
     def actuator(self) -> PersonaActuator:
         return self._actuator
 
     @property
     def last_action_execution(self) -> Optional[ActionExecution]:
         return self._last_action_execution
+
+    @property
+    def last_goal_execution(self) -> Optional[ActionExecution]:
+        return self._last_goal_execution
 
     @property
     def last_winner(self) -> Optional[str]:

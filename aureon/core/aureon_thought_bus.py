@@ -397,6 +397,22 @@ class ThoughtBus:
         with self._lock:
             self._subs.setdefault(topic, []).append(handler)
 
+    def list_subscribed_topics(self) -> List[str]:
+        """Return the topic patterns that currently have at least one
+        subscriber. Read-only introspection — used by BusFlightCheck to
+        build the standing-wave topology without monkey-patching the
+        bus."""
+        with self._lock:
+            return [t for t, handlers in self._subs.items() if handlers]
+
+    def subscriber_count(self, topic: Optional[str] = None) -> int:
+        """Count subscribers on a specific topic pattern, or across all
+        patterns when topic is None."""
+        with self._lock:
+            if topic is None:
+                return sum(len(h) for h in self._subs.values())
+            return len(self._subs.get(topic, []))
+
     def publish(self, *args: Any, **kwargs: Any) -> Thought:
         thought = _coerce_thought_args(*args, **kwargs)
         with self._lock:

@@ -169,21 +169,6 @@ def test_dispatch_returns_none_when_action_is_none():
     assert a.dispatch("x", None) is None
 
 
-def test_dispatch_dry_run_records_but_does_not_fire_handlers():
-    bus = _StubBus()
-    vault = _StubVault()
-    a = PersonaActuator(thought_bus=bus, vault=vault, dry_run=True)
-    action = PersonaAction(kind="bus.publish", topic="dry.topic", payload={"k": 1})
-    rec = a.dispatch("mystic", action)
-    assert rec is not None
-    assert rec.ok is True
-    assert rec.dry_run is True
-    assert rec.result == {"note": "dry_run — handler not invoked"}
-    # Nothing published, nothing ingested
-    assert bus.published == []
-    assert vault.ingested == []
-
-
 def test_dispatch_bus_publish_handler_emits_on_bus():
     bus = _StubBus()
     a = PersonaActuator(thought_bus=bus)
@@ -422,36 +407,6 @@ def test_vacuum_dispatches_action_after_collapse():
     # The bus saw the actuator publish
     topics = [t.topic for t in bus.published]
     assert "queen.request_cognition" in topics
-
-
-def test_vacuum_dry_run_mode_does_not_fire_handlers():
-    bus = _StubBus()
-    vault = _StubVault()
-    from aureon.vault.voice.aureon_personas import build_aureon_personas
-    vacuum = PersonaVacuum(
-        personas=build_aureon_personas(adapter=_StubAdapter()),
-        thought_bus=bus,
-        rng=random.Random(0),
-        vault=vault,
-        actuator_dry_run=True,
-    )
-    bus.publish(_StubThought("queen.source_law.cognition", {
-        "coherence_gamma": 0.96, "node_readings": {"tiger": 0.9},
-    }))
-    bus.subscribe("queen.source_law.cognition", vacuum._on_cognition)
-    bus.publish(_StubThought("queen.source_law.cognition", {
-        "coherence_gamma": 0.96, "node_readings": {"tiger": 0.9},
-    }))
-    for name, p in vacuum._personas.items():
-        p.compute_affinity = (lambda s, n=name: 1000.0 if n == "engineer" else 0.01)
-    # Count only actuator-generated publishes (exclude the cognition seeds
-    # we did above).
-    before = len([t for t in bus.published if t.topic == "queen.request_cognition"])
-    vacuum.observe(vault)
-    after = len([t for t in bus.published if t.topic == "queen.request_cognition"])
-    assert after == before  # dry_run blocked the publish
-    rec = vacuum.last_action_execution
-    assert rec is not None and rec.dry_run is True and rec.ok is True
 
 
 def test_vacuum_no_action_when_persona_is_silent():

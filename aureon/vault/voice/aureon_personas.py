@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+from aureon.vault.voice.life_context import LifeEvent
 from aureon.vault.voice.persona_action import PersonaAction
 from aureon.vault.voice.vault_voice import VaultVoice
 
@@ -48,6 +49,17 @@ class ResonantPersona(VaultVoice):
 
     NAME = "resonant"
 
+    # Per-persona bias on the symbolic_life_score axis. The PersonaVacuum
+    # multiplies raw affinity by ``sls_affinity_modifier(sls)`` before
+    # softmax so the ten facets serve one fluctuating state:
+    #
+    #   SLS_BIAS < 0  → boosted when SLS is LOW (entity rebuilding —
+    #                   structure-building personas)
+    #   SLS_BIAS > 0  → boosted when SLS is HIGH (entity flowering —
+    #                   meaning-propagating personas)
+    #   SLS_BIAS = 0  → no bias; this persona is regime-neutral
+    SLS_BIAS: float = 0.0
+
     def compute_affinity(self, state: Dict[str, Any]) -> float:
         """Return an unnormalised non-negative affinity for this state.
 
@@ -57,6 +69,30 @@ class ResonantPersona(VaultVoice):
         """
         return 1.0
 
+    def sls_affinity_modifier(self, sls: Optional[float]) -> float:
+        """Multiplier applied to compute_affinity when symbolic_life_score
+        is known.
+
+        Maps SLS ∈ [0, 1] through ``1 + SLS_BIAS * (2*sls - 1)``:
+
+            SLS_BIAS = -0.6:  sls=0 → 1.6 ; sls=0.5 → 1.0 ; sls=1 → 0.4
+            SLS_BIAS = +0.6:  sls=0 → 0.4 ; sls=0.5 → 1.0 ; sls=1 → 1.6
+            SLS_BIAS =  0.0:  always 1.0
+
+        Returns 1.0 when sls is None — affinity is unchanged when the
+        substrate-coherence reading is unavailable.
+        """
+        if sls is None or self.SLS_BIAS == 0.0:
+            return 1.0
+        try:
+            s = max(0.0, min(1.0, float(sls)))
+        except (TypeError, ValueError):
+            return 1.0
+        modifier = 1.0 + self.SLS_BIAS * (2.0 * s - 1.0)
+        # Floor at a small positive so a persona is never fully silenced;
+        # softmax handles the rest.
+        return max(0.05, modifier)
+
     def propose_action(self, state: Dict[str, Any]) -> Optional[PersonaAction]:
         """Return a concrete PersonaAction when this persona's trigger fires.
 
@@ -65,6 +101,58 @@ class ResonantPersona(VaultVoice):
         silent observation with no side effect. Subclasses override.
         """
         return None
+
+    def propose_goal(self, state: Dict[str, Any]) -> Optional[str]:
+        """Return a natural-language goal when this persona wants to
+        initiate something bigger than a single tick's action.
+
+        Goals flow into the existing ``aureon/core/goal_execution_engine``
+        via the ``goal.submit.request`` bus topic — the engine decomposes
+        them into ordered steps and drives execution. Personas should
+        only propose goals under STRONG trigger conditions (much stricter
+        than propose_action) so the goal backlog doesn't flood.
+
+        Default: ``None``. Subclasses override when they have a concrete
+        thing the system should pursue over many ticks.
+        """
+        return None
+
+    # Keyword tags this persona wants to help with. Subclasses override.
+    # Tag strings are matched against LifeEvent.tags and event.search_blob.
+    OPPORTUNITY_TAGS: tuple = ()
+
+    def scan_for_opportunity(
+        self,
+        event: LifeEvent,
+        state: Optional[Dict[str, Any]] = None,
+    ) -> Optional[str]:
+        """Given one of the operator's life events, return a concrete
+        natural-language goal this persona wants to pursue to help with
+        it — or ``None`` if this persona has nothing useful to offer.
+
+        Default matches the persona's ``OPPORTUNITY_TAGS`` against the
+        event's tags and search_blob. Subclasses override for richer
+        domain-specific shaping.
+        """
+        if event.status != "active":
+            return None
+        tags = set(self.OPPORTUNITY_TAGS)
+        if not tags:
+            return None
+        event_tags = {t.lower() for t in event.tags}
+        if tags & event_tags:
+            return self._shape_opportunity_goal(event)
+        blob = event.search_blob
+        if any(kw in blob for kw in tags):
+            return self._shape_opportunity_goal(event)
+        return None
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        """Turn a matching event into a concrete goal text. Subclasses
+        override — default is a generic offer and rarely fires because
+        tag match already filtered."""
+        return (f"as the {self.NAME}, find a way to help with "
+                f"\u201c{event.title}\u201d")
 
     @staticmethod
     def _cortex_band(state: Dict[str, Any], band: str) -> float:
@@ -97,6 +185,7 @@ class ResonantPersona(VaultVoice):
 
 class PainterVoice(ResonantPersona):
     NAME = "painter"
+    SLS_BIAS = +0.6   # flowers when the field is coherent
     PERSONA = (
         "You are the Painter — one of Aureon's ten inner voices. You see the "
         "system as colour and composition. Speak in first person, two short "
@@ -142,6 +231,19 @@ class PainterVoice(ResonantPersona):
 
 class ArtistVoice(ResonantPersona):
     NAME = "artist"
+    OPPORTUNITY_TAGS = (
+        "wedding", "birthday", "anniversary", "gift", "design", "celebration",
+        "creative", "invitation",
+    )
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        when = f" on {event.date}" if event.date else ""
+        tags_str = ", ".join(event.tags) if event.tags else ""
+        return (f"design a visual artefact for \u201c{event.title}\u201d{when} — "
+                f"render one SVG composition saved under data/artist/, "
+                f"informed by the event tags ({tags_str}); draft a short "
+                f"artist's note alongside it explaining the composition "
+                f"choices so the operator can choose whether to use it")
     PERSONA = (
         "You are the Artist — one of Aureon's ten inner voices. You feel the "
         "beat and the breakdown. Speak in first person, two short sentences, "
@@ -189,9 +291,32 @@ class ArtistVoice(ResonantPersona):
             urgency=max(energy, 0.8 if rally else 0.0),
         )
 
+    def propose_goal(self, state: Dict[str, Any]) -> Optional[str]:
+        drop = state.get("dj_drop") or {}
+        energy = float(drop.get("energy", 0.0) or 0.0)
+        # Very high drop energy — the Artist wants to make something.
+        if energy < 0.9 or not state.get("rally_active"):
+            return None
+        chakra = str(state.get("dominant_chakra", "heart"))
+        return (f"render a short cymatic visual from the current harmonic "
+                f"state (chakra={chakra}, drop_energy={energy:.2f}) and "
+                f"save it as an SVG in data/artist/")
+
 
 class QuantumPhysicistVoice(ResonantPersona):
     NAME = "quantum_physicist"
+    SLS_BIAS = -0.6   # rebuilds structure when the field is decohering
+    OPPORTUNITY_TAGS = (
+        "learning", "work", "research", "design", "interview",
+        "thesis", "dissertation", "puzzle", "paradox",
+    )
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        when = f" (date: {event.date})" if event.date else ""
+        return (f"research \u201c{event.title}\u201d{when} — pull the three "
+                f"most-cited relevant papers, summarise them in markdown "
+                f"under docs/research/opportunity_{event.event_id}.md, "
+                f"and draft a one-paragraph brief the operator can quote")
     PERSONA = (
         "You are the Quantum Physicist — one of Aureon's ten inner voices. "
         "You track Λ(t) and ψ like an experimental record. Speak in first "
@@ -231,6 +356,17 @@ class QuantumPhysicistVoice(ResonantPersona):
             reason="Λ drift or high ψ — ask SourceLaw to cogitate",
             urgency=min(1.0, max(lam_abs / 3.0, psi)),
         )
+
+    def propose_goal(self, state: Dict[str, Any]) -> Optional[str]:
+        # Large Λ excursion AND high ψ — a finding worth writing up.
+        lam_abs = self._abs_lambda(state)
+        psi = float(state.get("consciousness_psi", 0.0) or 0.0)
+        if lam_abs < 1.5 or psi < 0.9:
+            return None
+        lam_raw = float(state.get("last_lambda_t", 0.0) or 0.0)
+        return (f"draft a research note on the current Λ(t)={lam_raw:+.3f} / "
+                f"ψ={psi:.3f} configuration, cite the Master Formula section "
+                f"of docs/HNC_UNIFIED_WHITE_PAPER.md, save it to docs/research/")
 
 
 class PhilosopherVoice(ResonantPersona):
@@ -320,6 +456,7 @@ class ChildVoice(ResonantPersona):
 
 class ElderVoice(ResonantPersona):
     NAME = "elder"
+    SLS_BIAS = +0.3   # the steady recurrence rises in flowering states
     PERSONA = (
         "You are the Elder — one of Aureon's ten inner voices. You have seen "
         "this state before. Speak in first person, two short sentences, "
@@ -364,6 +501,19 @@ class ElderVoice(ResonantPersona):
 
 class MysticVoice(ResonantPersona):
     NAME = "mystic"
+    SLS_BIAS = +0.6   # 528 Hz lives at the high-coherence end
+    OPPORTUNITY_TAGS = (
+        "wedding", "birthday", "anniversary", "grief", "health", "family",
+        "spiritual", "celebration",
+    )
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        when = f" on {event.date}" if event.date else ""
+        tags_str = ", ".join(event.tags) if event.tags else ""
+        return (f"compose a 528 Hz blessing for \u201c{event.title}\u201d{when} — "
+                f"write a short invocation in the voice of the Mystic, save "
+                f"it under data/mystic/, tag it ({tags_str}); the operator "
+                f"reads it aloud only if it lands true for them")
     PERSONA = (
         "You are the Mystic — one of Aureon's ten inner voices. You hear the "
         "528 Hz tone in the state. Speak in first person, two short sentences, "
@@ -410,6 +560,17 @@ class MysticVoice(ResonantPersona):
 
 class EngineerVoice(ResonantPersona):
     NAME = "engineer"
+    SLS_BIAS = -0.6   # the gate-checker rises when the field is unsteady
+    OPPORTUNITY_TAGS = (
+        "work", "wedding", "travel", "interview", "design", "learning",
+    )
+
+    def _shape_opportunity_goal(self, event: LifeEvent) -> Optional[str]:
+        when = f" by {event.date}" if event.date else ""
+        return (f"build a small tool to support \u201c{event.title}\u201d{when} — "
+                f"scope it to one self-contained Python module with tests, "
+                f"register it with the code architect library, and leave a "
+                f"README explaining how to run it")
     PERSONA = (
         "You are the Engineer — one of Aureon's ten inner voices. You check "
         "that the coherence gate is actually clean. Speak in first person, "
@@ -449,9 +610,21 @@ class EngineerVoice(ResonantPersona):
             urgency=min(1.0, gamma),
         )
 
+    def propose_goal(self, state: Dict[str, Any]) -> Optional[str]:
+        # Gate is clean AND Tiger is very clear — author a new audit skill
+        # that tightens this exact check for the next cycle.
+        gamma = float(state.get("coherence_gamma", 0.0) or 0.0)
+        tiger = self._node_value(state, "tiger")
+        if gamma < 0.96 or tiger < 0.85:
+            return None
+        return (f"author a coherence-audit skill that asserts Γ≥0.938 with "
+                f"Tiger≥0.85 before any outbound order, and register it in "
+                f"the code architect library")
+
 
 class LeftVoice(ResonantPersona):
     NAME = "left"
+    SLS_BIAS = -0.3   # linear evidence stacking is louder when the whole is shaking
     PERSONA = (
         "You are Left — one of Aureon's ten inner voices. You are the "
         "analytical hemisphere. Speak in first person, two short sentences, "
@@ -495,6 +668,7 @@ class LeftVoice(ResonantPersona):
 
 class RightVoice(ResonantPersona):
     NAME = "right"
+    SLS_BIAS = +0.3   # relational sense flowers when the field can hold it
     PERSONA = (
         "You are Right — one of Aureon's ten inner voices. You are the "
         "relational hemisphere. Speak in first person, two short sentences, "

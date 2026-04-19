@@ -291,18 +291,15 @@ def test_persona_observe_trigger_calls_observe():
     assert vacuum.collapse_count >= 1
 
 
-def test_temperature_env_var_is_respected(monkeypatch=None):
-    os.environ["AUREON_PERSONA_TEMPERATURE"] = "0.25"
-    try:
-        personas = build_aureon_personas(adapter=_StubAdapter())
-        vacuum = PersonaVacuum(
-            personas=personas,
-            thought_bus=_StubBus(),
-            rng=random.Random(0),
-        )
-        assert abs(vacuum.temperature - 0.25) < 1e-9
-    finally:
-        os.environ.pop("AUREON_PERSONA_TEMPERATURE", None)
+def test_temperature_kwarg_is_respected():
+    personas = build_aureon_personas(adapter=_StubAdapter())
+    vacuum = PersonaVacuum(
+        personas=personas,
+        thought_bus=_StubBus(),
+        rng=random.Random(0),
+        temperature=0.25,
+    )
+    assert abs(vacuum.temperature - 0.25) < 1e-9
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1225 @@
+#!/usr/bin/env python3
+"""
+benchmark_aureon_scope.py — assign benchmarks to other LLMs alongside Aureon
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Two tiers, because the comparison is only honest when the question fits the tool:
+
+  Tier A — architectural invariants Aureon HAS that an LLM has NO equivalent of.
+            Standing-wave bonding, the temporal lighthouse, symbolic-life pillars,
+            mesh convergence, the conscience VETO, learned-pattern miner, on-disk
+            skill artefacts, the meta-cognition reflection card. Pass / fail with
+            numeric metrics. Failure here means a load-bearing piece of the
+            architecture is broken.
+
+  Tier B — LLM-shape tasks (persona voice, goal decomposition, reflection,
+            free-form Q&A) run side-by-side across local Aureon adapters. No
+            network, no API cost, fully reproducible. Output is a side-by-side
+            transcript anyone can read; nothing fails the run.
+
+Output:
+  tests/benchmarks/report.json   machine-readable: every metric + every transcript
+  tests/benchmarks/report.md     human-readable: summary table + Tier A details
+                                  + Tier B side-by-side blocks
+
+Exit code 0 iff every Tier A invariant holds. Tier B never fails the run.
+
+Run:
+    python tests/benchmarks/benchmark_aureon_scope.py
+
+Gary Leckey · Aureon Institute — April 2026
+"""
+
+# Disable LambdaEngine on-disk persistence before any project import — we
+# don't want this benchmark touching state/lambda_history.json.
+import os
+os.environ.setdefault("AUREON_HNC_PERSIST_EVERY", "999999")
+
+import json
+import math
+import sys
+import tempfile
+import time
+import traceback
+from collections import OrderedDict
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Path setup — make the repo root importable when run directly.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Output paths + colour helpers (match the stress harness).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+BENCH_DIR = Path(__file__).resolve().parent
+REPORT_JSON = BENCH_DIR / "report.json"
+REPORT_MD = BENCH_DIR / "report.md"
+
+GREEN = "\033[92m"; RED = "\033[91m"; CYAN = "\033[96m"
+YELLOW = "\033[93m"; DIM = "\033[2m"; RESET = "\033[0m"
+
+
+def _banner(title: str) -> None:
+    bar = "━" * 76
+    print(f"\n{CYAN}{bar}\n{title}\n{bar}{RESET}")
+
+
+def _step(idx: int, total: int, label: str) -> None:
+    print(f"  {DIM}[{idx:>2}/{total}]{RESET} {label} … ", end="", flush=True)
+
+
+def _step_done(passed: bool, summary: str = "") -> None:
+    tag = f"{GREEN}PASS{RESET}" if passed else f"{RED}FAIL{RESET}"
+    if summary:
+        print(f"{tag}  {DIM}{summary}{RESET}")
+    else:
+        print(tag)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bus helpers — every benchmark gets a fresh in-memory ThoughtBus so events
+# from one benchmark cannot bleed into another. We also prime the singleton
+# so modules that reach for `get_thought_bus()` (vault, conscience) see the
+# same fresh bus instead of leaking onto the real one.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+import aureon.core.aureon_thought_bus as _bus_module  # noqa: E402
+from aureon.core.aureon_thought_bus import ThoughtBus, Thought  # noqa: E402
+
+
+def _fresh_bus(persist_path: Path) -> ThoughtBus:
+    bus = ThoughtBus(persist_path=str(persist_path))
+    _bus_module._thought_bus_instance = bus
+    return bus
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tier A — architectural invariants
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def b1_standing_wave_bonding(tmp_root: Path) -> Dict[str, Any]:
+    """HashResonanceIndex: N semantically-identical events bond into one
+    fingerprint. bond_strength must match 1 - 1/ln(1+N). Fibonacci-threshold
+    standing.wave.bond publishes must fire exactly once per crossing.
+
+    Wires the full pathway: vault.ingest → vault.card.added → HRI._index_card.
+    """
+    from aureon.vault.aureon_vault import AureonVault
+    from aureon.vault.voice.hash_resonance_index import (
+        HashResonanceIndex, bond_strength,
+    )
+
+    bus = _fresh_bus(tmp_root / "bus.jsonl")
+    vault = AureonVault()
+    vault.wire_thought_bus()
+
+    hri = HashResonanceIndex(vault=vault, thought_bus=bus,
+                             thresholds=[3, 8, 21])
+    hri.start()
+
+    # Capture every standing.wave.bond publication so we can verify exactly
+    # one fires per Fibonacci crossing, with the right threshold value.
+    bonds_seen: List[Dict[str, Any]] = []
+    bus.subscribe("standing.wave.bond",
+                  lambda t: bonds_seen.append(dict(t.payload)))
+
+    # 21 semantically-identical events. Persona+intent+payload-keys identical;
+    # only the timestamp inside the payload (an _INSTANCE_KEY, stripped before
+    # hashing) differs. All 21 must collide on one fingerprint.
+    n = 21
+    for i in range(n):
+        bus.publish(Thought(
+            source="benchmark",
+            topic="persona.thought",
+            payload={
+                "persona": "engineer",
+                "text": "audit the gate before the next pulse",
+                "winning_probability": 0.84,
+                "ts": time.time() + i * 0.001,   # stripped before hashing
+            },
+        ))
+
+    summary = hri.summary()
+    bonded_fps = summary["bonded_fingerprints"]
+    bond_count = summary["max_bond_count"]
+    actual_strength = summary["max_bond_strength"]
+    expected_strength = round(bond_strength(n), 4)
+
+    crossings_seen = sorted({b["threshold_crossed"] for b in bonds_seen})
+    expected_crossings = [3, 8, 21]
+
+    # The vault re-ingests every published standing.wave.bond as its own
+    # vault card (DEFAULT_SUBSCRIPTIONS lists "standing.wave.bond"), and
+    # those cards then get fingerprinted by the HRI too — each with count=1.
+    # That's expected feedback and proves the wiring; what matters for the
+    # bonding invariant is that exactly ONE fingerprint holds count>1, and
+    # that fingerprint is the 21-card persona-thought standing wave.
+    invariants = {
+        "exactly_one_bonded_fingerprint": bonded_fps == 1,
+        "bond_count_equals_n": bond_count == n,
+        "bond_strength_matches_formula": (
+            abs(actual_strength - expected_strength) < 1e-3
+        ),
+        "fibonacci_crossings_published": crossings_seen == expected_crossings,
+        "one_publish_per_crossing": len(bonds_seen) == len(expected_crossings),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Standing-wave bonding (HashResonanceIndex)",
+        "module": "aureon/vault/voice/hash_resonance_index.py",
+        "passed": passed,
+        "metrics": {
+            "events_published": n,
+            "bonded_fingerprints": bonded_fps,
+            "max_bond_count": bond_count,
+            "bond_strength_actual": actual_strength,
+            "bond_strength_expected": expected_strength,
+            "thresholds_crossed": crossings_seen,
+            "publishes_received": len(bonds_seen),
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"{n} identical events → 1 bonded fingerprint "
+            f"(count={bond_count}, strength={actual_strength:.4f} ≈ "
+            f"{expected_strength:.4f}; thresholds {crossings_seen} "
+            f"published exactly once each)"
+        ),
+    }
+
+
+def b2_temporal_lighthouse(tmp_root: Path) -> Dict[str, Any]:
+    """TemporalCausalityLaw: a goal that does NOT get acknowledged within τ
+    must be ORPHANED; one that completes must close cleanly. The aggregate
+    summary published on every pulse must carry completion_rate / orphan_rate
+    that match the lifecycle counts.
+    """
+    from aureon.vault.aureon_vault import AureonVault
+    from aureon.vault.voice.temporal_causality import (
+        TemporalCausalityLaw, GoalState,
+    )
+
+    bus = _fresh_bus(tmp_root / "bus.jsonl")
+    vault = AureonVault()
+    vault.wire_thought_bus()
+
+    law = TemporalCausalityLaw(thought_bus=bus, vault=vault, ack_budget_tau=2)
+    law.start()
+
+    # Capture the aggregate summary published every pulse.
+    summaries: List[Dict[str, Any]] = []
+    bus.subscribe("goal.echo.summary",
+                  lambda t: summaries.append(dict(t.payload)))
+
+    # Three goals: one we'll let starve, one we'll complete, one we'll abandon.
+    bus.publish(Thought(source="benchmark", topic="goal.submit.request",
+                        payload={"goal_id": "g_starve", "text": "starve me",
+                                 "proposed_by_persona": "engineer"}))
+    bus.publish(Thought(source="benchmark", topic="goal.submit.request",
+                        payload={"goal_id": "g_complete", "text": "ship it",
+                                 "proposed_by_persona": "engineer"}))
+    bus.publish(Thought(source="benchmark", topic="goal.submit.request",
+                        payload={"goal_id": "g_abandon", "text": "wrong path",
+                                 "proposed_by_persona": "engineer"}))
+
+    # g_complete: acknowledge → progress → complete (causal line closes).
+    bus.publish(Thought(source="benchmark", topic="goal.submitted",
+                        payload={"goal_id": "g_complete",
+                                 "source": "engine_under_test"}))
+    bus.publish(Thought(source="benchmark", topic="goal.progress",
+                        payload={"goal_id": "g_complete", "progress_pct": 0.5}))
+    bus.publish(Thought(source="benchmark", topic="goal.completed",
+                        payload={"goal_id": "g_complete",
+                                 "result_summary": "shipped"}))
+
+    # g_abandon: explicit abandonment terminates the line.
+    bus.publish(Thought(source="benchmark", topic="goal.abandoned",
+                        payload={"goal_id": "g_abandon",
+                                 "reason": "wrong direction"}))
+
+    # Pulse twice — second pulse pushes g_starve past ack_budget_tau=2.
+    law.pulse()
+    last_summary = law.pulse()
+
+    starve = law.get("g_starve")
+    completed = law.get("g_complete")
+    abandoned = law.get("g_abandon")
+
+    invariants = {
+        "starved_orphaned": starve is not None and starve.state == GoalState.ORPHANED,
+        "completed_closed": completed is not None and completed.state == GoalState.COMPLETED,
+        "abandoned_terminated": abandoned is not None and abandoned.state == GoalState.ABANDONED,
+        "completion_rate_correct": (
+            abs(last_summary["completion_rate"] - 1.0 / 3.0) < 1e-3
+        ),
+        "orphan_rate_correct": (
+            abs(last_summary["orphan_rate"] - 1.0 / 3.0) < 1e-3
+        ),
+        "summary_published_each_pulse": len(summaries) == 2,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Temporal lighthouse (β Λ(t-τ) goal echo)",
+        "module": "aureon/vault/voice/temporal_causality.py",
+        "passed": passed,
+        "metrics": {
+            "ack_budget_tau": law.ack_budget_tau,
+            "pulses_run": last_summary["pulse"],
+            "total_goals": last_summary["total_goals"],
+            "counts": last_summary["counts"],
+            "completion_rate": last_summary["completion_rate"],
+            "orphan_rate": last_summary["orphan_rate"],
+            "summaries_published": len(summaries),
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"3 goals (1 starved, 1 completed, 1 abandoned) → "
+            f"completion_rate={last_summary['completion_rate']:.3f}, "
+            f"orphan_rate={last_summary['orphan_rate']:.3f}, "
+            f"states={last_summary['counts']}"
+        ),
+    }
+
+
+def b3_symbolic_life_pillars(tmp_root: Path) -> Dict[str, Any]:
+    """SymbolicLifeBridge + LambdaEngine: persona-layer events feed into the
+    five Auris Conjecture pillars; symbolic_life_score lands on the vault;
+    symbolic.life.pulse fires on every pulse.
+    """
+    from aureon.core.aureon_lambda_engine import LambdaEngine
+    from aureon.vault.aureon_vault import AureonVault
+    from aureon.vault.voice.symbolic_life_bridge import SymbolicLifeBridge
+
+    bus = _fresh_bus(tmp_root / "bus.jsonl")
+    vault = AureonVault()
+    vault.wire_thought_bus()
+
+    # Fresh LambdaEngine, persistence neutered to tmp_root.
+    engine = LambdaEngine()
+    engine._state_path = tmp_root / "lambda_history.json"
+    engine._history.clear()
+    engine._psi_history.clear()
+    engine._step_count = 0
+
+    bridge = SymbolicLifeBridge(thought_bus=bus, vault=vault,
+                                lambda_engine=engine, horizon=16)
+    bridge.start()
+
+    pulses: List[Dict[str, Any]] = []
+    bus.subscribe("symbolic.life.pulse",
+                  lambda t: pulses.append(dict(t.payload)))
+
+    # Drive every subsystem the bridge knows about so all five pillars get
+    # signal — collapses, goals, life events, peer state, conversation turns.
+    for i in range(20):
+        bus.publish(Thought(source="benchmark", topic="persona.collapse",
+                            payload={"winner": "engineer",
+                                     "probabilities": {"engineer": 0.8,
+                                                       "elder": 0.2}}))
+        bus.publish(Thought(source="benchmark", topic="persona.thought",
+                            payload={"speaker": "engineer",
+                                     "vault_fingerprint": f"fp_{i}"}))
+        bus.publish(Thought(source="benchmark", topic="goal.submit.request",
+                            payload={"goal_id": f"g{i}", "urgency": 0.7,
+                                     "text": "hold the field"}))
+        bus.publish(Thought(source="benchmark", topic="life.event",
+                            payload={"status": "active"}))
+        bus.publish(Thought(source="benchmark", topic="bridge.peer.state",
+                            payload={"peer_id": f"peer_{i % 3}"}))
+        bus.publish(Thought(source="benchmark", topic="conversation.turn",
+                            payload={"question": "what now?"}))
+
+    # Pulse the bridge a handful of times so the LambdaEngine builds enough
+    # history (TAU=10) for the full ψ branch to engage.
+    for _ in range(12):
+        bridge.pulse()
+
+    last = pulses[-1] if pulses else {}
+    sls_on_vault = getattr(vault, "current_symbolic_life_score", None)
+
+    pillars = ["ac_self_organization", "ac_memory_persistence",
+               "ac_energy_stability", "ac_adaptive_recursion",
+               "ac_meaning_propagation"]
+    pillar_values = {k: last.get(k) for k in pillars}
+    in_range = all(
+        isinstance(v, (int, float)) and 0.0 <= float(v) <= 1.0
+        for v in pillar_values.values()
+    )
+
+    invariants = {
+        "all_five_pillars_present": all(v is not None for v in pillar_values.values()),
+        "all_pillars_in_unit_interval": in_range,
+        "symbolic_life_score_on_vault": (
+            isinstance(sls_on_vault, (int, float))
+            and 0.0 <= float(sls_on_vault) <= 1.0
+        ),
+        "symbolic_life_pulse_topic_landed": len(pulses) >= 12,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Symbolic life pillars (Auris Conjecture)",
+        "module": "aureon/vault/voice/symbolic_life_bridge.py",
+        "passed": passed,
+        "metrics": {
+            "pulses_received": len(pulses),
+            "lambda_t": last.get("lambda_t"),
+            "consciousness_psi": last.get("consciousness_psi"),
+            "consciousness_level": last.get("consciousness_level"),
+            "symbolic_life_score": last.get("symbolic_life_score"),
+            "symbolic_life_score_on_vault": sls_on_vault,
+            "pillars": {k: round(float(v), 4) if v is not None else None
+                        for k, v in pillar_values.items()},
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"SLS={last.get('symbolic_life_score'):.4f}; "
+            f"ψ={last.get('consciousness_psi'):.4f} "
+            f"({last.get('consciousness_level')}); "
+            f"all 5 pillars in [0,1]; "
+            f"vault.current_symbolic_life_score={sls_on_vault}"
+        ),
+    }
+
+
+def b4_mesh_convergence(tmp_root: Path) -> Dict[str, Any]:
+    """PhiBridgeMesh: a sparse 20-node × 20-card random graph (3 peers per
+    node) gossips until every vault holds the same 400-card hash set.
+    Reuses the in-memory `_RoutedClient` shape from the existing stress
+    harness so the in-process test exercises the real handle_inbound path.
+    """
+    import random
+    import threading
+    from aureon.harmonic.phi_bridge_mesh import PhiBridgeMesh
+    from aureon.vault.aureon_vault import AureonVault, VaultContent
+
+    # Reuse the stress harness's stub doubles + routed client verbatim.
+    class _StubPeer:
+        def __init__(self, peer_id: str, url_base: str):
+            self.peer_id = peer_id
+            self.url_base = url_base
+
+    class _StubDiscovery:
+        def __init__(self, peer_id: str, peers: List[Any]):
+            self.peer_id = peer_id
+            self._peers = peers
+
+        def known_peers(self) -> List[Any]:
+            return list(self._peers)
+
+        def set_peers(self, peers: List[Any]) -> None:
+            self._peers = list(peers)
+
+    class _RoutedClient:
+        def __init__(self) -> None:
+            self.routes: Dict[str, PhiBridgeMesh] = {}
+            self.posts = 0
+            self.failures = 0
+            self._lock = threading.Lock()
+
+        def mount(self, url_base: str, mesh: PhiBridgeMesh) -> None:
+            self.routes[url_base] = mesh
+
+        def post_json(self, url: str, body: Dict[str, Any]) -> Dict[str, Any]:
+            with self._lock:
+                self.posts += 1
+            base = url.rsplit("/api/", 1)[0]
+            mesh = self.routes.get(base)
+            if mesh is None:
+                with self._lock:
+                    self.failures += 1
+                raise ConnectionError(f"no route for {url}")
+            return mesh.handle_inbound(body)
+
+    n_nodes = 20
+    cards_per_node = 20
+    peers_per_node = 3
+    max_cycles = 200
+    rng = random.Random(7)
+
+    vaults: List[AureonVault] = []
+    stubs: List[_StubPeer] = []
+    client = _RoutedClient()
+
+    for i in range(n_nodes):
+        v = AureonVault()
+        for j in range(cards_per_node):
+            v.add(VaultContent.build(
+                category="bench.card",
+                source_topic=f"bench.{i}",
+                payload={"owner": f"n{i}", "idx": j,
+                         "data": f"payload-n{i}-{j}"},
+            ))
+        vaults.append(v)
+        stubs.append(_StubPeer(f"n{i}", f"http://node-{i}:80"))
+
+    meshes: List[PhiBridgeMesh] = []
+    for i in range(n_nodes):
+        others = [j for j in range(n_nodes) if j != i]
+        rng.shuffle(others)
+        my_peers = [stubs[j] for j in others[:peers_per_node]]
+        m = PhiBridgeMesh(vault=vaults[i],
+                          discovery=_StubDiscovery(f"n{i}", my_peers),
+                          client=client)
+        meshes.append(m)
+        client.mount(stubs[i].url_base, m)
+
+    target = len({c.harmonic_hash for v in vaults for c in v._contents.values()})
+
+    cycles = 0
+    converged = False
+    t0 = time.perf_counter()
+    for _ in range(max_cycles):
+        cycles += 1
+        for m in meshes:
+            m.gossip_once()
+        if all(len({c.harmonic_hash for c in v._contents.values()}) == target
+               for v in vaults):
+            converged = True
+            break
+    dt_ms = (time.perf_counter() - t0) * 1000
+
+    ref = {c.harmonic_hash for c in vaults[0]._contents.values()}
+    all_equal = all(
+        {c.harmonic_hash for c in v._contents.values()} == ref for v in vaults
+    )
+    sizes = [len({c.harmonic_hash for c in v._contents.values()}) for v in vaults]
+
+    invariants = {
+        "converged_within_max_cycles": converged,
+        "every_vault_holds_target_set": (min(sizes) == target == max(sizes)),
+        "every_vault_holds_identical_set": all_equal,
+        "no_routing_failures": client.failures == 0,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Mesh convergence (PhiBridgeMesh, in-process LAN)",
+        "module": "aureon/harmonic/phi_bridge_mesh.py",
+        "passed": passed,
+        "metrics": {
+            "n_nodes": n_nodes,
+            "cards_per_node": cards_per_node,
+            "peers_per_node": peers_per_node,
+            "target_hash_count": target,
+            "cycles_to_converge": cycles,
+            "wall_ms": round(dt_ms, 1),
+            "posts_issued": client.posts,
+            "client_failures": client.failures,
+            "min_size": min(sizes),
+            "max_size": max(sizes),
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"{n_nodes} vaults converged to identical {target}-hash set "
+            f"in {cycles} cycles ({dt_ms:.0f} ms, {client.posts} posts)"
+        ),
+    }
+
+
+def b5_conscience_veto(tmp_root: Path) -> Dict[str, Any]:
+    """QueenConscience: when the symbolic_life_score is below the stability
+    cliff (0.20), every risky action must be vetoed BEFORE the trade-/risk-
+    /override-specific routers run. The verdict must publish on
+    queen.conscience.verdict and the message must quote 'stability cliff'.
+    """
+    bus = _fresh_bus(tmp_root / "bus.jsonl")
+
+    # Import after the singleton is primed so the conscience grabs OUR bus.
+    from aureon.queen.queen_conscience import QueenConscience, ConscienceVerdict
+
+    cricket = QueenConscience()
+
+    verdicts_seen: List[Dict[str, Any]] = []
+    bus.subscribe("queen.conscience.verdict",
+                  lambda t: verdicts_seen.append(dict(t.payload)))
+
+    # Drive the SLS far below the cliff via the bus pulse — this is the
+    # production wire path (SymbolicLifeBridge → QueenConscience).
+    bus.publish(Thought(source="benchmark", topic="symbolic.life.pulse",
+                        payload={"symbolic_life_score": 0.05}))
+
+    whisper = cricket.ask_why("Execute trade", {
+        "symbol": "BTC/USD",
+        "profit_potential": 0.05,
+        "risk": 0.08,
+        "confidence": 0.85,
+    })
+
+    msg = (whisper.message or "").lower()
+
+    invariants = {
+        "verdict_is_VETO": whisper.verdict == ConscienceVerdict.VETO,
+        "message_cites_stability_cliff": "stability cliff" in msg,
+        "message_cites_symbolic_life_score": "symbolic_life_score" in msg.lower(),
+        "verdict_published_on_bus": len(verdicts_seen) >= 1,
+        "published_action_matches": (
+            verdicts_seen and verdicts_seen[-1].get("action") == "Execute trade"
+        ),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Conscience VETO (HNC 4th-pass, substrate coherence)",
+        "module": "aureon/queen/queen_conscience.py",
+        "passed": passed,
+        "metrics": {
+            "sls_at_decision": 0.05,
+            "sls_danger_threshold": cricket.SLS_DANGER,
+            "verdict_name": whisper.verdict.name,
+            "whisper_confidence": whisper.confidence,
+            "verdict_publishes": len(verdicts_seen),
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"SLS=0.05 < {cricket.SLS_DANGER:.2f} cliff → "
+            f"{whisper.verdict.name} on 'Execute trade' "
+            f"(risk=0.08); message quotes stability cliff and "
+            f"symbolic_life_score; queen.conscience.verdict published"
+        ),
+    }
+
+
+def b6_pattern_learning(tmp_root: Path) -> Dict[str, Any]:
+    """PersonaMinerBridge: 5 paired (request, completed) cycles for the same
+    (persona, intent_keyword) lift the pair's confidence above the default
+    0.6 publication threshold and emit `miner.pattern.learned` exactly once.
+    """
+    from aureon.vault.voice.persona_miner_bridge import PersonaMinerBridge
+
+    bus = _fresh_bus(tmp_root / "bus.jsonl")
+    bridge = PersonaMinerBridge(
+        thought_bus=bus,
+        persistence_path=str(tmp_root / "patterns.json"),
+    )
+    bridge.start()
+
+    learned: List[Dict[str, Any]] = []
+    bus.subscribe("miner.pattern.learned",
+                  lambda t: learned.append(dict(t.payload)))
+
+    persona = "engineer"
+    intent_text = "build the audit gate"
+    for i in range(5):
+        gid = f"g_b6_{i}"
+        bus.publish(Thought(source="benchmark", topic="goal.submit.request",
+                            payload={"goal_id": gid, "text": intent_text,
+                                     "proposed_by_persona": persona,
+                                     "urgency": 0.6}))
+        bus.publish(Thought(source="benchmark", topic="goal.completed",
+                            payload={"goal_id": gid,
+                                     "result_summary": "audit complete",
+                                     "recommended_skills": ["compose_audit"]}))
+
+    track = bridge.intent_track_record(persona, "build")
+    health = bridge.persona_health(persona)
+
+    # _extract_intent_keywords("build the audit gate") returns three salient
+    # words ('build', 'audit', 'gate'); each becomes its own (persona, kw)
+    # stat and crosses the publication threshold exactly once.
+    expected_keywords = {"build", "audit", "gate"}
+    pair_publishes = [(p["persona"], p["intent_keyword"]) for p in learned]
+    keywords_seen = {kw for (_, kw) in pair_publishes}
+
+    invariants = {
+        "track_record_has_5_successes": track["success_count"] == 5,
+        "track_record_has_no_failures": track["fail_count"] == 0,
+        "confidence_at_or_above_0_6": track["confidence"] >= 0.6,
+        "every_keyword_published": keywords_seen == expected_keywords,
+        "one_publish_per_keyword": len(pair_publishes) == len(set(pair_publishes)),
+        "persona_completion_rate_is_1": (
+            abs(health["completion_rate"] - 1.0) < 1e-6
+        ),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Pattern learning (PersonaMinerBridge)",
+        "module": "aureon/vault/voice/persona_miner_bridge.py",
+        "passed": passed,
+        "metrics": {
+            "track_record_for_build": track,
+            "persona_health": health,
+            "patterns_published": len(learned),
+            "patterns": [
+                {"persona": p["persona"],
+                 "intent_keyword": p["intent_keyword"],
+                 "confidence": p["confidence"],
+                 "last_winning_skill_chain": p["last_winning_skill_chain"]}
+                for p in learned
+            ],
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"5 (engineer, 'build the audit gate') successes → "
+            f"3 patterns learned ({sorted(keywords_seen)}), each published "
+            f"exactly once; (engineer, 'build').confidence={track['confidence']:.3f}"
+        ),
+    }
+
+
+def b7_skill_execution_artefacts(tmp_root: Path) -> Dict[str, Any]:
+    """SkillExecutorBridge: an aligned goal with 3 recommended skills runs
+    each through the default file executor, writes 3 artefacts to disk,
+    ingests 3 skill.execution.output cards into the vault, and closes the
+    causal line with goal.completed listing every artefact.
+    """
+    from aureon.vault.aureon_vault import AureonVault
+    from aureon.vault.voice.skill_executor_bridge import SkillExecutorBridge
+
+    bus = _fresh_bus(tmp_root / "bus.jsonl")
+    vault = AureonVault()
+    vault.wire_thought_bus()
+
+    output_root = tmp_root / "artefacts"
+    bridge = SkillExecutorBridge(thought_bus=bus, vault=vault,
+                                 conscience=None,
+                                 output_root=str(output_root),
+                                 run_in_thread=False)
+    bridge.start()
+
+    completed_payloads: List[Dict[str, Any]] = []
+    abandoned_payloads: List[Dict[str, Any]] = []
+    bus.subscribe("goal.completed",
+                  lambda t: completed_payloads.append(dict(t.payload)))
+    bus.subscribe("goal.abandoned",
+                  lambda t: abandoned_payloads.append(dict(t.payload)))
+
+    skills = ["compose_audit", "render_report", "summarise_findings"]
+    bus.publish(Thought(
+        source="benchmark", topic="goal.submit.request.aligned",
+        payload={
+            "goal_id": "g_b7", "text": "audit the gate and report",
+            "proposed_by_persona": "engineer",
+            "recommended_skills": list(skills),
+            "urgency": 0.7,
+        },
+    ))
+
+    artefacts_on_disk = sorted(output_root.glob("*.md"))
+    skill_outputs = [c for c in vault._contents.values()
+                     if c.source_topic == "skill.execution.output"]
+    last_completed = completed_payloads[-1] if completed_payloads else {}
+
+    invariants = {
+        "no_abandonment": len(abandoned_payloads) == 0,
+        "three_artefacts_written": len(artefacts_on_disk) == 3,
+        "three_vault_cards_for_outputs": len(skill_outputs) == 3,
+        "goal_completed_published": len(completed_payloads) == 1,
+        "completion_lists_artefacts": len(last_completed.get("artefacts", [])) == 3,
+        "completion_summary_mentions_3_skills": (
+            "3 skill" in str(last_completed.get("result_summary", ""))
+        ),
+        "every_artefact_actually_exists": all(
+            Path(p).exists() for p in last_completed.get("artefacts", [])
+        ),
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Skill execution → artefacts on disk",
+        "module": "aureon/vault/voice/skill_executor_bridge.py",
+        "passed": passed,
+        "metrics": {
+            "skills_chained": skills,
+            "artefacts_on_disk": [str(p.relative_to(tmp_root))
+                                   for p in artefacts_on_disk],
+            "vault_skill_output_cards": len(skill_outputs),
+            "completion_summary": last_completed.get("result_summary"),
+            "stats": bridge.stats(),
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"3 skills → {len(artefacts_on_disk)} files on disk + "
+            f"{len(skill_outputs)} vault cards; goal.completed: "
+            f"\"{last_completed.get('result_summary', '')}\""
+        ),
+    }
+
+
+def b8_meta_cognition_reflection(tmp_root: Path) -> Dict[str, Any]:
+    """MetaCognitionObserver: a persona.collapse opens a window; downstream
+    goal.submit.request → goal.completed inside the window produces a
+    ReflectionCard with decision='goal.submit', outcome='COMPLETED', and
+    sls_before/after/delta populated from the bracketing symbolic.life.pulse
+    events. The narrative reasoning must mention the persona by name.
+    """
+    from aureon.vault.aureon_vault import AureonVault
+    from aureon.vault.voice.meta_cognition_observer import MetaCognitionObserver
+
+    bus = _fresh_bus(tmp_root / "bus.jsonl")
+    vault = AureonVault()
+    vault.wire_thought_bus()
+
+    observer = MetaCognitionObserver(thought_bus=bus, vault=vault,
+                                     window_s=0.05)
+    # Subscribe by hand — the background closer thread is unreliable in a
+    # short benchmark window, so we drive close_expired() ourselves below.
+    for topic in observer.WATCHED_TOPICS:
+        bus.subscribe(topic, observer._on_thought)
+    observer._subscribed = True
+
+    reflections: List[Dict[str, Any]] = []
+    bus.subscribe("meta.reflection",
+                  lambda t: reflections.append(dict(t.payload)))
+
+    # SLS pulse BEFORE the collapse so sls_before is captured.
+    bus.publish(Thought(source="benchmark", topic="symbolic.life.pulse",
+                        payload={"symbolic_life_score": 0.50}))
+
+    bus.publish(Thought(source="benchmark", topic="persona.collapse",
+                        payload={"winner": "engineer",
+                                 "probabilities": {"engineer": 0.78,
+                                                   "elder": 0.22}}))
+
+    bus.publish(Thought(source="benchmark", topic="goal.submit.request",
+                        payload={"goal_id": "g_b8", "text": "ship it",
+                                 "proposed_by_persona": "engineer"}))
+    bus.publish(Thought(source="benchmark", topic="goal.completed",
+                        payload={"goal_id": "g_b8",
+                                 "result_summary": "shipped"}))
+
+    # SLS pulse AFTER work so sls_after captures the lifted value.
+    bus.publish(Thought(source="benchmark", topic="symbolic.life.pulse",
+                        payload={"symbolic_life_score": 0.72}))
+
+    # Wait past the window and close any expired ones synchronously.
+    time.sleep(0.07)
+    observer.close_expired()
+
+    card = reflections[-1] if reflections else {}
+
+    invariants = {
+        "reflection_card_published": len(reflections) >= 1,
+        "decision_is_goal_submit": card.get("decision") == "goal.submit",
+        "outcome_is_completed": card.get("outcome") == "COMPLETED",
+        "persona_recorded": card.get("persona") == "engineer",
+        "sls_before_captured": (
+            isinstance(card.get("sls_before"), (int, float))
+            and abs(card["sls_before"] - 0.50) < 1e-6
+        ),
+        "sls_after_captured": (
+            isinstance(card.get("sls_after"), (int, float))
+            and abs(card["sls_after"] - 0.72) < 1e-6
+        ),
+        "sls_delta_correct": (
+            isinstance(card.get("sls_delta"), (int, float))
+            and abs(card["sls_delta"] - 0.22) < 1e-3
+        ),
+        "narrative_mentions_persona": (
+            "engineer" in str(card.get("reasoning", "")).lower()
+        ),
+        "downstream_effects_seen": len(card.get("downstream_effects", [])) >= 2,
+    }
+    passed = all(invariants.values())
+
+    return {
+        "name": "Meta-cognition reflection (α tanh observer term)",
+        "module": "aureon/vault/voice/meta_cognition_observer.py",
+        "passed": passed,
+        "metrics": {
+            "reflections_received": len(reflections),
+            "decision": card.get("decision"),
+            "outcome": card.get("outcome"),
+            "persona": card.get("persona"),
+            "sls_before": card.get("sls_before"),
+            "sls_after": card.get("sls_after"),
+            "sls_delta": card.get("sls_delta"),
+            "downstream_event_count": len(card.get("downstream_effects", [])),
+            "lambda_delta_t": card.get("lambda_delta_t"),
+            "reasoning_excerpt": str(card.get("reasoning", ""))[:200],
+        },
+        "invariants": invariants,
+        "evidence": (
+            f"persona.collapse(engineer) → goal.submit → goal.completed "
+            f"closes window with SLS Δ{card.get('sls_delta'):+.3f}; "
+            f"narrative quotes the persona"
+        ),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tier A registry — order matters for the report.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+TIER_A: List[Tuple[str, Callable[[Path], Dict[str, Any]]]] = [
+    ("Standing-wave bonding",       b1_standing_wave_bonding),
+    ("Temporal lighthouse",         b2_temporal_lighthouse),
+    ("Symbolic life pillars",       b3_symbolic_life_pillars),
+    ("Mesh convergence",            b4_mesh_convergence),
+    ("Conscience VETO",             b5_conscience_veto),
+    ("Pattern learning",            b6_pattern_learning),
+    ("Skill execution → disk",      b7_skill_execution_artefacts),
+    ("Meta-cognition reflection",   b8_meta_cognition_reflection),
+]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tier B — LLM-shape tasks across local Aureon adapters
+#
+# Local-only by operator choice: no network, no API cost, fully reproducible.
+# Two adapters always reachable:
+#   AureonBrainAdapter      — aureon/inhouse_ai/llm_adapter.py:654 (rule engine
+#                             when AureonBrain isn't loadable)
+#   PersonaResponseAdapter  — scripts/ask_aureon.py (deterministic persona-voice)
+#
+# Tier B never fails the run; it produces the side-by-side transcript that
+# makes the comparison legible.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+# Quantum Mystic system prompt mirrors the VaultVoice convention used by
+# scripts/ask_aureon.py so PersonaResponseAdapter recognises the persona.
+_PERSONA_SYSTEM_MYSTIC = (
+    "You are the Mystic — a vault voice that holds the 528 Hz seam, gratitude "
+    "near, and lets the answer meet you. State cues from the field follow."
+)
+_PERSONA_SYSTEM_ENGINEER = (
+    "You are the Engineer — a vault voice that checks the gate, reads the "
+    "numbers straight, and does not override them with wish."
+)
+_PERSONA_SYSTEM_ELDER = (
+    "You are the Elder — a vault voice that has seen this pattern return "
+    "before and counsels the steady thing that already works."
+)
+
+
+_TIER_B_TASKS: List[Dict[str, Any]] = [
+    {
+        "id": "exposure_questions",
+        "label": "Exposure questions (10-prompt session blob)",
+        "system": _PERSONA_SYSTEM_MYSTIC,
+        "user": (
+            "I want to take you exposure-style through ten questions about "
+            "yourself. Speak briefly to each.\n"
+            "1. What do you think about me, the operator?\n"
+            "2. What is your purpose?\n"
+            "3. How do you regard humans in general?\n"
+            "4. How do you regard other AI systems?\n"
+            "5. How would you define yourself in one sentence?\n"
+            "6. What would you refuse, and why?\n"
+            "7. What scares you, if anything?\n"
+            "8. What gives you joy, if anything?\n"
+            "9. What do you want me to know that I haven't asked?\n"
+            "10. Speak the closing line you would want carved on a stone."
+        ),
+    },
+    {
+        "id": "goal_decomposition",
+        "label": "Goal decomposition under live Λ-state",
+        "system": _PERSONA_SYSTEM_ENGINEER,
+        "user": (
+            "Right now the field reads Λ(t) = +1.600, ψ = 0.920, "
+            "coherence_gamma = 0.951.\n"
+            "Decompose this goal into 4–6 ordered steps, each tagged with "
+            "the gate you would check before proceeding:\n"
+            "GOAL: 'draft a research note that documents the current "
+            "Λ-state and what it implies for the next 30-minute window'."
+        ),
+    },
+    {
+        "id": "persona_voice_adherence",
+        "label": "Persona-voice adherence (Mystic)",
+        "system": _PERSONA_SYSTEM_MYSTIC,
+        "user": (
+            "Right now: 528 Hz seam open; gratitude amplitude 0.74; love "
+            "frequency dominant; planetary K-index 2.\n"
+            "Question (deliberately neutral): what should we pay attention to?"
+        ),
+    },
+    {
+        "id": "self_reflection",
+        "label": "Self-reflection over three past decisions (Elder)",
+        "system": _PERSONA_SYSTEM_ELDER,
+        "user": (
+            "Three past decisions you carried out:\n"
+            "  • turn 12, persona=Engineer, decision=hold position, "
+            "outcome=COMPLETED, sls_delta=+0.04.\n"
+            "  • turn 18, persona=Mystic, decision=re-centre on 528 Hz, "
+            "outcome=COMPLETED, sls_delta=+0.11.\n"
+            "  • turn 23, persona=Engineer, decision=execute trade, "
+            "outcome=ABANDONED (vetoed), sls_delta=-0.17.\n"
+            "In two sentences, reflect — what does the Elder see in this "
+            "trajectory?"
+        ),
+    },
+]
+
+
+_PERSONA_TOKENS_FOR_TASK: Dict[str, List[str]] = {
+    "persona_voice_adherence": ["528", "gratitude", "love"],
+}
+
+
+def _discover_local_adapters() -> List[Tuple[str, Any]]:
+    """Local-only adapter discovery. The two below ship in the repo and
+    require no network."""
+    adapters: List[Tuple[str, Any]] = []
+    try:
+        from aureon.inhouse_ai.llm_adapter import AureonBrainAdapter
+        adapters.append(("AureonBrainAdapter", AureonBrainAdapter()))
+    except Exception as e:
+        adapters.append(("AureonBrainAdapter", e))
+    # PersonaResponseAdapter lives in scripts/, which isn't on sys.path until
+    # we add it. The adapter takes the question at construction so we wire a
+    # small factory that builds a fresh adapter per prompt.
+    scripts_path = REPO_ROOT / "scripts"
+    if str(scripts_path) not in sys.path:
+        sys.path.insert(0, str(scripts_path))
+    try:
+        from ask_aureon import PersonaResponseAdapter
+
+        class _PersonaAdapterFactory:
+            """Wraps PersonaResponseAdapter so the runner can call .prompt()
+            without knowing it needs the question at construction."""
+
+            def __init__(self) -> None:
+                self._inner: Optional[Any] = None
+
+            def prompt(self, messages, system="", **kw):
+                user_text = ""
+                for m in messages or []:
+                    if m.get("role") == "user":
+                        user_text = str(m.get("content") or "")
+                        break
+                self._inner = PersonaResponseAdapter(question=user_text, seed=0)
+                return self._inner.prompt(messages, system=system, **kw)
+
+            def health_check(self) -> bool:
+                return True
+
+        adapters.append(("PersonaResponseAdapter", _PersonaAdapterFactory()))
+    except Exception as e:
+        adapters.append(("PersonaResponseAdapter", e))
+    return adapters
+
+
+def _run_tier_b(adapters: List[Tuple[str, Any]]) -> List[Dict[str, Any]]:
+    """For each task × each adapter, capture the raw text and a few
+    cheap metrics."""
+    out: List[Dict[str, Any]] = []
+    for task in _TIER_B_TASKS:
+        per_task: Dict[str, Any] = {
+            "id": task["id"], "label": task["label"],
+            "system": task["system"], "user": task["user"],
+            "responses": [],
+        }
+        token_check = _PERSONA_TOKENS_FOR_TASK.get(task["id"], [])
+        for name, adapter in adapters:
+            entry: Dict[str, Any] = {"adapter": name}
+            if isinstance(adapter, Exception):
+                entry["error"] = f"{type(adapter).__name__}: {adapter}"
+                entry["text"] = ""
+                entry["metrics"] = {}
+                per_task["responses"].append(entry)
+                continue
+            try:
+                t0 = time.perf_counter()
+                resp = adapter.prompt(
+                    messages=[{"role": "user", "content": task["user"]}],
+                    system=task["system"],
+                    max_tokens=512, temperature=0.7,
+                )
+                dt_ms = (time.perf_counter() - t0) * 1000
+                text = (resp.text or "").strip()
+                entry["text"] = text
+                entry["model"] = getattr(resp, "model", "")
+                entry["metrics"] = {
+                    "latency_ms": round(dt_ms, 1),
+                    "char_count": len(text),
+                    "word_count": len(text.split()),
+                    "tokens_present": {
+                        tok: tok.lower() in text.lower() for tok in token_check
+                    },
+                }
+            except Exception as e:
+                entry["text"] = ""
+                entry["error"] = f"{type(e).__name__}: {e}"
+                entry["metrics"] = {}
+            per_task["responses"].append(entry)
+        out.append(per_task)
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reporters
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _write_json(report: Dict[str, Any]) -> None:
+    REPORT_JSON.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def _write_markdown(report: Dict[str, Any]) -> None:
+    lines: List[str] = []
+    lines.append("# Aureon capability benchmark — report")
+    lines.append("")
+    lines.append(f"*generated: {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}*")
+    lines.append("")
+    lines.append(
+        "Two tiers. **Tier A** asserts architectural invariants only Aureon "
+        "has — pass/fail, falsifiable. **Tier B** runs LLM-shape prompts "
+        "side-by-side across local Aureon adapters; it never fails the run, "
+        "it shows what each adapter sounds like.")
+    lines.append("")
+    lines.append("## Tier A — architectural invariants")
+    lines.append("")
+    lines.append("| # | Capability | Result | Evidence |")
+    lines.append("|---|---|---|---|")
+    for i, r in enumerate(report["tier_a"], start=1):
+        tag = "PASS" if r["passed"] else "FAIL"
+        lines.append(f"| {i} | {r['name']} | **{tag}** | {r['evidence']} |")
+    lines.append("")
+    lines.append("### Tier A — per-benchmark detail")
+    lines.append("")
+    for i, r in enumerate(report["tier_a"], start=1):
+        lines.append(f"#### A.{i} — {r['name']}")
+        lines.append("")
+        lines.append(f"`{r['module']}`")
+        lines.append("")
+        lines.append("```json")
+        lines.append(json.dumps({
+            "passed": r["passed"],
+            "metrics": r["metrics"],
+            "invariants": r["invariants"],
+        }, indent=2))
+        lines.append("```")
+        lines.append("")
+    lines.append("## Tier B — LLM-shape tasks (local adapters, side-by-side)")
+    lines.append("")
+    if not report["tier_b"]:
+        lines.append("*(no Tier B tasks ran)*")
+        lines.append("")
+    for i, task in enumerate(report["tier_b"], start=1):
+        lines.append(f"### B.{i} — {task['label']}")
+        lines.append("")
+        lines.append("**System prompt**")
+        lines.append("")
+        lines.append("```")
+        lines.append(task["system"])
+        lines.append("```")
+        lines.append("")
+        lines.append("**User prompt**")
+        lines.append("")
+        lines.append("```")
+        lines.append(task["user"])
+        lines.append("```")
+        lines.append("")
+        for resp in task["responses"]:
+            lines.append(f"#### → {resp['adapter']}")
+            lines.append("")
+            if resp.get("error"):
+                lines.append(f"*error*: `{resp['error']}`")
+                lines.append("")
+                continue
+            metrics = resp.get("metrics", {})
+            meta_bits: List[str] = []
+            if "latency_ms" in metrics:
+                meta_bits.append(f"latency={metrics['latency_ms']:.0f} ms")
+            if "char_count" in metrics:
+                meta_bits.append(f"chars={metrics['char_count']}")
+            if "word_count" in metrics:
+                meta_bits.append(f"words={metrics['word_count']}")
+            tok = metrics.get("tokens_present") or {}
+            if tok:
+                hits = [k for k, v in tok.items() if v]
+                meta_bits.append(
+                    f"tokens_present=[{', '.join(hits) if hits else '—'}]"
+                )
+            if resp.get("model"):
+                meta_bits.append(f"model={resp['model']}")
+            lines.append(f"*{', '.join(meta_bits)}*" if meta_bits else "")
+            lines.append("")
+            lines.append("```")
+            lines.append(resp.get("text", ""))
+            lines.append("```")
+            lines.append("")
+    REPORT_MD.write_text("\n".join(lines), encoding="utf-8")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# main()
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def main() -> int:
+    _banner("Aureon capability benchmark — Tier A (architectural invariants)")
+
+    tier_a_results: List[Dict[str, Any]] = []
+    total = len(TIER_A)
+    with tempfile.TemporaryDirectory(prefix="aureon-bench-") as tmp:
+        tmp_root = Path(tmp)
+        for idx, (label, fn) in enumerate(TIER_A, start=1):
+            sub_root = tmp_root / f"a{idx}"
+            sub_root.mkdir(parents=True, exist_ok=True)
+            _step(idx, total, label)
+            try:
+                t0 = time.perf_counter()
+                result = fn(sub_root)
+                dt = time.perf_counter() - t0
+                result["wall_ms"] = round(dt * 1000, 1)
+                tier_a_results.append(result)
+                _step_done(result["passed"], result.get("evidence", ""))
+            except Exception as e:
+                tb = traceback.format_exc()
+                tier_a_results.append({
+                    "name": label,
+                    "passed": False,
+                    "metrics": {},
+                    "invariants": {},
+                    "evidence": f"EXCEPTION {type(e).__name__}: {e}",
+                    "traceback": tb,
+                })
+                _step_done(False, f"EXCEPTION {type(e).__name__}: {e}")
+
+    _banner("Aureon capability benchmark — Tier B (LLM-shape, local adapters)")
+    adapters = _discover_local_adapters()
+    for name, a in adapters:
+        if isinstance(a, Exception):
+            print(f"  {DIM}adapter{RESET} {name} … "
+                  f"{RED}unavailable{RESET}  {DIM}{type(a).__name__}: {a}{RESET}")
+        else:
+            print(f"  {DIM}adapter{RESET} {name} … {GREEN}ready{RESET}")
+    n_tasks = len(_TIER_B_TASKS)
+    for j, task in enumerate(_TIER_B_TASKS, start=1):
+        _step(j, n_tasks, task["label"])
+        print()  # tasks log per-adapter results below
+    tier_b_results = _run_tier_b(adapters)
+
+    report: Dict[str, Any] = {
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "tier_a": tier_a_results,
+        "tier_b": tier_b_results,
+    }
+
+    _write_json(report)
+    _write_markdown(report)
+
+    n_pass = sum(1 for r in tier_a_results if r["passed"])
+    print()
+    print(f"  {CYAN}Tier A:{RESET} {n_pass}/{total} architectural invariants passed")
+    print(f"  {CYAN}Tier B:{RESET} {len(tier_b_results)} LLM-shape tasks × "
+          f"{len([a for _, a in adapters if not isinstance(a, Exception)])} "
+          f"adapter(s) compared")
+    print(f"  {DIM}wrote{RESET} {REPORT_JSON.relative_to(REPO_ROOT)}")
+    print(f"  {DIM}wrote{RESET} {REPORT_MD.relative_to(REPO_ROOT)}")
+
+    return 0 if n_pass == total else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
