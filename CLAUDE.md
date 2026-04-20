@@ -23,6 +23,7 @@ After those three, pick the next file by task:
 - User asks about the HNC math → [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) (Master Formula Λ(t), Tree of Light, Auris Conjecture)
 - User asks about the ancient/φ² thread → [`docs/research/THE_PHI_SQUARED_CHAIN_Sumer_to_Rome_to_Now.md`](docs/research/THE_PHI_SQUARED_CHAIN_Sumer_to_Rome_to_Now.md)
 - User asks about trading operations → [`docs/QUICK_START.md`](docs/QUICK_START.md) → [`docs/LIVE_TRADING_RUNBOOK.md`](docs/LIVE_TRADING_RUNBOOK.md)
+- User asks about deployment / Windows / dashboards → [`docs/deployment/`](docs/deployment/) · [`docs/windows/`](docs/windows/) · [`docs/dashboards/`](docs/dashboards/)
 
 ---
 
@@ -47,18 +48,34 @@ aureon-trading/
 │   ├── THE_SYNTHESIS.md    ★ start here
 │   ├── CLAIMS_AND_EVIDENCE.md
 │   ├── STATE_FILES.md      # inventory of repo-root runtime JSONs
-│   ├── research/           # 54 whitepapers + markdown research notes
+│   ├── CHANGELOG.md · CONTRIBUTING.md · CODE_OF_CONDUCT.md
+│   ├── HNC_FALSIFICATION_PROTOCOL.md · WHO_RUNS_THE_WORLD.md
+│   ├── research/           # whitepapers + markdown research notes
 │   │   ├── READING_PATHS.md   ★ the 13-paper canon
 │   │   ├── INDEX.md            # full thematic catalog
-│   │   ├── whitepapers/        # 54 PDFs/DOCX, themed
-│   │   ├── traffic/            # GitHub 14-day analytics PNGs
+│   │   ├── whitepapers/        # PDFs/DOCX, themed
+│   │   ├── reports/            # benchmark / analysis reports (AI LLM, sentience, Butlin…)
+│   │   ├── audits/             # HNC verification audits (dated)
+│   │   ├── figures/            # benchmark + verification charts (PNG / JPG)
+│   │   ├── traffic/            # GitHub analytics charts
 │   │   ├── hardware/           # CAD + firmware
 │   │   └── images/
-│   └── architecture/       # System maps, theory-to-code bridge
+│   ├── deployment/         # DigitalOcean / tier / quickstart deploy guides
+│   ├── windows/            # Windows setup, terminal + unicode fixes
+│   ├── dashboards/         # Dashboard guides + validation reports
+│   ├── architecture/       # System maps, theory-to-code bridge
+│   ├── images/             # thematic visuals (WHO_RUNS_THE_WORLD, etc.)
+│   └── archive/            # Historical docs kept for provenance
+│       ├── queen_explorations/   # 14 QUEEN_*.md session + design notes
+│       └── status_reports/       # 25 _STATUS / _COMPLETE / _SUMMARY proclamations
 ├── scripts/                # CLI tooling, deployment, analytics
-├── tests/                  # pytest suite
+│   └── patches/            # queued code patches (not yet applied)
+├── tests/                  # pytest suite; tests/fixtures/ for sample JSONL
 ├── data/                   # Ephemeris, market datasets, simulations
-├── VERIFICATION AND VALIDATION/  # 15 PDFs: acceptance criteria, replication
+│   ├── datasets/           # aureon_qa / math_challenge / questions (ask-aureon corpus)
+│   ├── research/           # structured benchmark & analysis data
+│   └── ephemeral/          # runtime output logs (multiverse_live_thoughts.jsonl)
+├── VERIFICATION AND VALIDATION/  # 16 PDFs: acceptance criteria, replication
 └── CLAUDE.md               # ← you are here
 ```
 

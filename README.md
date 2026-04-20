@@ -134,7 +134,7 @@ If Aureon has given you an edge, saved you from a bad trade, or simply opened yo
 | [Quick Start](#quick-start-war-room-dashboard) | [Architecture Overview](#architecture-overview) | [Ancient Convergence](docs/research/ANCIENT_CONVERGENCE.md) |
 | [Scripts Index](docs/SCRIPTS_INDEX.md) | [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Bot Intelligence](docs/research/BOT_INTELLIGENCE.md) |
 | [Exchange Setup](#configuration) | [Intelligence Wiring](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Financial Exposure](docs/research/FINANCIAL_EXPOSURE.md) |
-| [Dashboard Guide](docs/DASHBOARD_GUIDE.md) | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | [Unified Field](docs/research/UNIFIED_FIELD.md) |
+| [Dashboard Guide](docs/dashboards/DASHBOARD_GUIDE.md) | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | [Unified Field](docs/research/UNIFIED_FIELD.md) |
 | [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | [Contributing](docs/CONTRIBUTING.md) | [Counter-Strategies](docs/research/COUNTER_STRATEGIES.md) |
 
 > **New here?** Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) for guided learning paths. See the [Full Documentation Index](docs/INDEX.md) for all 180+ docs.
@@ -3673,7 +3673,7 @@ The Aureon system includes **180+ documentation files** organized by topic. Star
 |----------|-------------|
 | [Scripts Index](docs/SCRIPTS_INDEX.md) | Find the right startup script from 150+ options |
 | [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | Day-to-day trading operations |
-| [Dashboard Guide](docs/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
+| [Dashboard Guide](docs/dashboards/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
 | [Multi-Broker Guide](docs/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
 
 ### For Developers

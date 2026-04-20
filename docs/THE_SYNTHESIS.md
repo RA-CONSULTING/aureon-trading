@@ -125,7 +125,7 @@ Pick the path that matches why you're here.
 ### 🎯 If you are a **Trader** — run the system
 1. [docs/QUICK_START.md](QUICK_START.md) — up and running in 10 minutes
 2. [docs/LIVE_TRADING_RUNBOOK.md](LIVE_TRADING_RUNBOOK.md) — daily operations
-3. [docs/DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md) — monitor positions live
+3. [docs/dashboards/DASHBOARD_GUIDE.md](dashboards/DASHBOARD_GUIDE.md) — monitor positions live
 
 ### 🔬 If you are a **Researcher** — verify the pattern
 1. [docs/research/READING_PATHS.md](research/READING_PATHS.md) — curated canon (13 papers out of 54)

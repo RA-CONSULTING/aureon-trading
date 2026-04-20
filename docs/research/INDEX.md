@@ -10,6 +10,9 @@ Central catalog of research materials, white papers, and supporting evidence for
 
 > **Layout**
 > - [`whitepapers/`](whitepapers/) — Formal papers (PDF / DOCX)
+> - [`reports/`](reports/) — Benchmark + analysis reports (AI LLM / sentience / Butlin / supremacy)
+> - [`audits/`](audits/) — HNC verification audits (dated, plus rendered PDFs)
+> - [`figures/`](figures/) — Benchmark + verification charts (PNG / JPG)
 > - [`traffic/`](traffic/) — GitHub traffic analytics (node activation)
 > - [`hardware/`](hardware/) — CAD, firmware, formula-tree diagrams
 > - [`images/`](images/) — Visual evidence & figures
@@ -197,4 +200,5 @@ Exploratory Jupyter notebooks.
 
 ---
 
-*Last updated: 2026-04-05 — consolidated 2nd research upload (33 new papers, 11 byte-identical duplicates removed, 3 same-stem different-content pairs preserved as `_v1`/`_v2`).*
+*Last updated: 2026-04-20 — added `reports/`, `audits/`, `figures/` subfolders populated by root-level reorg (2 byte-identical duplicates removed; 1 unique root variant of `HNC_Grand_Unified_v2_PrimarySource_Leckey_2026.docx` preserved as `_rev3.docx`).*
+*Previous: 2026-04-05 — consolidated 2nd research upload (33 new papers, 11 byte-identical duplicates removed, 3 same-stem different-content pairs preserved as `_v1`/`_v2`).*
