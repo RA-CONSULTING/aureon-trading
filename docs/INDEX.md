@@ -51,6 +51,6 @@ Master table of contents for all project documentation.
 ## Contributing
 | Document | Description |
 |----------|-------------|
-| [Contributing Guide](../CONTRIBUTING.md) | How to contribute |
-| [Code of Conduct](../CODE_OF_CONDUCT.md) | Community standards |
-| [Changelog](../CHANGELOG.md) | Version history |
+| [Contributing Guide](CONTRIBUTING.md) | How to contribute |
+| [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards |
+| [Changelog](CHANGELOG.md) | Version history |

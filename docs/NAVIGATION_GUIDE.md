@@ -19,7 +19,7 @@ Start here if you want to understand or extend the system.
 3. **[Intelligence Wiring Matrix](architecture/INTELLIGENCE_WIRING_MATRIX.md)** — What feeds what
 4. **[Open Market Data Matrix](architecture/OPEN_MARKET_DATA_MATRIX.md)** — Data topology
 5. **[Theory to Code](architecture/THEORY_TO_CODE.md)** — Research concepts → implementations
-6. **[Contributing](../CONTRIBUTING.md)** — Code style, testing, PR process
+6. **[Contributing](CONTRIBUTING.md)** — Code style, testing, PR process
 
 ## Researcher Path
 Start here if you're interested in the harmonic/mathematical research.

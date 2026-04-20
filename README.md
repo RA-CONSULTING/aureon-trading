@@ -135,7 +135,7 @@ If Aureon has given you an edge, saved you from a bad trade, or simply opened yo
 | [Scripts Index](docs/SCRIPTS_INDEX.md) | [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Bot Intelligence](docs/research/BOT_INTELLIGENCE.md) |
 | [Exchange Setup](#configuration) | [Intelligence Wiring](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Financial Exposure](docs/research/FINANCIAL_EXPOSURE.md) |
 | [Dashboard Guide](docs/DASHBOARD_GUIDE.md) | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | [Unified Field](docs/research/UNIFIED_FIELD.md) |
-| [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | [Contributing](CONTRIBUTING.md) | [Counter-Strategies](docs/research/COUNTER_STRATEGIES.md) |
+| [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | [Contributing](docs/CONTRIBUTING.md) | [Counter-Strategies](docs/research/COUNTER_STRATEGIES.md) |
 
 > **New here?** Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) for guided learning paths. See the [Full Documentation Index](docs/INDEX.md) for all 180+ docs.
 
