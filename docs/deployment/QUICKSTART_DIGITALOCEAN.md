@@ -251,8 +251,8 @@ top
 
 ## 📚 Full Documentation
 
-- **Complete Setup Guide**: [DIGITALOCEAN_DEPLOYMENT.md](deployment/DIGITALOCEAN_DEPLOYMENT.md)
-- **Pre-Flight Checklist**: [PREFLIGHT_CHECKLIST.md](PREFLIGHT_CHECKLIST.md)
+- **Complete Setup Guide**: [DIGITALOCEAN_DEPLOYMENT.md](DIGITALOCEAN_DEPLOYMENT.md)
+- **Pre-Flight Checklist**: [PREFLIGHT_CHECKLIST.md](../runbooks/PREFLIGHT_CHECKLIST.md)
 - **Compatibility Check**: Run `python check_digitalocean_compat.py`
 
 ---

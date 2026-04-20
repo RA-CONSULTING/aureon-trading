@@ -2156,7 +2156,7 @@ field_strength = (
 
 For full technical implementation:
 - [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) - **Harmonic Nexus Core white paper** — Master Formula Λ(t), Tree of Light, Queen veto logic, CME 2026 validation, Auris Conjecture, Code-to-Theory mapping
-- [`COMPLETE_LIBERATION_PROTOCOL.md`](docs/COMPLETE_LIBERATION_PROTOCOL.md) - Integration guide
+- [`COMPLETE_LIBERATION_PROTOCOL.md`](docs/archive/status_reports/COMPLETE_LIBERATION_PROTOCOL.md) - Integration guide
 - [`.github/copilot-instructions.md`](.github/copilot-instructions.md) - Development guidelines
 
 ---
@@ -3089,7 +3089,7 @@ pip install -r requirements.txt
 .\scripts\runners\run_capital_swarm.ps1
 ```
 
-Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](docs/AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
+Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](docs/windows/AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
 
 ---
 
@@ -3674,13 +3674,13 @@ The Aureon system includes **180+ documentation files** organized by topic. Star
 | [Scripts Index](docs/SCRIPTS_INDEX.md) | Find the right startup script from 150+ options |
 | [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | Day-to-day trading operations |
 | [Dashboard Guide](docs/dashboards/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
-| [Multi-Broker Guide](docs/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
+| [Multi-Broker Guide](docs/integrations/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
 
 ### For Developers
 | Document | Description |
 |----------|-------------|
 | [Module Reference](docs/MODULES_AT_A_GLANCE.md) | All 715 modules across 24 domains |
-| [System Architecture Map](docs/SYSTEM_ARCHITECTURE_MAP.md) | 5-phase startup hierarchy |
+| [System Architecture Map](docs/architecture/SYSTEM_ARCHITECTURE_MAP.md) | 5-phase startup hierarchy |
 | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | What intelligence feeds which trader |
 | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | Research concepts → implementations |
 | [Open Market Data Matrix](docs/architecture/OPEN_MARKET_DATA_MATRIX.md) | Data feed topology |

@@ -22,7 +22,7 @@ Master table of contents for all project documentation.
 | [Repo Mindmap](architecture/REPO_MINDMAP.md) | Complete file inventory |
 | [Continuous Market Pipeline](architecture/CONTINUOUS_MARKET_WORLDVIEW_PIPELINE.md) | Always-on coherence system |
 | [Theory to Code](architecture/THEORY_TO_CODE.md) | Research concepts → implementations |
-| [System Landscape](SYSTEM_LANDSCAPE.md) | High-level subsystem overview |
+| [System Landscape](architecture/SYSTEM_LANDSCAPE.md) | High-level subsystem overview |
 | [HNC White Paper](HNC_UNIFIED_WHITE_PAPER.md) | Harmonic Nexus Core mathematical framework |
 
 ## Trading Operations
@@ -30,14 +30,14 @@ Master table of contents for all project documentation.
 |----------|-------------|
 | [Live Trading Runbook](LIVE_TRADING_RUNBOOK.md) | Day-to-day trading operations |
 | [Dashboard Guide](dashboards/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
-| [Multi-Broker Guide](MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
+| [Multi-Broker Guide](integrations/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
 
 ## Deployment
 | Document | Description |
 |----------|-------------|
 | [Deployment Guide](deployment/DEPLOYMENT_GUIDE.md) | General deployment |
 | [DigitalOcean Guide](deployment/DIGITALOCEAN_DEPLOYMENT.md) | DigitalOcean App Platform |
-| [Production Checklist](PRODUCTION_CHECKLIST.md) | Pre-production validation |
+| [Production Checklist](runbooks/PRODUCTION_CHECKLIST.md) | Pre-production validation |
 
 ## Research
 | Document | Description |

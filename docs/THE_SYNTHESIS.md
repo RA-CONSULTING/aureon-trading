@@ -133,7 +133,7 @@ Pick the path that matches why you're here.
 3. [docs/research/INDEX.md](research/INDEX.md) — full catalog grouped by theme
 
 ### 🛠️ If you are a **Builder** — extend the system
-1. [docs/SYSTEM_ARCHITECTURE_MAP.md](SYSTEM_ARCHITECTURE_MAP.md) — the 5-phase architecture
+1. [docs/architecture/SYSTEM_ARCHITECTURE_MAP.md](architecture/SYSTEM_ARCHITECTURE_MAP.md) — the 5-phase architecture
 2. [docs/architecture/THEORY_TO_CODE.md](architecture/THEORY_TO_CODE.md) — HNC equations → Python modules
 3. [docs/MODULES_AT_A_GLANCE.md](MODULES_AT_A_GLANCE.md) — all 715 modules, 24 domains
 
