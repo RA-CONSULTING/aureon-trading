@@ -30,7 +30,7 @@ This workspace now hosts multiple concurrent subsystems that together compose th
 - **Notable Assets:** Unity C# scripts under `Assets/Scripts/Nexus/`, comprehensive documentation (`docs/`, `README_*.md`), and prior Node/TypeScript services under `core/` and `scripts/`.
 
 ## 5. Rainbow & Validation Research Bundles
-- **`RAINBOW-main/`**: Archive containing Rainbow project documentation and additional earth data packages.
+- **`archive/RAINBOW-main-extracted/`**: Archived Rainbow project stub + earth-live-data zip (moved from root-level `RAINBOW-main/` which was marked as should-be-separate-repo in `.gitignore`).
 - **`VERIFICATION AND VALIDATION/`**: Evidence packages (PDF/DOCX) outlining harmonic nexus validation methodology.
 - **Purpose:** Reference artifacts for compliance, research traceability, and legacy protocol documentation.
 
