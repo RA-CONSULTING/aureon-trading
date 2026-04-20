@@ -21,7 +21,7 @@ That's it! Rising Star Logic is now active with:
 ## Files in This Package
 
 ### 📚 Documentation
-1. **[RISING_STAR_SUMMARY.md](RISING_STAR_SUMMARY.md)** - Complete overview
+1. **[RISING_STAR_SUMMARY.md](archive/status_reports/RISING_STAR_SUMMARY.md)** - Complete overview
 2. **[rising_star_war_room_integration.md](rising_star_war_room_integration.md)** - Integration guide
 3. **[rising_star_visual_comparison.txt](rising_star_visual_comparison.txt)** - Visual flowcharts
 4. **[RISING_STAR_QUICK_START.py](RISING_STAR_QUICK_START.py)** - Code snippets
@@ -241,7 +241,7 @@ python rising_star_demo.py
 ## File Navigation
 
 ### Start Here
-- 📖 Read: [RISING_STAR_SUMMARY.md](RISING_STAR_SUMMARY.md)
+- 📖 Read: [RISING_STAR_SUMMARY.md](archive/status_reports/RISING_STAR_SUMMARY.md)
 - 📺 Watch: `python rising_star_demo.py`
 - 📊 Compare: [rising_star_visual_comparison.txt](rising_star_visual_comparison.txt)
 
@@ -282,7 +282,7 @@ Historical proof:
 ## Next Steps
 
 1. ✅ Run demo: `python rising_star_demo.py`
-2. ✅ Read summary: [RISING_STAR_SUMMARY.md](RISING_STAR_SUMMARY.md)
+2. ✅ Read summary: [RISING_STAR_SUMMARY.md](archive/status_reports/RISING_STAR_SUMMARY.md)
 3. ✅ Integrate: Add 3 lines to War Room (see [RISING_STAR_QUICK_START.py](RISING_STAR_QUICK_START.py))
 4. ✅ Test: Run with `--dry-run` flag
 5. ✅ Monitor: Track `rising_star_stats` metrics

@@ -9,7 +9,7 @@ Master table of contents for all project documentation.
 |----------|-------------|
 | [Navigation Guide](NAVIGATION_GUIDE.md) | Learning paths for traders, developers, researchers |
 | [Quick Start](QUICK_START.md) | Get running in 10 minutes |
-| [Windows Setup](WINDOWS_SETUP_GUIDE.md) | Windows-specific installation |
+| [Windows Setup](windows/WINDOWS_SETUP_GUIDE.md) | Windows-specific installation |
 | [Scripts Index](SCRIPTS_INDEX.md) | Find the right startup script |
 
 ## Architecture & System Design
@@ -29,14 +29,14 @@ Master table of contents for all project documentation.
 | Document | Description |
 |----------|-------------|
 | [Live Trading Runbook](LIVE_TRADING_RUNBOOK.md) | Day-to-day trading operations |
-| [Dashboard Guide](DASHBOARD_GUIDE.md) | Live monitoring dashboard |
+| [Dashboard Guide](dashboards/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
 | [Multi-Broker Guide](MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
 
 ## Deployment
 | Document | Description |
 |----------|-------------|
-| [Deployment Guide](DEPLOYMENT_GUIDE.md) | General deployment |
-| [DigitalOcean Guide](DIGITALOCEAN_DEPLOYMENT.md) | DigitalOcean App Platform |
+| [Deployment Guide](deployment/DEPLOYMENT_GUIDE.md) | General deployment |
+| [DigitalOcean Guide](deployment/DIGITALOCEAN_DEPLOYMENT.md) | DigitalOcean App Platform |
 | [Production Checklist](PRODUCTION_CHECKLIST.md) | Pre-production validation |
 
 ## Research
