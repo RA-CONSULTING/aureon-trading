@@ -1,6 +1,6 @@
 # Archive: Aureon Trading on Kraken
 
-Status: This document is an older, Kraken-focused guide. For the current unified engine and run instructions, see [README.md](README.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Status: This document is an older, Kraken-focused guide. For the current unified engine and run instructions, see the root [README.md](../../README.md) and [docs/architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md).
 
 This bot now supports the Kraken ecosystem! 🐙
 

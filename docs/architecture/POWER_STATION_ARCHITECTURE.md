@@ -449,8 +449,8 @@ The Power Station is successful when you see:
 
 ## 📚 Related Documentation
 
-- **[QUEEN_AUTONOMOUS_POWER_SYSTEM.md](./QUEEN_AUTONOMOUS_POWER_SYSTEM.md)** - Queen's decision-making system
-- **[DIGITAL_OCEAN_DEPLOY.md](./DIGITAL_OCEAN_DEPLOY.md)** - Deployment guide
+- **[QUEEN_AUTONOMOUS_POWER_SYSTEM.md](../archive/queen_explorations/QUEEN_AUTONOMOUS_POWER_SYSTEM.md)** - Queen's decision-making system
+- **[DIGITAL_OCEAN_DEPLOY.md](../deployment/DIGITAL_OCEAN_DEPLOY.md)** - Deployment guide
 - **[.github/copilot-instructions.md](./.github/copilot-instructions.md)** - Full system architecture
 
 ---

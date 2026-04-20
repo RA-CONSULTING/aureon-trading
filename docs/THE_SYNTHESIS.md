@@ -125,7 +125,7 @@ Pick the path that matches why you're here.
 ### 🎯 If you are a **Trader** — run the system
 1. [docs/QUICK_START.md](QUICK_START.md) — up and running in 10 minutes
 2. [docs/LIVE_TRADING_RUNBOOK.md](LIVE_TRADING_RUNBOOK.md) — daily operations
-3. [docs/DASHBOARD_GUIDE.md](DASHBOARD_GUIDE.md) — monitor positions live
+3. [docs/dashboards/DASHBOARD_GUIDE.md](dashboards/DASHBOARD_GUIDE.md) — monitor positions live
 
 ### 🔬 If you are a **Researcher** — verify the pattern
 1. [docs/research/READING_PATHS.md](research/READING_PATHS.md) — curated canon (13 papers out of 54)
@@ -133,7 +133,7 @@ Pick the path that matches why you're here.
 3. [docs/research/INDEX.md](research/INDEX.md) — full catalog grouped by theme
 
 ### 🛠️ If you are a **Builder** — extend the system
-1. [docs/SYSTEM_ARCHITECTURE_MAP.md](SYSTEM_ARCHITECTURE_MAP.md) — the 5-phase architecture
+1. [docs/architecture/SYSTEM_ARCHITECTURE_MAP.md](architecture/SYSTEM_ARCHITECTURE_MAP.md) — the 5-phase architecture
 2. [docs/architecture/THEORY_TO_CODE.md](architecture/THEORY_TO_CODE.md) — HNC equations → Python modules
 3. [docs/MODULES_AT_A_GLANCE.md](MODULES_AT_A_GLANCE.md) — all 715 modules, 24 domains
 

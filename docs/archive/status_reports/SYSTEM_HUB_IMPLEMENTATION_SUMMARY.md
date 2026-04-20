@@ -8,7 +8,7 @@
 - **[aureon_system_hub_cli.py](aureon_system_hub_cli.py)** - Command-line interface
 
 ### 2. Documentation
-- **[SYSTEM_HUB_README.md](SYSTEM_HUB_README.md)** - Complete user guide
+- **[SYSTEM_HUB_README.md](../../architecture/SYSTEM_HUB_README.md)** - Complete user guide
 - **[SYSTEM_HUB_INTEGRATION.py](SYSTEM_HUB_INTEGRATION.py)** - Developer integration guide
 
 ### 3. Integration

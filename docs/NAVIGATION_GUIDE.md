@@ -8,7 +8,7 @@ Start here if you want to run the trading system.
 1. **[Quick Start](QUICK_START.md)** — Get the system running in 10 minutes
 2. **[Exchange Setup](#exchange-setup)** — Configure Kraken, Capital.com, Alpaca, Binance
 3. **[Live Trading Runbook](LIVE_TRADING_RUNBOOK.md)** — Day-to-day operations
-4. **[Dashboard Guide](DASHBOARD_GUIDE.md)** — Monitor your positions live
+4. **[Dashboard Guide](dashboards/DASHBOARD_GUIDE.md)** — Monitor your positions live
 5. **[Scripts Index](SCRIPTS_INDEX.md)** — Find the right startup script
 
 ## Developer Path  
@@ -19,7 +19,7 @@ Start here if you want to understand or extend the system.
 3. **[Intelligence Wiring Matrix](architecture/INTELLIGENCE_WIRING_MATRIX.md)** — What feeds what
 4. **[Open Market Data Matrix](architecture/OPEN_MARKET_DATA_MATRIX.md)** — Data topology
 5. **[Theory to Code](architecture/THEORY_TO_CODE.md)** — Research concepts → implementations
-6. **[Contributing](../CONTRIBUTING.md)** — Code style, testing, PR process
+6. **[Contributing](CONTRIBUTING.md)** — Code style, testing, PR process
 
 ## Researcher Path
 Start here if you're interested in the harmonic/mathematical research.
