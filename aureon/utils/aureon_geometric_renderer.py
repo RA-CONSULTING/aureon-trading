@@ -1363,7 +1363,7 @@ def patch_world_simulator() -> None:
     The WorldSimulator auto-cycles it alongside the existing 5 views.
     """
     try:
-        import aureon.simulation.aureon_world_simulator as aureon_world_simulator as ws
+        import aureon.simulation.aureon_world_simulator as ws
         from aureon.simulation.aureon_world_simulator import WorldView, VIEW_ICONS, WorldSimulator
 
         # Add GEOMETRY to the enum (dynamic enum extension)

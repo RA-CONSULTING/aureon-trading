@@ -138,8 +138,10 @@ def link_system(module_name: str) -> None:
         return
     _LINKED.add(module_name)
 
+    # Auto-control is deferred to explicit system launch — not triggered on import.
+    # Call aureon.core.aureon_baton_link.activate_autonomous_control() to enable it.
     global _AUTO_CONTROL_DONE
-    if not _AUTO_CONTROL_DONE:
+    if not _AUTO_CONTROL_DONE and os.getenv("AUREON_ACTIVATE_ON_IMPORT", "0") == "1":
         _AUTO_CONTROL_DONE = True
         try:
             from aureon.utils.aureon_queen_hive_mind import get_queen
@@ -177,6 +179,26 @@ def link_system(module_name: str) -> None:
         ))
     except Exception:
         return
+
+
+def activate_autonomous_control() -> None:
+    """
+    Explicitly activate Queen's full autonomous control.
+    Call this from the ICS boot sequence, not from module imports.
+    """
+    global _AUTO_CONTROL_DONE
+    if _AUTO_CONTROL_DONE:
+        return
+    _AUTO_CONTROL_DONE = True
+    try:
+        from aureon.utils.aureon_queen_hive_mind import get_queen
+        queen = get_queen()
+        try:
+            queen.enable_full_autonomous_control()
+        except Exception:
+            pass
+    except Exception:
+        pass
 
 
 def emit_stage(stage: str, source: str, *, topic: str | None = None, meta: Optional[dict] = None) -> None:

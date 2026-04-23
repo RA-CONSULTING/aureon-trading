@@ -33,6 +33,18 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+# Module-level Lambda Engine reference — set by ICS before any instance is created.
+# Each CapitalCFDTrader.__init__ picks this up automatically.
+_MODULE_LAMBDA_ENGINE: Any = None
+
+
+def set_module_lambda_engine(engine: Any) -> None:
+    """Called by ICS after Phase 4 (LambdaEngine boot) to wire Λ(t) into Capital."""
+    global _MODULE_LAMBDA_ENGINE
+    _MODULE_LAMBDA_ENGINE = engine
+
+
 CAPITAL_TRACE_PATH = Path(os.getenv("CAPITAL_TRACE_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_cfd_last_exchange_trace.json"))).resolve()
 CAPITAL_PROMOTION_LOG_PATH = Path(os.getenv("CAPITAL_PROMOTION_LOG_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_shadow_promotions.jsonl"))).resolve()
 
@@ -169,36 +181,40 @@ except Exception:
         HAS_PENNY_ENGINE = False
 
 # ── INSTRUMENT UNIVERSE ────────────────────────────────────────────────────────
-# symbol → {class, tp_pct, sl_pct, size, max_spread_pct, momentum_threshold}
-#   tp_pct / sl_pct  — take-profit / stop-loss as % of entry price
-#   size             — position size in Capital.com lots / units
-#   max_spread_pct   — reject trade if spread exceeds this % of mid-price
-#   momentum_threshold — min |change_pct| to consider the move meaningful
+# symbol → {class, tp_pct, sl_pct, trail_activation_pct, size, max_spread_pct, momentum_threshold}
+#   tp_pct               — take-profit target as % of entry price
+#   sl_pct               — initial hard stop as % of entry price (wide — survives noise)
+#   trail_activation_pct — % profit before trailing stop engages (river must flow first)
+#   size                 — position size in Capital.com lots / units
+#   max_spread_pct       — reject trade if spread exceeds this % of mid-price
+#   momentum_threshold   — min |change_pct| to consider the move meaningful
 
 CAPITAL_UNIVERSE: Dict[str, dict] = {
     # ── Forex (major pairs) ──────────────────────────────────────────────
-    "EURUSD":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "size": 0.01, "max_spread_pct": 0.06, "momentum_threshold": 0.06},
-    "GBPUSD":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "size": 0.01, "max_spread_pct": 0.08, "momentum_threshold": 0.06},
-    "USDJPY":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "size": 0.01, "max_spread_pct": 0.05, "momentum_threshold": 0.05},
-    "AUDUSD":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "size": 0.01, "max_spread_pct": 0.08, "momentum_threshold": 0.07},
-    "USDCAD":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "size": 0.01, "max_spread_pct": 0.08, "momentum_threshold": 0.07},
-    "EURGBP":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "size": 0.01, "max_spread_pct": 0.07, "momentum_threshold": 0.06},
+    "EURUSD":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "trail_activation_pct": 0.08, "cognitive_timeout_s": 90,  "size": 0.01, "max_spread_pct": 0.06, "momentum_threshold": 0.02},
+    "GBPUSD":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "trail_activation_pct": 0.08, "cognitive_timeout_s": 90,  "size": 0.01, "max_spread_pct": 0.08, "momentum_threshold": 0.02},
+    "USDJPY":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "trail_activation_pct": 0.08, "cognitive_timeout_s": 90,  "size": 0.01, "max_spread_pct": 0.05, "momentum_threshold": 0.02},
+    "AUDUSD":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "trail_activation_pct": 0.08, "cognitive_timeout_s": 90,  "size": 0.01, "max_spread_pct": 0.08, "momentum_threshold": 0.02},
+    "USDCAD":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "trail_activation_pct": 0.08, "cognitive_timeout_s": 90,  "size": 0.01, "max_spread_pct": 0.08, "momentum_threshold": 0.02},
+    "EURGBP":     {"class": "forex",     "tp_pct": 0.35, "sl_pct": 0.20, "trail_activation_pct": 0.08, "cognitive_timeout_s": 90,  "size": 0.01, "max_spread_pct": 0.07, "momentum_threshold": 0.02},
     # ── Indices ──────────────────────────────────────────────────────────
-    "UK100":      {"class": "index",     "tp_pct": 0.55, "sl_pct": 0.30, "size": 1,    "max_spread_pct": 0.05, "momentum_threshold": 0.10},
-    "US500":      {"class": "index",     "tp_pct": 0.55, "sl_pct": 0.30, "size": 1,    "max_spread_pct": 0.05, "momentum_threshold": 0.10},
-    "US30":       {"class": "index",     "tp_pct": 0.55, "sl_pct": 0.30, "size": 1,    "max_spread_pct": 0.05, "momentum_threshold": 0.10},
-    "DE40":       {"class": "index",     "tp_pct": 0.55, "sl_pct": 0.30, "size": 1,    "max_spread_pct": 0.06, "momentum_threshold": 0.12},
+    "UK100":      {"class": "index",     "tp_pct": 0.65, "sl_pct": 0.30, "trail_activation_pct": 0.15, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.05, "momentum_threshold": 0.03},
+    "US500":      {"class": "index",     "tp_pct": 0.65, "sl_pct": 0.30, "trail_activation_pct": 0.15, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.05, "momentum_threshold": 0.03},
+    "US30":       {"class": "index",     "tp_pct": 0.65, "sl_pct": 0.30, "trail_activation_pct": 0.15, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.05, "momentum_threshold": 0.03},
+    "USTECH":     {"class": "index",     "tp_pct": 0.70, "sl_pct": 0.33, "trail_activation_pct": 0.18, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.07, "momentum_threshold": 0.03},
+    "US100":      {"class": "index",     "tp_pct": 0.70, "sl_pct": 0.33, "trail_activation_pct": 0.18, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.07, "momentum_threshold": 0.03},
+    "DE40":       {"class": "index",     "tp_pct": 0.65, "sl_pct": 0.30, "trail_activation_pct": 0.15, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.06, "momentum_threshold": 0.03},
     # ── Commodities ───────────────────────────────────────────────────────
-    "GOLD":       {"class": "commodity", "tp_pct": 0.75, "sl_pct": 0.45, "size": 0.1,  "max_spread_pct": 0.08, "momentum_threshold": 0.15},
-    "SILVER":     {"class": "commodity", "tp_pct": 0.75, "sl_pct": 0.45, "size": 1,    "max_spread_pct": 0.15, "momentum_threshold": 0.20},
-    "OIL_CRUDE":  {"class": "commodity", "tp_pct": 0.75, "sl_pct": 0.45, "size": 1,    "max_spread_pct": 0.10, "momentum_threshold": 0.20},
-    "NATURALGAS": {"class": "commodity", "tp_pct": 1.00, "sl_pct": 0.60, "size": 10,   "max_spread_pct": 0.25, "momentum_threshold": 0.30},
+    "GOLD":       {"class": "commodity", "tp_pct": 0.75, "sl_pct": 0.45, "trail_activation_pct": 0.18, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.08, "momentum_threshold": 0.03},
+    "SILVER":     {"class": "commodity", "tp_pct": 0.75, "sl_pct": 0.45, "trail_activation_pct": 0.20, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.15, "momentum_threshold": 0.04},
+    "OIL_CRUDE":  {"class": "commodity", "tp_pct": 0.75, "sl_pct": 0.45, "trail_activation_pct": 0.18, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.10, "momentum_threshold": 0.04},
+    "NATURALGAS": {"class": "commodity", "tp_pct": 1.00, "sl_pct": 0.60, "trail_activation_pct": 0.25, "cognitive_timeout_s": 120, "size": 0.01, "max_spread_pct": 0.25, "momentum_threshold": 0.05},
     # ── Stocks (CFDs) ─────────────────────────────────────────────────────
-    "AAPL":       {"class": "stock",     "tp_pct": 0.90, "sl_pct": 0.55, "size": 1,    "max_spread_pct": 0.15, "momentum_threshold": 0.20},
-    "TSLA":       {"class": "stock",     "tp_pct": 0.90, "sl_pct": 0.55, "size": 1,    "max_spread_pct": 0.20, "momentum_threshold": 0.25},
-    "NVDA":       {"class": "stock",     "tp_pct": 0.90, "sl_pct": 0.55, "size": 1,    "max_spread_pct": 0.20, "momentum_threshold": 0.25},
-    "AMZN":       {"class": "stock",     "tp_pct": 0.90, "sl_pct": 0.55, "size": 1,    "max_spread_pct": 0.15, "momentum_threshold": 0.20},
-    "MSFT":       {"class": "stock",     "tp_pct": 0.90, "sl_pct": 0.55, "size": 1,    "max_spread_pct": 0.15, "momentum_threshold": 0.20},
+    "AAPL":       {"class": "stock",     "tp_pct": 1.10, "sl_pct": 0.55, "trail_activation_pct": 0.22, "cognitive_timeout_s": 180, "size": 0.01, "max_spread_pct": 0.15, "momentum_threshold": 0.05},
+    "TSLA":       {"class": "stock",     "tp_pct": 1.20, "sl_pct": 0.55, "trail_activation_pct": 0.25, "cognitive_timeout_s": 180, "size": 0.01, "max_spread_pct": 0.20, "momentum_threshold": 0.05},
+    "NVDA":       {"class": "stock",     "tp_pct": 1.20, "sl_pct": 0.55, "trail_activation_pct": 0.25, "cognitive_timeout_s": 180, "size": 0.01, "max_spread_pct": 0.20, "momentum_threshold": 0.05},
+    "AMZN":       {"class": "stock",     "tp_pct": 1.10, "sl_pct": 0.55, "trail_activation_pct": 0.22, "cognitive_timeout_s": 180, "size": 0.01, "max_spread_pct": 0.15, "momentum_threshold": 0.05},
+    "MSFT":       {"class": "stock",     "tp_pct": 1.10, "sl_pct": 0.55, "trail_activation_pct": 0.22, "cognitive_timeout_s": 180, "size": 0.01, "max_spread_pct": 0.15, "momentum_threshold": 0.05},
 }
 
 # ── CONFIG ─────────────────────────────────────────────────────────────────────
@@ -220,7 +236,7 @@ def _env_bool(name: str, default: bool) -> bool:
 
 
 CFD_CONFIG: Dict[str, float] = {
-    "max_positions":      _env_float("CAPITAL_MAX_POSITIONS", 2.0),   # One BUY lane and one SELL lane
+    "max_positions":      _env_float("CAPITAL_MAX_POSITIONS", 4.0),   # Up to 4 concurrent positions
     "price_ttl_secs":    _env_float("CAPITAL_PRICE_TTL_SECS", 10.0),  # Price cache lifetime
     "position_ttl_secs": _env_float("CAPITAL_POSITION_TTL_SECS", 3600.0), # Selection benchmark only; not a forced close
     "scan_interval_secs": _env_float("CAPITAL_SCAN_INTERVAL_SECS", 8.0),  # Opportunity scan interval
@@ -231,6 +247,7 @@ CFD_CONFIG: Dict[str, float] = {
 CFD_FLAGS = {
     "profit_only_closes": _env_bool("CAPITAL_PROFIT_ONLY_CLOSES", True),
     "penny_take_profit": _env_bool("CAPITAL_PENNY_TAKE_PROFIT", True),
+    "trailing_stop": _env_bool("CAPITAL_TRAILING_STOP", False),
 }
 CAPITAL_REJECTION_COOLDOWN_SECS = _env_float("CAPITAL_REJECTION_COOLDOWN_SECS", 60.0)
 CAPITAL_RISK_REJECTION_COOLDOWN_SECS = _env_float("CAPITAL_RISK_REJECTION_COOLDOWN_SECS", 180.0)
@@ -255,6 +272,8 @@ CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS = _env_float("CAPITAL_LIVE_EVENT_MIN_INTERV
 CAPITAL_MIND_MAP_REFRESH_SECS = _env_float("CAPITAL_MIND_MAP_REFRESH_SECS", 300.0)
 CAPITAL_MYCELIUM_REFRESH_SECS = _env_float("CAPITAL_MYCELIUM_REFRESH_SECS", 15.0)
 CAPITAL_PROBABILITY_FEED_INTERVAL_SECS = _env_float("CAPITAL_PROBABILITY_FEED_INTERVAL_SECS", 15.0)
+# Skip slow multi-exchange Quadrumvirate overlays — set true for HFT benchmarking
+CAPITAL_SKIP_INTEL_OVERLAYS = _env_bool("CAPITAL_SKIP_INTEL_OVERLAYS", False)
 CAPITAL_FOCUS_SYMBOLS = tuple(
     symbol.strip().upper()
     for symbol in str(os.getenv("CAPITAL_FOCUS_SYMBOLS", "") or "").split(",")
@@ -475,6 +494,14 @@ class CapitalCFDTrader:
         self._last_live_event_at: float = 0.0
         self.penny_engine = get_penny_engine() if HAS_PENNY_ENGINE and get_penny_engine is not None else None
 
+        # Lambda Engine + Probability Nexus (lambda wired externally via set_lambda_engine)
+        self._lambda_engine: Any = _MODULE_LAMBDA_ENGINE
+        try:
+            from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus as _EPNexus
+            self._probability_nexus: Any = _EPNexus()
+        except Exception:
+            self._probability_nexus: Any = None
+
         # Timing
         self._last_scan:    float = 0.0
         self._last_monitor: float = 0.0
@@ -488,6 +515,11 @@ class CapitalCFDTrader:
         # Hive Mind shared intelligence — set externally by TradingHiveMind
         # {symbol/alias: confidence_factor 0.0–1.0} from Market Harp ripples
         self._hive_boosts:   Dict[str, float] = {}
+
+        # Wave-onset tracking: last observed change_pct per symbol.
+        # Used in _score_symbol to reward acceleration, not plateau.
+        self._prev_change_pct: Dict[str, float] = {}
+        self._last_wave_factors: Dict[str, float] = {}   # symbol → _wave_factor from last score
 
         # Session statistics
         self.stats: Dict[str, float] = {
@@ -545,6 +577,10 @@ class CapitalCFDTrader:
                 logger.debug("[QUEEN HUNT] No orchestrator — skipping execution")
         except Exception as e:
             logger.debug(f"[QUEEN HUNT] Error: {e}")
+
+    def set_lambda_engine(self, engine: Any) -> None:
+        """Wire Λ(t) LambdaEngine into this trader instance (called by ICS Phase 16.7)."""
+        self._lambda_engine = engine
 
     # ── PROPERTIES ─────────────────────────────────────────────────────────────
     @property
@@ -1798,7 +1834,10 @@ class CapitalCFDTrader:
         sl_level = float(position.get("stopLevel", 0.0) or 0.0)
         cfg = CAPITAL_UNIVERSE.get(symbol, {})
         tp_pct = self._effective_tp_pct(entry_price, size, cfg)
-        sl_pct = float(cfg.get("sl_pct", 0.0) or 0.0)
+        # Use 0.25% as minimum SL fallback so unknown symbols never compute sl = entry_price.
+        sl_pct = float(cfg.get("sl_pct", 0.25) or 0.25)
+        if sl_pct <= 0:
+            sl_pct = 0.25
         if tp_level <= 0:
             tp_level = entry_price * (1 + tp_pct / 100.0) if direction == "BUY" else entry_price * (1 - tp_pct / 100.0)
         if sl_level <= 0:
@@ -1846,8 +1885,15 @@ class CapitalCFDTrader:
                 existing = existing_by_deal.get(live.deal_id)
                 if existing is not None:
                     live.opened_at = existing.opened_at
-                    if existing.current_price > 0:
+                    # Keep live bid/ask price from Capital.com; only fall back to local if exchange gave nothing
+                    if live.current_price <= 0 and existing.current_price > 0:
                         live.current_price = existing.current_price
+                    # Preserve locally-managed SL/TP — Capital.com doesn't track our trailing SL
+                    # Only use exchange value if we have no local value set
+                    if existing.sl_price > 0:
+                        live.sl_price = existing.sl_price
+                    if existing.tp_price > 0:
+                        live.tp_price = existing.tp_price
                 merged.append(live)
 
             self.positions = merged
@@ -1883,34 +1929,114 @@ class CapitalCFDTrader:
         Score a candidate for BUY/SELL entry.
         Returns (0.0, "") = skip; (>0.0, direction) = attractive, higher is better.
 
-        Scoring:
-          base = momentum magnitude (abs(change_pct))
-          penalty = spread quality cost
-          gate = spread too wide → 0
-          gate = abs(momentum) below threshold → 0
+        Multi-factor composite scoring:
+          momentum   (40%) — directional move strength
+          volatility (30%) — historical ATR proxy from market_bars
+          spread     (30%) — tight spread = liquid, high-quality opportunity
+        All three factors must align. Single-factor noise is ignored.
         """
         price      = float(ticker.get("price") or 0)
         bid        = float(ticker.get("bid")   or 0)
         ask        = float(ticker.get("ask")   or 0)
         change_pct = float(ticker.get("change_pct") or 0)
+        high       = float(ticker.get("high") or 0)
+        low        = float(ticker.get("low")  or 0)
 
         if price <= 0 or bid <= 0 or ask <= 0:
             return 0.0, ""
 
         # Spread guard
         spread_pct = (ask - bid) / price * 100
-        max_spread = cfg.get("max_spread_pct", 0.2) * 100   # convert → %
+        max_spread = cfg.get("max_spread_pct", 0.2) * 100
         if spread_pct > max_spread:
             return 0.0, ""
 
-        # Momentum gate — trade in the direction of the move
-        threshold = cfg.get("momentum_threshold", 0.10)
-        if abs(change_pct) < threshold:
+        # Hard floor: must have ANY directional movement
+        if abs(change_pct) < 0.01:
             return 0.0, ""
         direction = "BUY" if change_pct > 0 else "SELL"
 
-        # Score = momentum minus spread drag
-        score = abs(change_pct) - spread_pct * 0.15
+        # Wave-onset: score HOW MUCH the symbol is accelerating in the trade direction
+        # right now, not how much it has already moved today.
+        # - Cold start (first observation): onset = full change_pct (treat as fresh)
+        # - Plateau / reversing: onset_in_direction → 0 → score → 0 → no entry
+        # This prevents the re-entry loop where a declining symbol (e.g. SILVER after SL_HIT)
+        # keeps winning the scan purely because its daily %change is large.
+        _prev_chg = self._prev_change_pct.get(symbol, 0.0)
+        self._prev_change_pct[symbol] = change_pct
+        _onset = change_pct - _prev_chg
+        if _prev_chg == 0.0:
+            _onset_magnitude = abs(change_pct)          # cold start: treat as fresh
+            _freshness = 1.0
+        else:
+            _onset_in_dir = _onset if direction == "BUY" else -_onset  # >0 = accelerating in dir
+            _onset_magnitude = max(0.0, _onset_in_dir)  # 0 when reversing/plateauing
+            _freshness = min(1.0, _onset_magnitude / max(abs(change_pct), 0.001) * 2.0)
+        _wave_factor = 0.2 + 0.8 * _freshness          # informational: shown in SCAN log
+
+        # Hard onset gate — onset must be meaningful relative to what we're risking.
+        # Three floors, take the largest:
+        #   (a) 12% of SL distance — risk-to-signal must not exceed 8:1
+        #   (b) 30% of spread cost — acceleration must cover entry friction
+        #   (c) 50% of momentum_threshold — existing minimum move filter
+        # Without this, weak-onset entries sit flat for full cognitive cycles,
+        # burning time while better opportunities go undetected.
+        _sl_pct     = float(cfg.get("sl_pct", 0.25) or 0.25)
+        _spread_pct = float(cfg.get("max_spread_pct", 0.05) or 0.05)
+        _onset_threshold = max(
+            _sl_pct * 0.12,
+            _spread_pct * 0.30,
+            (cfg.get("momentum_threshold", 0.03) or 0.03) * 0.5,
+            0.01,
+        )
+        if _prev_chg != 0.0 and _onset_magnitude < _onset_threshold:
+            self._last_wave_factors[symbol] = _wave_factor
+            self._last_wave_factors[f"{symbol}__onset_mag"] = _onset_magnitude
+            return 0.0, ""
+
+        # Day-range position: penalise entries at the daily extreme.
+        # BUY near the daily high = worst entry (no room to run upward).
+        # SELL near the daily low  = worst entry (no room to run downward).
+        # Both cases yield _range_factor → 0.25; mid-range yields 1.0.
+        _range_factor = 1.0
+        if high > 0 and low > 0 and high > low:
+            day_range = high - low
+            if direction == "BUY":
+                room_above = (high - price) / day_range   # 0 = AT high, 1 = AT low
+                _range_factor = max(0.1, 0.25 + 0.75 * min(1.0, room_above * 3.0))
+            else:  # SELL
+                room_below = (price - low) / day_range    # 0 = AT low, 1 = AT high
+                _range_factor = max(0.1, 0.25 + 0.75 * min(1.0, room_below * 3.0))
+        self._last_wave_factors[f"{symbol}__range"] = _range_factor   # store for candidate dict
+
+        # ── Composite multi-factor signal ────────────────────────────────
+        threshold = cfg.get("momentum_threshold", 0.03)
+        try:
+            from aureon.trading.composite_signal import score as _composite_score, get_survival_instinct
+            composite, _breakdown = _composite_score(
+                epic=symbol,
+                change_pct=change_pct,
+                bid=bid,
+                ask=ask,
+                high=high,
+                low=low,
+                price=price,
+            )
+            survival = get_survival_instinct()
+            if not survival.should_trade(composite):
+                return 0.0, ""
+            # _onset_magnitude computed above in wave-onset block.
+            # Score = onset (how much it's moving NOW) × composite quality × range room.
+            base_score = _onset_magnitude * (0.5 + composite * 0.5) * _range_factor
+        except Exception:
+            # Fallback: simple momentum gate
+            threshold = cfg.get("momentum_threshold", 0.03)
+            if abs(change_pct) < threshold:
+                return 0.0, ""
+            base_score = _onset_magnitude * _range_factor
+
+        # Score = onset-weighted signal minus spread drag
+        score = base_score - spread_pct * 0.15
 
         # Must have enough room to clear the realized-profit floor.
         size = float(cfg.get("size", 0.0) or 0.0)
@@ -1925,10 +2051,10 @@ class CapitalCFDTrader:
 
         score += min(1.0, expected_profit_gbp / max(CAPITAL_MIN_PROFIT_GBP, 0.0001)) * 0.25
 
-        # Time-to-profit is a selection signal only: prefer the quickest realistic route
-        # to the configured realized-profit floor, but never force a close because of time.
+        # Time-to-profit: use onset velocity (not daily change) so plateauing symbols
+        # get no ETA bonus — their current velocity can't reach TP quickly.
         threshold_safe = max(float(threshold or 0.0), 0.01)
-        momentum_speed = max(abs(change_pct), threshold_safe)
+        momentum_speed = max(_onset_magnitude, threshold_safe)
         eta_to_target = required_tp_pct / momentum_speed if momentum_speed > 0 else 999.0
         eta_score = max(0.0, 2.0 - eta_to_target)
         score += eta_score * 0.5
@@ -1960,6 +2086,29 @@ class CapitalCFDTrader:
                 regime_multiplier = 1.0 + regime_conf * 0.05 if regime_bias == direction else 1.0 - regime_conf * 0.05
                 score *= max(0.9, regime_multiplier)
 
+        # Λ(t) Lambda Engine gate — DORMANT field blocks all trades; higher
+        # consciousness level multiplies score proportional to field strength.
+        if self._lambda_engine is not None:
+            try:
+                lstate = self._lambda_engine.step()
+                if str(getattr(lstate, 'consciousness_level', 'AWARE')).upper() == 'DORMANT':
+                    return 0.0, ""
+                lt = float(getattr(lstate, 'lambda_t', 1.0) or 1.0)
+                score *= max(0.3, min(1.5, 0.5 + abs(lt) * 0.5))
+            except Exception:
+                pass
+
+        # Probability Nexus — active prediction signal adds a 10% confidence bonus
+        if self._probability_nexus is not None:
+            try:
+                sig = self._probability_nexus.get_signal()
+                if sig is not None:
+                    score *= 1.1
+            except Exception:
+                pass
+
+        self._last_wave_factors[symbol] = _wave_factor
+        self._last_wave_factors[f"{symbol}__onset_mag"] = _onset_magnitude
         return max(0.0, score), direction
 
     def _apply_hft_analysis(self, scored: List[Dict[str, Any]]) -> None:
@@ -2074,6 +2223,8 @@ class CapitalCFDTrader:
 
     def _apply_intelligence_overlays(self, scored: List[Dict[str, Any]]) -> None:
         """Apply higher-level signal systems from the main margin trader to Capital candidates."""
+        if CAPITAL_SKIP_INTEL_OVERLAYS:
+            return
         for item in scored:
             base_score = float(item.get("score", 0.0) or 0.0)
             if base_score <= 0:
@@ -2161,7 +2312,14 @@ class CapitalCFDTrader:
         if bool(preflight.get("ok")):
             return True
         reason = str(preflight.get("reason") or "").lower()
-        return "expected net profit" in reason and self._has_live_reading({
+        # Allow estimated-margin failures: the margin estimate uses the instrument's
+        # native currency (e.g. USD) but available_balance is in GBP — no FX conversion
+        # is applied, so the check is unreliable. Let the real exchange validate margin.
+        soft_fail = (
+            "expected net profit" in reason
+            or "insufficient equity for estimated margin" in reason
+        )
+        return soft_fail and self._has_live_reading({
             "price": preflight.get("price"),
             "bid": preflight.get("bid"),
             "ask": preflight.get("ask"),
@@ -2173,7 +2331,11 @@ class CapitalCFDTrader:
         if bool(preflight.get("ok")):
             return True
         reason = str(preflight.get("reason") or "").lower()
-        return "expected net profit" in reason and self._has_live_reading({
+        soft_fail = (
+            "expected net profit" in reason
+            or "insufficient equity for estimated margin" in reason
+        )
+        return soft_fail and self._has_live_reading({
             "price": preflight.get("price"),
             "bid": preflight.get("bid"),
             "ask": preflight.get("ask"),
@@ -2648,6 +2810,8 @@ class CapitalCFDTrader:
             if not ticker:
                 continue
             score, direction = self._score_symbol(symbol, cfg, ticker)
+            if score <= 0:
+                continue  # onset veto: reversing/plateau symbols never reach the brain
             if not self._can_open_candidate(symbol, direction, direction_counts):
                 continue
             price = float(ticker.get("price") or 0.0)
@@ -2666,6 +2830,9 @@ class CapitalCFDTrader:
                 "ask": ask,
                 "spread_pct": spread_pct,
                 "change_pct": float(ticker.get("change_pct") or 0.0),
+                "wave_factor": float(self._last_wave_factors.get(symbol, 1.0)),
+                "range_factor": float(self._last_wave_factors.get(f"{symbol}__range", 1.0)),
+                "onset_mag": float(self._last_wave_factors.get(f"{symbol}__onset_mag", 0.0)),
                 "size": float(cfg.get("size", 0.0) or 0.0),
                 "tp_pct": effective_tp_pct,
                 "sl_pct": float(cfg.get("sl_pct", 0.0) or 0.0),
@@ -2760,11 +2927,14 @@ class CapitalCFDTrader:
         for direction in ("BUY", "SELL"):
             if direction_counts.get(direction, 0) >= 1:
                 continue
+            candidates_ready = self._ranked_live_slot_candidates(direction)
             last_attempt = float(self._last_slot_fill_attempt.get(direction, 0.0) or 0.0)
-            if (now - last_attempt) < CAPITAL_SLOT_FILL_INTERVAL_SECS:
+            interval = _env_float("CAPITAL_SLOT_FILL_INTERVAL_SECS", CAPITAL_SLOT_FILL_INTERVAL_SECS)
+            # Bypass throttle if fresh candidates are waiting — never let a live signal die waiting
+            if not candidates_ready and (now - last_attempt) < interval:
                 continue
             self._last_slot_fill_attempt[direction] = now
-            for sym, cfg, ticker in self._ranked_live_slot_candidates(direction):
+            for sym, cfg, ticker in candidates_ready:
                 # Get Queen's dynamic sizing for slot fill
                 slot_cfg = dict(cfg)
                 if self.orchestrator is not None:
@@ -3092,11 +3262,19 @@ class CapitalCFDTrader:
                 "validated": False,
             }
             if not preflight.get("ok"):
-                self._latest_order_error = f"{symbol} preflight failed: {preflight.get('reason') or 'unknown'}"
-                trace_payload["final_error"] = self._latest_order_error
-                self._write_exchange_trace(trace_payload)
-                logger.warning("CFD preflight failed for %s: %s", symbol, preflight.get("reason") or "unknown")
-                return None
+                reason = str(preflight.get("reason") or "unknown").lower()
+                # Soft-fail: margin estimate uses instrument native currency (e.g. USD)
+                # vs account in GBP — comparison is unreliable. Let exchange validate.
+                margin_soft_fail = (
+                    "insufficient equity for estimated margin" in reason
+                    and self._has_live_reading(ticker)
+                )
+                if not margin_soft_fail:
+                    self._latest_order_error = f"{symbol} preflight failed: {preflight.get('reason') or 'unknown'}"
+                    trace_payload["final_error"] = self._latest_order_error
+                    self._write_exchange_trace(trace_payload)
+                    logger.warning("CFD preflight failed for %s: %s", symbol, preflight.get("reason") or "unknown")
+                    return None
             known_deal_ids = {
                 str((raw.get("position", {}) if isinstance(raw, dict) else {}).get("dealId") or "")
                 for raw in self.client.get_positions()
@@ -3190,6 +3368,25 @@ class CapitalCFDTrader:
                 trace_payload["final_error"] = f"{symbol} validated raw position could not be parsed"
                 self._write_exchange_trace(trace_payload)
                 return None
+            # Guard: Capital.com sometimes returns stopLevel ≈ fill_price (inverted SL).
+            # Detect wrong-side or zero SL and recalculate from our config.
+            _capital_sl = pos.sl_price
+            _ref_price  = fill_price if fill_price > 0 else pos.entry_price
+            _sl_inverted = (
+                (pos.direction == "BUY"  and pos.sl_price >= pos.entry_price * 0.9995) or
+                (pos.direction == "SELL" and pos.sl_price <= pos.entry_price * 1.0005) or
+                pos.sl_price <= 0
+            )
+            if _sl_inverted:
+                _sl_pct = float(cfg.get("sl_pct", 0.25) or 0.25)
+                if pos.direction == "BUY":
+                    pos.sl_price = _ref_price * (1.0 - _sl_pct / 100)
+                else:
+                    pos.sl_price = _ref_price * (1.0 + _sl_pct / 100)
+                logger.warning(
+                    "CFD SL guard: %s %s Capital sl=%.5g was inverted vs entry=%.5g → recalc sl=%.5g",
+                    symbol, pos.direction, _capital_sl, pos.entry_price, pos.sl_price,
+                )
             pos.epic = epic or pos.epic
             pos.current_price = fill_price if fill_price > 0 else pos.current_price
             self.positions = [p for p in self.positions if p.deal_id != pos.deal_id]
@@ -3430,6 +3627,37 @@ class CapitalCFDTrader:
                 penny_reason = self._penny_take_profit_reason(pos, pnl_gbp)
                 if penny_reason:
                     close_reason = penny_reason
+
+            # Trail SL — only after position reaches trail_activation_pct profit.
+            # Gives the entry room to breathe through initial noise before the
+            # trailing stop locks in gains as the wave develops.
+            if CFD_FLAGS.get("trailing_stop", False) and close_reason is None and pos.current_price > 0:
+                cfg_trail = CAPITAL_UNIVERSE.get(pos.symbol, {})
+                trail_sl_pct        = float(cfg_trail.get("sl_pct", 0.1) or 0.1) / 100.0
+                trail_activation    = float(cfg_trail.get("trail_activation_pct", 0.0) or 0.0) / 100.0
+                if pos.direction == "BUY":
+                    activate_at = pos.entry_price * (1.0 + trail_activation)
+                    if pos.current_price > activate_at:
+                        new_sl = pos.current_price * (1.0 - trail_sl_pct)
+                        if new_sl > pos.sl_price:
+                            pos.sl_price = new_sl
+                elif pos.direction == "SELL":
+                    activate_at = pos.entry_price * (1.0 - trail_activation)
+                    if pos.current_price < activate_at:
+                        new_sl = pos.current_price * (1.0 + trail_sl_pct)
+                        if new_sl < pos.sl_price:
+                            pos.sl_price = new_sl
+
+            # Cognitive cycle timeout — if position has not reached break-even
+            # within 2 cognitive cycles (~60s), the wave is not flowing.
+            # Free the slot so the next genuine onset can enter.
+            # Only applies when trailing_stop is active (HFT/wave-riding mode).
+            if close_reason is None and CFD_FLAGS.get("trailing_stop", False):
+                cfg_cog = CAPITAL_UNIVERSE.get(pos.symbol, {})
+                cog_timeout = float(cfg_cog.get("cognitive_timeout_s", 60.0) or 60.0)
+                age_s = pos.age_secs
+                if age_s > cog_timeout and pnl_gbp < 0:
+                    close_reason = f"COG_TIMEOUT age={age_s:.0f}s pnl={pnl_gbp:+.4f}"
 
             if close_reason and CFD_FLAGS["profit_only_closes"] and pnl_gbp <= 0:
                 self._latest_monitor_line = (

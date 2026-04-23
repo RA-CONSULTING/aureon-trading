@@ -92,7 +92,7 @@ def _lazy_load_mycelium():
     if _mycelium_module is not None:
         return MYCELIUM_AVAILABLE
     try:
-        import aureon.core.aureon_mycelium as aureon_mycelium as _mycelium_mod
+        import aureon.core.aureon_mycelium as _mycelium_mod
         _mycelium_module = _mycelium_mod
         MYCELIUM_AVAILABLE = True
         return True

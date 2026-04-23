@@ -135,6 +135,7 @@ class PhiBridge:
         self._created_at = time.time()
         self._total_in = 0
         self._total_out = 0
+        self._live_state: Dict[str, Any] = {}  # pushed by ICS every tick
 
     # ─────────────────────────────────────────────────────────────────
     # Peer registration
@@ -350,6 +351,11 @@ class PhiBridge:
     # Internals
     # ─────────────────────────────────────────────────────────────────
 
+    def push_state(self, state: Dict[str, Any]) -> None:
+        """ICS calls this every ~5s to keep the bridge view current with live Queen state."""
+        with self._lock:
+            self._live_state.update(state)
+
     def _sweep_locked(self) -> None:
         if self.peer_timeout_s <= 0:
             return
@@ -379,6 +385,9 @@ class PhiBridge:
             "card_count": 0,
             "last_utterance": None,
         }
+        # Merge live Queen state pushed by ICS (mood, cycle, lambda, position, etc.)
+        with self._lock:
+            view.update(self._live_state)
         vault = self.vault
         if vault is None:
             return view

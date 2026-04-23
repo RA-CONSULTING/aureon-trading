@@ -201,4 +201,5 @@ async def main():
     }, open(str(_REPO / "state" / "zpe_zero_observer.json"), "w"), indent=2, default=str)
 
 
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())

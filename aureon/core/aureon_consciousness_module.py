@@ -681,6 +681,19 @@ class ConsciousnessModule:
                 except Exception as e:
                     log.debug(f"Capital trader tick: {e}")
 
+        # ── Survival instinct: feed live equity so threshold adjusts ──────────
+        try:
+            from aureon.trading.composite_signal import get_survival_instinct
+            _eq = float(
+                self._understanding.get("penny_balance") or
+                self._understanding.get("total_equity") or
+                self._understanding.get("capital_equity") or 0
+            )
+            if _eq > 0:
+                get_survival_instinct().update(_eq)
+        except Exception:
+            pass
+
         # ── Step 4e: ASSET SCAN — know what we own across ALL exchanges ──
         if self._asset_commander and self.lambda_state:
             step = self.lambda_state.step if self.lambda_state else 0

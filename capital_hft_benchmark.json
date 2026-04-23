@@ -1,0 +1,43 @@
+{
+  "session_start": "2026-04-22 17:19:43",
+  "phases": {
+    "FLIGHT": {
+      "ticks": 10,
+      "avg_tick_ms": 4721.6,
+      "trades_opened": 0,
+      "trades_closed": 0,
+      "symbols": [],
+      "top_signals": []
+    },
+    "STRESS": {
+      "ticks": 41,
+      "avg_tick_ms": 2332.5,
+      "trades_opened": 1,
+      "trades_closed": 0,
+      "symbols": [
+        "META",
+        "OIL_CRUDE"
+      ],
+      "top_signals": [
+        {
+          "ts": "17:17:31",
+          "symbol": "META",
+          "dir": "BUY",
+          "score": 15.098,
+          "change": 0.59,
+          "spread": 0.037,
+          "reason": ""
+        },
+        {
+          "ts": "17:19:02",
+          "symbol": "OIL_CRUDE",
+          "dir": "BUY",
+          "score": 10.762,
+          "change": 3.06,
+          "spread": 0.0344,
+          "reason": ""
+        }
+      ]
+    }
+  }
+}

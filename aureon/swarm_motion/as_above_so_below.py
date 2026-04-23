@@ -87,11 +87,20 @@ class AsAboveSoBelowMirror:
         self._above_to_below_count = 0
         self._last_gamma_above = 0.5
 
-        # Wire to subsystems
-        self._wire_subsystems()
+        # ThoughtBus (fast — no network)
+        try:
+            from aureon.core.aureon_thought_bus import ThoughtBus
+            self._thought_bus = ThoughtBus()
+        except Exception:
+            pass
+
+        # Wire AI bridges in background so Ollama health-check probes
+        # (up to 30s each) don't block the boot sequence.
+        _wt = threading.Thread(target=self._wire_subsystems, daemon=True, name="Mirror.wire")
+        _wt.start()
 
     def _wire_subsystems(self) -> None:
-        # Queen AI Bridge
+        # Queen AI Bridge (may probe Ollama — runs in background thread)
         try:
             from aureon.queen.queen_inhouse_ai_bridge import get_queen_ai_bridge
             self._queen_bridge = get_queen_ai_bridge()
@@ -104,13 +113,6 @@ class AsAboveSoBelowMirror:
             from aureon.miner.miner_inhouse_ai_bridge import get_miner_ai_bridge
             self._miner_bridge = get_miner_ai_bridge()
             logger.info("Mirror wired to Miner AI Bridge")
-        except Exception:
-            pass
-
-        # ThoughtBus
-        try:
-            from aureon.core.aureon_thought_bus import ThoughtBus
-            self._thought_bus = ThoughtBus()
         except Exception:
             pass
 

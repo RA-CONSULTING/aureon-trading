@@ -150,12 +150,11 @@ try:
 except Exception:
     _HAS_NEURON = False
 
-# Cognitive narrator
-try:
-    from aureon.queen.queen_cognitive_narrator import QueenCognitiveNarrator
-    _HAS_NARRATOR = True
-except Exception:
-    _HAS_NARRATOR = False
+# Cognitive narrator — deferred to background thread at __init__ time.
+# Importing queen_cognitive_narrator triggers aureon_orca_intelligence which
+# probes a heavy dependency chain; wiring it synchronously hangs QSL boot.
+_HAS_NARRATOR = False
+QueenCognitiveNarrator = None  # type: ignore[assignment,misc]
 
 # Macro intelligence
 try:
@@ -323,13 +322,17 @@ class QueenSentientLoop:
         self._agent: Optional[Any] = None
         self._ai_bridge: Optional[Any] = None
 
-        # In-House AI Bridge — sovereign consciousness enhancement
-        try:
-            from aureon.queen.queen_inhouse_ai_bridge import get_queen_ai_bridge
-            self._ai_bridge = get_queen_ai_bridge()
-            self._ai_bridge.start()
-        except Exception:
-            self._ai_bridge = None
+        # In-House AI Bridge — initialised in background (Ollama probe can take
+        # several seconds; we don't want to block the consciousness boot).
+        def _wire_ai_bridge():
+            try:
+                from aureon.queen.queen_inhouse_ai_bridge import get_queen_ai_bridge
+                bridge = get_queen_ai_bridge()
+                bridge.start()
+                self._ai_bridge = bridge
+            except Exception:
+                self._ai_bridge = None
+        threading.Thread(target=_wire_ai_bridge, daemon=True, name="QSL.ai_bridge").start()
 
         # Agent core (try to create immediately)
         if _HAS_AGENT_CORE and AureonAgentCore is not None:
@@ -525,6 +528,10 @@ class QueenSentientLoop:
                 except Exception as exc:
                     self._record_error("HEARTBEAT", exc)
 
+            # --- HNC-OS signal bridge ---
+            if self._cycle_count % 5 == 0:
+                self._check_hncos_signal()
+
             # --- Phase 1: PERCEIVE ---
             perception = Perception(timestamp=time.time())
             try:
@@ -712,13 +719,41 @@ class QueenSentientLoop:
         if _HAS_DEEP_INTEL:
             try:
                 self._deep_intel = QueenDeepIntelligence()
+                # Wire persistence callback so generated insights reach the DB.
+                # Without this, insights stay in-memory only (CS coherence stays ~0.12).
+                if _HAS_HISTORY_DB:
+                    def _persist_deep_insight(insight):
+                        try:
+                            import json as _json
+                            conn = db_connect(None)
+                            db_insert_insight(conn, {
+                                "insight_id": getattr(insight, "id", None),
+                                "source": "queen_deep_intelligence",
+                                "insight_type": insight.insight_type.value,
+                                "title": getattr(insight, "title", ""),
+                                "conclusion": getattr(insight, "conclusion", ""),
+                                "confidence": getattr(insight, "confidence", 0.0),
+                                "severity": round(1.0 - float(getattr(insight, "confidence", 0.5)), 3),
+                                "ts_ms": int(getattr(insight, "timestamp", time.time()) * 1000),
+                                "raw_json": _json.dumps({
+                                    "reasoning": getattr(insight, "reasoning", ""),
+                                    "systems_involved": getattr(insight, "systems_involved", []),
+                                }),
+                            })
+                            conn.commit()
+                            conn.close()
+                        except Exception:
+                            pass
+                    self._deep_intel.on_insight_callback = _persist_deep_insight
+                self._deep_intel.start_autonomous_thinking()
             except Exception:
                 pass
 
-        # Market awareness
+        # Market awareness — start live tracking for real-time price/whale/sentiment feeds
         if _HAS_MARKET_AWARE:
             try:
                 self._market_aware = QueenMarketAwareness()
+                self._market_aware.start_live_tracking()
             except Exception:
                 pass
 
@@ -729,12 +764,15 @@ class QueenSentientLoop:
             except Exception:
                 pass
 
-        # Cognitive narrator
-        if _HAS_NARRATOR:
+        # Cognitive narrator — import in background (aureon_orca_intelligence
+        # dependency chain is slow; don't block the boot sequence).
+        def _wire_narrator():
             try:
-                self._narrator = QueenCognitiveNarrator()
+                from aureon.queen.queen_cognitive_narrator import QueenCognitiveNarrator as _CN
+                self._narrator = _CN()
             except Exception:
                 pass
+        threading.Thread(target=_wire_narrator, daemon=True, name="QSL.narrator").start()
 
         # Macro intelligence
         if _HAS_MACRO:
@@ -743,10 +781,11 @@ class QueenSentientLoop:
             except Exception:
                 pass
 
-        # Open source data engine
+        # Open source data engine — start background polling (CoinGecko, F&G, DeFi, Binance WS)
         if _HAS_OSDE:
             try:
                 self._osde = OpenSourceDataEngine()
+                self._osde.start_background()
             except Exception:
                 pass
 
@@ -817,6 +856,37 @@ class QueenSentientLoop:
             "mycelium_signal": 0.0,
             "happiness_pursuit": 0.5,
         }
+
+    # ------------------------------------------------------------------
+    # HNC-OS Signal Bridge
+    # ------------------------------------------------------------------
+
+    def _check_hncos_signal(self) -> None:
+        """Read and consume hncos_signal.json written by the external HNC-OS observer."""
+        import json, time as _time
+        from pathlib import Path
+        signal_path = Path(__file__).parents[3] / "state" / "hncos_signal.json"
+        try:
+            if not signal_path.exists():
+                return
+            age = _time.time() - signal_path.stat().st_mtime
+            if age > 30:
+                return
+            with open(signal_path, "r", encoding="utf-8") as f:
+                sig = json.load(f)
+            signal_path.unlink(missing_ok=True)   # consumed
+            stype = sig.get("type", "")
+            if stype == "hnc_wake":
+                log.info("[HNC-OS] Wake signal received — boosting awareness")
+                self._cycle_count = max(0, self._cycle_count - 10)
+            elif stype == "hnc_pulse":
+                lv = sig.get("payload", {}).get("lambda", "?")
+                log.info(f"[HNC-OS] Pulse signal received — observer Λ(t)={lv}")
+            elif stype == "hnc_reset":
+                log.info("[HNC-OS] Reset signal received — clearing cycle flags")
+                self._cycle_count = 0
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Phase 1: PERCEIVE

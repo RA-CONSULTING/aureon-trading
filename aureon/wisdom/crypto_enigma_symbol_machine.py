@@ -551,7 +551,7 @@ class CryptoEnigmaSymbolMachine:
         if not hasattr(scanner, "__class__"):
             return 0
 
-        import aureon.scanners.aureon_ocean_wave_scanner as aureon_ocean_wave_scanner as _ows
+        import aureon.scanners.aureon_ocean_wave_scanner as _ows
         existing = set(getattr(_ows, "CRYPTO_PAIRS", []))
         new_pairs = self.get_for_ocean_scanner("binance", stable_only=True, limit=1000)
         added = 0
