@@ -104,6 +104,13 @@ except Exception:  # pragma: no cover
     get_code_integrator = None  # type: ignore[assignment]
     _HAS_INTEGRATOR = False
 
+try:
+    from aureon.core.aureon_self_refinement_loop import get_refinement_loop
+    _HAS_REFINEMENT = True
+except Exception:  # pragma: no cover
+    get_refinement_loop = None  # type: ignore[assignment]
+    _HAS_REFINEMENT = False
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Status dataclass
@@ -532,6 +539,11 @@ class CognitiveAuthoringLoop:
         self._request_handlers["show_edit"] = self._handle_show_edit
         self._request_handlers["edit_history"] = self._handle_edit_history
         self._request_handlers["propose_comparison"] = self._handle_propose_comparison
+        # Refinement loop — score, backtest, feedback-to-consciousness.
+        self._request_handlers["score_edit"] = self._handle_score_edit
+        self._request_handlers["backtest_edit"] = self._handle_backtest_edit
+        self._request_handlers["refinement_queue"] = self._handle_refinement_queue
+        self._request_handlers["consciousness_digest"] = self._handle_consciousness_digest
 
     def register_handler(
         self,
@@ -742,6 +754,48 @@ class CognitiveAuthoringLoop:
             "applied": ci.history(limit=int(p.get("limit") or 10), kind="applied"),
             "rejected": ci.history(limit=int(p.get("limit") or 10), kind="rejected"),
         }
+
+    # --- Refinement loop handlers ------------------------------------
+    def _ensure_refinement(self) -> Optional[Any]:
+        if not _HAS_REFINEMENT:
+            return None
+        try:
+            return get_refinement_loop()
+        except Exception as e:
+            self._record_error(f"refinement init: {e}")
+            return None
+
+    def _handle_score_edit(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        loop = self._ensure_refinement()
+        if loop is None:
+            return {"ok": False, "error": "refinement loop unavailable"}
+        return loop.score(
+            applied_id=str(p.get("applied_id") or p.get("pending_id") or ""),
+            score=float(p.get("score", 0.5)),
+            reviewer=str(p.get("reviewer") or "observer"),
+            comment=str(p.get("comment") or ""),
+        )
+
+    def _handle_backtest_edit(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        loop = self._ensure_refinement()
+        if loop is None:
+            return {"ok": False, "error": "refinement loop unavailable"}
+        return loop.backtest(
+            applied_id=str(p.get("applied_id") or p.get("pending_id") or ""),
+            mode=str(p.get("mode") or "fast"),
+        )
+
+    def _handle_refinement_queue(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        loop = self._ensure_refinement()
+        if loop is None:
+            return {"ok": False, "error": "refinement loop unavailable"}
+        return {"ok": True, "pending": loop.pending_refinements(limit=int(p.get("limit") or 20))}
+
+    def _handle_consciousness_digest(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        loop = self._ensure_refinement()
+        if loop is None:
+            return {"ok": False, "error": "refinement loop unavailable"}
+        return {"ok": True, "digest": loop.consciousness_digest(window=int(p.get("window") or 50))}
 
     def _handle_propose_comparison(self, p: Dict[str, Any]) -> Dict[str, Any]:
         """
