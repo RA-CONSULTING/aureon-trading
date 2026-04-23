@@ -333,6 +333,95 @@ class SelfIntrospection:
             if q in dp.kind.lower() or q in dp.name.lower() or q in dp.raw.lower()
         )
 
+    def reachability(
+        self,
+        entry_points: Optional[Iterable[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Compute which aureon.* modules are reachable from the given entry
+        points via static AST import analysis. Default entry is the ICS
+        orchestrator.
+
+        Returns:
+            {
+              "entry_points":   [...],
+              "all_count":      N,      # every aureon.* module on disk
+              "reachable_count": R,     # reached via import BFS
+              "dormant_count":  D,      # all - reachable
+              "reach_ratio":    R/N,
+              "dormant_by_package": { "aureon.trading": ..., ... },
+              "reachable":      sorted list of reachable dotted names,
+              "dormant":        sorted list of dormant dotted names,
+            }
+
+        This is the organism's honest answer to "is every file wired to my
+        design?" — the dormant list is exactly the work the architect can
+        be fed as wire-in edit targets.
+        """
+        if entry_points is None:
+            entry_points = ["aureon.core.integrated_cognitive_system"]
+        entries = [str(e) for e in entry_points]
+
+        snap = self.last_snapshot() or self.scan()
+
+        # Map dotted-module-name -> fingerprint, so package dirs (__init__.py)
+        # also register as their dotted parent name.
+        module_map: Dict[str, ModuleFingerprint] = {}
+        for fp in snap.fingerprints:
+            p = fp.path
+            if not p.startswith("aureon/") or not p.endswith(".py"):
+                continue
+            name = p[:-3].replace("/", ".")
+            if name.endswith(".__init__"):
+                name = name[:-len(".__init__")]
+            module_map[name] = fp
+
+        all_mods = set(module_map)
+
+        # BFS over aureon.* imports. For each imported name, prefer an exact
+        # match; otherwise walk prefixes from longest to shortest to hit the
+        # nearest package node we know about.
+        reachable: set = set()
+        frontier = list(entries)
+        while frontier:
+            cur = frontier.pop()
+            if cur in reachable or cur not in module_map:
+                continue
+            reachable.add(cur)
+            fp = module_map[cur]
+            for imp in fp.imports:
+                if not isinstance(imp, str) or not imp.startswith("aureon"):
+                    continue
+                if imp in module_map:
+                    if imp not in reachable:
+                        frontier.append(imp)
+                    continue
+                parts = imp.split(".")
+                for i in range(len(parts), 0, -1):
+                    pref = ".".join(parts[:i])
+                    if pref in module_map and pref not in reachable:
+                        frontier.append(pref)
+                        break
+
+        dormant = all_mods - reachable
+
+        from collections import defaultdict
+        by_package: Dict[str, int] = defaultdict(int)
+        for m in dormant:
+            top = ".".join(m.split(".")[:2])  # aureon.X
+            by_package[top] += 1
+
+        return {
+            "entry_points": entries,
+            "all_count": len(all_mods),
+            "reachable_count": len(reachable),
+            "dormant_count": len(dormant),
+            "reach_ratio": (len(reachable) / len(all_mods)) if all_mods else 0.0,
+            "dormant_by_package": dict(sorted(by_package.items(), key=lambda x: -x[1])),
+            "reachable": sorted(reachable),
+            "dormant": sorted(dormant),
+        }
+
     def summary(self) -> Dict[str, Any]:
         """A compact dict the organism can publish to its ThoughtBus."""
         snap = self.last_snapshot() or self.scan()
