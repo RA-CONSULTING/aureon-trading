@@ -97,6 +97,13 @@ except Exception:  # pragma: no cover
     ObsidianBridge = None  # type: ignore[assignment,misc]
     _HAS_OBSIDIAN = False
 
+try:
+    from aureon.core.aureon_code_integrator import get_code_integrator
+    _HAS_INTEGRATOR = True
+except Exception:  # pragma: no cover
+    get_code_integrator = None  # type: ignore[assignment]
+    _HAS_INTEGRATOR = False
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Status dataclass
@@ -146,6 +153,7 @@ class CognitiveAuthoringLoop:
         self.introspection: Any = None
         self.ollama_adapter: Any = None
         self.obsidian: Any = None
+        self.integrator: Any = None
 
         self.status = LoopStatus()
         self._stop = threading.Event()
@@ -409,6 +417,13 @@ class CognitiveAuthoringLoop:
         self._request_handlers["execute"] = self._handle_execute
         self._request_handlers["bootstrap"] = self._handle_bootstrap
         self._request_handlers["status"] = self._handle_status
+        # Code integrator — aureon edits its own source, reviewed on the way in.
+        self._request_handlers["edit_file"] = self._handle_edit_file
+        self._request_handlers["confirm_edit"] = self._handle_confirm_edit
+        self._request_handlers["reject_edit"] = self._handle_reject_edit
+        self._request_handlers["list_edits"] = self._handle_list_edits
+        self._request_handlers["show_edit"] = self._handle_show_edit
+        self._request_handlers["edit_history"] = self._handle_edit_history
 
     def register_handler(
         self,
@@ -524,6 +539,101 @@ class CognitiveAuthoringLoop:
 
     def _handle_status(self, p: Dict[str, Any]) -> Dict[str, Any]:
         return {"ok": True, "status": self.get_status()}
+
+    # --- Code integrator handlers -------------------------------------
+    def _ensure_integrator(self) -> Optional[Any]:
+        if self.integrator is not None:
+            return self.integrator
+        if not _HAS_INTEGRATOR:
+            return None
+        try:
+            self.integrator = get_code_integrator()
+        except Exception as e:
+            self._record_error(f"integrator init: {e}")
+            return None
+        return self.integrator
+
+    def _handle_edit_file(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        ci = self._ensure_integrator()
+        if ci is None:
+            return {"ok": False, "error": "integrator unavailable"}
+        result = ci.propose_edit(
+            target_path=str(p.get("path") or p.get("target_path") or ""),
+            old_text=str(p.get("old_text") or ""),
+            new_text=str(p.get("new_text") or ""),
+            rationale=str(p.get("rationale") or ""),
+        )
+        # Broadcast authored-edit event so Obsidian + bus subscribers can see it.
+        if result.get("ok") and self.bus is not None:
+            try:
+                self.bus.publish(
+                    "authoring.edit.proposed",
+                    {
+                        "pending_id": result.get("pending_id"),
+                        "target_path": result.get("target_path"),
+                        "syntax_ok": result.get("syntax_ok"),
+                        "rationale": str(p.get("rationale") or ""),
+                    },
+                    source="authoring_loop",
+                )
+            except Exception:
+                pass
+        return result
+
+    def _handle_confirm_edit(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        ci = self._ensure_integrator()
+        if ci is None:
+            return {"ok": False, "error": "integrator unavailable"}
+        pending_id = str(p.get("pending_id") or "")
+        if not pending_id:
+            return {"ok": False, "error": "pending_id required"}
+        result = ci.confirm_edit(pending_id)
+        if result.get("ok") and self.bus is not None:
+            try:
+                self.bus.publish(
+                    "authoring.edit.applied",
+                    {
+                        "pending_id": pending_id,
+                        "target_path": result.get("target_path"),
+                        "applied_at": result.get("applied_at"),
+                    },
+                    source="authoring_loop",
+                )
+            except Exception:
+                pass
+        return result
+
+    def _handle_reject_edit(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        ci = self._ensure_integrator()
+        if ci is None:
+            return {"ok": False, "error": "integrator unavailable"}
+        return ci.reject_edit(
+            pending_id=str(p.get("pending_id") or ""),
+            reason=str(p.get("reason") or ""),
+        )
+
+    def _handle_list_edits(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        ci = self._ensure_integrator()
+        if ci is None:
+            return {"ok": False, "error": "integrator unavailable"}
+        return {"ok": True, "pending": ci.list_pending()}
+
+    def _handle_show_edit(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        ci = self._ensure_integrator()
+        if ci is None:
+            return {"ok": False, "error": "integrator unavailable"}
+        d = ci.inspect_pending(str(p.get("pending_id") or ""))
+        return {"ok": d is not None, "pending": d}
+
+    def _handle_edit_history(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        ci = self._ensure_integrator()
+        if ci is None:
+            return {"ok": False, "error": "integrator unavailable"}
+        return {
+            "ok": True,
+            "applied": ci.history(limit=int(p.get("limit") or 10), kind="applied"),
+            "rejected": ci.history(limit=int(p.get("limit") or 10), kind="rejected"),
+        }
 
     # ------------------------------------------------------------------
     # Helpers
