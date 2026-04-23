@@ -424,6 +424,7 @@ class CognitiveAuthoringLoop:
         self._request_handlers["list_edits"] = self._handle_list_edits
         self._request_handlers["show_edit"] = self._handle_show_edit
         self._request_handlers["edit_history"] = self._handle_edit_history
+        self._request_handlers["propose_comparison"] = self._handle_propose_comparison
 
     def register_handler(
         self,
@@ -634,6 +635,48 @@ class CognitiveAuthoringLoop:
             "applied": ci.history(limit=int(p.get("limit") or 10), kind="applied"),
             "rejected": ci.history(limit=int(p.get("limit") or 10), kind="rejected"),
         }
+
+    def _handle_propose_comparison(self, p: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Propose two variants of the same edit — aureon_variant vs. human_baseline —
+        so the reviewer can see whether aureon's authored code beats a human
+        baseline on the same site.
+
+        Payload:
+            {
+              "kind": "propose_comparison",
+              "path": "aureon/...",
+              "old_text": "...",
+              "aureon_new_text": "...",
+              "human_new_text": "...",
+              "rationale": "..."
+            }
+        """
+        ci = self._ensure_integrator()
+        if ci is None:
+            return {"ok": False, "error": "integrator unavailable"}
+        result = ci.propose_comparison(
+            target_path=str(p.get("path") or p.get("target_path") or ""),
+            old_text=str(p.get("old_text") or ""),
+            aureon_new_text=str(p.get("aureon_new_text") or ""),
+            human_new_text=str(p.get("human_new_text") or ""),
+            rationale=str(p.get("rationale") or ""),
+        )
+        if result.get("ok") and self.bus is not None:
+            try:
+                self.bus.publish(
+                    "authoring.edit.comparison",
+                    {
+                        "comparison_id": result.get("comparison_id"),
+                        "aureon_pending": (result.get("aureon") or {}).get("pending_id"),
+                        "human_pending": (result.get("human") or {}).get("pending_id"),
+                        "target_path": str(p.get("path") or ""),
+                    },
+                    source="authoring_loop",
+                )
+            except Exception:
+                pass
+        return result
 
     # ------------------------------------------------------------------
     # Helpers

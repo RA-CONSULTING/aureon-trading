@@ -363,6 +363,9 @@ class CodeIntegrator:
                     "backup_path": str(backup_path),
                 }
 
+            # If this pending was part of a comparison, auto-reject the sibling.
+            comparison_id, variant, sibling_id = self._read_comparison_meta(pending_id)
+
             # Audit.
             diff = _unified_diff(pending.before_text, pending.after_text, pending.target_path)
             record = {
@@ -375,10 +378,38 @@ class CodeIntegrator:
                 "backup_path": _relpath(backup_path),
                 "diff": diff,
             }
+            if comparison_id:
+                record["comparison_id"] = comparison_id
+                record["variant"] = variant
+                record["sibling_pending_id"] = sibling_id
             self._append_log(_APPLIED_LOG, record)
             self._delete_pending(pending_id)
 
-            return {
+            sibling_rejection: Optional[Dict[str, Any]] = None
+            if comparison_id and sibling_id:
+                # Don't hold _lock recursively — sibling rejection doesn't
+                # touch disk state beyond our own log files.
+                sibling = self._load_pending(sibling_id)
+                if sibling is not None:
+                    sib_record = {
+                        "rejected_at": _now(),
+                        "pending_id": sibling.pending_id,
+                        "target_path": sibling.target_path,
+                        "rationale": sibling.rationale,
+                        "reason": f"lost comparison {comparison_id} to variant={variant}",
+                        "comparison_id": comparison_id,
+                        "sibling_pending_id": pending_id,
+                        "before_sha": sibling.before_sha,
+                        "after_sha": sibling.after_sha,
+                    }
+                    self._append_log(_REJECTED_LOG, sib_record)
+                    self._delete_pending(sibling_id)
+                    sibling_rejection = {
+                        "sibling_pending_id": sibling_id,
+                        "reason": sib_record["reason"],
+                    }
+
+            result = {
                 "ok": True,
                 "applied_at": record["applied_at"],
                 "pending_id": pending_id,
@@ -386,6 +417,95 @@ class CodeIntegrator:
                 "backup_path": _relpath(backup_path),
                 "diff": diff,
             }
+            if comparison_id:
+                result["comparison_id"] = comparison_id
+                result["variant"] = variant
+                if sibling_rejection:
+                    result["sibling_rejected"] = sibling_rejection
+            return result
+
+    def propose_comparison(
+        self,
+        target_path: str,
+        old_text: str,
+        aureon_new_text: str,
+        human_new_text: str,
+        rationale: str = "",
+    ) -> Dict[str, Any]:
+        """
+        Propose two competing edits for the same site so a reviewer can see
+        whether Aureon's version beats a human baseline.
+
+        Both variants are stored as independent pending edits that share
+        a `comparison_id`. When one is confirmed, the other is auto-rejected
+        with reason "lost comparison <id>" so the applied audit line can
+        always be traced back to what the organism chose over what a human
+        would have written.
+
+        Returns:
+            {
+              "ok": bool,
+              "comparison_id": "cmp_...",
+              "aureon": { <propose_edit result> },
+              "human":  { <propose_edit result> },
+              "side_by_side": "<aureon diff>\\n---\\n<human diff>"
+            }
+        """
+        comparison_id = f"cmp_{int(_now() * 1000)}_{uuid.uuid4().hex[:8]}"
+
+        aureon_res = self.propose_edit(
+            target_path=target_path,
+            old_text=old_text,
+            new_text=aureon_new_text,
+            rationale=f"[comparison {comparison_id} variant=aureon] {rationale}",
+        )
+        human_res = self.propose_edit(
+            target_path=target_path,
+            old_text=old_text,
+            new_text=human_new_text,
+            rationale=f"[comparison {comparison_id} variant=human] {rationale}",
+        )
+
+        # Tag each pending record with its sibling + comparison id so the
+        # audit trail can find the pair later.
+        for res, variant, sibling in (
+            (aureon_res, "aureon", human_res),
+            (human_res, "human", aureon_res),
+        ):
+            pid = res.get("pending_id")
+            if not pid:
+                continue
+            try:
+                fp = self._pending_file(pid)
+                d = json.loads(fp.read_text(encoding="utf-8"))
+                d["comparison_id"] = comparison_id
+                d["variant"] = variant
+                d["sibling_pending_id"] = sibling.get("pending_id")
+                fp.write_text(json.dumps(d, indent=2), encoding="utf-8")
+            except Exception as e:
+                logger.debug("comparison tag failed: %s", e)
+
+        # Side-by-side preview (trimmed).
+        aureon_preview = aureon_res.get("preview", "") or ""
+        human_preview = human_res.get("preview", "") or ""
+        side_by_side = (
+            f"=== AUREON ({aureon_res.get('pending_id', '?')}) ===\n"
+            f"syntax_ok={aureon_res.get('syntax_ok')} "
+            f"err={aureon_res.get('syntax_error') or ''}\n"
+            f"{aureon_preview}\n"
+            f"\n=== HUMAN ({human_res.get('pending_id', '?')}) ===\n"
+            f"syntax_ok={human_res.get('syntax_ok')} "
+            f"err={human_res.get('syntax_error') or ''}\n"
+            f"{human_preview}\n"
+        )
+
+        return {
+            "ok": bool(aureon_res.get("ok") or human_res.get("ok")),
+            "comparison_id": comparison_id,
+            "aureon": aureon_res,
+            "human": human_res,
+            "side_by_side": side_by_side,
+        }
 
     def reject_edit(self, pending_id: str, reason: str = "") -> Dict[str, Any]:
         """Discard a pending edit; write a rejection audit line."""
@@ -460,6 +580,21 @@ class CodeIntegrator:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+    def _read_comparison_meta(self, pending_id: str) -> Tuple[str, str, str]:
+        """Return (comparison_id, variant, sibling_pending_id) or ("", "", "")."""
+        fp = self._pending_file(pending_id)
+        if not fp.exists():
+            return "", "", ""
+        try:
+            d = json.loads(fp.read_text(encoding="utf-8"))
+        except Exception:
+            return "", "", ""
+        return (
+            str(d.get("comparison_id") or ""),
+            str(d.get("variant") or ""),
+            str(d.get("sibling_pending_id") or ""),
+        )
+
     def _syntax_check(self, text: str, target_path: str) -> Tuple[bool, str]:
         # We only full-parse .py files; everything else gets a pass.
         if not target_path.endswith(".py"):
