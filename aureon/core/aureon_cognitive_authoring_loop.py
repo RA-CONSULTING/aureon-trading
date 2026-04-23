@@ -33,13 +33,20 @@ own that. This file just wires the two subsystems into one heartbeat.
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import threading
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger("aureon.core.cognitive_authoring_loop")
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_INBOX_PATH = _REPO_ROOT / "state" / "authoring_inbox.jsonl"
+_OUTBOX_PATH = _REPO_ROOT / "state" / "authoring_outbox.jsonl"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +82,20 @@ try:
 except Exception:  # pragma: no cover
     get_self_introspection = None  # type: ignore[assignment]
     _HAS_INTRO = False
+
+try:
+    from aureon.integrations.ollama.ollama_adapter import OllamaLLMAdapter
+    _HAS_OLLAMA = True
+except Exception:  # pragma: no cover
+    OllamaLLMAdapter = None  # type: ignore[assignment,misc]
+    _HAS_OLLAMA = False
+
+try:
+    from aureon.integrations.obsidian.obsidian_bridge import ObsidianBridge
+    _HAS_OBSIDIAN = True
+except Exception:  # pragma: no cover
+    ObsidianBridge = None  # type: ignore[assignment,misc]
+    _HAS_OBSIDIAN = False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -123,12 +144,16 @@ class CognitiveAuthoringLoop:
         self.consciousness: Any = None
         self.architect: Any = None
         self.introspection: Any = None
+        self.ollama_adapter: Any = None
+        self.obsidian: Any = None
 
         self.status = LoopStatus()
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._lock = threading.Lock()
         self._last_observe_at = 0.0
+        self._last_inbox_mtime = 0.0
+        self._inbox_seen_offsets = 0
         self._request_handlers: Dict[str, Callable[[Dict[str, Any]], Any]] = {}
 
         self._install_default_handlers()
@@ -143,15 +168,7 @@ class CognitiveAuthoringLoop:
             except Exception as e:
                 logger.debug("bus unavailable: %s", e)
 
-        if _HAS_CONSCIOUSNESS and self.consciousness is None:
-            try:
-                self.consciousness = ConsciousnessModule(bus=self.bus)
-                self.status.consciousness_alive = True
-                logger.info("consciousness: online")
-            except Exception as e:
-                self.status.consciousness_alive = False
-                self._record_error(f"consciousness init: {e}")
-
+        # Architect first — it's the authoring surface and its init is light.
         if _HAS_ARCHITECT and self.architect is None:
             try:
                 self.architect = get_code_architect()
@@ -166,6 +183,25 @@ class CognitiveAuthoringLoop:
                 self.status.architect_alive = False
                 self._record_error(f"architect init: {e}")
 
+        # Consciousness is heavy (auto-wires Timeline Oracle, Multiverse,
+        # exchanges, Enigma, etc). Instantiate in a background thread so the
+        # architect is usable immediately and the loop starts ticking.
+        if _HAS_CONSCIOUSNESS and self.consciousness is None:
+            def _deferred_consciousness():
+                try:
+                    self.consciousness = ConsciousnessModule(bus=self.bus)
+                    self.status.consciousness_alive = True
+                    logger.info("consciousness: online")
+                except Exception as e:
+                    self.status.consciousness_alive = False
+                    self._record_error(f"consciousness init: {e}")
+
+            threading.Thread(
+                target=_deferred_consciousness,
+                name="authoring-loop-consciousness-init",
+                daemon=True,
+            ).start()
+
         if _HAS_INTRO and self.introspection is None:
             try:
                 self.introspection = get_self_introspection()
@@ -177,6 +213,37 @@ class CognitiveAuthoringLoop:
                 self.bus.subscribe("authoring.request", self._on_request)
             except Exception as e:
                 self._record_error(f"bus subscribe: {e}")
+
+        # Ollama — attach as the SkillWriter's AI adapter so it can author
+        # non-trivial skills via llama3.1 (or whichever model is running).
+        if _HAS_OLLAMA and self.ollama_adapter is None and self.architect is not None:
+            try:
+                model = os.getenv("AUREON_OLLAMA_MODEL", "llama3.1:8b")
+                self.ollama_adapter = OllamaLLMAdapter(model=model)
+                # Check health — the bridge returns a falsy response when offline.
+                try:
+                    healthy = self.ollama_adapter.bridge.health_check()
+                except Exception:
+                    healthy = False
+                if healthy:
+                    self.architect.writer.adapter = self.ollama_adapter
+                    self.architect.writer._use_ai = True
+                    logger.info("ollama: online — attached to SkillWriter (%s)", model)
+                else:
+                    logger.info("ollama: offline — SkillWriter stays in template mode")
+            except Exception as e:
+                self._record_error(f"ollama wire: {e}")
+
+        # Obsidian — write every authored skill as a note into the vault,
+        # so the user can read what Aureon built.
+        if _HAS_OBSIDIAN and self.obsidian is None:
+            try:
+                self.obsidian = ObsidianBridge()
+                if self.bus is not None:
+                    self.bus.subscribe("authoring.skill.new", self._on_skill_for_obsidian)
+                logger.info("obsidian: wired — skill notes will be written to vault")
+            except Exception as e:
+                logger.debug("obsidian unavailable: %s", e)
 
     # ------------------------------------------------------------------
     # Run / stop
@@ -218,6 +285,14 @@ class CognitiveAuthoringLoop:
             self.status.ticks += 1
             self.status.last_tick_at = tick_started
 
+            # Inbox poll — users drop requests as JSON lines in
+            # state/authoring_inbox.jsonl. Each line becomes an
+            # authoring.request. Results go to state/authoring_outbox.jsonl.
+            try:
+                self._poll_inbox()
+            except Exception as e:
+                self._record_error(f"inbox poll: {e}")
+
             # Architect: every observe_interval_s, pull patterns → skills.
             if (self.architect is not None
                     and tick_started - self._last_observe_at >= self.observe_interval_s):
@@ -239,6 +314,7 @@ class CognitiveAuthoringLoop:
                             "skills_authored": self.status.skills_authored,
                             "skills_executed": self.status.skills_executed,
                             "errors": self.status.errors,
+                            "consciousness_alive": self.status.consciousness_alive,
                         },
                         source="authoring_loop",
                     )
@@ -247,6 +323,80 @@ class CognitiveAuthoringLoop:
 
             # Sleep, but stay responsive to stop().
             self._stop.wait(self.tick_interval_s)
+
+    def _poll_inbox(self) -> None:
+        """Read any new JSON lines from the inbox file and dispatch them."""
+        if not _INBOX_PATH.exists():
+            return
+        try:
+            st = _INBOX_PATH.stat()
+        except Exception:
+            return
+        if st.st_mtime <= self._last_inbox_mtime and st.st_size <= self._inbox_seen_offsets:
+            return
+
+        try:
+            with _INBOX_PATH.open("r", encoding="utf-8") as f:
+                f.seek(self._inbox_seen_offsets)
+                new_lines = f.readlines()
+                self._inbox_seen_offsets = f.tell()
+        except Exception as e:
+            self._record_error(f"inbox read: {e}")
+            return
+
+        self._last_inbox_mtime = st.st_mtime
+        for raw in new_lines:
+            raw = raw.strip()
+            if not raw or raw.startswith("#"):
+                continue
+            try:
+                payload = json.loads(raw)
+            except Exception as e:
+                self._write_outbox({"ok": False, "error": f"bad json: {e}", "raw": raw})
+                continue
+            result = self._dispatch(payload if isinstance(payload, dict) else {})
+            self._write_outbox({
+                "at": time.time(),
+                "request": payload,
+                "result": result,
+            })
+
+    def _write_outbox(self, record: Dict[str, Any]) -> None:
+        try:
+            _OUTBOX_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with _OUTBOX_PATH.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(record, default=str) + "\n")
+        except Exception as e:
+            logger.debug("outbox write failed: %s", e)
+
+    def _on_skill_for_obsidian(self, thought: Any) -> None:
+        if self.obsidian is None:
+            return
+        try:
+            payload = getattr(thought, "payload", None) or {}
+            if not isinstance(payload, dict):
+                return
+            name = str(payload.get("name") or "")
+            if not name:
+                return
+            body = [
+                f"# Skill: {name}",
+                "",
+                f"- level: {payload.get('level', '')}",
+                f"- status: {payload.get('status', '')}",
+                f"- category: {payload.get('category', '')}",
+                f"- queen_verdict: {payload.get('queen_verdict', '')}",
+                f"- pillar_score: {payload.get('pillar_score', 0.0)}",
+                f"- authored_at: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+                "",
+            ]
+            self.obsidian.write_note(
+                path=f"aureon/authored_skills/{name}.md",
+                content="\n".join(body),
+                overwrite=True,
+            )
+        except Exception as e:
+            logger.debug("obsidian write failed: %s", e)
 
     # ------------------------------------------------------------------
     # Request handling
