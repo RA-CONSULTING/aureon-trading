@@ -116,9 +116,15 @@ class LoopStatus:
     ticks: int = 0
     skills_authored: int = 0
     skills_executed: int = 0
+    edits_applied: int = 0
+    edits_positive: int = 0
+    edits_noop: int = 0
+    edits_regression: int = 0
     errors: int = 0
     last_error: str = ""
     last_skill: str = ""
+    last_edit_target: str = ""
+    last_edit_verdict: str = ""
     last_tick_at: float = 0.0
     consciousness_alive: bool = False
     architect_alive: bool = False
@@ -221,6 +227,13 @@ class CognitiveAuthoringLoop:
                 self.bus.subscribe("authoring.request", self._on_request)
             except Exception as e:
                 self._record_error(f"bus subscribe: {e}")
+            # Self-report: whenever an edit is applied, track the verdict so
+            # the loop can report its own progress (and flag if it is not
+            # actually delivering positive improvement).
+            try:
+                self.bus.subscribe("authoring.edit.applied", self._on_edit_applied)
+            except Exception as e:
+                self._record_error(f"bus subscribe edit.applied: {e}")
 
         # Ollama — attach as the SkillWriter's AI adapter so it can author
         # non-trivial skills via llama3.1 (or whichever model is running).
@@ -376,6 +389,100 @@ class CognitiveAuthoringLoop:
                 f.write(json.dumps(record, default=str) + "\n")
         except Exception as e:
             logger.debug("outbox write failed: %s", e)
+
+    def _on_edit_applied(self, thought: Any) -> None:
+        """
+        Self-report when an edit lands. Publishes an improvement.summary
+        aggregate so monitors can see organism progress — and a warning on
+        the bus if the improvement verdict is no-op or regression.
+        """
+        try:
+            payload = getattr(thought, "payload", None) or {}
+            if not isinstance(payload, dict):
+                return
+            target = str(payload.get("target_path") or "")
+            pending_id = str(payload.get("pending_id") or "")
+            # The payload itself may not carry the improvement dict (depends
+            # on publisher), so re-read the improvement log tail to pull it.
+            improvement = self._lookup_latest_improvement(pending_id)
+            verdict = (improvement or {}).get("verdict", "unknown")
+
+            self.status.edits_applied += 1
+            self.status.last_edit_target = target
+            self.status.last_edit_verdict = verdict
+            if verdict == "positive":
+                self.status.edits_positive += 1
+            elif verdict == "no-op":
+                self.status.edits_noop += 1
+            elif verdict == "regression":
+                self.status.edits_regression += 1
+
+            # Self-report line to stdout so the CLI reviewer sees it immediately.
+            print(
+                f"[aureon.author] edit applied  target={target} "
+                f"verdict={verdict} "
+                f"cls_Δ={(improvement or {}).get('classes_delta')} "
+                f"fn_Δ={(improvement or {}).get('functions_delta')} "
+                f"dp_Δ={(improvement or {}).get('decision_points_delta')}"
+            )
+
+            if self.bus is not None:
+                try:
+                    total = max(1, self.status.edits_applied)
+                    self.bus.publish(
+                        "improvement.summary",
+                        {
+                            "edits_applied": self.status.edits_applied,
+                            "edits_positive": self.status.edits_positive,
+                            "edits_noop": self.status.edits_noop,
+                            "edits_regression": self.status.edits_regression,
+                            "positive_rate": self.status.edits_positive / total,
+                            "last_target": target,
+                            "last_verdict": verdict,
+                        },
+                        source="authoring_loop",
+                    )
+                except Exception:
+                    pass
+
+                # If the loop is producing no-ops or regressions, flag it.
+                if verdict in ("no-op", "regression"):
+                    try:
+                        self.bus.publish(
+                            "improvement.warning",
+                            {
+                                "target_path": target,
+                                "verdict": verdict,
+                                "pending_id": pending_id,
+                                "note": "edit applied but no measurable positive change — loop may not be working",
+                            },
+                            source="authoring_loop",
+                        )
+                    except Exception:
+                        pass
+        except Exception as e:
+            self._record_error(f"on_edit_applied: {e}")
+
+    def _lookup_latest_improvement(self, pending_id: str) -> Optional[Dict[str, Any]]:
+        """Scan the improvement log tail for the record that matches pending_id."""
+        log = _REPO_ROOT / "state" / "improvement_log.jsonl"
+        if not log.exists():
+            return None
+        try:
+            lines = log.read_text(encoding="utf-8").splitlines()
+        except Exception:
+            return None
+        for raw in reversed(lines[-50:]):
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                rec = json.loads(raw)
+            except Exception:
+                continue
+            if pending_id and rec.get("pending_id") == pending_id:
+                return rec.get("improvement") or {}
+        return None
 
     def _on_skill_for_obsidian(self, thought: Any) -> None:
         if self.obsidian is None:
@@ -709,12 +816,20 @@ class CognitiveAuthoringLoop:
 
     def get_status(self) -> Dict[str, Any]:
         s = self.status
+        total_edits = max(1, s.edits_applied)
         return {
             "running": s.running,
             "started_at": s.started_at,
             "ticks": s.ticks,
             "skills_authored": s.skills_authored,
             "skills_executed": s.skills_executed,
+            "edits_applied": s.edits_applied,
+            "edits_positive": s.edits_positive,
+            "edits_noop": s.edits_noop,
+            "edits_regression": s.edits_regression,
+            "positive_rate": s.edits_positive / total_edits if s.edits_applied else 0.0,
+            "last_edit_target": s.last_edit_target,
+            "last_edit_verdict": s.last_edit_verdict,
             "errors": s.errors,
             "last_error": s.last_error,
             "last_skill": s.last_skill,

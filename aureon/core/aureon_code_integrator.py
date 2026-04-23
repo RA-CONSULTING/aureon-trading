@@ -68,6 +68,7 @@ _PENDING_DIR = _STATE_ROOT / "integrations_pending"
 _APPLIED_LOG = _STATE_ROOT / "integrations_applied.jsonl"
 _REJECTED_LOG = _STATE_ROOT / "integrations_rejected.jsonl"
 _BACKUP_ROOT = _STATE_ROOT / "code_integrator_backups"
+_IMPROVEMENT_LOG = _STATE_ROOT / "improvement_log.jsonl"
 
 # Paths the integrator is permitted to touch, relative to repo root. These
 # are prefixes — `aureon/` covers every module under aureon-trading/aureon/.
@@ -343,6 +344,11 @@ class CodeIntegrator:
             # Backup.
             backup_path = self._backup(abs_path, current)
 
+            # Capture metrics BEFORE the write so we can measure positive
+            # improvement after the apply. Improvement is the organism's
+            # signal that the edit actually did something.
+            metrics_before = self._capture_metrics()
+
             # Write and compile.
             try:
                 abs_path.write_text(pending.after_text, encoding="utf-8")
@@ -363,6 +369,9 @@ class CodeIntegrator:
                     "backup_path": str(backup_path),
                 }
 
+            metrics_after = self._capture_metrics()
+            improvement = self._metrics_delta(metrics_before, metrics_after)
+
             # If this pending was part of a comparison, auto-reject the sibling.
             comparison_id, variant, sibling_id = self._read_comparison_meta(pending_id)
 
@@ -377,12 +386,24 @@ class CodeIntegrator:
                 "after_sha": pending.after_sha,
                 "backup_path": _relpath(backup_path),
                 "diff": diff,
+                "metrics_before": metrics_before,
+                "metrics_after": metrics_after,
+                "improvement": improvement,
             }
             if comparison_id:
                 record["comparison_id"] = comparison_id
                 record["variant"] = variant
                 record["sibling_pending_id"] = sibling_id
             self._append_log(_APPLIED_LOG, record)
+            # Dedicated improvement log — tails here to see organism progress.
+            self._append_log(_IMPROVEMENT_LOG, {
+                "applied_at": record["applied_at"],
+                "pending_id": pending_id,
+                "target_path": pending.target_path,
+                "improvement": improvement,
+                "comparison_id": comparison_id or None,
+                "variant": variant or None,
+            })
             self._delete_pending(pending_id)
 
             sibling_rejection: Optional[Dict[str, Any]] = None
@@ -416,12 +437,31 @@ class CodeIntegrator:
                 "target_path": pending.target_path,
                 "backup_path": _relpath(backup_path),
                 "diff": diff,
+                "improvement": improvement,
             }
             if comparison_id:
                 result["comparison_id"] = comparison_id
                 result["variant"] = variant
                 if sibling_rejection:
                     result["sibling_rejected"] = sibling_rejection
+
+            # Self-report: if no positive improvement, the loop is not doing
+            # useful work — flag loudly so the reviewer sees it.
+            verdict = improvement.get("verdict", "unknown")
+            if verdict in ("no-op", "regression"):
+                logger.warning(
+                    "edit applied but improvement verdict=%s on %s — loop may not be working",
+                    verdict, pending.target_path,
+                )
+            else:
+                logger.info(
+                    "edit applied: %s verdict=%s cls_delta=%s fn_delta=%s dp_delta=%s",
+                    pending.target_path,
+                    verdict,
+                    improvement.get("classes_delta"),
+                    improvement.get("functions_delta"),
+                    improvement.get("decision_points_delta"),
+                )
             return result
 
     def propose_comparison(
@@ -580,6 +620,110 @@ class CodeIntegrator:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Improvement capture — the "is this actually working?" signal
+    # ------------------------------------------------------------------
+    def _capture_metrics(self) -> Dict[str, Any]:
+        """
+        Snapshot measurable state that can change from an edit. Returns a
+        compact dict. Safe to call on a live tree.
+        """
+        metrics: Dict[str, Any] = {
+            "taken_at": _now(),
+            "modules_total": 0,
+            "decision_points_total": 0,
+            "decision_points_by_kind": {},
+            "classes_total": 0,
+            "functions_total": 0,
+            "loaded_aureon_modules": 0,
+        }
+        try:
+            from aureon.core.aureon_self_introspection import get_self_introspection
+            intro = get_self_introspection()
+            snap = intro.scan(fast=False)
+            by_kind: Dict[str, int] = {}
+            for dp in snap.decision_points:
+                by_kind[dp.kind] = by_kind.get(dp.kind, 0) + 1
+            cls_total = 0
+            fn_total = 0
+            for fp in snap.fingerprints:
+                cls_total += len(fp.classes)
+                fn_total += len(fp.functions)
+            metrics.update({
+                "modules_total": snap.modules_total,
+                "decision_points_total": len(snap.decision_points),
+                "decision_points_by_kind": by_kind,
+                "classes_total": cls_total,
+                "functions_total": fn_total,
+                "loaded_aureon_modules": len(intro.loaded_modules()),
+            })
+        except Exception as e:
+            metrics["error"] = f"capture failed: {e}"
+        return metrics
+
+    @staticmethod
+    def _metrics_delta(before: Dict[str, Any], after: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compute a compact delta. Positive deltas on function/class counts
+        indicate new code was added. Changes to decision-point kinds tell
+        us whether gates/flags moved.
+        """
+        def _num(d: Dict[str, Any], k: str) -> int:
+            v = d.get(k, 0)
+            try:
+                return int(v)
+            except Exception:
+                return 0
+
+        kinds_before = dict(before.get("decision_points_by_kind") or {})
+        kinds_after = dict(after.get("decision_points_by_kind") or {})
+        all_kinds = set(kinds_before) | set(kinds_after)
+        kinds_delta = {
+            k: int(kinds_after.get(k, 0)) - int(kinds_before.get(k, 0))
+            for k in sorted(all_kinds)
+        }
+
+        delta = {
+            "modules_total_delta": _num(after, "modules_total") - _num(before, "modules_total"),
+            "decision_points_delta": (
+                _num(after, "decision_points_total") - _num(before, "decision_points_total")
+            ),
+            "decision_points_by_kind_delta": kinds_delta,
+            "classes_delta": _num(after, "classes_total") - _num(before, "classes_total"),
+            "functions_delta": _num(after, "functions_total") - _num(before, "functions_total"),
+            "loaded_aureon_modules_delta": (
+                _num(after, "loaded_aureon_modules") - _num(before, "loaded_aureon_modules")
+            ),
+        }
+
+        # Simple positive-improvement verdict:
+        #   - new code added (classes or functions up) → positive
+        #   - modules_total up (file added) → positive
+        #   - no change at all → flagged "no-op"
+        #   - only regressions → flagged "regression"
+        positives = [
+            delta["classes_delta"],
+            delta["functions_delta"],
+            delta["modules_total_delta"],
+            delta["loaded_aureon_modules_delta"],
+        ]
+        is_noop = all(v == 0 for v in positives) and delta["decision_points_delta"] == 0
+        has_positive = any(v > 0 for v in positives) or any(v > 0 for v in kinds_delta.values())
+        has_regression = any(v < 0 for v in positives)
+
+        if is_noop:
+            delta["verdict"] = "no-op"
+        elif has_positive and not has_regression:
+            delta["verdict"] = "positive"
+        elif has_positive and has_regression:
+            delta["verdict"] = "mixed"
+        elif has_regression:
+            delta["verdict"] = "regression"
+        else:
+            delta["verdict"] = "neutral"
+
+        return delta
+
     def _read_comparison_meta(self, pending_id: str) -> Tuple[str, str, str]:
         """Return (comparison_id, variant, sibling_pending_id) or ("", "", "")."""
         fp = self._pending_file(pending_id)
