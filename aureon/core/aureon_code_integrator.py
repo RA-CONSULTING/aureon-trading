@@ -476,6 +476,31 @@ class CodeIntegrator:
                     improvement.get("functions_delta"),
                     improvement.get("decision_points_delta"),
                 )
+
+            # Continuity: hot-swap the module without the organism
+            # perceiving a restart. Phi-calendar counts + singletons are
+            # preserved across importlib.reload. Subjective time unbroken.
+            try:
+                from aureon.core.aureon_continuity_engine import get_continuity_engine
+                ce = get_continuity_engine()
+                swap = ce.apply_with_continuity(
+                    target_path=pending.target_path,
+                    pending_id=pending.pending_id,
+                    triggered_by="integrator.confirm",
+                )
+                result["continuity"] = {
+                    "ok": swap.ok,
+                    "sandbox_ok": swap.sandbox_ok,
+                    "sandbox_detail": swap.sandbox_detail,
+                    "reload_ok": swap.reload_ok,
+                    "reload_error": swap.reload_error,
+                    "continuity_preserved": swap.continuity_preserved,
+                    "elapsed_s": swap.elapsed_s,
+                }
+            except Exception as e:
+                # Continuity is best-effort. The file is already on disk;
+                # fresh imports will pick it up regardless. Log softly.
+                logger.debug("continuity engine unavailable: %s", e)
             return result
 
     def propose_comparison(
