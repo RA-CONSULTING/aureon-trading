@@ -4,15 +4,18 @@
 
 | Layer | Directory | Purpose | Files |
 |-------|-----------|---------|-------|
-| **Foundation** | `1_substrate/` | φ² Bridge foundation, market data, constants | 75 |
-| **Intelligence** | `2_dynamics/` | LTDE dynamics, multi-branch logic | 325 |
-| **Execution** | `3_forcing/` | NOW operator, gates, execution | 56 |
-| **Outputs** | `4_output/` | Results, portfolio, metrics, dashboards | 145 |
-| **Tests** | `tests/` | Validation, benchmarking | 128 |
-| **Docs** | `docs/` | Documentation, guides | 143 |
-| **DevOps** | `infrastructure/` | Deployment, CI/CD, monitoring | 11 |
+| **Foundation** | `1_substrate/` | φ² Bridge foundation, market data, constants | 403 |
+| **Intelligence** | `2_dynamics/` | LTDE dynamics, multi-branch logic | 514 |
+| **Execution** | `3_forcing/` | NOW operator, gates, execution | 85 |
+| **Outputs** | `4_output/` | Results, portfolio, metrics, dashboards | 187 |
+| **Tests** | `tests/` | Validation, benchmarking | 130 |
+| **Docs** | `docs/` | Documentation, research, archives | 201 |
+| **DevOps** | `infrastructure/` | Deployment, CI/CD, production, config | 52 |
+| **Scripts** | `scripts/` | Entry points, utilities, management | 148 |
+| **Assets** | `Assets/` | Images, scientific data (CSV, BSP) | 28 |
+| **State** | `state/` | Runtime state, logs, JSONL, backups | 22 |
 
-**Total:** 883 files organized by logical function
+**Total organized:** 2,681 files (including web stack)
 
 ---
 
@@ -24,12 +27,16 @@
 
 ```
 1_substrate/
-├── frequencies/                    (29 files)
-│   └── Harmonic constants, φ-ladder definitions
-├── market_feeds/                   (36 files)
-│   └── Live market data (Alpaca, Binance, CoinAPI, WebSocket)
-└── data_models/                    (10 files)
-    └── Core schemas, caches, unified data structures
+├── frequencies/                    (32 files)
+│   ├── Harmonic constants, φ-ladder definitions
+│   └── cache/   (harmonic cache)
+├── market_feeds/                   (57 files)
+│   └── Live market data (Alpaca, Binance, CoinAPI, Kraken, WebSocket)
+└── data_models/                    (313 files)
+    ├── Core schemas, caches, unified data structures
+    ├── queen_configs/  (state configuration)
+    ├── memory/  (CIA declassified references)
+    └── wisdom/  (wisdom data & cache)
 ```
 
 **Entry point:** Market data flows in, gets normalized to φ-aligned frequencies
@@ -44,13 +51,13 @@
 
 ```
 2_dynamics/
-├── trading_logic/                  (274 files)
+├── trading_logic/                  (460 files)
 │   └── Multi-path traders holding branches in superposition
-├── probability_networks/           (33 files)
+├── probability_networks/           (34 files)
 │   └── Coherence operators (Γ tracking), branch amplitudes
-├── echo_feedback/                  (7 files)
+├── echo_feedback/                  (8 files)
 │   └── Temporal delegation (τₖ = τ₀·φᵏ), cascade chains
-└── multiverse_branches/            (11 files)
+└── multiverse_branches/            (12 files)
     └── Parallel simulators, what-if evaluators
 ```
 
@@ -68,19 +75,19 @@
 
 ```
 3_forcing/
-├── market_events/                  (7 files)
-│   └── Opportunity detection, scanners
-├── execution_engines/              (25 files)
-│   └── Trade execution, order placement
-├── coherence_gates/                (21 files)
+├── market_events/                  (19 files)
+│   └── Opportunity detection, scanners, whale trackers
+├── execution_engines/              (39 files)
+│   └── Trade execution, order placement, smoke tests
+├── coherence_gates/                (22 files)
 │   └── Γ threshold enforcement (0.35-0.945 range)
-└── real_time_triggers/             (3 files)
+└── real_time_triggers/             (4 files)
     └── Heartbeat monitors, emergency gates
 ```
 
 **Entry point:** Branch evaluations from Layer 2 + market events from Layer 1
 
-**Decision rule:** 
+**Decision rule:**
 - If Γ ≥ 0.945 AND market event → Execute
 - If Γ ≤ 0.35 → Kill (stop trading)
 - If 0.35 < Γ < 0.945 → Continue Layer 2 evaluation
@@ -95,13 +102,14 @@
 
 ```
 4_output/
-├── trade_outputs/                  (17 files)
-│   └── Executed trades, signals, records
-├── portfolio_management/           (44 files)
+├── trade_outputs/                  (32 files)
+│   └── Executed trades, signals, records, history
+├── portfolio_management/           (47 files)
 │   └── Position tracking, holdings, balances
-├── performance_metrics/            (63 files)
-│   └── PnL, win-rate, edge detection, Q_choice
-└── dashboard/                      (21 files)
+├── performance_metrics/            (83 files)
+│   ├── PnL, win-rate, edge detection, Q_choice
+│   └── benchmarks/   (reports & benchmark runs)
+└── dashboard/                      (23 files)
     └── Real-time visualization of shade-of-many
 ```
 
@@ -110,6 +118,52 @@
 **Output:** Historical records, dashboards, metrics for analysis and visualization
 
 **Principle:** Never collapse the shade. Show probability distributions, not single answers.
+
+---
+
+## Python Import Path Setup
+
+### Why This Matters
+
+The codebase was reorganized into PEFCφS layers, but **629+ files still use flat module imports** like:
+
+```python
+from aureon_baton_link import link_system
+from aureon_advanced_intelligence import AdvancedIntelligence
+```
+
+To make these work across the new layer structure, the repo ships with:
+
+**`bootstrap_paths.py`** — adds all layer directories to `sys.path`
+
+**`conftest.py`** — auto-imports `bootstrap_paths` for pytest
+
+### Usage
+
+**Running a script directly:**
+```bash
+cd /home/user/aureon-trading
+python -c "import bootstrap_paths; import your_module"
+```
+
+**In a script:**
+```python
+import bootstrap_paths  # Add at the top of entry scripts
+# Now all flat imports work
+from aureon_baton_link import link_system
+```
+
+**Running pytest:**
+```bash
+# conftest.py handles it automatically — no changes needed
+pytest tests/
+```
+
+**Setting PYTHONPATH (persistent):**
+```bash
+export PYTHONPATH="$PYTHONPATH:/path/to/aureon-trading/1_substrate/frequencies"
+# ... or use bootstrap_paths.py instead
+```
 
 ---
 
@@ -142,11 +196,11 @@
               │                         │
               ▼                         ▼
     ┌───────────────────┐  ┌──────────────────┐
-    │  Layer 1          │  │  3_FORCING       │
-    │  Market Events    │  │  ├─ Market Events│
-    │  (triggers)       │  │  ├─ Execution    │
-    │                   │  │  ├─ Coherence    │
-    └───────┬───────────┘  │  └─ Real-Time    │
+    │  Market Events    │  │  3_FORCING       │
+    │  (triggers)       │  │  ├─ Market Events│
+    │                   │  │  ├─ Execution    │
+    └───────┬───────────┘  │  ├─ Coherence    │
+            │              │  └─ Real-Time    │
             │              └────────┬─────────┘
             │                       │
             └───────────┬───────────┘
@@ -169,6 +223,47 @@
 
 ---
 
+## Supporting Directories
+
+```
+aureon-trading/
+├── 1_substrate/          PEFCφS foundation layer
+├── 2_dynamics/           PEFCφS intelligence layer
+├── 3_forcing/            PEFCφS execution layer
+├── 4_output/             PEFCφS results layer
+│
+├── aureon/               Main Python package (decoders, forensics)
+├── Assets/               Images (PNG, SVG) & scientific data (CSV, BSP)
+├── docs/                 Documentation, research, validation framework, archives
+├── frontend/             React UI source
+├── infrastructure/       Deployment (Docker, systemd), CI/CD, config, production
+├── scripts/              Entry points, utilities, management, CLI, aureon_launcher
+├── skills/               Claude Code custom skills
+├── state/                Runtime state (logs, JSONL, backups)
+├── tests/                Validation & benchmarking
+│
+├── api/                  Web API endpoint (RSS)
+├── functions/            Cloudflare functions
+├── netlify/              Netlify functions
+├── public/               Static web assets (codex, oracle cards, glyphs)
+├── server/               Node.js servers (earth-live-data, nexus-command)
+├── static/               Static HTML (geometric glyphs)
+├── supabase/             Database migrations & edge functions
+├── templates/            HTML templates (queen dashboards)
+│
+├── ARCHITECTURE.md       Full PEFCφS formalism and design
+├── STRUCTURE_GUIDE.md    This file — navigation guide
+├── bootstrap_paths.py    Python path setup for flat imports
+├── conftest.py           Pytest bootstrap
+├── Dockerfile            Main container definition
+├── Dockerfile.ephemeris  Ephemeris container
+├── Procfile              Heroku-style process spec
+├── app.yaml              Google App Engine config
+└── LICENSE
+```
+
+---
+
 ## File Organization By Purpose
 
 ### If you're writing code that...
@@ -179,13 +274,16 @@
 **...defines harmonic constants or φ-relationships?**
 → `1_substrate/frequencies/`
 
+**...stores cached or unified data?**
+→ `1_substrate/data_models/`
+
 **...evaluates multiple trading scenarios in parallel?**
 → `2_dynamics/trading_logic/` or `2_dynamics/multiverse_branches/`
 
 **...tracks branch coherence or amplitudes?**
 → `2_dynamics/probability_networks/`
 
-**...detects market opportunities?**
+**...detects market opportunities (scanning, whale tracking)?**
 → `3_forcing/market_events/`
 
 **...places orders or executes trades?**
@@ -209,40 +307,8 @@
 **...deploys or monitors infrastructure?**
 → `infrastructure/`
 
----
-
-## Key Files by Function
-
-### Core Trading Loop
-
-1. **Market data arrives**
-   - `1_substrate/market_feeds/alpaca_sse_client.py`
-   - `1_substrate/market_feeds/ws_market_data_feeder.py`
-
-2. **Multi-branch evaluation**
-   - `2_dynamics/trading_logic/aureon_*.py` (274 files)
-   - `2_dynamics/multiverse_branches/aureon_internal_multiverse.py`
-
-3. **Coherence checking**
-   - `2_dynamics/probability_networks/aureon_probability_nexus.py`
-
-4. **Event detection**
-   - `3_forcing/market_events/mega_scanner.py`
-   - `3_forcing/market_events/queen_options_scanner.py`
-
-5. **Execution trigger**
-   - `3_forcing/coherence_gates/adaptive_prime_profit_gate.py`
-
-6. **Trade execution**
-   - `3_forcing/execution_engines/execute_limit_profit_trades.py`
-   - `3_forcing/execution_engines/queen_live_tracking_status.py`
-
-7. **Portfolio tracking**
-   - `4_output/portfolio_management/aureon_real_portfolio_tracker.py`
-
-8. **Metrics & visualization**
-   - `4_output/performance_metrics/` (63 files for analysis)
-   - `4_output/dashboard/aureon_unified_live_dashboard.py`
+**...provides a CLI entry point?**
+→ `scripts/entry_points/`
 
 ---
 
@@ -261,17 +327,10 @@
 
 ### Primary Metrics
 
-- **Γ(t)** — Branch coherence (0 to 1)
-  - Calculated in `2_dynamics/probability_networks/`
-  
-- **τ_sustain** — Duration in productive band
-  - Tracked in `3_forcing/coherence_gates/` and `4_output/performance_metrics/`
-  
-- **N_branch(t)** — Number of live branches
-  - Estimated in `2_dynamics/probability_networks/`
-  
-- **Q_choice** — Output quality during superposition
-  - Measured in `4_output/performance_metrics/`
+- **Γ(t)** — Branch coherence (0 to 1) — calculated in `2_dynamics/probability_networks/`
+- **τ_sustain** — Duration in productive band — tracked in `3_forcing/coherence_gates/` and `4_output/performance_metrics/`
+- **N_branch(t)** — Number of live branches — estimated in `2_dynamics/probability_networks/`
+- **Q_choice** — Output quality during superposition — measured in `4_output/performance_metrics/`
 
 ### Secondary Metrics
 
@@ -292,29 +351,6 @@ All code should be validated:
 - **Edge case tests** — Market crashes, data gaps, extreme moves
 
 Test files use the naming convention `test_*.py` and are automatically categorized into `tests/`
-
----
-
-## Deployment Structure
-
-```
-infrastructure/
-├── deploy/                         (Kubernetes, Docker, systemd)
-├── ci_cd/                          (GitHub Actions, build pipelines)
-├── config/                         (Environment, settings, secrets)
-└── monitoring/                     (Health checks, alerts, logging)
-```
-
----
-
-## Entry Points
-
-Main launchers for different use cases:
-
-- **Live trading** → `scripts/entry_points/aureon_full_autonomy.py` (or similar)
-- **Backtesting** → `2_dynamics/multiverse_branches/` simulators
-- **Dashboard** → `4_output/dashboard/aureon_unified_live_dashboard.py`
-- **Monitoring** → `infrastructure/monitoring/`
 
 ---
 
@@ -350,9 +386,11 @@ git push origin feature/name
 - `2_dynamics/README.md` — Layer 2 detail
 - `3_forcing/README.md` — Layer 3 detail
 - `4_output/README.md` — Layer 4 detail
+- `docs/research/` — Research documents (validation framework, queen research)
+- `docs/archives/` — Historical zips, RAINBOW-main, patches
 
 ---
 
-**Last Updated:** 2026-04-23  
-**Organization:** PEFCφS (Position of Echo-Feedback Cognitive φ-Substrate)  
+**Last Updated:** 2026-04-23
+**Organization:** PEFCφS (Position of Echo-Feedback Cognitive φ-Substrate)
 **Maintainer:** Gary LeCkey
