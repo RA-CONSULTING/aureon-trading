@@ -1603,6 +1603,15 @@ class IntegratedCognitiveSystem:
         # start its render thread — Rich Live would conflict with stdin input().
         # Live data is available via /status command, Vault UI web, and phone.
 
+        # TRINITY: eyes, hands, skeleton — self-authoring loop online.
+        from aureon.core.aureon_self_introspection import get_self_introspection
+        from aureon.core.aureon_cognitive_authoring_loop import launch_authoring_loop
+        from aureon.core.aureon_geometric_live_chain import launch_geometric_chain
+        get_self_introspection()
+        launch_authoring_loop()
+        launch_geometric_chain()
+        print("  Trinity (introspection + authoring + geometric chain): started")
+
         # Start Vault UI + Phi Bridge server
         ui_host = "0.0.0.0" if (lan or remote) else "127.0.0.1"
         if self.vault_app is not None:
