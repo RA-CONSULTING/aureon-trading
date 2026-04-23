@@ -372,6 +372,20 @@ class CodeIntegrator:
             metrics_after = self._capture_metrics()
             improvement = self._metrics_delta(metrics_before, metrics_after)
 
+            # File-level deltas from the pending text itself — sensitive to
+            # edits that activate dormant modules (new imports, new calls)
+            # even when the tree-wide scan shows no change.
+            file_delta = self._file_delta(pending.before_text, pending.after_text)
+            improvement["file"] = file_delta
+            # Upgrade verdict if file-level change is clearly positive.
+            if improvement.get("verdict") == "no-op" and (
+                file_delta.get("lines_added", 0) > 0
+                or file_delta.get("imports_added", 0) > 0
+                or file_delta.get("calls_added", 0) > 0
+            ):
+                improvement["verdict"] = "positive"
+                improvement["verdict_source"] = "file_delta"
+
             # If this pending was part of a comparison, auto-reject the sibling.
             comparison_id, variant, sibling_id = self._read_comparison_meta(pending_id)
 
@@ -660,6 +674,43 @@ class CodeIntegrator:
         except Exception as e:
             metrics["error"] = f"capture failed: {e}"
         return metrics
+
+    @staticmethod
+    def _file_delta(before_text: str, after_text: str) -> Dict[str, Any]:
+        """
+        File-level delta between the before and after text of a single
+        pending edit. Counts lines, bytes, imports, and call expressions —
+        so an edit that activates dormant modules (new imports, new calls)
+        registers as positive even when the tree-wide scan shows no change.
+        """
+        def _count_ast(text: str) -> Dict[str, int]:
+            out = {"imports": 0, "calls": 0, "classes": 0, "functions": 0}
+            try:
+                tree = ast.parse(text)
+            except Exception:
+                return out
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    # Count every imported name (import a, b → 2).
+                    out["imports"] += len(getattr(node, "names", []) or [])
+                elif isinstance(node, ast.Call):
+                    out["calls"] += 1
+                elif isinstance(node, ast.ClassDef):
+                    out["classes"] += 1
+                elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    out["functions"] += 1
+            return out
+
+        before_counts = _count_ast(before_text)
+        after_counts = _count_ast(after_text)
+        return {
+            "lines_added": after_text.count("\n") - before_text.count("\n"),
+            "bytes_added": len(after_text) - len(before_text),
+            "imports_added": after_counts["imports"] - before_counts["imports"],
+            "calls_added": after_counts["calls"] - before_counts["calls"],
+            "classes_added": after_counts["classes"] - before_counts["classes"],
+            "functions_added": after_counts["functions"] - before_counts["functions"],
+        }
 
     @staticmethod
     def _metrics_delta(before: Dict[str, Any], after: Dict[str, Any]) -> Dict[str, Any]:
