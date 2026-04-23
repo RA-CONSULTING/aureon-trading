@@ -264,26 +264,63 @@ def _keyword_parse(text: str) -> Dict[str, Any]:
 # LLM intent parser (uses whatever adapter the authoring loop has)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _llm_parse(text: str) -> Optional[Dict[str, Any]]:
+_LLM_ADAPTER_CACHE: Dict[str, Any] = {}
+
+
+def _get_llm_adapter() -> Optional[Any]:
     """
-    Ask the already-wired Ollama adapter (or any adapter on the
-    authoring loop) to turn the user text into one of the actions in
-    ACTION_SCHEMA. Returns None if no adapter is available or parsing
-    fails — caller falls back to keyword parse.
+    Return a usable Ollama adapter. Cache it so we only pay the
+    construction cost once per terminal session. Order of preference:
+        1. adapter already wired on the authoring loop
+        2. adapter on the architect's SkillWriter
+        3. fresh OllamaLLMAdapter(model=AUREON_OLLAMA_MODEL)
     """
+    if "adapter" in _LLM_ADAPTER_CACHE:
+        return _LLM_ADAPTER_CACHE["adapter"]
+    adapter = None
     try:
         from aureon.core.aureon_cognitive_authoring_loop import get_authoring_loop
         loop = get_authoring_loop()
         adapter = loop.ollama_adapter or (
-            loop.architect.writer.adapter if loop.architect else None
+            getattr(getattr(loop.architect, "writer", None), "adapter", None)
+            if loop.architect else None
         )
-        if adapter is None:
-            return None
+    except Exception as e:
+        logger.debug("loop adapter probe: %s", e)
+    if adapter is None:
+        try:
+            from aureon.integrations.ollama.ollama_adapter import OllamaLLMAdapter
+            model = os.getenv("AUREON_OLLAMA_MODEL", "llama3.2:1b")
+            adapter = OllamaLLMAdapter(model=model)
+            # Health probe
+            try:
+                healthy = adapter.bridge.health_check()
+            except Exception:
+                healthy = False
+            if not healthy:
+                adapter = None
+        except Exception as e:
+            logger.debug("adapter construction failed: %s", e)
+            adapter = None
+    _LLM_ADAPTER_CACHE["adapter"] = adapter
+    return adapter
+
+
+def _llm_parse(text: str) -> Optional[Dict[str, Any]]:
+    """
+    Ask Ollama to classify the user's text into one of the actions in
+    ACTION_SCHEMA. Returns None if no adapter is available or parsing
+    fails — caller falls back to keyword parse.
+    """
+    adapter = _get_llm_adapter()
+    if adapter is None:
+        return None
+    try:
         schema_text = "\n".join(
             f"  {name}: {spec['description']} fields={list(spec['fields'].keys())}"
             for name, spec in ACTION_SCHEMA.items()
         )
-        prompt = (
+        system_msg = (
             "You are Aureon's intent parser. The user speaks natural "
             "language; you produce one JSON object of the form "
             '{"action": "<one of the action names>", "args": {...}}. '
@@ -291,15 +328,19 @@ def _llm_parse(text: str) -> Optional[Dict[str, Any]]:
             "commentary. Do NOT wrap in code fences. Respond with the "
             "JSON only.\n\n"
             "Available actions:\n"
-            f"{schema_text}\n\n"
-            f"User: {text}\n"
-            "JSON:"
+            f"{schema_text}"
         )
-        reply = adapter.prompt(prompt) if hasattr(adapter, "prompt") else None
-        if reply is None:
-            return None
-        # Some adapters return an LLMResponse with .text; some return str.
+        messages = [{"role": "user", "content": text}]
+        reply = adapter.prompt(
+            messages=messages,
+            system=system_msg,
+            max_tokens=256,
+            temperature=0.1,
+            format="json",
+        )
         text_out = getattr(reply, "text", None) or str(reply)
+        if not text_out:
+            return None
         # Extract first top-level JSON object.
         i = text_out.find("{")
         if i < 0:
@@ -329,6 +370,39 @@ def _llm_parse(text: str) -> Optional[Dict[str, Any]]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Dispatch — wire parsed intents into the running stack
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _coerce_int(value: Any, default: int) -> int:
+    """Pull the first integer out of anything. Falls back to default."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return default  # bools sneak through isinstance(value, int)
+    if isinstance(value, (int, float)):
+        return int(value)
+    s = str(value)
+    m = re.search(r"-?\d+", s)
+    if m:
+        try:
+            return int(m.group(0))
+        except Exception:
+            return default
+    return default
+
+
+def _coerce_float(value: Any, default: float) -> float:
+    if value is None:
+        return default
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    s = str(value)
+    m = re.search(r"-?\d+(?:\.\d+)?", s)
+    if m:
+        try:
+            return float(m.group(0))
+        except Exception:
+            return default
+    return default
+
 
 class IntentDispatcher:
     """
@@ -445,7 +519,7 @@ class IntentDispatcher:
                 return {"ok": False, "error": "refinement loop unavailable"}
             return self._refinement.score(
                 applied_id=str(args.get("applied_id") or ""),
-                score=float(args.get("score") or 0.0),
+                score=_coerce_float(args.get("score"), 0.0),
                 comment=str(args.get("comment") or ""),
             )
 
@@ -461,19 +535,19 @@ class IntentDispatcher:
             if self._narrator is None:
                 return {"ok": False, "error": "narrator unavailable"}
             return {"ok": True, "stories": self._narrator.print_recent(
-                limit=int(args.get("limit") or 10))}
+                limit=_coerce_int(args.get("limit"), 10))}
 
         if action == "wheel":
             if self._narrator is None:
                 return {"ok": False, "error": "narrator unavailable"}
             return {"ok": True, "wheel": self._narrator.wheel_delta(
-                window=int(args.get("window") or 20))}
+                window=_coerce_int(args.get("window"), 20))}
 
         if action == "digest":
             if self._refinement is None:
                 return {"ok": False, "error": "refinement loop unavailable"}
             return {"ok": True, "digest": self._refinement.consciousness_digest(
-                window=int(args.get("window") or 50))}
+                window=_coerce_int(args.get("window"), 50))}
 
         if action == "wire":
             tgt = str(args.get("target_module") or "").strip()
