@@ -3630,7 +3630,7 @@ The live system runs on **DigitalOcean App Platform** with automatic deploy-on-p
 | `Dockerfile` | Production container image |
 | `app.yaml` | DigitalOcean App Platform spec |
 | `deploy/supervisord.conf` | Process management (dashboard, orca-engine, command-center) |
-| `deploy/DIGITAL_OCEAN_MASTER_GUIDE.md` | Full deployment documentation |
+| `docs/deployment/DIGITAL_OCEAN_MASTER_GUIDE.md` | Full deployment documentation |
 | `deploy/droplet-setup.sh` | VPS/Droplet provisioning script |
 | `deploy/droplet-deploy.sh` | Deployment automation |
 | `deploy/validate_startup.sh` | Post-deploy health validation |

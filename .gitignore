@@ -101,6 +101,7 @@ runs/
 logs/
 harmonic_cache/
 ws_cache/
+cache/wisdom_cache/
 
 # Old/archived projects (should be separate repos)
 Aueron-Trading-Quantum-Quackers-War-Ready-Version--alert-autofix-gl1/
@@ -132,4 +133,5 @@ integrations_audit.jsonl
 # Imported research bundles (keep research files, but ignore embedded repo snapshots / archives).
 # NOTE: Some imported bundles include `.env*` files with live credentials; never commit those.
 imports/Kimi_Agent_Aureon_*/aureon-trading-main/
+imports/Kimi_Agent_Aureon_*/aureon-trading-main-snapshot/
 imports/Kimi_Agent_Aureon_*/aureon-trading.zip
