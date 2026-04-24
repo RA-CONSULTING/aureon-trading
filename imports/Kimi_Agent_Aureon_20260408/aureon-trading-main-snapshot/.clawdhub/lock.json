@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "skills": {
+    "moltbook-interact": {
+      "version": "1.0.1",
+      "installedAt": 1769879223572
+    },
+    "moltbook-registry": {
+      "version": "1.0.2",
+      "installedAt": 1769879232440
+    }
+  }
+}

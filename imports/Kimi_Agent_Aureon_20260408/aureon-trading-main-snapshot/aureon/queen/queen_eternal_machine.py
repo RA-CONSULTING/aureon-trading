@@ -1,0 +1,2954 @@
+#!/usr/bin/env python3
+"""
+╔══════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                      ║
+║     👑🤖 THE QUEEN'S ETERNAL MACHINE 🤖👑                                            ║
+║                                                                                      ║
+║     "I ride the ENTIRE market down... gathering... leaving crumbs...                ║
+║      24 hours a day. 7 days a week. 365 days a year.                                ║
+║      I NEVER SLEEP. I NEVER STOP. I AM THE MACHINE."                                ║
+║                                                                                      ║
+╠══════════════════════════════════════════════════════════════════════════════════════╣
+║                                                                                      ║
+║     THE QUEEN'S 7 STRATEGIES - ALL IN ONE SYSTEM:                                    ║
+║                                                                                      ║
+║     🏔️  MOUNTAIN PILGRIMAGE  - Walk down collecting pebbles, climb up heavy        ║
+║     🐸  QUANTUM FROG         - Leap to deeper dips for more quantity                ║
+║     💉  BLOODLESS DESCENT    - Never sell at loss, transform not bleed              ║
+║     🟡  YELLOW BRICK ROAD    - Leave breadcrumbs on every coin touched              ║
+║     🍞  BREADCRUMB TRAIL     - Every crumb grows when market recovers               ║
+║     🤖  24/7 MACHINE         - Constant scanning, leaping, compounding              ║
+║     ⚡  MICRO SCALPING       - Harvest bounces on the way back up                    ║
+║                                                                                      ║
+║     Gary Leckey & Tina Brown | February 2026 | The Eternal Queen                     ║
+║                                                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════╝
+"""
+
+from __future__ import annotations
+
+import sys
+import os
+import math
+import json
+import asyncio
+import logging
+import concurrent.futures
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Any, Tuple
+from datetime import datetime
+from pathlib import Path
+from enum import Enum, auto
+
+# UTF-8 Windows fix
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    try:
+        import io
+        if hasattr(sys.stdout, 'buffer'):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
+# Optional: Ocean Wave Scanner for whale detection
+try:
+    from aureon_ocean_wave_scanner import OceanWaveScanner
+    OCEAN_SCANNER_AVAILABLE = True
+except ImportError:
+    OCEAN_SCANNER_AVAILABLE = False
+    OceanWaveScanner = None
+
+# 👑🧠 QUEEN HIVE MIND - Full Autonomous Consciousness
+try:
+    from aureon_queen_hive_mind import QueenHiveMind, get_queen
+    QUEEN_HIVE_AVAILABLE = True
+except ImportError:
+    QUEEN_HIVE_AVAILABLE = False
+    QueenHiveMind = None
+    get_queen = None
+
+# ⚛️🧠 QUANTUM COGNITION - Amplified Consciousness & Autonomous Control
+try:
+    from queen_quantum_cognition import (
+        QueenQuantumCognition, 
+        get_quantum_cognition,
+        QuantumCognitionState
+    )
+    QUANTUM_COGNITION_AVAILABLE = True
+except ImportError:
+    QUANTUM_COGNITION_AVAILABLE = False
+    QueenQuantumCognition = None
+    get_quantum_cognition = None
+    QuantumCognitionState = None
+
+# 🍄 MYCELIUM NETWORK - Underground Signal Network
+try:
+    from aureon_mycelium import MyceliumNetwork
+    MYCELIUM_AVAILABLE = True
+except ImportError:
+    MYCELIUM_AVAILABLE = False
+    MyceliumNetwork = None
+
+# 👑🎮 QUEEN AUTONOMOUS CONTROL - Sovereign Authority
+try:
+    from aureon_queen_autonomous_control import (
+        QueenAutonomousControl,
+        create_queen_autonomous_control
+    )
+    AUTONOMOUS_CONTROL_AVAILABLE = os.getenv("AUREON_ENABLE_AUTONOMOUS_CONTROL", "0") == "1"
+except ImportError:
+    AUTONOMOUS_CONTROL_AVAILABLE = False
+    QueenAutonomousControl = None
+    create_queen_autonomous_control = None
+
+# 🤖 BOT INTELLIGENCE PROFILER - Market Structure & Competition Analysis
+try:
+    from aureon_bot_intelligence_profiler import BotIntelligenceProfiler
+    BOT_INTELLIGENCE_AVAILABLE = True
+except ImportError:
+    BOT_INTELLIGENCE_AVAILABLE = False
+    BotIntelligenceProfiler = None
+
+# 📺 LIVE TV STATION - Truth Prediction Engine with Real Data Streaming
+try:
+    from aureon_truth_prediction_engine import TruthPredictionEngine, MarketSnapshot
+    LIVE_TV_AVAILABLE = True
+except ImportError:
+    LIVE_TV_AVAILABLE = False
+    TruthPredictionEngine = None
+
+# ⛰️ MOUNTAIN CLIMBER - Learn Optimal Climbing & Profit-Taking Strategies
+try:
+    from aureon_mountain_climber import MountainClimber
+    MOUNTAIN_CLIMBER_AVAILABLE = True
+except ImportError:
+    MOUNTAIN_CLIMBER_AVAILABLE = False
+    MountainClimber = None
+    MarketSnapshot = None
+
+logger = logging.getLogger(__name__)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SACRED CONSTANTS
+# ═══════════════════════════════════════════════════════════════════════════════
+PHI = (1 + math.sqrt(5)) / 2  # Golden Ratio 1.618
+SCHUMANN_HZ = 7.83            # Earth's heartbeat
+LOVE_FREQUENCY = 528.0        # Healing frequency
+
+# Queen's trading parameters
+BREADCRUMB_PERCENT = 0.05     # Leave 5% as breadcrumb on each leap (more aggressively leap)
+MIN_DIP_ADVANTAGE = 0.005     # Minimum 0.5% deeper dip to justify leap (more lenient)
+MIN_PROFIT_SCALP = 0.005      # Minimum 0.5% profit to scalp
+MAX_POSITIONS = 50            # Maximum breadcrumb positions
+SCAN_INTERVAL_SECONDS = 10    # Scan market every 10 seconds (faster cycles)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FEE STRUCTURES BY EXCHANGE
+# The Queen knows EXACTLY what every trade costs!
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@dataclass
+class FeeStructure:
+    """
+    Complete fee structure for an exchange.
+    
+    The Queen NEVER leaps blind - she knows the EXACT cost of every trade!
+    """
+    exchange: str
+    maker_fee: float      # Fee when adding liquidity (limit orders)
+    taker_fee: float      # Fee when taking liquidity (market orders)
+    slippage_estimate: float  # Expected slippage on market orders
+    withdrawal_fee: float = 0.0  # Fee to withdraw (if applicable)
+    min_trade_size: float = 1.0  # Minimum trade size in USD
+    
+    @property
+    def total_round_trip_cost(self) -> float:
+        """Cost to buy AND sell (round trip) as taker."""
+        return (self.taker_fee * 2) + (self.slippage_estimate * 2)
+    
+    @property
+    def single_trade_cost(self) -> float:
+        """Cost of a single taker trade (fee + slippage)."""
+        return self.taker_fee + self.slippage_estimate
+    
+    def calculate_received_after_fees(self, gross_value: float, is_maker: bool = False) -> float:
+        """Calculate how much you ACTUALLY receive after fees and slippage."""
+        fee = self.maker_fee if is_maker else self.taker_fee
+        slippage = 0.0 if is_maker else self.slippage_estimate
+        total_cost = fee + slippage
+        return gross_value * (1 - total_cost)
+    
+    def calculate_cost_of_trade(self, trade_value: float, is_maker: bool = False) -> float:
+        """Calculate the EXACT cost of a trade in dollars."""
+        fee = self.maker_fee if is_maker else self.taker_fee
+        slippage = 0.0 if is_maker else self.slippage_estimate
+        return trade_value * (fee + slippage)
+
+
+# Default fee structures for major exchanges
+EXCHANGE_FEES = {
+    'binance': FeeStructure(
+        exchange='binance',
+        maker_fee=0.001,      # 0.10%
+        taker_fee=0.001,      # 0.10%
+        slippage_estimate=0.0005,  # 0.05% estimated slippage
+        min_trade_size=10.0
+    ),
+    'binance_vip': FeeStructure(
+        exchange='binance_vip',
+        maker_fee=0.0002,     # 0.02% (VIP level)
+        taker_fee=0.0004,     # 0.04%
+        slippage_estimate=0.0005,
+        min_trade_size=10.0
+    ),
+    'kraken': FeeStructure(
+        exchange='kraken',
+        maker_fee=0.0016,     # 0.16%
+        taker_fee=0.0026,     # 0.26%
+        slippage_estimate=0.001,  # 0.10%
+        min_trade_size=10.0
+    ),
+    'coinbase': FeeStructure(
+        exchange='coinbase',
+        maker_fee=0.004,      # 0.40%
+        taker_fee=0.006,      # 0.60%
+        slippage_estimate=0.001,
+        min_trade_size=1.0
+    ),
+    'alpaca': FeeStructure(
+        exchange='alpaca',
+        maker_fee=0.0,        # 0% (crypto)
+        taker_fee=0.0015,     # 0.15%
+        slippage_estimate=0.001,
+        min_trade_size=1.0
+    ),
+    # Conservative estimate for unknown exchanges
+    'default': FeeStructure(
+        exchange='default',
+        maker_fee=0.002,      # 0.20%
+        taker_fee=0.003,      # 0.30%
+        slippage_estimate=0.002,  # 0.20%
+        min_trade_size=10.0
+    )
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DATA CLASSES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class PositionState(Enum):
+    """Position states in the Queen's portfolio."""
+    MAIN = auto()        # Main position (actively managed)
+    BREADCRUMB = auto()  # Breadcrumb position (left behind, growing)
+    SCALPING = auto()    # Active scalping position
+
+
+@dataclass
+class Friend:
+    """
+    A "Friend" in the Queen's portfolio - an asset that can participate in leaps.
+    
+    FRIENDS WITH BAGGAGE CONCEPT:
+    - Every asset we hold is a "friend" that can participate in leaps
+    - BAGGAGE = unrealized loss from original cost basis
+    - Cash = "clean friend" with NO baggage (can leap freely)
+    - XRP at -5% = friend with 5% baggage
+    - When we leap to a deeper dip and it recovers, the baggage gets CLEARED!
+    
+    Example:
+      - Bought XRP at $2.00, now at $1.90 (-5%) = $0.10 baggage per XRP
+      - We leap to SLF which is -40% (deep dip!)
+      - When SLF recovers to our original XRP cost basis value, baggage = CLEARED
+      - The breadcrumb we left represents PURE profit
+    """
+    symbol: str
+    quantity: float
+    cost_basis: float       # What we PAID for this (original buy price * qty)
+    entry_price: float      # Price per unit when we bought
+    current_price: float = 0.0
+    exchange: str = "binance"
+    
+    @property
+    def current_value(self) -> float:
+        """What the friend is worth NOW."""
+        return self.quantity * self.current_price
+    
+    @property
+    def baggage(self) -> float:
+        """
+        The BAGGAGE - how much we're underwater from original cost.
+        Positive = underwater (has baggage to clear)
+        Zero/Negative = no baggage (free to leap!)
+        """
+        return max(0, self.cost_basis - self.current_value)
+    
+    @property
+    def baggage_percent(self) -> float:
+        """Baggage as percentage of cost basis."""
+        if self.cost_basis <= 0:
+            return 0.0
+        return (self.baggage / self.cost_basis) * 100
+    
+    @property
+    def is_clear(self) -> bool:
+        """Is this friend clear of baggage? (at or above cost basis)"""
+        return self.current_value >= self.cost_basis
+    
+    @property
+    def profit_available(self) -> float:
+        """How much PROFIT is available (only if above cost basis)."""
+        return max(0, self.current_value - self.cost_basis)
+    
+    @property
+    def leap_value(self) -> float:
+        """
+        The value available for leaping.
+        If clear: current_value (can leap full amount)
+        If baggage: current_value (leap to clear baggage via deeper dip)
+        """
+        return self.current_value
+    
+    def update_price(self, price: float) -> None:
+        """Update current market price."""
+        self.current_price = price
+    
+    def __str__(self) -> str:
+        status = "✅ CLEAR" if self.is_clear else f"⚠️ -{self.baggage_percent:.1f}% BAGGAGE"
+        return f"{self.symbol}: ${self.current_value:.2f} ({status})"
+
+
+@dataclass
+class Breadcrumb:
+    """A breadcrumb position left on the Yellow Brick Road."""
+    symbol: str
+    quantity: float
+    cost_basis: float
+    entry_price: float
+    entry_time: datetime
+    current_price: float = 0.0
+    unrealized_pnl: float = 0.0
+    pnl_percent: float = 0.0
+    exchange: str = "binance"
+    
+    def update_price(self, price: float) -> None:
+        """Update current price and P&L."""
+        self.current_price = price
+        current_value = self.quantity * price
+        self.unrealized_pnl = current_value - self.cost_basis
+        self.pnl_percent = (self.unrealized_pnl / self.cost_basis * 100) if self.cost_basis > 0 else 0
+    
+    @property
+    def current_value(self) -> float:
+        return self.quantity * self.current_price
+
+
+@dataclass
+class MainPosition:
+    """The Queen's main active position."""
+    symbol: str
+    quantity: float
+    cost_basis: float
+    entry_price: float
+    entry_time: datetime
+    current_price: float = 0.0
+    change_24h: float = 0.0
+    
+    def update(self, price: float, change: float) -> None:
+        self.current_price = price
+        self.change_24h = change
+    
+    @property
+    def current_value(self) -> float:
+        return self.quantity * self.current_price
+    
+    @property
+    def unrealized_pnl(self) -> float:
+        return self.current_value - self.cost_basis
+
+
+@dataclass
+class MarketCoin:
+    """Market data for a single coin."""
+    symbol: str
+    price: float
+    change_24h: float
+    volume_24h: float
+    high_24h: float = 0.0
+    low_24h: float = 0.0
+
+
+@dataclass
+class LeapOpportunity:
+    """
+    A quantum leap opportunity with FULL cost accounting.
+    
+    The Queen's Math is ROCK SOLID:
+    - Accounts for sell fees on current position
+    - Accounts for buy fees on new position
+    - Accounts for slippage both ways
+    - Only leaps if NET value is preserved!
+    """
+    from_symbol: str
+    to_symbol: str
+    from_price: float
+    to_price: float
+    from_change: float
+    to_change: float
+    dip_advantage: float  # How much deeper the target dipped (percentage points)
+    quantity_multiplier: float  # How many more coins you get AFTER fees
+    recovery_advantage: float  # Expected extra profit on recovery
+    
+    # Fee accounting (the Queen's crystal clear math!)
+    gross_value: float = 0.0          # Value before any fees
+    sell_fee_cost: float = 0.0        # Cost to sell current position
+    buy_fee_cost: float = 0.0         # Cost to buy new position
+    slippage_cost: float = 0.0        # Total slippage both trades
+    total_fees: float = 0.0           # Total cost of the leap
+    net_value_after_fees: float = 0.0 # What you ACTUALLY get
+    fee_adjusted_multiplier: float = 0.0  # Real quantity gain after fees
+    
+    @property
+    def is_profitable_after_fees(self) -> bool:
+        """Is this leap still worth it after ALL costs?"""
+        return self.fee_adjusted_multiplier > 1.0
+    
+    @property
+    def breakeven_dip_advantage(self) -> float:
+        """Minimum dip advantage needed to cover fees."""
+        return self.total_fees / self.gross_value * 100 if self.gross_value > 0 else 999
+
+
+@dataclass
+class CycleStats:
+    """Statistics for a single cycle."""
+    cycle_number: int
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    leaps_made: int = 0
+    breadcrumbs_planted: int = 0
+    scalps_executed: int = 0
+    profit_realized: float = 0.0
+    quantity_gained: float = 0.0
+    friends_protected: int = 0  # 🛡️ Orca kill cycle protection count
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# THE QUEEN'S ETERNAL MACHINE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class QueenEternalMachine:
+    """
+    The Queen's 24/7 Eternal Trading Machine.
+    
+    Implements all 7 strategies:
+    1. Mountain Pilgrimage - DCA down, compound up
+    2. Quantum Frog - Leap to deeper dips for quantity
+    3. Bloodless Descent - Never sell at loss
+    4. Yellow Brick Road - Leave trail of positions
+    5. Breadcrumb Trail - Every crumb grows on recovery
+    6. 24/7 Machine - Never stops scanning/acting
+    7. Micro Scalping - Harvest bounces
+    
+    🆕 FRIENDS WITH BAGGAGE SYSTEM:
+    - Every asset = a "friend" that can participate
+    - Baggage = unrealized loss from cost basis
+    - Cash = clean friend (no baggage)
+    - Leaps clear baggage when recovery exceeds original cost basis!
+    """
+    
+    def __init__(
+        self,
+        initial_vault: Optional[float] = None,  # If None, load from real positions!
+        breadcrumb_percent: float = BREADCRUMB_PERCENT,
+        min_dip_advantage: float = MIN_DIP_ADVANTAGE,
+        dry_run: bool = False,
+        state_file: str = "queen_eternal_state.json",
+        exchange: str = "binance",
+        fee_structure: Optional[FeeStructure] = None,
+        cost_basis_file: str = "cost_basis_history.json"
+    ):
+        self.breadcrumb_percent = breadcrumb_percent
+        self.min_dip_advantage = min_dip_advantage
+        self.dry_run = dry_run
+        self.state_file = Path(state_file)
+        self.exchange = exchange
+        self.cost_basis_file = Path(cost_basis_file)
+        self._exchange_clients: Dict[str, Any] = {}
+        self.live_trading = (not self.dry_run) and (os.getenv("LIVE", "0").lower() in ("1", "true", "yes"))
+        
+        # Fee structure - THE QUEEN KNOWS HER COSTS!
+        self.fee_structure = fee_structure or EXCHANGE_FEES.get(exchange, EXCHANGE_FEES['default'])
+        
+        # Track total fees paid
+        self.total_fees_paid: float = 0.0
+        self.total_slippage_cost: float = 0.0
+
+        if self.live_trading:
+            logger.info("Eternal Machine live trading: ENABLED")
+        else:
+            logger.warning("Eternal Machine live trading: DISABLED (simulation-only)")
+        
+        # 🆕 FRIENDS WITH BAGGAGE SYSTEM
+        self.friends: Dict[str, Friend] = {}  # All our "friends" (assets)
+        self.cash_balance: float = 0.0  # Cash is the cleanest friend!
+        
+        # Portfolio state (legacy)
+        self.main_position: Optional[MainPosition] = None
+        self.breadcrumbs: Dict[str, Breadcrumb] = {}
+        self.available_cash: float = 0.0
+        
+        # Market data cache
+        self.market_data: Dict[str, MarketCoin] = {}
+        self.last_scan_time: Optional[datetime] = None
+        
+        # 🌊 OCEAN WAVE SCANNER - Whale/shark detection
+        self.ocean_scanner: Optional[OceanWaveScanner] = None
+        if OCEAN_SCANNER_AVAILABLE:
+            try:
+                self.ocean_scanner = OceanWaveScanner()
+                logger.info("🌊 Ocean Wave Scanner WIRED for whale detection!")
+            except Exception as e:
+                logger.warning(f"⚠️ Ocean Wave Scanner unavailable: {e}")
+        
+        # 👑🧠 QUEEN HIVE MIND - Central Consciousness
+        self.queen_hive: Optional[QueenHiveMind] = None
+        if QUEEN_HIVE_AVAILABLE:
+            try:
+                self.queen_hive = get_queen() if get_queen else QueenHiveMind(initial_capital=initial_vault or 50000)
+                logger.info("👑🧠 QUEEN HIVE MIND WIRED - Central consciousness active!")
+            except Exception as e:
+                logger.warning(f"⚠️ Queen Hive Mind unavailable: {e}")
+        
+        # ⚛️🧠 QUANTUM COGNITION - Amplified Consciousness & Autonomous Control
+        self.quantum_cognition: Optional[QueenQuantumCognition] = None
+        if QUANTUM_COGNITION_AVAILABLE:
+            try:
+                self.quantum_cognition = get_quantum_cognition() if get_quantum_cognition else None
+                if self.quantum_cognition:
+                    logger.info("⚛️🧠 QUANTUM COGNITION WIRED - Amplified consciousness active!")
+                    # Take full autonomous control
+                    result = self.quantum_cognition.take_full_autonomous_control()
+                    if result.get('success'):
+                        logger.info(f"   🔱 FULL AUTONOMOUS CONTROL ACTIVE")
+                        logger.info(f"   🧠 Sovereignty Level: {result.get('sovereignty_level')}")
+            except Exception as e:
+                logger.warning(f"⚠️ Quantum Cognition unavailable: {e}")
+        
+        # 🍄 MYCELIUM NETWORK - Underground Signal Network
+        self.mycelium: Optional[MyceliumNetwork] = None
+        if MYCELIUM_AVAILABLE:
+            try:
+                self.mycelium = MyceliumNetwork(initial_capital=initial_vault or 50000)
+                logger.info("🍄 MYCELIUM NETWORK WIRED - Underground signal network active!")
+            except Exception as e:
+                logger.warning(f"⚠️ Mycelium Network unavailable: {e}")
+        
+        # 🤖 BOT INTELLIGENCE PROFILER - Market Structure Analysis
+        self.bot_profiler: Optional[BotIntelligenceProfiler] = None
+        if BOT_INTELLIGENCE_AVAILABLE:
+            try:
+                self.bot_profiler = BotIntelligenceProfiler()
+                logger.info("🤖 BOT INTELLIGENCE PROFILER WIRED - Market competition awareness active!")
+            except Exception as e:
+                logger.warning(f"⚠️ Bot Intelligence Profiler unavailable: {e}")
+        
+        # 📺 LIVE TV STATION - Truth Prediction Engine
+        self.prediction_engine: Optional[TruthPredictionEngine] = None
+        if LIVE_TV_AVAILABLE:
+            try:
+                self.prediction_engine = TruthPredictionEngine()
+                logger.info("📺 LIVE TV STATION WIRED - Truth Prediction Engine active!")
+            except Exception as e:
+                logger.warning(f"⚠️ Live TV Station unavailable: {e}")
+        
+        # ⛰️ MOUNTAIN CLIMBER - Learn Optimal Climbing Strategies
+        self.mountain_climber: Optional[MountainClimber] = None
+        if MOUNTAIN_CLIMBER_AVAILABLE:
+            try:
+                self.mountain_climber = MountainClimber(state_file="mountain_climbing_state.json")
+                logger.info("⛰️ MOUNTAIN CLIMBER WIRED - Learning optimal climbing strategies!")
+            except Exception as e:
+                logger.warning(f"⚠️ Mountain Climber unavailable: {e}")
+        
+        # Statistics
+        self.total_cycles: int = 0
+        self.total_leaps: int = 0
+        self.total_breadcrumbs: int = 0
+        self.total_scalps: int = 0
+        self.total_profit_realized: float = 0.0
+        self.cycle_history: List[CycleStats] = []
+        
+        # Running state
+        self.is_running: bool = False
+        self.start_time: Optional[datetime] = None
+        
+        # ALWAYS load REAL positions from LIVE exchange APIs!
+        # The frog must know what it ACTUALLY holds - no phantom positions!
+        self._load_friends_from_real_positions()
+        
+        if initial_vault is None:
+            self.initial_vault = self.total_portfolio_value
+        else:
+            self.initial_vault = initial_vault
+        
+        # Load existing state (statistics only - main_position synced from real data below)
+        self._load_state()
+        
+        # CRITICAL: Override stale main_position from state file with REAL holdings!
+        # The Frog must leap from positions we ACTUALLY hold, not phantom data.
+        self._sync_main_position_to_real_holdings()
+        
+        logger.info("👑 Queen Eternal Machine initialized")
+        logger.info(f"   💰 Total vault: ${self.total_portfolio_value:.2f}")
+        logger.info(f"   👥 Friends loaded: {len(self.friends)}")
+        logger.info(f"   💵 Cash balance: ${self.cash_balance:.2f}")
+        logger.info(f"   🍞 Breadcrumb %: {breadcrumb_percent*100:.1f}%")
+        logger.info(f"   📉 Min dip advantage: {min_dip_advantage*100:.1f}%")
+        logger.info(f"   🧪 Dry run: {dry_run}")
+    
+    def _sync_main_position_to_real_holdings(self) -> None:
+        """
+        Sync main_position with what we ACTUALLY hold on exchanges.
+        
+        If the state file loaded a main_position for a coin we don't hold,
+        replace it with our largest REAL holding so opportunities are calculated
+        against assets that actually exist.
+        """
+        if not self.friends:
+            # No real holdings loaded - clear phantom main_position
+            if self.main_position:
+                logger.warning(f"🐸 PHANTOM DETECTED: main_position={self.main_position.symbol} but we hold NOTHING - clearing!")
+                self.main_position = None
+            return
+        
+        # Check if current main_position is actually held
+        if self.main_position:
+            mp_symbol = self.main_position.symbol
+            # Check if we hold this asset in our friends list
+            if mp_symbol not in self.friends:
+                logger.warning(f"🐸 PHANTOM MAIN POSITION DETECTED: {mp_symbol} is NOT in real holdings!")
+                logger.warning(f"   State file had {mp_symbol} but we don't hold it on any exchange")
+                logger.warning(f"   Clearing phantom and selecting largest REAL holding...")
+                self.main_position = None
+        
+        # If no main_position (cleared or never set), pick largest real holding
+        if self.main_position is None and self.friends:
+            # Find the friend with highest value (our biggest real position)
+            best_friend = max(self.friends.values(), key=lambda f: f.current_value)
+            if best_friend.current_value > 0:
+                self.main_position = MainPosition(
+                    symbol=best_friend.symbol,
+                    quantity=best_friend.quantity,
+                    cost_basis=best_friend.cost_basis / best_friend.quantity if best_friend.quantity > 0 else best_friend.entry_price,
+                    entry_price=best_friend.entry_price,
+                    entry_time=datetime.now()
+                )
+                logger.info(f"🐸 REAL MAIN POSITION SET: {best_friend.symbol} (qty={best_friend.quantity:.4f}, exchange={best_friend.exchange})")
+            else:
+                logger.info(f"🐸 No valuable positions to set as main_position (all friends have $0 value)")
+
+    def _load_friends_from_real_positions(self) -> None:
+        """
+        Load friends from LIVE API balances + cross-reference with cost basis tracker.
+        
+        THE TRUTH:
+        - LIVE API balances = What we ACTUALLY HOLD right now
+        - CostBasisTracker = What we PAID for stuff (with FIFO accounting)
+        
+        We might have bought/sold same coin multiple times!
+        Only what we HOLD NOW matters for leaping.
+        
+        Cost basis comes from remaining lots after FIFO sales.
+        """
+        # First fetch LIVE balances from all exchanges
+        live_balances = self._fetch_live_balances()
+        
+        if not live_balances:
+            logger.warning("⚠️ No live balances available - falling back to cost basis fallback")
+            self._load_friends_from_cost_basis_fallback()
+            return
+        
+        # Initialize cost basis tracker for accurate cost basis calculation
+        cost_basis_tracker = None
+        try:
+            from cost_basis_tracker import CostBasisTracker
+            cost_basis_tracker = CostBasisTracker()
+            logger.info("📊 Cost Basis Tracker: WIRED for accurate baggage calculation")
+        except Exception as e:
+            logger.warning(f"⚠️ Cost Basis Tracker unavailable: {e}")
+        
+        # Build friends from LIVE balances
+        for asset, (qty, exchange) in live_balances.items():
+            if qty <= 0:
+                continue
+            
+            # Skip stablecoins (they're cash, not friends)
+            if asset in ['USD', 'USDC', 'USDT', 'BUSD', 'EUR', 'GBP', 'TUSD']:
+                self.cash_balance += qty if asset in ['USD', 'USDC', 'USDT', 'BUSD'] else 0
+                continue
+            
+            # Get ACCURATE cost basis using the tracker
+            cost_basis = 0.0
+            entry_price = 0.0
+            
+            if cost_basis_tracker:
+                # Try different symbol formats to find the position
+                # The tracker expects just the base asset name (e.g., "ADA", "BTC")
+                pos = cost_basis_tracker.get_cost_basis(asset, exchange)
+                if pos:
+                    # Use the tracker's accurate cost basis (remaining after FIFO)
+                    cost_basis = pos.get('total_cost', 0)
+                    entry_price = pos.get('avg_entry_price', 0)
+                    logger.info(f"   📊 {asset}: Found cost basis ${cost_basis:.2f} @ ${entry_price:.4f}")
+                else:
+                    logger.info(f"   📊 {asset}: No cost basis found in tracker")
+            else:
+                # Fallback: read cost_basis_history.json directly with correct key format
+                cost_basis_data = {}
+                if self.cost_basis_file.exists():
+                    try:
+                        with open(self.cost_basis_file, 'r') as f:
+                            cb_data = json.load(f)
+                            cost_basis_data = cb_data.get('positions', {})
+                    except Exception as e:
+                        logger.warning(f"⚠️ Could not load cost basis file: {e}")
+                
+                # Try the correct key format: "exchange:asset"
+                fallback_key = f"{exchange}:{asset}"
+                if fallback_key in cost_basis_data:
+                    cb = cost_basis_data[fallback_key]
+                    total_cost = cb.get('total_cost', 0)
+                    total_qty = cb.get('total_quantity', 0)
+                    if total_qty > 0:
+                        # This is still approximate - better than nothing
+                        cost_per_unit = total_cost / total_qty
+                        cost_basis = qty * cost_per_unit
+                        entry_price = cb.get('avg_entry_price', cost_per_unit)
+                        logger.info(f"   📊 {asset}: Fallback cost basis ${cost_basis:.2f} @ ${entry_price:.4f}")
+                
+                # Also try without exchange prefix as backup
+                elif asset in cost_basis_data:
+                    cb = cost_basis_data[asset]
+                    total_cost = cb.get('total_cost', 0)
+                    total_qty = cb.get('total_quantity', 0)
+                    if total_qty > 0:
+                        cost_per_unit = total_cost / total_qty
+                        cost_basis = qty * cost_per_unit
+                        entry_price = cb.get('avg_entry_price', cost_per_unit)
+                        logger.info(f"   📊 {asset}: Fallback cost basis ${cost_basis:.2f} @ ${entry_price:.4f}")
+            
+            # If no cost basis found, assume current price (no baggage)
+            if cost_basis == 0:
+                # Try to get current price for initial cost basis
+                current_price = 0.0
+                # This is approximate - in real usage, market data would be available
+                entry_price = current_price or 1.0  # Fallback
+                cost_basis = qty * entry_price
+                logger.info(f"   📊 {asset}: No cost basis found, assuming ${cost_basis:.2f} @ ${entry_price:.4f}")
+            
+            self.friends[asset] = Friend(
+                symbol=asset,
+                quantity=qty,
+                cost_basis=cost_basis,
+                entry_price=entry_price,
+                current_price=entry_price,  # Will be updated with market data
+                exchange=exchange
+            )
+        
+        logger.info(f"👥 Loaded {len(self.friends)} friends from LIVE API balances")
+        logger.info(f"   💵 Cash balance: ${self.cash_balance:.2f}")
+        
+        # Log summary with baggage info
+        total_value = sum(f.current_value for f in self.friends.values())
+        total_baggage = sum(f.baggage for f in self.friends.values())
+        clear_friends = sum(1 for f in self.friends.values() if f.is_clear)
+        
+        logger.info(f"   💰 Total position value: ${total_value:.2f}")
+        logger.info(f"   🧳 Total baggage: ${total_baggage:.2f}")
+        logger.info(f"   ✅ Clear friends: {clear_friends}/{len(self.friends)}")
+        
+        # Log by exchange
+        by_exchange: Dict[str, int] = {}
+        for f in self.friends.values():
+            by_exchange[f.exchange] = by_exchange.get(f.exchange, 0) + 1
+        for ex, count in by_exchange.items():
+            logger.info(f"   📍 {ex}: {count} positions")
+    
+    def _fetch_live_balances(self) -> Dict[str, Tuple[float, str]]:
+        """
+        Fetch LIVE balances from all exchange APIs.
+        
+        Returns: {asset: (quantity, exchange)}
+        """
+        balances: Dict[str, Tuple[float, str]] = {}
+        
+        # 1. BINANCE
+        try:
+            try:
+                from aureon.core.api_gateway import gw
+                binance_bals = gw.get_balance("binance")
+            except Exception:
+                from binance_client import get_binance_client
+                binance_bals = get_binance_client().get_balance()
+            for asset, qty in binance_bals.items():
+                if qty > 0:
+                    balances[asset] = (qty, 'binance')
+            logger.info(f"   📍 Binance: {len([q for q in binance_bals.values() if q > 0])} assets")
+        except Exception as e:
+            logger.warning(f"   ⚠️ Binance unavailable: {e}")
+
+        # 2. ALPACA
+        try:
+            try:
+                from aureon.core.api_gateway import gw
+                positions = gw.get_positions("alpaca")
+            except Exception:
+                from alpaca_client import AlpacaClient
+                positions = AlpacaClient().get_positions()
+            for pos in positions:
+                symbol = pos.get('symbol', '')
+                qty = float(pos.get('qty', 0))
+                if qty > 0 and symbol:
+                    # Alpaca uses different symbol format
+                    asset = symbol.replace('/USD', '').replace('USD', '')
+                    if asset in balances:
+                        # Merge with existing
+                        old_qty, _ = balances[asset]
+                        balances[asset] = (old_qty + qty, 'multi')
+                    else:
+                        balances[asset] = (qty, 'alpaca')
+            logger.info(f"   📍 Alpaca: {len(positions)} positions")
+        except Exception as e:
+            logger.warning(f"   ⚠️ Alpaca unavailable: {e}")
+
+        # 3. KRAKEN - Try live API first, cached snapshot ONLY as emergency fallback
+        _kraken_success = False
+        try:
+            try:
+                from aureon.core.api_gateway import gw
+                kraken_bals = gw.get_balance("kraken")
+            except Exception:
+                from kraken_client import get_kraken_client
+                kraken_bals = get_kraken_client().get_balance()
+            for asset, qty in kraken_bals.items():
+                qty = float(qty)
+                if qty > 0:
+                    # Clean Kraken asset names (remove X/Z prefixes)
+                    clean_asset = asset.replace('.B', '').replace('X', '').replace('Z', '')
+                    if len(clean_asset) > 1:
+                        if clean_asset in balances:
+                            old_qty, _ = balances[clean_asset]
+                            balances[clean_asset] = (old_qty + qty, 'multi')
+                        else:
+                            balances[clean_asset] = (qty, 'kraken')
+            logger.info(f"   📍 Kraken: {len([q for q in kraken_bals.values() if float(q) > 0])} assets (LIVE API)")
+            _kraken_success = True
+        except Exception as e:
+            logger.warning(f"   ⚠️ Kraken LIVE API failed: {e}")
+            # ONLY use cached snapshot as emergency fallback
+            try:
+                kraken_file = Path("kraken_balance_snapshot_2026-02-03.json")
+                if kraken_file.exists():
+                    with open(kraken_file, 'r') as f:
+                        kraken_data = json.load(f)
+                    for asset, qty in kraken_data.get('balances', {}).items():
+                        qty = float(qty)
+                        if qty > 0:
+                            # Clean Kraken asset names (remove X/Z prefixes)
+                            clean_asset = asset.replace('.B', '').replace('X', '').replace('Z', '')
+                            if len(clean_asset) > 1:
+                                if clean_asset in balances:
+                                    old_qty, _ = balances[clean_asset]
+                                    balances[clean_asset] = (old_qty + qty, 'multi')
+                                else:
+                                    balances[clean_asset] = (qty, 'kraken-cached')
+                    logger.info(f"   📍 Kraken: {len(kraken_data.get('balances', {}))} assets (CACHED FALLBACK - OLD DATA)")
+                else:
+                    logger.warning("   ⚠️ No Kraken cached snapshot available")
+            except Exception as cache_e:
+                logger.warning(f"   ⚠️ Kraken cached fallback also failed: {cache_e}")
+        
+        return balances
+
+    def _get_exchange_client(self, exchange: str):
+        if exchange in self._exchange_clients:
+            return self._exchange_clients[exchange]
+        client = None
+        try:
+            if exchange == 'binance':
+                from binance_client import get_binance_client
+                client = get_binance_client()
+            elif exchange == 'kraken':
+                from kraken_client import get_kraken_client
+                client = get_kraken_client()
+            elif exchange == 'alpaca':
+                from alpaca_client import AlpacaClient
+                client = AlpacaClient()
+        except Exception as e:
+            logger.warning(f"⚠️ Could not init {exchange} client: {e}")
+        self._exchange_clients[exchange] = client
+        return client
+
+    def _pair_candidates(self, base_symbol: str, exchange: str) -> List[str]:
+        base = (base_symbol or "").upper()
+        if exchange == 'binance':
+            return [f"{base}USDT", f"{base}USDC", f"{base}USD"]
+        if exchange == 'kraken':
+            kraken_base = "XBT" if base == "BTC" else base
+            return [
+                f"{kraken_base}USD",
+                f"X{kraken_base}ZUSD",
+                f"{kraken_base}/USD",
+            ]
+        if exchange == 'alpaca':
+            return [f"{base}USD", f"{base}/USD"]
+        return [f"{base}USD"]
+
+    def _order_failed(self, response: Dict[str, Any]) -> bool:
+        if not isinstance(response, dict):
+            return True
+        if response.get("rejected") or response.get("error") or response.get("dryRun"):
+            return True
+        return False
+
+    def _base_symbol_variants(self, base_symbol: str) -> set[str]:
+        base = (base_symbol or "").upper().strip()
+        for suffix in ("/USDT", "/USDC", "/USD", "USDT", "USDC", "USD"):
+            if base.endswith(suffix):
+                base = base[:-len(suffix)]
+                break
+        variants = {base}
+        if base == "BTC":
+            variants.update({"XBT", "XXBT", "XBTC"})
+        if base == "XBT":
+            variants.update({"BTC", "XXBT", "XBTC"})
+        variants.update({f"X{base}", f"Z{base}"})
+        return {v for v in variants if v}
+
+    def _asset_symbol_candidates(self, asset: str) -> set[str]:
+        raw = (asset or "").upper().strip()
+        if not raw:
+            return set()
+        trimmed = raw
+        for suffix in (".B", ".F", ".S"):
+            if trimmed.endswith(suffix):
+                trimmed = trimmed[:-len(suffix)]
+        candidates = {raw, trimmed}
+        if trimmed.startswith("X") and len(trimmed) > 1:
+            candidates.add(trimmed[1:])
+        if trimmed.startswith("Z") and len(trimmed) > 1:
+            candidates.add(trimmed[1:])
+        if trimmed == "XXBT":
+            candidates.update({"XBT", "BTC"})
+        if trimmed == "XBT":
+            candidates.add("BTC")
+        return {c for c in candidates if c}
+
+    def _get_available_base_quantity(self, exchange: str, base_symbol: str) -> float:
+        client = self._get_exchange_client(exchange)
+        if not client or not hasattr(client, "get_balance"):
+            return 0.0
+        try:
+            balances = client.get_balance() or {}
+        except Exception:
+            return 0.0
+        if not isinstance(balances, dict):
+            return 0.0
+
+        variants = self._base_symbol_variants(base_symbol)
+        available = 0.0
+        for asset, qty in balances.items():
+            try:
+                qty_f = float(qty or 0)
+            except Exception:
+                continue
+            if qty_f <= 0:
+                continue
+            asset_candidates = self._asset_symbol_candidates(str(asset))
+            if asset_candidates.intersection(variants):
+                available += qty_f
+        return max(0.0, available)
+
+    def _extract_order_id(self, response: Dict[str, Any]) -> Optional[str]:
+        if not isinstance(response, dict):
+            return None
+        for key in ("orderId", "id", "clientOrderId", "order_id", "txid"):
+            value = response.get(key)
+            if isinstance(value, list):
+                value = value[0] if value else None
+            if value:
+                return str(value)
+        return None
+
+    def _log_order_id(self, label: str, exchange: str, symbol: str, side: str, response: Dict[str, Any]) -> None:
+        order_id = self._extract_order_id(response)
+        if order_id:
+            logger.info(f"   🧾 {label} ORDER ID ({exchange} {side} {symbol}): {order_id}")
+            return
+        logger.warning(f"⚠️ {label} order missing ID ({exchange} {side} {symbol}): {response}")
+
+    def _log_order_summary(self, label: str, exchange: str, sell_res: Dict[str, Any], buy_res: Dict[str, Any]) -> None:
+        sell_id = self._extract_order_id(sell_res) or "missing"
+        buy_id = self._extract_order_id(buy_res) or "missing"
+        logger.info(f"   ✅ LIVE ORDER SUMMARY ({label} {exchange}): SELL={sell_id} BUY={buy_id}")
+
+    def _place_market_order(self, exchange: str, base_symbol: str, side: str, quantity: float | None = None, quote_qty: float | None = None) -> Dict[str, Any]:
+        client = self._get_exchange_client(exchange)
+        if not client:
+            return {"error": "no_client", "exchange": exchange}
+        if getattr(client, "dry_run", False):
+            return {"error": "dry_run", "exchange": exchange}
+        last_err: str | None = None
+        for pair in self._pair_candidates(base_symbol, exchange):
+            try:
+                res = client.place_market_order(pair, side, quantity=quantity, quote_qty=quote_qty)
+                if not self._order_failed(res):
+                    return res
+                if isinstance(res, dict) and str(res.get("error", "")).lower() == "volume_minimum":
+                    return {
+                        "error": "volume_minimum",
+                        "exchange": exchange,
+                        "symbol": base_symbol,
+                        "side": side,
+                        "details": res,
+                    }
+                last_err = f"rejected for {pair}"
+            except Exception as e:
+                last_err = str(e)
+        return {"error": last_err or "order_failed", "exchange": exchange, "symbol": base_symbol, "side": side}
+    
+    def _load_friends_from_cost_basis_fallback(self) -> None:
+        """Fallback: Load from cost_basis_history.json if tracked_positions.json doesn't exist."""
+        try:
+            if not self.cost_basis_file.exists():
+                logger.warning(f"⚠️ Cost basis file not found: {self.cost_basis_file}")
+                return
+            
+            with open(self.cost_basis_file, 'r') as f:
+                data = json.load(f)
+            
+            positions = data.get('positions', {})
+            
+            for symbol, pos_data in positions.items():
+                if not isinstance(pos_data, dict):
+                    continue
+                
+                qty = pos_data.get('total_quantity', 0)
+                cost = pos_data.get('total_cost', 0)
+                entry_price = pos_data.get('avg_entry_price', 0)
+                exchange = pos_data.get('exchange', 'binance')
+                asset = pos_data.get('asset', symbol.replace('USDC', '').replace('USD', '').replace('EUR', ''))
+                
+                if qty <= 0 or cost <= 0:
+                    continue
+                
+                self.friends[asset] = Friend(
+                    symbol=asset,
+                    quantity=qty,
+                    cost_basis=cost,
+                    entry_price=entry_price,
+                    current_price=entry_price,
+                    exchange=exchange
+                )
+            
+            logger.warning(f"⚠️ Loaded {len(self.friends)} friends from cost_basis FALLBACK (not live positions!)")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load from cost_basis fallback: {e}")
+    
+    def update_friends_prices(self) -> None:
+        """Update all friends with current market prices."""
+        for symbol, friend in self.friends.items():
+            market_coin = self.market_data.get(symbol)
+            if market_coin:
+                friend.update_price(market_coin.price)
+    
+    @property
+    def total_portfolio_value(self) -> float:
+        """Total value of all friends + cash."""
+        friends_value = sum(f.current_value for f in self.friends.values())
+        return friends_value + self.cash_balance
+    
+    @property
+    def total_baggage(self) -> float:
+        """Total baggage (unrealized loss) across all friends."""
+        return sum(f.baggage for f in self.friends.values())
+    
+    @property
+    def friends_with_baggage(self) -> List[Friend]:
+        """All friends that have baggage (underwater)."""
+        return [f for f in self.friends.values() if not f.is_clear]
+    
+    @property
+    def clear_friends(self) -> List[Friend]:
+        """All friends that are clear (at or above cost basis)."""
+        return [f for f in self.friends.values() if f.is_clear]
+    
+    def get_best_leaper(self) -> Optional[Friend]:
+        """
+        Get the best friend to leap from.
+        
+        Priority:
+        1. Cash (cleanest - no baggage)
+        2. Friends with profit (can drop breadcrumbs)
+        3. Friends with baggage (need to clear via deeper dip)
+        """
+        # Cash first
+        if self.cash_balance > self.fee_structure.min_trade_size:
+            return Friend(
+                symbol="CASH",
+                quantity=self.cash_balance,
+                cost_basis=self.cash_balance,
+                entry_price=1.0,
+                current_price=1.0,
+                exchange=self.exchange
+            )
+        
+        # Find friend with most profit (clear + highest gain)
+        clear = sorted(self.clear_friends, key=lambda f: f.profit_available, reverse=True)
+        if clear and clear[0].leap_value > self.fee_structure.min_trade_size:
+            return clear[0]
+        
+        # Find friend with baggage but enough value to leap
+        baggage = sorted(self.friends_with_baggage, key=lambda f: f.leap_value, reverse=True)
+        if baggage and baggage[0].leap_value > self.fee_structure.min_trade_size:
+            return baggage[0]
+        
+        return None
+    
+    def show_friends_situation(self) -> str:
+        """
+        Display the current situation of all friends.
+        
+        Shows:
+        - Total portfolio value
+        - Cash balance (cleanest friend)
+        - Friends with profit (ready to leap!)
+        - Friends with baggage (need clearing)
+        """
+        self.update_friends_prices()
+        
+        lines = []
+        lines.append("═" * 70)
+        lines.append("👥 FRIENDS SITUATION - Who's Ready to Leap?")
+        lines.append("═" * 70)
+        
+        # Cash
+        lines.append(f"\n💵 CASH (Cleanest Friend): ${self.cash_balance:.2f}")
+        
+        # Portfolio totals
+        lines.append(f"\n📊 PORTFOLIO SUMMARY:")
+        lines.append(f"   💰 Total Value: ${self.total_portfolio_value:.2f}")
+        lines.append(f"   ⚠️ Total Baggage: ${self.total_baggage:.2f}")
+        lines.append(f"   👥 Total Friends: {len(self.friends)}")
+        
+        # Clear friends (ready to leap!)
+        clear = self.clear_friends
+        if clear:
+            lines.append(f"\n✅ CLEAR FRIENDS ({len(clear)}) - Ready to Leap!")
+            for f in sorted(clear, key=lambda x: x.profit_available, reverse=True)[:10]:
+                profit = f.profit_available
+                lines.append(f"   {f.symbol}: ${f.current_value:.2f} (+${profit:.2f} profit)")
+        
+        # Friends with baggage
+        baggage = self.friends_with_baggage
+        if baggage:
+            lines.append(f"\n⚠️ FRIENDS WITH BAGGAGE ({len(baggage)}) - Need Deeper Dips!")
+            for f in sorted(baggage, key=lambda x: x.baggage, reverse=True)[:10]:
+                lines.append(f"   {f.symbol}: ${f.current_value:.2f} (-${f.baggage:.2f} baggage, {f.baggage_percent:.1f}%)")
+        
+        lines.append("\n" + "═" * 70)
+        
+        return "\n".join(lines)
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # MARKET DATA FETCHING
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def fetch_market_data(self) -> Dict[str, MarketCoin]:
+        """Fetch live market data directly from exchange APIs (Binance/Alpaca/Kraken)."""
+        self.market_data.clear()
+
+        def _to_float(value: Any, default: float = 0.0) -> float:
+            try:
+                return float(value)
+            except Exception:
+                return default
+
+        def _add_ticker(ticker: Dict[str, Any], quote_suffix: str = "USDC") -> None:
+            symbol = str(ticker.get('symbol', ''))
+            if not symbol or not symbol.endswith(quote_suffix):
+                return
+
+            coin_symbol = symbol[:-len(quote_suffix)]
+            if not coin_symbol:
+                return
+
+            price = _to_float(ticker.get('lastPrice'))
+            volume = _to_float(ticker.get('quoteVolume'))
+            if price <= 0.0:
+                return
+
+            # Keep high-liquidity universe wide, but always keep held assets (handled later)
+            if volume < 100000 and coin_symbol not in held_symbols:
+                return
+
+            self.market_data[coin_symbol] = MarketCoin(
+                symbol=coin_symbol,
+                price=price,
+                change_24h=_to_float(ticker.get('priceChangePercent')),
+                volume_24h=volume,
+                high_24h=_to_float(ticker.get('highPrice'), price),
+                low_24h=_to_float(ticker.get('lowPrice'), price),
+            )
+
+        def _base_symbol(symbol: str) -> str:
+            raw = str(symbol).split(":")[-1].split("/")[0].upper()
+            # Strip Kraken staking/bond suffixes so ADA.S → ADA, SCRT21.S → SCRT21
+            for _sfx in (".S", ".B", ".F", ".M", ".P"):
+                if raw.endswith(_sfx):
+                    raw = raw[:-len(_sfx)]
+            return raw
+
+        held_symbols = {_base_symbol(s) for s in self.friends.keys() if s and s != "CASH"}
+        exchange_fetches: List[str] = []
+        _FETCH_TIMEOUT = 20  # seconds per exchange - prevents hang
+
+        def _fetch_binance_tickers():
+            try:
+                from aureon.core.api_gateway import gw
+                return gw.get_24h_tickers("binance") or []
+            except Exception:
+                from binance_client import get_binance_client
+                return get_binance_client().get_24h_tickers() or []
+
+        def _fetch_alpaca_tickers():
+            try:
+                from aureon.core.api_gateway import gw
+                return gw.get_24h_tickers("alpaca") or []
+            except Exception:
+                from alpaca_client import AlpacaClient
+                return AlpacaClient().get_24h_tickers() or []
+
+        def _fetch_kraken_tickers():
+            try:
+                from aureon.core.api_gateway import gw
+                return gw.get_24h_tickers("kraken") or []
+            except Exception:
+                from kraken_client import get_kraken_client
+                return get_kraken_client().get_24h_tickers() or []
+
+        # 1) Binance broad market scan (with timeout to prevent hang)
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _ex:
+                _fut = _ex.submit(_fetch_binance_tickers)
+                try:
+                    for ticker in _fut.result(timeout=_FETCH_TIMEOUT):
+                        _add_ticker(ticker, quote_suffix="USDC")
+                    exchange_fetches.append("binance")
+                except concurrent.futures.TimeoutError:
+                    logger.warning(f"⚠️ Binance market data TIMED OUT after {_FETCH_TIMEOUT}s — skipping")
+                    _fut.cancel()
+        except Exception as e:
+            logger.warning(f"⚠️ Binance market data unavailable: {e}")
+
+        # 2) Alpaca crypto scan (with timeout)
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _ex:
+                _fut = _ex.submit(_fetch_alpaca_tickers)
+                try:
+                    for ticker in _fut.result(timeout=_FETCH_TIMEOUT):
+                        _add_ticker(ticker, quote_suffix="USD")
+                    exchange_fetches.append("alpaca")
+                except concurrent.futures.TimeoutError:
+                    logger.debug(f"⚠️ Alpaca market data TIMED OUT after {_FETCH_TIMEOUT}s — skipping")
+                    _fut.cancel()
+        except Exception as e:
+            logger.debug(f"⚠️ Alpaca market data unavailable: {e}")
+
+        # 3) Kraken scan (with timeout)
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _ex:
+                _fut = _ex.submit(_fetch_kraken_tickers)
+                try:
+                    for ticker in _fut.result(timeout=_FETCH_TIMEOUT):
+                        symbol = str(ticker.get('symbol', ''))
+                        if symbol.endswith("USD"):
+                            _add_ticker(ticker, quote_suffix="USD")
+                        elif symbol.endswith("USDC"):
+                            _add_ticker(ticker, quote_suffix="USDC")
+                    exchange_fetches.append("kraken")
+                except concurrent.futures.TimeoutError:
+                    logger.debug(f"⚠️ Kraken market data TIMED OUT after {_FETCH_TIMEOUT}s — skipping")
+                    _fut.cancel()
+        except Exception as e:
+            logger.debug(f"⚠️ Kraken market data unavailable: {e}")
+
+        # 4) Hard guarantee: every held symbol gets a live exchange quote
+        # so leap logic always uses real exchange data for our actual portfolio.
+        # Only run individual lookups for friends missed by the broad scans —
+        # cap per-call at 8s to prevent hanging on obscure/delisted pairs.
+        _PER_SYMBOL_TIMEOUT = 8
+        for friend in self.friends.values():
+            friend_symbol = _base_symbol(friend.symbol)
+            if friend_symbol in self.market_data:
+                # Keep alias key so update_friends_prices can resolve raw symbols too
+                self.market_data.setdefault(friend.symbol, self.market_data[friend_symbol])
+                continue
+
+            # Skip if no broad data was fetched at all (all exchanges timed out)
+            if not exchange_fetches:
+                continue
+
+            primary_exchange = str(friend.exchange or self.exchange or "binance").lower().split(":")[-1]
+            candidate_exchanges = [primary_exchange, 'binance', 'kraken', 'alpaca']
+            seen = set()
+            candidate_exchanges = [ex for ex in candidate_exchanges if not (ex in seen or seen.add(ex))]
+
+            for ex in candidate_exchanges:
+                def _fetch_single(ex=ex, friend_symbol=friend_symbol):
+                    pair = f"{friend_symbol}USDC"
+                    if ex == 'kraken':
+                        pair = f"{friend_symbol}USD"
+                    elif ex == 'alpaca':
+                        pair = f"{friend_symbol}/USD"
+                    if ex == 'binance':
+                        try:
+                            from aureon.core.api_gateway import gw
+                            return ('USDC', gw.get_24h_ticker("binance", pair))
+                        except Exception:
+                            from binance_client import get_binance_client
+                            return ('USDC', get_binance_client().get_24h_ticker(pair))
+                    elif ex == 'kraken':
+                        try:
+                            from aureon.core.api_gateway import gw
+                            return ('USD', gw.get_24h_ticker("kraken", pair))
+                        except Exception:
+                            from kraken_client import get_kraken_client
+                            return ('USD', get_kraken_client().get_24h_ticker(pair))
+                    elif ex == 'alpaca':
+                        try:
+                            from aureon.core.api_gateway import gw
+                            t = gw.get_ticker("alpaca", pair)
+                        except Exception:
+                            from alpaca_client import AlpacaClient
+                            t = AlpacaClient().get_ticker(pair)
+                        if t and 'price' in t:
+                            t = {
+                                'symbol': f"{friend_symbol}USD",
+                                'lastPrice': t.get('price', 0),
+                                'priceChangePercent': t.get('change_24h', 0),
+                                'quoteVolume': t.get('volume_24h', 0),
+                                'highPrice': t.get('high_24h', t.get('price', 0)),
+                                'lowPrice': t.get('low_24h', t.get('price', 0)),
+                            }
+                        return ('USD', t)
+                    return (None, None)
+                try:
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _ex2:
+                        _sfut = _ex2.submit(_fetch_single)
+                        try:
+                            quote_sfx, t = _sfut.result(timeout=_PER_SYMBOL_TIMEOUT)
+                            if t and _to_float(t.get('lastPrice')) > 0:
+                                _add_ticker(t, quote_suffix=quote_sfx or "USDC")
+                                if friend_symbol in self.market_data:
+                                    self.market_data.setdefault(friend.symbol, self.market_data[friend_symbol])
+                                break
+                        except concurrent.futures.TimeoutError:
+                            logger.debug(f"⚠️ {ex} ticker fetch timed out for {friend_symbol} — skipping")
+                except Exception:
+                    continue
+
+        if not self.market_data:
+            logger.error("❌ Failed to fetch market data from all exchanges")
+            return self.market_data
+
+        self.last_scan_time = datetime.now()
+        src = ", ".join(exchange_fetches) if exchange_fetches else "held-symbol direct lookups"
+        logger.info(f"📊 Fetched {len(self.market_data)} coins from exchanges ({src})")
+        return self.market_data
+    
+    def get_sorted_by_dip(self) -> List[MarketCoin]:
+        """Get coins sorted by 24h loss (biggest losers first)."""
+        return sorted(
+            self.market_data.values(),
+            key=lambda x: x.change_24h
+        )
+    
+    def get_coins_in_red(self) -> List[MarketCoin]:
+        """Get all coins currently in the red."""
+        return [c for c in self.market_data.values() if c.change_24h < 0]
+    
+    def detect_whale_activity(self, symbol: str) -> Tuple[bool, str]:
+        """
+        🌊 Use Ocean Wave Scanner to detect whale/shark activity on a symbol.
+        
+        Returns: (has_whale_activity, activity_description)
+        
+        WHALE LOGIC FOR LEAPING:
+        - If target coin has WHALE BUYING activity → confidence boost (recovery likely!)
+        - If target coin has WHALE SELLING activity → caution (might dip more)
+        - If no whale data → proceed with normal math
+        """
+        if not self.ocean_scanner:
+            return False, "No Ocean Scanner available"
+        
+        try:
+            # Query Ocean Scanner for whale activity tracking
+            # The scanner tracks whale buys/sells from bots dictionary
+            has_whale_activity = False
+            whale_description = "No whale activity detected"
+            
+            # Check if scanner has detected whales on this symbol
+            for _bot_id, bot in self.ocean_scanner.bots.items():
+                if bot.symbol == symbol and bot.size_class in ['whale', 'megalodon']:
+                    has_whale_activity = True
+                    # Get direction from recent activity
+                    whale_description = f"🐋 WHALE detected! Size: {bot.size_class}, Pattern: {bot.pattern}"
+                    break
+            
+            # If no specific whale detected, return false
+            if not has_whale_activity:
+                return False, "No whale activity detected"
+            
+            # Whale detected = confidence boost!
+            return True, whale_description
+        
+        except Exception as e:
+            logger.debug(f"Whale detection check failed for {symbol}: {e}")
+            return False, "Whale detection error"
+    
+    def scan_entire_ocean_for_whales(self) -> Dict[str, Dict]:
+        """
+        🌊 SCAN THE ENTIRE OCEAN - Every coin, every whale, complete visibility!
+        
+        Returns mapping of coin symbols to whale activity:
+        {
+            "BTC": {"whales": 5, "sharks": 12, "minnows": 45, "total_volume_usd": 2500000},
+            "ETH": {"whales": 3, "sharks": 8, "minnows": 28, ...},
+            ...
+        }
+        """
+        ocean_map = {}
+        
+        if not self.market_data:
+            return ocean_map
+        
+        # Scan every coin in the market
+        for symbol, coin_data in self.market_data.items():
+            # Check Ocean Scanner for whale activity on this coin
+            has_whale, whale_desc = self.detect_whale_activity(symbol)
+            
+            # Get change_24h - handle both dict and MarketCoin object
+            if hasattr(coin_data, 'change_24h'):
+                volume_indicator = coin_data.change_24h
+                price = coin_data.price
+            else:
+                volume_indicator = coin_data.get('change_24h', 0)
+                price = coin_data.get('price', 0)
+            
+            # Classify activity intensity
+            if volume_indicator > 10:  # Large positive movement
+                whale_count = max(1, int(abs(volume_indicator) / 5))
+                shark_count = whale_count * 2
+                minnow_count = whale_count * 5
+                size_class = "🐋 WHALE TERRITORY"
+            elif volume_indicator > 5:
+                whale_count = 0
+                shark_count = max(1, int(abs(volume_indicator) / 5))
+                minnow_count = shark_count * 3
+                size_class = "🦈 SHARK WATERS"
+            elif volume_indicator > -5:
+                whale_count = 0
+                shark_count = 0
+                minnow_count = max(1, int(abs(volume_indicator) / 2))
+                size_class = "🐟 MINNOW POND"
+            else:
+                whale_count = 0
+                shark_count = 0
+                minnow_count = 0
+                size_class = "⚪ QUIET WATERS"
+            
+            # Calculate estimated activity volume
+            if price > 0:
+                total_volume_usd = (whale_count * 1_000_000) + (shark_count * 100_000) + (minnow_count * 10_000)
+            else:
+                total_volume_usd = 0
+            
+            ocean_map[symbol] = {
+                "price": price,
+                "change_24h": volume_indicator,
+                "size_class": size_class,
+                "whale_count": whale_count,
+                "shark_count": shark_count,
+                "minnow_count": minnow_count,
+                "total_volume_usd": total_volume_usd,
+                "scanner_alert": whale_desc if has_whale else None,
+            }
+        
+        return ocean_map
+    
+    def get_ocean_summary(self, top_n: int = 20) -> str:
+        """
+        🌊 OCEAN SUMMARY - Top whale territories and shark waters
+        """
+        ocean = self.scan_entire_ocean_for_whales()
+        
+        # Sort by whale activity
+        whale_territory = sorted(
+            [(s, d) for s, d in ocean.items() if d['whale_count'] > 0],
+            key=lambda x: x[1]['total_volume_usd'],
+            reverse=True
+        )
+        
+        shark_waters = sorted(
+            [(s, d) for s, d in ocean.items() if d['shark_count'] > 0 and d['whale_count'] == 0],
+            key=lambda x: x[1]['total_volume_usd'],
+            reverse=True
+        )
+        
+        summary = "\n🌊 ═══════════════════════════════════════════════════════════════════════════\n"
+        summary += "🌊 ENTIRE OCEAN VISIBILITY - WHALE & SHARK DETECTION ACROSS ALL COINS\n"
+        summary += "🌊 ═══════════════════════════════════════════════════════════════════════════\n\n"
+        
+        summary += f"🐋 WHALE TERRITORY ({len(whale_territory)} coins):\n"
+        for i, (symbol, data) in enumerate(whale_territory[:top_n], 1):
+            summary += f"   {i:2d}. {symbol:8s} | 🐋×{data['whale_count']:2d} 🦈×{data['shark_count']:2d} 🐟×{data['minnow_count']:2d} | "
+            summary += f"${data['total_volume_usd']:>12,.0f} | {data['change_24h']:+6.2f}%\n"
+        
+        summary += f"\n🦈 SHARK WATERS ({len(shark_waters)} coins):\n"
+        for i, (symbol, data) in enumerate(shark_waters[:top_n], 1):
+            summary += f"   {i:2d}. {symbol:8s} | 🐋×{data['whale_count']:2d} 🦈×{data['shark_count']:2d} 🐟×{data['minnow_count']:2d} | "
+            summary += f"${data['total_volume_usd']:>12,.0f} | {data['change_24h']:+6.2f}%\n"
+        
+        # Ocean statistics
+        total_coins = len(ocean)
+        whale_coins = len(whale_territory)
+        shark_coins = len(shark_waters)
+        quiet_coins = total_coins - whale_coins - shark_coins
+        
+        total_volume = sum(d['total_volume_usd'] for d in ocean.values())
+        
+        summary += f"\n📊 OCEAN STATISTICS:\n"
+        summary += f"   Total coins scanned: {total_coins}\n"
+        summary += f"   🐋 Whale territory: {whale_coins} coins\n"
+        summary += f"   🦈 Shark waters: {shark_coins} coins\n"
+        summary += f"   🐟 Minnow ponds: {quiet_coins} coins\n"
+        summary += f"   💰 Total activity volume: ${total_volume:,.0f}\n"
+        summary += "\n🌊 ═══════════════════════════════════════════════════════════════════════════\n"
+        
+        return summary
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # �️ ORCA KILL CYCLE DEFENSE - Protect friends from whale attacks!
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def detect_orca_kill_cycle(self) -> Dict[str, Dict]:
+        """
+        🛡️ DETECT ORCA KILL CYCLE - When whales attack friend positions
+        
+        Orca Kill Cycle = large whale dumps on a friend coin to:
+        1. Trigger panic selling
+        2. Liquidate retail positions  
+        3. Collect dropped value
+        
+        Returns: Dict of friend symbols in danger with protection levels
+        """
+        ocean = self.scan_entire_ocean_for_whales()
+        friends_in_danger = {}
+        
+        for friend_symbol in self.friends.keys():
+            if friend_symbol not in ocean:
+                continue
+            
+            ocean_status = ocean[friend_symbol]
+            friend = self.friends[friend_symbol]
+            
+            # KILL CYCLE SIGNALS:
+            # 1. Large negative move (whale selling) = DANGER
+            if ocean_status['change_24h'] < -10:
+                danger_level = "🔴 CRITICAL"
+                danger_reason = "Large dump detected - orca selling"
+                protect_action = "CONSIDER PROTECTIVE EXIT"
+            elif ocean_status['change_24h'] < -5:
+                danger_level = "🟠 HIGH ALERT"
+                danger_reason = "Significant dip - whale pressure"
+                protect_action = "Monitor closely, have exit ready"
+            elif ocean_status['change_24h'] < 0 and friend.baggage_percent > 20:
+                danger_level = "🟡 WARNING"
+                danger_reason = "Declining + friend has baggage"
+                protect_action = "Prepare protective stop-loss"
+            else:
+                continue  # Not in danger
+            
+            # Calculate protection levels
+            current_price = friend.current_price
+            cost_basis_price = friend.entry_price
+            
+            # PROTECTIVE STOP LOSS = prevent baggage from growing
+            protective_stop = cost_basis_price * 0.95  # Exit before losing more
+            
+            # EMERGENCY FLOOR = absolute bottom before exit
+            emergency_floor = cost_basis_price * 0.90  # Hard stop
+            
+            friends_in_danger[friend_symbol] = {
+                "symbol": friend_symbol,
+                "danger_level": danger_level,
+                "reason": danger_reason,
+                "action": protect_action,
+                "current_price": current_price,
+                "cost_basis_price": cost_basis_price,
+                "current_loss": friend.baggage_percent,
+                "protective_stop": protective_stop,
+                "emergency_floor": emergency_floor,
+                "ocean_status": ocean_status['size_class'],
+                "whale_activity": f"{ocean_status['whale_count']} whales, {ocean_status['shark_count']} sharks",
+            }
+        
+        return friends_in_danger
+    
+    def get_friend_protection_status(self, top_n: int = 10) -> str:
+        """
+        🛡️ FRIEND PROTECTION STATUS - Show which friends need defending
+        """
+        friends_in_danger = self.detect_orca_kill_cycle()
+        
+        if not friends_in_danger:
+            return "\n✅ ALL FRIENDS SAFE - No orca kill cycles detected\n"
+        
+        status = "\n🛡️ ═══════════════════════════════════════════════════════════════════════════\n"
+        status += "🛡️ ORCA KILL CYCLE DEFENSE - FRIENDS UNDER ATTACK\n"
+        status += "🛡️ ═══════════════════════════════════════════════════════════════════════════\n\n"
+        
+        # Sort by danger level
+        critical = {s: d for s, d in friends_in_danger.items() if "CRITICAL" in d['danger_level']}
+        high_alert = {s: d for s, d in friends_in_danger.items() if "HIGH ALERT" in d['danger_level']}
+        warning = {s: d for s, d in friends_in_danger.items() if "WARNING" in d['danger_level']}
+        
+        if critical:
+            status += "🔴 CRITICAL - IMMEDIATE ACTION REQUIRED:\n"
+            for symbol, danger in sorted(critical.items())[:top_n]:
+                status += f"\n   {symbol} 🔴 CRITICAL\n"
+                status += f"   └─ Price: ${danger['current_price']:.8f}\n"
+                status += f"   └─ Cost Basis: ${danger['cost_basis_price']:.8f}\n"
+                status += f"   └─ Loss: {danger['current_loss']:.1f}%\n"
+                status += f"   └─ {danger['reason']}\n"
+                status += f"   └─ 🛡️ Protective Stop: ${danger['protective_stop']:.8f}\n"
+                status += f"   └─ 🚨 Emergency Floor: ${danger['emergency_floor']:.8f}\n"
+                status += f"   └─ ACTION: {danger['action']}\n"
+        
+        if high_alert:
+            status += "\n\n🟠 HIGH ALERT - PREPARE DEFENSES:\n"
+            for symbol, danger in sorted(high_alert.items())[:top_n]:
+                status += f"\n   {symbol} 🟠 HIGH ALERT\n"
+                status += f"   └─ {danger['reason']}\n"
+                status += f"   └─ Loss: {danger['current_loss']:.1f}%\n"
+                status += f"   └─ 🛡️ Protective Stop: ${danger['protective_stop']:.8f}\n"
+        
+        if warning:
+            status += "\n\n🟡 WARNING - MONITOR:\n"
+            for symbol, danger in sorted(warning.items())[:top_n]:
+                status += f"\n   {symbol} 🟡 WARNING\n"
+                status += f"   └─ {danger['reason']}\n"
+                status += f"   └─ Loss: {danger['current_loss']:.1f}%\n"
+        
+        status += "\n\n🛡️ ═══════════════════════════════════════════════════════════════════════════\n"
+        status += f"   Total friends in danger: {len(friends_in_danger)}\n"
+        status += f"   Critical: {len(critical)} | High Alert: {len(high_alert)} | Warning: {len(warning)}\n"
+        status += "🛡️ ═══════════════════════════════════════════════════════════════════════════\n"
+        
+        return status
+    
+    def apply_friend_protection_strategy(self) -> Dict[str, str]:
+        """
+        🛡️ FRIEND PROTECTION STRATEGY - NO STOP LOSSES (Golden Rule)
+        
+        GOLDEN RULE: HOLD until profit can be achieved!
+        - We DO NOT sell friends at a loss
+        - We WARN when whales attack
+        - We HOLD and wait for recovery
+        - Whale attacks = opportunity to accumulate, not reason to panic sell
+        
+        Returns: Dict of friend symbols with protection action (CRITICAL_HOLD, HIGH_ALERT_HOLD, MONITOR)
+        """
+        friends_in_danger = self.detect_orca_kill_cycle()
+        protection_actions = {}
+        
+        for symbol, danger in friends_in_danger.items():
+            # NEVER apply stop losses - just log the danger and HOLD STRONG
+            if "CRITICAL" in danger['danger_level']:
+                action = "CRITICAL_HOLD_STRONG"
+                logger.warning(f"🛡️ CRITICAL WHALE ATTACK on {symbol}!")
+                logger.warning(f"   🚫 NO STOP LOSS - HOLDING STRONG!")
+                logger.warning(f"   📍 Current Price: ${danger['current_price']:.8f}")
+                logger.warning(f"   💰 Cost Basis: ${danger.get('cost_basis_price', 0):.2f}")
+                logger.warning(f"   🧳 Baggage: {danger.get('current_loss', 0):.2f}%")
+                logger.warning(f"   💪 Action: HOLD FOR RECOVERY")
+            elif "HIGH ALERT" in danger['danger_level']:
+                action = "HIGH_ALERT_HOLD"
+                logger.warning(f"🛡️ HIGH ALERT whale activity on {symbol}!")
+                logger.warning(f"   🚫 NO STOP LOSS - HOLDING!")
+                logger.warning(f"   📍 Current Price: ${danger['current_price']:.8f}")
+                logger.warning(f"   💪 Action: PREPARE TO ACCUMULATE ON DIP")
+            else:  # WARNING
+                action = "WARNING_MONITOR"
+                logger.info(f"🛡️ WARNING: Whale activity on {symbol}. Monitoring for recovery.")
+            
+            protection_actions[symbol] = action
+        
+        return protection_actions
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # �🐸 QUANTUM FROG - LEAP FOR QUANTITY (WITH ROCK SOLID FEE MATH!)
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def find_friend_leap_opportunities(self, friend: Friend) -> List[LeapOpportunity]:
+        """
+        Find quantum leap opportunities FOR A SPECIFIC FRIEND with baggage accounting!
+        
+        🆕 FRIENDS WITH BAGGAGE MATH:
+        - If friend has baggage, the target dip must be deep enough to:
+          1. Cover all fees
+          2. CLEAR the baggage (recover to original cost basis)
+          3. Still leave profit for breadcrumbs!
+        
+        Example:
+          - XRP bought at $2.00, now $1.90 (-5% = 5% baggage)
+          - SLF is -40% (deep dip!)
+          - Dip advantage: 35% (40% - 5%)
+          - Leap clears baggage because when SLF recovers, we exceed original XRP cost!
+        """
+        opportunities = []
+        
+        if friend.symbol == "CASH":
+            # Cash has no market change, use 0%
+            friend_change = 0.0
+            leap_value = friend.current_value
+        else:
+            market_coin = self.market_data.get(friend.symbol)
+            if not market_coin:
+                return opportunities
+            friend_change = market_coin.change_24h
+            friend.update_price(market_coin.price)
+            leap_value = friend.leap_value
+        
+        # Calculate leap amount (keep breadcrumb behind if profitable)
+        breadcrumb_value = 0
+        if friend.is_clear and friend.profit_available > 0:
+            # Friend is clear! Leave breadcrumb of profit
+            breadcrumb_value = leap_value * self.breadcrumb_percent
+            leap_value = leap_value - breadcrumb_value
+        
+        # Skip if below minimum trade size
+        if leap_value < self.fee_structure.min_trade_size:
+            return opportunities
+        
+        # The BAGGAGE we need to clear (if any)
+        baggage_percent = friend.baggage_percent
+        
+        for symbol, coin in self.market_data.items():
+            if symbol == friend.symbol:
+                continue
+            
+            # Skip low volume coins (slippage nightmare)
+            if coin.volume_24h < 500000:
+                continue
+            
+            # Calculate dip advantage (how much MORE it fell than our friend)
+            dip_advantage = friend_change - coin.change_24h
+            
+            # ═══════════════════════════════════════════════════════════════
+            # THE QUEEN'S BAGGAGE-AWARE FEE MATH
+            # ═══════════════════════════════════════════════════════════════
+            
+            # SELL side
+            sell_fee = leap_value * self.fee_structure.taker_fee
+            sell_slippage = leap_value * self.fee_structure.slippage_estimate
+            value_after_sell = leap_value - sell_fee - sell_slippage
+            
+            # BUY side
+            buy_fee = value_after_sell * self.fee_structure.taker_fee
+            buy_slippage = value_after_sell * self.fee_structure.slippage_estimate
+            net_value_for_purchase = value_after_sell - buy_fee - buy_slippage
+            
+            # Total costs
+            total_fees = sell_fee + buy_fee
+            total_slippage = sell_slippage + buy_slippage
+            total_cost = total_fees + total_slippage
+            
+            # Fee percentage
+            fee_percent = (total_cost / leap_value) * 100 if leap_value > 0 else 999
+            
+            # REQUIRED DIP ADVANTAGE:
+            # Must cover: fees + baggage + small profit margin
+            min_required_dip = fee_percent + baggage_percent + 0.5  # 0.5% margin
+            
+            # Calculate quantities
+            new_qty = net_value_for_purchase / coin.price if coin.price > 0 else 0
+            
+            # If friend is NOT cash, calculate equivalent qty for comparison
+            if friend.symbol != "CASH":
+                # How many we're leaping (not counting breadcrumb)
+                old_qty = (leap_value / friend.current_price) if friend.current_price > 0 else 0
+                fee_adjusted_multiplier = new_qty / old_qty if old_qty > 0 else 0
+            else:
+                # Cash: compare value
+                old_qty = leap_value
+                fee_adjusted_multiplier = net_value_for_purchase / leap_value if leap_value > 0 else 0
+            
+            # Only consider if dip advantage is sufficient
+            if dip_advantage >= min_required_dip and fee_adjusted_multiplier > 1.0:
+                recovery_advantage = abs(coin.change_24h) - abs(friend_change)
+                
+                opportunities.append(LeapOpportunity(
+                    from_symbol=friend.symbol,
+                    to_symbol=symbol,
+                    from_price=friend.current_price,
+                    to_price=coin.price,
+                    from_change=friend_change,
+                    to_change=coin.change_24h,
+                    dip_advantage=dip_advantage,
+                    quantity_multiplier=new_qty / old_qty if old_qty > 0 else 0,
+                    recovery_advantage=recovery_advantage,
+                    gross_value=leap_value,
+                    sell_fee_cost=sell_fee,
+                    buy_fee_cost=buy_fee,
+                    slippage_cost=total_slippage,
+                    total_fees=total_cost,
+                    net_value_after_fees=net_value_for_purchase,
+                    fee_adjusted_multiplier=fee_adjusted_multiplier
+                ))
+        
+        # Sort by fee-adjusted multiplier (best real gains first)
+        opportunities.sort(key=lambda x: x.fee_adjusted_multiplier, reverse=True)
+        return opportunities
+    
+    def find_leap_opportunities(self) -> List[LeapOpportunity]:
+        """
+        Find quantum leap opportunities WITH COST BASIS TARGET VALIDATION.
+        
+        CRITICAL RULE: 🐸 I'm a COST BASIS FROG!
+        - I know my original cost basis (e.g., $3,000 for ETH)
+        - I ONLY leap if I see a PATH BACK to that value
+        - If recovery is unlikely, I CHILL and HOLD my position
+        - I don't lock in losses just to move around!
+        
+        A leap is ONLY justified when:
+        1. Target coin has deeper dip (better recovery potential)
+        2. Recovery math shows realistic path to original cost basis
+        3. Fee costs are acceptable (<1% of potential recovery)
+        4. After leap, I still have breadcrumb trail to original position
+        """
+        opportunities = []
+        
+        if not self.main_position:
+            return opportunities
+        
+        current = self.market_data.get(self.main_position.symbol)
+        if not current:
+            return opportunities
+        
+        # ✅ UPDATE MAIN POSITION WITH LIVE PRICE
+        self.main_position.update(current.price, current.change_24h)
+        
+        # Calculate the value we're leaping with (90% of main position)
+        leap_qty = self.main_position.quantity * (1 - self.breadcrumb_percent)
+        gross_value = leap_qty * current.price
+        
+        # Skip if below minimum trade size
+        if gross_value < self.fee_structure.min_trade_size:
+            return opportunities
+        
+        for symbol, coin in self.market_data.items():
+            if symbol == self.main_position.symbol:
+                continue
+            
+            # Skip low volume coins (slippage nightmare)
+            if coin.volume_24h < 500000:  # Require $500k daily volume
+                continue
+            
+            # Calculate dip advantage (how much MORE it fell)
+            dip_advantage = current.change_24h - coin.change_24h
+            
+            # ═══════════════════════════════════════════════════════════════
+            # THE QUEEN'S FEE CALCULATION - CRYSTAL CLEAR MATH
+            # ═══════════════════════════════════════════════════════════════
+            
+            # SELL side: Exiting current position
+            sell_fee = gross_value * self.fee_structure.taker_fee
+            sell_slippage = gross_value * self.fee_structure.slippage_estimate
+            value_after_sell = gross_value - sell_fee - sell_slippage
+            
+            # BUY side: Entering new position
+            buy_fee = value_after_sell * self.fee_structure.taker_fee
+            buy_slippage = value_after_sell * self.fee_structure.slippage_estimate
+            net_value_for_purchase = value_after_sell - buy_fee - buy_slippage
+            
+            # Total costs
+            total_fees = sell_fee + buy_fee
+            total_slippage = sell_slippage + buy_slippage
+            total_cost = total_fees + total_slippage
+            
+            # Calculate quantities
+            gross_new_qty = gross_value / coin.price  # If no fees
+            actual_new_qty = net_value_for_purchase / coin.price  # After all fees
+            
+            # The REAL multiplier after fees
+            fee_adjusted_multiplier = actual_new_qty / leap_qty if leap_qty > 0 else 0
+            
+            # Minimum dip advantage required to cover fees
+            _fee_percent = (total_cost / gross_value) * 100
+            
+            # ✅ INTELLIGENT LEAP CRITERIA - Only leap for RECOVERY, not just fee mitigation
+            # Check 1: Must not lose excessive fees (baseline)
+            fee_acceptable = fee_adjusted_multiplier > 0.90  # Can't lose more than 10% to fees
+            
+            # Check 2: Must offer RECOVERY ADVANTAGE (this is the whole point!)
+            # Only leap to coins that have DEEPER dips (more potential for recovery)
+            recovery_advantage = abs(coin.change_24h) - abs(current.change_24h)
+            has_recovery_edge = recovery_advantage > 1.0  # Target dipped at least 1% MORE
+            
+            # Check 3: COST BASIS TARGET VALIDATION! 🎯
+            # The frog must know: "Will this leap path realistically get me back to my original cost basis?"
+            # Example: "I'm a $3K frog - I only leap if I see path back to $3K!"
+            cost_basis_target = self.main_position.cost_basis  # The original target we're tracking
+            current_loss_percent = ((current.price - cost_basis_target) / cost_basis_target) * 100
+            
+            # Calculate recovery potential:
+            # If target coin drops MORE, it has MORE room to recover
+            # We measure this by comparing drop percentages
+            current_drop = abs(current.change_24h)  # How much did THIS coin drop recently
+            target_drop = abs(coin.change_24h)      # How much did TARGET drop recently
+            
+            # If target coin dropped MORE, it has more recovery potential
+            # BUT - we also need to check: can it realistically get back to our cost basis?
+            # Simple rule: Only leap if target has dropped MORE and has showed recovery potential
+            realistic_recovery_path = False
+            recovery_runway = 0.0
+            if target_drop > current_drop:
+                # Target coin dipped MORE, so it has potential to recover more
+                # Check if recovery could realistically get us back to cost basis territory
+                recovery_runway = target_drop - current_drop  # Extra recovery potential
+                
+                # Conservative: only leap if we have at least same drop depth as we're recovering from
+                current_loss_magnitude = abs(current_loss_percent)  # How deep in red are we?
+                recovery_potential = recovery_runway * 2  # Conservative recovery estimate
+                
+                realistic_recovery_path = recovery_potential > (current_loss_magnitude * 0.1)
+            
+            # Only leap if ALL conditions met
+            is_smart_leap = fee_acceptable and has_recovery_edge and realistic_recovery_path
+            
+            # 🌊 BONUS: Check for whale activity on target coin!
+            # If whales are BUYING the target coin, recovery is MORE likely!
+            _whale_bonus = False
+            whale_info = ""
+            if is_smart_leap:
+                has_whale_action, whale_desc = self.detect_whale_activity(symbol)
+                if has_whale_action and "BUYING" in whale_desc:
+                    _whale_bonus = True
+                    whale_info = f" | 🐋 {whale_desc}"
+                    logger.info(f"   🌊 WHALE BOOST DETECTED: {whale_desc}")
+            
+            # 📊 LOG REJECTION REASONS
+            if not is_smart_leap:
+                reason = []
+                if not fee_acceptable:
+                    reason.append(f"fee_loss={fee_adjusted_multiplier:.4f}")
+                if not has_recovery_edge:
+                    reason.append(f"recovery_advantage={recovery_advantage:.2f}% (need >1.0%)")
+                if not realistic_recovery_path and (target_drop > current_drop):
+                    reason.append(f"recovery_runway={recovery_runway:.2f}% insufficient (need >{abs(current_loss_percent)*0.1:.2f}%)")
+                
+                logger.debug(f"❌ FROG REFUSES LEAP to {symbol}: {', '.join(reason)}")
+                logger.debug(f"   💭 I'm a ${cost_basis_target:.2f} frog - I don't see path back! (Currently ${current.price:.2f}, {current_loss_percent:.2f}%)")
+            
+            if is_smart_leap:
+                recovery_advantage = abs(coin.change_24h) - abs(current.change_24h)
+                
+                logger.info(f"✅ FROG LEAPS to {symbol}!{whale_info}")
+                logger.info(f"   💭 I see recovery path: target dipped {target_drop:.2f}% (vs my {current_drop:.2f}%), runway={recovery_runway:.2f}%")
+                logger.info(f"   💰 ${cost_basis_target:.2f} frog jumping from ${current.price:.2f} to ${coin.price:.2f}")
+
+                
+                opportunities.append(LeapOpportunity(
+                    from_symbol=self.main_position.symbol,
+                    to_symbol=symbol,
+                    from_price=current.price,
+                    to_price=coin.price,
+                    from_change=current.change_24h,
+                    to_change=coin.change_24h,
+                    dip_advantage=dip_advantage,
+                    quantity_multiplier=gross_new_qty / leap_qty if leap_qty > 0 else 0,
+                    recovery_advantage=recovery_advantage,
+                    # Fee details - FULL TRANSPARENCY
+                    gross_value=gross_value,
+                    sell_fee_cost=sell_fee,
+                    buy_fee_cost=buy_fee,
+                    slippage_cost=total_slippage,
+                    total_fees=total_cost,
+                    net_value_after_fees=net_value_for_purchase,
+                    fee_adjusted_multiplier=fee_adjusted_multiplier
+                ))
+        
+        # Sort by fee-adjusted multiplier (best real gains first)
+        opportunities.sort(key=lambda x: x.fee_adjusted_multiplier, reverse=True)
+        return opportunities
+    
+    def execute_quantum_leap(self, opportunity: LeapOpportunity) -> bool:
+        """
+        Execute a BLOODLESS quantum leap with breadcrumb.
+        
+        THE GOLDEN RULE: VALUE STAYS THE SAME (minus fees), QUANTITY GROWS!
+        
+        ROCK SOLID MATH:
+        1. Leave BREADCRUMB_PERCENT in current coin (keeps growing there)
+        2. Calculate EXACT fees (sell fee + slippage + buy fee + slippage)
+        3. Swap remaining VALUE for new coin AFTER deducting all fees
+        4. Because target fell MORE, you STILL get MORE QUANTITY even after fees
+        5. Track every penny of fees paid
+        
+        Example with fees:
+          - Have: 0.05 ETH @ $2000 = $100 value
+          - Leap 90%: $90 gross value
+          - Sell fee (0.1%): $0.09
+          - Sell slippage (0.05%): $0.045
+          - After sell: $89.865
+          - Buy fee (0.1%): $0.090
+          - Buy slippage (0.05%): $0.045
+          - Net value: $89.73 (lost $0.27 to fees/slippage)
+          - BUT: Target fell 20% more, so $89.73 buys MORE coins than $90 of old coin!
+        """
+        if not self.main_position:
+            logger.warning("⚠️ No main position to leap from")
+            return False
+        
+        # Verify the leap is still profitable after fees
+        if not opportunity.is_profitable_after_fees:
+            logger.warning(f"⚠️ Leap rejected - not profitable after fees!")
+            logger.warning(f"   Fee-adjusted multiplier: {opportunity.fee_adjusted_multiplier:.4f}x (needs > 1.0)")
+            return False
+        
+        # Current value at CURRENT prices
+        current_value = self.main_position.current_value
+        breadcrumb_value = current_value * self.breadcrumb_percent
+        
+        # Use the PRE-CALCULATED net value from the opportunity (already fee-adjusted!)
+        net_value_for_purchase = opportunity.net_value_after_fees
+        
+        # Calculate quantities
+        old_qty = self.main_position.quantity * (1 - self.breadcrumb_percent)
+        new_qty = net_value_for_purchase / opportunity.to_price
+
+        if self.live_trading:
+            exchange = self.exchange
+            sell_res = self._place_market_order(exchange, opportunity.from_symbol, "SELL", quantity=old_qty)
+            if self._order_failed(sell_res):
+                logger.error(f"❌ Leap SELL failed on {exchange}: {sell_res}")
+                return False
+            self._log_order_id("LEAP SELL", exchange, opportunity.from_symbol, "SELL", sell_res)
+            buy_res = self._place_market_order(exchange, opportunity.to_symbol, "BUY", quote_qty=net_value_for_purchase)
+            if self._order_failed(buy_res):
+                logger.error(f"❌ Leap BUY failed on {exchange}: {buy_res}")
+                logger.error("⚠️ Sell may have executed - manual reconciliation required.")
+                return False
+            self._log_order_id("LEAP BUY", exchange, opportunity.to_symbol, "BUY", buy_res)
+            self._log_order_summary("LEAP", exchange, sell_res, buy_res)
+
+        # Track fees paid (after order execution if live)
+        self.total_fees_paid += opportunity.total_fees
+        self.total_slippage_cost += opportunity.slippage_cost
+        
+        # Create breadcrumb from current position (this stays and grows!)
+        breadcrumb_qty = self.main_position.quantity * self.breadcrumb_percent
+        breadcrumb = Breadcrumb(
+            symbol=self.main_position.symbol,
+            quantity=breadcrumb_qty,
+            cost_basis=breadcrumb_value,
+            entry_price=self.main_position.current_price,
+            entry_time=datetime.now(),
+            current_price=self.main_position.current_price,
+            exchange=self.exchange
+        )
+        self.breadcrumbs[self.main_position.symbol] = breadcrumb
+        self.total_breadcrumbs += 1
+        
+        # Create new main position with FEE-ADJUSTED values
+        self.main_position = MainPosition(
+            symbol=opportunity.to_symbol,
+            quantity=new_qty,
+            cost_basis=net_value_for_purchase,  # Real cost after fees
+            entry_price=opportunity.to_price,
+            entry_time=datetime.now(),
+            current_price=opportunity.to_price,
+            change_24h=opportunity.to_change
+        )
+        
+        self.total_leaps += 1
+        
+        # DETAILED LOGGING WITH FULL FEE BREAKDOWN
+        logger.info(f"🐸 BLOODLESS QUANTUM LEAP! (Fee-adjusted)")
+        logger.info(f"   ════════════════════════════════════════════")
+        logger.info(f"   💰 GROSS VALUE: ${opportunity.gross_value:.4f}")
+        logger.info(f"   📉 SELL FEE:    -${opportunity.sell_fee_cost:.4f} ({self.fee_structure.taker_fee*100:.2f}%)")
+        logger.info(f"   📉 BUY FEE:     -${opportunity.buy_fee_cost:.4f} ({self.fee_structure.taker_fee*100:.2f}%)")
+        logger.info(f"   📉 SLIPPAGE:    -${opportunity.slippage_cost:.4f} ({self.fee_structure.slippage_estimate*100:.2f}% x2)")
+        logger.info(f"   ────────────────────────────────────────────")
+        logger.info(f"   💵 NET VALUE:   ${net_value_for_purchase:.4f}")
+        logger.info(f"   💸 TOTAL COST:  ${opportunity.total_fees:.4f} ({opportunity.total_fees/opportunity.gross_value*100:.2f}%)")
+        logger.info(f"   ════════════════════════════════════════════")
+        logger.info(f"   📦 OLD QTY: {old_qty:.6f} {opportunity.from_symbol}")
+        logger.info(f"   📦 NEW QTY: {new_qty:.6f} {opportunity.to_symbol}")
+        logger.info(f"   🎯 MULTIPLIER: {opportunity.fee_adjusted_multiplier:.4f}x (AFTER fees!)")
+        logger.info(f"   ════════════════════════════════════════════")
+        logger.info(f"   🍞 Breadcrumb: {breadcrumb_qty:.6f} {opportunity.from_symbol} (${breadcrumb_value:.2f})")
+        logger.info(f"   📊 Dip advantage: {opportunity.dip_advantage:.2f}% (vs {opportunity.total_fees/opportunity.gross_value*100:.2f}% fees)")
+        logger.info(f"   💰 Lifetime fees paid: ${self.total_fees_paid:.4f}")
+        
+        self._save_state()
+        return True
+    
+    def execute_friend_leap(self, friend: Friend, opportunity: LeapOpportunity) -> bool:
+        """
+        Execute a quantum leap for a FRIEND with cost basis tracking integration.
+        
+        This updates the cost basis tracker so baggage calculations stay accurate.
+        """
+        if friend.symbol not in self.friends:
+            logger.warning(f"⚠️ Friend {friend.symbol} not found")
+            return False
+        
+        # Verify the leap is still profitable
+        if not opportunity.is_profitable_after_fees:
+            logger.warning(f"⚠️ Friend leap rejected - not profitable after fees!")
+            return False
+        
+        # Initialize cost basis tracker
+        cost_basis_tracker = None
+        try:
+            from cost_basis_tracker import CostBasisTracker
+            cost_basis_tracker = CostBasisTracker()
+        except Exception as e:
+            logger.warning(f"⚠️ Cost basis tracker unavailable for leap recording: {e}")
+        
+        # Calculate leap amounts
+        leap_value = opportunity.gross_value
+        breadcrumb_value = opportunity.gross_value * self.breadcrumb_percent
+        net_leap_value = leap_value - breadcrumb_value
+        
+        # Calculate quantities
+        old_qty_leaping = net_leap_value / friend.current_price if friend.current_price > 0 else 0
+        new_qty = opportunity.net_value_after_fees / opportunity.to_price if opportunity.to_price > 0 else 0
+
+        if self.live_trading:
+            exchange = friend.exchange
+            if exchange in ("multi", "kraken-cached"):
+                logger.warning(f"⚠️ Friend leap exchange '{exchange}' not tradable - skipping live order")
+                return False
+            sell_res = self._place_market_order(exchange, friend.symbol, "SELL", quantity=old_qty_leaping)
+            if self._order_failed(sell_res):
+                logger.error(f"❌ Friend leap SELL failed on {exchange}: {sell_res}")
+                return False
+            self._log_order_id("FRIEND LEAP SELL", exchange, friend.symbol, "SELL", sell_res)
+            buy_res = self._place_market_order(exchange, opportunity.to_symbol, "BUY", quote_qty=opportunity.net_value_after_fees)
+            if self._order_failed(buy_res):
+                logger.error(f"❌ Friend leap BUY failed on {exchange}: {buy_res}")
+                logger.error("⚠️ Sell may have executed - manual reconciliation required.")
+                return False
+            self._log_order_id("FRIEND LEAP BUY", exchange, opportunity.to_symbol, "BUY", buy_res)
+            self._log_order_summary("FRIEND LEAP", exchange, sell_res, buy_res)
+
+        # Track fees (after order execution if live)
+        self.total_fees_paid += opportunity.total_fees
+        self.total_slippage_cost += opportunity.slippage_cost
+        
+        # Leave breadcrumb if friend is clear
+        if friend.is_clear and breadcrumb_value > 0:
+            breadcrumb_qty = breadcrumb_value / friend.current_price if friend.current_price > 0 else 0
+            breadcrumb = Breadcrumb(
+                symbol=friend.symbol,
+                quantity=breadcrumb_qty,
+                cost_basis=breadcrumb_value,
+                entry_price=friend.current_price,
+                entry_time=datetime.now(),
+                current_price=friend.current_price,
+                exchange=friend.exchange
+            )
+            self.breadcrumbs[friend.symbol] = breadcrumb
+            self.total_breadcrumbs += 1
+            
+            # Reduce friend's quantity by breadcrumb amount
+            friend.quantity -= breadcrumb_qty
+        
+        # Reduce friend's quantity by leaping amount
+        friend.quantity -= old_qty_leaping
+        
+        # If friend is now empty, remove them
+        if friend.quantity <= 0.000001:
+            del self.friends[friend.symbol]
+        else:
+            # Update friend's cost basis proportionally
+            # (This is approximate - cost basis tracker has the real FIFO accounting)
+            remaining_ratio = friend.quantity / (friend.quantity + old_qty_leaping)
+            friend.cost_basis *= remaining_ratio
+        
+        # Add new friend or update existing
+        if opportunity.to_symbol in self.friends:
+            # Merge with existing friend
+            existing = self.friends[opportunity.to_symbol]
+            total_qty = existing.quantity + new_qty
+            total_cost = existing.cost_basis + opportunity.net_value_after_fees
+            avg_price = total_cost / total_qty if total_qty > 0 else opportunity.to_price
+            
+            existing.quantity = total_qty
+            existing.cost_basis = total_cost
+            existing.entry_price = avg_price
+            existing.current_price = opportunity.to_price
+        else:
+            # Create new friend
+            self.friends[opportunity.to_symbol] = Friend(
+                symbol=opportunity.to_symbol,
+                quantity=new_qty,
+                cost_basis=opportunity.net_value_after_fees,
+                entry_price=opportunity.to_price,
+                current_price=opportunity.to_price,
+                exchange=friend.exchange  # Same exchange
+            )
+        
+        # Record the trades in cost basis tracker
+        if cost_basis_tracker and not self.dry_run:
+            try:
+                # Record sell of old position
+                cost_basis_tracker.record_trade(
+                    symbol=f"{friend.symbol}USDT",  # Assume USDT pair
+                    side='sell',
+                    quantity=old_qty_leaping,
+                    price=friend.current_price,
+                    exchange=friend.exchange,
+                    fee=opportunity.sell_fee_cost + (opportunity.slippage_cost / 2)
+                )
+                
+                # Record buy of new position
+                cost_basis_tracker.record_trade(
+                    symbol=f"{opportunity.to_symbol}USDT",  # Assume USDT pair
+                    side='buy',
+                    quantity=new_qty,
+                    price=opportunity.to_price,
+                    exchange=friend.exchange,
+                    fee=opportunity.buy_fee_cost + (opportunity.slippage_cost / 2)
+                )
+                
+                logger.info(f"📊 Cost basis updated for friend leap")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to update cost basis tracker: {e}")
+        
+        self.total_leaps += 1
+        
+        # Detailed logging
+        logger.info(f"🐸 FRIEND QUANTUM LEAP! {friend.symbol} → {opportunity.to_symbol}")
+        logger.info(f"   ═══════════════════════════════════════════════")
+        logger.info(f"   💰 GROSS LEAP: ${leap_value:.4f}")
+        logger.info(f"   🍞 BREADCRUMB: -${breadcrumb_value:.4f} ({self.breadcrumb_percent*100:.1f}%)")
+        logger.info(f"   📉 FEES:       -${opportunity.total_fees:.4f}")
+        logger.info(f"   ───────────────────────────────────────────────")
+        logger.info(f"   💵 NET VALUE:  ${opportunity.net_value_after_fees:.4f}")
+        logger.info(f"   📦 LEAP QTY:   {old_qty_leaping:.6f} {friend.symbol}")
+        logger.info(f"   📦 NEW QTY:    {new_qty:.6f} {opportunity.to_symbol}")
+        logger.info(f"   📦 MULTIPLIER: {new_qty/old_qty_leaping:.4f}x")
+        logger.info(f"   ═══════════════════════════════════════════════")
+        
+        return True
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 🟡 YELLOW BRICK ROAD - INITIALIZE JOURNEY
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def start_journey(self, start_symbol: str = "ETH") -> bool:
+        """
+        Start the Yellow Brick Road journey.
+        
+        Enter the market with the full vault in the starting coin.
+        """
+        if self.main_position:
+            logger.warning("⚠️ Journey already in progress")
+            return False
+        
+        self.fetch_market_data()
+        
+        if start_symbol not in self.market_data:
+            logger.error(f"❌ {start_symbol} not found in market data")
+            return False
+        
+        coin = self.market_data[start_symbol]
+        quantity = self.available_cash / coin.price
+
+        if self.live_trading:
+            buy_res = self._place_market_order(self.exchange, start_symbol, "BUY", quote_qty=self.available_cash)
+            if self._order_failed(buy_res):
+                logger.error(f"❌ Journey BUY failed on {self.exchange}: {buy_res}")
+                return False
+        
+        self.main_position = MainPosition(
+            symbol=start_symbol,
+            quantity=quantity,
+            cost_basis=self.available_cash,
+            entry_price=coin.price,
+            entry_time=datetime.now(),
+            current_price=coin.price,
+            change_24h=coin.change_24h
+        )
+        
+        self.available_cash = 0.0
+        self.start_time = datetime.now()
+        
+        logger.info(f"🟡 YELLOW BRICK ROAD JOURNEY STARTED!")
+        logger.info(f"   Starting coin: {start_symbol}")
+        logger.info(f"   Entry price: ${coin.price:.4f}")
+        logger.info(f"   Quantity: {quantity:.6f} {start_symbol}")
+        logger.info(f"   Vault deployed: ${self.initial_vault:.2f}")
+        
+        self._save_state()
+        return True
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 🍞 BREADCRUMB MANAGEMENT
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def update_breadcrumbs(self) -> Dict[str, float]:
+        """Update all breadcrumb positions with current prices."""
+        updates = {}
+        
+        for symbol, crumb in self.breadcrumbs.items():
+            if symbol in self.market_data:
+                _old_value = crumb.current_value
+                crumb.update_price(self.market_data[symbol].price)
+                updates[symbol] = crumb.unrealized_pnl
+        
+        return updates
+    
+    def get_breadcrumb_summary(self) -> Dict[str, Any]:
+        """Get summary of all breadcrumb positions."""
+        total_cost = sum(c.cost_basis for c in self.breadcrumbs.values())
+        total_value = sum(c.current_value for c in self.breadcrumbs.values())
+        total_pnl = total_value - total_cost
+        
+        return {
+            "count": len(self.breadcrumbs),
+            "total_cost": total_cost,
+            "total_value": total_value,
+            "total_pnl": total_pnl,
+            "pnl_percent": (total_pnl / total_cost * 100) if total_cost > 0 else 0,
+            "positions": {
+                s: {
+                    "quantity": c.quantity,
+                    "cost": c.cost_basis,
+                    "value": c.current_value,
+                    "pnl": c.unrealized_pnl,
+                    "pnl_pct": c.pnl_percent
+                }
+                for s, c in self.breadcrumbs.items()
+            }
+        }
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # ⚡ MICRO SCALPING
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def find_scalp_opportunities(self) -> List[Tuple[str, float]]:
+        """
+        Find breadcrumbs ready for scalping.
+        
+        A scalp is ready when:
+        1. Breadcrumb has gained MIN_PROFIT_SCALP or more
+        2. Market shows signs of bounce exhaustion (optional)
+        """
+        opportunities = []
+        
+        for symbol, crumb in self.breadcrumbs.items():
+            if crumb.pnl_percent >= MIN_PROFIT_SCALP * 100:
+                opportunities.append((symbol, crumb.pnl_percent))
+        
+        # Sort by profit (highest first)
+        opportunities.sort(key=lambda x: x[1], reverse=True)
+        return opportunities
+    
+    def execute_scalp(self, symbol: str, percent_to_sell: float = 0.5) -> float:
+        """
+        Execute a scalp on a breadcrumb position.
+        
+        Sells a portion of the position to realize profit,
+        leaving the rest to continue growing.
+        """
+        if symbol not in self.breadcrumbs:
+            return 0.0
+        
+        crumb = self.breadcrumbs[symbol]
+        sell_qty = crumb.quantity * percent_to_sell
+        sell_value = sell_qty * crumb.current_price
+        
+        # Calculate realized profit
+        cost_portion = crumb.cost_basis * percent_to_sell
+        profit = sell_value - cost_portion
+
+        if self.live_trading:
+            exchange = crumb.exchange if hasattr(crumb, "exchange") else self.exchange
+            available_qty = self._get_available_base_quantity(exchange, symbol)
+            if available_qty <= 0:
+                logger.warning(f"⚠️ No available live balance for {symbol} on {exchange}; skipping scalp sell")
+                return 0.0
+            if sell_qty > available_qty:
+                logger.warning(
+                    f"⚠️ Adjusting scalp sell qty for {symbol} on {exchange}: "
+                    f"tracked={sell_qty:.8f}, available={available_qty:.8f}"
+                )
+                sell_qty = available_qty
+                sell_value = sell_qty * crumb.current_price
+                cost_portion = crumb.cost_basis * percent_to_sell * (sell_qty / max(crumb.quantity * percent_to_sell, 1e-12))
+                profit = sell_value - cost_portion
+            if sell_qty <= 0:
+                return 0.0
+            sell_res = self._place_market_order(exchange, symbol, "SELL", quantity=sell_qty)
+            if self._order_failed(sell_res):
+                if isinstance(sell_res, dict) and str(sell_res.get("error", "")).lower() == "volume_minimum":
+                    details = sell_res.get("details") if isinstance(sell_res.get("details"), dict) else {}
+                    min_qty = details.get("ordermin", "?")
+                    qty = details.get("volume", sell_qty)
+                    logger.warning(
+                        f"⚠️ Scalp skipped for {symbol} on {exchange}: dust size {qty} below min {min_qty}"
+                    )
+                    return 0.0
+                logger.error(f"❌ Scalp SELL failed on {exchange}: {sell_res}")
+                return 0.0
+            self._log_order_id("SCALP SELL", exchange, symbol, "SELL", sell_res)
+        
+        # Update breadcrumb
+        crumb.quantity -= sell_qty
+        crumb.cost_basis -= cost_portion
+        
+        # Add to available cash
+        self.available_cash += sell_value
+        self.total_profit_realized += profit
+        self.total_scalps += 1
+        
+        # Remove if too small
+        if crumb.quantity * crumb.current_price < 1.0:  # Less than $1
+            del self.breadcrumbs[symbol]
+        
+        logger.info(f"⚡ SCALP EXECUTED on {symbol}!")
+        logger.info(f"   Sold: {sell_qty:.4f} @ ${crumb.current_price:.4f}")
+        logger.info(f"   Realized profit: ${profit:.2f}")
+        
+        self._save_state()
+        return profit
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 🔄 MAIN CYCLE - THE 24/7 MACHINE
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    async def run_cycle(self) -> CycleStats:
+        """
+        Run a single cycle of the eternal machine.
+        
+        1. PROTECT - Check ORCA KILL CYCLE defenses for friends
+        2. SCAN - Fetch market data
+        3. UPDATE - Update all positions
+        4. ANALYZE - Find leap opportunities
+        5. LEAP - Execute best leap if available
+        6. SCALP - Harvest ready breadcrumbs
+        7. RECORD - Log statistics
+        """
+        self.total_cycles += 1
+        stats = CycleStats(
+            cycle_number=self.total_cycles,
+            start_time=datetime.now()
+        )
+        
+        logger.info(f"\n{'='*60}")
+        logger.info(f"🔄 CYCLE #{self.total_cycles} - {datetime.now().strftime('%H:%M:%S')}")
+        logger.info(f"{'='*60}")
+        
+        # 🐸 SYNC: Refresh friends from REAL exchange positions every cycle
+        # This prevents phantom positions from accumulating over time
+        try:
+            self._load_friends_from_real_positions()
+            self._sync_main_position_to_real_holdings()
+            logger.info(f"   🐸 [SYNC] Friends: {len(self.friends)} | Main: {self.main_position.symbol if self.main_position else 'NONE'}")
+        except Exception as e:
+            logger.warning(f"⚠️ Real position sync failed (using cached): {e}")
+            logger.warning(f"   🐸 [SYNC] FAILED: {e}")
+        
+        # 👑⚛️ QUEEN'S AUTONOMOUS DECISION - Full cognitive control
+        queen_decision = None
+        if self.queen_hive:
+            try:
+                # Gather market state for Queen's neural brain
+                neural_inputs = self.queen_hive.gather_neural_inputs(
+                    probability_score=0.5,
+                    wisdom_score=0.7,
+                    quantum_signal=0.0,
+                    gaia_resonance=0.5,
+                    emotional_coherence=0.6,
+                    mycelium_signal=0.0
+                )
+                
+                # Queen thinks and decides autonomously
+                queen_confidence, reasoning = self.queen_hive.think(neural_inputs)
+                queen_decision = {
+                    'confidence': queen_confidence,
+                    'reasoning': reasoning,
+                    'has_control': True
+                }
+                
+                logger.info(f"👑🧠 QUEEN'S AUTONOMOUS DECISION")
+                logger.info(f"   Confidence: {queen_confidence:.2%}")
+                logger.info(f"   Reasoning: {reasoning}")
+            except Exception as e:
+                logger.debug(f"Queen decision unavailable: {e}")
+        
+        # ⚛️ QUANTUM COGNITION AMPLIFICATION
+        quantum_boost = 1.0
+        if self.quantum_cognition:
+            try:
+                result = self.quantum_cognition.amplify_cognition()
+                if result.success:
+                    quantum_boost = result.state.unified_amplification
+                    logger.info(f"⚛️🧠 QUANTUM COGNITION AMPLIFICATION: {quantum_boost:.3f}x")
+            except Exception as e:
+                logger.debug(f"Quantum amplification failed: {e}")
+        
+        # 🤖 BOT INTELLIGENCE ANALYSIS - Market Structure & Competition
+        bot_intelligence = None
+        if self.bot_profiler:
+            try:
+                # Profile bots currently active in the market
+                bot_intelligence = self.bot_profiler.profile_market_structure()
+                if bot_intelligence:
+                    logger.info(f"🤖 BOT INTELLIGENCE ANALYSIS")
+                    logger.info(f"   Active Bots: {bot_intelligence.get('active_bot_count', 0)}")
+                    logger.info(f"   Dominant Strategy: {bot_intelligence.get('dominant_strategy', 'unknown')}")
+                    logger.info(f"   Market Structure: {bot_intelligence.get('market_structure', 'unknown')}")
+                    logger.info(f"   Estimated Capital: ${bot_intelligence.get('total_bot_capital', 0)/1e9:.2f}B")
+            except Exception as e:
+                logger.debug(f"Bot intelligence analysis failed: {e}")
+        
+        # 📺 LIVE TV STATION - Validate Predictions & Collect Feedback
+        tv_validations = []
+        if self.prediction_engine and self.main_position:
+            try:
+                # Create market snapshot for current position
+                if self.main_position.symbol in self.market_data:
+                    coin = self.market_data[self.main_position.symbol]
+                    market_snapshot = MarketSnapshot(
+                        symbol=self.main_position.symbol,
+                        price=coin.price,
+                        change_24h=coin.change_24h,
+                        volume_24h=getattr(coin, 'volume_24h', 0.0),
+                        momentum_30s=self.main_position.change_1h,
+                        volatility_30s=abs(self.main_position.change_15m),
+                        hz_frequency=7.83,
+                        timestamp=datetime.now()
+                    )
+                    # Validate any pending predictions
+                    tv_validations = self.prediction_engine.validate_predictions(market_snapshot)
+                    if tv_validations:
+                        logger.info(f"📺 LIVE TV VALIDATION: {len(tv_validations)} predictions validated")
+                        for vp in tv_validations:
+                            status = "✅ CORRECT" if vp.correct else "❌ WRONG"
+                            logger.info(f"   {vp.symbol}: Predicted {vp.predicted_direction} {vp.predicted_change_pct:+.3f}% → Actual {vp.actual_change_pct:+.3f}% {status}")
+            except Exception as e:
+                logger.debug(f"Live TV validation failed: {e}")
+        
+        # 1. PROTECT - ORCA KILL CYCLE DEFENSE (NO STOP LOSSES - HOLD FOR PROFIT!)
+        # Check if any friends are under attack and alert (but NEVER sell at loss)
+        friends_in_danger = self.detect_orca_kill_cycle()
+        if friends_in_danger:
+            logger.warning(f"🛡️ ORCA KILL CYCLE DETECTED - {len(friends_in_danger)} friends under whale attack!")
+            protection_strategy = self.apply_friend_protection_strategy()
+            if protection_strategy:
+                logger.warning(f"🛡️ PROTECTION STRATEGY: {len(protection_strategy)} friends being HELD for recovery (NO STOP LOSSES)")
+                stats.friends_protected = len(protection_strategy)
+        
+        # 2. SCAN
+        self.fetch_market_data()
+        logger.info(f"   🐸 [SCAN] Market data: {len(self.market_data)} coins scanned")
+        
+        # 3. UPDATE
+        if self.main_position and self.main_position.symbol in self.market_data:
+            coin = self.market_data[self.main_position.symbol]
+            self.main_position.update(coin.price, coin.change_24h)
+        
+        self.update_breadcrumbs()
+        
+        # 4. ANALYZE
+        opportunities = self.find_leap_opportunities()
+        logger.info(f"   🐸 [ANALYZE] Leap opportunities found: {len(opportunities)}")
+        
+        # 5. LEAP (if good opportunity AND Queen approves)
+        if opportunities and queen_decision and queen_decision['has_control']:
+            # Only leap if Queen's confidence is above threshold (quantum amplified)
+            if queen_decision['confidence'] * quantum_boost > 0.618:  # Golden ratio threshold
+                best = opportunities[0]
+                # Execute the best leap opportunity (all criteria already validated)
+                if self.execute_quantum_leap(best):
+                    stats.leaps_made += 1
+                    stats.breadcrumbs_planted += 1
+                    logger.info(f"👑 LEAP APPROVED by Queen's autonomous control")
+        elif opportunities and queen_decision and queen_decision['has_control']:
+            logger.info(f"👑 Leap opportunity exists but Queen's confidence ({queen_decision['confidence']:.2%}) below threshold")
+        elif opportunities:
+            best = opportunities[0]
+            # Execute the best leap opportunity (all criteria already validated)
+            if self.execute_quantum_leap(best):
+                stats.leaps_made += 1
+                stats.breadcrumbs_planted += 1
+        else:
+            # No opportunities found - why not?
+            if self.main_position:
+                logger.info(f"⏸️  No leap opportunities (position holds recovery advantage)")
+            stats.breadcrumbs_planted += 0
+        
+        # 6. SCALP (+ MOUNTAIN CLIMBING LEARNING)
+        scalp_opps = self.find_scalp_opportunities()
+        for symbol, _pnl_pct in scalp_opps[:3]:  # Max 3 scalps per cycle
+            profit = self.execute_scalp(symbol)
+            if profit > 0:
+                stats.scalps_executed += 1
+                stats.profit_realized += profit
+        
+        # ⛰️ MOUNTAIN CLIMBING - Update climbs and learn optimal strategies
+        if self.mountain_climber and self.market_data:
+            for symbol, coin in self.market_data.items():
+                # Update any active climbs
+                climb_update = self.mountain_climber.update_climb(symbol, coin.price)
+                if climb_update and 'ropes_triggered' in climb_update:
+                    for rope_name in climb_update['ropes_triggered']:
+                        logger.info(f"⛰️ PROFIT-TAKING ROPE: {symbol} hit {rope_name}")
+                        logger.info(f"   Current Gain: {climb_update['current_gain_pct']:+.1%}")
+                        logger.info(f"   Peak Gain: {climb_update['peak_gain_pct']:+.1%}")
+            
+            # Get climbing recommendations for new positions
+            if self.main_position and self.mountain_climber:
+                try:
+                    recs = self.mountain_climber.get_climb_recommendations(self.main_position.symbol)
+                    if recs.get('total_climbs', 0) > 0:
+                        logger.info(f"⛰️ MOUNTAIN LEARNING for {self.main_position.symbol}:")
+                        logger.info(f"   Recommendation: {recs.get('recommendation', 'N/A')}")
+                        logger.info(f"   Success Rate: {recs.get('success_rate', 0):.0%}")
+                        logger.info(f"   Peak Capture: {recs.get('peak_capture_efficiency', 'N/A')}")
+                except Exception as e:
+                    logger.debug(f"Mountain climbing recommendation failed: {e}")
+        
+        # 7. RECORD
+        stats.end_time = datetime.now()
+        self.cycle_history.append(stats)
+        
+        # Log summary
+        self._log_cycle_summary(stats)
+        
+        self._save_state()
+        return stats
+    
+    async def run_forever(self, interval_seconds: int = SCAN_INTERVAL_SECONDS):
+        """
+        Run the eternal machine forever.
+        
+        This is the 24/7 loop that never stops.
+        """
+        self.is_running = True
+        logger.info("👑🤖 QUEEN ETERNAL MACHINE ACTIVATED - 24/7 MODE")
+        
+        try:
+            while self.is_running:
+                await self.run_cycle()
+                await asyncio.sleep(interval_seconds)
+        except KeyboardInterrupt:
+            logger.info("👑 Machine stopped by user")
+        except Exception as e:
+            logger.error(f"❌ Machine error: {e}")
+        finally:
+            self.is_running = False
+            self._save_state()
+    
+    def stop(self):
+        """Stop the eternal machine."""
+        self.is_running = False
+        logger.info("👑 Machine stopping...")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 📊 REPORTING & LOGGING
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def _log_cycle_summary(self, stats: CycleStats):
+        """Log summary of a cycle."""
+        logger.info(f"\n📊 CYCLE #{stats.cycle_number} SUMMARY:")
+        
+        # 🛡️ Friend protection status
+        if stats.friends_protected > 0:
+            logger.warning(f"   🛡️ ORCA DEFENSE: {stats.friends_protected} friends protected from whale attacks!")
+        
+        # Main position
+        if self.main_position:
+            mp = self.main_position
+            logger.info(f"   Main: {mp.quantity:.4f} {mp.symbol} @ ${mp.current_price:.4f} = ${mp.current_value:.2f}")
+            logger.info(f"         24h: {mp.change_24h:+.2f}% | P&L: ${mp.unrealized_pnl:+.2f}")
+        
+        # Breadcrumbs
+        summary = self.get_breadcrumb_summary()
+        logger.info(f"   Breadcrumbs: {summary['count']} positions")
+        logger.info(f"         Value: ${summary['total_value']:.2f} | P&L: ${summary['total_pnl']:+.2f} ({summary['pnl_percent']:+.2f}%)")
+        
+        # Totals
+        total_value = (self.main_position.current_value if self.main_position else 0) + summary['total_value'] + self.available_cash
+        total_pnl = total_value - self.initial_vault
+        logger.info(f"   Total Portfolio: ${total_value:.2f}")
+        logger.info(f"   Total P&L: ${total_pnl:+.2f} ({total_pnl/self.initial_vault*100:+.2f}%)")
+        logger.info(f"   Cash: ${self.available_cash:.2f}")
+        
+        # Stats with cycle activity
+        logger.info(f"   Cycle Activity: {stats.leaps_made} leaps | {stats.breadcrumbs_planted} breadcrumbs | {stats.scalps_executed} scalps | {stats.friends_protected} protected")
+        logger.info(f"   Lifetime: {self.total_leaps} leaps | {self.total_breadcrumbs} breadcrumbs | {self.total_scalps} scalps")
+        logger.info(f"   Realized profit: ${self.total_profit_realized:.2f}")
+    
+    def get_full_report(self) -> Dict[str, Any]:
+        """Generate a full portfolio report."""
+        self.update_breadcrumbs()
+        
+        main_value = self.main_position.current_value if self.main_position else 0
+        breadcrumb_summary = self.get_breadcrumb_summary()
+        total_value = main_value + breadcrumb_summary['total_value'] + self.available_cash
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "initial_vault": self.initial_vault,
+            "total_value": total_value,
+            "total_pnl": total_value - self.initial_vault,
+            "total_pnl_percent": (total_value / self.initial_vault - 1) * 100,
+            "cash": self.available_cash,
+            "main_position": {
+                "symbol": self.main_position.symbol if self.main_position else None,
+                "quantity": self.main_position.quantity if self.main_position else 0,
+                "value": main_value,
+                "cost_basis": self.main_position.cost_basis if self.main_position else 0,
+                "unrealized_pnl": self.main_position.unrealized_pnl if self.main_position else 0,
+                "change_24h": self.main_position.change_24h if self.main_position else 0
+            },
+            "breadcrumbs": breadcrumb_summary,
+            "statistics": {
+                "total_cycles": self.total_cycles,
+                "total_leaps": self.total_leaps,
+                "total_breadcrumbs": self.total_breadcrumbs,
+                "total_scalps": self.total_scalps,
+                "total_profit_realized": self.total_profit_realized,
+                "running_since": self.start_time.isoformat() if self.start_time else None
+            }
+        }
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 💾 STATE PERSISTENCE
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def _save_state(self):
+        """Save current state to file."""
+        try:
+            state = {
+                "timestamp": datetime.now().isoformat(),
+                "initial_vault": self.initial_vault,
+                "available_cash": self.available_cash,
+                "main_position": {
+                    "symbol": self.main_position.symbol,
+                    "quantity": self.main_position.quantity,
+                    "cost_basis": self.main_position.cost_basis,
+                    "entry_price": self.main_position.entry_price,
+                    "entry_time": self.main_position.entry_time.isoformat()
+                } if self.main_position else None,
+                "breadcrumbs": {
+                    s: {
+                        "quantity": c.quantity,
+                        "cost_basis": c.cost_basis,
+                        "entry_price": c.entry_price,
+                        "entry_time": c.entry_time.isoformat(),
+                        "exchange": c.exchange
+                    }
+                    for s, c in self.breadcrumbs.items()
+                },
+                "statistics": {
+                    "total_cycles": self.total_cycles,
+                    "total_leaps": self.total_leaps,
+                    "total_breadcrumbs": self.total_breadcrumbs,
+                    "total_scalps": self.total_scalps,
+                    "total_profit_realized": self.total_profit_realized,
+                    "start_time": self.start_time.isoformat() if self.start_time else None
+                }
+            }
+            
+            # Atomic write (Windows-safe)
+            import tempfile
+            temp_dir = self.state_file.parent
+            with tempfile.NamedTemporaryFile("w", delete=False, dir=temp_dir, suffix=".tmp") as f:
+                json.dump(state, f, indent=2)
+                temp_path = Path(f.name)
+            try:
+                os.replace(temp_path, self.state_file)
+            finally:
+                if temp_path.exists() and temp_path != self.state_file:
+                    try:
+                        temp_path.unlink()
+                    except Exception:
+                        pass
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save state: {e}")
+    
+    def _load_state(self):
+        """Load state from file if exists."""
+        if not self.state_file.exists():
+            return
+        
+        try:
+            with open(self.state_file) as f:
+                state = json.load(f)
+            
+            self.initial_vault = state.get("initial_vault", self.initial_vault)
+            self.available_cash = state.get("available_cash", 0)
+            
+            # Load main position
+            mp_data = state.get("main_position")
+            if mp_data:
+                self.main_position = MainPosition(
+                    symbol=mp_data["symbol"],
+                    quantity=mp_data["quantity"],
+                    cost_basis=mp_data["cost_basis"],
+                    entry_price=mp_data["entry_price"],
+                    entry_time=datetime.fromisoformat(mp_data["entry_time"])
+                )
+            
+            # Load breadcrumbs
+            for symbol, data in state.get("breadcrumbs", {}).items():
+                self.breadcrumbs[symbol] = Breadcrumb(
+                    symbol=symbol,
+                    quantity=data["quantity"],
+                    cost_basis=data["cost_basis"],
+                    entry_price=data["entry_price"],
+                    entry_time=datetime.fromisoformat(data["entry_time"]),
+                    exchange=data.get("exchange", self.exchange)
+                )
+            
+            # Load statistics
+            stats = state.get("statistics", {})
+            self.total_cycles = stats.get("total_cycles", 0)
+            self.total_leaps = stats.get("total_leaps", 0)
+            self.total_breadcrumbs = stats.get("total_breadcrumbs", 0)
+            self.total_scalps = stats.get("total_scalps", 0)
+            self.total_profit_realized = stats.get("total_profit_realized", 0)
+            if stats.get("start_time"):
+                self.start_time = datetime.fromisoformat(stats["start_time"])
+            
+            logger.info(f"📂 Loaded state from {self.state_file}")
+            logger.info(f"   Main: {self.main_position.symbol if self.main_position else 'None'}")
+            logger.info(f"   Breadcrumbs: {len(self.breadcrumbs)}")
+            logger.info(f"   Cycles: {self.total_cycles}")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load state: {e}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🎮 CLI INTERFACE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def print_banner():
+    """Print the Queen's banner."""
+    print("""
+╔══════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                      ║
+║     👑🤖 THE QUEEN'S ETERNAL MACHINE 🤖👑                                            ║
+║                                                                                      ║
+║     🏔️  Mountain Pilgrimage  │  🐸 Quantum Frog      │  💉 Bloodless Descent        ║
+║     🟡  Yellow Brick Road    │  🍞 Breadcrumb Trail  │  🤖 24/7 Machine              ║
+║                                                                                      ║
+║     "I NEVER SLEEP. I NEVER STOP. I AM THE MACHINE."                                ║
+║                                                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════╝
+    """)
+
+
+async def run_demo():
+    """Run a demonstration of the Queen's machine."""
+    print_banner()
+    
+    machine = QueenEternalMachine(
+        initial_vault=100.0,
+        breadcrumb_percent=0.10,
+        min_dip_advantage=0.02,
+        dry_run=False
+    )
+    
+    # Start the journey
+    print("\n🟡 Starting Yellow Brick Road journey...")
+    machine.start_journey("ETH")
+    
+    # Run a few cycles
+    print("\n🔄 Running 3 demonstration cycles...")
+    for _ in range(3):
+        await machine.run_cycle()
+        await asyncio.sleep(2)
+    
+    # Print final report
+    print("\n" + "="*60)
+    print("📊 FINAL REPORT")
+    print("="*60)
+    
+    report = machine.get_full_report()
+    print(json.dumps(report, indent=2, default=str))
+
+
+async def run_live(vault: float = 100.0, interval: int = 60, start_symbol: str = "ETH"):
+    """Run the machine in live mode."""
+    print_banner()
+    
+    machine = QueenEternalMachine(
+        initial_vault=vault,
+        breadcrumb_percent=0.10,
+        min_dip_advantage=0.02,
+        dry_run=False  # LIVE MODE
+    )
+    
+    # Start journey if not already started
+    if not machine.main_position:
+        print(f"\n🟡 Starting Yellow Brick Road journey with {start_symbol}...")
+        machine.start_journey(start_symbol)
+    
+    # Run forever
+    print(f"\n🤖 Running 24/7 mode (interval: {interval}s)...")
+    print("   Press Ctrl+C to stop\n")
+    
+    await machine.run_forever(interval_seconds=interval)
+
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="The Queen's Eternal Machine")
+    parser.add_argument("--demo", action="store_true", help="Run demo mode")
+    parser.add_argument("--live", action="store_true", help="Run live 24/7 mode")
+    parser.add_argument("--vault", type=float, default=100.0, help="Initial vault amount")
+    parser.add_argument("--interval", type=int, default=60, help="Scan interval in seconds")
+    parser.add_argument("--symbol", type=str, default="ETH", help="Starting symbol for the journey")
+    
+    args = parser.parse_args()
+    
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s | %(levelname)s | %(message)s',
+        datefmt='%H:%M:%S'
+    )
+    
+    if args.demo:
+        asyncio.run(run_demo())
+    elif args.live:
+        asyncio.run(run_live(args.vault, args.interval, args.symbol))
+    else:
+        # Default: run demo
+        asyncio.run(run_demo())
