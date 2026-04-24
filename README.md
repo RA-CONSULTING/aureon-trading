@@ -8,7 +8,10 @@
 
 This system is **actively trading** with real results. See complete evidence:
 
-**→ [`LIVE_PROOF.md`](LIVE_PROOF.md)** — Backtesting, paper trading, live execution, and verification
+| Document | Purpose |
+|----------|---------|
+| **[`LIVE_PROOF.md`](LIVE_PROOF.md)** | Complete backtesting, paper trading, and live execution results with verification |
+| **[`QUICK_START.md`](QUICK_START.md)** | Find what you need fast: commands, file locations, workflows |
 
 **Quick Stats:**
 - ✅ **Backtesting:** 629 historical trades, 92.4% win rate, +$97,475 PnL
