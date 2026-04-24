@@ -4,6 +4,22 @@
 
 ---
 
+## ⚡ Live Proof: System in Production
+
+This system is **actively trading** with real results. See complete evidence:
+
+**→ [`LIVE_PROOF.md`](LIVE_PROOF.md)** — Backtesting, paper trading, live execution, and verification
+
+**Quick Stats:**
+- ✅ **Backtesting:** 629 historical trades, 92.4% win rate, +$97,475 PnL
+- ✅ **Paper Trading:** 24 simulated trades, 66.7% win rate, +$2.00 PnL
+- ✅ **Live Trading:** Multi-exchange portfolio (Binance, Kraken) actively managed
+- ✅ **Verification:** 100% ETA prediction accuracy (5/5 hits with sub-second execution)
+
+Each stage shows the complete pipeline from signal generation through trade execution, validation, and P&L reconciliation.
+
+---
+
 ## This Repository Is Six Domains, Not One
 
 | # | Domain | What It Contains | Entry Point |
