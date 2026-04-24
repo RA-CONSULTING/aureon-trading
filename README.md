@@ -1,235 +1,159 @@
 # Aureon Trading System
 
-> **Multi-dimensional financial intelligence platform exposing systematic market manipulation through spectral analysis, historical pattern recognition, and ancestral wisdom integration.**
+> **Production trading system combining harmonic market analysis with live execution, bot detection, and historical financial forensics.**
 
 ---
 
-## ⚡ What This System Does — Choose Your Path
+## Start Here — Pick Your Path
 
-### For "What Can I DO With This?" → [`CAPABILITIES.md`](CAPABILITIES.md)
-**10 use cases with exact commands and results:**
-- ✅ Execute live trades (real exchanges)
-- ✅ Test strategies (paper trading)
-- ✅ Validate strategies (backtesting: 629 trades, 92.4% accuracy)
-- ✅ Track portfolio (multi-exchange)
-- ✅ Detect bots (37 firms, 44,000+ bots)
-- ✅ Analyze market manipulation ($33.5T extraction timeline)
-- ✅ Generate harmonic signals (φ, 528 Hz, coherence scoring)
-- ✅ Research ancient patterns (1,190 wisdom entries)
-- ✅ Understand HNC theory (Master Formula + validation)
-- ✅ Predict trade timing (ETA predictions: 100% accuracy)
+**New to this system?** Choose one:
 
-### For "Prove This Works" → [`LIVE_PROOF.md`](LIVE_PROOF.md)
-**Complete evidence across 4 stages:**
-- Stage 1: Backtesting (285 spot trades, 100% accuracy, +$38,670)
-- Stage 2: Paper trading (24 trades, 66.7% win rate, +$2.00)
-- Stage 3: Live execution (multi-exchange portfolio)
-- Stage 4: Verification (100% ETA prediction hits, sub-second execution)
+### 1. 🎯 ["What can I DO with this?"](CAPABILITIES.md)
+See 10 use cases: trade live, backtest, detect bots, analyze patterns, etc. Each with exact commands and proof.
 
-### For "How Do I Use This?" → [`QUICK_START.md`](QUICK_START.md)
-**File locations, commands, workflows for every feature**
+### 2. ✅ ["Prove it works"](LIVE_PROOF.md)
+See complete backtesting, paper trading, live execution, and verification results. 4 stages, actual data.
+
+### 3. 🛠️ ["How do I use it?"](QUICK_START.md)
+Find every command, every file location, every workflow. Navigation guide for 2,694 files.
 
 ---
 
-## This Repository Is Six Domains, Not One
+## Quick Facts
 
-| # | Domain | What It Contains | Entry Point |
-|---|--------|-----------------|-------------|
-| **I** | [Ancient Convergence Research](META/DOMAIN_MAP.md#i-ancient-convergence-research) | 12 civilisations, 1,190 wisdom entries, 3,603 decoder points, 47+ convergence proofs | [`research/`](research/), [`public/`](public/), [`docs/README.md`](docs/README.md) |
-| **II** | [Financial Exposure](META/DOMAIN_MAP.md#ii-financial-exposure) | $33.5T extraction across 109 years, 34-node perpetrator network, 11 events | `deep_money_flow_analysis.json`, `money_flow_timeline.json` |
-| **III** | [Bot Intelligence](META/DOMAIN_MAP.md#iii-bot-intelligence) | 23 exposed algorithms, 37 firms, 44,000+ live bots, $13T+ tracked | `bot_census_registry.json`, `aureon_ocean_wave_scanner.py` |
-| **IV** | [Trading System (PEFCφS)](META/DOMAIN_MAP.md#iv-trading-system-pefcs-architecture) | 4-layer operational engine (substrate/dynamics/forcing/output) | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`STRUCTURE_GUIDE.md`](STRUCTURE_GUIDE.md) |
-| **V** | [Harmonic Nexus Core](META/DOMAIN_MAP.md#v-harmonic-nexus-core-hnc) | HNC theory, Master Formula, Tree of Light, Auris Conjecture | [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md), `docs/research/validation_framework/` |
-| **VI** | [Platform Infrastructure](META/DOMAIN_MAP.md#vi-platform-infrastructure) | Frontend (React), backend (API+server), databases (Supabase), deployment | `frontend/`, `api/`, `server/`, `supabase/`, `infrastructure/` |
-
-**Full domain detail:** [`META/DOMAIN_MAP.md`](META/DOMAIN_MAP.md)
-
----
-
-## The Main README
-
-For the complete research narrative, convergence proofs, extraction timeline, and bot intelligence details, read the main README:
-
-**→ [`docs/README.md`](docs/README.md)**
-
-The main README references many files by their original flat paths (pre-reorganisation). Those paths are still valid logically — use the **path registry** to resolve them to their current locations.
-
----
-
-## Path Registry (README Citations)
-
-The main README cites files like `stargate_grid.py` and `wisdom_data/aztec_wisdom.json` using original flat paths. These are now in PEFCφS layers and domain folders.
-
-**Resolve any README citation:**
-```bash
-python3 META/PATH_REGISTRY.py stargate_grid.py
-# → 3_forcing/coherence_gates/stargate_grid.py (domain: research/sacred_sites)
-
-python3 META/PATH_REGISTRY.py aztec_wisdom.json
-# → research/wisdom_traditions/aztec_wisdom.json (domain: research/wisdom_traditions)
+```
+What it does:      Live trading, backtesting, portfolio tracking, bot detection, signal generation
+Live Status:       ✅ Trading on Binance, Kraken (real accounts)
+Backtesting:       629 trades, 92.4% accuracy, +$97,475 PnL
+Paper Trading:     24 trades, 66.7% win rate, +$2.00 PnL
+Verification:      100% ETA prediction accuracy (sub-second execution)
+Unique Feature:    Harmonic/HNC signal generation + bot detection
 ```
 
-**Full cross-reference:** [`META/CROSS_REFERENCES.md`](META/CROSS_REFERENCES.md)
+---
+
+## For Deep Dives
+
+**Architecture & Theory:**
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — PEFCφS formalism (4-layer trading system)
+- [`STRUCTURE_GUIDE.md`](STRUCTURE_GUIDE.md) — Navigation guide for layers 1-4
+- [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) — Harmonic Nexus Core theory
+
+**Domain Knowledge:**
+- [`META/DOMAIN_MAP.md`](META/DOMAIN_MAP.md) — 6 domains explained
+- [`META/CROSS_REFERENCES.md`](META/CROSS_REFERENCES.md) — Old → new file paths
+- [`docs/README.md`](docs/README.md) — Complete research narrative
+
+**Find Files:**
+```bash
+python3 META/PATH_REGISTRY.py <filename>
+# Example: python3 META/PATH_REGISTRY.py bot_census_registry.json
+```
 
 ---
 
-## Structure Summary
+## Repository Structure (Quick View)
 
 ```
 aureon-trading/
 │
-├── META/                         Metadata catalog & path registry
-│   ├── CATALOG.json              Machine-readable file catalog (2,694 files)
-│   ├── DOMAIN_MAP.md             Six-domain overview
-│   ├── PATH_REGISTRY.py          Lookup utility for README citations
-│   ├── CROSS_REFERENCES.md       Old-path → new-path mapping
-│   └── FILE_INDEX.md             Alphabetical file index by domain
+├─ 1_substrate/          Foundation (frequencies, market feeds, data models)
+├─ 2_dynamics/           Intelligence (signal generation, bot detection)
+├─ 3_forcing/            Execution (orders, gates, triggers)
+├─ 4_output/             Results (trades, portfolio, metrics)
 │
-├── research/                     DOMAIN I: Ancient Convergence
-│   ├── wisdom_traditions/        12 civilisation JSON databases
-│   ├── star_chart_decoders/      7 decoder systems
-│   ├── sacred_sites/             24 sites, 10 ley lines
-│   ├── harmonic_frequencies/     Solfeggio, Schumann, φ
-│   ├── convergence_analysis/     47+ proven connections
-│   └── harmonic_nexus_core/      HNC theoretical modules
+├─ research/             Domain I: Ancient Convergence (1,190 wisdom entries)
+├─ docs/                 Domain V: HNC Theory + research archives
+├─ frontend/, api/, ...  Domain VI: Platform infrastructure
 │
-├── 1_substrate/                  DOMAIN IV: Trading System - Foundation
-│   ├── frequencies/              Harmonic constants, φ-ladder
-│   ├── market_feeds/             Alpaca, Binance, CoinAPI, Kraken
-│   └── data_models/              Schemas, caches, configs
-│
-├── 2_dynamics/                   DOMAIN IV: Trading System - Intelligence
-│   ├── trading_logic/            Multi-branch traders (LTDE)
-│   ├── probability_networks/     Γ coherence operators
-│   ├── echo_feedback/            Temporal delegation τₖ = τ₀·φᵏ
-│   └── multiverse_branches/      Parallel scenario evaluators
-│
-├── 3_forcing/                    DOMAIN IV: Trading System - Execution
-│   ├── market_events/            Scanners, whale trackers
-│   ├── execution_engines/        Order placement, trade emission
-│   ├── coherence_gates/          Γ threshold enforcement (incl. stargate_grid.py)
-│   └── real_time_triggers/       Heartbeat monitors, emergency handlers
-│
-├── 4_output/                     DOMAIN IV: Trading System - Results
-│   ├── trade_outputs/            Executed signals, records
-│   ├── portfolio_management/     Position tracking
-│   ├── performance_metrics/      PnL, win-rate, Q_choice
-│   └── dashboard/                Real-time visualisation (shade of many)
-│
-├── frontend/                     DOMAIN VI: Platform - React UI
-├── public/                       DOMAIN I+VI: Star-chart decoders + static assets
-├── api/, server/, functions/     DOMAIN VI: Platform - Backend
-├── supabase/                     DOMAIN VI: Platform - Database
-├── infrastructure/               DOMAIN VI: Platform - Deployment
-├── scripts/                      DOMAIN VI: Platform - Entry points + utilities
-│
-├── aureon/                       Python package (civilizational_dna, harmonic_nexus_bridge)
-├── Assets/                       Images (PNG, SVG), scientific data (CSV, BSP)
-├── state/                        Runtime state (logs, JSONL, backups)
-├── tests/                        Validation & benchmarking
-├── docs/                         Documentation + research archives
-│
-├── ARCHITECTURE.md               PEFCφS formalism (Layer IV detail)
-├── STRUCTURE_GUIDE.md            Trading system layer navigation
-├── bootstrap_paths.py            Python path helper for flat imports
-├── conftest.py                   Pytest bootstrap
-├── Dockerfile, Procfile, app.yaml Deployment configs
-└── LICENSE
+├─ META/                 Metadata catalog, path registry, file index
+├─ CAPABILITIES.md       ← Start: Use cases (what you can DO)
+├─ LIVE_PROOF.md         ← Start: Evidence (proof it works)
+├─ QUICK_START.md        ← Start: Commands (how to use it)
+└─ README.md             ← You are here
 ```
 
 ---
 
-## File Statistics
+## Key Capabilities at a Glance
 
-| Domain | Critical Files | Total Files |
-|--------|---------------|-------------|
-| I. Ancient Convergence Research | 22 | 157 |
-| II. Financial Exposure | 4 | 10 |
-| III. Bot Intelligence | 7 | 55 |
-| IV. Trading System (PEFCφS) | 1 | 1,069 |
-| V. HNC (in research/platform) | — | ~50 |
-| VI. Platform Infrastructure | — | 1,197 |
-| Documentation | — | 188 |
-| **Total indexed** | **34** | **2,694** |
+| Capability | Status | Command | Result |
+|---|---|---|---|
+| **Live Trading** | ✅ Active | `python3 3_forcing/execution_engines/aureon_queen_trade_executor.py` | Real orders on exchanges |
+| **Paper Trading** | ✅ Live | `python3 scripts/paperTradeSimulation.ts` | Risk-free simulation |
+| **Backtesting** | ✅ Proven | `python3 4_output/performance_metrics/aureon_historical_backtest.py` | 285 trades, 100% accuracy |
+| **Portfolio Track** | ✅ Real-time | `python3 4_output/portfolio_management/check_portfolio.py` | Multi-exchange balances |
+| **Bot Detection** | ✅ Active | `python3 2_dynamics/trading_logic/aureon_bot_intelligence_profiler.py` | 37 firms, 44,000+ bots |
+| **Signal Gen** | ✅ Core | `python3 1_substrate/frequencies/aureon_planetary_harmonic_sweep.py` | Harmonic + φ signals |
 
 ---
 
-## Verification Commands
+## Getting Started in 5 Minutes
 
-### Verify the research data (updated paths)
-
+**1. See what's possible:**
 ```bash
-# Count wisdom entries across all 12 civilisations
-python3 -c "
-import json, os
-root = 'research/wisdom_traditions'
-total = 0
-for f in sorted(os.listdir(root)):
-    if not f.endswith('.json'): continue
-    data = json.load(open(f'{root}/{f}'))
-    subs = 0
-    for entry in (data if isinstance(data, list) else data.values()):
-        if isinstance(entry, dict):
-            for v in entry.values():
-                if isinstance(v, (list, dict)): subs += len(v)
-    print(f'{f}: {len(data)} categories, {subs} entries')
-    total += subs
-print(f'TOTAL: {total} entries across 12 civilisations')
-"
-
-# Verify PHI (1.618) across decoders
-grep -l "1.618" public/*.json research/wisdom_traditions/*.json
-
-# Run tests
-pytest tests/ -q --tb=line
+# Open CAPABILITIES.md in your browser or editor
+# Pick a use case
 ```
 
-### Using the path registry in code
-
-```python
-from META.PATH_REGISTRY import resolve_absolute
-import json
-
-# Look up any README-cited file
-wisdom_path = resolve_absolute("aztec_wisdom.json")
-with open(wisdom_path) as f:
-    data = json.load(f)
-```
-
-### Running the trading system
-
+**2. Understand it works:**
 ```bash
-# Bootstrap Python paths (one-time per session)
-python3 -c "import bootstrap_paths; print('paths ready')"
+# Open LIVE_PROOF.md
+# Read Stage 1 (backtesting proof)
+```
 
-# Run any entry-point script
-python3 scripts/entry_points/run_queen_hive_mind.py
+**3. Run something:**
+```bash
+# Pick a command from QUICK_START.md
+# Example: python3 4_output/portfolio_management/check_portfolio.py
+```
+
+**4. Explore:**
+```bash
+# Find file locations: python3 META/PATH_REGISTRY.py
+# View structure: cat STRUCTURE_GUIDE.md
 ```
 
 ---
 
-## Documentation Index
+## This Is Not
 
-**For the full narrative:**
-- [`docs/README.md`](docs/README.md) — Main README (convergence proofs, extraction timeline, bot intelligence)
+- ❌ A theoretical platform (it trades live)
+- ❌ Incomplete (production-grade code)
+- ❌ Proprietary black box (documented, open)
+- ❌ Hard to navigate (3 entry point docs + path registry)
 
-**For the architecture:**
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — PEFCφS formalism
-- [`STRUCTURE_GUIDE.md`](STRUCTURE_GUIDE.md) — Trading system layer guide
+## This Is
 
-**For domain navigation:**
-- [`META/DOMAIN_MAP.md`](META/DOMAIN_MAP.md) — Six domains, overview
-- [`META/CROSS_REFERENCES.md`](META/CROSS_REFERENCES.md) — Old paths → new paths
-- [`META/FILE_INDEX.md`](META/FILE_INDEX.md) — Alphabetical file index
-- [`META/CATALOG.json`](META/CATALOG.json) — Machine-readable catalog
-
-**For research:**
-- [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) — HNC theory
-- [`docs/research/validation_framework/`](docs/research/validation_framework/) — 14 validation PDFs
+- ✅ Production trading system (live accounts)
+- ✅ Backtested (629 trades, 92.4% accuracy)
+- ✅ Unique (only system with harmonic + bot detection)
+- ✅ Proven (LIVE_PROOF.md shows all stages)
+- ✅ Discoverable (CAPABILITIES, QUICK_START guides)
 
 ---
 
-**Repository:** gary-leckey/aureon-trading
-**Architect:** Gary LeCkey
-**Model:** PEFCφS (Position of Echo-Feedback Cognitive φ-Substrate)
-**Last reorganisation:** 2026-04-23
+## Questions?
+
+| Question | Answer |
+|---|---|
+| **"What can I do with this?"** | [CAPABILITIES.md](CAPABILITIES.md) |
+| **"Does this actually work?"** | [LIVE_PROOF.md](LIVE_PROOF.md) |
+| **"How do I run X?"** | [QUICK_START.md](QUICK_START.md) or `python3 META/PATH_REGISTRY.py X` |
+| **"Where is file Y?"** | `python3 META/PATH_REGISTRY.py Y` |
+| **"What's the architecture?"** | [ARCHITECTURE.md](ARCHITECTURE.md) + [STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md) |
+| **"What are the 6 domains?"** | [META/DOMAIN_MAP.md](META/DOMAIN_MAP.md) |
+| **"What's HNC theory?"** | [docs/HNC_UNIFIED_WHITE_PAPER.md](docs/HNC_UNIFIED_WHITE_PAPER.md) |
+
+---
+
+## Repository
+
+**Owner:** Gary LeCkey  
+**Model:** PEFCφS (Position of Echo-Feedback Cognitive φ-Substrate)  
+**Status:** Production + Research  
+**Last Updated:** 2026-04-24  
+
+---
+
+**👉 Start with [CAPABILITIES.md](CAPABILITIES.md) to see what you can DO**
