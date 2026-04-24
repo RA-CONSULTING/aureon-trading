@@ -11,7 +11,7 @@
 | **I** | [Ancient Convergence Research](META/DOMAIN_MAP.md#i-ancient-convergence-research) | 12 civilisations, 1,190 wisdom entries, 3,603 decoder points, 47+ convergence proofs | [`research/`](research/), [`public/`](public/), [`docs/README.md`](docs/README.md) |
 | **II** | [Financial Exposure](META/DOMAIN_MAP.md#ii-financial-exposure) | $33.5T extraction across 109 years, 34-node perpetrator network, 11 events | `deep_money_flow_analysis.json`, `money_flow_timeline.json` |
 | **III** | [Bot Intelligence](META/DOMAIN_MAP.md#iii-bot-intelligence) | 23 exposed algorithms, 37 firms, 44,000+ live bots, $13T+ tracked | `bot_census_registry.json`, `aureon_ocean_wave_scanner.py` |
-| **IV** | [Trading System (PEFCφS)](META/DOMAIN_MAP.md#iv-trading-system-pefcφs-architecture) | 4-layer operational engine (substrate/dynamics/forcing/output) | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`STRUCTURE_GUIDE.md`](STRUCTURE_GUIDE.md) |
+| **IV** | [Trading System (PEFCφS)](META/DOMAIN_MAP.md#iv-trading-system-pefcs-architecture) | 4-layer operational engine (substrate/dynamics/forcing/output) | [`ARCHITECTURE.md`](ARCHITECTURE.md), [`STRUCTURE_GUIDE.md`](STRUCTURE_GUIDE.md) |
 | **V** | [Harmonic Nexus Core](META/DOMAIN_MAP.md#v-harmonic-nexus-core-hnc) | HNC theory, Master Formula, Tree of Light, Auris Conjecture | [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md), `docs/research/validation_framework/` |
 | **VI** | [Platform Infrastructure](META/DOMAIN_MAP.md#vi-platform-infrastructure) | Frontend (React), backend (API+server), databases (Supabase), deployment | `frontend/`, `api/`, `server/`, `supabase/`, `infrastructure/` |
 
