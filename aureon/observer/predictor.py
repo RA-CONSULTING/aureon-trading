@@ -58,19 +58,32 @@ _BEARISH_ANCHORS_HZ = (440.0,)
 _HZ_MATCH_TOLERANCE = 0.10        # 10% — same tolerance the observer uses
 
 
-def _nearest_anchor_signed_strength(rock: Rock) -> float:
-    """+1 if close to a bullish anchor, -1 if close to bearish, 0 otherwise."""
-    if rock.dominant_hz <= 0:
+def _nearest_anchor_signed_strength(hz: float) -> float:
+    """+1 if closest anchor is bullish, -1 if bearish, 0 if no anchor in range.
+
+    Critical: 432 Hz (bullish) and 440 Hz (bearish parasite) are only
+    1.85% apart — both inside the 10% match tolerance for either. We
+    must pick the *closest* anchor across both pools, not the first
+    match in either pool, otherwise a 440 Hz rock incorrectly looks
+    bullish (it's within 1.85% of 432 Hz before it's checked against
+    440 Hz). Same logic future-proofs against any other near-pair
+    anchors that might be added.
+    """
+    if hz <= 0:
         return 0.0
-    for hz in _BULLISH_ANCHORS_HZ:
-        rel = abs(rock.dominant_hz - hz) / max(hz, 1e-9)
-        if rel <= _HZ_MATCH_TOLERANCE:
-            return 1.0
-    for hz in _BEARISH_ANCHORS_HZ:
-        rel = abs(rock.dominant_hz - hz) / max(hz, 1e-9)
-        if rel <= _HZ_MATCH_TOLERANCE:
-            return -1.0
-    return 0.0
+    best_rel = float("inf")
+    best_sign = 0.0
+    for h in _BULLISH_ANCHORS_HZ:
+        rel = abs(hz - h) / max(h, 1e-9)
+        if rel <= _HZ_MATCH_TOLERANCE and rel < best_rel:
+            best_rel = rel
+            best_sign = 1.0
+    for h in _BEARISH_ANCHORS_HZ:
+        rel = abs(hz - h) / max(h, 1e-9)
+        if rel <= _HZ_MATCH_TOLERANCE and rel < best_rel:
+            best_rel = rel
+            best_sign = -1.0
+    return best_sign
 
 
 def _build_unified_signal(observer: HarmonicObserver, symbol: str):
@@ -95,16 +108,7 @@ def _build_unified_signal(observer: HarmonicObserver, symbol: str):
         z = float(rd.get("z_score", 0.0) or 0.0)
         if hz <= 0:
             continue
-        sign = 0.0
-        for h in _BULLISH_ANCHORS_HZ:
-            if abs(hz - h) / max(h, 1e-9) <= _HZ_MATCH_TOLERANCE:
-                sign = 1.0
-                break
-        if sign == 0.0:
-            for h in _BEARISH_ANCHORS_HZ:
-                if abs(hz - h) / max(h, 1e-9) <= _HZ_MATCH_TOLERANCE:
-                    sign = -1.0
-                    break
+        sign = _nearest_anchor_signed_strength(hz)
         if sign != 0.0:
             n_aligned += 1
             weighted += sign * max(0.0, z)
