@@ -366,6 +366,15 @@ class PredictionBus:
         except Exception as _exc:
             logger.debug("HarmonicObserver auto-wire skipped: %s", _exc)
 
+        # Auto-wire the WavePredictor predictor. Same pattern as the
+        # observer — idempotent, NEUTRAL until a singleton exists,
+        # never blocks PredictionBus construction.
+        try:
+            from aureon.observer.wave_predictor import auto_wire_prediction_bus as _wp_wire
+            _wp_wire(self)
+        except Exception as _exc:
+            logger.debug("WavePredictor auto-wire skipped: %s", _exc)
+
     def register_predictor(self, name: str, predict_fn: Callable):
         """Register a prediction engine. predict_fn(data_signals) -> UnifiedSignal"""
         self._predictors[name] = predict_fn
@@ -412,6 +421,7 @@ class PredictionBus:
             'whale_hunter': 1.0,
             'quantum_telescope': 0.5,
             'harmonic_observer': 1.5,      # Theroux-style live HNC field describer
+            'wave_predictor': 1.0,         # wave-based next-tick directional forecast
         }
 
         for name, pred in predictions.items():
