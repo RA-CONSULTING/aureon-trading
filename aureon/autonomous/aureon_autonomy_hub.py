@@ -355,6 +355,17 @@ class PredictionBus:
         self._prediction_history: deque = deque(maxlen=500)
         self._lock = threading.Lock()
 
+        # Auto-wire the HarmonicObserver predictor. Idempotent and
+        # safe even if no observer has been constructed yet — the
+        # predictor returns NEUTRAL until a singleton is registered.
+        # Import inside __init__ to avoid any chance of circular import
+        # at module load time.
+        try:
+            from aureon.observer.wiring import auto_wire_prediction_bus
+            auto_wire_prediction_bus(self)
+        except Exception as _exc:
+            logger.debug("HarmonicObserver auto-wire skipped: %s", _exc)
+
     def register_predictor(self, name: str, predict_fn: Callable):
         """Register a prediction engine. predict_fn(data_signals) -> UnifiedSignal"""
         self._predictors[name] = predict_fn
@@ -400,6 +411,7 @@ class PredictionBus:
             'qgita': 2.0,
             'whale_hunter': 1.0,
             'quantum_telescope': 0.5,
+            'harmonic_observer': 1.5,      # Theroux-style live HNC field describer
         }
 
         for name, pred in predictions.items():
