@@ -10621,6 +10621,54 @@ class OrcaKillCycle:
         print(f"   QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
 
         #
+        #  GATE 0:  HARMONIC OBSERVER NARROW-BAND  (per-symbol + global)
+        #
+        #  The HarmonicObserver describes the live HNC field. Two
+        #  things are read here, additively:
+        #
+        #    (a) Per-symbol direction via the observer's predictor
+        #        adapter. Maps Λ-trace rocks at HNC anchor frequencies
+        #        (7.83 / 14.3 / 432 / 528 / 963 Hz bullish, 440 Hz
+        #        parasite bearish, closest-anchor wins) to a
+        #        UnifiedSignal. Counts as Brain 6 in the multi-brain
+        #        vote below — directly narrows which coins/commodities
+        #        clear the gate.
+        #
+        #    (b) Global coherence_score. When the field is chaotic
+        #        (coh < 0.4) the multi-brain threshold gets +1 vote
+        #        added — fewer trades pass through a noisy field. When
+        #        coherence is healthy (≥0.4), behaviour is unchanged.
+        #
+        #  No-observer fallback: every variable stays None / 0, the
+        #  Brain-6 vote is skipped, the threshold stays at today's 2.
+        #
+        _observer_coherence: Optional[float] = None
+        _observer_signal = None
+        try:
+            from aureon.observer import get_observer
+            _obs = get_observer()
+            if _obs is not None:
+                try:
+                    _observer_coherence = float(_obs.coherence_score())
+                except Exception:
+                    _observer_coherence = None
+                try:
+                    from aureon.observer.predictor import make_predictor
+                    _observer_signal = make_predictor(_obs)({}, symbol)
+                except Exception:
+                    _observer_signal = None
+        except Exception:
+            pass
+
+        _observer_extra_votes_required = 0
+        if _observer_coherence is not None and _observer_coherence < 0.4:
+            _observer_extra_votes_required = 1
+            print(f"   OBSERVER NARROW-BAND: coherence={_observer_coherence:.3f} "
+                  f"(chaotic field) — requiring +1 brain vote")
+        elif _observer_coherence is not None:
+            print(f"   OBSERVER FIELD-OK: coherence={_observer_coherence:.3f}")
+
+        #
         #     MULTI-BRAIN VALIDATION GATE (consensus from all intelligence)
         #     Opportunity must be confirmed by at least 2 independent systems
         #
@@ -10711,22 +10759,58 @@ class OrcaKillCycle:
                 except Exception:
                     pass
 
+            # Vote 6: HarmonicObserver — per-symbol narrow-band signal.
+            # Maps the live HNC field's rocks at this symbol's harmonic
+            # anchor (closest-anchor across bullish/bearish lists) into
+            # a BUY / SELL / HOLD vote. Read once at top of function;
+            # only counted if the observer is actually present (no
+            # observer = vote skipped, total unchanged).
+            if _observer_signal is not None:
+                _validation_total += 1
+                if _observer_signal.direction == "BULLISH" and _observer_signal.confidence >= 0.4:
+                    _validation_votes += 1
+                    _validation_details.append(
+                        f"Observer:BUY({_observer_signal.confidence:.0%},"
+                        f"coh={_observer_coherence:.2f})"
+                    )
+                elif _observer_signal.direction == "BEARISH":
+                    _validation_details.append(
+                        f"Observer:SELL({_observer_signal.confidence:.0%},"
+                        f"coh={_observer_coherence:.2f})"
+                    )
+                else:
+                    _validation_details.append(
+                        f"Observer:NEUTRAL(coh={_observer_coherence:.2f})"
+                    )
+
             detail_str = " | ".join(_validation_details) if _validation_details else "no signals"
             print(f"   MULTI-BRAIN VALIDATION: {_validation_votes}/{_validation_total} brains confirm BUY ({detail_str})")
 
-            # Gate: require at least 2 independent confirmations if 3+ systems available
-            if _validation_total >= 3 and _validation_votes < 2:
-                print(f"   MULTI-BRAIN GATE BLOCKED: {symbol} [{context}] - only {_validation_votes}/{_validation_total} confirmations")
+            # Gate: require at least 2 independent confirmations if 3+
+            # systems available — plus the observer's narrow-band tax
+            # (+1 required when global coherence is low).
+            _required_votes = 2 + _observer_extra_votes_required
+            if _validation_total >= 3 and _validation_votes < _required_votes:
+                _block_reason = (
+                    f'Multi-brain validation: {_validation_votes}/'
+                    f'{_validation_total} brains confirm '
+                    f'(needed {_required_votes}'
+                    f'{", +1 from observer narrow-band" if _observer_extra_votes_required else ""})'
+                )
+                print(f"   MULTI-BRAIN GATE BLOCKED: {symbol} [{context}] - {_block_reason}")
                 return {
                     'status': 'blocked',
-                    'reason': f'Multi-brain validation: only {_validation_votes}/{_validation_total} brains confirm',
+                    'reason': _block_reason,
                     'blocked_by': 'MULTI_BRAIN_VALIDATION_GATE',
                     'symbol': symbol,
                     'exchange': exchange,
                     'context': context,
                     'validation_votes': _validation_votes,
                     'validation_total': _validation_total,
+                    'validation_required': _required_votes,
                     'validation_details': _validation_details,
+                    'observer_coherence': _observer_coherence,
+                    'observer_extra_votes_required': _observer_extra_votes_required,
                     'rejected': True
                 }
         except Exception as e:
