@@ -283,6 +283,66 @@ def _aggregate(capture: _BenchCapture, daemon) -> Dict[str, Any]:
 _BENCH_HEADER = "# HNC Observer — Unified Field Benchmark"
 
 
+# ─── text sparkline ────────────────────────────────────────────────
+# 8-level Unicode block characters; mapping a value's position in
+# [vmin, vmax] to a glyph. Constant-width, no font dependency.
+_SPARK_GLYPHS = " ▁▂▃▄▅▆▇█"
+
+
+def _sparkline(values: List[float], width: Optional[int] = None) -> str:
+    """Render ``values`` as a one-line block-character sparkline.
+
+    Empty input returns an empty string. Constant series renders as
+    a flat midline. ``width`` resamples to that many output columns
+    (nearest-neighbour); None preserves the input length.
+    """
+    if not values:
+        return ""
+    vs = list(values)
+    if width is not None and width > 0 and width != len(vs):
+        # Nearest-neighbour resample.
+        step = len(vs) / float(width)
+        vs = [vs[min(int(i * step), len(vs) - 1)] for i in range(width)]
+    vmin = min(vs)
+    vmax = max(vs)
+    span = vmax - vmin
+    if span <= 0:
+        # Flat — pick the middle glyph so it's visible.
+        return _SPARK_GLYPHS[len(_SPARK_GLYPHS) // 2] * len(vs)
+    out = []
+    for v in vs:
+        norm = (v - vmin) / span
+        idx = int(round(norm * (len(_SPARK_GLYPHS) - 1)))
+        idx = max(0, min(len(_SPARK_GLYPHS) - 1, idx))
+        out.append(_SPARK_GLYPHS[idx])
+    return "".join(out)
+
+
+def _regime_timeline(snaps: List[Dict[str, Any]]) -> str:
+    """Single-line timeline showing regime transitions across the run.
+
+    Format: ``WARMING(4) → QUIET(14)`` — each regime with its
+    consecutive sample count, transitions separated by → arrows.
+    """
+    if not snaps:
+        return ""
+    runs: List[Tuple[str, int]] = []
+    cur = None
+    n = 0
+    for s in snaps:
+        regime = s["snapshot"].get("regime", "?") or "?"
+        if regime == cur:
+            n += 1
+        else:
+            if cur is not None:
+                runs.append((cur, n))
+            cur = regime
+            n = 1
+    if cur is not None:
+        runs.append((cur, n))
+    return " → ".join(f"{r}({c})" for r, c in runs)
+
+
 def _write_markdown(report_path: Path, agg: Dict[str, Any], capture: _BenchCapture,
                     params: Dict[str, Any], tag: str) -> None:
     started = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(capture.started_at))
@@ -348,6 +408,45 @@ def _write_markdown(report_path: Path, agg: Dict[str, Any], capture: _BenchCaptu
     else:
         add("*(no rock events emitted — observer needs numpy/scipy or more data)*")
     add("")
+    add("## Time series")
+    add("")
+    # Coherence trace
+    cohs = [float(s["snapshot"].get("coherence_score", 0.0) or 0.0) for s in snaps]
+    if cohs:
+        add(f"**Coherence score** ({min(cohs):.3f} → {max(cohs):.3f}, "
+            f"mean {sum(cohs)/len(cohs):.3f}):")
+        add("")
+        add(f"```\n{_sparkline(cohs, width=min(len(cohs), 60))}\n```")
+        add("")
+    # Λ_full trace from engine_state
+    lambdas = [float(s["engine_state"].get("lambda_t", 0.0) or 0.0) for s in snaps]
+    if lambdas:
+        add(f"**Λ_full** ({min(lambdas):.3f} → {max(lambdas):.3f}):")
+        add("")
+        add(f"```\n{_sparkline(lambdas, width=min(len(lambdas), 60))}\n```")
+        add("")
+    # ψ trace
+    psis = [float(s["engine_state"].get("consciousness_psi", 0.0) or 0.0)
+            for s in snaps]
+    if psis:
+        add(f"**ψ (consciousness)** ({min(psis):.3f} → {max(psis):.3f}):")
+        add("")
+        add(f"```\n{_sparkline(psis, width=min(len(psis), 60))}\n```")
+        add("")
+    # Symbolic life score
+    sls = [float(s["engine_state"].get("symbolic_life_score", 0.0) or 0.0)
+           for s in snaps]
+    if sls:
+        add(f"**Symbolic life score** ({min(sls):.3f} → {max(sls):.3f}):")
+        add("")
+        add(f"```\n{_sparkline(sls, width=min(len(sls), 60))}\n```")
+        add("")
+    # Regime transition timeline (text, not sparkline)
+    timeline = _regime_timeline(snaps)
+    if timeline:
+        add(f"**Regime timeline:** {timeline}")
+        add("")
+
     add("## Predictor consensus")
     add("")
     add(f"- **Periodic reads:** {agg['periodic_reads']}")
@@ -358,14 +457,61 @@ def _write_markdown(report_path: Path, agg: Dict[str, Any], capture: _BenchCaptu
         for k, v in sorted(agg["predictor_consensus_directions"].items(),
                            key=lambda kv: -kv[1]):
             add(f"| {k} | {v} |")
-    add("")
+    # Per-read consensus strength evolution
+    cons_strengths = [
+        float(r["consensus"].get("strength", 0.0))
+        for r in reads if r.get("consensus")
+    ]
+    cons_confs = [
+        float(r["consensus"].get("confidence", 0.0))
+        for r in reads if r.get("consensus")
+    ]
+    if cons_strengths:
+        add("")
+        add(f"**Consensus strength** "
+            f"({min(cons_strengths):+.3f} → {max(cons_strengths):+.3f}):")
+        add("")
+        add(f"```\n{_sparkline(cons_strengths, width=min(len(cons_strengths), 40))}\n```")
+        add("")
+    if cons_confs:
+        add(f"**Consensus confidence** "
+            f"({min(cons_confs):.3f} → {max(cons_confs):.3f}):")
+        add("")
+        add(f"```\n{_sparkline(cons_confs, width=min(len(cons_confs), 40))}\n```")
+        add("")
+
     add("## Kelly gate coupling")
     add("")
     add(f"- **Mean buffer multiplier (observed/baseline):** "
         f"{agg['kelly_buffer_multiplier_mean']:.3f}")
     add("- A multiplier > 1.0 means the observer's coherence_score < 1.0 "
         "and the safety buffer was widened; 1.0 means no widening.")
-    add("")
+    # Side-by-side baseline vs observed Kelly r_prime_buffer table
+    if reads:
+        add("")
+        add("**Baseline vs observer-driven r_prime_buffer per read:**")
+        add("")
+        add("| t (s) | observer_coh | baseline | observed | mul | Δ (bps) |")
+        add("|---|---|---|---|---|---|")
+        t0 = capture.started_at
+        for r in reads:
+            coh = r.get("observer_coherence_used")
+            coh_s = f"{coh:.3f}" if coh is not None else "—"
+            base = r.get("kelly_baseline_r_prime_buffer", 0.0)
+            obs = r.get("kelly_observed_r_prime_buffer", 0.0)
+            mul = r.get("kelly_buffer_multiplier", 1.0)
+            delta_bps = (obs - base) * 1e4   # fraction → basis points
+            add(f"| {r['ts']-t0:.0f} | {coh_s} | "
+                f"{base:.6f} | {obs:.6f} | {mul:.3f} | {delta_bps:+.2f} |")
+        # Sparkline of the multiplier over time
+        mults = [r.get("kelly_buffer_multiplier", 1.0) for r in reads]
+        if mults:
+            add("")
+            add(f"**Multiplier trace** ({min(mults):.3f} → {max(mults):.3f}):")
+            add("")
+            add(f"```\n{_sparkline(mults, width=min(len(mults), 40))}\n```")
+            add("")
+
     add("## Fetcher health")
     add("")
     if agg["fetchers"]:
