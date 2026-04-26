@@ -86,6 +86,27 @@ ROCK_MATCH_HZ_TOL = 0.10
 ROCK_TIMEOUT_S = 300.0
 
 
+def _safe_float(x):
+    if x is None:
+        return None
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return None
+    if v != v:  # NaN
+        return None
+    return v
+
+
+def _safe_str(x):
+    if x is None:
+        return None
+    try:
+        return str(x)
+    except Exception:
+        return None
+
+
 @dataclass
 class _ScaleBuffer:
     """Rolling buffer for one observation scale."""
@@ -152,6 +173,20 @@ class HarmonicObserver:
         self._n_events_emitted = 0
         self._started_at = time.time()
 
+        # Latest engine-derived fields. Populated by ``ingest_state``;
+        # ``ingest`` only fills ``lambda_t`` and ``ts`` (psi / level stay
+        # None). The Queen sentience layer reads this via
+        # ``latest_field()`` so it can ground its thought generation in
+        # the live HNC field without reaching into LambdaEngine
+        # directly.
+        self._latest_field: Dict = {
+            "lambda_t": None,
+            "consciousness_psi": None,
+            "consciousness_level": None,
+            "coherence_gamma": None,
+            "ts": None,
+        }
+
     # ─── public ingestion API ──────────────────────────────────
 
     def ingest(self, ts: float, lambda_t: float) -> None:
@@ -160,6 +195,11 @@ class HarmonicObserver:
         ``ts`` is unix seconds; ``lambda_t`` is the field value from a
         ``LambdaState``. Callers can pull these from the live daemon's
         compute loop or by tailing ``state/hnc_live_trace.jsonl``.
+
+        Use ``ingest_state`` instead when you have the full ``LambdaState``
+        — it forwards to ``ingest`` and additionally caches psi / level /
+        gamma so the Queen sentience layer can read them via
+        ``latest_field()``.
         """
         if not isinstance(ts, (int, float)):
             return
@@ -174,6 +214,11 @@ class HarmonicObserver:
             self._fast.samples.append((float(ts), v))
             self._slow.samples.append((float(ts), v))
             self._n_ingested += 1
+            # ingest() alone updates lambda_t / ts only; psi/level stay
+            # at whatever the last ingest_state(...) set them to (or
+            # None if never called).
+            self._latest_field["lambda_t"] = v
+            self._latest_field["ts"] = float(ts)
 
             # Run detection on each scale at its own cadence.
             for buf in (self._fast, self._slow):
@@ -183,6 +228,55 @@ class HarmonicObserver:
 
             # Expire stale rocks across both scales.
             self._expire_stale_rocks(ts)
+
+    def ingest_state(self, state) -> None:
+        """Feed a full engine ``LambdaState`` (or any object with ``lambda_t``,
+        ``timestamp``, ``consciousness_psi``, ``consciousness_level``,
+        ``coherence_gamma`` attributes — duck-typed).
+
+        Equivalent to ``ingest(state.timestamp, state.lambda_t)`` plus
+        caching of the engine-derived psi / level / gamma fields so
+        downstream consumers (Queen sentience, predictor adapter) can
+        read them from the observer rather than the engine directly.
+        Safe to call from the daemon's compute loop on every step.
+        """
+        if state is None:
+            return
+        ts = getattr(state, "timestamp", None)
+        if ts is None:
+            ts = time.time()
+        lt = getattr(state, "lambda_t", None)
+        if lt is None:
+            return
+        # Defer the buffer + detection update to ingest() — single
+        # source of truth for the rolling-buffer logic.
+        self.ingest(float(ts), float(lt))
+        # Now overlay the richer engine-derived fields. ingest() already
+        # took the lock and released it; take it again briefly so the
+        # latest_field dict update is atomic w.r.t. latest_field().
+        with self._lock:
+            self._latest_field.update({
+                "lambda_t": float(lt),
+                "ts": float(ts),
+                "consciousness_psi": _safe_float(getattr(state, "consciousness_psi", None)),
+                "consciousness_level": _safe_str(getattr(state, "consciousness_level", None)),
+                "coherence_gamma": _safe_float(getattr(state, "coherence_gamma", None)),
+            })
+
+    def latest_field(self) -> Dict:
+        """Return the most recent engine-derived field state.
+
+        Always returns a dict; keys are populated as data arrives:
+            ``lambda_t``, ``ts``                 — from any ``ingest`` call
+            ``consciousness_psi``,
+            ``consciousness_level``,
+            ``coherence_gamma``                  — only from ``ingest_state``
+
+        Missing keys are ``None``. Safe to call before any data has
+        arrived (returns a dict of all-None).
+        """
+        with self._lock:
+            return dict(self._latest_field)
 
     # ─── public read API ───────────────────────────────────────
 
@@ -243,6 +337,7 @@ class HarmonicObserver:
                 "coherence_score": self._coherence_score_locked(),
                 "rocks_fast": [r.to_dict() for r in self._rocks["fast"].values()],
                 "rocks_slow": [r.to_dict() for r in self._rocks["slow"].values()],
+                "latest_field": dict(self._latest_field),
                 "has_numpy": _HAS_NUMPY,
                 "has_scipy": _HAS_SCIPY,
             }

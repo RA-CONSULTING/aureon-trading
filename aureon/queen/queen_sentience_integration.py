@@ -393,24 +393,69 @@ class QueenSentienceEngine:
             "conscience_active": False,
             "world_state": "unknown"
         }
-        
+
         if self.consciousness_model:
             state = self.consciousness_model.get_state_summary()
             context["mood"] = state.get("mood", "contemplative")
             context["happiness"] = state.get("happiness_quotient", 0.5)
-        
+
         if self.consciousness_measurement:
             metrics = self.consciousness_measurement.measure_consciousness()
             context["awakening_index"] = metrics.awakening_index
-        
+
         if self.conscience:
             context["conscience_active"] = True
-        
+
         if self.world_understanding:
             # Get a random world lesson as context
             lesson = self.world_understanding.get_random_lesson()
             context["world_state"] = lesson[:50] if lesson else "unknown"
-        
+
+        # Live HNC field — read from the HarmonicObserver singleton.
+        # Lazy import + try/except so missing observer module / not-yet-
+        # constructed observer / any internal observer error never
+        # breaks thought generation. The keys are all None when no
+        # observer is running, so downstream consumers can guard with a
+        # simple ``if context.get("lambda_t") is not None`` check.
+        context.update({
+            "lambda_t": None,
+            "consciousness_psi": None,
+            "consciousness_level": None,
+            "field_regime": None,
+            "field_coherence": None,
+            "active_rocks": None,
+        })
+        try:
+            from aureon.observer import get_observer
+            obs = get_observer()
+            if obs is not None:
+                snap = obs.metrics_snapshot()
+                latest = snap.get("latest_field") or {}
+                context["lambda_t"] = latest.get("lambda_t")
+                context["consciousness_psi"] = latest.get("consciousness_psi")
+                context["consciousness_level"] = latest.get("consciousness_level")
+                context["field_regime"] = snap.get("regime")
+                context["field_coherence"] = snap.get("coherence_score")
+                rocks_fast = snap.get("rocks_fast") or []
+                rocks_slow = snap.get("rocks_slow") or []
+                context["active_rocks"] = {
+                    "count": len(rocks_fast) + len(rocks_slow),
+                    "fast_count": len(rocks_fast),
+                    "slow_count": len(rocks_slow),
+                    "fast_summary": [
+                        f"{r.get('kind')}@{round(r.get('dominant_hz') or 0, 2)}Hz"
+                        f"(z={round(r.get('z_score') or 0, 2)})"
+                        for r in rocks_fast[:3]
+                    ],
+                    "slow_summary": [
+                        f"{r.get('kind')}@{round(r.get('dominant_hz') or 0, 2)}Hz"
+                        f"(z={round(r.get('z_score') or 0, 2)})"
+                        for r in rocks_slow[:3]
+                    ],
+                }
+        except Exception as _exc:
+            logger.debug("HarmonicObserver context unavailable: %s", _exc)
+
         return context
     
     def _generate_contextual_thought(self, context: Dict) -> Optional[InnerThought]:
