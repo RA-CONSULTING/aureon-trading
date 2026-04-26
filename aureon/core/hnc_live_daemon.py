@@ -164,7 +164,23 @@ class HNCLiveDaemon:
     """
 
     def __init__(self, params: Optional[HNCParams] = None,
-                 trace_path: Optional[Path] = None):
+                 trace_path: Optional[Path] = None,
+                 attach_observer: bool = True,
+                 observer=None):
+        """
+        attach_observer: when True (default), construct a HarmonicObserver
+            and feed it engine state on every compute step. The observer
+            auto-claims the singleton (see aureon.observer.__init__) so
+            the Queen sentience layer, the Kelly gate, and the
+            PredictionBus all auto-pick it up — no extra wiring needed.
+            Set False when you want the daemon's pure compute behaviour
+            (e.g. running multiple daemons in one process).
+
+        observer: pass a pre-constructed HarmonicObserver to use instead
+            of the default. Useful for tests or for sharing one observer
+            across multiple daemons. When None and attach_observer=True,
+            a default observer is created.
+        """
         self.params = apply_to_lambda_engine(params or load_params())
         self.engine = LambdaEngine()
         self._sources: Dict[str, SourceState] = {}
@@ -179,6 +195,22 @@ class HNCLiveDaemon:
 
         # Built-in sources — only wire if their bridges import cleanly.
         self._wire_default_sources()
+
+        # Optional observer attach. Lazy-import + try/except so any
+        # observer issue (missing module, missing numpy in sandbox) can
+        # NEVER break daemon startup or the compute loop. The observer
+        # is purely an output channel from this loop's perspective.
+        self._observer = observer
+        if self._observer is None and attach_observer:
+            try:
+                from aureon.observer import HarmonicObserver
+                self._observer = HarmonicObserver(publish_to_bus=True)
+                logger.info("HNC daemon: HarmonicObserver attached (auto)")
+            except Exception as exc:
+                logger.warning("HNC daemon: HarmonicObserver attach skipped: %s", exc)
+                self._observer = None
+        elif self._observer is not None:
+            logger.info("HNC daemon: HarmonicObserver attached (caller-provided)")
 
     # ─── source registration ────────────────────────────────────
 
@@ -276,6 +308,17 @@ class HNCLiveDaemon:
                 state = self.engine.step(readings)
             self._last_state_dict = state.to_dict()
             self._append_trace(self._last_state_dict, readings)
+
+            # Feed the engine state into the attached observer. Wrapped
+            # so any observer error (numpy missing in sandbox, scipy
+            # crash on a degenerate window, etc.) cannot interrupt the
+            # compute loop — the daemon's job is to keep ticking.
+            if self._observer is not None:
+                try:
+                    self._observer.ingest_state(state)
+                except Exception as exc:
+                    logger.debug("observer.ingest_state failed: %s", exc)
+
             try:
                 await asyncio.wait_for(self._stop.wait(), timeout=COMPUTE_INTERVAL)
                 return
