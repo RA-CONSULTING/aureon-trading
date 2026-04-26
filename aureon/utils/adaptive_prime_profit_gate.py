@@ -49,6 +49,49 @@ logger = logging.getLogger(__name__)
 EPSILON_PROFIT_USD = 0.017  # 1.7¢ — guaranteed net after all fees + slippage
 
 
+# ─── Observer-coherence coupling ───────────────────────────────────
+# When the HarmonicObserver reports a low coherence_score, the field is
+# either noisy or chaotic and the existing static fee math under-prices
+# the safety margin. Scale r_prime_buffer (and the matching win_gte
+# threshold) by (1 + (1 - coherence) * MAX_BUFFER_INFLATION) so a
+# perfectly coherent field (score=1) leaves the buffer untouched and a
+# pathological field (score=0) demands a buffer 1 + MAX_BUFFER_INFLATION
+# times wider. r_breakeven and r_prime are intentionally NOT scaled —
+# they represent absolute cost recovery and must stay anchored to the
+# fee model. Only the *safety* gate moves with field state.
+MAX_BUFFER_INFLATION = 0.5   # 50% widest with score=0
+
+# Auto-consult opt-in: when set truthy in the environment, calculate_gates
+# called without an explicit observer_coherence will consult the
+# HarmonicObserver singleton at call time. Default off so existing
+# callers' numeric outputs are unchanged unless the operator opts in.
+ENV_AUTO_OBSERVER = "AUREON_KELLY_OBSERVE_COHERENCE"
+
+
+def _resolve_auto_observer_coherence() -> Optional[float]:
+    """Best-effort fetch of the observer's coherence score.
+
+    Returns None when:
+      * The opt-in env var is not set.
+      * No observer singleton has been constructed yet.
+      * Anything in the observer chain raises (logged at debug only).
+    The Kelly path is hot — never let a misconfigured observer break it.
+    """
+    if not os.environ.get(ENV_AUTO_OBSERVER):
+        return None
+    try:
+        from aureon.observer import get_observer
+        obs = get_observer()
+        if obs is None:
+            return None
+        score = float(obs.coherence_score())
+        if score != score or score < 0.0 or score > 1.0:  # NaN-safe clamp
+            return max(0.0, min(1.0, score))
+        return score
+    except Exception:
+        return None
+
+
 # ═══════════════════════════════════════════════════════════════
 # 📊 EXCHANGE FEE PROFILES (BASE TIERS - UPDATED LIVE)
 # ═══════════════════════════════════════════════════════════════
@@ -125,30 +168,41 @@ class AdaptiveGateResult:
     """Result from adaptive gate calculation."""
     exchange: str
     trade_value: float
-    
+
     # The three gates (required price move as fraction)
     r_breakeven: float          # Net profit ≥ 0
     r_prime: float              # Net profit ≥ prime target
     r_prime_buffer: float       # Net profit ≥ prime + buffer
-    
+
     # Corresponding gross thresholds (win_gte equivalent)
     win_gte_breakeven: float    # Gross P&L for breakeven
     win_gte_prime: float        # Gross P&L for prime profit
     win_gte_prime_buffer: float # Gross P&L for prime + buffer
-    
+
     # Cost breakdown
     fee_rate_used: float
     slippage_rate: float
     spread_cost: float
     fixed_costs: float
-    
+
     # Targets
     prime_target: float         # e.g. $0.02
     buffer_amount: float        # e.g. $0.01
-    
+
     # Meta
     is_maker: bool
     timestamp: float = field(default_factory=time.time)
+
+    # Observer coupling — populated when calculate_gates is called with
+    # observer_coherence (or auto-consulted via the env opt-in). When
+    # not None, the buffer-stage thresholds (r_prime_buffer,
+    # win_gte_prime_buffer) above have already been scaled by
+    # (1 + (1 - clamped_coherence) * MAX_BUFFER_INFLATION). The raw
+    # coherence value and the resulting multiplier are recorded here so
+    # downstream code can audit / log why the buffer is wider than the
+    # static fee math would suggest.
+    observer_coherence: Optional[float] = None
+    observer_buffer_multiplier: float = 1.0
     
     def to_dict(self) -> dict:
         return {
@@ -171,6 +225,8 @@ class AdaptiveGateResult:
             'buffer_amount': self.buffer_amount,
             'is_maker': self.is_maker,
             'timestamp': self.timestamp,
+            'observer_coherence': self.observer_coherence,
+            'observer_buffer_multiplier': round(self.observer_buffer_multiplier, 4),
         }
 
 
@@ -329,36 +385,70 @@ class AdaptivePrimeProfitGate:
         buffer_amount: float = None,
         is_maker: bool = None,
         use_cache: bool = True,
+        observer_coherence: Optional[float] = None,
     ) -> AdaptiveGateResult:
         """
         🎯 Calculate all three gates for a trade.
-        
+
         Returns AdaptiveGateResult with:
         - r_breakeven: Price move for net ≥ 0
         - r_prime: Price move for net ≥ prime
         - r_prime_buffer: Price move for net ≥ prime + buffer
         - win_gte_*: Corresponding gross P&L thresholds
+
+        observer_coherence (optional, [0, 1]):
+            HarmonicObserver coherence score for the live HNC field.
+            When provided (or auto-consulted via the AUREON_KELLY_OBSERVE_
+            COHERENCE env opt-in), r_prime_buffer and win_gte_prime_buffer
+            are inflated by (1 + (1 - coherence) * MAX_BUFFER_INFLATION).
+            Coherent fields → buffer unchanged; chaotic fields → buffer
+            widens up to MAX_BUFFER_INFLATION. r_breakeven / r_prime are
+            never scaled — only the *safety* gate moves with field state.
+            Pass ``False`` to explicitly disable observer scaling on a
+            single call without changing the env-flag default.
         """
         ex = exchange.lower()
         prime = prime_target if prime_target is not None else self.default_prime
         buffer = buffer_amount if buffer_amount is not None else self.default_buffer
         maker = is_maker if is_maker is not None else self.use_maker_fees
-        
-        # Check cache
+
+        # Resolve observer coherence:
+        #   False                 -> explicit disable, no scaling
+        #   None                  -> consult env opt-in (singleton); else None
+        #   float in [0, 1]       -> use directly (clamped)
+        if observer_coherence is False:
+            coherence: Optional[float] = None
+        elif observer_coherence is None:
+            coherence = _resolve_auto_observer_coherence()
+        else:
+            try:
+                coherence = max(0.0, min(1.0, float(observer_coherence)))
+            except (TypeError, ValueError):
+                coherence = None
+
+        if coherence is None:
+            buffer_multiplier = 1.0
+        else:
+            buffer_multiplier = 1.0 + (1.0 - coherence) * MAX_BUFFER_INFLATION
+
+        # Cache must include the buffer multiplier — otherwise a coherent
+        # call would poison the cache for subsequent chaotic calls.
         cache_key = self._get_cache_key(ex, trade_value, prime, buffer)
+        if buffer_multiplier != 1.0 or coherence is not None:
+            cache_key = (cache_key, round(buffer_multiplier, 6))
         if use_cache and cache_key in self._cache:
             cached = self._cache[cache_key]
             if time.time() - cached.timestamp < self._cache_ttl:
                 return cached
-        
+
         # Get fee profile
         profile = self.fee_profiles.get(ex, DEFAULT_FEE_PROFILES.get('binance'))
-        
+
         fee_rate = profile.maker_fee if maker else profile.taker_fee
         slippage = profile.slippage_estimate
         spread = profile.spread_cost
         fixed = profile.fixed_costs()
-        
+
         # Calculate the three gates
         r_breakeven = self.calculate_required_r(
             trade_value, 0.0, fee_rate, slippage, spread, fixed
@@ -369,12 +459,16 @@ class AdaptivePrimeProfitGate:
         r_prime_buffer = self.calculate_required_r(
             trade_value, prime + buffer, fee_rate, slippage, spread, fixed
         )
-        
+
+        # Apply observer-coherence scaling to the safety gate only.
+        if buffer_multiplier != 1.0:
+            r_prime_buffer = r_prime_buffer * buffer_multiplier
+
         # Convert to gross P&L thresholds (win_gte)
         win_gte_breakeven = trade_value * r_breakeven
         win_gte_prime = trade_value * r_prime
         win_gte_prime_buffer = trade_value * r_prime_buffer
-        
+
         result = AdaptiveGateResult(
             exchange=ex,
             trade_value=trade_value,
@@ -391,13 +485,15 @@ class AdaptivePrimeProfitGate:
             prime_target=prime,
             buffer_amount=buffer,
             is_maker=maker,
+            observer_coherence=coherence,
+            observer_buffer_multiplier=buffer_multiplier,
         )
-        
+
         # Cache result
         self._cache[cache_key] = result
         self.calculations_count += 1
         self.last_calculation_time = time.time()
-        
+
         return result
     
     def get_adaptive_threshold(
