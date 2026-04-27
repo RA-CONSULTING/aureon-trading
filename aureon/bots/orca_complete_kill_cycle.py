@@ -10783,6 +10783,108 @@ class OrcaKillCycle:
                         f"Observer:NEUTRAL(coh={_observer_coherence:.2f})"
                     )
 
+            # Vote 7: PredictionBus consensus — fuses the 11 already-
+            # registered predictors (nexus, macro_context [VIX/DXY/
+            # fear-greed], sentiment_analysis [news], hnc_matrix,
+            # imperial, probability_ultimate, whale_hunter,
+            # quantum_telescope, war_planner, harmonic_observer,
+            # wave_predictor) into a single weighted call. Without
+            # this block, news + macro + options + war + qgita +
+            # quantum + wave signals are computed by other call
+            # sites but never reach this gate. With it, they all
+            # vote at once.
+            #
+            # Strong-bearish high-confidence consensus VETOES the
+            # trade outright — when 11 weighted predictors agree the
+            # field is bearish, that's a stronger signal than any
+            # single inline brain. Anything weaker just contributes a
+            # +1 vote (BULLISH ≥40% conf) or 0 vote (NEUTRAL / weak
+            # BEARISH) and is logged in validation_details.
+            #
+            # Audit trail: when Vote 7 vetoes, the rejection payload
+            # carries consensus_direction / confidence / strength /
+            # predictor_breakdown so logs show which predictors agreed.
+            _consensus_direction = None
+            _consensus_confidence = 0.0
+            _consensus_strength = 0.0
+            _consensus_predictor_breakdown: Dict[str, Dict[str, float]] = {}
+            _consensus_veto = False
+            try:
+                from aureon.autonomous.aureon_autonomy_hub import get_hub
+                _hub = get_hub()
+                if _hub is not None and hasattr(_hub, "prediction_bus"):
+                    _bus = _hub.prediction_bus
+                    _bridge = getattr(_hub, "data_bridge", None)
+                    _data_signals = (
+                        _bridge.get_all_data_signals() if _bridge is not None else {}
+                    )
+                    _preds = _bus.run_predictions(_data_signals, symbol)
+                    _consensus = _bus.get_consensus(_preds)
+                    _consensus_direction = _consensus.direction
+                    _consensus_confidence = float(_consensus.confidence)
+                    _consensus_strength = float(_consensus.strength)
+                    _consensus_predictor_breakdown = {
+                        n: {
+                            "direction": p.direction,
+                            "confidence": float(p.confidence),
+                            "strength": float(p.strength),
+                        }
+                        for n, p in (_preds or {}).items()
+                    }
+
+                    _validation_total += 1
+                    if (_consensus_direction == "BULLISH"
+                            and _consensus_confidence >= 0.4):
+                        _validation_votes += 1
+                        _validation_details.append(
+                            f"Consensus:BUY({_consensus_confidence:.0%},"
+                            f"strength={_consensus_strength:+.2f},"
+                            f"n={len(_preds)})"
+                        )
+                    elif (_consensus_direction == "BEARISH"
+                            and _consensus_confidence >= 0.6
+                            and _consensus_strength <= -0.3):
+                        # Strong-bearish high-conf — VETO.
+                        _consensus_veto = True
+                        _validation_details.append(
+                            f"Consensus:VETO_SELL({_consensus_confidence:.0%},"
+                            f"strength={_consensus_strength:+.2f},"
+                            f"n={len(_preds)})"
+                        )
+                    else:
+                        _validation_details.append(
+                            f"Consensus:{_consensus_direction or 'NEUTRAL'}"
+                            f"({_consensus_confidence:.0%},"
+                            f"strength={_consensus_strength:+.2f})"
+                        )
+            except Exception as _exc:
+                # Bus unavailable — fall through to today's behaviour.
+                # Validation total stays unchanged; gate behaves as if
+                # Vote 7 didn't fire.
+                pass
+
+            if _consensus_veto:
+                _veto_reason = (
+                    f"PredictionBus consensus BEARISH at "
+                    f"{_consensus_confidence:.0%} confidence, "
+                    f"strength={_consensus_strength:+.2f}"
+                )
+                print(f"   PREDICTION_BUS VETO: {symbol} [{context}] - {_veto_reason}")
+                return {
+                    'status': 'blocked',
+                    'reason': _veto_reason,
+                    'blocked_by': 'PREDICTION_BUS_BEARISH_CONSENSUS',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'consensus_direction': _consensus_direction,
+                    'consensus_confidence': _consensus_confidence,
+                    'consensus_strength': _consensus_strength,
+                    'consensus_predictor_breakdown': _consensus_predictor_breakdown,
+                    'validation_details': _validation_details,
+                    'rejected': True,
+                }
+
             detail_str = " | ".join(_validation_details) if _validation_details else "no signals"
             print(f"   MULTI-BRAIN VALIDATION: {_validation_votes}/{_validation_total} brains confirm BUY ({detail_str})")
 
@@ -10811,6 +10913,10 @@ class OrcaKillCycle:
                     'validation_details': _validation_details,
                     'observer_coherence': _observer_coherence,
                     'observer_extra_votes_required': _observer_extra_votes_required,
+                    'consensus_direction': _consensus_direction,
+                    'consensus_confidence': _consensus_confidence,
+                    'consensus_strength': _consensus_strength,
+                    'consensus_predictor_breakdown': _consensus_predictor_breakdown,
                     'rejected': True
                 }
         except Exception as e:
