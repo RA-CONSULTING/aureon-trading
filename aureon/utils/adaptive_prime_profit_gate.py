@@ -71,13 +71,29 @@ ENV_AUTO_OBSERVER = "AUREON_KELLY_OBSERVE_COHERENCE"
 def _resolve_auto_observer_coherence() -> Optional[float]:
     """Best-effort fetch of the observer's coherence score.
 
-    Returns None when:
-      * The opt-in env var is not set.
-      * No observer singleton has been constructed yet.
+    Default behaviour: always consult the HarmonicObserver singleton
+    when one exists. Returns None when:
+      * No observer singleton has been constructed yet (operator hasn't
+        spun up the live daemon / observer module — falls back silently
+        to today's static-fee behaviour).
+      * AUREON_KELLY_OBSERVE_COHERENCE is explicitly set to "0" or "false"
+        (operator opt-OUT for benchmarking / regression testing).
       * Anything in the observer chain raises (logged at debug only).
+
+    Stage Y change: previously this required AUREON_KELLY_OBSERVE_COHERENCE
+    to be truthy *to enable*. That meant every one of the 13 call sites
+    in the trading code (micro_profit_labyrinth, aureon_unified_ecosystem,
+    queen_true_consciousness, profit_monitor, etc.) sized positions with
+    a static fee buffer even when the observer was actively reporting
+    field state. Inverting the default — "auto-consult unless explicitly
+    disabled" — wires the observer's narrow-band signal natively into
+    every Kelly call without per-caller edits. Disable via
+    AUREON_KELLY_OBSERVE_COHERENCE=0.
+
     The Kelly path is hot — never let a misconfigured observer break it.
     """
-    if not os.environ.get(ENV_AUTO_OBSERVER):
+    opt_out = os.environ.get(ENV_AUTO_OBSERVER, "").strip().lower()
+    if opt_out in ("0", "false", "off", "no"):
         return None
     try:
         from aureon.observer import get_observer
