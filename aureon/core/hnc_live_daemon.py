@@ -65,6 +65,11 @@ SPACE_WEATHER_INTERVAL = 60     # USGS geomag every 1 min, NOAA Kp every 5
 GDELT_INTERVAL = 900            # GDELT 2.0 publishes every 15 min
 BITFINEX_INTERVAL = 10          # ticker loop (when wired)
 OMNI_INTERVAL = 3600            # OMNI hourly (when wired)
+# Stage AF — added live data sources:
+MACRO_INTERVAL = 60             # GlobalFinancialFeed has its own 60s cache
+COINGECKO_INTERVAL = 300        # CoinGecko free tier ~50 calls/min
+COMMUNITY_INTERVAL = 900        # Reddit + HN community sentiment
+FRED_INTERVAL = 3600            # FRED economic releases are sparse
 
 # Compute cadence — how often the engine takes a step against the latest
 # readings. The kernel is cheap (<1 ms/step) so 5 s gives the field high
@@ -144,6 +149,145 @@ def _map_gdelt(items: list) -> SubsystemReading:
         value=value,
         confidence=0.7 if n else 0.3,
         state=f"{n}_articles",
+    )
+
+
+def _map_macro(snapshot) -> SubsystemReading:
+    """GlobalFinancialFeed.MacroSnapshot → SubsystemReading.
+
+    Composite signal from the three most-watched macro indicators:
+      vix_signal      : (100 - VIX) / 100  — high vol → low confidence
+      fg_signal       : crypto_fear_greed / 100  — directly 0..1
+      curve_signal    : 0 if yield curve inverted else 1
+
+    Weighted blend: 0.4*vix + 0.4*fg + 0.2*curve. State carries the
+    market_regime label (NORMAL / FEAR / GREED / PANIC / EUPHORIA).
+    Confidence is fixed because the underlying Yahoo / FNG endpoints
+    are authoritative when present.
+    """
+    if snapshot is None:
+        return SubsystemReading(
+            name="macro_context", value=0.5, confidence=0.0, state="unavailable",
+        )
+    vix = float(getattr(snapshot, "vix", 20.0) or 20.0)
+    fg = float(getattr(snapshot, "crypto_fear_greed", 50) or 50)
+    curve_inv = bool(getattr(snapshot, "yield_curve_inversion", False))
+    regime = str(getattr(snapshot, "market_regime", "NORMAL") or "NORMAL")
+
+    vix_signal = max(0.0, min(1.0, (100.0 - vix) / 100.0))
+    fg_signal = max(0.0, min(1.0, fg / 100.0))
+    curve_signal = 0.0 if curve_inv else 1.0
+    value = 0.4 * vix_signal + 0.4 * fg_signal + 0.2 * curve_signal
+
+    return SubsystemReading(
+        name="macro_context",
+        value=float(value),
+        confidence=0.85,
+        state=regime,
+    )
+
+
+def _map_coingecko(item) -> SubsystemReading:
+    """CoinGecko WorldDataItem → SubsystemReading.
+
+    Maps 24h percent change to a 0..1 directional value:
+      -10%  → 0.0   (panic)
+       0%   → 0.5   (flat)
+      +10%  → 1.0   (rally)
+      ±20%  → saturated at the bound
+    State carries the human-readable summary (price + percent change).
+    """
+    if item is None:
+        return SubsystemReading(
+            name="coingecko_btc", value=0.5, confidence=0.0, state="unavailable",
+        )
+    raw = getattr(item, "raw", None) or {}
+    change_24h = float(raw.get("change_24h", 0.0) or 0.0)
+    price = float(raw.get("price", 0.0) or 0.0)
+    value = max(0.0, min(1.0, 0.5 + change_24h / 20.0))
+    return SubsystemReading(
+        name="coingecko_btc",
+        value=value,
+        confidence=0.8 if price > 0 else 0.0,
+        state=f"BTC ${price:,.0f} ({change_24h:+.2f}%)",
+    )
+
+
+# Crude bullish/bearish keyword lists for community sentiment scoring.
+# Production-grade NLP belongs elsewhere; this is a directional
+# heuristic over headlines only.
+_COMM_BULL_KW = ("rally", "surge", "bull", "moon", "pump", "soar",
+                 "breakout", "record high", "all-time", "ath", "boom")
+_COMM_BEAR_KW = ("crash", "drop", "bear", "dump", "plunge", "tank",
+                 "selloff", "collapse", "crater", "wipe out", "rout")
+
+
+def _map_community(items_hn: list, items_reddit: list) -> SubsystemReading:
+    """Reddit + Hacker News headlines → SubsystemReading.
+
+    Crude keyword scoring per item: +1 (bullish kw match), -1 (bearish
+    kw match), 0 (neither). Average → mapped from [-1, 1] to [0, 1].
+    Confidence scales with the count of items processed and the share
+    of items with any keyword hit (heavy-no-keyword pulls drop confidence).
+    """
+    items = (items_hn or []) + (items_reddit or [])
+    if not items:
+        return SubsystemReading(
+            name="community_sentiment", value=0.5, confidence=0.0,
+            state="no_posts",
+        )
+    scores = []
+    hits = 0
+    for it in items:
+        title = (getattr(it, "title", "") or "").lower()
+        s = 0
+        if any(kw in title for kw in _COMM_BULL_KW):
+            s += 1
+        if any(kw in title for kw in _COMM_BEAR_KW):
+            s -= 1
+        scores.append(s)
+        if s != 0:
+            hits += 1
+    avg = sum(scores) / len(scores)
+    value = max(0.0, min(1.0, 0.5 + avg / 2.0))
+    confidence = max(0.2, min(1.0, hits / max(len(items), 1)))
+    return SubsystemReading(
+        name="community_sentiment",
+        value=float(value),
+        confidence=float(confidence),
+        state=f"{len(items)}_posts_{hits}_hits",
+    )
+
+
+def _map_fred(item) -> SubsystemReading:
+    """FRED (UNRATE — US unemployment rate) → SubsystemReading.
+
+    Lower unemployment ⇒ stronger economy ⇒ higher confidence. Linear
+    map: 3% → 1.0, 8% → 0.0, clamped. The numeric value lives in
+    item.raw["value"] as a string per fetch_fred's CSV parse.
+    """
+    if item is None:
+        return SubsystemReading(
+            name="fred_unrate", value=0.5, confidence=0.0, state="unavailable",
+        )
+    raw = getattr(item, "raw", None) or {}
+    try:
+        unrate = float(raw.get("value", "nan"))
+    except (TypeError, ValueError):
+        return SubsystemReading(
+            name="fred_unrate", value=0.5, confidence=0.0, state="parse_error",
+        )
+    if unrate != unrate:  # NaN
+        return SubsystemReading(
+            name="fred_unrate", value=0.5, confidence=0.0, state="nan",
+        )
+    # Map 3..8% → 1..0
+    value = max(0.0, min(1.0, (8.0 - unrate) / 5.0))
+    return SubsystemReading(
+        name="fred_unrate",
+        value=float(value),
+        confidence=0.9,  # FRED is authoritative
+        state=f"UNRATE={unrate:.1f}%",
     )
 
 
@@ -267,6 +411,63 @@ class HNCLiveDaemon:
             self.register_source("gdelt", GDELT_INTERVAL, fetch_gdelt)
         except Exception as exc:
             logger.warning("HNC daemon: gdelt not wired (%s)", exc)
+
+        # ─── Stage AF: macro context (VIX/DXY/fear-greed/forex) ──
+        try:
+            from aureon.data_feeds.global_financial_feed import GlobalFinancialFeed
+            macro_feed = GlobalFinancialFeed()
+
+            async def fetch_macro():
+                snap = await asyncio.to_thread(macro_feed.get_snapshot)
+                return _map_macro(snap) if snap is not None else None
+
+            self.register_source("macro_context", MACRO_INTERVAL, fetch_macro)
+        except Exception as exc:
+            logger.warning("HNC daemon: macro_context not wired (%s)", exc)
+
+        # ─── Stage AF: CoinGecko BTC market ───────────────────────
+        try:
+            from aureon.integrations.world_data.world_data_ingester import WorldDataIngester
+            cg_ingester = WorldDataIngester()
+
+            async def fetch_coingecko():
+                item = await asyncio.to_thread(cg_ingester.fetch_coingecko, "bitcoin")
+                return _map_coingecko(item) if item is not None else None
+
+            self.register_source("coingecko_btc", COINGECKO_INTERVAL, fetch_coingecko)
+        except Exception as exc:
+            logger.warning("HNC daemon: coingecko_btc not wired (%s)", exc)
+
+        # ─── Stage AF: HN + Reddit community sentiment ────────────
+        try:
+            from aureon.integrations.world_data.world_data_ingester import WorldDataIngester
+            comm_ingester = WorldDataIngester()
+
+            async def fetch_community():
+                hn = await asyncio.to_thread(comm_ingester.fetch_hacker_news, 10)
+                reddit = await asyncio.to_thread(
+                    comm_ingester.fetch_reddit, "worldnews", 10
+                )
+                return _map_community(hn, reddit)
+
+            self.register_source(
+                "community_sentiment", COMMUNITY_INTERVAL, fetch_community,
+            )
+        except Exception as exc:
+            logger.warning("HNC daemon: community_sentiment not wired (%s)", exc)
+
+        # ─── Stage AF: FRED unemployment rate ────────────────────
+        try:
+            from aureon.integrations.world_data.world_data_ingester import WorldDataIngester
+            fred_ingester = WorldDataIngester()
+
+            async def fetch_fred_unrate():
+                item = await asyncio.to_thread(fred_ingester.fetch_fred, "UNRATE")
+                return _map_fred(item) if item is not None else None
+
+            self.register_source("fred_unrate", FRED_INTERVAL, fetch_fred_unrate)
+        except Exception as exc:
+            logger.warning("HNC daemon: fred_unrate not wired (%s)", exc)
 
     # ─── per-source pull loop ──────────────────────────────────
 
