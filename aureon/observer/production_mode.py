@@ -51,7 +51,12 @@ class ObserverMode(enum.Enum):
 
 
 ENV_MODE = "AUREON_OBSERVER_MODE"
-DEFAULT_MODE = ObserverMode.DRY_RUN
+# Default flipped to LIVE on operator request: "everything must be live
+# and production ready for all live data trading". Operators who want
+# the safer dry_run / shadow flow set AUREON_OBSERVER_MODE explicitly.
+# Promotion criteria + monitoring guidance still in
+# docs/runbooks/HARMONIC_OBSERVER_PRODUCTION.md.
+DEFAULT_MODE = ObserverMode.LIVE
 
 
 # Module-level cache of the resolved mode. The env var is read once on

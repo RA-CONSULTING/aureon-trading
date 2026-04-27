@@ -375,6 +375,15 @@ class PredictionBus:
         except Exception as _exc:
             logger.debug("WavePredictor auto-wire skipped: %s", _exc)
 
+        # Auto-wire the MomentumTracker predictor (Stage AC). Recency-
+        # weighted EMA momentum across all data sources fed into the
+        # daemon — operator can see momentum forming on the live feed.
+        try:
+            from aureon.observer.momentum import auto_wire_prediction_bus as _mt_wire
+            _mt_wire(self)
+        except Exception as _exc:
+            logger.debug("MomentumTracker auto-wire skipped: %s", _exc)
+
     def register_predictor(self, name: str, predict_fn: Callable):
         """Register a prediction engine. predict_fn(data_signals) -> UnifiedSignal"""
         self._predictors[name] = predict_fn
@@ -422,6 +431,7 @@ class PredictionBus:
             'quantum_telescope': 0.5,
             'harmonic_observer': 1.5,      # Theroux-style live HNC field describer
             'wave_predictor': 1.0,         # wave-based next-tick directional forecast
+            'momentum_tracker': 1.2,       # recency-weighted multi-source momentum
         }
 
         for name, pred in predictions.items():

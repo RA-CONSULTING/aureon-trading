@@ -281,6 +281,18 @@ class HNCLiveDaemon:
                     st.last_fetch_ts = time.time()
                     st.error_count = 0
                     st.backoff_s = BACKOFF_INITIAL
+                    # Stage AC: feed the value into the momentum tracker
+                    # so multi-horizon EMAs update for every source the
+                    # daemon pulls. The tracker is a singleton and
+                    # auto-wires onto PredictionBus; this is the data
+                    # ingestion side.
+                    try:
+                        from aureon.observer.momentum import get_momentum_tracker
+                        mt = get_momentum_tracker()
+                        if mt is not None:
+                            mt.ingest(name, float(reading.value), st.last_fetch_ts)
+                    except Exception:
+                        pass
                 wait = st.interval_s
             except Exception as exc:
                 st.error_count += 1
