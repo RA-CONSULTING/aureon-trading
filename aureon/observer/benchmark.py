@@ -452,11 +452,30 @@ def _write_markdown(report_path: Path, agg: Dict[str, Any], capture: _BenchCaptu
     add(f"- **Periodic reads:** {agg['periodic_reads']}")
     if agg["predictor_consensus_directions"]:
         add("")
+        add("**Consensus direction histogram:**")
+        add("")
         add("| Direction | Reads |")
         add("|---|---|")
         for k, v in sorted(agg["predictor_consensus_directions"].items(),
                            key=lambda kv: -kv[1]):
             add(f"| {k} | {v} |")
+    # Per-predictor breakdown — what every registered predictor said
+    # at the LAST periodic read. Useful for "is X actually wired?"
+    # debugging without needing to open the JSON.
+    if reads:
+        last = reads[-1]
+        directions = last.get("predictor_directions") or {}
+        strengths = last.get("predictor_strengths") or {}
+        if directions:
+            add("")
+            add("**Per-predictor breakdown (last read):**")
+            add("")
+            add("| Predictor | Direction | Strength |")
+            add("|---|---|---|")
+            for name in sorted(directions.keys()):
+                d = directions.get(name, "?")
+                s = strengths.get(name, 0.0)
+                add(f"| {name} | {d} | {s:+.3f} |")
     # Per-read consensus strength evolution
     cons_strengths = [
         float(r["consensus"].get("strength", 0.0))
