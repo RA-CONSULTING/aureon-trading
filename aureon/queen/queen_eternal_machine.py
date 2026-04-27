@@ -476,7 +476,10 @@ class QueenEternalMachine:
         self.exchange = exchange
         self.cost_basis_file = Path(cost_basis_file)
         self._exchange_clients: Dict[str, Any] = {}
-        self.live_trading = (not self.dry_run) and (os.getenv("LIVE", "0").lower() in ("1", "true", "yes"))
+        # LIVE env defaults "1" — Stage AD sweep: production trading
+        # is the default. Operator who wants a paper / dry posture sets
+        # LIVE=0 explicitly in the deployment env.
+        self.live_trading = (not self.dry_run) and (os.getenv("LIVE", "1").lower() in ("1", "true", "yes"))
         
         # Fee structure - THE QUEEN KNOWS HER COSTS!
         self.fee_structure = fee_structure or EXCHANGE_FEES.get(exchange, EXCHANGE_FEES['default'])

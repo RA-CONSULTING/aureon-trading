@@ -436,7 +436,7 @@ class AureonCapitalMobilizer:
         
         return plan
     
-    def execute_mobilization(self, plan: Dict, dry_run: bool = True) -> bool:
+    def execute_mobilization(self, plan: Dict, dry_run: bool = False) -> bool:
         """
         Execute a mobilization plan.
         

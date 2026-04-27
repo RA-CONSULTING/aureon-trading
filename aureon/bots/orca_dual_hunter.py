@@ -211,7 +211,9 @@ class OrcaDualHunter:
             
             if api_key and api_secret:
                 # Check if paper trading is configured
-                paper_mode = os.environ.get('ALPACA_PAPER', 'true').lower() in ('true', '1', 'yes')
+                # Stage AD: ALPACA_PAPER default flipped to 'false' to align with the
+                # rest of the codebase (alpaca_client.py and others). Live by default.
+                paper_mode = os.environ.get('ALPACA_PAPER', 'false').lower() in ('true', '1', 'yes')
                 self.alpaca = TradingClient(api_key, api_secret, paper=paper_mode)
                 self.alpaca_status.connected = True
                 logger.info(f"✅ Alpaca connected ({'PAPER' if paper_mode else 'LIVE'})")

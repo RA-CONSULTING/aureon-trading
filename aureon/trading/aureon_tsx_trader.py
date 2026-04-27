@@ -355,7 +355,7 @@ def execute_trade(client: BinanceClient, symbol: str, side: str, quantity: float
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class TSXTrader:
-    def __init__(self, config: TradingConfig, paper_mode: bool = True):
+    def __init__(self, config: TradingConfig, paper_mode: bool = False):
         self.config = config
         self.paper_mode = paper_mode
         self.client = get_binance_client()

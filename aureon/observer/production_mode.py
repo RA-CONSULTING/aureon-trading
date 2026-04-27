@@ -67,10 +67,15 @@ _mode_lock = threading.Lock()
 
 
 def get_mode() -> ObserverMode:
-    """Resolve the active mode from env, with safe fallback to DRY_RUN.
+    """Resolve the active mode from env, with fallback to DEFAULT_MODE.
 
-    Anything we don't recognise defaults to DRY_RUN (safest). The env
-    var is read case-insensitively so 'LIVE', 'live', 'Live' all work.
+    Anything we don't recognise (typo, missing var, malformed value)
+    falls through to ``DEFAULT_MODE`` — currently ``LIVE`` per Stage
+    AC's operator-set production posture. The env var is read case-
+    insensitively so 'LIVE', 'live', 'Live' all work. Operators who
+    want a safer first-deploy can either set
+    ``AUREON_OBSERVER_MODE=dry_run`` explicitly or change
+    ``DEFAULT_MODE`` at the top of this module.
     """
     global _cached_mode
     if _cached_mode is not None:

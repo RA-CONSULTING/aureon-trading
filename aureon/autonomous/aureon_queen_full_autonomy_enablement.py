@@ -262,7 +262,7 @@ def get_autonomy_status() -> dict:
         "trading_mode": os.getenv("AUREON_EXECUTION_MODE", "UNKNOWN"),
         "trade_gating": os.getenv("AUREON_TRADE_GATING", "UNKNOWN"),
         "approval_required": os.getenv("AUREON_APPROVAL_REQUIRED", "UNKNOWN"),
-        "dry_run": os.getenv("AUREON_DRY_RUN", "true") == "true",
+        "dry_run": os.getenv("AUREON_DRY_RUN", "false") == "true",
         "timestamp": datetime.utcnow().isoformat()
     }
 
