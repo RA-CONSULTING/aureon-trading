@@ -158,11 +158,29 @@ class QuantumWarfareLive:
                         )
                         continue
                 
-                # Fallback to simulation
-                states[symbol] = self._simulate_market_data(symbol)
-                
+                # Stage AE: only substitute simulated market data when the
+                # operator has explicitly opted in via AUREON_ALLOW_SIM_FALLBACK.
+                # Default production posture: skip the symbol so we never trade
+                # on hardcoded 2024 prices ($98,500 BTC, $3,200 ETH, etc.) when
+                # the live ticker fetch hiccups.
+                from aureon.observer.live_data_policy import (
+                    simulation_fallback_allowed, log_blocked_fallback,
+                )
+                if simulation_fallback_allowed():
+                    states[symbol] = self._simulate_market_data(symbol)
+                else:
+                    log_blocked_fallback(f"quantum_warfare_live:{symbol}",
+                                         "ticker_returned_none")
+
             except Exception as e:
-                states[symbol] = self._simulate_market_data(symbol)
+                from aureon.observer.live_data_policy import (
+                    simulation_fallback_allowed, log_blocked_fallback,
+                )
+                if simulation_fallback_allowed():
+                    states[symbol] = self._simulate_market_data(symbol)
+                else:
+                    log_blocked_fallback(f"quantum_warfare_live:{symbol}",
+                                         f"ticker_exc:{type(e).__name__}")
         
         self.market_states = states
         return states

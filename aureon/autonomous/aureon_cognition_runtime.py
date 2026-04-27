@@ -147,15 +147,42 @@ class ExecutionModule:
 
 
 class AureonRuntime:
-    def __init__(self, persist_path: Optional[str] = "logs/aureon_thoughts.jsonl"):
+    def __init__(self, persist_path: Optional[str] = "logs/aureon_thoughts.jsonl",
+                 place_order_fn: Optional[Any] = None):
+        """
+        Stage AE: place_order_fn must be supplied explicitly OR
+        AUREON_ALLOW_SIM_FALLBACK must be set truthy. Otherwise the
+        runtime refuses to wire a stub order function — production
+        deployments would silently no-op every order placement.
+        """
         self.bus = ThoughtBus(persist_path=persist_path)
         self.miner = MinerModule(self.bus)
         self.risk = RiskModule(self.bus)
-        self.exec = ExecutionModule(self.bus, place_order_fn=self.fake_place_order)
 
-    def fake_place_order(self, symbol: str, side: str, qty: float) -> Json:
-        # Replace with your ccxt order call
-        return {"ok": True, "symbol": symbol, "side": side, "qty": qty, "ts": time.time()}
+        if place_order_fn is None:
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if simulation_fallback_allowed():
+                # Dev / test posture — wire the stub.
+                place_order_fn = self._stub_place_order
+            else:
+                log_blocked_fallback("cognition_runtime", "no_place_order_fn")
+                raise ValueError(
+                    "AureonCognitionRuntime requires an explicit "
+                    "place_order_fn in production. Pass a real exchange-"
+                    "client order method, or set AUREON_ALLOW_SIM_FALLBACK=1 "
+                    "to enable the dev stub."
+                )
+        self.exec = ExecutionModule(self.bus, place_order_fn=place_order_fn)
+
+    def _stub_place_order(self, symbol: str, side: str, qty: float) -> Json:
+        """Dev-only stub. Returns success without placing a real order.
+        Wired only when AUREON_ALLOW_SIM_FALLBACK is set; production
+        callers must pass a real order function via the constructor.
+        """
+        return {"ok": True, "symbol": symbol, "side": side, "qty": qty,
+                "ts": time.time(), "is_stub": True}
 
     def tick(self, universe: List[str], market_by_symbol: Json) -> None:
         self.bus.publish(Thought(
