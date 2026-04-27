@@ -136,6 +136,30 @@ class _ReplayCapture:
     direction_distribution: Counter = field(default_factory=Counter)
     regime_distribution: Counter = field(default_factory=Counter)
     kp_category_distribution: Counter = field(default_factory=Counter)
+    # Stage X — Vote 7 decision-flow tally:
+    vote7_outcome_distribution: Counter = field(default_factory=Counter)
+    # Per-Kp-category veto/vote/neutral counts (nested: kp_cat → outcome → n)
+    vote7_by_kp_category: Dict[str, Counter] = field(default_factory=dict)
+
+
+def _classify_vote7(consensus_direction: str,
+                    consensus_confidence: float,
+                    consensus_strength: float) -> str:
+    """Mirror the buy-side Vote 7 rule from queen_gated_buy.
+
+    Returns one of:
+      'BULLISH_VOTE'      consensus BULLISH, conf ≥ 0.4 → +1 vote
+      'BEARISH_VETO'      consensus BEARISH, conf ≥ 0.6, strength ≤ -0.3 → veto
+      'NEUTRAL_NO_VOTE'   anything else (NEUTRAL, weak BEARISH,
+                          low-conf BULLISH) → 0 vote, no veto
+    """
+    if consensus_direction == "BULLISH" and consensus_confidence >= 0.4:
+        return "BULLISH_VOTE"
+    if (consensus_direction == "BEARISH"
+            and consensus_confidence >= 0.6
+            and consensus_strength <= -0.3):
+        return "BEARISH_VETO"
+    return "NEUTRAL_NO_VOTE"
 
 
 def run_replay(
@@ -144,24 +168,26 @@ def run_replay(
     fast_window_minutes: float = 360.0,
     slow_window_minutes: float = 20160.0,
 ) -> Tuple[_ReplayCapture, Dict[str, Any]]:
-    """Replay ``samples`` through LambdaEngine + HarmonicObserver.
+    """Replay ``samples`` through LambdaEngine + HarmonicObserver + Vote 7.
 
-    Each Kp is treated as one tick. The engine's substrate is
-    sample-step indexed, so the cadence (3 h apart in real time) only
-    matters for the regime/stale logic — and we configure the
-    observer's windows in *minutes* assuming 5 s/sample for those
-    knobs to be meaningful even though the engine itself is sample-
-    indexed. Result: regime classifications are about sample-count
-    boundaries (≥8 samples) rather than wall-clock minutes.
+    Each Kp is treated as one tick. Per snapshot we now also evaluate
+    the buy-side Vote 7 gate (PredictionBus.run_predictions →
+    get_consensus → classify_vote7) so the report shows historical
+    decision flow: how many bullish votes, how many bearish vetoes,
+    how many neutrals — total and broken down by Kp category.
     """
     from aureon.core.aureon_lambda_engine import LambdaEngine, SubsystemReading
     from aureon.observer import HarmonicObserver
     from aureon.observer.predictor import make_predictor
+    from aureon.observer.wave_predictor import WavePredictor
+    from aureon.autonomous.aureon_autonomy_hub import PredictionBus
 
-    # Reset singleton so a stale observer from a previous run can't bleed
-    # in; the new HarmonicObserver auto-claims it.
+    # Reset singletons so a stale observer / wave predictor from a
+    # previous run can't bleed in; the new ones auto-claim.
     import aureon.observer as _obs_mod
+    import aureon.observer.wave_predictor as _wp_mod
     _obs_mod._observer_singleton = None
+    _wp_mod._singleton = None
 
     engine = LambdaEngine()
     observer = HarmonicObserver(
@@ -169,12 +195,14 @@ def run_replay(
         slow_window_minutes=slow_window_minutes,
         publish_to_bus=False,  # backtest never touches the live bus
     )
+    wave = WavePredictor(history_length=120, observer=observer)
     predict = make_predictor(observer)
+    # PredictionBus auto-wires harmonic_observer + wave_predictor
+    # against the singletons we just constructed (Stages B + Q).
+    bus = PredictionBus()
     capture = _ReplayCapture()
 
-    # Subscribe a local capture to RockEvents emitted via _emit. The
-    # observer publishes to ThoughtBus; we instead directly count
-    # _n_events_emitted and walk the rock catalogue afterwards.
+    state = None
     for sample in samples:
         # Map Kp → SubsystemReading (mirror live daemon's _map_space_weather).
         reading = SubsystemReading(
@@ -185,9 +213,14 @@ def run_replay(
         )
         # Engine step.
         state = engine.step([reading])
-        # Feed the engine state into the observer.
+        # Feed the engine state into both observer + wave predictor so
+        # the bus consensus has real, evolving inputs.
         try:
             observer.ingest_state(state)
+        except Exception:
+            pass
+        try:
+            wave.ingest_state(state)
         except Exception:
             pass
         capture.samples_processed += 1
@@ -197,13 +230,39 @@ def run_replay(
         if capture.samples_processed % snapshot_every == 0:
             snap = observer.metrics_snapshot()
             sig = predict({}, "BTCUSD")
+
+            # Stage X: run the bus consensus + classify Vote 7 outcome.
+            try:
+                preds = bus.run_predictions({}, "BTCUSD")
+                consensus = bus.get_consensus(preds)
+                cons_dir = consensus.direction
+                cons_conf = float(consensus.confidence)
+                cons_str = float(consensus.strength)
+                vote7_outcome = _classify_vote7(cons_dir, cons_conf, cons_str)
+                # Per-predictor breakdown for audit.
+                predictor_breakdown = {
+                    n: {
+                        "direction": p.direction,
+                        "confidence": float(p.confidence),
+                        "strength": float(p.strength),
+                    }
+                    for n, p in (preds or {}).items()
+                }
+            except Exception:
+                cons_dir, cons_conf, cons_str = None, 0.0, 0.0
+                vote7_outcome = "NEUTRAL_NO_VOTE"
+                predictor_breakdown = {}
+
+            kp_cat = _kp_category(sample.kp)
             capture.regime_distribution[snap.get("regime", "?")] += 1
             capture.direction_distribution[sig.direction] += 1
+            capture.vote7_outcome_distribution[vote7_outcome] += 1
+            capture.vote7_by_kp_category.setdefault(kp_cat, Counter())[vote7_outcome] += 1
             capture.snapshots.append({
                 "sample_index": capture.samples_processed,
                 "date": f"{sample.year:04d}-{sample.month:02d}-{sample.day:02d}",
                 "kp": sample.kp,
-                "kp_category": _kp_category(sample.kp),
+                "kp_category": kp_cat,
                 "lambda_t": state.lambda_t,
                 "consciousness_psi": state.consciousness_psi,
                 "consciousness_level": state.consciousness_level,
@@ -218,6 +277,13 @@ def run_replay(
                     "confidence": sig.confidence,
                     "strength": sig.strength,
                 },
+                "consensus": {
+                    "direction": cons_dir,
+                    "confidence": cons_conf,
+                    "strength": cons_str,
+                },
+                "vote7_outcome": vote7_outcome,
+                "predictor_breakdown": predictor_breakdown,
             })
 
     aggregates = {
@@ -226,6 +292,10 @@ def run_replay(
         "regime_distribution": dict(capture.regime_distribution),
         "direction_distribution": dict(capture.direction_distribution),
         "kp_category_distribution": dict(capture.kp_category_distribution),
+        "vote7_outcome_distribution": dict(capture.vote7_outcome_distribution),
+        "vote7_by_kp_category": {
+            cat: dict(counts) for cat, counts in capture.vote7_by_kp_category.items()
+        },
         "rock_events_total": observer._n_events_emitted,
         "active_rocks_at_end": len(observer.current_rocks()),
         "final_state": {
@@ -317,6 +387,77 @@ def _write_markdown(path: Path, capture: _ReplayCapture, agg: Dict[str, Any],
     for k, v in sorted(agg["direction_distribution"].items(), key=lambda kv: -kv[1]):
         add(f"| {k} | {v} |")
     add("")
+
+    # Stage X: Vote 7 decision-flow tables.
+    add("## Vote 7 decision flow (queen_gated_buy gate evaluation)")
+    add("")
+    add("Each periodic snapshot is evaluated against the buy-side Vote 7 "
+        "logic: consensus BULLISH ≥40% conf adds +1 vote; consensus "
+        "BEARISH ≥60% conf with strength ≤−0.3 vetoes the trade outright; "
+        "everything else is neutral / no vote.")
+    add("")
+
+    v7 = agg.get("vote7_outcome_distribution") or {}
+    total_snaps = max(1, sum(v7.values()))
+    if v7:
+        add("**Outcome distribution:**")
+        add("")
+        add("| Outcome | Count | % |")
+        add("|---|---|---|")
+        for outcome in ("BULLISH_VOTE", "BEARISH_VETO", "NEUTRAL_NO_VOTE"):
+            n = v7.get(outcome, 0)
+            add(f"| {outcome} | {n} | {100.0 * n / total_snaps:.1f}% |")
+        add("")
+
+    v7_kp = agg.get("vote7_by_kp_category") or {}
+    if v7_kp:
+        add("**Outcome by Kp category** "
+            "(does narrow-band fire harder during storms?):")
+        add("")
+        add("| Kp category | Snapshots | Bullish votes | Bearish vetos | Neutral | Veto rate |")
+        add("|---|---|---|---|---|---|")
+        for cat in ("Quiet", "Unsettled", "Active", "Storm", "Severe"):
+            cat_data = v7_kp.get(cat) or {}
+            n_total = sum(cat_data.values())
+            if n_total == 0:
+                continue
+            n_bull = cat_data.get("BULLISH_VOTE", 0)
+            n_veto = cat_data.get("BEARISH_VETO", 0)
+            n_neut = cat_data.get("NEUTRAL_NO_VOTE", 0)
+            veto_pct = 100.0 * n_veto / n_total
+            add(f"| {cat} | {n_total} | {n_bull} | {n_veto} | "
+                f"{n_neut} | {veto_pct:.1f}% |")
+        add("")
+
+    # Consensus signal traces — show the underlying movement even when
+    # the Vote 7 threshold isn't crossed. The threshold gates DECISION;
+    # the trace gates UNDERSTANDING.
+    cons_dirs = [str((s.get("consensus") or {}).get("direction") or "?") for s in snaps]
+    cons_confs = [float((s.get("consensus") or {}).get("confidence") or 0.0) for s in snaps]
+    cons_strs = [float((s.get("consensus") or {}).get("strength") or 0.0) for s in snaps]
+    if cons_strs:
+        add("**Consensus signal trace** (raw, pre-threshold):")
+        add("")
+        add(f"- Direction histogram: " +
+            ", ".join(f"{d}: {cons_dirs.count(d)}"
+                      for d in sorted(set(cons_dirs))))
+        add(f"- Strength range: {min(cons_strs):+.4f} → {max(cons_strs):+.4f} "
+            f"(mean {sum(cons_strs)/len(cons_strs):+.4f})")
+        add(f"- Confidence range: {min(cons_confs):.4f} → {max(cons_confs):.4f} "
+            f"(mean {sum(cons_confs)/len(cons_confs):.4f})")
+        add("")
+        add(f"**Strength sparkline** ({min(cons_strs):+.3f} → {max(cons_strs):+.3f}):")
+        add(f"```\n{_sparkline(cons_strs)}\n```")
+        add("")
+        add(f"**Confidence sparkline** ({min(cons_confs):.3f} → {max(cons_confs):.3f}):")
+        add(f"```\n{_sparkline(cons_confs)}\n```")
+        add("")
+        add(f"_Vote 7 fires when direction == BULLISH and confidence ≥ 0.40 "
+            f"(or direction == BEARISH and confidence ≥ 0.60 with strength ≤ −0.30). "
+            f"A consistent below-threshold bullish trace is itself a finding: "
+            f"the consensus signal is non-zero, just gated by the harmonic field's "
+            f"coherence floor (no rocks → coherence_gate at 0.25 → confidence squashed)._ ")
+        add("")
 
     if snaps:
         kps = [float(s.get("kp") or 0.0) for s in snaps]
