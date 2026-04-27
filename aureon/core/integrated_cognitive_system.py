@@ -188,6 +188,13 @@ except Exception:
     _HAS_INTEGRATIONS = False
 
 try:
+    from aureon.queen.queen_cognitive_action_planner import QueenCognitiveActionPlanner
+    _HAS_COGNITIVE_PLANNER = True
+except Exception:
+    QueenCognitiveActionPlanner = None  # type: ignore[assignment,misc]
+    _HAS_COGNITIVE_PLANNER = False
+
+try:
     from aureon.queen.queen_conscience import QueenConscience as _QueenConscience
     _HAS_CONSCIENCE = True
 except Exception:
@@ -279,6 +286,21 @@ except Exception:
     get_vault_knowledge_bridge = None  # type: ignore[assignment]
     _HAS_VAULT_BRIDGE = False
 
+try:
+    from aureon.data_feeds.market_data_refresher import start_refresher as _start_market_refresher, stop_refresher as _stop_market_refresher
+    _HAS_MARKET_REFRESHER = True
+except Exception:
+    _start_market_refresher = None  # type: ignore[assignment]
+    _stop_market_refresher = None  # type: ignore[assignment]
+    _HAS_MARKET_REFRESHER = False
+
+try:
+    from aureon.exchanges.capital_cfd_trader import set_module_lambda_engine as _set_capital_lambda
+    _HAS_CAPITAL_TRADER = True
+except Exception:
+    _set_capital_lambda = None  # type: ignore[assignment]
+    _HAS_CAPITAL_TRADER = False
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # IntegratedCognitiveSystem
@@ -326,11 +348,13 @@ class IntegratedCognitiveSystem:
         self.world_data_ingester: Any = None # Free-API world news / wiki / yahoo
         self.self_research_loop: Any = None # Active self-question research loop
         self.vault_knowledge_bridge: Any = None # Vault -> interpreter -> dataset sync
+        self.cognitive_planner: Any = None     # Ollama-powered autonomous goal synthesiser
 
         # State
         self._running = False
         self._tick_thread: Optional[threading.Thread] = None
         self._vault_ui_thread: Optional[threading.Thread] = None
+        self._market_refresher = None
         self._boot_status: Dict[str, str] = {}
         self._tick_count = 0
         self._vault_ui_port: int = 5566
@@ -345,6 +369,17 @@ class IntegratedCognitiveSystem:
         degradation. Returns {subsystem_name: "alive"|"failed"|"skipped"}.
         """
         status: Dict[str, str] = {}
+
+        # Activate Queen autonomous control in background — importing
+        # aureon_queen_hive_mind pulls a heavy dependency chain that can
+        # take 30+ seconds; don't block the boot sequence.
+        def _do_activate():
+            try:
+                from aureon.core.aureon_baton_link import activate_autonomous_control
+                activate_autonomous_control()
+            except Exception:
+                pass
+        threading.Thread(target=_do_activate, daemon=True, name="ICS.auto_ctrl").start()
 
         def _boot_phase(name: str, fn):
             try:
@@ -424,7 +459,7 @@ class IntegratedCognitiveSystem:
         def boot_sentient():
             if not _HAS_SENTIENT:
                 raise RuntimeError("import failed")
-            self.sentient_loop = QueenSentientLoop()
+            self.sentient_loop = QueenSentientLoop(think_interval=1.0)
             self.sentient_loop.start()
         _boot_phase("sentient_loop", boot_sentient)
 
@@ -587,6 +622,30 @@ class IntegratedCognitiveSystem:
             )
         _boot_phase("goal_engine", boot_goal_engine)
 
+        # Phase 16.5: Cognitive Action Planner (Ollama goal synthesiser)
+        # Starts now without an Ollama adapter — wiring.py injects it
+        # once Ollama health check passes (async in Phase 23).
+        def boot_cognitive_planner():
+            if not _HAS_COGNITIVE_PLANNER:
+                raise RuntimeError("import failed")
+            self.cognitive_planner = QueenCognitiveActionPlanner(
+                goal_engine=self.goal_engine,
+                thought_bus=self.thought_bus,
+            )
+            self.cognitive_planner.start()
+        _boot_phase("cognitive_planner", boot_cognitive_planner)
+
+        # Phase 16.7: Capital CFD Trader — wire Λ(t) into scoring engine.
+        # Sets module-level lambda reference so any CapitalCFDTrader instance
+        # (created now or later) picks up the live field automatically.
+        def boot_capital_wiring():
+            if not _HAS_CAPITAL_TRADER or _set_capital_lambda is None:
+                raise RuntimeError("capital_cfd_trader import failed")
+            if self.lambda_engine is None:
+                raise RuntimeError("lambda_engine not booted")
+            _set_capital_lambda(self.lambda_engine)
+        _boot_phase("capital_lambda_wiring", boot_capital_wiring)
+
         # Phase 17: Dashboard (state collector via ThoughtBus)
         def boot_dashboard():
             if not _HAS_DASHBOARD:
@@ -664,10 +723,30 @@ class IntegratedCognitiveSystem:
         _boot_phase("vault_knowledge_bridge", boot_vault_bridge)
 
         # Phase 23: Wire integrations (Ollama + Obsidian into vault/loop)
+        # Run in background — OllamaBridge.health_check() uses a 120s default
+        # timeout; if Ollama is not running this blocks the entire boot.
+        # Aureon functions without Ollama (voices fall back to AureonBrainAdapter).
         def boot_integrations():
             if not _HAS_INTEGRATIONS:
                 raise RuntimeError("import failed")
-            wire_integrations(vault=self.vault, loop=self.feedback_loop)
+            def _do_wire():
+                try:
+                    result = wire_integrations(
+                        vault=self.vault,
+                        loop=self.feedback_loop,
+                        goal_engine=self.goal_engine,
+                    )
+                    # Also inject Ollama into the cognitive planner once available
+                    if (
+                        result is not None
+                        and result.ollama_adapter is not None
+                        and self.cognitive_planner is not None
+                        and hasattr(self.cognitive_planner, "set_ollama_adapter")
+                    ):
+                        self.cognitive_planner.set_ollama_adapter(result.ollama_adapter)
+                except Exception:
+                    pass
+            threading.Thread(target=_do_wire, daemon=True, name="ICS.integrations").start()
         _boot_phase("integrations", boot_integrations)
 
         # Phase 26: Prose Composer (self-description from real state)
@@ -1012,6 +1091,47 @@ class IntegratedCognitiveSystem:
                         pass
             except Exception:
                 pass
+
+        # φ¹ BRIDGE PUSH — full ICS organism state every tick.
+        # Sent at tick-end so lambda/coherence/auris are fully computed.
+        if self.phi_bridge is not None and self.sentient_loop is not None:
+            try:
+                bridge_state = dict(self.sentient_loop.get_status())
+                bridge_state.update({
+                    # Lambda field + consciousness level from source_state
+                    "lambda_t":            source_state.get("lambda_t", 0.0),
+                    "coherence_gamma":     source_state.get("coherence_gamma", 0.0),
+                    "consciousness_psi":   source_state.get("consciousness_psi", 0.0),
+                    "consciousness_level": source_state.get("consciousness_level", "DORMANT"),
+                    "symbolic_life_score": source_state.get("symbolic_life_score", 0.0),
+                    # Auris 9-node consensus + composite coherence from hnc_state
+                    "auris_consensus":     hnc_state.get("auris_consensus", "NEUTRAL"),
+                    "auris_confidence":    hnc_state.get("auris_confidence", 0.0),
+                    "composite_coherence": hnc_state.get("composite_coherence", 0.0),
+                    # Recent ThoughtBus events (last 8) for HNC-OS documentary
+                    "tb_events":           self._recent_tb_events(),
+                })
+                self.phi_bridge.push_state(bridge_state)
+            except Exception:
+                pass
+
+    def _recent_tb_events(self) -> list:
+        """Last 8 ThoughtBus events serialised for the Phi Bridge snapshot."""
+        if self.thought_bus is None:
+            return []
+        try:
+            return [
+                {
+                    "id":      e.get("id", ""),
+                    "topic":   e.get("topic", ""),
+                    "payload": e.get("payload", {}),
+                    "ts":      e.get("ts", 0.0),
+                    "source":  e.get("source", ""),
+                }
+                for e in self.thought_bus.get_recent(8)
+            ]
+        except Exception:
+            return []
 
     # ------------------------------------------------------------------
     # User input processing
@@ -1473,9 +1593,30 @@ class IntegratedCognitiveSystem:
 
         # Start background threads
         self._start_tick_thread()
+        if _HAS_MARKET_REFRESHER and _start_market_refresher is not None:
+            try:
+                self._market_refresher = _start_market_refresher()
+                print("  Market data refresher: started (catches up last 72h, then every 2h)")
+            except Exception as _mre:
+                print(f"  Market data refresher: failed to start ({_mre})")
         # Dashboard collects state via ThoughtBus subscriptions but does not
         # start its render thread — Rich Live would conflict with stdin input().
         # Live data is available via /status command, Vault UI web, and phone.
+
+        # TRINITY + ANTIVIRUS + CALENDAR + SWARM — full self-authoring stack.
+        from aureon.core.aureon_self_introspection import get_self_introspection
+        from aureon.core.aureon_cognitive_authoring_loop import launch_authoring_loop
+        from aureon.core.aureon_geometric_live_chain import launch_geometric_chain
+        from aureon.core.aureon_self_check_scanner import launch_self_check_scanner
+        from aureon.core.aureon_phi_calendar import launch_phi_calendar
+        from aureon.core.aureon_repair_swarm import launch_repair_swarm
+        get_self_introspection()
+        launch_authoring_loop()
+        launch_geometric_chain()
+        launch_self_check_scanner()
+        launch_phi_calendar()
+        launch_repair_swarm()
+        print("  Self-authoring stack: introspection + authoring + geometric + scanner + calendar + swarm: started")
 
         # Start Vault UI + Phi Bridge server
         ui_host = "0.0.0.0" if (lan or remote) else "127.0.0.1"
@@ -1603,6 +1744,12 @@ class IntegratedCognitiveSystem:
         if self.vault_knowledge_bridge is not None:
             try:
                 self.vault_knowledge_bridge.stop()
+            except Exception:
+                pass
+
+        if self._market_refresher is not None:
+            try:
+                self._market_refresher.stop()
             except Exception:
                 pass
 

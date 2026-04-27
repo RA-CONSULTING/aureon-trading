@@ -29,8 +29,14 @@ logger = logging.getLogger(__name__)
 CAPITAL_HTTP_TIMEOUT = float(os.getenv('CAPITAL_HTTP_TIMEOUT_SECS', '8'))
 CAPITAL_SESSION_RETRY_BACKOFF_SECS = float(os.getenv('CAPITAL_SESSION_RETRY_BACKOFF_SECS', '15'))
 CAPITAL_TICKER_WORKERS = int(os.getenv('CAPITAL_TICKER_WORKERS', '4'))
+CAPITAL_TICKER_MEM_TTL = float(os.getenv('CAPITAL_TICKER_MEM_TTL', '25.0'))  # In-memory per-symbol ticker cache TTL
 CAPITAL_MONITOR_CACHE_PATH = os.getenv("CAPITAL_MONITOR_CACHE_PATH", os.path.join("ws_cache", "capital_monitor.json"))
 CAPITAL_MONITOR_CACHE_MAX_AGE_S = float(os.getenv("CAPITAL_MONITOR_CACHE_MAX_AGE_S", "20"))
+# Disk cache for market catalogue — survives process restarts, avoids re-downloading 6799 markets
+CAPITAL_MARKET_DISK_CACHE_PATH = os.getenv(
+    "CAPITAL_MARKET_DISK_CACHE_PATH",
+    os.path.join(_REPO_ROOT, "ws_cache", "capital_market_catalogue.json"),
+)
 
 class CapitalClient:
     """
@@ -62,6 +68,12 @@ class CapitalClient:
         self._rate_limit_logged = False  # Only log rate limits once
         self._session_error_logged = False  # Only log session errors once
         self._next_session_retry_at = 0.0
+        self._ticker_mem_cache: Dict[str, Dict[str, Any]] = {}  # In-memory per-symbol ticker cache
+        self._ticker_mem_cache_times: Dict[str, float] = {}    # Fetch timestamps for TTL
+        self._accounts_cache: List[Dict[str, Any]] = []         # In-memory accounts cache
+        self._accounts_cache_time: float = 0.0                  # Accounts cache fetch timestamp
+        self._snapshot_cache: Dict[str, Any] = {}               # In-memory market snapshot cache {epic: data}
+        self._snapshot_cache_times: Dict[str, float] = {}       # Snapshot cache fetch timestamps
         
         if not self.api_key or not self.identifier or not self.password:
             logger.warning("Capital.com credentials not fully set. Client will be disabled.")
@@ -262,12 +274,37 @@ class CapitalClient:
         if not self.enabled:
             return []
 
+        # Return in-memory cache if still fresh.
         if (
             not force_refresh
             and self.market_cache
             and (time.time() - self.market_cache_time) < self.market_cache_ttl
         ):
             return self.market_cache
+
+        # Don't download while rate-limited.
+        if time.time() < self._rate_limit_until:
+            return self.market_cache or []
+
+        # Try disk cache — avoids re-downloading 6799 markets on every process restart.
+        if not force_refresh:
+            try:
+                disk_path = CAPITAL_MARKET_DISK_CACHE_PATH
+                if os.path.exists(disk_path):
+                    stat = os.stat(disk_path)
+                    age = time.time() - stat.st_mtime
+                    if age < self.market_cache_ttl:
+                        with open(disk_path, "r", encoding="utf-8") as _f:
+                            disk_data = json.load(_f)
+                        markets = disk_data.get("markets", [])
+                        if markets:
+                            self.market_cache = markets
+                            self.market_cache_time = time.time() - age
+                            self._update_market_index(markets)
+                            logger.info(f"Capital.com market catalogue loaded from disk cache ({len(markets)} markets, age={age:.0f}s)")
+                            return self.market_cache
+            except Exception as _disk_err:
+                logger.debug(f"Disk market cache load failed: {_disk_err}")
 
         markets: List[Dict[str, Any]] = []
         queue: List[Optional[str]] = [None]
@@ -303,6 +340,16 @@ class CapitalClient:
         self.market_cache_time = time.time()
         self._update_market_index(markets)
         logger.info(f"Capital.com market catalogue loaded ({len(markets)} markets)")
+
+        # Persist to disk so the next process start can skip this BFS download.
+        try:
+            disk_path = CAPITAL_MARKET_DISK_CACHE_PATH
+            os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+            with open(disk_path, "w", encoding="utf-8") as _f:
+                json.dump({"markets": markets, "ts": self.market_cache_time}, _f)
+        except Exception as _save_err:
+            logger.debug(f"Disk market cache save failed: {_save_err}")
+
         return markets
 
     def _resolve_market(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -340,21 +387,31 @@ class CapitalClient:
 
         return None
 
-    def _get_market_snapshot(self, epic: str) -> Optional[Dict[str, Any]]:
-        """Fetch detailed market info (including bid/ask) for a specific epic."""
+    def _get_market_snapshot(self, epic: str, *, cache_ttl: float = 30.0) -> Optional[Dict[str, Any]]:
+        """Fetch detailed market info (including bid/ask) for a specific epic.
+        Results cached for cache_ttl seconds (default 30s) to avoid duplicate HTTP calls.
+        """
         if time.time() < self._rate_limit_until:
             return None  # Silently skip if globally rate limited
-            
+
+        now = time.time()
+        cached_snap = self._snapshot_cache.get(epic)
+        if cached_snap is not None and (now - self._snapshot_cache_times.get(epic, 0.0)) < cache_ttl:
+            return cached_snap
+
         try:
             response = self._request('GET', f'/markets/{epic}')
             if response.status_code == 200:
-                return response.json()
+                result = response.json()
+                self._snapshot_cache[epic] = result
+                self._snapshot_cache_times[epic] = time.time()
+                return result
             if response.status_code == 429 or 'too-many.requests' in (response.text or '').lower():
-                return None
+                return cached_snap  # Return stale on rate limit
             logger.error(f"Capital.com market snapshot failed for {epic}: {response.text}")
         except Exception as e:
             logger.error(f"Capital.com market snapshot error for {epic}: {e}")
-        return None
+        return cached_snap  # Return stale on error
 
     def _read_monitor_cache(self) -> Dict[str, Any]:
         path = CAPITAL_MONITOR_CACHE_PATH
@@ -417,13 +474,18 @@ class CapitalClient:
             logger.error(f"Error fetching Capital.com balances: {e}")
             return {}
     
-    def get_accounts(self) -> List[Dict[str, Any]]:
+    def get_accounts(self, *, cache_ttl: float = 60.0) -> List[Dict[str, Any]]:
         """Get account information including available balance.
         Returns list of accounts with structure: [{'accountId': str, 'available': float, 'balance': float}]
+        Results are cached for cache_ttl seconds (default 60s) to avoid serial HTTP calls during preflight.
         """
         if not self.enabled:
             return []
-        
+
+        now = time.time()
+        if self._accounts_cache and (now - self._accounts_cache_time) < cache_ttl:
+            return self._accounts_cache
+
         try:
             response = self._request('GET', '/accounts')
             if response.status_code == 200:
@@ -437,13 +499,15 @@ class CapitalClient:
                         'available': float(balance_data.get('available', balance_data.get('balance', 0.0))),
                         'currency': os.getenv('CAPITAL_ACCOUNT_CURRENCY', 'GBP').upper()
                     })
+                self._accounts_cache = accounts
+                self._accounts_cache_time = now
                 return accounts
             else:
                 logger.error(f"Failed to get Capital.com accounts: {response.text}")
-                return []
+                return self._accounts_cache  # Return stale cache on error
         except Exception as e:
             logger.error(f"Error fetching Capital.com accounts: {e}")
-            return []
+            return self._accounts_cache  # Return stale cache on error
 
     def get_ticker(self, symbol: str) -> Dict[str, float]:
         """Get current price for a symbol."""
@@ -474,12 +538,16 @@ class CapitalClient:
             price = (bid + ask) / 2 if bid and ask else (bid or ask or float(snap.get('midOpen', 0) or 0))
 
             change_pct = float(snap.get('percentageChange', 0) or 0)
+            high = float(snap.get('high') or snap.get('dayHigh') or 0)
+            low  = float(snap.get('low')  or snap.get('dayLow')  or 0)
             return {
                 'price': price,
                 'bid': bid,
                 'ask': ask,
                 'epic': epic,
                 'change_pct': change_pct,
+                'high': high,
+                'low': low,
             }
         except Exception as e:
             logger.error(f"Error fetching Capital.com ticker for {symbol}: {e}")
@@ -509,16 +577,29 @@ class CapitalClient:
 
         results: Dict[str, Dict[str, float]] = {}
         uncached_symbols: List[str] = []
+        now = time.time()
         for sym in unique_symbols:
+            # 1. Check disk-based monitor cache (written by background monitor process)
             cached = self._get_cached_monitor_quote(sym)
             if cached and float(cached.get("price", 0.0) or 0.0) > 0:
                 results[sym] = cached
-            else:
-                uncached_symbols.append(sym)
+                continue
+            # 2. Check in-memory per-symbol cache (populated by previous batch fetches)
+            mem_age = now - self._ticker_mem_cache_times.get(sym, 0.0)
+            if mem_age < CAPITAL_TICKER_MEM_TTL:
+                mem_hit = self._ticker_mem_cache.get(sym, {})
+                if mem_hit and float(mem_hit.get("price", 0.0) or 0.0) > 0:
+                    results[sym] = mem_hit
+                    continue
+            uncached_symbols.append(sym)
 
         if not uncached_symbols:
             return results
         max_workers = max(1, int(max_workers))
+
+        # Pre-warm market catalogue once serially — prevents N concurrent
+        # get_all_markets() calls each downloading 6799 markets → 429 ban.
+        self.get_all_markets()
 
         def _fetch(sym: str) -> Dict[str, float]:
             return self.get_ticker(sym)
@@ -528,9 +609,14 @@ class CapitalClient:
             for fut in as_completed(future_map):
                 sym = future_map[fut]
                 try:
-                    results[sym] = fut.result() or {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+                    result = fut.result() or {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
                 except Exception:
-                    results[sym] = {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+                    result = {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+                results[sym] = result
+                # Populate in-memory cache for subsequent ticks
+                if float(result.get("price", 0.0) or 0.0) > 0:
+                    self._ticker_mem_cache[sym] = result
+                    self._ticker_mem_cache_times[sym] = time.time()
 
         return results
 

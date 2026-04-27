@@ -35,6 +35,7 @@ EXIT CODES:
   130 = User interrupt (Ctrl+C)
 """
 
+import os
 import sys
 import json
 import time
@@ -69,7 +70,7 @@ logging.basicConfig(
     datefmt='%H:%M:%S',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('/workspaces/aureon-trading/autonomy_execution.log')
+        logging.FileHandler(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'autonomy_execution.log'))
     ]
 )
 logger = logging.getLogger('AUREON_AUTONOMY')
@@ -1503,7 +1504,7 @@ class AutonomyExecutor:
         try:
             if not QUEEN_AVAILABLE:
                 try:
-                    import aureon.queen.queen_neuron as queen_neuron as _qn
+                    import aureon.queen.queen_neuron as _qn
                     globals()['_queen_module'] = _qn
                     QUEEN_AVAILABLE = True
                     logger.info("  👑🧠 QueenNeuron loaded for intent-coherence feedback")
@@ -2079,7 +2080,7 @@ class AutonomyExecutor:
                 nexus_module = globals().get('nexus')
                 if not NEXUS_AVAILABLE:
                     try:
-                        import aureon.bridges.aureon_probability_nexus as aureon_probability_nexus as _nexus
+                        import aureon.bridges.aureon_probability_nexus as _nexus
                         globals()['nexus'] = _nexus
                         nexus_module = _nexus
                         NEXUS_AVAILABLE = True

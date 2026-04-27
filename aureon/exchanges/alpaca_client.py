@@ -276,7 +276,10 @@ class AlpacaClient:
             })
             self.is_authenticated = True
             self.auth_probe_warning = ""
-            self._probe_initial_auth()
+            # Run auth probe in daemon thread — real API call, but never blocks boot.
+            import threading as _threading
+            _t = _threading.Thread(target=self._probe_initial_auth, daemon=True, name="alpaca-auth-probe")
+            _t.start()
         else:
             logger.warning("Alpaca API keys not found in environment variables.")
             self.init_error = "credentials_missing"

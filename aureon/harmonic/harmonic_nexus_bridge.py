@@ -46,7 +46,7 @@ from typing import Dict, Optional, Sequence, Tuple
 
 def _load_geopolitical_module():
     try:
-        from . import aureon.analytics.geopolitical_forensics as geopolitical_forensics as module  # type: ignore
+        from aureon.analytics import geopolitical_forensics as module  # type: ignore
         return module
     except Exception:
         module_path = Path(__file__).with_name('geopolitical_forensics.py')

@@ -324,7 +324,7 @@ class KingConnector:
 
     def _init(self):
         try:
-            import aureon.bots.king_integration as king_integration as ki  # noqa
+            import aureon.bots.king_integration as ki  # noqa
             self._ki = ki
             self._available = True
             logger.info("King connected (live).")

@@ -262,6 +262,17 @@ def _try_load_ira_sniper():
         IRA_SNIPER_AVAILABLE = False
         print("   IRA Sniper Mode not available - system will continue without Celtic warfare intelligence")
 
+# Boot banner guard: print once per OS session (env var survives same-session
+# subprocess spawns on Windows; prevents 6× duplicate on multiprocess imports).
+_ORCA_BOOT_KEY = '_AUREON_ORCA_BOOT_PRINTED'
+_orca_boot_verbose = os.environ.get(_ORCA_BOOT_KEY) != '1'
+if _orca_boot_verbose:
+    os.environ[_ORCA_BOOT_KEY] = '1'
+else:
+    import builtins as _builtins
+    _orca_saved_print = _builtins.print
+    _builtins.print = lambda *a, **k: None  # silence duplicate boot banner
+
 #    Probability Nexus Integration (Batten Matrix: Coherence   Lambda   Probability)
 try:
     from aureon.bridges.aureon_probability_nexus import process_market_data, update_subsystems, SUBSYSTEM_STATE
@@ -582,6 +593,10 @@ except ImportError:
     MoversShakersScanner = None
     MoverShaker = None
     print("   Movers & Shakers Scanner not available - momentum detection disabled")
+
+# Restore builtins.print after boot banner section (all module-level inits done).
+if not _orca_boot_verbose:
+    _builtins.print = _orca_saved_print
 
 #   Queen Volume Hunter - Volume breakout detection
 try:

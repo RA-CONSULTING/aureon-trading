@@ -5,16 +5,15 @@ Aureon Boot Diagnostic
 Boots the Integrated Cognitive System and prints the live status
 of every subsystem — vault, mycelium, thought bus, goal engine, etc.
 """
-import io, sys, os, time, logging
-
-# Force unbuffered UTF-8 output
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True)
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace", line_buffering=True)
+import sys, os, time, logging
 
 # Suppress all internal logging — we control what prints
 logging.disable(logging.CRITICAL)
 
-os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.chdir(_repo_root)
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
 
 PHASE_LABELS = {
     "thought_bus":        "ThoughtBus      (neural signal highway)",

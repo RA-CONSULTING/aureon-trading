@@ -237,6 +237,7 @@ class GoalExecutionEngine:
         self._vault = vault
         self._swarm = swarm
         self._temporal_ground = temporal_ground
+        self._ollama: Any = None   # injected after boot via set_ollama_adapter()
         self._agent_tools = self._build_agent_tools()
 
         self._current_plan: Optional[GoalPlan] = None
@@ -254,6 +255,10 @@ class GoalExecutionEngine:
             "swarm_dispatches": 0,
             "timelines_forked": 0,
         }
+
+    def set_ollama_adapter(self, adapter: Any) -> None:
+        """Inject an OllamaLLMAdapter as the primary LLM for goal decomposition."""
+        self._ollama = adapter
 
     # ------------------------------------------------------------------
     # Tool bridge — AgentCore tools available to swarm agents
@@ -853,7 +858,9 @@ class GoalExecutionEngine:
         Every call obeys the Emerald Tablet decree and includes any
         prior knowledge retrieved from the dataset for puzzle-piecing.
         """
-        adapter = self._swarm.adapter
+        adapter = self._ollama or (self._swarm.adapter if self._swarm is not None else None)
+        if adapter is None:
+            return []
         decree = self._consult_source_law()
         tablet = self._emerald_tablet_prompt(decree)
 

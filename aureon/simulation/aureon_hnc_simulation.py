@@ -63,13 +63,13 @@ import builtins
 
 # 1. Load HNC Surge Detector
 try:
-    import aureon.bridges.aureon_hnc_surge_detector as aureon_hnc_surge_detector as hnc
+    import aureon.bridges.aureon_hnc_surge_detector as hnc
 except ImportError:
     # If not found (path issues), we assume we are in root
     pass
 
 # 2. Load Phantom Filter
-import aureon.scanners.aureon_phantom_signal_filter as aureon_phantom_signal_filter as pf
+import aureon.scanners.aureon_phantom_signal_filter as pf
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - SIM - %(message)s')
