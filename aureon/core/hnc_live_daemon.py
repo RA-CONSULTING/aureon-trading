@@ -356,6 +356,30 @@ class HNCLiveDaemon:
         elif self._observer is not None:
             logger.info("HNC daemon: HarmonicObserver attached (caller-provided)")
 
+        # Stage AG: also construct WavePredictor + MomentumTracker
+        # singletons. Their bus-predictor adapters (Stages Q + AC)
+        # call get_wave_predictor() / get_momentum_tracker() at predict
+        # time — if those return None, the predictors silently return
+        # NEUTRAL conf=0 with reason 'wave_predictor_not_running' /
+        # 'momentum_tracker_no_data'. The fix is to construct the
+        # singletons HERE so they actually receive the live ticks the
+        # daemon's compute loop + source loop produce.
+        self._wave_predictor = None
+        self._momentum_tracker = None
+        if attach_observer:
+            try:
+                from aureon.observer.wave_predictor import WavePredictor
+                self._wave_predictor = WavePredictor(observer=self._observer)
+                logger.info("HNC daemon: WavePredictor attached (auto)")
+            except Exception as exc:
+                logger.warning("HNC daemon: WavePredictor attach skipped: %s", exc)
+            try:
+                from aureon.observer.momentum import MomentumTracker
+                self._momentum_tracker = MomentumTracker()
+                logger.info("HNC daemon: MomentumTracker attached (auto)")
+            except Exception as exc:
+                logger.warning("HNC daemon: MomentumTracker attach skipped: %s", exc)
+
     # ─── source registration ────────────────────────────────────
 
     def register_source(
@@ -531,6 +555,16 @@ class HNCLiveDaemon:
                     self._observer.ingest_state(state)
                 except Exception as exc:
                     logger.debug("observer.ingest_state failed: %s", exc)
+
+            # Stage AG: also feed the wave predictor on every compute
+            # step. The predictor's confidence depends on having a
+            # window of LambdaState samples to fit a slope through;
+            # without ingest_state calls here it stays at 0 forever.
+            if self._wave_predictor is not None:
+                try:
+                    self._wave_predictor.ingest_state(state)
+                except Exception as exc:
+                    logger.debug("wave_predictor.ingest_state failed: %s", exc)
 
             try:
                 await asyncio.wait_for(self._stop.wait(), timeout=COMPUTE_INTERVAL)
