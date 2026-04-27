@@ -11393,6 +11393,95 @@ class OrcaKillCycle:
             print(f"  [DR AURIS] VALIDATED: (Silent/Offline Mode) - Proceeding.")
             print(f"  [QUEEN] APPROVED. Proceed with SELL.")
 
+        #
+        #     PREDICTION-BUS CONSENSUS GATE  (sell-side, mirror of buy Vote 7)
+        #
+        # Symmetric to the buy-side wire (queen_gated_buy → Vote 7). Same
+        # 11 predictors are consulted (nexus, macro_context, sentiment_
+        # analysis, hnc_matrix, imperial, probability_ultimate,
+        # whale_hunter, quantum_telescope, war_planner, harmonic_observer,
+        # wave_predictor) but with INVERTED veto logic:
+        #
+        #   buy-side:   strong-BEARISH high-conf → VETO bad entry
+        #   sell-side:  strong-BULLISH high-conf → VETO premature voluntary exit
+        #
+        # CRITICAL safety asymmetry: voluntary exits (reason='TP') can be
+        # vetoed; forced exits (USER_ABORT, ctrl_c_cleanup, anything not
+        # 'TP') NEVER are. Trapping a position because of a bullish-
+        # consensus reading would amplify any drawdown into a loss —
+        # always safer to let the sell proceed when the system thinks
+        # it needs to exit.
+        _sell_consensus_direction = None
+        _sell_consensus_confidence = 0.0
+        _sell_consensus_strength = 0.0
+        _sell_consensus_predictor_breakdown: Dict[str, Dict[str, float]] = {}
+        _sell_consensus_veto = False
+        try:
+            from aureon.autonomous.aureon_autonomy_hub import get_hub
+            _hub = get_hub()
+            if _hub is not None and hasattr(_hub, "prediction_bus"):
+                _bus = _hub.prediction_bus
+                _bridge = getattr(_hub, "data_bridge", None)
+                _data_signals = (
+                    _bridge.get_all_data_signals() if _bridge is not None else {}
+                )
+                _preds = _bus.run_predictions(_data_signals, symbol)
+                _consensus = _bus.get_consensus(_preds)
+                _sell_consensus_direction = _consensus.direction
+                _sell_consensus_confidence = float(_consensus.confidence)
+                _sell_consensus_strength = float(_consensus.strength)
+                _sell_consensus_predictor_breakdown = {
+                    n: {
+                        "direction": p.direction,
+                        "confidence": float(p.confidence),
+                        "strength": float(p.strength),
+                    }
+                    for n, p in (_preds or {}).items()
+                }
+
+                # Voluntary exits only — never trap a forced exit.
+                # 'TP' is the take-profit default; everything else
+                # (USER_ABORT, ctrl_c_cleanup, STOP_LOSS, TIMEOUT, etc.)
+                # is treated as forced and bypasses the veto entirely.
+                _is_voluntary_tp = (reason == 'TP')
+                if (_is_voluntary_tp
+                        and _sell_consensus_direction == "BULLISH"
+                        and _sell_consensus_confidence >= 0.6
+                        and _sell_consensus_strength >= 0.3):
+                    _sell_consensus_veto = True
+                    print(f"   PREDICTION_BUS VETO SELL (premature TP): "
+                          f"consensus BULLISH conf={_sell_consensus_confidence:.0%} "
+                          f"strength={_sell_consensus_strength:+.2f} — "
+                          f"holding position")
+                else:
+                    print(f"   PREDICTION_BUS consensus on SELL: "
+                          f"{_sell_consensus_direction or 'NEUTRAL'} "
+                          f"conf={_sell_consensus_confidence:.0%} "
+                          f"strength={_sell_consensus_strength:+.2f} "
+                          f"(reason={reason}, voluntary={_is_voluntary_tp})")
+        except Exception as _exc:
+            # Bus unavailable — fall through silently. NEVER block a sell
+            # because of a missing dependency.
+            pass
+
+        if _sell_consensus_veto:
+            return {
+                'status': 'blocked',
+                'reason': (f"PredictionBus consensus BULLISH at "
+                           f"{_sell_consensus_confidence:.0%} confidence, "
+                           f"strength={_sell_consensus_strength:+.2f} — "
+                           f"premature voluntary TP exit"),
+                'blocked_by': 'PREDICTION_BUS_BULLISH_CONSENSUS',
+                'symbol': symbol,
+                'exchange': exchange,
+                'sell_reason': reason,
+                'consensus_direction': _sell_consensus_direction,
+                'consensus_confidence': _sell_consensus_confidence,
+                'consensus_strength': _sell_consensus_strength,
+                'consensus_predictor_breakdown': _sell_consensus_predictor_breakdown,
+                'rejected': True,
+            }
+
         #   Require 30s validated prediction window
         pred_ok, pred_info = self._prediction_window_ready(symbol)
         
