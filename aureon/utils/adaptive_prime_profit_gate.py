@@ -95,6 +95,20 @@ def _resolve_auto_observer_coherence() -> Optional[float]:
     opt_out = os.environ.get(ENV_AUTO_OBSERVER, "").strip().lower()
     if opt_out in ("0", "false", "off", "no"):
         return None
+    # Production-mode gate (Stage AB): the buffer-multiplier auto-
+    # widening only fires in LIVE mode. In DRY_RUN / SHADOW the
+    # observer's coherence is read and audited but the gate stays
+    # at multiplier 1.0 (today's behaviour) so position-sizing on
+    # first deploy is bit-identical to pre-observer days.
+    try:
+        from aureon.observer.production_mode import (
+            kelly_buffer_scaling_active, audit as _obs_audit,
+        )
+        _scaling_active = kelly_buffer_scaling_active()
+    except Exception:
+        _scaling_active = False
+        _obs_audit = None
+
     try:
         from aureon.observer import get_observer
         obs = get_observer()
@@ -102,8 +116,24 @@ def _resolve_auto_observer_coherence() -> Optional[float]:
             return None
         score = float(obs.coherence_score())
         if score != score or score < 0.0 or score > 1.0:  # NaN-safe clamp
-            return max(0.0, min(1.0, score))
-        return score
+            score = max(0.0, min(1.0, score))
+
+        if _obs_audit is not None:
+            try:
+                _obs_audit(
+                    "kelly_buffer_evaluation",
+                    {"coherence_score": score,
+                     "scaling_active_in_mode": _scaling_active},
+                    decision="kelly_buffer",
+                    would_have_blocked=None,
+                    actually_blocked=None,
+                )
+            except Exception:
+                pass
+
+        # In non-LIVE modes return None so calculate_gates uses the
+        # pre-observer multiplier of 1.0.
+        return score if _scaling_active else None
     except Exception:
         return None
 

@@ -10660,13 +10660,51 @@ class OrcaKillCycle:
         except Exception:
             pass
 
-        _observer_extra_votes_required = 0
+        # Production-mode gate (Stage AB): in DRY_RUN / SHADOW the
+        # narrow-band threshold tightening is RECORDED but not APPLIED.
+        # Only LIVE mode actually raises the required-votes count.
+        try:
+            from aureon.observer.production_mode import (
+                narrow_band_threshold_active, audit,
+            )
+            _narrow_band_active = narrow_band_threshold_active()
+        except Exception:
+            _narrow_band_active = False
+            audit = None
+
+        _observer_extra_votes_required_recommended = 0
         if _observer_coherence is not None and _observer_coherence < 0.4:
-            _observer_extra_votes_required = 1
+            _observer_extra_votes_required_recommended = 1
             print(f"   OBSERVER NARROW-BAND: coherence={_observer_coherence:.3f} "
-                  f"(chaotic field) — requiring +1 brain vote")
+                  f"(chaotic field) — recommending +1 brain vote "
+                  f"[{'APPLIED' if _narrow_band_active else 'RECORDED ONLY'}]")
         elif _observer_coherence is not None:
             print(f"   OBSERVER FIELD-OK: coherence={_observer_coherence:.3f}")
+
+        _observer_extra_votes_required = (
+            _observer_extra_votes_required_recommended
+            if _narrow_band_active else 0
+        )
+
+        if audit is not None and _observer_coherence is not None:
+            try:
+                audit(
+                    "narrow_band_evaluation",
+                    {
+                        "symbol": symbol,
+                        "context": context,
+                        "coherence": _observer_coherence,
+                        "extra_votes_required_recommended":
+                            _observer_extra_votes_required_recommended,
+                        "extra_votes_required_applied":
+                            _observer_extra_votes_required,
+                    },
+                    decision="narrow_band",
+                    would_have_blocked=None,
+                    actually_blocked=None,
+                )
+            except Exception:
+                pass
 
         #
         #     MULTI-BRAIN VALIDATION GATE (consensus from all intelligence)
@@ -10832,24 +10870,47 @@ class OrcaKillCycle:
                         for n, p in (_preds or {}).items()
                     }
 
-                    _validation_total += 1
+                    # Production-mode gate (Stage AB): vote-add and
+                    # veto only fire in LIVE mode; DRY_RUN / SHADOW
+                    # record the recommendation in the audit log so the
+                    # operator can see what LIVE would have done without
+                    # the trade decision actually changing.
+                    try:
+                        from aureon.observer.production_mode import (
+                            gate_buy_veto_active, vote_addition_active,
+                            audit as _obs_audit,
+                        )
+                        _veto_active = gate_buy_veto_active()
+                        _vote_add_active = vote_addition_active()
+                    except Exception:
+                        _veto_active = False
+                        _vote_add_active = False
+                        _obs_audit = None
+
+                    _consensus_outcome_recommended = "NEUTRAL"
                     if (_consensus_direction == "BULLISH"
                             and _consensus_confidence >= 0.4):
-                        _validation_votes += 1
+                        _consensus_outcome_recommended = "BULLISH_VOTE"
+                        if _vote_add_active:
+                            _validation_votes += 1
                         _validation_details.append(
                             f"Consensus:BUY({_consensus_confidence:.0%},"
                             f"strength={_consensus_strength:+.2f},"
-                            f"n={len(_preds)})"
+                            f"n={len(_preds)},"
+                            f"{'APPLIED' if _vote_add_active else 'RECORDED'})"
                         )
                     elif (_consensus_direction == "BEARISH"
                             and _consensus_confidence >= 0.6
                             and _consensus_strength <= -0.3):
-                        # Strong-bearish high-conf — VETO.
-                        _consensus_veto = True
+                        # Strong-bearish high-conf — VETO recommended.
+                        _consensus_outcome_recommended = "BEARISH_VETO"
+                        if _veto_active:
+                            _consensus_veto = True
                         _validation_details.append(
                             f"Consensus:VETO_SELL({_consensus_confidence:.0%},"
                             f"strength={_consensus_strength:+.2f},"
-                            f"n={len(_preds)})"
+                            f"n={len(_preds)},"
+                            f"{'APPLIED' if _veto_active else 'RECORDED'})"
                         )
                     else:
                         _validation_details.append(
@@ -10857,6 +10918,30 @@ class OrcaKillCycle:
                             f"({_consensus_confidence:.0%},"
                             f"strength={_consensus_strength:+.2f})"
                         )
+
+                    # Always-on audit row — operator's primary visibility
+                    # into the divergence between LIVE and DRY_RUN/SHADOW.
+                    if _obs_audit is not None:
+                        try:
+                            _obs_audit(
+                                "buy_vote7",
+                                {
+                                    "symbol": symbol,
+                                    "context": context,
+                                    "consensus_direction": _consensus_direction,
+                                    "consensus_confidence": _consensus_confidence,
+                                    "consensus_strength": _consensus_strength,
+                                    "predictor_breakdown": _consensus_predictor_breakdown,
+                                    "outcome_recommended": _consensus_outcome_recommended,
+                                    "veto_active_in_mode": _veto_active,
+                                    "vote_add_active_in_mode": _vote_add_active,
+                                },
+                                decision="vote7_buy",
+                                would_have_blocked=(_consensus_outcome_recommended == "BEARISH_VETO"),
+                                actually_blocked=_consensus_veto,
+                            )
+                        except Exception:
+                            pass
             except Exception as _exc:
                 # Bus unavailable — fall through to today's behaviour.
                 # Validation total stays unchanged; gate behaves as if
@@ -11443,22 +11528,63 @@ class OrcaKillCycle:
                 # 'TP' is the take-profit default; everything else
                 # (USER_ABORT, ctrl_c_cleanup, STOP_LOSS, TIMEOUT, etc.)
                 # is treated as forced and bypasses the veto entirely.
+                #
+                # Production-mode gate (Stage AB): even on a voluntary
+                # TP that meets the bullish-veto criteria, the veto
+                # only fires in LIVE mode. DRY_RUN / SHADOW record
+                # the recommendation in the audit log so the operator
+                # sees what LIVE would have done.
+                try:
+                    from aureon.observer.production_mode import (
+                        gate_sell_veto_active, audit as _obs_audit,
+                    )
+                    _sell_veto_active = gate_sell_veto_active()
+                except Exception:
+                    _sell_veto_active = False
+                    _obs_audit = None
+
                 _is_voluntary_tp = (reason == 'TP')
+                _sell_outcome_recommended = "ALLOW"
                 if (_is_voluntary_tp
                         and _sell_consensus_direction == "BULLISH"
                         and _sell_consensus_confidence >= 0.6
                         and _sell_consensus_strength >= 0.3):
-                    _sell_consensus_veto = True
+                    _sell_outcome_recommended = "VETO_TP"
+                    if _sell_veto_active:
+                        _sell_consensus_veto = True
                     print(f"   PREDICTION_BUS VETO SELL (premature TP): "
                           f"consensus BULLISH conf={_sell_consensus_confidence:.0%} "
                           f"strength={_sell_consensus_strength:+.2f} — "
-                          f"holding position")
+                          f"{'holding position' if _sell_veto_active else 'RECORDED ONLY (mode!=live)'}")
                 else:
                     print(f"   PREDICTION_BUS consensus on SELL: "
                           f"{_sell_consensus_direction or 'NEUTRAL'} "
                           f"conf={_sell_consensus_confidence:.0%} "
                           f"strength={_sell_consensus_strength:+.2f} "
                           f"(reason={reason}, voluntary={_is_voluntary_tp})")
+
+                if _obs_audit is not None:
+                    try:
+                        _obs_audit(
+                            "sell_vote7",
+                            {
+                                "symbol": symbol,
+                                "exchange": exchange,
+                                "sell_reason": reason,
+                                "is_voluntary_tp": _is_voluntary_tp,
+                                "consensus_direction": _sell_consensus_direction,
+                                "consensus_confidence": _sell_consensus_confidence,
+                                "consensus_strength": _sell_consensus_strength,
+                                "predictor_breakdown": _sell_consensus_predictor_breakdown,
+                                "outcome_recommended": _sell_outcome_recommended,
+                                "veto_active_in_mode": _sell_veto_active,
+                            },
+                            decision="vote7_sell",
+                            would_have_blocked=(_sell_outcome_recommended == "VETO_TP"),
+                            actually_blocked=_sell_consensus_veto,
+                        )
+                    except Exception:
+                        pass
         except Exception as _exc:
             # Bus unavailable — fall through silently. NEVER block a sell
             # because of a missing dependency.
