@@ -1570,13 +1570,29 @@ _hub_instance: Optional[AutonomyHub] = None
 _hub_lock = threading.Lock()
 
 def get_autonomy_hub() -> AutonomyHub:
-    """Get or create the global AutonomyHub singleton."""
+    """Get or create the global AutonomyHub singleton.
+
+    Lazy construction: the first caller pays the cost of registering
+    all 11 predictors (9 hub-side + harmonic_observer + wave_predictor
+    auto-wires) and connecting the ThoughtBus. Subsequent callers get
+    the cached instance. Thread-safe via _hub_lock.
+
+    Stage T/V Vote 7 imports ``get_hub`` — that's an alias of this
+    function (added below) so older code paths that imported the short
+    name still resolve.
+    """
     global _hub_instance
     with _hub_lock:
         if _hub_instance is None:
             _hub_instance = AutonomyHub()
             _hub_instance.connect_thought_bus()
     return _hub_instance
+
+
+# Short alias used by aureon/bots/orca_complete_kill_cycle.py Vote 7
+# blocks (Stages T and V) and any other call site that wants the
+# concise name. Identity-equal to get_autonomy_hub.
+get_hub = get_autonomy_hub
 
 
 def spin(symbol: str = "BTCUSD") -> UnifiedSignal:
