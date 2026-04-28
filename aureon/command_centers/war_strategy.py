@@ -621,10 +621,13 @@ def get_war_briefing() -> str:
 # ═══════════════════════════════════════════════════════════════
 # 🧪 TEST
 # ═══════════════════════════════════════════════════════════════
+# 🟡 DEMO ONLY — synthetic price data + hardcoded exit_price below.
+# Production callers should use start_raid / complete_raid with real
+# market prices, not invoke this __main__ block.
 if __name__ == "__main__":
-    print("⚔️ WAR STRATEGY - QUICK KILL PROBABILITY SYSTEM ⚔️\n")
-    
-    # Simulate price data with varying volatility
+    print("⚔️ WAR STRATEGY - QUICK KILL PROBABILITY SYSTEM (DEMO) ⚔️\n")
+
+    # Simulate price data with varying volatility (DEMO ONLY)
     import random
     
     # High volatility coin (good for quick kills)

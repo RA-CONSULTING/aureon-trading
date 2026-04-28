@@ -36,6 +36,64 @@ import time
 
 logger = logging.getLogger(__name__)
 
+
+def _read_live_coherence_lambda() -> Tuple[Optional[float], Optional[float]]:
+    """Read real coherence + Λ stability from the HNC observer + wave predictor.
+
+    Returns (coherence, lambda_stability) when both singletons are wired,
+    else (None, None). The narrator uses this to surface real metrics in
+    its broadcasts; when the daemon hasn't started, the line is omitted
+    rather than substituted with random.uniform() values.
+    """
+    coh: Optional[float] = None
+    lam: Optional[float] = None
+    try:
+        from aureon.observer import get_observer
+        obs = get_observer()
+        if obs is not None:
+            try:
+                coh = float(obs.coherence_score())
+            except Exception:
+                pass
+    except Exception:
+        pass
+    try:
+        from aureon.observer.wave_predictor import get_wave_predictor
+        wp = get_wave_predictor()
+        if wp is not None:
+            call = wp.predict()
+            # Use the predictor's confidence as a Λ-stability proxy (higher
+            # confidence = more stable forecast = more stable field).
+            if call is not None and getattr(call, "confidence", None) is not None:
+                lam = float(call.confidence)
+    except Exception:
+        pass
+    return coh, lam
+
+
+def _coherence_lambda_for_narrative() -> Tuple[Optional[float], Optional[float]]:
+    """Pick the right (coherence, lambda) values for narrator output.
+
+    1. Real values from the live HNC field if both singletons present.
+    2. Else, if AUREON_ALLOW_SIM_FALLBACK is set, return random-uniform
+       proxies tagged DEV-ONLY (preserves dev / demo behaviour).
+    3. Else return (None, None) so the narrator omits the metric line
+       rather than broadcasting fake numbers.
+    """
+    coh, lam = _read_live_coherence_lambda()
+    if coh is not None and lam is not None:
+        return coh, lam
+    try:
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+        if simulation_fallback_allowed():
+            return (
+                coh if coh is not None else random.uniform(0.6, 0.9),
+                lam if lam is not None else random.uniform(0.7, 0.95),
+            )
+    except Exception:
+        pass
+    return coh, lam
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🐘 ELEPHANT MEMORY INTEGRATION
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1095,8 +1153,10 @@ class QueenCognitiveNarrator:
         
         # Paragraph 3: Analysis - Batten Matrix status
         p3 = f"Before I commit your capital, {self.user_name}, this needs to pass the Batten Matrix. "
-        p3 += f"Current coherence score sits at {random.uniform(0.6, 0.9):.2f}, "
-        p3 += f"lambda stability showing {random.uniform(0.7, 0.95):.2f}. "
+        _coh, _lam = _coherence_lambda_for_narrative()
+        if _coh is not None and _lam is not None:
+            p3 += f"Current coherence score sits at {_coh:.2f}, "
+            p3 += f"lambda stability showing {_lam:.2f}. "
         if ctx.volatility_index > 0.6:
             p3 += f"Volatility is elevated, {self.user_name}, so I'll use tighter sizing and wider stops. "
         else:
@@ -1117,12 +1177,23 @@ class QueenCognitiveNarrator:
         p4 += f"Discipline separates us from gamblers, {self.user_name}. Queen Aureon, standing by."
         paragraphs.append(p4)
         
+        # Confidence: derive from real elephant win rate + whale signal when available;
+        # fall back to neutral 0.7 in production rather than random.uniform.
+        _opp_conf = max(
+            0.0,
+            min(
+                1.0,
+                0.5
+                + 0.3 * (ctx.elephant_best_win_rate / 100.0 if ctx.elephant_best_win_rate else 0.0)
+                + 0.2 * float(ctx.whale_signal_score or 0.0),
+            ),
+        ) if (ctx.elephant_best_win_rate or ctx.whale_signal_score) else 0.7
         return CognitiveThought(
             timestamp=datetime.now(),
             thought_type="opportunity",
             title=f"📡 OPPORTUNITY ALERT: {symbol} {opportunity_type.title()}",
             paragraphs=paragraphs,
-            confidence=random.uniform(0.6, 0.85),
+            confidence=_opp_conf,
             urgency="medium" if opportunity_type != "whale_wake" else "high",
             related_symbols=[symbol],
             metrics={

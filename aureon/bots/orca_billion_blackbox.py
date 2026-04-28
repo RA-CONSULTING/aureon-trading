@@ -149,6 +149,10 @@ class BillionBlackBox:
     """
     
     def __init__(self, live_mode: bool = False):
+        # WARNING: live_mode is decorative — trade_loop always uses hardcoded
+        # prices and a random.gauss price walk regardless. This is a TRAINING
+        # RIG, not a real-trading path. The production live-trading path is
+        # aureon.strategies.quantum_warfare_live + the HNC live daemon.
         self.live_mode = live_mode
         self.start_time = time.time()
         self.trade_counter = 0
@@ -422,7 +426,9 @@ class BillionBlackBox:
         print("⚫🏴‍☠️ BLACK BOX AUTONOMOUS TRADING - RACE TO $1 BILLION 🏴‍☠️⚫")
         print("=" * 80)
         print()
-        print(f"Mode: {'🔴 LIVE TRADING' if self.live_mode else '🔶 DRY RUN'}")
+        # NOTE: trade_loop always simulates (hardcoded prices + random walk),
+        # regardless of live_mode. The label below is honest about that.
+        print(f"Mode: 🔶 SIMULATION (training rig — see quantum_warfare_live for real trading)")
         print(f"Max Positions: {max_positions}")
         print(f"Elite Hunting: {'🏴‍☠️ ACTIVE - FUCK THE 1%!' if self.elite_hunting_enabled else '❌ DISABLED'}")
         print()

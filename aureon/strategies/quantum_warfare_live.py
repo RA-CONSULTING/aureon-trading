@@ -249,7 +249,10 @@ class QuantumWarfareLive:
                         pattern_id=f"{symbol}_{band_name}",
                         frequency_hz=detected_freq,
                         amplitude=len([i for i in intervals if 1/i > freq_range[0] and 1/i < freq_range[1]]) / len(intervals),
-                        phase=random.uniform(0, 2 * math.pi),
+                        # phase placeholder: was random.uniform(0, 2π); without
+                        # FFT-based phase recovery the value is unknown, so emit
+                        # 0.0 deterministically rather than inject noise.
+                        phase=0.0,
                         firm_attribution=firm,
                         predictability=0.7
                     )

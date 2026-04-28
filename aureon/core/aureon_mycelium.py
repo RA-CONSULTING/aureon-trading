@@ -2439,6 +2439,9 @@ def get_mycelium(initial_capital: float = 100.0) -> MyceliumNetwork:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
+    # 🟡 DEMO ONLY — synthetic market data via random.uniform.
+    # The MyceliumNetwork class itself takes real market_data dicts; this
+    # __main__ block simulates them for standalone demo runs.
     print("""
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
