@@ -2,6 +2,8 @@
 
 > Everything you need to understand, evaluate, and use this system.
 
+> 🚀 **To actually RUN the system, see [`RUNNING.md`](RUNNING.md) — the single source of truth for setup and run commands.**
+
 ---
 
 ## 🚀 Start Here (Pick Your Path)
@@ -10,9 +12,10 @@
 
 | Your Goal | Document | Time | What You'll Learn |
 |-----------|----------|------|-------------------|
-| **See what this can do** | [CAPABILITIES.md](CAPABILITIES.md) | 10 min | 10 use cases with exact commands |
+| **Run the system** | [RUNNING.md](RUNNING.md) | 5 min | Setup → dry-run → testnet → live trading |
+| **See what this can do** | [CAPABILITIES.md](CAPABILITIES.md) | 10 min | 10 use cases with backing modules |
 | **Know if it works** | [LIVE_PROOF.md](LIVE_PROOF.md) | 15 min | Evidence: backtest, paper, live, verify |
-| **Find commands/files** | [QUICK_START.md](QUICK_START.md) | 5 min | Every command, every file location |
+| **Find commands/files** | [QUICK_START.md](QUICK_START.md) | 5 min | Quick reference: where things live |
 | **Understand strategy** | [SWOT_ANALYSIS.md](SWOT_ANALYSIS.md) | 10 min | Strengths, weaknesses, opportunities, threats |
 | **See how data flows** | [DATA_FLOW.md](DATA_FLOW.md) | 15 min | Architecture, pipelines, execution flow |
 | **Get everything at once** | [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) | 20 min | Audit + SWOT + data flow consolidated |
@@ -26,17 +29,17 @@
 | Document | Purpose | Audience | Time |
 |----------|---------|----------|------|
 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | PEFCφS formalism, layer design, mathematical foundation | Engineers, researchers | 30 min |
-| **[STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md)** | Navigate 4-layer system, file organization, layer details | Developers, builders | 20 min |
-| **[META/DOMAIN_MAP.md](META/DOMAIN_MAP.md)** | 6 domains explained, Domain I-VI overview | Architects, researchers | 20 min |
+| **[STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md)** | Navigate the codebase, file organization | Developers, builders | 20 min |
+| **[docs/NAVIGATION_GUIDE.md](docs/NAVIGATION_GUIDE.md)** | Curated paths by role (trader/dev/researcher) | All audiences | 15 min |
 
 ### Navigation & Reference
 
 | Document | Purpose | Use When |
 |----------|---------|----------|
-| **[META/PATH_REGISTRY.py](META/PATH_REGISTRY.py)** | Look up any file by old name | Need to find where a file is |
-| **[META/CATALOG.json](META/CATALOG.json)** | Complete 2,694-file inventory with metadata | Want machine-readable catalog |
-| **[META/CROSS_REFERENCES.md](META/CROSS_REFERENCES.md)** | Old paths → new paths mapping | Reading old documentation |
-| **[META/FILE_INDEX.md](META/FILE_INDEX.md)** | Alphabetical file index by domain | Browsing all files by name |
+| **[docs/MODULES_AT_A_GLANCE.md](docs/MODULES_AT_A_GLANCE.md)** | Reference for the 715 Python modules across 24 domains | Browsing code structure |
+| **[docs/SCRIPTS_INDEX.md](docs/SCRIPTS_INDEX.md)** | Catalog of CLI scripts and entry points | Finding the right script |
+| **[docs/STATE_FILES.md](docs/STATE_FILES.md)** | Runtime state files and ownership | Understanding generated artifacts |
+| **[CLAUDE.md](CLAUDE.md)** | Onboarding for AI assistants & cold readers | Need a 15-min orientation |
 
 ### Theory & Research
 
@@ -49,9 +52,11 @@
 
 | Script | Purpose |
 |--------|---------|
-| **[scripts/paperTradeSimulation.ts](scripts/paperTradeSimulation.ts)** | Start paper trading simulation |
-| **[3_forcing/execution_engines/aureon_queen_trade_executor.py](3_forcing/execution_engines/aureon_queen_trade_executor.py)** | Execute live trades |
-| **[4_output/performance_metrics/aureon_historical_backtest.py](4_output/performance_metrics/aureon_historical_backtest.py)** | Run backtesting |
+| **[scripts/aureon_ignition.py](scripts/aureon_ignition.py)** | Master launcher (default = safe dry-run; `--live` for trading) |
+| **[run_hnc_live.py](run_hnc_live.py)** | Interactive HNC terminal — Queen cognition loop |
+| **[aureon/trading/aureon_queen_trade_executor.py](aureon/trading/aureon_queen_trade_executor.py)** | Trade executor module (used by ignition) |
+| **[aureon/analytics/aureon_historical_backtest.py](aureon/analytics/aureon_historical_backtest.py)** | Run historical backtests |
+| **[scripts/traders/paperTradeSimulation.ts](scripts/traders/paperTradeSimulation.ts)** | TypeScript paper-trade simulation (run with `npx ts-node`) |
 
 ---
 
@@ -132,16 +137,17 @@ server/supabase/
 
 | Capability | Document Section | Command |
 |-----------|----------|---------|
-| **Execute live trades** | [CAPABILITIES.md#use-case-1](CAPABILITIES.md#🎯-use-case-1-i-want-to-trade-actively-live) | `python3 3_forcing/execution_engines/aureon_queen_trade_executor.py` |
-| **Test strategies** | [CAPABILITIES.md#use-case-2](CAPABILITIES.md#🧪-use-case-2-i-want-to-test-a-strategy-paper-trading) | `python3 scripts/paperTradeSimulation.ts` |
-| **Validate strategies** | [CAPABILITIES.md#use-case-3](CAPABILITIES.md#📊-use-case-3-i-want-to-validate-a-strategy-backtesting) | `python3 4_output/performance_metrics/aureon_historical_backtest.py` |
-| **Monitor portfolio** | [CAPABILITIES.md#use-case-4](CAPABILITIES.md#💼-use-case-4-i-want-to-monitor-my-portfolio) | `python3 4_output/portfolio_management/check_portfolio.py` |
-| **Detect bots** | [CAPABILITIES.md#use-case-5](CAPABILITIES.md#🤖-use-case-5-i-want-to-detect-market-manipulation-bots) | `python3 2_dynamics/trading_logic/aureon_bot_intelligence_profiler.py` |
-| **Analyze manipulation** | [CAPABILITIES.md#use-case-6](CAPABILITIES.md#🔍-use-case-6-i-want-to-analyze-historical-market-manipulation) | `python3 2_dynamics/trading_logic/aureon_historical_manipulation_hunter.py` |
-| **Generate signals** | [CAPABILITIES.md#use-case-7](CAPABILITIES.md#🎵-use-case-7-i-want-to-use-harmonic-signal-generation) | `python3 1_substrate/frequencies/aureon_planetary_harmonic_sweep.py` |
+| **Run the system (safe)** | [RUNNING.md](RUNNING.md) | `python scripts/aureon_ignition.py` |
+| **Run live trading** | [RUNNING.md](RUNNING.md#d-live-trade-with-real-money-️) | `python scripts/aureon_ignition.py --live` |
+| **Test strategies (dry-run)** | [CAPABILITIES.md#use-case-2](CAPABILITIES.md#🧪-use-case-2-i-want-to-test-a-strategy-paper-trading) | `python scripts/aureon_ignition.py` |
+| **Validate strategies** | [CAPABILITIES.md#use-case-3](CAPABILITIES.md#📊-use-case-3-i-want-to-validate-a-strategy-backtesting) | `python aureon/analytics/aureon_historical_backtest.py` |
+| **Monitor portfolio** | [CAPABILITIES.md#use-case-4](CAPABILITIES.md#💼-use-case-4-i-want-to-monitor-my-portfolio) | `python scripts/diagnostics/check_portfolio.py` |
+| **Detect bots** | [CAPABILITIES.md#use-case-5](CAPABILITIES.md#🤖-use-case-5-i-want-to-detect-market-manipulation-bots) | `python aureon/bots_intelligence/aureon_bot_intelligence_profiler.py` |
+| **Analyze manipulation** | [CAPABILITIES.md#use-case-6](CAPABILITIES.md#🔍-use-case-6-i-want-to-analyze-historical-market-manipulation) | `python aureon/analytics/aureon_historical_manipulation_hunter.py` |
+| **Generate signals** | [CAPABILITIES.md#use-case-7](CAPABILITIES.md#🎵-use-case-7-i-want-to-use-harmonic-signal-generation) | `python aureon/harmonic/aureon_planetary_harmonic_sweep.py` |
 | **Research patterns** | [CAPABILITIES.md#use-case-8](CAPABILITIES.md#📚-use-case-8-i-want-to-research-ancient-wisdom-patterns) | `ls research/wisdom_traditions/` |
 | **Understand HNC** | [CAPABILITIES.md#use-case-9](CAPABILITIES.md#🧬-use-case-9-i-want-to-understand-hnc-theory) | [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) |
-| **Predict timing** | [CAPABILITIES.md#use-case-10](CAPABILITIES.md#⏱️-use-case-10-i-want-precise-timing-predictions-eta) | See `4_output/trade_outputs/eta_verification_history.json` |
+| **Interactive HNC terminal** | [`run_hnc_live.py`](run_hnc_live.py) | `python run_hnc_live.py` |
 
 ---
 
@@ -149,23 +155,30 @@ server/supabase/
 
 ### By Name
 ```bash
-python3 META/PATH_REGISTRY.py <filename>
-# Example: python3 META/PATH_REGISTRY.py bot_census_registry.json
+# Most active code lives in aureon/ — use grep/find for fast lookup
+find aureon -name "<filename>"
+grep -r "<symbol>" aureon/
 ```
 
 ### By Domain
 ```bash
-# Browse by domain:
-# research/          → Domain I (Ancient Convergence)
-# 1_substrate/       → Domain IV Layer 1 (Substrate)
-# 2_dynamics/        → Domain IV Layer 2 (Dynamics)
-# 3_forcing/         → Domain IV Layer 3 (Forcing)
-# 4_output/          → Domain IV Layer 4 (Output)
-# frontend/api/etc/  → Domain VI (Platform)
+# Browse the active codebase by domain:
+# aureon/                → Main Python package (715 modules, 24 domains)
+# aureon/harmonic/       → HNC math, FFT, planetary sweep
+# aureon/queen/          → Queen AI decision layer
+# aureon/scanners/       → Bot & wave scanners
+# aureon/exchanges/      → Kraken, Capital, Alpaca, Binance
+# aureon/trading/        → Order execution & risk
+# aureon/portfolio/      → Position & P&L tracking
+# aureon/analytics/      → Backtests & forensics
+# scripts/               → CLI entry points (aureon_ignition.py is the launcher)
+# research/              → Ancient wisdom databases
+# docs/                  → All documentation
+# frontend/              → React + Vite dashboard
 ```
 
 ### By Purpose
-See [QUICK_START.md](QUICK_START.md) for complete mapping of purposes → files → commands
+See [QUICK_START.md](QUICK_START.md) and [`docs/MODULES_AT_A_GLANCE.md`](docs/MODULES_AT_A_GLANCE.md) for full mapping.
 
 ---
 
@@ -209,19 +222,19 @@ See [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) for:
 1. Read [STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md) — How is it organized?
 2. Read [ARCHITECTURE.md](ARCHITECTURE.md) — What's the design?
 3. Read [DATA_FLOW.md](DATA_FLOW.md) — How does data move?
-4. Explore the code in 1_substrate/, 2_dynamics/, etc.
+4. Explore the code in `aureon/` (the active package — 715 modules across 24 domains)
 
 ### For Researchers
 1. Read [SWOT_ANALYSIS.md](SWOT_ANALYSIS.md) — What's the strategy?
 2. Read [docs/HNC_UNIFIED_WHITE_PAPER.md](docs/HNC_UNIFIED_WHITE_PAPER.md) — What's the theory?
-3. Read [META/DOMAIN_MAP.md](META/DOMAIN_MAP.md) — What are the 6 domains?
-4. Explore research/ and docs/research/validation_framework/
+3. Read [docs/research/READING_PATHS.md](docs/research/READING_PATHS.md) — 13-paper canon across 3 paths
+4. Explore research/ and docs/research/
 
 ### For Architects
 1. Read [ARCHITECTURE.md](ARCHITECTURE.md) — The PEFCφS formalism
 2. Read [DATA_FLOW.md](DATA_FLOW.md) — Complete system flow
-3. Read [META/DOMAIN_MAP.md](META/DOMAIN_MAP.md) — All 6 domains
-4. Study the layer structure (1_substrate/ through 4_output/)
+3. Read [docs/architecture/THEORY_TO_CODE.md](docs/architecture/THEORY_TO_CODE.md) — HNC equations → Python mapping
+4. Study the active code under `aureon/` (715 modules) and the HNC harmonic implementation
 
 ---
 
@@ -245,10 +258,10 @@ See [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) for:
 | Question | Answer |
 |----------|--------|
 | What does this system do? | See [README.md](README.md) or [CAPABILITIES.md](CAPABILITIES.md) |
+| **How do I run it?** | See [**RUNNING.md**](RUNNING.md) |
 | Does it actually work? | See [LIVE_PROOF.md](LIVE_PROOF.md) with real data |
-| How do I run X? | See [QUICK_START.md](QUICK_START.md) |
-| Where is file Y? | Run `python3 META/PATH_REGISTRY.py Y` |
-| How is it organized? | See [STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md) |
+| Where is file Y? | `find aureon -name "Y"` or `grep -r "Y" aureon/` |
+| How is it organized? | See [STRUCTURE_GUIDE.md](STRUCTURE_GUIDE.md) and [docs/MODULES_AT_A_GLANCE.md](docs/MODULES_AT_A_GLANCE.md) |
 | What's the strategy? | See [SWOT_ANALYSIS.md](SWOT_ANALYSIS.md) |
 | How does data flow? | See [DATA_FLOW.md](DATA_FLOW.md) |
 | What's the theory? | See [docs/HNC_UNIFIED_WHITE_PAPER.md](docs/HNC_UNIFIED_WHITE_PAPER.md) |
@@ -260,38 +273,41 @@ See [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) for:
 ```
 Root-Level Entry Points:
 ├─ README.md              ← Start here (proof-first approach)
-├─ CAPABILITIES.md        ← 10 use cases with commands
+├─ RUNNING.md             ← How to run the system (canonical)
+├─ CAPABILITIES.md        ← 10 use cases with backing modules
 ├─ LIVE_PROOF.md          ← Evidence in 4 stages
-├─ QUICK_START.md         ← Command & file reference
+├─ QUICK_START.md         ← Quick reference for commands & paths
 ├─ SWOT_ANALYSIS.md       ← Strategic analysis
 ├─ DATA_FLOW.md           ← Architecture diagrams
 ├─ AUDIT_SUMMARY.md       ← Consolidated analysis
 ├─ INDEX.md               ← You are here
 ├─ ARCHITECTURE.md        ← PEFCφS formalism
-└─ STRUCTURE_GUIDE.md     ← Layer navigation
+├─ STRUCTURE_GUIDE.md     ← Layer & directory navigation
+└─ CLAUDE.md              ← AI-assistant onboarding
 
-System Directories:
-├─ 1_substrate/           ← Foundation layer
-├─ 2_dynamics/            ← Intelligence layer
-├─ 3_forcing/             ← Execution layer
-├─ 4_output/              ← Results layer
-├─ research/              ← Domain I (Ancient research)
-├─ docs/                  ← Domain V (Theory)
-├─ frontend/api/server/   ← Domain VI (Platform)
-└─ META/                  ← Metadata & catalogs
+Active Codebase:
+├─ aureon/                ← Main Python package (715 modules · 24 domains)
+│   ├─ harmonic/          ← HNC math, FFT, planetary sweep
+│   ├─ queen/             ← Queen AI decision layer
+│   ├─ scanners/          ← Bot & wave scanners
+│   ├─ exchanges/         ← Kraken, Capital, Alpaca, Binance
+│   ├─ trading/           ← Order execution & risk
+│   ├─ portfolio/         ← Position & P&L tracking
+│   ├─ analytics/         ← Backtests & forensics
+│   ├─ bots_intelligence/ ← Bot fingerprinting
+│   ├─ wisdom/            ← Ghost Dance & sacred geometry
+│   └─ utils/             ← Adaptive Kelly, miner brain
+├─ scripts/               ← CLI entry points (aureon_ignition.py)
+├─ frontend/              ← React + Vite dashboard
+├─ docs/                  ← All documentation
+├─ research/              ← Ancient wisdom databases
+└─ tests/                 ← Pytest suite
 
-Research Files:
+Research:
 ├─ research/wisdom_traditions/    ← 12 civilization databases
 ├─ research/star_chart_decoders/  ← 7 decoder systems
 ├─ research/sacred_sites/         ← 24 sites + 10 ley lines
 └─ research/harmonic_frequencies/ ← φ, 528Hz, constants
-
-Metadata:
-├─ META/CATALOG.json              ← All 2,694 files indexed
-├─ META/PATH_REGISTRY.py          ← File lookup utility
-├─ META/DOMAIN_MAP.md             ← 6 domains overview
-├─ META/CROSS_REFERENCES.md       ← Old → new paths
-└─ META/FILE_INDEX.md             ← Alphabetical index
 ```
 
 ---

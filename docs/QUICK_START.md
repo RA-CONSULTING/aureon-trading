@@ -8,19 +8,19 @@ cp .env.example .env
 # Edit .env — add your NEW Binance API keys (not the exposed ones!)
 
 # 2. PREFLIGHT CHECK
-python3 check_live_environment.py
+python scripts/diagnostics/check_live_environment.py
 
 # 3. RUN STAGE 0 (testnet + dry-run, NO real money)
 export BINANCE_USE_TESTNET=true BINANCE_DRY_RUN=true
-python3 aureon_live.py --stage 0 --symbol BTCUSDT
+python aureon/trading/aureon_live.py --stage 0 --symbol BTCUSDT
 
 # 4. RUN STAGE 1 (testnet + real orders, testnet money)
 export BINANCE_USE_TESTNET=true BINANCE_DRY_RUN=false
-python3 aureon_live.py --stage 1 --symbol BTCUSDT --trades 3
+python aureon/trading/aureon_live.py --stage 1 --symbol BTCUSDT --trades 3
 
 # 5. RUN STAGE 2 (mainnet + real money — ONLY after 1+ hrs on testnet)
 export BINANCE_USE_TESTNET=false CONFIRM_LIVE=yes
-python3 aureon_live.py --stage 2 --symbol BTCUSDT
+python aureon/trading/aureon_live.py --stage 2 --symbol BTCUSDT
 ```
 
 ---
@@ -29,10 +29,10 @@ python3 aureon_live.py --stage 2 --symbol BTCUSDT
 
 | Command | Purpose |
 |---------|---------|
-| `python3 check_live_environment.py` | Pre-flight validation |
-| `python3 binance_trade_sample.py` | Test order placement logic |
-| `python3 binance_get_address.py BTC` | Retrieve deposit address |
-| `python3 aureon_live.py --stage 0 --symbol BTCUSDT` | Validate strategy (dry-run) |
+| `python scripts/diagnostics/check_live_environment.py` | Pre-flight validation |
+| `python aureon/exchanges/binance_trade_sample.py` | Test order placement logic |
+| `python aureon/exchanges/binance_get_address.py BTC` | Retrieve deposit address |
+| `python aureon/trading/aureon_live.py --stage 0 --symbol BTCUSDT` | Validate strategy (dry-run) |
 | `tail -f trade_audit.log` | Monitor live trades in real-time |
 
 ---

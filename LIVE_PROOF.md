@@ -2,6 +2,13 @@
 
 > **Complete evidence of backtesting, paper trading simulation, and live execution with HNC harmonic signal validation**
 
+> 🚀 **To actually RUN the system, see [`RUNNING.md`](RUNNING.md).**
+>
+> ℹ️ Some `4_output/...json` paths below refer to runtime-generated state files. These are produced when the system runs — you won't find them at those paths until you've executed the relevant module. The JSON paths in this doc reflect logical organization, not necessarily on-disk location of pre-existing files. To find runtime artifacts on your install, search by filename:
+> ```bash
+> find . -name "<filename>.json" -not -path "./.venv/*" -not -path "./node_modules/*"
+> ```
+
 ---
 
 ## Executive Summary
@@ -334,7 +341,7 @@ Performance:
 ## Trade Validation & Auditing
 
 ### Trade Profit Validation
-**File:** `4_output/performance_metrics/trade_profit_validator.py`
+**File:** `aureon/portfolio/trade_profit_validator.py`
 
 **Validation Pipeline:**
 ```python
@@ -464,10 +471,10 @@ Overall                   100% (285)   86% (344)      Hybrid strategy
 ### Run Backtesting
 ```bash
 # Spot trading backtest
-python3 4_output/performance_metrics/aureon_historical_backtest.py
+python3 aureon/analytics/aureon_historical_backtest.py
 
 # Margin trading backtest
-python3 4_output/performance_metrics/super_intelligence_backtest.py
+python3 aureon/analytics/super_intelligence_backtest.py
 
 # View results
 cat 4_output/performance_metrics/backtest_spot_results.json
@@ -477,10 +484,10 @@ cat 4_output/performance_metrics/backtest_margin_results.json
 ### Run Paper Trading
 ```bash
 # Start paper trading simulation
-python3 scripts/paperTradeSimulation.ts
+python scripts/aureon_ignition.py    # safe dry-run mode (default)
 
 # Monitor in real-time
-python3 4_output/portfolio_management/live_portfolio_growth_tracker.py
+python3 aureon/portfolio/live_portfolio_growth_tracker.py
 
 # View trade history
 cat 4_output/trade_outputs/paper_trade_history.json
@@ -489,19 +496,19 @@ cat 4_output/trade_outputs/paper_trade_history.json
 ### Check Live Trading
 ```bash
 # View current portfolio state
-python3 4_output/portfolio_management/check_portfolio.py
+python3 scripts/diagnostics/check_portfolio.py
 
 # View recent trades
-python3 4_output/portfolio_management/check_recent_trades.py
+python3 scripts/diagnostics/check_recent_trades.py
 
 # View detailed accounting
-python3 4_output/portfolio_management/king_accounting.py
+python3 aureon/bots/king_accounting.py
 ```
 
 ### Verify Trade Accuracy
 ```bash
 # Run trade validation
-python3 4_output/performance_metrics/trade_profit_validator.py
+python3 aureon/portfolio/trade_profit_validator.py
 
 # View audit trail
 cat 4_output/performance_metrics/trade_history_audit.json

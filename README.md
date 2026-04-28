@@ -2560,7 +2560,7 @@ DECREE LAYER (PRIME DIRECTIVE)
 | **1991-02-11** | Identity anchor | Gary Leckey temporal seed encoded as `DOB_HASH = 2111991` and `PRIME_SENTINEL_HZ = 2.111991` | `prime_sentinel_decree.py`, `aureon_seer.py`, `aureon_temporal_biometric_link.py` | Establishes the root authentication signature the rest of the system refers back to |
 | **2025-11** | Identity formalization | Creator/sentinel role, self-awareness layer, and package-level identity exports consolidated | `aureon_self_awareness.py`, `docs/PRIMELINES_IDENTITY.md`, `aureon/__init__.py` | Turns the symbolic identity layer into a codified runtime/documentation surface |
 | **2026-02-28** | Event anchor | EPIC-FURY strike window becomes the public-record timing reference used by the MAGAMYMAN and BUBBLEMAPS-6 analyses | `aureon/geopolitical_forensics.py` | Provides the real-world event-time anchor for the L(t) research cases |
-| **2026-03-03** | Autonomy runtime | Full autonomy loop formalized around live Binance prices, Trinity alignment, Nexus signals, and execution gating | `aureon_full_autonomy.py`, `INTEGRATION_TEST_STATUS.md` | Bridges research outputs into an automated decision engine |
+| **2026-03-03** | Autonomy runtime | Full autonomy loop formalized around live Binance prices, Trinity alignment, Nexus signals, and execution gating | `scripts/aureon_ignition.py`, `INTEGRATION_TEST_STATUS.md` | Bridges research outputs into an automated decision engine |
 | **2026-03-06** | Unified research layer | Emerald decoder, neutral forensics engine, harmonic nexus bridge, and test suite brought together as one documented layer | `aureon/decoders/emerald_spec.py`, `aureon/geopolitical_forensics.py`, `aureon/harmonic_nexus_bridge.py`, `tests/test_*.py` | This is the point where the repo can explain the whole stack end-to-end instead of as isolated motifs |
 | **2026-03 (extended)** | Unified Ancient Wisdom | Mogollon, Maya, and Celtic traditions decoded and connected to the Hermetic system via 5 universal harmonic threads; `--unified` and `--ancient` CLI flags added; 69 tests passing | `aureon/decoders/emerald_spec.py` | Completes the unified field picture: Egyptian + ancient wisdom = 8 civilisation nodes, one four-instruction operating system |
 
@@ -2731,7 +2731,7 @@ STATE + ARTIFACT TREE
 | Geopolitical forensics | Public-record | `aureon/geopolitical_forensics.py` | Explicitly neutral and pseudonymous only; no KYC or real-world attribution |
 | Harmonic bridge plasma event | Synthetic demo | `aureon/harmonic_nexus_bridge.py` demo anomaly | Test harness for clustering logic, not a claimed live plasma measurement |
 | Emerald decoder | Research mapping | `aureon/decoders/emerald_spec.py` | Structural/interpretive translation layer, not a historical claim engine |
-| Autonomy market feed | Live external data | Binance public REST endpoints in `aureon_full_autonomy.py` | Real market input with no simulated price feed |
+| Autonomy market feed | Live external data | Binance public REST endpoints in `scripts/aureon_ignition.py` | Real market input with no simulated price feed |
 | Autonomy state surfaces | Local persisted real state | `7day_*.json`, `active_position.json` | File-backed operational memory used for alignment and fallback logic |
 | Planetary network injection | Local derived artifact | `planetary_harmonic_network.json` | Deduplicated research graph enriched by bridge output |
 
@@ -2746,10 +2746,10 @@ STATE + ARTIFACT TREE
 | Forensic case catalog | **2 extreme cases** | `aureon/geopolitical_forensics.py` | MAGAMYMAN-001 and BUBBLEMAPS-6 |
 | Bridge demo anomaly mix | **1 public-record + 1 synthetic** | `aureon/harmonic_nexus_bridge.py` | Keeps cross-domain clustering reproducible in tests |
 | Planetary network snapshot | **25 entities / 125 signatures** | `planetary_harmonic_network.json` | Current repo-state metadata before additional injections |
-| Autonomy tracked symbols | **10 Binance pairs** | `aureon_full_autonomy.py` | `BTC`, `ETH`, `DOGE`, `SOL`, `LINK`, `UNI`, `LTC`, `ADA`, `AVAX`, `XRP` |
-| Autonomy execution threshold | **0.80** | `aureon_full_autonomy.py` | Required Trinity alignment for execution |
-| Max concurrent trades | **3** | `aureon_full_autonomy.py` | Hard cap per cycle |
-| Default loop interval | **10 seconds** | `aureon_full_autonomy.py` | Observation cadence |
+| Autonomy tracked symbols | **10 Binance pairs** | `scripts/aureon_ignition.py` | `BTC`, `ETH`, `DOGE`, `SOL`, `LINK`, `UNI`, `LTC`, `ADA`, `AVAX`, `XRP` |
+| Autonomy execution threshold | **0.80** | `scripts/aureon_ignition.py` | Required Trinity alignment for execution |
+| Max concurrent trades | **3** | `scripts/aureon_ignition.py` | Hard cap per cycle |
+| Default loop interval | **10 seconds** | `scripts/aureon_ignition.py` | Observation cadence |
 | Required runtime state surfaces | **5 present** | repo root JSON files | `7day_adaptive_weights`, `7day_current_plan`, `7day_validation_history`, `7day_pending_validations`, `active_position` all exist in the current repo snapshot |
 | Execution state artifact | **not yet present in snapshot** | `autonomy_execution_state.json` | Created atomically on first logged cycle |
 | Machine-readable companion | **`unified_field_manifest.json`** | repo root JSON manifest | Canonical structured summary of timeline, thresholds, provenance, formulas, and runtime surfaces |
@@ -2761,9 +2761,9 @@ STATE + ARTIFACT TREE
 |----------------|------------|----------|---------|
 | Stone threshold | `L(t) > 2.8` | `aureon/decoders/emerald_spec.py` | Flags statistical anomaly strong enough to reject naive chance |
 | Golden Gate | `L(t) > phi × 2.8 = 4.5305` | `aureon/decoders/emerald_spec.py` | Higher harmonic threshold above the base Stone gate |
-| Learning score | `acc7d*0.4 + acc30d*0.3 + weight_quality*0.2 + maturity*0.1` | `aureon_full_autonomy.py` | Compresses learning quality into one scalar |
-| Trinity alignment | `learning*0.35 + health*0.25 + plan*0.40` | `aureon_full_autonomy.py` | Main execution readiness gate |
-| Execution decision | `alignment >= 0.80 and buy > 0` | `aureon_full_autonomy.py` | Opens the autonomy window |
+| Learning score | `acc7d*0.4 + acc30d*0.3 + weight_quality*0.2 + maturity*0.1` | `scripts/aureon_ignition.py` | Compresses learning quality into one scalar |
+| Trinity alignment | `learning*0.35 + health*0.25 + plan*0.40` | `scripts/aureon_ignition.py` | Main execution readiness gate |
+| Execution decision | `alignment >= 0.80 and buy > 0` | `scripts/aureon_ignition.py` | Opens the autonomy window |
 | Profit gate | `r = (V+G+P)/[V×(1-c)^2] - 1` | `adaptive_prime_profit_gate.py` | Position-quality / return gate in the execution stack |
 
 ### The Key Insight

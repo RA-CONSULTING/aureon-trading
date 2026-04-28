@@ -19,7 +19,7 @@ export $(cat .env | grep -v '^#' | xargs)
 pip install -r requirements.txt
 
 # Run Stage 0
-python scripts/aureon_ignition.py --live --stage 0 --symbol BTCUSDT --trades 1
+python aureon/trading/aureon_live.py --stage 0 --symbol BTCUSDT --trades 1
 ```
 
 **Expected Output:**
@@ -41,7 +41,7 @@ python scripts/aureon_ignition.py --live --stage 0 --symbol BTCUSDT --trades 1
 export BINANCE_DRY_RUN=false
 
 # Run Stage 1 (still on testnet)
-python scripts/aureon_ignition.py --live --stage 1 --symbol BTCUSDT --trades 3
+python aureon/trading/aureon_live.py --stage 1 --symbol BTCUSDT --trades 3
 ```
 
 **Expected Behavior:**
@@ -59,7 +59,7 @@ python scripts/aureon_ignition.py --live --stage 1 --symbol BTCUSDT --trades 3
 1. ✅ Stage 0 & Stage 1 completed and validated
 2. ✅ NEW Binance API key generated (NOT the exposed one from chat)
 3. ✅ API key restricted: **SPOT trading only**, **no withdrawals**, **IP whitelisted**
-4. ✅ Deposit address retrieved via `python binance_get_address.py BTC` (or your base asset)
+4. ✅ Deposit address retrieved via `python aureon/exchanges/binance_get_address.py BTC` (or your base asset)
 5. ✅ Funds transferred from bank → Binance wallet
 
 ```bash
@@ -70,7 +70,7 @@ export BINANCE_USE_TESTNET=false
 export CONFIRM_LIVE=yes
 
 # Run Stage 2 with conservative trade count
-python scripts/aureon_ignition.py --live --stage 2 --symbol BTCUSDT --trades 1
+python aureon/trading/aureon_live.py --stage 2 --symbol BTCUSDT --trades 1
 ```
 
 **⚠️ WARNING:** Real capital will be spent. Verify you have:
@@ -206,7 +206,10 @@ The dashboard now talks to a lightweight command gateway so you can start/stop l
 
 ### Start the gateway
 
+The command server lives in the `server/` directory (the repo root has no `package.json`).
+
 ```bash
+cd server
 npm install              # once, ensures express/cors/ws are available
 npm run command-server   # starts server/nexus-command-server.ts (default port 8790)
 ```

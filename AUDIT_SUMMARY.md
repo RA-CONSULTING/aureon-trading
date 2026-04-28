@@ -289,7 +289,7 @@ All documentation now in place to understand the complete system architecture.
 → [`STRUCTURE_GUIDE.md`](STRUCTURE_GUIDE.md) → Navigate 4 layers
 
 **For "What are the domains?"**
-→ [`META/DOMAIN_MAP.md`](META/DOMAIN_MAP.md) → See 6 domains
+→ [`docs/MODULES_AT_A_GLANCE.md`](docs/MODULES_AT_A_GLANCE.md) → See 24 domains across 715 modules
 
 ---
 
