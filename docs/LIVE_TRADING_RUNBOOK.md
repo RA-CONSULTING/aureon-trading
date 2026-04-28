@@ -19,7 +19,7 @@ export $(cat .env | grep -v '^#' | xargs)
 pip install -r requirements.txt
 
 # Run Stage 0
-python aureon_live.py --stage 0 --symbol BTCUSDT --trades 1
+python scripts/aureon_ignition.py --live --stage 0 --symbol BTCUSDT --trades 1
 ```
 
 **Expected Output:**
@@ -41,7 +41,7 @@ python aureon_live.py --stage 0 --symbol BTCUSDT --trades 1
 export BINANCE_DRY_RUN=false
 
 # Run Stage 1 (still on testnet)
-python aureon_live.py --stage 1 --symbol BTCUSDT --trades 3
+python scripts/aureon_ignition.py --live --stage 1 --symbol BTCUSDT --trades 3
 ```
 
 **Expected Behavior:**
@@ -70,7 +70,7 @@ export BINANCE_USE_TESTNET=false
 export CONFIRM_LIVE=yes
 
 # Run Stage 2 with conservative trade count
-python aureon_live.py --stage 2 --symbol BTCUSDT --trades 1
+python scripts/aureon_ignition.py --live --stage 2 --symbol BTCUSDT --trades 1
 ```
 
 **⚠️ WARNING:** Real capital will be spent. Verify you have:

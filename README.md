@@ -131,13 +131,13 @@ If Aureon has given you an edge, saved you from a bad trade, or simply opened yo
 
 | 🏦 **Trader** | 🔧 **Developer** | 🔬 **Researcher** |
 |---|---|---|
-| [Quick Start](#quick-start-war-room-dashboard) | [Architecture Overview](#architecture-overview) | [Ancient Convergence](docs/research/ANCIENT_CONVERGENCE.md) |
+| [**How to Run →**](RUNNING.md) | [Architecture Overview](#architecture-overview) | [Ancient Convergence](docs/research/ANCIENT_CONVERGENCE.md) |
 | [Scripts Index](docs/SCRIPTS_INDEX.md) | [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Bot Intelligence](docs/research/BOT_INTELLIGENCE.md) |
 | [Exchange Setup](#configuration) | [Intelligence Wiring](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Financial Exposure](docs/research/FINANCIAL_EXPOSURE.md) |
 | [Dashboard Guide](docs/dashboards/DASHBOARD_GUIDE.md) | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | [Unified Field](docs/research/UNIFIED_FIELD.md) |
 | [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | [Contributing](docs/CONTRIBUTING.md) | [Counter-Strategies](docs/research/COUNTER_STRATEGIES.md) |
 
-> **New here?** Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) for guided learning paths. See the [Full Documentation Index](docs/INDEX.md) for all 180+ docs.
+> **Getting started?** See [`RUNNING.md`](RUNNING.md) for verified, working run instructions. **New to the project?** Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) for guided learning paths. See the [Full Documentation Index](docs/INDEX.md) for all 180+ docs.
 
 </div>
 
@@ -272,21 +272,25 @@ timeline
 
 ---
 
-### 🧪 How to Become a Beta Tester (2 minutes)
+### 🧪 How to Get Started (2 minutes)
 
+**See [`RUNNING.md`](RUNNING.md) for complete, verified run instructions.**
+
+Quick path:
 ```bash
-# 1. Fork the repo at https://github.com/RA-CONSULTING/aureon-trading
-# 2. Clone your fork
-git clone https://github.com/YOUR-USERNAME/aureon-trading.git
+# 1. Clone the repo
+git clone https://github.com/RA-CONSULTING/aureon-trading.git
 cd aureon-trading
 
-# 3. Install dependencies
+# 2. Install dependencies
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 4. Run in dry-run mode — zero API keys required
-python aureon_full_autonomy.py --dry-run
+# 3. Run in safe dry-run mode — zero API keys required
+python scripts/aureon_ignition.py
 ```
+
+Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join the Discussion tab.
 
 Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join the Discussion tab.
 

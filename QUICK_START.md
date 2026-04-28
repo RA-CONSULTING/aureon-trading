@@ -24,24 +24,20 @@
   → [`META/DOMAIN_MAP.md`](META/DOMAIN_MAP.md)  
   Overview of Ancient Research, Financial Exposure, Bot Intelligence, Trading, HNC, and Platform
 
-### Run Paper Trading
+### Run Paper Trading (Safe Dry-Run Mode)
 ```bash
-# Start a paper trading session
-npm run paper-trade
-# or
-python3 scripts/paperTradeSimulation.ts
+# See RUNNING.md for complete instructions with prerequisite setup
+# The easiest path: run the system in default safe mode (no real trades)
+python scripts/aureon_ignition.py
 
-# Monitor trades in real-time
-python3 4_output/portfolio_management/live_portfolio_growth_tracker.py
-
-# View paper trade history
-cat 4_output/trade_outputs/paper_trade_history.json
+# For detailed run instructions (testnet, live trading, etc.):
+# → See RUNNING.md
 ```
 
-**Files:**
-- Execution: `scripts/paperTradeSimulation.ts`
-- Results: `4_output/trade_outputs/paper_trade_history.json`
-- Monitoring: `4_output/portfolio_management/live_portfolio_growth_tracker.py`
+**For detailed setup, configuration, and all available trading modes:**
+- See [`RUNNING.md`](RUNNING.md) for verified working commands
+- Complete walkthrough from setup to live trading
+- Prerequisite checklist and common issues
 
 ### Run Backtesting
 ```bash
