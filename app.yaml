@@ -75,6 +75,8 @@ services:
         value: "true"
 
       # Trading mode
+      # ⚠️ SAFETY WARNING: These defaults prevent real money trading on deployment.
+      # CHANGE THESE ONLY AFTER TESTING AND VERIFICATION.
       - key: LIVE
         scope: RUN_TIME
         value: "1"
@@ -83,13 +85,13 @@ services:
         value: "1"
       - key: KRAKEN_DRY_RUN
         scope: RUN_TIME
-        value: "false"
+        value: "true"
       - key: BINANCE_DRY_RUN
         scope: RUN_TIME
-        value: "false"
+        value: "true"
       - key: ALPACA_DRY_RUN
         scope: RUN_TIME
-        value: "false"
+        value: "true"
 
       # Supabase for realtime dashboard data + audit logging
       - key: SUPABASE_URL
