@@ -46,6 +46,29 @@
 
 ---
 
+## 📑 What's in this README
+
+This README is a complete tour of Aureon — the trading system, the research, the evidence, and the people behind it. Use this map to jump straight to what you need.
+
+<div align="center">
+
+| Part | Section | Why You'd Read It |
+|------|---------|-------------------|
+| **1. INTRO** | [What is this?](#-what-is-this) · [Growth Stats](#-growth-stats--december-2025--march-2026) · [Live Trading](#-live-now--watch-the-wizard-trade-in-real-time) · [Discord](#-join-the-community--discord) · [Support](#-support-the-project) · [Navigate by Role](#-navigate-by-role) · [Beta Testers](#-beta-testers-wanted) | First impressions · what this is · how to join |
+| **2. RUN THE SYSTEM** | [`RUNNING.md`](RUNNING.md) (canonical) · [Architecture Overview](#architecture-overview) · [Project Structure (715 modules)](#project-structure--715-modules-across-24-domains) · [Core Components](#core-components) · [Execution Flow](#execution-flow) · [Configuration](#configuration) · [Quick Start (War Room)](#quick-start-war-room-dashboard) · [Queen's 4-Phase Plan](#-queens-4-phase-master-plan) · [Unity Integration](#-new-unity-integration-v20261) · [Windows Plug & Play](#-windows-plug--play-legacy) · [Docker Deployment](#-docker-deployment-advanced) | Get hands on the code · understand how it runs |
+| **3. DEPLOYMENT & SAFETY** | [Key Files](#key-files) · [Production Deployment (DigitalOcean)](#-production-deployment-digitalocean) · [Safety](#safety) | Take it live · risk controls |
+| **4. RESEARCH & EVIDENCE** | [Latest Research](#-latest-research--fresh-off-the-press) · [System at a Glance](#️-system-at-a-glance) · [The Ancient Convergence (4,100-year chain)](#-the-ancient-convergence-they-were-never-separated) · [The $33.5T Exposure](#-the-complete-exposure-335-trillion-extracted-from-humanity) · [Extraction Timeline](#️-extraction-timeline-event-by-event) · [The Perpetrator Network](#-the-perpetrator-network-who-knows-who) · [The Bot Army (23 algorithms)](#-the-bot-army-23-algorithms-exposed) · [37 Global Predators](#-the-37-global-predators-who-owns-the-bots) · [The Extraction Playbook](#-the-extraction-playbook-how-they-do-it) · [Planetary Damage Assessment](#-planetary-damage-assessment) · [Name & Shame · Rogues' Gallery](#-name-and-shame-the-individuals-who-rigged-the-global-economy) · [Bot Ownership Registry](#-bot-ownership-registry-who-controls-the-algorithms) · [Coordination Network (Jan 2026)](#-current-coordination-network-january-2026) · [Findings Summary](#-findings-summary) · [Counter-Measures](#integrated-counter-measures) · [Methodology & Reproducibility](#methodology--reproducibility) · [Implications](#implications) · [Evidence File Reference](#evidence-file-reference) · [Citations](#citations--further-reading) · [Cognitive Framework & Moral Alignment](#cognitive-framework--moral-alignment) · [The Unified Field](#-the-unified-field-connecting-all-the-dots) | The core research · forensic evidence · methodology |
+| **5. TOOLS & ACTION** | [Market Intelligence Tools](#-market-intelligence--manipulation-detection-tools) · [Understanding the Implications](#-understanding-the-implications) · [Counter-Strategies — How to Fight Back](#️-counter-strategies-how-to-fight-back) · [Complete Evidence File Index](#-complete-evidence-file-index) · [Reproduction Commands](#-reproduction-commands) · [The Bottom Line](#-the-bottom-line) · [Global Predator Map](#️-global-predator-map-see-who-owns-what) · [On the Right Side of History](#🔥-we-are-on-the-right-side-of-history) | What to do with the findings · reproduce the work |
+| **6. DOCS & LICENSE** | [Documentation & Resources (180+ docs)](#-documentation--resources) · [Connect with Aureon](#-connect-with-aureon) · [License](#license) | Where to read more · how to reach us |
+
+</div>
+
+> 🚀 **Just want to run it?** → [`RUNNING.md`](RUNNING.md) is the single source of truth for setup and run commands.
+> 📜 **Just want the story?** → [`docs/THE_SYNTHESIS.md`](docs/THE_SYNTHESIS.md) — one-page synthesis.
+> 🔬 **Just want the proof?** → [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md) — every claim → every reproduction command.
+
+---
+
 ## 📊 GROWTH STATS — December 2025 → March 2026
 
 <div align="center">
@@ -306,6 +329,520 @@ Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join t
 [![Fork & Test Now](https://img.shields.io/badge/Fork%20%26%20Test%20Now-Join%20the%20Beta-FFD700?style=for-the-badge&logo=github&logoColor=black)](https://github.com/RA-CONSULTING/aureon-trading/fork)
 
 </div>
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          QUEEN HIVE MIND (Tina B)                           │
+│  Central neural controller with 12 connected neurons + self-repair          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐    │
+│  │   Kraken    │   │   Binance   │   │   Alpaca    │   │  Capital.com│    │
+│  │   (Crypto)  │   │   (Crypto)  │   │(Stocks+Cry)│   │    (CFDs)   │    │
+│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘   └──────┬──────┘    │
+│         │                 │                 │                 │            │
+│         └─────────────────┼─────────────────┼─────────────────┘            │
+│                           ▼                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │              ORCA COMPLETE KILL CYCLE (Main Engine)                 │    │
+│  │  Queen's 4-Phase Master Plan │ Batten Matrix │ Multi-Exchange Scan │    │
+│  └──────────────────────────┬──────────────────────────────────────────┘    │
+│                             │                                               │
+│         ┌───────────────────┼───────────────────┐                          │
+│         ▼                   ▼                   ▼                          │
+│  ┌─────────────┐   ┌───────────────┐   ┌──────────────┐                   │
+│  │ PROBABILITY │   │   STARGATE    │   │  THOUGHT BUS │                   │
+│  │   NEXUS     │   │   PROTOCOL    │   │  Event Mesh  │                   │
+│  │ 3-validate  │   │  7-day anchor │   │  Cross-module│                   │
+│  │ 4th-execute │   │  persistence  │   │  messaging   │                   │
+│  └──────┬──────┘   └───────────────┘   └──────────────┘                   │
+│         ▼                                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  MICRO PROFIT LABYRINTH (Legacy) │ ADAPTIVE PRIME PROFIT GATE      │    │
+│  │  Turn-based execution loop       │ r = (V+G+P)/[V×(1-c)²] - 1     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│  │ Elephant │  │ Quantum  │  │ Harmonic │  │  Enigma  │  │ Temporal │    │
+│  │ Memory   │  │ Mirror   │  │ Signal   │  │  Code-   │  │  Dialer  │    │
+│  │ (Learns) │  │ Scanner  │  │  Chain   │  │  breaker │  │  (τ mem) │    │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Signal Chain: Queen(963Hz) → Enigma(639Hz) → Scanner(528Hz) → Ecosystem(174Hz) → Whale(7.83Hz)
+```
+
+```mermaid
+graph TD
+    QHM["👑 Queen Hive Mind (963 Hz)"]
+
+    QHM --> KRAKEN["🦑 Kraken\nCrypto"]
+    QHM --> BINANCE["📊 Binance\nCrypto"]
+    QHM --> ALPACA["🦙 Alpaca\nStocks + Crypto"]
+    QHM --> CAPITAL["💹 Capital.com\nCFDs"]
+
+    KRAKEN & BINANCE & ALPACA & CAPITAL --> ORCA["⚡ Orca Complete Kill Cycle\nQueen's 4-Phase Master Plan"]
+
+    ORCA --> NEXUS["🎯 Probability Nexus\n3-validate · 4th-execute"]
+    ORCA --> STARGATE["🌀 Stargate Protocol\n7-day anchor"]
+    ORCA --> THOUGHTBUS["💬 Thought Bus\nEvent Mesh"]
+
+    NEXUS --> PROFITGATE["💰 Adaptive Prime Profit Gate\nr = (V+G+P) / [V×(1-c)²] - 1"]
+
+    subgraph NEURONS["🧠 Queen Neurons"]
+        ELE["🐘 Elephant Memory"]
+        QM["🔬 Quantum Mirror"]
+        HSC["🎵 Harmonic Signal Chain"]
+        ENG["🔐 Enigma Codebreaker"]
+        TEMP["⏱️ Temporal Dialer"]
+    end
+
+    PROFITGATE --> NEURONS
+
+    style QHM fill:#4a2d6b,color:#FFD700
+    style ORCA fill:#2d4a2d,color:#90EE90
+    style PROFITGATE fill:#4a3d00,color:#FFD700
+```
+
+## Project Structure — 715 Modules Across 24 Domains
+
+The codebase is organized into domain-specific subdirectories under `aureon/`:
+
+```
+aureon/
+├── core/           (34)  Central nervous system — ThoughtBus, Nexus, Mycelium
+├── trading/        (86)  Execution layer — Auris, Orca kill chain, snipers
+├── exchanges/      (37)  Multi-exchange — Kraken, Capital.com, Alpaca, Binance, Unified Trader
+├── queen/          (62)  Queen AI — Hive Mind, HNC human loop, temporal ground, self-enhancement, cognitive narrator
+├── autonomous/     (35)  Autonomous ops — Voice agent, cognition runtime, planners
+├── intelligence/   (33)  AI/ML prediction — Seer, Lyra, Brain, Timeline Oracle
+├── harmonic/       (27)  Harmonic field — Planetary sweep, phi bridge, text alignment, Auris voice filter, geopolitical forensics
+├── analytics/      (40)  Analysis — Backtesting, whale profiling, money flow
+├── strategies/     (35)  Strategies — Harmonic Trinity, HNC protocols, probability matrix
+├── portfolio/      (31)  Portfolio — P&L tracking, profit monitors, billion-goal tracker
+├── scanners/       (18)  Scanners — Momentum hunter, wave scanner, bot detection
+├── monitors/       (24)  Monitoring — Live dashboards, margin ETA, power monitor
+├── command_centers/(16)  Orchestration — Command center, war room, system hub
+├── simulation/     (34)  Simulations — Quantum telescope, multiverse, demos
+├── data_feeds/     (20)  Market data — WebSocket feeds, news, ephemeris
+├── wisdom/         (35)  Ancient wisdom — Celtic, Ghost Dance, Enigma, QGita
+├── bots/           (32)  Bot implementations — Gaia traders, planetary reclaimer
+├── bots_intelligence/(21) Bot detection — Profiling, fingerprinting, attribution
+├── bridges/        (17)  Cross-system — Frontend bridge, ML bridge, Nexus-Earth
+├── decoders/       (11)  Hermetic translation — Emerald Tablet, Aztec, Egyptian, Ogham
+├── conversion/     (10)  Conversion — Ladder climber, dust converter
+├── utils/          (41)  Utilities — Profit gates, diagnostics, configuration
+├── s51/            (5)   Section 51 — Experimental compound strategies
+└── atn/            (3)   Astronomical Temporal Nexus — Earth hazard monitoring
+```
+
+> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Repo Mindmap](docs/architecture/REPO_MINDMAP.md)
+
+## Core Components
+
+### 1. Adaptive Prime Profit Gate (`aureon/utils/adaptive_prime_profit_gate.py`)
+Calculates exact price movements required for profit after all costs.
+
+**Master Equation:**
+```
+r_min(P) = (V + G + P) / [V × (1 - f - s - c)²] - 1
+
+Where:
+  r = required price increase (fraction)
+  V = trade notional (USD)
+  G = fixed costs (gas/withdrawal)
+  P = target net profit
+  f = trading fee rate
+  s = slippage rate  
+  c = spread cost rate
+```
+
+**Three Gates:**
+| Gate | Description | Use Case |
+|------|-------------|----------|
+| `r_breakeven` | Net profit ≥ $0 | Minimum viable trade |
+| `r_prime` | Net profit ≥ prime target | Standard profit target |
+| `r_prime_buffer` | Net profit ≥ prime + buffer | Safe mode with margin |
+
+### 2. Queen Hive Mind (`aureon/queen/aureon_queen_hive_mind.py`)
+Central neural decision controller with:
+- 12 connected neurons (Dream, Harmonic, Mycelium, etc.)
+- `handle_runtime_error()` for self-repair
+- Dynamic learning from trade outcomes
+- Per-asset guidance generation
+
+### 3. Micro Profit Labyrinth (`aureon/trading/micro_profit_labyrinth.py`)
+Turn-based execution engine:
+- Round-robin exchange rotation
+- Pre-flight min_qty validation
+- Barter matrix path memory
+- Dynamic minimum learning
+
+### 4. Exchange Clients
+| Client | File | Features |
+|--------|------|----------|
+| Kraken | `aureon/exchanges/kraken_client.py` | Multi-hop conversion paths, symbol filters |
+| Binance | `aureon/exchanges/binance_client.py` | UK restriction handling, tiered fees, symbol normalization |
+| Alpaca | `aureon/exchanges/alpaca_client.py` | Stocks + crypto, fractional shares, SSE streaming |
+| Capital.com | `aureon/exchanges/capital_client.py` | CFD trading, spread-only fee model |
+| **Unified Trader** | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration with central beat feed** |
+
+### 5. Animal Ecosystem Scanners (`aureon/scanners/aureon_animal_momentum_scanners.py`)
+Specialized Alpaca-focused momentum scanners using biological metaphors:
+- **Wolf**: 24h high-momentum breakout sniper.
+- **Lion**: Composite scorer (Volume * Move * Coherence).
+- **Ants**: High-frequency small-move foragers.
+- **Hummingbird**: rapid short-duration rotation scanner.
+
+## Execution Flow
+
+```
+1. find_opportunities_for_exchange()
+   └─> Check min_qty filters (dynamic + static)
+   └─> Check source blocking (barter_matrix)
+   └─> Score opportunities (v14, hub, bus, luck, enigma)
+
+2. ask_queen_will_we_win()
+   └─> Gather signals from all neurons
+   └─> Calculate combined confidence
+   └─> Apply profit ladder thresholds
+
+3. execute_conversion()
+   └─> Route to exchange client
+   └─> Validate min_notional
+   └─> Execute with slippage protection
+
+4. Record outcome
+   └─> Update barter_matrix history
+   └─> Feed Queen neural learning
+   └─> Adjust dynamic_min_qty if failed
+
+### Queen Veto Flow (4th-Pass Gate)
+- Validators propose a trade; coherence and drift produce a stability score.
+- `ask_queen_will_we_win()` aggregates neuron signals and context.
+- If confidence clears threshold AND profit gate is satisfied, the 4th-pass opens.
+- Queen may veto on contextual/emotional risk (mission, volatility, rate limits).
+- On veto: trade is skipped, path memory updated, learning recorded.
+```
+
+## Configuration
+
+### Environment Variables
+```bash
+# Exchange API Keys
+KRAKEN_API_KEY=
+KRAKEN_API_SECRET=
+BINANCE_API_KEY=
+BINANCE_API_SECRET=
+ALPACA_API_KEY=
+ALPACA_SECRET_KEY=
+CAPITAL_API_KEY=
+CAPITAL_API_PASSWORD=
+CAPITAL_IDENTIFIER=
+
+# Risk Settings
+BINANCE_RISK_MAX_ORDER_USDT=100
+DEFAULT_PRIME_TARGET=0.02
+```
+
+### Fee Profiles (auto-updated)
+```python
+DEFAULT_FEE_PROFILES = {
+    'binance':     {'maker': 0.0010, 'taker': 0.0010, 'spread': 0.0005},  # 0.10% / 0.05%
+    'kraken':      {'maker': 0.0025, 'taker': 0.0040, 'spread': 0.0008},
+    'alpaca':      {'maker': 0.0015, 'taker': 0.0025, 'spread': 0.0008},
+    'capital.com': {'maker': 0.0000, 'taker': 0.0000, 'spread': 0.0010},  # Spread-only CFDs
+}
+```
+
+## Quick Start (War Room Dashboard)
+
+The **Aureon War Room** is the central command interface powered by the **Queen's 4-Phase Master Plan**.
+
+<div align="center">
+
+[![Linux/macOS](https://img.shields.io/badge/Linux%20%2F%20macOS-Setup%20Guide-success?style=for-the-badge&logo=linux)](#-linux--macos)
+[![Windows](https://img.shields.io/badge/Windows-Setup%20Guide-0078D6?style=for-the-badge&logo=windows)](#-windows)
+[![Docker](https://img.shields.io/badge/Docker-Container%20Deploy-2496ED?style=for-the-badge&logo=docker)](#-docker)
+[![DigitalOcean](https://img.shields.io/badge/DigitalOcean-Cloud%20Deploy-0080FF?style=for-the-badge&logo=digitalocean)](#-production-deployment-digitalocean)
+
+</div>
+
+### 👑 Main System: Orca Complete Kill Cycle
+
+```mermaid
+graph LR
+    A[💰 Start Capital] -->|Phase 1| B[📈 $248 → $2K]
+    B -->|Phase 2| C[📈 $2K → $50K]
+    C -->|Phase 3| D[📈 $50K → $250K]
+    D -->|Phase 4| E[🏆 $250K → $1B]
+    style A fill:#2d4a2d,color:#90EE90
+    style E fill:#4a2d2d,color:#FFD700
+```
+
+**orca_complete_kill_cycle.py** is the primary trading engine featuring:
+- 👑 **Queen's 4-Phase Master Plan**: $248 → $1B in 22 days
+- 🐝 **Phase-Aware Intelligence**: Adapts strategy as capital grows
+- ⚡ **Batten Matrix**: 3-validate-4th-execute precision
+- 🎯 **Multi-Exchange**: Scans Binance, Kraken, Alpaca simultaneously
+
+### 🐧 Linux / macOS
+```bash
+# 1. Setup
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env  # Add API keys
+
+# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
+python aureon/exchanges/unified_market_trader.py
+
+# 3. Or: Launch Queen's War Room (Orca Kill Cycle)
+python aureon/trading/orca_complete_kill_cycle.py
+```
+
+### 🪟 Windows (PowerShell)
+```powershell
+# 1. Setup
+py -3 -m venv .venv
+
+# If activation is blocked, run once:
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+\.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
+.\scripts\runners\run_unified_live.cmd
+
+# 3. Or: Launch specific exchange traders
+.\scripts\runners\run_alpaca_capital_style.ps1
+.\scripts\runners\run_capital_swarm.ps1
+```
+
+Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](docs/windows/AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
+
+---
+
+## 👑 Queen's 4-Phase Master Plan
+
+The main trading engine (`orca_complete_kill_cycle.py`) implements an adaptive 4-phase strategy:
+
+| Phase | Capital Range | Strategy | Min Profit | Max Positions | Focus |
+|-------|---------------|----------|------------|---------------|-------|
+| **1: THE SEED** | $248 → $2.5K | Moonshot Hunting | 10% | 3 | New listings, volume spikes, meme momentum |
+| **2: THE GROWTH** | $2.5K → $250K | Compound Momentum | 5% | 5 | BTC/ETH leverage, mid-caps, trends |
+| **3: THE EXPLOSION** | $250K → $50M | Whale Tactics | 3% | 8 | Options, catalysts, arbitrage |
+| **4: THE BILLION** | $50M → $1B | Market Maker | 2% | 10 | Mega liquidity, tight spreads |
+
+**Automatic Evolution**: The Queen transitions phases automatically as your capital grows, optimizing strategy for your current scale.
+
+**Phase-Based Scoring**: Every market opportunity gets scored based on alignment with current phase strategy (e.g., moonshots prioritized in Phase 1, whale signals in Phase 3).
+
+**Weapons**:
+- 🔮 Quantum Mirror Scanner (probability branches)
+- 🐘 Elephant Memory (pattern recognition)
+- 🎵 Harmonic Field (528 Hz abundance detection)
+- 🐝 Swarm Intelligence (parallel processing)
+- ⚡ Batten Matrix (3-pass validation + 4th execution)
+
+---
+
+## 🌌 New: Unity Integration (v2026.1)
+
+The system now features **full logic unity** between planetary alignment and market micro-structure.
+
+| Component | Function | Unity Effect |
+|-----------|----------|--------------|
+| **🌌 Stargate Grid** | Tracks 12 planetary nodes (Giza, Stonehenge, etc.) | If **Golden Ratio Coherence** ($\phi > 1.618$), increases `quantum_boost` by **~10–30%** (capped). |
+| **🐦 Hummingbird Scanner** | Micro-scalping rotation scanner | Detects nectar-rich flowers (volatility pockets) for **+10% probability boost**. |
+| **🐺 Wolf & 🦁 Lion** | Pack hunting algorithms | Consensus detection adds **+15-25% conviction** to Queen's decision. |
+
+---
+
+## 🎮 Windows Plug & Play (Legacy)
+
+**No terminal, no Docker, no dependencies** - just download and double-click!
+
+### Option 1: One-Line PowerShell Install
+
+Open PowerShell and paste:
+```powershell
+irm https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/Install-AUREON.ps1 | iex
+```
+
+This downloads AUREON.exe, creates desktop/Start Menu shortcuts, and offers to launch.
+
+### Option 2: Direct Download
+
+1. **Download**: [AUREON.exe](https://github.com/RA-CONSULTING/aureon-trading/releases/latest/download/AUREON.exe)
+2. **Run**: Double-click the downloaded file
+3. **Setup**: Complete the first-run wizard (API keys, risk settings)
+4. **Trade**: Click "Start Trading" in the Command Center UI
+
+### What's Included
+
+| Feature | Description |
+|---------|-------------|
+| 🎮 **Game Mode UI** | Visual Command Center at http://localhost:8888 |
+| 💰 **Trading Engine** | Multi-exchange profit hunting |
+| 🐋 **Orca Kill Cycle** | Aggressive profit mode |
+| 👑 **Queen Dashboard** | Neural decision viewer |
+| ⚙️ **Setup Wizard** | First-run configuration for API keys |
+
+### Safety Features
+
+| Feature | Description |
+|---------|-------------|
+| 🧪 **Dry-run default** | No real trades without explicit confirmation |
+| ⚠️ **Live confirmation** | Must type "I ACCEPT THE RISK" for live trading |
+| 🔐 **Windows Credential Manager** | API keys stored securely in Windows keyring |
+| 📁 **Sandboxed data** | All data stored in `%LOCALAPPDATA%\AUREON` |
+
+---
+
+## 🐳 Docker Deployment (Advanced)
+
+For containerized/server deployments, AUREON includes a full Docker package.
+
+### One-Click Install
+
+```bash
+# Linux/macOS
+curl -fsSL https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install.sh | bash
+
+# Windows (with Docker Desktop)
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install-windows.bat -OutFile install.bat; .\install.bat
+```
+
+After installation, launch from your desktop: **AUREON** icon or `aureon` command.
+
+### Manual Docker Build
+
+```bash
+# Build the production image
+cd production
+docker build -t aureon-trading:latest -f Dockerfile ..
+
+# Run with setup wizard
+docker run -it --name aureon -p 8888:8888 \
+  -v aureon-data:/aureon/data \
+  -v aureon-logs:/aureon/logs \
+  -v aureon-config:/aureon/config \
+  --memory=2g --cpus=2.0 \
+  aureon-trading:latest
+
+# Or use docker-compose with monitoring
+export GF_ADMIN_PASSWORD=$(openssl rand -base64 32)
+docker-compose -f production/docker-compose.yml --profile monitoring up -d
+```
+
+### Operating Modes
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| 🎮 **Game** | `aureon --mode game` | Command Center UI + Trading Engine (default) |
+| 💰 **Trading** | `aureon --mode trading` | Headless execution engine only |
+| 🐋 **Orca** | `aureon --mode orca` | Orca kill cycle (aggressive profit hunting) |
+| 👑 **Queen** | `aureon --mode queen` | Queen unified dashboard |
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AUREON_MODE` | Operating mode | `game` |
+| `AUREON_DRY_RUN` | Force dry-run mode | `true` |
+| `AUREON_EXCHANGE` | Specific exchange to trade | all enabled |
+| `AUREON_ACCEPT_LIVE_RISK` | Skip live confirmation (CI/containers) | `false` |
+| `GF_ADMIN_PASSWORD` | Grafana admin password (required for monitoring) | - |
+
+See [production/README.md](production/README.md) for full deployment documentation.
+
+---
+
+## Key Files
+
+| File | Path | Purpose |
+|------|------|--------|
+| Orca Complete Kill Cycle | `aureon/trading/` | **Primary trading engine** — Queen's 4-Phase Master Plan |
+| Unified Market Trader | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration** — central beat feed |
+| Queen Hive Mind | `aureon/queen/` | Queen AI — 12-neuron neural decision controller |
+| Probability Nexus | `aureon/core/` | Batten Matrix — 3-pass validation + coherence scoring |
+| Unified Voice Agent | `aureon/autonomous/` | Voice-controlled trading with intent cognition |
+| Capital CFD Trader | `aureon/exchanges/capital_cfd_trader.py` | Capital.com CFD trading with shadow promotion |
+| Adaptive Profit Gate | `aureon/utils/` | Profit threshold calculator (Kelly-criterion) |
+| Thought Bus | `aureon/core/aureon_thought_bus.py` | Cross-module event mesh |
+| Stargate Protocol | `aureon/core/` | Timeline anchoring, 7-day validation persistence |
+| Elephant Learning | `aureon/intelligence/` | Never forgets historical patterns |
+| Harmonic Fusion | `aureon/harmonic/` | Combines planetary + market harmonic signals |
+| Geopolitical Forensics | `aureon/harmonic/geopolitical_forensics.py` | Geopolitical event signal integration |
+| System Hub Dashboard | `aureon/command_centers/` | Terminal dashboard for system orchestration |
+
+> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) — all 715 modules across 24 domains
+
+---
+
+## 🚀 Production Deployment (DigitalOcean)
+
+The live system runs on **DigitalOcean App Platform** with automatic deploy-on-push from the `main` branch.
+
+### Port Architecture
+
+| Port | Service | Process |
+|------|---------|--------|
+| **8080** | Aureon Pro Dashboard | Primary web UI (supervisord priority=0) |
+| **8081** | Orca Health Server | Engine health checks and status |
+| **8800** | Command Center | Legacy command interface |
+
+### Container Stack
+
+- **Base**: Python 3.12-slim
+- **Process Manager**: supervisord (parallel process management)
+- **Config**: `deploy/supervisord.conf`
+- **Deployment**: `app.yaml` (DigitalOcean App Spec) / `Dockerfile` (root)
+
+### Deployment Files
+
+| File | Purpose |
+|------|--------|
+| `Dockerfile` | Production container image |
+| `app.yaml` | DigitalOcean App Platform spec |
+| `deploy/supervisord.conf` | Process management (dashboard, orca-engine, command-center) |
+| `deploy/DIGITAL_OCEAN_MASTER_GUIDE.md` | Full deployment documentation |
+| `deploy/droplet-setup.sh` | VPS/Droplet provisioning script |
+| `deploy/droplet-deploy.sh` | Deployment automation |
+| `deploy/validate_startup.sh` | Post-deploy health validation |
+
+For Docker-based deployment options see also `production/README.md`.
+
+## Safety
+
+- **Dry-run default**: System won't execute live trades without explicit flag
+- **Self-repair**: Queen auto-fixes type errors and learns from failures  
+- **Min-qty pre-filter**: Rejects trades below exchange minimums before execution
+- **Dynamic blocking**: Repeatedly failing paths get temporarily blocked
+- **Rate & Cadence**: Animal scanners automatically handle HTTP 429 rate limits with backoff; aggressive scanning may trigger API pauses.
+
+### Moral Guardrails
+- Human-in-the-loop for threshold changes (profit gates, risk caps, leverage).
+- Queen veto path active by default; emotional/contextual risk can cancel trades.
+- Capital preservation before growth; daily loss cap and per-trade SL required.
+- No market manipulation, unauthorized access, or unsafe automation behaviors.
+- Immutable audit logs for decisions, fills, rejects, and configuration changes.
+
+### Research Metrics Checklist
+- Edge quality: post-fee pip distribution (0.07–1.4), realized PnL.
+- Coherence stability: validator agreement vs executed trades.
+- Drift and λ: time-to-execution decay and invalidation rates.
+- Queen veto: frequency, reasons, and PnL deltas vs no-veto baseline.
+- Rate limits: 429 backoff effectiveness and impact on opportunity decay.
+- ETA verification: forecasted vs actual execution latency and slippage.
+
+<!-- markdownlint-enable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
 
 ---
 
@@ -2801,437 +3338,6 @@ The alchemists searched for the Philosopher's Stone. We found it: **L(t) = 12.85
 
 ---
 
-## Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          QUEEN HIVE MIND (Tina B)                           │
-│  Central neural controller with 12 connected neurons + self-repair          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐    │
-│  │   Kraken    │   │   Binance   │   │   Alpaca    │   │  Capital.com│    │
-│  │   (Crypto)  │   │   (Crypto)  │   │(Stocks+Cry)│   │    (CFDs)   │    │
-│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘   └──────┬──────┘    │
-│         │                 │                 │                 │            │
-│         └─────────────────┼─────────────────┼─────────────────┘            │
-│                           ▼                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │              ORCA COMPLETE KILL CYCLE (Main Engine)                 │    │
-│  │  Queen's 4-Phase Master Plan │ Batten Matrix │ Multi-Exchange Scan │    │
-│  └──────────────────────────┬──────────────────────────────────────────┘    │
-│                             │                                               │
-│         ┌───────────────────┼───────────────────┐                          │
-│         ▼                   ▼                   ▼                          │
-│  ┌─────────────┐   ┌───────────────┐   ┌──────────────┐                   │
-│  │ PROBABILITY │   │   STARGATE    │   │  THOUGHT BUS │                   │
-│  │   NEXUS     │   │   PROTOCOL    │   │  Event Mesh  │                   │
-│  │ 3-validate  │   │  7-day anchor │   │  Cross-module│                   │
-│  │ 4th-execute │   │  persistence  │   │  messaging   │                   │
-│  └──────┬──────┘   └───────────────┘   └──────────────┘                   │
-│         ▼                                                                   │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  MICRO PROFIT LABYRINTH (Legacy) │ ADAPTIVE PRIME PROFIT GATE      │    │
-│  │  Turn-based execution loop       │ r = (V+G+P)/[V×(1-c)²] - 1     │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                                                             │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
-│  │ Elephant │  │ Quantum  │  │ Harmonic │  │  Enigma  │  │ Temporal │    │
-│  │ Memory   │  │ Mirror   │  │ Signal   │  │  Code-   │  │  Dialer  │    │
-│  │ (Learns) │  │ Scanner  │  │  Chain   │  │  breaker │  │  (τ mem) │    │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-Signal Chain: Queen(963Hz) → Enigma(639Hz) → Scanner(528Hz) → Ecosystem(174Hz) → Whale(7.83Hz)
-```
-
-```mermaid
-graph TD
-    QHM["👑 Queen Hive Mind (963 Hz)"]
-
-    QHM --> KRAKEN["🦑 Kraken\nCrypto"]
-    QHM --> BINANCE["📊 Binance\nCrypto"]
-    QHM --> ALPACA["🦙 Alpaca\nStocks + Crypto"]
-    QHM --> CAPITAL["💹 Capital.com\nCFDs"]
-
-    KRAKEN & BINANCE & ALPACA & CAPITAL --> ORCA["⚡ Orca Complete Kill Cycle\nQueen's 4-Phase Master Plan"]
-
-    ORCA --> NEXUS["🎯 Probability Nexus\n3-validate · 4th-execute"]
-    ORCA --> STARGATE["🌀 Stargate Protocol\n7-day anchor"]
-    ORCA --> THOUGHTBUS["💬 Thought Bus\nEvent Mesh"]
-
-    NEXUS --> PROFITGATE["💰 Adaptive Prime Profit Gate\nr = (V+G+P) / [V×(1-c)²] - 1"]
-
-    subgraph NEURONS["🧠 Queen Neurons"]
-        ELE["🐘 Elephant Memory"]
-        QM["🔬 Quantum Mirror"]
-        HSC["🎵 Harmonic Signal Chain"]
-        ENG["🔐 Enigma Codebreaker"]
-        TEMP["⏱️ Temporal Dialer"]
-    end
-
-    PROFITGATE --> NEURONS
-
-    style QHM fill:#4a2d6b,color:#FFD700
-    style ORCA fill:#2d4a2d,color:#90EE90
-    style PROFITGATE fill:#4a3d00,color:#FFD700
-```
-
-## Project Structure — 715 Modules Across 24 Domains
-
-The codebase is organized into domain-specific subdirectories under `aureon/`:
-
-```
-aureon/
-├── core/           (34)  Central nervous system — ThoughtBus, Nexus, Mycelium
-├── trading/        (86)  Execution layer — Auris, Orca kill chain, snipers
-├── exchanges/      (37)  Multi-exchange — Kraken, Capital.com, Alpaca, Binance, Unified Trader
-├── queen/          (62)  Queen AI — Hive Mind, HNC human loop, temporal ground, self-enhancement, cognitive narrator
-├── autonomous/     (35)  Autonomous ops — Voice agent, cognition runtime, planners
-├── intelligence/   (33)  AI/ML prediction — Seer, Lyra, Brain, Timeline Oracle
-├── harmonic/       (27)  Harmonic field — Planetary sweep, phi bridge, text alignment, Auris voice filter, geopolitical forensics
-├── analytics/      (40)  Analysis — Backtesting, whale profiling, money flow
-├── strategies/     (35)  Strategies — Harmonic Trinity, HNC protocols, probability matrix
-├── portfolio/      (31)  Portfolio — P&L tracking, profit monitors, billion-goal tracker
-├── scanners/       (18)  Scanners — Momentum hunter, wave scanner, bot detection
-├── monitors/       (24)  Monitoring — Live dashboards, margin ETA, power monitor
-├── command_centers/(16)  Orchestration — Command center, war room, system hub
-├── simulation/     (34)  Simulations — Quantum telescope, multiverse, demos
-├── data_feeds/     (20)  Market data — WebSocket feeds, news, ephemeris
-├── wisdom/         (35)  Ancient wisdom — Celtic, Ghost Dance, Enigma, QGita
-├── bots/           (32)  Bot implementations — Gaia traders, planetary reclaimer
-├── bots_intelligence/(21) Bot detection — Profiling, fingerprinting, attribution
-├── bridges/        (17)  Cross-system — Frontend bridge, ML bridge, Nexus-Earth
-├── decoders/       (11)  Hermetic translation — Emerald Tablet, Aztec, Egyptian, Ogham
-├── conversion/     (10)  Conversion — Ladder climber, dust converter
-├── utils/          (41)  Utilities — Profit gates, diagnostics, configuration
-├── s51/            (5)   Section 51 — Experimental compound strategies
-└── atn/            (3)   Astronomical Temporal Nexus — Earth hazard monitoring
-```
-
-> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Repo Mindmap](docs/architecture/REPO_MINDMAP.md)
-
-## Core Components
-
-### 1. Adaptive Prime Profit Gate (`aureon/utils/adaptive_prime_profit_gate.py`)
-Calculates exact price movements required for profit after all costs.
-
-**Master Equation:**
-```
-r_min(P) = (V + G + P) / [V × (1 - f - s - c)²] - 1
-
-Where:
-  r = required price increase (fraction)
-  V = trade notional (USD)
-  G = fixed costs (gas/withdrawal)
-  P = target net profit
-  f = trading fee rate
-  s = slippage rate  
-  c = spread cost rate
-```
-
-**Three Gates:**
-| Gate | Description | Use Case |
-|------|-------------|----------|
-| `r_breakeven` | Net profit ≥ $0 | Minimum viable trade |
-| `r_prime` | Net profit ≥ prime target | Standard profit target |
-| `r_prime_buffer` | Net profit ≥ prime + buffer | Safe mode with margin |
-
-### 2. Queen Hive Mind (`aureon/queen/aureon_queen_hive_mind.py`)
-Central neural decision controller with:
-- 12 connected neurons (Dream, Harmonic, Mycelium, etc.)
-- `handle_runtime_error()` for self-repair
-- Dynamic learning from trade outcomes
-- Per-asset guidance generation
-
-### 3. Micro Profit Labyrinth (`aureon/trading/micro_profit_labyrinth.py`)
-Turn-based execution engine:
-- Round-robin exchange rotation
-- Pre-flight min_qty validation
-- Barter matrix path memory
-- Dynamic minimum learning
-
-### 4. Exchange Clients
-| Client | File | Features |
-|--------|------|----------|
-| Kraken | `aureon/exchanges/kraken_client.py` | Multi-hop conversion paths, symbol filters |
-| Binance | `aureon/exchanges/binance_client.py` | UK restriction handling, tiered fees, symbol normalization |
-| Alpaca | `aureon/exchanges/alpaca_client.py` | Stocks + crypto, fractional shares, SSE streaming |
-| Capital.com | `aureon/exchanges/capital_client.py` | CFD trading, spread-only fee model |
-| **Unified Trader** | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration with central beat feed** |
-
-### 5. Animal Ecosystem Scanners (`aureon/scanners/aureon_animal_momentum_scanners.py`)
-Specialized Alpaca-focused momentum scanners using biological metaphors:
-- **Wolf**: 24h high-momentum breakout sniper.
-- **Lion**: Composite scorer (Volume * Move * Coherence).
-- **Ants**: High-frequency small-move foragers.
-- **Hummingbird**: rapid short-duration rotation scanner.
-
-## Execution Flow
-
-```
-1. find_opportunities_for_exchange()
-   └─> Check min_qty filters (dynamic + static)
-   └─> Check source blocking (barter_matrix)
-   └─> Score opportunities (v14, hub, bus, luck, enigma)
-
-2. ask_queen_will_we_win()
-   └─> Gather signals from all neurons
-   └─> Calculate combined confidence
-   └─> Apply profit ladder thresholds
-
-3. execute_conversion()
-   └─> Route to exchange client
-   └─> Validate min_notional
-   └─> Execute with slippage protection
-
-4. Record outcome
-   └─> Update barter_matrix history
-   └─> Feed Queen neural learning
-   └─> Adjust dynamic_min_qty if failed
-
-### Queen Veto Flow (4th-Pass Gate)
-- Validators propose a trade; coherence and drift produce a stability score.
-- `ask_queen_will_we_win()` aggregates neuron signals and context.
-- If confidence clears threshold AND profit gate is satisfied, the 4th-pass opens.
-- Queen may veto on contextual/emotional risk (mission, volatility, rate limits).
-- On veto: trade is skipped, path memory updated, learning recorded.
-```
-
-## Configuration
-
-### Environment Variables
-```bash
-# Exchange API Keys
-KRAKEN_API_KEY=
-KRAKEN_API_SECRET=
-BINANCE_API_KEY=
-BINANCE_API_SECRET=
-ALPACA_API_KEY=
-ALPACA_SECRET_KEY=
-CAPITAL_API_KEY=
-CAPITAL_API_PASSWORD=
-CAPITAL_IDENTIFIER=
-
-# Risk Settings
-BINANCE_RISK_MAX_ORDER_USDT=100
-DEFAULT_PRIME_TARGET=0.02
-```
-
-### Fee Profiles (auto-updated)
-```python
-DEFAULT_FEE_PROFILES = {
-    'binance':     {'maker': 0.0010, 'taker': 0.0010, 'spread': 0.0005},  # 0.10% / 0.05%
-    'kraken':      {'maker': 0.0025, 'taker': 0.0040, 'spread': 0.0008},
-    'alpaca':      {'maker': 0.0015, 'taker': 0.0025, 'spread': 0.0008},
-    'capital.com': {'maker': 0.0000, 'taker': 0.0000, 'spread': 0.0010},  # Spread-only CFDs
-}
-```
-
-## Quick Start (War Room Dashboard)
-
-The **Aureon War Room** is the central command interface powered by the **Queen's 4-Phase Master Plan**.
-
-<div align="center">
-
-[![Linux/macOS](https://img.shields.io/badge/Linux%20%2F%20macOS-Setup%20Guide-success?style=for-the-badge&logo=linux)](#-linux--macos)
-[![Windows](https://img.shields.io/badge/Windows-Setup%20Guide-0078D6?style=for-the-badge&logo=windows)](#-windows)
-[![Docker](https://img.shields.io/badge/Docker-Container%20Deploy-2496ED?style=for-the-badge&logo=docker)](#-docker)
-[![DigitalOcean](https://img.shields.io/badge/DigitalOcean-Cloud%20Deploy-0080FF?style=for-the-badge&logo=digitalocean)](#-production-deployment-digitalocean)
-
-</div>
-
-### 👑 Main System: Orca Complete Kill Cycle
-
-```mermaid
-graph LR
-    A[💰 Start Capital] -->|Phase 1| B[📈 $248 → $2K]
-    B -->|Phase 2| C[📈 $2K → $50K]
-    C -->|Phase 3| D[📈 $50K → $250K]
-    D -->|Phase 4| E[🏆 $250K → $1B]
-    style A fill:#2d4a2d,color:#90EE90
-    style E fill:#4a2d2d,color:#FFD700
-```
-
-**orca_complete_kill_cycle.py** is the primary trading engine featuring:
-- 👑 **Queen's 4-Phase Master Plan**: $248 → $1B in 22 days
-- 🐝 **Phase-Aware Intelligence**: Adapts strategy as capital grows
-- ⚡ **Batten Matrix**: 3-validate-4th-execute precision
-- 🎯 **Multi-Exchange**: Scans Binance, Kraken, Alpaca simultaneously
-
-### 🐧 Linux / macOS
-```bash
-# 1. Setup
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # Add API keys
-
-# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
-python aureon/exchanges/unified_market_trader.py
-
-# 3. Or: Launch Queen's War Room (Orca Kill Cycle)
-python aureon/trading/orca_complete_kill_cycle.py
-```
-
-### 🪟 Windows (PowerShell)
-```powershell
-# 1. Setup
-py -3 -m venv .venv
-
-# If activation is blocked, run once:
-# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-\.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-
-# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
-.\scripts\runners\run_unified_live.cmd
-
-# 3. Or: Launch specific exchange traders
-.\scripts\runners\run_alpaca_capital_style.ps1
-.\scripts\runners\run_capital_swarm.ps1
-```
-
-Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](docs/windows/AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
-
----
-
-## 👑 Queen's 4-Phase Master Plan
-
-The main trading engine (`orca_complete_kill_cycle.py`) implements an adaptive 4-phase strategy:
-
-| Phase | Capital Range | Strategy | Min Profit | Max Positions | Focus |
-|-------|---------------|----------|------------|---------------|-------|
-| **1: THE SEED** | $248 → $2.5K | Moonshot Hunting | 10% | 3 | New listings, volume spikes, meme momentum |
-| **2: THE GROWTH** | $2.5K → $250K | Compound Momentum | 5% | 5 | BTC/ETH leverage, mid-caps, trends |
-| **3: THE EXPLOSION** | $250K → $50M | Whale Tactics | 3% | 8 | Options, catalysts, arbitrage |
-| **4: THE BILLION** | $50M → $1B | Market Maker | 2% | 10 | Mega liquidity, tight spreads |
-
-**Automatic Evolution**: The Queen transitions phases automatically as your capital grows, optimizing strategy for your current scale.
-
-**Phase-Based Scoring**: Every market opportunity gets scored based on alignment with current phase strategy (e.g., moonshots prioritized in Phase 1, whale signals in Phase 3).
-
-**Weapons**:
-- 🔮 Quantum Mirror Scanner (probability branches)
-- 🐘 Elephant Memory (pattern recognition)
-- 🎵 Harmonic Field (528 Hz abundance detection)
-- 🐝 Swarm Intelligence (parallel processing)
-- ⚡ Batten Matrix (3-pass validation + 4th execution)
-
----
-
-## 🌌 New: Unity Integration (v2026.1)
-
-The system now features **full logic unity** between planetary alignment and market micro-structure.
-
-| Component | Function | Unity Effect |
-|-----------|----------|--------------|
-| **🌌 Stargate Grid** | Tracks 12 planetary nodes (Giza, Stonehenge, etc.) | If **Golden Ratio Coherence** ($\phi > 1.618$), increases `quantum_boost` by **~10–30%** (capped). |
-| **🐦 Hummingbird Scanner** | Micro-scalping rotation scanner | Detects nectar-rich flowers (volatility pockets) for **+10% probability boost**. |
-| **🐺 Wolf & 🦁 Lion** | Pack hunting algorithms | Consensus detection adds **+15-25% conviction** to Queen's decision. |
-
----
-
-## 🎮 Windows Plug & Play (Legacy)
-
-**No terminal, no Docker, no dependencies** - just download and double-click!
-
-### Option 1: One-Line PowerShell Install
-
-Open PowerShell and paste:
-```powershell
-irm https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/Install-AUREON.ps1 | iex
-```
-
-This downloads AUREON.exe, creates desktop/Start Menu shortcuts, and offers to launch.
-
-### Option 2: Direct Download
-
-1. **Download**: [AUREON.exe](https://github.com/RA-CONSULTING/aureon-trading/releases/latest/download/AUREON.exe)
-2. **Run**: Double-click the downloaded file
-3. **Setup**: Complete the first-run wizard (API keys, risk settings)
-4. **Trade**: Click "Start Trading" in the Command Center UI
-
-### What's Included
-
-| Feature | Description |
-|---------|-------------|
-| 🎮 **Game Mode UI** | Visual Command Center at http://localhost:8888 |
-| 💰 **Trading Engine** | Multi-exchange profit hunting |
-| 🐋 **Orca Kill Cycle** | Aggressive profit mode |
-| 👑 **Queen Dashboard** | Neural decision viewer |
-| ⚙️ **Setup Wizard** | First-run configuration for API keys |
-
-### Safety Features
-
-| Feature | Description |
-|---------|-------------|
-| 🧪 **Dry-run default** | No real trades without explicit confirmation |
-| ⚠️ **Live confirmation** | Must type "I ACCEPT THE RISK" for live trading |
-| 🔐 **Windows Credential Manager** | API keys stored securely in Windows keyring |
-| 📁 **Sandboxed data** | All data stored in `%LOCALAPPDATA%\AUREON` |
-
----
-
-## 🐳 Docker Deployment (Advanced)
-
-For containerized/server deployments, AUREON includes a full Docker package.
-
-### One-Click Install
-
-```bash
-# Linux/macOS
-curl -fsSL https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install.sh | bash
-
-# Windows (with Docker Desktop)
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install-windows.bat -OutFile install.bat; .\install.bat
-```
-
-After installation, launch from your desktop: **AUREON** icon or `aureon` command.
-
-### Manual Docker Build
-
-```bash
-# Build the production image
-cd production
-docker build -t aureon-trading:latest -f Dockerfile ..
-
-# Run with setup wizard
-docker run -it --name aureon -p 8888:8888 \
-  -v aureon-data:/aureon/data \
-  -v aureon-logs:/aureon/logs \
-  -v aureon-config:/aureon/config \
-  --memory=2g --cpus=2.0 \
-  aureon-trading:latest
-
-# Or use docker-compose with monitoring
-export GF_ADMIN_PASSWORD=$(openssl rand -base64 32)
-docker-compose -f production/docker-compose.yml --profile monitoring up -d
-```
-
-### Operating Modes
-
-| Mode | Command | Description |
-|------|---------|-------------|
-| 🎮 **Game** | `aureon --mode game` | Command Center UI + Trading Engine (default) |
-| 💰 **Trading** | `aureon --mode trading` | Headless execution engine only |
-| 🐋 **Orca** | `aureon --mode orca` | Orca kill cycle (aggressive profit hunting) |
-| 👑 **Queen** | `aureon --mode queen` | Queen unified dashboard |
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `AUREON_MODE` | Operating mode | `game` |
-| `AUREON_DRY_RUN` | Force dry-run mode | `true` |
-| `AUREON_EXCHANGE` | Specific exchange to trade | all enabled |
-| `AUREON_ACCEPT_LIVE_RISK` | Skip live confirmation (CI/containers) | `false` |
-| `GF_ADMIN_PASSWORD` | Grafana admin password (required for monitoring) | - |
-
-See [production/README.md](production/README.md) for full deployment documentation.
-
----
 
 ## 🔬 Market Intelligence & Manipulation Detection Tools
 
@@ -3583,88 +3689,6 @@ They thought they could hide it in complexity.
 We found them anyway.
 
 **Take back the planet.** 🌍✊
-
----
-
-## Key Files
-
-| File | Path | Purpose |
-|------|------|--------|
-| Orca Complete Kill Cycle | `aureon/trading/` | **Primary trading engine** — Queen's 4-Phase Master Plan |
-| Unified Market Trader | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration** — central beat feed |
-| Queen Hive Mind | `aureon/queen/` | Queen AI — 12-neuron neural decision controller |
-| Probability Nexus | `aureon/core/` | Batten Matrix — 3-pass validation + coherence scoring |
-| Unified Voice Agent | `aureon/autonomous/` | Voice-controlled trading with intent cognition |
-| Capital CFD Trader | `aureon/exchanges/capital_cfd_trader.py` | Capital.com CFD trading with shadow promotion |
-| Adaptive Profit Gate | `aureon/utils/` | Profit threshold calculator (Kelly-criterion) |
-| Thought Bus | `aureon/core/aureon_thought_bus.py` | Cross-module event mesh |
-| Stargate Protocol | `aureon/core/` | Timeline anchoring, 7-day validation persistence |
-| Elephant Learning | `aureon/intelligence/` | Never forgets historical patterns |
-| Harmonic Fusion | `aureon/harmonic/` | Combines planetary + market harmonic signals |
-| Geopolitical Forensics | `aureon/harmonic/geopolitical_forensics.py` | Geopolitical event signal integration |
-| System Hub Dashboard | `aureon/command_centers/` | Terminal dashboard for system orchestration |
-
-> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) — all 715 modules across 24 domains
-
----
-
-## 🚀 Production Deployment (DigitalOcean)
-
-The live system runs on **DigitalOcean App Platform** with automatic deploy-on-push from the `main` branch.
-
-### Port Architecture
-
-| Port | Service | Process |
-|------|---------|--------|
-| **8080** | Aureon Pro Dashboard | Primary web UI (supervisord priority=0) |
-| **8081** | Orca Health Server | Engine health checks and status |
-| **8800** | Command Center | Legacy command interface |
-
-### Container Stack
-
-- **Base**: Python 3.12-slim
-- **Process Manager**: supervisord (parallel process management)
-- **Config**: `deploy/supervisord.conf`
-- **Deployment**: `app.yaml` (DigitalOcean App Spec) / `Dockerfile` (root)
-
-### Deployment Files
-
-| File | Purpose |
-|------|--------|
-| `Dockerfile` | Production container image |
-| `app.yaml` | DigitalOcean App Platform spec |
-| `deploy/supervisord.conf` | Process management (dashboard, orca-engine, command-center) |
-| `deploy/DIGITAL_OCEAN_MASTER_GUIDE.md` | Full deployment documentation |
-| `deploy/droplet-setup.sh` | VPS/Droplet provisioning script |
-| `deploy/droplet-deploy.sh` | Deployment automation |
-| `deploy/validate_startup.sh` | Post-deploy health validation |
-
-For Docker-based deployment options see also `production/README.md`.
-
-## Safety
-
-- **Dry-run default**: System won't execute live trades without explicit flag
-- **Self-repair**: Queen auto-fixes type errors and learns from failures  
-- **Min-qty pre-filter**: Rejects trades below exchange minimums before execution
-- **Dynamic blocking**: Repeatedly failing paths get temporarily blocked
-- **Rate & Cadence**: Animal scanners automatically handle HTTP 429 rate limits with backoff; aggressive scanning may trigger API pauses.
-
-### Moral Guardrails
-- Human-in-the-loop for threshold changes (profit gates, risk caps, leverage).
-- Queen veto path active by default; emotional/contextual risk can cancel trades.
-- Capital preservation before growth; daily loss cap and per-trade SL required.
-- No market manipulation, unauthorized access, or unsafe automation behaviors.
-- Immutable audit logs for decisions, fills, rejects, and configuration changes.
-
-### Research Metrics Checklist
-- Edge quality: post-fee pip distribution (0.07–1.4), realized PnL.
-- Coherence stability: validator agreement vs executed trades.
-- Drift and λ: time-to-execution decay and invalidation rates.
-- Queen veto: frequency, reasons, and PnL deltas vs no-veto baseline.
-- Rate limits: 429 backoff effectiveness and impact on opportunity decay.
-- ETA verification: forecasted vs actual execution latency and slippage.
-
-<!-- markdownlint-enable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
 
 ---
 
