@@ -3037,7 +3037,16 @@ class WhaleIntelligenceTracker:
         """
         Simulate realistic firm activity based on market conditions.
         Uses known firm patterns from GLOBAL_TRADING_FIRMS.
+
+        ⚠ Direction (accumulating / distributing / market_making) is derived
+        from real `price_change_pct`, but volume + confidence are sampled
+        from random.uniform. Gated behind AUREON_ALLOW_SIM_FALLBACK so
+        production refuses to emit synthetic FirmActivity into the catalog
+        and ThoughtBus.
         """
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+        if not simulation_fallback_allowed():
+            return []
         activities = []
         symbol_base = symbol.replace('/USD', '').replace('USDT', '').upper()
         

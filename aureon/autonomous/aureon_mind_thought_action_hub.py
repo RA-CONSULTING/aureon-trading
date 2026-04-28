@@ -765,9 +765,21 @@ class MindThoughtActionHub:
                 await asyncio.sleep(5)
     
     async def generate_test_thoughts(self):
-        """Generate test thoughts for demonstration."""
+        """Generate test thoughts for demonstration.
+
+        ⚠ Publishes synthetic Thoughts onto the bus (fake confidences,
+        topics, payloads). Gated behind AUREON_ALLOW_SIM_FALLBACK so
+        production refuses to inject fake thoughts into the live system.
+        """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_mind_thought_action_hub.generate_test_thoughts",
+                                 "synthetic_thoughts")
+            return
         await asyncio.sleep(5)
-        
+
         logger.info("🧪 Starting test thought generator...")
         
         topics = [

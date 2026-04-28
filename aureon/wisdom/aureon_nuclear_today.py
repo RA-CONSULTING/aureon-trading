@@ -1,6 +1,12 @@
 """
 💎🔥 AUREON NUCLEAR MODE - £100,000 TODAY 🔥💎
 
+🟡 STANDALONE SIMULATOR — NuclearDayTrader scans random fake opportunities
+   (random.uniform momentum / price / volume) and "trades" them against an
+   in-memory account. The class is not imported by production code; only the
+   __main__ block calls main(). All scan/trade/manage methods are gated
+   behind AUREON_ALLOW_SIM_FALLBACK so calling them in production raises.
+
 "THEY SAID IT CAN'T BE DONE.
  FUCK THEM.
  THE MATH SAYS OTHERWISE.
@@ -182,11 +188,27 @@ class NuclearDayTrader:
             'on_track': current_multiplier >= (self.target_multiplier ** (elapsed_hours / 24))
         }
     
+    def _require_sim_fallback(self, op: str) -> None:
+        """Raise unless AUREON_ALLOW_SIM_FALLBACK is set; this whole class is a
+        synthetic-data simulator and must not run in production."""
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback(f"aureon_nuclear_today.{op}", "synthetic_simulator")
+            raise RuntimeError(
+                f"NuclearDayTrader.{op}() uses random.uniform momentum / price / "
+                "volume — it's a simulator, not a live trader. Set "
+                "AUREON_ALLOW_SIM_FALLBACK=1 for dev runs, or wire a real "
+                "exchange feed before invoking in production."
+            )
+
     async def scan_nuclear_opportunities(self) -> List[dict]:
         """
         NUCLEAR SCANNING
         Find ANYTHING that moves
         """
+        self._require_sim_fallback("scan_nuclear_opportunities")
         opportunities = []
         
         # Simulate finding opportunities (replace with real scanning)
@@ -262,10 +284,11 @@ class NuclearDayTrader:
     
     async def manage_positions_nuclear(self):
         """CLOSE POSITIONS INSTANTLY AT TARGET"""
+        self._require_sim_fallback("manage_positions_nuclear")
         to_close = []
-        
+
         for pos_id, pos in list(self.active_positions.items()):
-            # Simulate current price
+            # Simulate current price (sim-fallback already enforced above)
             import random
             noise = random.uniform(-0.005, 0.005)
             current_price = pos['entry_price'] * (1 + noise)

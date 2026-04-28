@@ -2,6 +2,10 @@
 """
 🇮🇪🎯🧠 UNIFIED SNIPER BRAIN - 1 MILLION KILL TRAINING LOADED 🧠🎯🇮🇪
 ====================================================================
+🟡 The class itself takes real prices/volumes via its public methods.
+   The __main__ block at the bottom uses random.uniform to demo synthetic
+   prices for a self-test. Production callers must pass real data.
+====================================================================
 TRAINED ON 1,000,000 TRADES. ZERO LOSSES. 100% WIN RATE.
 
 We know where the profit is.

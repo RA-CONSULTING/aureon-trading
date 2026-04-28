@@ -592,10 +592,27 @@ class SimulatedFeed:
         }
         
     async def start(self):
-        """Start simulated feed"""
+        """Start simulated feed.
+
+        ⚠ Synthetic-only feed — generates random.gauss price walks plus
+        scripted whale/coordinated/manipulation events. Gated behind
+        AUREON_ALLOW_SIM_FALLBACK so production refuses to start. Wire a
+        real exchange feed before enabling in production.
+        """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_realtime_surveillance.start",
+                                 "synthetic_feed")
+            raise RuntimeError(
+                "aureon_realtime_surveillance.start() emits a synthetic "
+                "market feed (random.gauss). Set AUREON_ALLOW_SIM_FALLBACK=1 "
+                "for dev, or wire a real exchange feed."
+            )
         self.running = True
         logger.info("📡 Starting simulated market feed...")
-        
+
         while self.running:
             for symbol, base_price in self.base_prices.items():
                 # Add some randomness with bot-like patterns

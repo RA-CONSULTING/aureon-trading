@@ -2,6 +2,13 @@
 """
 💎🔮 HISTORICAL PATTERN HUNTER: PREDICT THE FUTURE FROM THE PAST 🔮💎
 
+🟡 STANDALONE BACKTEST SIMULATOR — execute_pattern_trade() simulates wins
+   via random.random() < pattern.win_rate and profit via
+   pattern.avg_profit_pct * random.uniform(0.85, 1.15). The class is not
+   imported by production code; only the __main__ block calls run_simulation().
+   Do NOT call execute_pattern_trade or run_simulation from a live path —
+   this is a backtest harness, not a trade executor.
+
 "THE PRESENT IS A GIFT. USE THE PAST TO UNWRAP IT."
 
 This uses ACTUAL historical patterns from adaptive_learning_history.json

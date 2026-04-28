@@ -3140,12 +3140,16 @@ class AureonUnifiedMasterHub:
             warroom_data['losses'] = int(orca_state.get('total_losses', orca_state.get('queen_vetoes', 0)))
             warroom_data['cycles'] = int(orca_state.get('hunt_count', orca_state.get('total_trades', 0)))
             
-            # Generate demo positions with live progress bars
+            # Generate demo positions with live progress bars (DEV ONLY).
+            # Production posture leaves warroom_data['positions'] empty rather
+            # than broadcasting fabricated symbols/values to the operator.
             import random
+            from aureon.observer.live_data_policy import simulation_fallback_allowed
             demo_symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'GOOGL']
             demo_firms = ['Citadel Securities', 'Jane Street', 'Two Sigma', 'Jump Trading', 'DRW', 'Optiver', 'Tower Research', 'IMC Trading']
-            
-            for i, symbol in enumerate(demo_symbols[:random.randint(2, 5)]):
+
+            if simulation_fallback_allowed():
+              for i, symbol in enumerate(demo_symbols[:random.randint(2, 5)]):
                 # Create realistic position data with varying progress
                 t_offset = (time.time() + i * 1000) % 100  # Different phase per position
                 progress = min(100, max(5, 30 + 60 * math.sin(t_offset * 0.02) + random.uniform(-5, 5)))
@@ -3431,12 +3435,18 @@ class AureonUnifiedMasterHub:
                         })
                     ocean_data['hive_count'] = len(scanner.hives)
             else:
-                # Generate sample data
+                # Generate sample data (DEV ONLY — gated). Production posture
+                # leaves ocean_data empty rather than broadcasting fabricated
+                # firms/symbols to the operator UI. The whole `else:` body
+                # is short-circuited via the flag below.
+                from aureon.observer.live_data_policy import simulation_fallback_allowed
+                _ocean_demo_ok = simulation_fallback_allowed()
+
                 symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'DOGE/USD', 'XRP/USD', 'PEPE/USD']
                 owners = ['Jane Street', 'Citadel', 'Jump Trading', 'Wintermute', 'Unknown', 'Retail']
                 sizes = ['megalodon', 'whale', 'whale', 'shark', 'shark', 'shark', 'minnow', 'minnow', 'minnow', 'minnow']
-                
-                for i in range(random.randint(5, 12)):
+
+                for i in range(random.randint(5, 12) if _ocean_demo_ok else 0):
                     size = random.choice(sizes)
                     ocean_data['bots'].append({
                         'bot_id': f'BOT-{random.randint(1000, 9999)}',
@@ -3451,9 +3461,9 @@ class AureonUnifiedMasterHub:
                     else: ocean_data['minnow_count'] += 1
                 
                 ocean_data['total_volume'] = sum(b['total_volume'] for b in ocean_data['bots'])
-                ocean_data['hive_count'] = random.randint(1, 4)
-                ocean_data['battle_count'] = random.randint(0, 3)
-                
+                ocean_data['hive_count'] = random.randint(1, 4) if _ocean_demo_ok else 0
+                ocean_data['battle_count'] = random.randint(0, 3) if _ocean_demo_ok else 0
+
                 # Sample hives
                 for i in range(ocean_data['hive_count']):
                     ocean_data['hives'].append({
@@ -3481,10 +3491,25 @@ class AureonUnifiedMasterHub:
             logger.debug(f"Ocean Scanner update error: {e}")
     
     async def _update_surveillance(self):
-        """Update Surveillance data."""
+        """Update Surveillance data.
+
+        ⚠ The whole method generates synthetic surveillance metrics
+        (messages/sec, latency, spectrogram, alerts, fallback prices) and
+        broadcasts them under a 'surveillance_update' message. Gated behind
+        AUREON_ALLOW_SIM_FALLBACK so production refuses to broadcast fake
+        operator-facing data. To restore in prod, wire a real surveillance
+        feed and remove the gate.
+        """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_unified_master_hub._update_surveillance",
+                                 "synthetic_surveillance")
+            return
         try:
             import random
-            
+
             surv_data = {
                 'connections': len(self.clients),
                 'messages_per_sec': random.randint(50, 200),
@@ -3552,7 +3577,15 @@ class AureonUnifiedMasterHub:
             logger.debug(f"Surveillance update error: {e}")
     
     async def _generate_test_data(self):
-        """Generate test data for demonstration."""
+        """Generate test data for demonstration.
+
+        ⚠ Broadcasts synthetic Thoughts and Queen messages to the dashboard.
+        Gated behind AUREON_ALLOW_SIM_FALLBACK so production refuses to
+        emit fake Queen voice / fake confidence values to the operator.
+        """
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+        if not simulation_fallback_allowed():
+            return
         if time.time() % 10 < 1:  # Every 10 seconds
             import random
             

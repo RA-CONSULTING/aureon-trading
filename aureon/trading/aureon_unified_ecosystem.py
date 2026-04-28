@@ -18404,9 +18404,18 @@ class AureonKrakenEcosystem:
     def _get_hardcoded_fallback_tickers(self) -> List[Dict]:
         """
         Fallback ticker list when API fails.
-        Uses synthetic but realistic data for common trading pairs.
+
+        Two paths:
+          1. Prefer the recent snapshot file (real prices captured earlier).
+          2. If no snapshot, the synthetic random-perturbation block below
+             only runs when AUREON_ALLOW_SIM_FALLBACK is set. Production
+             posture raises rather than fabricating tickers — callers must
+             handle the empty-list / raise instead of trading on synthetic.
         """
         import random
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
 
         # If we have a recent snapshot file, prefer using it as fallback
         snapshot_path = os.path.join('/workspaces/aureon-trading', 'market_snapshots_30.json')
@@ -18469,9 +18478,19 @@ class AureonKrakenEcosystem:
             ('RENUSDT', 0.38, 5.8),      # REN very volatile
         ]
         
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_unified_ecosystem._get_hardcoded_fallback_tickers",
+                                 "no_snapshot_no_live")
+            raise RuntimeError(
+                "_get_hardcoded_fallback_tickers: no market snapshot and no live "
+                "API; refusing to fabricate synthetic tickers in production. "
+                "Set AUREON_ALLOW_SIM_FALLBACK=1 to allow the synthetic path "
+                "for dev / backtest, or restore live API connectivity."
+            )
+
         fallback_tickers = []
         for symbol, base_price, volatility in pairs:
-            # Add small random perturbation to appear more realistic
+            # DEV-ONLY synthetic perturbation, gated above
             price = base_price * (1 + random.uniform(-0.01, 0.01))
             change = random.uniform(-volatility, volatility)
             volume = random.uniform(100000, 5000000)

@@ -1115,6 +1115,9 @@ class AureonOmega:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
+    # 🟡 DEMO ENTRY — runs Aureon Omega against a 10-tick synthetic price walk
+    # (random.uniform). Production should call AureonOmegaSystem methods
+    # directly with real market data, not invoke main(). Banner only.
     print("""
 ═══════════════════════════════════════════════════════════════════════════════
       AUREON OMEGA - THE COMPLETE UNIFIED TRADING ORCHESTRATOR

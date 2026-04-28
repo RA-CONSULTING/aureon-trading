@@ -928,15 +928,35 @@ class PureConversionEngine:
         return opportunities
     
     def _calculate_all_metrics(self):
-        """Calculate momentum and strength for all assets"""
+        """Calculate momentum and strength for all assets.
+
+        Production: derives momentum from the rolling delta of self.prices
+        (real reads). Synthetic-fallback path is gated behind
+        AUREON_ALLOW_SIM_FALLBACK — if no price history is present and the
+        gate is off, the symbol's momentum is simply left at its previous
+        value rather than fabricated.
+        """
         import random
-        
-        # Simulate momentum based on price changes
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+
+        _allow_sim = simulation_fallback_allowed()
         for asset, info in self.UNIVERSE.items():
             symbol = info['binance']
             if symbol in self.prices:
-                # Simulate momentum (would be real in live mode)
-                self.momentum[symbol] = random.uniform(-0.02, 0.03)
+                history = getattr(self, "price_history", {}).get(symbol)
+                if history and len(history) >= 2:
+                    # Real momentum from price delta: (latest - oldest) / oldest
+                    try:
+                        first, last = float(history[0]), float(history[-1])
+                        if first:
+                            self.momentum[symbol] = (last - first) / first
+                            continue
+                    except (TypeError, ValueError, ZeroDivisionError):
+                        pass
+                if _allow_sim:
+                    # DEV-ONLY synthetic momentum, gated
+                    self.momentum[symbol] = random.uniform(-0.02, 0.03)
+                # else: leave previous value (no fabrication in production)
         
         # Update relative strength
         btc_momentum = self.momentum.get('BTCUSDT', 0)

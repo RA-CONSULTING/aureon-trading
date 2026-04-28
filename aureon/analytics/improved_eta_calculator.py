@@ -2,6 +2,10 @@
 """
 🔬🎯 IMPROVED ETA CALCULATOR - FIXING THE CORE LOGIC 🎯🔬
 ==========================================================
+🟡 The class itself takes real velocity / pnl values. The __main__
+   block at the bottom uses random.uniform to demo synthetic ticks.
+   Production paths must pass real measurements, not call __main__.
+==========================================================
 
 The old ETA calculation was naive:
     ETA = gap / velocity
