@@ -3692,6 +3692,7 @@ We found them anyway.
 
 ---
 
+
 ## 📚 Documentation & Resources
 
 The Aureon system includes **180+ documentation files** organized by topic. Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) or browse the [Full Index](docs/INDEX.md).

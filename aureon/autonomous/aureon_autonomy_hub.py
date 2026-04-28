@@ -355,6 +355,35 @@ class PredictionBus:
         self._prediction_history: deque = deque(maxlen=500)
         self._lock = threading.Lock()
 
+        # Auto-wire the HarmonicObserver predictor. Idempotent and
+        # safe even if no observer has been constructed yet — the
+        # predictor returns NEUTRAL until a singleton is registered.
+        # Import inside __init__ to avoid any chance of circular import
+        # at module load time.
+        try:
+            from aureon.observer.wiring import auto_wire_prediction_bus
+            auto_wire_prediction_bus(self)
+        except Exception as _exc:
+            logger.debug("HarmonicObserver auto-wire skipped: %s", _exc)
+
+        # Auto-wire the WavePredictor predictor. Same pattern as the
+        # observer — idempotent, NEUTRAL until a singleton exists,
+        # never blocks PredictionBus construction.
+        try:
+            from aureon.observer.wave_predictor import auto_wire_prediction_bus as _wp_wire
+            _wp_wire(self)
+        except Exception as _exc:
+            logger.debug("WavePredictor auto-wire skipped: %s", _exc)
+
+        # Auto-wire the MomentumTracker predictor (Stage AC). Recency-
+        # weighted EMA momentum across all data sources fed into the
+        # daemon — operator can see momentum forming on the live feed.
+        try:
+            from aureon.observer.momentum import auto_wire_prediction_bus as _mt_wire
+            _mt_wire(self)
+        except Exception as _exc:
+            logger.debug("MomentumTracker auto-wire skipped: %s", _exc)
+
     def register_predictor(self, name: str, predict_fn: Callable):
         """Register a prediction engine. predict_fn(data_signals) -> UnifiedSignal"""
         self._predictors[name] = predict_fn
@@ -400,6 +429,9 @@ class PredictionBus:
             'qgita': 2.0,
             'whale_hunter': 1.0,
             'quantum_telescope': 0.5,
+            'harmonic_observer': 1.5,      # Theroux-style live HNC field describer
+            'wave_predictor': 1.0,         # wave-based next-tick directional forecast
+            'momentum_tracker': 1.2,       # recency-weighted multi-source momentum
         }
 
         for name, pred in predictions.items():
@@ -1548,13 +1580,29 @@ _hub_instance: Optional[AutonomyHub] = None
 _hub_lock = threading.Lock()
 
 def get_autonomy_hub() -> AutonomyHub:
-    """Get or create the global AutonomyHub singleton."""
+    """Get or create the global AutonomyHub singleton.
+
+    Lazy construction: the first caller pays the cost of registering
+    all 11 predictors (9 hub-side + harmonic_observer + wave_predictor
+    auto-wires) and connecting the ThoughtBus. Subsequent callers get
+    the cached instance. Thread-safe via _hub_lock.
+
+    Stage T/V Vote 7 imports ``get_hub`` — that's an alias of this
+    function (added below) so older code paths that imported the short
+    name still resolve.
+    """
     global _hub_instance
     with _hub_lock:
         if _hub_instance is None:
             _hub_instance = AutonomyHub()
             _hub_instance.connect_thought_bus()
     return _hub_instance
+
+
+# Short alias used by aureon/bots/orca_complete_kill_cycle.py Vote 7
+# blocks (Stages T and V) and any other call site that wants the
+# concise name. Identity-equal to get_autonomy_hub.
+get_hub = get_autonomy_hub
 
 
 def spin(symbol: str = "BTCUSD") -> UnifiedSignal:

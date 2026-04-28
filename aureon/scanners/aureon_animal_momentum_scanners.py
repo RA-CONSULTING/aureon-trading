@@ -672,7 +672,7 @@ class AlpacaSwarmOrchestrator:
         self.lion = AlpacaLionHunt(alpaca, bridge)
         self.ants = AlpacaArmyAnts(alpaca, bridge)
         self.hummingbird = AlpacaHummingbird(alpaca, bridge)
-        self.dry_run = True  # Safety default
+        self.dry_run = False  # Stage AD: live default. Opt out by passing dry_run=True at construction or AUREON_DRY_RUN=true env override.
 
         # 🔗 Communication Buses
         self.thought_bus = get_thought_bus() if THOUGHT_BUS_AVAILABLE else None

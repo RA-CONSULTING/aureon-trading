@@ -10636,6 +10636,92 @@ class OrcaKillCycle:
         print(f"   QUEEN APPROVED: {symbol} [{context}] - {gate_reason}")
 
         #
+        #  GATE 0:  HARMONIC OBSERVER NARROW-BAND  (per-symbol + global)
+        #
+        #  The HarmonicObserver describes the live HNC field. Two
+        #  things are read here, additively:
+        #
+        #    (a) Per-symbol direction via the observer's predictor
+        #        adapter. Maps Λ-trace rocks at HNC anchor frequencies
+        #        (7.83 / 14.3 / 432 / 528 / 963 Hz bullish, 440 Hz
+        #        parasite bearish, closest-anchor wins) to a
+        #        UnifiedSignal. Counts as Brain 6 in the multi-brain
+        #        vote below — directly narrows which coins/commodities
+        #        clear the gate.
+        #
+        #    (b) Global coherence_score. When the field is chaotic
+        #        (coh < 0.4) the multi-brain threshold gets +1 vote
+        #        added — fewer trades pass through a noisy field. When
+        #        coherence is healthy (≥0.4), behaviour is unchanged.
+        #
+        #  No-observer fallback: every variable stays None / 0, the
+        #  Brain-6 vote is skipped, the threshold stays at today's 2.
+        #
+        _observer_coherence: Optional[float] = None
+        _observer_signal = None
+        try:
+            from aureon.observer import get_observer
+            _obs = get_observer()
+            if _obs is not None:
+                try:
+                    _observer_coherence = float(_obs.coherence_score())
+                except Exception:
+                    _observer_coherence = None
+                try:
+                    from aureon.observer.predictor import make_predictor
+                    _observer_signal = make_predictor(_obs)({}, symbol)
+                except Exception:
+                    _observer_signal = None
+        except Exception:
+            pass
+
+        # Production-mode gate (Stage AB): in DRY_RUN / SHADOW the
+        # narrow-band threshold tightening is RECORDED but not APPLIED.
+        # Only LIVE mode actually raises the required-votes count.
+        try:
+            from aureon.observer.production_mode import (
+                narrow_band_threshold_active, audit,
+            )
+            _narrow_band_active = narrow_band_threshold_active()
+        except Exception:
+            _narrow_band_active = False
+            audit = None
+
+        _observer_extra_votes_required_recommended = 0
+        if _observer_coherence is not None and _observer_coherence < 0.4:
+            _observer_extra_votes_required_recommended = 1
+            print(f"   OBSERVER NARROW-BAND: coherence={_observer_coherence:.3f} "
+                  f"(chaotic field) — recommending +1 brain vote "
+                  f"[{'APPLIED' if _narrow_band_active else 'RECORDED ONLY'}]")
+        elif _observer_coherence is not None:
+            print(f"   OBSERVER FIELD-OK: coherence={_observer_coherence:.3f}")
+
+        _observer_extra_votes_required = (
+            _observer_extra_votes_required_recommended
+            if _narrow_band_active else 0
+        )
+
+        if audit is not None and _observer_coherence is not None:
+            try:
+                audit(
+                    "narrow_band_evaluation",
+                    {
+                        "symbol": symbol,
+                        "context": context,
+                        "coherence": _observer_coherence,
+                        "extra_votes_required_recommended":
+                            _observer_extra_votes_required_recommended,
+                        "extra_votes_required_applied":
+                            _observer_extra_votes_required,
+                    },
+                    decision="narrow_band",
+                    would_have_blocked=None,
+                    actually_blocked=None,
+                )
+            except Exception:
+                pass
+
+        #
         #     MULTI-BRAIN VALIDATION GATE (consensus from all intelligence)
         #     Opportunity must be confirmed by at least 2 independent systems
         #
@@ -10726,22 +10812,211 @@ class OrcaKillCycle:
                 except Exception:
                     pass
 
+            # Vote 6: HarmonicObserver — per-symbol narrow-band signal.
+            # Maps the live HNC field's rocks at this symbol's harmonic
+            # anchor (closest-anchor across bullish/bearish lists) into
+            # a BUY / SELL / HOLD vote. Read once at top of function;
+            # only counted if the observer is actually present (no
+            # observer = vote skipped, total unchanged).
+            if _observer_signal is not None:
+                _validation_total += 1
+                if _observer_signal.direction == "BULLISH" and _observer_signal.confidence >= 0.4:
+                    _validation_votes += 1
+                    _validation_details.append(
+                        f"Observer:BUY({_observer_signal.confidence:.0%},"
+                        f"coh={_observer_coherence:.2f})"
+                    )
+                elif _observer_signal.direction == "BEARISH":
+                    _validation_details.append(
+                        f"Observer:SELL({_observer_signal.confidence:.0%},"
+                        f"coh={_observer_coherence:.2f})"
+                    )
+                else:
+                    _validation_details.append(
+                        f"Observer:NEUTRAL(coh={_observer_coherence:.2f})"
+                    )
+
+            # Vote 7: PredictionBus consensus — fuses the 11 already-
+            # registered predictors (nexus, macro_context [VIX/DXY/
+            # fear-greed], sentiment_analysis [news], hnc_matrix,
+            # imperial, probability_ultimate, whale_hunter,
+            # quantum_telescope, war_planner, harmonic_observer,
+            # wave_predictor) into a single weighted call. Without
+            # this block, news + macro + options + war + qgita +
+            # quantum + wave signals are computed by other call
+            # sites but never reach this gate. With it, they all
+            # vote at once.
+            #
+            # Strong-bearish high-confidence consensus VETOES the
+            # trade outright — when 11 weighted predictors agree the
+            # field is bearish, that's a stronger signal than any
+            # single inline brain. Anything weaker just contributes a
+            # +1 vote (BULLISH ≥40% conf) or 0 vote (NEUTRAL / weak
+            # BEARISH) and is logged in validation_details.
+            #
+            # Audit trail: when Vote 7 vetoes, the rejection payload
+            # carries consensus_direction / confidence / strength /
+            # predictor_breakdown so logs show which predictors agreed.
+            _consensus_direction = None
+            _consensus_confidence = 0.0
+            _consensus_strength = 0.0
+            _consensus_predictor_breakdown: Dict[str, Dict[str, float]] = {}
+            _consensus_veto = False
+            try:
+                from aureon.autonomous.aureon_autonomy_hub import get_hub
+                _hub = get_hub()
+                if _hub is not None and hasattr(_hub, "prediction_bus"):
+                    _bus = _hub.prediction_bus
+                    _bridge = getattr(_hub, "data_bridge", None)
+                    _data_signals = (
+                        _bridge.get_all_data_signals() if _bridge is not None else {}
+                    )
+                    _preds = _bus.run_predictions(_data_signals, symbol)
+                    _consensus = _bus.get_consensus(_preds)
+                    _consensus_direction = _consensus.direction
+                    _consensus_confidence = float(_consensus.confidence)
+                    _consensus_strength = float(_consensus.strength)
+                    _consensus_predictor_breakdown = {
+                        n: {
+                            "direction": p.direction,
+                            "confidence": float(p.confidence),
+                            "strength": float(p.strength),
+                        }
+                        for n, p in (_preds or {}).items()
+                    }
+
+                    # Production-mode gate (Stage AB): vote-add and
+                    # veto only fire in LIVE mode; DRY_RUN / SHADOW
+                    # record the recommendation in the audit log so the
+                    # operator can see what LIVE would have done without
+                    # the trade decision actually changing.
+                    try:
+                        from aureon.observer.production_mode import (
+                            gate_buy_veto_active, vote_addition_active,
+                            audit as _obs_audit,
+                        )
+                        _veto_active = gate_buy_veto_active()
+                        _vote_add_active = vote_addition_active()
+                    except Exception:
+                        _veto_active = False
+                        _vote_add_active = False
+                        _obs_audit = None
+
+                    _consensus_outcome_recommended = "NEUTRAL"
+                    if (_consensus_direction == "BULLISH"
+                            and _consensus_confidence >= 0.4):
+                        _consensus_outcome_recommended = "BULLISH_VOTE"
+                        if _vote_add_active:
+                            _validation_votes += 1
+                        _validation_details.append(
+                            f"Consensus:BUY({_consensus_confidence:.0%},"
+                            f"strength={_consensus_strength:+.2f},"
+                            f"n={len(_preds)},"
+                            f"{'APPLIED' if _vote_add_active else 'RECORDED'})"
+                        )
+                    elif (_consensus_direction == "BEARISH"
+                            and _consensus_confidence >= 0.6
+                            and _consensus_strength <= -0.3):
+                        # Strong-bearish high-conf — VETO recommended.
+                        _consensus_outcome_recommended = "BEARISH_VETO"
+                        if _veto_active:
+                            _consensus_veto = True
+                        _validation_details.append(
+                            f"Consensus:VETO_SELL({_consensus_confidence:.0%},"
+                            f"strength={_consensus_strength:+.2f},"
+                            f"n={len(_preds)},"
+                            f"{'APPLIED' if _veto_active else 'RECORDED'})"
+                        )
+                    else:
+                        _validation_details.append(
+                            f"Consensus:{_consensus_direction or 'NEUTRAL'}"
+                            f"({_consensus_confidence:.0%},"
+                            f"strength={_consensus_strength:+.2f})"
+                        )
+
+                    # Always-on audit row — operator's primary visibility
+                    # into the divergence between LIVE and DRY_RUN/SHADOW.
+                    if _obs_audit is not None:
+                        try:
+                            _obs_audit(
+                                "buy_vote7",
+                                {
+                                    "symbol": symbol,
+                                    "context": context,
+                                    "consensus_direction": _consensus_direction,
+                                    "consensus_confidence": _consensus_confidence,
+                                    "consensus_strength": _consensus_strength,
+                                    "predictor_breakdown": _consensus_predictor_breakdown,
+                                    "outcome_recommended": _consensus_outcome_recommended,
+                                    "veto_active_in_mode": _veto_active,
+                                    "vote_add_active_in_mode": _vote_add_active,
+                                },
+                                decision="vote7_buy",
+                                would_have_blocked=(_consensus_outcome_recommended == "BEARISH_VETO"),
+                                actually_blocked=_consensus_veto,
+                            )
+                        except Exception:
+                            pass
+            except Exception as _exc:
+                # Bus unavailable — fall through to today's behaviour.
+                # Validation total stays unchanged; gate behaves as if
+                # Vote 7 didn't fire.
+                pass
+
+            if _consensus_veto:
+                _veto_reason = (
+                    f"PredictionBus consensus BEARISH at "
+                    f"{_consensus_confidence:.0%} confidence, "
+                    f"strength={_consensus_strength:+.2f}"
+                )
+                print(f"   PREDICTION_BUS VETO: {symbol} [{context}] - {_veto_reason}")
+                return {
+                    'status': 'blocked',
+                    'reason': _veto_reason,
+                    'blocked_by': 'PREDICTION_BUS_BEARISH_CONSENSUS',
+                    'symbol': symbol,
+                    'exchange': exchange,
+                    'context': context,
+                    'consensus_direction': _consensus_direction,
+                    'consensus_confidence': _consensus_confidence,
+                    'consensus_strength': _consensus_strength,
+                    'consensus_predictor_breakdown': _consensus_predictor_breakdown,
+                    'validation_details': _validation_details,
+                    'rejected': True,
+                }
+
             detail_str = " | ".join(_validation_details) if _validation_details else "no signals"
             print(f"   MULTI-BRAIN VALIDATION: {_validation_votes}/{_validation_total} brains confirm BUY ({detail_str})")
 
-            # Gate: require at least 2 independent confirmations if 3+ systems available
-            if _validation_total >= 3 and _validation_votes < 2:
-                print(f"   MULTI-BRAIN GATE BLOCKED: {symbol} [{context}] - only {_validation_votes}/{_validation_total} confirmations")
+            # Gate: require at least 2 independent confirmations if 3+
+            # systems available — plus the observer's narrow-band tax
+            # (+1 required when global coherence is low).
+            _required_votes = 2 + _observer_extra_votes_required
+            if _validation_total >= 3 and _validation_votes < _required_votes:
+                _block_reason = (
+                    f'Multi-brain validation: {_validation_votes}/'
+                    f'{_validation_total} brains confirm '
+                    f'(needed {_required_votes}'
+                    f'{", +1 from observer narrow-band" if _observer_extra_votes_required else ""})'
+                )
+                print(f"   MULTI-BRAIN GATE BLOCKED: {symbol} [{context}] - {_block_reason}")
                 return {
                     'status': 'blocked',
-                    'reason': f'Multi-brain validation: only {_validation_votes}/{_validation_total} brains confirm',
+                    'reason': _block_reason,
                     'blocked_by': 'MULTI_BRAIN_VALIDATION_GATE',
                     'symbol': symbol,
                     'exchange': exchange,
                     'context': context,
                     'validation_votes': _validation_votes,
                     'validation_total': _validation_total,
+                    'validation_required': _required_votes,
                     'validation_details': _validation_details,
+                    'observer_coherence': _observer_coherence,
+                    'observer_extra_votes_required': _observer_extra_votes_required,
+                    'consensus_direction': _consensus_direction,
+                    'consensus_confidence': _consensus_confidence,
+                    'consensus_strength': _consensus_strength,
+                    'consensus_predictor_breakdown': _consensus_predictor_breakdown,
                     'rejected': True
                 }
         except Exception as e:
@@ -11217,6 +11492,136 @@ class OrcaKillCycle:
             # We print the approval to maintain narrative consistency
             print(f"  [DR AURIS] VALIDATED: (Silent/Offline Mode) - Proceeding.")
             print(f"  [QUEEN] APPROVED. Proceed with SELL.")
+
+        #
+        #     PREDICTION-BUS CONSENSUS GATE  (sell-side, mirror of buy Vote 7)
+        #
+        # Symmetric to the buy-side wire (queen_gated_buy → Vote 7). Same
+        # 11 predictors are consulted (nexus, macro_context, sentiment_
+        # analysis, hnc_matrix, imperial, probability_ultimate,
+        # whale_hunter, quantum_telescope, war_planner, harmonic_observer,
+        # wave_predictor) but with INVERTED veto logic:
+        #
+        #   buy-side:   strong-BEARISH high-conf → VETO bad entry
+        #   sell-side:  strong-BULLISH high-conf → VETO premature voluntary exit
+        #
+        # CRITICAL safety asymmetry: voluntary exits (reason='TP') can be
+        # vetoed; forced exits (USER_ABORT, ctrl_c_cleanup, anything not
+        # 'TP') NEVER are. Trapping a position because of a bullish-
+        # consensus reading would amplify any drawdown into a loss —
+        # always safer to let the sell proceed when the system thinks
+        # it needs to exit.
+        _sell_consensus_direction = None
+        _sell_consensus_confidence = 0.0
+        _sell_consensus_strength = 0.0
+        _sell_consensus_predictor_breakdown: Dict[str, Dict[str, float]] = {}
+        _sell_consensus_veto = False
+        try:
+            from aureon.autonomous.aureon_autonomy_hub import get_hub
+            _hub = get_hub()
+            if _hub is not None and hasattr(_hub, "prediction_bus"):
+                _bus = _hub.prediction_bus
+                _bridge = getattr(_hub, "data_bridge", None)
+                _data_signals = (
+                    _bridge.get_all_data_signals() if _bridge is not None else {}
+                )
+                _preds = _bus.run_predictions(_data_signals, symbol)
+                _consensus = _bus.get_consensus(_preds)
+                _sell_consensus_direction = _consensus.direction
+                _sell_consensus_confidence = float(_consensus.confidence)
+                _sell_consensus_strength = float(_consensus.strength)
+                _sell_consensus_predictor_breakdown = {
+                    n: {
+                        "direction": p.direction,
+                        "confidence": float(p.confidence),
+                        "strength": float(p.strength),
+                    }
+                    for n, p in (_preds or {}).items()
+                }
+
+                # Voluntary exits only — never trap a forced exit.
+                # 'TP' is the take-profit default; everything else
+                # (USER_ABORT, ctrl_c_cleanup, STOP_LOSS, TIMEOUT, etc.)
+                # is treated as forced and bypasses the veto entirely.
+                #
+                # Production-mode gate (Stage AB): even on a voluntary
+                # TP that meets the bullish-veto criteria, the veto
+                # only fires in LIVE mode. DRY_RUN / SHADOW record
+                # the recommendation in the audit log so the operator
+                # sees what LIVE would have done.
+                try:
+                    from aureon.observer.production_mode import (
+                        gate_sell_veto_active, audit as _obs_audit,
+                    )
+                    _sell_veto_active = gate_sell_veto_active()
+                except Exception:
+                    _sell_veto_active = False
+                    _obs_audit = None
+
+                _is_voluntary_tp = (reason == 'TP')
+                _sell_outcome_recommended = "ALLOW"
+                if (_is_voluntary_tp
+                        and _sell_consensus_direction == "BULLISH"
+                        and _sell_consensus_confidence >= 0.6
+                        and _sell_consensus_strength >= 0.3):
+                    _sell_outcome_recommended = "VETO_TP"
+                    if _sell_veto_active:
+                        _sell_consensus_veto = True
+                    print(f"   PREDICTION_BUS VETO SELL (premature TP): "
+                          f"consensus BULLISH conf={_sell_consensus_confidence:.0%} "
+                          f"strength={_sell_consensus_strength:+.2f} — "
+                          f"{'holding position' if _sell_veto_active else 'RECORDED ONLY (mode!=live)'}")
+                else:
+                    print(f"   PREDICTION_BUS consensus on SELL: "
+                          f"{_sell_consensus_direction or 'NEUTRAL'} "
+                          f"conf={_sell_consensus_confidence:.0%} "
+                          f"strength={_sell_consensus_strength:+.2f} "
+                          f"(reason={reason}, voluntary={_is_voluntary_tp})")
+
+                if _obs_audit is not None:
+                    try:
+                        _obs_audit(
+                            "sell_vote7",
+                            {
+                                "symbol": symbol,
+                                "exchange": exchange,
+                                "sell_reason": reason,
+                                "is_voluntary_tp": _is_voluntary_tp,
+                                "consensus_direction": _sell_consensus_direction,
+                                "consensus_confidence": _sell_consensus_confidence,
+                                "consensus_strength": _sell_consensus_strength,
+                                "predictor_breakdown": _sell_consensus_predictor_breakdown,
+                                "outcome_recommended": _sell_outcome_recommended,
+                                "veto_active_in_mode": _sell_veto_active,
+                            },
+                            decision="vote7_sell",
+                            would_have_blocked=(_sell_outcome_recommended == "VETO_TP"),
+                            actually_blocked=_sell_consensus_veto,
+                        )
+                    except Exception:
+                        pass
+        except Exception as _exc:
+            # Bus unavailable — fall through silently. NEVER block a sell
+            # because of a missing dependency.
+            pass
+
+        if _sell_consensus_veto:
+            return {
+                'status': 'blocked',
+                'reason': (f"PredictionBus consensus BULLISH at "
+                           f"{_sell_consensus_confidence:.0%} confidence, "
+                           f"strength={_sell_consensus_strength:+.2f} — "
+                           f"premature voluntary TP exit"),
+                'blocked_by': 'PREDICTION_BUS_BULLISH_CONSENSUS',
+                'symbol': symbol,
+                'exchange': exchange,
+                'sell_reason': reason,
+                'consensus_direction': _sell_consensus_direction,
+                'consensus_confidence': _sell_consensus_confidence,
+                'consensus_strength': _sell_consensus_strength,
+                'consensus_predictor_breakdown': _sell_consensus_predictor_breakdown,
+                'rejected': True,
+            }
 
         #   Require 30s validated prediction window
         pred_ok, pred_info = self._prediction_window_ready(symbol)

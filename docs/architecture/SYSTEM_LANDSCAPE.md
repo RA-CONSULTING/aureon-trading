@@ -27,7 +27,7 @@ This workspace now hosts multiple concurrent subsystems that together compose th
 ## 4. Legacy AQTS Bundle (`Aueron-Trading-Quantum-Quackers-War-Ready-Version--alert-autofix-gl1/`)
 - **Contents:** Full historical AQTS distribution (React UI, scripts, Unity assets, data exports) recovered from the `earth-live-data-1 (10).zip` archive.
 - **Status:** Serves as reference material; not currently wired into the live Vite project but sources inform component and library ports.
-- **Notable Assets:** Unity C# scripts under `Assets/Scripts/Nexus/`, comprehensive documentation (`docs/`, `README_*.md`), and prior Node/TypeScript services under `core/` and `scripts/`.
+- **Notable Assets:** Unity C# scripts under `docs/research/hardware/unity/Nexus/`, comprehensive documentation (`docs/`, `README_*.md`), and prior Node/TypeScript services under `core/` and `scripts/`.
 
 ## 5. Rainbow & Validation Research Bundles
 - **`archive/RAINBOW-main-extracted/`**: Archived Rainbow project stub + earth-live-data zip (moved from root-level `RAINBOW-main/` which was marked as should-be-separate-repo in `.gitignore`).
