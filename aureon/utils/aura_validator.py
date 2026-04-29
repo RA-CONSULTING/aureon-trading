@@ -34,17 +34,41 @@ class EWMA:
 
 # ---- helpers ----
 def fnum(x, d=6):
+    """Format a numeric to ``d`` decimals.
+
+    Raises ``ValueError`` on truly malformed input (strings that don't parse,
+    dicts, etc.) — the caller is responsible for skipping the sample rather
+    than persisting a fake 0.0 reading. ``None`` and explicit zeros are
+    still allowed (treated as 0.0).
+    """
+    if x is None:
+        return 0.0
     try:
         x = float(x)
-        if not math.isfinite(x): return 0.0
-        return float(f"{x:.{d}f}")
-    except: return 0.0
-
-def clamp01(x): 
-    try:
-        return max(0.0, min(1.0, float(x)))
-    except: 
+    except (ValueError, TypeError) as exc:
+        raise ValueError(
+            f"fnum: cannot coerce {x!r} to float; aura input is malformed ({exc})"
+        )
+    if not math.isfinite(x):
         return 0.0
+    return float(f"{x:.{d}f}")
+
+
+def clamp01(x):
+    """Clamp ``x`` into [0, 1].
+
+    Raises ``ValueError`` on malformed input so callers don't accidentally
+    feed a silent 0.0 into the calm/concordance validation thresholds.
+    """
+    if x is None:
+        return 0.0
+    try:
+        v = float(x)
+    except (ValueError, TypeError) as exc:
+        raise ValueError(
+            f"clamp01: cannot coerce {x!r} to float; aura input is malformed ({exc})"
+        )
+    return max(0.0, min(1.0, v))
 
 def hue_from_bands(alpha, theta, beta):
     # Map band dominance to hue (deg): theta→220°, alpha→60°, beta→0°
@@ -251,12 +275,18 @@ def run_stdin_mode():
         # Aura hue from band dominance
         hue = hue_from_bands(alpha, theta, beta)
 
-        w.writerow([
-            fnum(t,3), epoch, label,
-            fnum(atr), fnum(hrv_norm), fnum(gsr_norm),
-            fnum(calm_index), fnum(c1091), fnum(hue)
-        ])
-        f.flush()
+        try:
+            w.writerow([
+                fnum(t, 3), epoch, label,
+                fnum(atr), fnum(hrv_norm), fnum(gsr_norm),
+                fnum(calm_index), fnum(c1091), fnum(hue)
+            ])
+            f.flush()
+        except ValueError as exc:
+            # fnum/clamp01 surfaced malformed input; skip this sample rather
+            # than write a fabricated 0.0 row to the audit log.
+            print(f"[aura-validator] skipped malformed sample at t={t}: {exc}",
+                  file=sys.stderr)
 
     print("Aura validator finished.", file=sys.stderr)
     f.close()

@@ -73,7 +73,13 @@ class WorkerBeeSwarm:
         self._init_bees()
 
     def _init_bees(self) -> None:
-        """Try to instantiate each scanner. Failures are silently skipped."""
+        """Try to instantiate each scanner.
+
+        Failures are surfaced at WARNING level (was DEBUG, which silently
+        hid which bees actually loaded — operators saw the "[SWARM] N
+        worker bees active" summary and assumed all 6 were present).
+        """
+        failed: List[str] = []
         for name, module_path, class_name in _BEE_REGISTRY:
             try:
                 mod = importlib.import_module(module_path)
@@ -85,10 +91,15 @@ class WorkerBeeSwarm:
                     self._bees[name] = cls()
                 log.debug(f"[SWARM] Worker bee '{name}' loaded")
             except Exception as exc:
-                log.debug(f"[SWARM] Worker bee '{name}' unavailable: {exc}")
+                failed.append(name)
+                log.warning(f"[SWARM] Worker bee '{name}' FAILED to load "
+                            f"({type(exc).__name__}: {exc}); consensus will run "
+                            f"without it")
 
         loaded = list(self._bees.keys())
-        log.info(f"[SWARM] {len(loaded)} worker bees active: {', '.join(loaded) or 'none'}")
+        log.info(f"[SWARM] {len(loaded)}/{len(_BEE_REGISTRY)} worker bees active: "
+                 f"{', '.join(loaded) or 'none'}"
+                 + (f" — failed: {', '.join(failed)}" if failed else ""))
 
     def update_market(self, price_map: Dict[str, float], symbols: List[str]) -> None:
         """Update market data from ThoughtBus price feed."""
@@ -410,7 +421,16 @@ class QueenHiveCommand:
 
             avg_score = sum(s.get("score", 0) for s in sigs) / len(sigs)
             neural_conf = self._get_neural_confidence(symbol)
-            composite = avg_score * 0.6 + neural_conf * 0.4
+            # When neural confidence is unavailable (NeuronV2 not loaded or
+            # neural_input fields are still hardcoded placeholders), the
+            # composite collapses to the avg_score component only — rather
+            # than fold a synthetic 0.5 into the ranking.
+            if neural_conf is None:
+                composite = avg_score
+                neural_display = None
+            else:
+                composite = avg_score * 0.6 + neural_conf * 0.4
+                neural_display = round(neural_conf, 4)
 
             if composite < MIN_COMPOSITE_SCORE:
                 continue
@@ -420,7 +440,7 @@ class QueenHiveCommand:
                 "exchange": sigs[0].get("exchange", "kraken"),
                 "consensus_count": len(sigs),
                 "avg_score": round(avg_score, 4),
-                "neural_confidence": round(neural_conf, 4),
+                "neural_confidence": neural_display,
                 "composite_score": round(composite, 4),
                 "sources": list(set(s.get("source", "?") for s in sigs)),
             })
@@ -429,10 +449,38 @@ class QueenHiveCommand:
         opportunities.sort(key=lambda x: x["composite_score"], reverse=True)
         return opportunities
 
-    def _get_neural_confidence(self, symbol: str) -> float:
-        """Query NeuronV2 for confidence on this symbol."""
+    def _get_neural_confidence(self, symbol: str):
+        """Query NeuronV2 for confidence on this symbol.
+
+        Returns ``Optional[float]``. ``None`` signals "no neural component
+        available" so the caller's composite_score collapses to the
+        non-neural term cleanly. Production posture currently always
+        returns ``None`` because the neural_input vector is still hardcoded
+        placeholders (probability_score=0.5, wisdom_score=0.5, etc.) — until
+        those fields are wired to real scorers, the prediction is meaningless
+        and must not influence hunt ranking.
+        """
         if self._neuron is None:
-            return 0.5
+            if not getattr(self, "_warned_no_neuron", False):
+                self._warned_no_neuron = True
+                log.warning("[stub] _get_neural_confidence: NeuronV2 not "
+                               "loaded; composite_score will use non-neural "
+                               "components only")
+            return None
+
+        # ⚠ Neural inputs are hardcoded placeholders. Until probability /
+        # wisdom / gaia / emotional / mycelium scorers are wired through, the
+        # prediction reflects the placeholder vector, not a real read.
+        if not getattr(self, "_neural_inputs_wired", False):
+            if not getattr(self, "_warned_neural_stubs", False):
+                self._warned_neural_stubs = True
+                log.warning("[stub] _get_neural_confidence: neural_input "
+                               "fields (probability_score, wisdom_score, "
+                               "gaia_resonance, ...) are hardcoded 0.5 "
+                               "placeholders; gating output to None until "
+                               "real scorers are wired")
+            return None
+
         try:
             neural_input = {
                 "probability_score": 0.5,
@@ -444,9 +492,11 @@ class QueenHiveCommand:
                 "happiness_pursuit": 0.5,
             }
             prediction = self._neuron.predict(neural_input)
-            return float(prediction) if prediction is not None else 0.5
-        except Exception:
-            return 0.5
+            return float(prediction) if prediction is not None else None
+        except Exception as exc:
+            log.warning(f"[stub] _get_neural_confidence neuron predict error "
+                           f"for {symbol}: {exc}")
+            return None
 
     # ── ACT ───────────────────────────────────────────────────────────────
 

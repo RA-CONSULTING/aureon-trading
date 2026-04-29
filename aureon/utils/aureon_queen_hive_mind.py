@@ -2405,8 +2405,22 @@ class QueenHiveMind:
             'timestamp': time.time()
         }
         
-        # Get prices if not provided
+        # Get prices if not provided.
+        # Production posture: refuse to substitute hardcoded BTC=105000 /
+        # ETH=3800 / etc. defaults. Returns empty intelligence so Queen's
+        # downstream confidence gate (>0.618) fails closed instead of firing
+        # a real trade against fabricated prices.
         if not prices:
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if not simulation_fallback_allowed():
+                log_blocked_fallback("queen_hive_mind.gather_all_intelligence",
+                                     "no_prices_passed")
+                logger.warning("[live-data] gather_all_intelligence called "
+                               "without prices and no live-data fallback allowed; "
+                               "returning empty intelligence (no hunts will issue)")
+                return intelligence
             prices = self._get_default_prices()
         
         # Gather from Intelligence Engine

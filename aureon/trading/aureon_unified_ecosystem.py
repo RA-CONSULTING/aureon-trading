@@ -14793,16 +14793,27 @@ class AureonKrakenEcosystem:
             has_btc = False
             has_eth = False
             
+            skipped_unified_assets: List[Tuple[str, str]] = []
             for exchange, balances in all_balances.items():
                 for asset, free in balances.items():
                     try:
-                        if float(free) > 0.0001: # Min threshold
-                            if asset in ['USD', 'ZUSD', 'USDT', 'USDC']: has_usd = True
-                            if asset in ['GBP', 'ZGBP']: has_gbp = True
-                            if asset in ['EUR', 'ZEUR']: has_eur = True
-                            if asset in ['XBT', 'XXBT', 'BTC']: has_btc = True
-                            if asset in ['ETH', 'XETH']: has_eth = True
-                    except: continue
+                        free_val = float(free)
+                    except (ValueError, TypeError) as exc:
+                        logger.warning("[wallet-parse-error] unified %s/%s: cannot "
+                                       "parse balance %r (%s); excluding from holdings view",
+                                       exchange, asset, free, exc)
+                        skipped_unified_assets.append((exchange, asset))
+                        continue
+                    if free_val > 0.0001:  # Min threshold
+                        if asset in ['USD', 'ZUSD', 'USDT', 'USDC']: has_usd = True
+                        if asset in ['GBP', 'ZGBP']: has_gbp = True
+                        if asset in ['EUR', 'ZEUR']: has_eur = True
+                        if asset in ['XBT', 'XXBT', 'BTC']: has_btc = True
+                        if asset in ['ETH', 'XETH']: has_eth = True
+            if skipped_unified_assets:
+                logger.warning("[wallet-summary] unified: %d assets skipped due to "
+                               "parse errors: %s",
+                               len(skipped_unified_assets), skipped_unified_assets)
             
             # Update tradeable currencies based on holdings
             new_tradeables = []

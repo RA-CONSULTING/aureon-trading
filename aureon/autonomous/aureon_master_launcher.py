@@ -504,8 +504,23 @@ def run_autonomous_trading(engine=None, hub=None):
                 elif hasattr(labyrinth, 'price_cache'):
                     prices = labyrinth.price_cache
                 
-                # If no prices, use some defaults
+                # If no prices: production skips the cycle rather than
+                # substituting hardcoded BTC=43000 / ETH=2300 / SOL=100 prices
+                # (months-old reference values). A skipped cycle costs nothing;
+                # firing a trade against fabricated prices is catastrophic.
                 if not prices:
+                    from aureon.observer.live_data_policy import (
+                        simulation_fallback_allowed, log_blocked_fallback,
+                    )
+                    if not simulation_fallback_allowed():
+                        log_blocked_fallback("master_launcher.run_autonomous_trading",
+                                             "no_live_prices")
+                        logger.error("[live-data] real prices unavailable from "
+                                     "labyrinth, skipping cycle %d (no synthetic "
+                                     "substitution in production posture)", cycle_count)
+                        time.sleep(1)
+                        continue
+                    # DEV-ONLY hardcoded fallback (gated above)
                     prices = {
                         'BTC/USD': 43000.0,
                         'ETH/USD': 2300.0,
