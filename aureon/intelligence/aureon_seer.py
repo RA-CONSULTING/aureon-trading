@@ -1696,10 +1696,32 @@ class OracleOfSentiment:
         scores.append(("lyra_resonance", lyra_score, 0.09))
         details.update(lyra_details)
 
-        # Weighted combination
-        total_weight = sum(w for _, _, w in scores)
-        unified = sum(s * w for _, s, w in scores) / total_weight if total_weight > 0 else 0.5
-        unified = max(0.0, min(1.0, unified))
+        # Weighted combination — skip oracles whose live source returned None
+        # (Stage AP) and reweight the remaining components proportionally so a
+        # fake neutral 0.5 isn't folded into the unified sentiment.
+        active = [(name, s, w) for name, s, w in scores if s is not None]
+        skipped = [name for name, s, _ in scores if s is None]
+        total_weight = sum(w for _, _, w in active)
+        if active and total_weight > 0:
+            unified = sum(s * w for _, s, w in active) / total_weight
+            unified = max(0.0, min(1.0, unified))
+            details["sentiment_oracles_active"] = [n for n, _, _ in active]
+            if skipped:
+                details["sentiment_oracles_skipped"] = skipped
+                logger.warning("[insufficient-data] sentiment unified score "
+                               "computed from %d/%d active oracles (skipped: %s)",
+                               len(active), len(scores), skipped)
+        else:
+            # Every oracle returned None — there is no real sentiment signal.
+            # Mark the unified score as neutral 0.5 with an explicit "no sources
+            # active" detail so callers can detect.
+            unified = 0.5
+            details["sentiment_oracles_active"] = []
+            details["sentiment_oracles_skipped"] = skipped
+            details["sentiment_no_sources_active"] = True
+            logger.warning("[insufficient-data] sentiment: ALL %d oracles "
+                           "returned None; unified=0.5 with sentiment_no_sources_active=True",
+                           len(scores))
 
         # Phase determination
         if unified >= 0.75:
@@ -1735,8 +1757,14 @@ class OracleOfSentiment:
             confidence=min(0.95, confidence),
         )
 
-    def _read_fear_greed(self) -> Tuple[float, Dict]:
-        """Read Fear & Greed Index."""
+    def _read_fear_greed(self) -> Tuple[Optional[float], Dict]:
+        """Read Fear & Greed Index.
+
+        Returns (score, details). ``score`` is ``None`` when the live FG
+        source is unavailable so the aggregator can drop this component
+        and reweight the remainder, rather than fold a synthetic 0.5
+        into the unified sentiment reading.
+        """
         details = {}
         fetcher = self._get_fg_fetcher()
         if fetcher:
@@ -1753,11 +1781,13 @@ class OracleOfSentiment:
                 score = index_val / 100.0
                 return score, details
             except Exception as e:
-                logger.debug(f"OracleOfSentiment FG error: {e}")
+                logger.warning(f"[insufficient-data] _read_fear_greed source error: {e}")
         details["fear_greed_source_active"] = False
-        return 0.5, details
+        logger.warning("[insufficient-data] _read_fear_greed: no live source; "
+                       "returning None so aggregator reweights without this component")
+        return None, details
 
-    def _read_yahoo_news(self) -> Tuple[float, Dict]:
+    def _read_yahoo_news(self) -> Tuple[Optional[float], Dict]:
         """
         Read Yahoo Finance RSS headlines and analyze for geopolitical/market sentiment.
         Uses keyword matching on headlines to gauge bullish vs bearish tone.
@@ -1793,7 +1823,9 @@ class OracleOfSentiment:
         if not headlines:
             details["news_source_active"] = False
             details["news_headlines_count"] = 0
-            return 0.5, details
+            logger.warning("[insufficient-data] _read_yahoo_news: no headlines "
+                           "fetched; returning None so aggregator reweights")
+            return None, details
 
         # Analyze headlines
         bullish_count = 0
@@ -1832,8 +1864,13 @@ class OracleOfSentiment:
 
         return score, details
 
-    def _read_order_flow(self) -> Tuple[float, Dict]:
-        """Read the King's Order Flow Velocity."""
+    def _read_order_flow(self) -> Tuple[Optional[float], Dict]:
+        """Read the King's Order Flow Velocity.
+
+        Returns ``(None, details)`` when king_accounting is unavailable so
+        the aggregator drops this component instead of folding a fake 0.5
+        into the unified sentiment.
+        """
         details = {}
         try:
             from aureon.bots.king_accounting import get_order_flow_velocity
@@ -1846,15 +1883,23 @@ class OracleOfSentiment:
             details["flow_surge"] = report.get("surge_detected", False)
             details["flow_acceleration"] = report.get("acceleration", 0.0)
             # Map pressure_ratio directly to score (0 = all sells, 1 = all buys)
-            score = report.get("flow_momentum", 0.5)
-            return score, details
+            score = report.get("flow_momentum", None)
+            if score is not None:
+                return float(score), details
         except Exception as e:
-            logger.debug(f"OracleOfSentiment order flow error: {e}")
+            logger.warning(f"[insufficient-data] _read_order_flow source error: {e}")
         details["order_flow_source_active"] = False
-        return 0.5, details
+        logger.warning("[insufficient-data] _read_order_flow: no live source; "
+                       "returning None so aggregator reweights without this component")
+        return None, details
 
-    def _read_lyra_resonance(self) -> Tuple[float, Dict]:
-        """Read Lyra's latest emotional resonance."""
+    def _read_lyra_resonance(self) -> Tuple[Optional[float], Dict]:
+        """Read Lyra's latest emotional resonance.
+
+        Returns ``(None, details)`` when Lyra hasn't produced a resonance
+        reading yet so the aggregator reweights other oracles rather than
+        absorbing a fake neutral 0.5.
+        """
         details = {}
         try:
             from aureon.trading.aureon_lyra import get_lyra
@@ -1868,9 +1913,9 @@ class OracleOfSentiment:
                 details["lyra_action"] = r.action
                 return r.unified_score, details
         except Exception as e:
-            logger.debug(f"OracleOfSentiment Lyra error: {e}")
+            logger.warning(f"[insufficient-data] _read_lyra_resonance source error: {e}")
         details["lyra_resonance_source_active"] = False
-        return 0.5, details
+        return None, details
 
     # ── MACRO LANDSCAPE — full global view ──────────────────────────────
 
@@ -1878,7 +1923,7 @@ class OracleOfSentiment:
     _MACRO_CACHE_TIME: float = 0.0
     _MACRO_CACHE_TTL: float = 300.0  # 5 minutes
 
-    def _read_macro_landscape(self) -> Tuple[float, Dict]:
+    def _read_macro_landscape(self) -> Tuple[Optional[float], Dict]:
         """
         Reads the full global macro landscape from open-source APIs.
         Sources (all free, no API key required):
@@ -2064,7 +2109,10 @@ class OracleOfSentiment:
 
         if not signals:
             details["macro_source_active"] = False
-            return 0.5, details
+            logger.warning("[insufficient-data] _read_macro_landscape: no signals "
+                           "gathered (Yahoo / CoinGecko / DXY all failed); returning "
+                           "None so aggregator reweights without this component")
+            return None, details
 
         total_w = sum(w for _, _, w in signals)
         macro_score = sum(s * w for _, s, w in signals) / total_w if total_w > 0 else 0.5

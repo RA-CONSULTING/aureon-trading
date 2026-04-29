@@ -272,7 +272,14 @@ class EarthResonanceEngine:
                 try:
                     loop = asyncio.get_event_loop()
                     if loop.is_running():
-                        kp_value = None  # Cannot block; skip
+                        # Inside an async context — can't block on
+                        # run_until_complete. Skip Kp fetch this cycle;
+                        # caller should use the async path directly.
+                        logger.debug(
+                            "earth_resonance: event loop running, deferring "
+                            "NOAA Kp fetch to async caller"
+                        )
+                        kp_value = None
                     else:
                         kp_value = loop.run_until_complete(qssa._fetch_kp_index())
                 except RuntimeError:
@@ -283,8 +290,8 @@ class EarthResonanceEngine:
 
             if kp_value is not None and 0 <= kp_value <= 9:
                 # Real-data estimate: higher Kp → larger mode amplitudes
-                # (same scaling as queen_solar_system_awareness).
-                # Mode 1 (7.83 Hz) baseline 0.8, gentle rise with Kp.
+                # (same scaling shape as queen_solar_system_awareness).
+                # Mode 1 (7.83 Hz) baseline 0.7, gentle rise with Kp.
                 if mode1_power is None:
                     mode1_power = min(1.0, 0.7 + 0.05 * kp_value)
                 # Mode 2 (14.3 Hz) baseline 0.6, stronger Kp coupling.

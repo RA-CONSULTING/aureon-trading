@@ -325,7 +325,9 @@ class TruthPredictionEngine:
         accel_real = 0.0
         if len(history) >= 2:
             (t_prev, m_prev), (t_now, m_now) = history[-2], history[-1]
-            dt = max(1e-3, t_now - t_prev)
+            # abs() guards against clock-skew or out-of-order timestamps
+            # producing a tiny dt that would warp accel into a huge value.
+            dt = max(1e-3, abs(t_now - t_prev))
             # Convert percentage momentum delta to decimal/second
             accel_real = ((m_now - m_prev) / 100.0) / dt
 
