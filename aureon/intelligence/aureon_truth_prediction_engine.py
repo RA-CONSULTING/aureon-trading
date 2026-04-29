@@ -151,7 +151,13 @@ class TruthPredictionEngine:
         self.probability_intel: Optional[ProbabilityUltimateIntelligence] = None
         self.pingpong: Optional[QueenAurisPingPong] = None
         self.pending_predictions: Dict[str, List[TruthPrediction]] = {}
-        
+        # Stage AO: track per-symbol momentum history so we can derive
+        # real `accel` (rate-of-change of momentum) from successive
+        # snapshots instead of passing accel=0.0 placeholder.
+        # Each entry: (timestamp, momentum_30s).
+        self._momentum_history: Dict[str, List[tuple]] = {}
+        self._momentum_history_max = 16
+
         if PROBABILITY_AVAILABLE:
             try:
                 self.probability_intel = ProbabilityUltimateIntelligence()
@@ -307,20 +313,37 @@ class TruthPredictionEngine:
         
         pattern_key = (scenario, risk, proximity, momentum_band, clownfish)
         
-        # Query probability matrices
+        # Stage AO: derive real `accel` (rate-of-change of momentum) from
+        # the per-symbol momentum history we accumulate across snapshots.
+        # If we have at least 2 prior readings, accel = (m_now - m_prev)
+        # divided by elapsed seconds. Otherwise the first call seeds the
+        # buffer and accel falls back to 0.0 with no log spam.
+        history = self._momentum_history.setdefault(snapshot.symbol, [])
+        history.append((snapshot.timestamp, snapshot.momentum_30s))
+        if len(history) > self._momentum_history_max:
+            del history[: len(history) - self._momentum_history_max]
+        accel_real = 0.0
+        if len(history) >= 2:
+            (t_prev, m_prev), (t_now, m_now) = history[-2], history[-1]
+            dt = max(1e-3, t_now - t_prev)
+            # Convert percentage momentum delta to decimal/second
+            accel_real = ((m_now - m_prev) / 100.0) / dt
+
         try:
-            # Build mock data for probability query (would be real in production)
+            # Note: entry_price/target_price still placeholders pending wiring
+            # to the real per-symbol target tracker. queen_flags pending the
+            # risk-flag pipeline. accel is now derived from real history.
             intel = self.probability_intel.get_prediction(
                 current_price=snapshot.price,
-                entry_price=snapshot.price,  # Mock entry
-                target_price=snapshot.price * 1.02,  # Mock 2% target
+                entry_price=snapshot.price,
+                target_price=snapshot.price * 1.02,
                 current_time=snapshot.timestamp,
-                entry_time=snapshot.timestamp - 3600,  # Mock 1h ago
+                entry_time=snapshot.timestamp - 3600,
                 prediction_time=snapshot.timestamp + horizon_seconds,
-                queen_flags=[],  # Would be real flags
-                probability_base=0.5,  # Neutral start
-                momentum=snapshot.momentum_30s / 100.0,  # Convert % to decimal
-                accel=0.0  # Would calculate from history
+                queen_flags=[],
+                probability_base=0.5,
+                momentum=snapshot.momentum_30s / 100.0,
+                accel=accel_real,
             )
             
             win_probability = intel.final_probability

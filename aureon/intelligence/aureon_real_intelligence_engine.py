@@ -278,28 +278,87 @@ class RealBotProfiler:
         return 50  # Default
     
     def _estimate_order_consistency(self, orderbook: Dict) -> float:
-        """Estimate order size consistency.
+        """Estimate order size consistency from real L2 orderbook entries.
 
-        ⚠ STUB: not yet implemented. Returns 0.0 (no signal) and logs a
-        warning so operators see the placeholder. Was previously returning
-        a hardcoded 0.85 / 0.5 which looked like real consistency scores.
-        TODO: replace with real order-size variance / clustering analysis.
+        Returns a score in [0, 1] where 1 = highly consistent order sizes
+        (algorithmic trading signature) and 0 = highly varied sizes (more
+        retail-like). Computed as 1 / (1 + CV) where CV = stdev/mean of
+        all order qty values across bids+asks for every symbol present.
+
+        Returns 0.0 only when orderbook is empty / unparseable — in which
+        case there's no real signal to surface.
         """
-        logger.warning("[stub] _estimate_order_consistency not implemented — "
-                       "returning 0.0 (no signal). orderbook_present=%s",
-                       bool(orderbook))
-        return 0.0
-    
+        if not orderbook:
+            return 0.0
+        try:
+            qty_values: List[float] = []
+            iterable = orderbook.values() if isinstance(orderbook, dict) else []
+            for sym_book in iterable:
+                if not isinstance(sym_book, dict):
+                    continue
+                for side in ("bids", "asks"):
+                    rows = sym_book.get(side) or []
+                    for row in rows:
+                        try:
+                            # Accept (price, qty), {'price','qty'}, or [price,qty]
+                            if isinstance(row, dict):
+                                q = float(row.get("qty") or row.get("size") or 0)
+                            elif isinstance(row, (list, tuple)) and len(row) >= 2:
+                                q = float(row[1])
+                            else:
+                                continue
+                        except (ValueError, TypeError):
+                            continue
+                        if q > 0:
+                            qty_values.append(q)
+            if len(qty_values) < 4:
+                return 0.0   # Too few orders to compute meaningful CV
+            mean = sum(qty_values) / len(qty_values)
+            if mean <= 0:
+                return 0.0
+            var = sum((q - mean) ** 2 for q in qty_values) / len(qty_values)
+            stdev = var ** 0.5
+            cv = stdev / mean
+            # Map CV → consistency. CV=0 → 1.0; CV=1 → 0.5; CV→∞ → 0.
+            return max(0.0, min(1.0, 1.0 / (1.0 + cv)))
+        except Exception as exc:
+            logger.debug("_estimate_order_consistency unexpected error: %s", exc)
+            return 0.0
+
     def _estimate_latency(self, orderbook: Dict) -> int:
-        """Estimate trading latency.
+        """Estimate effective WebSocket latency from per-symbol update timing.
 
-        ⚠ STUB: was returning hardcoded 30 / 100 ms. Returns -1 (unknown)
-        with a warning so operators see the placeholder.
-        TODO: measure real round-trip time from request → ack timestamps.
+        Real measurement requires exchange-side ack timestamps which the
+        existing client interfaces don't currently expose. As a best-effort
+        proxy, infer from the cadence of update events the orderbook
+        records: tighter cadences imply lower latency. Returns latency in
+        ms rounded to the nearest 5; returns -1 sentinel only when no
+        timing data is present.
         """
-        logger.warning("[stub] _estimate_latency not implemented — returning -1 "
-                       "(unknown). orderbook_present=%s", bool(orderbook))
-        return -1
+        if not orderbook:
+            return -1
+        try:
+            cadences: List[float] = []
+            for sym_book in orderbook.values() if isinstance(orderbook, dict) else []:
+                if not isinstance(sym_book, dict):
+                    continue
+                last_update = sym_book.get("last_update_ts") or sym_book.get("ts")
+                prev_update = sym_book.get("prev_update_ts")
+                if last_update and prev_update:
+                    try:
+                        delta = float(last_update) - float(prev_update)
+                        if 0 < delta < 60:  # only sensible cadences
+                            cadences.append(delta * 1000.0)
+                    except (ValueError, TypeError):
+                        continue
+            if not cadences:
+                return -1
+            avg_ms = sum(cadences) / len(cadences)
+            # Round to nearest 5 ms
+            return int(round(avg_ms / 5.0) * 5)
+        except Exception as exc:
+            logger.debug("_estimate_latency unexpected error: %s", exc)
+            return -1
 
     def _get_volume(self, symbol: str, orderbook: Dict) -> float:
         """Get trading volume"""
@@ -308,15 +367,55 @@ class RealBotProfiler:
         return 0
 
     def _detect_layering(self, orderbook: Dict) -> float:
-        """Detect orderbook layering patterns.
+        """Detect L2 orderbook layering (multi-level bid/ask wall stacking).
 
-        ⚠ STUB: was returning hardcoded 0.3 / 0.0. Returns 0.0 (no signal)
-        with a warning so operators see the placeholder.
-        TODO: implement real bid/ask layering detection from L2 book.
+        Layering = placing multiple sizable orders behind the top of book
+        to create false depth. Computed as: ratio of (qty in levels 2-N)
+        to (qty at top of book). Higher ratio means more layering.
+
+        Returns score in [0, 1] capped — 0 = no layering (all qty at top
+        of book or no data), 1 = heavy layering (deeper levels carry far
+        more qty than top).
         """
-        logger.warning("[stub] _detect_layering not implemented — returning "
-                       "0.0 (no signal). orderbook_present=%s", bool(orderbook))
-        return 0.0
+        if not orderbook:
+            return 0.0
+        try:
+            scores: List[float] = []
+            for sym_book in orderbook.values() if isinstance(orderbook, dict) else []:
+                if not isinstance(sym_book, dict):
+                    continue
+                for side in ("bids", "asks"):
+                    rows = sym_book.get(side) or []
+                    if len(rows) < 3:
+                        continue
+                    qtys: List[float] = []
+                    for row in rows:
+                        try:
+                            if isinstance(row, dict):
+                                q = float(row.get("qty") or row.get("size") or 0)
+                            elif isinstance(row, (list, tuple)) and len(row) >= 2:
+                                q = float(row[1])
+                            else:
+                                continue
+                        except (ValueError, TypeError):
+                            continue
+                        if q > 0:
+                            qtys.append(q)
+                    if len(qtys) < 3:
+                        continue
+                    top_qty = qtys[0]
+                    deeper_qty = sum(qtys[1:])
+                    if top_qty <= 0:
+                        continue
+                    ratio = deeper_qty / top_qty
+                    # Cap at 1.0 — beyond ratio=1 is heavy layering
+                    scores.append(min(1.0, ratio / 4.0))
+            if not scores:
+                return 0.0
+            return sum(scores) / len(scores)
+        except Exception as exc:
+            logger.debug("_detect_layering unexpected error: %s", exc)
+            return 0.0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
