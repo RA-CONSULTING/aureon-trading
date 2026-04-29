@@ -189,22 +189,213 @@ than absorb a fake value.
 
 ## Production Guarantees
 
-*See subsequent sections.*
+In default production posture (`AUREON_ALLOW_SIM_FALLBACK` unset, no
+explicit dev opt-in), the system **WILL NOT**:
+
+- Fire a trade against hardcoded BTC=$43,000 / $105,000 / $97,500 prices on a primary-feed blip
+- Substitute hardcoded `_get_default_prices()` dicts when the labyrinth feed returns empty
+- Inject `random.uniform()` biometrics, coherence scores, lambda stability values, or whale flows into any decision pipeline
+- Broadcast canned Queen messages or "ALL SYSTEMS GO" status when underlying APIs are unreachable
+- Silently swallow exchange wallet-parse errors (now per-asset warnings + summary count)
+- Train the OHLC predictor on >10% corrupt data (raises instead)
+- Return hardcoded $45,000 BTC for whale-flow USD valuations
+- Multiply real wallet balances by hardcoded BTC*$91k / ETH*$3.1k portfolio multipliers
+- Publish Queen sentiment unified=0.5 without flagging `sentiment_no_sources_active=True`
+- Allow the earth gate to read open while `_schumann_state_initialized=False`
+- Run `_get_neural_confidence` against a hardcoded 0.5 placeholder vector
+
+In default production posture, the system **WILL**:
+
+- Walk the 5-source real-data fallback chain (`unified_cache → coingecko_cache → kraken → binance → coingecko_live`) before giving up on prices
+- Skip the cycle and log `[live-data] real prices unavailable` when every real source fails
+- Return 503 on `/health` when underlying APIs are stale or unreachable
+- Surface `[insufficient-data]` / `[stub]` warnings whenever a fallback fires
+- Compute real values from real data wherever a real source is wired (observer coherence, wave predictor confidence, NOAA Kp, Schumann field coherence, swarm consensus)
+- Use `Optional[float]` returns + reweighting when sub-component signals are missing, rather than fold neutral defaults into the aggregate
 
 ---
 
 ## Still to Wire
 
-*See subsequent sections.*
+Prioritised list of work that would replace remaining `⚠️ PARTIAL` /
+`❌ NOT FIXED` / `🔍 GATED` markers with `✅ FIXED`. Each entry includes
+an effort estimate.
+
+### High priority — production decision impact
+
+| # | Component | What's missing | Effort | Stage candidate |
+|---|---|---|---|---|
+| 1 | Queen `_build_real_neural_input` — `probability_score` field | Wire to real `ProbabilityUltimateIntelligence.final_probability` query path | ~30 LOC + plumbing test | AR-1 |
+| 2 | Queen `_build_real_neural_input` — `emotional_coherence` field | Source from emotional-state scorer (likely `aureon_temporal_biometric_link.user_coherence`) | ~20 LOC | AR-2 |
+| 3 | Queen `_build_real_neural_input` — `happiness_pursuit` field | No real source identified; either delete the field from the input vector and retrain the neuron, or wire to a meaningful proxy (e.g. recent win-rate) | ~40 LOC + retrain | AR-3 |
+| 4 | `truth_prediction_engine.generate_prediction` — `risk` placeholder (`"none"`) | Wire to real risk-flag pipeline (volatility-derived, position-derived, time-of-day) | ~50 LOC | AR-4 |
+| 5 | `truth_prediction_engine.generate_prediction` — `proximity` placeholder (`"far"`) | Wire to per-symbol target-distance tracker against active positions | ~30 LOC | AR-5 |
+| 6 | `truth_prediction_engine.generate_prediction` — `queen_flags` placeholder (`[]`) | Wire to `Queen.get_active_flags(symbol)` | ~20 LOC | AR-6 |
+| 7 | `aureon_realtime_surveillance.start` — currently raises in production | Wire a real WebSocket exchange feed (Kraken / Binance L2 streams) | ~150 LOC | separate project |
+| 8 | `aureon_historical_live` — entire module is stubbed | Real Kraken / Alpaca / Binance exchange order flow | ~300 LOC | separate project |
+
+### Medium priority — operator-facing dashboards
+
+| # | Component | What's missing | Effort |
+|---|---|---|---|
+| 9 | `aureon_unified_master_hub` `_update_warroom` / `_update_surveillance` / `_generate_test_data` | Wire to real position state + real surveillance feed (depends on item 7) | ~100 LOC |
+| 10 | `aureon_command_center_enhanced` `_generate_mock_signals` / `_queen_commentary` | Wire to ThoughtBus listener for real Queen output | ~50 LOC |
+| 11 | `mind_thought_action_hub.generate_test_thoughts` | Replace with real ThoughtBus subscription | ~30 LOC |
+
+### Medium priority — sensor / consciousness wiring
+
+| # | Component | What's missing | Effort |
+|---|---|---|---|
+| 12 | `IntuitionSense` / `AncestralSense` — defaults to 0.5 with WARNING | Wire `aureon.queen.queen_consciousness_measurement` so `consciousness_active=True` | ~50 LOC + module verification |
+| 13 | Biometric streams (`queen_live_signal_tracker`, `queen_street_homing`) | Wire real HRV / EEG hardware (HeartMath device, Muse headband, etc.) | hardware project |
+| 14 | `_simulate_firm_activity` (orca_complete_kill_cycle's separate copy) | Either gate like queen_quantum_frog's, or wire to real `firm_intelligence_catalog.get_recent_activity()` | ~25 LOC |
+
+### Low priority — execution-side
+
+| # | Component | What's missing | Effort |
+|---|---|---|---|
+| 15 | `micro_profit_labyrinth.execute_validated_opportunity` | Roll back position record when no order_id returns from exchange (currently logs warning but records the trade) | ~40 LOC + audit-log integration |
+| 16 | `_simulate_firm_activity` cosmetic rename | `_derive_firm_activity_from_price` (no behaviour change) | ~5 LOC |
+| 17 | `_simulate_momentum_validation` cosmetic rename | `_validate_momentum_against_history` | ~5 LOC |
+
+### Low priority — fresher / alternate sources
+
+| # | Component | What's missing | Effort |
+|---|---|---|---|
+| 18 | Price-freshness check | Reject prices older than N seconds even when real (separate concern from "no fake data") | ~30 LOC |
+| 19 | Direct measured Schumann (vs Kp-derived) | Wire alternate Schumann data source so `queen_solar_system_awareness.fetch_schumann_data` doesn't depend on Kp estimation | ~50 LOC + source eval |
+| 20 | `aureon_universal_forecast._compute_fibonacci_alignment` | Wire to existing `self.price_history` deque instead of returning 0.5 with documentation comment | ~10 LOC |
 
 ---
 
 ## Smoke Verification
 
-*See subsequent sections.*
+Run these commands against a fresh checkout to confirm production posture
+behaves as documented.
+
+### 1. Real-price fallback chain returns live data
+
+```bash
+unset AUREON_ALLOW_SIM_FALLBACK
+python -c "
+from aureon.observer.real_price_fallback import get_real_prices_with_fallback
+prices, sources = get_real_prices_with_fallback(['BTC/USD', 'ETH/USD', 'SOL/USD'], timeout_sec=5.0)
+print(f'Sources: {sources}')
+for sym, p in prices.items():
+    print(f'  {sym}: \${p:,.2f}')
+"
+# Expected: 3 real prices from the first source that responds
+```
+
+### 2. Production posture refuses to fabricate prices
+
+```bash
+unset AUREON_ALLOW_SIM_FALLBACK
+AUREON_PRICE_FALLBACK_CHAIN=unknown_source python -c "
+from aureon.observer.real_price_fallback import get_real_prices_with_fallback
+prices, sources = get_real_prices_with_fallback(['BTC/USD'], timeout_sec=2.0)
+assert prices == {} and sources == []
+print('OK: empty chain returns ({}, []) — caller must skip cycle')
+"
+# Expected: '[real-price-fallback] all sources returned no prices ...' warning
+```
+
+### 3. Earth gate stays closed without live Schumann
+
+```bash
+unset AUREON_ALLOW_SIM_FALLBACK
+python -c "
+from aureon.harmonic.earth_resonance_engine import EarthResonanceEngine
+e = EarthResonanceEngine()
+gate_open, reason = e.get_trading_gate_status()
+assert not gate_open and 'no_live' in reason
+print(f'OK: gate closed: {reason}')
+"
+# Expected: 'gate closed: no_live_schumann_data (defaults not trusted as real reading)'
+```
+
+### 4. Dev posture preserves synthetic paths
+
+```bash
+AUREON_ALLOW_SIM_FALLBACK=1 python -c "
+from aureon.harmonic.earth_resonance_engine import EarthResonanceEngine
+e = EarthResonanceEngine()
+state = e.update_schumann_state(market_volatility=0.0)
+print(f'OK dev: mode1={state.mode1_power:.2f}')
+"
+# Expected: synthetic mode_power values (~1.0 from sin curves)
+```
+
+### 5. Aura validator surfaces malformed input
+
+```bash
+python -c "
+from aureon.utils.aura_validator import fnum
+try:
+    fnum('garbage')
+    print('FAIL'); raise SystemExit(1)
+except ValueError as exc:
+    print(f'OK: fnum raised: {exc}')
+"
+# Expected: ValueError with 'malformed' in message
+```
+
+### 6. Real bot-profiler L2 algorithms
+
+```bash
+python -c "
+from aureon.intelligence.aureon_real_intelligence_engine import RealBotProfiler
+p = RealBotProfiler()
+ob = {'BTC/USD': {'bids': [(67000, 1.0)]*4, 'asks': [(67001, 1.0)]*4}}
+print(f'consistency: {p._estimate_order_consistency(ob):.3f}')   # Expected ~1.0
+print(f'layering: {p._detect_layering(ob):.3f}')                 # Expected ~0.75
+print(f'latency: {p._estimate_latency({})}')                     # Expected -1
+"
+```
+
+### 7. Health endpoint returns 503 on stale data
+
+```bash
+# (When run against a deployment with no recent ticker fetch)
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8081/health
+# Expected: 503 with JSON body listing failed_checks
+```
 
 ---
 
 ## Stage Map
 
-*See subsequent sections.*
+Each fix is traceable to a stage commit on `claude/organize-repo-fYIx7`:
+
+| Stage | Commit | Theme |
+|---|---|---|
+| AE | (earlier) | `live_data_policy.py` — `simulation_fallback_allowed()` primitive |
+| AF | (earlier) | 4 free live-data fetchers wired (macro, coingecko, FRED) |
+| AG | (earlier) | Daemon constructs `WavePredictor` + `MomentumTracker` singletons |
+| AH | `647ff4ca` | Sweep synthetic data out of the logic stream (queen biometrics, narrator coherence, coinapi demo, BillionBlackBox label) |
+| AI | `721f124d` | Sweep remaining synthetic data from trading + dashboard paths |
+| AJ | `5bd00d37` | Surface silent stubs + hardcoded fake defaults via `[insufficient-data]` warnings |
+| AK | `590edafe` | Gate `ProbabilityMatrix`, `EarthResonanceEngine`, research stubs |
+| AK followup | `52b158cc` | Earth gate defaults to closed until live Schumann ingested |
+| AL | `9418a910` | 3 CRITICAL holes in trading spine + 4 silent-except + truthful health endpoint |
+| AM | `0b08fcce` | Real-data fallback chain (`real_price_fallback.py`) wired into 3 spine sites |
+| AN | `5e5e9c42` | Propagate fresh-data chain across subsystems |
+| AO | `bac358ff` | Replace fake intelligence with real-data computations |
+| AP | `d3cf7c17` | Final intelligence-line audit + AO robustness fixes |
+| AQ | `62eb1933`, `570072b9`, *this commit* | Cognitive flow checklist (this document) |
+
+PR opening this work into `main`: [#173](https://github.com/RA-CONSULTING/aureon-trading/pull/173).
+
+---
+
+## Maintenance
+
+When future work lands:
+
+1. Update the relevant row in the Layer-by-Layer Status table.
+2. Move the entry from "Still to Wire" to a fixed row when complete.
+3. Add the new stage to the Stage Map.
+4. Increment the date + last-commit fields at the top of this file.
+
+This document is meant to stay current. If it goes stale, that itself is
+a signal that real-data wiring has slipped.
