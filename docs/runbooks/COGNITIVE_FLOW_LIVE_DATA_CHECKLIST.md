@@ -28,7 +28,65 @@ Status icons used throughout:
 
 ---
 
-## Cognitive Flow Diagram
+## Progress Summary
+
+**40 of 53 cognitive components ✅ FIXED — 75.5% of the system is backed by live data.**
+
+```
+✅ FIXED       ████████████████████████████████████████░░░░░░░░░░░░  40/53  (75.5%)
+🔍 GATED       ████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   8/53  (15.1%)
+⚠️  PARTIAL     ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   4/53   (7.5%)
+❌ NOT FIXED   █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   1/53   (1.9%)
+```
+
+### Status tally
+
+| Status | Count | % |
+|---|---|---|
+| ✅ FIXED | 40 | 75.5% |
+| 🔍 GATED | 8 | 15.1% |
+| ⚠️ PARTIAL | 4 | 7.5% |
+| ❌ NOT FIXED | 1 | 1.9% |
+| **Total** | **53** | **100%** |
+
+### Per-layer fix coverage
+
+| Layer | ✅ FIXED | Total | Coverage |
+|---|---|---|---|
+| 5 · Field / Cosmic | 4 | 4 | **100%** |
+| 7 · Risk / Validation | 4 | 4 | **100%** |
+| 1 · Raw Data Input | 7 | 8 | 87.5% |
+| 2 · Pre-processing / Sensors | 5 | 6 | 83.3% |
+| 6 · Queen Decision | 5 | 6 | 83.3% |
+| 4 · Sentiment / Sensory | 3 | 4 | 75.0% |
+| 8 · Execution | 5 | 7 | 71.4% |
+| 3 · Pattern Detection | 5 | 8 | 62.5% |
+| Outputs / Broadcasts | 2 | 6 | 33.3% |
+
+Layers 5 (Field / Cosmic) and 7 (Risk / Validation) are **fully covered** — every production trade-decision path through them reads real data or surfaces a no-data sentinel. Outputs / Broadcasts drags the overall percentage because 4 of its 6 components are 🔍 GATED (synthetic dashboard demos that production correctly refuses to render); they aren't dangerous, just missing real-feed wiring for the *display* of system state.
+
+### Work scorecard
+
+- **Stages completed**: 14 (AE → AQ + AR-1 in flight)
+- **Code commits on this branch**: 16 (AH → AR-1)
+- **Files changed**: ~50
+- **New helper modules added**: 1 (`aureon/observer/real_price_fallback.py`)
+- **New documentation added**: 2 (`COGNITIVE_FLOW_LIVE_DATA_CHECKLIST.md` + `HNC_VERIFICATION_AUDIT_v3_2026-04-29.md`)
+
+### Deferred work (from AQ-3 "Still to Wire")
+
+20 prioritised items remain, organised by impact:
+
+| Priority | Count | Examples |
+|---|---|---|
+| **HIGH** — production decision impact | 8 | Queen neural input fields (`probability_score`, `emotional_coherence`, `happiness_pursuit`); `truth_prediction` `risk` / `proximity` / `queen_flags`; real surveillance feed; `aureon_historical_live` real exchange wiring |
+| **MEDIUM** — operator dashboards | 3 | `master_hub` warroom + surveillance + test_data; `command_center_enhanced` mock signals + Queen commentary; `mind_thought_action_hub` test thoughts |
+| **MEDIUM** — sensor / consciousness | 3 | `IntuitionSense` + `AncestralSense` consciousness module; biometric hardware; `_simulate_firm_activity` orca copy |
+| **LOW** — execution polish | 3 | `micro_profit_labyrinth` order-id rollback; cosmetic renames |
+| **LOW** — fresher / alternate sources | 3 | Price-freshness check; direct-measured Schumann; `_compute_fibonacci_alignment` deque wiring |
+
+---
+
 
 ```
                             ┌──────────────────────────────────────┐
