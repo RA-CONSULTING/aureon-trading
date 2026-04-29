@@ -414,3 +414,28 @@ def get_real_prices_with_fallback(
             len(requested),
         )
     return accumulated, sources_used
+
+
+def get_real_price(
+    symbol: str,
+    *,
+    max_cache_age_sec: Optional[float] = None,
+    timeout_sec: Optional[float] = None,
+) -> Optional[float]:
+    """Fetch a single symbol's price via the live-data fallback chain.
+
+    Returns ``None`` if every real source fails — callers MUST treat
+    ``None`` as "no real data, skip this calculation" and never substitute
+    a hardcoded price.
+
+    Convenience wrapper around :func:`get_real_prices_with_fallback` for
+    sites that need just one symbol's price (e.g. portfolio breakdowns,
+    glassnode whale-flow USD valuations, single-asset position sizing).
+    """
+    prices, _ = get_real_prices_with_fallback(
+        symbols=[symbol],
+        max_cache_age_sec=max_cache_age_sec,
+        timeout_sec=timeout_sec,
+    )
+    canonical = _normalise_symbol(symbol)
+    return prices.get(canonical)

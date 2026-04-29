@@ -2202,25 +2202,27 @@ class OrcaKillerWhaleIntelligence:
         """
         # For now, return a mock price - in real implementation this would
         # query the actual price feed (Kraken, Binance, etc.)
-        # We could get this from the global price data in the dashboard
-        
-        # Mock implementation - in real system this would be:
-        # return self.price_feeds.get(symbol, {}).get('price', 0)
-        
-        # For testing, return a price that allows some exits
-        base_prices = {
-            'BTC/USD': 95000,
-            'ETH/USD': 3200,
-            'SOL/USD': 180,
-            'ADA/USD': 0.85,
-            'DOT/USD': 12.5,
-        }
-        
+        # Stage AN: was hardcoded {'BTC/USD': 95000, 'ETH/USD': 3200, ...}
+        # with $100 default for unknown symbols. Replaced with real-data
+        # fallback chain — exit signals broadcast to the dashboard now reflect
+        # real prices, not stale references that distorted exit recommendations.
+
         if symbol in self.latest_prices:
             return self.latest_prices[symbol]
         if symbol.upper() in self.latest_prices:
             return self.latest_prices[symbol.upper()]
-        return base_prices.get(symbol, 100.0)  # Default $100
+        try:
+            from aureon.observer.real_price_fallback import get_real_price
+            price = get_real_price(symbol, max_cache_age_sec=60.0, timeout_sec=3.0)
+            if price and price > 0:
+                # Cache so subsequent calls are free
+                self.latest_prices[symbol] = float(price)
+                return float(price)
+        except Exception:
+            pass
+        # Real chain failed and we have no cache — return 0.0 sentinel
+        # (exit-signal logic will see "no real price" and skip).
+        return 0.0
     
     def get_exit_signals(self) -> List[Dict]:
         """

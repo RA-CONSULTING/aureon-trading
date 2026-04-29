@@ -180,6 +180,7 @@ import logging
 
 # Set global logging to WARNING to suppress INFO spam
 logging.basicConfig(level=logging.WARNING, format='%(message)s')
+logger = logging.getLogger(__name__)
 
 # Suppress specific chatty modules
 NOISY_MODULES = [
@@ -8128,22 +8129,54 @@ class OrcaKillCycle:
                     except Exception:
                         pass
         
-        # 4. HARDCODED FALLBACKS (last resort)
-        fallbacks = {
-            'ETHUSD': 3300.0, 'ETHUSDT': 3300.0,
-            'SOLUSD': 250.0, 'SOLUSDT': 250.0,
-            'BTCUSD': 105000.0, 'BTCUSDT': 105000.0,
-            'GBPUSD': 1.27,
-            'TRXUSD': 0.25, 'TRXUSDT': 0.25,
-            'BNBUSDT': 700.0,
-            'ADAUSD': 1.0, 'ADAUSDT': 1.0,
-            'DOTUSD': 7.0, 'DOTUSDT': 7.0,
-            'ATOMUSD': 10.0, 'ATOMUSDT': 10.0,
-        }
-        for pair, fallback in fallbacks.items():
-            if pair not in prices or prices[pair] == 0:
-                prices[pair] = fallback
-        
+        # 4. REAL-DATA FALLBACK CHAIN (no hardcoded substitutions).
+        # Stage AN: previously this block hardcoded BTC=105000, ETH=3300,
+        # SOL=250 etc. as a "last resort" — but get_available_cash()
+        # multiplies these against real wallet balances, so a stale
+        # hardcoded BTC=$105k against a real holding would mis-state
+        # buying power and warp position-sizing. Walk the live chain
+        # (unified cache → CoinGecko cache → Kraken/Binance REST) instead;
+        # missing pairs stay missing rather than fabricated.
+        missing = [p for p in (
+            'ETHUSD', 'ETHUSDT', 'SOLUSD', 'SOLUSDT',
+            'BTCUSD', 'BTCUSDT', 'TRXUSD', 'TRXUSDT',
+            'BNBUSDT', 'ADAUSD', 'ADAUSDT', 'DOTUSD', 'DOTUSDT',
+            'ATOMUSD', 'ATOMUSDT',
+        ) if p not in prices or prices.get(p, 0) == 0]
+        if missing:
+            try:
+                from aureon.observer.real_price_fallback import (
+                    get_real_prices_with_fallback,
+                )
+                # Map exchange-specific suffixes to canonical BASE/USD,
+                # fetch once, then re-emit under each requested suffix.
+                bases = {p.replace('USDT', '').replace('USD', '') for p in missing}
+                canonicals = [f"{b}/USD" for b in bases if b]
+                fetched, sources = get_real_prices_with_fallback(
+                    symbols=canonicals, max_cache_age_sec=60.0, timeout_sec=4.0
+                )
+                if fetched:
+                    for pair in missing:
+                        base = pair.replace('USDT', '').replace('USD', '')
+                        canonical = f"{base}/USD"
+                        if canonical in fetched:
+                            prices[pair] = float(fetched[canonical])
+            except Exception as exc:
+                logger.warning("[live-data] _get_live_crypto_prices fallback "
+                               "chain raised: %s; missing pairs stay missing",
+                               exc)
+
+        # GBPUSD is a fiat pair — keep the FX rate gated separately.
+        # Production posture: skip rather than hardcode. Dev posture: 1.27.
+        if 'GBPUSD' not in prices or prices.get('GBPUSD', 0) == 0:
+            try:
+                from aureon.observer.live_data_policy import simulation_fallback_allowed
+                if simulation_fallback_allowed():
+                    prices['GBPUSD'] = 1.27   # DEV-ONLY hardcoded FX (gated)
+                # else: leave missing — fiat conversion uses real source elsewhere
+            except Exception:
+                pass
+
         return prices
     
     def get_available_cash(self) -> Dict[str, float]:

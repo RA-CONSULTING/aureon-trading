@@ -323,11 +323,32 @@ class GlassnodeClient:
     def _get_btc_price_at_timestamp(self, timestamp: int) -> float:
         """
         Get BTC price at a specific timestamp.
-        This is a simplified implementation - in production you'd cache prices.
+
+        Pulls a fresh BTC/USD spot price via the real-data fallback chain
+        (unified cache → CoinGecko cache → Kraken/Binance REST) and uses
+        that as a proxy for the historical timestamp. Returns 0.0 only
+        when every real source fails — callers downstream multiply
+        whale flows by this value, so 0.0 is the safe-fail sentinel
+        (whale_flow_usd = 0 is honest "unknown" vs hardcoded $45k which
+        looked real).
+
+        For true historical accuracy a per-timestamp price feed (e.g.
+        CoinGecko market_chart endpoint) is the right answer; until that
+        is wired, current spot is closer to truth than a 2024-era
+        hardcoded $45,000.
         """
-        # For now, return a reasonable average price
-        # In production, you'd integrate with a price feed
-        return 45000.0  # Approximate current BTC price
+        try:
+            from aureon.observer.real_price_fallback import get_real_price
+            price = get_real_price('BTC/USD', timeout_sec=3.0)
+            if price and price > 0:
+                return float(price)
+        except Exception as exc:
+            logger.warning("[glassnode] _get_btc_price_at_timestamp fallback "
+                           "chain raised: %s; returning 0.0", exc)
+        # Every real source failed — return 0.0 sentinel rather than
+        # hardcoded $45,000. Downstream whale_flow_usd will be 0, which
+        # operators can detect as "no real BTC reference price available".
+        return 0.0
 
     def get_whale_intelligence_summary(self) -> Dict[str, Any]:
         """

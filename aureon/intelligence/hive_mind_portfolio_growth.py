@@ -273,12 +273,37 @@ class HiveMindTrader:
         return total_balance > 0
     
     def _get_exchange_balance(self, client: any, exchange: str) -> float:
-        """Get total USD balance from exchange."""
+        """Get total USD balance from exchange.
+
+        Stage AN: was using hardcoded BTC=$95000 / ETH=$3400 multipliers
+        (months-old reference prices). Real multipliers now come from the
+        live-data fallback chain so a missing/stale primary feed doesn't
+        warp portfolio totals broadcast to the operator dashboard.
+        """
         try:
             if exchange == 'binance':
                 usdt = client.get_free_balance('USDT')
-                btc = client.get_free_balance('BTC') * 95000  # Approx BTC price
-                eth = client.get_free_balance('ETH') * 3400   # Approx ETH price
+                btc_qty = client.get_free_balance('BTC')
+                eth_qty = client.get_free_balance('ETH')
+                btc_price = eth_price = 0.0
+                if btc_qty or eth_qty:
+                    try:
+                        from aureon.observer.real_price_fallback import (
+                            get_real_prices_with_fallback,
+                        )
+                        prices, _ = get_real_prices_with_fallback(
+                            symbols=['BTC/USD', 'ETH/USD'],
+                            max_cache_age_sec=60.0, timeout_sec=4.0,
+                        )
+                        btc_price = float(prices.get('BTC/USD', 0.0))
+                        eth_price = float(prices.get('ETH/USD', 0.0))
+                    except Exception:
+                        btc_price = eth_price = 0.0
+                # Skip components where we couldn't get a real price rather
+                # than fabricate the multiplier. Caller sees true USDT plus
+                # whatever crypto we could value with real data.
+                btc = btc_qty * btc_price if btc_price > 0 else 0.0
+                eth = eth_qty * eth_price if eth_price > 0 else 0.0
                 return usdt + btc + eth
             elif exchange == 'kraken':
                 bal = client.get_account_balance()
