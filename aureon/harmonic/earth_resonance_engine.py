@@ -159,7 +159,13 @@ class EarthResonanceEngine:
         # Pass thresholds to SchumannState for property checks
         self.schumann_state._coherence_threshold = self.COHERENCE_THRESHOLD
         self.schumann_state._phase_lock_threshold = self.OBSERVER_LOCK_THRESHOLD
-        
+
+        # Tracks whether update_schumann_state has ever succeeded. While this
+        # is False, get_trading_gate_status() returns (False, "no_live_data")
+        # so callers don't mistake the dataclass defaults (field_coherence=0.7)
+        # for a real Schumann reading. Set to True on successful update.
+        self._schumann_state_initialized = False
+
         self.emotional_state = EmotionalFrequency(
             frequency_hz=256.0,
             state=EmotionalState.NEUTRAL,
@@ -294,7 +300,11 @@ class EarthResonanceEngine:
         # Preserve threshold settings on new state instance
         self.schumann_state._coherence_threshold = self.COHERENCE_THRESHOLD
         self.schumann_state._phase_lock_threshold = self.OBSERVER_LOCK_THRESHOLD
-        
+
+        # Mark state as initialized — get_trading_gate_status() will now
+        # return real gate decisions instead of (False, "no_live_data").
+        self._schumann_state_initialized = True
+
         self.last_update = now
         return self.schumann_state
     
@@ -386,9 +396,16 @@ class EarthResonanceEngine:
     def get_trading_gate_status(self) -> Tuple[bool, str]:
         """
         Check if trading should be allowed based on field coherence.
-        
+
         Returns (should_trade, reason)
         """
+        # Defensive: refuse to vouch for the gate until we've successfully
+        # ingested at least one real Schumann reading. Default SchumannState
+        # has field_coherence=0.7 which would otherwise pass the 0.55 gate
+        # — making "no live data" indistinguishable from "good coherence".
+        if not getattr(self, "_schumann_state_initialized", False):
+            return False, "no_live_schumann_data (defaults not trusted as real reading)"
+
         # Check Schumann coherence
         if not self.schumann_state.is_coherent:
             return False, f"Field coherence {self.schumann_state.field_coherence:.2%} < {self.COHERENCE_THRESHOLD:.0%} threshold"
