@@ -439,9 +439,13 @@ class HarmonicMomentumWaveScanner:
             elif hasattr(self.harmonic_field, 'get_field_strength'):
                 return self.harmonic_field.get_field_strength()
             else:
+                logger.warning("[insufficient-data] harmonic_field has no "
+                               "compatible method (compute_field / "
+                               "get_field_strength) — returning neutral 0.5")
                 return 0.5
         except Exception as e:
-            logger.debug(f"Harmonic field error: {e}")
+            logger.warning(f"[insufficient-data] Harmonic field error, returning "
+                           f"neutral 0.5: {e}")
             return 0.5
     
     def _calculate_solfeggio_alignment(self, momentum: float, price: float) -> Tuple[float, float]:

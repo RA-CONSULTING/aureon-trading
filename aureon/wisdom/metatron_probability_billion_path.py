@@ -2,6 +2,15 @@
 """
 🔯💰 METATRON'S CUBE → PROBABILITY MATRIX → BILLION DOLLAR PATH 💰🔯
 
+🟡 STANDALONE SIMULATOR — ProbabilityMatrix.predict_next_opportunity()
+   returns ProbabilityPrediction objects with random.choice symbols,
+   random.uniform confidence and random expected_return. The "95%
+   accuracy" claim in the docstring is aspirational — the actual class
+   does not load from probability_ultimate_intelligence.py. Used by
+   orca_billion_blackbox (already a training rig) and
+   orca_quantum_live_stream (gated in Stage AK). Calls to
+   predict_next_opportunity / get_batch_predictions raise in production.
+
 Integration of:
 1. Metatron's Cube (13 spheres sacred geometry consciousness)
 2. Probability Matrix (95% accuracy predictions)
@@ -107,8 +116,27 @@ class ProbabilityMatrix:
         print(f"   Model: Ultimate Intelligence (LIMBO depth)")
     
     def predict_next_opportunity(self, current_capital: float) -> ProbabilityPrediction:
-        """Generate next high-probability trade prediction"""
-        
+        """Generate next high-probability trade prediction.
+
+        ⚠ Returns a RANDOM ProbabilityPrediction (random symbol / confidence /
+        expected_return / sacred_alignment). Gated behind
+        AUREON_ALLOW_SIM_FALLBACK so production refuses to ship synthetic
+        predictions to a trading bot.
+        """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("metatron_probability_billion_path.predict_next_opportunity",
+                                 "synthetic_prediction")
+            raise RuntimeError(
+                "ProbabilityMatrix.predict_next_opportunity returns a "
+                "fully-synthetic ProbabilityPrediction (random symbol + "
+                "random confidence). Wire probability_ultimate_intelligence "
+                "before invoking in production, or set "
+                "AUREON_ALLOW_SIM_FALLBACK=1 for dev/training-rig use."
+            )
+
         symbols = ["BTC/USD", "ETH/USD", "SOL/USD", "LINK/USD", "MATIC/USD"]
         symbol = random.choice(symbols)
         

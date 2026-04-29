@@ -698,6 +698,8 @@ class MultiversalEngine:
             Reality strength (0-1): High when multiverse agrees on state
         """
         if not self.ontological_history:
+            logger.warning("[insufficient-data] reality_strength returning "
+                           "neutral 0.5 (empty ontological_history)")
             return 0.5
         
         recent_states = list(self.ontological_history)[-10:]

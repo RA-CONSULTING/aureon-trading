@@ -307,12 +307,18 @@ class QueenSolarSystemAwareness:
     async def fetch_schumann_data(self) -> Optional[SchumannResonance]:
         """
         Fetch Schumann resonance data.
-        
+
         The Schumann resonance is the electromagnetic heartbeat of Earth.
         Normally 7.83 Hz. When CME hits, it SPIKES.
         HFT systems DON'T account for this. WE DO.
+
+        ⚠ This function does NOT fetch a measured Schumann reading. It
+        ESTIMATES the fundamental from the NOAA Kp index using a heuristic
+        mapping (Kp≤2 → ~7.83 Hz, Kp 3-4 → 8.0-8.5 Hz, Kp 5+ → 9-12 Hz).
+        For a measured fundamental, use
+        aureon.harmonic.aureon_schumann_resonance_bridge.SchumannResonanceBridge
+        which polls Barcelona / USGS directly.
         """
-        # HeartMath Global Coherence data (approximation via public sources)
         try:
             # Use GCI (Global Coherence Initiative) public data
             # Note: For real implementation, use proper API access
@@ -358,7 +364,12 @@ class QueenSolarSystemAwareness:
             return None
     
     async def _fetch_kp_index(self) -> float:
-        """Fetch current Kp index from NOAA"""
+        """Fetch current Kp index from NOAA.
+
+        ⚠ On NOAA fetch failure, returns hardcoded 2.0 ("default calm")
+        with a warning log. Callers cannot distinguish "computed calm"
+        from "fetch failed" — watch the warning to detect missing data.
+        """
         try:
             url = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json"
             resp = requests.get(url, timeout=10)
@@ -372,7 +383,9 @@ class QueenSolarSystemAwareness:
                     return kp
         except Exception as e:
             logger.warning(f"Kp fetch failed: {e}")
-        
+
+        logger.warning("[insufficient-data] _fetch_kp_index NOAA fetch failed "
+                       "or empty — returning hardcoded fallback Kp=2.0 (calm)")
         return 2.0  # Default calm
     
     # ═══════════════════════════════════════════════════════════════════════

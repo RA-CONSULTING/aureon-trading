@@ -12,12 +12,15 @@ Integrates:
 
 from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
+import logging
 import math
 import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # PHI - Golden Ratio
 PHI = (1 + math.sqrt(5)) / 2  # 1.618033988749895
@@ -202,33 +205,70 @@ class EarthResonanceEngine:
         else:
             self.field_mapper = {}
     
-    def update_schumann_state(self, 
+    def update_schumann_state(self,
                               mode1_power: float = None,
                               mode2_power: float = None,
                               mode3_power: float = None,
                               market_volatility: float = 0.0) -> SchumannState:
         """
         Update Schumann resonance state.
-        In production, this would pull from live earth-data sensors.
-        For now, we simulate based on time and market conditions.
+
+        Preference order:
+          1. Caller-provided mode1/2/3 power values (real measurements)
+          2. SchumannResonanceBridge live reading (Barcelona/USGS feed)
+          3. Synthetic time-of-day + sin-wave fallback (DEV ONLY, gated
+             behind AUREON_ALLOW_SIM_FALLBACK)
+
+        The synthetic fallback existed historically as "for now we simulate
+        based on time and market conditions". Production posture refuses
+        to run it so downstream consumers (kraken_margin_penny_trader,
+        aureon_integrated_forecast, dr_auris_throne, aureon_seer) see real
+        coherence rather than a sin-wave fabrication.
         """
         now = time.time()
-        
-        # Simulate Schumann modes with natural variation
-        hour = (now % 86400) / 3600  # Hour of day
-        
-        # Mode 1 (7.83 Hz) - strongest at night
-        if mode1_power is None:
-            night_factor = 1.0 + 0.3 * math.cos(2 * math.pi * hour / 24)
-            mode1_power = 0.8 + 0.2 * night_factor + 0.1 * math.sin(now / 1000)
-        
-        # Mode 2 (14.3 Hz) - varies with solar activity
-        if mode2_power is None:
-            mode2_power = 0.6 + 0.2 * math.sin(now / 500) + 0.1 * math.cos(now / 2000)
-        
-        # Mode 3 (20.8 Hz) - geomagnetic coupling
-        if mode3_power is None:
-            mode3_power = 0.5 + 0.2 * math.sin(now / 800)
+
+        # Try the live Schumann bridge first if any mode value is missing
+        if mode1_power is None or mode2_power is None or mode3_power is None:
+            try:
+                from aureon.harmonic.aureon_schumann_resonance_bridge import (
+                    get_schumann_bridge,
+                )
+                live = get_schumann_bridge().get_live_data()
+                if live is not None:
+                    # Bridge surfaces fundamental + amplitudes per mode
+                    if mode1_power is None and getattr(live, "amplitude_mode1", None) is not None:
+                        mode1_power = float(live.amplitude_mode1)
+                    if mode2_power is None and getattr(live, "amplitude_mode2", None) is not None:
+                        mode2_power = float(live.amplitude_mode2)
+                    if mode3_power is None and getattr(live, "amplitude_mode3", None) is not None:
+                        mode3_power = float(live.amplitude_mode3)
+            except Exception as exc:
+                logger.debug(f"Schumann bridge unavailable for earth-resonance: {exc}")
+
+        # Anything still missing → synthetic fallback, gated.
+        if mode1_power is None or mode2_power is None or mode3_power is None:
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if not simulation_fallback_allowed():
+                log_blocked_fallback("earth_resonance_engine.update_schumann_state",
+                                     "no_live_schumann_data")
+                raise RuntimeError(
+                    "EarthResonanceEngine.update_schumann_state has no live "
+                    "Schumann data and no caller-provided mode powers. "
+                    "Production refuses to fabricate sin-wave Schumann modes. "
+                    "Wire SchumannResonanceBridge or pass mode1/2/3 explicitly, "
+                    "or set AUREON_ALLOW_SIM_FALLBACK=1 for dev/testing."
+                )
+            # DEV-ONLY synthetic Schumann modes (gated above)
+            hour = (now % 86400) / 3600
+            if mode1_power is None:
+                night_factor = 1.0 + 0.3 * math.cos(2 * math.pi * hour / 24)
+                mode1_power = 0.8 + 0.2 * night_factor + 0.1 * math.sin(now / 1000)
+            if mode2_power is None:
+                mode2_power = 0.6 + 0.2 * math.sin(now / 500) + 0.1 * math.cos(now / 2000)
+            if mode3_power is None:
+                mode3_power = 0.5 + 0.2 * math.sin(now / 800)
         
         # Field coherence affected by market volatility
         base_coherence = 0.7 + 0.2 * math.cos(now / 1500)

@@ -2,6 +2,13 @@
 """
 🦈🔮 ORCA QUANTUM LIVE STREAM - RACE TO THE BILLION 🔮🦈
 
+🟡 STANDALONE TRAINING/DEMO RIG — uses ProbabilityMatrix from
+   metatron_probability_billion_path which returns RANDOM predictions
+   (not real 95% predictions). The ProbabilityMatrix calls now raise
+   in production unless AUREON_ALLOW_SIM_FALLBACK is set, so this
+   bot will fail loud at start in production rather than trade off
+   synthetic predictions.
+
 Integration of:
 - Orca Complete Kill Cycle (multi-exchange hunting)
 - Quantum Prediction Stream (95% accuracy)

@@ -307,14 +307,25 @@ class UniversalForecastEngine:
         # ─────────────────────────────────────────────────────────────────
         # 1A. EARTH RESONANCE ENGINE
         # ─────────────────────────────────────────────────────────────────
-        self.earth_engine.update_schumann_state(market_volatility=0.0)
-        gate_dict = self.earth_engine.get_trading_gate_status_dict()
-        
-        status.earth_coherence = gate_dict['coherence']
-        status.earth_phase_lock = 0.7 if gate_dict['phase_locked'] else 0.4
-        status.earth_phi_boost = self.earth_engine.get_phi_position_multiplier()
-        status.earth_open = gate_dict['gate_open']
-        status.earth_reason = gate_dict['reason']
+        try:
+            self.earth_engine.update_schumann_state(market_volatility=0.0)
+            gate_dict = self.earth_engine.get_trading_gate_status_dict()
+            status.earth_coherence = gate_dict['coherence']
+            status.earth_phase_lock = 0.7 if gate_dict['phase_locked'] else 0.4
+            status.earth_phi_boost = self.earth_engine.get_phi_position_multiplier()
+            status.earth_open = gate_dict['gate_open']
+            status.earth_reason = gate_dict['reason']
+        except RuntimeError as exc:
+            # No live Schumann data + no sim fallback. Earth gate closed.
+            import logging
+            logging.getLogger(__name__).warning(
+                f"earth_resonance unavailable, earth gate closed: {exc}"
+            )
+            status.earth_coherence = None
+            status.earth_phase_lock = 0.4
+            status.earth_phi_boost = 1.0
+            status.earth_open = False
+            status.earth_reason = f"earth_resonance_unavailable: {exc}"
         
         # ─────────────────────────────────────────────────────────────────
         # 1B. COSMIC STATE ENGINE (Imperial Predictability)
