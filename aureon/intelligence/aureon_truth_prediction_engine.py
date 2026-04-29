@@ -12,7 +12,17 @@ Purpose:
 - Feed validation results back to probability learning
 
 ⚠️ REAL DATA ONLY. NO SIMULATIONS. NO LINEAR GUESSES.
+
+⚠️ KNOWN GAP (Stage AJ): generate_prediction() currently uses several
+   placeholders (risk="none", proximity="far", queen_flags=[],
+   entry_price=current_price, target=current*1.02, accel=0.0). These
+   are logged at WARN level so operators can see the intel comes from
+   a partially-mocked feature vector. Wire risk_flags, target_proximity,
+   and acceleration history from the live state to remove them.
 """
+
+import logging
+logger = logging.getLogger(__name__)
 
 from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
@@ -270,8 +280,19 @@ class TruthPredictionEngine:
         
         # Build pattern key (5D)
         scenario = self._classify_scenario(snapshot)
+        # ⚠ Placeholders — see module docstring KNOWN GAP. Logged once per
+        # symbol-scenario combo so operators see the intel is partially mocked.
         risk = "none"  # Would come from risk flags in real system
         proximity = "far"  # Would come from target proximity
+        if not getattr(self, "_warned_placeholders", set()):
+            self._warned_placeholders = set()
+        _key = (snapshot.symbol, scenario)
+        if _key not in self._warned_placeholders:
+            self._warned_placeholders.add(_key)
+            logger.warning("[stub] generate_prediction(%s, %s) uses placeholder "
+                           "risk=none, proximity=far, queen_flags=[], accel=0.0 — "
+                           "wire real values to remove the mock features",
+                           snapshot.symbol, scenario)
         momentum_band = self._classify_momentum_band(snapshot.momentum_30s)
         
         # Clownfish classification (based on volatility for now)

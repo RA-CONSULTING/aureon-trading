@@ -313,6 +313,8 @@ class TemporalBiometricLink:
         """
         with self.lock:
             if not self.quantum_link.latest_biometric:
+                logger.warning("[insufficient-data] user_coherence returning "
+                               "neutral 0.5 (no biometric reading yet)")
                 return 0.5  # Default to neutral
             
             return self.quantum_link.latest_biometric.normalized_coherence()
@@ -328,8 +330,10 @@ class TemporalBiometricLink:
         """
         with self.lock:
             if not self.quantum_link.latest_biometric:
+                logger.warning("[insufficient-data] trade_multiplier returning "
+                               "neutral 0.5 (no biometric reading yet)")
                 return 0.5
-            
+
             coherence = self.quantum_link.latest_biometric.normalized_coherence()
             temporal = self.quantum_link.gary_temporal_anchor.temporal_resonance
             

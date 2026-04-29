@@ -278,27 +278,44 @@ class RealBotProfiler:
         return 50  # Default
     
     def _estimate_order_consistency(self, orderbook: Dict) -> float:
-        """Estimate order size consistency"""
-        if orderbook:
-            return 0.85  # Would analyze real order sizes
-        return 0.5
+        """Estimate order size consistency.
+
+        ⚠ STUB: not yet implemented. Returns 0.0 (no signal) and logs a
+        warning so operators see the placeholder. Was previously returning
+        a hardcoded 0.85 / 0.5 which looked like real consistency scores.
+        TODO: replace with real order-size variance / clustering analysis.
+        """
+        logger.warning("[stub] _estimate_order_consistency not implemented — "
+                       "returning 0.0 (no signal). orderbook_present=%s",
+                       bool(orderbook))
+        return 0.0
     
     def _estimate_latency(self, orderbook: Dict) -> int:
-        """Estimate trading latency"""
-        if orderbook:
-            return 30  # Would measure real latency
-        return 100
-    
+        """Estimate trading latency.
+
+        ⚠ STUB: was returning hardcoded 30 / 100 ms. Returns -1 (unknown)
+        with a warning so operators see the placeholder.
+        TODO: measure real round-trip time from request → ack timestamps.
+        """
+        logger.warning("[stub] _estimate_latency not implemented — returning -1 "
+                       "(unknown). orderbook_present=%s", bool(orderbook))
+        return -1
+
     def _get_volume(self, symbol: str, orderbook: Dict) -> float:
         """Get trading volume"""
         if orderbook and symbol in orderbook:
             return orderbook[symbol].get('volume', 0)
         return 0
-    
+
     def _detect_layering(self, orderbook: Dict) -> float:
-        """Detect orderbook layering patterns"""
-        if orderbook:
-            return 0.3  # Would analyze real patterns
+        """Detect orderbook layering patterns.
+
+        ⚠ STUB: was returning hardcoded 0.3 / 0.0. Returns 0.0 (no signal)
+        with a warning so operators see the placeholder.
+        TODO: implement real bid/ask layering detection from L2 book.
+        """
+        logger.warning("[stub] _detect_layering not implemented — returning "
+                       "0.0 (no signal). orderbook_present=%s", bool(orderbook))
         return 0.0
 
 

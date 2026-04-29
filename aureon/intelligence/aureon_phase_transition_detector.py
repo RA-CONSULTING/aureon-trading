@@ -205,6 +205,9 @@ class GeometricAnalyzer:
         """
         n = len(trajectory)
         if n < window:
+            logger.warning("[insufficient-data] phase_transition coherence "
+                           "returning neutral 0.5 (need %d samples, got %d)",
+                           window, n)
             return 0.5
 
         recent = trajectory[-window:]
@@ -212,6 +215,8 @@ class GeometricAnalyzer:
         # Compute autocorrelation of pairwise distances at different lags
         max_lag = min(window // 3, 15)
         if max_lag < 2:
+            logger.warning("[insufficient-data] phase_transition coherence "
+                           "returning neutral 0.5 (window too small for autocorrelation)")
             return 0.5
 
         distances = []
@@ -224,6 +229,8 @@ class GeometricAnalyzer:
 
         distances = np.array(distances)
         if len(distances) < 2 or distances.max() < 1e-12:
+            logger.warning("[insufficient-data] phase_transition coherence "
+                           "returning neutral 0.5 (distances degenerate / max < 1e-12)")
             return 0.5
 
         # Fit exponential decay: d(lag) ~ A * exp(-lambda * lag)

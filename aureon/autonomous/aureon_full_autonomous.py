@@ -707,8 +707,18 @@ class QueenFullAutonomous:
         while not self._shutdown_event.is_set():
             try:
                 if self._intelligence_engine:
-                    # Gather all intelligence
+                    # Gather all intelligence.
+                    # ⚠ prices={} / orderbook_data={} are placeholders — the
+                    # autonomous loop hasn't been wired to a real price source
+                    # yet. Logged once so operators see the intel runs against
+                    # empty state rather than treating it as silent.
                     if hasattr(self._intelligence_engine, 'gather_all_intelligence'):
+                        if not getattr(self, "_warned_intel_empty", False):
+                            self._warned_intel_empty = True
+                            logger.warning("[stub] intelligence_loop calls "
+                                           "gather_all_intelligence with prices={} "
+                                           "and orderbook_data={} — wire a real "
+                                           "price source to populate")
                         intel = self._intelligence_engine.gather_all_intelligence(
                             prices={},  # Would be filled with real prices
                             orderbook_data={}

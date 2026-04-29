@@ -496,7 +496,12 @@ class UniversalForecastEngine:
         return alignment
     
     def _compute_fibonacci_alignment(self, prices: List[float]) -> float:
-        """Compute Fibonacci retracement alignment"""
+        """Compute Fibonacci retracement alignment.
+
+        ⚠ Insufficient-data fallback returns neutral 0.5. Caller cannot
+        distinguish "computed neutral" from "no data". Wire prices≥3 to
+        get a real alignment score.
+        """
         if len(prices) < 3:
             return 0.5
         

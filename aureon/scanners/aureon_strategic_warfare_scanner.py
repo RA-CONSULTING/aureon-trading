@@ -38,9 +38,12 @@ import numpy as np
 import requests
 import time
 import math
+import logging
 from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Optional, Tuple, Set
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 from collections import defaultdict
 
 # 🚌 Communication Buses
@@ -398,6 +401,8 @@ class StrategicWarfareScanner:
     def calculate_stealth_score(self, market_data: List) -> float:
         """IRA: How well hidden are their operations? (0=visible, 1=covert)"""
         if not market_data:
+            logger.warning("[insufficient-data] calculate_stealth_score returning "
+                           "neutral 0.5 (empty market_data)")
             return 0.5
         
         # Stealth = low volatility + consistent volume = blend in
@@ -448,6 +453,8 @@ class StrategicWarfareScanner:
     def measure_patience(self, market_data: List) -> float:
         """Apache: How patient are they? (time between actions)"""
         if not market_data:
+            logger.warning("[insufficient-data] measure_patience returning "
+                           "neutral 0.5 (empty market_data)")
             return 0.5
         
         # Patience = low frequency of large moves
