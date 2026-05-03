@@ -40,6 +40,10 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
 # Dart/Flutter
 .dart_tool/
 .packages
