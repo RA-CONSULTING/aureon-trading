@@ -678,17 +678,27 @@ def demo_anomaly_detection():
     
     api_key = os.getenv('COINAPI_KEY')
     if not api_key:
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("coinapi_anomaly_detector", "no_api_key")
+            raise RuntimeError(
+                "COINAPI_KEY missing; refusing to emit synthetic anomalies in "
+                "production. Set COINAPI_KEY (https://www.coinapi.io/, free "
+                "tier 100 req/day) or AUREON_ALLOW_SIM_FALLBACK=1 for dev demo."
+            )
         print("""
 ⚠️  No CoinAPI key found!
-   
+
 To use this feature:
 1. Get free API key from https://www.coinapi.io/
 2. Add to .env file: COINAPI_KEY=your-key-here
 3. Free tier: 100 requests/day
 
-For now, showing demo with simulated data...
+DEV ONLY (AUREON_ALLOW_SIM_FALLBACK=1): showing demo with simulated data...
 """)
-        # Simulate some data for demo
+        # DEV-ONLY synthetic data, gated above
         return demo_with_simulated_data()
     
     # Real API test

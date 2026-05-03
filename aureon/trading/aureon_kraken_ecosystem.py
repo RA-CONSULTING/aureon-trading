@@ -35,6 +35,9 @@ import time
 import math
 import random
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 try:
     import websockets
     WEBSOCKETS_AVAILABLE = True
@@ -1243,17 +1246,28 @@ class AureonKrakenEcosystem:
             has_btc = False
             has_eth = False
             
+            skipped_assets: List[str] = []
             for b in balances:
                 asset = b.get('asset', '')
+                raw_free = b.get('free', 0)
                 try:
-                    free = float(b.get('free', 0))
-                    if free > 0.0001: # Min threshold
-                        if asset in ['USD', 'ZUSD', 'USDT', 'USDC']: has_usd = True
-                        if asset in ['GBP', 'ZGBP']: has_gbp = True
-                        if asset in ['EUR', 'ZEUR']: has_eur = True
-                        if asset in ['XBT', 'XXBT', 'BTC']: has_btc = True
-                        if asset in ['ETH', 'XETH']: has_eth = True
-                except: continue
+                    free = float(raw_free)
+                except (ValueError, TypeError) as exc:
+                    logger.warning("[wallet-parse-error] kraken asset %s: cannot "
+                                   "parse balance %r (%s); excluding from holdings view",
+                                   asset, raw_free, exc)
+                    skipped_assets.append(asset)
+                    continue
+                if free > 0.0001:  # Min threshold
+                    if asset in ['USD', 'ZUSD', 'USDT', 'USDC']: has_usd = True
+                    if asset in ['GBP', 'ZGBP']: has_gbp = True
+                    if asset in ['EUR', 'ZEUR']: has_eur = True
+                    if asset in ['XBT', 'XXBT', 'BTC']: has_btc = True
+                    if asset in ['ETH', 'XETH']: has_eth = True
+            if skipped_assets:
+                logger.warning("[wallet-summary] kraken: %d of %d assets skipped "
+                               "due to parse errors: %s",
+                               len(skipped_assets), len(balances), skipped_assets)
             
             # Update tradeable currencies based on holdings
             new_tradeables = []

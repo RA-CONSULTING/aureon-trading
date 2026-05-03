@@ -2,6 +2,11 @@
 """
 💎👑 COMPOUND KING: 30-DAY MASTER PLAN 👑💎
 
+🟡 STANDALONE COMPOUND-PROJECTION SIMULATOR — simulate_day() generates
+   synthetic returns (target_return * random.uniform(0.5, 1.15)) and
+   trade counts. Not imported by production code; only the __main__
+   block calls run_simulation(). Projection harness, not a trade executor.
+
 "COMPOUND IS KING. TIME IS YOUR WEAPON."
 
 Starting: £76

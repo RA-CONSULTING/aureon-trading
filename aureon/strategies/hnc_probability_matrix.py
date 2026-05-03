@@ -2129,7 +2129,13 @@ class HNCProbabilityIntegration:
 # ═══════════════════════════════════════════════════════════════
 
 def demo_probability_matrix():
-    """Demonstrate the probability matrix system"""
+    """Demonstrate the probability matrix system.
+
+    🟡 DEMO ONLY — uses np.random.uniform to perturb test_data into
+    historical snapshots. Not invoked from production paths
+    (only the __main__ block calls this). The HNCProbabilityIntegration
+    class itself takes real snapshots through track_market_state().
+    """
     print("""
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║  🌍⚡ HNC PROBABILITY MATRIX DEMONSTRATION ⚡🌍                          ║

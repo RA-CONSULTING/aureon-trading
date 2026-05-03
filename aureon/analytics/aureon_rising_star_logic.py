@@ -189,19 +189,30 @@ class RisingStarScanner:
         candidates.sort(key=lambda c: c.score, reverse=True)
         return candidates[:max_candidates]  # Return exactly max_candidates
     
-    def run_monte_carlo_simulations(self, candidate: RisingStarCandidate, 
+    def run_monte_carlo_simulations(self, candidate: RisingStarCandidate,
                                      amount_per_position: float = 2.5) -> Dict:
         """
         🎲 STAGE 2: SIMULATE - Run Monte Carlo simulations.
-        
+
         Runs 1000s of simulations using:
         - Live ticker data
         - Historical patterns
         - Future predictions
         - Quantum + Probability intelligence
-        
+
+        ⚠ DISTRIBUTION NOTE: the per-simulation `price_move_pct` was historically
+        sampled from a hardcoded uniform(0.5, 2.0). That distribution is not
+        derived from the symbol's real volatility — it's a placeholder. In
+        production posture (AUREON_ALLOW_SIM_FALLBACK off) we use the
+        deterministic mean of that uniform (1.25) so the Monte Carlo collapses
+        into a deterministic expected-value estimate rather than injecting a
+        fabricated price-move distribution into trade ranking. In dev posture
+        the original random sampling is preserved for backtest variance tests.
+
         Returns simulation results.
         """
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+        _allow_sim = simulation_fallback_allowed()
         wins = 0
         total_profit = 0.0
         time_to_profits = []
@@ -220,8 +231,9 @@ class RisingStarScanner:
                 wins += 1
                 
                 # Profit calculation (with fees)
-                # Higher momentum = bigger moves
-                price_move_pct = random.uniform(0.5, 2.0) * momentum_factor
+                # Higher momentum = bigger moves. Production: deterministic
+                # mean of uniform(0.5, 2.0) = 1.25. Dev: original random sampling.
+                price_move_pct = (random.uniform(0.5, 2.0) if _allow_sim else 1.25) * momentum_factor
                 gross_profit = amount_per_position * (price_move_pct / 100)
                 fees = amount_per_position * 0.005  # 0.5% round-trip
                 net_profit = gross_profit - fees

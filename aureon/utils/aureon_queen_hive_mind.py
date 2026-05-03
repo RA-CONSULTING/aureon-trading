@@ -2405,8 +2405,40 @@ class QueenHiveMind:
             'timestamp': time.time()
         }
         
-        # Get prices if not provided
+        # Get prices if not provided. First try the real-data fallback chain
+        # (unified cache → CoinGecko cache → Kraken/Binance REST → CoinGecko
+        # REST). Only when EVERY real source fails do we either return empty
+        # intelligence (production) or fall through to hardcoded dev defaults.
         if not prices:
+            try:
+                from aureon.observer.real_price_fallback import (
+                    get_real_prices_with_fallback,
+                )
+                wanted = list(self._get_default_prices().keys())
+                fetched, sources = get_real_prices_with_fallback(
+                    symbols=wanted, max_cache_age_sec=120.0, timeout_sec=5.0
+                )
+                if fetched:
+                    logger.info("[live-data] gather_all_intelligence resolved %d "
+                                "real prices via fallback chain (%s)",
+                                len(fetched), "+".join(sources))
+                    prices = fetched
+            except Exception as exc:
+                logger.warning("[live-data] real-price fallback chain raised: %s",
+                               exc)
+
+        if not prices:
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if not simulation_fallback_allowed():
+                log_blocked_fallback("queen_hive_mind.gather_all_intelligence",
+                                     "no_prices_after_fallback_chain")
+                logger.warning("[live-data] gather_all_intelligence: real "
+                               "fallback chain returned no prices and "
+                               "AUREON_ALLOW_SIM_FALLBACK is off; returning "
+                               "empty intelligence (no hunts will issue)")
+                return intelligence
             prices = self._get_default_prices()
         
         # Gather from Intelligence Engine

@@ -2,6 +2,12 @@
 """
 🔮📊 AUREON 30-SECOND QUANTUM PREDICTION STREAM 📊🔮
 
+🟡 STANDALONE SIMULATOR — uses synthetic price ticks (random.gauss).
+   Not imported by production code. Do not call from
+   aureon/queen/, aureon/observer/, or the live HNC daemon.
+   The label "LIVE DATA STREAM" below refers to the simulator's
+   internal cadence, not exchange-feed connectivity.
+
 Three 30-second windows:
 1. CURRENT MARKET VALUATION (30s) - Total market state snapshot
 2. LIVE DATA STREAM (30s) - Real-time price feeds & probability calculations

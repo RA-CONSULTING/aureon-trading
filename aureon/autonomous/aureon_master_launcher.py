@@ -504,8 +504,51 @@ def run_autonomous_trading(engine=None, hub=None):
                 elif hasattr(labyrinth, 'price_cache'):
                     prices = labyrinth.price_cache
                 
-                # If no prices, use some defaults
+                # If primary feed (labyrinth) returned no prices, walk a
+                # REAL-data fallback chain (unified cache → CoinGecko cache
+                # → Kraken/Binance REST → CoinGecko REST). Production NEVER
+                # substitutes hardcoded prices; if every real source fails,
+                # the cycle is skipped and we wait for live data to return.
                 if not prices:
+                    try:
+                        from aureon.observer.real_price_fallback import (
+                            get_real_prices_with_fallback,
+                        )
+                        wanted = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'XRP/USD',
+                                  'DOGE/USD', 'ADA/USD']
+                        prices, sources = get_real_prices_with_fallback(
+                            symbols=wanted, max_cache_age_sec=60.0, timeout_sec=5.0
+                        )
+                        if prices:
+                            logger.info(
+                                "[live-data] labyrinth empty; resolved %d real "
+                                "prices via fallback chain (%s) for cycle %d",
+                                len(prices), "+".join(sources), cycle_count,
+                            )
+                    except Exception as exc:
+                        logger.warning(
+                            "[live-data] real-price fallback chain raised: %s; "
+                            "treating as no-data", exc,
+                        )
+                        prices = {}
+
+                # If even the real-data fallback chain returned nothing,
+                # production refuses to substitute hardcoded prices and
+                # skips the cycle. A skipped cycle costs nothing; firing
+                # a trade against fabricated prices is catastrophic.
+                if not prices:
+                    from aureon.observer.live_data_policy import (
+                        simulation_fallback_allowed, log_blocked_fallback,
+                    )
+                    if not simulation_fallback_allowed():
+                        log_blocked_fallback("master_launcher.run_autonomous_trading",
+                                             "no_live_prices_after_fallback_chain")
+                        logger.error("[live-data] every real source returned "
+                                     "no prices, skipping cycle %d (no synthetic "
+                                     "substitution in production posture)", cycle_count)
+                        time.sleep(1)
+                        continue
+                    # DEV-ONLY hardcoded fallback (gated by AUREON_ALLOW_SIM_FALLBACK)
                     prices = {
                         'BTC/USD': 43000.0,
                         'ETH/USD': 2300.0,

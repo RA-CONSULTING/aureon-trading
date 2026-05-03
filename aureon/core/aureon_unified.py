@@ -443,8 +443,10 @@ class MasterEquationSystem:
         """
         ticker = self.data.get_ticker(symbol)
         if not ticker:
+            logger.warning("[insufficient-data] compute_substrate returning "
+                           "neutral 0.5 (no ticker for %s)", symbol)
             return 0.5
-        
+
         price = float(ticker.get('lastPrice', 0))
         change = float(ticker.get('priceChangePercent', 0))
         volume = float(ticker.get('quoteVolume', 0))
@@ -510,8 +512,10 @@ class MasterEquationSystem:
         """
         ticker = self.data.get_ticker(symbol)
         if not ticker:
+            logger.warning("[insufficient-data] compute_observer returning "
+                           "neutral 0.5 (no ticker for %s)", symbol)
             return 0.5
-        
+
         change = float(ticker.get('priceChangePercent', 0))
         
         # Sigmoid mapping
@@ -523,6 +527,9 @@ class MasterEquationSystem:
         E(t) = Echo component (feedback from previous Lambda)
         """
         if len(self.lambda_history) < 3:
+            logger.warning("[insufficient-data] compute_echo returning neutral "
+                           "0.5 (need 3 lambda samples, got %d)",
+                           len(self.lambda_history))
             return 0.5
         
         # Exponentially weighted average of past Lambda values

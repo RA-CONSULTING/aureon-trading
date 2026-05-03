@@ -186,18 +186,28 @@ class IntegratedForecastTrader:
         # The natural cycle will boost coherence over time
         self.earth_engine.COHERENCE_THRESHOLD = 0.45  # Reduced from 0.55
         
-        # Update the Schumann state - in production this would pull from live sensors
-        # For now we use market volatility to modulate coherence
-        # Lower volatility = higher coherence
-        self.earth_engine.update_schumann_state(
-            market_volatility=0.0  # Minimal volatility = stable conditions
-        )
-        
-        gate_status = self.earth_engine.get_trading_gate_status_dict()
-        earth_coherence = gate_status['coherence']
-        earth_phase_lock = gate_status['phase_locked']
-        earth_phi = self.earth_engine.get_phi_position_multiplier()
-        earth_open = gate_status['gate_open']
+        # Update the Schumann state. In production, EarthResonanceEngine
+        # reads from SchumannResonanceBridge (Barcelona/USGS); when no live
+        # reading is available the call raises and we degrade earth_*
+        # gracefully instead of trading off a sin-wave fabrication.
+        try:
+            self.earth_engine.update_schumann_state(market_volatility=0.0)
+            gate_status = self.earth_engine.get_trading_gate_status_dict()
+            earth_coherence = gate_status['coherence']
+            earth_phase_lock = gate_status['phase_locked']
+            earth_phi = self.earth_engine.get_phi_position_multiplier()
+            earth_open = gate_status['gate_open']
+        except RuntimeError as exc:
+            # Live Schumann unavailable + no sim fallback. Treat as
+            # "earth gate unknown" rather than fabricate a coherence reading.
+            import logging
+            logging.getLogger(__name__).warning(
+                f"earth_resonance unavailable, earth_* set to neutral/closed: {exc}"
+            )
+            earth_coherence = None
+            earth_phase_lock = False
+            earth_phi = 1.0
+            earth_open = False
         
         details['earth'] = {
             'open': earth_open,

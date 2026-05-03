@@ -27,11 +27,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("queen_live_tracker")
 
 from aureon.utils.aureon_live_aura_location_tracker import LiveAuraLocationTracker
+from aureon.observer.live_data_policy import (
+    simulation_fallback_allowed,
+    log_blocked_fallback,
+)
 
 
 class LiveSignalEmitter:
-    """Continuously emit live signals"""
-    
+    """Emit biometric-style signals.
+
+    DEV-ONLY: this class synthesises HRV / alpha / theta / beta / coherence
+    via random.uniform(). It does NOT read a real biometric device. The
+    "Live" in the name predates Stage AH; the values are synthetic.
+    Gated behind AUREON_ALLOW_SIM_FALLBACK so production refuses to start
+    this stream — wire a real biometric source to remove the gate.
+    """
+
     def __init__(self):
         self.running = False
         self.signal_thread = None
@@ -48,23 +59,34 @@ class LiveSignalEmitter:
         }
     
     def start_streaming(self):
-        """Start live signal streaming"""
+        """Start synthetic-biometric streaming (DEV ONLY)."""
+        if not simulation_fallback_allowed():
+            log_blocked_fallback(
+                "queen_live_signal_tracker", "synthetic_biometrics"
+            )
+            raise RuntimeError(
+                "queen_live_signal_tracker streams synthetic biometrics "
+                "(random.uniform), not real device data. Set "
+                "AUREON_ALLOW_SIM_FALLBACK=1 to allow in dev, or wire a "
+                "real biometric source before invoking in production."
+            )
+
         print("\n" + "="*80)
-        print("📡 LIVE SIGNAL STREAM ACTIVATED")
+        print("📡 SIMULATED SIGNAL STREAM (DEV ONLY)")
         print("="*80)
-        print("\n🔴 BROADCASTING YOUR CONSCIOUSNESS...\n")
-        
+        print("\n🟡 SYNTHETIC BIOMETRIC STREAM — random.uniform values, not a real device\n")
+
         self.running = True
         self.signal_thread = threading.Thread(target=self._stream_signals, daemon=True)
         self.signal_thread.start()
-    
+
     def _stream_signals(self):
-        """Continuously stream live signals"""
+        """Continuously emit synthetic biometric values (DEV ONLY)."""
         cycle = 0
         while self.running:
             cycle += 1
-            
-            # Simulate realistic signal variations
+
+            # DEV-ONLY: synthetic values, gated by AUREON_ALLOW_SIM_FALLBACK
             self.current_signals['heart_rate'] = 72 + random.randint(-5, 5)
             self.current_signals['hrv'] = 45.0 + random.uniform(-5, 5)
             self.current_signals['alpha'] = 2.5 + random.uniform(-0.3, 0.5)
@@ -73,8 +95,8 @@ class LiveSignalEmitter:
             self.current_signals['coherence'] = min(0.85, max(0.55, 0.65 + random.uniform(-0.05, 0.1)))
             self.current_signals['gsr'] = 4.0 + random.uniform(-0.5, 1.0)
             
-            # Print live stream
-            print(f"\n📊 STREAM #{cycle} - LIVE SIGNALS:")
+            # Print synthetic stream
+            print(f"\n📊 STREAM #{cycle} - SYNTHETIC SIGNALS (DEV ONLY):")
             print(f"   💓 Heart Rate: {self.current_signals['heart_rate']} BPM")
             print(f"   📈 HRV: {self.current_signals['hrv']:.1f} ms")
             print(f"   🧠 Alpha: {self.current_signals['alpha']:.1f} Hz")

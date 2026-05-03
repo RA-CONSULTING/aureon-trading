@@ -314,10 +314,16 @@ class HncSurgeDetector:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def run_hnc_demo():
-    """Demonstrate the HNC Surge Detector in action."""
-    
+    """Demonstrate the HNC Surge Detector in action.
+
+    🟡 DEMO ONLY — uses np.random.randn for the base price walk and
+    injects a synthetic harmonic blend. Do not call from production
+    decision paths. Production uses HncSurgeDetector.add_price_tick()
+    with real exchange ticks.
+    """
+
     print("\n" + "="*80)
-    print("🌊🎶 HNC SURGE DETECTOR - LIVE DEMO 🎶🌊")
+    print("🌊🎶 HNC SURGE DETECTOR - SYNTHETIC DEMO (DEV ONLY) 🎶🌊")
     print("="*80 + "\n")
     
     detector = HncSurgeDetector(sample_rate=100, analysis_window_size=1024)

@@ -28,11 +28,14 @@ Usage:
 """
 
 from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+import logging
 import numpy as np
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from collections import deque
 import json
+
+logger = logging.getLogger(__name__)
 
 
 class NexusPredictor:
@@ -680,7 +683,12 @@ if __name__ == "__main__":
     
     all_candles = []
     current = start
+    parse_errors = 0
+    rows_seen = 0
+    failed_batches = 0
+    total_batches = 0
     while current < end:
+        total_batches += 1
         batch_end = min(current + timedelta(hours=300), end)
         try:
             url = f"{BASE_URL}/products/BTC-USD/candles"
@@ -688,15 +696,47 @@ if __name__ == "__main__":
             response = requests.get(url, params=params, timeout=30)
             if response.status_code == 200:
                 for c in response.json():
-                    all_candles.append({
-                        'timestamp': datetime.fromtimestamp(c[0]),
-                        'open': float(c[3]), 'high': float(c[2]),
-                        'low': float(c[1]), 'close': float(c[4]),
-                        'volume': float(c[5]),
-                    })
-        except: pass
+                    rows_seen += 1
+                    try:
+                        all_candles.append({
+                            'timestamp': datetime.fromtimestamp(c[0]),
+                            'open': float(c[3]), 'high': float(c[2]),
+                            'low': float(c[1]), 'close': float(c[4]),
+                            'volume': float(c[5]),
+                        })
+                    except (KeyError, IndexError, TypeError, ValueError) as exc:
+                        parse_errors += 1
+                        logger.warning("[ohlc-parse-error] row=%r: %s; skipping", c, exc)
+            else:
+                failed_batches += 1
+                logger.warning("[ohlc-fetch-error] batch starting %s returned HTTP %d",
+                               current.isoformat(), response.status_code)
+        except Exception as exc:
+            failed_batches += 1
+            logger.warning("[ohlc-fetch-error] batch starting %s exception: %s",
+                           current.isoformat(), exc)
         current = batch_end
-    
+
+    # Defensive bound — if more than 10% of rows failed to parse, the data
+    # source has changed shape and the predictor would silently train on
+    # whatever subset survived. Refuse to proceed.
+    if rows_seen > 0 and parse_errors / rows_seen > 0.10:
+        raise RuntimeError(
+            f"OHLC batch >=10% corrupt ({parse_errors}/{rows_seen} rows failed "
+            f"to parse); refusing to train predictor on incomplete history. "
+            f"Inspect the BTC-USD candles API response shape."
+        )
+    if total_batches > 0 and failed_batches / total_batches > 0.25:
+        raise RuntimeError(
+            f"OHLC batch >=25% of fetches failed ({failed_batches}/{total_batches}); "
+            f"refusing to train predictor on a sparse history."
+        )
+    if parse_errors or failed_batches:
+        logger.warning("OHLC fetch completed with %d/%d parse errors and "
+                       "%d/%d failed batches; predictor trained on remaining "
+                       "%d rows", parse_errors, rows_seen, failed_batches,
+                       total_batches, len(all_candles))
+
     all_candles.sort(key=lambda x: x['timestamp'])
     print(f"   ✅ Loaded {len(all_candles):,} candles")
     

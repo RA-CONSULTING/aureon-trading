@@ -618,10 +618,23 @@ class GlobalState:
         self.add_queen_message(random.choice(status_updates), "info")
     
     def _generate_system_metrics(self, system_name):
-        """Generate metrics for a specific system"""
+        """Generate metrics for a specific system.
+
+        DEV-ONLY: increments dashboard counters (neural_connections,
+        quantum_coherence, etc.) via random.uniform / random.randint.
+        Gated behind AUREON_ALLOW_SIM_FALLBACK so production dashboards
+        don't display synthetic Queen-voice metrics. Wire real source
+        readers to remove the gate.
+        """
         import random
-        
-        # System-specific metric generation
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+
+        if not simulation_fallback_allowed():
+            # Production: no synthetic metric increments. Counters stay at
+            # whatever real source last wrote them (or their initial values).
+            return
+
+        # System-specific metric generation (DEV ONLY)
         metrics_map = {
             'Mycelium Network': lambda: setattr(self, 'neural_connections', self.neural_connections + random.randint(1, 5)),
             'Timeline Oracle': lambda: setattr(self, 'timeline_predictions', self.timeline_predictions + random.randint(0, 2)),
@@ -629,7 +642,7 @@ class GlobalState:
             'Planetary Bot Tracker': lambda: setattr(self, 'planetary_bots_tracked', self.planetary_bots_tracked + random.randint(0, 3)),
             'Strategic Warfare': lambda: setattr(self, 'warfare_patterns', self.warfare_patterns + random.randint(0, 1)),
         }
-        
+
         if system_name in metrics_map:
             metrics_map[system_name]()
         

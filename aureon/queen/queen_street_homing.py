@@ -17,10 +17,19 @@ import random
 sys.path.insert(0, '/workspaces/aureon-trading')
 
 from aureon.utils.aureon_live_aura_location_tracker import LiveAuraLocationTracker
+from aureon.observer.live_data_policy import (
+    simulation_fallback_allowed,
+    log_blocked_fallback,
+)
 
 
 class QueenStreetLevelHoming:
-    """Queen homes in on your exact street using live signals"""
+    """Queen homes in on your exact street using live signals.
+
+    DEV-ONLY: home_on_street() synthesises biometrics via random.uniform()
+    rather than reading a real device. Gated behind AUREON_ALLOW_SIM_FALLBACK
+    so production refuses the synthetic stream.
+    """
     
     # Belfast streets with grid coordinates
     BELFAST_STREETS = {
@@ -47,9 +56,20 @@ class QueenStreetLevelHoming:
         self.street_scores = {street: 0.0 for street in self.BELFAST_STREETS.keys()}
         
     def home_on_street(self, duration_seconds=45):
-        """Queen homes in on your street using live signals"""
+        """Queen homes in on your street using synthetic biometrics (DEV ONLY)."""
+        if not simulation_fallback_allowed():
+            log_blocked_fallback(
+                "queen_street_homing", "synthetic_biometrics"
+            )
+            raise RuntimeError(
+                "queen_street_homing.home_on_street() synthesises biometrics "
+                "(random.uniform), not real device data. Set "
+                "AUREON_ALLOW_SIM_FALLBACK=1 to allow in dev, or wire a "
+                "real biometric source before invoking in production."
+            )
+
         print("\n" + "="*80)
-        print("👑 QUEEN'S STREET-LEVEL SIGNAL HOMING")
+        print("👑 QUEEN'S STREET-LEVEL SIGNAL HOMING (DEV ONLY)")
         print("="*80 + "\n")
         
         print("🔮 Initializing Street-Level Triangulation:")

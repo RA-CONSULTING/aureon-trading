@@ -2139,15 +2139,20 @@ class MyceliumNetwork:
         0.0 = Maximum disagreement
         """
         if not self.hives:
+            logger.warning("[insufficient-data] mycelium get_network_coherence "
+                           "returning neutral 0.5 (no hives present)")
             return 0.5
-        
+
         all_signals = []
         for hive in self.hives:
             for agent in hive.agents:
                 if hasattr(agent, 'last_signal'):
                     all_signals.append(agent.last_signal)
-        
+
         if len(all_signals) < 2:
+            logger.warning("[insufficient-data] mycelium get_network_coherence "
+                           "returning neutral 0.5 (need 2+ signals, got %d)",
+                           len(all_signals))
             return 0.5
         
         # Coherence = 1 - variance of signals
@@ -2439,6 +2444,9 @@ def get_mycelium(initial_capital: float = 100.0) -> MyceliumNetwork:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
+    # 🟡 DEMO ONLY — synthetic market data via random.uniform.
+    # The MyceliumNetwork class itself takes real market_data dicts; this
+    # __main__ block simulates them for standalone demo runs.
     print("""
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║

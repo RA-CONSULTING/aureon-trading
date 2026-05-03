@@ -748,6 +748,8 @@ class ScannerNode(ChainNode):
     def _validation_pass_1(self, signal: ChainSignal) -> float:
         """Harmonic resonance check."""
         if not signal.harmonics:
+            logger.warning("[insufficient-data] _validation_pass_1 returning "
+                           "neutral 0.5 (signal has no harmonics)")
             return 0.5
         # Check if harmonics align with Solfeggio frequencies
         solfeggio = [174, 285, 396, 417, 528, 639, 741, 852, 963]

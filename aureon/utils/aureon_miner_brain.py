@@ -1109,20 +1109,32 @@ class DreamEngine:
         """
         if not hasattr(self, '_detailed_tickers') or not self._detailed_tickers:
             self.fetch_live_tickers()
-        
+
         total = len(self._detailed_tickers)
         if total == 0:
-            return {'breadth': 0.5, 'status': 'UNKNOWN'}
-        
+            # Stage AP: was returning hardcoded {'breadth': 0.5, 'status':
+            # 'UNKNOWN'} silently when CoinGecko top-100 fetch failed.
+            # Now logged + tagged so callers can detect "no real ticker
+            # data" and skip rather than treating 0.5 as a real reading.
+            import logging
+            logging.getLogger(__name__).warning(
+                "[insufficient-data] get_market_breadth: no live tickers "
+                "available (CoinGecko fetch likely failed); returning "
+                "neutral breadth 0.5 with status=UNKNOWN — caller should "
+                "skip breadth-gated decisions"
+            )
+            return {'breadth': 0.5, 'status': 'UNKNOWN', 'no_real_data': True}
+
         up = sum(1 for t in self._detailed_tickers.values() if t['change_24h'] > 0)
         down = sum(1 for t in self._detailed_tickers.values() if t['change_24h'] < 0)
-        
-        breadth = up / total if total > 0 else 0.5
-        
-        # Weighted by volume
+
+        # No fallback needed below since total > 0 was checked above.
+        breadth = up / total
+
+        # Weighted by volume — guard against zero vol total but no fake substitution
         total_vol = sum(t['volume_24h'] for t in self._detailed_tickers.values())
         vol_up = sum(t['volume_24h'] for t in self._detailed_tickers.values() if t['change_24h'] > 0)
-        vol_breadth = vol_up / total_vol if total_vol > 0 else 0.5
+        vol_breadth = vol_up / total_vol if total_vol > 0 else None
         
         return {
             'breadth': breadth,
@@ -1573,11 +1585,21 @@ class LiveTickerStream:
     def _calculate_market_breadth(self, tickers: Dict) -> Dict:
         """Calculate overall market breadth - up vs down ratio."""
         if not tickers:
-            return {'breadth': 0.5, 'status': 'UNKNOWN'}
-        
+            import logging
+            logging.getLogger(__name__).warning(
+                "[insufficient-data] _calculate_market_breadth: no tickers "
+                "passed; returning neutral 0.5 with no_real_data=True"
+            )
+            return {'breadth': 0.5, 'status': 'UNKNOWN', 'no_real_data': True}
+
         changes = [t.get('change_24h', 0) for t in tickers.values() if isinstance(t, dict)]
         if not changes:
-            return {'breadth': 0.5, 'status': 'UNKNOWN'}
+            import logging
+            logging.getLogger(__name__).warning(
+                "[insufficient-data] _calculate_market_breadth: tickers had "
+                "no change_24h fields; returning neutral 0.5 with no_real_data=True"
+            )
+            return {'breadth': 0.5, 'status': 'UNKNOWN', 'no_real_data': True}
         
         up = sum(1 for c in changes if c > 0)
         down = sum(1 for c in changes if c < 0)

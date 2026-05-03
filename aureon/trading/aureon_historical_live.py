@@ -616,9 +616,25 @@ class AureonHistoricalLive:
         return markets
     
     async def get_kraken_markets(self) -> List[Dict]:
-        """Get Kraken market data"""
-        # TODO: Implement real Kraken API calls
-        # For now, return mock data structure
+        """Get Kraken market data.
+
+        ⚠ STUB: returns hardcoded mock data with price=42000 and synthetic
+        momentum 0.12. Gated behind AUREON_ALLOW_SIM_FALLBACK so production
+        refuses to execute trades against fake market state.
+        """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_historical_live.get_kraken_markets",
+                                 "stub_hardcoded_mock_prices")
+            raise RuntimeError(
+                "aureon_historical_live.get_kraken_markets is a stub "
+                "returning hardcoded BTC=42000 mock data. Implement real "
+                "Kraken API calls before invoking in production, or set "
+                "AUREON_ALLOW_SIM_FALLBACK=1 for stub-mode dev runs."
+            )
+        # DEV-ONLY hardcoded mock structure (gated above)
         return [
             {
                 'exchange': 'Kraken',
@@ -664,10 +680,21 @@ class AureonHistoricalLive:
         print(f"   Target: £{signal.predicted_target:,.2f} (+{signal.pattern.avg_profit_pct*100:.1f}%)")
         print(f"   Stop: £{signal.predicted_stop:,.2f} (-{signal.pattern.avg_loss_pct*100:.1f}%)")
         print(f"   Size: £{position_size:,.2f} ({signal.position_size_pct*100:.0f}%)")
-        
-        # TODO: Execute real trade via exchange API
-        # For now, create position object
-        
+
+        # ⚠ STUB: not yet wired to a real exchange API. Production refuses
+        # to fabricate "executed" position objects without a real fill.
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_historical_live.execute_signal",
+                                 "no_exchange_api_call")
+            raise RuntimeError(
+                "aureon_historical_live.execute_signal would fabricate a "
+                "LivePosition without calling any exchange API. Wire the real "
+                "Kraken/Alpaca/Binance order flow before invoking in production."
+            )
+        # DEV-ONLY: create paper-trade position object (gated above)
         position = LivePosition(
             signal=signal,
             entry_time=time.time(),

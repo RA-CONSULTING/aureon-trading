@@ -2,6 +2,11 @@
 """
 🐙 KRAKEN QUICK STRATEGY ANALYSIS 🐙
 =====================================
+🟡 STANDALONE SIMULATOR — runs 50 random.random() cycles per strategy
+   against a captured market snapshot. Not imported by production code;
+   only the __main__ block invokes simulate_strategy. Strategy backtest
+   harness, not a trade executor.
+=====================================
 Fast simulation using current market snapshot to evaluate strategies.
 Runs 50 simulated cycles per strategy to give quick flavor of Kraken ecosystem.
 """

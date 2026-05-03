@@ -2,6 +2,10 @@
 """
 🦈🔍 ORCA PREDATOR DETECTION SYSTEM - WHO'S HUNTING WHO? 🔍🦈
 ═══════════════════════════════════════════════════════════════════════════════
+🟡 The PredatorDetector class records REAL orders + REAL price reactions.
+   `simulate_hunting_scenario()` (run only under __main__) uses synthetic
+   random orders for demonstration; do not call from production paths.
+═══════════════════════════════════════════════════════════════════════════════
 
 DETECTS WHEN MARKET MAKERS ARE ADAPTING TO *YOUR* PATTERNS
 

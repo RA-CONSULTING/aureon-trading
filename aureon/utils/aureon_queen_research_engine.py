@@ -292,9 +292,13 @@ class QueenResearchEngine:
     def research_web(self, query: str, max_results: int = 5) -> List[ResearchFinding]:
         """
         Research via web search.
-        
-        NOTE: This is a placeholder that simulates research.
-        In production, you'd integrate with:
+
+        ⚠ STUB: returns hardcoded "example.com" findings with hardcoded
+        relevance scores (0.85 / 0.72 / 0.65). Gated behind
+        AUREON_ALLOW_SIM_FALLBACK so production refuses to inject fake
+        research findings into the autonomous orchestrator.
+
+        In production, integrate with:
         - DuckDuckGo API
         - Google Custom Search API
         - Bing Search API
@@ -302,12 +306,19 @@ class QueenResearchEngine:
         - CoinGecko API
         - Alpha Vantage
         """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_queen_research_engine.research_web",
+                                 "synthetic_findings")
+            return []
         findings = []
-        
+
         try:
-            # Simulated research for now
+            # Simulated research for now (gated above)
             # In real implementation, make actual API calls
-            
+
             simulated_findings = [
                 {
                     "content": f"Trading strategy research result for: {query}",

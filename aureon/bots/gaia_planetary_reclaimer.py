@@ -1980,28 +1980,31 @@ class PlanetaryReclaimer:
                     # Stablecoins = 1:1 USD
                     if asset in ['USDC', 'USDT', 'USD', 'BUSD', 'TUSD', 'LDUSDC', 'DAI']:
                         breakdown['binance'] += amt
-                    elif asset == 'BTC':
-                        breakdown['binance'] += amt * 91000  # Approximate BTC price
-                    elif asset == 'ETH':
-                        breakdown['binance'] += amt * 3100   # Approximate ETH price
-                    elif asset == 'SOL':
-                        breakdown['binance'] += amt * 137    # Approximate SOL price
-                    elif asset == 'AVAX':
-                        breakdown['binance'] += amt * 14     # Approximate AVAX price
                     else:
-                        # Try to get price from ticker
-                        try:
-                            t = self.binance.get_ticker_price(f'{asset}USDC')
-                            price = float(t.get('price', 0)) if t else 0
-                            breakdown['binance'] += amt * price
-                        except:
+                        # Stage AN: was BTC*91000 / ETH*3100 / SOL*137 / AVAX*14
+                        # hardcoded multipliers — replaced with real-data chain.
+                        # Try Binance ticker first (we already have a client),
+                        # then fall through to the unified real-price chain.
+                        price = 0.0
+                        for quote in ('USDC', 'USDT'):
                             try:
-                                t = self.binance.get_ticker_price(f'{asset}USDT')
-                                price = float(t.get('price', 0)) if t else 0
-                                breakdown['binance'] += amt * price
-                            except:
-                                pass
-        except:
+                                t = self.binance.get_ticker_price(f'{asset}{quote}')
+                                price = float(t.get('price', 0)) if t else 0.0
+                                if price > 0:
+                                    break
+                            except Exception:
+                                price = 0.0
+                        if price <= 0:
+                            try:
+                                from aureon.observer.real_price_fallback import get_real_price
+                                p = get_real_price(f"{asset}/USD", timeout_sec=3.0)
+                                price = float(p) if p and p > 0 else 0.0
+                            except Exception:
+                                price = 0.0
+                        if price > 0:
+                            breakdown['binance'] += amt * price
+                        # else: skip this asset rather than fabricate a value
+        except Exception:
             pass
         
         # ALPACA

@@ -250,6 +250,9 @@ class HarmonicOrchestrator:
         Returns 0-1 (1 = perfect harmony)
         """
         if len(self.key_frequencies) < 2:
+            logger.warning("[insufficient-data] calculate_ensemble_resonance "
+                           "returning neutral 0.5 (only %d key frequencies tuned)",
+                           len(self.key_frequencies))
             return 0.5
         
         frequencies = list(self.key_frequencies.values())
@@ -283,11 +286,15 @@ def calculate_golden_ratio_alignment(prices: List[float]) -> float:
     Returns 0-1 (1 = perfect φ alignment)
     """
     if len(prices) < 8:
+        logger.warning("[insufficient-data] calculate_golden_ratio_alignment "
+                       "returning neutral 0.5 (need 8 prices, got %d)", len(prices))
         return 0.5
     
     # Calculate consecutive move sizes
     moves = [abs(prices[i] - prices[i-1]) for i in range(1, len(prices))]
     if len(moves) < 3:
+        logger.warning("[insufficient-data] calculate_golden_ratio_alignment "
+                       "returning neutral 0.5 (need 3 moves, got %d)", len(moves))
         return 0.5
     
     phi_matches = 0
@@ -310,6 +317,8 @@ def calculate_trend_strength_rsquared(prices: List[float]) -> float:
     Returns 0-1 (1 = perfect linear trend)
     """
     if len(prices) < 10:
+        logger.warning("[insufficient-data] calculate_trend_strength_rsquared "
+                       "returning neutral 0.5 (need 10 prices, got %d)", len(prices))
         return 0.5
     
     n = len(prices)
@@ -325,6 +334,8 @@ def calculate_trend_strength_rsquared(prices: List[float]) -> float:
     den_y = sum((prices[i] - y_mean)**2 for i in range(n))
     
     if den_x == 0 or den_y == 0:
+        logger.warning("[insufficient-data] calculate_trend_strength_rsquared "
+                       "returning neutral 0.5 (zero variance — flat price series)")
         return 0.5
     
     r = numerator / math.sqrt(den_x * den_y)
@@ -408,6 +419,9 @@ class TemporalReader:
         future = self.read_future()
         
         if not (past and present and future):
+            logger.warning("[insufficient-data] temporal_alignment returning "
+                           "neutral 0.5 (past=%s present=%s future=%s)",
+                           bool(past), bool(present), bool(future))
             return 0.5
         
         # Check if momentum is consistent

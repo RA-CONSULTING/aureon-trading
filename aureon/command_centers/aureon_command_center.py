@@ -799,8 +799,22 @@ def print_flight_check_poem(results: Dict[str, FlightCheckResult]) -> str:
     
     go_count = sum(1 for r in results.values() if r.status == 'GO')
     total = len(results)
-    all_go = go_count == total
-    
+    # Compose `all_go` from the per-system check results AND the real
+    # exchange-connectivity health helper (single source of truth shared with
+    # the /health endpoint). Stops the dashboard from showing "ALL SYSTEMS GO"
+    # while Kraken/Binance/HNC daemon are actually unreachable.
+    all_systems_ok = go_count == total
+    real_health_ok, real_health_failures = (True, [])
+    try:
+        from aureon.queen.queen_quantum_frog import compute_real_health
+        real_health_ok, real_health_failures = compute_real_health()
+    except Exception:
+        # If the real-health helper itself fails, treat as unhealthy rather
+        # than silently passing — operator must see why.
+        real_health_ok = False
+        real_health_failures = ["compute_real_health_unavailable"]
+    all_go = all_systems_ok and real_health_ok
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     
     poem = f"""
@@ -832,7 +846,7 @@ def print_flight_check_poem(results: Dict[str, FlightCheckResult]) -> str:
     
     poem += f"""╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
-║     FLIGHT STATUS: {'🟢 ALL SYSTEMS GO - CLEAR FOR LAUNCH!' if all_go else f'🔴 {total - go_count} SYSTEM(S) NOT READY      '}                       ║
+║     FLIGHT STATUS: {'🟢 ALL SYSTEMS GO - CLEAR FOR LAUNCH!' if all_go else (f'🔴 {total - go_count} SYSTEM(S) NOT READY      ' if not real_health_ok and all_systems_ok else f'🔴 LIVE-DATA UNHEALTHY: {", ".join(real_health_failures[:2])[:50]}'.ljust(48))}                       ║
 ║     SYSTEMS ONLINE: {go_count}/{total} ({go_count*100//total}%)                                                       ║
 ║                                                                                  ║
 ║     "With heartbeats confirmed and timestamps true,                              ║

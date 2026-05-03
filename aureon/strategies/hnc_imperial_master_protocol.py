@@ -221,7 +221,11 @@ for i, date in enumerate(dates):
     
     # Cosmic modulators
     SR = 19.5 + 14.0 * np.sin(2*np.pi*t/7 + PHI) * lunar
-    flare = max(1.0, 1.95 * np.exp(-0.15*t) + 1.2*np.random.uniform(0,1))
+    # Deterministic mid-band — was np.random.uniform(0,1) but the surrounding
+    # block runs at module import, so the random injection produced a different
+    # forecast table on every Python process start. 0.5 is the expectation of
+    # uniform(0,1) and keeps the formula's central tendency.
+    flare = max(1.0, 1.95 * np.exp(-0.15*t) + 1.2*0.5)
     kp = 1.8 + 4.0 * np.sin(2*np.pi*(t+1)/6)
     lunar_phase = days_from_new / 29.53
     
@@ -385,7 +389,7 @@ for i, date in enumerate(dates):
     # SR Power: Oscillates with surge (17.2 baseline → 30 peak w/ Kp)
     SR = 17.2 + 12.8 * np.sin(2*np.pi*t/7 + PHI)  # Harmonic peaks
     # Flare Strength: Declines but spikes (1.95 baseline → 2.8 X-class odds)
-    flare = 1.95 * np.exp(-0.1*t) + 0.85 * np.random.uniform(0,1)  # 20% X-chance
+    flare = 1.95 * np.exp(-0.1*t) + 0.85 * 0.5  # was uniform(0,1); deterministic mid-band
     # Kp Index: Quiet baseline; peaks Dec 3-4 (Kp 5), Dec 13 (Kp 6)
     kp = 1.5 + 3.5 * np.sin(2*np.pi*(t+2)/7) + 1.0 * (1 if t in [3,4] else 0)  # Storm peaks
     

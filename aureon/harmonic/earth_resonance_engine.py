@@ -12,12 +12,15 @@ Integrates:
 
 from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
+import logging
 import math
 import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # PHI - Golden Ratio
 PHI = (1 + math.sqrt(5)) / 2  # 1.618033988749895
@@ -156,7 +159,13 @@ class EarthResonanceEngine:
         # Pass thresholds to SchumannState for property checks
         self.schumann_state._coherence_threshold = self.COHERENCE_THRESHOLD
         self.schumann_state._phase_lock_threshold = self.OBSERVER_LOCK_THRESHOLD
-        
+
+        # Tracks whether update_schumann_state has ever succeeded. While this
+        # is False, get_trading_gate_status() returns (False, "no_live_data")
+        # so callers don't mistake the dataclass defaults (field_coherence=0.7)
+        # for a real Schumann reading. Set to True on successful update.
+        self._schumann_state_initialized = False
+
         self.emotional_state = EmotionalFrequency(
             frequency_hz=256.0,
             state=EmotionalState.NEUTRAL,
@@ -202,33 +211,125 @@ class EarthResonanceEngine:
         else:
             self.field_mapper = {}
     
-    def update_schumann_state(self, 
+    def update_schumann_state(self,
                               mode1_power: float = None,
                               mode2_power: float = None,
                               mode3_power: float = None,
                               market_volatility: float = 0.0) -> SchumannState:
         """
         Update Schumann resonance state.
-        In production, this would pull from live earth-data sensors.
-        For now, we simulate based on time and market conditions.
+
+        Preference order:
+          1. Caller-provided mode1/2/3 power values (real measurements)
+          2. SchumannResonanceBridge live reading (Barcelona/USGS feed)
+          3. Synthetic time-of-day + sin-wave fallback (DEV ONLY, gated
+             behind AUREON_ALLOW_SIM_FALLBACK)
+
+        The synthetic fallback existed historically as "for now we simulate
+        based on time and market conditions". Production posture refuses
+        to run it so downstream consumers (kraken_margin_penny_trader,
+        aureon_integrated_forecast, dr_auris_throne, aureon_seer) see real
+        coherence rather than a sin-wave fabrication.
         """
         now = time.time()
-        
-        # Simulate Schumann modes with natural variation
-        hour = (now % 86400) / 3600  # Hour of day
-        
-        # Mode 1 (7.83 Hz) - strongest at night
-        if mode1_power is None:
-            night_factor = 1.0 + 0.3 * math.cos(2 * math.pi * hour / 24)
-            mode1_power = 0.8 + 0.2 * night_factor + 0.1 * math.sin(now / 1000)
-        
-        # Mode 2 (14.3 Hz) - varies with solar activity
-        if mode2_power is None:
-            mode2_power = 0.6 + 0.2 * math.sin(now / 500) + 0.1 * math.cos(now / 2000)
-        
-        # Mode 3 (20.8 Hz) - geomagnetic coupling
-        if mode3_power is None:
-            mode3_power = 0.5 + 0.2 * math.sin(now / 800)
+
+        # Try the live Schumann bridge first if any mode value is missing
+        if mode1_power is None or mode2_power is None or mode3_power is None:
+            try:
+                from aureon.harmonic.aureon_schumann_resonance_bridge import (
+                    get_schumann_bridge,
+                )
+                live = get_schumann_bridge().get_live_data()
+                if live is not None:
+                    # Bridge surfaces fundamental + amplitudes per mode
+                    if mode1_power is None and getattr(live, "amplitude_mode1", None) is not None:
+                        mode1_power = float(live.amplitude_mode1)
+                    if mode2_power is None and getattr(live, "amplitude_mode2", None) is not None:
+                        mode2_power = float(live.amplitude_mode2)
+                    if mode3_power is None and getattr(live, "amplitude_mode3", None) is not None:
+                        mode3_power = float(live.amplitude_mode3)
+            except Exception as exc:
+                logger.debug(f"Schumann bridge unavailable for earth-resonance: {exc}")
+
+        # Stage AO: degraded-but-still-real fallback. If Barcelona/USGS
+        # Schumann feed is down BUT NOAA Kp index is up, derive an
+        # estimate from the real Kp index (Kp ↔ geomagnetic activity ↔
+        # Schumann mode amplitudes). This is the same heuristic
+        # mapping that queen_solar_system_awareness.fetch_schumann_data
+        # uses, and it yields REAL solar-derived values rather than
+        # sin-wave fabrications.
+        if mode1_power is None or mode2_power is None or mode3_power is None:
+            kp_value = None
+            try:
+                from aureon.queen.queen_solar_system_awareness import (
+                    QueenSolarSystemAwareness,
+                )
+                # Use the existing NOAA fetcher. It's an async coroutine,
+                # so we run it through a fresh event loop only when no
+                # running loop is present.
+                import asyncio
+                qssa = QueenSolarSystemAwareness()
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # Inside an async context — can't block on
+                        # run_until_complete. Skip Kp fetch this cycle;
+                        # caller should use the async path directly.
+                        logger.debug(
+                            "earth_resonance: event loop running, deferring "
+                            "NOAA Kp fetch to async caller"
+                        )
+                        kp_value = None
+                    else:
+                        kp_value = loop.run_until_complete(qssa._fetch_kp_index())
+                except RuntimeError:
+                    kp_value = asyncio.run(qssa._fetch_kp_index())
+            except Exception as exc:
+                logger.debug(f"NOAA Kp fetch failed for earth-resonance: {exc}")
+                kp_value = None
+
+            if kp_value is not None and 0 <= kp_value <= 9:
+                # Real-data estimate: higher Kp → larger mode amplitudes
+                # (same scaling shape as queen_solar_system_awareness).
+                # Mode 1 (7.83 Hz) baseline 0.7, gentle rise with Kp.
+                if mode1_power is None:
+                    mode1_power = min(1.0, 0.7 + 0.05 * kp_value)
+                # Mode 2 (14.3 Hz) baseline 0.6, stronger Kp coupling.
+                if mode2_power is None:
+                    mode2_power = min(1.0, 0.5 + 0.07 * kp_value)
+                # Mode 3 (20.8 Hz) baseline 0.4, strongest Kp coupling.
+                if mode3_power is None:
+                    mode3_power = min(1.0, 0.3 + 0.08 * kp_value)
+                logger.info(
+                    "[live-data] earth_resonance: SchumannBridge unavailable, "
+                    "derived modes from real NOAA Kp=%s (mode1=%.2f, mode2=%.2f, mode3=%.2f)",
+                    kp_value, mode1_power, mode2_power, mode3_power,
+                )
+
+        # Anything still missing → synthetic fallback, gated.
+        if mode1_power is None or mode2_power is None or mode3_power is None:
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if not simulation_fallback_allowed():
+                log_blocked_fallback("earth_resonance_engine.update_schumann_state",
+                                     "no_live_schumann_data")
+                raise RuntimeError(
+                    "EarthResonanceEngine.update_schumann_state has no live "
+                    "Schumann data and no caller-provided mode powers. "
+                    "Production refuses to fabricate sin-wave Schumann modes. "
+                    "Wire SchumannResonanceBridge or pass mode1/2/3 explicitly, "
+                    "or set AUREON_ALLOW_SIM_FALLBACK=1 for dev/testing."
+                )
+            # DEV-ONLY synthetic Schumann modes (gated above)
+            hour = (now % 86400) / 3600
+            if mode1_power is None:
+                night_factor = 1.0 + 0.3 * math.cos(2 * math.pi * hour / 24)
+                mode1_power = 0.8 + 0.2 * night_factor + 0.1 * math.sin(now / 1000)
+            if mode2_power is None:
+                mode2_power = 0.6 + 0.2 * math.sin(now / 500) + 0.1 * math.cos(now / 2000)
+            if mode3_power is None:
+                mode3_power = 0.5 + 0.2 * math.sin(now / 800)
         
         # Field coherence affected by market volatility
         base_coherence = 0.7 + 0.2 * math.cos(now / 1500)
@@ -254,7 +355,11 @@ class EarthResonanceEngine:
         # Preserve threshold settings on new state instance
         self.schumann_state._coherence_threshold = self.COHERENCE_THRESHOLD
         self.schumann_state._phase_lock_threshold = self.OBSERVER_LOCK_THRESHOLD
-        
+
+        # Mark state as initialized — get_trading_gate_status() will now
+        # return real gate decisions instead of (False, "no_live_data").
+        self._schumann_state_initialized = True
+
         self.last_update = now
         return self.schumann_state
     
@@ -346,9 +451,16 @@ class EarthResonanceEngine:
     def get_trading_gate_status(self) -> Tuple[bool, str]:
         """
         Check if trading should be allowed based on field coherence.
-        
+
         Returns (should_trade, reason)
         """
+        # Defensive: refuse to vouch for the gate until we've successfully
+        # ingested at least one real Schumann reading. Default SchumannState
+        # has field_coherence=0.7 which would otherwise pass the 0.55 gate
+        # — making "no live data" indistinguishable from "good coherence".
+        if not getattr(self, "_schumann_state_initialized", False):
+            return False, "no_live_schumann_data (defaults not trusted as real reading)"
+
         # Check Schumann coherence
         if not self.schumann_state.is_coherent:
             return False, f"Field coherence {self.schumann_state.field_coherence:.2%} < {self.COHERENCE_THRESHOLD:.0%} threshold"

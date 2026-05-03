@@ -41,20 +41,76 @@ import time as _time
 _HEALTH_PORT = int(os.environ.get('HEALTH_PORT', '8081'))
 _health_status = {"status": "starting", "uptime": 0, "cycles": 0, "positions": 0}
 _health_start_time = _time.time()
+HEALTH_TTL_SECONDS = int(os.environ.get('AUREON_HEALTH_TTL_SECONDS', '30'))
+
+
+def compute_real_health() -> tuple:
+    """Return (is_healthy, failed_checks).
+
+    Real connectivity check — the previous always-200 endpoint hid
+    Kraken / Binance API outages from container orchestrators. This
+    helper is shared by `_HealthHandler.do_GET` and the command-center
+    flight-status banner so they cannot drift out of sync.
+    """
+    failed = []
+    now = _time.time()
+
+    # Check 1: live HNC daemon recently updated
+    try:
+        from aureon.core.hnc_live_daemon import get_daemon
+        daemon = get_daemon()
+        last_update = getattr(daemon, "last_update", 0) if daemon else 0
+        if not last_update or (now - last_update) > HEALTH_TTL_SECONDS:
+            failed.append(f"hnc_daemon_stale_or_missing (last={last_update})")
+    except Exception as exc:
+        failed.append(f"hnc_daemon_unavailable: {type(exc).__name__}")
+
+    # Check 2: Queen price cache non-empty
+    try:
+        from aureon.utils.aureon_queen_hive_mind import get_queen_hive_mind
+        qhm = get_queen_hive_mind() if callable(get_queen_hive_mind) else None
+        price_cache = getattr(qhm, "price_cache", None) if qhm else None
+        if not price_cache:
+            failed.append("queen_price_cache_empty")
+    except Exception as exc:
+        failed.append(f"queen_hive_mind_unavailable: {type(exc).__name__}")
+
+    # Check 3: at least one exchange ticker fetch succeeded recently
+    try:
+        from aureon.exchanges.kraken_client import get_kraken_client
+        kc = get_kraken_client()
+        last_ticker_ts = getattr(kc, "last_ticker_fetch_ts", None) if kc else None
+        if last_ticker_ts is None or (now - last_ticker_ts) > HEALTH_TTL_SECONDS:
+            failed.append(f"kraken_ticker_fetch_stale (last={last_ticker_ts})")
+    except Exception as exc:
+        failed.append(f"kraken_client_unavailable: {type(exc).__name__}")
+
+    return (len(failed) == 0, failed)
+
 
 class _HealthHandler(http.server.BaseHTTPRequestHandler):
     """Simple HTTP handler for health/readiness probes."""
-    
+
     def log_message(self, format, *args):
         pass  # Suppress access logs
-    
+
     def do_GET(self):
         if self.path in ('/', '/health', '/healthz', '/ready', '/readiness'):
             _health_status['uptime'] = int(_time.time() - _health_start_time)
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(_json.dumps(_health_status).encode())
+            is_healthy, failed = compute_real_health()
+            if is_healthy:
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(_json.dumps({**_health_status, "checks_passed": True}).encode())
+            else:
+                # 503 so container orchestrators (k8s / supervisord / docker)
+                # actually restart the pod when underlying APIs are down.
+                self.send_response(503)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                payload = {**_health_status, "status": "unhealthy", "failed_checks": failed}
+                self.wfile.write(_json.dumps(payload).encode())
         elif self.path == '/status':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -3037,7 +3093,16 @@ class WhaleIntelligenceTracker:
         """
         Simulate realistic firm activity based on market conditions.
         Uses known firm patterns from GLOBAL_TRADING_FIRMS.
+
+        ⚠ Direction (accumulating / distributing / market_making) is derived
+        from real `price_change_pct`, but volume + confidence are sampled
+        from random.uniform. Gated behind AUREON_ALLOW_SIM_FALLBACK so
+        production refuses to emit synthetic FirmActivity into the catalog
+        and ThoughtBus.
         """
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+        if not simulation_fallback_allowed():
+            return []
         activities = []
         symbol_base = symbol.replace('/USD', '').replace('USDT', '').upper()
         
