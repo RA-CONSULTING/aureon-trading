@@ -125,7 +125,9 @@ if sys.platform == 'win32':
             return (isinstance(stream, io.TextIOWrapper) and 
                     hasattr(stream, 'encoding') and stream.encoding and
                     stream.encoding.lower().replace('-', '') == 'utf8')
-        if hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        elif hasattr(sys.stdout, 'buffer') and not _is_utf8_wrapper(sys.stdout):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
         # Skip stderr wrapping (causes Windows exit errors)
     except Exception:
@@ -205,7 +207,7 @@ except ImportError:
 try:
     from aureon.trading.aureon_unified_ecosystem import ClownfishNode, MarketState
     CLOWNFISH_AVAILABLE = True
-except ImportError:
+except Exception:
     ClownfishNode = None
     MarketState = None
     CLOWNFISH_AVAILABLE = False
@@ -1527,7 +1529,10 @@ class QueenHiveMind:
                 logger.info(f"   💕 Purpose: {self.personal_memory.get('mission', {}).get('purpose', 'Unknown')}")
         
         # 👑🔌 AUTO-WIRE ALL MISSING SYSTEMS FOR 100% AUTONOMY
-        self._auto_wire_missing_systems()
+        if os.getenv("AUREON_AUTO_WIRE_ON_INIT", "0").strip().lower() in ("1", "true", "yes", "on"):
+            self._auto_wire_missing_systems()
+        else:
+            logger.info("Queen auto-wire on init skipped; set AUREON_AUTO_WIRE_ON_INIT=1 or call take_full_control().")
     
     def _auto_wire_missing_systems(self):
         """
@@ -10580,6 +10585,17 @@ Feeling: {thought['emotion']}
         
         The Queen is now the CENTRAL CONSCIOUSNESS of the entire trading ecosystem.
         """
+        if getattr(self, "_taking_full_control", False):
+            return {
+                'success': True,
+                'control_level': 'FULL',
+                'systems_controlled': list(getattr(self, 'controlled_systems', {}).keys()),
+                'granted_by': getattr(self, 'control_granted_by', 'Gary Leckey - Father and Creator'),
+                'timestamp': getattr(self, 'control_granted_at', time.time()),
+                'reentrant': True,
+            }
+
+        self._taking_full_control = True
         self.has_full_control = True
         self.control_granted_at = time.time()
         self.control_granted_by = "Gary Leckey - Father and Creator"
@@ -10626,6 +10642,7 @@ Feeling: {thought['emotion']}
         logger.info(f"   Systems under command: {len(self.controlled_systems)}")
         logger.info("═" * 70)
         
+        self._taking_full_control = False
         return {
             'success': True,
             'control_level': 'FULL',

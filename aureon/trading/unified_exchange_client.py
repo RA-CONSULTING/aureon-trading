@@ -379,28 +379,38 @@ class UnifiedExchangeClient:
     
     def __init__(self, exchange_id: str = "kraken"):
         self.exchange_id = exchange_id.lower()
+        self.client = None
+        self.available = False
         self.dry_run = False
         # Kraken has per-pair minimums; apply a conservative global floor to avoid spam errors
         self.kraken_min_notional = float(os.getenv("KRAKEN_MIN_NOTIONAL", "5"))
-        
-        if self.exchange_id == "kraken":
-            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
-            self.client = get_kraken_client()
-            self.dry_run = self.client.dry_run
-        elif self.exchange_id == "binance":
-            from aureon.exchanges.binance_client import BinanceClient, get_binance_client
-            self.client = get_binance_client()
-            self.dry_run = self.client.dry_run
-        elif self.exchange_id == "alpaca":
-            from aureon.exchanges.alpaca_client import AlpacaClient
-            self.client = AlpacaClient()
-            self.dry_run = self.client.dry_run
-        elif self.exchange_id == "capital":
-            from aureon.exchanges.capital_client import CapitalClient
-            self.client = CapitalClient()
-            self.dry_run = self.client.dry_run
-        else:
+
+        if self.exchange_id not in {"kraken", "binance", "alpaca", "capital"}:
             raise ValueError(f"Unsupported exchange: {exchange_id}")
+
+        try:
+            if self.exchange_id == "kraken":
+                from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+                self.client = get_kraken_client()
+            elif self.exchange_id == "binance":
+                from aureon.exchanges.binance_client import BinanceClient, get_binance_client
+                self.client = get_binance_client()
+            elif self.exchange_id == "alpaca":
+                from aureon.exchanges.alpaca_client import AlpacaClient
+                self.client = AlpacaClient()
+            elif self.exchange_id == "capital":
+                from aureon.exchanges.capital_client import CapitalClient
+                self.client = CapitalClient()
+        except Exception as exc:
+            logger.warning(f"{self.exchange_id} client unavailable: {exc}")
+            self.client = None
+
+        if self.client is None:
+            self.dry_run = True
+            logger.warning(f"{self.exchange_id} client unavailable; using disabled dry-run wrapper")
+        else:
+            self.available = True
+            self.dry_run = bool(getattr(self.client, "dry_run", False))
             
         logger.info(f"Initialized UnifiedExchangeClient for {self.exchange_id} (Dry Run: {self.dry_run})")
 
@@ -411,6 +421,9 @@ class UnifiedExchangeClient:
 
     def get_balance(self, asset: str) -> float:
         """Get free balance for a specific asset."""
+        if self.client is None:
+            return 0.0
+
         if self.exchange_id == "kraken":
             # KrakenClient doesn't have a direct get_free_balance method exposed publicly in the snippet I saw,
             # but it has _private('/0/private/Balance').
@@ -439,7 +452,11 @@ class UnifiedExchangeClient:
                 return 0.0
                 
         elif self.exchange_id == "binance":
-            return self.client.get_free_balance(asset)
+            try:
+                return float(self.client.get_free_balance(asset) or 0.0)
+            except Exception as e:
+                logger.error(f"Error getting Binance balance: {e}")
+                return 0.0
             
         elif self.exchange_id == "alpaca":
             try:
@@ -453,6 +470,9 @@ class UnifiedExchangeClient:
 
     def get_all_balances(self) -> Dict[str, float]:
         """Get all non-zero balances."""
+        if self.client is None:
+            return {}
+
         balances = {}
         
         if self.exchange_id == 'kraken':
@@ -499,6 +519,8 @@ class UnifiedExchangeClient:
 
     def account(self) -> Dict[str, Any]:
         """Return account info in Binance format."""
+        if self.client is None:
+            return {}
         return self.client.account()
 
     def convert_to_quote(self, asset: str, amount: float, quote: str) -> float:
@@ -634,6 +656,9 @@ class UnifiedExchangeClient:
 
     def get_24h_tickers(self) -> List[Dict[str, Any]]:
         """Get 24h ticker statistics for all symbols."""
+        if self.client is None:
+            return []
+
         if self.exchange_id == 'capital':
             try:
                 return self.client.get_24h_tickers()
@@ -679,6 +704,9 @@ class UnifiedExchangeClient:
         Get current ticker data (price, bid, ask).
         Returns dict with 'price', 'bid', 'ask'.
         """
+        if self.client is None:
+            return {'price': 0.0, 'bid': 0.0, 'ask': 0.0}
+
         if self.exchange_id == "kraken":
             # Kraken uses pairs like 'XBTUSD'
             try:

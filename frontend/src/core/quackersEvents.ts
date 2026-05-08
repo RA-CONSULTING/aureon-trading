@@ -35,7 +35,7 @@ export interface FearFieldDetectedPayload {
   threshold: number; // threshold crossed
 }
 
-export interface SystemLifecyclePayload { }
+export type SystemLifecyclePayload = Record<string, never>;
 
 export type QuackersPayload =
   | HarmonicResonancePayload
