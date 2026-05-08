@@ -62,7 +62,7 @@
     "@radix-ui/react-tooltip": "^1.1.4",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
-    "@react-three/postprocessing": "^3.0.4",
+    "@react-three/postprocessing": "^2.19.1",
     "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.56.2",
     "@types/dompurify": "^3.0.5",
@@ -121,5 +121,8 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
+  },
+  "overrides": {
+    "postprocessing": "6.36.4"
   }
 }
