@@ -15,6 +15,18 @@ Gary Leckey | April 2026 | The Queen's Face
 
 from __future__ import annotations
 
+# Load environment variables from .env or .env1
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    import pathlib as _pathlib
+    _root = _pathlib.Path(__file__).resolve().parent.parent.parent
+    for _env_name in (".env", ".env1", ".env1.txt"):
+        _env_path = _root / _env_name
+        if _env_path.exists():
+            _load_dotenv(_env_path, override=False)
+except ImportError:
+    pass
+
 import io
 import json
 import logging
@@ -1670,6 +1682,24 @@ def main():
 
     if not no_browser:
         threading.Timer(1.5, lambda: webbrowser.open("http://localhost:5299")).start()
+
+    # Monkey-patch click.echo to avoid ValueError on Windows consoles
+    # where stdout fileno() fails with "I/O operation on closed file"
+    try:
+        import click as _click
+        _orig_echo = _click.echo
+        def _safe_echo(message=None, file=None, nl=True, err=False, color=None):
+            try:
+                _orig_echo(message=message, file=file, nl=nl, err=err, color=color)
+            except (ValueError, OSError):
+                # Fallback: print directly if click's console detection fails
+                try:
+                    print(message or "")
+                except Exception:
+                    pass
+        _click.echo = _safe_echo
+    except ImportError:
+        pass
 
     socketio.run(app, host="0.0.0.0", port=5299, debug=False, allow_unsafe_werkzeug=True)
 

@@ -18,8 +18,8 @@ BINANCE_DRY_RUN=false
 BINANCE_UK_MODE=true
 
 # 🐙 KRAKEN (https://www.kraken.com/u/security/api)
-KRAKEN_API_KEY=vrncFiHzBsAFScLboamDnuf6ZrSix+4GjEgAtTo2OMYD+ixzZ51Nvkz6
-KRAKEN_API_SECRET=Kxd/Ik8R7yCrD3fVrYdPE/qYyGe6LTnL8SvOfn9W5twEXIFMnOM0hVwOTC9CLMKuCk93iytFWpe8D1HBAsTLbA==
+KRAKEN_API_KEY=LjftmnYwEiqqrk71S5jVp7RIb6up/G0ZswuphQbVBkwJc51PPvRyMiVf
+KRAKEN_API_SECRET=r042AF7vIuvfyZCCKVsDhFvmJwHKOJku8WVXWJ2T28soPFHjOX86Or7w05Y6hUxNaK9EKHUmR1wcyyuz6JePKA==
 KRAKEN_DRY_RUN=false
 
 # 🦙 ALPACA (https://app.alpaca.markets/paper/dashboard/overview)
