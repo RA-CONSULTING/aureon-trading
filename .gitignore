@@ -135,6 +135,12 @@ state/*_thoughts.json
 # Integration audit trail (regenerated on each run)
 integrations_audit.jsonl
 
+# Accounting generated/private artifacts
+Kings_Accounting_Suite/output/
+Kings_Accounting_Suite/data/
+Kings_Accounting_Suite/.pytest_cache/
+Kings_Accounting_Suite/**/*.xlsx
+
 # Imported research bundles (keep research files, but ignore embedded repo snapshots / archives).
 # NOTE: Some imported bundles include `.env*` files with live credentials; never commit those.
 imports/Kimi_Agent_Aureon_*/aureon-trading-main/
