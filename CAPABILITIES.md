@@ -1,535 +1,90 @@
-# Aureon Trading System — Capabilities Matrix
+# Aureon Current Capabilities
 
-> What can this system actually DO? Find your use case below.
+This document describes the current public runtime surfaces and capability map. For commands, see [RUNNING.md](RUNNING.md) and [QUICK_START.md](QUICK_START.md). For a deeper end-user explanation of how all subsystems connect, see [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md).
 
-> 🚀 **To actually RUN the system, see [`RUNNING.md`](RUNNING.md) — the single source of truth for working commands.**
->
-> ℹ️ This file lists capabilities and their backing modules. Some specific commands below reference older PEFCφS paths (`1_substrate/`, `2_dynamics/`, `3_forcing/`, `4_output/`); the active code lives under `aureon/`. For the canonical entry point, run:
-> ```bash
-> python scripts/aureon_ignition.py     # safe dry-run (default)
-> python scripts/aureon_ignition.py --live   # real trading
-> ```
+## Current Full-System Entrypoint
 
----
-
-## Quick Capability Overview
-
-| I Want To... | Capability | Status | Files | Result |
-|---|---|---|---|---|
-| **Execute trades** | Live trading automation | ✅ Live | `aureon/trading/` | Real orders on Binance, Kraken, etc. |
-| **Test strategies** | Paper trading (dry-run mode) | ✅ Live | `scripts/aureon_ignition.py` | Risk-free real-time simulation |
-| **Validate strategies** | Historical backtesting | ✅ Proven | `aureon/analytics/` | 629 trades, 92.4% accuracy, +$97K |
-| **Track portfolio** | Real-time account management | ✅ Live | `aureon/portfolio/` | Multi-exchange balance & position tracking |
-| **Detect market manipulation** | Bot detection & profiling | ✅ Active | `aureon/bots_intelligence/` | 37 firms, 44,000+ bots profiled |
-| **Analyze market forensics** | Historical extraction analysis | ✅ Documented | `aureon/analytics/` | $33.5T extraction timeline mapped |
-| **Generate signals** | Harmonic frequency analysis | ✅ Core | `aureon/harmonic/` | 528Hz, 432Hz, φ-based signals |
-| **Predict timing** | ETA (time-to-target) prediction | ✅ Verified | `aureon/portfolio/` | 100% accuracy on sub-second execution |
-| **Manage risk** | Dynamic position sizing | ✅ Implemented | `aureon/utils/` | Kelly Criterion, volatility-based sizing |
-| **Research ancient patterns** | Wisdom convergence analysis | ✅ Complete | `research/wisdom_traditions/` | 1,190 entries across 12 civilizations |
-
----
-
-## Use Cases & How To Execute Them
-
-### 🎯 Use Case 1: I Want To Trade Actively (Live)
-
-**What you need:**
-- Real-time market signals
-- Automatic trade execution
-- Live portfolio tracking
-- Risk management
-
-**How to do it:**
-
-```bash
-# 1. Start the trading system
-python3 aureon/trading/aureon_queen_trade_executor.py
-
-# 2. Monitor portfolio in real-time
-python3 aureon/portfolio/live_portfolio_growth_tracker.py
-
-# 3. Check recent trades
-python3 scripts/diagnostics/check_recent_trades.py
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
-**System delivers:**
-- ✅ Harmonic signal generation (every tick)
-- ✅ Order placement on Binance, Kraken
-- ✅ Position tracking across exchanges
-- ✅ Real-time P&L calculation
-- ✅ Risk limit enforcement
+Safe launcher validation:
 
-**Key files:**
-- Execution: `aureon/trading/aureon_queen_trade_executor.py`
-- Signals: `aureon/utils/aureon_miner_brain.py`
-- Risk gates: `aureon/utils/adaptive_prime_profit_gate.py`
-- Portfolio: `aureon/portfolio/aureon_real_portfolio_tracker.py`
-
-**Performance proof:** See [`LIVE_PROOF.md`](LIVE_PROOF.md) Stage 3
-
----
-
-### 🧪 Use Case 2: I Want To Test A Strategy (Paper Trading)
-
-**What you need:**
-- Real-time market data
-- Simulated trade execution
-- Risk-free testing
-- Performance metrics
-
-**How to do it:**
-
-```bash
-# 1. Start paper trading
-python scripts/aureon_ignition.py    # safe dry-run mode (default)
-
-# 2. Monitor trades in real-time
-python3 aureon/portfolio/live_portfolio_growth_tracker.py
-
-# 3. View results
-cat 4_output/trade_outputs/paper_trade_history.json
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
 ```
 
-**System delivers:**
-- ✅ Live market data feed
-- ✅ Simulated order execution (no real capital)
-- ✅ HNC signal analysis for each trade
-- ✅ Entry/exit timing verification
-- ✅ Coherence scoring (0-1 quality metric)
+Dev/audit ignition:
 
-**Key files:**
-- Simulator: `scripts/traders/paperTradeSimulation.ts` (note: TypeScript — runs via `npx ts-node`, or use `python scripts/aureon_ignition.py` for dry-run mode)
-- Signals: `2_dynamics/trading_logic/`
-- Results: `4_output/trade_outputs/paper_trade_history.json`
-
-**Performance proof:** See [`LIVE_PROOF.md`](LIVE_PROOF.md) Stage 2
-- 24 trades, 66.7% win rate, +$2.00 PnL
-
----
-
-### 📊 Use Case 3: I Want To Validate A Strategy (Backtesting)
-
-**What you need:**
-- Historical market data
-- Fast simulation engine
-- Complete performance metrics
-- Risk analysis
-
-**How to do it:**
-
-```bash
-# 1. Run spot trading backtest
-python3 aureon/analytics/aureon_historical_backtest.py
-
-# 2. Run margin trading backtest (with leverage)
-python3 aureon/analytics/super_intelligence_backtest.py
-
-# 3. View results
-cat 4_output/performance_metrics/backtest_spot_results.json
-cat 4_output/performance_metrics/backtest_margin_results.json
+```powershell
+python scripts/aureon_ignition.py --audit-only
 ```
 
-**System delivers:**
-- ✅ 285-344 simulated trades per backtest
-- ✅ Entry/exit signal validation
-- ✅ P&L, drawdown, Sharpe ratio calculation
-- ✅ Win rate & accuracy metrics
-- ✅ Position sizing optimization
-
-**Key files:**
-- Spot backtest: `aureon/analytics/aureon_historical_backtest.py`
-- Margin backtest: `aureon/analytics/super_intelligence_backtest.py`
-- Results: `4_output/performance_metrics/backtest_*_results.json`
-
-**Performance proof:** See [`LIVE_PROOF.md`](LIVE_PROOF.md) Stage 1
-- Spot: 285 trades, 100% win rate, +$38,670
-- Margin: 344 trades, 86% win rate, +$58,805
-
----
-
-### 💼 Use Case 4: I Want To Monitor My Portfolio
-
-**What you need:**
-- Real-time balance tracking
-- Position P&L calculation
-- Multi-exchange support
-- Account state snapshots
-
-**How to do it:**
-
-```bash
-# 1. Check current balances
-python3 scripts/diagnostics/check_portfolio.py
-
-# 2. View recent trades
-python3 scripts/diagnostics/check_recent_trades.py
-
-# 3. See full portfolio state
-cat 4_output/portfolio_management/portfolio_truth.json
-
-# 4. Detailed analysis
-python3 aureon/analytics/analyze_portfolio_stats.py
-```
-
-**System delivers:**
-- ✅ Real-time balance from Kraken, Binance, etc.
-- ✅ Per-position P&L tracking
-- ✅ Cost basis tracking
-- ✅ Cross-exchange margin management
-- ✅ Snapshot history for audit trail
-
-**Key files:**
-- Balance check: `scripts/diagnostics/check_portfolio.py`
-- Recent trades: `scripts/diagnostics/check_recent_trades.py`
-- Current state: `4_output/portfolio_management/portfolio_truth.json`
-- Analytics: `aureon/analytics/analyze_portfolio_stats.py`
-
-**Sample output:**
-```json
-{
-  "exchange": "kraken",
-  "positions": {
-    "ADA": {"quantity": 27.90, "entry_price": 0.3558, "pnl": -$9.92},
-    "CRO": {"quantity": 172.37, "entry_price": 0.0, "pnl": $0.00}
-  }
-}
-```
-
----
-
-### 🤖 Use Case 5: I Want To Detect Market Manipulation (Bots)
-
-**What you need:**
-- Algorithmic pattern detection
-- Bot attribution (who's trading?)
-- Coordination analysis
-- Market timing signatures
-
-**How to do it:**
-
-```bash
-# 1. Profile detected bots
-python3 aureon/bots_intelligence/aureon_bot_intelligence_profiler.py
-
-# 2. Scan for ocean wave patterns (price action)
-python3 aureon/scanners/aureon_ocean_wave_scanner.py
-
-# 3. View detected bots
-cat 2_dynamics/trading_logic/bot_census_registry.json
-
-# 4. View bot attribution
-cat 2_dynamics/trading_logic/bot_cultural_attribution.json
-```
-
-**System delivers:**
-- ✅ 193 detected algorithmic patterns
-- ✅ 23 bots attributed to specific owners (55%+ confidence)
-- ✅ 37 global trading firms profiled
-- ✅ 1,500 coordination links (0.0° phase alignment)
-- ✅ 44,000+ live bots tracked
-
-**Key files:**
-- Bot profiler: `aureon/bots_intelligence/aureon_bot_intelligence_profiler.py`
-- Ocean scanner: `aureon/scanners/aureon_ocean_wave_scanner.py`
-- Registry: `2_dynamics/trading_logic/bot_census_registry.json`
-- Attribution: `2_dynamics/trading_logic/bot_cultural_attribution.json`
-- Coordination: `1_substrate/frequencies/planetary_harmonic_network.json`
-
-**Evidence data:**
-- 37 firms: Jane Street, Citadel, Renaissance, Blackrock, Virtu, etc.
-- $13T+ capital tracked
-- Coordination pattern: perfectly synchronized trades at 0.0° phase
-
----
-
-### 🔍 Use Case 6: I Want To Analyze Historical Market Manipulation
-
-**What you need:**
-- Extraction timeline (1913-2024)
-- Perpetrator network mapping
-- Evidence catalog
-- Financial forensics
-
-**How to do it:**
-
-```bash
-# 1. Hunt for historical patterns
-python3 aureon/analytics/aureon_historical_manipulation_hunter.py
-
-# 2. View money flow analysis
-cat 4_output/performance_metrics/deep_money_flow_analysis.json
-
-# 3. View extraction timeline
-cat 1_substrate/data_models/money_flow_timeline.json
-
-# 4. View historical evidence
-cat 1_substrate/data_models/historical_manipulation_evidence.json
-```
-
-**System delivers:**
-- ✅ $33.5 trillion extraction mapped (109 years)
-- ✅ 11 major extraction events with evidence
-- ✅ 34-node perpetrator network (Rothschild, Fed, Goldman Sachs, etc.)
-- ✅ Timeline: 1913 Federal Reserve → 2023 AI pump
-- ✅ Proof: Retail→Institution flow, Bailout evidence
-
-**Key files:**
-- Hunter: `aureon/analytics/aureon_historical_manipulation_hunter.py`
-- Flow analysis: `4_output/performance_metrics/deep_money_flow_analysis.json`
-- Timeline: `1_substrate/data_models/money_flow_timeline.json`
-- Evidence: `1_substrate/data_models/historical_manipulation_evidence.json`
-
-**Evidence timeline:**
-- 1913: Federal Reserve created (+$1.2T extraction)
-- 1929: Stock market crash (+$2.1T)
-- 1987: Black Monday (+$0.5T)
-- 2008: Financial crisis (+$5T+ bailouts)
-- 2020: COVID crash & pump (+$3.2T)
-- 2023: AI bubble pump (+$2.8T)
-
----
-
-### 🎵 Use Case 7: I Want To Use Harmonic Signal Generation
-
-**What you need:**
-- Frequency scanning (Hz detection)
-- φ² Coherence Bridge (sacred frequencies)
-- Solfeggio tones (528, 432 Hz)
-- Coherence scoring (0-1 metric)
-
-**How to do it:**
-
-```bash
-# 1. Scan for harmonic frequencies
-python3 aureon/harmonic/aureon_planetary_harmonic_sweep.py
-
-# 2. View sacred frequency database
-cat 1_substrate/frequencies/sacred_frequencies.json
-
-# 3. View planetary harmonic network
-cat 1_substrate/frequencies/planetary_harmonic_network.json
-
-# 4. Check φ² bridge alignment
-python3 1_substrate/frequencies/aureon_phi_squared_coherence_bridge.py
-```
-
-**System delivers:**
-- ✅ Real-time frequency scanning (Hz detection in price data)
-- ✅ φ (1.618) resonance detection
-- ✅ Solfeggio alignment (528 Hz, 432 Hz)
-- ✅ Schumann frequency (7.83 Hz) tracking
-- ✅ Coherence score (0-1, where 0.35-0.945 is productive)
-
-**Key files:**
-- Harmonic sweep: `aureon/harmonic/aureon_planetary_harmonic_sweep.py`
-- Sacred constants: `1_substrate/frequencies/sacred_frequencies.json`
-- Planetary network: `1_substrate/frequencies/planetary_harmonic_network.json`
-- Miner brain: `aureon/utils/aureon_miner_brain.py`
-
-**How it works:**
-```
-Market Price → Frequency Analysis → φ Detection → Coherence Score
-     $347.90        512.19 Hz          YES            0.888
-     
-     0.1701         803.67 Hz          YES            0.924
-```
-
-Each trade tagged with coherence value (higher = higher confidence)
-
----
-
-### 📚 Use Case 8: I Want To Research Ancient Wisdom Patterns
-
-**What you need:**
-- 12 civilization databases
-- Star chart decoders
-- Sacred site mappings
-- Convergence proofs
-
-**How to do it:**
-
-```bash
-# 1. View wisdom traditions
-ls research/wisdom_traditions/
-
-# 2. Read Aztec wisdom
-cat research/wisdom_traditions/aztec_wisdom.json
-
-# 3. View star glyphs
-cat public/aztec-star-glyphs.json
-cat public/celtic-ogham-feda.json
-cat public/egyptian-hieroglyphs.json
-
-# 4. View convergence analysis
-ls research/convergence_analysis/
-```
-
-**System delivers:**
-- ✅ 1,190 wisdom entries (12 civilizations)
-- ✅ 3,603 decoder data points (7 star systems)
-- ✅ 24 sacred sites mapped globally
-- ✅ 10 ley lines documented
-- ✅ 47+ convergence proofs (φ ratio, Venus cycle, etc.)
-
-**Key files:**
-- Wisdom: `research/wisdom_traditions/` (12 JSON files)
-- Decoders: `public/` (7 JSON files)
-- Sacred sites: `research/sacred_sites/`
-- Convergence: `research/convergence_analysis/`
-
-**Civilizations included:**
-- Aztec, Celtic, Chinese, Egyptian, Ghost Dance
-- Hindu, Mayan, Mogollon, Norse, Plantagenet
-- Pythagorean, Warfare
-
----
-
-### 🧬 Use Case 9: I Want To Understand HNC Theory
-
-**What you need:**
-- Master formula explanation
-- LTDE equation (temporal delegation)
-- φ² Coherence Bridge specification
-- Validation framework
-
-**How to do it:**
-
-```bash
-# 1. Read HNC white paper
-cat docs/HNC_UNIFIED_WHITE_PAPER.md
-
-# 2. Review validation research
-ls docs/research/validation_framework/
-
-# 3. Check implementation modules
-ls 1_substrate/frequencies/aureon_harmonic_*.py
-```
-
-**System delivers:**
-- ✅ Complete HNC theory formalism
-- ✅ LTDE equation: Ψ(t) = Σₖ aₖ·Λₖ(t-τₖ)·e^(iθₖ)
-- ✅ φ² Bridge: 528.422 Hz ↔ 1.42 GHz (1.29 ppb match)
-- ✅ Γ (coherence) measurement (0-1 scale)
-- ✅ 14 validation PDFs
-
-**Key files:**
-- HNC paper: `docs/HNC_UNIFIED_WHITE_PAPER.md`
-- Validation: `docs/research/validation_framework/` (14 PDFs)
-- Implementation: `aureon/harmonic_nexus_bridge.py`
-
----
-
-### ⏱️ Use Case 10: I Want Precise Timing Predictions (ETA)
-
-**What you need:**
-- Time-to-target prediction
-- Execution verification
-- Timing accuracy metrics
-- Adaptive correction
-
-**How to do it:**
-
-```bash
-# 1. Review ETA verification
-cat 4_output/trade_outputs/eta_verification_history.json
-
-# 2. Check trade timing accuracy
-python3 aureon/portfolio/trade_profit_validator.py
-
-# 3. Monitor prediction confidence
-cat 4_output/trade_outputs/exchange_verification_results.json
-```
-
-**System delivers:**
-- ✅ Predicts exact seconds to profit target
-- ✅ 100% hit rate on verified predictions (5/5)
-- ✅ Sub-second execution verification
-- ✅ Adaptive velocity correction
-- ✅ Confidence scoring (0-1)
-
-**Key files:**
-- ETA verification: `4_output/trade_outputs/eta_verification_history.json`
-- Validator: `aureon/portfolio/trade_profit_validator.py`
-- Results: `4_output/trade_outputs/exchange_verification_results.json`
-
-**Example result:**
-```json
-{
-  "predicted_eta": 30 seconds,
-  "actual_eta": 0.01 seconds,
-  "accuracy": "HIT_EARLY",
-  "outcome": "VERIFIED"
-}
-```
-
----
-
-## Capability Summary by Layer
-
-### Layer 1 (Substrate): Foundation & Feeds
-```
-✓ Market data feeds (Binance, Kraken, Alpaca)
-✓ Harmonic frequency database
-✓ Sacred frequency constants (φ, 528 Hz, 432 Hz, etc.)
-✓ Data models & schemas
-✓ Historical data caching
-```
-
-### Layer 2 (Dynamics): Intelligence & Logic
-```
-✓ HNC signal generation (LTDE equation)
-✓ Γ coherence calculation (0-1 scoring)
-✓ Multi-branch probability networks
-✓ Bot detection & profiling
-✓ Echo-feedback temporal delegation
-✓ Probability threshold operators
-```
-
-### Layer 3 (Forcing): Execution & Control
-```
-✓ Adaptive profit gate (φ threshold enforcement)
-✓ Order execution engines
-✓ Coherence gate enforcement (Γ limits)
-✓ Real-time trade triggers
-✓ Risk limit enforcement
-✓ Market event scanners
-```
-
-### Layer 4 (Output): Results & Analytics
-```
-✓ Trade history recording
-✓ Portfolio state tracking
-✓ P&L calculation & validation
-✓ Performance metrics (Sharpe, win rate, etc.)
-✓ Trade audit trails
-✓ ETA verification
-✓ Dashboard data
-```
-
----
-
-## Performance Proof Matrix
-
-| Capability | Test Type | Result | Evidence |
-|---|---|---|---|
-| Signal Accuracy | Historical backtest (spot) | 100% (285/285) | backtest_spot_results.json |
-| Signal Accuracy | Historical backtest (margin) | 86% (296/344) | backtest_margin_results.json |
-| Live Execution | Paper trading | 66.7% (16/24) | paper_trade_history.json |
-| Timing Prediction | ETA verification | 100% (5/5) | eta_verification_history.json |
-| Portfolio Tracking | Real accounts | Live (multi-exchange) | portfolio_truth.json |
-| Risk Management | Max drawdown (spot) | 0.64% | backtest_spot_results.json |
-| Risk Management | Max drawdown (margin) | 1.83% | backtest_margin_results.json |
-| Bot Detection | Pattern scanning | 193 patterns, 23 attributed | bot_census_registry.json |
-
----
-
-## How To Get Started
-
-1. **See proof it works** → [`LIVE_PROOF.md`](LIVE_PROOF.md)
-2. **Find what you need** → [`QUICK_START.md`](QUICK_START.md)
-3. **Pick a use case above** → Follow the command
-4. **Check the results** → View the output files
-
----
-
-**Questions about a capability?** Check [`QUICK_START.md`](QUICK_START.md) for file locations and commands.
+## Capability Table
+
+| Capability | What it does | Primary surfaces |
+|---|---|---|
+| Live/safe runtime supervision | Starts and supervises the organism from one terminal, publishes manifests, and keeps reboot timing visible. | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
+| Multi-exchange market coverage | Runs unified market telemetry and exchange readiness for Kraken, Binance, Alpaca, and Capital. | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
+| Spot/margin observation and trading readiness | Tracks runtime state, open positions, stale ticks, and flight-test reboot decisions before action. | `/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
+| Exchange clients | Provides exchange-specific adapters for market data, balances, and order paths through the runtime gates. | `kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
+| Cognitive order-intent path | Lets the cognitive layer observe, ask, reason, and emit order-intent evidence into the runtime rather than bypassing exchange gates. | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |
+| HNC/Auris harmonic affect reporting | Produces timestamped cognitive trade evidence, harmonic affect state, and benchmark reporting. | `aureon_cognitive_trade_evidence.py`, `aureon_harmonic_affect_state.py`, `aureon_live_cognition_benchmark.py` |
+| Self-questioning and mind hub | Runs the local thought/action hub and self-questioning loop for operator-visible reasoning. | `http://127.0.0.1:13002/api/thoughts` |
+| Unified autonomous console | Shows organism pulse, runtime mirror, blockers, exchange state, evolution queue, audits, and current capability modes. | `frontend/src/App.tsx`, `frontend/src/services/aureonAutonomousFrontend.ts`, `frontend/src/hooks/useTerminalSync.ts` |
+| Accounting/HMRC support pack tooling | Generates statutory support packs, CT support notes, and accounting evidence while keeping filing manual. | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
+| SaaS/security/local authorized audit tooling | Catalogs SaaS/frontend surfaces, security blockers, authorized local findings, and migration work orders. | `aureon/autonomous/aureon_saas_system_inventory.py`, `aureon/autonomous/hnc_authorized_attack_lab.py` |
+| Continuous self-audit | Rebuilds readiness, switchboard, catalog, and mind-wiring reports for the console and operator review. | `aureon_organism_runtime_observer.py`, `aureon_system_readiness_audit.py`, `aureon_autonomous_capability_switchboard.py`, `aureon_repo_self_catalog.py`, `mind_wiring_audit.py` |
+
+## Subsystem Atlas
+
+| Subsystem | End-user purpose | Where to start |
+|---|---|---|
+| Launcher/supervisor | Start the whole organism once and know what is alive. | `AUREON_PRODUCTION_LIVE.cmd`, wake-up manifests |
+| Exchange runtime | Bring Kraken, Binance, Alpaca, and Capital into one market state. | `aureon/exchanges/`, `/api/terminal-state` |
+| Trading/portfolio/risk | Convert market state into readiness, intent, position, and execution evidence. | `aureon/trading/`, `aureon/portfolio/`, `aureon/strategies/` |
+| Scanners/analytics | Find movement, anomalies, backtest context, and opportunity candidates. | `aureon/scanners/`, `aureon/analytics/` |
+| Cognition/agents | Ask questions, route goals, choose capabilities, and expose thought/action state. | `aureon/autonomous/`, `/api/thoughts` |
+| HNC/Auris evidence | Timestamp coherence, cognitive trade evidence, harmonic affect, and benchmark state. | `docs/audits/`, `aureon/autonomous/aureon_live_cognition_benchmark.py` |
+| Frontend console | Give the operator a single live surface for runtime, blockers, audits, and capability modes. | `frontend/src/App.tsx`, `frontend/public/` |
+| Accounting/HMRC support | Build evidence packs and manual filing support without changing accounts totals silently. | `Kings_Accounting_Suite/tools/`, `aureon/queen/accounting_context_bridge.py` |
+| SaaS/security audit | Show frontend/SaaS blockers, owned-scope security findings, and migration work. | `aureon_saas_system_inventory.py`, `hnc_authorized_attack_lab.py` |
+| Vault/research/memory | Keep local knowledge, learning history, research context, and voice/persona state. | `aureon/vault/`, `docs/`, `queen_research/` |
+| Self-improvement | Catalog what exists, what is stale, and what can safely be improved next. | readiness audit, repo catalog, growth loop, self-enhancement lifecycle |
+
+## Public Local Interfaces
+
+| Interface | URL or file |
+|---|---|
+| Unified autonomous console | `http://127.0.0.1:8081/` |
+| Runtime terminal state | `http://127.0.0.1:8791/api/terminal-state` |
+| Flight test | `http://127.0.0.1:8791/api/flight-test` |
+| Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
+| Mind thoughts | `http://127.0.0.1:13002/api/thoughts` |
+| Wake-up manifest | `state/aureon_wake_up_manifest.json` |
+| Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
+| Cognitive trade evidence | `docs/audits/aureon_cognitive_trade_evidence.json` |
+| Harmonic affect state | `docs/audits/aureon_harmonic_affect_state.json` and `frontend/public/aureon_harmonic_affect_state.json` |
+
+## Runtime Modes
+
+| Mode | Meaning |
+|---|---|
+| `safe_observation` | Runtime/feed is offline, or the environment is not in live mode. |
+| `guarded_observe_plan` | Runtime is live but action is blocked by evidence such as stale data, booting state, open-position reboot timing, or unavailable downtime window. |
+| `guarded_live_action` | Runtime is fresh, live mode is enabled, real order capability is enabled, and all runtime gates are clear. |
+
+## Exchange Coverage
+
+| Exchange | Current role |
+|---|---|
+| Kraken | Spot/margin-capable client path under unified exchange runtime. |
+| Binance | Market and trade adapter with symbol normalization and account readiness checks. |
+| Alpaca | Stocks/crypto adapter with account and position readiness checks. |
+| Capital | CFD account and position adapter integrated into unified runtime state. |
+
+The unified runtime is responsible for coordinating these clients. Individual exchange bots are not the recommended public run path.
+
+## Manual Boundaries
+
+Aureon can generate evidence, reports, runtime state, order intent, and accounting support packs. It does not remove the need for configured credentials, runtime freshness, safe reboot windows, valid exchange permissions, or manual review of filings/payments. Official filings, payments, credential reveal, and unowned security mutation remain manual or explicitly authorized operations.

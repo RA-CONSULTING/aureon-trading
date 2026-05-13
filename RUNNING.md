@@ -1,345 +1,164 @@
-# How to Run the Aureon Trading System
+# Running Aureon
 
-⚠️ **WARNING: This system can trade with REAL MONEY. Read the safety section before running with `--live` flag.**
+Last updated: 2026-05-13
 
----
+This is the canonical runbook for the current Aureon runtime. The recommended full-organism terminal entrypoint is the production wake-up launcher, not individual exchange bots.
 
-## Safety First: Know What You're Running
+For a plain-English map of every major subsystem and what it can do, read [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md).
 
-The Aureon system progresses through **safe test modes** before you touch real money:
+The launcher starts the production supervisor, market runtime, status/telemetry server, mind hub, self-questioning loop, organism observer, manifest refresh, and unified frontend console.
 
-1. **DRY-RUN (default)** — Simulates trades, no real orders. **Always safe.**
-2. **BOOT-ONLY** — Loads all systems, verifies they work, exits. No trading.
-3. **TESTNET** — Uses fake money on a real exchange (Binance Testnet). Practice with zero risk.
-4. **LIVE** — Real money on real exchanges. **Start small. Risk only what you can lose.**
+## Current Entrypoints
 
-⚠️ **Critical:** The cloud deployment (`app.yaml`) defaults to LIVE mode with real money. Never deploy to production without explicitly configuring safety settings.
+| Purpose | Command |
+|---|---|
+| Full Windows production supervisor | `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
+| Validate launcher and flags without opening services | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
+| Dev/audit ignition path | `python scripts/aureon_ignition.py --audit-only` |
+| Standalone runtime status server | `python aureon/exchanges/unified_market_status_server.py --port 8791` |
+| Frontend development server | `cd frontend; npm run dev` |
 
----
+Use port `8791` for the current runtime feed when older local sessions may still own `8790`.
 
-## Prerequisites Checklist
+## Run The Whole Organism
 
-Before you start, verify you have:
+Open PowerShell:
 
-- [ ] Python 3.11 or later (`python3 --version`)
-- [ ] Git installed
-- [ ] 4GB RAM minimum
-- [ ] Internet connection
-- [ ] API keys (optional for dry-run, required for live trading)
-  - Binance: https://www.binance.com/en/support/faq/360002502072
-  - Binance Testnet: https://testnet.binance.vision/
-  - Kraken, Alpaca, Capital.com: Optional, configured in `.env`
-
----
-
-## Setup (5 Minutes)
-
-### 1. Clone and Navigate
-
-```bash
-git clone https://github.com/RA-CONSULTING/aureon-trading
-cd aureon-trading
+```powershell
+cd C:\Users\user\aureon-trading-integrated-main-20260508
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
-### 2. Create Virtual Environment (Recommended)
+Leave this terminal open. It is the production supervisor. A healthy launch prints:
 
-```bash
-python3 -m venv .venv
-
-# Linux / macOS:
-source .venv/bin/activate
-
-# Windows (Command Prompt):
-.venv\Scripts\activate.bat
-
-# Windows (PowerShell):
-.venv\Scripts\Activate.ps1
+```text
+Mode: LIVE_TRADING_OPERATOR_CONFIRMED + COGNITIVE_ORDER_INTENT_AUTHORITY + PRODUCTION_SUPERVISOR
+LLM/cognitive order-intent authority: ON
+Production supervisor attached
 ```
 
-### 3. Install Dependencies
+## Safe Validation
 
-```bash
-pip install -r requirements.txt
+Run this before a live session, after pulling updates, or after editing launch docs:
+
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
 ```
 
-### 4. Configure Environment
+Validation checks the launcher profile and command wiring without starting the full console stack.
 
-```bash
-# Copy the example config
-cp .env.example .env
+## Watch The Runtime
 
-# Edit .env with your API keys and preferences
-# For dry-run: You can leave it empty or use placeholder keys
-# For live trading: Fill in real API keys
+Open the unified console:
+
+```text
+http://127.0.0.1:8081/
 ```
 
----
+Watch local endpoints from a second PowerShell window:
 
-## What Do You Want To Do?
-
-Pick the path that matches your goal:
-
-### A) Test the System (Safe, No Money at Risk)
-
-**Command:**
-```bash
-python scripts/aureon_ignition.py
+```powershell
+Invoke-RestMethod http://127.0.0.1:8791/api/terminal-state | ConvertTo-Json -Depth 8
+Invoke-RestMethod http://127.0.0.1:8791/api/flight-test | ConvertTo-Json -Depth 8
+Invoke-RestMethod http://127.0.0.1:8791/api/reboot-advice | ConvertTo-Json -Depth 8
+Invoke-RestMethod http://127.0.0.1:13002/api/thoughts | ConvertTo-Json -Depth 8
 ```
 
-**What happens:**
-- ✅ Runs in DRY-RUN mode (default, no real trades)
-- ✅ Loads all 100+ systems
-- ✅ Simulates trading decisions
-- ✅ Shows live harmonic analysis, bot scanning, Queen decisions
-- ✅ Press `Ctrl+C` to stop
+The console also reads the wake-up manifest from:
 
-**No setup required.** This works immediately after `pip install -r requirements.txt`.
-
----
-
-### B) Boot All Systems (Verify Everything Works, No Trading)
-
-**Command:**
-```bash
-python scripts/aureon_ignition.py --live --no-trade
+```text
+state/aureon_wake_up_manifest.json
+frontend/public/aureon_wake_up_manifest.json
 ```
 
-**What happens:**
-- ✅ Loads all systems in LIVE mode (connects to exchanges)
-- ✅ Verifies API connections work
-- ✅ Does NOT execute any trades
-- ✅ Shows system health status
-- ✅ Press `Ctrl+C` after seeing "AUTONOMOUS TRADING ACTIVE"
+## What The Launcher Starts
 
-**Requires:** Valid API keys in `.env` (even if you use testnet keys)
+| Surface | Active path |
+|---|---|
+| Production wrapper | `AUREON_PRODUCTION_LIVE.cmd` |
+| Full wake-up launcher | `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
+| Market runtime | `aureon/exchanges/unified_market_trader.py` |
+| Runtime status server | `aureon/exchanges/unified_market_status_server.py` |
+| Kraken client | `aureon/exchanges/kraken_client.py` |
+| Binance client | `aureon/exchanges/binance_client.py` |
+| Alpaca client | `aureon/exchanges/alpaca_client.py` |
+| Capital client | `aureon/exchanges/capital_client.py` |
+| Self-questioning loop | `aureon/autonomous/aureon_self_questioning_ai.py` |
+| Mind hub | `aureon/autonomous/aureon_mind_thought_action_hub.py` |
+| Organism observer | `aureon/autonomous/aureon_organism_runtime_observer.py` |
+| Readiness audit | `aureon/autonomous/aureon_system_readiness_audit.py` |
+| Capability switchboard | `aureon/autonomous/aureon_autonomous_capability_switchboard.py` |
+| Repo self-catalog | `aureon/autonomous/aureon_repo_self_catalog.py` |
+| Mind wiring audit | `aureon/autonomous/mind_wiring_audit.py` |
+| Cognitive trade evidence | `aureon/autonomous/aureon_cognitive_trade_evidence.py` |
+| Harmonic affect state | `aureon/autonomous/aureon_harmonic_affect_state.py` |
+| Live cognition benchmark | `aureon/autonomous/aureon_live_cognition_benchmark.py` |
+| Frontend shell | `frontend/src/App.tsx` |
+| Frontend autonomous service | `frontend/src/services/aureonAutonomousFrontend.ts` |
+| Terminal sync hook | `frontend/src/hooks/useTerminalSync.ts` |
+| Accounting pack generator | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py` |
+| Accounting context bridge | `aureon/queen/accounting_context_bridge.py` |
 
----
+## Runtime Modes
 
-### C) Live Trade on Binance Testnet (Fake Money, Real Exchange)
+| Mode | Meaning |
+|---|---|
+| `safe_observation` | Runtime or feed is offline, or live environment is not enabled. |
+| `guarded_observe_plan` | Live runtime is enabled, but action blockers such as stale ticks, open-position restart windows, or booting state remain active. |
+| `guarded_live_action` | Runtime is fresh, live environment is enabled, real order capability is enabled, and guards are clear. |
 
-**Testnet is the safest path to practice real trading.** Use this BEFORE live mainnet.
+The guard layer is not a separate trading strategy. It is the runtime evidence layer that prevents stale data, duplicate supervisors, unsafe reboot timing, credential mistakes, API-rate overload, payment/filing automation, and unowned security mutation from being treated as live action.
 
-#### Step 1: Get Testnet API Keys
-1. Go to https://testnet.binance.vision/
-2. Log in (create account if needed)
-3. Navigate to **API Management**
-4. Create a new API key (no restrictions needed)
-5. Copy the API Key and Secret Key
+## Live Trading Preconditions
 
-#### Step 2: Update `.env`
-Edit `.env` and set:
-```bash
-BINANCE_USE_TESTNET=true
-BINANCE_API_KEY=your_testnet_key_here
-BINANCE_API_SECRET=your_testnet_secret_here
+Before live operation, confirm:
+
+- Exchange credentials are present in `.env` for Kraken, Binance, Alpaca, and Capital as applicable.
+- Withdrawal permissions are disabled on exchange keys.
+- The launcher validation command passes.
+- `http://127.0.0.1:8791/api/terminal-state` reports `trading_ready: true` and `data_ready: true`.
+- `stale` is `false`, or the console clearly shows a guarded state while waiting.
+- `http://127.0.0.1:8791/api/flight-test` allows reboot only when the runtime is in a safe downtime window.
+
+## Dev And Audit Paths
+
+Use ignition for local audit and dry-run checks:
+
+```powershell
+python scripts/aureon_ignition.py --audit-only
+python scripts/aureon_ignition.py --no-trade
+python scripts/aureon_ignition.py --accounts-status
 ```
 
-#### Step 3: Run
-```bash
-python scripts/aureon_ignition.py --live
+The production launcher remains the recommended full Windows organism entrypoint.
+
+## Legacy Or Dev-Only Commands
+
+Do not use old root scripts as the main run path. These are obsolete, deprecated, or dev-only references:
+
+- `python aureon_live.py`
+- `python aureon_unified_ecosystem.py`
+- `python3 scripts/paperTradeSimulation.ts`
+- `.\scripts\runners\run_unified_live.cmd`
+
+Use the production launcher for full operation and `scripts/aureon_ignition.py --audit-only` for dev/audit checks.
+
+## Verification
+
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
+.\.venv\Scripts\python.exe -m pytest tests/test_ignition_live_profile.py tests/test_unified_market_status_server.py tests/test_aureon_organism_runtime_observer.py -q
 ```
 
-**What happens:**
-- ✅ Connects to Binance Testnet (fake USDT)
-- ✅ Executes real trading logic with zero risk
-- ✅ Queen AI makes decisions
-- ✅ Bots analyze markets
-- ✅ Practice patterns before real money
+Frontend build check:
 
-**Duration:** Run for 1–2 hours to see multiple trading cycles.
-
----
-
-### D) Live Trade with Real Money ⚠️
-
-**⚠️ WARNING: This uses REAL money. Start small. Losses are possible.**
-
-#### Safety Checklist
-- [ ] You have practiced on testnet (section C above)
-- [ ] You have read [`docs/LIVE_TRADING_RUNBOOK.md`](docs/LIVE_TRADING_RUNBOOK.md)
-- [ ] You set `BINANCE_RISK_MAX_ORDER_USDT` to a small amount (e.g., $25)
-- [ ] You set `BINANCE_RISK_FRACTION` to 1–2% of your account
-- [ ] You have a way to quickly stop the system (press `Ctrl+C`)
-- [ ] Someone knows you're running this (in case something goes wrong)
-
-#### Step 1: Get Real API Keys
-1. Go to https://www.binance.com/
-2. Log in to your account
-3. Security → API Management → Create API
-4. **Enable IP Whitelist** to your home IP only
-5. **Disable deposit/withdrawal** permissions
-6. Copy API Key and Secret
-
-#### Step 2: Update `.env`
-Edit `.env` and set:
-```bash
-BINANCE_USE_TESTNET=false
-BINANCE_API_KEY=your_real_key_here
-BINANCE_API_SECRET=your_real_secret_here
-
-# Risk limits (START SMALL)
-BINANCE_RISK_MAX_ORDER_USDT=25
-BINANCE_RISK_FRACTION=0.02
+```powershell
+cd frontend
+npm run build
 ```
 
-#### Step 3: Run
-```bash
-python scripts/aureon_ignition.py --live
-```
+## Stop And Recovery
 
-**What happens:**
-- ⚠️ Executes real trades with your real money
-- ⚠️ Queen AI makes autonomous decisions
-- ⚠️ Losses are possible; wins are possible
-- ✅ Monitor the terminal and dashboard
-- ✅ Press `Ctrl+C` to halt trading
+Press `Ctrl+C` in the production supervisor terminal to stop supervising. Background services keep their own process state.
 
-**Recommended duration:** Start with 1–2 hour sessions. Build confidence before longer runs.
-
----
-
-### E) Interactive HNC Terminal (Queen Cognition Loop)
-
-Run the interactive Harmonic Nexus Core terminal to query the Queen directly:
-
-```bash
-python run_hnc_live.py
-```
-
-**What you can do:**
-- Ask the Queen questions about market conditions
-- Explore harmonic patterns in real-time
-- Run forecasting models interactively
-- Debug trading logic
-
----
-
-### F) Production Deployment (Docker)
-
-For cloud or long-term running:
-
-```bash
-docker build -t aureon-trading .
-docker run --env-file .env aureon-trading
-```
-
-**Before deploying:**
-- ⚠️ Set `BINANCE_DRY_RUN=true` in `.env` unless you want live trading
-- Set `BINANCE_RISK_MAX_ORDER_USDT` to a safe limit
-- Use health-check endpoints to monitor system status
-
----
-
-### G) Windows GUI Launcher
-
-On Windows, you can use the graphical launcher:
-
-```bash
-python aureon_launcher/launcher.py
-```
-
-This opens a GUI for configuring and launching the system without the terminal.
-
----
-
-## Verify Setup Works
-
-Run a smoke test to ensure everything is installed correctly:
-
-```bash
-# Option 1: Pytest smoke test (if tests are available)
-python -m pytest tests/smoke_test.py
-
-# Option 2: Boot all systems without trading (takes 30–60 seconds)
-python scripts/aureon_ignition.py --live --no-trade
-# Press Ctrl+C after seeing system startup messages
-```
-
-If both complete without errors, you're ready to trade.
-
----
-
-## Common Issues & Fixes
-
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| "ModuleNotFoundError: No module named 'aureon'" | Virtual env not activated | Run `source .venv/bin/activate` (Linux/Mac) or `.venv\Scripts\activate` (Windows) |
-| "Invalid API key" | Testnet vs mainnet key mismatch | Verify `BINANCE_USE_TESTNET` matches your key type |
-| "Connection refused" | Network/firewall issue | Check internet connection, try VPN if blocked, check firewall rules |
-| "No module found for cryptography" | Old venv with missing deps | Delete `.venv/` and reinstall: `python3 -m venv .venv && pip install -r requirements.txt` |
-| "Permission denied" on `.venv/bin/activate` | File permissions issue | Run `chmod +x .venv/bin/activate` on Linux/Mac |
-
----
-
-## What NOT To Do
-
-These commands are **outdated or do not exist**. Do not use them:
-
-- ❌ `python aureon_full_autonomy.py --dry-run` ← File does not exist
-- ❌ `npm run paper-trade` ← No npm setup at repo root
-- ❌ `python3 scripts/paperTradeSimulation.ts` ← File does not exist
-- ❌ `python aureon_unified_ecosystem.py` ← Deprecated entry point
-- ❌ `python aureon_live.py` ← Use `aureon_ignition.py --live` instead
-
-**If you find yourself running these, stop and use `scripts/aureon_ignition.py` instead.**
-
----
-
-## CLI Reference: aureon_ignition.py Flags
-
-```bash
-python scripts/aureon_ignition.py [FLAGS]
-
-Flags:
-  (no flags)      Run in DRY-RUN mode (default, safe, no trades)
-  --live          Connect to real exchange, execute trades
-  --no-trade      Boot all systems but skip trading loop (verify connectivity)
-  --verbose       Enable debug logging and detailed output
-```
-
-**Examples:**
-```bash
-python scripts/aureon_ignition.py              # Safe dry-run (default)
-python scripts/aureon_ignition.py --verbose    # Debug logging
-python scripts/aureon_ignition.py --live       # Real trading (with real money if configured)
-python scripts/aureon_ignition.py --live --no-trade  # Boot systems, verify they work, exit
-```
-
----
-
-## Environment Variables Quick Reference
-
-See `.env.example` for the full list. Key ones:
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `BINANCE_USE_TESTNET` | Use testnet (safe) or mainnet (real money) | `true` or `false` |
-| `BINANCE_API_KEY` | Your Binance API key | (from Binance, 64 char) |
-| `BINANCE_API_SECRET` | Your Binance API secret | (from Binance, 64 char) |
-| `BINANCE_RISK_MAX_ORDER_USDT` | Max order size in USDT | `25` (dollars) |
-| `BINANCE_RISK_FRACTION` | Max portfolio fraction per trade | `0.02` (2%) |
-| `HNC_VERBOSE` | Enable HNC debug output | `true` or `false` |
-
----
-
-## Next Steps
-
-1. **First time?** Start with [A) Test the System](#a-test-the-system-safe-no-money-at-risk)
-2. **Want to verify everything works?** Run [B) Boot All Systems](#b-boot-all-systems-verify-everything-works-no-trading)
-3. **Ready to practice?** Use [C) Testnet Trading](#c-live-trade-on-binance-testnet-fake-money-real-exchange)
-4. **Ready for real money?** Read [`docs/LIVE_TRADING_RUNBOOK.md`](docs/LIVE_TRADING_RUNBOOK.md) first, then [D) Live Trading](#d-live-trade-with-real-money-️)
-
----
-
-## Documentation & Help
-
-- **Architecture:** See [`docs/NAVIGATION_GUIDE.md`](docs/NAVIGATION_GUIDE.md)
-- **HNC Theory:** See [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md)
-- **Live Trading Checklist:** See [`docs/LIVE_TRADING_RUNBOOK.md`](docs/LIVE_TRADING_RUNBOOK.md)
-- **Troubleshooting:** See [`docs/runbooks/`](docs/runbooks/)
-- **All Theory & Research:** See [`docs/research/READING_PATHS.md`](docs/research/READING_PATHS.md)
-
----
-
-**Last updated:** 2026-04-28  
-**Status:** ✅ Verified working commands from `scripts/aureon_ignition.py` source
+To relaunch cleanly, close older elevated terminals that may still own ports `8081`, `8790`, or `8791`, then run the production launcher once. Do not force-kill the market runtime while positions are open; use the flight-test and reboot-advice endpoints to wait for a safe downtime window.

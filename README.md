@@ -18,6 +18,65 @@
 
 ---
 
+## Run Aureon Now
+
+For the full operator runbook, see [RUNNING.md](RUNNING.md). For the end-to-end map of every major subsystem, see [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md). The current full-organism entrypoint is the Windows production wake-up launcher. Individual bots and older ignition commands are development or audit paths.
+
+### Full Windows Production Supervisor
+
+```powershell
+cd C:\Users\user\aureon-trading-integrated-main-20260508
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
+
+This starts the production supervisor, market runtime, telemetry/status server, mind hub, self-questioning loop, organism observer, manifest refresh, and unified console.
+
+### Safe Validation
+
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
+```
+
+### Dev And Audit Ignition
+
+```powershell
+python scripts/aureon_ignition.py --audit-only
+```
+
+### Local Console And Live Endpoints
+
+| Surface | URL or path |
+|---|---|
+| Unified autonomous console | `http://127.0.0.1:8081/` |
+| Runtime terminal state | `http://127.0.0.1:8791/api/terminal-state` |
+| Flight test | `http://127.0.0.1:8791/api/flight-test` |
+| Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
+| Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
+| Wake-up manifest | `state/aureon_wake_up_manifest.json` |
+| Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
+
+Live trading requires configured exchange credentials and the existing runtime safety gates to be clear. The docs describe how to run Aureon; they do not bypass stale-data, position, credential, API-rate, payment, filing, or security boundaries.
+
+### Current Capability Map
+
+| Capability | Current surface |
+|---|---|
+| Live/safe runtime supervision | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
+| Multi-exchange market coverage | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
+| Exchange clients | `aureon/exchanges/kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
+| Spot/margin observation and readiness | Unified runtime feed plus flight-test and reboot-advice endpoints |
+| Cognitive order-intent path | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |
+| HNC/Auris evidence reporting | `aureon/autonomous/aureon_cognitive_trade_evidence.py`, `aureon/autonomous/aureon_harmonic_affect_state.py`, `aureon/autonomous/aureon_live_cognition_benchmark.py` |
+| Unified autonomous console | `frontend/src/App.tsx`, `frontend/src/services/aureonAutonomousFrontend.ts`, `frontend/src/hooks/useTerminalSync.ts` |
+| Accounting/HMRC support tooling | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
+| Self-audit and security visibility | Runtime observer, readiness audit, capability switchboard, repo catalog, mind wiring audit, authorized local audit tooling |
+
+### Whole-system guide for end users
+
+Aureon is not a one-purpose bot. The public map in [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) explains how launch, exchange coverage, trading readiness, cognition, HNC/Auris evidence, frontend console, accounting support, SaaS/security audit, vault memory, research, and self-improvement fit together.
+
+---
+
 ## 🧭 What is this?
 
 **Aureon** is a live, open-source quantitative trading system built on the **Harmonic Nexus Core (HNC)** — a framework that reads 4,100-year-old φ² coherence patterns in live markets. We've measured an **r = 0.85 correlation** between geopolitical stress and GitHub node activation, with **24–48 h lag** and **1.29 ppb** mathematical precision. It's falsifiable. It's open-source. It's live.
@@ -300,20 +359,22 @@ timeline
 **See [`RUNNING.md`](RUNNING.md) for complete, verified run instructions.**
 
 Quick path:
-```bash
+```powershell
 # 1. Clone the repo
 git clone https://github.com/RA-CONSULTING/aureon-trading.git
 cd aureon-trading
 
 # 2. Install dependencies
-python3 -m venv .venv && source .venv/bin/activate
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# 3. Run in safe dry-run mode — zero API keys required
-python scripts/aureon_ignition.py
-```
+# 3. Validate the current full-organism launcher
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
 
-Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join the Discussion tab.
+# 4. Start the production supervisor when configured
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
 
 Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join the Discussion tab.
 
@@ -533,11 +594,9 @@ Specialized Alpaca-focused momentum scanners using biological metaphors:
 
 ### Environment Variables
 ```bash
-# Exchange API Keys
+# Exchange credential names live in `.env.example`; keep secret values out of docs and commits.
 KRAKEN_API_KEY=
-KRAKEN_API_SECRET=
 BINANCE_API_KEY=
-BINANCE_API_SECRET=
 ALPACA_API_KEY=
 ALPACA_SECRET_KEY=
 CAPITAL_API_KEY=
@@ -597,11 +656,11 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # Add API keys
 
-# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
-python aureon/exchanges/unified_market_trader.py
+# 2. Dev/audit ignition on non-Windows hosts
+python scripts/aureon_ignition.py --audit-only
 
-# 3. Or: Launch Queen's War Room (Orca Kill Cycle)
-python aureon/trading/orca_complete_kill_cycle.py
+# 3. Optional local runtime status server for read-only endpoint checks
+python aureon/exchanges/unified_market_status_server.py --port 8791
 ```
 
 ### 🪟 Windows (PowerShell)
@@ -616,12 +675,11 @@ py -3 -m venv .venv
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
-.\scripts\runners\run_unified_live.cmd
+# 2. Validate the current full-organism launcher
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
 
-# 3. Or: Launch specific exchange traders
-.\scripts\runners\run_alpaca_capital_style.ps1
-.\scripts\runners\run_capital_swarm.ps1
+# 3. Start the production supervisor
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
 Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](docs/windows/AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
