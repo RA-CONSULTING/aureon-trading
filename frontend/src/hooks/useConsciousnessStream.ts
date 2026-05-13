@@ -113,7 +113,7 @@ export function useConsciousnessStream(enabled: boolean = true, pollInterval: nu
             // Self model
             queenName: String(sm.name || 'Queen Sero'),
             queenIdentity: String(sm.identity || ''),
-            queenCreator: String(sm.creator || 'Gary Leckey'),
+            queenCreator: String(sm.creator || 'Aureon Creator'),
             queenPurpose: String(sm.purpose || ''),
             coreMessage: String(sm.core_message || ''),
             dreamTarget: toNum(sm.dream_target, 1000000000),

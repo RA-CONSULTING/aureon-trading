@@ -1,14 +1,14 @@
-﻿{
+{
   "available": true,
-  "generated_at": "2026-05-13T21:31:29.210766+00:00",
+  "generated_at": "2026-05-13T21:35:18.865907+00:00",
   "lambda_state": {
-    "lambda": 5345.024254548647,
-    "psi": 0.539455692638076,
+    "lambda": 5347.51943055605,
+    "psi": 0.5444561348511054,
     "gamma": 0.009001870605362394,
     "level": "FOCUSED",
     "observer": 1.0,
-    "echo": 5344.603307588547,
-    "step": 116415
+    "echo": 5347.050351892075,
+    "step": 116419
   },
   "understanding": {
     "market_direction": "unknown",
@@ -53,13 +53,13 @@
     "happiness": 0.4016984854487684,
     "dream_pct": 0,
     "wheel": 1.045420800921598,
-    "lambda": 5345.024254548647,
-    "psi": 0.539455692638076,
+    "lambda": 5347.51943055605,
+    "psi": 0.5444561348511054,
     "gamma": 0.009001870605362394,
     "level": "FOCUSED",
     "observer_signal": 1.0,
-    "echo_signal": 5344.603307588547,
-    "step": 116415,
+    "echo_signal": 5347.050351892075,
+    "step": 116419,
     "lambda_real": 0,
     "coherence_real": 0.0,
     "reality_state": "chaos",
@@ -73,9 +73,9 @@
       "reasoning": "Chaotic field (C=0.00%) - Wait for coherence to emerge",
       "reality_verified": false
     },
-    "observations": 15342,
-    "thoughts_generated": 9,
-    "uptime_s": 3386.38792347908,
+    "observations": 16336,
+    "thoughts_generated": 10,
+    "uptime_s": 3616.043064594269,
     "recent_topics": [
       "enigma.whale.whale_sonar",
       "enigma.whale.consciousness",
@@ -98,8 +98,26 @@
   },
   "thought_stream": [
     {
-      "topic": "queen.alert.whale",
+      "topic": "whale.sonar.consciousness",
       "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.consciousness",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.whale_sonar",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.whale_sonar",
+      "source": "whale_sonar.enigma",
       "timestamp": 0.0,
       "text": ""
     },
@@ -112,12 +130,6 @@
     {
       "topic": "enigma.whale.whale_sonar.enigma",
       "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "queen.alert.whale",
-      "source": "whale_sonar",
       "timestamp": 0.0,
       "text": ""
     },
@@ -146,12 +158,6 @@
       "text": ""
     },
     {
-      "topic": "queen.alert.whale",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
       "topic": "whale.sonar.whale_sonar.enigma",
       "source": "whale_sonar",
       "timestamp": 0.0,
@@ -160,12 +166,6 @@
     {
       "topic": "enigma.whale.whale_sonar.enigma",
       "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "queen.alert.whale",
-      "source": "whale_sonar",
       "timestamp": 0.0,
       "text": ""
     },
@@ -218,9 +218,9 @@
       "text": ""
     }
   ],
-  "observations": 15342,
-  "thoughts_generated": 9,
-  "uptime_s": 3386.4,
+  "observations": 16336,
+  "thoughts_generated": 10,
+  "uptime_s": 3616.0,
   "harmonic_field": {
     "lambda_real": 0.0,
     "coherence_real": 0.0,
