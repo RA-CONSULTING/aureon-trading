@@ -47,6 +47,7 @@ CORE_REFRESH_MODULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("frontend_unification", ("aureon.autonomous.aureon_frontend_unification_plan",)),
     ("frontend_evolution_queue", ("aureon.autonomous.aureon_frontend_evolution_queue",)),
     ("capability_switchboard", ("aureon.autonomous.aureon_autonomous_capability_switchboard",)),
+    ("operational_ui_builder", ("aureon.autonomous.aureon_unified_ui_builder",)),
     ("system_readiness", ("aureon.autonomous.aureon_system_readiness_audit",)),
     ("cognitive_trade_evidence", ("aureon.autonomous.aureon_cognitive_trade_evidence",)),
     ("harmonic_affect_state", ("aureon.autonomous.aureon_harmonic_affect_state",)),
@@ -186,6 +187,18 @@ DOMAIN_MANIFESTS: tuple[dict[str, Any], ...] = (
         "required_summary_keys": ("capability_count", "presentation_intent_count"),
         "attention_keys": ("blocker_count", "blocked_capability_count"),
         "next_action": "Run python -m aureon.autonomous.aureon_autonomous_capability_switchboard.",
+    },
+    {
+        "id": "operational_ui_builder",
+        "label": "Aureon Operational UI Builder",
+        "domain": "self_improvement",
+        "path": "docs/audits/aureon_operational_ui_builder.json",
+        "public_path": "frontend/public/aureon_operational_ui_spec.json",
+        "fresh_seconds": 15 * 60,
+        "required_summary_keys": ("capability_count", "frontend_work_order_count", "template_count"),
+        "summary_path": ("capability_coverage",),
+        "attention_keys": ("blocked_work_order_count", "blind_spot_count"),
+        "next_action": "Run python -m aureon.autonomous.aureon_unified_ui_builder.",
     },
     {
         "id": "system_readiness",
@@ -541,7 +554,14 @@ def refresh_artifacts(
 def build_domain_pulse(root: Path, spec: dict[str, Any]) -> DomainPulse:
     path = root / str(spec["path"])
     data = _load_json(path)
-    summary = data.get("summary") if isinstance(data.get("summary"), dict) else {}
+    summary_path = tuple(spec.get("summary_path") or ())
+    summary_source: Any = data
+    for part in summary_path:
+        summary_source = summary_source.get(part) if isinstance(summary_source, dict) else {}
+    if summary_path:
+        summary = summary_source if isinstance(summary_source, dict) else {}
+    else:
+        summary = data.get("summary") if isinstance(data.get("summary"), dict) else {}
     metrics = dict(summary)
     generated_time = _parse_time(data.get("generated_at")) or _file_time(path)
     age = _age_seconds(generated_time)
@@ -980,6 +1000,7 @@ def build_organism_runtime_status(
         "frontend_unification": (root / "frontend/public/aureon_frontend_unification_plan.json").exists(),
         "frontend_evolution_queue": (root / "frontend/public/aureon_frontend_evolution_queue.json").exists(),
         "capability_switchboard": (root / "frontend/public/aureon_autonomous_capability_switchboard.json").exists(),
+        "operational_ui_spec": (root / "frontend/public/aureon_operational_ui_spec.json").exists(),
     }
     runtime_feed["frontend_public_manifests"] = frontend_public
     action_capability = build_action_capability(runtime_feed, safety)

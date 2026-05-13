@@ -325,6 +325,7 @@ function Invoke-Refresh {
         "aureon.autonomous.aureon_frontend_unification_plan",
         "aureon.autonomous.aureon_frontend_evolution_queue",
         "aureon.autonomous.aureon_autonomous_capability_switchboard",
+        "aureon.autonomous.aureon_unified_ui_builder",
         "aureon.autonomous.aureon_organism_runtime_observer --refresh-core"
     )
 

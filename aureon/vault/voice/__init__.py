@@ -129,6 +129,15 @@ from aureon.vault.voice.skill_executor_bridge import (
     reset_skill_executor_bridge,
 )
 from aureon.vault.voice._goal_claims import GoalClaims
+from aureon.vault.voice.whole_knowledge_voice import (
+    FACETS as WHOLE_KNOWLEDGE_VOICE_FACETS,
+    ExpressionProfile,
+    RuntimeTranslation,
+    VoiceArtifact,
+    build_expression_profile,
+    compose_voice_artifact,
+    translate_runtime_state,
+)
 
 __all__ = [
     # Utterance
@@ -218,4 +227,11 @@ __all__ = [
     "get_skill_executor_bridge",
     "reset_skill_executor_bridge",
     "GoalClaims",
+    "WHOLE_KNOWLEDGE_VOICE_FACETS",
+    "ExpressionProfile",
+    "RuntimeTranslation",
+    "VoiceArtifact",
+    "build_expression_profile",
+    "compose_voice_artifact",
+    "translate_runtime_state",
 ]

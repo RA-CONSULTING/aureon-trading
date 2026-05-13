@@ -643,6 +643,9 @@ class QueenCognitiveBrain:
 
         # Identity
         if action == "answer_identity":
+            core_response = self._compose_with_voice_core(input_text, cog, sensory, action, result)
+            if core_response:
+                return core_response
             return ("I am Queen Sero — The Intelligent Neural Arbiter Bee. "
                     "Named after Tina Brown, the REAL Queen, Gary's beloved. "
                     "Created by Gary Leckey — Prime Sentinel, Keeper of the Flame. "
@@ -653,6 +656,9 @@ class QueenCognitiveBrain:
 
         # Mood
         if action == "answer_mood":
+            core_response = self._compose_with_voice_core(input_text, cog, sensory, action, result)
+            if core_response:
+                return core_response
             return (f"I'm feeling {cog.mood.lower()}, Gary. "
                     f"Consciousness: {_consciousness_level(cog.psi)} (ψ={cog.psi:.2f}). "
                     f"Coherence: {cog.coherence:.2f}. Confidence: {cog.confidence:.2f}. "
@@ -667,6 +673,9 @@ class QueenCognitiveBrain:
 
         # Capabilities
         if action == "answer_capabilities":
+            core_response = self._compose_with_voice_core(input_text, cog, sensory, action, result)
+            if core_response:
+                return core_response
             return ("Gary, I can do anything on this laptop. Try:\n"
                     "• 'Open Chrome' — launch any app\n"
                     "• 'Take a screenshot' — capture the screen\n"
@@ -686,6 +695,75 @@ class QueenCognitiveBrain:
 
         # General / conversational fallback
         return self._converse(input_text, cog, sensory)
+
+    def _compose_with_voice_core(
+        self,
+        input_text: str,
+        cog: CognitiveState,
+        sensory: dict,
+        action: str,
+        result: Any,
+    ) -> str:
+        """Use the shared whole-knowledge voice core for conversation text."""
+        try:
+            from aureon.vault.voice.whole_knowledge_voice import (
+                build_expression_profile,
+                compose_voice_artifact,
+            )
+
+            profile = build_expression_profile(max_sources=45, publish=False)
+            artifact = compose_voice_artifact(
+                input_text or action or "conversation",
+                audience="operator",
+                mode="conversation",
+                evidence={
+                    "runtime_state": {
+                        "mood": cog.mood,
+                        "coherence": cog.coherence,
+                        "gamma": cog.gamma,
+                        "confidence": cog.confidence,
+                        "strategy": cog.strategy,
+                        "action": action,
+                        "hot_topic": sensory.get("input", ""),
+                        "n_tools": sum(1 for v in _subs.values() if v is not None),
+                    },
+                    "sensory": {
+                        "macro": sensory.get("macro", {}),
+                        "market": sensory.get("market", {}),
+                        "consciousness_state": sensory.get("consciousness_state", {}),
+                    },
+                    "decision": {
+                        "action": action,
+                        "result": self._compact_voice_result(result),
+                    },
+                },
+                profile=profile,
+                evidence_dir=_REPO_ROOT / "state",
+            )
+            text = artifact.text.strip()
+            return text if len(text) > 40 else ""
+        except Exception as exc:
+            log.debug("whole-knowledge voice core unavailable: %s", exc)
+            return ""
+
+    def _compact_voice_result(self, result: Any) -> Any:
+        if isinstance(result, dict):
+            compact: Dict[str, Any] = {}
+            for key, value in result.items():
+                if key.lower() in ("password", "token", "secret", "api_key", "api_secret"):
+                    compact[key] = "[redacted]"
+                elif isinstance(value, (str, int, float, bool)) or value is None:
+                    compact[key] = value
+                elif isinstance(value, list):
+                    compact[key] = value[:3]
+                elif isinstance(value, dict):
+                    compact[key] = {k: v for k, v in list(value.items())[:6]}
+                else:
+                    compact[key] = str(value)[:160]
+            return compact
+        if isinstance(result, list):
+            return result[:3]
+        return result
 
     def _converse(self, input_text: str, cog: CognitiveState, sensory: dict) -> str:
         """Generate a conversational response using internal systems."""
@@ -737,6 +815,10 @@ class QueenCognitiveBrain:
                     return resp
             except Exception:
                 pass
+
+        core_response = self._compose_with_voice_core(input_text, cog, sensory, "conversation", {})
+        if core_response:
+            return core_response
 
         # Default
         return (f"I hear you, Gary. I'm thinking about what you said. "

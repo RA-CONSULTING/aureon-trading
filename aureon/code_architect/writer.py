@@ -35,6 +35,7 @@ from aureon.code_architect.skill import (
     SkillLevel,
 )
 from aureon.code_architect.observer import ObservedPattern
+from aureon.code_architect.expression import build_code_expression_context
 
 logger = logging.getLogger("aureon.code_architect.writer")
 
@@ -72,14 +73,26 @@ def _indent(code: str, spaces: int = 4) -> str:
 class SkillWriter:
     """Generates SkillProposal objects from observations or manual specs."""
 
-    def __init__(self, adapter: Any = None):
+    def __init__(
+        self,
+        adapter: Any = None,
+        *,
+        expression_profile: Any = None,
+        expression_evidence_dir: Optional[str] = None,
+        expression_publish: bool = True,
+    ):
         self.adapter = adapter          # optional: AureonBrainAdapter / Local / Hybrid
         self._use_ai = adapter is not None
+        self.expression_profile = expression_profile
+        self.expression_evidence_dir = expression_evidence_dir
+        self.expression_publish = expression_publish
 
         # Metrics
         self._proposals_created = 0
         self._ai_proposals = 0
         self._template_proposals = 0
+        self._expression_enriched = 0
+        self._expression_failures = 0
 
     def _load_adapter_if_needed(self) -> None:
         if self.adapter is not None:
@@ -138,7 +151,23 @@ class SkillWriter:
         )
         self._proposals_created += 1
         self._template_proposals += 1
-        return proposal
+        return self._enrich_with_expression(
+            proposal,
+            goal=f"write atomic code skill {skill_name} for primitive {primitive_name}",
+            evidence={
+                "runtime_state": {
+                    "hot_topic": skill_name,
+                    "action": "WRITE_CODE",
+                    "mode": "code_architect",
+                },
+                "proposal": {
+                    "name": skill_name,
+                    "level": "atomic",
+                    "target": target,
+                    "description": proposal.description,
+                },
+            },
+        )
 
     # ─────────────────────────────────────────────────────────────────────
     # Level 1 — compound (from an ObservedPattern)
@@ -194,7 +223,23 @@ class SkillWriter:
                 self._ai_proposals += 1
 
         self._proposals_created += 1
-        return proposal
+        return self._enrich_with_expression(
+            proposal,
+            goal=f"write compound code skill {proposal.name} from observed pattern",
+            evidence={
+                "runtime_state": {
+                    "hot_topic": proposal.name,
+                    "action": "WRITE_CODE",
+                    "mode": "code_architect",
+                },
+                "pattern": {
+                    "signature": pattern.signature,
+                    "occurrence_count": pattern.occurrence_count,
+                    "coherence": pattern.coherence,
+                    "actions": [a.get("action") for a in pattern.action_sequence],
+                },
+            },
+        )
 
     def _template_code_for_pattern(
         self,
@@ -343,7 +388,24 @@ class SkillWriter:
         )
         self._proposals_created += 1
         self._template_proposals += 1
-        return proposal
+        return self._enrich_with_expression(
+            proposal,
+            goal=f"write {category} code skill {skill_name}",
+            evidence={
+                "runtime_state": {
+                    "hot_topic": skill_name,
+                    "action": "WRITE_CODE",
+                    "mode": "code_architect",
+                },
+                "proposal": {
+                    "name": skill_name,
+                    "level": level.name.lower(),
+                    "target": target,
+                    "dependencies": proposal.dependencies,
+                    "description": proposal.description,
+                },
+            },
+        )
 
     def propose_workflow(
         self,
@@ -402,6 +464,60 @@ class SkillWriter:
         )
         self._proposals_created += 1
         self._template_proposals += 1
+        return self._enrich_with_expression(
+            proposal,
+            goal=f"write role code skill {skill_name}",
+            evidence={
+                "runtime_state": {
+                    "hot_topic": skill_name,
+                    "action": "WRITE_CODE",
+                    "mode": "code_architect",
+                },
+                "proposal": {
+                    "name": skill_name,
+                    "level": "role",
+                    "target": "either",
+                    "dependencies": proposal.dependencies,
+                    "description": proposal.description,
+                },
+            },
+        )
+
+    def _enrich_with_expression(
+        self,
+        proposal: SkillProposal,
+        *,
+        goal: str,
+        evidence: Dict[str, Any],
+    ) -> SkillProposal:
+        """Attach whole-knowledge voice context to a code proposal."""
+        try:
+            context = build_code_expression_context(
+                goal,
+                evidence=evidence,
+                profile=self.expression_profile,
+                evidence_dir=self.expression_evidence_dir,
+                publish=self.expression_publish,
+            )
+            proposal.expression_context = context
+            if context.get("ok"):
+                self._expression_enriched += 1
+                summary = str(context.get("voice_summary") or "").strip()
+                if summary:
+                    proposal.reasoning = (
+                        proposal.reasoning.rstrip()
+                        + " | Expression context: "
+                        + summary[:220]
+                    )
+            else:
+                self._expression_failures += 1
+        except Exception as exc:
+            self._expression_failures += 1
+            proposal.expression_context = {
+                "schema_features": ["aureon_code_expression_context_v1"],
+                "ok": False,
+                "warnings": [f"writer_expression_failed:{exc}"],
+            }
         return proposal
 
     # ─────────────────────────────────────────────────────────────────────
@@ -414,4 +530,6 @@ class SkillWriter:
             "template_proposals": self._template_proposals,
             "ai_proposals": self._ai_proposals,
             "adapter_available": self.adapter is not None,
+            "expression_enriched": self._expression_enriched,
+            "expression_failures": self._expression_failures,
         }

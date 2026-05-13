@@ -770,6 +770,78 @@ class GoalExecutionEngine:
         plan = GoalPlan(original_text=text, objective=text)
         steps: List[GoalStep] = []
 
+        repo_repair = self._match_repo_self_repair_goal(text)
+        if repo_repair:
+            steps = [GoalStep(
+                title="Aureon repo-wide self bug report and repair",
+                intent="repo_self_repair",
+                params=repo_repair,
+                expected_outcome="Repo-level checks, bug report, safe repairs, and retest evidence generated",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Repo self-repair report generated and critical checks retested"
+            return plan
+
+        coding_skill_base = self._match_coding_agent_skill_base_goal(text)
+        if coding_skill_base:
+            steps = [GoalStep(
+                title="Aureon build coding-agent skill base",
+                intent="coding_agent_skill_base",
+                params=coding_skill_base,
+                expected_outcome="Coding agents, skill base, web-learning sources, and improvement work orders published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Coding-agent skill base manifest generated with web/repo learning tools visible"
+            return plan
+
+        work_orders = self._match_frontend_work_order_goal(text)
+        if work_orders:
+            steps = [GoalStep(
+                title="Aureon execute frontend work orders",
+                intent="frontend_work_orders",
+                params=work_orders,
+                expected_outcome="Frontend work order execution manifest and adapter console generated",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "All current frontend work orders represented as execution records"
+            return plan
+
+        ui_repair = self._match_operational_ui_self_repair_goal(text)
+        if ui_repair:
+            steps = [GoalStep(
+                title="Aureon self-review and repair operational UI",
+                intent="self_repair_operational_ui",
+                params=ui_repair,
+                expected_outcome="Operational React console reviewed, repaired, and retested through Aureon's own code path",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Self-review/self-repair evidence generated with final UI checks passing"
+            return plan
+
+        operational_ui = self._match_operational_ui_goal(text)
+        if operational_ui:
+            steps = [GoalStep(
+                title="Aureon self-author operational UI",
+                intent="self_author_operational_ui",
+                params=operational_ui,
+                expected_outcome="Operational React console authored through Aureon's Queen code writer",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Self-authored UI component and provenance evidence generated"
+            return plan
+
+        document_pdf = self._match_document_pdf_goal(text)
+        if document_pdf:
+            steps = [GoalStep(
+                title=f"compose {document_pdf['form']} PDF about {document_pdf['topic']}",
+                intent="compose_document_pdf",
+                params=document_pdf,
+                expected_outcome="Long-form Markdown and PDF document artifacts created",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Document PDF generated and validated on disk"
+            return plan
+
         # Path -1: Creative generation — "write a [poem/story/essay/song/
         # haiku/sonnet/letter/article/speech] about <topic>"
         creative_match = _re.search(
@@ -851,6 +923,149 @@ class GoalExecutionEngine:
         plan.steps = steps
         plan.success_criteria = f"All {len(steps)} steps completed and validated"
         return plan
+
+    def _match_repo_self_repair_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon to inspect and fix its repo/codebase."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "itself" in lower
+        repo_hit = _re.search(r"\b(?:repo|repository|codebase|code|everything|all problems|bug report|bugs|tests|builds)\b", lower)
+        repair_hit = _re.search(r"\b(?:fix|repair|review|check|test|work through|diagnose|bug report|self[- ]?repair)\b", lower)
+        self_hit = _re.search(r"\b(?:own|itself|self|without help|no cheating)\b", lower)
+        if not (aureon_hit and repo_hit and repair_hit and self_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_repo_self_repair_to_queen_code_architect",
+        }
+
+    def _match_frontend_work_order_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon to execute frontend evolution work orders."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "itself" in lower
+        work_order_hit = _re.search(r"\b(?:work order|work orders|frontend evolution|adapter|adapters|do the work)\b", lower)
+        action_hit = _re.search(r"\b(?:do|execute|fix|complete|work through|apply|wire)\b", lower)
+        if not (aureon_hit and work_order_hit and action_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_frontend_work_orders_to_queen_code_architect",
+        }
+
+    def _match_coding_agent_skill_base_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request to teach Aureon its coder-agent/skill/web-learning system."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "system" in lower or "organism" in lower
+        coding_hit = _re.search(r"\b(?:coder|coders|coding|code writing|write code|programming|developer|agents as coders)\b", lower)
+        skill_hit = _re.search(r"\b(?:skill|skills|skill base|capability|capabilities|learn|learning|teach)\b", lower)
+        web_hit = _re.search(r"\b(?:websearch|web search|web_search|web|online|open source|api|documentation|docs)\b", lower)
+        if not (aureon_hit and coding_hit and skill_hit):
+            return None
+        return {
+            "goal": text,
+            "online": bool(web_hit),
+            "authoring_contract": "goal_engine_coding_agent_skill_base_to_queen_code_architect",
+        }
+
+    def _match_operational_ui_self_repair_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon to diagnose and fix its own UI defects."""
+        import re as _re
+
+        lower = (text or "").lower()
+        ui_hit = _re.search(r"\b(?:ui|user interface|frontend|front-end|console|dashboard|react|tsx)\b", lower)
+        aureon_hit = "aureon" in lower or "organism" in lower or "itself" in lower
+        repair_hit = _re.search(
+            r"\b(?:problem|problems|issue|issues|defect|defects|bug|bugs|fix|repair|review|check|test|work through|improve)\b",
+            lower,
+        )
+        self_hit = _re.search(r"\b(?:own|itself|self|without help|no cheating)\b", lower)
+        if not (ui_hit and aureon_hit and repair_hit and self_hit):
+            return None
+
+        target_path = self._extract_path(text)
+        if target_path and not target_path.lower().endswith((".tsx", ".jsx")):
+            target_path = ""
+        if not target_path:
+            target_path = "frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx"
+        return {
+            "goal": text,
+            "target_path": target_path,
+            "authoring_contract": "goal_engine_self_review_repair_to_queen_code_architect",
+        }
+
+    def _match_operational_ui_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon to design/write its own live UI."""
+        import re as _re
+
+        lower = (text or "").lower()
+        action_hit = _re.search(r"\b(?:design|build|create|write|author|generate)\b", lower)
+        ui_hit = _re.search(r"\b(?:ui|user interface|frontend|front-end|console|dashboard|react|tsx)\b", lower)
+        aureon_hit = "aureon" in lower or "organism" in lower
+        if not (action_hit and ui_hit and aureon_hit):
+            return None
+
+        target_path = self._extract_path(text)
+        if target_path and not target_path.lower().endswith((".tsx", ".jsx")):
+            target_path = ""
+        if not target_path:
+            target_path = "frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx"
+        return {
+            "goal": text,
+            "target_path": target_path,
+            "authoring_contract": "goal_engine_to_queen_code_architect",
+        }
+
+    def _match_document_pdf_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect long-form writing requests that must become a PDF artifact."""
+        import re as _re
+
+        lower = (text or "").lower()
+        if "pdf" not in lower:
+            return None
+        if not _re.search(r"\b(?:write|compose|craft|create|draft)\b", lower):
+            return None
+        form_match = _re.search(r"\b(essay|article|report|document|piece)\b", lower)
+        if not form_match:
+            return None
+        form = form_match.group(1)
+        topic = self._extract_document_topic(text, form=form)
+        target_words = self._extract_document_target_words(text, default=4000)
+        desktop = bool(_re.search(r"\bdesktop\b", lower))
+        return {
+            "form": form,
+            "topic": topic,
+            "prompt": text,
+            "target_words": target_words,
+            "output_dir": "desktop" if desktop else "",
+        }
+
+    def _extract_document_topic(self, text: str, *, form: str) -> str:
+        import re as _re
+
+        patterns = [
+            rf"\b{_re.escape(form)}\b\s+(?:about|on|of)\s+(.+?)(?:\s+(?:and|then)\s+(?:pdf|save|export|put|write)|\s+to\s+(?:a\s+)?pdf|\s+as\s+(?:a\s+)?pdf|$)",
+            r"\b(?:about|on|of)\s+(.+?)(?:\s+(?:and|then)\s+(?:pdf|save|export|put|write)|\s+to\s+(?:a\s+)?pdf|\s+as\s+(?:a\s+)?pdf|$)",
+        ]
+        for pattern in patterns:
+            match = _re.search(pattern, text or "", _re.I)
+            if match:
+                topic = match.group(1).strip(" .")
+                if topic:
+                    return topic
+        return "the meaning of life"
+
+    def _extract_document_target_words(self, text: str, default: int = 4000) -> int:
+        import re as _re
+
+        match = _re.search(r"\b(\d{3,5})\s*(?:[- ]?word|words)\b", text or "", _re.I)
+        if not match:
+            return default
+        return max(100, min(int(match.group(1)), 20000))
 
     def _llm_decompose(self, text: str) -> List[GoalStep]:
         """
@@ -1635,6 +1850,182 @@ class GoalExecutionEngine:
     # ------------------------------------------------------------------
     # Creative generation — compose_creative intent handler
     # ------------------------------------------------------------------
+    def _execute_document_pdf(self, step: GoalStep) -> Dict[str, Any]:
+        """Compose a long-form Markdown/PDF artifact through Aureon's prose stack."""
+        try:
+            from aureon.queen.queen_prose_composer import QueenProseComposer
+            from aureon.vault.voice.document_artifact_skill import (
+                AureonDocumentArtifactSkill,
+                desktop_dir,
+            )
+
+            composer = QueenProseComposer(
+                lambda_engine=self._lambda_engine,
+                vault=self._vault,
+                elephant_memory=self._elephant_memory,
+                auris=self._auris,
+                source_law=self._source_law,
+                goal_engine=self,
+                agent_core=self._agent_core,
+                temporal_knowledge=self._temporal_knowledge,
+                knowledge_dataset=self._knowledge_dataset,
+                subsystem_status={
+                    "goal_engine": "alive",
+                    "document_artifact_skill": "alive",
+                    "thought_bus": "alive" if self._thought_bus is not None else "unknown",
+                    "agent_core": "alive" if self._agent_core is not None else "unknown",
+                },
+            )
+            output_dir = step.params.get("output_dir") or ""
+            resolved_output = desktop_dir() if output_dir == "desktop" else None
+            skill = AureonDocumentArtifactSkill(
+                composer=composer,
+                thought_bus=self._thought_bus,
+                output_dir=resolved_output,
+            )
+            result = skill.compose_pdf(
+                prompt=str(step.params.get("prompt") or step.title),
+                topic=str(step.params.get("topic") or "the meaning of life"),
+                target_words=int(step.params.get("target_words") or 4000),
+                output_dir=resolved_output,
+            )
+            payload = result.to_dict()
+            return {
+                "success": bool(result.ok),
+                "result": payload,
+                "tool_used": "compose_document_pdf",
+                "artifact_path": result.pdf_path,
+                "markdown_path": result.markdown_path,
+                "evidence_path": result.evidence_path,
+                "word_count": result.word_count,
+                "pdf_rendered": result.pdf_rendered,
+                "error": result.error or None,
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "compose_document_pdf",
+                "error": str(exc),
+            }
+
+    def _execute_repo_self_repair(self, step: GoalStep) -> Dict[str, Any]:
+        """Run Aureon's repo-wide bug report, safe repair, and retest loop."""
+        try:
+            from aureon.autonomous.aureon_repo_self_repair import run_repo_self_repair
+
+            result = run_repo_self_repair(str(step.params.get("goal") or step.title))
+            return {
+                "success": result.get("summary", {}).get("failed_retest_count", 1) == 0,
+                "result": result,
+                "tool_used": "repo_self_repair",
+                "error": None if result.get("summary", {}).get("failed_retest_count", 1) == 0 else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "repo_self_repair",
+                "error": str(exc),
+            }
+
+    def _execute_frontend_work_orders(self, step: GoalStep) -> Dict[str, Any]:
+        """Execute frontend work orders into safe adapter/blocker records."""
+        try:
+            from aureon.autonomous.aureon_frontend_work_order_executor import execute_frontend_work_orders
+
+            result = execute_frontend_work_orders(str(step.params.get("goal") or step.title))
+            return {
+                "success": bool(result.get("summary", {}).get("executed_count")),
+                "result": result,
+                "tool_used": "frontend_work_orders",
+                "error": None if result.get("summary", {}).get("executed_count") else "no_work_orders_executed",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "frontend_work_orders",
+                "error": str(exc),
+            }
+
+    def _execute_coding_agent_skill_base(self, step: GoalStep) -> Dict[str, Any]:
+        """Build Aureon's coding-agent skill base and web-learning manifest."""
+        try:
+            from aureon.autonomous.aureon_coding_agent_skill_base import build_and_write_profile
+
+            result = build_and_write_profile(
+                str(step.params.get("goal") or step.title),
+                online=bool(step.params.get("online")),
+            )
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            return {
+                "success": bool(summary.get("coder_agent_count")) and bool(summary.get("web_tools_ready")),
+                "result": result,
+                "tool_used": "coding_agent_skill_base",
+                "error": None if bool(summary.get("web_tools_ready")) else "coder_web_tools_not_ready",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "coding_agent_skill_base",
+                "error": str(exc),
+            }
+
+    def _execute_self_author_operational_ui(self, step: GoalStep) -> Dict[str, Any]:
+        """Author the live operations UI through Aureon's own Queen code path."""
+        try:
+            from pathlib import Path
+
+            from aureon.autonomous.aureon_unified_ui_builder import self_author_operational_ui
+
+            target = str(step.params.get("target_path") or "frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx")
+            result = self_author_operational_ui(
+                str(step.params.get("goal") or step.title),
+                component_path=Path(target),
+            )
+            return {
+                "success": bool(result.get("success")),
+                "result": result,
+                "tool_used": "self_author_operational_ui",
+                "error": result.get("error"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "self_author_operational_ui",
+                "error": str(exc),
+            }
+
+    def _execute_self_repair_operational_ui(self, step: GoalStep) -> Dict[str, Any]:
+        """Let Aureon inspect, repair, and retest its own generated UI."""
+        try:
+            from pathlib import Path
+
+            from aureon.autonomous.aureon_unified_ui_builder import self_review_and_repair_operational_ui
+
+            target = str(step.params.get("target_path") or "frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx")
+            result = self_review_and_repair_operational_ui(
+                str(step.params.get("goal") or step.title),
+                component_path=Path(target),
+                run_build=Path("frontend/package.json").exists(),
+            )
+            return {
+                "success": bool(result.get("success")),
+                "result": result,
+                "tool_used": "self_repair_operational_ui",
+                "error": None if result.get("success") else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "self_repair_operational_ui",
+                "error": str(exc),
+            }
+
     def _execute_creative(self, step: GoalStep) -> Dict[str, Any]:
         """
         Compose a creative piece (poem, story, essay, song, etc.) by:
@@ -1926,6 +2317,24 @@ class GoalExecutionEngine:
         analysis of the result for reasoning-heavy intents.
         """
         # Creative generation intent — handled internally, not via AgentCore
+        if step.intent == "compose_document_pdf":
+            return self._execute_document_pdf(step)
+
+        if step.intent == "repo_self_repair":
+            return self._execute_repo_self_repair(step)
+
+        if step.intent == "frontend_work_orders":
+            return self._execute_frontend_work_orders(step)
+
+        if step.intent == "coding_agent_skill_base":
+            return self._execute_coding_agent_skill_base(step)
+
+        if step.intent == "self_repair_operational_ui":
+            return self._execute_self_repair_operational_ui(step)
+
+        if step.intent == "self_author_operational_ui":
+            return self._execute_self_author_operational_ui(step)
+
         if step.intent == "compose_creative":
             return self._execute_creative(step)
 
@@ -1996,6 +2405,24 @@ class GoalExecutionEngine:
         intent = step.intent
 
         # Creative generation validation — verify output exists and has substance
+        if intent == "compose_document_pdf":
+            text_result = result.get("result") or {}
+            artifact = result.get("artifact_path", "") or text_result.get("pdf_path", "")
+            markdown = result.get("markdown_path", "") or text_result.get("markdown_path", "")
+            target = int(step.params.get("target_words") or 4000)
+            wc = int(result.get("word_count") or text_result.get("word_count") or 0)
+            if artifact and markdown and os.path.exists(artifact) and os.path.exists(markdown) and wc >= target * 0.9:
+                return {
+                    "valid": True,
+                    "reason": f"Document PDF verified at {artifact} with {wc} words",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": f"Document PDF missing or too short: pdf={artifact!r} markdown={markdown!r} words={wc}",
+                "confidence": 0.2,
+            }
+
         if intent == "compose_creative":
             text = result.get("result", "") or ""
             artifact = result.get("artifact_path", "")
@@ -2006,6 +2433,129 @@ class GoalExecutionEngine:
                     reason += f" + file at {artifact}"
                 return {"valid": True, "reason": reason, "confidence": 0.9}
             return {"valid": False, "reason": "Creative output too short or empty", "confidence": 0.2}
+
+        if intent == "repo_self_repair":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            passed = (
+                result.get("success")
+                and isinstance(summary, dict)
+                and int(summary.get("failed_retest_count") or 0) == 0
+                and "QueenCodeArchitect.write_file" in authoring_path
+            )
+            if passed:
+                return {
+                    "valid": True,
+                    "reason": "Repo self-repair report passed checks/retests with Queen provenance",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Repo self-repair found unresolved failed checks or missing Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "frontend_work_orders":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            executed = int((summary or {}).get("executed_count") or 0) if isinstance(summary, dict) else 0
+            source_count = int((summary or {}).get("source_queue_count") or 0) if isinstance(summary, dict) else 0
+            if (
+                success
+                and executed > 0
+                and (source_count == 0 or executed <= source_count)
+                and "QueenCodeArchitect.write_file" in authoring_path
+            ):
+                return {
+                    "valid": True,
+                    "reason": f"Frontend work orders executed as {executed} safe adapter/blocker records",
+                    "confidence": 0.94,
+                }
+            return {
+                "valid": False,
+                "reason": "Frontend work order execution missing records or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "coding_agent_skill_base":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            work_orders = payload.get("coding_work_orders") if isinstance(payload, dict) else []
+            logic_map = payload.get("coding_logic_map") if isinstance(payload, dict) else {}
+            writer = (payload.get("write_info") or {}).get("writer") if isinstance(payload.get("write_info"), dict) else ""
+            if (
+                success
+                and int((summary or {}).get("coder_agent_count") or 0) >= 3
+                and bool((summary or {}).get("web_tools_ready"))
+                and (logic_map or {}).get("status") == "who_what_where_when_how_ready"
+                and int((summary or {}).get("coding_logic_rule_count") or 0) >= 5
+                and isinstance(work_orders, list)
+                and work_orders
+                and "QueenCodeArchitect.write_file" in authoring_path
+                and writer == "QueenCodeArchitect"
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Coding-agent skill base published with who/what/where/when/how routing, active web/repo learning tools, and Queen provenance",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Coding-agent skill base missing agents, web tools, logic map, work orders, or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "self_author_operational_ui":
+            payload = result.get("result") or {}
+            files = payload.get("generated_files") or []
+            authoring_path = payload.get("authoring_path") or []
+            component = payload.get("component_path") or step.params.get("target_path", "")
+            if (
+                success
+                and component
+                and os.path.exists(component)
+                and "QueenCodeArchitect.write_file" in authoring_path
+                and len(files) >= 3
+            ):
+                return {
+                    "valid": True,
+                    "reason": f"Self-authored UI verified at {component} through QueenCodeArchitect",
+                    "confidence": 0.96,
+                }
+            return {
+                "valid": False,
+                "reason": "Self-authored UI evidence missing component, generated files, or Queen writer provenance",
+                "confidence": 0.2,
+            }
+
+        if intent == "self_repair_operational_ui":
+            payload = result.get("result") or {}
+            final_review = payload.get("final_review") if isinstance(payload, dict) else {}
+            build_result = final_review.get("build_result") if isinstance(final_review, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            build_ok = isinstance(build_result, dict) and (
+                build_result.get("success") or build_result.get("ran") is False
+            )
+            if (
+                success
+                and isinstance(final_review, dict)
+                and final_review.get("success")
+                and build_ok
+                and "QueenCodeArchitect.write_file" in authoring_path
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Self UI review/repair passed with Queen provenance and frontend build",
+                    "confidence": 0.96,
+                }
+            return {
+                "valid": False,
+                "reason": "Self UI repair did not clear final review, build, or Queen provenance",
+                "confidence": 0.2,
+            }
 
         # File operation validation
         if intent in ("write_file", "create_script", "create_dir"):

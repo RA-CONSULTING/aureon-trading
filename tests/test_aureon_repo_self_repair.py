@@ -1,0 +1,49 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from aureon.autonomous.aureon_repo_self_repair import run_repo_self_repair
+
+
+def _write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _fake_repo(root: Path) -> None:
+    (root / "aureon").mkdir()
+    (root / "scripts").mkdir()
+    (root / "frontend" / "src" / "components").mkdir(parents=True)
+    public = root / "frontend" / "public"
+    _write_json(public / "aureon_wake_up_manifest.json", {"runtime_feed_url": "http://127.0.0.1:8791/api/terminal-state"})
+    _write_json(public / "aureon_organism_runtime_status.json", {"summary": {"runtime_feed_status": "online"}})
+    _write_json(public / "aureon_saas_system_inventory.json", {"summary": {"surface_count": 10, "frontend_surface_count": 5}})
+    _write_json(public / "aureon_frontend_unification_plan.json", {"summary": {"screen_count": 7}})
+    _write_json(public / "aureon_frontend_evolution_queue.json", {"summary": {"queue_count": 4, "ready_adapter_count": 3}})
+    _write_json(public / "aureon_autonomous_capability_switchboard.json", {"summary": {"capability_count": 9}})
+    for name in (
+        "aureon_cognitive_trade_evidence.json",
+        "aureon_harmonic_affect_state.json",
+        "aureon_live_cognition_benchmark.json",
+        "aureon_hnc_cognitive_proof.json",
+    ):
+        _write_json(public / name, {"status": "ready"})
+
+
+def test_repo_self_repair_writes_bug_report_and_state(tmp_path: Path) -> None:
+    _fake_repo(tmp_path)
+
+    result = run_repo_self_repair(
+        "Aureon fix its own repo problems",
+        root=tmp_path,
+        run_frontend_build=False,
+    )
+
+    assert result["schema_version"] == "aureon-repo-self-repair-v1"
+    assert result["summary"]["failed_retest_count"] == 0
+    assert result["summary"]["ui_self_review_success"] is True
+    assert "QueenCodeArchitect.write_file" in result["authoring_path"]
+    assert (tmp_path / "docs" / "audits" / "aureon_repo_self_repair.json").exists()
+    assert (tmp_path / "docs" / "audits" / "aureon_repo_self_repair.md").exists()
+    assert (tmp_path / "state" / "aureon_repo_self_repair_last_run.json").exists()

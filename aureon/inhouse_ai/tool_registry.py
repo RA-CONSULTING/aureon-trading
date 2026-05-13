@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import subprocess
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
@@ -228,6 +229,65 @@ class ToolRegistry:
             handler=_builtin_execute_shell,
         )
 
+        self.define_tool(
+            name="web_search",
+            description="Search the web through AureonAgentCore and return bounded read-only results for learning.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query."},
+                    "num_results": {"type": "integer", "description": "Maximum result count, default 5, max 10."},
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+            handler=_builtin_web_search,
+        )
+
+        self.define_tool(
+            name="web_fetch",
+            description="Fetch a public web page through AureonAgentCore and return bounded text for learning.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string", "description": "URL to fetch."},
+                },
+                "required": ["url"],
+                "additionalProperties": False,
+            },
+            handler=_builtin_web_fetch,
+        )
+
+        self.define_tool(
+            name="repo_search",
+            description="Search local repository text without modifying files.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "pattern": {"type": "string", "description": "Case-insensitive regex/text pattern."},
+                    "directory": {"type": "string", "description": "Relative directory, default repo root."},
+                    "limit": {"type": "integer", "description": "Maximum hits, default 25, max 100."},
+                },
+                "required": ["pattern"],
+                "additionalProperties": False,
+            },
+            handler=_builtin_repo_search,
+        )
+
+        self.define_tool(
+            name="skill_base_status",
+            description="Read Aureon's latest coding-agent skill-base manifest.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "detail": {"type": "string", "description": "summary|full, default summary."},
+                },
+                "required": [],
+                "additionalProperties": False,
+            },
+            handler=_builtin_skill_base_status,
+        )
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Built-in tool handlers
@@ -364,3 +424,117 @@ def _builtin_execute_shell(args: Dict[str, Any]) -> str:
         return json.dumps({"error": f"Command timed out after {timeout}s"})
     except Exception as e:
         return json.dumps({"error": str(e)})
+
+
+def _builtin_web_search(args: Dict[str, Any]) -> str:
+    query = str(args.get("query", "")).strip()
+    num_results = max(1, min(int(args.get("num_results", 5) or 5), 10))
+    if not query:
+        return json.dumps({"error": "query is required"})
+    try:
+        from aureon.autonomous.aureon_agent_core import AureonAgentCore
+
+        agent = AureonAgentCore()
+        return json.dumps({"query": query, "results": agent.web_search(query, num_results=num_results)}, indent=2)
+    except Exception as e:
+        return json.dumps({"error": str(e), "query": query})
+
+
+def _builtin_web_fetch(args: Dict[str, Any]) -> str:
+    url = str(args.get("url", "")).strip()
+    if not url:
+        return json.dumps({"error": "url is required"})
+    if not (url.startswith("https://") or url.startswith("http://")):
+        return json.dumps({"error": "Only http(s) URLs are allowed", "url": url})
+    try:
+        from aureon.autonomous.aureon_agent_core import AureonAgentCore
+
+        agent = AureonAgentCore()
+        fetched = agent.web_fetch(url)
+        text = str(fetched.get("text") or "")
+        if text:
+            fetched["text"] = text[:6000]
+        return json.dumps(fetched, indent=2)
+    except Exception as e:
+        return json.dumps({"error": str(e), "url": url})
+
+
+def _repo_root() -> str:
+    current = os.path.abspath(os.getcwd())
+    candidates = [current]
+    parent = current
+    while True:
+        next_parent = os.path.dirname(parent)
+        if next_parent == parent:
+            break
+        candidates.append(next_parent)
+        parent = next_parent
+    here = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    candidates.append(here)
+    for candidate in candidates:
+        if os.path.isdir(os.path.join(candidate, "aureon")) and os.path.isdir(os.path.join(candidate, "scripts")):
+            return candidate
+    return here
+
+
+def _builtin_repo_search(args: Dict[str, Any]) -> str:
+    pattern = str(args.get("pattern", "")).strip()
+    directory = str(args.get("directory", ".") or ".").strip()
+    limit = max(1, min(int(args.get("limit", 25) or 25), 100))
+    if not pattern:
+        return json.dumps({"error": "pattern is required"})
+    root = os.path.abspath(_repo_root())
+    base = os.path.abspath(os.path.join(root, directory))
+    if not (base == root or base.startswith(root + os.sep)):
+        return json.dumps({"error": "directory must stay inside repo", "directory": directory})
+    ignored = {".git", ".venv", "__pycache__", "node_modules", "dist", "build", "queen_backups"}
+    hits = []
+    try:
+        regex = re.compile(pattern, re.IGNORECASE)
+    except re.error:
+        regex = re.compile(re.escape(pattern), re.IGNORECASE)
+    for walk_root, dirs, files in os.walk(base):
+        dirs[:] = [d for d in dirs if d not in ignored]
+        for filename in files:
+            if len(hits) >= limit:
+                break
+            path = os.path.join(walk_root, filename)
+            try:
+                with open(path, "r", encoding="utf-8", errors="replace") as fh:
+                    for line_no, line in enumerate(fh, start=1):
+                        if regex.search(line):
+                            hits.append(
+                                {
+                                    "path": os.path.relpath(path, root).replace("\\", "/"),
+                                    "line": line_no,
+                                    "text": line.strip()[:240],
+                                }
+                            )
+                            break
+            except Exception:
+                continue
+        if len(hits) >= limit:
+            break
+    return json.dumps({"pattern": pattern, "directory": directory, "hit_count": len(hits), "hits": hits}, indent=2)
+
+
+def _builtin_skill_base_status(args: Dict[str, Any]) -> str:
+    detail = str(args.get("detail", "summary") or "summary").lower()
+    root = _repo_root()
+    path = os.path.join(root, "state", "aureon_coding_agent_skill_base_last_run.json")
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as fh:
+            data = json.load(fh)
+    except Exception as e:
+        return json.dumps({"status": "missing", "error": str(e), "path": path})
+    if detail == "full":
+        return json.dumps(data, indent=2)[:12000]
+    return json.dumps(
+        {
+            "status": data.get("status"),
+            "generated_at": data.get("generated_at"),
+            "summary": data.get("summary"),
+            "coding_work_orders": data.get("coding_work_orders", [])[:8],
+        },
+        indent=2,
+    )

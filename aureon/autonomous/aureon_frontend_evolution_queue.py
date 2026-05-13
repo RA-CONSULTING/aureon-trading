@@ -356,7 +356,7 @@ def build_frontend_evolution_queue(root: Optional[Path] = None, inventory: Optio
         repo_root=str(root),
         status=status,
         summary=summary,
-        work_orders=work_orders[:500],
+        work_orders=work_orders,
         counts={
             "by_status": dict(sorted(status_counts.items())),
             "by_target_screen": dict(sorted(target_counts.items())),

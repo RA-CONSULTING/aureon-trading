@@ -27,6 +27,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AureonGeneratedOperationalConsole } from "@/components/generated/AureonGeneratedOperationalConsole";
+import { AureonWorkOrderExecutionConsole } from "@/components/generated/AureonWorkOrderExecutionConsole";
+import { AureonCodingAgentSkillBaseConsole } from "@/components/generated/AureonCodingAgentSkillBaseConsole";
 import {
   CapabilitySwitchboardManifest,
   FrontendScreenPlan,
@@ -452,6 +455,9 @@ function AppShell() {
         ) : null}
 
         <OrganismPulsePanel organism={organism} runtimeConnected={runtime.connected} />
+        <AureonGeneratedOperationalConsole />
+        <AureonWorkOrderExecutionConsole />
+        <AureonCodingAgentSkillBaseConsole />
         <FrontendEvolutionPanel evolution={evolution} />
         <CapabilitySwitchboardPanel switchboard={switchboard} />
 

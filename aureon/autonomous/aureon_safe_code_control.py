@@ -22,6 +22,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from aureon.code_architect.expression import build_code_expression_context
+
 
 DEFAULT_STATE_PATH = Path("state/safe_code_control_state.json")
 
@@ -60,6 +62,7 @@ class SafeCodeControl:
         self._persist()
 
     def propose(self, proposal: CodeProposal) -> Dict[str, Any]:
+        self._attach_expression_context(proposal)
         item = asdict(proposal)
         if self.auto_approve:
             item["status"] = "approved"
@@ -73,6 +76,33 @@ class SafeCodeControl:
             self.pending_proposals = self.pending_proposals[-self.max_pending :]
         self._persist()
         return item
+
+    def _attach_expression_context(self, proposal: CodeProposal) -> None:
+        if proposal.metadata.get("expression_context"):
+            return
+        context = build_code_expression_context(
+            proposal.title or proposal.kind,
+            evidence={
+                "runtime_state": {
+                    "hot_topic": proposal.title or proposal.kind,
+                    "action": "PROPOSE_CODE",
+                    "mode": "safe_code_control",
+                },
+                "proposal": {
+                    "kind": proposal.kind,
+                    "title": proposal.title,
+                    "summary": proposal.summary,
+                    "target_files": proposal.target_files,
+                    "source": proposal.source,
+                    "has_patch_text": bool(proposal.patch_text.strip()),
+                },
+            },
+            evidence_dir=self.state_path.parent,
+            publish=True,
+        )
+        proposal.metadata["expression_context"] = context
+        if not proposal.summary and context.get("voice_summary"):
+            proposal.summary = str(context["voice_summary"])[:500]
 
     def approve_next(self, reviewer: str = "operator") -> Dict[str, Any]:
         if not self.pending_proposals:

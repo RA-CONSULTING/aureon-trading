@@ -71,6 +71,11 @@ Live trading requires configured exchange credentials and the existing runtime s
 | Accounting/HMRC support tooling | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
 | Local OS/task control | `aureon/autonomous/aureon_local_task_queue.py`, `aureon/autonomous/aureon_repo_explorer_service.py`, `aureon/autonomous/aureon_voice_command_bridge.py` |
 | Code authoring and review | `aureon/autonomous/aureon_safe_code_control.py`, `aureon/autonomous/aureon_queen_code_bridge.py`, `aureon/code_architect/` |
+| Self-authored operational UI | `aureon/autonomous/aureon_unified_ui_builder.py`, `frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx` |
+| Frontend work-order execution | `aureon/autonomous/aureon_frontend_work_order_executor.py`, `frontend/src/components/generated/AureonWorkOrderExecutionConsole.tsx` |
+| Repo self-repair loop | `aureon/autonomous/aureon_repo_self_repair.py`, `docs/audits/aureon_repo_self_repair.json` |
+| Coding-agent skill base | `aureon/autonomous/aureon_coding_agent_skill_base.py`, `frontend/src/components/generated/AureonCodingAgentSkillBaseConsole.tsx` |
+| Whole-knowledge voice core | `aureon/vault/voice/whole_knowledge_voice.py`, `aureon/vault/voice/document_artifact_skill.py` |
 | Desktop automation | `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/aureon_queen_desktop_bridge.py`, `aureon/autonomous/aureon_laptop_control.py` |
 | LLM and skill layer | `aureon/inhouse_ai/llm_adapter.py`, `aureon/core/aureon_cognitive_authoring_loop.py`, `aureon/code_architect/skill_library.py` |
 | Self-audit and security visibility | Runtime observer, readiness audit, capability switchboard, repo catalog, mind wiring audit, authorized local audit tooling |
@@ -95,10 +100,43 @@ Aureon includes local operating-system style capabilities in addition to trading
 | Desktop control | `aureon/autonomous/aureon_safe_desktop_control.py` | Local-only, dry-run by default, arm/disarm, emergency stop, allowlisted actions |
 | Laptop hardware abstraction | `aureon/autonomous/aureon_laptop_control.py` | Raw local capability layer; public active path should route through safe desktop control |
 
+### Active Self-Coding And Self-Repair Layer
+
+Aureon now has an explicit self-coding workflow. Operator goals are routed through `GoalExecutionEngine`, classified into a capability route, written through `QueenCodeArchitect` where code generation is required, then verified with focused tests/builds and published as evidence for the console.
+
+| System | What it does | Evidence and UI |
+|---|---|---|
+| Self-authored UI builder | Lets Aureon design and write its own operational React console from runtime, trading, self-repair, work-order, voice, and coding-skill manifests. | `state/aureon_self_authored_ui_last_run.json`, `frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx` |
+| Frontend work-order executor | Converts the frontend evolution queue into safe adapter records, blocker cards, generated links, and archive decisions. | `state/aureon_frontend_work_order_execution_last_run.json`, `frontend/src/components/generated/AureonWorkOrderExecutionConsole.tsx` |
+| Repo self-repair | Runs repo checks, builds a bug report, applies scoped safe repairs through Queen writer paths, and retests. | `state/aureon_repo_self_repair_last_run.json`, `docs/audits/aureon_repo_self_repair.json` |
+| Coding-agent skill base | Teaches Aureon coder agents to learn from official docs, search/fetch the web, search the repo, and decide who/what/where/when/how before writing files. | `state/aureon_coding_agent_skill_base_last_run.json`, `docs/audits/aureon_coding_agent_skill_base.json`, `frontend/public/aureon_coding_agent_skill_base.json` |
+| Whole-knowledge voice core | Turns repo, vault, HNC/Auris, cognitive state, sensory-state evidence, and human language sources into original document, console, and conversation prose. | `state/aureon_expression_profile.json`, `state/aureon_voice_last_run.json`, document Markdown/PDF artifacts |
+
+The coding-agent skill base currently publishes a `who_what_where_when_how_ready` logic map. That map tells Aureon's agents:
+
+| Question | Coding meaning |
+|---|---|
+| Who | Which coder-agent chain owns the task: repo cartography, web learning, implementation, testing, or security review |
+| What | Whether the task is frontend UI, autonomous Python, trading/exchange logic, accounting/legal packs, voice/knowledge expression, or repair/security |
+| Where | Which repo paths and public/state evidence contracts are allowed for that task |
+| When | Whether Aureon should learn, patch, test, pause, publish evidence, or escalate a blocker |
+| How | Which Queen writer path, tests, builds, browser checks, redaction scans, and public artifacts prove the change |
+
+Generated public console panels live in `frontend/src/components/generated/` and are mounted from `frontend/src/App.tsx`:
+
+```text
+AureonGeneratedOperationalConsole.tsx
+AureonWorkOrderExecutionConsole.tsx
+AureonCodingAgentSkillBaseConsole.tsx
+```
+
 Focused validation currently passes:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests/test_safe_code_control.py tests/test_inhouse_llm_adapter_audit_mode.py tests/test_goal_capability_map.py tests/test_capability_growth_loop.py tests/vault/test_skill_executor_bridge.py -q
+.\.venv\Scripts\python.exe -m pytest tests/test_coding_agent_skill_base.py tests/test_goal_execution_engine_self_ui.py tests/test_aureon_repo_self_repair.py tests/test_frontend_work_order_executor.py -q
+cd frontend
+npm run build
 ```
 
 ---

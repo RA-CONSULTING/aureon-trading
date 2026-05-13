@@ -457,6 +457,29 @@ class QueenProseComposer:
         reads from live system state (motion snapshots).
         """
         state = self._gather_state()
+        shared_voice_text = ""
+        shared_voice_facets: List[str] = []
+        try:
+            from aureon.vault.voice.whole_knowledge_voice import (
+                build_expression_profile,
+                compose_voice_artifact,
+            )
+
+            expression_profile = build_expression_profile(max_sources=55, publish=False)
+            shared_voice_facets = expression_profile.top_facets(limit=5)
+            shared_voice = compose_voice_artifact(
+                topic or "Aureon's current self-description",
+                audience="operator",
+                mode="conversation" if target_words <= 750 else "document",
+                evidence={"runtime_state": state},
+                profile=expression_profile,
+                publish=False,
+            )
+            shared_voice_text = shared_voice.text.strip()
+            state["expression_profile_sources"] = expression_profile.source_count
+            state["expression_profile_facets"] = ", ".join(shared_voice_facets)
+        except Exception:
+            shared_voice_text = ""
         essay = ComposedEssay(
             target_words=target_words,
             topic=topic,
@@ -615,6 +638,8 @@ class QueenProseComposer:
         ]
 
         combined_text = "\n\n".join(text_parts)
+        if shared_voice_text:
+            combined_text = shared_voice_text + "\n\n" + combined_text
         word_count = len(combined_text.split())
         pad_idx = 0
         while word_count < target_words * 0.9 and pad_idx < 50:
@@ -626,6 +651,8 @@ class QueenProseComposer:
         essay.text = combined_text
         essay.word_count = word_count
         essay.stanzas_used = [s[:40] for s in stanzas if s]
+        if shared_voice_facets:
+            essay.stanzas_used.insert(0, "whole_knowledge_voice:" + ",".join(shared_voice_facets))
 
         # Remember this essay for the next breath
         with self._lock:
