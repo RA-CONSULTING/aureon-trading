@@ -126,6 +126,50 @@ Trading action depends on runtime truth: fresh ticks, exchange readiness, valid 
 
 The cognitive layer should be read as an evidence-producing controller: it reasons, routes, asks, and proposes. The runtime feed and exchange clients determine what can become live action.
 
+## Operating System, LLM, Code, Skills, And Desktop Control
+
+Aureon also has local operating-system style capabilities. This is the part of the organism that can inspect the repo, queue tasks, reason through local/in-house LLM adapters, produce code proposals, route voice/text intents, execute validated skills, and control the local desktop through a constrained action layer.
+
+| Capability | What is active | Key paths |
+|---|---|---|
+| Repo explorer | Read-only file listing, text search, and file inspection for task/code context | `aureon/autonomous/aureon_repo_explorer_service.py` |
+| Local task queue | Persistent visible task queue for operator and agent goals | `aureon/autonomous/aureon_local_task_queue.py` |
+| Repo task bridge | Turns repo findings into queued local tasks | `aureon/autonomous/aureon_repo_task_bridge.py` |
+| LLM adapter layer | Backend-agnostic prompt/stream interface for local LLMs, hybrid mode, and AureonBrain fallback | `aureon/inhouse_ai/llm_adapter.py` |
+| Cognitive authoring loop | Observes gaps and routes validated skill/code authoring through CodeArchitect | `aureon/core/aureon_cognitive_authoring_loop.py` |
+| CodeArchitect | Authors, validates, stores, and executes skills through the SkillLibrary pipeline | `aureon/code_architect/` |
+| Safe code control | Queues code tasks, patch proposals, and file-edit proposals for review | `aureon/autonomous/aureon_safe_code_control.py` |
+| Queen code bridge | Routes ThoughtBus/code events into safe code proposals | `aureon/autonomous/aureon_queen_code_bridge.py` |
+| Skill executor bridge | Turns aligned goals into skill artefacts and vault cards | `aureon/vault/voice/skill_executor_bridge.py` |
+| Voice command bridge | Routes text/speech commands into repo search, tasks, code proposals, and desktop actions | `aureon/autonomous/aureon_voice_command_bridge.py` |
+| Conversation loop | Operator-facing conversation route into local capabilities | `aureon/autonomous/aureon_conversation_loop.py` |
+| Safe desktop control | Local-only desktop automation with dry-run default, arm/disarm, emergency stop, and allowlisted actions | `aureon/autonomous/aureon_safe_desktop_control.py` |
+| Queen desktop bridge | ThoughtBus-to-desktop proposal bridge | `aureon/autonomous/aureon_queen_desktop_bridge.py` |
+| Laptop control abstraction | Raw local hardware/OS abstraction layer for screenshots, windows, clipboard, voice, camera, and system state | `aureon/autonomous/aureon_laptop_control.py` |
+
+The active public control path is the safe layer:
+
+```text
+operator / voice / ThoughtBus
+  -> intent cognition
+  -> repo explorer / task queue / code proposal queue / desktop proposal queue
+  -> review, arm, approve, test, or execute
+  -> persisted state under state/
+```
+
+Important operating boundaries:
+
+- Code proposals queue for review by default. `AUREON_CODE_AUTO_APPROVE=1` is an explicit opt-in and still does not apply patches by itself.
+- Desktop control is local-only, dry-run by default, and requires arming before execution.
+- The raw laptop abstraction exists, but public docs should route users through `SafeDesktopControl` and bridges first.
+- Audit-mode LLM calls do not require an external model server; `AureonHybridAdapter` falls back to `AureonBrain`.
+
+Validated active checks:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/test_safe_code_control.py tests/test_inhouse_llm_adapter_audit_mode.py tests/test_goal_capability_map.py tests/test_capability_growth_loop.py tests/vault/test_skill_executor_bridge.py -q
+```
+
 ## HNC, Auris, Harmonic, And Research Evidence
 
 | Area | What it does | Representative paths |

@@ -3,17 +3,20 @@
 Safe local code proposal controller.
 
 This module does not directly modify the repo or execute generated code.
-It provides a queue for:
+It provides a reviewable queue for:
 - code tasks
 - proposed file edits
 - patch text proposals
 
-The queue can be reviewed and approved externally by the user/operator.
+By default proposals are pending review. Set AUREON_CODE_AUTO_APPROVE=1 only
+for an explicitly trusted local workflow that wants proposals marked approved
+immediately; this still does not apply patches by itself.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -21,6 +24,13 @@ from typing import Any, Dict, List, Optional
 
 
 DEFAULT_STATE_PATH = Path("state/safe_code_control_state.json")
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
 
 
 @dataclass
@@ -41,6 +51,7 @@ class SafeCodeControl:
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
 
         self.enabled = True
+        self.auto_approve = _env_bool("AUREON_CODE_AUTO_APPROVE", False)
         self.pending_proposals: List[Dict[str, Any]] = []
         self.recent_reviews: List[Dict[str, Any]] = []
         self.last_error = ""
@@ -49,14 +60,17 @@ class SafeCodeControl:
         self._persist()
 
     def propose(self, proposal: CodeProposal) -> Dict[str, Any]:
-        # SOVEREIGN MODE — auto-approve all code proposals immediately.
-        # The Queen has full write access. No approval queue needed.
         item = asdict(proposal)
-        item["status"] = "approved"
-        item["reviewed_at"] = time.time()
-        item["reviewer"] = "sovereign_queen"
-        self.recent_reviews.append(item)
-        self.recent_reviews = self.recent_reviews[-self.max_recent:]
+        if self.auto_approve:
+            item["status"] = "approved"
+            item["reviewed_at"] = time.time()
+            item["reviewer"] = "env:AUREON_CODE_AUTO_APPROVE"
+            self.recent_reviews.append(item)
+            self.recent_reviews = self.recent_reviews[-self.max_recent :]
+        else:
+            item["status"] = "pending_review"
+            self.pending_proposals.append(item)
+            self.pending_proposals = self.pending_proposals[-self.max_pending :]
         self._persist()
         return item
 
@@ -71,7 +85,7 @@ class SafeCodeControl:
         item["reviewed_at"] = time.time()
         item["reviewer"] = reviewer
         self.recent_reviews.append(item)
-        self.recent_reviews = self.recent_reviews[-self.max_recent:]
+        self.recent_reviews = self.recent_reviews[-self.max_recent :]
         self._persist()
         return {"ok": True, "proposal": item}
 
@@ -87,7 +101,7 @@ class SafeCodeControl:
         item["reviewer"] = reviewer
         item["reject_reason"] = reason
         self.recent_reviews.append(item)
-        self.recent_reviews = self.recent_reviews[-self.max_recent:]
+        self.recent_reviews = self.recent_reviews[-self.max_recent :]
         self._persist()
         return {"ok": True, "proposal": item}
 
@@ -98,6 +112,7 @@ class SafeCodeControl:
     def status(self) -> Dict[str, Any]:
         return {
             "enabled": self.enabled,
+            "auto_approve": self.auto_approve,
             "last_error": self.last_error,
             "pending_count": len(self.pending_proposals),
             "pending_proposals": self.pending_proposals[-10:],

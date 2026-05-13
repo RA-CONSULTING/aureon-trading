@@ -31,6 +31,10 @@ python scripts/aureon_ignition.py --audit-only
 | Cognitive order-intent path | Lets the cognitive layer observe, ask, reason, and emit order-intent evidence into the runtime rather than bypassing exchange gates. | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |
 | HNC/Auris harmonic affect reporting | Produces timestamped cognitive trade evidence, harmonic affect state, and benchmark reporting. | `aureon_cognitive_trade_evidence.py`, `aureon_harmonic_affect_state.py`, `aureon_live_cognition_benchmark.py` |
 | Self-questioning and mind hub | Runs the local thought/action hub and self-questioning loop for operator-visible reasoning. | `http://127.0.0.1:13002/api/thoughts` |
+| Local OS/task capability | Queues goals, searches the repo, inspects files, and routes operator/voice tasks into visible state. | `aureon_local_task_queue.py`, `aureon_repo_explorer_service.py`, `aureon_voice_command_bridge.py` |
+| LLM capability | Uses local LLM backends when available and AureonBrain fallback in audit mode. | `aureon/inhouse_ai/llm_adapter.py` |
+| Code-writing capability | Produces reviewable code tasks and patch proposals, and connects to CodeArchitect/SkillLibrary for validated skills. | `aureon_safe_code_control.py`, `aureon_queen_code_bridge.py`, `aureon/code_architect/` |
+| Desktop capability | Offers local desktop action proposals with dry-run default, arm/disarm, emergency stop, and allowlisted actions. | `aureon_safe_desktop_control.py`, `aureon_queen_desktop_bridge.py`, `aureon_laptop_control.py` |
 | Unified autonomous console | Shows organism pulse, runtime mirror, blockers, exchange state, evolution queue, audits, and current capability modes. | `frontend/src/App.tsx`, `frontend/src/services/aureonAutonomousFrontend.ts`, `frontend/src/hooks/useTerminalSync.ts` |
 | Accounting/HMRC support pack tooling | Generates statutory support packs, CT support notes, and accounting evidence while keeping filing manual. | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
 | SaaS/security/local authorized audit tooling | Catalogs SaaS/frontend surfaces, security blockers, authorized local findings, and migration work orders. | `aureon/autonomous/aureon_saas_system_inventory.py`, `aureon/autonomous/hnc_authorized_attack_lab.py` |
@@ -45,6 +49,7 @@ python scripts/aureon_ignition.py --audit-only
 | Trading/portfolio/risk | Convert market state into readiness, intent, position, and execution evidence. | `aureon/trading/`, `aureon/portfolio/`, `aureon/strategies/` |
 | Scanners/analytics | Find movement, anomalies, backtest context, and opportunity candidates. | `aureon/scanners/`, `aureon/analytics/` |
 | Cognition/agents | Ask questions, route goals, choose capabilities, and expose thought/action state. | `aureon/autonomous/`, `/api/thoughts` |
+| OS/code/desktop layer | Search the repo, queue tasks, propose code, execute validated skills, and drive local desktop actions through safe controllers. | `aureon_repo_explorer_service.py`, `aureon_safe_code_control.py`, `aureon_safe_desktop_control.py`, `aureon/code_architect/` |
 | HNC/Auris evidence | Timestamp coherence, cognitive trade evidence, harmonic affect, and benchmark state. | `docs/audits/`, `aureon/autonomous/aureon_live_cognition_benchmark.py` |
 | Frontend console | Give the operator a single live surface for runtime, blockers, audits, and capability modes. | `frontend/src/App.tsx`, `frontend/public/` |
 | Accounting/HMRC support | Build evidence packs and manual filing support without changing accounts totals silently. | `Kings_Accounting_Suite/tools/`, `aureon/queen/accounting_context_bridge.py` |

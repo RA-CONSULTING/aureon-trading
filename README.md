@@ -69,11 +69,37 @@ Live trading requires configured exchange credentials and the existing runtime s
 | HNC/Auris evidence reporting | `aureon/autonomous/aureon_cognitive_trade_evidence.py`, `aureon/autonomous/aureon_harmonic_affect_state.py`, `aureon/autonomous/aureon_live_cognition_benchmark.py` |
 | Unified autonomous console | `frontend/src/App.tsx`, `frontend/src/services/aureonAutonomousFrontend.ts`, `frontend/src/hooks/useTerminalSync.ts` |
 | Accounting/HMRC support tooling | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
+| Local OS/task control | `aureon/autonomous/aureon_local_task_queue.py`, `aureon/autonomous/aureon_repo_explorer_service.py`, `aureon/autonomous/aureon_voice_command_bridge.py` |
+| Code authoring and review | `aureon/autonomous/aureon_safe_code_control.py`, `aureon/autonomous/aureon_queen_code_bridge.py`, `aureon/code_architect/` |
+| Desktop automation | `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/aureon_queen_desktop_bridge.py`, `aureon/autonomous/aureon_laptop_control.py` |
+| LLM and skill layer | `aureon/inhouse_ai/llm_adapter.py`, `aureon/core/aureon_cognitive_authoring_loop.py`, `aureon/code_architect/skill_library.py` |
 | Self-audit and security visibility | Runtime observer, readiness audit, capability switchboard, repo catalog, mind wiring audit, authorized local audit tooling |
 
 ### Whole-system guide for end users
 
 Aureon is not a one-purpose bot. The public map in [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) explains how launch, exchange coverage, trading readiness, cognition, HNC/Auris evidence, frontend console, accounting support, SaaS/security audit, vault memory, research, and self-improvement fit together.
+
+### Active OS, LLM, Code, Skill, And Desktop Layer
+
+Aureon includes local operating-system style capabilities in addition to trading:
+
+| Capability | Active surface | Boundary |
+|---|---|---|
+| Repo inspection | `aureon/autonomous/aureon_repo_explorer_service.py` | Read-only codebase search and file inspection |
+| Task goals | `aureon/autonomous/aureon_local_task_queue.py` | Queues operator/agent tasks as visible state |
+| LLM reasoning | `aureon/inhouse_ai/llm_adapter.py` | Uses local LLM when available; audit mode falls back to `AureonBrain` |
+| Code proposals | `aureon/autonomous/aureon_safe_code_control.py` | Proposals queue for review by default; `AUREON_CODE_AUTO_APPROVE=1` is explicit opt-in |
+| Queen code bridge | `aureon/autonomous/aureon_queen_code_bridge.py` | Routes ThoughtBus/code events into the proposal queue |
+| Skills | `aureon/code_architect/` and `aureon/vault/voice/skill_executor_bridge.py` | Validated SkillLibrary and skill execution artefacts |
+| Voice/task bridge | `aureon/autonomous/aureon_voice_command_bridge.py` | Routes speech/text intents into task, code, repo, and desktop queues |
+| Desktop control | `aureon/autonomous/aureon_safe_desktop_control.py` | Local-only, dry-run by default, arm/disarm, emergency stop, allowlisted actions |
+| Laptop hardware abstraction | `aureon/autonomous/aureon_laptop_control.py` | Raw local capability layer; public active path should route through safe desktop control |
+
+Focused validation currently passes:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/test_safe_code_control.py tests/test_inhouse_llm_adapter_audit_mode.py tests/test_goal_capability_map.py tests/test_capability_growth_loop.py tests/vault/test_skill_executor_bridge.py -q
+```
 
 ---
 

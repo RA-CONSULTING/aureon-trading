@@ -150,6 +150,12 @@ Use the production launcher for full operation and `scripts/aureon_ignition.py -
 .\.venv\Scripts\python.exe -m pytest tests/test_ignition_live_profile.py tests/test_unified_market_status_server.py tests/test_aureon_organism_runtime_observer.py -q
 ```
 
+Verify the active OS/LLM/task/code/skill surfaces:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/test_safe_code_control.py tests/test_inhouse_llm_adapter_audit_mode.py tests/test_goal_capability_map.py tests/test_capability_growth_loop.py tests/vault/test_skill_executor_bridge.py -q
+```
+
 Frontend build check:
 
 ```powershell
