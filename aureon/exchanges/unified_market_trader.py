@@ -24,6 +24,7 @@ import json
 import logging
 import math
 import os
+import queue
 import shutil
 import subprocess
 import sys
@@ -167,6 +168,11 @@ ORDER_EXECUTOR_SYMBOL_COOLDOWN_SEC = max(5.0, _env_float("UNIFIED_ORDER_EXECUTOR
 ORDER_EXECUTOR_QUOTE_USD = max(1.0, _env_float("UNIFIED_ORDER_EXECUTOR_QUOTE_USD", 5.0))
 ORDER_EXECUTOR_MAX_PER_TICK = max(1, int(_env_float("UNIFIED_ORDER_EXECUTOR_MAX_PER_TICK", 4.0)))
 ORDER_EXECUTOR_MAX_OPEN_POSITIONS = max(1, int(_env_float("UNIFIED_ORDER_EXECUTOR_MAX_OPEN_POSITIONS", 12.0)))
+ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC = max(1.0, _env_float("UNIFIED_ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC", 8.0))
+ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC = max(
+    ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC,
+    _env_float("UNIFIED_ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC", 300.0),
+)
 KRAKEN_SPOT_QUOTE_USD = max(63.0, _env_float("UNIFIED_KRAKEN_SPOT_QUOTE_USD", 65.0))
 BINANCE_MARGIN_LEVERAGE = max(1, int(_env_float("UNIFIED_BINANCE_MARGIN_LEVERAGE", 2.0)))
 SHADOW_TRADE_MAX_PER_CYCLE = max(1, int(_env_float("UNIFIED_SHADOW_TRADE_MAX_PER_CYCLE", 12.0)))
@@ -603,6 +609,11 @@ class UnifiedMarketTrader:
         self._last_execution_at: float = 0.0
         self._execution_memory: Dict[str, float] = {}
         self._latest_execution_results: Dict[str, Any] = {}
+        self._executor_route_lock = threading.Lock()
+        self._executor_route_inflight: Dict[str, Dict[str, Any]] = {}
+        self._executor_route_results: Dict[str, Dict[str, Any]] = {}
+        self._tick_phase = "booting"
+        self._tick_phase_at = time.time()
         self._local_dashboard_server: ThreadingHTTPServer | None = None
         self._local_dashboard_thread: threading.Thread | None = None
         self._runtime_heartbeat_thread: threading.Thread | None = None
@@ -667,6 +678,192 @@ class UnifiedMarketTrader:
 
     def _unified_executor_enabled(self) -> bool:
         return self._env_enabled("AUREON_UNIFIED_ORDER_EXECUTOR", self._runtime_real_orders_allowed())
+
+    def _set_tick_phase(self, phase: str) -> None:
+        self._tick_phase = str(phase or "unknown")
+        self._tick_phase_at = time.time()
+
+    def _ensure_executor_route_state(self) -> None:
+        if not hasattr(self, "_executor_route_lock") or self._executor_route_lock is None:
+            self._executor_route_lock = threading.Lock()
+        if not hasattr(self, "_executor_route_inflight") or self._executor_route_inflight is None:
+            self._executor_route_inflight = {}
+        if not hasattr(self, "_executor_route_results") or self._executor_route_results is None:
+            self._executor_route_results = {}
+        if not hasattr(self, "_execution_memory") or self._execution_memory is None:
+            self._execution_memory = {}
+
+    def _executor_route_snapshot(self) -> Dict[str, Any]:
+        self._ensure_executor_route_state()
+        now = time.time()
+        with self._executor_route_lock:
+            inflight = []
+            for key, state in self._executor_route_inflight.items():
+                if not state.get("running"):
+                    continue
+                started_at = float(state.get("started_at", now) or now)
+                inflight.append({
+                    "route_key": key,
+                    "venue": state.get("venue"),
+                    "market_type": state.get("market_type"),
+                    "symbol": state.get("symbol"),
+                    "side": state.get("side"),
+                    "running_sec": round(max(0.0, now - started_at), 3),
+                    "timeout_sec": state.get("timeout_sec"),
+                })
+            latest_results = sorted(
+                self._executor_route_results.values(),
+                key=lambda item: str(item.get("completed_at_iso") or item.get("generated_at") or ""),
+                reverse=True,
+            )[:8]
+        return {
+            "route_timeout_sec": ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC,
+            "route_abandon_after_sec": ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC,
+            "inflight_count": len(inflight),
+            "inflight": inflight,
+            "latest_async_results": latest_results,
+        }
+
+    def _run_executor_route_with_timeout(
+        self,
+        route_key: str,
+        venue: str,
+        market_type: str,
+        symbol: str,
+        side: str,
+        handler: Callable[[], Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        self._ensure_executor_route_state()
+        now = time.time()
+        timeout_sec = ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC
+        with self._executor_route_lock:
+            existing = self._executor_route_inflight.get(route_key)
+            if existing and existing.get("running"):
+                started_at = float(existing.get("started_at", now) or now)
+                running_sec = max(0.0, now - started_at)
+                reason = (
+                    "executor_route_orphaned_manual_review"
+                    if running_sec > ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC
+                    else "executor_route_inflight"
+                )
+                return {
+                    "ok": False,
+                    "held": True,
+                    "venue": venue,
+                    "market_type": market_type,
+                    "symbol": symbol,
+                    "side": side,
+                    "route_key": route_key,
+                    "reason": reason,
+                    "running_sec": round(running_sec, 3),
+                    "timeout_sec": timeout_sec,
+                }
+            self._executor_route_inflight[route_key] = {
+                "running": True,
+                "started_at": now,
+                "started_at_iso": datetime.fromtimestamp(now).isoformat(),
+                "venue": venue,
+                "market_type": market_type,
+                "symbol": symbol,
+                "side": side,
+                "timeout_sec": timeout_sec,
+            }
+
+        result_queue = queue.Queue(maxsize=1)
+
+        def runner() -> None:
+            error: Optional[Exception] = None
+            raw_result: Optional[Dict[str, Any]] = None
+            try:
+                raw_result = handler()
+            except Exception as e:
+                error = e
+                try:
+                    self._governor().record_error(venue or "execution", e)
+                except Exception:
+                    pass
+            completed_at = time.time()
+            if error is not None:
+                result = {
+                    "ok": False,
+                    "venue": venue,
+                    "market_type": market_type,
+                    "symbol": symbol,
+                    "side": side,
+                    "error": str(error),
+                }
+            elif isinstance(raw_result, dict):
+                result = dict(raw_result)
+            else:
+                result = {
+                    "ok": bool(raw_result),
+                    "venue": venue,
+                    "market_type": market_type,
+                    "symbol": symbol,
+                    "side": side,
+                    "result": raw_result,
+                }
+            result.update({
+                "route_key": route_key,
+                "route_elapsed_sec": round(max(0.0, completed_at - now), 3),
+                "timeout_sec": timeout_sec,
+                "completed_after_timeout": bool(completed_at - now > timeout_sec),
+                "completed_at_iso": datetime.fromtimestamp(completed_at).isoformat(),
+            })
+            if result.get("ok"):
+                self._execution_memory[route_key] = completed_at
+            with self._executor_route_lock:
+                self._executor_route_inflight[route_key] = {
+                    "running": False,
+                    "started_at": now,
+                    "completed_at": completed_at,
+                    "venue": venue,
+                    "market_type": market_type,
+                    "symbol": symbol,
+                    "side": side,
+                    "timeout_sec": timeout_sec,
+                }
+                self._executor_route_results[route_key] = dict(result)
+            try:
+                result_queue.put_nowait(result)
+            except queue.Full:
+                pass
+
+        thread = threading.Thread(
+            target=runner,
+            name=f"aureon-exec-route-{venue}-{market_type}-{symbol}",
+            daemon=True,
+        )
+        thread.start()
+        thread.join(timeout_sec)
+        if thread.is_alive():
+            return {
+                "ok": False,
+                "held": True,
+                "timeout": True,
+                "venue": venue,
+                "market_type": market_type,
+                "symbol": symbol,
+                "side": side,
+                "route_key": route_key,
+                "reason": "executor_route_timeout",
+                "timeout_sec": timeout_sec,
+                "source": "unified_market_trader.executor",
+            }
+        try:
+            return result_queue.get_nowait()
+        except queue.Empty:
+            return {
+                "ok": False,
+                "held": True,
+                "venue": venue,
+                "market_type": market_type,
+                "symbol": symbol,
+                "side": side,
+                "route_key": route_key,
+                "reason": "executor_route_finished_without_result",
+                "timeout_sec": timeout_sec,
+            }
 
     def _preflight_item(self, name: str, ok: bool, severity: str, detail: str, meta: Dict[str, Any] | None = None) -> Dict[str, Any]:
         return {
@@ -1084,6 +1281,8 @@ class UnifiedMarketTrader:
                         "heartbeat_at_iso": datetime.now().isoformat(),
                         "last_tick_started_at": self._last_tick_started_at,
                         "last_tick_completed_at": self._last_tick_completed_at,
+                        "tick_phase": getattr(self, "_tick_phase", "idle"),
+                        "tick_phase_at": getattr(self, "_tick_phase_at", 0.0),
                         "booting": self._last_tick_completed_at <= 0,
                     }
                     self._latest_dashboard_payload = payload
@@ -1907,6 +2106,8 @@ class UnifiedMarketTrader:
             "blocked_count": 0,
             "results": [],
             "blockers": blockers,
+            "route_timeout_sec": ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC,
+            "executor_route_state": self._executor_route_snapshot(),
         }
         if blockers:
             self._latest_execution_results = execution_summary
@@ -1981,13 +2182,57 @@ class UnifiedMarketTrader:
                 try:
                     execution_summary["attempted_count"] += 1
                     if venue == "kraken" and market_type == "spot":
-                        result = self._execute_kraken_spot_route(side, route_symbol, ORDER_EXECUTOR_QUOTE_USD)
+                        result = self._run_executor_route_with_timeout(
+                            route_key,
+                            venue,
+                            market_type,
+                            route_symbol,
+                            side,
+                            lambda side=side, route_symbol=route_symbol: self._execute_kraken_spot_route(
+                                side,
+                                route_symbol,
+                                ORDER_EXECUTOR_QUOTE_USD,
+                            ),
+                        )
                     elif venue == "alpaca" and market_type == "spot":
-                        result = self._execute_alpaca_spot_route(side, route_symbol, ORDER_EXECUTOR_QUOTE_USD)
+                        result = self._run_executor_route_with_timeout(
+                            route_key,
+                            venue,
+                            market_type,
+                            route_symbol,
+                            side,
+                            lambda side=side, route_symbol=route_symbol: self._execute_alpaca_spot_route(
+                                side,
+                                route_symbol,
+                                ORDER_EXECUTOR_QUOTE_USD,
+                            ),
+                        )
                     elif venue == "binance" and market_type == "spot":
-                        result = self._execute_binance_spot_route(side, route_symbol, ORDER_EXECUTOR_QUOTE_USD)
+                        result = self._run_executor_route_with_timeout(
+                            route_key,
+                            venue,
+                            market_type,
+                            route_symbol,
+                            side,
+                            lambda side=side, route_symbol=route_symbol: self._execute_binance_spot_route(
+                                side,
+                                route_symbol,
+                                ORDER_EXECUTOR_QUOTE_USD,
+                            ),
+                        )
                     elif venue == "binance" and market_type == "margin":
-                        result = self._execute_binance_margin_route(side, route_symbol, ORDER_EXECUTOR_QUOTE_USD)
+                        result = self._run_executor_route_with_timeout(
+                            route_key,
+                            venue,
+                            market_type,
+                            route_symbol,
+                            side,
+                            lambda side=side, route_symbol=route_symbol: self._execute_binance_margin_route(
+                                side,
+                                route_symbol,
+                                ORDER_EXECUTOR_QUOTE_USD,
+                            ),
+                        )
                     else:
                         result = {"ok": False, "venue": venue, "market_type": market_type, "symbol": route_symbol, "reason": "executor_route_not_supported"}
                 except Exception as e:
@@ -2016,6 +2261,7 @@ class UnifiedMarketTrader:
 
         if execution_summary["submitted_count"] > 0:
             self._last_execution_at = now
+        execution_summary["executor_route_state"] = self._executor_route_snapshot()
         self._latest_execution_results = execution_summary
         action_plan["latest_execution"] = execution_summary
 
@@ -3732,6 +3978,8 @@ class UnifiedMarketTrader:
         last_tick_started_at = float(getattr(self, "_last_tick_started_at", 0.0) or 0.0)
         tick_age_sec = (now - last_tick_completed_at) if last_tick_completed_at > 0 else None
         tick_running_sec = (now - last_tick_started_at) if last_tick_started_at > last_tick_completed_at else 0.0
+        tick_phase = str(getattr(self, "_tick_phase", "idle") or "idle")
+        tick_phase_at = float(getattr(self, "_tick_phase_at", 0.0) or 0.0)
         booting = last_tick_completed_at <= 0
         boot_age_sec = now - float(getattr(self, "start_time", now) or now)
         stale_reason = ""
@@ -3760,6 +4008,8 @@ class UnifiedMarketTrader:
             "last_tick_completed_at": datetime.fromtimestamp(last_tick_completed_at).isoformat() if last_tick_completed_at > 0 else None,
             "last_tick_age_sec": round(float(tick_age_sec), 3) if tick_age_sec is not None else None,
             "last_tick_running_sec": round(float(tick_running_sec), 3) if tick_running_sec > 0 else 0.0,
+            "tick_phase": tick_phase,
+            "tick_phase_running_sec": round(max(0.0, now - tick_phase_at), 3) if tick_phase_at > 0 else 0.0,
             "stale_reason": stale_reason,
             "dashboard_generated_at": payload.get("generated_at"),
             "runtime_minutes": payload.get("runtime_minutes"),
@@ -3806,11 +4056,14 @@ class UnifiedMarketTrader:
                 else None,
                 "tick_stale": stale,
                 "tick_stale_reason": stale_reason,
+                "tick_phase": tick_phase,
+                "tick_phase_running_sec": round(max(0.0, now - tick_phase_at), 3) if tick_phase_at > 0 else 0.0,
                 "tick_stale_after_sec": READY_STALE_AFTER_SEC,
                 "last_tick_age_sec": round(float(tick_age_sec), 3) if tick_age_sec is not None else None,
                 "last_tick_running_sec": round(float(tick_running_sec), 3) if tick_running_sec > 0 else 0.0,
                 "file_heartbeat_is_not_market_freshness": True,
             },
+            "executor_route_state": self._executor_route_snapshot(),
             "runtime_writer": {
                 "owns_lock": bool(getattr(self, "_owns_runtime_status", True)),
                 "pid": os.getpid(),
@@ -3998,6 +4251,7 @@ class UnifiedMarketTrader:
     def tick(self) -> Dict[str, Any]:
         self._last_tick_started_at = time.time()
         self._last_tick_error = ""
+        self._set_tick_phase("ensure_exchanges")
         self._ensure_exchanges()
         kraken_closed: List[dict] = []
         capital_closed: List[dict] = []
@@ -4008,6 +4262,7 @@ class UnifiedMarketTrader:
                 "kraken.tick",
                 KRAKEN_TICK_MIN_INTERVAL_SEC,
             ):
+                self._set_tick_phase("kraken_tick")
                 try:
                     kraken_closed = self.kraken.tick()
                 except Exception as e:
@@ -4024,6 +4279,7 @@ class UnifiedMarketTrader:
                 "capital.tick",
                 CAPITAL_TICK_MIN_INTERVAL_SEC,
             ):
+                self._set_tick_phase("capital_tick")
                 try:
                     capital_closed = self.capital.tick()
                 except Exception as e:
@@ -4035,6 +4291,7 @@ class UnifiedMarketTrader:
                     logger.error("Capital tick failed: %s", e)
 
         # ── Publish closed trades to Thought Bus + record in Mycelium ─────
+        self._set_tick_phase("publish_closed_trades")
         for trade in kraken_closed:
             self._publish_thought("execution.trade.closed", {
                 "pair": str(trade.get("pair") or trade.get("symbol") or "?"),
@@ -4053,6 +4310,7 @@ class UnifiedMarketTrader:
             self._record_trade_profit(trade)
 
         # ── Periodic status publish (every 30s) ──────────────────────────
+        self._set_tick_phase("publish_status")
         now = time.time()
         if now - self._last_status_publish >= 30.0:
             self._last_status_publish = now
@@ -4072,12 +4330,15 @@ class UnifiedMarketTrader:
                     "symbols": symbols,
                 })
 
+        self._set_tick_phase("build_combined_payload")
         payload = self._build_combined_payload()
+        self._set_tick_phase("execute_runtime_order_actions")
         execution_summary = self._execute_runtime_order_actions(payload)
         if isinstance(payload.get("exchange_action_plan"), dict):
             payload["exchange_action_plan"]["latest_execution"] = execution_summary
         self._latest_dashboard_payload = self._copy_payload(payload)
         self._last_tick_completed_at = time.time()
+        self._set_tick_phase("idle")
         self._write_runtime_status_file()
         return {
             "kraken_closed": kraken_closed,

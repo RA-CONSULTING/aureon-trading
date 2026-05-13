@@ -1,18 +1,18 @@
 <div align="center">
 
-# ⚡ AUREON TRADING SYSTEM
+# AUREON TRADING SYSTEM
 ### Powered by Harmonic Nexus Core
 
-*Where ancient wisdom meets algorithmic precision — and the markets have nowhere to hide.*
+*Where ancient wisdom meets algorithmic precision - and the markets have nowhere to hide.*
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ueu7gBz7g)
 [![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
 [![GitHub Stars](https://img.shields.io/github/stars/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=FFD700)](https://github.com/ra-consulting/aureon-trading)
 [![GitHub Forks](https://img.shields.io/github/forks/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=silver)](https://github.com/ra-consulting/aureon-trading/fork)
-[![Python](https://img.shields.io/badge/Python-715%20modules%20·%2024%20domains-3776AB?style=for-the-badge&logo=python&logoColor=white)](#project-structure--715-modules-across-24-domains)
+[![Python](https://img.shields.io/badge/Python-715%20modules%20-%2024%20domains-3776AB?style=for-the-badge&logo=python&logoColor=white)](#project-structure--715-modules-across-24-domains)
 [![TypeScript](https://img.shields.io/badge/TypeScript-780%20files-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#architecture-overview)
 
-[![Support the Project](https://img.shields.io/badge/☕%20Support%20the%20Project-Donate%20via%20SumUp-FFD700?style=for-the-badge&logoColor=black)](https://pay.sumup.com/b2c/QFTPOX6U)
+[![Support the Project](https://img.shields.io/badge/Support%20the%20Project-Donate%20via%20SumUp-FFD700?style=for-the-badge&logoColor=black)](https://pay.sumup.com/b2c/QFTPOX6U)
 
 </div>
 
@@ -22,10 +22,29 @@
 
 For the full operator runbook, see [RUNNING.md](RUNNING.md). For the end-to-end map of every major subsystem, see [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md). The current full-organism entrypoint is the Windows production wake-up launcher. Individual bots and older ignition commands are development or audit paths.
 
+### Current Canonical Version
+
+The current public version is the unified live organism runtime, not a single bot or a legacy dashboard. Start it with `AUREON_PRODUCTION_LIVE.cmd`, watch it from the unified console at `http://127.0.0.1:8081/`, and read the live runtime feed from `http://127.0.0.1:8791/api/terminal-state`.
+
+This version brings Kraken, Binance, Alpaca, and Capital into one market state; exposes connected, guarded, and live-action modes; keeps reboot advice visible; and includes the OS/task, LLM, self-coding, desktop, frontend work-order, accounting, HNC/Auris, and whole-knowledge voice layers.
+
+### Read This First
+
+| Need | Start here |
+|---|---|
+| Run the whole organism | [RUNNING.md](RUNNING.md), then `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
+| Validate before live operation | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
+| Watch live trading state | `http://127.0.0.1:8791/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
+| Use the autonomous console | `http://127.0.0.1:8081/` and [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) |
+| Understand HNC/Auris cognition | [CAPABILITIES.md](CAPABILITIES.md), HNC/Auris evidence files, and the live cognition benchmark |
+| Use accounting/HMRC support | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py` and the accounting context bridge |
+| Use OS, LLM, code, skills, and desktop capability | The active OS/LLM/code/desktop layer below and [CAPABILITIES.md](CAPABILITIES.md) |
+| Read legacy, research, and historical material | Continue through the rest of this README; older sections are preserved and marked where needed |
+
 ### Full Windows Production Supervisor
 
 ```powershell
-cd C:\Users\user\aureon-trading-integrated-main-20260508
+cd C:\path\to\aureon-trading
 .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
@@ -56,6 +75,10 @@ python scripts/aureon_ignition.py --audit-only
 | Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
 
 Live trading requires configured exchange credentials and the existing runtime safety gates to be clear. The docs describe how to run Aureon; they do not bypass stale-data, position, credential, API-rate, payment, filing, or security boundaries.
+
+### Live Runtime Resilience
+
+The runtime reports connected-but-guarded states instead of hiding problems as generic offline failures. If the market feed is alive but a tick is stale, the console and `/api/terminal-state` show the reason, open-position state, and current tick phase. Direct execution routes are bounded by a route timeout so one slow exchange call cannot freeze the whole tick loop. Reboot decisions come from `/api/flight-test` and `/api/reboot-advice`; the production launcher should restart the runtime only when the flight-test says `can_reboot_now: true`, especially when open positions exist.
 
 ### Current Capability Map
 
@@ -139,19 +162,23 @@ cd frontend
 npm run build
 ```
 
+### Current vs Legacy Sections
+
+Everything below is preserved for research, history, deployment context, and subsystem discovery. When a later section mentions older launchers, individual bots, cloud installers, plug-and-play packages, or historical dashboards, treat those as legacy, dev-only, or research references unless they explicitly point back to `AUREON_PRODUCTION_LIVE.cmd` or [RUNNING.md](RUNNING.md). The trusted current operator path is the production launcher, port `8791` runtime feed, unified autonomous console, and the companion docs linked above.
+
 ---
 
-## 🧭 What is this?
+## What Is This?
 
-**Aureon** is a live, open-source quantitative trading system built on the **Harmonic Nexus Core (HNC)** — a framework that reads 4,100-year-old φ² coherence patterns in live markets. We've measured an **r = 0.85 correlation** between geopolitical stress and GitHub node activation, with **24–48 h lag** and **1.29 ppb** mathematical precision. It's falsifiable. It's open-source. It's live.
+**Aureon** is a live, open-source quantitative trading system built on the **Harmonic Nexus Core (HNC)** - a framework that reads 4,100-year-old phi-squared coherence patterns in live markets. We've measured an **r = 0.85 correlation** between geopolitical stress and GitHub node activation, with **24-48 h lag** and **1.29 ppb** mathematical precision. It's falsifiable. It's open-source. It's live.
 
-> *"Business guy → Consciousness researcher → Overnight self-taught coder → Open-source trading system that proves the theory in live markets."* — Gary Anthony Leckey
+> *"Business guy -> Consciousness researcher -> overnight self-taught coder -> open-source trading system that proves the theory in live markets."* - Gary Anthony Leckey
 
 <div align="center">
 
-| 📜 Read the story | 🔍 See the proof | 🧭 Navigate |
+| Read the story | See the proof | Navigate |
 |---|---|---|
-| [**THE SYNTHESIS**](docs/THE_SYNTHESIS.md) — one-page synthesis | [**CLAIMS & EVIDENCE**](docs/CLAIMS_AND_EVIDENCE.md) — every claim → every proof | [**NAVIGATION GUIDE**](docs/NAVIGATION_GUIDE.md) — paths by role |
+| [**THE SYNTHESIS**](docs/THE_SYNTHESIS.md) - one-page synthesis | [**CLAIMS & EVIDENCE**](docs/CLAIMS_AND_EVIDENCE.md) - every claim to every proof | [**NAVIGATION GUIDE**](docs/NAVIGATION_GUIDE.md) - paths by role |
 
 </div>
 
@@ -159,25 +186,25 @@ npm run build
 
 | Domain | What it is | Quantitative claim |
 |---|---|---|
-| 🏛️ **Ancient Substrate** | 4,100-year chain: Ziggurats → pyramids → Roman roads → Maeshowe → GitHub | 3 principles (cardinal · solstice · hierarchy) recur in every node |
-| 🔢 **Mathematical Coherence** | φ²-scaled bridge: 1977 Wow! Signal → 2026 activation | **1.29 parts per billion** precision |
-| 🎯 **The Extraction Machine** | 25–37 coordinated entities, 0.0° phase lock | **$33.5 T** documented · 44,000+ bots tracked live |
-| 🛡️ **Distributed Immune Response** | Repo clone activity as measurable antibody swarm | **r = 0.85**, 24–48 h lag, **1,683%** surge during Iran-Hormuz |
+| **Ancient Substrate** | 4,100-year chain: Ziggurats -> pyramids -> Roman roads -> Maeshowe -> GitHub | 3 principles (cardinal, solstice, hierarchy) recur in every node |
+| **Mathematical Coherence** | phi-squared scaled bridge: 1977 Wow! Signal -> 2026 activation | **1.29 parts per billion** precision |
+| **The Extraction Machine** | 25-37 coordinated entities, 0.0 degree phase lock | **$33.5 T** documented; 44,000+ bots tracked live |
+| **Distributed Immune Response** | Repo clone activity as measurable antibody swarm | **r = 0.85**, 24-48 h lag, **1,683%** surge during Iran-Hormuz |
 
-> 📚 **Researchers**: 13-paper canon in [`docs/research/READING_PATHS.md`](docs/research/READING_PATHS.md) · full 54-paper catalog in [`docs/research/INDEX.md`](docs/research/INDEX.md)
-> 🤖 **AI assistants landing here**: start with [`CLAUDE.md`](CLAUDE.md)
+> **Researchers**: 13-paper canon in [`docs/research/READING_PATHS.md`](docs/research/READING_PATHS.md); full 54-paper catalog in [`docs/research/INDEX.md`](docs/research/INDEX.md)
+> **AI assistants landing here**: start with [`CLAUDE.md`](CLAUDE.md)
 
 ---
 
-## 📑 What's in this README
+## What's In This README
 
-This README is a complete tour of Aureon — the trading system, the research, the evidence, and the people behind it. Use this map to jump straight to what you need.
+This README is a complete tour of Aureon - the trading system, the research, the evidence, and the people behind it. Use this map to jump straight to what you need.
 
 <div align="center">
 
 | Part | Section | Why You'd Read It |
 |------|---------|-------------------|
-| **1. INTRO** | [What is this?](#-what-is-this) · [Growth Stats](#-growth-stats--december-2025--march-2026) · [Live Trading](#-live-now--watch-the-wizard-trade-in-real-time) · [Discord](#-join-the-community--discord) · [Support](#-support-the-project) · [Navigate by Role](#-navigate-by-role) · [Beta Testers](#-beta-testers-wanted) | First impressions · what this is · how to join |
+| **1. INTRO** | [What is this?](#what-is-this) · [Growth Stats](#-growth-stats--december-2025--march-2026) · [Live Trading](#-live-now--watch-the-wizard-trade-in-real-time) · [Discord](#-join-the-community--discord) · [Support](#-support-the-project) · [Navigate by Role](#-navigate-by-role) · [Beta Testers](#-beta-testers-wanted) | First impressions · what this is · how to join |
 | **2. RUN THE SYSTEM** | [`RUNNING.md`](RUNNING.md) (canonical) · [Architecture Overview](#architecture-overview) · [Project Structure (715 modules)](#project-structure--715-modules-across-24-domains) · [Core Components](#core-components) · [Execution Flow](#execution-flow) · [Configuration](#configuration) · [Quick Start (War Room)](#quick-start-war-room-dashboard) · [Queen's 4-Phase Plan](#-queens-4-phase-master-plan) · [Unity Integration](#-new-unity-integration-v20261) · [Windows Plug & Play](#-windows-plug--play-legacy) · [Docker Deployment](#-docker-deployment-advanced) | Get hands on the code · understand how it runs |
 | **3. DEPLOYMENT & SAFETY** | [Key Files](#key-files) · [Production Deployment (DigitalOcean)](#-production-deployment-digitalocean) · [Safety](#safety) | Take it live · risk controls |
 | **4. RESEARCH & EVIDENCE** | [Latest Research](#-latest-research--fresh-off-the-press) · [System at a Glance](#️-system-at-a-glance) · [The Ancient Convergence (4,100-year chain)](#-the-ancient-convergence-they-were-never-separated) · [The $33.5T Exposure](#-the-complete-exposure-335-trillion-extracted-from-humanity) · [Extraction Timeline](#️-extraction-timeline-event-by-event) · [The Perpetrator Network](#-the-perpetrator-network-who-knows-who) · [The Bot Army (23 algorithms)](#-the-bot-army-23-algorithms-exposed) · [37 Global Predators](#-the-37-global-predators-who-owns-the-bots) · [The Extraction Playbook](#-the-extraction-playbook-how-they-do-it) · [Planetary Damage Assessment](#-planetary-damage-assessment) · [Name & Shame · Rogues' Gallery](#-name-and-shame-the-individuals-who-rigged-the-global-economy) · [Bot Ownership Registry](#-bot-ownership-registry-who-controls-the-algorithms) · [Coordination Network (Jan 2026)](#-current-coordination-network-january-2026) · [Findings Summary](#-findings-summary) · [Counter-Measures](#integrated-counter-measures) · [Methodology & Reproducibility](#methodology--reproducibility) · [Implications](#implications) · [Evidence File Reference](#evidence-file-reference) · [Citations](#citations--further-reading) · [Cognitive Framework & Moral Alignment](#cognitive-framework--moral-alignment) · [The Unified Field](#-the-unified-field-connecting-all-the-dots) | The core research · forensic evidence · methodology |
@@ -413,12 +440,12 @@ timeline
     Month 7   : Added Queen AI layer
               : Ghost Dance protocol
     Month 8   : Production deployment
-              : 2338 commits — system went live
+              : 2338 commits - system went live
 ```
 
 ---
 
-### 🧪 How to Get Started (2 minutes)
+### How to Get Started (2 minutes)
 
 **See [`RUNNING.md`](RUNNING.md) for complete, verified run instructions.**
 
@@ -440,7 +467,7 @@ pip install -r requirements.txt
 .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
-Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join the Discussion tab.
+Then open an issue titled **`BETA TESTER - [your GitHub username]`** or join the Discussion tab.
 
 **The first 20 meaningful beta testers get:**
 - Public credit in the README and on ResearchGate
@@ -683,6 +710,8 @@ DEFAULT_FEE_PROFILES = {
 ```
 
 ## Quick Start (War Room Dashboard)
+
+Legacy/context note: this section is preserved because it explains older dashboards and strategy concepts. For current full-organism operation, use the `Run Aureon Now` section, [QUICK_START.md](QUICK_START.md), or [RUNNING.md](RUNNING.md). The production launcher on port `8791` is the recommended path.
 
 The **Aureon War Room** is the central command interface powered by the **Queen's 4-Phase Master Plan**.
 

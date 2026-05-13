@@ -27,6 +27,7 @@ python scripts/aureon_ignition.py --audit-only
 | Live/safe runtime supervision | Starts and supervises the organism from one terminal, publishes manifests, and keeps reboot timing visible. | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
 | Multi-exchange market coverage | Runs unified market telemetry and exchange readiness for Kraken, Binance, Alpaca, and Capital. | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
 | Spot/margin observation and trading readiness | Tracks runtime state, open positions, stale ticks, and flight-test reboot decisions before action. | `/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
+| Runtime resilience and recovery | Shows connected-but-guarded states, tick phase, route timeouts, executor in-flight state, and safe reboot advice. | `/api/terminal-state`, `runtime_watchdog`, `executor_route_state` |
 | Exchange clients | Provides exchange-specific adapters for market data, balances, and order paths through the runtime gates. | `kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
 | Cognitive order-intent path | Lets the cognitive layer observe, ask, reason, and emit order-intent evidence into the runtime rather than bypassing exchange gates. | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |
 | HNC/Auris harmonic affect reporting | Produces timestamped cognitive trade evidence, harmonic affect state, and benchmark reporting. | `aureon_cognitive_trade_evidence.py`, `aureon_harmonic_affect_state.py`, `aureon_live_cognition_benchmark.py` |
@@ -78,6 +79,8 @@ python scripts/aureon_ignition.py --audit-only
 | `safe_observation` | Runtime/feed is offline, or the environment is not in live mode. |
 | `guarded_observe_plan` | Runtime is live but action is blocked by evidence such as stale data, booting state, open-position reboot timing, or unavailable downtime window. |
 | `guarded_live_action` | Runtime is fresh, live mode is enabled, real order capability is enabled, and all runtime gates are clear. |
+
+`ok:false` from the runtime does not always mean offline. If the heartbeat and status file are fresh, Aureon is connected but guarded; use `stale_reason`, `tick_phase`, `executor_route_state`, and reboot advice to decide what happens next.
 
 ## Exchange Coverage
 

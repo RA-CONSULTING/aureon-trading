@@ -5,7 +5,7 @@ Use this when you only need the current commands. For the full runbook, see [RUN
 ## 1. Install
 
 ```powershell
-cd C:\Users\user\aureon-trading-integrated-main-20260508
+cd C:\path\to\aureon-trading
 py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
@@ -50,6 +50,8 @@ http://127.0.0.1:8791/api/flight-test
 http://127.0.0.1:8791/api/reboot-advice
 http://127.0.0.1:13002/api/thoughts
 ```
+
+If `terminal-state` returns `ok:false` but the status file and heartbeat are fresh, treat it as connected-but-guarded. Check `stale_reason`, `runtime_watchdog`, `executor_route_state`, and `/api/reboot-advice` before restarting. Do not restart the market runtime while open positions exist unless the flight-test reports `can_reboot_now: true`.
 
 Manifest files:
 

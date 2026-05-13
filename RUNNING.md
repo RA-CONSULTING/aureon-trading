@@ -25,7 +25,7 @@ Use port `8791` for the current runtime feed when older local sessions may still
 Open PowerShell:
 
 ```powershell
-cd C:\Users\user\aureon-trading-integrated-main-20260508
+cd C:\path\to\aureon-trading
 .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
@@ -108,6 +108,12 @@ frontend/public/aureon_wake_up_manifest.json
 | `guarded_live_action` | Runtime is fresh, live environment is enabled, real order capability is enabled, and guards are clear. |
 
 The guard layer is not a separate trading strategy. It is the runtime evidence layer that prevents stale data, duplicate supervisors, unsafe reboot timing, credential mistakes, API-rate overload, payment/filing automation, and unowned security mutation from being treated as live action.
+
+## Runtime Resilience
+
+The status feed should be read as connected-but-guarded when `ok:false` appears with a fresh status file and heartbeat. `/api/terminal-state` exposes stale reason, open positions, API governor state, exchange readiness, executor route state, and tick phase. Direct execution routes use a timeout so a slow exchange call is held and reported instead of freezing the whole tick loop.
+
+Use `/api/flight-test` and `/api/reboot-advice` before any restart. If open positions exist, the launcher should preserve monitoring and wait until the flight-test reports `can_reboot_now: true`.
 
 ## Live Trading Preconditions
 

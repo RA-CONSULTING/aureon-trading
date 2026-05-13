@@ -60,6 +60,11 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader._last_execution_at = 0.0
         trader._execution_memory = {}
         trader._latest_execution_results = {}
+        trader._executor_route_lock = trader_mod.threading.Lock()
+        trader._executor_route_inflight = {}
+        trader._executor_route_results = {}
+        trader._tick_phase = "idle"
+        trader._tick_phase_at = time.time()
         trader._thought_bus = None
         trader._mycelium = None
         trader._api_governor = trader_mod.ExchangeCallGovernor()
@@ -402,6 +407,49 @@ class UnifiedMarketTraderTests(unittest.TestCase):
             self.assertGreater(trader.binance.margin_orders[0][2], 0)
         finally:
             self._restore_env(old_env)
+
+    def test_executor_route_timeout_holds_tick_without_duplicate_route(self):
+        old_timeout = trader_mod.ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC
+        old_abandon = trader_mod.ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC
+        trader_mod.ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC = 0.02
+        trader_mod.ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC = 1.0
+        try:
+            trader = self._make_trader()
+            route_key = "kraken:spot:XBTUSD:BUY"
+
+            def slow_route():
+                time.sleep(0.18)
+                return {"ok": True, "venue": "kraken", "market_type": "spot", "symbol": "XBTUSD"}
+
+            first = trader._run_executor_route_with_timeout(
+                route_key,
+                "kraken",
+                "spot",
+                "XBTUSD",
+                "BUY",
+                slow_route,
+            )
+            second = trader._run_executor_route_with_timeout(
+                route_key,
+                "kraken",
+                "spot",
+                "XBTUSD",
+                "BUY",
+                lambda: {"ok": True},
+            )
+
+            self.assertTrue(first["timeout"])
+            self.assertEqual(first["reason"], "executor_route_timeout")
+            self.assertEqual(second["reason"], "executor_route_inflight")
+
+            time.sleep(0.25)
+            snapshot = trader._executor_route_snapshot()
+            self.assertEqual(snapshot["inflight_count"], 0)
+            self.assertTrue(snapshot["latest_async_results"][0]["ok"])
+            self.assertIn(route_key, trader._execution_memory)
+        finally:
+            trader_mod.ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC = old_timeout
+            trader_mod.ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC = old_abandon
 
     def test_hnc_cognitive_proof_runs_master_flow_over_real_runtime_data(self):
         trader = self._make_trader()
