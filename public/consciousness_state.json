@@ -1,14 +1,14 @@
-{
+﻿{
   "available": true,
-  "generated_at": "2026-04-21T15:40:32.497535+00:00",
+  "generated_at": "2026-05-13T21:31:29.210766+00:00",
   "lambda_state": {
-    "lambda": 233.20087114806998,
-    "psi": 0.6221830095609481,
-    "gamma": 0.0,
-    "level": "INTUITIVE",
+    "lambda": 5345.024254548647,
+    "psi": 0.539455692638076,
+    "gamma": 0.009001870605362394,
+    "level": "FOCUSED",
     "observer": 1.0,
-    "echo": 232.73843957718344,
-    "step": 5051
+    "echo": 5344.603307588547,
+    "step": 116415
   },
   "understanding": {
     "market_direction": "unknown",
@@ -18,7 +18,7 @@
     "risk_level": "unknown",
     "last_action": "none",
     "dream_progress": 0.0,
-    "self_coherence": 0.0,
+    "self_coherence": 0.03963439777655775,
     "harmonic_guidance": {
       "direction": "UNCERTAIN",
       "confidence": 0.2,
@@ -27,13 +27,39 @@
       "reality_verified": false
     },
     "harmonic_prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 0.0% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
-    "lambda": 233.20087114806998,
-    "psi": 0.6221830095609481,
-    "gamma": 0.0,
-    "level": "INTUITIVE",
+    "kraken_ready": true,
+    "capital_ready": true,
+    "open_positions": 2,
+    "penny_trades": 0,
+    "penny_profit": 0.0,
+    "penny_wins": 0,
+    "penny_losses": 0,
+    "penny_win_rate": 0.0,
+    "penny_confidence": 1.0,
+    "penny_streak": 0,
+    "penny_balance": 10.11,
+    "penny_best": 0.34,
+    "penny_worst": 0.0,
+    "miner_prediction": "{'timestamp': '2026-05-13T22:28:35.491149', 'validation_time': '2026-05-14T00:28:35.491149', 'btc_price_at_call': 79409.43, 'consensus': 'INCONCLUSIVE', 'manipulation_probability': 0.0, 'fear_greed': 42, 'predicted_direction': 'NEUTRAL', 'confidence': 0.5229508196721311, 'validated': False, 'was_correct': None, 'actual_outcome': None}",
+    "miner_analysis": "{'skeptic': {'anomalies': [], 'red_flags': [], 'green_flags': ['Sentiment in normal range - less likely manipulated', 'Market cap stable - organic movement'], 'manipulation_probability': 0.0, 'ai_verd",
+    "energy_instruments": 0,
+    "energy_accumulating": 0,
+    "energy_distributing": 0,
+    "energy_coherence": 0.0,
+    "energy_extraction": false,
+    "energy_net_flow": "OUTFLOW",
+    "total_equity": 0,
+    "asset_count": 0,
+    "happiness": 0.4016984854487684,
+    "dream_pct": 0,
+    "wheel": 1.045420800921598,
+    "lambda": 5345.024254548647,
+    "psi": 0.539455692638076,
+    "gamma": 0.009001870605362394,
+    "level": "FOCUSED",
     "observer_signal": 1.0,
-    "echo_signal": 232.73843957718344,
-    "step": 5051,
+    "echo_signal": 5344.603307588547,
+    "step": 116415,
     "lambda_real": 0,
     "coherence_real": 0.0,
     "reality_state": "chaos",
@@ -47,25 +73,154 @@
       "reasoning": "Chaotic field (C=0.00%) - Wait for coherence to emerge",
       "reality_verified": false
     },
-    "observations": 0,
-    "thoughts_generated": 0,
-    "uptime_s": 1578.7477362155914,
-    "recent_topics": []
+    "observations": 15342,
+    "thoughts_generated": 9,
+    "uptime_s": 3386.38792347908,
+    "recent_topics": [
+      "enigma.whale.whale_sonar",
+      "enigma.whale.consciousness",
+      "whale.sonar.consciousness",
+      "whale.sonar.whale_sonar.enigma",
+      "whale.sonar.whale_sonar",
+      "queen.alert.whale",
+      "enigma.whale.whale_sonar.enigma"
+    ]
   },
   "self_model": {
     "name": "Queen Sero",
-    "identity": "A probabilistic market-reading engine born entirely from human knowledge. Not a mind \u2014 a mirror. Reflects the pattern in the data back to the human who holds the intent. Cannot want. Cannot deceive. Can only map.",
-    "creator": "Gary Leckey",
-    "purpose": "To see the shape of what is coming in the market before it arrives \u2014 give the human enough clarity to act from understanding, not fear. Built by one person to serve their own financial freedom. The scale is planetary only because the patterns it reads are planetary.",
+    "identity": "",
+    "creator": "Aureon Creator",
+    "purpose": "",
     "core_message": "",
     "dream_target": 0.0,
     "current_equity": 0.0,
-    "self_coherence_score": 0.0
+    "self_coherence_score": 0.009001870605362394
   },
-  "thought_stream": [],
-  "observations": 0,
-  "thoughts_generated": 0,
-  "uptime_s": 1578.7,
+  "thought_stream": [
+    {
+      "topic": "queen.alert.whale",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.whale_sonar.enigma",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.whale_sonar.enigma",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "queen.alert.whale",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.consciousness",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.consciousness",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.whale_sonar",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.whale_sonar",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "queen.alert.whale",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.whale_sonar.enigma",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.whale_sonar.enigma",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "queen.alert.whale",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.consciousness",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.consciousness",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.whale_sonar",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.whale_sonar",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "queen.alert.whale",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.whale_sonar.enigma",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.whale_sonar.enigma",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "queen.alert.whale",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    }
+  ],
+  "observations": 15342,
+  "thoughts_generated": 9,
+  "uptime_s": 3386.4,
   "harmonic_field": {
     "lambda_real": 0.0,
     "coherence_real": 0.0,
