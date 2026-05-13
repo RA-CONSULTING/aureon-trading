@@ -361,18 +361,18 @@ class ThoughtBus:
         if self._persist_path:
             os.makedirs(os.path.dirname(self._persist_path) or ".", exist_ok=True)
             
-        # 🐳 Auto-wire Whale Sonar for every ThoughtBus instance
-        # This ensures every subsystem (Queen, Scanner, Feed) has sonar capabilities.
-        try:
-            from aureon.core.mycelium_whale_sonar import ensure_sonar
+        # Auto-wire Whale Sonar for normal runtime, but keep audit probes inert.
+        if os.getenv("AUREON_AUDIT_MODE", "").strip().lower() not in {"1", "true", "yes", "on"}:
             try:
-                ensure_sonar(self)
-            except Exception:
-                # E.g. circular import or missing dependency during startup; proceed anyway.
+                from aureon.core.mycelium_whale_sonar import ensure_sonar
+                try:
+                    ensure_sonar(self)
+                except Exception:
+                    # E.g. circular import or missing dependency during startup; proceed anyway.
+                    pass
+            except ImportError:
+                # Mycelium sonar module might not be present in all environments
                 pass
-        except ImportError:
-            # Mycelium sonar module might not be present in all environments
-            pass
 
     def think(self, message: str, topic: str = "thought", priority: str = "normal", metadata: Dict = None) -> Thought:
         """Convenience method to publish a thought"""

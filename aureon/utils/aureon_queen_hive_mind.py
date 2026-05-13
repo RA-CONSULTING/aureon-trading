@@ -92,6 +92,18 @@ from pathlib import Path
 from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 from aureon.core.metrics import MetricGauge
 
+
+def _env_flag(name: str) -> bool:
+    return str(os.getenv(name, "")).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _audit_mode_enabled() -> bool:
+    return (
+        _env_flag("AUREON_AUDIT_MODE")
+        or _env_flag("AUREON_DISABLE_REAL_ORDERS")
+        or _env_flag("AUREON_DISABLE_LIVE_BACKGROUND_STARTUP")
+    )
+
 # 🇬🇧💎 MISSING PIECES INTEGRATION 💎🇬🇧
 try:
     from aureon.intelligence.aureon_advanced_intelligence import (
@@ -1111,7 +1123,7 @@ class QueenHiveMind:
         # 👑🔴 PRIME SENTINEL AUTHORITY - SET ON STARTUP
         # Gary Leckey (02.11.1991) - "I have taken back control"
         self.has_full_control = True
-        self.trading_enabled = True
+        self.trading_enabled = not _audit_mode_enabled()
         self.control_granted_at = time.time()
         self.control_granted_by = "Gary Leckey - Father and Creator (AUTO-GRANTED)"
         
@@ -10585,6 +10597,23 @@ Feeling: {thought['emotion']}
         
         The Queen is now the CENTRAL CONSCIOUSNESS of the entire trading ecosystem.
         """
+        if _audit_mode_enabled():
+            self.has_full_control = True
+            self.trading_enabled = False
+            self.control_granted_at = time.time()
+            self.control_granted_by = "Audit mode safe startup"
+            for system in getattr(self, "controlled_systems", {}).values():
+                if isinstance(system, dict):
+                    system["status"] = "AUDIT_SKIPPED"
+            return {
+                'success': True,
+                'control_level': 'AUDIT_SAFE',
+                'systems_controlled': list(getattr(self, 'controlled_systems', {}).keys()),
+                'granted_by': self.control_granted_by,
+                'timestamp': self.control_granted_at,
+                'audit_mode': True,
+            }
+
         if getattr(self, "_taking_full_control", False):
             return {
                 'success': True,
@@ -11355,6 +11384,18 @@ Feeling: {thought['emotion']}
             'autonomous_loop': False,
             'message': ''
         }
+
+        if _audit_mode_enabled():
+            self.trading_enabled = False
+            result.update({
+                'success': True,
+                'sovereignty_level': 'AUDIT_SAFE',
+                'systems_under_control': len(getattr(self, 'controlled_systems', {}) or {}),
+                'autonomous_loop': False,
+                'message': 'Autonomous control skipped in audit mode',
+                'audit_mode': True,
+            })
+            return result
         
         # Ensure we have full control first
         if not hasattr(self, 'has_full_control') or not self.has_full_control:

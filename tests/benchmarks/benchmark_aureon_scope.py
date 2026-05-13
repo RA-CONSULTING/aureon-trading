@@ -32,12 +32,16 @@ Gary Leckey · Aureon Institute — April 2026
 
 # Disable LambdaEngine on-disk persistence before any project import — we
 # don't want this benchmark touching state/lambda_history.json.
+import io
 import os
+import sys
 os.environ.setdefault("AUREON_HNC_PERSIST_EVERY", "999999")
+
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 import json
 import math
-import sys
 import tempfile
 import time
 import traceback

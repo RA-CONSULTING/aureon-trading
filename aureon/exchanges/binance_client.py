@@ -1,10 +1,18 @@
 import os, time, hmac, hashlib, requests, json, logging
+from pathlib import Path
 from decimal import Decimal, InvalidOperation, ROUND_DOWN
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 try:
     from dotenv import load_dotenv  # type: ignore
     load_dotenv()
+except Exception:
+    pass
+
+try:
+    from aureon.core.aureon_env import load_aureon_environment
+
+    load_aureon_environment(Path(__file__).resolve().parents[2], override=False)
 except Exception:
     pass
 from typing import Dict, Any, Set, List, Optional

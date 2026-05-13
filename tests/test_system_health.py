@@ -42,6 +42,13 @@ REQUIRED_ENV_VARS = [
     "KRAKEN_API_SECRET",
 ]
 
+
+def _finish_check(passed: int, failed: int):
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        assert failed == 0
+        return None
+    return passed, failed
+
 # ═══════════════════════════════════════════════════════════════════════════
 # TEST FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════════════
@@ -63,7 +70,7 @@ def test_core_imports():
             print(f"  ❌ {module}: {e}")
             failed += 1
     
-    return passed, failed
+    return _finish_check(passed, failed)
 
 
 def test_client_imports():
@@ -87,7 +94,7 @@ def test_client_imports():
             print(f"  ❌ {module_name}: {e}")
             failed += 1
     
-    return passed, failed
+    return _finish_check(passed, failed)
 
 
 def test_env_vars():
@@ -161,7 +168,7 @@ def test_env_vars():
     if failed:
         print("\n  💡 Tip: set missing keys in .env or disable that battlefield in CONFIG['BATTLEFIELDS'].")
     
-    return passed, failed
+    return _finish_check(passed, failed)
 
 
 def test_battlefield_config():
@@ -182,7 +189,7 @@ def test_battlefield_config():
         
         if not battlefields:
             print("  ⚠️  BATTLEFIELDS not configured")
-            return 0, 1
+            return _finish_check(0, 1)
         
         required_keys = ["enabled", "sniper_active", "harvester_active"]
         
@@ -206,7 +213,7 @@ def test_battlefield_config():
         print(f"  ❌ Config error: {e}")
         failed += 1
     
-    return passed, failed
+    return _finish_check(passed, failed)
 
 
 def test_version():
@@ -216,7 +223,12 @@ def test_version():
     
     try:
         # Read version from file. On Windows, never rely on the default code page.
-        target = Path(__file__).resolve().parent / "aureon_unified_ecosystem.py"
+        target = (
+            Path(__file__).resolve().parent.parent
+            / "aureon"
+            / "trading"
+            / "aureon_unified_ecosystem.py"
+        )
         try:
             content = target.read_text(encoding="utf-8", errors="replace")[:500]
         except Exception:
@@ -228,12 +240,12 @@ def test_version():
             for line in content.split("\n"):
                 if "Version:" in line:
                     print(f"  ✅ {line.strip()}")
-                    return 1, 0
+                    return _finish_check(1, 0)
         print("  ⚠️  No version found in module")
-        return 0, 1
+        return _finish_check(0, 1)
     except Exception as e:
         print(f"  ❌ {e}")
-        return 0, 1
+        return _finish_check(0, 1)
 
 
 def test_json_configs():
@@ -267,7 +279,7 @@ def test_json_configs():
         else:
             print(f"  ⚪ {filename} (not found, optional)")
     
-    return passed, failed
+    return _finish_check(passed, failed)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

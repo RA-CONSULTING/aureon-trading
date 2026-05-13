@@ -3,7 +3,9 @@ import unittest
 from unittest.mock import patch
 
 from aureon.exchanges.kraken_client import KrakenClient
-from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader
+from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader, MarginPairInfo
+from aureon.trading.dynamic_margin_sizer import DynamicMarginConfig, DynamicMarginSizer
+from aureon.trading.temporal_trade_cognition import TemporalTradeCognition
 
 
 class TestKrakenMarginStartupSync(unittest.TestCase):
@@ -112,6 +114,82 @@ class TestKrakenMarginStartupSync(unittest.TestCase):
         self.assertEqual(trader.active_long.side, "buy")
         self.assertEqual(trader.active_long.order_id, "P123")
         self.assertGreater(trader.active_long.breakeven_price, trader.active_long.entry_price)
+
+    def test_dynamic_margin_plan_uses_live_free_margin_for_tiny_accounts(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.dry_run = False
+        trader.dynamic_sizer = DynamicMarginSizer(DynamicMarginConfig())
+        trader.client = type("ClientStub", (), {
+            "get_trade_balance": staticmethod(lambda: {
+                "equity_value": "10.0",
+                "free_margin": "10.0",
+                "margin_amount": "0.0",
+            })
+        })()
+        pair = MarginPairInfo(
+            pair="DOGE/USD",
+            internal="XDGUSD",
+            base="XXDG",
+            base_clean="DOGE",
+            quote="USD",
+            leverage_buy=[2, 3, 5],
+            leverage_sell=[2, 3, 5],
+            max_leverage=5,
+            ordermin=1.0,
+            costmin=5.0,
+            lot_decimals=4,
+            price_decimals=5,
+            binance_symbol="DOGEUSDT",
+            last_price=1.0,
+        )
+
+        plan = trader._plan_dynamic_margin_position(pair, 5)
+
+        self.assertTrue(plan.approved, plan.reason)
+        self.assertGreaterEqual(plan.notional, 5.0)
+        self.assertLess(plan.profit_target_usd, 1.27)
+
+    def test_trade_cognition_plan_records_expected_human_time(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.temporal_cognition = TemporalTradeCognition()
+        trader.thought_bus = None
+        pair = MarginPairInfo(
+            pair="DOGE/USD",
+            internal="XDGUSD",
+            base="XXDG",
+            base_clean="DOGE",
+            quote="USD",
+            leverage_buy=[5],
+            leverage_sell=[5],
+            max_leverage=5,
+            ordermin=1.0,
+            costmin=5.0,
+            lot_decimals=4,
+            price_decimals=5,
+            binance_symbol="DOGEUSDT",
+            last_price=1.0,
+        )
+
+        plan = trader._build_trade_cognition_plan(
+            pair_info=pair,
+            side="buy",
+            entry_price=1.0,
+            target_price=1.01,
+            trade_value=10.0,
+            profit_target_usd=0.10,
+            cognition_context={
+                "required_move_pct": 1.0,
+                "eta_minutes": 3.0,
+                "confidence": 0.75,
+            },
+        )
+
+        self.assertEqual(plan["pair"], "DOGE/USD")
+        self.assertAlmostEqual(plan["eta_minutes"], 3.0)
+        self.assertEqual(
+            plan["expected_by"]["epoch"] - plan["opened_at"]["epoch"],
+            180.0,
+        )
 
 
 if __name__ == "__main__":

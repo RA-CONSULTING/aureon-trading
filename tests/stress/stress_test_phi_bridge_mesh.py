@@ -32,6 +32,7 @@ import os
 import random
 import shutil
 import sys
+import io
 import tempfile
 import threading
 import time
@@ -43,6 +44,9 @@ from typing import Any, Dict, List
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from aureon.harmonic.phi_bridge_mesh import PhiBridgeMesh  # noqa: E402
 from aureon.vault.aureon_vault import AureonVault, VaultContent  # noqa: E402

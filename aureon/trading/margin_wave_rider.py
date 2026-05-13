@@ -160,6 +160,7 @@ class MarginWaveRider:
         equity: float,
         current_margin_used: float,
         leverage: float,
+        free_margin: Optional[float] = None,
     ) -> float:
         """
         Maximum notional size for a new position that keeps projected
@@ -177,7 +178,10 @@ class MarginWaveRider:
         additional_margin_allowed = max_margin - current_margin_used
         if additional_margin_allowed <= 0:
             return 0.0
-        return additional_margin_allowed * leverage
+        level_limited = additional_margin_allowed * leverage
+        if free_margin is None:
+            return level_limited
+        return min(level_limited, max(0.0, free_margin) * leverage)
 
     # ------------------------------------------------------------------
     # Main check
@@ -189,6 +193,7 @@ class MarginWaveRider:
         margin_used: float,
         new_notional: float,
         leverage: float,
+        free_margin: Optional[float] = None,
     ) -> Tuple[bool, WaveCheck]:
         """
         Validate whether it is safe to open a new position.
@@ -204,9 +209,14 @@ class MarginWaveRider:
         -------
         (approved: bool, check: WaveCheck)
         """
+        actual_free_margin = (
+            max(0.0, float(free_margin))
+            if free_margin is not None
+            else max(0.0, equity - margin_used)
+        )
         snap = MarginSnapshot(
             equity=equity,
-            free_margin=max(0.0, equity - margin_used),
+            free_margin=actual_free_margin,
             margin_used=margin_used,
             margin_level=(equity / margin_used * 100.0) if margin_used > 0 else 0.0,
         )
@@ -225,7 +235,7 @@ class MarginWaveRider:
         # Gate 2: projected margin after entry
         proj = self.projected_margin_pct(equity, margin_used, new_notional, leverage)
         capacity = self.wave_capacity_pct(proj, leverage)
-        max_notional = self.max_safe_notional(equity, margin_used, leverage)
+        max_notional = self.max_safe_notional(equity, margin_used, leverage, free_margin=actual_free_margin)
 
         if proj < self.entry_min:
             return False, WaveCheck(
@@ -275,6 +285,9 @@ class MarginWaveRider:
             tb = kraken_client.get_trade_balance()
             equity = float(tb.get("equity", tb.get("equity_value", 0)) or 0)
             margin_used = float(tb.get("margin_amount", tb.get("m", 0)) or 0)
+            free_margin = float(
+                tb.get("free_margin", tb.get("margin_free", tb.get("mf", max(0.0, equity - margin_used)))) or 0
+            )
         except Exception as e:
             logger.error(f"[WaveRider] Could not fetch trade balance: {e}")
             # Fail safe — do not allow entry if we can't read margin data
@@ -288,7 +301,7 @@ class MarginWaveRider:
                 snapshot=snap,
             )
 
-        return self.check(equity, margin_used, new_notional, leverage)
+        return self.check(equity, margin_used, new_notional, leverage, free_margin=free_margin)
 
     # ------------------------------------------------------------------
     # Convenience: cap notional to safe size
@@ -300,12 +313,13 @@ class MarginWaveRider:
         margin_used: float,
         requested_notional: float,
         leverage: float,
+        free_margin: Optional[float] = None,
     ) -> float:
         """
         Return the smaller of requested_notional and max_safe_notional.
         Use this to auto-cap position sizes instead of rejecting entirely.
         """
-        max_n = self.max_safe_notional(equity, margin_used, leverage)
+        max_n = self.max_safe_notional(equity, margin_used, leverage, free_margin=free_margin)
         return min(requested_notional, max_n)
 
     # ------------------------------------------------------------------

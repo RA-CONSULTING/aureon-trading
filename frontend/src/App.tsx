@@ -1,114 +1,1103 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Activity,
+  AlertTriangle,
+  Brain,
+  Calculator,
+  Database,
+  Eye,
+  FileText,
+  LineChart,
+  Lock,
+  Radio,
+  RefreshCcw,
+  Search,
+  Server,
+  Settings,
+  ShieldCheck,
+} from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Card } from "@/components/ui/card";
-import { LiveTerminalStats } from "@/components/LiveTerminalStats";
-import { useTerminalSync } from "@/hooks/useTerminalSync";
-import { useGlobalState } from "@/hooks/useGlobalState";
-import { CinematicObservatory } from "@/components/cinema/CinematicObservatory";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  CapabilitySwitchboardManifest,
+  FrontendScreenPlan,
+  FrontendEvolutionQueueManifest,
+  loadUnifiedFrontendState,
+  OrganismDomainPulse,
+  SaaSInventoryManifest,
+  surfacesForScreen,
+  UnifiedFrontendState,
+} from "@/services/aureonAutonomousFrontend";
 
 const queryClient = new QueryClient();
+const ENV_LOCAL_TERMINAL_ENDPOINT = import.meta.env.VITE_LOCAL_TERMINAL_URL as string | undefined;
+const DEFAULT_RUNTIME_ENDPOINTS = [
+  ENV_LOCAL_TERMINAL_ENDPOINT,
+  "http://127.0.0.1:8791/api/terminal-state",
+  "http://127.0.0.1:8790/api/terminal-state",
+].filter((value): value is string => Boolean(value));
 
-function StatusBlock() {
-  const state = useGlobalState();
-  const statusLines = Array.isArray(state.statusLines) ? state.statusLines : [];
-  const latestMonitorLine = String(state.latestMonitorLine || "").trim();
+interface RuntimeObservation {
+  connected: boolean;
+  clearancePending: boolean;
+  endpoint?: string;
+  generatedAt?: string;
+  statusLines: string[];
+  metrics: Array<{ label: string; value: string }>;
+  clearances: string[];
+  details: Array<{ label: string; value: string }>;
+}
 
+interface WakeUpManifest {
+  runtime_feed_url?: string;
+  runtime_flight_test_url?: string;
+  runtime_reboot_advice_url?: string;
+}
+
+const screenIcons: Record<string, typeof Activity> = {
+  overview: Eye,
+  trading: LineChart,
+  accounting: Calculator,
+  research: Search,
+  saas_security: ShieldCheck,
+  self_improvement: Brain,
+  admin: Settings,
+};
+
+const statusTone: Record<string, string> = {
+  wired: "border-green-500/30 bg-green-500/10 text-green-300",
+  partial: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+  orphaned: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300",
+  legacy: "border-orange-500/30 bg-orange-500/10 text-orange-300",
+  generated_output: "border-cyan-500/30 bg-cyan-500/10 text-cyan-300",
+  security_blocker: "border-red-500/30 bg-red-500/10 text-red-300",
+  unknown: "border-border bg-muted/20 text-muted-foreground",
+};
+
+const safetyTone: Record<string, string> = {
+  observation: "border-green-500/30 bg-green-500/10 text-green-300",
+  credential_or_auth_boundary: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300",
+  live_trading_boundary: "border-red-500/30 bg-red-500/10 text-red-300",
+  payment_or_kyc_boundary: "border-red-500/30 bg-red-500/10 text-red-300",
+  manual_filing_boundary: "border-orange-500/30 bg-orange-500/10 text-orange-300",
+  admin_or_tenant_boundary: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300",
+};
+
+function asNumber(value: unknown, fallback = 0): number {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function formatCompact(value: unknown): string {
+  return asNumber(value).toLocaleString();
+}
+
+function readinessPercent(summary: SaaSInventoryManifest["summary"]): number {
+  const total = Math.max(1, asNumber(summary?.surface_count));
+  const blockers = asNumber(summary?.security_blocker_count);
+  const orphaned = asNumber(summary?.orphaned_frontend_count);
+  const weightedGaps = blockers * 25 + orphaned * 0.12;
+  return Math.max(0, Math.min(100, Math.round(100 - (weightedGaps / total) * 100)));
+}
+
+function uniqueStrings(values: Array<string | undefined>): string[] {
+  return Array.from(new Set(values.map((value) => String(value || "").trim()).filter(Boolean)));
+}
+
+async function fetchJsonOrNull<T>(url: string, signal?: AbortSignal): Promise<T | null> {
+  try {
+    const response = await fetch(url, { cache: "no-store", signal });
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function loadWakeUpManifest(signal?: AbortSignal): Promise<WakeUpManifest | null> {
+  return fetchJsonOrNull<WakeUpManifest>("/aureon_wake_up_manifest.json", signal);
+}
+
+function flightTestUrlFor(endpoint: string, manifest?: WakeUpManifest | null): string {
+  if (manifest?.runtime_flight_test_url) return manifest.runtime_flight_test_url;
+  return endpoint.replace(/\/api\/terminal-state$/, "/api/flight-test");
+}
+
+function runtimeStatusLines(data: any, flight: any): string[] {
+  const existing = Array.isArray(data?.status_lines)
+    ? data.status_lines.map((line: unknown) => String(line || "")).filter(Boolean)
+    : [];
+  if (existing.length) return existing;
+
+  const watchdog = data?.runtime_watchdog || {};
+  const advice = flight?.reboot_advice || {};
+  const lines = [
+    `Runtime feed: connected${data?.ok === false ? " with runtime clearance pending" : ""}`,
+    `Trading ready: ${Boolean(data?.trading_ready)}; data ready: ${Boolean(data?.data_ready)}`,
+  ];
+  if (data?.stale || watchdog?.tick_stale) {
+    lines.push(`Runtime check: ${String(data?.stale_reason || watchdog?.tick_stale_reason || "runtime_stale")}`);
+  }
+  if (watchdog?.last_tick_age_sec !== undefined) {
+    lines.push(`Tick age: ${formatCompact(watchdog.last_tick_age_sec)}s`);
+  }
+  if (advice?.decision) {
+    lines.push(`Reboot advice: ${String(advice.decision)} (${String(advice.reason || "no reason")})`);
+  }
+  return lines;
+}
+
+function runtimeClearances(data: any, flight: any): string[] {
+  const watchdog = data?.runtime_watchdog || {};
+  const checks = flight?.checks || {};
+  const advice = flight?.reboot_advice || {};
+  const clearances: string[] = [];
+  if (data?.booting) clearances.push("runtime_booting");
+  if (data?.stale || watchdog?.tick_stale) clearances.push("runtime_stale");
+  if (watchdog?.tick_stale_reason || data?.stale_reason) clearances.push(String(data?.stale_reason || watchdog.tick_stale_reason));
+  if (asNumber(data?.combined?.open_positions || checks?.open_positions || watchdog?.open_positions) > 0 || checks?.open_positions === true || watchdog?.open_positions === true) {
+    clearances.push("open_positions");
+  }
+  if (checks?.downtime_window === false || checks?.downtime_window_open === false || advice?.downtime_window === false) {
+    clearances.push("downtime_window_false");
+  }
+  if (advice?.can_reboot_now === false) clearances.push(String(advice.reason || "reboot_held"));
+  return uniqueStrings(clearances);
+}
+
+function runtimeDetails(data: any, flight: any): Array<{ label: string; value: string }> {
+  const watchdog = data?.runtime_watchdog || {};
+  const advice = flight?.reboot_advice || {};
+  const governor = data?.api_governor?.exchanges || {};
+  const actionPlan = data?.exchange_action_plan || {};
+  const venues = actionPlan?.venues || {};
+  const latestIntents = actionPlan?.latest_published || {};
+  const latestExecution = actionPlan?.latest_execution || {};
+  const modelCoverage = actionPlan?.model_coverage || {};
+  const shadowTrading = data?.shadow_trading || actionPlan?.shadow_trading || {};
+  const hncProof = data?.hnc_cognitive_proof || actionPlan?.hnc_cognitive_proof || {};
+  const details = [
+    { label: "tick age", value: watchdog?.last_tick_age_sec !== undefined ? `${formatCompact(watchdog.last_tick_age_sec)}s` : "unknown" },
+    { label: "stale reason", value: String(data?.stale_reason || watchdog?.tick_stale_reason || "none") },
+    { label: "reboot", value: String(advice?.decision || "unknown") },
+    { label: "positions", value: formatCompact(data?.combined?.open_positions || 0) },
+  ];
+  if (actionPlan?.venue_count !== undefined || Object.keys(venues).length) {
+    details.push({
+      label: "venues ready",
+      value: `${formatCompact(actionPlan?.ready_venue_count || 0)}/${formatCompact(actionPlan?.venue_count || Object.keys(venues).length)}`,
+    });
+  }
+  if (actionPlan?.mode) {
+    details.push({ label: "intent mode", value: String(actionPlan.mode).replace("runtime_gated_", "") });
+  }
+  if (actionPlan?.trade_path_state) {
+    details.push({ label: "trade path", value: String(actionPlan.trade_path_state).replaceAll("_", " ") });
+  }
+  if (modelCoverage?.available_model_count !== undefined || modelCoverage?.ready_route_count !== undefined) {
+    details.push({
+      label: "models",
+      value: `${formatCompact(modelCoverage?.available_model_count || 0)} linked / ${formatCompact(modelCoverage?.ready_route_count || 0)} routes`,
+    });
+  }
+  if (latestIntents?.intent_count !== undefined || actionPlan?.order_intents_published !== undefined) {
+    details.push({
+      label: "order intents",
+      value: formatCompact(latestIntents?.intent_count || actionPlan?.order_intents_published || 0),
+    });
+  }
+  if (latestExecution?.submitted_count !== undefined || latestExecution?.blocked_count !== undefined) {
+    details.push({
+      label: "executor",
+      value: `${formatCompact(latestExecution?.submitted_count || 0)} sent / ${formatCompact(latestExecution?.delegated_count || 0)} delegated / ${formatCompact(latestExecution?.held_count ?? latestExecution?.blocked_count ?? 0)} held`,
+    });
+  }
+  if (shadowTrading?.shadow_count !== undefined || shadowTrading?.active_shadow_count !== undefined) {
+    details.push({
+      label: "shadow trades",
+      value: `${formatCompact(shadowTrading?.shadow_opened_count || 0)} opened / ${formatCompact(shadowTrading?.active_shadow_count || 0)} active`,
+    });
+  }
+  if (shadowTrading?.validated_shadow_count !== undefined || shadowTrading?.self_measurement?.agent_average_score !== undefined) {
+    details.push({
+      label: "shadow proof",
+      value: `${formatCompact(shadowTrading?.validated_shadow_count || 0)} validated / ${Math.round(asNumber(shadowTrading?.self_measurement?.agent_average_score) * 100)}% agent score`,
+    });
+  }
+  if (hncProof?.step_count !== undefined || hncProof?.passed_count !== undefined) {
+    details.push({
+      label: "HNC flow",
+      value: `${formatCompact(hncProof?.passed_count || 0)}/${formatCompact(hncProof?.step_count || 0)} ${String(hncProof?.status || "checking")}`,
+    });
+  }
+  if (hncProof?.auris_nodes?.node_count !== undefined || hncProof?.auris_nodes?.coherence !== undefined) {
+    details.push({
+      label: "Auris nodes",
+      value: `${formatCompact(hncProof?.auris_nodes?.node_count || 0)} nodes / ${Math.round(asNumber(hncProof?.auris_nodes?.coherence) * 100)}% coherence`,
+    });
+  }
+  if (hncProof?.master_formula?.score !== undefined) {
+    details.push({
+      label: "master formula",
+      value: `${Math.round(asNumber(hncProof?.master_formula?.score) * 100)}% ${hncProof?.master_formula?.passed ? "passing" : "attention"}`,
+    });
+  }
+  for (const name of ["kraken", "capital", "alpaca", "binance"]) {
+    if (governor?.[name]?.utilization !== undefined) {
+      details.push({ label: `${name} api`, value: `${Math.round(asNumber(governor[name].utilization) * 100)}%` });
+    }
+  }
+  return details;
+}
+
+async function loadRuntimeObservation(): Promise<RuntimeObservation> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 1500);
+
+  try {
+    const manifest = await loadWakeUpManifest(controller.signal);
+    const endpoints = uniqueStrings([manifest?.runtime_feed_url, ...DEFAULT_RUNTIME_ENDPOINTS]);
+    for (const endpoint of endpoints) {
+      const data = await fetchJsonOrNull<any>(endpoint, controller.signal);
+      if (!data) continue;
+      const flight = await fetchJsonOrNull<any>(flightTestUrlFor(endpoint, manifest), controller.signal);
+      const clearances = runtimeClearances(data, flight);
+      return {
+        connected: true,
+        clearancePending: data?.ok === false || clearances.length > 0,
+        endpoint,
+        generatedAt: String(data?.generated_at || data?.dashboard_generated_at || new Date().toISOString()),
+        statusLines: runtimeStatusLines(data, flight),
+        metrics: [
+          { label: "portfolio", value: formatCompact(data?.portfolio_value || data?.combined?.equity || data?.combined?.capital_equity_gbp || 0) },
+          { label: "open positions", value: formatCompact(data?.combined?.open_positions || data?.positions?.length || 0) },
+          { label: "trades", value: formatCompact(data?.total_trades || 0) },
+          { label: "mode", value: data?.ok === false ? "clearance pending" : String(data?.trading_mode || data?.queen_state || "observe") },
+        ],
+        clearances,
+        details: runtimeDetails(data, flight),
+      };
+    }
+    return {
+      connected: false,
+      clearancePending: false,
+      statusLines: ["Runtime feed unavailable. Start Aureon ignition to stream live status."],
+      metrics: [],
+      clearances: [],
+      details: [],
+    };
+  } catch {
+    return {
+      connected: false,
+      clearancePending: false,
+      statusLines: ["Runtime feed unavailable. The unified shell is showing manifest/audit state only."],
+      metrics: [],
+      clearances: [],
+      details: [],
+    };
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+function Pill({ label, tone = "outline" }: { label: string; tone?: string }) {
   return (
-    <Card className="border-border/50 bg-background/95 p-4">
-      <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/40 pb-3">
-        <div>
-          <div className="text-sm font-semibold text-foreground">Terminal Mirror</div>
-          <div className="text-xs text-muted-foreground">
-            Live runtime output from Kraken and Capital only
-          </div>
-        </div>
-        <div className="font-mono text-[11px] text-muted-foreground">
-          {state.wsConnected ? `Feed live (${state.wsMessageCount})` : "Polling local terminal"}
-        </div>
-      </div>
+    <span className={`inline-flex min-h-6 items-center rounded-md border px-2 py-0.5 text-[11px] font-medium ${tone}`}>
+      {label}
+    </span>
+  );
+}
 
-      <div className="space-y-3">
-        {latestMonitorLine ? (
-          <div className="rounded border border-border/40 bg-muted/20 p-3 font-mono text-[11px] text-foreground">
-            {latestMonitorLine}
-          </div>
-        ) : null}
-
-        <div className="rounded border border-border/40 bg-black/40 p-3">
-          {statusLines.length > 0 ? (
-            <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[11px] leading-5 text-foreground">
-              {statusLines.join("\n")}
-            </pre>
-          ) : (
-            <div className="font-mono text-[11px] text-muted-foreground">
-              Waiting for terminal status...
-            </div>
-          )}
+function MetricTile({
+  label,
+  value,
+  icon: Icon,
+  tone = "text-foreground",
+}: {
+  label: string;
+  value: string;
+  icon: typeof Activity;
+  tone?: string;
+}) {
+  return (
+    <Card className="min-h-[116px] bg-card/80">
+      <CardContent className="flex h-full flex-col justify-between p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-xs uppercase text-muted-foreground">{label}</div>
+          <Icon className={`h-4 w-4 ${tone}`} />
         </div>
-      </div>
+        <div className={`mt-4 text-2xl font-semibold ${tone}`}>{value}</div>
+      </CardContent>
     </Card>
   );
 }
 
-function TerminalMirrorApp() {
-  useTerminalSync(true, 2000);
+function AppShell() {
+  const [state, setState] = useState<UnifiedFrontendState | null>(null);
+  const [runtime, setRuntime] = useState<RuntimeObservation>({
+    connected: false,
+    clearancePending: false,
+    statusLines: ["Runtime feed pending."],
+    metrics: [],
+    clearances: [],
+    details: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState("overview");
+
+  const refresh = async () => {
+    setLoading(true);
+    const loaded = await loadUnifiedFrontendState();
+    setState(loaded);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    refresh();
+    const timer = window.setInterval(refresh, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshRuntime = async () => setRuntime(await loadRuntimeObservation());
+    refreshRuntime();
+    const timer = window.setInterval(refreshRuntime, 5000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const inventory = state?.inventory || {};
+  const plan = state?.plan || {};
+  const organism = state?.organism || {};
+  const evolution = state?.evolution || {};
+  const switchboard = state?.switchboard || {};
+  const screens = plan.canonical_screens || [];
+  const summary = inventory.summary || {};
+  const organismSummary = organism.summary || {};
+  const evolutionSummary = evolution.summary || {};
+  const switchboardSummary = switchboard.summary || {};
+  const planSummary = plan.summary || {};
+  const percent = readinessPercent(summary);
+  const securityBlockers = asNumber(summary.security_blocker_count);
+  const blindSpotCount = asNumber(organismSummary.blind_spot_count);
+  const highBlindSpotCount = asNumber(organismSummary.high_blind_spot_count);
+  const manualActions = Object.entries(plan.safety_contract || {}).filter(([, value]) => Boolean(value));
+  const activeScreen = screens.find((screen) => screen.id === active) || screens[0];
+  const statusLines = organism.status_lines?.length ? organism.status_lines : runtime.statusLines;
+
+  const domainCounts = useMemo(() => inventory.counts?.by_domain || {}, [inventory.counts]);
+  const topDomains = Object.entries(domainCounts)
+    .sort((a, b) => asNumber(b[1]) - asNumber(a[1]))
+    .slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-6xl p-4 md:p-6">
-        <div className="mb-5 flex items-center justify-between gap-3 border-b border-border/50 pb-4">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Aureon Terminal Mirror</h1>
-            <p className="text-sm text-muted-foreground">
-              Single-screen monitor for the live unified trader
-            </p>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border/50 bg-background/95">
+        <div className="mx-auto flex max-w-[1500px] flex-col gap-4 px-4 py-5 lg:px-6">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-normal">Aureon Unified Autonomous Console</h1>
+                <Badge variant={securityBlockers ? "destructive" : "success"}>
+                  {securityBlockers ? `${securityBlockers} blockers` : "clear"}
+                </Badge>
+                <Badge variant={highBlindSpotCount ? "destructive" : blindSpotCount ? "outline" : "success"}>
+                  {blindSpotCount ? `${blindSpotCount} blind spots` : "fresh pulse"}
+                </Badge>
+                <Badge variant="outline">{plan.status || "manifest pending"}</Badge>
+              </div>
+              <p className="mt-1 max-w-4xl text-sm text-muted-foreground">
+                Aureon works through its trading, accounting, research, vault, cognition, SaaS security, and self-audit systems while this shell exposes evidence, blockers, and manual-only boundaries.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={refresh} variant="outline" size="sm" disabled={loading}>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+              <Pill
+                label={runtime.connected ? (runtime.clearancePending ? "runtime feed checking" : "runtime feed live") : "runtime feed offline"}
+                tone={runtime.connected ? (runtime.clearancePending ? statusTone.orphaned : statusTone.wired) : statusTone.security_blocker}
+              />
+              <Pill label={`loaded ${state?.loadedAt ? new Date(state.loadedAt).toLocaleTimeString() : "pending"}`} tone="border-border bg-muted/20 text-muted-foreground" />
+            </div>
           </div>
-          <div className="font-mono text-[11px] text-muted-foreground">
-            `unified_market_trader.py`
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <MetricTile label="SaaS surfaces" value={formatCompact(summary.surface_count)} icon={Database} />
+            <MetricTile label="Frontend surfaces" value={formatCompact(summary.frontend_surface_count)} icon={Activity} />
+            <MetricTile label="Fresh domains" value={`${formatCompact(organismSummary.fresh_domain_count)}/${formatCompact(organismSummary.domain_count)}`} icon={Server} />
+            <MetricTile label="Evolution queue" value={formatCompact(evolutionSummary.queue_count)} icon={ShieldCheck} tone={asNumber(evolutionSummary.blocked_count) ? "text-yellow-300" : "text-green-300"} />
+            <MetricTile label="Capability modes" value={formatCompact(switchboardSummary.capability_count)} icon={Brain} tone={asNumber(switchboardSummary.blocker_count) ? "text-yellow-300" : "text-green-300"} />
           </div>
         </div>
+      </header>
 
-        <div className="space-y-4">
-          <LiveTerminalStats />
-          <StatusBlock />
+      <main className="mx-auto max-w-[1500px] px-4 py-5 lg:px-6">
+        {state?.errors?.length ? (
+          <Card className="mb-4 border-yellow-500/30 bg-yellow-500/10">
+            <CardContent className="flex flex-col gap-2 p-4 text-sm text-yellow-100 md:flex-row md:items-center">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <div>{state.errors.join(" ")}</div>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        <OrganismPulsePanel organism={organism} runtimeConnected={runtime.connected} />
+        <FrontendEvolutionPanel evolution={evolution} />
+        <CapabilitySwitchboardPanel switchboard={switchboard} />
+
+        <Tabs value={active} onValueChange={setActive}>
+          <ScrollArea className="w-full">
+            <TabsList className="mb-4 h-auto min-w-max justify-start gap-1 bg-card/80 p-1">
+              {screens.map((screen) => {
+                const Icon = screenIcons[screen.id] || Activity;
+                const missing = screen.missing_capabilities?.length || 0;
+                return (
+                  <TabsTrigger key={screen.id} value={screen.id} className="gap-2 whitespace-nowrap px-3 py-2">
+                    <Icon className="h-4 w-4" />
+                    <span>{screen.title}</span>
+                    {missing ? <span className="rounded bg-yellow-500/20 px-1.5 text-[10px] text-yellow-200">{missing}</span> : null}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </ScrollArea>
+
+          {screens.map((screen) => (
+            <TabsContent key={screen.id} value={screen.id} className="mt-0">
+              <ScreenPanel screen={screen} inventory={inventory} />
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <Card className="bg-card/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Radio className="h-4 w-4 text-primary" />
+                Runtime Mirror
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {(runtime.metrics.length ? runtime.metrics : [
+                  { label: "portfolio", value: "offline" },
+                  { label: "open positions", value: "offline" },
+                  { label: "trades", value: "offline" },
+                  { label: "mode", value: "observe" },
+                ]).map((metric) => (
+                  <div key={metric.label} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                    <div className="text-[11px] uppercase text-muted-foreground">{metric.label}</div>
+                    <div className="mt-1 truncate font-mono text-sm font-semibold">{metric.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Pill label={runtime.connected ? (runtime.clearancePending ? "connected checking" : "connected clear") : "offline"} tone={runtime.connected ? (runtime.clearancePending ? statusTone.orphaned : statusTone.wired) : statusTone.partial} />
+                <Pill label={runtime.generatedAt ? `updated ${new Date(runtime.generatedAt).toLocaleTimeString()}` : "no runtime timestamp"} tone="border-border bg-muted/20 text-muted-foreground" />
+                {runtime.endpoint ? <Pill label={runtime.endpoint.replace("http://127.0.0.1:", "")} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-300" /> : null}
+                {runtime.clearances.map((clearance) => (
+                  <Pill key={clearance} label={clearance} tone={statusTone.security_blocker} />
+                ))}
+              </div>
+              {runtime.details.length ? (
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  {runtime.details.map((detail) => (
+                    <div key={detail.label} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                      <div className="text-[11px] uppercase text-muted-foreground">{detail.label}</div>
+                      <div className="mt-1 truncate font-mono text-sm font-semibold">{detail.value}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <div className="rounded-md border border-border/50 bg-black/35 p-3">
+                {statusLines.length ? (
+                  <pre className="max-h-52 overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-5 text-foreground">
+                    {statusLines.slice(-24).join("\n")}
+                  </pre>
+                ) : (
+                  <div className="font-mono text-[11px] text-muted-foreground">Waiting for runtime status...</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Lock className="h-4 w-4 text-primary" />
+                Safety And Manual Boundaries
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                {manualActions.map(([key]) => (
+                  <div key={key} className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-muted/10 px-3 py-2">
+                    <span className="text-sm">{key.replace(/_/g, " ")}</span>
+                    <Badge variant="outline">visible</Badge>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Inventory readiness</span>
+                  <span>{percent}%</span>
+                </div>
+                <Progress value={percent} className="h-2" />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+                  <div className="text-xs text-muted-foreground">orphaned frontend</div>
+                  <div className="mt-1 text-lg font-semibold">{formatCompact(summary.orphaned_frontend_count)}</div>
+                </div>
+                <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+                  <div className="text-xs text-muted-foreground">uncalled functions</div>
+                  <div className="mt-1 text-lg font-semibold">{formatCompact(summary.uncalled_supabase_function_count)}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+          <Card className="bg-card/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Domain Spread</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {topDomains.map(([domain, count]) => {
+                const width = Math.min(100, Math.round((asNumber(count) / Math.max(1, asNumber(summary.surface_count))) * 100));
+                return (
+                  <div key={domain}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="capitalize text-muted-foreground">{domain.replace(/_/g, " ")}</span>
+                      <span className="font-mono">{count}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded bg-muted/30">
+                      <div className="h-full bg-primary" style={{ width: `${Math.max(4, width)}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card/80">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Current Screen Focus</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {activeScreen ? (
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-lg font-semibold">{activeScreen.title}</div>
+                    <p className="mt-1 text-sm text-muted-foreground">{activeScreen.goal}</p>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+                      <div className="text-xs text-muted-foreground">source surfaces</div>
+                      <div className="mt-1 text-lg font-semibold">{activeScreen.source_surface_count}</div>
+                    </div>
+                    <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+                      <div className="text-xs text-muted-foreground">backend functions</div>
+                      <div className="mt-1 text-lg font-semibold">{activeScreen.backend_functions.length}</div>
+                    </div>
+                    <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+                      <div className="text-xs text-muted-foreground">missing items</div>
+                      <div className="mt-1 text-lg font-semibold">{activeScreen.missing_capabilities.length}</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No screen plan available.</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-5 text-xs text-muted-foreground">
+          Sources: {state?.inventorySource || "pending"}, {state?.planSource || "pending"}, {state?.organismSource || "pending"}, {state?.evolutionSource || "pending"}, and {state?.switchboardSource || "pending"}. Generated screens: {formatCompact(planSummary.screen_count)}. Readiness signal: {percent}%.
         </div>
       </main>
     </div>
   );
 }
 
-const App = () => {
-  const [view, setView] = useState<'terminal' | 'observatory'>('terminal');
+function freshnessTone(status: string): string {
+  if (status === "fresh") return statusTone.wired;
+  if (status === "attention") return "border-yellow-500/30 bg-yellow-500/10 text-yellow-200";
+  if (status === "stale") return "border-orange-500/30 bg-orange-500/10 text-orange-200";
+  if (status === "missing" || status === "broken") return statusTone.security_blocker;
+  return statusTone.unknown;
+}
+
+function formatAge(seconds: unknown): string {
+  const total = asNumber(seconds, -1);
+  if (total < 0) return "unknown";
+  if (total < 60) return `${Math.round(total)}s`;
+  if (total < 3600) return `${Math.round(total / 60)}m`;
+  return `${Math.round(total / 3600)}h`;
+}
+
+function OrganismPulsePanel({
+  organism,
+  runtimeConnected,
+}: {
+  organism: UnifiedFrontendState["organism"];
+  runtimeConnected: boolean;
+}) {
+  const domains = organism.domains || [];
+  const blindSpots = organism.blind_spots || [];
+  const summary = organism.summary || {};
+  const sortedDomains = [...domains].sort((a, b) => {
+    const order: Record<string, number> = { missing: 0, broken: 1, stale: 2, attention: 3, fresh: 4 };
+    return (order[a.status] ?? 5) - (order[b.status] ?? 5);
+  });
 
   return (
-    <ThemeProvider defaultTheme="dark">
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          {view === 'observatory' ? (
-            <CinematicObservatory onExit={() => setView('terminal')} />
-          ) : (
-            <>
-              <TerminalMirrorApp />
-              <div className="fixed bottom-4 right-4 z-50">
-                <button
-                  onClick={() => setView('observatory')}
-                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600/80 to-purple-600/80 backdrop-blur-xl border border-white/10 text-white/90 text-sm font-medium shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:shadow-[0_4px_30px_rgba(99,102,241,0.5)] hover:scale-105 transition-all cursor-pointer"
-                >
-                  Enter Observatory
-                </button>
+    <div className="mb-5 grid gap-4 xl:grid-cols-[1fr_0.95fr]">
+      <Card className="bg-card/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Brain className="h-4 w-4 text-primary" />
+            Organism Pulse
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Pill label={organism.status || "pulse pending"} tone={freshnessTone((organism.status || "").includes("blind") ? "attention" : "fresh")} />
+            <Pill label={`mode ${organism.mode || "safe_observation"}`} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+            <Pill label={runtimeConnected ? "runtime feed connected" : "runtime feed offline"} tone={runtimeConnected ? statusTone.wired : statusTone.partial} />
+            <Pill label={`updated ${organism.generated_at ? new Date(organism.generated_at).toLocaleTimeString() : "pending"}`} tone="border-border bg-muted/20 text-muted-foreground" />
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-4">
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">domains</div>
+              <div className="mt-1 text-lg font-semibold">{formatCompact(summary.domain_count)}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">fresh</div>
+              <div className="mt-1 text-lg font-semibold text-green-300">{formatCompact(summary.fresh_domain_count)}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">stale/missing</div>
+              <div className="mt-1 text-lg font-semibold text-yellow-200">
+                {formatCompact(asNumber(summary.stale_domain_count) + asNumber(summary.missing_domain_count))}
               </div>
-            </>
-          )}
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">blind spots</div>
+              <div className="mt-1 text-lg font-semibold text-red-200">{formatCompact(summary.blind_spot_count)}</div>
+            </div>
+          </div>
+
+          <ScrollArea className="h-[245px] pr-3">
+            <div className="space-y-2">
+              {sortedDomains.slice(0, 14).map((domain: OrganismDomainPulse) => (
+                <div key={domain.id} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-medium">{domain.label}</div>
+                      <div className="mt-1 font-mono text-[11px] text-muted-foreground">{domain.source_path}</div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      <Pill label={domain.status} tone={freshnessTone(domain.status)} />
+                      <Pill label={formatAge(domain.age_seconds)} tone="border-border bg-muted/20 text-muted-foreground" />
+                    </div>
+                  </div>
+                  {domain.blind_spots?.length ? (
+                    <div className="mt-2 text-xs text-yellow-100">{domain.blind_spots.slice(0, 3).join(", ")}</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-4 w-4 text-primary" />
+            Blind Spots And Next Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ScrollArea className="h-[276px] pr-3">
+            <div className="space-y-2">
+              {blindSpots.length ? (
+                blindSpots.slice(0, 16).map((spot) => (
+                  <div key={spot.id} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-mono text-[11px] text-muted-foreground">{spot.id}</div>
+                      <Pill label={spot.severity} tone={spot.severity === "high" ? statusTone.security_blocker : "border-yellow-500/30 bg-yellow-500/10 text-yellow-200"} />
+                    </div>
+                    <div className="mt-2 text-sm">{spot.issue}</div>
+                    {spot.next_action ? <div className="mt-2 text-xs text-muted-foreground">{spot.next_action}</div> : null}
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-md border border-green-500/30 bg-green-500/10 p-4 text-sm text-green-100">
+                  No blind spots in the current organism pulse.
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+          <div className="rounded-md border border-border/50 bg-black/35 p-3">
+            <pre className="max-h-32 overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-5 text-foreground">
+              {(organism.status_lines || ["Waiting for organism pulse..."]).slice(0, 10).join("\n")}
+            </pre>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
-};
+}
+
+function FrontendEvolutionPanel({ evolution }: { evolution: FrontendEvolutionQueueManifest }) {
+  const summary = evolution.summary || {};
+  const orders = [...(evolution.work_orders || [])]
+    .sort((a, b) => asNumber(b.priority) - asNumber(a.priority))
+    .slice(0, 10);
+
+  return (
+    <Card className="mb-5 bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Activity className="h-4 w-4 text-primary" />
+          Frontend Evolution Queue
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <Pill label={evolution.status || "queue pending"} tone={asNumber(summary.blocked_count) ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-200" : statusTone.wired} />
+          <Pill label={`${formatCompact(summary.ready_adapter_count)} ready adapters`} tone="border-green-500/30 bg-green-500/10 text-green-200" />
+          <Pill label={`${formatCompact(summary.blocked_count)} blocked`} tone={asNumber(summary.blocked_count) ? statusTone.security_blocker : "border-border bg-muted/20 text-muted-foreground"} />
+          <Pill label={`updated ${evolution.generated_at ? new Date(evolution.generated_at).toLocaleTimeString() : "pending"}`} tone="border-border bg-muted/20 text-muted-foreground" />
+        </div>
+
+        <div className="grid gap-2 md:grid-cols-5">
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">work orders</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.queue_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">targets</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.target_screen_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">generated links</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.generated_output_link_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">archive</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.archive_candidate_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">top priority</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.highest_priority)}</div>
+          </div>
+        </div>
+
+        <ScrollArea className="h-[330px] pr-3">
+          <div className="space-y-3">
+            {orders.length ? (
+              orders.map((order) => (
+                <div key={order.id} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">{order.title}</div>
+                      <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{order.source_path}</div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      <Pill label={`P${order.priority}`} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+                      <Pill label={order.status} tone={order.status.includes("blocked") ? statusTone.security_blocker : freshnessTone("attention")} />
+                      <Pill label={order.target_title} tone="border-border bg-muted/20 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">{order.capability_summary}</div>
+                  {order.frontend_action ? <div className="mt-2 text-xs text-foreground">{order.frontend_action}</div> : null}
+                  {order.safety_boundary ? <div className="mt-2 text-[11px] text-yellow-100">{order.safety_boundary}</div> : null}
+                </div>
+              ))
+            ) : (
+              <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                No evolution work orders are mounted yet.
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CapabilitySwitchboardPanel({ switchboard }: { switchboard: CapabilitySwitchboardManifest }) {
+  const summary = switchboard.summary || {};
+  const modes = [...(switchboard.capability_modes || [])];
+  const intents = [...(switchboard.presentation_intents || [])]
+    .sort((a, b) => asNumber(b.priority) - asNumber(a.priority))
+    .slice(0, 10);
+  const blockers = switchboard.blockers || [];
+  const gates = Array.isArray(switchboard.hnc_control_contract?.anti_hallucination_gates)
+    ? switchboard.hnc_control_contract.anti_hallucination_gates.map((gate) => String(gate))
+    : [];
+
+  return (
+    <div className="mb-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <Card className="bg-card/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Brain className="h-4 w-4 text-primary" />
+            Autonomous Capability Switchboard
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Pill label={switchboard.status || "switchboard pending"} tone={asNumber(summary.blocker_count) ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-200" : statusTone.wired} />
+            <Pill label={`${formatCompact(summary.autonomous_capability_count)} autonomous modes`} tone="border-green-500/30 bg-green-500/10 text-green-200" />
+            <Pill label={`${formatCompact(summary.presentation_intent_count)} presentation intents`} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+            <Pill label={`updated ${switchboard.generated_at ? new Date(switchboard.generated_at).toLocaleTimeString() : "pending"}`} tone="border-border bg-muted/20 text-muted-foreground" />
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-5">
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">capabilities</div>
+              <div className="mt-1 text-lg font-semibold">{formatCompact(summary.capability_count)}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">blocked</div>
+              <div className="mt-1 text-lg font-semibold text-yellow-200">{formatCompact(summary.blocker_count)}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">app/UI queue</div>
+              <div className="mt-1 text-lg font-semibold">{formatCompact(summary.frontend_work_order_count)}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">ready adapters</div>
+              <div className="mt-1 text-lg font-semibold text-green-300">{formatCompact(summary.ready_adapter_count)}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">runtime</div>
+              <div className="mt-1 truncate text-sm font-semibold">{String(summary.runtime_feed_status || "unknown")}</div>
+            </div>
+          </div>
+
+          <ScrollArea className="h-[356px] pr-3">
+            <div className="space-y-3">
+              {modes.length ? (
+                modes.map((mode) => (
+                  <div key={mode.id} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">{mode.title}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{mode.authority_level.replace(/_/g, " ")}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        <Pill label={mode.domain} tone="border-border bg-muted/20 text-muted-foreground" />
+                        <Pill label={mode.status} tone={mode.status.startsWith("blocked") ? statusTone.security_blocker : freshnessTone(mode.status.includes("ready") ? "fresh" : "attention")} />
+                        <Pill label={mode.autonomous_allowed ? "autonomous" : "manual"} tone={mode.autonomous_allowed ? statusTone.wired : statusTone.partial} />
+                      </div>
+                    </div>
+                    {mode.systems?.length ? (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {mode.systems.slice(0, 5).map((system) => (
+                          <Pill key={system} label={system} tone="border-blue-500/30 bg-blue-500/10 text-blue-100" />
+                        ))}
+                      </div>
+                    ) : null}
+                    {mode.next_action ? <div className="mt-2 text-xs text-muted-foreground">{mode.next_action}</div> : null}
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No capability modes are mounted yet.
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Eye className="h-4 w-4 text-primary" />
+            What Aureon Chooses To Show Next
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">HNC anti-drift gates</div>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {(gates.length ? gates : ["source_evidence_required", "safe_authority_boundary_checked"]).slice(0, 7).map((gate) => (
+                <Pill key={gate} label={gate.replace(/_/g, " ")} tone="border-green-500/30 bg-green-500/10 text-green-100" />
+              ))}
+            </div>
+          </div>
+
+          <ScrollArea className="h-[255px] pr-3">
+            <div className="space-y-2">
+              {intents.length ? (
+                intents.map((intent) => (
+                  <div key={intent.id} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-medium">{intent.title}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{intent.reason}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        <Pill label={`P${intent.priority}`} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+                        <Pill label={intent.display_mode.replace(/_/g, " ")} tone="border-border bg-muted/20 text-muted-foreground" />
+                      </div>
+                    </div>
+                    {intent.next_action ? <div className="mt-2 text-xs text-foreground">{intent.next_action}</div> : null}
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No presentation intents are mounted yet.
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Current blockers</div>
+            {(blockers.length ? blockers.slice(0, 4) : [{ id: "none", reason: "No switchboard blockers reported." }]).map((blocker) => (
+              <div key={String(blocker.id)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                <span className="font-mono text-muted-foreground">{String(blocker.id)}</span>
+                <span className="ml-2 text-foreground">{String(blocker.reason || "")}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ScreenPanel({ screen, inventory }: { screen: FrontendScreenPlan; inventory: SaaSInventoryManifest }) {
+  const surfaces = surfacesForScreen(inventory, screen);
+  const Icon = screenIcons[screen.id] || Activity;
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <Card className="bg-card/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Icon className="h-4 w-4 text-primary" />
+            {screen.title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">{screen.goal}</p>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-xs text-muted-foreground">sources</div>
+              <div className="mt-1 text-lg font-semibold">{screen.source_surface_count}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-xs text-muted-foreground">canonical</div>
+              <div className="mt-1 text-lg font-semibold">{screen.canonical_sources.length}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-xs text-muted-foreground">legacy</div>
+              <div className="mt-1 text-lg font-semibold">{screen.embedded_legacy_surfaces.length}</div>
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-xs text-muted-foreground">outputs</div>
+              <div className="mt-1 text-lg font-semibold">{screen.generated_outputs.length}</div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Safety notes</div>
+            {screen.safety_notes.length ? (
+              <div className="flex flex-wrap gap-2">
+                {screen.safety_notes.map((note) => (
+                  <Pill key={note} label={note} tone="border-yellow-500/30 bg-yellow-500/10 text-yellow-200" />
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Observation-only screen.</div>
+            )}
+          </div>
+
+          {screen.missing_capabilities.length ? (
+            <div className="space-y-2">
+              <div className="text-xs uppercase text-muted-foreground">Missing or blocked</div>
+              {screen.missing_capabilities.map((item) => (
+                <div key={item} className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-100">
+                  {item}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card/80">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4 text-primary" />
+            Source Surfaces
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[420px] pr-3">
+            <div className="space-y-3">
+              {surfaces.length ? (
+                surfaces.map((surface) => (
+                  <div key={surface.id} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate font-mono text-xs text-foreground">{surface.path}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{surface.purpose}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        <Pill label={surface.wiring_status} tone={statusTone[surface.wiring_status] || statusTone.unknown} />
+                        <Pill label={surface.safety_class} tone={safetyTone[surface.safety_class] || statusTone.unknown} />
+                      </div>
+                    </div>
+                    {surface.missing_next_step ? (
+                      <div className="mt-2 text-xs text-muted-foreground">{surface.missing_next_step}</div>
+                    ) : null}
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No matching surfaces in the current manifest.
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+const App = () => (
+  <ThemeProvider defaultTheme="dark">
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AppShell />
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
+);
 
 export default App;

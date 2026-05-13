@@ -26,11 +26,15 @@ import random
 import statistics
 import sys
 import time
+import io
 from typing import Any, Callable, Dict, List, Optional
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from aureon.core.aureon_thought_bus import Thought, ThoughtBus  # noqa: E402
 from aureon.vault.aureon_vault import AureonVault  # noqa: E402

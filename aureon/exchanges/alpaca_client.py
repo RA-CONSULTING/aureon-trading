@@ -62,6 +62,13 @@ try:
 except ImportError:
     pass
 
+try:
+    from aureon.core.aureon_env import load_aureon_environment
+
+    load_aureon_environment(Path(__file__).resolve().parents[2], override=False)
+except Exception:
+    pass
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,0 +1,284 @@
+"""Shared environment loading for Aureon runtime entrypoints.
+
+This keeps live launchers, exchange clients, and diagnostics aligned on one
+repo-local .env loading policy without ever logging secret values.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Iterable, MutableMapping, Optional
+
+
+SECRET_KEYS = {
+    "KRAKEN_API_KEY",
+    "KRAKEN_API_SECRET",
+    "BINANCE_API_KEY",
+    "BINANCE_API_SECRET",
+    "BINANCE_SECRET_KEY",
+    "ALPACA_API_KEY",
+    "ALPACA_SECRET_KEY",
+    "CAPITAL_API_KEY",
+    "CAPITAL_PASSWORD",
+    "CAPITAL_API_PASSWORD",
+    "CAPITAL_API_SECRET",
+    "COINAPI_API_KEY",
+    "COINAPI_KEY",
+    "SUPABASE_ANON_KEY",
+}
+
+KRAKEN_REQUIRED_ENV = ("KRAKEN_API_KEY", "KRAKEN_API_SECRET")
+
+CREDENTIAL_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("ALPACA_API_SECRET", ("ALPACA_SECRET_KEY", "ALPACA_SECRET")),
+    ("ALPACA_KEY", ("ALPACA_API_KEY",)),
+    ("ALPACA_SECRET", ("ALPACA_SECRET_KEY", "ALPACA_API_SECRET")),
+    ("APCA_API_KEY_ID", ("ALPACA_API_KEY",)),
+    ("APCA_API_SECRET_KEY", ("ALPACA_SECRET_KEY", "ALPACA_API_SECRET", "ALPACA_SECRET")),
+    ("BINANCE_SECRET", ("BINANCE_API_SECRET", "BINANCE_SECRET_KEY")),
+    ("BINANCE_KEY", ("BINANCE_API_KEY",)),
+    ("BINANCE_SECRET_KEY", ("BINANCE_API_SECRET", "BINANCE_SECRET")),
+    ("CAPITAL_API_PASSWORD", ("CAPITAL_PASSWORD",)),
+    ("CAPITAL_API_SECRET", ("CAPITAL_PASSWORD", "CAPITAL_API_PASSWORD")),
+    ("CAPITAL_DEMO_MODE", ("CAPITAL_DEMO",)),
+    ("CAPITAL_USER", ("CAPITAL_IDENTIFIER",)),
+    ("COINAPI_API_KEY", ("COINAPI_KEY",)),
+    ("SUPABASE_URL", ("VITE_SUPABASE_URL",)),
+    ("SUPABASE_ANON_KEY", ("VITE_SUPABASE_PUBLISHABLE_KEY",)),
+)
+
+EXCHANGE_REQUIRED_ENV: dict[str, tuple[str, ...]] = {
+    "kraken": ("KRAKEN_API_KEY", "KRAKEN_API_SECRET"),
+    "binance": ("BINANCE_API_KEY", "BINANCE_API_SECRET"),
+    "alpaca": ("ALPACA_API_KEY", "ALPACA_SECRET_KEY"),
+    "capital": ("CAPITAL_API_KEY", "CAPITAL_IDENTIFIER", "CAPITAL_PASSWORD"),
+}
+
+EXCHANGE_ENABLE_FLAGS: dict[str, tuple[str, ...]] = {
+    "kraken": ("ENABLE_KRAKEN", "KRAKEN_LIVE"),
+    "binance": ("ENABLE_BINANCE", "BINANCE_LIVE"),
+    "alpaca": ("ENABLE_ALPACA", "ALPACA_LIVE"),
+    "capital": ("ENABLE_CAPITAL", "CAPITAL_LIVE"),
+}
+
+TRUTHY = {"1", "true", "yes", "y", "on"}
+
+
+@dataclass
+class EnvLoadReport:
+    loaded: bool
+    loaded_paths: list[str] = field(default_factory=list)
+    candidate_paths: list[str] = field(default_factory=list)
+    aliases_applied: list[dict[str, str]] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "loaded": self.loaded,
+            "loaded_paths": list(self.loaded_paths),
+            "candidate_paths": list(self.candidate_paths),
+            "aliases_applied": list(self.aliases_applied),
+            "errors": list(self.errors),
+        }
+
+
+def resolve_repo_root(start: Optional[Path] = None) -> Path:
+    current = Path(start or Path.cwd()).resolve()
+    if current.is_file():
+        current = current.parent
+    for candidate in (current, *current.parents):
+        if (candidate / "aureon").is_dir() and (candidate / "scripts").is_dir():
+            return candidate
+    return Path(__file__).resolve().parents[2]
+
+
+def candidate_env_paths(repo_root: Optional[Path] = None) -> list[Path]:
+    root = resolve_repo_root(repo_root)
+    candidates: list[Path] = []
+    for env_name in ("AUREON_ENV_FILE", "DOTENV_PATH"):
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            candidates.append(Path(value).expanduser())
+
+    candidates.extend(
+        [
+            root / ".env",
+            root / ".env.local",
+            root / ".env.production",
+        ]
+    )
+
+    seen: set[str] = set()
+    unique: list[Path] = []
+    for candidate in candidates:
+        try:
+            key = str(candidate.resolve())
+        except Exception:
+            key = str(candidate)
+        if key not in seen:
+            seen.add(key)
+            unique.append(candidate)
+    return unique
+
+
+def _parse_env_line(line: str) -> Optional[tuple[str, str]]:
+    raw = line.strip()
+    if not raw or raw.startswith("#"):
+        return None
+    if raw.startswith("export "):
+        raw = raw[len("export ") :].strip()
+    if "=" not in raw:
+        return None
+    key, value = raw.split("=", 1)
+    key = key.strip()
+    if not key:
+        return None
+    value = value.strip()
+    if (
+        len(value) >= 2
+        and value[0] == value[-1]
+        and value[0] in {"'", '"'}
+    ):
+        value = value[1:-1]
+    return key, value
+
+
+def _fallback_load_env_file(
+    path: Path,
+    environ: MutableMapping[str, str],
+    override: bool,
+) -> None:
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        parsed = _parse_env_line(line)
+        if not parsed:
+            continue
+        key, value = parsed
+        if override or key not in environ:
+            environ[key] = value
+
+
+def apply_env_aliases(
+    environ: Optional[MutableMapping[str, str]] = None,
+    *,
+    override: bool = False,
+) -> list[dict[str, str]]:
+    env = os.environ if environ is None else environ
+    applied: list[dict[str, str]] = []
+    for target, sources in CREDENTIAL_ALIASES:
+        if not override and str(env.get(target, "") or "").strip():
+            continue
+        for source in sources:
+            source_value = str(env.get(source, "") or "")
+            if source_value.strip():
+                env[target] = source_value
+                applied.append({"target": target, "source": source})
+                break
+    return applied
+
+
+def load_aureon_environment(
+    repo_root: Optional[Path] = None,
+    *,
+    override: bool = False,
+    environ: Optional[MutableMapping[str, str]] = None,
+) -> EnvLoadReport:
+    env = os.environ if environ is None else environ
+    candidates = candidate_env_paths(repo_root)
+    report = EnvLoadReport(
+        loaded=False,
+        candidate_paths=[str(path) for path in candidates],
+    )
+
+    for path in candidates:
+        try:
+            if not path.exists() or not path.is_file():
+                continue
+            try:
+                if env is os.environ:
+                    from dotenv import load_dotenv
+
+                    load_dotenv(dotenv_path=str(path), override=override)
+                else:
+                    _fallback_load_env_file(path, env, override=override)
+                loaded = True
+            except Exception:
+                _fallback_load_env_file(path, env, override=override)
+                loaded = True
+            if loaded:
+                report.loaded = True
+                report.loaded_paths.append(str(path))
+        except Exception as exc:
+            report.errors.append(f"{path}: {type(exc).__name__}: {exc}")
+    report.aliases_applied = apply_env_aliases(env, override=False)
+    return report
+
+
+def env_truthy(
+    name: str,
+    environ: Optional[MutableMapping[str, str]] = None,
+    default: bool = False,
+) -> bool:
+    env = os.environ if environ is None else environ
+    value = env.get(name)
+    if value is None:
+        return default
+    return str(value).strip().lower() in TRUTHY
+
+
+def enabled_credential_groups(
+    environ: Optional[MutableMapping[str, str]] = None,
+) -> dict[str, tuple[str, ...]]:
+    env = os.environ if environ is None else environ
+    groups: dict[str, tuple[str, ...]] = {}
+    for exchange, flags in EXCHANGE_ENABLE_FLAGS.items():
+        if any(env_truthy(flag, env) for flag in flags):
+            groups[exchange] = EXCHANGE_REQUIRED_ENV[exchange]
+    return groups
+
+
+def env_presence(
+    keys: Iterable[str],
+    environ: Optional[MutableMapping[str, str]] = None,
+) -> dict[str, dict[str, object]]:
+    env = os.environ if environ is None else environ
+    status: dict[str, dict[str, object]] = {}
+    for key in keys:
+        value = str(env.get(key, "") or "")
+        status[key] = {
+            "set": bool(value.strip()),
+            "length": len(value),
+            "secret": key in SECRET_KEYS,
+        }
+    return status
+
+
+def missing_env(
+    keys: Iterable[str],
+    environ: Optional[MutableMapping[str, str]] = None,
+) -> list[str]:
+    env = os.environ if environ is None else environ
+    return [key for key in keys if not str(env.get(key, "") or "").strip()]
+
+
+def env_status_summary(keys: Iterable[str]) -> str:
+    presence = env_presence(keys)
+    return ", ".join(f"{key}={'set' if info['set'] else 'missing'}" for key, info in presence.items())
+
+
+__all__ = [
+    "CREDENTIAL_ALIASES",
+    "EnvLoadReport",
+    "EXCHANGE_REQUIRED_ENV",
+    "KRAKEN_REQUIRED_ENV",
+    "apply_env_aliases",
+    "candidate_env_paths",
+    "enabled_credential_groups",
+    "env_presence",
+    "env_status_summary",
+    "env_truthy",
+    "load_aureon_environment",
+    "missing_env",
+    "resolve_repo_root",
+]

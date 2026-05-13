@@ -49,7 +49,24 @@ import time
 import webbrowser
 import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional
+
+from aureon.core.aureon_runtime_safety import child_env_for_mode, live_block_reason
+
+
+SCRIPT_MODULES = {
+    "aureon_command_center.py": "aureon.command_centers.aureon_command_center",
+    "queen_web_dashboard.py": "aureon.queen.queen_web_dashboard",
+    "aureon_queen_unified_dashboard.py": "aureon.monitors.aureon_queen_unified_dashboard",
+    "aureon_bot_hunter_dashboard.py": "aureon.bots_intelligence.aureon_bot_hunter_dashboard",
+    "aureon_global_bot_map.py": "aureon.bots_intelligence.aureon_global_bot_map",
+    "aureon_system_hub_dashboard.py": "aureon.command_centers.aureon_system_hub_dashboard",
+    "telemetry_server.py": "aureon.monitors.telemetry_server",
+    "micro_profit_labyrinth.py": "aureon.trading.micro_profit_labyrinth",
+    "orca_complete_kill_cycle.py": "aureon.bots.orca_complete_kill_cycle",
+}
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass
@@ -75,7 +92,8 @@ class ServiceProcess:
 
 
 def _build_python_command(script_name: str, args: Optional[List[str]] = None) -> List[str]:
-    cmd = [sys.executable, script_name]
+    module = SCRIPT_MODULES.get(script_name)
+    cmd = [sys.executable, "-m", module] if module else [sys.executable, script_name]
     if args:
         cmd.extend(args)
     return cmd
@@ -91,7 +109,12 @@ def _get_log_path(name: str) -> str:
     return os.path.join(log_dir, f"{_sanitize_name(name)}.log")
 
 
-def _start_process(name: str, cmd: List[str], log_to_file: bool = False) -> ServiceProcess:
+def _start_process(
+    name: str,
+    cmd: List[str],
+    log_to_file: bool = False,
+    env: Optional[Dict[str, str]] = None,
+) -> ServiceProcess:
     safe_print(f"🚀 Starting {name} ...")
     safe_print(f"   Command: {' '.join(cmd)}")  # DEBUG: Show the exact command
     log_file = None
@@ -104,9 +127,9 @@ def _start_process(name: str, cmd: List[str], log_to_file: bool = False) -> Serv
         log_file = open(log_path, "a", encoding="utf-8", errors="replace")
         if is_trading_engine and not log_to_file:
             safe_print(f"   📝 Logging to: {log_path}")
-        process = subprocess.Popen(cmd, stdout=log_file, stderr=log_file)
+        process = subprocess.Popen(cmd, stdout=log_file, stderr=log_file, env=env, cwd=str(REPO_ROOT))
     else:
-        process = subprocess.Popen(cmd)
+        process = subprocess.Popen(cmd, env=env, cwd=str(REPO_ROOT))
     return ServiceProcess(name=name, command=cmd, process=process, log_file=log_file)
 
 
@@ -177,6 +200,14 @@ def _shutdown_processes(processes: List[ServiceProcess]):
 def run_game_mode(config: GameModeConfig) -> int:
     processes: List[ServiceProcess] = []
     orca_warroom_mode = config.start_trading and not config.dry_run
+
+    if config.start_trading and not config.dry_run:
+        reason = live_block_reason("Aureon game launcher")
+        if reason:
+            safe_print(f"Live trading blocked: {reason}")
+            return 1
+    else:
+        os.environ.update(child_env_for_mode(False, os.environ))
 
     try:
         # PRIMARY: Command Center (the main dashboard)

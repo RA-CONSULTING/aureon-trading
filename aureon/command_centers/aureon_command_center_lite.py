@@ -276,8 +276,8 @@ async def handle_launch_dryrun(request):
     try:
         import subprocess
         subprocess.Popen(
-            [sys.executable, 'micro_profit_labyrinth.py', '--dry-run'],
-            cwd=str(Path(__file__).parent),
+            [sys.executable, '-m', 'aureon.trading.micro_profit_labyrinth', '--dry-run'],
+            cwd=str(Path(__file__).resolve().parents[2]),
             creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == 'win32' else 0
         )
         return web.json_response({'status': 'ok', 'message': 'Dry run launched in new window'})
@@ -289,8 +289,8 @@ async def handle_launch_live(request):
     try:
         import subprocess
         subprocess.Popen(
-            [sys.executable, 'micro_profit_labyrinth.py', '--live', '--yes'],
-            cwd=str(Path(__file__).parent),
+            [sys.executable, '-m', 'aureon.trading.micro_profit_labyrinth', '--live', '--yes'],
+            cwd=str(Path(__file__).resolve().parents[2]),
             creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == 'win32' else 0
         )
         return web.json_response({'status': 'ok', 'message': 'Live trading launched in new window'})

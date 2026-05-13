@@ -231,6 +231,12 @@ from pathlib import Path
 # Live vs demo mode
 DEMO_MODE = os.getenv("AUREON_COMMAND_CENTER_DEMO", "0").lower() in ("1", "true", "yes", "y")
 
+from aureon.core.aureon_runtime_safety import (
+    child_env_for_mode,
+    env_truthy,
+    live_block_reason,
+)
+
 # Windows deferred loading mode - start server first, load systems in background
 WINDOWS_FAST_START = sys.platform == 'win32'
 
@@ -294,7 +300,7 @@ def load_all_systems():
         SYSTEMS_STATUS['Enigma Decoder'] = False
     
     try:
-        from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
+        from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
         SYSTEMS_STATUS['Probability Nexus'] = True
     except ImportError:
         SYSTEMS_STATUS['Probability Nexus'] = False
@@ -304,9 +310,9 @@ def load_all_systems():
         from aureon.queen.queen_soul_shield import QueenSoulShield
         SYSTEMS_STATUS['Soul Shield'] = True
         # Initialize shield but don't start monitoring (dashboard will trigger)
-        queen_shield_instance = QueenSoulShield(gary_frequency=528.422, verbose=False)
+        queen_shield_instance = QueenSoulShield(protected_soul="Gary Leckey")
         SYSTEMS_STATUS['Soul Shield Status'] = 'Ready'
-    except ImportError:
+    except Exception:
         SYSTEMS_STATUS['Soul Shield'] = False
         SYSTEMS_STATUS['Soul Shield Status'] = 'Unavailable'
     
@@ -383,7 +389,11 @@ def load_all_systems():
     except ImportError:
         SYSTEMS_STATUS['Internal Multiverse'] = False
     
-    SYSTEMS_STATUS['Stargate Protocol'] = False
+    try:
+        from aureon.wisdom.aureon_stargate_protocol import StargateProtocolEngine
+        SYSTEMS_STATUS['Stargate Protocol'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Stargate Protocol'] = False
     
     try:
         from aureon.core.aureon_memory_core import AureonMemoryCore
@@ -868,6 +878,51 @@ LIVE_FEED_ENABLED = True
 # Trading engine toggle (real trading on/off)
 TRADING_LIVE_ENABLED = False
 TRADING_PROCESS: Optional[asyncio.subprocess.Process] = None
+TRADING_MODE = "off"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _build_trading_command(live: bool) -> List[str]:
+    cmd = [sys.executable, "-u", "-m", "aureon.trading.micro_profit_labyrinth"]
+    if live:
+        cmd.extend(["--live", "--yes", "--multi-exchange"])
+    else:
+        duration = os.getenv("AUREON_COMMAND_CENTER_DRY_RUN_DURATION", "86400")
+        cmd.extend(["--dry-run", "--multi-exchange", "--duration", duration])
+    return cmd
+
+
+async def _stop_trading_engine() -> None:
+    global TRADING_LIVE_ENABLED, TRADING_PROCESS, TRADING_MODE
+    if TRADING_PROCESS and TRADING_PROCESS.returncode is None:
+        TRADING_PROCESS.terminate()
+        try:
+            await asyncio.wait_for(TRADING_PROCESS.wait(), timeout=10)
+        except asyncio.TimeoutError:
+            TRADING_PROCESS.kill()
+    TRADING_PROCESS = None
+    TRADING_LIVE_ENABLED = False
+    TRADING_MODE = "off"
+
+
+async def _start_trading_engine(live: bool) -> None:
+    global TRADING_LIVE_ENABLED, TRADING_PROCESS, TRADING_MODE
+    if live:
+        reason = live_block_reason("Command Center")
+        if reason:
+            raise RuntimeError(reason)
+
+    cmd = _build_trading_command(live)
+    env = child_env_for_mode(live, os.environ)
+    TRADING_PROCESS = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=str(REPO_ROOT),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+        env=env,
+    )
+    TRADING_LIVE_ENABLED = live
+    TRADING_MODE = "live" if live else "dry_run"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # COMMAND CENTER HTML - THE EPIC INTERFACE
@@ -5843,6 +5898,10 @@ async def handle_api_state(request):
         'queen_message': state.queen_messages[-1] if state.queen_messages else "Queen SERO online. All systems operational.",
         'live_feed': LIVE_FEED_ENABLED,
         'trading_on': TRADING_LIVE_ENABLED,
+        'trading_mode': TRADING_MODE,
+        'safety': {
+            'live_block_reason': live_block_reason("Command Center"),
+        },
     })
 
 async def handle_live_toggle(request):
@@ -5854,38 +5913,30 @@ async def handle_live_toggle(request):
 
 async def handle_trading_toggle(request):
     """Toggle real trading engine on/off"""
-    global TRADING_LIVE_ENABLED, TRADING_PROCESS
+    global TRADING_LIVE_ENABLED, TRADING_PROCESS, TRADING_MODE
 
-    if TRADING_LIVE_ENABLED:
-        # Stop trading engine
-        if TRADING_PROCESS and TRADING_PROCESS.returncode is None:
-            TRADING_PROCESS.terminate()
-            try:
-                await asyncio.wait_for(TRADING_PROCESS.wait(), timeout=10)
-            except asyncio.TimeoutError:
-                TRADING_PROCESS.kill()
-        TRADING_PROCESS = None
-        TRADING_LIVE_ENABLED = False
+    if TRADING_PROCESS and TRADING_PROCESS.returncode is None:
+        await _stop_trading_engine()
     else:
-        # Start trading engine in LIVE mode (no dry-run)
-        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"]
-        env = dict(os.environ)
-        # Propagate debug flag if set in Command Center environment
-        if env.get("AUREON_DEBUG_STARTUP") == "1":
-            env["AUREON_DEBUG_STARTUP"] = "1"
-        # Force unbuffered output for reliable streaming
-        env["PYTHONUNBUFFERED"] = "1"
-        TRADING_PROCESS = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=str(Path(__file__).resolve().parent),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            env=env,
-        )
-        TRADING_LIVE_ENABLED = True
+        reason = live_block_reason("Command Center")
+        if reason:
+            await broadcast_to_clients({
+                'type': 'trading',
+                'enabled': False,
+                'mode': TRADING_MODE,
+                'blocked': True,
+                'reason': reason,
+            })
+            return web.json_response({
+                'enabled': False,
+                'mode': TRADING_MODE,
+                'blocked': True,
+                'reason': reason,
+            }, status=423)
+        await _start_trading_engine(live=True)
 
-    await broadcast_to_clients({'type': 'trading', 'enabled': TRADING_LIVE_ENABLED})
-    return web.json_response({'enabled': TRADING_LIVE_ENABLED})
+    await broadcast_to_clients({'type': 'trading', 'enabled': TRADING_LIVE_ENABLED, 'mode': TRADING_MODE})
+    return web.json_response({'enabled': TRADING_LIVE_ENABLED, 'mode': TRADING_MODE})
 
 async def websocket_handler(request):
     """WebSocket handler for real-time updates"""
@@ -5918,6 +5969,7 @@ async def websocket_handler(request):
             'queen_message': state.queen_messages[-1] if state.queen_messages else "Welcome to the Command Center.",
             'live_feed': LIVE_FEED_ENABLED,
             'trading_on': TRADING_LIVE_ENABLED,
+            'trading_mode': TRADING_MODE,
         })
         
         async for msg in ws:
@@ -6378,7 +6430,7 @@ async def handle_flight_check(request):
 
 async def monitor_trading_output():
     """Monitor output from the trading subprocess and broadcast logs/visuals"""
-    global TRADING_PROCESS
+    global TRADING_PROCESS, TRADING_LIVE_ENABLED, TRADING_MODE
     safe_print("👀 Starting Trading Process Monitor...")
     # Keep a tail buffer so we can show last lines if the process exits
     tail_buffer = deque(maxlen=40)
@@ -6527,6 +6579,8 @@ async def monitor_trading_output():
                             for line in tail_buffer:
                                 safe_print(f"   {line}")
                         TRADING_PROCESS = None
+                        TRADING_LIVE_ENABLED = False
+                        TRADING_MODE = "off"
                         # Auto-restart?
                     await asyncio.sleep(0.5)
             except Exception as e:
@@ -6562,35 +6616,36 @@ async def start_background_tasks(app):
         app['simulate_task'] = asyncio.create_task(simulate_data_task())
     app['balances_task'] = asyncio.create_task(update_balances_task())
     app['thought_bus_task'] = asyncio.create_task(thought_bus_listener_task())
-    
-    # 🚀 AUTO-START TRADING IMMEDIATELY ON BOOT!
-    global TRADING_PROCESS, TRADING_LIVE_ENABLED
-    safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
-    try:
-        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"]
-        env = dict(os.environ)
-        if env.get("AUREON_DEBUG_STARTUP") == "1":
-            env["AUREON_DEBUG_STARTUP"] = "1"
-        env["PYTHONUNBUFFERED"] = "1"
-        TRADING_PROCESS = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=str(Path(__file__).resolve().parent),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            env=env,
-        )
-        TRADING_LIVE_ENABLED = True
-        safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
-        
-        # Start the monitor
-        app['monitor_task'] = asyncio.create_task(monitor_trading_output())
-        
-    except Exception as e:
-        safe_print(f"⚠️ Failed to auto-start trading: {e}")
+
+    # Trading engine startup is explicit. Safe startup can request dry-run so
+    # the whole interface is active without opening real exchange orders.
+    if env_truthy("AUREON_COMMAND_CENTER_AUTO_START_DRY_RUN"):
+        safe_print("AUTO-STARTING TRADING ENGINE IN DRY-RUN MODE...")
+        try:
+            await _start_trading_engine(live=False)
+            app['monitor_task'] = asyncio.create_task(monitor_trading_output())
+            safe_print("Trading engine dry-run process started.")
+        except Exception as e:
+            safe_print(f"Failed to auto-start dry-run trading: {e}")
+    elif env_truthy("AUREON_COMMAND_CENTER_AUTO_START_TRADING"):
+        reason = live_block_reason("Command Center auto-start")
+        if reason:
+            safe_print(f"Live trading auto-start blocked: {reason}")
+        else:
+            try:
+                await _start_trading_engine(live=True)
+                app['monitor_task'] = asyncio.create_task(monitor_trading_output())
+                safe_print("Live trading engine started by explicit environment gate.")
+            except Exception as e:
+                safe_print(f"Failed to auto-start live trading: {e}")
+    else:
+        safe_print("Trading engine auto-start disabled; Command Center is online in guarded mode.")
+    return
 
 async def cleanup_background_tasks(app):
     """Cleanup background tasks"""
-    for task_name in ['queen_task', 'simulate_task', 'balances_task', 'thought_bus_task']:
+    await _stop_trading_engine()
+    for task_name in ['queen_task', 'simulate_task', 'balances_task', 'thought_bus_task', 'monitor_task']:
         task = app.get(task_name)
         if task:
             task.cancel()

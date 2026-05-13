@@ -37,6 +37,13 @@ except Exception:
     _HAS_THOUGHT_BUS = False
 
 try:
+    from aureon.core.organism_contracts import OrganismContractStack
+    _HAS_CONTRACT_STACK = True
+except Exception:
+    OrganismContractStack = None  # type: ignore[assignment,misc]
+    _HAS_CONTRACT_STACK = False
+
+try:
     from aureon.vault.aureon_vault import AureonVault
     _HAS_VAULT = True
 except Exception:
@@ -295,6 +302,20 @@ except Exception:
     _HAS_MARKET_REFRESHER = False
 
 try:
+    from aureon.queen.accounting_context_bridge import get_accounting_context_bridge
+    _HAS_ACCOUNTING_CONTEXT = True
+except Exception:
+    get_accounting_context_bridge = None  # type: ignore[assignment]
+    _HAS_ACCOUNTING_CONTEXT = False
+
+try:
+    from aureon.autonomous.hnc_saas_cognitive_bridge import SaaSCognitiveBridge
+    _HAS_SAAS_COGNITIVE_BRIDGE = True
+except Exception:
+    SaaSCognitiveBridge = None  # type: ignore[assignment,misc]
+    _HAS_SAAS_COGNITIVE_BRIDGE = False
+
+try:
     from aureon.exchanges.capital_cfd_trader import set_module_lambda_engine as _set_capital_lambda
     _HAS_CAPITAL_TRADER = True
 except Exception:
@@ -349,6 +370,9 @@ class IntegratedCognitiveSystem:
         self.self_research_loop: Any = None # Active self-question research loop
         self.vault_knowledge_bridge: Any = None # Vault -> interpreter -> dataset sync
         self.cognitive_planner: Any = None     # Ollama-powered autonomous goal synthesiser
+        self.accounting_context: Any = None    # Final-ready accounts/compliance context bridge
+        self.saas_cognition: Any = None        # HNC SaaS unhackable pursuit cognitive bridge
+        self.contract_stack: Any = None        # Goal/task/job/work-order contract spine
 
         # State
         self._running = False
@@ -398,6 +422,18 @@ class IntegratedCognitiveSystem:
             self.thought_bus = get_thought_bus()
         _boot_phase("thought_bus", boot_thought_bus)
 
+        # Phase 1.5: Organism contract stack (goals -> tasks -> jobs -> work orders)
+        def boot_contract_stack():
+            if not _HAS_CONTRACT_STACK:
+                raise RuntimeError("import failed")
+            self.contract_stack = OrganismContractStack(
+                thought_bus=self.thought_bus,
+                state_path="state/organism_contract_stack.json",
+                source="integrated_cognitive_system",
+            )
+            self.contract_stack.publish_status()
+        _boot_phase("contract_stack", boot_contract_stack)
+
         # Phase 2: Vault
         def boot_vault():
             if not _HAS_VAULT:
@@ -405,6 +441,35 @@ class IntegratedCognitiveSystem:
             self.vault = AureonVault()
             self.vault.wire_thought_bus()
         _boot_phase("vault", boot_vault)
+
+        # Phase 2.1: Accounting context bridge (final-ready accounts/compliance)
+        def boot_accounting_context():
+            if not _HAS_ACCOUNTING_CONTEXT:
+                raise RuntimeError("import failed")
+            self.accounting_context = get_accounting_context_bridge()
+            self.accounting_context.load_context()
+            self.accounting_context.ingest_to_vault(self.vault, force=False)
+            if self.thought_bus is not None:
+                self.accounting_context.publish_status(
+                    self.thought_bus,
+                    topic="accounting.context.ready",
+                )
+        _boot_phase("accounting_context", boot_accounting_context)
+
+        # Phase 2.2: HNC SaaS cognitive bridge (unhackable pursuit loop)
+        def boot_saas_cognition():
+            if not _HAS_SAAS_COGNITIVE_BRIDGE:
+                raise RuntimeError("import failed")
+            self.saas_cognition = SaaSCognitiveBridge(
+                thought_bus=self.thought_bus,
+                contract_stack=self.contract_stack,
+                vault=self.vault,
+            )
+            self.saas_cognition.load_context()
+            self.saas_cognition.ingest_to_vault(self.vault, force=False)
+            if self.thought_bus is not None:
+                self.saas_cognition.publish_ready()
+        _boot_phase("saas_cognition", boot_saas_cognition)
 
         # Phase 2.5: Temporal Knowledge Base (subscribes to ThoughtBus
         # immediately so it captures every event from boot onwards)
@@ -827,6 +892,13 @@ class IntegratedCognitiveSystem:
         except Exception:
             pass
 
+        # CONTRACTS: internal goal/task/job/work-order stack.
+        if self.contract_stack is not None and (self._tick_count == 1 or self._tick_count % 60 == 0):
+            try:
+                self.contract_stack.publish_status()
+            except Exception:
+                pass
+
         # MIND: Cortex band snapshot
         mind_state: Dict[str, Any] = {"delta": 0.0, "theta": 0.0, "alpha": 0.0, "beta": 0.0, "gamma": 0.0}
         if self.cortex is not None:
@@ -857,7 +929,10 @@ class IntegratedCognitiveSystem:
                 if _HAS_LAMBDA:
                     subsystem_health = [
                         ("thought_bus",     self.thought_bus is not None),
+                        ("contract_stack",  self.contract_stack is not None),
                         ("vault",           self.vault is not None),
+                        ("accounting",      self.accounting_context is not None),
+                        ("saas_cognition",  self.saas_cognition is not None),
                         ("lambda",          True),  # self
                         ("cortex",          self.cortex is not None),
                         ("feedback_loop",   self.feedback_loop is not None),
@@ -1013,6 +1088,20 @@ class IntegratedCognitiveSystem:
         except Exception:
             pass
 
+        # ACCOUNTING: compact metadata only, never filing/submission/payment.
+        if self.accounting_context is not None and (self._tick_count == 1 or self._tick_count % 60 == 0):
+            try:
+                self.accounting_context.publish_status(bus, topic="accounting.status")
+            except Exception:
+                pass
+
+        # HNC SAAS COGNITION: keep the unhackable pursuit loop on ThoughtBus.
+        if self.saas_cognition is not None and (self._tick_count == 1 or self._tick_count % 30 == 0):
+            try:
+                self.saas_cognition.publish_state()
+            except Exception:
+                pass
+
         # TEMPORAL GROUND: maintain multiverse hash chain continuously
         if self.temporal_ground is not None:
             try:
@@ -1140,7 +1229,7 @@ class IntegratedCognitiveSystem:
         """
         Process user input. Returns a response string or None.
 
-        Commands: /status, /goal, /pause, /resume, /cancel, /coherence, /quit
+        Commands: /status, /goal, /saas, /accounts, /contracts, /pause, /resume, /cancel, /coherence, /quit
         Anything else -> GoalExecutionEngine.submit_goal()
         """
         text = text.strip()
@@ -1187,19 +1276,39 @@ class IntegratedCognitiveSystem:
             return self._cmd_research(text)
         elif text == "/organize":
             return self._cmd_organize()
+        elif text == "/contracts" or text.startswith("/contracts "):
+            return self._cmd_contracts(text)
+        elif text == "/saas" or text.startswith("/saas "):
+            return self._cmd_saas(text)
+        elif text == "/accounts" or text.startswith("/accounts "):
+            return self._cmd_accounts(text)
         elif text == "/quit":
             return "__QUIT__"
 
         # Default: submit as goal
+        contract_id = ""
+        if self.contract_stack is not None:
+            try:
+                workflow = self.contract_stack.create_goal_workflow(
+                    text,
+                    source="ics.user_input",
+                    route_surfaces=["memory", "reasoning", "contracts", "thought_bus"],
+                )
+                contract_id = ((workflow.get("goal") or {}).get("contract_id") or "")
+            except Exception:
+                contract_id = ""
         if self.goal_engine is not None:
             try:
                 plan = self.goal_engine.submit_goal(text)
                 completed = sum(1 for s in plan.steps if s.status == "completed")
+                suffix = f" Contract: {contract_id}." if contract_id else ""
                 return (f"Goal '{plan.objective[:50]}' {plan.status}. "
-                        f"{completed}/{len(plan.steps)} steps completed.")
+                        f"{completed}/{len(plan.steps)} steps completed.{suffix}")
             except Exception as exc:
                 return f"Goal execution error: {exc}"
 
+        if contract_id:
+            return f"Goal engine not available, but contract workflow was queued: {contract_id}."
         return "Goal engine not available. No subsystems could process this input."
 
     def _cmd_status(self) -> str:
@@ -1207,8 +1316,762 @@ class IntegratedCognitiveSystem:
         for name, st in self._boot_status.items():
             marker = "OK" if st == "alive" else "FAIL"
             lines.append(f"  [{marker:>4}] {name}")
+        if self.contract_stack is not None:
+            try:
+                cst = self.contract_stack.status()
+                lines.append(
+                    "  Contracts: "
+                    f"{cst.get('contract_count', 0)} contracts, "
+                    f"queued={cst.get('queue_count', 0)}"
+                )
+            except Exception:
+                lines.append("  Contracts: status unavailable")
+        if self.accounting_context is not None:
+            try:
+                ast = self.accounting_context.status()
+                lines.append(
+                    "  Accounting: "
+                    f"{ast.get('accounts_build_status', 'unknown')} "
+                    f"overdue={ast.get('overdue_count', 0)} "
+                    f"manual_filing={ast.get('manual_filing_required', True)}"
+                )
+            except Exception:
+                lines.append("  Accounting: status unavailable")
+        if self.saas_cognition is not None:
+            try:
+                sst = self.saas_cognition.status()
+                summary = sst.get("summary") or {}
+                lines.append(
+                    "  SaaS cognition: "
+                    f"{sst.get('status', 'unknown')} "
+                    f"benchmarks={summary.get('unhackable_benchmark_count', 0)} "
+                    f"attack_cases={summary.get('attack_case_count', 0)} "
+                    f"findings={summary.get('actionable_finding_count', 0)} "
+                    f"queued={summary.get('queued_decision_count', 0)}"
+                )
+            except Exception:
+                lines.append("  SaaS cognition: status unavailable")
         lines.append(f"  Tick count: {self._tick_count}")
         return "\n".join(lines)
+
+    def _cmd_contracts(self, text: str) -> str:
+        if self.contract_stack is None:
+            return "Organism contract stack not available."
+
+        parts = text.split(maxsplit=2)
+        action = parts[1].lower() if len(parts) > 1 else "status"
+        if action in {"", "status"}:
+            st = self.contract_stack.publish_status()
+            lines = ["=== ORGANISM CONTRACT STACK ==="]
+            lines.append(f"  Schema: {st.get('contract_schema_version')}")
+            lines.append(f"  Contracts: {st.get('contract_count', 0)}")
+            lines.append(f"  Queued work orders: {st.get('queue_count', 0)}")
+            lines.append(f"  Types: {st.get('type_counts', {})}")
+            lines.append(f"  Statuses: {st.get('status_counts', {})}")
+            lines.append("  Topics:")
+            for key, topic in sorted((st.get("topics") or {}).items()):
+                lines.append(f"    - {key}: {topic}")
+            return "\n".join(lines)
+
+        if action == "goal":
+            objective = parts[2].strip() if len(parts) > 2 else ""
+            if not objective:
+                return "Usage: /contracts goal <objective>"
+            workflow = self.contract_stack.create_goal_workflow(
+                objective,
+                source="ics.contract_command",
+                route_surfaces=["memory", "reasoning", "contracts", "thought_bus"],
+            )
+            goal_id = (workflow.get("goal") or {}).get("contract_id")
+            work_orders = workflow.get("work_orders") or []
+            return (
+                "Contract workflow queued. "
+                f"Goal={goal_id}; work_orders={len(work_orders)}."
+            )
+
+        if action == "next":
+            item = self.contract_stack.claim_next(worker="ics.contract_command")
+            if item is None:
+                return "No queued organism work orders."
+            return f"Claimed {item.contract_id}: {item.title}"
+
+        if action == "complete":
+            rest = parts[2].strip() if len(parts) > 2 else ""
+            if not rest:
+                return "Usage: /contracts complete <work_order_id> [note]"
+            bits = rest.split(maxsplit=1)
+            contract_id = bits[0]
+            note = bits[1] if len(bits) > 1 else "completed from ICS command"
+            done = self.contract_stack.complete_work_order(
+                contract_id,
+                result={"note": note},
+                ok=True,
+                worker="ics.contract_command",
+            )
+            if done is None:
+                return f"Work order not found: {contract_id}"
+            return f"Completed {done.contract_id}: {done.title}"
+
+        return "Usage: /contracts [status|goal <objective>|next|complete <work_order_id> [note]]"
+
+    def _cmd_saas(self, text: str) -> str:
+        if self.saas_cognition is None:
+            return "HNC SaaS cognitive bridge not available."
+
+        parts = text.split()
+        action = parts[1].lower() if len(parts) > 1 else "status"
+        if action in {"", "status"}:
+            try:
+                st = self.saas_cognition.status(force=True)
+            except Exception as exc:
+                return f"SaaS cognition status error: {exc}"
+            summary = st.get("summary") or {}
+            lines = ["=== HNC SAAS COGNITION ==="]
+            lines.append(f"  Status: {st.get('status', 'unknown')}")
+            lines.append(f"  Blueprint: {summary.get('blueprint_status', 'unknown')}")
+            lines.append(f"  Attack lab: {summary.get('attack_lab_status', 'unknown')}")
+            lines.append(f"  HNC surfaces: {summary.get('hnc_surface_count', 0)}")
+            lines.append(f"  Unhackable benchmarks: {summary.get('unhackable_benchmark_count', 0)}")
+            lines.append(f"  Attack cases: {summary.get('attack_case_count', 0)}")
+            lines.append(f"  Actionable findings: {summary.get('actionable_finding_count', 0)}")
+            lines.append(f"  Queued decisions: {summary.get('queued_decision_count', 0)}")
+            lines.append("  Questions:")
+            for question in (st.get("questions") or [])[:6]:
+                lines.append(f"    - {question.get('risk')}: {question.get('question')}")
+            lines.append("  Safety: authorized local/staging self-attack only; no external attacks, live trading, filing, payments, or secrets.")
+            return "\n".join(lines)
+
+        if action in {"think", "refresh"}:
+            try:
+                st = self.saas_cognition.load_context(force=True)
+                self.saas_cognition.ingest_to_vault(self.vault, force=True)
+                self.saas_cognition.publish_state()
+                return (
+                    "SaaS cognitive bridge refreshed. "
+                    f"status={st.status}; questions={len(st.questions)}; decisions={len(st.decisions)}; "
+                    f"queued={st.summary.get('queued_decision_count', 0)}"
+                )
+            except Exception as exc:
+                return f"SaaS cognition refresh error: {exc}"
+
+        if action in {"attack", "lab"}:
+            try:
+                from aureon.autonomous.hnc_authorized_attack_lab import build_authorized_attack_lab_report, write_report
+
+                report = build_authorized_attack_lab_report(
+                    targets=["http://localhost"],
+                    execute_simulations=True,
+                    queue_fixes=True,
+                )
+                write_report(report)
+                self.saas_cognition.load_context(force=True)
+                self.saas_cognition.publish_state()
+                summary = report.summary
+                return (
+                    "Authorized SaaS self-attack lab completed. "
+                    f"status={report.status}; cases={summary.get('attack_case_count', 0)}; "
+                    f"findings={summary.get('actionable_finding_count', 0)}; "
+                    f"fixes_queued={summary.get('fix_contracts_queued')}"
+                )
+            except Exception as exc:
+                return f"SaaS attack lab error: {exc}"
+
+        if action in {"blueprint", "architect"}:
+            try:
+                from aureon.autonomous.hnc_saas_security_architect import build_hnc_saas_security_blueprint, write_report
+
+                blueprint = build_hnc_saas_security_blueprint(queue_contracts=True)
+                write_report(blueprint)
+                self.saas_cognition.load_context(force=True)
+                self.saas_cognition.publish_state()
+                summary = blueprint.summary
+                return (
+                    "SaaS security blueprint refreshed. "
+                    f"status={blueprint.status}; controls={summary.get('control_count', 0)}; "
+                    f"benchmarks={summary.get('unhackable_benchmark_count', 0)}; "
+                    f"contracts={summary.get('contract_queued')}"
+                )
+            except Exception as exc:
+                return f"SaaS blueprint error: {exc}"
+
+        return "Usage: /saas [status|think|attack|blueprint]"
+
+    def _cmd_accounts(self, text: str) -> str:
+        if self.accounting_context is None:
+            return "Accounting context bridge not available."
+
+        parts = text.split()
+        action = parts[1].lower() if len(parts) > 1 else "status"
+        if action in {"", "status"}:
+            try:
+                st = self.accounting_context.status(force=True)
+            except Exception as exc:
+                return f"Accounting status error: {exc}"
+            lines = ["=== ACCOUNTING STATUS ==="]
+            lines.append(f"  Company: {st.get('company_number')} {st.get('company_name')}")
+            lines.append(f"  Status:  {st.get('company_status') or 'unknown'}")
+            lines.append(f"  Period:  {st.get('period_start')} to {st.get('period_end')}")
+            lines.append(f"  Build:   {st.get('accounts_build_status')} at {st.get('generated_at') or 'unknown'}")
+            lines.append(f"  Overdue: {st.get('overdue_count', 0)}")
+            lines.append(f"  Bank evidence complete: {st.get('bank_evidence_complete')}")
+            lines.append(f"  Manual filing required: {st.get('manual_filing_required')}")
+            combined = st.get("combined_bank_data") or {}
+            if combined:
+                transaction_sources = combined.get("transaction_source_count", combined.get("csv_source_count", 0))
+                lines.append(
+                    "  Bank/account data: "
+                    f"{transaction_sources} transaction sources "
+                    f"({combined.get('csv_source_count', 0)} CSV, {combined.get('pdf_source_count', 0)} parsed PDF), "
+                    f"{combined.get('unique_rows_in_period', 0)} unique period rows, "
+                    f"{combined.get('duplicate_rows_removed', 0)} duplicate overlaps removed"
+                )
+                source_summary = combined.get("source_provider_summary") or {}
+                if source_summary:
+                    lines.append(
+                        "  Source providers: "
+                        + ", ".join(f"{name}={info.get('rows', 0)}" for name, info in sorted(source_summary.items()))
+                    )
+                flow_summary = combined.get("flow_provider_summary") or {}
+                if flow_summary:
+                    lines.append(
+                        "  Flow providers: "
+                        + ", ".join(f"{name}={info.get('rows', 0)}" for name, info in sorted(flow_summary.items()))
+                    )
+            registry = st.get("accounting_system_registry") or {}
+            if registry and not registry.get("error"):
+                lines.append(
+                    "  Accounting tools: "
+                    f"{registry.get('module_count', 0)} modules/tools, "
+                    f"{registry.get('artifact_count', 0)} artifacts"
+                )
+            readiness = st.get("accounting_readiness") or {}
+            if readiness:
+                lines.append(
+                    "  Readiness: "
+                    f"{'ready' if readiness.get('ready') else 'blocked'} for "
+                    f"{readiness.get('ready_for', 'final-ready manual upload pack')}; "
+                    f"required_failures={len(readiness.get('required_failures') or [])}"
+                )
+            statutory = st.get("statutory_filing_pack") or {}
+            if statutory:
+                lines.append(
+                    "  Companies House/HMRC final-ready pack: "
+                    f"{len(statutory.get('outputs') or {})} outputs; "
+                    "official filing remains manual"
+                )
+            raw_manifest = st.get("raw_data_manifest") or {}
+            raw_summary = raw_manifest.get("summary") or {}
+            if raw_summary:
+                lines.append(
+                    "  Raw data intake: "
+                    f"{raw_summary.get('file_count', 0)} files, "
+                    f"{raw_summary.get('transaction_source_count', 0)} transaction sources, "
+                    f"{raw_summary.get('evidence_only_count', 0)} evidence-only"
+                )
+            workflow = st.get("autonomous_workflow") or {}
+            if workflow:
+                cognitive = workflow.get("cognitive_review") or st.get("cognitive_review") or {}
+                vault_memory = workflow.get("vault_memory") or st.get("vault_memory") or {}
+                handoff_pack = st.get("human_filing_handoff_pack") or workflow.get("human_filing_handoff_pack") or {}
+                handoff_readiness = handoff_pack.get("readiness") or {}
+                uk_brain = (
+                    st.get("uk_accounting_requirements_brain")
+                    or handoff_pack.get("uk_accounting_requirements_brain")
+                    or workflow.get("uk_accounting_requirements_brain")
+                    or {}
+                )
+                uk_summary = uk_brain.get("summary") or {}
+                uk_figures = uk_brain.get("figures") or {}
+                evidence_authoring = (
+                    st.get("accounting_evidence_authoring")
+                    or handoff_pack.get("accounting_evidence_authoring")
+                    or workflow.get("accounting_evidence_authoring")
+                    or {}
+                )
+                evidence_summary = evidence_authoring.get("summary") or {}
+                llm_authoring = evidence_authoring.get("llm_document_authoring") or evidence_summary.get("llm_document_authoring") or {}
+                lines.append(
+                    "  Autonomous accounts workflow: "
+                    f"{workflow.get('status', 'unknown')} "
+                    f"agent_tasks={len(workflow.get('agent_tasks') or [])}"
+                )
+                lines.append(
+                    "  Evidence authoring: "
+                    f"{evidence_authoring.get('status', 'unknown')} "
+                    f"requests={evidence_summary.get('draft_count', 0)} "
+                    f"documents={evidence_summary.get('generated_document_count', 0)} "
+                    f"petty_cash={evidence_summary.get('petty_cash_withdrawal_count', 0)} "
+                    f"llm_status={llm_authoring.get('status', 'unknown')} "
+                    f"llm_docs={llm_authoring.get('completed_count', 0)} "
+                    "internal_support_documents_only"
+                )
+                lines.append(
+                    "  UK accounting requirements brain: "
+                    f"{uk_brain.get('status', 'unknown')} "
+                    f"requirements={uk_summary.get('requirement_count', 0)} "
+                    f"questions={uk_summary.get('question_count', 0)} "
+                    f"unresolved={uk_summary.get('unresolved_question_count', 0)} "
+                    f"vat_over_threshold={uk_figures.get('turnover_over_vat_threshold', 'unknown')}"
+                )
+                lines.append(
+                    "  Human filing handoff: "
+                    f"{handoff_pack.get('status', 'unknown')} "
+                    f"ready={handoff_readiness.get('ready_for_manual_upload', handoff_readiness.get('ready_for_manual_review', 'unknown'))}"
+                )
+                lines.append(
+                    "  Accounting mind: "
+                    f"vault_memory={vault_memory.get('status', 'unknown')} "
+                    f"self_questioning={cognitive.get('status', 'unknown')} "
+                    f"source={cognitive.get('answer_source', 'n/a')}"
+                )
+            end_user = st.get("end_user_accounting_automation") or {}
+            if end_user:
+                coverage = end_user.get("requirement_coverage") or []
+                generated = sum(
+                    1
+                    for item in coverage
+                    if str(item.get("status", "")).startswith("generated")
+                    or str(item.get("status", "")).startswith("final_ready")
+                )
+                outputs = end_user.get("outputs") or {}
+                lines.append(
+                    "  End-user automation: "
+                    f"{end_user.get('status', 'unknown')} "
+                    f"coverage={generated}/{len(coverage)} "
+                    f"start_here={outputs.get('end_user_start_here', 'not generated')}"
+                )
+            swarm_scan = st.get("swarm_raw_data_wave_scan") or {}
+            if swarm_scan:
+                benchmark = swarm_scan.get("benchmark") or {}
+                consensus = ((swarm_scan.get("waves") or {}).get("phi_swarm_consensus") or {})
+                lines.append(
+                    "  Swarm raw-data wave scan: "
+                    f"{swarm_scan.get('status', 'unknown')} "
+                    f"files={benchmark.get('files_scanned', 0)} "
+                    f"benchmark={benchmark.get('total_duration_seconds', 0)}s "
+                    f"consensus={consensus.get('status', 'unknown')} score={consensus.get('score', 'n/a')}"
+                )
+            confirmation = st.get("end_user_confirmation") or {}
+            if confirmation:
+                payload = confirmation.get("confirmation") or confirmation
+                lines.append(
+                    "  End-user confirmation feed: "
+                    f"{confirmation.get('status', payload.get('status', 'unknown'))} "
+                    f"confirmed={len(payload.get('what_aureon_confirmed') or [])} "
+                    f"attention={len(payload.get('attention_items') or [])}"
+                )
+            missing = st.get("missing_outputs") or []
+            lines.append(f"  Missing outputs: {', '.join(missing) if missing else 'none'}")
+            pack = ((st.get("outputs") or {}).get("accounts_pack_pdf") or {}).get("path")
+            if pack:
+                lines.append(f"  Accounts pack: {pack}")
+            return "\n".join(lines)
+
+        if action in {"tools", "registry"}:
+            try:
+                st = self.accounting_context.status(force=True)
+            except Exception as exc:
+                return f"Accounting tools error: {exc}"
+            registry = st.get("accounting_system_registry") or {}
+            if not registry or registry.get("error"):
+                return f"Accounting tools registry unavailable: {registry.get('error', 'unknown')}"
+            lines = ["=== ACCOUNTING TOOL REGISTRY ==="]
+            lines.append(f"  Modules/tools: {registry.get('module_count', 0)}")
+            lines.append(f"  Artifacts:     {registry.get('artifact_count', 0)}")
+            lines.append(f"  Runnable:      {registry.get('runnable_tool_count', 0)}")
+            lines.append("  Domains:")
+            for domain, count in sorted((registry.get("domain_counts") or {}).items()):
+                lines.append(f"    - {domain}: {count}")
+            lines.append("  Safety: Companies House/HMRC filing and tax/payment actions remain manual only.")
+            return "\n".join(lines)
+
+        if action == "ingest":
+            try:
+                ingested = self.accounting_context.ingest_to_vault(self.vault, force=True)
+                status = self.accounting_context.publish_status(self.thought_bus, topic="accounting.status")
+                return (
+                    "Accounting context refreshed and ingested into vault. "
+                    f"cards={ingested}, overdue={status.get('overdue_count', 0)}"
+                )
+            except Exception as exc:
+                return f"Accounting ingest error: {exc}"
+
+        if action in {"readiness", "audit"}:
+            try:
+                if hasattr(self.accounting_context, "validate_accounting_readiness"):
+                    readiness = self.accounting_context.validate_accounting_readiness(force=True)
+                else:
+                    readiness = (self.accounting_context.status(force=True).get("accounting_readiness") or {})
+                if self.thought_bus is not None:
+                    try:
+                        self.thought_bus.publish("accounting.readiness", readiness, source="ics.accounting")
+                    except Exception:
+                        pass
+                lines = ["=== ACCOUNTING READINESS ==="]
+                lines.append(f"  Ready: {readiness.get('ready')}")
+                lines.append(f"  Ready for: {readiness.get('ready_for', 'final-ready manual upload pack')}")
+                lines.append(f"  Bank sources: {readiness.get('bank_sources', 0)}")
+                lines.append(f"  Unique bank rows: {readiness.get('unique_bank_rows', 0)}")
+                lines.append(f"  Statutory outputs: {readiness.get('statutory_outputs', 0)}")
+                failures = readiness.get("required_failures") or []
+                lines.append(f"  Required failures: {len(failures)}")
+                for item in failures[:8]:
+                    lines.append(f"    - {item.get('name')}: {item.get('detail')}")
+                if not failures:
+                    lines.append("  Required checklist: complete")
+                lines.append("  Safety: filing, HMRC submission, tax and payments remain manual.")
+                return "\n".join(lines)
+            except Exception as exc:
+                return f"Accounting readiness error: {exc}"
+
+        if action in {"requirements", "brain", "questions"}:
+            try:
+                st = self.accounting_context.status(force=True)
+            except Exception as exc:
+                return f"Accounting requirements brain error: {exc}"
+            handoff_pack = st.get("human_filing_handoff_pack") or {}
+            workflow = st.get("autonomous_workflow") or {}
+            uk_brain = (
+                st.get("uk_accounting_requirements_brain")
+                or handoff_pack.get("uk_accounting_requirements_brain")
+                or workflow.get("uk_accounting_requirements_brain")
+                or {}
+            )
+            if not uk_brain:
+                return "Accounting UK requirements brain has not been generated yet. Run /accounts autonomous or /accounts build first."
+            summary = uk_brain.get("summary") or {}
+            figures = uk_brain.get("figures") or {}
+            lines = ["=== UK ACCOUNTING REQUIREMENTS BRAIN ==="]
+            lines.append(f"  Status: {uk_brain.get('status', 'unknown')}")
+            lines.append(f"  Requirements: {summary.get('requirement_count', 0)}")
+            lines.append(f"  Accountant self-questions: {summary.get('question_count', 0)}")
+            lines.append(f"  Unresolved questions: {summary.get('unresolved_question_count', 0)}")
+            lines.append(f"  VAT turnover over threshold: {figures.get('turnover_over_vat_threshold')}")
+            lines.append(f"  VAT threshold: {figures.get('vat_registration_threshold', 'unknown')}")
+            lines.append("  Questions:")
+            for question in (uk_brain.get("accountant_self_questions") or [])[:10]:
+                lines.append(f"    - {question.get('status')}: {question.get('question')}")
+            lines.append("  Safety: inspect/reconcile/generate final-ready local packs only; filing, VAT/HMRC submission and payments remain manual.")
+            return "\n".join(lines)
+
+        if action in {"evidence", "documents", "receipts", "invoices"}:
+            try:
+                st = self.accounting_context.status(force=True)
+            except Exception as exc:
+                return f"Accounting evidence authoring error: {exc}"
+            handoff_pack = st.get("human_filing_handoff_pack") or {}
+            workflow = st.get("autonomous_workflow") or {}
+            evidence_authoring = (
+                st.get("accounting_evidence_authoring")
+                or handoff_pack.get("accounting_evidence_authoring")
+                or workflow.get("accounting_evidence_authoring")
+                or {}
+            )
+            if not evidence_authoring:
+                return "Accounting evidence authoring pack has not been generated yet. Run /accounts autonomous first."
+            summary = evidence_authoring.get("summary") or {}
+            llm_authoring = evidence_authoring.get("llm_document_authoring") or summary.get("llm_document_authoring") or {}
+            outputs = evidence_authoring.get("outputs") or {}
+            lines = ["=== ACCOUNTING EVIDENCE AUTHORING ==="]
+            lines.append(f"  Status: {evidence_authoring.get('status', 'unknown')}")
+            lines.append(f"  Evidence requests: {summary.get('draft_count', 0)}")
+            lines.append(f"  Generated internal document templates: {summary.get('generated_document_count', 0)}")
+            lines.append(
+                "  LLM document authoring: "
+                f"{llm_authoring.get('status', 'unknown')} "
+                f"generated={llm_authoring.get('completed_count', 0)} "
+                f"model={llm_authoring.get('model') or 'not selected'}"
+            )
+            lines.append(f"  Petty-cash withdrawals: {summary.get('petty_cash_withdrawal_count', 0)}")
+            lines.append(f"  Related-party/director queries: {summary.get('related_party_query_count', 0)}")
+            lines.append(f"  Expense receipt requests: {summary.get('expense_receipt_request_count', 0)}")
+            lines.append(f"  Income source queries: {summary.get('income_source_query_count', 0)}")
+            lines.append(f"  Manifest: {outputs.get('accounting_evidence_authoring_manifest', 'not found')}")
+            lines.append(f"  Requests CSV: {outputs.get('accounting_evidence_requests_csv', 'not found')}")
+            lines.append("  Safety: generated documents are internal support records only, not real receipts/invoices or filing evidence.")
+            return "\n".join(lines)
+
+        if action in {"filing", "statutory"}:
+            subaction = parts[2].lower() if len(parts) > 2 else "status"
+            if subaction in {"build", "generate"}:
+                if not hasattr(self.accounting_context, "run_statutory_filing_pack"):
+                    return "Accounting statutory generator not available."
+                try:
+                    result = self.accounting_context.run_statutory_filing_pack()
+                    if self.thought_bus is not None:
+                        topic = (
+                            "accounting.statutory.generated"
+                            if result.get("status") == "completed"
+                            else "accounting.statutory.blocked"
+                        )
+                        try:
+                            self.thought_bus.publish(topic, result, source="ics.accounting")
+                        except Exception:
+                            pass
+                    self.accounting_context.ingest_to_vault(self.vault, force=True)
+                    readiness = result.get("readiness") or ((result.get("summary") or {}).get("accounting_readiness") or {})
+                    return (
+                        "Accounting statutory filing-support build "
+                        f"{result.get('status')} (exit={result.get('exit_code', 'n/a')}); final-ready manual pack. "
+                        f"ready={readiness.get('ready', 'unknown')}; "
+                        "Companies House/HMRC filing remains manual."
+                    )
+                except Exception as exc:
+                    if self.thought_bus is not None:
+                        try:
+                            self.thought_bus.publish(
+                                "accounting.statutory.blocked",
+                                {"error": str(exc)},
+                                source="ics.accounting",
+                            )
+                        except Exception:
+                            pass
+                    return f"Accounting statutory build blocked: {exc}"
+
+            try:
+                st = self.accounting_context.status(force=True)
+            except Exception as exc:
+                return f"Accounting filing status error: {exc}"
+            statutory = st.get("statutory_filing_pack") or {}
+            outputs = statutory.get("outputs") or {}
+            figures = statutory.get("figures") or {}
+            requirement_summary = (statutory.get("government_requirements_matrix") or {}).get("summary") or {}
+            uk_brain = (
+                st.get("uk_accounting_requirements_brain")
+                or (st.get("human_filing_handoff_pack") or {}).get("uk_accounting_requirements_brain")
+                or {}
+            )
+            uk_summary = uk_brain.get("summary") or {}
+            lines = ["=== ACCOUNTING STATUTORY/HMRC PACK ==="]
+            lines.append(f"  Company: {st.get('company_number')} {st.get('company_name')}")
+            lines.append(f"  Period:  {st.get('period_start')} to {st.get('period_end')}")
+            lines.append(f"  Generated: {statutory.get('generated_at') or 'not generated'}")
+            if figures:
+                lines.append(
+                    "  Figures: "
+                    f"turnover={figures.get('turnover', 'n/a')}, "
+                    f"expenses={figures.get('expenses', 'n/a')}, "
+                    f"profit_before_tax={figures.get('profit_before_tax', 'n/a')}, "
+                    f"corporation_tax={figures.get('corporation_tax', 'n/a')}"
+                )
+            lines.append(f"  Outputs: {len(outputs)}")
+            if requirement_summary:
+                lines.append(
+                    "  Government requirements: "
+                    f"{requirement_summary.get('requirement_count', 0)} tracked, "
+                    f"{requirement_summary.get('generated_or_readiness_count', 0)} generated/readiness, "
+                "official submission manual"
+                )
+            if uk_summary:
+                lines.append(
+                    "  UK requirements brain: "
+                    f"{uk_summary.get('requirement_count', 0)} tracked, "
+                    f"{uk_summary.get('question_count', 0)} self-questions, "
+                    f"{uk_summary.get('unresolved_question_count', 0)} unresolved"
+                )
+            for key in (
+                "companies_house_accounts_pdf",
+                "directors_report_pdf",
+                "ct600_manual_entry_json",
+                "hmrc_ct600_draft_json",
+                "ct600_box_map_markdown",
+                "hmrc_tax_computation_pdf",
+                "ixbrl_readiness_note",
+                "government_requirements_matrix_markdown",
+                "filing_checklist",
+            ):
+                item = outputs.get(key) or ((st.get("outputs") or {}).get(key) or {})
+                lines.append(f"    - {key}: {item.get('path') or 'not found'}")
+            lines.append("  Safety: final-ready manual filing pack only; no Companies House/HMRC filing or payment is automatic.")
+            return "\n".join(lines)
+
+        if action in {"raw", "intake"}:
+            try:
+                st = self.accounting_context.status(force=True)
+            except Exception as exc:
+                return f"Accounting raw-data status error: {exc}"
+            raw_manifest = st.get("raw_data_manifest") or {}
+            summary = raw_manifest.get("summary") or {}
+            lines = ["=== ACCOUNTING RAW DATA INTAKE ==="]
+            lines.append(f"  Company: {st.get('company_number')} {st.get('company_name')}")
+            lines.append(f"  Period:  {st.get('period_start')} to {st.get('period_end')}")
+            lines.append(f"  Files:   {summary.get('file_count', 0)}")
+            lines.append(f"  Transaction sources: {summary.get('transaction_source_count', 0)}")
+            lines.append(f"  Evidence-only files: {summary.get('evidence_only_count', 0)}")
+            providers = summary.get("provider_counts") or {}
+            if providers:
+                lines.append("  Providers: " + ", ".join(f"{key}={value}" for key, value in sorted(providers.items())))
+            paths = st.get("source_files") or {}
+            if paths.get("raw_data_manifest"):
+                lines.append(f"  Manifest: {paths.get('raw_data_manifest')}")
+            swarm_scan = st.get("swarm_raw_data_wave_scan") or {}
+            if swarm_scan:
+                benchmark = swarm_scan.get("benchmark") or {}
+                consensus = ((swarm_scan.get("waves") or {}).get("phi_swarm_consensus") or {})
+                lines.append(
+                    "  Swarm wave scan: "
+                    f"files={benchmark.get('files_scanned', 0)} "
+                    f"files_per_second={benchmark.get('files_per_second', 0)} "
+                    f"consensus={consensus.get('status', 'unknown')}"
+                )
+            lines.append("  Safety: intake is local evidence inventory only; filing and payment remain manual.")
+            return "\n".join(lines)
+
+        if action in {"end-user", "end_user", "automation", "user"}:
+            try:
+                if not hasattr(self.accounting_context, "run_end_user_accounting_automation"):
+                    return "End-user accounting automation not available."
+                result = self.accounting_context.run_end_user_accounting_automation(no_fetch=True)
+                if self.thought_bus is not None:
+                    topic = (
+                        "accounting.end_user_accounts.completed"
+                        if result.get("status") == "completed"
+                        else "accounting.end_user_accounts.blocked"
+                    )
+                    try:
+                        self.thought_bus.publish(topic, result, source="ics.accounting")
+                    except Exception:
+                        pass
+                self.accounting_context.ingest_to_vault(self.vault, force=True)
+                summary = result.get("summary") or {}
+                end_user = summary.get("end_user_accounting_automation") or result.get("end_user_accounting_automation") or {}
+                coverage = end_user.get("requirement_coverage") or []
+                generated = sum(
+                    1
+                    for item in coverage
+                    if str(item.get("status", "")).startswith("generated")
+                    or str(item.get("status", "")).startswith("final_ready")
+                )
+                outputs = end_user.get("outputs") or {}
+                return (
+                    "End-user accounting automation "
+                    f"{result.get('status')} (exit={result.get('exit_code', 'n/a')}). "
+                    f"coverage={generated}/{len(coverage)} generated; "
+                    f"start_here={outputs.get('end_user_start_here', 'not generated')}; "
+                    "official Companies House/HMRC filing and payment remain manual."
+                )
+            except Exception as exc:
+                if self.thought_bus is not None:
+                    try:
+                        self.thought_bus.publish(
+                            "accounting.end_user_accounts.blocked",
+                            {"error": str(exc)},
+                            source="ics.accounting",
+                        )
+                    except Exception:
+                        pass
+                return f"End-user accounting automation blocked: {exc}"
+
+        if action in {"autonomous", "full"}:
+            try:
+                if not hasattr(self.accounting_context, "run_autonomous_full_accounts"):
+                    return "Accounting autonomous workflow not available."
+                result = self.accounting_context.run_autonomous_full_accounts(no_fetch=True)
+                if self.thought_bus is not None:
+                    topic = (
+                        "accounting.autonomous.accounts.completed"
+                        if result.get("status") == "completed"
+                        else "accounting.autonomous.accounts.blocked"
+                    )
+                    try:
+                        self.thought_bus.publish(topic, result, source="ics.accounting")
+                    except Exception:
+                        pass
+                self.accounting_context.ingest_to_vault(self.vault, force=True)
+                summary = result.get("summary") or {}
+                readiness = result.get("readiness") or summary.get("accounting_readiness") or {}
+                raw_summary = ((summary.get("raw_data_manifest") or {}).get("summary") or {})
+                workflow = summary.get("autonomous_workflow") or {}
+                cognitive = workflow.get("cognitive_review") or {}
+                handoff_pack = summary.get("human_filing_handoff_pack") or workflow.get("human_filing_handoff_pack") or {}
+                handoff_readiness = handoff_pack.get("readiness") or {}
+                uk_brain = (
+                    summary.get("uk_accounting_requirements_brain")
+                    or handoff_pack.get("uk_accounting_requirements_brain")
+                    or workflow.get("uk_accounting_requirements_brain")
+                    or {}
+                )
+                uk_summary = uk_brain.get("summary") or {}
+                evidence_authoring = (
+                    summary.get("accounting_evidence_authoring")
+                    or handoff_pack.get("accounting_evidence_authoring")
+                    or workflow.get("accounting_evidence_authoring")
+                    or {}
+                )
+                evidence_summary = evidence_authoring.get("summary") or {}
+                return (
+                    "Accounting autonomous full-accounts workflow "
+                    f"{result.get('status')} (exit={result.get('exit_code', 'n/a')}). "
+                    f"raw_files={raw_summary.get('file_count', 0)}; "
+                    f"agent_tasks={len(workflow.get('agent_tasks') or [])}; "
+                    f"evidence_requests={evidence_summary.get('draft_count', 0)}; "
+                    f"uk_questions={uk_summary.get('question_count', 0)}; "
+                    f"handoff_ready={handoff_readiness.get('ready_for_manual_upload', handoff_readiness.get('ready_for_manual_review', 'unknown'))}; "
+                    f"self_questioning={cognitive.get('status', 'unknown')}; "
+                    f"ready={readiness.get('ready', 'unknown')}; "
+                    "official filing remains manual."
+                )
+            except Exception as exc:
+                if self.thought_bus is not None:
+                    try:
+                        self.thought_bus.publish(
+                            "accounting.autonomous.accounts.blocked",
+                            {"error": str(exc)},
+                            source="ics.accounting",
+                        )
+                    except Exception:
+                        pass
+                return f"Accounting autonomous workflow blocked: {exc}"
+
+        if action == "build":
+            try:
+                used_end_user = False
+                if hasattr(self.accounting_context, "run_end_user_accounting_automation"):
+                    used_end_user = True
+                    result = self.accounting_context.run_end_user_accounting_automation(no_fetch=True)
+                else:
+                    result = self.accounting_context.run_full_accounts(no_fetch=True)
+                if self.thought_bus is not None:
+                    topic = (
+                        (
+                            "accounting.end_user_accounts.completed"
+                            if result.get("status") == "completed"
+                            else "accounting.end_user_accounts.blocked"
+                        )
+                        if used_end_user
+                        else (
+                            "accounting.accounts.generated"
+                            if result.get("status") == "completed"
+                            else "accounting.accounts.blocked"
+                        )
+                    )
+                    try:
+                        self.thought_bus.publish(topic, result, source="ics.accounting")
+                    except Exception:
+                        pass
+                self.accounting_context.ingest_to_vault(self.vault, force=True)
+                summary = result.get("summary") or {}
+                readiness = summary.get("accounting_readiness") or {}
+                return (
+                    "Accounting build "
+                    f"{result.get('status')} (exit={result.get('exit_code', 'n/a')}); final-ready manual pack. "
+                    f"manual_filing_required={((result.get('safety') or {}).get('manual_filing_required', True))}; "
+                    f"overdue={summary.get('overdue_count', 'unknown')}; "
+                    f"ready={readiness.get('ready', 'unknown')}"
+                )
+            except Exception as exc:
+                if self.thought_bus is not None:
+                    try:
+                        self.thought_bus.publish(
+                            "accounting.accounts.blocked",
+                            {"error": str(exc)},
+                            source="ics.accounting",
+                        )
+                    except Exception:
+                        pass
+                return f"Accounting build blocked: {exc}"
+
+        return "Usage: /accounts [status|raw|tools|registry|ingest|readiness|evidence|requirements|filing|statutory build|end-user|autonomous|build]"
 
     def _cmd_goal_status(self) -> str:
         if self.goal_engine is None:
@@ -1643,7 +2506,7 @@ class IntegratedCognitiveSystem:
                     print(f"    pyngrok:     pip install pyngrok")
             print()
 
-        print("  Commands: /status  /goal  /pause  /resume  /cancel  /coherence  /quit")
+        print("  Commands: /status  /goal  /saas  /accounts  /contracts  /pause  /resume  /cancel  /coherence  /quit")
         print("  Type any text to submit as a goal.\n")
 
         # Input loop (main thread)

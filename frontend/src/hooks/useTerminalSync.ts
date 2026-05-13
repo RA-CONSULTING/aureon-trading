@@ -14,8 +14,31 @@ import { globalSystemsManager } from '@/core/globalSystemsManager';
 
 // Public live feed user ID - data pushed from Python terminal
 const LIVE_FEED_USER_ID = '69e5567f-7ad1-42af-860f-3709ef1f5935';
-const LOCAL_TERMINAL_ENDPOINT = (import.meta.env.VITE_LOCAL_TERMINAL_URL as string | undefined)
-  || 'http://127.0.0.1:8790/api/terminal-state';
+const ENV_LOCAL_TERMINAL_ENDPOINT = import.meta.env.VITE_LOCAL_TERMINAL_URL as string | undefined;
+const DEFAULT_LOCAL_TERMINAL_ENDPOINTS = [
+  ENV_LOCAL_TERMINAL_ENDPOINT,
+  'http://127.0.0.1:8791/api/terminal-state',
+  'http://127.0.0.1:8790/api/terminal-state',
+].filter((value): value is string => Boolean(value));
+const TERMINAL_SYNC_DEBUG = (import.meta.env.VITE_TERMINAL_SYNC_DEBUG as string | undefined) === '1';
+
+interface WakeUpManifest {
+  runtime_feed_url?: string;
+}
+
+const uniqueStrings = (values: Array<string | undefined>): string[] =>
+  Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean)));
+
+const loadLocalTerminalEndpoints = async (): Promise<string[]> => {
+  try {
+    const response = await fetch('/aureon_wake_up_manifest.json', { cache: 'no-store' });
+    if (!response.ok) return DEFAULT_LOCAL_TERMINAL_ENDPOINTS;
+    const manifest = (await response.json()) as WakeUpManifest;
+    return uniqueStrings([manifest.runtime_feed_url, ...DEFAULT_LOCAL_TERMINAL_ENDPOINTS]);
+  } catch {
+    return DEFAULT_LOCAL_TERMINAL_ENDPOINTS;
+  }
+};
 
 interface RuntimeStats {
   runtime_minutes: number;
@@ -44,6 +67,7 @@ interface RuntimeStats {
 }
 
 interface LocalTerminalState {
+  ok?: boolean;
   generated_at?: string;
   queen_voice?: {
     ts?: string;
@@ -202,11 +226,15 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
 
   const fetchLocalTerminalState = useCallback(async (): Promise<LocalTerminalState | null> => {
     try {
-      const response = await fetch(LOCAL_TERMINAL_ENDPOINT, { cache: 'no-store' });
-      if (!response.ok) return null;
-      const data = await response.json();
-      if (!data || data.ok === false) return null;
-      return data as LocalTerminalState;
+      const endpoints = await loadLocalTerminalEndpoints();
+      for (const endpoint of endpoints) {
+        const response = await fetch(endpoint, { cache: 'no-store' });
+        if (!response.ok) continue;
+        const data = await response.json();
+        if (!data) continue;
+        return data as LocalTerminalState;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -222,13 +250,17 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('[TerminalSync] Session fetch error:', error);
+        if (TERMINAL_SYNC_DEBUG) {
+          console.warn('[TerminalSync] Session fetch unavailable:', error);
+        }
         return null;
       }
 
       return data;
     } catch (err) {
-      console.error('[TerminalSync] Session failed:', err);
+      if (TERMINAL_SYNC_DEBUG) {
+        console.warn('[TerminalSync] Session unavailable:', err);
+      }
       return null;
     }
   }, []);

@@ -115,6 +115,8 @@ class KnowingBlock:
     being_text: str = ""
     world: Optional[Dict[str, Any]] = None
     world_text: str = ""
+    accounting: Optional[Dict[str, Any]] = None
+    accounting_text: str = ""
 
     def has_any(self) -> bool:
         return bool(
@@ -129,6 +131,7 @@ class KnowingBlock:
             or self.direct_reply
             or self.being
             or self.world
+            or self.accounting
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -149,6 +152,8 @@ class KnowingBlock:
             "being_text": self.being_text,
             "world": self.world,
             "world_text": self.world_text,
+            "accounting": self.accounting,
+            "accounting_text": self.accounting_text,
         }
 
     def to_fact_dict(self) -> Dict[str, Any]:
@@ -190,6 +195,96 @@ class KnowingBlock:
                 "geo_risk", "news_risk_level",
             )
             out["world"] = {k: self.world.get(k) for k in keep_world if k in self.world}
+        if self.accounting:
+            company = self.accounting.get("company") or {}
+            full_run = self.accounting.get("full_run") or {}
+            deadlines = self.accounting.get("deadlines") or {}
+            safety = self.accounting.get("safety") or {}
+            combined = self.accounting.get("combined_bank_data") or {}
+            registry = self.accounting.get("accounting_system_registry") or {}
+            statutory = self.accounting.get("statutory_filing_pack") or {}
+            readiness = self.accounting.get("accounting_readiness") or {}
+            raw_manifest = self.accounting.get("raw_data_manifest") or {}
+            raw_summary = raw_manifest.get("summary") or {}
+            autonomous = self.accounting.get("autonomous_workflow") or {}
+            cognitive = autonomous.get("cognitive_review") or {}
+            vault_memory = autonomous.get("vault_memory") or {}
+            end_user = self.accounting.get("end_user_accounting_automation") or {}
+            end_user_coverage = end_user.get("requirement_coverage") or []
+            end_user_generated = sum(1 for item in end_user_coverage if str(item.get("status", "")).startswith("generated"))
+            handoff_pack = (
+                self.accounting.get("human_filing_handoff_pack")
+                or autonomous.get("human_filing_handoff_pack")
+                or {}
+            )
+            handoff_readiness = handoff_pack.get("readiness") or {}
+            uk_brain = (
+                self.accounting.get("uk_accounting_requirements_brain")
+                or handoff_pack.get("uk_accounting_requirements_brain")
+                or autonomous.get("uk_accounting_requirements_brain")
+                or {}
+            )
+            uk_summary = uk_brain.get("summary") or {}
+            uk_figures = uk_brain.get("figures") or {}
+            evidence_authoring = (
+                self.accounting.get("accounting_evidence_authoring")
+                or handoff_pack.get("accounting_evidence_authoring")
+                or autonomous.get("accounting_evidence_authoring")
+                or {}
+            )
+            evidence_summary = evidence_authoring.get("summary") or {}
+            llm_authoring = evidence_authoring.get("llm_document_authoring") or evidence_summary.get("llm_document_authoring") or {}
+            out["accounting"] = {
+                "company_number": company.get("company_number"),
+                "company_name": company.get("company_name"),
+                "company_status": company.get("company_status"),
+                "period_start": full_run.get("period_start"),
+                "period_end": full_run.get("period_end"),
+                "accounts_build_status": full_run.get("accounts_build_status"),
+                "overdue_count": deadlines.get("overdue_count"),
+                "manual_filing_required": safety.get("manual_filing_required", True),
+                "combined_bank_sources": combined.get("transaction_source_count", combined.get("csv_source_count", 0)),
+                "combined_csv_sources": combined.get("csv_source_count", 0),
+                "combined_pdf_sources": combined.get("pdf_source_count", 0),
+                "combined_unique_period_rows": combined.get("unique_rows_in_period", 0),
+                "source_provider_summary": combined.get("source_provider_summary") or {},
+                "flow_provider_summary": combined.get("flow_provider_summary") or {},
+                "accounting_tool_count": registry.get("module_count", 0),
+                "accounting_tool_domains": registry.get("domain_counts") or {},
+                "statutory_pack_generated_at": statutory.get("generated_at"),
+                "statutory_output_count": len(statutory.get("outputs") or {}),
+                "accounting_ready": readiness.get("ready"),
+                "accounting_required_failures": len(readiness.get("required_failures") or []),
+                "raw_file_count": raw_summary.get("file_count", 0),
+                "raw_transaction_source_count": raw_summary.get("transaction_source_count", 0),
+                "autonomous_workflow_status": autonomous.get("status"),
+                "autonomous_agent_task_count": len(autonomous.get("agent_tasks") or []),
+                "end_user_automation_status": end_user.get("status"),
+                "end_user_coverage_generated": end_user_generated,
+                "end_user_coverage_total": len(end_user_coverage),
+                "vault_memory_status": vault_memory.get("status"),
+                "vault_memory_note": vault_memory.get("note_path"),
+                "cognitive_review_status": cognitive.get("status"),
+                "cognitive_review_source": cognitive.get("answer_source"),
+                "cognitive_review_note": cognitive.get("note_path"),
+                "human_filing_handoff_status": handoff_pack.get("status"),
+                "human_filing_handoff_ready": handoff_readiness.get("ready_for_manual_upload", handoff_readiness.get("ready_for_manual_review")),
+                "human_filing_handoff_folder": handoff_pack.get("output_dir"),
+                "evidence_authoring_status": evidence_authoring.get("status"),
+                "evidence_request_count": evidence_summary.get("draft_count", 0),
+                "evidence_document_count": evidence_summary.get("generated_document_count", 0),
+                "llm_document_authoring_status": llm_authoring.get("status"),
+                "llm_document_workpaper_count": llm_authoring.get("completed_count", 0),
+                "llm_document_draft_count": llm_authoring.get("completed_count", 0),
+                "llm_document_model": llm_authoring.get("model"),
+                "petty_cash_request_count": evidence_summary.get("petty_cash_withdrawal_count", 0),
+                "related_party_query_count": evidence_summary.get("related_party_query_count", 0),
+                "uk_accounting_requirement_count": uk_summary.get("requirement_count", 0),
+                "uk_accounting_question_count": uk_summary.get("question_count", 0),
+                "uk_accounting_unresolved_question_count": uk_summary.get("unresolved_question_count", 0),
+                "vat_turnover_over_threshold": uk_figures.get("turnover_over_vat_threshold"),
+                "vat_registration_threshold": uk_figures.get("vat_registration_threshold"),
+            }
         return out
 
     def render_for_prompt(
@@ -219,6 +314,9 @@ class KnowingBlock:
             lines.append("")
         if self.world_text:
             lines.append(self.world_text)
+            lines.append("")
+        if self.accounting_text:
+            lines.append(self.accounting_text)
             lines.append("")
 
         lines.append("Grounded knowledge (use these facts, don't invent):")
@@ -400,6 +498,14 @@ _SKILL_ABILITY_TRIGGER_RE = re.compile(
     re.IGNORECASE,
 )
 
+_ACCOUNTING_TRIGGER_RE = re.compile(
+    r"\b(accounts?|accounting|tax|hmrc|companies\s+house|company\s+house|"
+    r"ledger|profit|loss|ct600|corporation\s+tax|confirmation\s+statement|"
+    r"filing|balance\s+sheet|trial\s+balance|management\s+accounts|"
+    r"bank\s+statement|director\s+review|penalt(?:y|ies))\b",
+    re.IGNORECASE,
+)
+
 # Voice-switch: "speak as the lover", "as the miner", "from the queen"
 _VOICE_SWITCH_RE = re.compile(
     r"\b(?:speak|answer|respond|reply|talk)\s+(?:to\s+me\s+)?(?:as|from|in|through)\s+"
@@ -541,11 +647,13 @@ class MeaningResolver:
         dr_auris: Any = None,
         action_bridge: Any = None,
         skill_library: Any = None,
+        accounting_bridge: Any = None,
     ):
         self._research_index = research_index
         self._dr_auris = dr_auris
         self._action_bridge = action_bridge
         self._skill_library = skill_library
+        self._accounting_bridge = accounting_bridge
         self._wired = False
         self._wire_lock = threading.Lock()
         self._math_reply_index = 0  # round-robin through _MATH_REPLY_TEMPLATES
@@ -603,6 +711,16 @@ class MeaningResolver:
                 except Exception as e:
                     logger.debug("skill_library unavailable: %s", e)
                     self._skill_library = None
+
+            if self._accounting_bridge is None:
+                try:
+                    from aureon.queen.accounting_context_bridge import (
+                        get_accounting_context_bridge,
+                    )
+                    self._accounting_bridge = get_accounting_context_bridge()
+                except Exception as e:
+                    logger.debug("accounting bridge unavailable: %s", e)
+                    self._accounting_bridge = None
 
             self._wired = True
 
@@ -705,6 +823,17 @@ class MeaningResolver:
             if skills:
                 block.skills = skills
                 block.sources_consulted.append("skills")
+
+        # 6. Accounting context.
+        if _ACCOUNTING_TRIGGER_RE.search(q):
+            accounting = self._pull_accounting_context()
+            if accounting:
+                block.accounting = accounting
+                try:
+                    block.accounting_text = self._accounting_bridge.render_for_prompt(accounting, max_chars=760)
+                except Exception:
+                    block.accounting_text = ""
+                block.sources_consulted.append("accounting")
 
         # 6. Prior facts from peer's conversation memory.
         if conversation_memory is not None and peer_id:
@@ -908,6 +1037,45 @@ class MeaningResolver:
 # ─────────────────────────────────────────────────────────────────────────────
 # Module-level singleton
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+    def _pull_accounting_context(self) -> Dict[str, Any]:
+        bridge = self._accounting_bridge
+        if bridge is None:
+            return {}
+        try:
+            context = bridge.load_context()
+        except Exception as e:
+            logger.debug("accounting context failed: %s", e)
+            return {}
+        if not isinstance(context, dict):
+            return {}
+        keep = {
+            "schema_version",
+            "generated_at",
+            "company",
+            "full_run",
+            "deadlines",
+            "local_accounts_pack",
+            "bank_statement_coverage",
+            "source_data_inventory",
+            "combined_bank_data",
+            "accounting_system_registry",
+            "statutory_filing_pack",
+            "raw_data_manifest",
+            "autonomous_workflow",
+            "outputs",
+            "safety",
+            "prompt_lines",
+            "source_files",
+        }
+        pulled = {key: context.get(key) for key in keep if key in context}
+        try:
+            if hasattr(bridge, "validate_accounting_readiness"):
+                pulled["accounting_readiness"] = bridge.validate_accounting_readiness(context)
+        except Exception:
+            pass
+        return pulled
 
 
 _resolver_singleton: Optional[MeaningResolver] = None

@@ -141,6 +141,21 @@ Kings_Accounting_Suite/data/
 Kings_Accounting_Suite/.pytest_cache/
 Kings_Accounting_Suite/**/*.xlsx
 
+# Local generated organism/audit/frontend state
+docs/audits/
+frontend/public/aureon_*.json
+frontend/vite.config.ts.timestamp-*.mjs
+autonomy/
+accounting/
+uploads/
+data/exchange_account_archives/
+.obsidian/
+Untitled.canvas
+kraken_margin_army_results.json
+margin_goal_proof.jsonl
+nexus_learning_state.json
+queen_neuron_v2_weights.json
+
 # Imported research bundles (keep research files, but ignore embedded repo snapshots / archives).
 # NOTE: Some imported bundles include `.env*` files with live credentials; never commit those.
 imports/Kimi_Agent_Aureon_*/aureon-trading-main/

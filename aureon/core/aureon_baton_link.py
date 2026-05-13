@@ -17,12 +17,10 @@ except Exception:
     get_thought_bus = None
     THOUGHT_BUS_AVAILABLE = False
 
-try:
-    from aureon.core.mycelium_whale_sonar import ensure_sonar
-    SONAR_AVAILABLE = True
-except Exception:
-    ensure_sonar = None
-    SONAR_AVAILABLE = False
+ensure_sonar = None
+SONAR_AVAILABLE = False
+_SONAR_IMPORT_ATTEMPTED = False
+_LOADING_SONAR = False
 
 
 _LINKED = set()
@@ -52,6 +50,45 @@ _REAL_DATA_ENV_DEFAULTS = {
     "AUREON_COMMAND_CENTER_DEMO": "0",
     "SENTIENCE_FORCE_PERFECT": "0",
 }
+
+
+def _audit_mode_enabled() -> bool:
+    return os.getenv("AUREON_AUDIT_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _import_side_effects_suppressed() -> bool:
+    return os.getenv("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def _load_sonar() -> bool:
+    """Load WhaleSonar only when a runtime link actually needs it."""
+    global ensure_sonar, SONAR_AVAILABLE, _SONAR_IMPORT_ATTEMPTED, _LOADING_SONAR
+    if SONAR_AVAILABLE and ensure_sonar is not None:
+        return True
+    if _LOADING_SONAR or _import_side_effects_suppressed() or _audit_mode_enabled():
+        return False
+    if _SONAR_IMPORT_ATTEMPTED:
+        return False
+
+    _SONAR_IMPORT_ATTEMPTED = True
+    _LOADING_SONAR = True
+    try:
+        from aureon.core.mycelium_whale_sonar import ensure_sonar as loaded_ensure_sonar
+
+        ensure_sonar = loaded_ensure_sonar
+        SONAR_AVAILABLE = True
+        return True
+    except Exception:
+        ensure_sonar = None
+        SONAR_AVAILABLE = False
+        return False
+    finally:
+        _LOADING_SONAR = False
 
 
 def _stream_is_broken(stream) -> bool:
@@ -124,6 +161,8 @@ def _should_ping(now: float) -> bool:
 
 
 def _enforce_real_data_only() -> None:
+    if _audit_mode_enabled():
+        return
     if os.getenv("REAL_DATA_ONLY", "1").strip().lower() not in ("1", "true", "yes", "on"):
         return
     for key, value in _REAL_DATA_ENV_DEFAULTS.items():
@@ -133,7 +172,11 @@ def _enforce_real_data_only() -> None:
 def link_system(module_name: str) -> None:
     """Publish a baton heartbeat and ensure Mycelium sonar is wired."""
     _ensure_stdio()
+    if _import_side_effects_suppressed():
+        return
     _enforce_real_data_only()
+    if _audit_mode_enabled():
+        return
     if module_name in _LINKED:
         return
     _LINKED.add(module_name)
@@ -157,7 +200,7 @@ def link_system(module_name: str) -> None:
         return
 
     bus = get_thought_bus(persist_path="logs/aureon_thoughts.jsonl")
-    if SONAR_AVAILABLE and ensure_sonar:
+    if module_name != "aureon.core.mycelium_whale_sonar" and _load_sonar() and ensure_sonar:
         try:
             ensure_sonar(bus)
         except Exception:

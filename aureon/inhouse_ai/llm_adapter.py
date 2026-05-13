@@ -24,6 +24,23 @@ from typing import Any, Dict, Generator, List, Optional
 
 logger = logging.getLogger("aureon.inhouse_ai.llm")
 
+
+def _env_truthy(name: str) -> bool:
+    return str(os.environ.get(name, "")).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _llm_http_disabled() -> bool:
+    """Return True when local-model HTTP calls should be skipped."""
+    if _env_truthy("AUREON_DISABLE_LLM_HTTP") or _env_truthy("AUREON_LLM_OFFLINE"):
+        return True
+    if _env_truthy("AUREON_AUDIT_MODE") and not _env_truthy("AUREON_LLM_ALLOW_HTTP_IN_AUDIT"):
+        return True
+    return False
+
+
+def _llm_timeout(default_s: float, audit_default_s: float) -> float:
+    return audit_default_s if _env_truthy("AUREON_AUDIT_MODE") else default_s
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Response types
 # ─────────────────────────────────────────────────────────────────────────────
@@ -321,11 +338,14 @@ class AureonLocalAdapter(LLMAdapter):
         temperature: float,
     ) -> LLMResponse:
         """Send a chat request through Ollama's native /api/chat."""
+        if _llm_http_disabled():
+            return LLMResponse(text="[ERROR] LLM HTTP disabled by audit/offline mode", stop_reason="error")
         payload = self._build_native_payload(messages, system, max_tokens, temperature)
         url = f"{self._native_root}/api/chat"
         try:
             req_timeout = float(
-                os.environ.get("AUREON_LLM_REQUEST_TIMEOUT_S", "60") or 60
+                os.environ.get("AUREON_LLM_REQUEST_TIMEOUT_S", str(_llm_timeout(60.0, 2.0)))
+                or _llm_timeout(60.0, 2.0)
             )
             resp = self._session.post(
                 url, json=payload, headers=self._headers(), timeout=max(1.0, req_timeout)
@@ -367,6 +387,8 @@ class AureonLocalAdapter(LLMAdapter):
     ) -> LLMResponse:
         if not self._session:
             return LLMResponse(text="[ERROR] requests library not available", stop_reason="error")
+        if _llm_http_disabled():
+            return LLMResponse(text="[ERROR] LLM HTTP disabled by audit/offline mode", stop_reason="error")
 
         # Ollama-native fast path: only used when we have no tool defs
         # (the native /api/chat doesn't emit OpenAI-style tool_calls),
@@ -379,7 +401,8 @@ class AureonLocalAdapter(LLMAdapter):
 
         try:
             req_timeout = float(
-                os.environ.get("AUREON_LLM_REQUEST_TIMEOUT_S", "20") or 20
+                os.environ.get("AUREON_LLM_REQUEST_TIMEOUT_S", str(_llm_timeout(20.0, 2.0)))
+                or _llm_timeout(20.0, 2.0)
             )
             resp = self._session.post(
                 url, json=payload, headers=self._headers(), timeout=max(1.0, req_timeout)
@@ -433,13 +456,24 @@ class AureonLocalAdapter(LLMAdapter):
         if not self._session:
             yield StreamChunk(text="[ERROR] requests library not available", done=True)
             return
+        if _llm_http_disabled():
+            yield StreamChunk(
+                text="[ERROR] LLM HTTP disabled by audit/offline mode",
+                done=True,
+                stop_reason="error",
+            )
+            return
 
         payload = self._build_payload(messages, system, tools, max_tokens, temperature, stream=True)
         url = f"{self.base_url}/chat/completions"
 
         try:
             resp = self._session.post(
-                url, json=payload, headers=self._headers(), stream=True, timeout=300
+                url,
+                json=payload,
+                headers=self._headers(),
+                stream=True,
+                timeout=_llm_timeout(300.0, 5.0),
             )
             resp.raise_for_status()
         except Exception as e:
@@ -551,12 +585,17 @@ class AureonLocalAdapter(LLMAdapter):
              it 500s (typically OOM), drop it and try the next candidate.
           4. Cache the verified model and return True; otherwise False.
         """
+        if _llm_http_disabled():
+            return False
         if not self._session:
             return False
         if self._model_verified:
             return True
         try:
-            timeout_s = float(os.environ.get("AUREON_LLM_HEALTH_TIMEOUT_S", "2.0") or 2.0)
+            timeout_s = float(
+                os.environ.get("AUREON_LLM_HEALTH_TIMEOUT_S", str(_llm_timeout(2.0, 0.5)))
+                or _llm_timeout(2.0, 0.5)
+            )
             resp = self._session.get(
                 f"{self.base_url}/models",
                 headers=self._headers(),
@@ -621,9 +660,12 @@ class AureonLocalAdapter(LLMAdapter):
 
     def _probe_model(self, model_id: str) -> bool:
         """Send a 1-token chat completion to confirm the model actually loads."""
+        if _llm_http_disabled():
+            return False
         try:
             probe_timeout = float(
-                os.environ.get("AUREON_LLM_PROBE_TIMEOUT_S", "30") or 30
+                os.environ.get("AUREON_LLM_PROBE_TIMEOUT_S", str(_llm_timeout(30.0, 1.0)))
+                or _llm_timeout(30.0, 1.0)
             )
             resp = self._session.post(
                 f"{self.base_url}/chat/completions",
@@ -737,26 +779,35 @@ class AureonBrainAdapter(LLMAdapter):
             return self._rule_engine_reason(context)
 
         try:
-            # Build features dict for brain
-            features = {
-                "query": context.get("query", ""),
-                "symbols": context.get("symbols", []),
-                "action": context.get("action"),
-                "timestamp": time.time(),
-            }
+            symbol, base_score, features, population_scores = self._brain_inputs(context)
 
             # If brain has a decide method, use it
             if hasattr(self._brain, "decide"):
-                decision = self._brain.decide(features)
+                decision = self._brain.decide(
+                    symbol=symbol,
+                    base_score=base_score,
+                    features=features,
+                    population_scores=population_scores,
+                    now=time.time(),
+                )
                 if decision and hasattr(decision, "__dict__"):
+                    side = str(getattr(decision, "side", "neutral") or "neutral")
                     return json.dumps({
-                        "signal": getattr(decision, "signal", "NEUTRAL"),
-                        "confidence": getattr(decision, "confidence", 0.5),
+                        "signal": side.upper(),
+                        "symbol": getattr(decision, "symbol", symbol),
+                        "score": getattr(decision, "score", base_score),
                         "coherence": getattr(decision, "coherence", 0.5),
-                        "reasoning": getattr(decision, "reasoning", str(decision)),
+                        "reasoning": "AureonBrain coherence and gate checks produced a candidate decision.",
                         "source": "AureonBrain",
                     }, indent=2)
-                return str(decision)
+                return json.dumps({
+                    "signal": "NEUTRAL",
+                    "symbol": symbol,
+                    "score": base_score,
+                    "coherence": self._brain.coherence(features) if hasattr(self._brain, "coherence") else 0.5,
+                    "reasoning": "AureonBrain gates did not authorise an actionable decision from this prompt context.",
+                    "source": "AureonBrain",
+                }, indent=2)
 
             # Fallback to any available method
             if hasattr(self._brain, "analyse"):
@@ -768,6 +819,39 @@ class AureonBrainAdapter(LLMAdapter):
             logger.warning("AureonBrain reasoning failed: %s", e)
 
         return self._rule_engine_reason(context)
+
+    def _brain_inputs(self, context: Dict[str, Any]):
+        """Translate prompt context into the current AureonBrain.decide contract."""
+        action = str(context.get("action") or "ANALYSE").upper()
+        symbols = list(context.get("symbols") or [])
+        symbol = str(symbols[0] if symbols else "AUREON").upper()
+
+        if action == "BUY":
+            base_score = 0.8
+            rsi = 58.0
+            momentum = 0.42
+            trend = 0.64
+        elif action == "SELL":
+            base_score = -0.8
+            rsi = 42.0
+            momentum = -0.42
+            trend = 0.64
+        else:
+            base_score = 0.05
+            rsi = 50.0
+            momentum = 0.0
+            trend = 0.45
+
+        features = {
+            "rsi": rsi,
+            "momentum": momentum,
+            "volatility": 0.25,
+            "trend_strength": trend,
+            "query_length": float(len(str(context.get("query") or ""))),
+            "timestamp": time.time(),
+        }
+        population_scores = [-0.65, -0.4, -0.2, 0.0, 0.2, 0.4, 0.65]
+        return symbol, base_score, features, population_scores
 
     def _rule_engine_reason(self, context: Dict[str, Any]) -> str:
         """Deterministic rule-based reasoning when Brain is unavailable."""
@@ -945,7 +1029,7 @@ class AureonHybridAdapter(LLMAdapter):
         enriched_system = self._enrich_system(system, messages)
 
         # Try local LLM first
-        if self.local.health_check():
+        if not _llm_http_disabled() and self.local.health_check():
             response = self.local.prompt(
                 messages, enriched_system, tools, max_tokens, temperature, **kwargs
             )
@@ -967,7 +1051,7 @@ class AureonHybridAdapter(LLMAdapter):
     ) -> Generator[StreamChunk, None, None]:
         enriched_system = self._enrich_system(system, messages)
 
-        if self.local.health_check():
+        if not _llm_http_disabled() and self.local.health_check():
             yield from self.local.stream(
                 messages, enriched_system, tools, max_tokens, temperature, **kwargs
             )
@@ -977,6 +1061,8 @@ class AureonHybridAdapter(LLMAdapter):
             )
 
     def health_check(self) -> bool:
+        if _llm_http_disabled():
+            return self.brain.health_check()
         return self.local.health_check() or self.brain.health_check()
 
 

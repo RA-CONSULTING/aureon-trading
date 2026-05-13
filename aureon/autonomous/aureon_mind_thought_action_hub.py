@@ -49,14 +49,19 @@ from aiohttp import web
 import json
 import logging
 import time
-from datetime import datetime
-from typing import Dict, List, Set, Optional
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Set, Optional
 from collections import deque, defaultdict
 from pathlib import Path
 
 # Import core systems
 from aureon.command_centers.aureon_system_hub import SystemRegistry
 from aureon.core.aureon_thought_bus import ThoughtBus, Thought
+from aureon.core.aureon_runtime_safety import audit_mode_enabled
+SelfQuestioningAI = None
+QueenHiveMind = None
+ProbabilityNexus = None
+UltimateIntelligence = None
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(message)s')
 logger = logging.getLogger(__name__)
@@ -71,9 +76,28 @@ def safe_import(name: str, module: str, cls: str):
         logger.debug(f"⚠️ {name}: {e}")
         return None
 
-QueenHiveMind = safe_import('Queen', 'aureon_queen_hive_mind', 'QueenHiveMind')
-ProbabilityNexus = safe_import('ProbNexus', 'aureon_probability_nexus', 'ProbabilityNexus')
-UltimateIntelligence = safe_import('UltimateIntel', 'probability_ultimate_intelligence', 'ProbabilityUltimateIntelligence')
+def load_optional_system_classes():
+    """Load optional cognitive systems only after the HTTP hub is online."""
+    global QueenHiveMind, ProbabilityNexus, UltimateIntelligence
+    if QueenHiveMind is None:
+        QueenHiveMind = safe_import('Queen', 'aureon_queen_hive_mind', 'QueenHiveMind')
+    if ProbabilityNexus is None:
+        ProbabilityNexus = safe_import('ProbNexus', 'aureon_probability_nexus', 'ProbabilityNexus')
+    if UltimateIntelligence is None:
+        UltimateIntelligence = safe_import('UltimateIntel', 'probability_ultimate_intelligence', 'ProbabilityUltimateIntelligence')
+
+
+def load_self_questioning_ai_class():
+    """Load the optional self-questioning AI only during hub warmup."""
+    global SelfQuestioningAI
+    if SelfQuestioningAI is not None:
+        return SelfQuestioningAI
+    try:
+        from aureon.autonomous.aureon_self_questioning_ai import SelfQuestioningAI as loaded
+        SelfQuestioningAI = loaded
+    except Exception:
+        SelfQuestioningAI = None
+    return SelfQuestioningAI
 
 # ════════════════════════════════════════════════════════════════════════════
 # ENHANCED HTML WITH MIND → THOUGHT → ACTION VISUALIZATION
@@ -577,6 +601,7 @@ class MindThoughtActionHub:
         self.queen = None
         self.prob_nexus = None
         self.ultimate_intel = None
+        self.self_questioning_ai = None
         
         # Thought and action tracking
         self.recent_thoughts = deque(maxlen=100)
@@ -588,12 +613,17 @@ class MindThoughtActionHub:
             'Intelligence Accuracy': 0,
             'Nexus Win Rate': 0,
             'Active Thoughts/s': 0,
-            'Actions Executed': 0
+            'Actions Executed': 0,
+            'Self Questioning Cycles': 0
         }
         
-        # Initialize
-        self._init_systems()
-        
+        self.initialized = False
+        self.initializing = False
+        self.init_error = None
+        self._init_task = None
+        self._self_questioning_task = None
+        self._goal_pursuit_task = None
+
         # Setup web app
         self.app = web.Application()
         self.app.router.add_get('/', self.handle_index)
@@ -601,6 +631,592 @@ class MindThoughtActionHub:
         self.app.router.add_get('/api/mindmap', self.handle_mindmap)
         self.app.router.add_get('/api/thoughts', self.handle_thoughts)
         self.app.router.add_get('/api/actions', self.handle_actions)
+        self.app.router.add_get('/api/flight-test', self.handle_flight_test)
+        self.app.router.add_get('/api/reboot-advice', self.handle_flight_test)
+        self.app.router.add_get('/api/goal-pursuit', self.handle_goal_pursuit)
+        self.app.router.add_get('/api/self-questioning/status', self.handle_self_questioning_status)
+        self.app.router.add_post('/api/self-questioning/ask', self.handle_self_questioning_ask)
+
+    def _initialization_status(self) -> str:
+        if self.init_error:
+            return 'error'
+        if self.initialized:
+            return 'ready'
+        return 'initializing'
+
+    def _parse_downtime_days(self, raw: str) -> Set[int]:
+        day_map = {
+            'mon': 0, 'monday': 0,
+            'tue': 1, 'tuesday': 1,
+            'wed': 2, 'wednesday': 2,
+            'thu': 3, 'thursday': 3,
+            'fri': 4, 'friday': 4,
+            'sat': 5, 'saturday': 5,
+            'sun': 6, 'sunday': 6,
+        }
+        value = (raw or '').strip().lower()
+        if value in {'*', 'all', 'daily', 'everyday'}:
+            return set(range(7))
+
+        days: Set[int] = set()
+        for part in value.replace(';', ',').split(','):
+            item = part.strip()
+            if not item:
+                continue
+            if '-' in item:
+                start_raw, end_raw = [piece.strip() for piece in item.split('-', 1)]
+                if start_raw in day_map and end_raw in day_map:
+                    start = day_map[start_raw]
+                    end = day_map[end_raw]
+                    cursor = start
+                    while True:
+                        days.add(cursor)
+                        if cursor == end:
+                            break
+                        cursor = (cursor + 1) % 7
+                continue
+            if item in day_map:
+                days.add(day_map[item])
+        return days or {6}
+
+    def _parse_hhmm(self, raw: str, fallback: str) -> tuple[int, int]:
+        value = (raw or fallback).strip()
+        try:
+            hour, minute = value.split(':', 1)
+            hour_int = max(0, min(23, int(hour)))
+            minute_int = max(0, min(59, int(minute)))
+            return hour_int, minute_int
+        except Exception:
+            fallback_hour, fallback_minute = fallback.split(':', 1)
+            return int(fallback_hour), int(fallback_minute)
+
+    def _downtime_window_state(self) -> Dict[str, Any]:
+        days_raw = os.environ.get('AUREON_MIND_DOWNTIME_DAYS', 'Sun')
+        start_raw = os.environ.get('AUREON_MIND_DOWNTIME_START_LOCAL', '03:00')
+        end_raw = os.environ.get('AUREON_MIND_DOWNTIME_END_LOCAL', '03:15')
+        days = self._parse_downtime_days(days_raw)
+        start_hour, start_minute = self._parse_hhmm(start_raw, '03:00')
+        end_hour, end_minute = self._parse_hhmm(end_raw, '03:15')
+
+        now = datetime.now().astimezone()
+
+        def window_for(day_offset: int) -> tuple[datetime, datetime]:
+            base = now + timedelta(days=day_offset)
+            start = base.replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
+            end = base.replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
+            if end <= start:
+                end += timedelta(days=1)
+            return start, end
+
+        today_start, today_end = window_for(0)
+        in_window = now.weekday() in days and today_start <= now < today_end
+        if not in_window:
+            yesterday_start, yesterday_end = window_for(-1)
+            in_window = (now - timedelta(days=1)).weekday() in days and yesterday_start <= now < yesterday_end
+
+        next_start = None
+        next_end = None
+        for offset in range(0, 15):
+            candidate_start, candidate_end = window_for(offset)
+            if candidate_start.weekday() in days and candidate_end > now:
+                if candidate_start <= now < candidate_end:
+                    next_start, next_end = candidate_start, candidate_end
+                elif candidate_start > now:
+                    next_start, next_end = candidate_start, candidate_end
+                if next_start:
+                    break
+
+        return {
+            'in_window': in_window,
+            'days': days_raw,
+            'start_local': f'{start_hour:02d}:{start_minute:02d}',
+            'end_local': f'{end_hour:02d}:{end_minute:02d}',
+            'now_local': now.isoformat(),
+            'next_start_local': next_start.isoformat() if next_start else None,
+            'next_end_local': next_end.isoformat() if next_end else None,
+        }
+
+    def _read_market_runtime_summary(self) -> Dict[str, Any]:
+        status_path = Path(__file__).resolve().parents[2] / 'state' / 'unified_runtime_status.json'
+        if not status_path.exists():
+            return {
+                'available': False,
+                'status_file': str(status_path),
+                'open_positions': 0,
+                'pending_orders': 0,
+            }
+
+        try:
+            with status_path.open('r', encoding='utf-8') as handle:
+                payload = json.load(handle)
+        except Exception as e:
+            return {
+                'available': False,
+                'status_file': str(status_path),
+                'error': str(e),
+                'open_positions': 0,
+                'pending_orders': 0,
+            }
+
+        def number_from(*keys: str, source: Optional[Dict[str, Any]] = None) -> int:
+            source = source or payload
+            for key in keys:
+                value = source.get(key) if isinstance(source, dict) else None
+                if isinstance(value, (int, float)):
+                    return int(value)
+                if isinstance(value, list):
+                    return len(value)
+            return 0
+
+        combined = payload.get('combined') if isinstance(payload.get('combined'), dict) else {}
+        exchanges = payload.get('exchanges') if isinstance(payload.get('exchanges'), dict) else {}
+        age_sec = max(0.0, time.time() - status_path.stat().st_mtime)
+        ready_values = [bool(value) for key, value in exchanges.items() if str(key).endswith('_ready')]
+
+        return {
+            'available': True,
+            'ok': bool(payload.get('ok', True)),
+            'trading_ready': bool(payload.get('trading_ready', False)),
+            'data_ready': bool(payload.get('data_ready', False)),
+            'stale': bool(payload.get('stale', False)) or age_sec > 60,
+            'status_file_age_sec': round(age_sec, 3),
+            'open_positions': number_from('open_positions', 'positions', source=combined),
+            'pending_orders': number_from(
+                'pending_orders',
+                'open_orders',
+                'active_orders',
+                source=combined,
+            ),
+            'exchanges_ready': all(ready_values) if ready_values else None,
+            'status_file': str(status_path),
+        }
+
+    def _read_reboot_intent(self) -> Dict[str, Any]:
+        intent_path = Path(__file__).resolve().parents[2] / 'state' / 'aureon_reboot_intent.json'
+        if not intent_path.exists():
+            return {'pending': False, 'path': str(intent_path)}
+        try:
+            with intent_path.open('r', encoding='utf-8') as handle:
+                payload = json.load(handle)
+        except Exception as e:
+            return {'pending': False, 'path': str(intent_path), 'error': str(e)}
+
+        if not isinstance(payload, dict):
+            return {'pending': False, 'path': str(intent_path), 'error': 'intent_not_object'}
+
+        status = str(payload.get('status', 'pending')).strip().lower()
+        surface = str(payload.get('surface', 'mind')).strip().lower()
+        pending = status in {'pending', 'requested', 'ready'} and surface in {
+            'mind',
+            'cognitive',
+            'all',
+            'organism',
+        }
+        return {
+            'pending': pending,
+            'path': str(intent_path),
+            'status': status,
+            'surface': surface,
+            'requested_by': payload.get('requested_by'),
+            'reason': payload.get('reason'),
+            'requested_at': payload.get('requested_at'),
+            'change_id': payload.get('change_id'),
+        }
+
+    def _read_goal_directive(self) -> Dict[str, Any]:
+        directive_path = Path(__file__).resolve().parents[2] / 'state' / 'aureon_goal_directive.json'
+        primary_goal = os.environ.get(
+            'AUREON_PRIMARY_GOAL',
+            'sustain_live_trading_and_grow_equity_with_positive_risk_adjusted_returns',
+        )
+        directive: Dict[str, Any] = {
+            'primary_goal': primary_goal,
+            'source': 'environment_default',
+            'path': str(directive_path),
+        }
+
+        if directive_path.exists():
+            try:
+                with directive_path.open('r', encoding='utf-8') as handle:
+                    payload = json.load(handle)
+                if isinstance(payload, dict):
+                    directive.update(payload)
+                    directive['source'] = 'state_file'
+                    directive['path'] = str(directive_path)
+                    directive['primary_goal'] = (
+                        payload.get('primary_goal')
+                        or payload.get('goal')
+                        or primary_goal
+                    )
+            except Exception as e:
+                directive['error'] = str(e)
+
+        baseline_constraints = [
+            'keep_live_trading_runtime_available',
+            'preserve_open_position_management',
+            'obey_runtime_risk_and_exchange_gates',
+            'publish_order_intent_only_through_authorized_runtime_paths',
+            'never_enable_direct_exchange_mutation_without_runtime_gate',
+            'reboot_only_after_self_flight_test_and_downtime_window',
+            'prefer_background_warmup_over_process_restart',
+        ]
+        configured = directive.get('constraints')
+        if not isinstance(configured, list):
+            configured = []
+        constraints: List[str] = []
+        for item in [*baseline_constraints, *configured]:
+            value = str(item).strip()
+            if value and value not in constraints:
+                constraints.append(value)
+        directive['constraints'] = constraints
+        return directive
+
+    def _read_organism_runtime_status(self) -> Dict[str, Any]:
+        status_path = (
+            Path(__file__).resolve().parents[2]
+            / 'frontend'
+            / 'public'
+            / 'aureon_organism_runtime_status.json'
+        )
+        if not status_path.exists():
+            return {
+                'available': False,
+                'status_file': str(status_path),
+                'blind_spot_count': 0,
+                'next_actions': [],
+            }
+
+        try:
+            with status_path.open('r', encoding='utf-8') as handle:
+                payload = json.load(handle)
+        except Exception as e:
+            return {
+                'available': False,
+                'status_file': str(status_path),
+                'error': str(e),
+                'blind_spot_count': 0,
+                'next_actions': [],
+            }
+
+        blind_spots = payload.get('blind_spots') if isinstance(payload, dict) else []
+        if not isinstance(blind_spots, list):
+            blind_spots = []
+        severity_rank = {
+            'critical': 4,
+            'high': 3,
+            'attention': 2,
+            'medium': 2,
+            'low': 1,
+        }
+        sorted_blind_spots = sorted(
+            [spot for spot in blind_spots if isinstance(spot, dict)],
+            key=lambda spot: severity_rank.get(str(spot.get('severity', '')).lower(), 0),
+            reverse=True,
+        )
+        next_actions = payload.get('next_actions') if isinstance(payload, dict) else []
+        if not isinstance(next_actions, list):
+            next_actions = []
+        age_sec = max(0.0, time.time() - status_path.stat().st_mtime)
+
+        return {
+            'available': True,
+            'status': payload.get('status') if isinstance(payload, dict) else None,
+            'generated_at': payload.get('generated_at') if isinstance(payload, dict) else None,
+            'status_file_age_sec': round(age_sec, 3),
+            'status_file': str(status_path),
+            'blind_spot_count': len(sorted_blind_spots),
+            'highest_blind_spots': sorted_blind_spots[:5],
+            'next_actions': [str(action) for action in next_actions[:5]],
+        }
+
+    def _run_goal_pursuit_assessment(
+        self,
+        market: Optional[Dict[str, Any]] = None,
+        organism: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        market = market or self._read_market_runtime_summary()
+        organism = organism or self._read_organism_runtime_status()
+        directive = self._read_goal_directive()
+
+        blockers: List[str] = []
+        active_modes: List[str] = []
+        next_best_actions: List[str] = []
+
+        market_ready = (
+            bool(market.get('available'))
+            and bool(market.get('trading_ready'))
+            and bool(market.get('data_ready'))
+            and market.get('exchanges_ready') is not False
+        )
+        if market_ready:
+            active_modes.append('live_trading_runtime_ready')
+            next_best_actions.append(
+                'Keep market feeds, exchange connections, and runtime trading telemetry alive.'
+            )
+        else:
+            blockers.append('market_runtime_not_fully_ready')
+            next_best_actions.append(
+                'Restore market runtime readiness before escalating new order intent.'
+            )
+
+        if market.get('stale'):
+            blockers.append('market_runtime_status_stale')
+            next_best_actions.append(
+                'Refresh and verify market telemetry before new risk-taking decisions.'
+            )
+
+        open_positions = int(market.get('open_positions', 0) or 0)
+        pending_orders = int(market.get('pending_orders', 0) or 0)
+        if open_positions > 0:
+            active_modes.append('open_position_monitoring')
+            next_best_actions.append(
+                f'Protect and supervise {open_positions} open position(s) through runtime risk controls.'
+            )
+        if pending_orders > 0:
+            active_modes.append('pending_order_supervision')
+            next_best_actions.append(
+                f'Reconcile {pending_orders} pending order(s) before maintenance or restart.'
+            )
+
+        if self.initialized:
+            active_modes.append('cognitive_analysis_ready')
+        elif self.initializing:
+            active_modes.append('cognitive_background_warmup')
+            next_best_actions.append(
+                'Continue cognitive warmup in the background while health endpoints remain live.'
+            )
+        else:
+            blockers.append('cognitive_systems_not_ready')
+            next_best_actions.append(
+                'Keep HTTP health online and finish cognitive initialization without rebooting.'
+            )
+
+        if self.init_error:
+            blockers.append('cognitive_initialization_error')
+            next_best_actions.append(
+                'Request repair and defer reboot until the downtime window and flight test both approve.'
+            )
+
+        if organism.get('available'):
+            active_modes.append('organism_self_observation')
+            if organism.get('blind_spot_count', 0) > 0:
+                active_modes.append('self_improvement_backlog')
+                highest_blind_spots = organism.get('highest_blind_spots')
+                if not isinstance(highest_blind_spots, list):
+                    highest_blind_spots = []
+                next_actions = organism.get('next_actions')
+                if not isinstance(next_actions, list):
+                    next_actions = []
+                top_spot = highest_blind_spots[0] if highest_blind_spots else {}
+                action = top_spot.get('next_action') or (
+                    next_actions[0] if next_actions else None
+                )
+                if action:
+                    next_best_actions.append(
+                        f'Work the highest-impact safe self-improvement check: {action}'
+                    )
+        else:
+            blockers.append('organism_status_unavailable')
+            next_best_actions.append(
+                'Regenerate organism runtime status so blind spots and next actions are visible.'
+            )
+
+        action_authority = {
+            'llm_order_intent_authority': os.environ.get(
+                'AUREON_LLM_ORDER_INTENT_AUTHORITY',
+                '0',
+            ).strip().lower() in {'1', 'true', 'yes', 'on'},
+            'direct_exchange_mutation_authority': os.environ.get(
+                'AUREON_LLM_DIRECT_EXCHANGE_MUTATION_AUTHORITY',
+                '0',
+            ).strip().lower() in {'1', 'true', 'yes', 'on'},
+            'real_orders_disabled': os.environ.get(
+                'AUREON_DISABLE_REAL_ORDERS',
+                '0',
+            ).strip().lower() in {'1', 'true', 'yes', 'on'},
+        }
+
+        if not action_authority['llm_order_intent_authority']:
+            next_best_actions.append(
+                'Analyze opportunities but do not emit order intent until runtime authority is present.'
+            )
+        if action_authority['direct_exchange_mutation_authority']:
+            blockers.append('direct_exchange_mutation_authority_enabled')
+            next_best_actions.append(
+                'Keep direct exchange mutation guarded by runtime policy; prefer order-intent handoff.'
+            )
+
+        if not next_best_actions:
+            next_best_actions.append(
+                'Continue live analysis and only act through risk-authorized trading pathways.'
+            )
+
+        if market_ready and self.initialized:
+            decision = 'pursue_goal_with_full_live_capability'
+        elif market_ready:
+            decision = 'pursue_goal_with_guarded_live_capability'
+        else:
+            decision = 'restore_capability_before_new_risk'
+
+        return {
+            'service': 'aureon-mind-thought-action-hub',
+            'generated_at': datetime.now().astimezone().isoformat(),
+            'primary_goal': directive.get('primary_goal'),
+            'decision': decision,
+            'maximum_safe_effort': (
+                'Run every non-destructive analysis, keep feeds alive, protect positions, '
+                'publish only authorized order intent, and defer disruptive maintenance.'
+            ),
+            'active_modes': active_modes,
+            'blockers': blockers,
+            'next_best_actions': next_best_actions[:8],
+            'constraints': directive.get('constraints', []),
+            'action_authority': action_authority,
+            'market_runtime': market,
+            'organism_status': organism,
+            'self_questions': [
+                'What can I safely do right now to advance the primary goal?',
+                'Are market data, trading runtime, and exchange connections ready?',
+                'Do open positions or pending orders require protection before anything else?',
+                'Which blind spot most threatens goal progress?',
+                'Would a reboot reduce live capability right now?',
+                'Can this action pass risk, legality, and runtime authority gates?',
+            ],
+        }
+
+    def _run_internal_flight_test(self) -> Dict[str, Any]:
+        downtime = self._downtime_window_state()
+        market = self._read_market_runtime_summary()
+        reboot_intent = self._read_reboot_intent()
+        goal_pursuit = self._run_goal_pursuit_assessment(market=market)
+        allow_open_positions = os.environ.get(
+            'AUREON_ALLOW_MIND_REBOOT_WITH_OPEN_POSITIONS',
+            '0',
+        ).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+        blockers: List[str] = []
+        if not downtime['in_window']:
+            blockers.append('outside_downtime_window')
+        if self.initializing:
+            blockers.append('mind_initializing')
+        if market.get('open_positions', 0) > 0 and not allow_open_positions:
+            blockers.append('open_positions_active')
+        if market.get('pending_orders', 0) > 0:
+            blockers.append('pending_orders_active')
+        if market.get('available') and market.get('stale'):
+            blockers.append('market_runtime_status_stale')
+
+        flight_checks = {
+            'http_surface': True,
+            'thought_bus': self.thought_bus is not None,
+            'mind_initialized': self.initialized,
+            'mind_initializing': self.initializing,
+            'mind_init_error': self.init_error is None,
+            'market_runtime_available': bool(market.get('available')),
+            'market_trading_ready': bool(market.get('trading_ready')),
+            'market_data_ready': bool(market.get('data_ready')),
+        }
+        ok = all(flight_checks.values()) if self.initialized else all(
+            value for key, value in flight_checks.items()
+            if key not in {'mind_initialized', 'market_runtime_available', 'market_trading_ready', 'market_data_ready'}
+        )
+
+        should_reboot = bool(reboot_intent.get('pending')) or bool(self.init_error)
+        can_reboot_now = len(blockers) == 0
+        if should_reboot and can_reboot_now:
+            decision = 'approve_reboot'
+        elif can_reboot_now:
+            decision = 'window_clear_no_reboot_requested'
+        else:
+            decision = 'hold_live_state'
+        reason = 'downtime_window_clear' if can_reboot_now else ','.join(blockers)
+
+        return {
+            'service': 'aureon-mind-thought-action-hub',
+            'generated_at': datetime.now().astimezone().isoformat(),
+            'status': self._initialization_status(),
+            'ok': ok,
+            'flight_checks': flight_checks,
+            'capabilities': {
+                'connected_clients': len(self.clients),
+                'recent_thoughts': len(self.recent_thoughts),
+                'recent_actions': len(self.recent_actions),
+                'registry_systems': len(self.registry.systems),
+                'self_questioning_available': self.self_questioning_ai is not None,
+            },
+            'market_runtime': market,
+            'goal_pursuit': goal_pursuit,
+            'downtime_window': downtime,
+            'reboot_intent': reboot_intent,
+            'reboot_advice': {
+                'decision': decision,
+                'can_reboot_now': can_reboot_now,
+                'should_reboot': should_reboot,
+                'reason': reason,
+                'blockers': blockers,
+                'next_window_start_local': downtime.get('next_start_local'),
+                'next_window_end_local': downtime.get('next_end_local'),
+            },
+            'self_questions': [
+                'Am I serving health endpoints?',
+                'Is ThoughtBus connected?',
+                'Is the market runtime ready?',
+                'Are positions or pending orders active?',
+                'What is the best safe action toward the primary goal?',
+                'Am I inside the configured downtime window?',
+                'Can I reboot without reducing live capability?',
+            ],
+        }
+
+    async def goal_pursuit_loop(self):
+        """Continuously publish the hub's safest next-step assessment."""
+        interval = os.environ.get('AUREON_GOAL_PURSUIT_INTERVAL_SEC', '60')
+        try:
+            interval_sec = max(15.0, float(interval))
+        except Exception:
+            interval_sec = 60.0
+
+        while True:
+            try:
+                assessment = self._run_goal_pursuit_assessment()
+                thought = self.thought_bus.publish(
+                    Thought(
+                        source='MindThoughtActionHub',
+                        topic='goal.pursuit.assessment',
+                        payload={
+                            'primary_goal': assessment.get('primary_goal'),
+                            'decision': assessment.get('decision'),
+                            'active_modes': assessment.get('active_modes', []),
+                            'blockers': assessment.get('blockers', []),
+                            'next_best_actions': assessment.get('next_best_actions', []),
+                            'generated_at': assessment.get('generated_at'),
+                        },
+                    )
+                )
+                if not self.recent_thoughts or self.recent_thoughts[-1].id != thought.id:
+                    self._on_thought(thought)
+            except Exception as e:
+                logger.info(f"Goal pursuit assessment skipped: {e}")
+            await asyncio.sleep(interval_sec)
+
+    async def _init_systems_async(self):
+        """Warm up cognitive systems without blocking the HTTP health surface."""
+        if self.initialized or self.initializing:
+            return
+
+        self.initializing = True
+        self.init_error = None
+        try:
+            await asyncio.to_thread(self._init_systems)
+            self.initialized = True
+            logger.info("Mind systems initialized")
+            if self._self_questioning_enabled() and self.self_questioning_ai:
+                self._self_questioning_task = asyncio.create_task(self.self_questioning_loop())
+        except Exception as e:
+            self.init_error = str(e)
+            logger.exception("Mind system initialization failed")
+        finally:
+            self.initializing = False
     
     def _init_systems(self):
         """Initialize core cognitive systems."""
@@ -608,8 +1224,15 @@ class MindThoughtActionHub:
         
         # Scan workspace
         self.registry.scan_workspace()
+        self._init_self_questioning_ai()
+        if audit_mode_enabled():
+            self.thought_bus.subscribe('*', self._on_thought)
+            logger.info("Audit mode: heavy Queen/Nexus instances deferred; ThoughtBus is active")
+            return
         logger.info(f"✅ Registered {len(self.registry.systems)} systems")
         
+        load_optional_system_classes()
+
         # Initialize Queen
         if QueenHiveMind:
             try:
@@ -638,12 +1261,36 @@ class MindThoughtActionHub:
         self.thought_bus.subscribe('*', self._on_thought)
         logger.info("💭 ThoughtBus subscribed")
     
+    def _init_self_questioning_ai(self):
+        """Wire the local Ollama + Obsidian self-questioning loop."""
+        cls = load_self_questioning_ai_class()
+        if cls is None:
+            logger.info("Self-questioning AI unavailable")
+            return
+        try:
+            self.self_questioning_ai = cls(thought_bus=self.thought_bus)
+            logger.info("Self-questioning AI wired to Ollama, Obsidian, and ThoughtBus")
+        except Exception as e:
+            self.self_questioning_ai = None
+            logger.info(f"Self-questioning AI not started: {e}")
+
+    def _self_questioning_enabled(self) -> bool:
+        val = os.environ.get("AUREON_SELF_QUESTIONING_AI", "1").strip().lower()
+        return val not in {"0", "false", "no", "off"}
+
+    def _schedule_broadcast(self, message: Dict):
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self.broadcast(message))
+        except RuntimeError:
+            return
+
     def _on_thought(self, thought: Thought):
         """Handle thought from ThoughtBus."""
         self.recent_thoughts.append(thought)
         
         # Broadcast to connected clients
-        asyncio.create_task(self.broadcast({
+        self._schedule_broadcast({
             'type': 'thought',
             'thought': {
                 'id': thought.id,
@@ -652,7 +1299,7 @@ class MindThoughtActionHub:
                 'topic': thought.topic,
                 'payload': thought.payload
             }
-        }))
+        })
         
         # Track actions
         if thought.topic.startswith('execution.') or thought.topic.startswith('order.'):
@@ -662,13 +1309,13 @@ class MindThoughtActionHub:
                 'ts': thought.ts
             })
             
-            asyncio.create_task(self.broadcast({
+            self._schedule_broadcast({
                 'type': 'action',
                 'action': {
                     'type': thought.topic,
                     'details': str(thought.payload)
                 }
-            }))
+            })
     
     async def handle_index(self, request):
         """Serve dashboard HTML."""
@@ -700,11 +1347,25 @@ class MindThoughtActionHub:
     
     async def handle_mindmap(self, request):
         """API endpoint for mind map data."""
+        if not self.initialized:
+            return web.json_response({
+                'nodes': [],
+                'edges': [],
+                'categories': [],
+                'status': self._initialization_status(),
+                'initialized': self.initialized,
+                'initializing': self.initializing,
+                'init_error': self.init_error,
+            })
         return web.json_response(self.registry.export_mind_map_data())
     
     async def handle_thoughts(self, request):
         """API endpoint for recent thoughts."""
         return web.json_response({
+            'status': self._initialization_status(),
+            'initialized': self.initialized,
+            'initializing': self.initializing,
+            'init_error': self.init_error,
             'thoughts': [
                 {
                     'id': t.id,
@@ -722,6 +1383,49 @@ class MindThoughtActionHub:
         return web.json_response({
             'actions': list(self.recent_actions)[-20:]
         })
+
+    async def handle_flight_test(self, request):
+        """Internal self-flight-test and reboot advice endpoint."""
+        return web.json_response(self._run_internal_flight_test())
+
+    async def handle_goal_pursuit(self, request):
+        """API endpoint for the current safest goal-pursuit assessment."""
+        return web.json_response(self._run_goal_pursuit_assessment())
+
+    async def handle_self_questioning_status(self, request):
+        """API endpoint for the Ollama + Obsidian self-questioning loop."""
+        if not self.self_questioning_ai:
+            return web.json_response({
+                'available': False,
+                'status': self._initialization_status(),
+                'initialized': self.initialized,
+                'initializing': self.initializing,
+            }, status=503)
+        return web.json_response({
+            'available': True,
+            'enabled': self._self_questioning_enabled(),
+            'status': self.self_questioning_ai.get_status(),
+        })
+
+    async def handle_self_questioning_ask(self, request):
+        """Run one safe self-questioning cycle on demand."""
+        if not self.self_questioning_ai:
+            return web.json_response({'error': 'self_questioning_ai unavailable'}, status=503)
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        questions = body.get('questions')
+        if not questions and body.get('question'):
+            questions = [body.get('question')]
+        cycle = await asyncio.to_thread(
+            self.self_questioning_ai.run_cycle,
+            questions=questions,
+            include_audit=bool(body.get('include_audit', True)),
+            include_self_scan=bool(body.get('include_self_scan', True)),
+        )
+        self.mind_stats['Self Questioning Cycles'] += 1
+        return web.json_response(cycle.to_dict())
     
     async def broadcast(self, message: Dict):
         """Broadcast message to all connected clients."""
@@ -763,6 +1467,35 @@ class MindThoughtActionHub:
             except Exception as e:
                 logger.error(f"Error in stats updater: {e}")
                 await asyncio.sleep(5)
+
+    async def self_questioning_loop(self):
+        """Periodic safe self-questioning using Ollama and Obsidian."""
+        if not self.self_questioning_ai:
+            return
+        await asyncio.sleep(float(os.environ.get("AUREON_SELF_QUESTIONING_START_DELAY_S", "10")))
+        interval = max(60.0, float(os.environ.get("AUREON_SELF_QUESTION_INTERVAL_S", "300")))
+        logger.info("Starting self-questioning AI loop")
+        while self._self_questioning_enabled():
+            try:
+                cycle = await asyncio.to_thread(
+                    self.self_questioning_ai.run_cycle,
+                    questions=None,
+                    include_audit=True,
+                    include_self_scan=True,
+                )
+                self.mind_stats['Self Questioning Cycles'] += 1
+                await self.broadcast({
+                    'type': 'self_questioning_cycle',
+                    'cycle': {
+                        'cycle_id': cycle.cycle_id,
+                        'summary': cycle.summary,
+                        'answer_source': cycle.answer_source,
+                        'note_path': cycle.note_path,
+                    }
+                })
+            except Exception as e:
+                logger.error(f"Self-questioning loop error: {e}")
+            await asyncio.sleep(interval)
     
     async def generate_test_thoughts(self):
         """Generate test thoughts for demonstration.
@@ -831,6 +1564,8 @@ class MindThoughtActionHub:
         await runner.setup()
         site = web.TCPSite(runner, '0.0.0.0', self.port)
         await site.start()
+        self._goal_pursuit_task = asyncio.create_task(self.goal_pursuit_loop())
+        self._init_task = asyncio.create_task(self._init_systems_async())
         
         print(f"\n{'='*80}")
         print(f"🧠💭⚡ AUREON MIND → THOUGHT → ACTION HUB")
@@ -838,19 +1573,12 @@ class MindThoughtActionHub:
         print(f"🌐 Dashboard: http://localhost:{self.port}")
         print(f"📡 WebSocket: ws://localhost:{self.port}/ws")
         print(f"\n✨ COGNITIVE ARCHITECTURE:")
-        print(f"   🧠 MIND:    {len([s for s in self.registry.systems.values() if 'queen' in s.name.lower() or 'intelligence' in s.name.lower()])} systems")
+        print(f"   🧠 MIND:    initializing in background")
         print(f"   💭 THOUGHT: ThoughtBus (real-time streaming)")
         print(f"   ⚡ ACTION:  Execution layer monitoring")
         print(f"\n📊 SYSTEMS INTEGRATED:")
-        print(f"   • Total Systems: {len(self.registry.systems)}")
-        print(f"   • Categories: {len(self.registry.get_category_stats())}")
-        print(f"   • Dashboards: {len([s for s in self.registry.systems.values() if s.is_dashboard])}")
-        if self.queen:
-            print(f"   • Queen Hive Mind: 229 patterns")
-        if self.prob_nexus:
-            print(f"   • Probability Nexus: 79.6% win rate")
-        if self.ultimate_intel:
-            print(f"   • Ultimate Intelligence: 95% accuracy")
+        print(f"   • HTTP health endpoint: READY")
+        print(f"   • System registry: warming up")
         print(f"{'='*80}\n")
         
         # Start background tasks

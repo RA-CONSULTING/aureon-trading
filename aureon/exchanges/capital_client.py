@@ -4,6 +4,7 @@ import logging
 import requests
 import time
 import json
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -22,6 +23,13 @@ try:
     else:
         load_dotenv(override=False)
 except ImportError:
+    pass
+
+try:
+    from aureon.core.aureon_env import load_aureon_environment
+
+    load_aureon_environment(Path(_REPO_ROOT), override=False)
+except Exception:
     pass
 
 logger = logging.getLogger(__name__)

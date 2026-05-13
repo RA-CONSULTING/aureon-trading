@@ -1,4 +1,5 @@
 import os, time, json, hmac, hashlib, base64, threading, random, logging
+from pathlib import Path
 from typing import Dict, Any, List, Tuple
 from decimal import Decimal
 
@@ -23,12 +24,11 @@ except ImportError:
     HTTPAdapter = None  # type: ignore
     Retry = None  # type: ignore
 
-# Load environment variables from .env file
+# Load environment variables from the shared Aureon env policy.
 try:
-    from dotenv import load_dotenv
-    # 🔑 Use override=True to ensure newest keys are always loaded!
-    load_dotenv(override=True)
-except ImportError:
+    from aureon.core.aureon_env import load_aureon_environment
+    load_aureon_environment(Path(__file__).resolve().parents[2], override=False)
+except Exception:
     pass
 
 KRAKEN_BASE = "https://api.kraken.com"

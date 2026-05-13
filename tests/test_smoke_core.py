@@ -3,14 +3,13 @@ import unittest
 import sys
 import os
 import time
+import logging
 from unittest.mock import MagicMock, patch
 
 # Add root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Stubbing logger to avoid spam
-logging_mock = MagicMock()
-sys.modules['logging'] = logging_mock
+logging.getLogger().setLevel(logging.ERROR)
 
 class TestSmokeCore(unittest.TestCase):
     

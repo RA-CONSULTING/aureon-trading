@@ -54,6 +54,7 @@ from datetime import datetime
 from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Optional, Any
 from pathlib import Path
+from aureon.core.aureon_runtime_safety import apply_safe_runtime_environment, require_real_orders_allowed
 
 # Configure logging
 logging.basicConfig(
@@ -99,8 +100,12 @@ class QueenUnifiedStartup:
     Streams live telemetry to ThoughtBus for dashboard display.
     """
     
-    def __init__(self, dry_run: bool = False):
+    def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
+        if dry_run:
+            apply_safe_runtime_environment()
+        else:
+            require_real_orders_allowed("Queen Unified Startup")
         self.state = UnifiedState()
         self.thought_bus = None
         self.queen = None

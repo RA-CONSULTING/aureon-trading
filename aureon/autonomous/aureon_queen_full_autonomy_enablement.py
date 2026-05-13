@@ -22,8 +22,10 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from aureon.core.aureon_runtime_safety import apply_safe_runtime_environment, live_block_reason
+
 # UTF-8 Windows fix
-if sys.platform == 'win32':
+if sys.platform == 'win32' and os.getenv("PYTEST_CURRENT_TEST") is None:
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
         import io
@@ -127,6 +129,25 @@ class QueenAutonomyConfig:
         
     def enable_full_autonomy(self):
         """Enable full autonomous control for the Queen."""
+        block_reason = live_block_reason("Queen full autonomy")
+        if block_reason:
+            logger.warning("Safe autonomy mode active: %s", block_reason)
+            apply_safe_runtime_environment()
+            self.autonomy_enabled = True
+            self.sovereignty_level = "SIMULATED"
+            self.trading_mode = "AUDIT_DRY_RUN"
+            self.systems_authorized = len(ALL_SYSTEMS)
+            return {
+                "success": True,
+                "autonomy_enabled": self.autonomy_enabled,
+                "sovereignty_level": self.sovereignty_level,
+                "trading_mode": self.trading_mode,
+                "systems_authorized": self.systems_authorized,
+                "safe_mode": True,
+                "block_reason": block_reason,
+                "timestamp": self.timestamp,
+            }
+
         logger.info("═" * 80)
         logger.info("👑🎮 ENABLING QUEEN FULL AUTONOMY 🎮👑")
         logger.info("═" * 80)
@@ -246,6 +267,13 @@ def initialize_queen_autonomy():
     """Initialize Queen's full autonomous control."""
     config = QueenAutonomyConfig()
     result = config.enable_full_autonomy()
+
+    if result.get("safe_mode"):
+        result["verification"] = {
+            "all_checks_passed": True,
+            "checks": {"safe_mode": True},
+        }
+        return result
     
     # Verify everything is properly configured
     verification = config.verify_autonomy_status()

@@ -98,6 +98,7 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+from aureon.core.aureon_runtime_safety import live_block_reason, real_orders_disabled
 # Import Adaptive Prime Profit Gate
 from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate
 from aureon.portfolio.cost_basis_tracker import CostBasisTracker
@@ -273,6 +274,13 @@ if callable(load_dotenv):
         safe_print("🔐 Environment variables loaded (default search)")
 else:
     safe_print("⚠️ python-dotenv not installed, using system env vars")
+
+try:
+    from aureon.core.aureon_env import load_aureon_environment
+
+    load_aureon_environment(Path(__file__).resolve().parents[2], override=False)
+except Exception:
+    pass
 
 # Get exchange config from .env
 KRAKEN_API_KEY = os.getenv("KRAKEN_API_KEY", "")
@@ -4677,8 +4685,9 @@ class MicroProfitLabyrinth:
 
     def __init__(self, live: bool = False, dry_run: bool = False):
         # --dry-run explicitly overrides LIVE env; otherwise allow env to enable live
-        self.dry_run = dry_run
-        if dry_run:
+        forced_dry_run = dry_run or real_orders_disabled()
+        self.dry_run = forced_dry_run
+        if forced_dry_run:
             self.live = False
         else:
             self.live = live or LIVE_MODE
@@ -20466,6 +20475,16 @@ async def main():
             safe_print(f"[DEBUG] Parsed args: {args}")
         except Exception:
             print(f"[DEBUG] Parsed args: {args}")
+
+    if args.live:
+        reason = live_block_reason("MicroProfitLabyrinth CLI")
+        if reason:
+            safe_print("\n" + "=" * 60)
+            safe_print("LIVE MODE BLOCKED BY AUREON SAFETY GUARD")
+            safe_print(reason)
+            safe_print("Use --dry-run, or explicitly enable live trading outside audit mode.")
+            safe_print("=" * 60)
+            sys.exit(2)
     
     # Handle CIA sync commands (standalone, no trading)
     if args.sync_cia or args.cia_report or args.cia_wisdom:
