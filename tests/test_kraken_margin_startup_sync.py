@@ -3,12 +3,57 @@ import unittest
 from unittest.mock import patch
 
 from aureon.exchanges.kraken_client import KrakenClient
-from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader, MarginPairInfo
+from aureon.exchanges.kraken_margin_penny_trader import ActiveTrade, KrakenMarginArmyTrader, MarginPairInfo
 from aureon.trading.dynamic_margin_sizer import DynamicMarginConfig, DynamicMarginSizer
 from aureon.trading.temporal_trade_cognition import TemporalTradeCognition
 
 
 class TestKrakenMarginStartupSync(unittest.TestCase):
+    def test_margin_fast_profit_capture_uses_true_net_after_fees_and_collateral_snapshot(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.dry_run = False
+        trader._last_fast_profit_capture = {}
+        trader._fast_profit_capture_by_order = {}
+        trader.client = type("ClientStub", (), {
+            "get_trade_balance": staticmethod(lambda: {
+                "equity_value": "100.0",
+                "free_margin": "72.0",
+                "margin_amount": "20.0",
+                "margin_level": "360.0",
+                "unrealized_pnl": "0.05",
+            })
+        })()
+        trade = ActiveTrade(
+            pair="BTC/USD",
+            side="buy",
+            volume=0.01,
+            entry_price=100.0,
+            leverage=3,
+            entry_fee=0.01,
+            entry_time=1_700_000_000.0,
+            order_id="MFAST",
+            cost=1.0,
+            breakeven_price=101.0,
+            binance_symbol="BTCUSDT",
+        )
+
+        decision = trader._kraken_margin_fast_profit_capture_decision(
+            trade,
+            current_price=101.0,
+            net_pnl=0.055,
+            validated_net_pnl=0.04,
+            total_fees=0.02,
+            exit_fee=0.01,
+            rollover=0.0,
+            stream_live=True,
+        )
+
+        self.assertTrue(decision["ready_to_capture"], decision)
+        self.assertEqual(decision["reason"], "capture_true_profit_after_costs")
+        self.assertEqual(decision["costs"]["total_costs_usd"], 0.02)
+        self.assertEqual(decision["collateral"]["margin_level"], 360.0)
+        self.assertIn("MFAST", trader._fast_profit_capture_by_order)
+
     def test_validator_required_move_pct_uses_trade_profit_validator_when_available(self):
         trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
         trader.trade_profit_validator = type("ValidatorStub", (), {

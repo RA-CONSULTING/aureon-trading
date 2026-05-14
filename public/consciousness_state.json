@@ -1,21 +1,21 @@
 {
   "available": true,
-  "generated_at": "2026-05-13T21:35:18.865907+00:00",
+  "generated_at": "2026-05-14T07:54:11.706633+00:00",
   "lambda_state": {
-    "lambda": 5347.51943055605,
-    "psi": 0.5444561348511054,
-    "gamma": 0.009001870605362394,
+    "lambda": 5374.854439141374,
+    "psi": 0.5603869241492461,
+    "gamma": 0.1076523538950509,
     "level": "FOCUSED",
     "observer": 1.0,
-    "echo": 5347.050351892075,
-    "step": 116419
+    "echo": 5374.266947193574,
+    "step": 116930
   },
   "understanding": {
-    "market_direction": "unknown",
-    "confidence": 0.0,
+    "market_direction": "sideways",
+    "confidence": 0.09998435238122097,
     "fear_level": 0.5,
-    "opportunity_count": 0,
-    "risk_level": "unknown",
+    "opportunity_count": 6,
+    "risk_level": "high",
     "last_action": "none",
     "dream_progress": 0.0,
     "self_coherence": 0.03963439777655775,
@@ -23,25 +23,25 @@
       "direction": "UNCERTAIN",
       "confidence": 0.2,
       "action": "WAIT",
-      "reasoning": "Chaotic field (C=0.00%) - Wait for coherence to emerge",
+      "reasoning": "Chaotic field (C=37.87%) - Wait for coherence to emerge",
       "reality_verified": false
     },
-    "harmonic_prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 0.0% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
+    "harmonic_prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 37.9% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
     "kraken_ready": true,
     "capital_ready": true,
     "open_positions": 2,
-    "penny_trades": 0,
-    "penny_profit": 0.0,
-    "penny_wins": 0,
+    "penny_trades": 11,
+    "penny_profit": 0.61,
+    "penny_wins": 11,
     "penny_losses": 0,
-    "penny_win_rate": 0.0,
+    "penny_win_rate": 100.0,
     "penny_confidence": 1.0,
-    "penny_streak": 0,
-    "penny_balance": 10.11,
+    "penny_streak": 11,
+    "penny_balance": 22.22,
     "penny_best": 0.34,
     "penny_worst": 0.0,
-    "miner_prediction": "{'timestamp': '2026-05-13T22:28:35.491149', 'validation_time': '2026-05-14T00:28:35.491149', 'btc_price_at_call': 79409.43, 'consensus': 'INCONCLUSIVE', 'manipulation_probability': 0.0, 'fear_greed': 42, 'predicted_direction': 'NEUTRAL', 'confidence': 0.5229508196721311, 'validated': False, 'was_correct': None, 'actual_outcome': None}",
-    "miner_analysis": "{'skeptic': {'anomalies': [], 'red_flags': [], 'green_flags': ['Sentiment in normal range - less likely manipulated', 'Market cap stable - organic movement'], 'manipulation_probability': 0.0, 'ai_verd",
+    "miner_prediction": "{'timestamp': '2026-05-14T08:52:52.986271', 'validation_time': '2026-05-14T10:52:52.986271', 'btc_price_at_call': 79883.29, 'consensus': 'INCONCLUSIVE', 'manipulation_probability': 0.0, 'fear_greed': 34, 'predicted_direction': 'NEUTRAL', 'confidence': 0.5229508196721311, 'validated': False, 'was_correct': None, 'actual_outcome': None}",
+    "miner_analysis": "{'skeptic': {'anomalies': [], 'red_flags': ['Sentiment in normal range - less likely manipulated', 'Market cap stable - organic movement'], 'green_flags': ['Sentiment in normal range - less likely man",
     "energy_instruments": 0,
     "energy_accumulating": 0,
     "energy_distributing": 0,
@@ -50,121 +50,102 @@
     "energy_net_flow": "OUTFLOW",
     "total_equity": 0,
     "asset_count": 0,
-    "happiness": 0.4016984854487684,
+    "happiness": 0.4142588626521209,
     "dream_pct": 0,
-    "wheel": 1.045420800921598,
-    "lambda": 5347.51943055605,
-    "psi": 0.5444561348511054,
-    "gamma": 0.009001870605362394,
+    "wheel": 1.0464496226495628,
+    "live_prices": {
+      "BITCOIN": 79873,
+      "CARDANO": 0.265234,
+      "DOGECOIN": 0.114442,
+      "ETHEREUM": 2269.12,
+      "RIPPLE": 1.43
+    },
+    "live_tick": true,
+    "pnl_this_session": 0.61,
+    "trades_closed": 11,
+    "last_trade": "CLOSED US Tech 100 +0.080",
+    "lambda": 5374.854439141374,
+    "psi": 0.5603869241492461,
+    "gamma": 0.1076523538950509,
     "level": "FOCUSED",
     "observer_signal": 1.0,
-    "echo_signal": 5347.050351892075,
-    "step": 116419,
+    "echo_signal": 5374.266947193574,
+    "step": 116930,
     "lambda_real": 0,
-    "coherence_real": 0.0,
+    "coherence_real": 0.460548698752507,
     "reality_state": "chaos",
     "branches": 0,
     "lev_events": 0,
-    "prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 0.0% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
+    "prophecy": "The substrate vibrates with potential. All branches await crystallization. | Coherence at 37.9% - Await the LEV event, the stabilization moment. | \ud83d\udd2e Dimensional echoes conflicted. Parallel universes disagree - reality remains contested.",
     "guidance": {
       "direction": "UNCERTAIN",
       "confidence": 0.2,
       "action": "WAIT",
-      "reasoning": "Chaotic field (C=0.00%) - Wait for coherence to emerge",
+      "reasoning": "Chaotic field (C=37.87%) - Wait for coherence to emerge",
       "reality_verified": false
     },
-    "observations": 16336,
-    "thoughts_generated": 10,
-    "uptime_s": 3616.043064594269,
+    "observations": 295006,
+    "thoughts_generated": 300,
+    "uptime_s": 40748.88379025459,
     "recent_topics": [
+      "enigma.whale.miner",
+      "whale.sonar.miner",
       "enigma.whale.whale_sonar",
       "enigma.whale.consciousness",
+      "enigma.whale.runtime",
       "whale.sonar.consciousness",
+      "whale.sonar.runtime",
+      "queen.alert.whale",
       "whale.sonar.whale_sonar.enigma",
       "whale.sonar.whale_sonar",
-      "queen.alert.whale",
+      "enigma.whale.risk",
+      "whale.sonar.risk",
       "enigma.whale.whale_sonar.enigma"
     ]
   },
   "self_model": {
     "name": "Queen Sero",
     "identity": "",
-    "creator": "Aureon Creator",
+    "creator": "Gary Leckey",
     "purpose": "",
     "core_message": "",
     "dream_target": 0.0,
     "current_equity": 0.0,
-    "self_coherence_score": 0.009001870605362394
+    "self_coherence_score": 0.1076523538950509
   },
   "thought_stream": [
     {
-      "topic": "whale.sonar.consciousness",
+      "topic": "whale.sonar.runtime",
       "source": "whale_sonar",
       "timestamp": 0.0,
       "text": ""
     },
     {
-      "topic": "enigma.whale.consciousness",
+      "topic": "enigma.whale.runtime",
       "source": "whale_sonar.enigma",
       "timestamp": 0.0,
       "text": ""
     },
     {
-      "topic": "whale.sonar.whale_sonar",
+      "topic": "whale.sonar.miner",
       "source": "whale_sonar",
       "timestamp": 0.0,
       "text": ""
     },
     {
-      "topic": "enigma.whale.whale_sonar",
+      "topic": "enigma.whale.miner",
       "source": "whale_sonar.enigma",
       "timestamp": 0.0,
       "text": ""
     },
     {
-      "topic": "whale.sonar.whale_sonar.enigma",
+      "topic": "whale.sonar.risk",
       "source": "whale_sonar",
       "timestamp": 0.0,
       "text": ""
     },
     {
-      "topic": "enigma.whale.whale_sonar.enigma",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.consciousness",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.consciousness",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.whale_sonar",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.whale_sonar",
-      "source": "whale_sonar.enigma",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "whale.sonar.whale_sonar.enigma",
-      "source": "whale_sonar",
-      "timestamp": 0.0,
-      "text": ""
-    },
-    {
-      "topic": "enigma.whale.whale_sonar.enigma",
+      "topic": "enigma.whale.risk",
       "source": "whale_sonar.enigma",
       "timestamp": 0.0,
       "text": ""
@@ -214,16 +195,52 @@
     {
       "topic": "queen.alert.whale",
       "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.runtime",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.runtime",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.miner",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.miner",
+      "source": "whale_sonar.enigma",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "whale.sonar.risk",
+      "source": "whale_sonar",
+      "timestamp": 0.0,
+      "text": ""
+    },
+    {
+      "topic": "enigma.whale.risk",
+      "source": "whale_sonar.enigma",
       "timestamp": 0.0,
       "text": ""
     }
   ],
-  "observations": 16336,
-  "thoughts_generated": 10,
-  "uptime_s": 3616.0,
+  "observations": 295006,
+  "thoughts_generated": 300,
+  "uptime_s": 40748.9,
   "harmonic_field": {
     "lambda_real": 0.0,
-    "coherence_real": 0.0,
+    "coherence_real": 0.460548698752507,
     "reality_state": "chaos",
     "branches": 0,
     "lev_events": 0

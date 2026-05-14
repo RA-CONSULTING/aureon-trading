@@ -269,6 +269,11 @@ CAPITAL_LIVE_REFRESH_ENABLED = _env_bool("CAPITAL_LIVE_REFRESH_ENABLED", True)
 CAPITAL_LIVE_REFRESH_INTERVAL_SECS = _env_float("CAPITAL_LIVE_REFRESH_INTERVAL_SECS", 1.0)
 CAPITAL_LIVE_EVENT_TRIGGER_PCT = _env_float("CAPITAL_LIVE_EVENT_TRIGGER_PCT", 0.03)
 CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS = _env_float("CAPITAL_LIVE_EVENT_MIN_INTERVAL_SECS", 0.25)
+CAPITAL_FAST_PROFIT_CAPTURE_ENABLED = _env_bool("CAPITAL_FAST_PROFIT_CAPTURE_ENABLED", True)
+CAPITAL_FAST_PROFIT_MIN_GBP = _env_float("CAPITAL_FAST_PROFIT_MIN_GBP", CAPITAL_MIN_PROFIT_GBP)
+CAPITAL_FAST_PROFIT_MIN_PCT = _env_float("CAPITAL_FAST_PROFIT_MIN_PCT", 0.02)
+CAPITAL_FAST_PROFIT_MIN_HOLD_SECS = _env_float("CAPITAL_FAST_PROFIT_MIN_HOLD_SECS", 2.0)
+CAPITAL_FAST_PROFIT_MARKET_STATUS_TTL_SECS = _env_float("CAPITAL_FAST_PROFIT_MARKET_STATUS_TTL_SECS", 10.0)
 CAPITAL_MIND_MAP_REFRESH_SECS = _env_float("CAPITAL_MIND_MAP_REFRESH_SECS", 300.0)
 CAPITAL_MYCELIUM_REFRESH_SECS = _env_float("CAPITAL_MYCELIUM_REFRESH_SECS", 15.0)
 CAPITAL_PROBABILITY_FEED_INTERVAL_SECS = _env_float("CAPITAL_PROBABILITY_FEED_INTERVAL_SECS", 15.0)
@@ -476,6 +481,8 @@ class CapitalCFDTrader:
         self._last_probability_feed_publish_at: float = 0.0
         self._last_live_confirmed_key: str = ""
         self._last_mycelium_message: Dict[str, Any] = {}
+        self._last_fast_profit_capture: Dict[str, Any] = {}
+        self._fast_profit_capture_by_deal: Dict[str, Dict[str, Any]] = {}
         self._swarm_snapshot: Dict[str, Any] = {
             "enabled": True,
             "leader": {},
@@ -3525,6 +3532,9 @@ class CapitalCFDTrader:
             "age_secs":         pos.age_secs,
             "closed_at":        datetime.now().isoformat(),
         }
+        fast_capture = dict(getattr(self, "_fast_profit_capture_by_deal", {}).get(pos.deal_id, {}) or {})
+        if fast_capture:
+            record["fast_profit_capture"] = fast_capture
         brain = getattr(self, "_signal_brain", None)
         if brain is not None and hasattr(brain, "learn_from_outcome"):
             try:
@@ -3569,6 +3579,121 @@ class CapitalCFDTrader:
             pnl_pct = (pos.entry_price - cp) / pos.entry_price
         return pnl_pct * pos.entry_price * pos.size
 
+    def _safe_cached_price(self, symbol: str) -> Dict[str, Any]:
+        try:
+            ticker = self._get_price(symbol) or {}
+            return dict(ticker) if isinstance(ticker, dict) else {}
+        except Exception:
+            return {}
+
+    def _capital_position_market_snapshot(self, pos: CFDPosition) -> Dict[str, Any]:
+        snapshot: Dict[str, Any] = {
+            "market_status": "UNKNOWN",
+            "market_active_for_close": False,
+            "status_source": "unknown",
+            "bid": 0.0,
+            "ask": 0.0,
+        }
+        ticker = self._safe_cached_price(pos.symbol)
+        bid = float(ticker.get("bid") or 0.0)
+        ask = float(ticker.get("ask") or 0.0)
+        market_info: Dict[str, Any] = {}
+        client = getattr(self, "client", None)
+        if client is not None and pos.epic and hasattr(client, "_get_market_snapshot"):
+            try:
+                try:
+                    raw = client._get_market_snapshot(  # type: ignore[attr-defined]
+                        pos.epic,
+                        cache_ttl=max(1.0, CAPITAL_FAST_PROFIT_MARKET_STATUS_TTL_SECS),
+                    )
+                except TypeError:
+                    raw = client._get_market_snapshot(pos.epic)  # type: ignore[attr-defined]
+                if isinstance(raw, dict):
+                    market_info = raw
+            except Exception as e:
+                snapshot["status_error"] = str(e)
+        if market_info:
+            snapshot["market_status"] = self._market_status_text(market_info)
+            snapshot["status_source"] = "capital_market_snapshot"
+            snap = market_info.get("snapshot", {}) if isinstance(market_info.get("snapshot"), dict) else {}
+            bid = bid or float(snap.get("bid") or 0.0)
+            ask = ask or float(snap.get("offer") or snap.get("ask") or 0.0)
+        elif bid > 0 or ask > 0 or pos.current_price > 0:
+            snapshot["status_source"] = "live_price_cache"
+
+        allowed_statuses = {"TRADEABLE", "TRADEABLE_ONLINE", "OPEN", "EDITS_ONLY", "ONLINE"}
+        market_status = str(snapshot["market_status"] or "UNKNOWN").upper()
+        live_price_active = bool(bid > 0 or ask > 0)
+        snapshot["market_active_for_close"] = bool(market_status in allowed_statuses or (market_status == "UNKNOWN" and live_price_active))
+        snapshot["bid"] = bid
+        snapshot["ask"] = ask
+        return snapshot
+
+    def _capital_fast_profit_capture_decision(self, pos: CFDPosition, pnl_gbp: float) -> Dict[str, Any]:
+        market = self._capital_position_market_snapshot(pos)
+        bid = float(market.get("bid") or 0.0)
+        ask = float(market.get("ask") or 0.0)
+        exit_price = float(pos.current_price if pos.current_price > 0 else pos.entry_price)
+        exit_source = "current_price"
+        if pos.direction == "BUY" and bid > 0:
+            exit_price = bid
+            exit_source = "bid"
+        elif pos.direction == "SELL" and ask > 0:
+            exit_price = ask
+            exit_source = "ask"
+
+        exit_adjusted_pct = 0.0
+        exit_adjusted_gbp = 0.0
+        if pos.entry_price > 0 and exit_price > 0:
+            if pos.direction == "BUY":
+                exit_adjusted_pct = (exit_price - pos.entry_price) / pos.entry_price * 100.0
+            else:
+                exit_adjusted_pct = (pos.entry_price - exit_price) / pos.entry_price * 100.0
+            exit_adjusted_gbp = (exit_adjusted_pct / 100.0) * pos.entry_price * pos.size
+
+        min_gbp = max(CAPITAL_MIN_PROFIT_GBP, CAPITAL_FAST_PROFIT_MIN_GBP)
+        min_pct = max(0.0, CAPITAL_FAST_PROFIT_MIN_PCT)
+        blockers: List[str] = []
+        if not CAPITAL_FAST_PROFIT_CAPTURE_ENABLED:
+            blockers.append("fast_profit_capture_disabled")
+        if pos.age_secs < CAPITAL_FAST_PROFIT_MIN_HOLD_SECS:
+            blockers.append("min_hold_window")
+        if not bool(market.get("market_active_for_close")):
+            blockers.append(f"market_not_active:{market.get('market_status', 'UNKNOWN')}")
+        if exit_adjusted_gbp < min_gbp:
+            blockers.append("profit_below_gbp_floor")
+        if exit_adjusted_pct < min_pct:
+            blockers.append("profit_below_pct_floor")
+
+        should_close = not blockers
+        decision = {
+            "schema_version": 1,
+            "enabled": CAPITAL_FAST_PROFIT_CAPTURE_ENABLED,
+            "symbol": pos.symbol,
+            "deal_id": pos.deal_id,
+            "direction": pos.direction,
+            "age_secs": pos.age_secs,
+            "market_status": market.get("market_status", "UNKNOWN"),
+            "market_active_for_close": bool(market.get("market_active_for_close")),
+            "status_source": market.get("status_source", "unknown"),
+            "bid": bid,
+            "ask": ask,
+            "entry_price": pos.entry_price,
+            "current_price": pos.current_price,
+            "exit_price": exit_price,
+            "exit_price_source": exit_source,
+            "pnl_gbp_mid": pnl_gbp,
+            "exit_adjusted_pnl_gbp": exit_adjusted_gbp,
+            "exit_adjusted_pnl_pct": exit_adjusted_pct,
+            "min_profit_gbp": min_gbp,
+            "min_profit_pct": min_pct,
+            "min_hold_secs": CAPITAL_FAST_PROFIT_MIN_HOLD_SECS,
+            "should_close": should_close,
+            "reason": "ready_to_capture_profit" if should_close else ",".join(blockers),
+            "checked_at": datetime.now().isoformat(),
+        }
+        return decision
+
     def _get_capital_dtp(self, pos: CFDPosition):
         if not HAS_CAPITAL_DTP or DynamicTakeProfit is None or not pos.deal_id:
             return None
@@ -3593,6 +3718,9 @@ class CapitalCFDTrader:
         """
         closed:    List[dict]       = []
         remaining: List[CFDPosition] = []
+        fast_profit_checks: List[Dict[str, Any]] = []
+        if not isinstance(getattr(self, "_fast_profit_capture_by_deal", None), dict):
+            self._fast_profit_capture_by_deal = {}
         for pos in self.positions:
             if pos.current_price <= 0:
                 remaining.append(pos)
@@ -3627,6 +3755,19 @@ class CapitalCFDTrader:
                 penny_reason = self._penny_take_profit_reason(pos, pnl_gbp)
                 if penny_reason:
                     close_reason = penny_reason
+
+            if close_reason is None:
+                fast_profit = self._capital_fast_profit_capture_decision(pos, pnl_gbp)
+                fast_profit_checks.append(fast_profit)
+                if fast_profit.get("should_close"):
+                    close_reason = (
+                        f"FAST_PROFIT_CAPTURE pnl={float(fast_profit.get('exit_adjusted_pnl_gbp', 0.0) or 0.0):+.4f}GBP "
+                        f"pct={float(fast_profit.get('exit_adjusted_pnl_pct', 0.0) or 0.0):+.3f}% "
+                        f"market={fast_profit.get('market_status', 'UNKNOWN')}"
+                    )
+                    self._fast_profit_capture_by_deal[pos.deal_id] = dict(fast_profit)
+                else:
+                    self._fast_profit_capture_by_deal.pop(pos.deal_id, None)
 
             # Trail SL — only after position reaches trail_activation_pct profit.
             # Gives the entry room to breathe through initial noise before the
@@ -3675,11 +3816,20 @@ class CapitalCFDTrader:
                     remaining.append(pos)
                 else:
                     self._dtp_trackers.pop(pos.deal_id, None)
+                    self._fast_profit_capture_by_deal.pop(pos.deal_id, None)
                     closed.append(record)
             else:
                 remaining.append(pos)
 
         self.positions = remaining
+        self._last_fast_profit_capture = {
+            "schema_version": 1,
+            "enabled": CAPITAL_FAST_PROFIT_CAPTURE_ENABLED,
+            "generated_at": datetime.now().isoformat(),
+            "open_positions_checked": len(fast_profit_checks),
+            "ready_to_capture": sum(1 for item in fast_profit_checks if bool(item.get("should_close"))),
+            "checks": fast_profit_checks[-8:],
+        }
         return closed
 
     # ── HEADLESS TICK ──────────────────────────────────────────────────────────
@@ -4005,6 +4155,14 @@ class CapitalCFDTrader:
             f"| avg/close=£{float(growth.get('avg_pnl_per_close_gbp', 0.0) or 0.0):+.3f} "
             f"| trend={growth.get('trend', 'steady')}"
         )
+        fast_capture = dict(getattr(self, "_last_fast_profit_capture", {}) or {})
+        if fast_capture:
+            lines.append(
+                f"  FastProfit: checked={int(fast_capture.get('open_positions_checked', 0) or 0)} "
+                f"ready={int(fast_capture.get('ready_to_capture', 0) or 0)} "
+                f"floor=GBP{max(CAPITAL_MIN_PROFIT_GBP, CAPITAL_FAST_PROFIT_MIN_GBP):.4f} "
+                f"pct={CAPITAL_FAST_PROFIT_MIN_PCT:.3f}%"
+            )
         if self._signal_brain is not None and hasattr(self._signal_brain, "learning_snapshot"):
             try:
                 learning = self._signal_brain.learning_snapshot()
@@ -4251,6 +4409,7 @@ class CapitalCFDTrader:
             "thought_bus_snapshot": dict(self._thought_bus_snapshot),
             "cognition_snapshot": dict(self._cognition_snapshot),
             "mycelium_snapshot": dict(self._mycelium_snapshot),
+            "fast_profit_capture": dict(getattr(self, "_last_fast_profit_capture", {}) or {}),
             "live_system_activity": dict(self._live_system_activity_snapshot),
             "probability_feed_snapshot": dict(self._probability_feed_snapshot),
             "recent_closed_trades": list(self._recent_closed_trades[-5:]),

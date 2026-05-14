@@ -1,8 +1,10 @@
 import os
 import sys
+import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 os.environ.setdefault("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", "1")
@@ -52,6 +54,10 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader._central_beat_layers = {"trader": {}, "probe": {}, "merged": {}}
         trader._central_beat_history = []
         trader._central_source_memory = {}
+        trader._stream_cache_health = {}
+        trader._orderbook_pressure_cache = {}
+        trader._fast_money_intelligence = {}
+        trader._extract_stream_cache_source_snapshot = lambda watchlist: {}  # type: ignore[method-assign]
         trader._last_tick_started_at = 0.0
         trader._last_tick_completed_at = 0.0
         trader._last_tick_error = ""
@@ -156,6 +162,42 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertEqual(beat2["source_count"], 1)
         self.assertTrue(beat2["sources"][0]["stale"])
         self.assertEqual(beat2["sources"][0]["source"], "alpaca")
+
+    def test_stream_cache_snapshot_feeds_fresh_websocket_symbols(self):
+        trader = self._make_trader()
+        ticker = trader_mod.SimpleNamespace(
+            symbol="BTC",
+            price=50123.45,
+            bid=50120.0,
+            ask=50125.0,
+            change_24h=1.8,
+            volume_24h=2_000_000_000.0,
+            source="binance_ws",
+            timestamp=time.time(),
+            pair="BTCUSDT",
+        )
+        cache = trader_mod.SimpleNamespace(get_all_tickers=lambda max_age: {"BTC": ticker})
+
+        with patch("aureon.data_feeds.unified_market_cache.get_market_cache", return_value=cache):
+            source = trader_mod.UnifiedMarketTrader._extract_stream_cache_source_snapshot(trader, ["BTCUSD"])
+
+        self.assertEqual(source["source"], "live_stream_cache")
+        self.assertTrue(source["stream_health"]["fresh"])
+        self.assertIn("BTCUSD", source["symbols"])
+        self.assertEqual(source["symbols"]["BTCUSD"]["price"], 50123.45)
+        self.assertEqual(trader._stream_cache_health["symbol_count"], 1)
+
+    def test_route_price_uses_stream_cache_before_rest_quote(self):
+        trader = self._make_trader()
+        trader._stream_price_ticker = lambda symbol, max_age=trader_mod.STREAM_CACHE_MAX_AGE_SEC: trader_mod.SimpleNamespace(price=123.45)  # type: ignore[method-assign]
+
+        class KrakenProbe:
+            def best_price(self, symbol):
+                raise AssertionError("REST quote should not be called when stream price is fresh")
+
+        trader.kraken = trader_mod.SimpleNamespace(client=KrakenProbe())
+
+        self.assertEqual(trader._estimate_route_price("kraken", "XBTUSD"), 123.45)
 
     def test_shared_order_flow_preserves_sell_direction_from_central_beat(self):
         trader = self._make_trader()
@@ -306,7 +348,70 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertLessEqual(top["estimated_target_eta_sec"], trader_mod.SHADOW_TRADE_VALIDATION_HORIZON_SEC)
         self.assertGreater(top["intelligence_mesh_score"], 0.0)
         self.assertIn("intelligence_mesh", order_flow)
-        self.assertEqual(order_flow["selection_process"]["mode"], "profit_velocity_ranked_live_shadow_selection")
+        self.assertEqual(order_flow["selection_process"]["mode"], "fast_money_profit_velocity_ranked_live_shadow_selection")
+        self.assertGreaterEqual(top["fast_money_score"], 0.0)
+        self.assertIn("fast_money_intelligence", order_flow)
+
+    def test_fast_money_ranking_uses_volume_momentum_and_orderbook_pressure(self):
+        trader = self._make_trader()
+        trader.kraken_ready = True
+        trader.capital_ready = True
+        trader._binance_diag = {"network_ok": True, "account_ok": True, "margin_available": True, "uk_mode": False}
+        trader._kraken_tradable_symbols = lambda: {"BTCUSD": "XXBTZUSD", "SOLUSD": "SOLUSDT"}  # type: ignore[method-assign]
+        trader._kraken_spot_tradable_symbols = lambda: {"BTCUSD": "XBTUSD", "SOLUSD": "SOLUSD"}  # type: ignore[method-assign]
+        trader._capital_tradable_symbols = lambda: {"BTCUSD": "BTCUSD", "SOLUSD": "SOLUSD"}  # type: ignore[method-assign]
+        trader._alpaca_tradable_symbols = lambda: {"BTCUSD": "BTC/USD", "SOLUSD": "SOL/USD"}  # type: ignore[method-assign]
+        trader._binance_tradable_symbols = lambda: {"BTCUSD": "BTCUSDT", "SOLUSD": "SOLUSDT"}  # type: ignore[method-assign]
+        trader._orderbook_pressure_snapshot = lambda item: {  # type: ignore[method-assign]
+            "available": True,
+            "source": "test_orderbook",
+            "symbol": item.get("symbol"),
+            "side": item.get("side", "BUY"),
+            "pressure_side": item.get("side", "BUY"),
+            "score": 0.92 if item.get("symbol") == "SOLUSD" else 0.42,
+            "signed_imbalance": 0.4 if item.get("symbol") == "SOLUSD" else -0.1,
+        }
+        central_beat = {
+            "symbols": {
+                "BTCUSD": {
+                    "confidence": 0.93,
+                    "support_count": 3,
+                    "side": "BUY",
+                    "sources": ["live_stream_cache", "kraken"],
+                    "reference_price": 50000.0,
+                    "change_pct": 0.04,
+                    "change_pct_abs_max": 0.04,
+                    "volume_24h": 9000000.0,
+                    "freshest_age_sec": 1.0,
+                    "model_alignment": True,
+                },
+                "SOLUSD": {
+                    "confidence": 0.74,
+                    "support_count": 4,
+                    "side": "BUY",
+                    "sources": ["live_stream_cache", "kraken", "capital", "binance"],
+                    "reference_price": 90.0,
+                    "change_pct": 0.92,
+                    "change_pct_abs_max": 1.2,
+                    "volume_24h": 65000000.0,
+                    "freshest_age_sec": 0.4,
+                    "fast_money_sources": ["live_stream_cache"],
+                    "model_alignment": True,
+                },
+            }
+        }
+        shared_market_feed = {"symbols": {"BTCUSD": 0.93, "SOLUSD": 0.74}}
+
+        order_flow = trader._build_global_order_flow_feed({}, {}, central_beat, shared_market_feed)
+        top = order_flow["active_order_flow"][0]
+
+        self.assertEqual(top["symbol"], "SOLUSD")
+        self.assertTrue(top["fast_money_candidate"])
+        self.assertGreater(top["fast_money_score"], order_flow["active_order_flow"][1]["fast_money_score"])
+        self.assertEqual(top["fast_money_profile"]["momentum_tier"], "tier_1_hot")
+        self.assertEqual(top["fast_money_profile"]["orderbook_alignment"], "aligned")
+        self.assertEqual(order_flow["fast_money_intelligence"]["candidate_count"], 1)
+        self.assertEqual(order_flow["fast_money_intelligence"]["orderbook_probe_count"], 1)
 
     def test_intelligence_mesh_reports_capability_presence_and_active_bridges(self):
         trader = self._make_trader()
@@ -515,6 +620,104 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         finally:
             self._restore_env(old_env)
 
+    def test_kraken_spot_buy_records_fee_aware_fast_profit_position(self):
+        class KrakenExec:
+            def __init__(self):
+                self.orders = []
+
+            def get_free_balance(self, asset):
+                return 500.0 if asset in {"USD", "ZUSD"} else 0.0
+
+            def get_ticker(self, symbol):
+                return {"price": 100.0, "bid": 99.99, "ask": 100.01}
+
+            def place_market_order(self, symbol, side, quantity=None, quote_qty=None):
+                self.orders.append((symbol, side, quantity, quote_qty))
+                return {"orderId": "KB1", "executedQty": "0.65", "status": "FILLED"}
+
+        class KrakenTrader:
+            def __init__(self):
+                self.client = KrakenExec()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            old_state = trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH
+            old_public = trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH
+            trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = Path(tmp) / "state.json"
+            trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = Path(tmp) / "public.json"
+            try:
+                trader = self._make_trader()
+                trader.kraken = KrakenTrader()
+                result = trader._execute_kraken_spot_route("BUY", "XBTUSD", 65.0)
+
+                self.assertTrue(result["ok"], result)
+                self.assertEqual(result["cost_profile"]["estimated_round_trip_cost_usd"], 0.52)
+                self.assertEqual(result["fast_profit_position"]["id"], "KB1")
+                state = trader._load_kraken_spot_fast_profit_state()
+                self.assertEqual(len(state["open_positions"]), 1)
+                self.assertEqual(state["open_positions"][0]["entry_fee_usd"], 0.26)
+            finally:
+                trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = old_state
+                trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = old_public
+
+    def test_kraken_spot_fast_profit_monitor_sells_only_true_net_profit(self):
+        old_env = self._with_live_executor_env()
+
+        class KrakenExec:
+            def __init__(self):
+                self.orders = []
+
+            def get_ticker(self, symbol):
+                return {"price": 101.0, "bid": 101.0, "ask": 101.02}
+
+            def place_market_order(self, symbol, side, quantity=None, quote_qty=None):
+                self.orders.append((symbol, side, quantity, quote_qty))
+                return {"orderId": "KS1", "status": "FILLED"}
+
+        class KrakenTrader:
+            def __init__(self):
+                self.client = KrakenExec()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            old_state = trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH
+            old_public = trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH
+            old_min = trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC
+            trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = Path(tmp) / "state.json"
+            trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = Path(tmp) / "public.json"
+            trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC = 0.0
+            try:
+                trader = self._make_trader()
+                trader.kraken = KrakenTrader()
+                trader.kraken_ready = True
+                trader._kraken_spot_fast_profit_state = {
+                    "schema_version": 1,
+                    "open_positions": [{
+                        "id": "P1",
+                        "symbol": "XBTUSD",
+                        "quantity": 1.0,
+                        "entry_price": 100.0,
+                        "entry_value_usd": 100.0,
+                        "entry_fee_usd": 0.10,
+                        "opened_at_epoch": time.time() - 5.0,
+                        "status": "open",
+                    }],
+                    "closed_positions": [],
+                    "last_check": {},
+                }
+
+                closed = trader._monitor_kraken_spot_fast_profit()
+
+                self.assertEqual(len(closed), 1)
+                self.assertEqual(trader.kraken.client.orders[0][1], "sell")
+                self.assertGreater(closed[0]["fast_profit_capture"]["true_net_profit_usd"], 0.0)
+                state = trader._load_kraken_spot_fast_profit_state()
+                self.assertEqual(state["open_positions"], [])
+                self.assertEqual(state["last_check"]["closed_count"], 1)
+            finally:
+                trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = old_state
+                trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = old_public
+                trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC = old_min
+                self._restore_env(old_env)
+
     def test_executor_route_timeout_holds_tick_without_duplicate_route(self):
         old_timeout = trader_mod.ORDER_EXECUTOR_ROUTE_TIMEOUT_SEC
         old_abandon = trader_mod.ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC
@@ -619,8 +822,18 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertTrue(proof["systems"]["seer"]["passed"])
         self.assertTrue(proof["systems"]["lyra"]["passed"])
         self.assertTrue(proof["systems"]["king"]["passed"])
+        cycle = proof["operating_cycle"]
+        self.assertEqual(cycle["cycle_order"], ["who", "what", "where", "when", "how", "act"])
+        self.assertTrue(cycle["passed"])
+        self.assertTrue(cycle["fed_to_decision_logic"])
+        self.assertEqual(cycle["step_count"], 6)
+        self.assertEqual(cycle["passed_count"], 6)
+        self.assertEqual(cycle["auris_node_count"], 9)
+        self.assertEqual(cycle["decision_output"]["action_state"], "runtime_gated_order_intent_ready")
+        self.assertTrue(any(step["step"] == "hnc_operating_cycle" for step in proof["flow"]))
         self.assertEqual(proof["passed_count"], proof["step_count"])
         self.assertIs(action_plan["hnc_cognitive_proof"], proof)
+        self.assertIs(action_plan["hnc_operating_cycle"], cycle)
 
     def test_get_local_dashboard_state_returns_cached_copy_without_rebuild(self):
         trader = self._make_trader()

@@ -93,7 +93,24 @@ interface TradingIntelligenceChecklist {
     hnc_auris_passing?: number;
     counter_intelligence_passing?: number;
     profit_timing_passing?: number;
+    evidence_self_trust_score?: number;
+    decision_self_trust_score?: number;
+    decision_posture?: string;
+    trust_to_decide?: boolean;
+    trust_to_shadow?: boolean;
+    trust_to_act?: boolean;
     top_blockers?: Array<Record<string, unknown>>;
+  };
+  decision_trust?: {
+    evidence_self_trust_score?: number;
+    live_action_trust_score?: number;
+    trust_to_decide?: boolean;
+    trust_to_shadow?: boolean;
+    trust_to_act?: boolean;
+    posture?: string;
+    synthetic_affect_state?: string;
+    not_fear_reason?: string;
+    self_instruction?: string;
   };
   rows?: TradingIntelligenceChecklistRow[];
 }
@@ -1046,6 +1063,7 @@ function CapabilitySwitchboardPanel({ switchboard }: { switchboard: CapabilitySw
 
 function TradingIntelligenceChecklistPanel({ checklist }: { checklist: TradingIntelligenceChecklist | null }) {
   const summary = checklist?.summary || {};
+  const trust = checklist?.decision_trust;
   const rows = checklist?.rows || [];
   const blockers = (summary.top_blockers || []).slice(0, 5);
   const criticalRows = rows
@@ -1080,7 +1098,7 @@ function TradingIntelligenceChecklistPanel({ checklist }: { checklist: TradingIn
           {summary.stale_reason ? <Pill label={String(summary.stale_reason)} tone={statusTone.security_blocker} /> : null}
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
           <div className="rounded-md border border-border/40 bg-muted/10 p-3">
             <div className="text-[11px] uppercase text-muted-foreground">fresh usable</div>
             <div className="mt-1 text-lg font-semibold">{formatCompact(summary.fresh_usable_count)}/{formatCompact(summary.system_count)}</div>
@@ -1101,7 +1119,30 @@ function TradingIntelligenceChecklistPanel({ checklist }: { checklist: TradingIn
             <div className="text-[11px] uppercase text-muted-foreground">stale/blocked</div>
             <div className="mt-1 text-lg font-semibold text-yellow-200">{formatCompact(summary.stale_or_blocked_count)}</div>
           </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">self trust</div>
+            <div className="mt-1 text-lg font-semibold">{Math.round(asNumber(summary.decision_self_trust_score) * 100)}%</div>
+          </div>
         </div>
+
+        {trust ? (
+          <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="text-[11px] uppercase text-cyan-100/80">decision posture</div>
+                <div className="mt-1 font-mono text-sm font-semibold text-cyan-50">
+                  {String(trust.posture || summary.decision_posture || "checking").replace(/_/g, " ")}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <Pill label={trust.trust_to_decide ? "trusts decision" : "still measuring"} tone={trust.trust_to_decide ? statusTone.wired : statusTone.orphaned} />
+                <Pill label={trust.trust_to_act ? "live intent ready" : trust.trust_to_shadow ? "shadow ready" : "learning"} tone={trust.trust_to_act ? statusTone.wired : statusTone.partial} />
+              </div>
+            </div>
+            <div className="mt-2 text-xs text-cyan-50/80">{trust.self_instruction}</div>
+            <div className="mt-1 text-[11px] text-cyan-50/60">{trust.not_fear_reason}</div>
+          </div>
+        ) : null}
 
         <div className="grid gap-2 md:grid-cols-4">
           {categoryRows.map((item) => (

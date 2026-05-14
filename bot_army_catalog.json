@@ -141,366 +141,366 @@
     "animal": "\ud83e\udd16 Robot",
     "band": "market_maker",
     "first_seen": 1778555609.2736113,
-    "last_seen": 1778707362.45736,
+    "last_seen": 1778742370.0252304,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 289,
+    "sighting_count": 327,
     "confidence": 0.8,
     "frequency": 0.0155,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 10.804018781941464,
-    "last_bsr": 0.97,
+    "last_power_pct": 10.320904707254572,
+    "last_bsr": 0.79,
     "action_history": [
       {
-        "ts": 1778652463,
+        "ts": 1778708435,
         "action": "SELLING",
-        "bsr": 0.5,
-        "power": 11.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778652555,
-        "action": "SELLING",
-        "bsr": 0.34,
-        "power": 10.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778652618,
-        "action": "SELLING",
-        "bsr": 0.41,
-        "power": 10.6,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778652945,
-        "action": "SELLING",
-        "bsr": 0.41,
-        "power": 10.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778653009,
-        "action": "SELLING",
-        "bsr": 0.26,
-        "power": 10.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778653049,
-        "action": "SELLING",
-        "bsr": 0.27,
-        "power": 10.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778653568,
-        "action": "BUYING",
-        "bsr": 1.31,
-        "power": 11.1,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778653816,
-        "action": "NEUTRAL",
-        "bsr": 0.82,
-        "power": 10.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778654029,
-        "action": "SELLING",
-        "bsr": 0.65,
-        "power": 10.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778654692,
-        "action": "NEUTRAL",
-        "bsr": 1.02,
-        "power": 9.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778654751,
-        "action": "SELLING",
-        "bsr": 0.76,
-        "power": 10.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778655039,
-        "action": "BUYING",
-        "bsr": 1.87,
-        "power": 12.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778655181,
-        "action": "BUYING",
-        "bsr": 1.78,
-        "power": 12.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778655549,
-        "action": "NEUTRAL",
-        "bsr": 0.78,
-        "power": 10.6,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778655640,
-        "action": "BUYING",
-        "bsr": 1.53,
-        "power": 10.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778655704,
-        "action": "SELLING",
-        "bsr": 0.7,
-        "power": 9.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778655773,
-        "action": "NEUTRAL",
-        "bsr": 1.28,
-        "power": 9.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778656194,
-        "action": "BUYING",
-        "bsr": 1.51,
-        "power": 9.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778656533,
-        "action": "NEUTRAL",
-        "bsr": 1.06,
-        "power": 10.0,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778656777,
-        "action": "BUYING",
-        "bsr": 1.53,
-        "power": 10.7,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778656805,
-        "action": "BUYING",
-        "bsr": 1.64,
-        "power": 11.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778658130,
-        "action": "SELLING",
-        "bsr": 0.72,
-        "power": 10.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778658409,
-        "action": "SELLING",
-        "bsr": 0.38,
-        "power": 10.5,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778658479,
-        "action": "BUYING",
-        "bsr": 1.75,
-        "power": 10.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778658571,
-        "action": "BUYING",
-        "bsr": 1.88,
-        "power": 10.7,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778659154,
-        "action": "SELLING",
-        "bsr": 0.46,
+        "bsr": 0.45,
         "power": 9.9,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778659416,
+        "ts": 1778709234,
         "action": "NEUTRAL",
-        "bsr": 0.84,
-        "power": 10.1,
+        "bsr": 0.81,
+        "power": 10.4,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778659977,
-        "action": "BUYING",
-        "bsr": 3.11,
-        "power": 9.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778660089,
-        "action": "SELLING",
-        "bsr": 0.59,
-        "power": 9.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778661779,
-        "action": "SELLING",
-        "bsr": 0.49,
-        "power": 10.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778662495,
+        "ts": 1778710292,
         "action": "NEUTRAL",
-        "bsr": 0.85,
+        "bsr": 0.79,
         "power": 10.0,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778663251,
+        "ts": 1778710451,
         "action": "NEUTRAL",
-        "bsr": 0.85,
-        "power": 12.5,
+        "bsr": 1.19,
+        "power": 10.2,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778663327,
+        "ts": 1778713039,
         "action": "NEUTRAL",
-        "bsr": 0.84,
-        "power": 11.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778664753,
-        "action": "SELLING",
-        "bsr": 0.22,
-        "power": 9.0,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778704085,
-        "action": "SELLING",
-        "bsr": 0.68,
-        "power": 11.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778704875,
-        "action": "BUYING",
-        "bsr": 1.66,
+        "bsr": 0.93,
         "power": 10.1,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704937,
+        "ts": 1778714251,
         "action": "BUYING",
-        "bsr": 1.3,
+        "bsr": 2.06,
         "power": 11.0,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705107,
+        "ts": 1778715052,
+        "action": "SELLING",
+        "bsr": 0.2,
+        "power": 9.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778715333,
         "action": "BUYING",
-        "bsr": 3.78,
-        "power": 11.3,
+        "bsr": 5.52,
+        "power": 9.8,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705205,
-        "action": "NEUTRAL",
-        "bsr": 1.05,
-        "power": 10.9,
+        "ts": 1778716953,
+        "action": "SELLING",
+        "bsr": 0.7,
+        "power": 9.8,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705241,
-        "action": "NEUTRAL",
-        "bsr": 1.26,
-        "power": 10.7,
+        "ts": 1778717004,
+        "action": "SELLING",
+        "bsr": 0.47,
+        "power": 9.8,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705277,
+        "ts": 1778720591,
         "action": "BUYING",
-        "bsr": 1.53,
-        "power": 11.3,
+        "bsr": 2.48,
+        "power": 9.5,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705319,
-        "action": "BUYING",
-        "bsr": 1.76,
-        "power": 11.7,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778705875,
-        "action": "BUYING",
-        "bsr": 2.23,
+        "ts": 1778721194,
+        "action": "SELLING",
+        "bsr": 0.68,
         "power": 10.4,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778706445,
+        "ts": 1778721695,
         "action": "NEUTRAL",
-        "bsr": 0.91,
-        "power": 9.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778706611,
-        "action": "NEUTRAL",
-        "bsr": 1.01,
-        "power": 9.7,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778706874,
-        "action": "NEUTRAL",
-        "bsr": 1.27,
-        "power": 11.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778707127,
-        "action": "NEUTRAL",
-        "bsr": 1.28,
+        "bsr": 1.16,
         "power": 11.3,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778707161,
+        "ts": 1778721939,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 10.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778722692,
+        "action": "SELLING",
+        "bsr": 0.57,
+        "power": 10.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778722872,
+        "action": "BUYING",
+        "bsr": 1.31,
+        "power": 10.2,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723230,
+        "action": "BUYING",
+        "bsr": 3.6,
+        "power": 10.5,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723647,
+        "action": "BUYING",
+        "bsr": 2.19,
+        "power": 11.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778724998,
         "action": "NEUTRAL",
-        "bsr": 1.06,
+        "bsr": 1.22,
+        "power": 11.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778725121,
+        "action": "BUYING",
+        "bsr": 1.47,
+        "power": 11.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778725300,
+        "action": "BUYING",
+        "bsr": 1.43,
+        "power": 14.2,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778725387,
+        "action": "BUYING",
+        "bsr": 1.35,
+        "power": 11.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778725437,
+        "action": "NEUTRAL",
+        "bsr": 1.05,
+        "power": 12.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778726619,
+        "action": "SELLING",
+        "bsr": 0.15,
+        "power": 14.2,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778727178,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 12.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778730163,
+        "action": "NEUTRAL",
+        "bsr": 1.01,
+        "power": 9.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778730866,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 9.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778730911,
+        "action": "SELLING",
+        "bsr": 0.73,
+        "power": 9.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778731338,
+        "action": "NEUTRAL",
+        "bsr": 0.85,
+        "power": 12.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778732352,
+        "action": "NEUTRAL",
+        "bsr": 0.94,
+        "power": 10.5,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778733052,
+        "action": "BUYING",
+        "bsr": 2.23,
+        "power": 10.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778733650,
+        "action": "NEUTRAL",
+        "bsr": 1.01,
+        "power": 10.5,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778733768,
+        "action": "NEUTRAL",
+        "bsr": 0.85,
         "power": 10.8,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778707196,
-        "action": "NEUTRAL",
-        "bsr": 1.02,
-        "power": 10.8,
+        "ts": 1778734132,
+        "action": "BUYING",
+        "bsr": 1.37,
+        "power": 10.6,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778707362,
+        "ts": 1778734356,
         "action": "NEUTRAL",
-        "bsr": 0.97,
-        "power": 10.8,
+        "bsr": 1.26,
+        "power": 11.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778734662,
+        "action": "NEUTRAL",
+        "bsr": 1.14,
+        "power": 10.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735060,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 9.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735187,
+        "action": "SELLING",
+        "bsr": 0.66,
+        "power": 10.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735371,
+        "action": "NEUTRAL",
+        "bsr": 0.98,
+        "power": 10.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735478,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 9.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735559,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 9.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735772,
+        "action": "NEUTRAL",
+        "bsr": 0.92,
+        "power": 9.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778736131,
+        "action": "NEUTRAL",
+        "bsr": 1.18,
+        "power": 12.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778736473,
+        "action": "NEUTRAL",
+        "bsr": 1.17,
+        "power": 11.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778736544,
+        "action": "NEUTRAL",
+        "bsr": 1.12,
+        "power": 11.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778738377,
+        "action": "NEUTRAL",
+        "bsr": 0.77,
+        "power": 9.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778739365,
+        "action": "SELLING",
+        "bsr": 0.7,
+        "power": 10.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778740777,
+        "action": "NEUTRAL",
+        "bsr": 1.14,
+        "power": 11.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778741949,
+        "action": "SELLING",
+        "bsr": 0.55,
+        "power": 10.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778742370,
+        "action": "NEUTRAL",
+        "bsr": 0.79,
+        "power": 10.3,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -513,17 +513,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778555609.2736113,
-    "last_seen": 1778706199.6365485,
+    "last_seen": 1778741949.0901954,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 45,
+    "sighting_count": 50,
     "confidence": 0.91,
     "frequency": 1.4297,
     "shape": "spiral",
     "last_action": "SELLING",
     "last_direction": "bearish",
-    "last_power_pct": 88.69855776962365,
-    "last_bsr": 0.48,
+    "last_power_pct": 89.84339747974288,
+    "last_bsr": 0.54,
     "action_history": [
       {
         "ts": 1778555609,
@@ -813,31 +813,66 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704402,
+        "ts": 1778714251,
         "action": "BUYING",
-        "bsr": 1.37,
-        "power": 87.5,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778704710,
-        "action": "SELLING",
-        "bsr": 0.63,
+        "bsr": 2.36,
         "power": 88.5,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705875,
-        "action": "BUYING",
-        "bsr": 2.22,
-        "power": 89.4,
+        "ts": 1778715052,
+        "action": "SELLING",
+        "bsr": 0.2,
+        "power": 89.9,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778706200,
+        "ts": 1778717117,
         "action": "SELLING",
-        "bsr": 0.48,
-        "power": 88.7,
+        "bsr": 0.52,
+        "power": 89.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723006,
+        "action": "BUYING",
+        "bsr": 4.6,
+        "power": 85.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778730866,
+        "action": "SELLING",
+        "bsr": 0.3,
+        "power": 90.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778734356,
+        "action": "BUYING",
+        "bsr": 1.58,
+        "power": 87.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735187,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 89.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778738847,
+        "action": "NEUTRAL",
+        "bsr": 1.12,
+        "power": 88.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778741949,
+        "action": "SELLING",
+        "bsr": 0.54,
+        "power": 89.8,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -850,32 +885,18 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778560990.8324656,
-    "last_seen": 1778707195.7029037,
+    "last_seen": 1778733650.0163002,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 57,
+    "sighting_count": 59,
     "confidence": 0.91,
     "frequency": 0.6432,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 88.9696764456486,
-    "last_bsr": 0.94,
+    "last_power_pct": 89.21397887330924,
+    "last_bsr": 0.83,
     "action_history": [
-      {
-        "ts": 1778588515,
-        "action": "SELLING",
-        "bsr": 0.66,
-        "power": 89.0,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778600133,
-        "action": "BUYING",
-        "bsr": 1.97,
-        "power": 82.9,
-        "symbol": "SAGAUSDT"
-      },
       {
         "ts": 1778600442,
         "action": "BUYING",
@@ -1157,59 +1178,73 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705026,
+        "ts": 1778705360,
         "action": "BUYING",
-        "bsr": 4.72,
-        "power": 88.8,
+        "bsr": 1.56,
+        "power": 87.7,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705107,
+        "ts": 1778706388,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 89.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778707157,
+        "action": "NEUTRAL",
+        "bsr": 1.01,
+        "power": 88.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778710451,
+        "action": "NEUTRAL",
+        "bsr": 1.12,
+        "power": 89.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778711104,
+        "action": "SELLING",
+        "bsr": 0.48,
+        "power": 89.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723503,
         "action": "BUYING",
-        "bsr": 3.54,
-        "power": 88.4,
+        "bsr": 6.12,
+        "power": 89.4,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705319,
-        "action": "BUYING",
-        "bsr": 1.54,
-        "power": 87.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778705692,
+        "ts": 1778725300,
         "action": "NEUTRAL",
-        "bsr": 1.21,
-        "power": 88.0,
+        "bsr": 1.18,
+        "power": 85.8,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778706445,
+        "ts": 1778725437,
         "action": "NEUTRAL",
-        "bsr": 0.94,
-        "power": 89.8,
+        "bsr": 1.08,
+        "power": 86.5,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778707127,
-        "action": "NEUTRAL",
-        "bsr": 1.15,
-        "power": 88.5,
+        "ts": 1778726619,
+        "action": "SELLING",
+        "bsr": 0.22,
+        "power": 85.6,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778707161,
+        "ts": 1778733650,
         "action": "NEUTRAL",
-        "bsr": 0.98,
-        "power": 89.1,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778707196,
-        "action": "NEUTRAL",
-        "bsr": 0.94,
-        "power": 89.0,
+        "bsr": 0.83,
+        "power": 89.2,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -1222,137 +1257,18 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778561363.9696283,
-    "last_seen": 1778704346.0527685,
+    "last_seen": 1778736543.9052992,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 88,
+    "sighting_count": 105,
     "confidence": 0.91,
     "frequency": 1.2304,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 89.13912210926469,
-    "last_bsr": 1.06,
+    "last_power_pct": 88.3311624015288,
+    "last_bsr": 1.18,
     "action_history": [
-      {
-        "ts": 1778606258,
-        "action": "NEUTRAL",
-        "bsr": 0.99,
-        "power": 90.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778606315,
-        "action": "BUYING",
-        "bsr": 1.38,
-        "power": 87.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778606341,
-        "action": "NEUTRAL",
-        "bsr": 0.97,
-        "power": 88.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778607006,
-        "action": "NEUTRAL",
-        "bsr": 0.93,
-        "power": 89.6,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778607996,
-        "action": "BUYING",
-        "bsr": 2.23,
-        "power": 88.7,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778608569,
-        "action": "SELLING",
-        "bsr": 0.36,
-        "power": 88.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778610127,
-        "action": "SELLING",
-        "bsr": 0.34,
-        "power": 89.7,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778611918,
-        "action": "SELLING",
-        "bsr": 0.67,
-        "power": 87.1,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778612682,
-        "action": "SELLING",
-        "bsr": 0.36,
-        "power": 88.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778614073,
-        "action": "BUYING",
-        "bsr": 2.02,
-        "power": 89.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778616500,
-        "action": "NEUTRAL",
-        "bsr": 0.79,
-        "power": 89.7,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778617326,
-        "action": "NEUTRAL",
-        "bsr": 1.1,
-        "power": 87.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778619325,
-        "action": "SELLING",
-        "bsr": 0.2,
-        "power": 92.5,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778619358,
-        "action": "NEUTRAL",
-        "bsr": 0.8,
-        "power": 84.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778621805,
-        "action": "BUYING",
-        "bsr": 2.06,
-        "power": 89.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778622007,
-        "action": "NEUTRAL",
-        "bsr": 1.17,
-        "power": 87.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778623581,
-        "action": "NEUTRAL",
-        "bsr": 0.8,
-        "power": 89.9,
-        "symbol": "SAGAUSDT"
-      },
       {
         "ts": 1778624438,
         "action": "SELLING",
@@ -1571,17 +1487,136 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704322,
-        "action": "NEUTRAL",
-        "bsr": 0.9,
-        "power": 89.4,
+        "ts": 1778708435,
+        "action": "SELLING",
+        "bsr": 0.46,
+        "power": 89.9,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704346,
+        "ts": 1778710998,
+        "action": "SELLING",
+        "bsr": 0.22,
+        "power": 89.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778715333,
+        "action": "BUYING",
+        "bsr": 5.57,
+        "power": 89.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778720718,
         "action": "NEUTRAL",
-        "bsr": 1.06,
+        "bsr": 0.95,
+        "power": 87.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778721194,
+        "action": "SELLING",
+        "bsr": 0.63,
+        "power": 89.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778722692,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 89.5,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723230,
+        "action": "BUYING",
+        "bsr": 3.25,
+        "power": 89.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723647,
+        "action": "BUYING",
+        "bsr": 3.18,
+        "power": 88.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723977,
+        "action": "NEUTRAL",
+        "bsr": 1.3,
+        "power": 87.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778725986,
+        "action": "BUYING",
+        "bsr": 1.42,
+        "power": 89.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778726425,
+        "action": "NEUTRAL",
+        "bsr": 1.01,
+        "power": 87.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778730911,
+        "action": "SELLING",
+        "bsr": 0.62,
+        "power": 89.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778733768,
+        "action": "NEUTRAL",
+        "bsr": 1.19,
         "power": 89.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778734132,
+        "action": "NEUTRAL",
+        "bsr": 1.26,
+        "power": 89.2,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778734439,
+        "action": "BUYING",
+        "bsr": 1.87,
+        "power": 87.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778734662,
+        "action": "NEUTRAL",
+        "bsr": 1.14,
+        "power": 89.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735371,
+        "action": "NEUTRAL",
+        "bsr": 1.04,
+        "power": 89.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778736234,
+        "action": "BUYING",
+        "bsr": 1.47,
+        "power": 90.2,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778736544,
+        "action": "NEUTRAL",
+        "bsr": 1.18,
+        "power": 88.3,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -1594,151 +1629,18 @@
     "animal": "\ud83e\udd16 Robot",
     "band": "market_maker",
     "first_seen": 1778561389.6939683,
-    "last_seen": 1778706700.037211,
+    "last_seen": 1778741320.8088214,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 139,
+    "sighting_count": 158,
     "confidence": 0.8,
     "frequency": 0.4805,
     "shape": "spiral",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 10.077470994519892,
-    "last_bsr": 0.9,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 9.893040462554264,
+    "last_bsr": 2.15,
     "action_history": [
-      {
-        "ts": 1778637323,
-        "action": "BUYING",
-        "bsr": 1.53,
-        "power": 10.6,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778637444,
-        "action": "BUYING",
-        "bsr": 1.48,
-        "power": 10.0,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778637991,
-        "action": "NEUTRAL",
-        "bsr": 0.96,
-        "power": 10.0,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778638579,
-        "action": "NEUTRAL",
-        "bsr": 1.22,
-        "power": 10.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778639597,
-        "action": "NEUTRAL",
-        "bsr": 1.1,
-        "power": 10.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778640164,
-        "action": "NEUTRAL",
-        "bsr": 0.79,
-        "power": 14.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778640657,
-        "action": "SELLING",
-        "bsr": 0.33,
-        "power": 11.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778640831,
-        "action": "NEUTRAL",
-        "bsr": 1.07,
-        "power": 9.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778641643,
-        "action": "SELLING",
-        "bsr": 0.71,
-        "power": 10.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778642349,
-        "action": "SELLING",
-        "bsr": 0.39,
-        "power": 10.6,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778643144,
-        "action": "NEUTRAL",
-        "bsr": 1.05,
-        "power": 10.6,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778643582,
-        "action": "SELLING",
-        "bsr": 0.38,
-        "power": 12.5,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778644163,
-        "action": "SELLING",
-        "bsr": 0.48,
-        "power": 10.0,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778644193,
-        "action": "NEUTRAL",
-        "bsr": 0.84,
-        "power": 10.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778645857,
-        "action": "NEUTRAL",
-        "bsr": 1.27,
-        "power": 10.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778646436,
-        "action": "BUYING",
-        "bsr": 1.6,
-        "power": 9.0,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778651596,
-        "action": "NEUTRAL",
-        "bsr": 0.87,
-        "power": 11.7,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778651637,
-        "action": "NEUTRAL",
-        "bsr": 0.86,
-        "power": 10.9,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778652080,
-        "action": "BUYING",
-        "bsr": 1.86,
-        "power": 10.8,
-        "symbol": "SAGAUSDT"
-      },
       {
         "ts": 1778652760,
         "action": "BUYING",
@@ -1894,66 +1796,199 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704322,
-        "action": "NEUTRAL",
-        "bsr": 0.94,
-        "power": 10.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778704346,
-        "action": "NEUTRAL",
-        "bsr": 1.17,
-        "power": 10.5,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778704402,
+        "ts": 1778704944,
         "action": "BUYING",
-        "bsr": 1.83,
-        "power": 12.2,
+        "bsr": 1.51,
+        "power": 11.6,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704710,
-        "action": "SELLING",
-        "bsr": 0.61,
-        "power": 11.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778705026,
+        "ts": 1778705360,
         "action": "BUYING",
-        "bsr": 5.12,
-        "power": 10.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778705657,
-        "action": "NEUTRAL",
-        "bsr": 0.97,
-        "power": 12.0,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778705692,
-        "action": "NEUTRAL",
-        "bsr": 1.23,
+        "bsr": 1.8,
         "power": 11.7,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778706200,
-        "action": "SELLING",
-        "bsr": 0.52,
-        "power": 11.0,
+        "ts": 1778705675,
+        "action": "NEUTRAL",
+        "bsr": 1.07,
+        "power": 11.8,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778706700,
-        "action": "NEUTRAL",
-        "bsr": 0.9,
+        "ts": 1778706138,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 9.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778710998,
+        "action": "SELLING",
+        "bsr": 0.23,
         "power": 10.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778711104,
+        "action": "SELLING",
+        "bsr": 0.51,
+        "power": 10.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778711696,
+        "action": "SELLING",
+        "bsr": 0.26,
+        "power": 9.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778711988,
+        "action": "NEUTRAL",
+        "bsr": 1.28,
+        "power": 9.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778712099,
+        "action": "BUYING",
+        "bsr": 3.0,
+        "power": 9.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778712833,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 10.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778717117,
+        "action": "SELLING",
+        "bsr": 0.55,
+        "power": 10.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778717754,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 10.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778719668,
+        "action": "NEUTRAL",
+        "bsr": 1.07,
+        "power": 10.2,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778720208,
+        "action": "NEUTRAL",
+        "bsr": 1.27,
+        "power": 10.2,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778720718,
+        "action": "NEUTRAL",
+        "bsr": 0.93,
+        "power": 11.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778721047,
+        "action": "BUYING",
+        "bsr": 1.38,
+        "power": 9.5,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723006,
+        "action": "BUYING",
+        "bsr": 6.87,
+        "power": 14.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723503,
+        "action": "BUYING",
+        "bsr": 6.2,
+        "power": 10.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778723977,
+        "action": "BUYING",
+        "bsr": 1.55,
+        "power": 11.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778725986,
+        "action": "BUYING",
+        "bsr": 1.45,
+        "power": 10.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778726425,
+        "action": "NEUTRAL",
+        "bsr": 0.83,
+        "power": 12.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778732736,
+        "action": "NEUTRAL",
+        "bsr": 1.08,
+        "power": 11.5,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778733292,
+        "action": "BUYING",
+        "bsr": 1.49,
+        "power": 10.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778733441,
+        "action": "NEUTRAL",
+        "bsr": 0.85,
+        "power": 9.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778734439,
+        "action": "BUYING",
+        "bsr": 1.67,
+        "power": 12.5,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778736234,
+        "action": "BUYING",
+        "bsr": 1.51,
+        "power": 9.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778738847,
+        "action": "NEUTRAL",
+        "bsr": 1.06,
+        "power": 11.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778741321,
+        "action": "BUYING",
+        "bsr": 2.15,
+        "power": 9.9,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -1966,25 +2001,18 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778561389.6939683,
-    "last_seen": 1778705276.5758643,
+    "last_seen": 1778735771.8486488,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 54,
+    "sighting_count": 55,
     "confidence": 0.91,
     "frequency": 2.2598,
     "shape": "spiral",
-    "last_action": "BUYING",
-    "last_direction": "bullish",
-    "last_power_pct": 88.38684187696103,
-    "last_bsr": 1.3,
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 89.98447570434773,
+    "last_bsr": 0.99,
     "action_history": [
-      {
-        "ts": 1778581735,
-        "action": "BUYING",
-        "bsr": 3.57,
-        "power": 89.4,
-        "symbol": "SAGAUSDT"
-      },
       {
         "ts": 1778583844,
         "action": "SELLING",
@@ -2308,24 +2336,31 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704085,
+        "ts": 1778704944,
         "action": "NEUTRAL",
-        "bsr": 0.77,
-        "power": 88.4,
+        "bsr": 1.22,
+        "power": 88.1,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705205,
-        "action": "NEUTRAL",
-        "bsr": 1.21,
-        "power": 88.8,
+        "ts": 1778709234,
+        "action": "SELLING",
+        "bsr": 0.68,
+        "power": 89.3,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705277,
+        "ts": 1778725121,
         "action": "BUYING",
-        "bsr": 1.3,
-        "power": 88.4,
+        "bsr": 1.56,
+        "power": 87.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735772,
+        "action": "NEUTRAL",
+        "bsr": 0.99,
+        "power": 90.0,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -2338,17 +2373,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778561472.6476724,
-    "last_seen": 1778706611.359019,
+    "last_seen": 1778742370.0252304,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 35,
+    "sighting_count": 40,
     "confidence": 0.91,
     "frequency": 3.253,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 90.07925823945224,
-    "last_bsr": 1.03,
+    "last_power_pct": 89.51422982211483,
+    "last_bsr": 0.84,
     "action_history": [
       {
         "ts": 1778561473,
@@ -2575,24 +2610,59 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705241,
-        "action": "NEUTRAL",
-        "bsr": 1.1,
-        "power": 89.0,
+        "ts": 1778717004,
+        "action": "SELLING",
+        "bsr": 0.46,
+        "power": 89.9,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778705657,
-        "action": "NEUTRAL",
-        "bsr": 0.96,
-        "power": 87.7,
+        "ts": 1778722872,
+        "action": "BUYING",
+        "bsr": 1.46,
+        "power": 89.5,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778706611,
+        "ts": 1778733052,
+        "action": "BUYING",
+        "bsr": 2.48,
+        "power": 89.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778733441,
         "action": "NEUTRAL",
-        "bsr": 1.03,
-        "power": 90.1,
+        "bsr": 0.89,
+        "power": 90.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778738377,
+        "action": "SELLING",
+        "bsr": 0.75,
+        "power": 90.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778739365,
+        "action": "SELLING",
+        "bsr": 0.75,
+        "power": 89.4,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778741321,
+        "action": "BUYING",
+        "bsr": 2.11,
+        "power": 89.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778742370,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 89.5,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -2605,17 +2675,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778562059.675211,
-    "last_seen": 1778707362.45736,
+    "last_seen": 1778736472.8259528,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 30,
+    "sighting_count": 32,
     "confidence": 0.91,
     "frequency": 4.0809,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 88.9667870552295,
-    "last_bsr": 0.97,
+    "last_power_pct": 88.52307923836757,
+    "last_bsr": 1.27,
     "action_history": [
       {
         "ts": 1778562060,
@@ -2807,24 +2877,38 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704875,
+        "ts": 1778710292,
+        "action": "SELLING",
+        "bsr": 0.76,
+        "power": 89.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778720591,
         "action": "BUYING",
-        "bsr": 1.61,
-        "power": 89.6,
+        "bsr": 2.71,
+        "power": 89.8,
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778704937,
+        "ts": 1778733292,
         "action": "NEUTRAL",
-        "bsr": 1.08,
-        "power": 88.8,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778707362,
-        "action": "NEUTRAL",
-        "bsr": 0.97,
+        "bsr": 1.24,
         "power": 89.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735478,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 90.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778736473,
+        "action": "NEUTRAL",
+        "bsr": 1.27,
+        "power": 88.5,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -2837,17 +2921,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778562397.9387126,
-    "last_seen": 1778706874.059699,
+    "last_seen": 1778721047.2133846,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 15,
+    "sighting_count": 16,
     "confidence": 0.91,
     "frequency": 4.8796,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 88.29090166307924,
-    "last_bsr": 1.0,
+    "last_power_pct": 90.28299839024123,
+    "last_bsr": 1.28,
     "action_history": [
       {
         "ts": 1778562398,
@@ -2948,10 +3032,17 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778706874,
+        "ts": 1778720208,
         "action": "NEUTRAL",
-        "bsr": 1.0,
-        "power": 88.3,
+        "bsr": 1.29,
+        "power": 89.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778721047,
+        "action": "NEUTRAL",
+        "bsr": 1.28,
+        "power": 90.3,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -2964,17 +3055,17 @@
     "animal": "\ud83e\udd16 Robot",
     "band": "market_maker",
     "first_seen": 1778562798.6996694,
-    "last_seen": 1778663100.2733054,
+    "last_seen": 1778727216.9639814,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 10,
+    "sighting_count": 12,
     "confidence": 0.8,
     "frequency": 0.0473,
     "shape": "taper",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 13.854413964920177,
-    "last_bsr": 0.91,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 10.36093373534339,
+    "last_bsr": 2.31,
     "action_history": [
       {
         "ts": 1778562799,
@@ -3045,6 +3136,20 @@
         "bsr": 0.91,
         "power": 13.9,
         "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778715374,
+        "action": "BUYING",
+        "bsr": 6.88,
+        "power": 10.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778727217,
+        "action": "BUYING",
+        "bsr": 2.31,
+        "power": 10.4,
+        "symbol": "SAGAUSDT"
       }
     ],
     "last_shape": "taper"
@@ -3084,53 +3189,18 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778572000.151152,
-    "last_seen": 1778706700.037211,
+    "last_seen": 1778740777.1257122,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 47,
+    "sighting_count": 55,
     "confidence": 0.91,
     "frequency": 2.1589,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 89.6197462428464,
-    "last_bsr": 0.89,
+    "last_power_pct": 88.09018614653291,
+    "last_bsr": 1.1,
     "action_history": [
-      {
-        "ts": 1778572000,
-        "action": "BUYING",
-        "bsr": 1.5,
-        "power": 89.4,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778581207,
-        "action": "NEUTRAL",
-        "bsr": 0.92,
-        "power": 88.3,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778581688,
-        "action": "SELLING",
-        "bsr": 0.68,
-        "power": 89.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778582285,
-        "action": "NEUTRAL",
-        "bsr": 1.01,
-        "power": 89.2,
-        "symbol": "SAGAUSDT"
-      },
-      {
-        "ts": 1778584183,
-        "action": "NEUTRAL",
-        "bsr": 0.95,
-        "power": 87.9,
-        "symbol": "SAGAUSDT"
-      },
       {
         "ts": 1778584245,
         "action": "BUYING",
@@ -3419,10 +3489,66 @@
         "symbol": "SAGAUSDT"
       },
       {
-        "ts": 1778706700,
+        "ts": 1778706138,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 89.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778713039,
         "action": "NEUTRAL",
-        "bsr": 0.89,
+        "bsr": 0.86,
         "power": 89.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778721939,
+        "action": "SELLING",
+        "bsr": 0.35,
+        "power": 89.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778725387,
+        "action": "NEUTRAL",
+        "bsr": 0.99,
+        "power": 87.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778727178,
+        "action": "NEUTRAL",
+        "bsr": 1.03,
+        "power": 87.0,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778730163,
+        "action": "NEUTRAL",
+        "bsr": 1.01,
+        "power": 89.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778732736,
+        "action": "NEUTRAL",
+        "bsr": 1.18,
+        "power": 87.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735559,
+        "action": "SELLING",
+        "bsr": 0.6,
+        "power": 90.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778740777,
+        "action": "NEUTRAL",
+        "bsr": 1.1,
+        "power": 88.1,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -3435,17 +3561,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778582365.6166933,
-    "last_seen": 1778659091.9499917,
+    "last_seen": 1778735060.186336,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 35,
+    "sighting_count": 48,
     "confidence": 0.91,
     "frequency": 3.0552,
     "shape": "spiral",
     "last_action": "NEUTRAL",
     "last_direction": "neutral",
-    "last_power_pct": 89.64583298604242,
-    "last_bsr": 1.14,
+    "last_power_pct": 89.96417610915188,
+    "last_bsr": 0.83,
     "action_history": [
       {
         "ts": 1778582366,
@@ -3691,6 +3817,97 @@
         "bsr": 1.14,
         "power": 89.6,
         "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778706870,
+        "action": "NEUTRAL",
+        "bsr": 0.98,
+        "power": 88.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778707739,
+        "action": "NEUTRAL",
+        "bsr": 0.85,
+        "power": 89.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778711696,
+        "action": "SELLING",
+        "bsr": 0.27,
+        "power": 90.1,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778711988,
+        "action": "NEUTRAL",
+        "bsr": 1.27,
+        "power": 89.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778712099,
+        "action": "BUYING",
+        "bsr": 3.02,
+        "power": 89.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778712833,
+        "action": "SELLING",
+        "bsr": 0.36,
+        "power": 89.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778716953,
+        "action": "SELLING",
+        "bsr": 0.7,
+        "power": 89.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778717754,
+        "action": "NEUTRAL",
+        "bsr": 0.82,
+        "power": 88.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778721695,
+        "action": "NEUTRAL",
+        "bsr": 1.13,
+        "power": 88.3,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778724998,
+        "action": "BUYING",
+        "bsr": 1.34,
+        "power": 88.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778731338,
+        "action": "SELLING",
+        "bsr": 0.55,
+        "power": 86.2,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778732352,
+        "action": "NEUTRAL",
+        "bsr": 0.92,
+        "power": 88.9,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778735060,
+        "action": "NEUTRAL",
+        "bsr": 0.83,
+        "power": 90.0,
+        "symbol": "SAGAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -3780,17 +3997,17 @@
     "animal": "\ud83e\udd8a Fox",
     "band": "scalper",
     "first_seen": 1778583547.434178,
-    "last_seen": 1778661778.6366272,
+    "last_seen": 1778736130.9463007,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 22,
+    "sighting_count": 25,
     "confidence": 0.91,
     "frequency": 4.5851,
     "shape": "spiral",
-    "last_action": "SELLING",
-    "last_direction": "bearish",
-    "last_power_pct": 88.90921989095035,
-    "last_bsr": 0.55,
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 86.56187490643272,
+    "last_bsr": 1.1,
     "action_history": [
       {
         "ts": 1778583547,
@@ -3945,6 +4162,27 @@
         "bsr": 0.55,
         "power": 88.9,
         "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778705675,
+        "action": "NEUTRAL",
+        "bsr": 1.06,
+        "power": 87.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778719668,
+        "action": "NEUTRAL",
+        "bsr": 1.0,
+        "power": 89.6,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778736131,
+        "action": "NEUTRAL",
+        "bsr": 1.1,
+        "power": 86.6,
+        "symbol": "SAGAUSDT"
       }
     ],
     "last_shape": "spiral"
@@ -4006,17 +4244,17 @@
     "animal": "\ud83d\udc1c Ants",
     "band": "market_maker",
     "first_seen": 1778610156.6585724,
-    "last_seen": 1778658190.8105514,
+    "last_seen": 1778730539.8256707,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 3,
+    "sighting_count": 4,
     "confidence": 0.8,
     "frequency": 0.0162,
     "shape": "surge",
     "last_action": "SELLING",
     "last_direction": "bearish",
-    "last_power_pct": 9.296872617811012,
-    "last_bsr": 0.26,
+    "last_power_pct": 11.29369097124157,
+    "last_bsr": 0.48,
     "action_history": [
       {
         "ts": 1778610157,
@@ -4038,6 +4276,13 @@
         "bsr": 0.26,
         "power": 9.3,
         "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778730540,
+        "action": "SELLING",
+        "bsr": 0.48,
+        "power": 11.3,
+        "symbol": "SAGAUSDT"
       }
     ],
     "last_shape": "surge"
@@ -4049,17 +4294,17 @@
     "animal": "\ud83d\udc27 Penguin",
     "band": "scalper",
     "first_seen": 1778610156.6585724,
-    "last_seen": 1778610156.6585724,
+    "last_seen": 1778730539.8256707,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 1,
+    "sighting_count": 2,
     "confidence": 0.8,
     "frequency": 4.588,
     "shape": "surge",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 88.8,
-    "last_bsr": 0.77,
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 87.65735632895667,
+    "last_bsr": 0.52,
     "action_history": [
       {
         "ts": 1778610157,
@@ -4067,8 +4312,16 @@
         "bsr": 0.77,
         "power": 88.8,
         "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778730540,
+        "action": "SELLING",
+        "bsr": 0.52,
+        "power": 87.7,
+        "symbol": "SAGAUSDT"
       }
-    ]
+    ],
+    "last_shape": "surge"
   },
   "9e0c5335c05c": {
     "bot_id": "9e0c5335c05c",
@@ -4205,17 +4458,17 @@
     "animal": "\ud83d\udc27 Penguin",
     "band": "scalper",
     "first_seen": 1778654133.2810585,
-    "last_seen": 1778655131.3515944,
+    "last_seen": 1778727216.9639814,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 2,
+    "sighting_count": 3,
     "confidence": 0.8,
     "frequency": 3.3212,
     "shape": "taper",
     "last_action": "BUYING",
     "last_direction": "bullish",
-    "last_power_pct": 87.75063192476293,
-    "last_bsr": 1.4,
+    "last_power_pct": 88.69338621689326,
+    "last_bsr": 2.19,
     "action_history": [
       {
         "ts": 1778654133,
@@ -4229,6 +4482,13 @@
         "action": "BUYING",
         "bsr": 1.4,
         "power": 87.8,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778727217,
+        "action": "BUYING",
+        "bsr": 2.19,
+        "power": 88.7,
         "symbol": "SAGAUSDT"
       }
     ],
@@ -4376,17 +4636,17 @@
     "animal": "\ud83d\udc27 Penguin",
     "band": "scalper",
     "first_seen": 1778657239.5235252,
-    "last_seen": 1778663100.2733054,
+    "last_seen": 1778715374.4429731,
     "first_symbol": "SAGAUSDT",
     "last_symbol": "SAGAUSDT",
-    "sighting_count": 2,
+    "sighting_count": 3,
     "confidence": 0.8,
     "frequency": 1.4744,
     "shape": "taper",
-    "last_action": "NEUTRAL",
-    "last_direction": "neutral",
-    "last_power_pct": 85.66656741150392,
-    "last_bsr": 1.06,
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.83601890778495,
+    "last_bsr": 7.16,
     "action_history": [
       {
         "ts": 1778657240,
@@ -4400,6 +4660,13 @@
         "action": "NEUTRAL",
         "bsr": 1.06,
         "power": 85.7,
+        "symbol": "SAGAUSDT"
+      },
+      {
+        "ts": 1778715374,
+        "action": "BUYING",
+        "bsr": 7.16,
+        "power": 89.8,
         "symbol": "SAGAUSDT"
       }
     ],

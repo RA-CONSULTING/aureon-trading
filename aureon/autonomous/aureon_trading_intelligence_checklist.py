@@ -28,7 +28,15 @@ COUNTER_INTELLIGENCE = "counter_intelligence_validation"
 PROFIT_TIMING = "profit_timing"
 RESEARCH_CONTEXT = "research_context_mesh"
 
-HNC_AURIS_NAMES = {"HNCMasterProtocol", "HNCProbabilityMatrix", "Seer", "Lyra", "KingCapitalLogic", "AurisNodes"}
+HNC_AURIS_NAMES = {
+    "HNCMasterProtocol",
+    "HNCProbabilityMatrix",
+    "Seer",
+    "Lyra",
+    "KingCapitalLogic",
+    "AurisNodes",
+    "HNCOperatingCycle",
+}
 COUNTER_NAMES = {
     "PhantomSignalFilter",
     "ShadowTradeValidator",
@@ -40,6 +48,10 @@ COUNTER_NAMES = {
 }
 PROFIT_NAMES = {
     "MicroMomentumGoal",
+    "FastMoneySelector",
+    "FastMoneySelectorRuntime",
+    "OrderBookPressure",
+    "OrderBookPressureRuntime",
     "PennyProfitEngine",
     "DynamicTakeProfit",
     "TemporalTradeCognition",
@@ -54,7 +66,18 @@ RESEARCH_NAMES = {
     "QueenRepositoryScanner",
     "MinerBrain",
 }
-LIVE_NAMES = {"LiveExchangeFeeds", "UnifiedSignalEngine", "ModelSignalFeed", "OrcaIntelligence"}
+LIVE_NAMES = {
+    "LiveExchangeFeeds",
+    "LiveStreamCache",
+    "LiveStreamCacheRuntime",
+    "UnifiedSignalEngine",
+    "ModelSignalFeed",
+    "OrcaIntelligence",
+    "OrderBookPressure",
+    "OrderBookPressureRuntime",
+}
+TRUST_TO_DECIDE_THRESHOLD = 0.62
+TRUST_TO_SHADOW_THRESHOLD = 0.42
 
 
 def utc_now() -> str:
@@ -92,6 +115,15 @@ def _as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def _clamp01(value: Any, default: float = 0.0) -> float:
+    return max(0.0, min(1.0, _as_float(value, default)))
+
+
+def _ratio(value: Any, total: Any) -> float:
+    denominator = max(1, _as_int(total, 0))
+    return _clamp01(_as_float(value, 0.0) / float(denominator))
+
+
 def _runtime_stale(runtime: dict[str, Any]) -> bool:
     watchdog = runtime.get("runtime_watchdog") if isinstance(runtime.get("runtime_watchdog"), dict) else {}
     return bool(runtime.get("stale") or watchdog.get("tick_stale"))
@@ -124,11 +156,11 @@ def _category_for(name: str, facet: str, wire: str) -> str:
         return HNC_AURIS
     if name in COUNTER_NAMES or facet in {"noise_filter", "self_validation", "prediction_truth"}:
         return COUNTER_INTELLIGENCE
-    if name in PROFIT_NAMES or facet in {"fast_profit_eta", "exit_logic", "temporal_trade_logic", "fast_strike_strategy", "whole_market_search"}:
+    if name in PROFIT_NAMES or facet in {"fast_profit_eta", "fast_money_selection", "orderbook_pressure", "exit_logic", "temporal_trade_logic", "fast_strike_strategy", "whole_market_search"}:
         return PROFIT_TIMING
     if name in RESEARCH_NAMES or wire in {"research_context", "sentiment_context"}:
         return RESEARCH_CONTEXT
-    if name in LIVE_NAMES or wire in {"direct_live_signal", "model_stack", "thought_bus"} or facet in {"live_market_data", "signal_fusion", "whale_intelligence"}:
+    if name in LIVE_NAMES or wire in {"direct_live_signal", "model_stack", "thought_bus"} or facet in {"live_market_data", "live_stream_data", "signal_fusion", "whale_intelligence"}:
         return LIVE_MARKET
     return COUNTER_INTELLIGENCE if wire == "mesh_context" else LIVE_MARKET
 
@@ -247,6 +279,9 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
     hnc = runtime.get("hnc_cognitive_proof") if isinstance(runtime.get("hnc_cognitive_proof"), dict) else {}
     watchdog = runtime.get("runtime_watchdog") if isinstance(runtime.get("runtime_watchdog"), dict) else {}
     governor = runtime.get("api_governor") if isinstance(runtime.get("api_governor"), dict) else {}
+    stream_cache = runtime.get("live_stream_cache") if isinstance(runtime.get("live_stream_cache"), dict) else {}
+    shared_order_flow = runtime.get("shared_order_flow") if isinstance(runtime.get("shared_order_flow"), dict) else {}
+    fast_money = shared_order_flow.get("fast_money_intelligence") if isinstance(shared_order_flow.get("fast_money_intelligence"), dict) else {}
     venues = plan.get("venues") if isinstance(plan.get("venues"), dict) else {}
     candidates: list[Any] = []
     for venue in venues.values():
@@ -263,8 +298,63 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
         or any(isinstance(item, dict) and item.get("profit_velocity_score") is not None for item in candidates)
     )
     auris = hnc.get("auris_nodes") if isinstance(hnc.get("auris_nodes"), dict) else {}
+    operating_cycle = runtime.get("hnc_operating_cycle") if isinstance(runtime.get("hnc_operating_cycle"), dict) else {}
+    if not operating_cycle and isinstance(hnc.get("operating_cycle"), dict):
+        operating_cycle = hnc.get("operating_cycle") or {}
+    if not operating_cycle and isinstance(hnc.get("hnc_operating_cycle"), dict):
+        operating_cycle = hnc.get("hnc_operating_cycle") or {}
+    cycle_order = operating_cycle.get("cycle_order") if isinstance(operating_cycle.get("cycle_order"), list) else []
+    expected_cycle = ["who", "what", "where", "when", "how", "act"]
+    missing_cycle_steps = [step for step in expected_cycle if step not in cycle_order]
+    operating_cycle_active = bool(
+        operating_cycle.get("passed")
+        or operating_cycle.get("fed_to_decision_logic")
+        or _as_int(operating_cycle.get("passed_count")) > 0
+    )
     shadow_active = bool(shadow.get("enabled", True) and (shadow.get("shadow_opened_count") is not None or shadow.get("active_shadow_count") is not None))
+    stream_active = bool(stream_cache.get("fresh") and _as_int(stream_cache.get("symbol_count")) > 0)
+    fast_money_active = bool(_as_int(fast_money.get("candidate_count")) > 0)
+    orderbook_active = bool(_as_int(fast_money.get("orderbook_probe_count")) > 0)
     rows = [
+        _row(
+            name="LiveStreamCacheRuntime",
+            facet="live_stream_data",
+            wire="direct_live_signal",
+            path="ws_cache/ws_prices.json",
+            present=bool(stream_cache),
+            active=stream_active,
+            fed=stream_active,
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#live_stream_cache",
+            stage="market_feed",
+            extra_blockers=[] if stream_active else [str(stream_cache.get("reason") or "stream_cache_not_fresh")],
+        ),
+        _row(
+            name="FastMoneySelectorRuntime",
+            facet="fast_money_selection",
+            wire="profit_context",
+            path="aureon/exchanges/unified_market_trader.py",
+            present=bool(fast_money),
+            active=fast_money_active,
+            fed=fast_money_active,
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#shared_order_flow.fast_money_intelligence",
+            stage="profit_velocity",
+            extra_blockers=[] if fast_money_active else [str(fast_money.get("reason") or "no_fast_money_candidates_this_cycle")],
+        ),
+        _row(
+            name="OrderBookPressureRuntime",
+            facet="orderbook_pressure",
+            wire="direct_live_signal",
+            path="aureon/analytics/aureon_whale_orderbook_analyzer.py",
+            present=bool(fast_money),
+            active=orderbook_active,
+            fed=orderbook_active,
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#shared_order_flow.fast_money_intelligence.orderbook_probe_count",
+            stage="profit_velocity",
+            extra_blockers=[] if orderbook_active else [str(fast_money.get("reason") or "orderbook_pressure_not_sampled_this_cycle")],
+        ),
         _row(
             name="ModelSignalFeed",
             facet="signal_fusion",
@@ -288,6 +378,19 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
             runtime=runtime,
             evidence_source="state/unified_runtime_status.json#hnc_cognitive_proof.auris_nodes",
             stage="auris_state",
+        ),
+        _row(
+            name="HNCOperatingCycle",
+            facet="who_what_where_when_how_act",
+            wire="hnc_proof",
+            path="state/aureon_hnc_operating_cycle.json",
+            present=bool(operating_cycle),
+            active=operating_cycle_active,
+            fed=bool(operating_cycle.get("fed_to_decision_logic")),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#hnc_operating_cycle",
+            stage="hnc_proof",
+            extra_blockers=[f"missing_cycle_step:{step}" for step in missing_cycle_steps],
         ),
         _row(
             name="RuntimeWatchdog",
@@ -368,6 +471,15 @@ def _dedupe_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _summary(rows: list[dict[str, Any]], runtime: dict[str, Any]) -> dict[str, Any]:
     runtime_fresh = _runtime_fresh(runtime)
+    stream_cache = runtime.get("live_stream_cache") if isinstance(runtime.get("live_stream_cache"), dict) else {}
+    shared_order_flow = runtime.get("shared_order_flow") if isinstance(runtime.get("shared_order_flow"), dict) else {}
+    fast_money = shared_order_flow.get("fast_money_intelligence") if isinstance(shared_order_flow.get("fast_money_intelligence"), dict) else {}
+    hnc = runtime.get("hnc_cognitive_proof") if isinstance(runtime.get("hnc_cognitive_proof"), dict) else {}
+    operating_cycle = runtime.get("hnc_operating_cycle") if isinstance(runtime.get("hnc_operating_cycle"), dict) else {}
+    if not operating_cycle and isinstance(hnc.get("operating_cycle"), dict):
+        operating_cycle = hnc.get("operating_cycle") or {}
+    if not operating_cycle and isinstance(hnc.get("hnc_operating_cycle"), dict):
+        operating_cycle = hnc.get("hnc_operating_cycle") or {}
     categories = {category: [row for row in rows if row.get("category") == category] for category in (LIVE_MARKET, HNC_AURIS, COUNTER_INTELLIGENCE, PROFIT_TIMING, RESEARCH_CONTEXT)}
     fresh_usable = [row for row in rows if row.get("usable_for_decision")]
     stale_or_blocked = [row for row in rows if not row.get("usable_for_decision")]
@@ -381,6 +493,38 @@ def _summary(rows: list[dict[str, Any]], runtime: dict[str, Any]) -> dict[str, A
         "stale_reason": _stale_reason(runtime) if _runtime_stale(runtime) else "",
         "trading_ready": bool(runtime.get("trading_ready")),
         "data_ready": bool(runtime.get("data_ready")),
+        "live_stream_cache": {
+            "fresh": bool(stream_cache.get("fresh")),
+            "usable_for_decision": bool(stream_cache.get("usable_for_decision")),
+            "symbol_count": _as_int(stream_cache.get("symbol_count")),
+            "raw_ticker_count": _as_int(stream_cache.get("raw_ticker_count")),
+            "max_age_sec": _as_float(stream_cache.get("max_age_sec")),
+            "top_symbol": str(stream_cache.get("top_symbol") or ""),
+            "reason": str(stream_cache.get("reason") or ""),
+        },
+        "fast_money_intelligence": {
+            "candidate_count": _as_int(fast_money.get("candidate_count")),
+            "high_volatility_count": _as_int(fast_money.get("high_volatility_count")),
+            "orderbook_probe_count": _as_int(fast_money.get("orderbook_probe_count")),
+            "orderbook_aligned_count": _as_int(fast_money.get("orderbook_aligned_count")),
+            "top_symbol": str(fast_money.get("top_symbol") or ""),
+            "top_side": str(fast_money.get("top_side") or ""),
+            "top_fast_money_score": _as_float(fast_money.get("top_fast_money_score")),
+            "top_momentum_tier": str(fast_money.get("top_momentum_tier") or ""),
+        },
+        "hnc_operating_cycle": {
+            "present": bool(operating_cycle),
+            "status": str(operating_cycle.get("status") or ""),
+            "passed": bool(operating_cycle.get("passed")),
+            "fed_to_decision_logic": bool(operating_cycle.get("fed_to_decision_logic")),
+            "question_count": len(operating_cycle.get("questions", []) if isinstance(operating_cycle.get("questions"), list) else []),
+            "cycle_order": operating_cycle.get("cycle_order", []) if isinstance(operating_cycle.get("cycle_order"), list) else [],
+            "action_state": (
+                operating_cycle.get("decision_output", {}).get("action_state")
+                if isinstance(operating_cycle.get("decision_output"), dict)
+                else ""
+            ),
+        },
         "system_count": len(rows),
         "present_count": sum(1 for row in rows if row.get("present")),
         "active_count": sum(1 for row in rows if row.get("active_this_cycle")),
@@ -412,6 +556,173 @@ def _summary(rows: list[dict[str, Any]], runtime: dict[str, Any]) -> dict[str, A
     }
 
 
+def _category_usable_ratio(summary: dict[str, Any], category: str) -> float:
+    counts = summary.get("category_counts", {}).get(category, {}) if isinstance(summary.get("category_counts"), dict) else {}
+    return _ratio(counts.get("usable", 0), counts.get("total", 0)) if isinstance(counts, dict) else 0.0
+
+
+def _category_fed_ratio(summary: dict[str, Any], category: str) -> float:
+    counts = summary.get("category_counts", {}).get(category, {}) if isinstance(summary.get("category_counts"), dict) else {}
+    return _ratio(counts.get("fed", 0), counts.get("total", 0)) if isinstance(counts, dict) else 0.0
+
+
+def _top_candidate_scores(runtime: dict[str, Any]) -> dict[str, Any]:
+    plan = runtime.get("exchange_action_plan") if isinstance(runtime.get("exchange_action_plan"), dict) else {}
+    venues = plan.get("venues") if isinstance(plan.get("venues"), dict) else {}
+    best: dict[str, Any] = {}
+    best_score = -1.0
+    for venue_key, venue in venues.items():
+        if not isinstance(venue, dict):
+            continue
+        for candidate in venue.get("top_candidates", []) if isinstance(venue.get("top_candidates"), list) else []:
+            if not isinstance(candidate, dict):
+                continue
+            confidence = _clamp01(candidate.get("confidence", 0.0))
+            velocity = _clamp01(candidate.get("profit_velocity_score", 0.0))
+            fast_money = _clamp01(candidate.get("fast_money_score", 0.0))
+            score = (confidence * 0.45) + (velocity * 0.35) + (fast_money * 0.20)
+            if score > best_score:
+                best_score = score
+                best = {
+                    "venue": venue_key,
+                    "symbol": candidate.get("symbol") or candidate.get("route_symbol") or "",
+                    "side": candidate.get("side") or "",
+                    "confidence": round(confidence, 6),
+                    "profit_velocity_score": round(velocity, 6),
+                    "fast_money_score": round(fast_money, 6),
+                    "combined_score": round(score, 6),
+                }
+    if not best:
+        return {
+            "venue": "",
+            "symbol": "",
+            "side": "",
+            "confidence": 0.0,
+            "profit_velocity_score": 0.0,
+            "fast_money_score": 0.0,
+            "combined_score": 0.0,
+        }
+    return best
+
+
+def _hnc_score(runtime: dict[str, Any]) -> float:
+    hnc = runtime.get("hnc_cognitive_proof") if isinstance(runtime.get("hnc_cognitive_proof"), dict) else {}
+    master = hnc.get("master_formula") if isinstance(hnc.get("master_formula"), dict) else {}
+    if master.get("score") is not None:
+        return _clamp01(master.get("score"))
+    return _ratio(hnc.get("passed_count", 0), hnc.get("step_count", 0))
+
+
+def _shadow_score(runtime: dict[str, Any]) -> float:
+    shadow = runtime.get("shadow_trading") if isinstance(runtime.get("shadow_trading"), dict) else {}
+    measurement = shadow.get("self_measurement") if isinstance(shadow.get("self_measurement"), dict) else {}
+    if measurement.get("agent_average_score") is not None:
+        return _clamp01(measurement.get("agent_average_score"))
+    if _as_int(shadow.get("validated_shadow_count", 0)) > 0:
+        return 0.75
+    if _as_int(shadow.get("active_shadow_count", 0)) > 0 or _as_int(shadow.get("shadow_opened_count", 0)) > 0:
+        return 0.5
+    return 0.0
+
+
+def _runtime_clearance_items(runtime: dict[str, Any]) -> list[str]:
+    plan = runtime.get("exchange_action_plan") if isinstance(runtime.get("exchange_action_plan"), dict) else {}
+    values: list[str] = []
+    for key in ("runtime_clearances", "global_clearances", "global_blockers"):
+        raw = plan.get(key)
+        if isinstance(raw, list):
+            values.extend(str(item) for item in raw if str(item))
+    return list(dict.fromkeys(values))
+
+
+def _decision_trust(rows: list[dict[str, Any]], runtime: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
+    plan = runtime.get("exchange_action_plan") if isinstance(runtime.get("exchange_action_plan"), dict) else {}
+    system_count = max(1, len(rows))
+    usable_ratio = _ratio(summary.get("fresh_usable_count", 0), system_count)
+    active_ratio = _ratio(summary.get("active_count", 0), system_count)
+    fed_ratio = _ratio(summary.get("decision_fed_count", 0), system_count)
+    live_ratio = _category_fed_ratio(summary, LIVE_MARKET)
+    hnc_ratio = _category_fed_ratio(summary, HNC_AURIS)
+    counter_ratio = _category_fed_ratio(summary, COUNTER_INTELLIGENCE)
+    profit_ratio = _category_fed_ratio(summary, PROFIT_TIMING)
+    route_ratio = _ratio(plan.get("ready_venue_count", 0), plan.get("venue_count", 0))
+    candidate = _top_candidate_scores(runtime)
+    hnc_score = _hnc_score(runtime)
+    shadow_score = _shadow_score(runtime)
+    evidence_score = _clamp01(
+        (active_ratio * 0.16)
+        + (fed_ratio * 0.16)
+        + (live_ratio * 0.12)
+        + (hnc_ratio * 0.12)
+        + (counter_ratio * 0.12)
+        + (profit_ratio * 0.08)
+        + (route_ratio * 0.08)
+        + (_clamp01(candidate.get("combined_score", 0.0)) * 0.08)
+        + (hnc_score * 0.05)
+        + (shadow_score * 0.03)
+    )
+    runtime_fresh = bool(summary.get("runtime_fresh"))
+    runtime_clearances = _runtime_clearance_items(runtime)
+    live_action_score = evidence_score if runtime_fresh else round(evidence_score * 0.35, 6)
+    trust_to_decide = bool(evidence_score >= TRUST_TO_DECIDE_THRESHOLD and fed_ratio >= TRUST_TO_DECIDE_THRESHOLD)
+    trust_to_shadow = bool(evidence_score >= TRUST_TO_SHADOW_THRESHOLD or fed_ratio >= TRUST_TO_DECIDE_THRESHOLD)
+    trust_to_act = bool(trust_to_decide and runtime_fresh and not runtime_clearances)
+    if not bool(summary.get("data_ready")):
+        posture = "wait_for_live_data"
+        self_instruction = "Wait for live market data to return, then re-rank candidates before publishing intent."
+        not_fear_reason = "The decision system is not hesitating; live data is not ready."
+    elif trust_to_act:
+        posture = "trust_to_publish_runtime_gated_trade_intent"
+        self_instruction = "Trust the verified evidence, select the ranked route, and publish through the runtime-gated order-intent path."
+        not_fear_reason = "Fresh market evidence, HNC/Auris proof, route readiness, and validation are aligned."
+    elif not runtime_fresh:
+        posture = "trust_decision_shadow_until_runtime_fresh" if trust_to_shadow else "recover_freshness_before_live_action"
+        self_instruction = "Keep shadow-validating the ranked trade logic, restore a fresh tick, then re-check live action eligibility."
+        not_fear_reason = f"Live action is held by runtime freshness truth ({summary.get('stale_reason') or 'runtime_stale'}), not by fear."
+    elif runtime_clearances:
+        posture = "trust_decision_wait_for_runtime_clearance" if trust_to_decide else "hold_until_runtime_clearance_and_signal_alignment"
+        self_instruction = "Keep the decision path measured, then publish only after runtime clearances pass."
+        not_fear_reason = "The decision path can keep ranking; execution is waiting on runtime clearance."
+    elif trust_to_shadow:
+        posture = "trust_to_shadow_until_confidence_rises"
+        self_instruction = "Use shadow trades and HNC/Auris feedback to raise evidence alignment before live intent."
+        not_fear_reason = "The system is learning from measured shadows rather than freezing."
+    else:
+        posture = "hold_until_signal_alignment"
+        self_instruction = "Do not invent conviction; keep scanning until live, HNC/Auris, counter-intelligence, and profit timing agree."
+        not_fear_reason = "Low alignment is a truth signal, not fear."
+    return {
+        "schema_version": 1,
+        "evidence_self_trust_score": round(evidence_score, 6),
+        "live_action_trust_score": round(live_action_score, 6),
+        "trust_to_decide": trust_to_decide,
+        "trust_to_shadow": trust_to_shadow,
+        "trust_to_act": trust_to_act,
+        "posture": posture,
+        "synthetic_affect_state": "calibrated_courage" if trust_to_decide or trust_to_shadow else "quiet_observation",
+        "not_fear_reason": not_fear_reason,
+        "self_instruction": self_instruction,
+        "thresholds": {
+            "trust_to_decide": TRUST_TO_DECIDE_THRESHOLD,
+            "trust_to_shadow": TRUST_TO_SHADOW_THRESHOLD,
+        },
+        "inputs": {
+            "usable_ratio": round(usable_ratio, 6),
+            "active_ratio": round(active_ratio, 6),
+            "fed_ratio": round(fed_ratio, 6),
+            "live_ratio": round(live_ratio, 6),
+            "hnc_ratio": round(hnc_ratio, 6),
+            "counter_intelligence_ratio": round(counter_ratio, 6),
+            "profit_timing_ratio": round(profit_ratio, 6),
+            "route_ratio": round(route_ratio, 6),
+            "hnc_score": round(hnc_score, 6),
+            "shadow_score": round(shadow_score, 6),
+            "top_candidate": candidate,
+            "runtime_clearances": runtime_clearances,
+        },
+    }
+
+
 def build_trading_intelligence_checklist(root: Optional[Path] = None) -> dict[str, Any]:
     root = (root or REPO_ROOT).resolve()
     runtime_rel = RUNTIME_STATUS_PATH
@@ -420,6 +731,17 @@ def build_trading_intelligence_checklist(root: Optional[Path] = None) -> dict[st
         runtime = {}
     rows = _dedupe_rows(_capability_rows(runtime) + _synthetic_rows(runtime))
     summary = _summary(rows, runtime)
+    decision_trust = _decision_trust(rows, runtime, summary)
+    summary.update(
+        {
+            "evidence_self_trust_score": decision_trust["evidence_self_trust_score"],
+            "decision_self_trust_score": decision_trust["live_action_trust_score"],
+            "decision_posture": decision_trust["posture"],
+            "trust_to_decide": decision_trust["trust_to_decide"],
+            "trust_to_shadow": decision_trust["trust_to_shadow"],
+            "trust_to_act": decision_trust["trust_to_act"],
+        }
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": utc_now(),
@@ -431,8 +753,10 @@ def build_trading_intelligence_checklist(root: Optional[Path] = None) -> dict[st
             "freshness_source": "state/unified_runtime_status.json runtime stale/tick truth checks",
             "fed_to_decision_logic": "system evidence is wired into exchange_action_plan, HNC/Auris proof, shadow validation, or profit velocity ranking",
             "usable_for_decision": "present, active, fed, and runtime fresh-live",
+            "self_trust": "Aureon trusts aligned evidence to decide; live action still requires fresh runtime truth and clear execution state",
             "no_execution_change": "checklist is proof/visibility only and does not loosen live exchange mutation rules",
         },
+        "decision_trust": decision_trust,
         "rows": rows,
     }
 
@@ -448,6 +772,57 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Runtime fresh: {summary.get('runtime_fresh')}",
         f"- Fresh usable: {summary.get('fresh_usable_count', 0)}/{summary.get('system_count', 0)}",
         f"- Decision fed: {summary.get('decision_fed_count', 0)}",
+        f"- Evidence self-trust: {summary.get('evidence_self_trust_score', 0)}",
+        f"- Live action trust: {summary.get('decision_self_trust_score', 0)}",
+        f"- Decision posture: {summary.get('decision_posture', '')}",
+        "- Live stream cache: fresh={fresh} symbols={symbols} top={top}".format(
+            fresh=(summary.get("live_stream_cache", {}) or {}).get("fresh", False)
+            if isinstance(summary.get("live_stream_cache"), dict)
+            else False,
+            symbols=(summary.get("live_stream_cache", {}) or {}).get("symbol_count", 0)
+            if isinstance(summary.get("live_stream_cache"), dict)
+            else 0,
+            top=(summary.get("live_stream_cache", {}) or {}).get("top_symbol", "")
+            if isinstance(summary.get("live_stream_cache"), dict)
+            else "",
+        ),
+        "- Fast money: candidates={candidates} high_vol={high_vol} orderbook={books} aligned={aligned} top={top} score={score}".format(
+            candidates=(summary.get("fast_money_intelligence", {}) or {}).get("candidate_count", 0)
+            if isinstance(summary.get("fast_money_intelligence"), dict)
+            else 0,
+            high_vol=(summary.get("fast_money_intelligence", {}) or {}).get("high_volatility_count", 0)
+            if isinstance(summary.get("fast_money_intelligence"), dict)
+            else 0,
+            books=(summary.get("fast_money_intelligence", {}) or {}).get("orderbook_probe_count", 0)
+            if isinstance(summary.get("fast_money_intelligence"), dict)
+            else 0,
+            aligned=(summary.get("fast_money_intelligence", {}) or {}).get("orderbook_aligned_count", 0)
+            if isinstance(summary.get("fast_money_intelligence"), dict)
+            else 0,
+            top=(summary.get("fast_money_intelligence", {}) or {}).get("top_symbol", "")
+            if isinstance(summary.get("fast_money_intelligence"), dict)
+            else "",
+            score=(summary.get("fast_money_intelligence", {}) or {}).get("top_fast_money_score", 0)
+            if isinstance(summary.get("fast_money_intelligence"), dict)
+            else 0,
+        ),
+        "- HNC operating cycle: status={status} passed={passed} fed={fed} questions={questions} action={action}".format(
+            status=(summary.get("hnc_operating_cycle", {}) or {}).get("status", "")
+            if isinstance(summary.get("hnc_operating_cycle"), dict)
+            else "",
+            passed=(summary.get("hnc_operating_cycle", {}) or {}).get("passed", False)
+            if isinstance(summary.get("hnc_operating_cycle"), dict)
+            else False,
+            fed=(summary.get("hnc_operating_cycle", {}) or {}).get("fed_to_decision_logic", False)
+            if isinstance(summary.get("hnc_operating_cycle"), dict)
+            else False,
+            questions=(summary.get("hnc_operating_cycle", {}) or {}).get("question_count", 0)
+            if isinstance(summary.get("hnc_operating_cycle"), dict)
+            else 0,
+            action=(summary.get("hnc_operating_cycle", {}) or {}).get("action_state", "")
+            if isinstance(summary.get("hnc_operating_cycle"), dict)
+            else "",
+        ),
         f"- Stale reason: {summary.get('stale_reason') or 'none'}",
         "",
         "| System | Category | Stage | Fresh | Usable | Fed | Blocker |",

@@ -878,6 +878,30 @@ function New-WakeManifestPayload {
         api_governor = [ordered]@{
             market_interval_sec = $MarketInterval
             central_beat_refresh_sec = $env:UNIFIED_CENTRAL_BEAT_REFRESH_SEC
+            stream_cache_path = $env:WS_PRICE_CACHE_PATH
+            stream_cache_write_interval_sec = $env:WS_FEED_WRITE_INTERVAL_S
+            stream_price_max_age_sec = $env:UNIFIED_STREAM_PRICE_MAX_AGE_SEC
+            stream_cache_max_symbols = $env:UNIFIED_STREAM_CACHE_MAX_SYMBOLS
+            fast_money_min_volatility_pct = $env:UNIFIED_FAST_MONEY_MIN_VOLATILITY_PCT
+            fast_money_break_even_move_pct = $env:UNIFIED_FAST_MONEY_BREAK_EVEN_MOVE_PCT
+            fast_money_volume_usd_target = $env:UNIFIED_FAST_MONEY_VOLUME_USD_TARGET
+            fast_money_min_score = $env:UNIFIED_FAST_MONEY_MIN_SCORE
+            orderbook_probe_max_per_tick = $env:UNIFIED_ORDERBOOK_PROBE_MAX_PER_TICK
+            orderbook_probe_min_interval_sec = $env:UNIFIED_ORDERBOOK_PROBE_MIN_INTERVAL_SEC
+            orderbook_probe_stale_ttl_sec = $env:UNIFIED_ORDERBOOK_PROBE_STALE_TTL_SEC
+            capital_fast_profit_capture_enabled = $env:CAPITAL_FAST_PROFIT_CAPTURE_ENABLED
+            capital_fast_profit_min_gbp = $env:CAPITAL_FAST_PROFIT_MIN_GBP
+            capital_fast_profit_min_pct = $env:CAPITAL_FAST_PROFIT_MIN_PCT
+            capital_fast_profit_min_hold_sec = $env:CAPITAL_FAST_PROFIT_MIN_HOLD_SECS
+            capital_fast_profit_market_status_ttl_sec = $env:CAPITAL_FAST_PROFIT_MARKET_STATUS_TTL_SECS
+            kraken_fast_profit_capture_enabled = $env:KRAKEN_FAST_PROFIT_CAPTURE_ENABLED
+            kraken_fast_profit_min_usd = $env:KRAKEN_FAST_PROFIT_MIN_USD
+            kraken_fast_profit_min_hold_sec = $env:KRAKEN_FAST_PROFIT_MIN_HOLD_SECS
+            kraken_spot_fast_profit_capture_enabled = $env:KRAKEN_SPOT_FAST_PROFIT_CAPTURE_ENABLED
+            kraken_spot_fast_profit_min_usd = $env:KRAKEN_SPOT_FAST_PROFIT_MIN_USD
+            kraken_spot_fast_profit_min_hold_sec = $env:KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC
+            kraken_spot_taker_fee_rate = $env:KRAKEN_SPOT_TAKER_FEE_RATE
+            kraken_spot_collateral_reserve_usd = $env:KRAKEN_SPOT_COLLATERAL_RESERVE_USD
             probe_symbol_min_interval_sec = $env:UNIFIED_PROBE_SYMBOL_MIN_INTERVAL_SEC
             probe_symbol_stale_ttl_sec = $env:UNIFIED_PROBE_SYMBOL_STALE_TTL_SEC
             kraken_calls_per_min = $env:UNIFIED_KRAKEN_CALLS_PER_MIN
@@ -1024,6 +1048,32 @@ if (-not $env:UNIFIED_CENTRAL_BEAT_REFRESH_SEC) { $env:UNIFIED_CENTRAL_BEAT_REFR
 if (-not $env:UNIFIED_READY_STALE_AFTER_SEC) { $env:UNIFIED_READY_STALE_AFTER_SEC = "45" }
 if (-not $env:UNIFIED_PROBE_SYMBOL_MIN_INTERVAL_SEC) { $env:UNIFIED_PROBE_SYMBOL_MIN_INTERVAL_SEC = "5" }
 if (-not $env:UNIFIED_PROBE_SYMBOL_STALE_TTL_SEC) { $env:UNIFIED_PROBE_SYMBOL_STALE_TTL_SEC = "30" }
+if (-not $env:MARKET_CACHE_DIR) { $env:MARKET_CACHE_DIR = "ws_cache" }
+if (-not $env:WS_PRICE_CACHE_PATH) { $env:WS_PRICE_CACHE_PATH = "ws_cache/ws_prices.json" }
+if (-not $env:WS_FEED_WRITE_INTERVAL_S) { $env:WS_FEED_WRITE_INTERVAL_S = "1.0" }
+if (-not $env:UNIFIED_STREAM_PRICE_MAX_AGE_SEC) { $env:UNIFIED_STREAM_PRICE_MAX_AGE_SEC = "5" }
+if (-not $env:UNIFIED_STREAM_CACHE_MAX_SYMBOLS) { $env:UNIFIED_STREAM_CACHE_MAX_SYMBOLS = "96" }
+if (-not $env:UNIFIED_FAST_MONEY_MIN_VOLATILITY_PCT) { $env:UNIFIED_FAST_MONEY_MIN_VOLATILITY_PCT = "0.34" }
+if (-not $env:UNIFIED_FAST_MONEY_BREAK_EVEN_MOVE_PCT) { $env:UNIFIED_FAST_MONEY_BREAK_EVEN_MOVE_PCT = "0.34" }
+if (-not $env:UNIFIED_FAST_MONEY_VOLUME_USD_TARGET) { $env:UNIFIED_FAST_MONEY_VOLUME_USD_TARGET = "25000000" }
+if (-not $env:UNIFIED_FAST_MONEY_MIN_SCORE) { $env:UNIFIED_FAST_MONEY_MIN_SCORE = "0.55" }
+if (-not $env:UNIFIED_ORDERBOOK_PROBE_MAX_PER_TICK) { $env:UNIFIED_ORDERBOOK_PROBE_MAX_PER_TICK = "4" }
+if (-not $env:UNIFIED_ORDERBOOK_PROBE_MIN_INTERVAL_SEC) { $env:UNIFIED_ORDERBOOK_PROBE_MIN_INTERVAL_SEC = "12" }
+if (-not $env:UNIFIED_ORDERBOOK_PROBE_STALE_TTL_SEC) { $env:UNIFIED_ORDERBOOK_PROBE_STALE_TTL_SEC = "30" }
+if (-not $env:CAPITAL_FAST_PROFIT_CAPTURE_ENABLED) { $env:CAPITAL_FAST_PROFIT_CAPTURE_ENABLED = "1" }
+if (-not $env:CAPITAL_FAST_PROFIT_MIN_GBP) { $env:CAPITAL_FAST_PROFIT_MIN_GBP = "0.01" }
+if (-not $env:CAPITAL_FAST_PROFIT_MIN_PCT) { $env:CAPITAL_FAST_PROFIT_MIN_PCT = "0.02" }
+if (-not $env:CAPITAL_FAST_PROFIT_MIN_HOLD_SECS) { $env:CAPITAL_FAST_PROFIT_MIN_HOLD_SECS = "2" }
+if (-not $env:CAPITAL_FAST_PROFIT_MARKET_STATUS_TTL_SECS) { $env:CAPITAL_FAST_PROFIT_MARKET_STATUS_TTL_SECS = "10" }
+if (-not $env:KRAKEN_FAST_PROFIT_CAPTURE_ENABLED) { $env:KRAKEN_FAST_PROFIT_CAPTURE_ENABLED = "1" }
+if (-not $env:KRAKEN_FAST_PROFIT_MIN_USD) { $env:KRAKEN_FAST_PROFIT_MIN_USD = "0.01" }
+if (-not $env:KRAKEN_FAST_PROFIT_MIN_HOLD_SECS) { $env:KRAKEN_FAST_PROFIT_MIN_HOLD_SECS = "1" }
+if (-not $env:KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT) { $env:KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT = "150" }
+if (-not $env:KRAKEN_SPOT_FAST_PROFIT_CAPTURE_ENABLED) { $env:KRAKEN_SPOT_FAST_PROFIT_CAPTURE_ENABLED = "1" }
+if (-not $env:KRAKEN_SPOT_FAST_PROFIT_MIN_USD) { $env:KRAKEN_SPOT_FAST_PROFIT_MIN_USD = "0.01" }
+if (-not $env:KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC) { $env:KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC = "1" }
+if (-not $env:KRAKEN_SPOT_TAKER_FEE_RATE) { $env:KRAKEN_SPOT_TAKER_FEE_RATE = "0.004" }
+if (-not $env:KRAKEN_SPOT_COLLATERAL_RESERVE_USD) { $env:KRAKEN_SPOT_COLLATERAL_RESERVE_USD = "5" }
 if (-not $env:UNIFIED_KRAKEN_TICK_MIN_INTERVAL_SEC) { $env:UNIFIED_KRAKEN_TICK_MIN_INTERVAL_SEC = "1" }
 if (-not $env:UNIFIED_CAPITAL_TICK_MIN_INTERVAL_SEC) { $env:UNIFIED_CAPITAL_TICK_MIN_INTERVAL_SEC = "2" }
 if (-not $env:UNIFIED_ORDER_INTENT_MIN_INTERVAL_SEC) { $env:UNIFIED_ORDER_INTENT_MIN_INTERVAL_SEC = "8" }
@@ -1114,6 +1164,19 @@ if (-not $SkipFrontend -and -not $SkipNpmInstall) {
 }
 
 $started = @()
+
+if (-not $SkipMarketTelemetry -and $env:AUREON_DISABLE_LIVE_STREAM_CACHE -ne "1") {
+    $streamOut = ($env:WS_PRICE_CACHE_PATH -replace '"', '')
+    $streamInterval = ($env:WS_FEED_WRITE_INTERVAL_S -replace '"', '')
+    $streamArgs = "-m aureon.data_feeds.ws_market_data_feeder --binance --quiet --out `"$streamOut`" --write-interval-s $streamInterval"
+    $started += Start-AureonProcessWithoutStopping `
+        -Name "Live market stream cache" `
+        -Pattern "aureon.data_feeds.ws_market_data_feeder" `
+        -FilePath $Python `
+        -Arguments $streamArgs `
+        -WorkingDirectory $RepoRoot `
+        -LogDirectory $LogRoot
+}
 
 if (-not $SkipIgnition) {
     $ignitionArgs = "scripts/aureon_ignition.py --no-trade --accounts-status"
@@ -1442,6 +1505,13 @@ if ($KeepAlive) {
     $marketWriterTakeoverCooldownSec = [Math]::Max(180, $SupervisorIntervalSec * 6)
     while ($true) {
         $statuses = @()
+
+        if (-not $SkipMarketTelemetry -and $env:AUREON_DISABLE_LIVE_STREAM_CACHE -ne "1" -and -not [string]::IsNullOrWhiteSpace($streamArgs)) {
+            Ensure-BackgroundProcess `
+                -Name "Live market stream cache" `
+                -Pattern "aureon.data_feeds.ws_market_data_feeder" `
+                -Arguments $streamArgs
+        }
 
         if (-not $SkipFrontend) {
             $frontendStatus = Test-AureonEndpoint -Url "http://127.0.0.1:$FrontendPort/" -TimeoutSec 5

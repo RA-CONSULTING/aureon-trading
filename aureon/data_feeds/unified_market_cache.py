@@ -45,7 +45,9 @@ logger = logging.getLogger(__name__)
 # Cache file paths
 CACHE_DIR = os.getenv('MARKET_CACHE_DIR', 'ws_cache')
 UNIFIED_CACHE_PATH = os.path.join(CACHE_DIR, 'unified_prices.json')
+WS_PRICE_CACHE_PATH = os.getenv('WS_PRICE_CACHE_PATH', os.path.join(CACHE_DIR, 'ws_prices.json'))
 BINANCE_CACHE_PATH = os.path.join(CACHE_DIR, 'binance_ws_prices.json')
+BINANCE_CACHE_PATHS = list(dict.fromkeys([WS_PRICE_CACHE_PATH, BINANCE_CACHE_PATH]))
 KRAKEN_CACHE_PATH = os.path.join(CACHE_DIR, 'kraken_prices.json')
 
 # Cache TTL (how old data can be before considered stale)
@@ -59,6 +61,22 @@ DEFAULT_SYMBOLS = [
     'FTM', 'NEAR', 'APT', 'INJ', 'TIA', 'SEI', 'SUI', 'OP', 'ARB', 'RENDER',
     'TRUMP', 'BAT', 'SKY', 'MANA', 'SAND', 'AXS', 'ENJ', 'GALA', 'IMX', 'BLUR'
 ]
+
+
+def _as_timestamp(value: Any, default: float = 0.0) -> float:
+    """Return a Unix timestamp from cache values that may be float or ISO text."""
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except Exception:
+        pass
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+        except Exception:
+            return default
+    return default
 
 
 @dataclass
@@ -133,7 +151,7 @@ class UnifiedMarketCache:
         
         # Priority order: Binance WS > Unified > Kraken REST
         cache_files = [
-            (BINANCE_CACHE_PATH, 'binance_ws', WS_CACHE_TTL_SECONDS),
+            *[(path, 'binance_ws', WS_CACHE_TTL_SECONDS) for path in BINANCE_CACHE_PATHS],
             (UNIFIED_CACHE_PATH, 'unified', CACHE_TTL_SECONDS),
             (KRAKEN_CACHE_PATH, 'kraken_rest', CACHE_TTL_SECONDS),
         ]
@@ -146,7 +164,7 @@ class UnifiedMarketCache:
                 with open(path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 
-                file_ts = data.get('generated_at', 0)
+                file_ts = _as_timestamp(data.get('generated_at'), 0.0)
                 if now - file_ts > ttl * 2:  # File too old
                     continue
                 
@@ -165,7 +183,7 @@ class UnifiedMarketCache:
                     
                     # Skip if we already have fresher data
                     existing = self._tickers.get(symbol)
-                    ticker_ts = t.get('timestamp', file_ts)
+                    ticker_ts = _as_timestamp(t.get('timestamp'), file_ts)
                     if existing and existing.timestamp > ticker_ts:
                         continue
                     

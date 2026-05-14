@@ -618,6 +618,13 @@ KRAKEN_CLOSE_FEE = 0.0035     # Actual observed closing fee rate
 KRAKEN_ROLLOVER_RATE = 0.0001 # 0.01% per 4 hours (Kraken margin rollover)
 KRAKEN_ROLLOVER_INTERVAL = 4 * 3600  # 4 hours in seconds
 MARGIN_BUFFER = 0.70          # Use 70% of free margin (30% safety for margin level)
+KRAKEN_FAST_PROFIT_CAPTURE_ENABLED = os.getenv("KRAKEN_FAST_PROFIT_CAPTURE_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
+KRAKEN_FAST_PROFIT_MIN_USD = max(0.0, float(os.getenv("KRAKEN_FAST_PROFIT_MIN_USD", "0.01")))
+KRAKEN_FAST_PROFIT_MIN_HOLD_SECS = max(0.0, float(os.getenv("KRAKEN_FAST_PROFIT_MIN_HOLD_SECS", "1.0")))
+KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT = max(
+    float(LIQUIDATION_FORCE),
+    float(os.getenv("KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT", str(LIQUIDATION_WARN))),
+)
 DYNAMIC_MIN_NOTIONAL_USD = float(os.getenv("KRAKEN_DYNAMIC_MIN_NOTIONAL_USD", "5.0"))
 DYNAMIC_MIN_PROFIT_USD = float(os.getenv("KRAKEN_DYNAMIC_MIN_PROFIT_USD", "0.05"))
 DYNAMIC_TARGET_EQUITY_FRACTION = float(os.getenv("KRAKEN_DYNAMIC_TARGET_EQUITY_FRACTION", "0.01"))
@@ -3146,6 +3153,8 @@ class KrakenMarginArmyTrader:
         self._latest_monitor_line = ""
         self._latest_status_lines: List[str] = []
         self._latest_dashboard_payload: Dict[str, Any] = {}
+        self._last_fast_profit_capture: Dict[str, Any] = {}
+        self._fast_profit_capture_by_order: Dict[str, Dict[str, Any]] = {}
         self._local_dashboard_server: Optional[ThreadingHTTPServer] = None
         self._local_dashboard_thread: Optional[threading.Thread] = None
         self._last_danger_check = 0
@@ -5501,6 +5510,7 @@ class KrakenMarginArmyTrader:
                 "thought_bus_snapshot": self._thought_bus_snapshot,
                 "cognition_snapshot": self._cognition_snapshot,
                 "trade_cognition": getattr(self, "_latest_trade_cognition", {}),
+                "kraken_fast_profit_capture": getattr(self, "_last_fast_profit_capture", {}),
             }
             self._latest_dashboard_payload = dict(payload)
             self._last_dashboard_push = now
@@ -6568,6 +6578,9 @@ class KrakenMarginArmyTrader:
                 "cognition_plan": getattr(trade, "cognition_plan", {}) or {},
                 "cognition_verification": cognition_verification,
             }
+            fast_capture = getattr(self, "_fast_profit_capture_by_order", {}).pop(str(trade.order_id), None)
+            if isinstance(fast_capture, dict) and fast_capture:
+                completed["fast_profit_capture"] = fast_capture
             self.completed_trades.append(completed)
             # Record outcome against the scan that selected this trade
             if self._goal_recorder is not None:
@@ -6700,6 +6713,96 @@ class KrakenMarginArmyTrader:
             return
 
         self.stream.sync_symbols(deduped)
+
+    def _kraken_margin_fast_profit_capture_decision(
+        self,
+        trade: ActiveTrade,
+        *,
+        current_price: float,
+        net_pnl: float,
+        validated_net_pnl: float,
+        total_fees: float,
+        exit_fee: float,
+        rollover: float,
+        stream_live: bool,
+    ) -> Dict[str, Any]:
+        """Decide whether a Kraken margin position has true profit worth capturing now."""
+        now = time.time()
+        hold_seconds = max(0.0, now - float(getattr(trade, "entry_time", now) or now))
+        blockers: List[str] = []
+        if not KRAKEN_FAST_PROFIT_CAPTURE_ENABLED:
+            blockers.append("fast_profit_capture_disabled")
+        if hold_seconds < KRAKEN_FAST_PROFIT_MIN_HOLD_SECS:
+            blockers.append("min_hold_time_not_met")
+        if validated_net_pnl < KRAKEN_FAST_PROFIT_MIN_USD:
+            blockers.append("validated_net_profit_below_minimum_after_all_costs")
+        if net_pnl < 0:
+            blockers.append("raw_net_profit_negative_after_fees")
+
+        capital = {
+            "available": False,
+            "equity": 0.0,
+            "free_margin": 0.0,
+            "margin_used": 0.0,
+            "margin_level": 0.0,
+            "collateral_pressure": False,
+        }
+        try:
+            snapshot = self._get_margin_capital()
+            margin_level = float(getattr(snapshot, "margin_level", 0.0) or 0.0)
+            capital.update(
+                {
+                    "available": True,
+                    "equity": round(float(getattr(snapshot, "equity", 0.0) or 0.0), 6),
+                    "free_margin": round(float(getattr(snapshot, "free_margin", 0.0) or 0.0), 6),
+                    "margin_used": round(float(getattr(snapshot, "margin_used", 0.0) or 0.0), 6),
+                    "margin_level": round(margin_level, 6),
+                    "collateral_pressure": bool(0 < margin_level < KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT),
+                }
+            )
+        except Exception as e:
+            capital["reason"] = str(e)
+
+        ready = bool(not blockers)
+        decision = {
+            "schema_version": 1,
+            "generated_at": datetime.now().isoformat(),
+            "mode": "kraken_margin_true_profit_first_past_the_post",
+            "pair": trade.pair,
+            "side": trade.side,
+            "order_id": str(getattr(trade, "order_id", "")),
+            "current_price": round(float(current_price), 8),
+            "entry_price": round(float(trade.entry_price), 8),
+            "volume": round(float(trade.volume), 12),
+            "leverage": int(trade.leverage),
+            "hold_seconds": round(hold_seconds, 3),
+            "stream_live": bool(stream_live),
+            "min_true_profit_usd": round(KRAKEN_FAST_PROFIT_MIN_USD, 6),
+            "min_hold_seconds": round(KRAKEN_FAST_PROFIT_MIN_HOLD_SECS, 3),
+            "gross_minus_all_costs_usd": round(float(net_pnl), 8),
+            "validated_true_profit_usd": round(float(validated_net_pnl), 8),
+            "costs": {
+                "entry_fee_usd": round(float(getattr(trade, "entry_fee", 0.0) or 0.0), 8),
+                "estimated_exit_fee_usd": round(float(exit_fee), 8),
+                "rollover_fees_usd": round(float(rollover), 8),
+                "total_costs_usd": round(float(total_fees), 8),
+            },
+            "collateral": capital,
+            "ready_to_capture": ready,
+            "blockers": blockers,
+            "reason": "capture_true_profit_after_costs" if ready else ",".join(blockers),
+            "collateral_note": (
+                "Live Kraken trade-balance is checked because spot cash movement can reduce margin headroom."
+                if capital.get("available")
+                else "Collateral snapshot unavailable this cycle; profit decision still uses net fee math."
+            ),
+        }
+        self._last_fast_profit_capture = decision
+        if ready:
+            if not hasattr(self, "_fast_profit_capture_by_order"):
+                self._fast_profit_capture_by_order = {}
+            self._fast_profit_capture_by_order[str(getattr(trade, "order_id", ""))] = decision
+        return decision
 
     def _emit_monitor_snapshot(
         self,
@@ -6889,6 +6992,28 @@ class KrakenMarginArmyTrader:
                     )
 
         # ── STALLION PHASE ────────────────────────────────────────────────────
+        fast_capture = self._kraken_margin_fast_profit_capture_decision(
+            trade,
+            current_price=current_price,
+            net_pnl=net_pnl,
+            validated_net_pnl=validated_net_pnl,
+            total_fees=total_fees,
+            exit_fee=exit_fee,
+            rollover=rollover,
+            stream_live=stream_live,
+        )
+        if fast_capture.get("ready_to_capture"):
+            logger.info(
+                "[KRAKEN FAST PROFIT] true net=%+.4f after all costs (fees=%.4f, hold=%.1fs) - closing now",
+                validated_net_pnl,
+                total_fees,
+                hold_time,
+            )
+            return self.close_position(
+                reason=f"FAST_PROFIT_CAPTURE (${validated_net_pnl:+.4f} true_after_costs)",
+                trade=trade,
+            )
+
         stallion_str = ""
         if HAS_STALLION and classify_phase is not None:
             # Pull live margin level for wave capacity (best-effort)
@@ -7731,6 +7856,14 @@ class KrakenMarginArmyTrader:
         if self.extra_active_longs or self.extra_active_shorts:
             status_lines.append(
                 f"ExtraLive: longs={len(self.extra_active_longs)} shorts={len(self.extra_active_shorts)}"
+            )
+        fast_capture = getattr(self, "_last_fast_profit_capture", {}) or {}
+        if fast_capture:
+            status_lines.append(
+                "FastProfit: "
+                f"ready={bool(fast_capture.get('ready_to_capture'))} "
+                f"net=${float(fast_capture.get('validated_true_profit_usd', 0.0) or 0.0):+.4f} "
+                f"reason={fast_capture.get('reason') or 'measuring'}"
             )
         status_lines.append(
             f"History: closed={closed_count} wins={wins} losses={losses} win_rate={win_rate:.1f}% avg={avg_net:+.2f}"

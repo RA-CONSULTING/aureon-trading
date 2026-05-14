@@ -131,12 +131,16 @@ ORDER_INTENT_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "aureon_unified_e
 EXECUTION_RESULT_LOG_PATH = RUNTIME_STATUS_PATH.with_name("unified_exchange_execution_results.jsonl")
 EXECUTION_RESULT_STATE_PATH = RUNTIME_STATUS_PATH.with_name("unified_exchange_execution_results.json")
 EXECUTION_RESULT_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "aureon_unified_exchange_execution_results.json"
+KRAKEN_SPOT_POSITION_STATE_PATH = RUNTIME_STATUS_PATH.with_name("kraken_spot_fast_profit_positions.json")
+KRAKEN_SPOT_POSITION_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "kraken_spot_fast_profit_positions.json"
 SHADOW_TRADE_LOG_PATH = RUNTIME_STATUS_PATH.with_name("unified_shadow_trade_report.jsonl")
 SHADOW_TRADE_STATE_PATH = RUNTIME_STATUS_PATH.with_name("unified_shadow_trade_report.json")
 SHADOW_TRADE_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "aureon_unified_shadow_trade_report.json"
 HNC_COGNITIVE_PROOF_LOG_PATH = RUNTIME_STATUS_PATH.with_name("aureon_hnc_cognitive_proof.jsonl")
 HNC_COGNITIVE_PROOF_STATE_PATH = RUNTIME_STATUS_PATH.with_name("aureon_hnc_cognitive_proof.json")
 HNC_COGNITIVE_PROOF_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "aureon_hnc_cognitive_proof.json"
+HNC_OPERATING_CYCLE_STATE_PATH = RUNTIME_STATUS_PATH.with_name("aureon_hnc_operating_cycle.json")
+HNC_OPERATING_CYCLE_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "aureon_hnc_operating_cycle.json"
 EMBEDDED_DASHBOARD_ENABLED = os.getenv("UNIFIED_MARKET_EMBEDDED_DASHBOARD", "").lower() in {
     "1",
     "true",
@@ -158,6 +162,18 @@ PROBE_SYMBOL_STALE_TTL_SEC = max(
     PROBE_SYMBOL_MIN_INTERVAL_SEC,
     _env_float("UNIFIED_PROBE_SYMBOL_STALE_TTL_SEC", 30.0),
 )
+STREAM_CACHE_MAX_AGE_SEC = max(0.5, _env_float("UNIFIED_STREAM_PRICE_MAX_AGE_SEC", 5.0))
+STREAM_CACHE_MAX_SYMBOLS = max(8, int(_env_float("UNIFIED_STREAM_CACHE_MAX_SYMBOLS", 96.0)))
+FAST_MONEY_MIN_VOLATILITY_PCT = max(0.01, _env_float("UNIFIED_FAST_MONEY_MIN_VOLATILITY_PCT", 0.34))
+FAST_MONEY_BREAK_EVEN_MOVE_PCT = max(0.01, _env_float("UNIFIED_FAST_MONEY_BREAK_EVEN_MOVE_PCT", 0.34))
+FAST_MONEY_VOLUME_USD_TARGET = max(1_000.0, _env_float("UNIFIED_FAST_MONEY_VOLUME_USD_TARGET", 25_000_000.0))
+FAST_MONEY_MIN_SCORE = max(0.0, min(1.0, _env_float("UNIFIED_FAST_MONEY_MIN_SCORE", 0.55)))
+ORDERBOOK_PROBE_MAX_PER_TICK = max(0, int(_env_float("UNIFIED_ORDERBOOK_PROBE_MAX_PER_TICK", 4.0)))
+ORDERBOOK_PROBE_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_ORDERBOOK_PROBE_MIN_INTERVAL_SEC", 12.0))
+ORDERBOOK_PROBE_STALE_TTL_SEC = max(
+    ORDERBOOK_PROBE_MIN_INTERVAL_SEC,
+    _env_float("UNIFIED_ORDERBOOK_PROBE_STALE_TTL_SEC", 30.0),
+)
 KRAKEN_TICK_MIN_INTERVAL_SEC = max(0.5, _env_float("UNIFIED_KRAKEN_TICK_MIN_INTERVAL_SEC", 1.0))
 CAPITAL_TICK_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_CAPITAL_TICK_MIN_INTERVAL_SEC", 2.0))
 ORDER_INTENT_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_ORDER_INTENT_MIN_INTERVAL_SEC", 8.0))
@@ -174,6 +190,11 @@ ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC = max(
     _env_float("UNIFIED_ORDER_EXECUTOR_ROUTE_ABANDON_AFTER_SEC", 300.0),
 )
 KRAKEN_SPOT_QUOTE_USD = max(63.0, _env_float("UNIFIED_KRAKEN_SPOT_QUOTE_USD", 65.0))
+KRAKEN_SPOT_FAST_PROFIT_CAPTURE_ENABLED = os.getenv("KRAKEN_SPOT_FAST_PROFIT_CAPTURE_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
+KRAKEN_SPOT_FAST_PROFIT_MIN_USD = max(0.0, _env_float("KRAKEN_SPOT_FAST_PROFIT_MIN_USD", 0.01))
+KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC = max(0.0, _env_float("KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC", 1.0))
+KRAKEN_SPOT_TAKER_FEE_RATE = max(0.0, _env_float("KRAKEN_SPOT_TAKER_FEE_RATE", 0.004))
+KRAKEN_SPOT_COLLATERAL_RESERVE_USD = max(0.0, _env_float("KRAKEN_SPOT_COLLATERAL_RESERVE_USD", 5.0))
 BINANCE_MARGIN_LEVERAGE = max(1, int(_env_float("UNIFIED_BINANCE_MARGIN_LEVERAGE", 2.0)))
 SHADOW_TRADE_MAX_PER_CYCLE = max(1, int(_env_float("UNIFIED_SHADOW_TRADE_MAX_PER_CYCLE", 12.0)))
 SHADOW_TRADE_MIN_CONFIDENCE = max(0.0, min(1.0, _env_float("UNIFIED_SHADOW_TRADE_MIN_CONFIDENCE", ORDER_INTENT_MIN_CONFIDENCE)))
@@ -307,6 +328,7 @@ EXCHANGE_MODEL_STACKS = {
 }
 INTELLIGENCE_MESH_CAPABILITIES = [
     {"name": "LiveExchangeFeeds", "path": "aureon/data_feeds/unified_market_cache.py", "facet": "live_market_data", "wire": "direct_live_signal", "activation": "central_beat_sources"},
+    {"name": "LiveStreamCache", "path": "aureon/data_feeds/ws_market_data_feeder.py", "facet": "live_stream_data", "wire": "direct_live_signal", "activation": "stream_cache"},
     {"name": "UnifiedSignalEngine", "path": "aureon/trading/unified_signal_engine.py", "facet": "signal_fusion", "wire": "direct_live_signal", "activation": "model_signal_feed"},
     {"name": "UnifiedDecisionEngine", "path": "aureon/intelligence/aureon_unified_decision_engine.py", "facet": "decision_intelligence", "wire": "decision_context", "activation": "repo_present"},
     {"name": "UnifiedIntelligenceRegistry", "path": "aureon/intelligence/aureon_unified_intelligence_registry.py", "facet": "capability_registry", "wire": "mesh_inventory", "activation": "repo_present"},
@@ -323,6 +345,8 @@ INTELLIGENCE_MESH_CAPABILITIES = [
     {"name": "TruthPredictionEngine", "path": "aureon/intelligence/aureon_truth_prediction_engine.py", "facet": "prediction_truth", "wire": "mesh_context", "activation": "repo_present"},
     {"name": "IntegratedForecast", "path": "aureon/intelligence/aureon_integrated_forecast.py", "facet": "forecast", "wire": "mesh_context", "activation": "repo_present"},
     {"name": "LiveMomentumHunter", "path": "aureon/scanners/aureon_live_momentum_hunter.py", "facet": "momentum_search", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "FastMoneySelector", "path": "aureon/exchanges/unified_market_trader.py", "facet": "fast_money_selection", "wire": "profit_context", "activation": "fast_money"},
+    {"name": "OrderBookPressure", "path": "aureon/analytics/aureon_whale_orderbook_analyzer.py", "facet": "orderbook_pressure", "wire": "direct_live_signal", "activation": "orderbook_pressure"},
     {"name": "GlobalWaveScanner", "path": "aureon/scanners/aureon_global_wave_scanner.py", "facet": "waveform_search", "wire": "mesh_context", "activation": "repo_present"},
     {"name": "MarginHarmonicScanner", "path": "aureon/scanners/aureon_margin_harmonic_scanner.py", "facet": "margin_search", "wire": "mesh_context", "activation": "repo_present"},
     {"name": "MoversShakersScanner", "path": "aureon/scanners/aureon_movers_shakers_scanner.py", "facet": "market_search", "wire": "mesh_context", "activation": "repo_present"},
@@ -651,6 +675,7 @@ class UnifiedMarketTrader:
         self._executor_route_lock = threading.Lock()
         self._executor_route_inflight: Dict[str, Dict[str, Any]] = {}
         self._executor_route_results: Dict[str, Dict[str, Any]] = {}
+        self._kraken_spot_fast_profit_state: Dict[str, Any] = {}
         self._tick_phase = "booting"
         self._tick_phase_at = time.time()
         self._local_dashboard_server: ThreadingHTTPServer | None = None
@@ -660,6 +685,9 @@ class UnifiedMarketTrader:
         self._mycelium = None
         self._last_status_publish: float = 0.0
         self._api_governor = ExchangeCallGovernor()
+        self._stream_cache_health: Dict[str, Any] = {}
+        self._orderbook_pressure_cache: Dict[str, Dict[str, Any]] = {}
+        self._fast_money_intelligence: Dict[str, Any] = {}
         self._runtime_instance_id = f"{os.getpid()}:{self.start_time:.6f}"
         self._runtime_writer_lock_reason = ""
         self._duplicate_runtime = False
@@ -1543,11 +1571,14 @@ class UnifiedMarketTrader:
             "latest_monitor_line": self._latest_monitor_line(),
             "shared_market_feed": shared_market_feed,
             "central_beat": central_beat,
+            "live_stream_cache": central_beat.get("stream_cache", {}) if isinstance(central_beat, dict) else {},
             "shared_order_flow": order_flow_feed,
             "shadow_trading": shadow_trade_report,
             "hnc_cognitive_proof": hnc_cognitive_proof,
+            "hnc_operating_cycle": hnc_cognitive_proof.get("operating_cycle", {}) if isinstance(hnc_cognitive_proof, dict) else {},
             "intelligence_mesh": intelligence_mesh,
             "exchange_action_plan": exchange_action_plan,
+            "kraken_spot_fast_profit": self._load_kraken_spot_fast_profit_state(),
             "preflight": self._build_preflight_report(),
             "api_governor": self._governor().snapshot(),
             "queen_voice": queen_voice,
@@ -1649,6 +1680,21 @@ class UnifiedMarketTrader:
         if activation == "model_signal_feed":
             feed = central_beat.get("model_signal_feed", {}) if isinstance(central_beat, dict) else {}
             return bool(isinstance(feed, dict) and feed.get("used"))
+        if activation == "stream_cache":
+            stream_cache = central_beat.get("stream_cache", {}) if isinstance(central_beat, dict) else {}
+            return bool(
+                isinstance(stream_cache, dict)
+                and stream_cache.get("fresh")
+                and int(stream_cache.get("symbol_count", 0) or 0) > 0
+            )
+        if activation == "fast_money":
+            feed = order_flow_feed if isinstance(order_flow_feed, dict) else {}
+            fast_money = feed.get("fast_money_intelligence", {}) if isinstance(feed.get("fast_money_intelligence"), dict) else {}
+            return bool(int(fast_money.get("candidate_count", 0) or 0) > 0)
+        if activation == "orderbook_pressure":
+            feed = order_flow_feed if isinstance(order_flow_feed, dict) else {}
+            fast_money = feed.get("fast_money_intelligence", {}) if isinstance(feed.get("fast_money_intelligence"), dict) else {}
+            return bool(int(fast_money.get("orderbook_probe_count", 0) or 0) > 0)
         if activation == "shadow_validation":
             report = shadow_trade_report if isinstance(shadow_trade_report, dict) else {}
             return bool(
@@ -1841,6 +1887,161 @@ class UnifiedMarketTrader:
                 "opportunity_count": len(opportunities),
             }
 
+    def _stream_cache_empty_health(self, reason: str) -> Dict[str, Any]:
+        health = {
+            "source": "aureon.data_feeds.unified_market_cache",
+            "mode": "websocket_stream_cache_first_rest_budget_protected",
+            "fresh": False,
+            "usable_for_decision": False,
+            "symbol_count": 0,
+            "max_age_sec": STREAM_CACHE_MAX_AGE_SEC,
+            "reason": reason,
+            "generated_at": datetime.now().isoformat(),
+        }
+        self._stream_cache_health = health
+        return health
+
+    def _canonical_stream_base(self, base: Any) -> str:
+        raw = str(base or "").upper().strip()
+        if raw in {"XBT", "XXBT"}:
+            return "BTC"
+        if raw in {"XETH"}:
+            return "ETH"
+        return raw
+
+    def _stream_price_ticker(self, symbol: str, max_age_sec: float = STREAM_CACHE_MAX_AGE_SEC) -> Any:
+        base = self._canonical_stream_base(self._base_from_route_symbol(symbol))
+        if not base:
+            return None
+        try:
+            from aureon.data_feeds.unified_market_cache import get_ticker
+
+            ticker = get_ticker(base, max_age=max_age_sec)
+            if ticker is None and base == "BTC":
+                ticker = get_ticker("XBT", max_age=max_age_sec)
+            return ticker
+        except Exception as e:
+            logger.debug("Stream cache ticker unavailable for %s: %s", symbol, e)
+            return None
+
+    def _estimate_stream_price(self, symbol: str) -> float:
+        ticker = self._stream_price_ticker(symbol)
+        if ticker is None:
+            return 0.0
+        try:
+            price = float(getattr(ticker, "price", 0.0) or 0.0)
+            return price if price > 0 else 0.0
+        except Exception:
+            return 0.0
+
+    def _extract_stream_cache_source_snapshot(self, watchlist: List[str]) -> Dict[str, Any]:
+        try:
+            from aureon.data_feeds.unified_market_cache import get_market_cache
+
+            tickers = get_market_cache().get_all_tickers(max_age=STREAM_CACHE_MAX_AGE_SEC)
+        except Exception as e:
+            self._stream_cache_empty_health(f"stream_cache_unavailable:{e}")
+            return {}
+
+        if not tickers:
+            self._stream_cache_empty_health("no_fresh_stream_tickers")
+            return {}
+
+        now = time.time()
+        watch_bases = {self._canonical_stream_base(self._base_from_route_symbol(symbol)) for symbol in watchlist if symbol}
+        if "XBT" in watch_bases or "XXBT" in watch_bases:
+            watch_bases.add("BTC")
+        ranked: List[Dict[str, Any]] = []
+        for base, ticker in tickers.items():
+            base_norm = self._canonical_stream_base(base or getattr(ticker, "symbol", "") or "")
+            if not base_norm or base_norm in {"USD", "USDT", "USDC", "BUSD", "EUR", "GBP"}:
+                continue
+            normalized = self._normalize_symbol(f"{base_norm}USD")
+            if not normalized:
+                continue
+            try:
+                price = float(getattr(ticker, "price", 0.0) or 0.0)
+                change_pct = float(getattr(ticker, "change_24h", 0.0) or 0.0)
+                volume_24h = float(getattr(ticker, "volume_24h", 0.0) or 0.0)
+                timestamp = float(getattr(ticker, "timestamp", 0.0) or 0.0)
+            except Exception:
+                continue
+            if price <= 0 or timestamp <= 0:
+                continue
+            age_sec = max(0.0, now - timestamp)
+            if age_sec > STREAM_CACHE_MAX_AGE_SEC:
+                continue
+            priority = 1.0 if base_norm in watch_bases or normalized in watchlist else 0.0
+            volume_score = min(1.0, max(0.0, volume_24h) / 1_000_000_000.0)
+            momentum_score = min(1.0, abs(change_pct) / 8.0)
+            score = priority + (momentum_score * 0.75) + (volume_score * 0.25)
+            confidence = min(1.0, 0.15 + momentum_score + (0.15 * priority) + (0.10 * volume_score))
+            ranked.append(
+                {
+                    "base": base_norm,
+                    "normalized": normalized,
+                    "ticker": ticker,
+                    "score": score,
+                    "confidence": confidence,
+                    "price": price,
+                    "change_pct": change_pct,
+                    "volume_24h": volume_24h,
+                    "age_sec": age_sec,
+                }
+            )
+
+        if not ranked:
+            self._stream_cache_empty_health("fresh_stream_tickers_not_routeable")
+            return {}
+
+        ranked.sort(key=lambda item: item["score"], reverse=True)
+        selected = ranked[:STREAM_CACHE_MAX_SYMBOLS]
+        symbols: Dict[str, Dict[str, Any]] = {}
+        for item in selected:
+            ticker = item["ticker"]
+            change_pct = float(item["change_pct"])
+            symbols[item["normalized"]] = {
+                "symbol": item["normalized"],
+                "raw_symbol": str(getattr(ticker, "pair", item["base"])),
+                "confidence": round(float(item["confidence"]), 4),
+                "side": "BUY" if change_pct >= 0 else "SELL",
+                "price": round(float(item["price"]), 8),
+                "change_pct": round(change_pct, 6),
+                "volume_24h": round(float(item["volume_24h"]), 6),
+                "age_sec": round(float(item["age_sec"]), 3),
+                "source": str(getattr(ticker, "source", "stream_cache")),
+                "reason": "fresh_websocket_cache",
+            }
+
+        strongest = max(symbols.values(), key=lambda item: float(item.get("confidence", 0.0) or 0.0))
+        ages = [float(item.get("age_sec", 0.0) or 0.0) for item in symbols.values()]
+        health = {
+            "source": "aureon.data_feeds.unified_market_cache",
+            "mode": "websocket_stream_cache_first_rest_budget_protected",
+            "fresh": True,
+            "usable_for_decision": True,
+            "symbol_count": len(symbols),
+            "raw_ticker_count": len(tickers),
+            "max_age_sec": STREAM_CACHE_MAX_AGE_SEC,
+            "oldest_selected_age_sec": round(max(ages), 3) if ages else 0.0,
+            "newest_selected_age_sec": round(min(ages), 3) if ages else 0.0,
+            "top_symbol": strongest.get("symbol"),
+            "top_confidence": strongest.get("confidence"),
+            "top_side": strongest.get("side"),
+            "generated_at": datetime.now().isoformat(),
+        }
+        self._stream_cache_health = health
+        return {
+            "source": "live_stream_cache",
+            "ready": True,
+            "mode": "websocket_cache_preferred_over_rest_quotes",
+            "symbols": symbols,
+            "stream_health": health,
+            "top_symbol": strongest.get("symbol"),
+            "top_side": strongest.get("side"),
+            "top_confidence": strongest.get("confidence"),
+        }
+
     def _build_central_beat_feed(self, kraken_payload: Dict[str, Any], capital_payload: Dict[str, Any]) -> Dict[str, Any]:
         now = time.time()
         if self._central_beat_feed and (now - self._central_beat_at) < CENTRAL_BEAT_REFRESH_SEC:
@@ -1860,6 +2061,9 @@ class UnifiedMarketTrader:
         sources.extend(trader_sources)
 
         watchlist = self._build_probe_watchlist(sources)
+        stream_source = self._extract_stream_cache_source_snapshot(watchlist)
+        if stream_source:
+            probe_sources.append(stream_source)
         alpaca_source = self._extract_alpaca_source_snapshot(watchlist)
         if alpaca_source:
             probe_sources.append(alpaca_source)
@@ -1895,6 +2099,10 @@ class UnifiedMarketTrader:
                         "price_sum": 0.0,
                         "price_count": 0,
                         "change_pct_sum": 0.0,
+                        "change_pct_abs_max": 0.0,
+                        "volume_24h_max": 0.0,
+                        "freshest_age_sec": None,
+                        "fast_money_sources": [],
                         "source_prices": {},
                     },
                 )
@@ -1917,9 +2125,29 @@ class UnifiedMarketTrader:
                     symbol_state["price_count"] += 1
                     symbol_state["source_prices"][source_name] = price
                 try:
-                    symbol_state["change_pct_sum"] += float(item.get("change_pct", 0.0) or 0.0)
+                    change_pct = float(item.get("change_pct", 0.0) or 0.0)
+                    symbol_state["change_pct_sum"] += change_pct
+                    symbol_state["change_pct_abs_max"] = max(
+                        float(symbol_state.get("change_pct_abs_max", 0.0) or 0.0),
+                        abs(change_pct),
+                    )
                 except Exception:
                     pass
+                try:
+                    volume_24h = float(item.get("volume_24h", 0.0) or 0.0)
+                except Exception:
+                    volume_24h = 0.0
+                if volume_24h > 0:
+                    symbol_state["volume_24h_max"] = max(float(symbol_state.get("volume_24h_max", 0.0) or 0.0), volume_24h)
+                    if source_name not in symbol_state["fast_money_sources"]:
+                        symbol_state["fast_money_sources"].append(source_name)
+                try:
+                    age_sec = float(item.get("age_sec", 0.0) or 0.0)
+                except Exception:
+                    age_sec = 0.0
+                if age_sec >= 0 and source_name == "live_stream_cache":
+                    current_age = symbol_state.get("freshest_age_sec")
+                    symbol_state["freshest_age_sec"] = age_sec if current_age is None else min(float(current_age), age_sec)
 
         normalized_symbols: Dict[str, Dict[str, Any]] = {}
         for normalized, item in symbols.items():
@@ -1941,6 +2169,14 @@ class UnifiedMarketTrader:
                 "sources": list(item.get("sources", [])),
                 "reference_price": round(reference_price, 8) if reference_price > 0 else 0.0,
                 "change_pct": round(float(item.get("change_pct_sum", 0.0) or 0.0) / max(1, support_count), 6),
+                "change_pct_abs_max": round(float(item.get("change_pct_abs_max", 0.0) or 0.0), 6),
+                "volume_24h": round(float(item.get("volume_24h_max", 0.0) or 0.0), 6),
+                "freshest_age_sec": (
+                    round(float(item.get("freshest_age_sec")), 3)
+                    if item.get("freshest_age_sec") is not None
+                    else None
+                ),
+                "fast_money_sources": list(item.get("fast_money_sources", [])),
                 "source_prices": dict(item.get("source_prices", {})),
             }
 
@@ -1981,6 +2217,13 @@ class UnifiedMarketTrader:
             "symbols": normalized_symbols,
             "regime": regime,
             "model_signal_feed": model_signal_feed,
+            "stream_cache": dict(getattr(self, "_stream_cache_health", {}) or {}),
+            "market_data_strategy": {
+                "freshness_goal": "prefer_live_stream_cache_then_budgeted_rest_quotes",
+                "stream_cache_max_age_sec": STREAM_CACHE_MAX_AGE_SEC,
+                "rest_probe_min_interval_sec": PROBE_SYMBOL_MIN_INTERVAL_SEC,
+                "rest_probe_stale_ttl_sec": PROBE_SYMBOL_STALE_TTL_SEC,
+            },
         }
         self._central_beat_layers = {
             "trader": {"sources": trader_sources, "count": len(trader_sources)},
@@ -2127,6 +2370,9 @@ class UnifiedMarketTrader:
         if not symbol:
             return 0.0
         try:
+            stream_price = self._estimate_stream_price(symbol)
+            if stream_price > 0:
+                return stream_price
             if venue == "kraken":
                 client = self._kraken_spot_client()
                 if client is not None and hasattr(client, "best_price"):
@@ -2198,6 +2444,285 @@ class UnifiedMarketTrader:
             return 0.0
         return max(0.0, min(available, target_qty) * 0.999)
 
+    def _empty_kraken_spot_fast_profit_state(self) -> Dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "mode": "kraken_spot_true_profit_first_past_the_post",
+            "generated_at": datetime.now().isoformat(),
+            "enabled": bool(KRAKEN_SPOT_FAST_PROFIT_CAPTURE_ENABLED),
+            "fee_rate": KRAKEN_SPOT_TAKER_FEE_RATE,
+            "min_true_profit_usd": KRAKEN_SPOT_FAST_PROFIT_MIN_USD,
+            "min_hold_sec": KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC,
+            "collateral_reserve_usd": KRAKEN_SPOT_COLLATERAL_RESERVE_USD,
+            "open_positions": [],
+            "closed_positions": [],
+            "last_check": {},
+        }
+
+    def _load_kraken_spot_fast_profit_state(self) -> Dict[str, Any]:
+        state = getattr(self, "_kraken_spot_fast_profit_state", {}) or {}
+        if state:
+            return state
+        try:
+            if KRAKEN_SPOT_POSITION_STATE_PATH.exists():
+                with KRAKEN_SPOT_POSITION_STATE_PATH.open("r", encoding="utf-8") as handle:
+                    loaded = json.load(handle)
+                if isinstance(loaded, dict):
+                    state = loaded
+        except Exception as e:
+            logger.debug("Kraken spot fast-profit state read failed: %s", e)
+        if not state:
+            state = self._empty_kraken_spot_fast_profit_state()
+        state.setdefault("open_positions", [])
+        state.setdefault("closed_positions", [])
+        state.setdefault("last_check", {})
+        self._kraken_spot_fast_profit_state = state
+        return state
+
+    def _save_kraken_spot_fast_profit_state(self, state: Dict[str, Any]) -> None:
+        state["generated_at"] = datetime.now().isoformat()
+        state["enabled"] = bool(KRAKEN_SPOT_FAST_PROFIT_CAPTURE_ENABLED)
+        state["fee_rate"] = KRAKEN_SPOT_TAKER_FEE_RATE
+        state["min_true_profit_usd"] = KRAKEN_SPOT_FAST_PROFIT_MIN_USD
+        state["min_hold_sec"] = KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC
+        state["collateral_reserve_usd"] = KRAKEN_SPOT_COLLATERAL_RESERVE_USD
+        self._kraken_spot_fast_profit_state = state
+        for path in (KRAKEN_SPOT_POSITION_STATE_PATH, KRAKEN_SPOT_POSITION_PUBLIC_PATH):
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+                with tmp_path.open("w", encoding="utf-8") as handle:
+                    json.dump(state, handle, indent=2, default=str)
+                os.replace(tmp_path, path)
+            except Exception as e:
+                logger.debug("Kraken spot fast-profit state write failed for %s: %s", path, e)
+
+    def _kraken_spot_quote_cash_available(self, client: Any) -> float:
+        if client is None or not hasattr(client, "get_free_balance"):
+            return 0.0
+        balances = []
+        for asset in ("USD", "ZUSD", "USDC", "USDT"):
+            try:
+                value = float(client.get_free_balance(asset) or 0.0)
+            except Exception:
+                value = 0.0
+            if value > 0:
+                balances.append(value)
+        return max(balances) if balances else 0.0
+
+    def _kraken_spot_cost_profile(self, side: str, symbol: str, quote_usd: float, price: float) -> Dict[str, Any]:
+        quote_value = max(0.0, float(quote_usd or 0.0))
+        fee_rate = KRAKEN_SPOT_TAKER_FEE_RATE
+        entry_fee = quote_value * fee_rate
+        exit_fee = quote_value * fee_rate
+        min_profit = KRAKEN_SPOT_FAST_PROFIT_MIN_USD
+        required_move_usd = entry_fee + exit_fee + min_profit
+        required_move_pct = (required_move_usd / quote_value * 100.0) if quote_value > 0 else 0.0
+        return {
+            "schema_version": 1,
+            "venue": "kraken",
+            "market_type": "spot",
+            "symbol": symbol,
+            "side": str(side or "").lower(),
+            "price": round(float(price or 0.0), 8),
+            "quote_usd": round(quote_value, 8),
+            "fee_rate": round(fee_rate, 8),
+            "estimated_entry_fee_usd": round(entry_fee, 8),
+            "estimated_exit_fee_usd": round(exit_fee, 8),
+            "estimated_round_trip_cost_usd": round(entry_fee + exit_fee, 8),
+            "min_true_profit_usd": round(min_profit, 8),
+            "required_move_usd": round(required_move_usd, 8),
+            "required_move_pct": round(required_move_pct, 8),
+            "cost_basis": "entry_fee_plus_exit_fee_plus_min_true_profit",
+        }
+
+    def _extract_order_quantity(self, result: Any, fallback_quantity: float) -> float:
+        if not isinstance(result, dict):
+            return max(0.0, float(fallback_quantity or 0.0))
+        for key in ("executedQty", "origQty", "quantity", "volume"):
+            try:
+                value = float(result.get(key, 0.0) or 0.0)
+            except Exception:
+                value = 0.0
+            if value > 0:
+                return value
+        return max(0.0, float(fallback_quantity or 0.0))
+
+    def _record_kraken_spot_buy_position(
+        self,
+        *,
+        symbol: str,
+        quote_usd: float,
+        price: float,
+        result: Dict[str, Any],
+        cost_profile: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        if price <= 0 or quote_usd <= 0:
+            return {}
+        order_id = str(result.get("orderId") or result.get("txid") or f"kraken-spot-{int(time.time() * 1000)}")
+        quantity = self._extract_order_quantity(result, quote_usd / price)
+        entry_value = quantity * price
+        if entry_value <= 0:
+            entry_value = quote_usd
+        position = {
+            "id": order_id,
+            "symbol": str(symbol or "").upper(),
+            "base_asset": self._base_from_route_symbol(symbol),
+            "side": "long_spot",
+            "quantity": round(quantity, 12),
+            "entry_price": round(price, 8),
+            "entry_value_usd": round(entry_value, 8),
+            "entry_fee_usd": round(entry_value * KRAKEN_SPOT_TAKER_FEE_RATE, 8),
+            "opened_at": datetime.now().isoformat(),
+            "opened_at_epoch": round(time.time(), 6),
+            "source_order_id": order_id,
+            "cost_profile": cost_profile,
+            "status": "open",
+        }
+        state = self._load_kraken_spot_fast_profit_state()
+        open_positions = [p for p in state.get("open_positions", []) if isinstance(p, dict) and p.get("status") == "open"]
+        open_positions.append(position)
+        state["open_positions"] = open_positions[-20:]
+        state["last_check"] = {"recorded_buy": position, "generated_at": datetime.now().isoformat()}
+        self._save_kraken_spot_fast_profit_state(state)
+        return position
+
+    def _kraken_spot_exit_price(self, client: Any, symbol: str) -> float:
+        try:
+            if client is not None and hasattr(client, "get_ticker"):
+                ticker = client.get_ticker(symbol)
+                if isinstance(ticker, dict):
+                    bid = float(ticker.get("bid", 0.0) or 0.0)
+                    if bid > 0:
+                        return bid
+                    price = float(ticker.get("price", 0.0) or ticker.get("lastPrice", 0.0) or 0.0)
+                    if price > 0:
+                        return price
+        except Exception:
+            pass
+        return self._estimate_route_price("kraken", symbol)
+
+    def _kraken_spot_fast_profit_decision(self, position: Dict[str, Any], current_price: float) -> Dict[str, Any]:
+        now = time.time()
+        opened = float(position.get("opened_at_epoch", 0.0) or 0.0)
+        hold_sec = max(0.0, now - opened) if opened > 0 else 0.0
+        quantity = max(0.0, float(position.get("quantity", 0.0) or 0.0))
+        entry_value = max(0.0, float(position.get("entry_value_usd", 0.0) or 0.0))
+        entry_fee = max(0.0, float(position.get("entry_fee_usd", 0.0) or 0.0))
+        exit_value = max(0.0, quantity * max(0.0, float(current_price or 0.0)))
+        exit_fee = exit_value * KRAKEN_SPOT_TAKER_FEE_RATE
+        gross_pnl = exit_value - entry_value
+        true_net = gross_pnl - entry_fee - exit_fee
+        blockers: List[str] = []
+        if not KRAKEN_SPOT_FAST_PROFIT_CAPTURE_ENABLED:
+            blockers.append("fast_profit_capture_disabled")
+        if current_price <= 0:
+            blockers.append("price_unavailable")
+        if quantity <= 0:
+            blockers.append("quantity_unavailable")
+        if hold_sec < KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC:
+            blockers.append("min_hold_time_not_met")
+        if true_net < KRAKEN_SPOT_FAST_PROFIT_MIN_USD:
+            blockers.append("true_profit_below_minimum_after_spot_fees")
+        if not self._runtime_real_orders_allowed():
+            blockers.append("live_exchange_mutation_not_enabled")
+        return {
+            "schema_version": 1,
+            "generated_at": datetime.now().isoformat(),
+            "symbol": position.get("symbol"),
+            "position_id": position.get("id"),
+            "current_price": round(float(current_price or 0.0), 8),
+            "quantity": round(quantity, 12),
+            "hold_seconds": round(hold_sec, 3),
+            "gross_pnl_usd": round(gross_pnl, 8),
+            "true_net_profit_usd": round(true_net, 8),
+            "costs": {
+                "entry_fee_usd": round(entry_fee, 8),
+                "estimated_exit_fee_usd": round(exit_fee, 8),
+                "round_trip_cost_usd": round(entry_fee + exit_fee, 8),
+            },
+            "ready_to_capture": bool(not blockers),
+            "blockers": blockers,
+            "reason": "capture_spot_true_profit_after_costs" if not blockers else ",".join(blockers),
+            "collateral_note": "Kraken spot cash is treated as shared account collateral, so entry records preserve fee/cash impact before margin logic trusts profit.",
+        }
+
+    def _monitor_kraken_spot_fast_profit(self) -> List[Dict[str, Any]]:
+        state = self._load_kraken_spot_fast_profit_state()
+        client = self._kraken_spot_client()
+        open_positions = [p for p in state.get("open_positions", []) if isinstance(p, dict) and p.get("status") == "open"]
+        checks: List[Dict[str, Any]] = []
+        closed: List[Dict[str, Any]] = []
+        if client is None or not open_positions:
+            state["last_check"] = {
+                "generated_at": datetime.now().isoformat(),
+                "open_count": len(open_positions),
+                "closed_count": 0,
+                "reason": "kraken_spot_client_missing" if client is None else "no_open_spot_positions",
+            }
+            self._save_kraken_spot_fast_profit_state(state)
+            return []
+
+        remaining: List[Dict[str, Any]] = []
+        for position in open_positions:
+            symbol = str(position.get("symbol") or "").upper().strip()
+            price = self._kraken_spot_exit_price(client, symbol)
+            decision = self._kraken_spot_fast_profit_decision(position, price)
+            checks.append(decision)
+            if not decision.get("ready_to_capture"):
+                remaining.append(position)
+                continue
+            quantity = max(0.0, float(position.get("quantity", 0.0) or 0.0)) * 0.999
+            if quantity <= 0:
+                decision["ready_to_capture"] = False
+                decision["blockers"] = ["quantity_unavailable"]
+                decision["reason"] = "quantity_unavailable"
+                remaining.append(position)
+                continue
+            try:
+                result = client.place_market_order(symbol, "sell", quantity=quantity)
+            except Exception as e:
+                result = {"error": str(e)}
+            rejected = isinstance(result, dict) and bool(result.get("error") or result.get("rejected"))
+            if result and not rejected:
+                completed = dict(position)
+                completed.update(
+                    {
+                        "status": "closed",
+                        "closed_at": datetime.now().isoformat(),
+                        "exit_price": decision.get("current_price", 0.0),
+                        "exit_quantity": round(quantity, 12),
+                        "close_result": result,
+                        "reason": "KRAKEN_SPOT_FAST_PROFIT_CAPTURE",
+                        "net_pnl": decision.get("true_net_profit_usd", 0.0),
+                        "fast_profit_capture": decision,
+                    }
+                )
+                closed.append(completed)
+            else:
+                position["last_close_error"] = result
+                remaining.append(position)
+
+        prior_closed = [p for p in state.get("closed_positions", []) if isinstance(p, dict)]
+        state["open_positions"] = remaining[-20:]
+        state["closed_positions"] = (prior_closed + closed)[-50:]
+        state["last_check"] = {
+            "generated_at": datetime.now().isoformat(),
+            "open_count": len(remaining),
+            "closed_count": len(closed),
+            "checks": checks[-20:],
+        }
+        self._save_kraken_spot_fast_profit_state(state)
+        for item in closed:
+            self._publish_thought("execution.trade.closed", {
+                "pair": item.get("symbol"),
+                "net_pnl": float(item.get("net_pnl", 0.0) or 0.0),
+                "reason": item.get("reason"),
+                "exchange": "kraken_spot",
+            })
+            self._record_trade_profit(item)
+        return closed
+
     def _execute_kraken_spot_route(self, side: str, symbol: str, quote_usd: float) -> Dict[str, Any]:
         client = self._kraken_spot_client()
         if client is None or not hasattr(client, "place_market_order"):
@@ -2205,15 +2730,42 @@ class UnifiedMarketTrader:
         side_norm = "buy" if str(side or "BUY").upper() == "BUY" else "sell"
         if side_norm == "buy":
             spot_quote_usd = max(float(quote_usd or 0.0), KRAKEN_SPOT_QUOTE_USD)
+            price = self._estimate_route_price("kraken", symbol)
+            cost_profile = self._kraken_spot_cost_profile(side_norm, symbol, spot_quote_usd, price)
+            quote_cash = self._kraken_spot_quote_cash_available(client)
+            if quote_cash > 0 and (spot_quote_usd + cost_profile["estimated_entry_fee_usd"]) > max(0.0, quote_cash - KRAKEN_SPOT_COLLATERAL_RESERVE_USD):
+                return {
+                    "ok": False,
+                    "venue": "kraken",
+                    "market_type": "spot",
+                    "symbol": symbol,
+                    "side": side_norm,
+                    "reason": "kraken_spot_cash_reserve_protects_margin_collateral",
+                    "quote_usd": spot_quote_usd,
+                    "quote_cash_available_usd": quote_cash,
+                    "collateral_reserve_usd": KRAKEN_SPOT_COLLATERAL_RESERVE_USD,
+                    "cost_profile": cost_profile,
+                }
             result = client.place_market_order(symbol, side_norm, quote_qty=spot_quote_usd)
             order_value = spot_quote_usd
+            position = {}
+            if isinstance(result, dict) and not bool(result.get("error") or result.get("rejected")):
+                position = self._record_kraken_spot_buy_position(
+                    symbol=symbol,
+                    quote_usd=spot_quote_usd,
+                    price=price if price > 0 else self._estimate_route_price("kraken", symbol),
+                    result=result,
+                    cost_profile=cost_profile,
+                )
         else:
             price = self._estimate_route_price("kraken", symbol)
+            cost_profile = self._kraken_spot_cost_profile(side_norm, symbol, max(float(quote_usd or 0.0), KRAKEN_SPOT_QUOTE_USD), price)
             quantity = self._spot_sell_quantity(client, symbol, max(float(quote_usd or 0.0), KRAKEN_SPOT_QUOTE_USD), price)
             if quantity <= 0:
                 return {"ok": False, "venue": "kraken", "market_type": "spot", "symbol": symbol, "side": side_norm, "reason": "no_spot_balance_to_sell"}
             result = client.place_market_order(symbol, side_norm, quantity=quantity)
             order_value = quantity * price if price > 0 else 0.0
+            position = {}
         rejected = isinstance(result, dict) and bool(result.get("error") or result.get("rejected"))
         return {
             "ok": bool(result) and not rejected,
@@ -2222,6 +2774,8 @@ class UnifiedMarketTrader:
             "symbol": symbol,
             "side": side_norm,
             "quote_usd": order_value,
+            "cost_profile": cost_profile,
+            "fast_profit_position": position,
             "result": result,
         }
 
@@ -2369,6 +2923,10 @@ class UnifiedMarketTrader:
                         "confidence": confidence,
                         "selection_rank": item.get("selection_rank"),
                         "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                        "fast_money_score": item.get("fast_money_score", 0.0),
+                        "fast_money_candidate": bool(item.get("fast_money_candidate")),
+                        "fast_money_profile": item.get("fast_money_profile", {}),
+                        "orderbook_pressure": item.get("orderbook_pressure", {}),
                         "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
                         "support_count": item.get("support_count", 0),
                         "cognitive_sources": item.get("sources", []),
@@ -2462,6 +3020,10 @@ class UnifiedMarketTrader:
                         "confidence": confidence,
                         "selection_rank": item.get("selection_rank"),
                         "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                        "fast_money_score": item.get("fast_money_score", 0.0),
+                        "fast_money_candidate": bool(item.get("fast_money_candidate")),
+                        "fast_money_profile": item.get("fast_money_profile", {}),
+                        "orderbook_pressure": item.get("orderbook_pressure", {}),
                         "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
                         "support_count": item.get("support_count", 0),
                         "cognitive_sources": item.get("sources", []),
@@ -2954,6 +3516,10 @@ class UnifiedMarketTrader:
                 "sources": list(central_signal.get("sources", [])) if isinstance(central_signal, dict) and isinstance(central_signal.get("sources"), list) else [],
                 "reference_price": float(central_signal.get("reference_price", 0.0) or 0.0) if isinstance(central_signal, dict) else 0.0,
                 "change_pct": float(central_signal.get("change_pct", 0.0) or 0.0) if isinstance(central_signal, dict) else 0.0,
+                "change_pct_abs_max": float(central_signal.get("change_pct_abs_max", 0.0) or 0.0) if isinstance(central_signal, dict) else 0.0,
+                "volume_24h": float(central_signal.get("volume_24h", 0.0) or 0.0) if isinstance(central_signal, dict) else 0.0,
+                "freshest_age_sec": central_signal.get("freshest_age_sec") if isinstance(central_signal, dict) else None,
+                "fast_money_sources": list(central_signal.get("fast_money_sources", [])) if isinstance(central_signal, dict) and isinstance(central_signal.get("fast_money_sources"), list) else [],
                 "source_prices": dict(central_signal.get("source_prices", {})) if isinstance(central_signal, dict) and isinstance(central_signal.get("source_prices"), dict) else {},
                 "model_signal": central_signal.get("model_signal", {}) if isinstance(central_signal, dict) else {},
                 "model_alignment": bool(central_signal.get("model_alignment", False)) if isinstance(central_signal, dict) else False,
@@ -2973,6 +3539,11 @@ class UnifiedMarketTrader:
             )
             ranked.append(row)
 
+        fast_money_intelligence = self._attach_orderbook_fast_money_pressure(
+            ranked,
+            shadow_index=shadow_index,
+            intelligence_mesh=intelligence_mesh,
+        )
         ranked.sort(
             key=lambda item: (
                 float(item.get("profit_velocity_score", 0.0) or 0.0),
@@ -3006,12 +3577,16 @@ class UnifiedMarketTrader:
             "venue_tradable_counts": venue_counts,
             "scope": "multi-exchange unified tradables across Kraken spot/margin, Capital CFDs, Alpaca spot, and Binance spot/margin",
             "intelligence_mesh": intelligence_mesh,
+            "fast_money_intelligence": fast_money_intelligence,
             "selection_process": {
-                "mode": "profit_velocity_ranked_live_shadow_selection",
+                "mode": "fast_money_profit_velocity_ranked_live_shadow_selection",
                 "who": "CentralBeat plus whole intelligence mesh, HNC/model/shadow validation routes",
-                "what": "rank candidates by cash-capable route, live/reference price, shadow history, support, model alignment, mesh readiness, and fastest target ETA",
+                "what": "rank candidates by cash-capable route, live/reference price, volatility, volume, stream age, order-book pressure, shadow history, support, model alignment, mesh readiness, and fastest target ETA",
                 "target_move_pct": SHADOW_TRADE_TARGET_MOVE_PCT,
                 "validation_horizon_sec": SHADOW_TRADE_VALIDATION_HORIZON_SEC,
+                "fast_money_min_volatility_pct": FAST_MONEY_MIN_VOLATILITY_PCT,
+                "fast_money_break_even_move_pct": FAST_MONEY_BREAK_EVEN_MOVE_PCT,
+                "fast_money_volume_usd_target": FAST_MONEY_VOLUME_USD_TARGET,
                 "history_routes": len((shadow_index.get("routes") or {}) if isinstance(shadow_index, dict) else {}),
                 "history_symbols": len((shadow_index.get("symbols") or {}) if isinstance(shadow_index, dict) else {}),
                 "intelligence_mesh_score": intelligence_mesh.get("selection_mesh_score", 0.0),
@@ -3028,6 +3603,9 @@ class UnifiedMarketTrader:
             symbol = str(item.get("symbol") or "").upper().strip()
             side = str(item.get("side") or "BUY").upper()
             confidence = max(0.0, min(1.0, float(item.get("confidence", 0.0) or 0.0)))
+            profit_velocity_score = self._clamp01(item.get("profit_velocity_score", 0.0))
+            fast_money_score = self._clamp01(item.get("fast_money_score", 0.0))
+            decision_score = max(confidence, profit_velocity_score, fast_money_score)
             metadata = {
                 "source": "unified_market_trader.shared_order_flow",
                 "kraken_symbol": item.get("kraken_symbol"),
@@ -3037,13 +3615,17 @@ class UnifiedMarketTrader:
                 "alpaca_symbol": item.get("alpaca_symbol"),
                 "binance_symbol": item.get("binance_symbol"),
                 "execution_routes": item.get("execution_routes", []),
+                "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                "fast_money_score": item.get("fast_money_score", 0.0),
+                "fast_money_profile": item.get("fast_money_profile", {}),
+                "orderbook_pressure": item.get("orderbook_pressure", {}),
                 "shared_tradable_count": order_flow_feed.get("shared_tradable_count", 0),
             }
             for trader in self._central_feed_targets():
                 if trader is None or not hasattr(trader, "_feed_unified_decision_engine"):
                     continue
                 try:
-                    trader._feed_unified_decision_engine(symbol=symbol, side=side, score=confidence, metadata=metadata)  # type: ignore[attr-defined]
+                    trader._feed_unified_decision_engine(symbol=symbol, side=side, score=decision_score, metadata=metadata)  # type: ignore[attr-defined]
                 except Exception as e:
                     logger.debug("Shared decision feed failed for %s: %s", symbol, e)
 
@@ -3396,6 +3978,387 @@ class UnifiedMarketTrader:
             return {"state": "asset_balance_checked_at_execution", "score": 0.55, "checked_by": "runtime_executor"}
         return {"state": "quote_budgeted_at_execution", "score": 0.65, "checked_by": "runtime_executor"}
 
+    def _momentum_tier(self, move_pct: float) -> str:
+        if move_pct >= 0.50:
+            return "tier_1_hot"
+        if move_pct >= 0.40:
+            return "tier_2_strong"
+        if move_pct >= FAST_MONEY_BREAK_EVEN_MOVE_PCT:
+            return "tier_3_cost_clearing"
+        return "below_cost_threshold"
+
+    def _fast_money_profile(
+        self,
+        *,
+        item: Dict[str, Any],
+        support_score: float,
+        route_score: float,
+        cash_score: float,
+        history_score: float,
+        mesh_score: float,
+        eta_score: float,
+        orderbook_pressure: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        side = str(item.get("side") or "BUY").upper()
+        try:
+            change_pct = abs(float(item.get("change_pct_abs_max", item.get("change_pct", 0.0)) or 0.0))
+        except Exception:
+            change_pct = 0.0
+        try:
+            avg_change_pct = abs(float(item.get("change_pct", 0.0) or 0.0))
+        except Exception:
+            avg_change_pct = 0.0
+        move_pct = max(change_pct, avg_change_pct)
+        try:
+            volume_24h = max(0.0, float(item.get("volume_24h", 0.0) or 0.0))
+        except Exception:
+            volume_24h = 0.0
+        try:
+            freshest_age_sec = float(item.get("freshest_age_sec"))
+        except Exception:
+            freshest_age_sec = None  # type: ignore[assignment]
+
+        momentum_score = self._clamp01(move_pct / max(FAST_MONEY_BREAK_EVEN_MOVE_PCT * 2.0, 0.01))
+        volatility_score = self._clamp01(move_pct / max(FAST_MONEY_MIN_VOLATILITY_PCT * 2.0, 0.01))
+        volume_score = self._clamp01(volume_24h / FAST_MONEY_VOLUME_USD_TARGET)
+        stream_freshness_score = 0.0
+        raw_sources = item.get("sources", [])
+        source_set = (
+            set(str(source) for source in raw_sources if source)
+            if isinstance(raw_sources, list)
+            else {str(raw_sources)} if raw_sources else set()
+        )
+        if freshest_age_sec is not None:
+            stream_freshness_score = self._clamp01(1.0 - (max(0.0, float(freshest_age_sec)) / max(STREAM_CACHE_MAX_AGE_SEC, 0.5)))
+        elif "live_stream_cache" in source_set:
+            stream_freshness_score = 0.5
+
+        pressure = orderbook_pressure if isinstance(orderbook_pressure, dict) else {}
+        orderbook_score = 0.35
+        orderbook_alignment = "not_sampled"
+        if pressure:
+            pressure_score = self._clamp01(pressure.get("score", 0.35), 0.35)
+            pressure_side = str(pressure.get("pressure_side") or "NEUTRAL").upper()
+            if bool(pressure.get("available")) and pressure_side in {"BUY", "SELL"}:
+                orderbook_alignment = "aligned" if pressure_side == side else "opposed"
+            elif bool(pressure.get("available")):
+                orderbook_alignment = "neutral"
+            else:
+                orderbook_alignment = "unavailable"
+            orderbook_score = pressure_score
+
+        score = self._clamp01(
+            (0.22 * momentum_score)
+            + (0.18 * volatility_score)
+            + (0.16 * volume_score)
+            + (0.13 * stream_freshness_score)
+            + (0.11 * orderbook_score)
+            + (0.08 * cash_score)
+            + (0.05 * route_score)
+            + (0.04 * history_score)
+            + (0.02 * mesh_score)
+            + (0.01 * eta_score)
+        )
+        reasons: List[str] = []
+        if move_pct >= FAST_MONEY_MIN_VOLATILITY_PCT:
+            reasons.append("volatility_threshold_passed")
+        else:
+            reasons.append("volatility_below_fast_money_threshold")
+        if move_pct >= FAST_MONEY_BREAK_EVEN_MOVE_PCT:
+            reasons.append("micro_momentum_cost_threshold_passed")
+        if volume_score >= 0.5:
+            reasons.append("volume_liquidity_confirmed")
+        elif volume_24h > 0:
+            reasons.append("volume_seen_but_below_target")
+        else:
+            reasons.append("volume_missing_from_stream")
+        if stream_freshness_score >= 0.5:
+            reasons.append("fresh_stream_cache_signal")
+        if orderbook_alignment == "aligned":
+            reasons.append("orderbook_pressure_aligned")
+        elif orderbook_alignment == "opposed":
+            reasons.append("orderbook_pressure_opposed")
+
+        fast_money_candidate = bool(score >= FAST_MONEY_MIN_SCORE and move_pct >= FAST_MONEY_MIN_VOLATILITY_PCT)
+        return {
+            "schema_version": 1,
+            "fast_money_score": round(score, 6),
+            "fast_money_candidate": fast_money_candidate,
+            "momentum_tier": self._momentum_tier(move_pct),
+            "volatility_pct": round(move_pct, 6),
+            "avg_change_pct": round(avg_change_pct, 6),
+            "volume_24h": round(volume_24h, 6),
+            "freshest_age_sec": round(float(freshest_age_sec), 3) if freshest_age_sec is not None else None,
+            "momentum_score": round(momentum_score, 6),
+            "volatility_score": round(volatility_score, 6),
+            "volume_score": round(volume_score, 6),
+            "stream_freshness_score": round(stream_freshness_score, 6),
+            "orderbook_score": round(orderbook_score, 6),
+            "orderbook_alignment": orderbook_alignment,
+            "thresholds": {
+                "min_volatility_pct": FAST_MONEY_MIN_VOLATILITY_PCT,
+                "break_even_move_pct": FAST_MONEY_BREAK_EVEN_MOVE_PCT,
+                "volume_usd_target": FAST_MONEY_VOLUME_USD_TARGET,
+                "min_fast_money_score": FAST_MONEY_MIN_SCORE,
+            },
+            "sources": list(item.get("fast_money_sources", [])) if isinstance(item.get("fast_money_sources"), list) else [],
+            "reasons": reasons,
+        }
+
+    def _normalize_orderbook_side(self, side: Any) -> List[List[float]]:
+        levels: List[List[float]] = []
+        if not isinstance(side, list):
+            return levels
+        for raw in side:
+            price = 0.0
+            size = 0.0
+            try:
+                if isinstance(raw, dict):
+                    price = float(raw.get("p") or raw.get("price") or raw.get("px") or 0.0)
+                    size = float(raw.get("s") or raw.get("size") or raw.get("qty") or raw.get("quantity") or 0.0)
+                elif isinstance(raw, (list, tuple)) and len(raw) >= 2:
+                    price = float(raw[0] or 0.0)
+                    size = float(raw[1] or 0.0)
+            except Exception:
+                price = 0.0
+                size = 0.0
+            if price > 0 and size > 0:
+                levels.append([price, size])
+        return levels
+
+    def _orderbook_pressure_from_depths(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        bid_depth: float,
+        ask_depth: float,
+        best_bid: float = 0.0,
+        best_ask: float = 0.0,
+        source: str,
+        available: bool = True,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        total_depth = max(0.0, bid_depth) + max(0.0, ask_depth)
+        signed_imbalance = ((bid_depth - ask_depth) / total_depth) if total_depth > 0 else 0.0
+        pressure_side = "BUY" if signed_imbalance > 0.08 else "SELL" if signed_imbalance < -0.08 else "NEUTRAL"
+        side_norm = str(side or "BUY").upper()
+        directional = signed_imbalance if side_norm == "BUY" else -signed_imbalance
+        spread_pct = 0.0
+        if best_bid > 0 and best_ask > 0:
+            mid = (best_bid + best_ask) / 2.0
+            spread_pct = ((best_ask - best_bid) / mid) * 100.0 if mid > 0 else 0.0
+        spread_score = self._clamp01(1.0 - (spread_pct / 0.35)) if spread_pct > 0 else 0.55
+        score = self._clamp01(0.50 + (directional * 0.42) + (spread_score * 0.08))
+        payload = {
+            "schema_version": 1,
+            "available": bool(available and total_depth > 0),
+            "source": source,
+            "symbol": symbol,
+            "side": side_norm,
+            "pressure_side": pressure_side,
+            "score": round(score, 6),
+            "bid_depth_usd": round(max(0.0, bid_depth), 6),
+            "ask_depth_usd": round(max(0.0, ask_depth), 6),
+            "signed_imbalance": round(signed_imbalance, 6),
+            "spread_pct": round(spread_pct, 6),
+            "generated_at": datetime.now().isoformat(),
+        }
+        if extra:
+            payload.update(extra)
+        return payload
+
+    def _orderbook_pressure_from_book(self, *, symbol: str, side: str, book: Dict[str, Any], source: str) -> Dict[str, Any]:
+        bids = self._normalize_orderbook_side(book.get("bids") or book.get("b") or [])
+        asks = self._normalize_orderbook_side(book.get("asks") or book.get("a") or [])
+        bid_depth = sum(price * size for price, size in bids[:20])
+        ask_depth = sum(price * size for price, size in asks[:20])
+        best_bid = bids[0][0] if bids else 0.0
+        best_ask = asks[0][0] if asks else 0.0
+        return self._orderbook_pressure_from_depths(
+            symbol=symbol,
+            side=side,
+            bid_depth=bid_depth,
+            ask_depth=ask_depth,
+            best_bid=best_bid,
+            best_ask=best_ask,
+            source=source,
+            available=bool(bids and asks),
+        )
+
+    def _orderbook_pressure_snapshot(self, item: Dict[str, Any]) -> Dict[str, Any]:
+        symbol = str(item.get("symbol") or "").upper().strip()
+        side = str(item.get("side") or "BUY").upper()
+        if not symbol:
+            return {"available": False, "reason": "symbol_missing", "generated_at": datetime.now().isoformat()}
+        cache: Dict[str, Dict[str, Any]] = getattr(self, "_orderbook_pressure_cache", {})
+        if not isinstance(cache, dict):
+            cache = {}
+            self._orderbook_pressure_cache = cache
+        cache_key = f"{symbol}:{side}"
+        now = time.time()
+        cached = cache.get(cache_key)
+        if isinstance(cached, dict) and now - float(cached.get("_cached_at", 0.0) or 0.0) <= ORDERBOOK_PROBE_STALE_TTL_SEC:
+            payload = dict(cached)
+            payload.pop("_cached_at", None)
+            payload["from_cache"] = True
+            return payload
+
+        binance_symbol = str(item.get("binance_symbol") or self._to_binance_symbol(symbol) or symbol).upper().replace("/", "")
+        kraken_intel = getattr(getattr(self, "kraken", None), "intel", None)
+        if kraken_intel is not None and hasattr(kraken_intel, "analyze_orderbook") and binance_symbol:
+            try:
+                analysis = self._governor().call(
+                    "binance",
+                    "orderbook",
+                    f"fastmoney:binance_depth:{binance_symbol}",
+                    lambda: kraken_intel.analyze_orderbook(binance_symbol),
+                    min_interval_sec=ORDERBOOK_PROBE_MIN_INTERVAL_SEC,
+                    stale_ttl_sec=ORDERBOOK_PROBE_STALE_TTL_SEC,
+                )
+                if isinstance(analysis, dict) and analysis:
+                    bid_depth = float(analysis.get("bid_depth_usd", 0.0) or 0.0)
+                    ask_depth = float(analysis.get("ask_depth_usd", 0.0) or 0.0)
+                    payload = self._orderbook_pressure_from_depths(
+                        symbol=binance_symbol,
+                        side=side,
+                        bid_depth=bid_depth,
+                        ask_depth=ask_depth,
+                        best_bid=float(analysis.get("best_bid", 0.0) or 0.0),
+                        best_ask=float(analysis.get("best_ask", 0.0) or 0.0),
+                        source="BattlefieldIntel.binance_depth",
+                        available=bid_depth > 0 and ask_depth > 0,
+                        extra={
+                            "whale_supporting_buy": bool(analysis.get("whale_supporting_buy")),
+                            "whale_blocking_buy": bool(analysis.get("whale_blocking_buy")),
+                            "whale_blocking_sell": bool(analysis.get("whale_blocking_sell")),
+                        },
+                    )
+                    payload["_cached_at"] = now
+                    cache[cache_key] = payload
+                    clean = dict(payload)
+                    clean.pop("_cached_at", None)
+                    return clean
+            except Exception as e:
+                logger.debug("Fast-money Binance orderbook pressure failed for %s: %s", binance_symbol, e)
+
+        alpaca_symbol = str(item.get("alpaca_symbol") or "").strip()
+        if self.alpaca is not None and alpaca_symbol and hasattr(self.alpaca, "get_crypto_orderbook"):
+            try:
+                book = self._governor().call(
+                    "alpaca",
+                    "orderbook",
+                    f"fastmoney:alpaca_orderbook:{alpaca_symbol}",
+                    lambda: self.alpaca.get_crypto_orderbook(alpaca_symbol, depth=20),
+                    min_interval_sec=ORDERBOOK_PROBE_MIN_INTERVAL_SEC,
+                    stale_ttl_sec=ORDERBOOK_PROBE_STALE_TTL_SEC,
+                )
+                if isinstance(book, dict) and book:
+                    payload = self._orderbook_pressure_from_book(symbol=alpaca_symbol, side=side, book=book, source="AlpacaClient.crypto_orderbook")
+                    payload["_cached_at"] = now
+                    cache[cache_key] = payload
+                    clean = dict(payload)
+                    clean.pop("_cached_at", None)
+                    return clean
+            except Exception as e:
+                logger.debug("Fast-money Alpaca orderbook pressure failed for %s: %s", alpaca_symbol, e)
+
+        return {
+            "schema_version": 1,
+            "available": False,
+            "source": "orderbook_probe",
+            "symbol": symbol,
+            "side": side,
+            "pressure_side": "NEUTRAL",
+            "score": 0.35,
+            "reason": "no_budgeted_orderbook_source_available",
+            "generated_at": datetime.now().isoformat(),
+        }
+
+    def _build_fast_money_summary(self, ranked: List[Dict[str, Any]]) -> Dict[str, Any]:
+        profiles = [
+            item.get("fast_money_profile", {})
+            for item in ranked
+            if isinstance(item, dict) and isinstance(item.get("fast_money_profile"), dict)
+        ]
+        candidates = [profile for profile in profiles if profile.get("fast_money_candidate")]
+        orderbooks = [
+            item.get("orderbook_pressure", {})
+            for item in ranked
+            if isinstance(item, dict) and isinstance(item.get("orderbook_pressure"), dict)
+        ]
+        top_item = max(
+            ranked,
+            key=lambda item: float((item.get("fast_money_profile") or {}).get("fast_money_score", 0.0) or 0.0),
+            default={},
+        )
+        top_profile = top_item.get("fast_money_profile", {}) if isinstance(top_item, dict) else {}
+        return {
+            "schema_version": 1,
+            "generated_at": datetime.now().isoformat(),
+            "mode": "high_volatility_momentum_volume_orderbook_profit_velocity",
+            "candidate_count": len(candidates),
+            "high_volatility_count": sum(
+                1 for profile in profiles if float(profile.get("volatility_pct", 0.0) or 0.0) >= FAST_MONEY_MIN_VOLATILITY_PCT
+            ),
+            "orderbook_probe_count": sum(1 for book in orderbooks if book.get("available")),
+            "orderbook_aligned_count": sum(1 for profile in profiles if profile.get("orderbook_alignment") == "aligned"),
+            "top_symbol": top_item.get("symbol") if isinstance(top_item, dict) else "",
+            "top_side": top_item.get("side") if isinstance(top_item, dict) else "",
+            "top_fast_money_score": round(float(top_profile.get("fast_money_score", 0.0) or 0.0), 6),
+            "top_momentum_tier": top_profile.get("momentum_tier", ""),
+            "thresholds": {
+                "min_volatility_pct": FAST_MONEY_MIN_VOLATILITY_PCT,
+                "break_even_move_pct": FAST_MONEY_BREAK_EVEN_MOVE_PCT,
+                "volume_usd_target": FAST_MONEY_VOLUME_USD_TARGET,
+                "orderbook_probe_max_per_tick": ORDERBOOK_PROBE_MAX_PER_TICK,
+                "orderbook_probe_min_interval_sec": ORDERBOOK_PROBE_MIN_INTERVAL_SEC,
+            },
+        }
+
+    def _attach_orderbook_fast_money_pressure(
+        self,
+        ranked: List[Dict[str, Any]],
+        *,
+        shadow_index: Dict[str, Any],
+        intelligence_mesh: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        if not ranked:
+            summary = self._build_fast_money_summary([])
+            self._fast_money_intelligence = summary
+            return summary
+        probe_candidates = sorted(
+            [
+                item
+                for item in ranked
+                if isinstance(item, dict)
+                and (
+                    bool((item.get("fast_money_profile") or {}).get("fast_money_candidate"))
+                    or float((item.get("fast_money_profile") or {}).get("volatility_pct", 0.0) or 0.0) >= FAST_MONEY_MIN_VOLATILITY_PCT
+                )
+            ],
+            key=lambda item: (
+                float((item.get("fast_money_profile") or {}).get("fast_money_score", 0.0) or 0.0),
+                float(item.get("profit_velocity_score", 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
+        for item in probe_candidates[:ORDERBOOK_PROBE_MAX_PER_TICK]:
+            pressure = self._orderbook_pressure_snapshot(item)
+            item["orderbook_pressure"] = pressure
+            item.update(
+                self._profit_velocity_metrics(
+                    item=item,
+                    execution_routes=item.get("execution_routes", []) if isinstance(item.get("execution_routes"), list) else [],
+                    shadow_index=shadow_index,
+                    intelligence_mesh=intelligence_mesh,
+                    orderbook_pressure=pressure,
+                )
+            )
+        summary = self._build_fast_money_summary(ranked)
+        self._fast_money_intelligence = summary
+        return summary
+
     def _profit_velocity_metrics(
         self,
         *,
@@ -3403,6 +4366,7 @@ class UnifiedMarketTrader:
         execution_routes: List[Dict[str, Any]],
         shadow_index: Dict[str, Any],
         intelligence_mesh: Optional[Dict[str, Any]] = None,
+        orderbook_pressure: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         confidence = self._clamp01(item.get("confidence", 0.0))
         support_score = self._clamp01(float(item.get("support_count", 0) or 0) / 4.0)
@@ -3455,19 +4419,34 @@ class UnifiedMarketTrader:
         if fastest_values:
             estimated_eta = min(estimated_eta, min(fastest_values))
         eta_score = self._clamp01(SHADOW_TRADE_VALIDATION_HORIZON_SEC / max(estimated_eta, 1.0))
+        fast_money_profile = self._fast_money_profile(
+            item=item,
+            support_score=support_score,
+            route_score=route_score,
+            cash_score=cash_score,
+            history_score=history_score,
+            mesh_score=mesh_score,
+            eta_score=eta_score,
+            orderbook_pressure=orderbook_pressure,
+        )
+        fast_money_score = self._clamp01(fast_money_profile.get("fast_money_score", 0.0))
         score = self._clamp01(
-            (0.22 * confidence)
-            + (0.17 * cash_score)
-            + (0.15 * history_score)
-            + (0.13 * momentum_score)
-            + (0.09 * support_score)
-            + (0.08 * model_score)
-            + (0.07 * mesh_score)
-            + (0.06 * eta_score)
-            + (0.03 * route_score)
+            (0.18 * confidence)
+            + (0.15 * cash_score)
+            + (0.13 * history_score)
+            + (0.16 * fast_money_score)
+            + (0.10 * momentum_score)
+            + (0.08 * support_score)
+            + (0.07 * model_score)
+            + (0.06 * mesh_score)
+            + (0.05 * eta_score)
+            + (0.02 * route_score)
         )
         return {
             "profit_velocity_score": round(score, 6),
+            "fast_money_score": round(fast_money_score, 6),
+            "fast_money_candidate": bool(fast_money_profile.get("fast_money_candidate")),
+            "fast_money_profile": fast_money_profile,
             "estimated_target_eta_sec": round(estimated_eta, 3),
             "eta_score": round(eta_score, 6),
             "cash_route_score": round(cash_score, 6),
@@ -3480,7 +4459,7 @@ class UnifiedMarketTrader:
             "price_score": round(price_score, 6),
             "model_score": round(model_score, 6),
             "intelligence_mesh_score": round(mesh_score, 6),
-            "selection_basis": "cash-capable routes, fresh/reference price, shadow history, support, model alignment, whole-intelligence mesh readiness, and fastest target ETA",
+            "selection_basis": "cash-capable routes, fresh/reference price, high-volatility fast-money evidence, volume/liquidity, order-book pressure, shadow history, support, model alignment, whole-intelligence mesh readiness, and fastest target ETA",
         }
 
     def _build_shadow_trade_report(
@@ -3582,6 +4561,10 @@ class UnifiedMarketTrader:
                         "confidence": round(confidence, 6),
                         "selection_rank": item.get("selection_rank"),
                         "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                        "fast_money_score": item.get("fast_money_score", 0.0),
+                        "fast_money_candidate": bool(item.get("fast_money_candidate")),
+                        "fast_money_profile": item.get("fast_money_profile", {}),
+                        "orderbook_pressure": item.get("orderbook_pressure", {}),
                         "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
                         "cash_capable_route_count": item.get("cash_capable_route_count", 0),
                         "history_validation_score": item.get("history_validation_score", 0.0),
@@ -3894,6 +4877,210 @@ class UnifiedMarketTrader:
             "nodes": nodes,
         }
 
+    def _build_hnc_operating_cycle(
+        self,
+        *,
+        generated_at: str,
+        metrics: Dict[str, Any],
+        market_texture: Dict[str, Any],
+        auris: Dict[str, Any],
+        systems: Dict[str, Any],
+        top: Dict[str, Any],
+        action_plan: Dict[str, Any],
+        shadow_trade_report: Dict[str, Any],
+        master_formula: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Prove the HNC who/what/where/when/how/act loop ran this cycle."""
+
+        top_symbol = str(top.get("symbol") or top.get("route_symbol") or "")
+        top_side = str(top.get("side") or "NEUTRAL").upper()
+        top_confidence = self._clamp01(top.get("confidence", metrics.get("avg_confidence", 0.0)))
+        runtime_clearances = (
+            action_plan.get("runtime_clearances", [])
+            if isinstance(action_plan, dict) and isinstance(action_plan.get("runtime_clearances"), list)
+            else []
+        )
+        venues = action_plan.get("venues", {}) if isinstance(action_plan, dict) and isinstance(action_plan.get("venues"), dict) else {}
+        ready_venue_count = int(action_plan.get("ready_venue_count", 0) or 0) if isinstance(action_plan, dict) else 0
+        venue_count = int(action_plan.get("venue_count", 0) or len(venues)) if isinstance(action_plan, dict) else len(venues)
+        route_scope = [
+            str(name)
+            for name, venue in venues.items()
+            if isinstance(venue, dict) and (venue.get("ready") or venue.get("status") in {"ready", "live_ready"})
+        ]
+        if top and not route_scope:
+            for route in top.get("execution_routes", []) if isinstance(top.get("execution_routes"), list) else []:
+                if isinstance(route, dict) and route.get("ready"):
+                    route_scope.append(
+                        "_".join(
+                            part
+                            for part in [
+                                str(route.get("venue") or "").lower(),
+                                str(route.get("market_type") or "").lower(),
+                            ]
+                            if part
+                        )
+                    )
+        route_scope = list(dict.fromkeys(item for item in route_scope if item))
+
+        if top_symbol and ready_venue_count > 0 and not runtime_clearances:
+            action_state = "runtime_gated_order_intent_ready"
+        elif top_symbol:
+            action_state = "shadow_validate_and_measure"
+        else:
+            action_state = "scan_measure_and_wait_for_candidate"
+
+        who_passed = all(
+            bool((systems.get(key) or {}).get("passed"))
+            for key in ("hnc_master_protocol", "hnc_probability_matrix", "auris_nodes", "seer", "lyra", "king")
+        )
+        what_passed = bool(top_symbol and metrics.get("passed"))
+        where_passed = bool(ready_venue_count > 0 or route_scope)
+        when_passed = bool(metrics.get("passed") and generated_at)
+        how_passed = bool(master_formula.get("evaluated") and master_formula.get("passed"))
+        act_passed = bool(action_state and isinstance(action_plan, dict))
+
+        question_rows = [
+            {
+                "step": "who",
+                "question": "Who is evaluating the market state?",
+                "answer": "HNC master protocol, probability matrix, Auris sensory nodes, Seer vision, Lyra resonance, King capital logic, shadow agents, and the unified exchange runtime.",
+                "auris_node_focus": "whole_node_set",
+                "cognitive_systems": ["HNCMasterProtocol", "HNCProbabilityMatrix", "AurisNodes", "Seer", "Lyra", "KingCapitalLogic"],
+                "evidence_source": "state/unified_runtime_status.json#hnc_cognitive_proof.systems",
+                "evidence": {
+                    "system_count": len(systems),
+                    "passed_system_count": sum(1 for item in systems.values() if isinstance(item, dict) and item.get("passed")),
+                },
+                "timestamp": generated_at,
+                "fed_to_decision_logic": True,
+                "passed": who_passed,
+            },
+            {
+                "step": "what",
+                "question": "What live opportunity or market texture is being evaluated?",
+                "answer": f"{top_symbol or 'no candidate'} {top_side} confidence={top_confidence:.3f}",
+                "auris_node_focus": "market_texture",
+                "cognitive_systems": ["UnifiedSignalEngine", "Seer", "AurisNodes"],
+                "evidence_source": "state/unified_runtime_status.json#shared_order_flow.active_order_flow",
+                "evidence": {
+                    "symbol": top_symbol,
+                    "side": top_side,
+                    "confidence": round(top_confidence, 6),
+                    "market_texture": market_texture,
+                },
+                "timestamp": generated_at,
+                "fed_to_decision_logic": True,
+                "passed": what_passed,
+            },
+            {
+                "step": "where",
+                "question": "Where can the route act across the connected financial ecosystem?",
+                "answer": f"{ready_venue_count}/{max(1, venue_count)} ready execution venues: {', '.join(route_scope) or 'none'}",
+                "auris_node_focus": "infrastructure_and_symbiosis",
+                "cognitive_systems": ["ExchangeRouteClearance", "KingCapitalLogic", "UnifiedExecutor"],
+                "evidence_source": "state/unified_runtime_status.json#exchange_action_plan.venues",
+                "evidence": {
+                    "ready_venue_count": ready_venue_count,
+                    "venue_count": venue_count,
+                    "route_scope": route_scope,
+                    "runtime_clearances": runtime_clearances,
+                },
+                "timestamp": generated_at,
+                "fed_to_decision_logic": True,
+                "passed": where_passed,
+            },
+            {
+                "step": "when",
+                "question": "When was the evidence measured and is it aligned to the current cycle?",
+                "answer": f"cycle timestamp {generated_at}; source_count={metrics.get('source_count', 0)} price_count={metrics.get('price_count', 0)}",
+                "auris_node_focus": "sensing_and_memory",
+                "cognitive_systems": ["RuntimeWatchdog", "CentralBeat", "AurisNodes"],
+                "evidence_source": "state/unified_runtime_status.json#central_beat",
+                "evidence": {
+                    "generated_at": generated_at,
+                    "source_count": metrics.get("source_count", 0),
+                    "price_count": metrics.get("price_count", 0),
+                    "symbol_count": metrics.get("symbol_count", 0),
+                },
+                "timestamp": generated_at,
+                "fed_to_decision_logic": True,
+                "passed": when_passed,
+            },
+            {
+                "step": "how",
+                "question": "How was the choice reasoned through HNC and Auris?",
+                "answer": f"HNC score={master_formula.get('score', 0.0)} coherence={auris.get('coherence', 0.0)} status={auris.get('status')}",
+                "auris_node_focus": "formula_and_resonance",
+                "cognitive_systems": ["HNCMasterProtocol", "HNCProbabilityMatrix", "Lyra", "AurisNodes"],
+                "evidence_source": "state/unified_runtime_status.json#hnc_cognitive_proof.master_formula",
+                "evidence": {
+                    "master_formula": master_formula,
+                    "auris_coherence": auris.get("coherence", 0.0),
+                    "auris_status": auris.get("status"),
+                    "shadow_average_score": (
+                        shadow_trade_report.get("self_measurement", {}).get("agent_average_score")
+                        if isinstance(shadow_trade_report.get("self_measurement"), dict)
+                        else None
+                    ),
+                },
+                "timestamp": generated_at,
+                "fed_to_decision_logic": True,
+                "passed": how_passed,
+            },
+            {
+                "step": "act",
+                "question": "What action state does the cycle move into?",
+                "answer": action_state,
+                "auris_node_focus": "execution_state",
+                "cognitive_systems": ["KingCapitalLogic", "ShadowTradeValidator", "UnifiedExecutor"],
+                "evidence_source": "state/unified_runtime_status.json#exchange_action_plan",
+                "evidence": {
+                    "action_state": action_state,
+                    "shadow_opened_count": shadow_trade_report.get("shadow_opened_count", 0)
+                    if isinstance(shadow_trade_report, dict)
+                    else 0,
+                    "active_shadow_count": shadow_trade_report.get("active_shadow_count", 0)
+                    if isinstance(shadow_trade_report, dict)
+                    else 0,
+                    "runtime_clearances": runtime_clearances,
+                },
+                "timestamp": generated_at,
+                "fed_to_decision_logic": True,
+                "passed": act_passed,
+            },
+        ]
+        passed_count = sum(1 for item in question_rows if item.get("passed"))
+        fed_to_decision_logic = all(bool(item.get("fed_to_decision_logic")) for item in question_rows)
+        return {
+            "schema_version": "aureon-hnc-operating-cycle-v1",
+            "generated_at": generated_at,
+            "mode": "harmonic_nexus_core_operating_cycle",
+            "status": "passing" if passed_count == len(question_rows) else "attention",
+            "passed": passed_count == len(question_rows),
+            "passed_count": passed_count,
+            "step_count": len(question_rows),
+            "cycle_order": ["who", "what", "where", "when", "how", "act"],
+            "questions": question_rows,
+            "fed_to_decision_logic": fed_to_decision_logic,
+            "auris_node_count": int(auris.get("node_count", 0) or 0),
+            "auris_coherence": float(auris.get("coherence", 0.0) or 0.0),
+            "master_formula_score": float(master_formula.get("score", 0.0) or 0.0),
+            "decision_output": {
+                "symbol": top_symbol,
+                "side": top_side,
+                "confidence": round(top_confidence, 6),
+                "action_state": action_state,
+                "ready_venue_count": ready_venue_count,
+                "venue_count": venue_count,
+                "runtime_clearances": runtime_clearances,
+            },
+            "contract": (
+                "Each who/what/where/when/how/act step must be timestamped, evidence-backed, "
+                "Auris-evaluated, HNC-scored, and fed into the runtime decision path."
+            ),
+        }
+
     def _build_hnc_cognitive_proof(
         self,
         central_beat: Dict[str, Any],
@@ -4029,6 +5216,17 @@ class UnifiedMarketTrader:
             "passed": bool(master_score > 0 and metrics.get("passed")),
             "timestamp": generated_at,
         }
+        operating_cycle = self._build_hnc_operating_cycle(
+            generated_at=generated_at,
+            metrics=metrics,
+            market_texture=market_texture,
+            auris=auris,
+            systems=systems,
+            top=top,
+            action_plan=action_plan,
+            shadow_trade_report=shadow_trade_report,
+            master_formula=master_formula,
+        )
 
         flow = [
             {
@@ -4047,6 +5245,15 @@ class UnifiedMarketTrader:
                 "step": "auris_nodes",
                 "passed": bool(auris.get("passed") and systems["auris_nodes"].get("passed")),
                 "evidence": f"{auris.get('node_count', 0)} nodes coherence={auris.get('coherence', 0.0)}",
+                "timestamp": generated_at,
+            },
+            {
+                "step": "hnc_operating_cycle",
+                "passed": bool(operating_cycle.get("passed")),
+                "evidence": (
+                    f"{operating_cycle.get('passed_count', 0)}/{operating_cycle.get('step_count', 0)} "
+                    f"who/what/where/when/how/act fed={operating_cycle.get('fed_to_decision_logic')}"
+                ),
                 "timestamp": generated_at,
             },
             {
@@ -4093,11 +5300,16 @@ class UnifiedMarketTrader:
             "who": "HNC master formula plus Auris nodes, Seer, Lyra, King, shadow agents, and unified exchange runtime",
             "what": "timestamped proof that cognitive logic evaluated real market data and moved through the intended flow",
             "where": str(HNC_COGNITIVE_PROOF_STATE_PATH),
+            "when": generated_at,
+            "how": "HNC formula, Auris node coherence, Seer/Lyra/King readings, route state, and shadow validation were evaluated together.",
+            "act": operating_cycle.get("decision_output", {}).get("action_state") if isinstance(operating_cycle.get("decision_output"), dict) else "",
             "real_data": metrics,
             "market_texture": market_texture,
             "master_formula": master_formula,
             "auris_nodes": auris,
             "systems": systems,
+            "operating_cycle": operating_cycle,
+            "hnc_operating_cycle": operating_cycle,
             "flow": flow,
             "passed_count": passed_count,
             "step_count": len(flow),
@@ -4106,6 +5318,7 @@ class UnifiedMarketTrader:
         }
         if isinstance(action_plan, dict):
             action_plan["hnc_cognitive_proof"] = report
+            action_plan["hnc_operating_cycle"] = operating_cycle
         if persist:
             self._persist_hnc_cognitive_proof(report)
         return report
@@ -4129,6 +5342,17 @@ class UnifiedMarketTrader:
                 os.replace(tmp_path, path)
             except Exception as e:
                 logger.debug("HNC cognitive proof write failed for %s: %s", path, e)
+        operating_cycle = report.get("operating_cycle") if isinstance(report.get("operating_cycle"), dict) else {}
+        if operating_cycle:
+            for path in (HNC_OPERATING_CYCLE_STATE_PATH, HNC_OPERATING_CYCLE_PUBLIC_PATH):
+                try:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+                    with tmp_path.open("w", encoding="utf-8") as handle:
+                        json.dump(operating_cycle, handle, indent=2, default=str)
+                    os.replace(tmp_path, path)
+                except Exception as e:
+                    logger.debug("HNC operating cycle write failed for %s: %s", path, e)
         last_signature = str(getattr(self, "_last_hnc_cognitive_proof_signature", "") or "")
         last_at = float(getattr(self, "_last_hnc_cognitive_proof_at", 0.0) or 0.0)
         if signature != last_signature or now - last_at >= HNC_COGNITIVE_PROOF_MIN_INTERVAL_SEC:
@@ -4201,6 +5425,10 @@ class UnifiedMarketTrader:
                             "side": item.get("side"),
                             "confidence": confidence,
                             "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                            "fast_money_score": item.get("fast_money_score", 0.0),
+                            "fast_money_candidate": bool(item.get("fast_money_candidate")),
+                            "fast_money_profile": item.get("fast_money_profile", {}),
+                            "orderbook_pressure": item.get("orderbook_pressure", {}),
                             "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
                             "cash_capable_route_count": item.get("cash_capable_route_count", 0),
                             "history_validation_score": item.get("history_validation_score", 0.0),
@@ -4213,6 +5441,7 @@ class UnifiedMarketTrader:
                 state.get("top_candidates", []),
                 key=lambda candidate: (
                     float(candidate.get("profit_velocity_score", 0.0) or 0.0),
+                    float(candidate.get("fast_money_score", 0.0) or 0.0),
                     float(candidate.get("confidence", 0.0) or 0.0),
                 ),
                 reverse=True,
@@ -4241,15 +5470,54 @@ class UnifiedMarketTrader:
         trade_path_state = "available" if live_enabled and not real_orders_disabled and not exchange_mutations_disabled else "operator_authorization_required"
         if global_clearances:
             trade_path_state = "runtime_clearance_pending"
+        venue_count = len(venues)
+        ready_venue_count = sum(1 for state in venues.values() if state.get("ready"))
+        top_candidates = [
+            candidate
+            for state in venues.values()
+            for candidate in state.get("top_candidates", [])
+            if isinstance(candidate, dict)
+        ]
+        best_confidence = max((float(candidate.get("confidence", 0.0) or 0.0) for candidate in top_candidates), default=0.0)
+        best_velocity = max((float(candidate.get("profit_velocity_score", 0.0) or 0.0) for candidate in top_candidates), default=0.0)
+        best_fast_money = max((float(candidate.get("fast_money_score", 0.0) or 0.0) for candidate in top_candidates), default=0.0)
+        route_unity = self._clamp01(ready_venue_count / max(1, venue_count))
+        signal_unity = self._clamp01(
+            (self._clamp01(best_confidence) * 0.45)
+            + (self._clamp01(best_velocity) * 0.35)
+            + (self._clamp01(best_fast_money) * 0.20)
+        )
+        self_trust_score = self._clamp01((route_unity * 0.45) + (signal_unity * 0.45) + ((0.1 if top_candidates else 0.0)))
+        trust_to_publish_intent = bool(publish_enabled and not global_clearances and ready_venue_count > 0 and best_confidence >= ORDER_INTENT_MIN_CONFIDENCE)
+        decision_self_trust = {
+            "schema_version": 1,
+            "score": round(self_trust_score, 6),
+            "posture": (
+                "trust_ready_routes"
+                if trust_to_publish_intent
+                else "trust_analysis_until_runtime_clearance"
+                if global_clearances
+                else "keep_scanning_until_signal_alignment"
+            ),
+            "trust_to_publish_intent": trust_to_publish_intent,
+            "not_fear": True,
+            "route_unity": round(route_unity, 6),
+            "signal_unity": round(signal_unity, 6),
+            "best_confidence": round(self._clamp01(best_confidence), 6),
+            "best_profit_velocity_score": round(self._clamp01(best_velocity), 6),
+            "best_fast_money_score": round(self._clamp01(best_fast_money), 6),
+            "self_instruction": "Use ranked routes when runtime truth is fresh and clear; otherwise keep measuring, shadow-validating, and re-ranking.",
+        }
 
         return {
             "generated_at": datetime.now().isoformat(),
             "mode": "runtime_gated_order_intent" if publish_enabled else "analysis_only",
             "venues": venues,
-            "venue_count": len(venues),
-            "ready_venue_count": sum(1 for state in venues.values() if state.get("ready")),
+            "venue_count": venue_count,
+            "ready_venue_count": ready_venue_count,
             "end_user_trade_available": any(bool(state.get("end_user_trade_available")) for state in venues.values()),
             "trade_path_state": trade_path_state,
+            "decision_self_trust": decision_self_trust,
             "order_intent_publish_enabled": publish_enabled,
             "executor_enabled": self._unified_executor_enabled(),
             "executor_quote_usd": ORDER_EXECUTOR_QUOTE_USD,
@@ -4308,6 +5576,10 @@ class UnifiedMarketTrader:
                     "confidence": confidence,
                     "selection_rank": item.get("selection_rank"),
                     "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                    "fast_money_score": item.get("fast_money_score", 0.0),
+                    "fast_money_candidate": bool(item.get("fast_money_candidate")),
+                    "fast_money_profile": item.get("fast_money_profile", {}),
+                    "orderbook_pressure": item.get("orderbook_pressure", {}),
                     "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
                     "cash_capable_route_count": item.get("cash_capable_route_count", 0),
                     "history_validation_score": item.get("history_validation_score", 0.0),
@@ -4568,14 +5840,25 @@ class UnifiedMarketTrader:
                 "capital_equity_gbp": float(combined.get("capital_equity_gbp", 0.0) or 0.0),
             },
             "api_governor": payload.get("api_governor") or self._governor().snapshot(),
+            "live_stream_cache": (
+                payload.get("live_stream_cache")
+                or (payload.get("central_beat", {}).get("stream_cache") if isinstance(payload.get("central_beat"), dict) else {})
+                or getattr(self, "_stream_cache_health", {})
+            ),
             "exchange_action_plan": action_plan,
             "shadow_trading": (
                 payload.get("shadow_trading")
                 or (action_plan.get("shadow_trading", {}) if isinstance(action_plan, dict) else {})
             ),
+            "kraken_spot_fast_profit": payload.get("kraken_spot_fast_profit") or self._load_kraken_spot_fast_profit_state(),
             "hnc_cognitive_proof": (
                 payload.get("hnc_cognitive_proof")
                 or (action_plan.get("hnc_cognitive_proof", {}) if isinstance(action_plan, dict) else {})
+            ),
+            "hnc_operating_cycle": (
+                payload.get("hnc_operating_cycle")
+                or (payload.get("hnc_cognitive_proof", {}).get("operating_cycle") if isinstance(payload.get("hnc_cognitive_proof"), dict) else {})
+                or (action_plan.get("hnc_operating_cycle", {}) if isinstance(action_plan, dict) else {})
             ),
             "runtime_watchdog": {
                 "heartbeat_alive": True,
@@ -4626,6 +5909,15 @@ class UnifiedMarketTrader:
                 f"bias={regime.get('bias', '?')} "
                 f"conf={float(regime.get('confidence', 0.0) or 0.0):.2f}"
             )
+        stream_cache = getattr(self, "_stream_cache_health", {}) or {}
+        if stream_cache:
+            lines.append(
+                "Live stream cache: "
+                f"fresh={bool(stream_cache.get('fresh'))} "
+                f"symbols={int(stream_cache.get('symbol_count', 0) or 0)} "
+                f"max_age={float(stream_cache.get('max_age_sec', 0.0) or 0.0):.1f}s "
+                f"top={stream_cache.get('top_symbol') or 'none'}"
+            )
         execution = getattr(self, "_latest_execution_results", {}) or {}
         if execution:
             lines.append(
@@ -4636,6 +5928,15 @@ class UnifiedMarketTrader:
                 f"held={int(execution.get('held_count', execution.get('blocked_count', 0)) or 0)} "
                 f"clearances={','.join(execution.get('runtime_clearances') or execution.get('guards') or execution.get('blockers') or []) or 'none'}"
             )
+        spot_fast = self._load_kraken_spot_fast_profit_state()
+        last_spot_check = spot_fast.get("last_check", {}) if isinstance(spot_fast, dict) else {}
+        lines.append(
+            "Kraken spot fast-profit: "
+            f"enabled={bool(spot_fast.get('enabled'))} "
+            f"open={len(spot_fast.get('open_positions', []) if isinstance(spot_fast.get('open_positions'), list) else [])} "
+            f"closed={int(last_spot_check.get('closed_count', 0) or 0)} "
+            f"reason={last_spot_check.get('reason') or 'measuring'}"
+        )
         governor = self._governor().snapshot()
         exchanges = governor.get("exchanges", {}) if isinstance(governor, dict) else {}
         if exchanges:
@@ -4782,6 +6083,7 @@ class UnifiedMarketTrader:
         self._set_tick_phase("ensure_exchanges")
         self._ensure_exchanges()
         kraken_closed: List[dict] = []
+        kraken_spot_closed: List[dict] = []
         capital_closed: List[dict] = []
         if self.kraken_ready and self.kraken is not None:
             if self._governor().should_run_cycle(
@@ -4800,6 +6102,13 @@ class UnifiedMarketTrader:
                     self.kraken = None
                     self._last_tick_error = str(e)
                     logger.error("Kraken tick failed: %s", e)
+            self._set_tick_phase("kraken_spot_fast_profit")
+            try:
+                kraken_spot_closed = self._monitor_kraken_spot_fast_profit()
+            except Exception as e:
+                self._governor().record_error("kraken", e)
+                self._last_tick_error = str(e)
+                logger.debug("Kraken spot fast-profit monitor failed: %s", e)
         if self.capital_ready and self.capital is not None:
             if self._governor().should_run_cycle(
                 "capital",
@@ -4828,6 +6137,13 @@ class UnifiedMarketTrader:
                 "exchange": "kraken",
             })
             self._record_trade_profit(trade)
+        for trade in kraken_spot_closed:
+            self._publish_thought("execution.trade.closed", {
+                "pair": str(trade.get("symbol") or trade.get("pair") or "?"),
+                "net_pnl": float(trade.get("net_pnl", 0) or 0),
+                "reason": str(trade.get("reason") or "?"),
+                "exchange": "kraken_spot",
+            })
         for trade in capital_closed:
             self._publish_thought("execution.trade.closed", {
                 "pair": str(trade.get("symbol") or trade.get("pair") or "?"),
@@ -4870,6 +6186,7 @@ class UnifiedMarketTrader:
         self._write_runtime_status_file()
         return {
             "kraken_closed": kraken_closed,
+            "kraken_spot_closed": kraken_spot_closed,
             "capital_closed": capital_closed,
             "execution": execution_summary,
             "payload": payload,

@@ -135,6 +135,12 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._last_slot_fill_attempt = {"BUY": 0.0, "SELL": 0.0}
         trader._harmonic_wiring_audit = {}
         trader._harmonic_wiring_audit_at = time.time()
+        trader._prev_change_pct = {}
+        trader._last_wave_factors = {}
+        trader._last_fast_profit_capture = {}
+        trader._fast_profit_capture_by_deal = {}
+        trader._lambda_engine = None
+        trader._probability_nexus = None
         trader._ensure_live_refresh = lambda: None
         trader._required_tp_pct_for_profit = lambda price, size: (CAPITAL_MIN_PROFIT_GBP / max(price * size, 0.0001)) * 100.0
         return trader
@@ -732,7 +738,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         score, direction = trader._score_symbol(
             "SILVER",
             {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45, "max_spread_pct": 0.15, "momentum_threshold": 0.20},
-            {"price": 100.0, "bid": 99.9, "ask": 100.1, "change_pct": -2.5},
+            {"price": 100.0, "bid": 99.99, "ask": 100.01, "change_pct": -2.5, "high": 105.0, "low": 95.0},
         )
 
         self.assertGreater(score, 0.0)
@@ -1354,6 +1360,73 @@ class TestCapitalCFDSync(unittest.TestCase):
             CFD_FLAGS["profit_only_closes"] = old_profit_only
             CFD_FLAGS["penny_take_profit"] = old_penny
 
+    def test_monitor_positions_fast_profit_capture_closes_tradeable_profit(self):
+        trader = self._build_trader(ClientStub(
+            close_result={"success": True},
+            market_snapshot={
+                "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
+                "snapshot": {"marketStatus": "TRADEABLE", "bid": 100.05, "offer": 100.07},
+                "dealingRules": {"minDealSize": {"value": 1}},
+            },
+        ))
+        trader.positions = [
+            CFDPosition(
+                symbol="SILVER",
+                deal_id="DFAST",
+                epic="CS.D.SILVER.CFD.IP",
+                direction="BUY",
+                size=1,
+                entry_price=100.0,
+                tp_price=101.0,
+                sl_price=99.0,
+                asset_class="commodity",
+                opened_at=time.time() - 5.0,
+                current_price=100.06,
+            )
+        ]
+
+        closed = trader._monitor_positions()
+
+        self.assertEqual(len(closed), 1)
+        self.assertEqual(trader.positions, [])
+        self.assertIn("FAST_PROFIT_CAPTURE", closed[0]["reason"])
+        self.assertGreater(closed[0]["net_pnl"], 0.0)
+        self.assertTrue(closed[0]["fast_profit_capture"]["market_active_for_close"])
+        self.assertEqual(trader._last_fast_profit_capture["ready_to_capture"], 1)
+
+    def test_monitor_positions_fast_profit_capture_holds_when_market_closed(self):
+        trader = self._build_trader(ClientStub(
+            close_result={"success": True},
+            market_snapshot={
+                "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
+                "snapshot": {"marketStatus": "CLOSED", "bid": 100.05, "offer": 100.07},
+                "dealingRules": {"minDealSize": {"value": 1}},
+            },
+        ))
+        trader.positions = [
+            CFDPosition(
+                symbol="SILVER",
+                deal_id="DCLOSED",
+                epic="CS.D.SILVER.CFD.IP",
+                direction="BUY",
+                size=1,
+                entry_price=100.0,
+                tp_price=101.0,
+                sl_price=99.0,
+                asset_class="commodity",
+                opened_at=time.time() - 5.0,
+                current_price=100.06,
+            )
+        ]
+
+        closed = trader._monitor_positions()
+
+        self.assertEqual(closed, [])
+        self.assertEqual(len(trader.positions), 1)
+        latest_check = trader._last_fast_profit_capture["checks"][0]
+        self.assertFalse(latest_check["market_active_for_close"])
+        self.assertIn("market_not_active:CLOSED", latest_check["reason"])
+
     def test_score_symbol_uses_central_beat_alignment(self):
         trader = self._build_trader(ClientStub())
         trader._effective_tp_pct = lambda price, size, cfg: 0.5
@@ -1361,12 +1434,13 @@ class TestCapitalCFDSync(unittest.TestCase):
             "SILVER": {"side": "BUY", "support_count": 3, "strength": 0.9},
         }
         trader._central_beat_regime = {"bias": "BUY", "confidence": 0.8}
-        ticker = {"price": 100.0, "bid": 99.9, "ask": 100.1, "change_pct": 0.4}
+        ticker = {"price": 100.0, "bid": 99.99, "ask": 100.01, "change_pct": 0.4, "high": 101.0, "low": 99.0}
         cfg = {"max_spread_pct": 0.01, "momentum_threshold": 0.1, "size": 1.0}
         boosted_score, direction = trader._score_symbol("SILVER", cfg, ticker)
 
         trader._central_beat_symbols = {}
         trader._central_beat_regime = {}
+        trader._prev_change_pct = {}
         plain_score, _ = trader._score_symbol("SILVER", cfg, ticker)
 
         self.assertEqual(direction, "BUY")
