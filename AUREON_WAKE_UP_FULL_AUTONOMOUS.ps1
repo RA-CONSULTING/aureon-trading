@@ -290,6 +290,60 @@ function Start-AureonProcess {
     }
 }
 
+function Start-AureonProcessWithoutStopping {
+    param(
+        [string]$Name,
+        [string]$Pattern,
+        [string]$FilePath,
+        [string]$Arguments,
+        [string]$WorkingDirectory,
+        [string]$LogDirectory,
+        [string]$LogNameSuffix = ""
+    )
+
+    $existing = @(Get-MatchingProcess -Pattern $Pattern)
+    if ($existing.Count -gt 0) {
+        $pids = ($existing | Select-Object -ExpandProperty ProcessId) -join ", "
+        Write-Aureon "$Name already running: PID(s) $pids" "OK"
+        return @{
+            name = $Name
+            status = "already_running"
+            pids = @($existing | Select-Object -ExpandProperty ProcessId)
+            log = $null
+        }
+    }
+
+    $safeName = ($Name -replace "[^A-Za-z0-9_-]", "_").ToLowerInvariant()
+    if (-not [string]::IsNullOrWhiteSpace($LogNameSuffix)) {
+        $safeName = "$safeName-$LogNameSuffix"
+    }
+    $stdout = Join-Path $LogDirectory "$safeName.out.log"
+    $stderr = Join-Path $LogDirectory "$safeName.err.log"
+    Write-Aureon "Starting $Name without stopping live surfaces"
+    $proc = Start-Process `
+        -FilePath $FilePath `
+        -ArgumentList $Arguments `
+        -WorkingDirectory $WorkingDirectory `
+        -RedirectStandardOutput $stdout `
+        -RedirectStandardError $stderr `
+        -WindowStyle Hidden `
+        -PassThru
+
+    Start-Sleep -Milliseconds 800
+    if (-not (Get-Process -Id $proc.Id -ErrorAction SilentlyContinue)) {
+        Write-Aureon "$Name process exited quickly after launch. Check $stderr" "WARN"
+    }
+
+    return @{
+        name = $Name
+        status = "started_no_stop"
+        pids = @($proc.Id)
+        stdout = $stdout
+        stderr = $stderr
+        command = "$FilePath $Arguments"
+    }
+}
+
 function Invoke-NativeLogged {
     param(
         [string]$Name,
@@ -520,6 +574,27 @@ function Test-AureonRuntimeHasOpenPositions {
     }
 }
 
+function Get-AureonRuntimeWriterPid {
+    param($RuntimeState)
+    try {
+        if ($null -eq $RuntimeState -or $null -eq $RuntimeState.runtime_writer -or $null -eq $RuntimeState.runtime_writer.pid) {
+            return 0
+        }
+        return [int]$RuntimeState.runtime_writer.pid
+    } catch {
+        return 0
+    }
+}
+
+function Test-AureonRuntimeWriterAlive {
+    param($RuntimeState)
+    $writerPid = Get-AureonRuntimeWriterPid -RuntimeState $RuntimeState
+    if ($writerPid -le 0) {
+        return $false
+    }
+    return (Test-ProcessAlive -ProcessId $writerPid)
+}
+
 function Complete-AureonMindRebootIntent {
     param([string]$Status = "completed")
     try {
@@ -622,6 +697,23 @@ function Restart-AureonMarketStatusServerOnly {
         -LogDirectory $LogRoot | Out-Null
 }
 
+function Start-AureonMarketTelemetryWriterOnly {
+    param([string]$Reason = "runtime_writer_takeover")
+    if ($SkipMarketTelemetry) { return $null }
+
+    $marketArgs = "-m aureon.exchanges.unified_market_trader --interval $MarketInterval"
+    if (-not $LiveTrading) { $marketArgs += " --dry-run" }
+    Write-Aureon "Market runtime writer takeover requested ($Reason); preserving status server and open-position continuity" "WATCH"
+    return Start-AureonProcessWithoutStopping `
+        -Name "Unified market telemetry" `
+        -Pattern "aureon.exchanges.unified_market_trader" `
+        -FilePath $Python `
+        -Arguments $marketArgs `
+        -WorkingDirectory $RepoRoot `
+        -LogDirectory $LogRoot `
+        -LogNameSuffix "writer-takeover"
+}
+
 function Wait-AureonEndpoint {
     param([string]$Name, [string]$Url, [int]$TimeoutSec = 75)
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
@@ -664,6 +756,8 @@ New-Item -ItemType Directory -Force -Path $LogRoot, $StateRoot | Out-Null
 $manifestPath = Join-Path $StateRoot "aureon_wake_up_manifest.json"
 $publicManifestPath = Join-Path $FrontendRoot "public\aureon_wake_up_manifest.json"
 $supervisorLockPath = Join-Path $StateRoot "aureon_supervisor_lock.json"
+$script:LastPublicManifestWarningAt = [datetime]::MinValue
+$script:PublicManifestWarningCooldownSec = 300
 
 function Get-SupervisorLockPayload {
     param([string]$Status = "active")
@@ -813,14 +907,53 @@ function New-WakeManifestPayload {
     return $payload
 }
 
+function Set-AureonAtomicTextFile {
+    param([string]$LiteralPath, [string]$Content)
+    try {
+        $dir = Split-Path -Parent $LiteralPath
+        if (-not [string]::IsNullOrWhiteSpace($dir)) {
+            New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        }
+        $name = [System.IO.Path]::GetFileName($LiteralPath)
+        $tmpPath = Join-Path $dir ".$name.$PID.tmp"
+        $Content | Set-Content -LiteralPath $tmpPath -Encoding UTF8
+        Move-Item -LiteralPath $tmpPath -Destination $LiteralPath -Force -ErrorAction Stop
+        return @{ ok = $true; error = "" }
+    } catch {
+        try {
+            if ($tmpPath -and (Test-Path -LiteralPath $tmpPath)) {
+                Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue
+            }
+        } catch {
+        }
+        return @{ ok = $false; error = $_.Exception.Message }
+    }
+}
+
+function Write-ThrottledPublicManifestWarning {
+    param([string]$Message)
+    $now = Get-Date
+    if (($now - $script:LastPublicManifestWarningAt).TotalSeconds -ge $script:PublicManifestWarningCooldownSec) {
+        Write-Aureon $Message "WARN"
+        $script:LastPublicManifestWarningAt = $now
+    }
+}
+
 function Write-WakeManifest {
     param([object]$Payload)
     try {
         $json = $Payload | ConvertTo-Json -Depth 12
-        $json | Set-Content -LiteralPath $manifestPath -Encoding UTF8
-        $publicDir = Split-Path -Parent $publicManifestPath
-        New-Item -ItemType Directory -Force -Path $publicDir | Out-Null
-        $json | Set-Content -LiteralPath $publicManifestPath -Encoding UTF8
+        $stateResult = Set-AureonAtomicTextFile -LiteralPath $manifestPath -Content $json
+        if (-not $stateResult.ok) {
+            Write-Aureon "Wake-up state manifest write failed: $($stateResult.error)" "WARN"
+        }
+        $publicResult = Set-AureonAtomicTextFile -LiteralPath $publicManifestPath -Content $json
+        if (-not $publicResult.ok) {
+            $fallbackPath = Join-Path (Split-Path -Parent $publicManifestPath) "aureon_wake_up_manifest.next.json"
+            $fallbackResult = Set-AureonAtomicTextFile -LiteralPath $fallbackPath -Content $json
+            $fallbackNote = if ($fallbackResult.ok) { " fallback=$fallbackPath" } else { " fallback_failed=$($fallbackResult.error)" }
+            Write-ThrottledPublicManifestWarning -Message "Public wake-up manifest is locked; state manifest remains authoritative.$fallbackNote error=$($publicResult.error)"
+        }
     } catch {
         Write-Aureon "Wake-up manifest write failed: $($_.Exception.Message)" "WARN"
     }
@@ -1039,6 +1172,16 @@ if (-not $SkipMarketTelemetry) {
         if ($null -eq $marketFlight) {
             Write-Aureon "Refreshing read-only market status server so market flight-test endpoints are available; trading loop remains untouched" "INFO"
             Restart-AureonMarketStatusServerOnly
+        }
+        $runtimeForWriterCheck = $marketState
+        if ($null -eq $runtimeForWriterCheck) {
+            $runtimeForWriterCheck = Get-AureonRuntimeState -TimeoutSec 3
+        }
+        $marketWriterPid = Get-AureonRuntimeWriterPid -RuntimeState $runtimeForWriterCheck
+        $marketWriterAlive = Test-AureonRuntimeWriterAlive -RuntimeState $runtimeForWriterCheck
+        if (-not $marketWriterAlive) {
+            $takeoverReason = "dead_or_missing_writer_pid_$marketWriterPid; restart_deferred_reason=$marketHoldReason"
+            $started += Start-AureonMarketTelemetryWriterOnly -Reason $takeoverReason
         }
         $marketPids = @()
         try {
@@ -1294,6 +1437,8 @@ if ($KeepAlive) {
     $mindHubLastHealthy = Get-Date
     $marketIntentLastLog = (Get-Date).AddMinutes(-10)
     $marketIntentLogCooldownSec = [Math]::Max(300, $SupervisorIntervalSec * 10)
+    $marketWriterTakeoverLastAttempt = [datetime]::MinValue
+    $marketWriterTakeoverCooldownSec = [Math]::Max(180, $SupervisorIntervalSec * 6)
     while ($true) {
         $statuses = @()
 
@@ -1321,6 +1466,9 @@ if ($KeepAlive) {
                         $marketIntent = $null
                     }
                     if ($null -ne $marketIntent -and $marketIntent.status -eq "pending") {
+                        $runtimeStateForWriter = Get-AureonRuntimeState -TimeoutSec 3
+                        $marketWriterPid = Get-AureonRuntimeWriterPid -RuntimeState $runtimeStateForWriter
+                        $marketWriterAlive = Test-AureonRuntimeWriterAlive -RuntimeState $runtimeStateForWriter
                         $marketFlight = Get-AureonMarketFlightTest -TimeoutSec 3
                         if ($null -ne $marketFlight -and $null -ne $marketFlight.reboot_advice -and $null -ne $marketFlight.checks) {
                             $marketHasOpenPositions = [bool]$marketFlight.checks.open_positions
@@ -1328,7 +1476,7 @@ if ($KeepAlive) {
                             $marketCanRestart = [bool]$marketFlight.reboot_advice.can_reboot_now
                             $marketHoldReason = [string]$marketFlight.reboot_advice.reason
                         } else {
-                            $runtimeState = Get-AureonRuntimeState -TimeoutSec 3
+                            $runtimeState = $runtimeStateForWriter
                             $marketHasOpenPositions = Test-AureonRuntimeHasOpenPositions -RuntimeState $runtimeState
                             $marketDowntimeWindow = Test-AureonMarketDowntimeWindow
                             $marketCanRestart = $marketDowntimeWindow -and (-not $marketHasOpenPositions)
@@ -1336,7 +1484,11 @@ if ($KeepAlive) {
                             Write-Aureon "Refreshing read-only market status server so market flight-test endpoints are available; trading loop remains untouched" "INFO"
                             Restart-AureonMarketStatusServerOnly
                         }
-                        if ($marketCanRestart) {
+                        if (-not $marketWriterAlive -and ((Get-Date) - $marketWriterTakeoverLastAttempt).TotalSeconds -ge $marketWriterTakeoverCooldownSec) {
+                            $takeoverReason = "supervisor_dead_or_missing_writer_pid_$marketWriterPid; restart_deferred_reason=$marketHoldReason"
+                            Start-AureonMarketTelemetryWriterOnly -Reason $takeoverReason | Out-Null
+                            $marketWriterTakeoverLastAttempt = Get-Date
+                        } elseif ($marketCanRestart) {
                             Write-Aureon "Market runtime requested planned restart; downtime and flat-position check approved" "WATCH"
                             Restart-AureonSurface -Surface "market"
                             Complete-AureonMarketRebootIntent
