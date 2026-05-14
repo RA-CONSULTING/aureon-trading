@@ -36,6 +36,7 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader.alpaca_trader = None
         trader.binance_trader = None
         trader.start_time = time.time()
+        trader._runtime_instance_id = "test-runtime"
         trader.kraken_ready = False
         trader.capital_ready = False
         trader.kraken_error = ""
@@ -241,6 +242,112 @@ class UnifiedMarketTraderTests(unittest.TestCase):
             self.assertTrue(shadow["agent_review"]["logic_validated"])
             self.assertIn("hnc_alignment_agent", shadow["agent_review"]["agents"])
             self.assertIn("runtime_clearance_agent", shadow["agent_review"]["agents"])
+
+    def test_profit_velocity_ranking_uses_cash_price_history_and_eta(self):
+        trader = self._make_trader()
+        trader.kraken_ready = True
+        trader.capital_ready = True
+        trader._binance_diag = {"network_ok": True, "account_ok": True, "margin_available": True, "uk_mode": False}
+        trader._kraken_tradable_symbols = lambda: {"BTCUSD": "XXBTZUSD", "SOLUSD": "SOLUSDT"}  # type: ignore[method-assign]
+        trader._kraken_spot_tradable_symbols = lambda: {"BTCUSD": "XBTUSD", "SOLUSD": "SOLUSD"}  # type: ignore[method-assign]
+        trader._capital_tradable_symbols = lambda: {"BTCUSD": "BTCUSD", "SOLUSD": "SOLUSD"}  # type: ignore[method-assign]
+        trader._alpaca_tradable_symbols = lambda: {"BTCUSD": "BTC/USD", "SOLUSD": "SOL/USD"}  # type: ignore[method-assign]
+        trader._binance_tradable_symbols = lambda: {"BTCUSD": "BTCUSDT", "SOLUSD": "SOLUSDT"}  # type: ignore[method-assign]
+        trader._read_shadow_trade_state = lambda: {  # type: ignore[method-assign]
+            "prior_verifications": [
+                {
+                    "id": "sol-fast",
+                    "route_signature": "binance:spot:SOLUSDT:BUY",
+                    "symbol": "SOLUSD",
+                    "status": "validated",
+                    "opened_at_epoch": 1000.0,
+                    "last_verified_epoch": 1030.0,
+                    "eta_seconds_actual": 30.0,
+                },
+                {
+                    "id": "btc-slow",
+                    "route_signature": "binance:spot:BTCUSDT:BUY",
+                    "symbol": "BTCUSD",
+                    "status": "missed_eta",
+                },
+            ]
+        }
+        central_beat = {
+            "symbols": {
+                "BTCUSD": {
+                    "confidence": 0.95,
+                    "support_count": 2,
+                    "side": "BUY",
+                    "sources": ["kraken", "capital"],
+                    "reference_price": 50000.0,
+                    "change_pct": 0.02,
+                    "model_alignment": True,
+                },
+                "SOLUSD": {
+                    "confidence": 0.72,
+                    "support_count": 4,
+                    "side": "BUY",
+                    "sources": ["kraken", "capital", "alpaca", "binance"],
+                    "reference_price": 90.0,
+                    "change_pct": 0.8,
+                    "model_alignment": True,
+                },
+            }
+        }
+        shared_market_feed = {"symbols": {"BTCUSD": 0.95, "SOLUSD": 0.72}}
+
+        order_flow = trader._build_global_order_flow_feed({}, {}, central_beat, shared_market_feed)
+        top = order_flow["active_order_flow"][0]
+
+        self.assertEqual(top["symbol"], "SOLUSD")
+        self.assertGreater(top["profit_velocity_score"], order_flow["active_order_flow"][1]["profit_velocity_score"])
+        self.assertEqual(top["history_validated_count"], 1)
+        self.assertGreaterEqual(top["cash_capable_route_count"], 1)
+        self.assertLessEqual(top["estimated_target_eta_sec"], trader_mod.SHADOW_TRADE_VALIDATION_HORIZON_SEC)
+        self.assertGreater(top["intelligence_mesh_score"], 0.0)
+        self.assertIn("intelligence_mesh", order_flow)
+        self.assertEqual(order_flow["selection_process"]["mode"], "profit_velocity_ranked_live_shadow_selection")
+
+    def test_intelligence_mesh_reports_capability_presence_and_active_bridges(self):
+        trader = self._make_trader()
+        central_beat = {
+            "source_count": 4,
+            "model_signal_feed": {"used": True},
+        }
+        shadow_report = {"shadow_opened_count": 2, "active_shadow_count": 2, "validated_shadow_count": 1}
+        hnc_proof = {
+            "systems": {
+                "hnc_master_protocol": {"passed": True},
+                "hnc_probability_matrix": {"passed": True},
+                "seer": {"passed": True},
+                "lyra": {"passed": True},
+                "king": {"passed": True},
+            }
+        }
+
+        mesh = trader._build_intelligence_mesh(
+            central_beat=central_beat,
+            shadow_trade_report=shadow_report,
+            hnc_cognitive_proof=hnc_proof,
+        )
+
+        self.assertGreater(mesh["present_count"], 10)
+        self.assertGreater(mesh["active_this_cycle_count"], 5)
+        self.assertGreater(mesh["selection_mesh_score"], 0.0)
+        statuses = {item["name"]: item["status"] for item in mesh["capabilities"]}
+        self.assertEqual(statuses["UnifiedSignalEngine"], "active")
+        self.assertEqual(statuses["ShadowTradeValidator"], "active")
+        self.assertIn(statuses["QueenOnlineResearcher"], {"active", "available_to_mesh"})
+
+    def test_fresh_writer_lock_is_not_honored_when_owner_pid_is_dead(self):
+        trader = self._make_trader()
+        lock = {
+            "instance_id": "other-runtime",
+            "pid": 99999999,
+            "heartbeat_at": time.time(),
+        }
+
+        self.assertFalse(trader._lock_owner_is_fresh(lock, time.time()))
 
     def test_shadow_trade_report_verifies_prior_shadow_against_current_price(self):
         trader = self._make_trader()

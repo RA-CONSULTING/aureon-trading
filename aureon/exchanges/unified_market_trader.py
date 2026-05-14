@@ -305,6 +305,45 @@ EXCHANGE_MODEL_STACKS = {
         {"name": "UnifiedMarginDecisionBrain", "path": "aureon/trading/unified_margin_brain.py", "role": "margin approval/reject decision fusion"},
     ],
 }
+INTELLIGENCE_MESH_CAPABILITIES = [
+    {"name": "LiveExchangeFeeds", "path": "aureon/data_feeds/unified_market_cache.py", "facet": "live_market_data", "wire": "direct_live_signal", "activation": "central_beat_sources"},
+    {"name": "UnifiedSignalEngine", "path": "aureon/trading/unified_signal_engine.py", "facet": "signal_fusion", "wire": "direct_live_signal", "activation": "model_signal_feed"},
+    {"name": "UnifiedDecisionEngine", "path": "aureon/intelligence/aureon_unified_decision_engine.py", "facet": "decision_intelligence", "wire": "decision_context", "activation": "repo_present"},
+    {"name": "UnifiedIntelligenceRegistry", "path": "aureon/intelligence/aureon_unified_intelligence_registry.py", "facet": "capability_registry", "wire": "mesh_inventory", "activation": "repo_present"},
+    {"name": "HNCMasterProtocol", "path": "aureon/strategies/hnc_master_protocol.py", "facet": "hnc_harmonic", "wire": "hnc_proof", "activation": "hnc_system"},
+    {"name": "HNCProbabilityMatrix", "path": "aureon/strategies/hnc_probability_matrix.py", "facet": "hnc_harmonic", "wire": "hnc_proof", "activation": "hnc_system"},
+    {"name": "HNC6DWaveform", "path": "aureon/strategies/hnc_6d_harmonic_waveform.py", "facet": "waveform_history", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "Seer", "path": "aureon/intelligence/aureon_seer.py", "facet": "oracle_forecast", "wire": "hnc_proof", "activation": "hnc_system"},
+    {"name": "Lyra", "path": "aureon/trading/aureon_lyra.py", "facet": "harmonic_affect", "wire": "hnc_proof", "activation": "hnc_system"},
+    {"name": "KingCapitalLogic", "path": "aureon/trading/compound_king.py", "facet": "capital_logic", "wire": "hnc_proof", "activation": "hnc_system"},
+    {"name": "ShadowTradeValidator", "path": "aureon/exchanges/unified_market_trader.py", "facet": "self_validation", "wire": "direct_live_signal", "activation": "shadow_validation"},
+    {"name": "SelfValidatingPredictor", "path": "aureon/intelligence/self_validating_predictor.py", "facet": "self_validation", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "ElephantLearning", "path": "aureon/intelligence/aureon_elephant_learning.py", "facet": "memory_history", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "TimelineOracle", "path": "aureon/intelligence/aureon_timeline_oracle.py", "facet": "temporal_forecast", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "TruthPredictionEngine", "path": "aureon/intelligence/aureon_truth_prediction_engine.py", "facet": "prediction_truth", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "IntegratedForecast", "path": "aureon/intelligence/aureon_integrated_forecast.py", "facet": "forecast", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "LiveMomentumHunter", "path": "aureon/scanners/aureon_live_momentum_hunter.py", "facet": "momentum_search", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "GlobalWaveScanner", "path": "aureon/scanners/aureon_global_wave_scanner.py", "facet": "waveform_search", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "MarginHarmonicScanner", "path": "aureon/scanners/aureon_margin_harmonic_scanner.py", "facet": "margin_search", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "MoversShakersScanner", "path": "aureon/scanners/aureon_movers_shakers_scanner.py", "facet": "market_search", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "AnimalMomentumScanners", "path": "aureon/scanners/aureon_animal_momentum_scanners.py", "facet": "swarm_momentum", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "OceanWaveScanner", "path": "aureon/scanners/aureon_ocean_wave_scanner.py", "facet": "waveform_search", "wire": "seer_oracle", "activation": "repo_present"},
+    {"name": "PhantomSignalFilter", "path": "aureon/scanners/aureon_phantom_signal_filter.py", "facet": "noise_filter", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "WhaleSonar", "path": "aureon/core/mycelium_whale_sonar.py", "facet": "whale_intelligence", "wire": "thought_bus", "activation": "thought_bus"},
+    {"name": "OrcaIntelligence", "path": "aureon/bots_intelligence/aureon_orca_intelligence.py", "facet": "whale_intelligence", "wire": "model_stack", "activation": "model_stack"},
+    {"name": "FirmIntelligenceCatalog", "path": "aureon/bots_intelligence/aureon_firm_intelligence_catalog.py", "facet": "firm_intelligence", "wire": "mesh_context", "activation": "repo_present"},
+    {"name": "NewsSignal", "path": "aureon/data_feeds/news_signal.py", "facet": "news_search", "wire": "sentiment_context", "activation": "repo_present"},
+    {"name": "QueenOnlineResearcher", "path": "aureon/queen/queen_online_researcher.py", "facet": "online_research", "wire": "research_context", "activation": "repo_present"},
+    {"name": "ResearchCorpusIndex", "path": "aureon/queen/research_corpus_index.py", "facet": "vault_research", "wire": "research_context", "activation": "repo_present"},
+    {"name": "QueenRepositoryScanner", "path": "aureon/queen/queen_repository_scanner.py", "facet": "repo_knowledge", "wire": "research_context", "activation": "repo_present"},
+    {"name": "MinerBrain", "path": "aureon/utils/aureon_miner_brain.py", "facet": "knowledge_mining", "wire": "research_context", "activation": "repo_present"},
+    {"name": "MicroMomentumGoal", "path": "aureon/conversion/aureon_micro_momentum_goal.py", "facet": "fast_profit_eta", "wire": "profit_context", "activation": "repo_present"},
+    {"name": "PennyProfitEngine", "path": "aureon/trading/penny_profit_engine.py", "facet": "fast_profit_eta", "wire": "profit_context", "activation": "repo_present"},
+    {"name": "DynamicTakeProfit", "path": "aureon/trading/dynamic_take_profit.py", "facet": "exit_logic", "wire": "profit_context", "activation": "repo_present"},
+    {"name": "TemporalTradeCognition", "path": "aureon/trading/temporal_trade_cognition.py", "facet": "temporal_trade_logic", "wire": "model_stack", "activation": "model_stack"},
+    {"name": "TorchBearerSystem", "path": "aureon/wisdom/torch_bearer_system.py", "facet": "fast_strike_strategy", "wire": "profit_context", "activation": "repo_present"},
+    {"name": "RisingStarLogic", "path": "aureon/analytics/aureon_rising_star_logic.py", "facet": "whole_market_search", "wire": "profit_context", "activation": "repo_present"},
+]
 
 
 class ExchangeCallGovernor:
@@ -1183,7 +1222,26 @@ class UnifiedMarketTrader:
         except Exception:
             heartbeat_at = 0.0
         owner = str(lock.get("instance_id") or "")
-        return bool(owner and owner != self._runtime_instance_id and heartbeat_at > 0 and now - heartbeat_at < RUNTIME_WRITER_LOCK_TTL_SEC)
+        if not bool(owner and owner != self._runtime_instance_id and heartbeat_at > 0 and now - heartbeat_at < RUNTIME_WRITER_LOCK_TTL_SEC):
+            return False
+        return self._runtime_writer_lock_owner_alive(lock)
+
+    def _runtime_writer_lock_owner_alive(self, lock: Dict[str, Any]) -> bool:
+        try:
+            pid = int(lock.get("pid", 0) or 0)
+        except Exception:
+            pid = 0
+        if pid <= 0:
+            return False
+        if pid == os.getpid():
+            return True
+        try:
+            os.kill(pid, 0)
+            return True
+        except PermissionError:
+            return True
+        except OSError:
+            return False
 
     def _claim_runtime_writer(self) -> bool:
         now = time.time()
@@ -1418,6 +1476,7 @@ class UnifiedMarketTrader:
                 "master_formula": {"score": 0.0, "evaluated": False},
                 "real_data": {"passed": False, "source_count": 0, "price_count": 0},
             },
+            "intelligence_mesh": self._build_intelligence_mesh(),
             "preflight": preflight,
             "api_governor": self._governor().snapshot(),
             "queen_voice": {
@@ -1461,6 +1520,15 @@ class UnifiedMarketTrader:
             exchange_action_plan,
             shadow_trade_report,
         )
+        intelligence_mesh = self._build_intelligence_mesh(
+            central_beat=central_beat,
+            order_flow_feed=order_flow_feed,
+            action_plan=exchange_action_plan,
+            shadow_trade_report=shadow_trade_report,
+            hnc_cognitive_proof=hnc_cognitive_proof,
+        )
+        order_flow_feed["intelligence_mesh"] = intelligence_mesh
+        exchange_action_plan["intelligence_mesh"] = intelligence_mesh
         self._publish_order_intents(order_flow_feed, exchange_action_plan)
         combined_status = self.get_status_lines()
         queen_voice = self._build_queen_voice_payload(kraken_payload, capital_payload)
@@ -1478,6 +1546,7 @@ class UnifiedMarketTrader:
             "shared_order_flow": order_flow_feed,
             "shadow_trading": shadow_trade_report,
             "hnc_cognitive_proof": hnc_cognitive_proof,
+            "intelligence_mesh": intelligence_mesh,
             "exchange_action_plan": exchange_action_plan,
             "preflight": self._build_preflight_report(),
             "api_governor": self._governor().snapshot(),
@@ -1546,6 +1615,150 @@ class UnifiedMarketTrader:
             "available_model_count": sum(int(item.get("available_count", 0) or 0) for item in coverage.values()),
             "total_model_count": sum(int(item.get("total_count", 0) or 0) for item in coverage.values()),
             "model_use": "UnifiedSignalEngine feeds CentralBeat; route model stacks declare venue-specific repo systems used for execution context.",
+        }
+
+    def _capability_present(self, rel_path: str) -> bool:
+        try:
+            return bool(rel_path and (REPO_ROOT / Path(rel_path)).exists())
+        except Exception:
+            return False
+
+    def _model_stack_names(self) -> set[str]:
+        names: set[str] = set()
+        for descriptor in COMMON_MODEL_STACK:
+            names.add(str(descriptor.get("name") or ""))
+        for stack in EXCHANGE_MODEL_STACKS.values():
+            for descriptor in stack:
+                names.add(str(descriptor.get("name") or ""))
+        return {name for name in names if name}
+
+    def _capability_active(
+        self,
+        descriptor: Dict[str, Any],
+        *,
+        central_beat: Optional[Dict[str, Any]] = None,
+        order_flow_feed: Optional[Dict[str, Any]] = None,
+        action_plan: Optional[Dict[str, Any]] = None,
+        shadow_trade_report: Optional[Dict[str, Any]] = None,
+        hnc_cognitive_proof: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        activation = str(descriptor.get("activation") or "repo_present")
+        name = str(descriptor.get("name") or "")
+        if activation == "central_beat_sources":
+            return bool(central_beat and int(central_beat.get("source_count", 0) or 0) > 0)
+        if activation == "model_signal_feed":
+            feed = central_beat.get("model_signal_feed", {}) if isinstance(central_beat, dict) else {}
+            return bool(isinstance(feed, dict) and feed.get("used"))
+        if activation == "shadow_validation":
+            report = shadow_trade_report if isinstance(shadow_trade_report, dict) else {}
+            return bool(
+                report
+                and (
+                    int(report.get("shadow_opened_count", 0) or 0) > 0
+                    or int(report.get("active_shadow_count", 0) or 0) > 0
+                    or int(report.get("validated_shadow_count", 0) or 0) > 0
+                )
+            )
+        if activation == "hnc_system":
+            proof = hnc_cognitive_proof if isinstance(hnc_cognitive_proof, dict) else {}
+            systems = proof.get("systems", {}) if isinstance(proof.get("systems"), dict) else {}
+            aliases = {
+                "HNCMasterProtocol": "hnc_master_protocol",
+                "HNCProbabilityMatrix": "hnc_probability_matrix",
+                "Seer": "seer",
+                "Lyra": "lyra",
+                "KingCapitalLogic": "king",
+            }
+            key = aliases.get(name, name)
+            return bool(isinstance(systems.get(key), dict) and systems[key].get("passed"))
+        if activation == "model_stack":
+            return name in self._model_stack_names()
+        if activation == "thought_bus":
+            return bool(getattr(self, "_thought_bus", None) is not None)
+        if activation == "repo_present":
+            return self._capability_present(str(descriptor.get("path") or ""))
+        return False
+
+    def _build_intelligence_mesh(
+        self,
+        *,
+        central_beat: Optional[Dict[str, Any]] = None,
+        order_flow_feed: Optional[Dict[str, Any]] = None,
+        action_plan: Optional[Dict[str, Any]] = None,
+        shadow_trade_report: Optional[Dict[str, Any]] = None,
+        hnc_cognitive_proof: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        capabilities: List[Dict[str, Any]] = []
+        facet_counts: Dict[str, int] = {}
+        active_count = 0
+        present_count = 0
+        direct_live_count = 0
+        active_direct_count = 0
+        model_stack_names = self._model_stack_names()
+        for descriptor in INTELLIGENCE_MESH_CAPABILITIES:
+            present = self._capability_present(str(descriptor.get("path") or ""))
+            active = bool(
+                present
+                and self._capability_active(
+                    descriptor,
+                    central_beat=central_beat,
+                    order_flow_feed=order_flow_feed,
+                    action_plan=action_plan,
+                    shadow_trade_report=shadow_trade_report,
+                    hnc_cognitive_proof=hnc_cognitive_proof,
+                )
+            )
+            wire = str(descriptor.get("wire") or "mesh_context")
+            facet = str(descriptor.get("facet") or "uncategorized")
+            if present:
+                present_count += 1
+                facet_counts[facet] = facet_counts.get(facet, 0) + 1
+            if active:
+                active_count += 1
+            if wire in {"direct_live_signal", "hnc_proof", "model_stack"}:
+                direct_live_count += 1
+                if active:
+                    active_direct_count += 1
+            status = "missing"
+            if present and active:
+                status = "active"
+            elif present and wire in {"direct_live_signal", "hnc_proof", "model_stack"}:
+                status = "wired_waiting_for_fresh_evidence"
+            elif present:
+                status = "available_to_mesh"
+            capabilities.append(
+                {
+                    "name": descriptor.get("name"),
+                    "facet": facet,
+                    "path": descriptor.get("path"),
+                    "wire": wire,
+                    "present": present,
+                    "active_this_cycle": active,
+                    "status": status,
+                }
+            )
+
+        total = len(INTELLIGENCE_MESH_CAPABILITIES)
+        available_ratio = present_count / max(1, total)
+        active_ratio = active_count / max(1, present_count)
+        direct_ratio = active_direct_count / max(1, direct_live_count)
+        selection_mesh_score = self._clamp01((0.50 * direct_ratio) + (0.30 * active_ratio) + (0.20 * available_ratio))
+        return {
+            "generated_at": datetime.now().isoformat(),
+            "mode": "whole_intelligence_mesh_capability_proof",
+            "summary": (
+                "Fast live loop uses CentralBeat, model fusion, HNC proof, shadow validation, and profit-velocity ranking; "
+                "heavier search/research/scanner systems are registered and exposed as available mesh context unless they have fresh bridge evidence."
+            ),
+            "capability_count": total,
+            "present_count": present_count,
+            "active_this_cycle_count": active_count,
+            "direct_live_count": direct_live_count,
+            "active_direct_live_count": active_direct_count,
+            "selection_mesh_score": round(selection_mesh_score, 6),
+            "facet_counts": facet_counts,
+            "model_stack_names": sorted(model_stack_names),
+            "capabilities": capabilities,
         }
 
     def _build_model_signal_feed(self, sources: List[Dict[str, Any]], regime: Dict[str, Any]) -> Dict[str, Any]:
@@ -2154,6 +2367,9 @@ class UnifiedMarketTrader:
                         "generated_at": datetime.now().isoformat(),
                         "source": "unified_market_trader.executor",
                         "confidence": confidence,
+                        "selection_rank": item.get("selection_rank"),
+                        "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                        "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
                         "support_count": item.get("support_count", 0),
                         "cognitive_sources": item.get("sources", []),
                         "model_signal": item.get("model_signal", {}),
@@ -2244,6 +2460,9 @@ class UnifiedMarketTrader:
                         "generated_at": datetime.now().isoformat(),
                         "source": "unified_market_trader.executor",
                         "confidence": confidence,
+                        "selection_rank": item.get("selection_rank"),
+                        "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                        "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
                         "support_count": item.get("support_count", 0),
                         "cognitive_sources": item.get("sources", []),
                         "model_signal": item.get("model_signal", {}),
@@ -2584,10 +2803,29 @@ class UnifiedMarketTrader:
             binance_diag.get("uk_mode", getattr(self.binance, "uk_mode", False) if self.binance is not None else False)
         )
 
-        def route(venue: str, market_type: str, symbol: str, ready: bool, blockers: List[str], execution_owner: str = "unified_executor") -> Dict[str, Any]:
+        shadow_index = self._shadow_validation_index()
+        intelligence_mesh = self._build_intelligence_mesh(central_beat=central_beat)
+
+        def route(
+            venue: str,
+            market_type: str,
+            symbol: str,
+            ready: bool,
+            blockers: List[str],
+            execution_owner: str = "unified_executor",
+            side: str = "BUY",
+        ) -> Dict[str, Any]:
             model_stack = self._model_stack_for_route(venue, market_type)
             clearances = [str(item) for item in blockers if str(item)]
             trade_clearance_state = "available" if ready and not clearances else "held"
+            cash_capability = self._route_cash_capability(
+                venue=venue,
+                market_type=market_type,
+                symbol=symbol,
+                side=side,
+                ready=bool(ready and not clearances),
+                execution_owner=execution_owner,
+            )
             return {
                 "venue": venue,
                 "market_type": market_type,
@@ -2601,6 +2839,9 @@ class UnifiedMarketTrader:
                 "end_user_trade_available": bool(ready),
                 "blockers": clearances,
                 "execution_owner": execution_owner,
+                "cash_capability": cash_capability,
+                "cash_capability_state": cash_capability.get("state"),
+                "cash_capability_score": cash_capability.get("score", 0.0),
                 "model_stack_key": model_stack.get("key"),
                 "model_count": model_stack.get("available_count", 0),
                 "model_total_count": model_stack.get("total_count", 0),
@@ -2629,6 +2870,7 @@ class UnifiedMarketTrader:
                         bool(self.kraken_ready and self.kraken is not None),
                         [] if self.kraken_ready and self.kraken is not None else [self.kraken_error or "kraken_not_ready"],
                         "unified_executor",
+                        side,
                     )
                 )
             if normalized in kraken_margin_tradables:
@@ -2640,6 +2882,7 @@ class UnifiedMarketTrader:
                         bool(self.kraken_ready and self.kraken is not None),
                         [] if self.kraken_ready and self.kraken is not None else [self.kraken_error or "kraken_not_ready"],
                         "existing_autonomous_trader_tick",
+                        side,
                     )
                 )
             if normalized in capital_tradables:
@@ -2651,6 +2894,7 @@ class UnifiedMarketTrader:
                         bool(self.capital_ready and self.capital is not None),
                         [] if self.capital_ready and self.capital is not None else [self.capital_error or "capital_not_ready"],
                         "existing_autonomous_trader_tick",
+                        side,
                     )
                 )
             if normalized in alpaca_tradables:
@@ -2661,6 +2905,7 @@ class UnifiedMarketTrader:
                         alpaca_tradables.get(normalized, normalized),
                         alpaca_ok,
                         [] if alpaca_ok else [self.alpaca_error or "alpaca_not_ready"],
+                        side=side,
                     )
                 )
             if normalized in binance_tradables:
@@ -2671,6 +2916,7 @@ class UnifiedMarketTrader:
                         binance_tradables.get(normalized, normalized),
                         binance_network_ok,
                         [] if binance_network_ok else [self.binance_error or "binance_network_not_ready"],
+                        side=side,
                     )
                 )
                 execution_routes.append(
@@ -2690,36 +2936,52 @@ class UnifiedMarketTrader:
                             )
                             if present
                         ],
+                        side=side,
                     )
                 )
             ready_route_count = sum(1 for item in execution_routes if item.get("ready"))
-            ranked.append(
-                {
-                    "symbol": normalized,
-                    "kraken_symbol": kraken_margin_tradables.get(normalized) or kraken_spot_tradables.get(normalized, normalized),
-                    "kraken_spot_symbol": kraken_spot_tradables.get(normalized),
-                    "kraken_margin_symbol": kraken_margin_tradables.get(normalized),
-                    "capital_symbol": capital_symbol,
-                    "alpaca_symbol": alpaca_tradables.get(normalized),
-                    "binance_symbol": binance_tradables.get(normalized),
-                    "side": side,
-                    "confidence": max(0.0, min(1.0, confidence)),
-                    "support_count": int(central_signal.get("support_count", 0) or 0) if isinstance(central_signal, dict) else 0,
-                    "sources": list(central_signal.get("sources", [])) if isinstance(central_signal, dict) and isinstance(central_signal.get("sources"), list) else [],
-                    "reference_price": float(central_signal.get("reference_price", 0.0) or 0.0) if isinstance(central_signal, dict) else 0.0,
-                    "change_pct": float(central_signal.get("change_pct", 0.0) or 0.0) if isinstance(central_signal, dict) else 0.0,
-                    "source_prices": dict(central_signal.get("source_prices", {})) if isinstance(central_signal, dict) and isinstance(central_signal.get("source_prices"), dict) else {},
-                    "model_signal": central_signal.get("model_signal", {}) if isinstance(central_signal, dict) else {},
-                    "model_alignment": bool(central_signal.get("model_alignment", False)) if isinstance(central_signal, dict) else False,
-                    "execution_routes": execution_routes,
-                    "ready_route_count": ready_route_count,
-                    "held_route_count": max(0, len(execution_routes) - ready_route_count),
-                    "available_route_count": ready_route_count,
-                    "blocked_route_count": max(0, len(execution_routes) - ready_route_count),
-                }
+            row = {
+                "symbol": normalized,
+                "kraken_symbol": kraken_margin_tradables.get(normalized) or kraken_spot_tradables.get(normalized, normalized),
+                "kraken_spot_symbol": kraken_spot_tradables.get(normalized),
+                "kraken_margin_symbol": kraken_margin_tradables.get(normalized),
+                "capital_symbol": capital_symbol,
+                "alpaca_symbol": alpaca_tradables.get(normalized),
+                "binance_symbol": binance_tradables.get(normalized),
+                "side": side,
+                "confidence": max(0.0, min(1.0, confidence)),
+                "support_count": int(central_signal.get("support_count", 0) or 0) if isinstance(central_signal, dict) else 0,
+                "sources": list(central_signal.get("sources", [])) if isinstance(central_signal, dict) and isinstance(central_signal.get("sources"), list) else [],
+                "reference_price": float(central_signal.get("reference_price", 0.0) or 0.0) if isinstance(central_signal, dict) else 0.0,
+                "change_pct": float(central_signal.get("change_pct", 0.0) or 0.0) if isinstance(central_signal, dict) else 0.0,
+                "source_prices": dict(central_signal.get("source_prices", {})) if isinstance(central_signal, dict) and isinstance(central_signal.get("source_prices"), dict) else {},
+                "model_signal": central_signal.get("model_signal", {}) if isinstance(central_signal, dict) else {},
+                "model_alignment": bool(central_signal.get("model_alignment", False)) if isinstance(central_signal, dict) else False,
+                "execution_routes": execution_routes,
+                "ready_route_count": ready_route_count,
+                "held_route_count": max(0, len(execution_routes) - ready_route_count),
+                "available_route_count": ready_route_count,
+                "blocked_route_count": max(0, len(execution_routes) - ready_route_count),
+            }
+            row.update(
+                self._profit_velocity_metrics(
+                    item=row,
+                    execution_routes=execution_routes,
+                    shadow_index=shadow_index,
+                    intelligence_mesh=intelligence_mesh,
+                )
             )
+            ranked.append(row)
 
-        ranked.sort(key=lambda item: float(item.get("confidence", 0.0) or 0.0), reverse=True)
+        ranked.sort(
+            key=lambda item: (
+                float(item.get("profit_velocity_score", 0.0) or 0.0),
+                float(item.get("confidence", 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
+        for index, item in enumerate(ranked, start=1):
+            item["selection_rank"] = index
         venue_counts = {
             "kraken_spot": len(kraken_spot_tradables),
             "kraken_margin": len(kraken_margin_tradables),
@@ -2743,6 +3005,17 @@ class UnifiedMarketTrader:
             "binance_tradables": len(binance_tradables),
             "venue_tradable_counts": venue_counts,
             "scope": "multi-exchange unified tradables across Kraken spot/margin, Capital CFDs, Alpaca spot, and Binance spot/margin",
+            "intelligence_mesh": intelligence_mesh,
+            "selection_process": {
+                "mode": "profit_velocity_ranked_live_shadow_selection",
+                "who": "CentralBeat plus whole intelligence mesh, HNC/model/shadow validation routes",
+                "what": "rank candidates by cash-capable route, live/reference price, shadow history, support, model alignment, mesh readiness, and fastest target ETA",
+                "target_move_pct": SHADOW_TRADE_TARGET_MOVE_PCT,
+                "validation_horizon_sec": SHADOW_TRADE_VALIDATION_HORIZON_SEC,
+                "history_routes": len((shadow_index.get("routes") or {}) if isinstance(shadow_index, dict) else {}),
+                "history_symbols": len((shadow_index.get("symbols") or {}) if isinstance(shadow_index, dict) else {}),
+                "intelligence_mesh_score": intelligence_mesh.get("selection_mesh_score", 0.0),
+            },
         }
 
     def _feed_shared_order_flow_to_decision_logic(self, order_flow_feed: Dict[str, Any]) -> None:
@@ -2968,13 +3241,247 @@ class UnifiedMarketTrader:
         result.update(
             {
                 "last_verified_at": datetime.now().isoformat(),
+                "last_verified_epoch": round(now, 3),
                 "current_price": round(current_price, 8) if current_price > 0 else 0.0,
                 "direction_move_pct": round(direction_move_pct, 6),
                 "target_hit": target_hit,
                 "status": status,
             }
         )
+        opened_epoch = float(result.get("opened_at_epoch", 0.0) or 0.0)
+        if target_hit and opened_epoch > 0:
+            result["eta_seconds_actual"] = round(max(0.0, now - opened_epoch), 3)
         return result
+
+    def _parse_shadow_epoch(self, value: Any) -> float:
+        try:
+            if isinstance(value, (int, float)):
+                return float(value)
+            text = str(value or "").strip()
+            if not text:
+                return 0.0
+            return datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp()
+        except Exception:
+            return 0.0
+
+    def _finalize_shadow_stats(self, stats: Dict[str, Any]) -> Dict[str, Any]:
+        validated = int(stats.get("validated", 0) or 0)
+        missed = int(stats.get("missed", 0) or 0)
+        total = validated + missed
+        eta_values = [float(value) for value in stats.get("eta_values", []) if float(value or 0.0) > 0]
+        validation_rate = validated / total if total > 0 else 0.0
+        return {
+            "validated": validated,
+            "missed": missed,
+            "total": total,
+            "validation_rate": round(validation_rate, 6),
+            "avg_validation_sec": round(sum(eta_values) / len(eta_values), 3) if eta_values else 0.0,
+            "fastest_validation_sec": round(min(eta_values), 3) if eta_values else 0.0,
+        }
+
+    def _shadow_validation_index(self, previous_state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        previous = previous_state if isinstance(previous_state, dict) else self._read_shadow_trade_state()
+        raw_routes: Dict[str, Dict[str, Any]] = {}
+        raw_symbols: Dict[str, Dict[str, Any]] = {}
+        seen: set[str] = set()
+        rows: List[Dict[str, Any]] = []
+        for key in ("prior_verifications", "shadows", "active_shadows"):
+            values = previous.get(key, []) if isinstance(previous, dict) else []
+            if isinstance(values, list):
+                rows.extend(row for row in values if isinstance(row, dict))
+
+        for shadow in rows:
+            status = str(shadow.get("status") or "").lower()
+            if status not in {"validated", "missed_eta"}:
+                continue
+            signature = str(shadow.get("route_signature") or "").strip()
+            symbol = str(shadow.get("symbol") or "").upper().strip()
+            if not signature and not symbol:
+                continue
+            dedupe = str(shadow.get("id") or signature or symbol) + ":" + status
+            if dedupe in seen:
+                continue
+            seen.add(dedupe)
+            opened_epoch = float(shadow.get("opened_at_epoch", 0.0) or 0.0)
+            verified_epoch = float(shadow.get("last_verified_epoch", 0.0) or 0.0) or self._parse_shadow_epoch(shadow.get("last_verified_at"))
+            eta = float(shadow.get("eta_seconds_actual", 0.0) or 0.0)
+            if eta <= 0 and opened_epoch > 0 and verified_epoch > opened_epoch and status == "validated":
+                eta = verified_epoch - opened_epoch
+
+            for bucket, key in ((raw_routes, signature), (raw_symbols, symbol)):
+                if not key:
+                    continue
+                item = bucket.setdefault(key, {"validated": 0, "missed": 0, "eta_values": []})
+                if status == "validated":
+                    item["validated"] += 1
+                    if eta > 0:
+                        item["eta_values"].append(eta)
+                elif status == "missed_eta":
+                    item["missed"] += 1
+
+        return {
+            "routes": {key: self._finalize_shadow_stats(value) for key, value in raw_routes.items()},
+            "symbols": {key: self._finalize_shadow_stats(value) for key, value in raw_symbols.items()},
+        }
+
+    def _recent_route_cash_blocker(self, venue: str, market_type: str, symbol: str, side: str) -> str:
+        latest = getattr(self, "_latest_execution_results", {}) or {}
+        results = latest.get("results", []) if isinstance(latest, dict) else []
+        if not isinstance(results, list):
+            return ""
+        venue_norm = str(venue or "").lower()
+        market_norm = str(market_type or "").lower()
+        symbol_norm = str(symbol or "").upper()
+        side_norm = str(side or "").upper()
+        cash_markers = (
+            "insufficient funds",
+            "insufficient balance",
+            "no_spot_balance",
+            "no_spot_balance_to_sell",
+            "quantity_unavailable",
+            "not enough",
+        )
+        for result in reversed(results[-20:]):
+            if not isinstance(result, dict):
+                continue
+            if str(result.get("venue") or "").lower() != venue_norm:
+                continue
+            if str(result.get("market_type") or "").lower() != market_norm:
+                continue
+            if symbol_norm and str(result.get("symbol") or "").upper() != symbol_norm:
+                continue
+            if side_norm and str(result.get("side") or "").upper() not in {"", side_norm}:
+                continue
+            text = " ".join(
+                str(result.get(key) or "")
+                for key in ("reason", "error", "message")
+            )
+            text = f"{text} {json.dumps(result.get('result', ''), default=str)}".lower()
+            if any(marker in text for marker in cash_markers):
+                return text[:180]
+        return ""
+
+    def _route_cash_capability(
+        self,
+        *,
+        venue: str,
+        market_type: str,
+        symbol: str,
+        side: str,
+        ready: bool,
+        execution_owner: str,
+    ) -> Dict[str, Any]:
+        venue_norm = str(venue or "").lower()
+        market_norm = str(market_type or "").lower()
+        side_norm = str(side or "BUY").upper()
+        if not ready:
+            return {"state": "route_not_ready", "score": 0.0, "checked_by": "route_readiness"}
+        blocker = self._recent_route_cash_blocker(venue_norm, market_norm, symbol, side_norm)
+        if blocker:
+            return {
+                "state": "recent_execution_cash_blocker",
+                "score": 0.1,
+                "checked_by": "last_execution_result",
+                "detail": blocker,
+            }
+        if str(execution_owner or "").lower() == "existing_autonomous_trader_tick":
+            return {
+                "state": "delegated_runtime_managed",
+                "score": 0.75,
+                "checked_by": "existing_autonomous_trader_tick",
+            }
+        if market_norm == "margin":
+            return {"state": "margin_runtime_checked_at_execution", "score": 0.65, "checked_by": "runtime_executor"}
+        if side_norm == "SELL":
+            return {"state": "asset_balance_checked_at_execution", "score": 0.55, "checked_by": "runtime_executor"}
+        return {"state": "quote_budgeted_at_execution", "score": 0.65, "checked_by": "runtime_executor"}
+
+    def _profit_velocity_metrics(
+        self,
+        *,
+        item: Dict[str, Any],
+        execution_routes: List[Dict[str, Any]],
+        shadow_index: Dict[str, Any],
+        intelligence_mesh: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        confidence = self._clamp01(item.get("confidence", 0.0))
+        support_score = self._clamp01(float(item.get("support_count", 0) or 0) / 4.0)
+        route_score = self._clamp01(sum(1 for route in execution_routes if route.get("ready")) / max(1, len(execution_routes)))
+        cash_scores = [
+            float((route.get("cash_capability") or {}).get("score", 0.0) or 0.0)
+            for route in execution_routes
+            if isinstance(route, dict)
+        ]
+        cash_score = self._clamp01(max(cash_scores) if cash_scores else 0.0)
+        try:
+            change_pct = abs(float(item.get("change_pct", 0.0) or 0.0))
+        except Exception:
+            change_pct = 0.0
+        target_pct = max(0.01, float(SHADOW_TRADE_TARGET_MOVE_PCT or 0.18))
+        momentum_score = self._clamp01(change_pct / max(target_pct * 2.0, 0.01))
+        price_score = 1.0 if float(item.get("reference_price", 0.0) or 0.0) > 0 else 0.2
+        model_score = 1.0 if bool(item.get("model_alignment")) else 0.55
+        mesh_score = self._clamp01((intelligence_mesh or {}).get("selection_mesh_score", 0.0), 0.0)
+
+        symbol = str(item.get("symbol") or "").upper().strip()
+        symbol_stats = (shadow_index.get("symbols", {}) or {}).get(symbol, {}) if isinstance(shadow_index, dict) else {}
+        route_stats: List[Dict[str, Any]] = []
+        side = str(item.get("side") or "BUY").upper()
+        for route in execution_routes:
+            if not isinstance(route, dict):
+                continue
+            signature = f"{str(route.get('venue') or '').lower()}:{str(route.get('market_type') or '').lower()}:{str(route.get('symbol') or '').upper().strip()}:{side}"
+            stats = (shadow_index.get("routes", {}) or {}).get(signature, {}) if isinstance(shadow_index, dict) else {}
+            if stats:
+                route_stats.append(stats)
+        validation_rates = [
+            float(stats.get("validation_rate", 0.0) or 0.0)
+            for stats in route_stats + ([symbol_stats] if symbol_stats else [])
+            if int(stats.get("total", 0) or 0) > 0
+        ]
+        history_score = self._clamp01(max(validation_rates) if validation_rates else 0.5)
+        validated_count = sum(int(stats.get("validated", 0) or 0) for stats in route_stats)
+        missed_count = sum(int(stats.get("missed", 0) or 0) for stats in route_stats)
+        if symbol_stats:
+            validated_count = max(validated_count, int(symbol_stats.get("validated", 0) or 0))
+            missed_count = max(missed_count, int(symbol_stats.get("missed", 0) or 0))
+        fastest_values = [
+            float(stats.get("fastest_validation_sec", 0.0) or 0.0)
+            for stats in route_stats + ([symbol_stats] if symbol_stats else [])
+            if float(stats.get("fastest_validation_sec", 0.0) or 0.0) > 0
+        ]
+        heuristic_eta = (target_pct / max(change_pct, 0.01)) * 60.0
+        estimated_eta = min(max(5.0, heuristic_eta), SHADOW_TRADE_VALIDATION_HORIZON_SEC * 3.0)
+        if fastest_values:
+            estimated_eta = min(estimated_eta, min(fastest_values))
+        eta_score = self._clamp01(SHADOW_TRADE_VALIDATION_HORIZON_SEC / max(estimated_eta, 1.0))
+        score = self._clamp01(
+            (0.22 * confidence)
+            + (0.17 * cash_score)
+            + (0.15 * history_score)
+            + (0.13 * momentum_score)
+            + (0.09 * support_score)
+            + (0.08 * model_score)
+            + (0.07 * mesh_score)
+            + (0.06 * eta_score)
+            + (0.03 * route_score)
+        )
+        return {
+            "profit_velocity_score": round(score, 6),
+            "estimated_target_eta_sec": round(estimated_eta, 3),
+            "eta_score": round(eta_score, 6),
+            "cash_route_score": round(cash_score, 6),
+            "cash_capable_route_count": sum(1 for score_value in cash_scores if score_value >= 0.55),
+            "route_score": round(route_score, 6),
+            "history_validation_score": round(history_score, 6),
+            "history_validated_count": validated_count,
+            "history_missed_count": missed_count,
+            "momentum_score": round(momentum_score, 6),
+            "price_score": round(price_score, 6),
+            "model_score": round(model_score, 6),
+            "intelligence_mesh_score": round(mesh_score, 6),
+            "selection_basis": "cash-capable routes, fresh/reference price, shadow history, support, model alignment, whole-intelligence mesh readiness, and fastest target ETA",
+        }
 
     def _build_shadow_trade_report(
         self,
@@ -3073,6 +3580,12 @@ class UnifiedMarketTrader:
                         "route_symbol": route_symbol,
                         "side": side,
                         "confidence": round(confidence, 6),
+                        "selection_rank": item.get("selection_rank"),
+                        "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                        "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
+                        "cash_capable_route_count": item.get("cash_capable_route_count", 0),
+                        "history_validation_score": item.get("history_validation_score", 0.0),
+                        "selection_basis": item.get("selection_basis", ""),
                         "support_count": int(item.get("support_count", 0) or 0),
                         "sources": list(item.get("sources", [])) if isinstance(item.get("sources"), list) else [],
                         "entry_price": round(entry_price, 8) if entry_price > 0 else 0.0,
@@ -3687,6 +4200,10 @@ class UnifiedMarketTrader:
                             "route_symbol": route_item.get("symbol"),
                             "side": item.get("side"),
                             "confidence": confidence,
+                            "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                            "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
+                            "cash_capable_route_count": item.get("cash_capable_route_count", 0),
+                            "history_validation_score": item.get("history_validation_score", 0.0),
                             "support_count": item.get("support_count", 0),
                             "sources": item.get("sources", []),
                         }
@@ -3694,7 +4211,10 @@ class UnifiedMarketTrader:
         for state in venues.values():
             state["top_candidates"] = sorted(
                 state.get("top_candidates", []),
-                key=lambda candidate: float(candidate.get("confidence", 0.0) or 0.0),
+                key=lambda candidate: (
+                    float(candidate.get("profit_velocity_score", 0.0) or 0.0),
+                    float(candidate.get("confidence", 0.0) or 0.0),
+                ),
                 reverse=True,
             )[:5]
 
@@ -3715,6 +4235,7 @@ class UnifiedMarketTrader:
         if not publish_enabled:
             global_blockers.append("order_intent_publish_disabled")
         model_coverage = self._all_exchange_model_coverage()
+        intelligence_mesh = order_flow_feed.get("intelligence_mesh", {}) if isinstance(order_flow_feed, dict) else {}
         global_clearances = list(global_blockers)
         global_guards = list(global_blockers)
         trade_path_state = "available" if live_enabled and not real_orders_disabled and not exchange_mutations_disabled else "operator_authorization_required"
@@ -3748,6 +4269,7 @@ class UnifiedMarketTrader:
             "latest_published": getattr(self, "_latest_order_intents", {}),
             "latest_execution": getattr(self, "_latest_execution_results", {}),
             "model_coverage": model_coverage,
+            "intelligence_mesh": intelligence_mesh,
             "order_intents_published": 0,
         }
 
@@ -3784,6 +4306,12 @@ class UnifiedMarketTrader:
                     "symbol": item.get("symbol"),
                     "side": item.get("side"),
                     "confidence": confidence,
+                    "selection_rank": item.get("selection_rank"),
+                    "profit_velocity_score": item.get("profit_velocity_score", 0.0),
+                    "estimated_target_eta_sec": item.get("estimated_target_eta_sec", 0.0),
+                    "cash_capable_route_count": item.get("cash_capable_route_count", 0),
+                    "history_validation_score": item.get("history_validation_score", 0.0),
+                    "selection_basis": item.get("selection_basis", ""),
                     "support_count": item.get("support_count", 0),
                     "sources": item.get("sources", []),
                     "model_signal": item.get("model_signal", {}),
