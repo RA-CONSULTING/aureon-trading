@@ -9,6 +9,34 @@ from aureon.trading.temporal_trade_cognition import TemporalTradeCognition
 
 
 class TestKrakenMarginStartupSync(unittest.TestCase):
+    def test_capital_snapshot_uses_live_spot_balances_when_margin_equity_is_zero(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.dry_run = False
+        trader.dynamic_sizer = None
+        trader.market = None
+        trader._last_margin_capital = None
+        trader._last_margin_capital_at = 0.0
+        trader._last_margin_capital_error = ""
+        trader._last_spot_balance_snapshot = {}
+        trader._last_spot_balance_snapshot_at = 0.0
+        trader.client = type("ClientStub", (), {
+            "get_trade_balance": staticmethod(lambda: {
+                "equity_value": "0.0",
+                "free_margin": "0.0",
+                "margin_amount": "0.0",
+                "unrealized_pnl": "0.0",
+            }),
+            "get_account_balance": staticmethod(lambda: {"GBP": 100.0, "USDT": 5.0}),
+        })()
+
+        snapshot = trader._get_capital_snapshot()
+
+        self.assertAlmostEqual(snapshot["equity"], 132.0)
+        self.assertAlmostEqual(snapshot["spot_value_usd"], 132.0)
+        self.assertAlmostEqual(snapshot["spot_cash_usd"], 132.0)
+        self.assertEqual(snapshot["portfolio_value_source"], "spot_balance")
+        self.assertEqual(snapshot["balance_snapshot"]["balances"]["GBP"]["amount"], 100.0)
+
     def test_margin_fast_profit_capture_uses_true_net_after_fees_and_collateral_snapshot(self):
         trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
         trader.dry_run = False

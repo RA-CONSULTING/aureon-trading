@@ -34,7 +34,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 try:
     # Load repo-local environment variables so users can run this file directly
@@ -175,6 +175,7 @@ ORDERBOOK_PROBE_STALE_TTL_SEC = max(
     _env_float("UNIFIED_ORDERBOOK_PROBE_STALE_TTL_SEC", 30.0),
 )
 KRAKEN_TICK_MIN_INTERVAL_SEC = max(0.5, _env_float("UNIFIED_KRAKEN_TICK_MIN_INTERVAL_SEC", 1.0))
+KRAKEN_TICK_TIMEOUT_SEC = max(KRAKEN_TICK_MIN_INTERVAL_SEC, _env_float("UNIFIED_KRAKEN_TICK_TIMEOUT_SEC", 20.0))
 CAPITAL_TICK_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_CAPITAL_TICK_MIN_INTERVAL_SEC", 2.0))
 ORDER_INTENT_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_ORDER_INTENT_MIN_INTERVAL_SEC", 8.0))
 ORDER_INTENT_MIN_CONFIDENCE = max(0.0, min(1.0, _env_float("UNIFIED_ORDER_INTENT_MIN_CONFIDENCE", 0.35)))
@@ -675,6 +676,9 @@ class UnifiedMarketTrader:
         self._executor_route_lock = threading.Lock()
         self._executor_route_inflight: Dict[str, Dict[str, Any]] = {}
         self._executor_route_results: Dict[str, Dict[str, Any]] = {}
+        self._kraken_tick_lock = threading.Lock()
+        self._kraken_tick_inflight: Dict[str, Any] = {}
+        self._latest_kraken_tick_state: Dict[str, Any] = {}
         self._kraken_spot_fast_profit_state: Dict[str, Any] = {}
         self._tick_phase = "booting"
         self._tick_phase_at = time.time()
@@ -931,6 +935,121 @@ class UnifiedMarketTrader:
                 "reason": "executor_route_finished_without_result",
                 "timeout_sec": timeout_sec,
             }
+
+    def _ensure_kraken_tick_state(self) -> None:
+        if not hasattr(self, "_kraken_tick_lock") or self._kraken_tick_lock is None:
+            self._kraken_tick_lock = threading.Lock()
+        if not hasattr(self, "_kraken_tick_inflight") or self._kraken_tick_inflight is None:
+            self._kraken_tick_inflight = {}
+        if not hasattr(self, "_latest_kraken_tick_state") or self._latest_kraken_tick_state is None:
+            self._latest_kraken_tick_state = {}
+
+    def _kraken_tick_snapshot(self) -> Dict[str, Any]:
+        self._ensure_kraken_tick_state()
+        now = time.time()
+        with self._kraken_tick_lock:
+            inflight = dict(self._kraken_tick_inflight)
+            latest = dict(self._latest_kraken_tick_state)
+        if inflight.get("running"):
+            started_at = float(inflight.get("started_at", now) or now)
+            latest["running"] = True
+            latest["running_sec"] = round(max(0.0, now - started_at), 3)
+            latest["timeout_sec"] = KRAKEN_TICK_TIMEOUT_SEC
+        return latest
+
+    def _run_kraken_tick_with_timeout(self) -> Tuple[List[dict], Dict[str, Any]]:
+        self._ensure_kraken_tick_state()
+        now = time.time()
+        timeout_sec = KRAKEN_TICK_TIMEOUT_SEC
+        with self._kraken_tick_lock:
+            existing = self._kraken_tick_inflight
+            if existing.get("running"):
+                started_at = float(existing.get("started_at", now) or now)
+                state = {
+                    "ok": False,
+                    "held": True,
+                    "running": True,
+                    "reason": "kraken_tick_inflight",
+                    "started_at_iso": existing.get("started_at_iso"),
+                    "running_sec": round(max(0.0, now - started_at), 3),
+                    "timeout_sec": timeout_sec,
+                }
+                self._latest_kraken_tick_state = dict(state)
+                return [], state
+            self._kraken_tick_inflight = {
+                "running": True,
+                "started_at": now,
+                "started_at_iso": datetime.fromtimestamp(now).isoformat(),
+                "timeout_sec": timeout_sec,
+            }
+
+        result_queue = queue.Queue(maxsize=1)
+
+        def runner() -> None:
+            error: Optional[Exception] = None
+            closed: List[dict] = []
+            try:
+                raw = self.kraken.tick() if self.kraken is not None else []
+                closed = raw if isinstance(raw, list) else []
+            except Exception as e:
+                error = e
+            completed_at = time.time()
+            state = {
+                "ok": error is None,
+                "running": False,
+                "closed_count": len(closed),
+                "elapsed_sec": round(max(0.0, completed_at - now), 3),
+                "timeout_sec": timeout_sec,
+                "completed_after_timeout": bool(completed_at - now > timeout_sec),
+                "completed_at_iso": datetime.fromtimestamp(completed_at).isoformat(),
+            }
+            if error is not None:
+                state["error"] = str(error)
+            with self._kraken_tick_lock:
+                self._kraken_tick_inflight = {
+                    "running": False,
+                    "started_at": now,
+                    "completed_at": completed_at,
+                    "timeout_sec": timeout_sec,
+                }
+                self._latest_kraken_tick_state = dict(state)
+            try:
+                result_queue.put_nowait((closed, state, error))
+            except queue.Full:
+                pass
+
+        thread = threading.Thread(target=runner, name="aureon-kraken-tick", daemon=True)
+        thread.start()
+        thread.join(timeout_sec)
+        if thread.is_alive():
+            state = {
+                "ok": False,
+                "held": True,
+                "timeout": True,
+                "running": True,
+                "reason": "kraken_tick_timeout",
+                "running_sec": round(max(0.0, time.time() - now), 3),
+                "timeout_sec": timeout_sec,
+                "source": "unified_market_trader.kraken_tick",
+            }
+            with self._kraken_tick_lock:
+                self._latest_kraken_tick_state = dict(state)
+            return [], state
+        try:
+            closed, state, error = result_queue.get_nowait()
+        except queue.Empty:
+            state = {
+                "ok": False,
+                "held": True,
+                "reason": "kraken_tick_finished_without_result",
+                "timeout_sec": timeout_sec,
+            }
+            with self._kraken_tick_lock:
+                self._latest_kraken_tick_state = dict(state)
+            return [], state
+        if error is not None:
+            raise error
+        return closed, state
 
     def _preflight_item(self, name: str, ok: bool, severity: str, detail: str, meta: Dict[str, Any] | None = None) -> Dict[str, Any]:
         return {
@@ -1555,6 +1674,7 @@ class UnifiedMarketTrader:
             shadow_trade_report=shadow_trade_report,
             hnc_cognitive_proof=hnc_cognitive_proof,
         )
+        kraken_equity = self._kraken_equity_from_payload(kraken_payload)
         order_flow_feed["intelligence_mesh"] = intelligence_mesh
         exchange_action_plan["intelligence_mesh"] = intelligence_mesh
         self._publish_order_intents(order_flow_feed, exchange_action_plan)
@@ -1584,17 +1704,37 @@ class UnifiedMarketTrader:
             "queen_voice": queen_voice,
             "combined": {
                 "open_positions": len(kraken_payload.get("positions", [])) + len(capital_payload.get("positions", [])),
-                "kraken_equity": float(kraken_payload.get("equity", 0.0) or 0.0),
+                "kraken_equity": kraken_equity,
                 "capital_equity_gbp": float(capital_payload.get("equity_gbp", 0.0) or 0.0),
                 "kraken_session_pnl": float(kraken_payload.get("session_profit", 0.0) or 0.0),
                 "capital_session_pnl_gbp": float(capital_payload.get("stats", {}).get("total_pnl_gbp", 0.0) or 0.0),
                 "kraken_ready": self.kraken_ready,
                 "capital_ready": self.capital_ready,
+                "portfolio_balances": {
+                    "kraken": kraken_payload.get("portfolio_balances") or kraken_payload.get("balance_snapshot") or {},
+                    "capital": capital_payload.get("portfolio_balances") or capital_payload.get("balance_snapshot") or {},
+                },
             },
         }
         self._latest_dashboard_payload = self._copy_payload(payload)
         self._write_runtime_status_file()
         return payload
+
+    def _kraken_equity_from_payload(self, payload: Dict[str, Any]) -> float:
+        for key in ("equity", "equity_usd", "portfolio_value_usd", "portfolio_value"):
+            try:
+                value = float(payload.get(key, 0.0) or 0.0)
+                if value > 0:
+                    return value
+            except Exception:
+                continue
+        balance_snapshot = payload.get("balance_snapshot") or payload.get("portfolio_balances")
+        if isinstance(balance_snapshot, dict):
+            try:
+                return float(balance_snapshot.get("total_usd_estimate", 0.0) or 0.0)
+            except Exception:
+                return 0.0
+        return 0.0
 
     def _extract_candidate_confidence(self, candidate: Dict[str, Any]) -> float:
         for key in ("confidence", "score", "probability", "win_prob"):
@@ -5838,6 +5978,7 @@ class UnifiedMarketTrader:
                 "open_positions": int(combined.get("open_positions", 0) or 0),
                 "kraken_equity": float(combined.get("kraken_equity", 0.0) or 0.0),
                 "capital_equity_gbp": float(combined.get("capital_equity_gbp", 0.0) or 0.0),
+                "portfolio_balances": combined.get("portfolio_balances", {}) if isinstance(combined, dict) else {},
             },
             "api_governor": payload.get("api_governor") or self._governor().snapshot(),
             "live_stream_cache": (
@@ -5875,6 +6016,7 @@ class UnifiedMarketTrader:
                 "file_heartbeat_is_not_market_freshness": True,
             },
             "executor_route_state": self._executor_route_snapshot(),
+            "kraken_tick_state": self._kraken_tick_snapshot(),
             "runtime_writer": {
                 "owns_lock": bool(getattr(self, "_owns_runtime_status", True)),
                 "pid": os.getpid(),
@@ -6094,7 +6236,15 @@ class UnifiedMarketTrader:
             ):
                 self._set_tick_phase("kraken_tick")
                 try:
-                    kraken_closed = self.kraken.tick()
+                    kraken_closed, kraken_tick_state = self._run_kraken_tick_with_timeout()
+                    if kraken_tick_state.get("timeout") or kraken_tick_state.get("held"):
+                        self._last_tick_error = str(kraken_tick_state.get("reason") or "kraken_tick_held")
+                        logger.warning(
+                            "Kraken tick held: %s running=%ss timeout=%ss",
+                            kraken_tick_state.get("reason"),
+                            kraken_tick_state.get("running_sec"),
+                            kraken_tick_state.get("timeout_sec"),
+                        )
                 except Exception as e:
                     self._governor().record_error("kraken", e)
                     self.kraken_error = str(e)

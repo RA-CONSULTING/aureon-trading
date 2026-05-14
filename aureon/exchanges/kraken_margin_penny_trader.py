@@ -625,6 +625,9 @@ KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT = max(
     float(LIQUIDATION_FORCE),
     float(os.getenv("KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT", str(LIQUIDATION_WARN))),
 )
+KRAKEN_MARGIN_CAPITAL_CACHE_TTL_SEC = max(3.0, float(os.getenv("KRAKEN_MARGIN_CAPITAL_CACHE_TTL_SEC", "20.0")))
+KRAKEN_SPOT_BALANCE_CACHE_TTL_SEC = max(5.0, float(os.getenv("KRAKEN_SPOT_BALANCE_CACHE_TTL_SEC", "30.0")))
+KRAKEN_TRUTH_CHECK_INTERVAL_SEC = max(30.0, float(os.getenv("KRAKEN_TRUTH_CHECK_INTERVAL_SEC", "120.0")))
 DYNAMIC_MIN_NOTIONAL_USD = float(os.getenv("KRAKEN_DYNAMIC_MIN_NOTIONAL_USD", "5.0"))
 DYNAMIC_MIN_PROFIT_USD = float(os.getenv("KRAKEN_DYNAMIC_MIN_PROFIT_USD", "0.05"))
 DYNAMIC_TARGET_EQUITY_FRACTION = float(os.getenv("KRAKEN_DYNAMIC_TARGET_EQUITY_FRACTION", "0.01"))
@@ -3153,6 +3156,13 @@ class KrakenMarginArmyTrader:
         self._latest_monitor_line = ""
         self._latest_status_lines: List[str] = []
         self._latest_dashboard_payload: Dict[str, Any] = {}
+        self._last_margin_capital = None
+        self._last_margin_capital_at = 0.0
+        self._last_margin_capital_error = ""
+        self._last_spot_balance_snapshot: Dict[str, Any] = {}
+        self._last_spot_balance_snapshot_at = 0.0
+        self._last_truth_check_at = 0.0
+        self._latest_truth_check: Dict[str, Any] = {}
         self._last_fast_profit_capture: Dict[str, Any] = {}
         self._fast_profit_capture_by_order: Dict[str, Dict[str, Any]] = {}
         self._local_dashboard_server: Optional[ThreadingHTTPServer] = None
@@ -5265,19 +5275,7 @@ class KrakenMarginArmyTrader:
         )
         return data
 
-    def _get_margin_capital(self):
-        """Return a normalized live margin snapshot for sizing decisions."""
-        if getattr(self, "dry_run", False):
-            if MarginCapitalSnapshot is not None:
-                return MarginCapitalSnapshot(
-                    equity=10000.0,
-                    free_margin=10000.0,
-                    margin_used=0.0,
-                    unrealized_pnl=0.0,
-                    margin_level=0.0,
-                    trade_balance=10000.0,
-                )
-        tb = self.client.get_trade_balance()
+    def _margin_capital_from_trade_balance(self, tb: Dict[str, Any]):
         if MarginCapitalSnapshot is None:
             equity = float(tb.get("equity", tb.get("equity_value", tb.get("e", 0.0))) or 0.0)
             margin_used = float(tb.get("margin_amount", tb.get("m", 0.0)) or 0.0)
@@ -5293,6 +5291,45 @@ class KrakenMarginArmyTrader:
                 "trade_balance": float(tb.get("trade_balance", tb.get("tb", 0.0)) or 0.0),
             })()
         return MarginCapitalSnapshot.from_trade_balance(tb)
+
+    def _get_margin_capital(self, *, force: bool = False):
+        """Return a normalized live margin snapshot, cached so private API stalls do not freeze the loop."""
+        if getattr(self, "dry_run", False):
+            if MarginCapitalSnapshot is not None:
+                return MarginCapitalSnapshot(
+                    equity=10000.0,
+                    free_margin=10000.0,
+                    margin_used=0.0,
+                    unrealized_pnl=0.0,
+                    margin_level=0.0,
+                    trade_balance=10000.0,
+                )
+        now = time.time()
+        cached = getattr(self, "_last_margin_capital", None)
+        cached_at = float(getattr(self, "_last_margin_capital_at", 0.0) or 0.0)
+        if cached is not None and not force and (now - cached_at) < KRAKEN_MARGIN_CAPITAL_CACHE_TTL_SEC:
+            return cached
+
+        try:
+            rate_status = self.client.get_rate_limit_status() if hasattr(self.client, "get_rate_limit_status") else {}
+            if cached is not None and isinstance(rate_status, dict) and rate_status.get("in_backoff"):
+                self._last_margin_capital_error = "kraken_private_api_in_backoff_using_cached_margin_capital"
+                return cached
+        except Exception:
+            pass
+
+        try:
+            tb = self.client.get_trade_balance()
+            snapshot = self._margin_capital_from_trade_balance(tb)
+            self._last_margin_capital = snapshot
+            self._last_margin_capital_at = time.time()
+            self._last_margin_capital_error = ""
+            return snapshot
+        except Exception as e:
+            self._last_margin_capital_error = str(e)
+            if cached is not None:
+                return cached
+            raise
 
     def _dynamic_profit_target_for_equity(self, equity: float) -> float:
         if getattr(self, "dynamic_sizer", None) is None:
@@ -5334,20 +5371,117 @@ class KrakenMarginArmyTrader:
             split_slot=split_slot,
         )
 
+    def _usd_value_for_asset_balance(self, asset: str, amount: float) -> float:
+        asset_norm = KRAKEN_BASE_MAP.get(str(asset or "").upper(), str(asset or "").upper())
+        if amount <= 0:
+            return 0.0
+        if asset_norm in {"USD", "USDT", "USDC", "DAI"}:
+            return amount
+        if asset_norm == "GBP":
+            return amount * float(os.getenv("KRAKEN_GBP_USD_RATE", "1.27"))
+        if asset_norm == "EUR":
+            return amount * float(os.getenv("KRAKEN_EUR_USD_RATE", "1.08"))
+        price = 0.0
+        try:
+            if getattr(self, "market", None) is not None:
+                price = float(self.market.get_single_price(f"{asset_norm}USDT") or 0.0)
+        except Exception:
+            price = 0.0
+        if price <= 0:
+            try:
+                ticker = self.client.best_price(f"{asset_norm}USD")
+                price = float(ticker.get("price", 0.0) or 0.0)
+            except Exception:
+                price = 0.0
+        return amount * price if price > 0 else 0.0
+
+    def _get_spot_balance_snapshot(self, *, force: bool = False) -> Dict[str, Any]:
+        """Return live Kraken spot/cash balances with cached USD valuation for the runtime mirror."""
+        now = time.time()
+        cached = getattr(self, "_last_spot_balance_snapshot", {}) or {}
+        cached_at = float(getattr(self, "_last_spot_balance_snapshot_at", 0.0) or 0.0)
+        if cached and not force and (now - cached_at) < KRAKEN_SPOT_BALANCE_CACHE_TTL_SEC:
+            return dict(cached)
+
+        balances: Dict[str, float] = {}
+        try:
+            if hasattr(self.client, "get_account_balance"):
+                balances = {
+                    str(asset).upper(): float(amount)
+                    for asset, amount in self.client.get_account_balance().items()
+                    if float(amount or 0.0) > 0
+                }
+        except Exception as e:
+            if cached:
+                snapshot = dict(cached)
+                snapshot["stale"] = True
+                snapshot["error"] = str(e)
+                return snapshot
+            snapshot = {
+                "generated_at": datetime.now().isoformat(),
+                "source": "kraken_private_balance",
+                "available": False,
+                "stale": True,
+                "error": str(e),
+                "balances": {},
+                "total_usd_estimate": 0.0,
+                "tradable_cash_usd": 0.0,
+            }
+            self._last_spot_balance_snapshot = snapshot
+            self._last_spot_balance_snapshot_at = now
+            return snapshot
+
+        valued_balances: Dict[str, Dict[str, Any]] = {}
+        total_usd = 0.0
+        tradable_cash_usd = 0.0
+        for asset, amount in sorted(balances.items()):
+            usd_value = self._usd_value_for_asset_balance(asset, amount)
+            total_usd += usd_value
+            if KRAKEN_BASE_MAP.get(asset, asset) in {"USD", "USDT", "USDC", "DAI", "GBP", "EUR"}:
+                tradable_cash_usd += usd_value
+            valued_balances[asset] = {
+                "amount": round(float(amount), 12),
+                "usd_estimate": round(float(usd_value), 6),
+            }
+
+        snapshot = {
+            "generated_at": datetime.now().isoformat(),
+            "source": "kraken_private_balance_cached_live",
+            "available": bool(balances),
+            "stale": False,
+            "balances": valued_balances,
+            "asset_count": len(valued_balances),
+            "total_usd_estimate": round(float(total_usd), 6),
+            "tradable_cash_usd": round(float(tradable_cash_usd), 6),
+            "cache_ttl_sec": KRAKEN_SPOT_BALANCE_CACHE_TTL_SEC,
+        }
+        self._last_spot_balance_snapshot = snapshot
+        self._last_spot_balance_snapshot_at = time.time()
+        return dict(snapshot)
+
     def _get_capital_snapshot(self) -> dict:
         """Return current Kraken portfolio metrics for sizing and UI."""
         snapshot = self._get_margin_capital()
         self._last_margin_capital = snapshot
-        equity = float(snapshot.equity or 0.0)
+        margin_equity = float(snapshot.equity or 0.0)
         free_margin = float(snapshot.free_margin or 0.0)
         margin_used = float(snapshot.margin_used or 0.0)
         unrealized = float(getattr(snapshot, "unrealized_pnl", 0.0) or 0.0)
+        spot_snapshot = self._get_spot_balance_snapshot()
+        spot_value_usd = float(spot_snapshot.get("total_usd_estimate", 0.0) or 0.0)
+        spot_cash_usd = float(spot_snapshot.get("tradable_cash_usd", 0.0) or 0.0)
+        equity = max(margin_equity, spot_value_usd)
+        if margin_equity <= 0:
+            free_margin = max(free_margin, spot_cash_usd)
         budget_fraction = TINY_ACCOUNT_MARGIN_BUFFER if equity <= TINY_ACCOUNT_EQUITY_USD else MARGIN_BUFFER
         budget = free_margin * budget_fraction
         profit_target_usd = self._dynamic_profit_target_for_equity(equity)
         target_pct_equity = (profit_target_usd / equity * 100.0) if equity > 0 else 0.0
         return {
             "equity": equity,
+            "margin_equity": margin_equity,
+            "spot_value_usd": spot_value_usd,
+            "spot_cash_usd": spot_cash_usd,
             "free_margin": free_margin,
             "margin_used": margin_used,
             "unrealized": unrealized,
@@ -5355,6 +5489,9 @@ class KrakenMarginArmyTrader:
             "budget_fraction": budget_fraction,
             "profit_target_usd": profit_target_usd,
             "target_pct_equity": target_pct_equity,
+            "balance_snapshot": spot_snapshot,
+            "margin_capital_error": getattr(self, "_last_margin_capital_error", ""),
+            "portfolio_value_source": "margin_trade_balance" if margin_equity >= spot_value_usd else "spot_balance",
         }
 
     def _track_equity_metrics(self, equity: float) -> tuple[float, float]:
@@ -5451,7 +5588,18 @@ class KrakenMarginArmyTrader:
             )
             payload = {
                 "user_id": self.dashboard_user_id,
+                "equity": equity,
+                "equity_usd": equity,
                 "portfolio_value": equity,
+                "portfolio_value_usd": equity,
+                "free_margin": float(capital["free_margin"] or 0.0),
+                "margin_used": float(capital["margin_used"] or 0.0),
+                "margin_equity_usd": float(capital.get("margin_equity", 0.0) or 0.0),
+                "spot_balance_value_usd": float(capital.get("spot_value_usd", 0.0) or 0.0),
+                "spot_cash_usd": float(capital.get("spot_cash_usd", 0.0) or 0.0),
+                "portfolio_value_source": capital.get("portfolio_value_source", ""),
+                "balance_snapshot": capital.get("balance_snapshot", {}),
+                "portfolio_balances": capital.get("balance_snapshot", {}),
                 "peak_equity": max(self._peak_equity_seen, equity, self.starting_equity),
                 "current_drawdown": current_drawdown,
                 "max_drawdown": max_drawdown,
@@ -5510,6 +5658,7 @@ class KrakenMarginArmyTrader:
                 "thought_bus_snapshot": self._thought_bus_snapshot,
                 "cognition_snapshot": self._cognition_snapshot,
                 "trade_cognition": getattr(self, "_latest_trade_cognition", {}),
+                "truth_check": getattr(self, "_latest_truth_check", {}),
                 "kraken_fast_profit_capture": getattr(self, "_last_fast_profit_capture", {}),
             }
             self._latest_dashboard_payload = dict(payload)
@@ -7224,8 +7373,11 @@ class KrakenMarginArmyTrader:
             danger_note=danger_note,
         )
 
-        # === TRUTH CHECK: Reconcile with Kraken every ~2 minutes ===
-        if int(hold_time) % 120 < MONITOR_INTERVAL + 1:
+        # === TRUTH CHECK: Reconcile with Kraken on a real interval, not modulo time.
+        # Keep the monitor alive if Kraken private endpoints are slow/rate-limited;
+        # the unified supervisor separately times the whole Kraken tick.
+        if now - float(getattr(self, "_last_truth_check_at", 0.0) or 0.0) >= KRAKEN_TRUTH_CHECK_INTERVAL_SEC:
+            self._last_truth_check_at = now
             try:
                 tb = self.client.get_trade_balance()
                 ml = tb.get("margin_level", 0)
@@ -7253,6 +7405,17 @@ class KrakenMarginArmyTrader:
                     f"Position pnl=${kraken_pnl:+.2f} fee=${kraken_fee:.4f} | "
                     f"Our net=${net_pnl:+.2f} fees=${total_fees:.4f}"
                 )
+                self._latest_truth_check = {
+                    "generated_at": datetime.now().isoformat(),
+                    "ok": True,
+                    "pair": trade.pair,
+                    "kraken_equity": float(kraken_equity or 0.0),
+                    "margin_level": float(ml or 0.0),
+                    "kraken_unrealized_pnl": float(kraken_pnl or 0.0),
+                    "kraken_fee": float(kraken_fee or 0.0),
+                    "local_net_pnl": float(net_pnl or 0.0),
+                    "validated_net_pnl": float(validated_net_pnl or 0.0),
+                }
                 # Update entry_fee if Kraken shows different (includes rollover)
                 if kraken_fee > 0 and abs(kraken_fee - trade.entry_fee) > 0.001:
                     logger.info(f"Fee drift: Kraken=${kraken_fee:.4f} vs ours=${trade.entry_fee:.4f}")
@@ -7272,10 +7435,17 @@ class KrakenMarginArmyTrader:
                 elif 0 < ml < LIQUIDATION_WARN:
                     logger.warning(f"WARNING: Margin level {ml:.1f}%")
             except Exception as e:
+                self._latest_truth_check = {
+                    "generated_at": datetime.now().isoformat(),
+                    "ok": False,
+                    "pair": trade.pair,
+                    "error": str(e),
+                    "using_local_position_state": True,
+                }
                 if self.dry_run:
                     logger.debug(f"Truth check failed: {e}")
                 else:
-                    raise RuntimeError(f"Live truth check failed: {e}")
+                    logger.warning(f"Live truth check deferred: {e}")
 
         return None
 

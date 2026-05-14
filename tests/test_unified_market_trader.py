@@ -850,6 +850,39 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertEqual(payload["nested"]["value"], 9)
         self.assertEqual(trader._latest_dashboard_payload["nested"]["value"], 1)
 
+    def test_kraken_equity_uses_portfolio_value_and_balance_snapshot_fallbacks(self):
+        trader = self._make_trader()
+
+        self.assertEqual(trader._kraken_equity_from_payload({"portfolio_value": 123.45}), 123.45)
+        self.assertEqual(
+            trader._kraken_equity_from_payload({"balance_snapshot": {"total_usd_estimate": 77.7}}),
+            77.7,
+        )
+
+    def test_kraken_tick_timeout_does_not_block_unified_runtime(self):
+        trader = self._make_trader()
+        old_timeout = trader_mod.KRAKEN_TICK_TIMEOUT_SEC
+        trader_mod.KRAKEN_TICK_TIMEOUT_SEC = 0.05
+
+        class SlowKraken:
+            def tick(self):
+                time.sleep(0.2)
+                return [{"pair": "BTC/USD", "net_pnl": 0.1}]
+
+        try:
+            trader.kraken = SlowKraken()
+            closed, state = trader._run_kraken_tick_with_timeout()
+
+            self.assertEqual(closed, [])
+            self.assertTrue(state["timeout"])
+            self.assertEqual(state["reason"], "kraken_tick_timeout")
+            self.assertTrue(trader._kraken_tick_snapshot()["running"])
+            time.sleep(0.25)
+            self.assertFalse(trader._kraken_tick_snapshot().get("running", False))
+            self.assertEqual(trader._kraken_tick_snapshot()["closed_count"], 1)
+        finally:
+            trader_mod.KRAKEN_TICK_TIMEOUT_SEC = old_timeout
+
     def test_runtime_health_uses_cached_state_and_flags_missing_systems(self):
         trader = self._make_trader()
         trader._latest_dashboard_payload = {
