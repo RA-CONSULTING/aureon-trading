@@ -589,6 +589,17 @@ function runtimeDetails(data: any, flight: any): Array<{ label: string; value: s
   return details;
 }
 
+function runtimeModeLabel(data: any): string {
+  const actionPlan = data?.exchange_action_plan || {};
+  const latestExecution = actionPlan?.latest_execution || data?.latest_execution || {};
+  if (latestExecution?.live_action_clearance === "cleared") return "live action cleared";
+  if ((actionPlan?.latest_published?.intent_count || actionPlan?.order_intents_published) > 0) return "intent published";
+  if (actionPlan?.order_intent_publish_enabled && actionPlan?.trade_path_state === "available") return "runtime gated action";
+  if (actionPlan?.mode) return String(actionPlan.mode).replaceAll("_", " ");
+  if (data?.ok === false) return "clearance pending";
+  return String(data?.trading_mode || data?.queen_state || "observe");
+}
+
 async function loadRuntimeObservation(): Promise<RuntimeObservation> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 1500);
@@ -611,7 +622,7 @@ async function loadRuntimeObservation(): Promise<RuntimeObservation> {
           { label: "portfolio", value: formatCompact(data?.portfolio_value || data?.combined?.equity || data?.combined?.capital_equity_gbp || 0) },
           { label: "open positions", value: formatCompact(data?.combined?.open_positions || data?.positions?.length || 0) },
           { label: "trades", value: formatCompact(data?.total_trades || 0) },
-          { label: "mode", value: data?.ok === false ? "clearance pending" : String(data?.trading_mode || data?.queen_state || "observe") },
+          { label: "mode", value: runtimeModeLabel(data) },
         ],
         clearances,
         details: runtimeDetails(data, flight),

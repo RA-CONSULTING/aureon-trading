@@ -132,6 +132,9 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader._executor_route_lock = trader_mod.threading.Lock()
         trader._executor_route_inflight = {}
         trader._executor_route_results = {}
+        trader._capital_tick_lock = trader_mod.threading.Lock()
+        trader._capital_tick_inflight = {}
+        trader._latest_capital_tick_state = {}
         trader._tick_phase = "idle"
         trader._tick_phase_at = time.time()
         trader._thought_bus = None
@@ -715,6 +718,54 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertEqual(len(calls), trader_mod.ORDERBOOK_PROBE_MAX_PER_TICK + 2)
         self.assertEqual(summary["thresholds"]["dynamic_orderbook_probe_max_per_tick"], trader_mod.ORDERBOOK_PROBE_MAX_PER_TICK + 2)
         self.assertEqual(summary["dynamic_intelligence_budget"]["mode"], "balance_weighted_dynamic_ocean_wave_scan")
+
+    def test_orderbook_pressure_samples_top_ranked_candidate_without_fast_money_threshold(self):
+        trader = self._make_trader()
+        trader._dynamic_intelligence_budget = {
+            "schema_version": 1,
+            "mode": "test_budget",
+            "orderbook_probe_limit": 1,
+        }
+        calls = []
+
+        def pressure(item):
+            calls.append(item.get("symbol"))
+            return {
+                "available": True,
+                "source": "test_orderbook",
+                "pressure_side": "BUY",
+                "score": 0.71,
+            }
+
+        trader._orderbook_pressure_snapshot = pressure  # type: ignore[method-assign]
+        ranked = [
+            {
+                "symbol": "BTCUSD",
+                "side": "BUY",
+                "confidence": trader_mod.ORDER_INTENT_MIN_CONFIDENCE,
+                "profit_velocity_score": 0.44,
+                "execution_routes": [{"ready": True, "cash_capability": {"score": 0.7}}],
+                "ready_route_count": 1,
+                "fast_money_profile": {
+                    "fast_money_candidate": False,
+                    "fast_money_score": 0.32,
+                    "volatility_pct": 0.02,
+                },
+            }
+        ]
+
+        summary = trader._attach_orderbook_fast_money_pressure(
+            ranked,
+            shadow_index={},
+            intelligence_mesh={"selection_mesh_score": 0.5},
+        )
+
+        self.assertEqual(calls, ["BTCUSD"])
+        self.assertEqual(summary["orderbook_attempt_count"], 1)
+        self.assertEqual(summary["orderbook_probe_count"], 1)
+        self.assertTrue(summary["active_this_cycle"])
+        self.assertTrue(summary["fed_to_decision_logic"])
+        self.assertEqual(ranked[0]["fast_money_profile"]["orderbook_alignment"], "aligned")
 
     def test_intelligence_mesh_reports_capability_presence_and_active_bridges(self):
         trader = self._make_trader()
@@ -1485,6 +1536,30 @@ class UnifiedMarketTraderTests(unittest.TestCase):
             self.assertEqual(trader._kraken_tick_snapshot()["closed_count"], 1)
         finally:
             trader_mod.KRAKEN_TICK_TIMEOUT_SEC = old_timeout
+
+    def test_capital_tick_timeout_does_not_block_unified_runtime(self):
+        trader = self._make_trader()
+        old_timeout = trader_mod.CAPITAL_TICK_TIMEOUT_SEC
+        trader_mod.CAPITAL_TICK_TIMEOUT_SEC = 0.05
+
+        class SlowCapital:
+            def tick(self):
+                time.sleep(0.2)
+                return [{"symbol": "BTCUSD", "pnl_gbp": 0.1}]
+
+        try:
+            trader.capital = SlowCapital()
+            closed, state = trader._run_capital_tick_with_timeout()
+
+            self.assertEqual(closed, [])
+            self.assertTrue(state["timeout"])
+            self.assertEqual(state["reason"], "capital_tick_timeout")
+            self.assertTrue(trader._capital_tick_snapshot()["running"])
+            time.sleep(0.25)
+            self.assertFalse(trader._capital_tick_snapshot().get("running", False))
+            self.assertEqual(trader._capital_tick_snapshot()["closed_count"], 1)
+        finally:
+            trader_mod.CAPITAL_TICK_TIMEOUT_SEC = old_timeout
 
     def test_runtime_health_uses_cached_state_and_flags_missing_systems(self):
         trader = self._make_trader()

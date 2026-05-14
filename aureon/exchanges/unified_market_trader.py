@@ -183,6 +183,7 @@ ORDERBOOK_PROBE_STALE_TTL_SEC = max(
 KRAKEN_TICK_MIN_INTERVAL_SEC = max(0.5, _env_float("UNIFIED_KRAKEN_TICK_MIN_INTERVAL_SEC", 1.0))
 KRAKEN_TICK_TIMEOUT_SEC = max(KRAKEN_TICK_MIN_INTERVAL_SEC, _env_float("UNIFIED_KRAKEN_TICK_TIMEOUT_SEC", 20.0))
 CAPITAL_TICK_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_CAPITAL_TICK_MIN_INTERVAL_SEC", 2.0))
+CAPITAL_TICK_TIMEOUT_SEC = max(CAPITAL_TICK_MIN_INTERVAL_SEC, _env_float("UNIFIED_CAPITAL_TICK_TIMEOUT_SEC", 20.0))
 ORDER_INTENT_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_ORDER_INTENT_MIN_INTERVAL_SEC", 8.0))
 ORDER_INTENT_MIN_CONFIDENCE = max(0.0, min(1.0, _env_float("UNIFIED_ORDER_INTENT_MIN_CONFIDENCE", 0.35)))
 ORDER_INTENT_MAX_PER_CYCLE = max(1, int(_env_float("UNIFIED_ORDER_INTENT_MAX_PER_CYCLE", 4.0)))
@@ -745,6 +746,9 @@ class UnifiedMarketTrader:
         self._kraken_tick_lock = threading.Lock()
         self._kraken_tick_inflight: Dict[str, Any] = {}
         self._latest_kraken_tick_state: Dict[str, Any] = {}
+        self._capital_tick_lock = threading.Lock()
+        self._capital_tick_inflight: Dict[str, Any] = {}
+        self._latest_capital_tick_state: Dict[str, Any] = {}
         self._kraken_spot_fast_profit_state: Dict[str, Any] = {}
         self._kraken_spot_portfolio_posture_cache: Dict[str, Any] = {}
         self._kraken_spot_portfolio_posture_at: float = 0.0
@@ -1126,6 +1130,121 @@ class UnifiedMarketTrader:
             }
             with self._kraken_tick_lock:
                 self._latest_kraken_tick_state = dict(state)
+            return [], state
+        if error is not None:
+            raise error
+        return closed, state
+
+    def _ensure_capital_tick_state(self) -> None:
+        if not hasattr(self, "_capital_tick_lock") or self._capital_tick_lock is None:
+            self._capital_tick_lock = threading.Lock()
+        if not hasattr(self, "_capital_tick_inflight") or self._capital_tick_inflight is None:
+            self._capital_tick_inflight = {}
+        if not hasattr(self, "_latest_capital_tick_state") or self._latest_capital_tick_state is None:
+            self._latest_capital_tick_state = {}
+
+    def _capital_tick_snapshot(self) -> Dict[str, Any]:
+        self._ensure_capital_tick_state()
+        now = time.time()
+        with self._capital_tick_lock:
+            inflight = dict(self._capital_tick_inflight)
+            latest = dict(self._latest_capital_tick_state)
+        if inflight.get("running"):
+            started_at = float(inflight.get("started_at", now) or now)
+            latest["running"] = True
+            latest["running_sec"] = round(max(0.0, now - started_at), 3)
+            latest["timeout_sec"] = CAPITAL_TICK_TIMEOUT_SEC
+        return latest
+
+    def _run_capital_tick_with_timeout(self) -> Tuple[List[dict], Dict[str, Any]]:
+        self._ensure_capital_tick_state()
+        now = time.time()
+        timeout_sec = CAPITAL_TICK_TIMEOUT_SEC
+        with self._capital_tick_lock:
+            existing = self._capital_tick_inflight
+            if existing.get("running"):
+                started_at = float(existing.get("started_at", now) or now)
+                state = {
+                    "ok": False,
+                    "held": True,
+                    "running": True,
+                    "reason": "capital_tick_inflight",
+                    "started_at_iso": existing.get("started_at_iso"),
+                    "running_sec": round(max(0.0, now - started_at), 3),
+                    "timeout_sec": timeout_sec,
+                }
+                self._latest_capital_tick_state = dict(state)
+                return [], state
+            self._capital_tick_inflight = {
+                "running": True,
+                "started_at": now,
+                "started_at_iso": datetime.fromtimestamp(now).isoformat(),
+                "timeout_sec": timeout_sec,
+            }
+
+        result_queue = queue.Queue(maxsize=1)
+
+        def runner() -> None:
+            error: Optional[Exception] = None
+            closed: List[dict] = []
+            try:
+                raw = self.capital.tick() if self.capital is not None else []
+                closed = raw if isinstance(raw, list) else []
+            except Exception as e:
+                error = e
+            completed_at = time.time()
+            state = {
+                "ok": error is None,
+                "running": False,
+                "closed_count": len(closed),
+                "elapsed_sec": round(max(0.0, completed_at - now), 3),
+                "timeout_sec": timeout_sec,
+                "completed_after_timeout": bool(completed_at - now > timeout_sec),
+                "completed_at_iso": datetime.fromtimestamp(completed_at).isoformat(),
+            }
+            if error is not None:
+                state["error"] = str(error)
+            with self._capital_tick_lock:
+                self._capital_tick_inflight = {
+                    "running": False,
+                    "started_at": now,
+                    "completed_at": completed_at,
+                    "timeout_sec": timeout_sec,
+                }
+                self._latest_capital_tick_state = dict(state)
+            try:
+                result_queue.put_nowait((closed, state, error))
+            except queue.Full:
+                pass
+
+        thread = threading.Thread(target=runner, name="aureon-capital-tick", daemon=True)
+        thread.start()
+        thread.join(timeout_sec)
+        if thread.is_alive():
+            state = {
+                "ok": False,
+                "held": True,
+                "timeout": True,
+                "running": True,
+                "reason": "capital_tick_timeout",
+                "running_sec": round(max(0.0, time.time() - now), 3),
+                "timeout_sec": timeout_sec,
+                "source": "unified_market_trader.capital_tick",
+            }
+            with self._capital_tick_lock:
+                self._latest_capital_tick_state = dict(state)
+            return [], state
+        try:
+            closed, state, error = result_queue.get_nowait()
+        except queue.Empty:
+            state = {
+                "ok": False,
+                "held": True,
+                "reason": "capital_tick_finished_without_result",
+                "timeout_sec": timeout_sec,
+            }
+            with self._capital_tick_lock:
+                self._latest_capital_tick_state = dict(state)
             return [], state
         if error is not None:
             raise error
@@ -6490,6 +6609,8 @@ class UnifiedMarketTrader:
             for item in ranked
             if isinstance(item, dict) and isinstance(item.get("orderbook_pressure"), dict)
         ]
+        orderbook_attempt_count = len(orderbooks)
+        orderbook_available_count = sum(1 for book in orderbooks if book.get("available"))
         top_item = max(
             ranked,
             key=lambda item: float((item.get("fast_money_profile") or {}).get("fast_money_score", 0.0) or 0.0),
@@ -6503,15 +6624,34 @@ class UnifiedMarketTrader:
             "generated_at": datetime.now().isoformat(),
             "mode": "balance_weighted_high_volatility_momentum_volume_orderbook_profit_velocity",
             "candidate_count": len(candidates),
+            "active_order_flow_count": len(ranked),
+            "evaluated_candidate_count": len(profiles),
+            "active_this_cycle": bool(profiles),
+            "fed_to_decision_logic": bool(profiles),
             "high_volatility_count": sum(
                 1 for profile in profiles if float(profile.get("volatility_pct", 0.0) or 0.0) >= FAST_MONEY_MIN_VOLATILITY_PCT
             ),
-            "orderbook_probe_count": sum(1 for book in orderbooks if book.get("available")),
+            "orderbook_attempt_count": orderbook_attempt_count,
+            "orderbook_probe_count": orderbook_available_count,
             "orderbook_aligned_count": sum(1 for profile in profiles if profile.get("orderbook_alignment") == "aligned"),
             "top_symbol": top_item.get("symbol") if isinstance(top_item, dict) else "",
             "top_side": top_item.get("side") if isinstance(top_item, dict) else "",
             "top_fast_money_score": round(float(top_profile.get("fast_money_score", 0.0) or 0.0), 6),
             "top_momentum_tier": top_profile.get("momentum_tier", ""),
+            "reason": (
+                "fast_money_candidates_ready"
+                if candidates
+                else "candidates_evaluated_below_fast_money_threshold"
+                if profiles
+                else "no_ranked_order_flow_candidates"
+            ),
+            "orderbook_reason": (
+                "orderbook_pressure_available"
+                if orderbook_available_count > 0
+                else "orderbook_pressure_attempted_unavailable"
+                if orderbook_attempt_count > 0
+                else "orderbook_pressure_not_sampled_this_cycle"
+            ),
             "thresholds": {
                 "min_volatility_pct": FAST_MONEY_MIN_VOLATILITY_PCT,
                 "break_even_move_pct": FAST_MONEY_BREAK_EVEN_MOVE_PCT,
@@ -6937,6 +7077,23 @@ class UnifiedMarketTrader:
             ),
             reverse=True,
         )
+        if not probe_candidates:
+            probe_candidates = sorted(
+                [
+                    item
+                    for item in ranked
+                    if isinstance(item, dict)
+                    and (
+                        int(item.get("ready_route_count", 0) or 0) > 0
+                        or float(item.get("confidence", 0.0) or 0.0) >= ORDER_INTENT_MIN_CONFIDENCE
+                    )
+                ],
+                key=lambda item: (
+                    float(item.get("profit_velocity_score", 0.0) or 0.0),
+                    float(item.get("confidence", 0.0) or 0.0),
+                ),
+                reverse=True,
+            )
         for item in probe_candidates[:self._dynamic_orderbook_probe_limit()]:
             pressure = self._orderbook_pressure_snapshot(item)
             item["orderbook_pressure"] = pressure
@@ -8476,6 +8633,7 @@ class UnifiedMarketTrader:
             },
             "executor_route_state": self._executor_route_snapshot(),
             "kraken_tick_state": self._kraken_tick_snapshot(),
+            "capital_tick_state": self._capital_tick_snapshot(),
             "runtime_writer": {
                 "owns_lock": bool(getattr(self, "_owns_runtime_status", True)),
                 "pid": os.getpid(),
@@ -8741,7 +8899,15 @@ class UnifiedMarketTrader:
             ):
                 self._set_tick_phase("capital_tick")
                 try:
-                    capital_closed = self.capital.tick()
+                    capital_closed, capital_tick_state = self._run_capital_tick_with_timeout()
+                    if capital_tick_state.get("timeout") or capital_tick_state.get("held"):
+                        self._last_tick_error = str(capital_tick_state.get("reason") or "capital_tick_held")
+                        logger.warning(
+                            "Capital tick held: %s running=%ss timeout=%ss",
+                            capital_tick_state.get("reason"),
+                            capital_tick_state.get("running_sec"),
+                            capital_tick_state.get("timeout_sec"),
+                        )
                 except Exception as e:
                     self._governor().record_error("capital", e)
                     self.capital_error = str(e)

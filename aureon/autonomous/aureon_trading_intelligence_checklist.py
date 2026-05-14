@@ -274,6 +274,7 @@ def _candidate_has_model_signal(candidate: Any) -> bool:
 
 
 def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
+    root = REPO_ROOT
     plan = runtime.get("exchange_action_plan") if isinstance(runtime.get("exchange_action_plan"), dict) else {}
     shadow = runtime.get("shadow_trading") if isinstance(runtime.get("shadow_trading"), dict) else {}
     hnc = runtime.get("hnc_cognitive_proof") if isinstance(runtime.get("hnc_cognitive_proof"), dict) else {}
@@ -282,6 +283,7 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
     stream_cache = runtime.get("live_stream_cache") if isinstance(runtime.get("live_stream_cache"), dict) else {}
     shared_order_flow = runtime.get("shared_order_flow") if isinstance(runtime.get("shared_order_flow"), dict) else {}
     fast_money = shared_order_flow.get("fast_money_intelligence") if isinstance(shared_order_flow.get("fast_money_intelligence"), dict) else {}
+    scanner_fusion = shared_order_flow.get("scanner_fusion_matrix") if isinstance(shared_order_flow.get("scanner_fusion_matrix"), dict) else {}
     venues = plan.get("venues") if isinstance(plan.get("venues"), dict) else {}
     candidates: list[Any] = []
     for venue in venues.values():
@@ -313,17 +315,37 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
     )
     shadow_active = bool(shadow.get("enabled", True) and (shadow.get("shadow_opened_count") is not None or shadow.get("active_shadow_count") is not None))
     stream_active = bool(stream_cache.get("fresh") and _as_int(stream_cache.get("symbol_count")) > 0)
-    fast_money_active = bool(_as_int(fast_money.get("candidate_count")) > 0)
-    orderbook_active = bool(_as_int(fast_money.get("orderbook_probe_count")) > 0)
+    stream_report_present = bool(stream_cache)
+    stream_fed = bool(stream_cache.get("usable_for_decision") or stream_active)
+    fast_money_report_present = bool(fast_money)
+    fast_money_active = bool(
+        fast_money.get("active_this_cycle")
+        or _as_int(fast_money.get("candidate_count")) > 0
+        or _as_int(fast_money.get("evaluated_candidate_count")) > 0
+        or _as_int(fast_money.get("active_order_flow_count")) > 0
+    )
+    fast_money_fed = bool(fast_money.get("fed_to_decision_logic") or fast_money_active)
+    orderbook_attempt_count = _as_int(fast_money.get("orderbook_attempt_count"))
+    orderbook_probe_count = _as_int(fast_money.get("orderbook_probe_count"))
+    orderbook_active = bool(orderbook_probe_count > 0 or orderbook_attempt_count > 0)
+    orderbook_fed = bool(orderbook_probe_count > 0 or orderbook_attempt_count > 0)
+    if not orderbook_active and isinstance(scanner_fusion.get("systems"), list):
+        for system in scanner_fusion["systems"]:
+            if isinstance(system, dict) and system.get("name") == "OrderBookPressure" and system.get("active_this_cycle"):
+                orderbook_active = True
+                orderbook_fed = bool(system.get("fed_to_decision_logic", True))
+                break
+    fast_money_path = "aureon/exchanges/unified_market_trader.py"
+    orderbook_path = "aureon/analytics/aureon_whale_orderbook_analyzer.py"
     rows = [
         _row(
             name="LiveStreamCacheRuntime",
             facet="live_stream_data",
             wire="direct_live_signal",
             path="ws_cache/ws_prices.json",
-            present=bool(stream_cache),
+            present=stream_report_present,
             active=stream_active,
-            fed=stream_active,
+            fed=stream_fed,
             runtime=runtime,
             evidence_source="state/unified_runtime_status.json#live_stream_cache",
             stage="market_feed",
@@ -333,27 +355,27 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
             name="FastMoneySelectorRuntime",
             facet="fast_money_selection",
             wire="profit_context",
-            path="aureon/exchanges/unified_market_trader.py",
-            present=bool(fast_money),
+            path=fast_money_path,
+            present=bool((root / fast_money_path).exists()),
             active=fast_money_active,
-            fed=fast_money_active,
+            fed=fast_money_fed,
             runtime=runtime,
             evidence_source="state/unified_runtime_status.json#shared_order_flow.fast_money_intelligence",
             stage="profit_velocity",
-            extra_blockers=[] if fast_money_active else [str(fast_money.get("reason") or "no_fast_money_candidates_this_cycle")],
+            extra_blockers=[] if fast_money_report_present else ["fast_money_report_missing"],
         ),
         _row(
             name="OrderBookPressureRuntime",
             facet="orderbook_pressure",
             wire="direct_live_signal",
-            path="aureon/analytics/aureon_whale_orderbook_analyzer.py",
-            present=bool(fast_money),
+            path=orderbook_path,
+            present=bool((root / orderbook_path).exists()),
             active=orderbook_active,
-            fed=orderbook_active,
+            fed=orderbook_fed,
             runtime=runtime,
             evidence_source="state/unified_runtime_status.json#shared_order_flow.fast_money_intelligence.orderbook_probe_count",
             stage="profit_velocity",
-            extra_blockers=[] if orderbook_active else [str(fast_money.get("reason") or "orderbook_pressure_not_sampled_this_cycle")],
+            extra_blockers=[] if orderbook_active else [str(fast_money.get("orderbook_reason") or "orderbook_pressure_not_sampled_this_cycle")],
         ),
         _row(
             name="ModelSignalFeed",

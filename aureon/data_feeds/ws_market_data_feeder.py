@@ -22,10 +22,14 @@ Output JSON schema (stable):
 """
 
 from __future__ import annotations
-from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
+
+if os.getenv("AUREON_STREAM_FEEDER_BATON", "0").strip().lower() in {"1", "true", "yes", "on"}:
+    from aureon.core.aureon_baton_link import link_system as _baton_link
+
+    _baton_link(__name__)
 
 # ttt
 # WINDOWS UTF-8 FIX - MUST BE AT TOP BEFORE ANY PRINT STATEMENTS
@@ -53,6 +57,7 @@ import argparse
 import asyncio
 import json
 import time
+import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -60,6 +65,62 @@ try:
     import websockets
 except Exception:
     websockets = None
+
+
+def _fetch_binance_all_tickers_rest() -> List[Dict[str, Any]]:
+    request = urllib.request.Request(
+        "https://api.binance.com/api/v3/ticker/24hr",
+        headers={"User-Agent": "AureonLiveStreamCache/1.0"},
+    )
+    with urllib.request.urlopen(request, timeout=10) as response:  # nosec B310 - public market-data endpoint
+        payload = json.loads(response.read().decode("utf-8", errors="replace"))
+    return payload if isinstance(payload, list) else []
+
+
+async def _write_binance_rest_snapshot(
+    *,
+    out_path: Path,
+    binance_uk_mode: bool,
+    source: str,
+) -> int:
+    data = await asyncio.to_thread(_fetch_binance_all_tickers_rest)
+    prices, ticker_cache = _extract_prices_and_tickers(data, binance_uk_mode=binance_uk_mode)
+    payload = {
+        'generated_at': time.time(),
+        'source': source,
+        'mode': 'rest_snapshot_for_stream_continuity',
+        'prices': prices,
+        'ticker_cache': ticker_cache,
+    }
+    _atomic_write_json(out_path, payload)
+    return len(ticker_cache)
+
+
+async def run_binance_all_tickers_rest_fallback(
+    *,
+    out_path: Path,
+    binance_uk_mode: bool,
+    write_interval_s: float,
+    quiet: bool,
+) -> None:
+    interval = max(2.0, write_interval_s)
+    if not quiet:
+        print("Binance WS unavailable; using budgeted public REST ticker fallback")
+    while True:
+        try:
+            ticker_count = await _write_binance_rest_snapshot(
+                out_path=out_path,
+                binance_uk_mode=binance_uk_mode,
+                source='binance_rest_fallback',
+            )
+            if not quiet:
+                print(f"   wrote REST fallback {ticker_count} tickers")
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            if not quiet:
+                print(f"Binance REST fallback error: {e} (retrying in {interval:.1f}s)")
+        await asyncio.sleep(interval)
 
 
 def _atomic_write_json(path: Path, payload: Dict[str, Any]) -> None:
@@ -87,24 +148,24 @@ def _extract_prices_and_tickers(
     # Binance !ticker@arr payload fields (common):
     # s=symbol, c=last price, P=priceChangePercent, v=volume
     for t in tickers:
-        symbol = str(t.get('s', '')).upper()
+        symbol = str(t.get('s') or t.get('symbol') or '').upper()
         if not symbol:
             continue
 
         try:
-            price = float(t.get('c', 0) or 0)
+            price = float(t.get('c') or t.get('lastPrice') or t.get('weightedAvgPrice') or 0)
         except Exception:
             price = 0.0
         if price <= 0:
             continue
 
         try:
-            change = float(t.get('P', 0) or 0)
+            change = float(t.get('P') or t.get('priceChangePercent') or 0)
         except Exception:
             change = 0.0
 
         try:
-            volume = float(t.get('v', 0) or 0)
+            volume = float(t.get('q') or t.get('quoteVolume') or t.get('v') or t.get('volume') or 0)
         except Exception:
             volume = 0.0
 
@@ -145,7 +206,13 @@ async def run_binance_all_tickers(
     quiet: bool,
 ) -> None:
     if not websockets:
-        raise RuntimeError("websockets package not installed")
+        await run_binance_all_tickers_rest_fallback(
+            out_path=out_path,
+            binance_uk_mode=binance_uk_mode,
+            write_interval_s=max(5.0, write_interval_s),
+            quiet=quiet,
+        )
+        return
 
     url = "wss://stream.binance.com:9443/ws/!ticker@arr"
     last_write = 0.0
@@ -156,12 +223,41 @@ async def run_binance_all_tickers(
 
     while True:
         try:
+            try:
+                ticker_count = await _write_binance_rest_snapshot(
+                    out_path=out_path,
+                    binance_uk_mode=binance_uk_mode,
+                    source='binance_rest_preflight',
+                )
+                last_write = time.time()
+                if not quiet:
+                    print(f"   preflight REST snapshot wrote {ticker_count} tickers")
+            except Exception as e:
+                if not quiet:
+                    print(f"   REST preflight failed: {e}")
             async with websockets.connect(url, ping_interval=20, ping_timeout=20) as ws:
                 if not quiet:
                     print("   ✅ Connected")
 
-                async for raw in ws:
+                while True:
                     now = time.time()
+                    try:
+                        raw = await asyncio.wait_for(ws.recv(), timeout=max(5.0, write_interval_s * 5.0))
+                    except asyncio.TimeoutError:
+                        if now - last_write >= max(5.0, write_interval_s * 3.0):
+                            try:
+                                ticker_count = await _write_binance_rest_snapshot(
+                                    out_path=out_path,
+                                    binance_uk_mode=binance_uk_mode,
+                                    source='binance_rest_ws_gap_fill',
+                                )
+                                last_write = time.time()
+                                if not quiet:
+                                    print(f"   gap-fill REST snapshot wrote {ticker_count} tickers")
+                            except Exception as e:
+                                if not quiet:
+                                    print(f"   REST gap-fill failed: {e}")
+                        continue
 
                     # throttle writes to disk
                     if now - last_write < write_interval_s:

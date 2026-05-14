@@ -235,6 +235,27 @@ function Find-ExistingMarketStatusPort {
     return 0
 }
 
+function Test-LiveStreamCacheFresh {
+    param(
+        [string]$Path,
+        [double]$MaxAgeSec = 30.0
+    )
+    try {
+        if ([string]::IsNullOrWhiteSpace($Path)) { return $false }
+        $resolved = $Path
+        if (-not [System.IO.Path]::IsPathRooted($resolved)) {
+            $resolved = Join-Path $RepoRoot $resolved
+        }
+        if (-not (Test-Path -LiteralPath $resolved)) { return $false }
+        $item = Get-Item -LiteralPath $resolved -ErrorAction Stop
+        if ($item.Length -le 0) { return $false }
+        $age = ((Get-Date) - $item.LastWriteTime).TotalSeconds
+        return ($age -le $MaxAgeSec)
+    } catch {
+        return $false
+    }
+}
+
 function Start-AureonProcess {
     param(
         [string]$Name,
@@ -1186,7 +1207,12 @@ $started = @()
 if (-not $SkipMarketTelemetry -and $env:AUREON_DISABLE_LIVE_STREAM_CACHE -ne "1") {
     $streamOut = ($env:WS_PRICE_CACHE_PATH -replace '"', '')
     $streamInterval = ($env:WS_FEED_WRITE_INTERVAL_S -replace '"', '')
+    $streamFreshMaxAgeSec = [Math]::Max(15.0, ([double]$streamInterval * 20.0))
     $streamArgs = "-m aureon.data_feeds.ws_market_data_feeder --binance --quiet --out `"$streamOut`" --write-interval-s $streamInterval"
+    if (-not (Test-LiveStreamCacheFresh -Path $streamOut -MaxAgeSec $streamFreshMaxAgeSec)) {
+        Write-Aureon "Live stream cache missing/stale; restarting stream feeder" "WATCH"
+        Stop-MatchingProcess -Pattern "aureon.data_feeds.ws_market_data_feeder" -Name "Live market stream cache"
+    }
     $started += Start-AureonProcessWithoutStopping `
         -Name "Live market stream cache" `
         -Pattern "aureon.data_feeds.ws_market_data_feeder" `
@@ -1526,6 +1552,10 @@ if ($KeepAlive) {
         $statuses = @()
 
         if (-not $SkipMarketTelemetry -and $env:AUREON_DISABLE_LIVE_STREAM_CACHE -ne "1" -and -not [string]::IsNullOrWhiteSpace($streamArgs)) {
+            if (-not (Test-LiveStreamCacheFresh -Path $streamOut -MaxAgeSec $streamFreshMaxAgeSec)) {
+                Write-Aureon "Live stream cache stale; restarting stream feeder" "WATCH"
+                Stop-MatchingProcess -Pattern "aureon.data_feeds.ws_market_data_feeder" -Name "Live market stream cache"
+            }
             Ensure-BackgroundProcess `
                 -Name "Live market stream cache" `
                 -Pattern "aureon.data_feeds.ws_market_data_feeder" `

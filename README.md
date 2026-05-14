@@ -71,6 +71,7 @@ python scripts/aureon_ignition.py --audit-only
 | Flight test | `http://127.0.0.1:8791/api/flight-test` |
 | Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
 | Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
+| Trading intelligence checklist | `http://127.0.0.1:8081/aureon_trading_intelligence_checklist.json` and `docs/audits/aureon_trading_intelligence_checklist.json` |
 | Scanner fusion proof | `state/aureon_scanner_fusion_matrix.json` |
 | World ecosystem proof | `state/aureon_world_financial_ecosystem_intelligence.json` |
 | 1h-to-1y waveform memory | `state/aureon_asset_waveform_models.json` |
@@ -81,7 +82,7 @@ Live trading requires configured exchange credentials and the existing runtime s
 
 ### Live Runtime Resilience
 
-The runtime reports connected-but-guarded states instead of hiding problems as generic offline failures. If the market feed is alive but a tick is stale, the console and `/api/terminal-state` show the reason, open-position state, and current tick phase. Direct execution routes are bounded by a route timeout so one slow exchange call cannot freeze the whole tick loop. Reboot decisions come from `/api/flight-test` and `/api/reboot-advice`; the production launcher should restart the runtime only when the flight-test says `can_reboot_now: true`, especially when open positions exist.
+The runtime reports connected-but-guarded states instead of hiding problems as generic offline failures. If the market feed is alive but a tick is stale, the console and `/api/terminal-state` show the reason, open-position state, and current tick phase. Direct execution routes and venue position ticks are bounded so one slow exchange call cannot freeze the whole tick loop. The Binance live-stream cache writes a REST snapshot before WebSocket streaming and fills WebSocket gaps with budgeted public ticker snapshots, so momentum and fast-money scanners still receive fresh world-market evidence when a stream stalls. Reboot decisions come from `/api/flight-test` and `/api/reboot-advice`; the production launcher should restart the runtime only when the flight-test says `can_reboot_now: true`, especially when open positions exist.
 
 ### Live Trading Intelligence Proof
 
