@@ -652,6 +652,24 @@ function Complete-AureonMarketRebootIntent {
     }
 }
 
+function Complete-AureonEnvUpdateIntent {
+    param([string]$Status = "completed")
+    try {
+        if ([string]::IsNullOrWhiteSpace($StateRoot)) { return }
+        $intentPath = Join-Path $StateRoot "aureon_env_update_intent.json"
+        if (-not (Test-Path -LiteralPath $intentPath)) { return }
+        $payload = Get-Content -LiteralPath $intentPath -Raw | ConvertFrom-Json
+        if ($payload.status -ne "pending") { return }
+        $payload | Add-Member -NotePropertyName status -NotePropertyValue $Status -Force
+        $payload | Add-Member -NotePropertyName completed_at -NotePropertyValue (Get-Date).ToString("o") -Force
+        $payload | Add-Member -NotePropertyName completed_by -NotePropertyValue "AUREON_WAKE_UP_FULL_AUTONOMOUS supervisor" -Force
+        $payload | Add-Member -NotePropertyName secret_policy -NotePropertyValue "metadata_only_no_values_returned" -Force
+        $payload | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $intentPath -Encoding UTF8
+    } catch {
+        Write-Aureon "Could not update env credential reload intent: $($_.Exception.Message)" "WARN"
+    }
+}
+
 function Request-AureonMarketRebootIntent {
     param(
         [string]$Reason = "planned_market_runtime_update",
@@ -1447,6 +1465,7 @@ function Restart-AureonSurface {
             -Arguments $marketArgs `
             -WorkingDirectory $RepoRoot `
             -LogDirectory $LogRoot | Out-Null
+        Complete-AureonEnvUpdateIntent
         return
     }
 
@@ -1563,6 +1582,7 @@ if ($KeepAlive) {
                             Write-Aureon "Market runtime requested planned restart; downtime and flat-position check approved" "WATCH"
                             Restart-AureonSurface -Surface "market"
                             Complete-AureonMarketRebootIntent
+                            Complete-AureonEnvUpdateIntent
                         } elseif (((Get-Date) - $marketIntentLastLog).TotalSeconds -ge $marketIntentLogCooldownSec) {
                             Write-Aureon "Market runtime planned restart held: reason=$marketHoldReason downtime=$marketDowntimeWindow open_positions=$marketHasOpenPositions; preserving live monitoring/trading continuity" "WARN"
                             $marketIntentLastLog = Get-Date

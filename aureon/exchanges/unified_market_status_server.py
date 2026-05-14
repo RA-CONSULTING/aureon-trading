@@ -11,20 +11,56 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import shutil
 import time
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from aureon.core.aureon_env import apply_env_aliases, env_presence
+from aureon.harmonic.hnc_quantum_packet_crypto import (
+    LEGACY_MASTER_KEY_ENV,
+    MASTER_KEY_ENV,
+    encode_env_packet,
+    env_packet_summary,
+    is_env_packet,
+    packet_master_key_from_env,
+    write_hnc_packet_evidence,
+)
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 STATE_ROOT = REPO_ROOT / "state"
 STATUS_PATH = REPO_ROOT / "state" / "unified_runtime_status.json"
 MARKET_INTENT_PATH = STATE_ROOT / "aureon_market_reboot_intent.json"
+ENV_UPDATE_INTENT_PATH = STATE_ROOT / "aureon_env_update_intent.json"
+HNC_PACKET_EVIDENCE_PATH = STATE_ROOT / "aureon_hnc_quantum_packet_last_run.json"
+ENV_PATH = Path(os.getenv("AUREON_ENV_FILE") or (REPO_ROOT / ".env")).expanduser()
 HOST = "127.0.0.1"
 STATUS_FILE_STALE_AFTER_SEC = float(os.getenv("UNIFIED_STATUS_FILE_STALE_AFTER_SEC", "60") or 60)
 TICK_STALE_AFTER_SEC = float(os.getenv("UNIFIED_READY_STALE_AFTER_SEC", "45") or 45)
+
+EXCHANGE_ENV_FIELDS: dict[str, tuple[str, ...]] = {
+    "binance": ("BINANCE_API_KEY", "BINANCE_API_SECRET"),
+    "kraken": ("KRAKEN_API_KEY", "KRAKEN_API_SECRET"),
+    "alpaca": ("ALPACA_API_KEY", "ALPACA_SECRET_KEY"),
+    "capital": ("CAPITAL_API_KEY", "CAPITAL_IDENTIFIER", "CAPITAL_PASSWORD"),
+}
+
+FRIENDLY_CREDENTIAL_KEYS: dict[str, dict[str, str]] = {
+    "binance": {"binanceApiKey": "BINANCE_API_KEY", "binanceApiSecret": "BINANCE_API_SECRET"},
+    "kraken": {"krakenApiKey": "KRAKEN_API_KEY", "krakenApiSecret": "KRAKEN_API_SECRET"},
+    "alpaca": {"alpacaApiKey": "ALPACA_API_KEY", "alpacaSecretKey": "ALPACA_SECRET_KEY"},
+    "capital": {
+        "capitalApiKey": "CAPITAL_API_KEY",
+        "capitalIdentifier": "CAPITAL_IDENTIFIER",
+        "capitalPassword": "CAPITAL_PASSWORD",
+    },
+}
+
+ENV_KEY_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
 
 def _parse_iso_timestamp(value: Any) -> float:
@@ -228,6 +264,215 @@ def _read_market_intent() -> dict[str, Any] | None:
     return None
 
 
+def _read_env_update_intent() -> dict[str, Any] | None:
+    try:
+        if not ENV_UPDATE_INTENT_PATH.exists():
+            return None
+        payload = json.loads(ENV_UPDATE_INTENT_PATH.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            return payload
+    except Exception:
+        return None
+    return None
+
+
+def _parse_env_values(path: Path | None = None) -> dict[str, str]:
+    target = path or ENV_PATH
+    values: dict[str, str] = {}
+    if not target.exists():
+        return values
+    for raw_line in target.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not ENV_KEY_RE.match(key):
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        values[key] = value
+    return values
+
+
+def _quote_env_value(value: str) -> str:
+    text = str(value)
+    if not text:
+        return ""
+    if any(ch.isspace() for ch in text) or "#" in text or '"' in text or "'" in text:
+        return json.dumps(text)
+    return text
+
+
+def _env_packet_master_key(env_values: dict[str, str] | None = None) -> str:
+    values = env_values or _parse_env_values()
+    return packet_master_key_from_env(os.environ) or str(values.get(MASTER_KEY_ENV) or values.get(LEGACY_MASTER_KEY_ENV) or "").strip()
+
+
+def _packetize_env_updates(updates: dict[str, str]) -> tuple[dict[str, str], list[str], dict[str, Any] | None]:
+    master_key = _env_packet_master_key()
+    if not master_key:
+        return dict(updates), [], None
+    stored: dict[str, str] = {}
+    encrypted_keys: list[str] = []
+    summaries: dict[str, Any] = {}
+    for key, value in updates.items():
+        token = encode_env_packet(value, master_key, env_key=key)
+        stored[key] = token
+        encrypted_keys.append(key)
+        summaries[key] = env_packet_summary(token)
+    evidence = {
+        "event": "env_credentials_packetized",
+        "updated_keys": sorted(updates),
+        "encrypted_keys": sorted(encrypted_keys),
+        "packet_format": "hncqp1",
+        "packet_summaries": summaries,
+    }
+    write_hnc_packet_evidence(evidence, HNC_PACKET_EVIDENCE_PATH)
+    return stored, sorted(encrypted_keys), evidence
+
+
+def _write_env_updates(updates: dict[str, str]) -> dict[str, Any]:
+    ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    existing_text = ENV_PATH.read_text(encoding="utf-8", errors="replace") if ENV_PATH.exists() else ""
+    lines = existing_text.splitlines()
+    updated_keys = set(updates)
+    stored_updates, encrypted_keys, packet_evidence = _packetize_env_updates(updates)
+    written: set[str] = set()
+    output: list[str] = []
+    for raw_line in lines:
+        stripped = raw_line.strip()
+        prefix = ""
+        check_line = stripped
+        if check_line.startswith("export "):
+            prefix = "export "
+            check_line = check_line[len("export ") :].strip()
+        if "=" in check_line:
+            key = check_line.split("=", 1)[0].strip()
+            if key in stored_updates:
+                output.append(f"{prefix}{key}={_quote_env_value(stored_updates[key])}")
+                written.add(key)
+                continue
+        output.append(raw_line)
+    missing = [key for key in stored_updates if key not in written]
+    if missing and output and output[-1].strip():
+        output.append("")
+    for key in missing:
+        output.append(f"{key}={_quote_env_value(stored_updates[key])}")
+
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    backup_path = None
+    if ENV_PATH.exists():
+        backup_path = ENV_PATH.with_name(f"{ENV_PATH.name}.bak-{timestamp}")
+        shutil.copy2(ENV_PATH, backup_path)
+    temp_path = ENV_PATH.with_name(f"{ENV_PATH.name}.tmp-{timestamp}")
+    temp_path.write_text("\n".join(output).rstrip() + "\n", encoding="utf-8")
+    os.replace(temp_path, ENV_PATH)
+    for key, value in updates.items():
+        os.environ[key] = value
+    apply_env_aliases(os.environ, override=False)
+    return {
+        "env_file": str(ENV_PATH),
+        "backup_file": str(backup_path) if backup_path else None,
+        "updated_keys": sorted(updated_keys),
+        "hnc_packet_encrypted_keys": encrypted_keys,
+        "hnc_packet_evidence": packet_evidence,
+    }
+
+
+def _env_credentials_status() -> dict[str, Any]:
+    env_values = _parse_env_values()
+    apply_env_aliases(env_values, override=False)
+    master_key = _env_packet_master_key(env_values)
+    packet_encoded_keys = sorted(key for key, value in env_values.items() if is_env_packet(value))
+    exchanges: dict[str, Any] = {}
+    for exchange, keys in EXCHANGE_ENV_FIELDS.items():
+        presence = env_presence(keys, env_values)
+        missing = [key for key, meta in presence.items() if not meta.get("set")]
+        exchanges[exchange] = {
+            "present": not missing,
+            "missing_keys": missing,
+            "keys": presence,
+        }
+    intent = _read_env_update_intent()
+    pending_restart = bool(intent and intent.get("status") == "pending")
+    return {
+        "ok": True,
+        "service": "unified-market-status-server",
+        "generated_at": datetime.now().isoformat(),
+        "env_file": str(ENV_PATH),
+        "env_file_exists": ENV_PATH.exists(),
+        "writable": ENV_PATH.exists() and os.access(ENV_PATH, os.W_OK) or os.access(ENV_PATH.parent, os.W_OK),
+        "exchanges": exchanges,
+        "restart_required": pending_restart,
+        "restart_intent": intent,
+        "hnc_packet_encryption": {
+            "enabled": bool(master_key),
+            "format": "hncqp1",
+            "encoded_key_count": len(packet_encoded_keys),
+            "encoded_keys": packet_encoded_keys,
+            "master_key_present": bool(master_key),
+            "evidence_file": str(HNC_PACKET_EVIDENCE_PATH),
+            "policy": "new local credential writes are packet-encrypted at rest when AUREON_HNC_PACKET_MASTER_KEY is present",
+            "secret_policy": "metadata_only_no_values_returned",
+        },
+        "secret_policy": "metadata_only_no_values_returned",
+    }
+
+
+def _extract_env_updates(exchange: str, credentials: dict[str, Any]) -> dict[str, str]:
+    normalized = exchange.strip().lower()
+    if normalized not in EXCHANGE_ENV_FIELDS:
+        raise ValueError(f"unsupported_exchange:{exchange}")
+    allowed = set(EXCHANGE_ENV_FIELDS[normalized])
+    friendly = FRIENDLY_CREDENTIAL_KEYS.get(normalized, {})
+    updates: dict[str, str] = {}
+    for raw_key, raw_value in credentials.items():
+        key = friendly.get(str(raw_key), str(raw_key))
+        if key not in allowed:
+            continue
+        value = str(raw_value or "").strip()
+        if value:
+            updates[key] = value
+    if not updates:
+        raise ValueError("no_supported_non_empty_credentials")
+    return updates
+
+
+def _record_env_update_intent(exchange: str, updated_keys: list[str]) -> dict[str, Any]:
+    STATE_ROOT.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "status": "pending",
+        "surface": "env_credentials",
+        "exchange": exchange,
+        "reason": "credentials_updated_from_local_console",
+        "updated_keys": sorted(updated_keys),
+        "env_file": str(ENV_PATH),
+        "restart_required": True,
+        "created_at": datetime.now().isoformat(),
+        "secret_policy": "metadata_only_no_values_returned",
+    }
+    ENV_UPDATE_INTENT_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    market_payload = {
+        "status": "pending",
+        "surface": "market",
+        "requested_by": "unified-market-status-server",
+        "reason": "env_credentials_updated_from_local_console",
+        "change_id": f"env_credentials_{exchange}",
+        "updated_keys": sorted(updated_keys),
+        "requested_at": datetime.now().isoformat(),
+        "policy": "restart only when runtime is live, configured downtime window is active, and no open positions are reported",
+        "secret_policy": "metadata_only_no_values_returned",
+    }
+    MARKET_INTENT_PATH.write_text(json.dumps(market_payload, indent=2), encoding="utf-8")
+    return payload
+
+
 def _has_open_positions(payload: dict[str, Any]) -> bool:
     combined = payload.get("combined")
     if isinstance(combined, dict):
@@ -244,7 +489,8 @@ def _has_open_positions(payload: dict[str, Any]) -> bool:
 def _flight_test() -> dict[str, Any]:
     status = _read_status()
     intent = _read_market_intent()
-    pending_restart = bool(intent and intent.get("status") == "pending")
+    env_intent = _read_env_update_intent()
+    pending_restart = bool(intent and intent.get("status") == "pending") or bool(env_intent and env_intent.get("status") == "pending")
     watchdog = status.get("runtime_watchdog") if isinstance(status.get("runtime_watchdog"), dict) else _runtime_watchdog(status)
     stale = bool(status.get("stale") or watchdog.get("tick_stale"))
     open_positions = _has_open_positions(status)
@@ -294,6 +540,7 @@ def _flight_test() -> dict[str, Any]:
             "recovery_action": watchdog.get("recovery_action"),
         },
         "intent": intent,
+        "env_update_intent": env_intent,
         "runtime": {
             "last_tick_started_at": status.get("last_tick_started_at"),
             "last_tick_completed_at": status.get("last_tick_completed_at"),
@@ -313,7 +560,10 @@ class StatusHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
-        if self.path in {"/", "/health", "/api/terminal-state", "/api/flight-test", "/api/reboot-advice"}:
+        if self.path in {"/", "/health", "/api/terminal-state", "/api/flight-test", "/api/reboot-advice", "/api/env-credentials"}:
+            if self.path == "/api/env-credentials":
+                self._json(200, _env_credentials_status())
+                return
             if self.path in {"/api/flight-test", "/api/reboot-advice"}:
                 self._json(200, _flight_test())
                 return
@@ -331,13 +581,64 @@ class StatusHandler(BaseHTTPRequestHandler):
             return
         self._json(404, {"ok": False, "error": "not_found"})
 
+    def do_POST(self) -> None:
+        if self.path != "/api/env-credentials":
+            self._json(404, {"ok": False, "error": "not_found"})
+            return
+        if not self._local_origin_allowed():
+            self._json(403, {"ok": False, "error": "local_origin_required"})
+            return
+        if self.headers.get("X-Aureon-Local-Operator") != "1":
+            self._json(403, {"ok": False, "error": "operator_header_required"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0") or 0)
+            if length <= 0 or length > 65536:
+                self._json(400, {"ok": False, "error": "invalid_body_length"})
+                return
+            body = json.loads(self.rfile.read(length).decode("utf-8"))
+            exchange = str(body.get("exchange") or "").strip().lower()
+            credentials = body.get("credentials") if isinstance(body.get("credentials"), dict) else {}
+            updates = _extract_env_updates(exchange, credentials)
+            result = _write_env_updates(updates)
+            intent = _record_env_update_intent(exchange, result["updated_keys"])
+            self._json(
+                200,
+                {
+                    "ok": True,
+                    "service": "unified-market-status-server",
+                    "generated_at": datetime.now().isoformat(),
+                    "exchange": exchange,
+                    "updated_keys": result["updated_keys"],
+                    "hnc_packet_encrypted_keys": result.get("hnc_packet_encrypted_keys", []),
+                    "env_file": result["env_file"],
+                    "backup_file": result["backup_file"],
+                    "restart_required": True,
+                    "restart_intent": intent,
+                    "credential_status": _env_credentials_status(),
+                    "secret_policy": "metadata_only_no_values_returned",
+                },
+            )
+        except ValueError as exc:
+            self._json(400, {"ok": False, "error": str(exc)})
+        except Exception as exc:
+            self._json(500, {"ok": False, "error": f"env_update_failed:{type(exc).__name__}"})
+
     def log_message(self, format: str, *args: Any) -> None:
         return
 
     def _cors(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        origin = self.headers.get("Origin", "")
+        if origin.startswith("http://127.0.0.1") or origin.startswith("http://localhost"):
+            self.send_header("Access-Control-Allow-Origin", origin)
+        else:
+            self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Aureon-Local-Operator")
+
+    def _local_origin_allowed(self) -> bool:
+        origin = self.headers.get("Origin", "")
+        return not origin or origin.startswith("http://127.0.0.1") or origin.startswith("http://localhost")
 
     def _json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, default=str).encode("utf-8")

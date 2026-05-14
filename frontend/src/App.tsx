@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AureonGeneratedOperationalConsole } from "@/components/generated/AureonGeneratedOperationalConsole";
 import { AureonWorkOrderExecutionConsole } from "@/components/generated/AureonWorkOrderExecutionConsole";
 import { AureonCodingAgentSkillBaseConsole } from "@/components/generated/AureonCodingAgentSkillBaseConsole";
+import { ExchangeCredentialsManager } from "@/components/ExchangeCredentialsManager";
 import {
   CapabilitySwitchboardManifest,
   FrontendScreenPlan,
@@ -115,6 +116,37 @@ interface TradingIntelligenceChecklist {
   rows?: TradingIntelligenceChecklistRow[];
 }
 
+interface HNCPacketSecurityComparison {
+  status?: string;
+  generated_at?: string;
+  summary?: {
+    current_hnc_score?: number;
+    current_swarm_score?: number;
+    current_hnc_rating?: string;
+    current_swarm_rating?: string;
+    compared_methods?: number;
+    beats_plaintext_by?: number;
+    below_os_keychain_by?: number;
+    below_kms_hsm_by?: number;
+    breaker_passed?: boolean;
+    swarm_breaker_passed?: boolean;
+    swarm_beats_hnc_by?: number;
+    swarm_below_kms_hsm_by?: number;
+    main_weakness?: string;
+    top_recommendation?: string;
+  };
+  rows?: Array<{
+    method: string;
+    score: number;
+    category?: string;
+    confidentiality?: string;
+    integrity?: string;
+    key_management?: string;
+    aureon_fit?: string;
+    limitation?: string;
+  }>;
+}
+
 interface WakeUpManifest {
   runtime_feed_url?: string;
   runtime_flight_test_url?: string;
@@ -148,6 +180,238 @@ const safetyTone: Record<string, string> = {
   payment_or_kyc_boundary: "border-red-500/30 bg-red-500/10 text-red-300",
   manual_filing_boundary: "border-orange-500/30 bg-orange-500/10 text-orange-300",
   admin_or_tenant_boundary: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300",
+};
+
+interface SecurityBlockerWorkOrder {
+  title: string;
+  workOrder: string;
+  sourcePath: string;
+  target: string;
+  priority: string;
+  status: string;
+  reason: string;
+  nextStep: string;
+  boundaries: string[];
+}
+
+const screenSecurityBlockers: Record<string, SecurityBlockerWorkOrder[]> = {
+  trading: [
+    {
+      title: "Orca Command Center Trading blocker",
+      workOrder: "Wire Orca Command Center into Trading",
+      sourcePath: "aureon/bots/orca_command_center.py",
+      target: "Trading",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The Orca command center initializes exchange clients, reads live positions, subscribes to ThoughtBus intelligence, and presents hunting/kill-cycle trading state. Trading exposes the work order as evidence only until a non-mutating adapter is reviewed.",
+      nextStep: "Extract read-only Orca position, exchange-readiness, signal, whale-detection, predator-alert, and kill-cycle evidence, then mount that adapter with all order, launcher, exchange mutation, and credential surfaces removed.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no order mutation",
+        "no official filing",
+        "no payment",
+        "no credential reveal",
+        "no external mutation",
+      ],
+    },
+    {
+      title: "AutonomousTradingGuide Trading blocker",
+      workOrder: "Wire Autonomoustradingguide into Trading",
+      sourcePath: "frontend/src/components/AutonomousTradingGuide.tsx",
+      target: "Trading",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The legacy guide documents autonomous execution, exchange API permissions, live-fire activation language, and signed Binance account-check code. Trading exposes the work order as evidence only until the guidance is adapted into a current Aureon read-only operating checklist.",
+      nextStep: "Extract the useful risk, permission, paper/live transition, and execution-readiness guidance into a current read-only Trading checklist, with secret examples redacted and no activation, key-entry, or order controls mounted.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no order mutation",
+        "no API key entry",
+        "no credential reveal",
+        "no official filing",
+        "no payment",
+        "no external mutation",
+      ],
+    },
+    {
+      title: "BinanceCredentialsSettings Trading blocker",
+      workOrder: "Wire Binancecredentialssettings into Trading",
+      sourcePath: "frontend/src/components/BinanceCredentialsSettings.tsx",
+      target: "Trading",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The existing settings panel accepts Binance API key and secret values, stores credentials through the Binance credential hook, and links operators to external Binance API management. Trading exposes the work order as evidence only until credential handling is mounted through the reviewed key-management flow.",
+      nextStep: "Extract read-only Binance credential readiness, encryption policy, withdrawal-disabled policy, and setup-status evidence, then route any key add/update workflow through the dedicated secure credential manager instead of this legacy panel.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no order mutation",
+        "no API key entry",
+        "no credential storage mutation",
+        "no credential reveal",
+        "no external credential workflow",
+        "no external mutation",
+      ],
+    },
+  ],
+  overview: [
+    {
+      title: "WarRoomDashboard Overview blocker",
+      workOrder: "Wire Warroomdashboard into Overview",
+      sourcePath: "frontend/src/components/WarRoomDashboard.tsx",
+      target: "Overview",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The existing dashboard contains interactive trading and launcher controls, so Overview exposes the work order as evidence only until the non-mutating adapter is reviewed.",
+      nextStep: "Extract a read-only telemetry adapter after security review, then mount that adapter instead of the interactive control surface.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no official filing",
+        "no payment",
+        "no credential reveal",
+        "no external mutation",
+      ],
+    },
+    {
+      title: "GasTankDisplay Overview blocker",
+      workOrder: "Wire Gastankdisplay into Overview",
+      sourcePath: "frontend/src/components/warroom/GasTankDisplay.tsx",
+      target: "Overview",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The existing gas tank panel displays user balance and fee state but also exposes top-up payment controls, so Overview shows the work order as evidence only until a redacted read-only adapter is reviewed.",
+      nextStep: "Extract gas-tank health, balance visibility policy, membership tier, and fee-burn status into a read-only adapter with all top-up and payment mutation paths removed.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no official filing",
+        "no payment",
+        "no top-up mutation",
+        "no credential reveal",
+        "no external mutation",
+      ],
+    },
+  ],
+  saas_security: [
+    {
+      title: "AdminKYCDashboard SaaS Security blocker",
+      workOrder: "Wire Adminkycdashboard into SaaS Security",
+      sourcePath: "frontend/src/components/AdminKYCDashboard.tsx",
+      target: "SaaS Security",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The existing dashboard reads KYC records, creates signed identity-document URLs, and can approve or reject applications through Supabase functions. SaaS Security exposes the work order as evidence only until a non-mutating adapter is reviewed.",
+      nextStep: "Extract redacted read-only KYC queue health and review-state metrics, then mount that adapter instead of the admin mutation surface.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no official filing",
+        "no payment",
+        "no credential reveal",
+        "no KYC document reveal",
+        "no external mutation",
+      ],
+    },
+    {
+      title: "AdminPaymentVerification SaaS Security blocker",
+      workOrder: "Wire Adminpaymentverification into SaaS Security",
+      sourcePath: "frontend/src/components/AdminPaymentVerification.tsx",
+      target: "SaaS Security",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The existing dashboard reads payment transactions and can invoke payment-verification functions that affect user access. SaaS Security exposes the work order as evidence only until a non-mutating adapter is reviewed.",
+      nextStep: "Extract redacted read-only payment queue health, verification-state counts, and access-impact evidence, then mount that adapter with every verify or payment mutation path removed.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no official filing",
+        "no payment",
+        "no payment verification mutation",
+        "no credential reveal",
+        "no external mutation",
+      ],
+    },
+    {
+      title: "AuthForm SaaS Security blocker",
+      workOrder: "Wire Authform into SaaS Security",
+      sourcePath: "frontend/src/components/AuthForm.tsx",
+      target: "SaaS Security",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The existing form can create auth sessions and accepts exchange API key material. SaaS Security exposes the work order as evidence only until a redacted, non-mutating onboarding adapter is reviewed.",
+      nextStep: "Extract auth readiness, password-policy, tenant-session, and API-key onboarding checklist evidence without rendering sign-in controls, secret inputs, or session mutation calls.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no official filing",
+        "no payment",
+        "no auth/session mutation",
+        "no credential reveal",
+        "no external mutation",
+      ],
+    },
+    {
+      title: "APIKeySecurityGuide SaaS Security blocker",
+      workOrder: "Wire Apikeysecurityguide into SaaS Security",
+      sourcePath: "frontend/src/components/auth/APIKeySecurityGuide.tsx",
+      target: "SaaS Security",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The existing guide points operators toward external exchange key workflows and permission setup. SaaS Security exposes the work order as evidence only until a read-only guidance adapter is reviewed.",
+      nextStep: "Extract redacted exchange-key setup guidance, withdrawal-disabled policy, and validation checklist evidence without collecting, revealing, or changing credentials.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no official filing",
+        "no payment",
+        "no credential reveal",
+        "no external mutation",
+      ],
+    },
+  ],
+  self_improvement: [
+    {
+      title: "Aureon Command Center Self-Improvement blocker",
+      workOrder: "Wire Aureon Command Center into Self-Improvement",
+      sourcePath: "aureon/command_centers/aureon_command_center.py",
+      target: "Self-Improvement",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The command center can launch and supervise runtime processes, including trading subprocess paths. Self-Improvement exposes the work order as evidence only until a non-mutating status adapter is reviewed.",
+      nextStep: "Extract read-only command-center health, process-state, tool inventory, and audit evidence, then mount that adapter with launch, stop, apply, restart, or mutation controls removed.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no official filing",
+        "no payment",
+        "no credential reveal",
+        "no process mutation",
+        "no external mutation",
+      ],
+    },
+    {
+      title: "Aureon Queen Realtime Command Center Self-Improvement blocker",
+      workOrder: "Wire Aureon Queen Realtime Command Center into Self-Improvement",
+      sourcePath: "aureon/command_centers/aureon_queen_realtime_command_center.py",
+      target: "Self-Improvement",
+      priority: "P100",
+      status: "blocked_security_review",
+      reason: "The realtime command center streams live bot, PnL, position, subsystem, and log evidence from command-center code paths. Self-Improvement shows the boundary before any interactive adapter is generated.",
+      nextStep: "Create a read-only status card for stream freshness, subsystem health, Queen commentary state, and report paths, with process control and exchange mutation surfaces excluded.",
+      boundaries: [
+        "read-only observation",
+        "no live trading",
+        "no official filing",
+        "no payment",
+        "no credential reveal",
+        "no process mutation",
+        "no external mutation",
+      ],
+    },
+  ],
 };
 
 function asNumber(value: unknown, fallback = 0): number {
@@ -187,6 +451,10 @@ async function loadWakeUpManifest(signal?: AbortSignal): Promise<WakeUpManifest 
 
 async function loadTradingIntelligenceChecklist(signal?: AbortSignal): Promise<TradingIntelligenceChecklist | null> {
   return fetchJsonOrNull<TradingIntelligenceChecklist>("/aureon_trading_intelligence_checklist.json", signal);
+}
+
+async function loadHNCPacketSecurityComparison(signal?: AbortSignal): Promise<HNCPacketSecurityComparison | null> {
+  return fetchJsonOrNull<HNCPacketSecurityComparison>("/aureon_hnc_packet_security_comparison.json", signal);
 }
 
 function flightTestUrlFor(endpoint: string, manifest?: WakeUpManifest | null): string {
@@ -403,6 +671,130 @@ function MetricTile({
   );
 }
 
+function SecurityBlockerCard({ blocker }: { blocker: SecurityBlockerWorkOrder }) {
+  return (
+    <Card className="border-yellow-500/30 bg-yellow-500/10">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+          <Lock className="h-4 w-4 text-yellow-200" />
+          {blocker.title}
+          <Pill label={blocker.priority} tone="border-yellow-500/40 bg-yellow-500/15 text-yellow-100" />
+          <Pill label={blocker.status} tone="border-red-500/35 bg-red-500/10 text-red-200" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr]">
+          <div className="rounded-md border border-border/40 bg-black/25 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">work order</div>
+            <div className="mt-1 text-sm font-semibold">{blocker.workOrder}</div>
+            <div className="mt-2 font-mono text-[11px] text-muted-foreground">{blocker.sourcePath}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-black/25 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">target screen</div>
+            <div className="mt-1 text-sm font-semibold">{blocker.target}</div>
+            <div className="mt-2 text-xs text-yellow-100/80">{blocker.reason}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-black/25 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">next action</div>
+            <div className="mt-1 text-xs text-foreground/85">{blocker.nextStep}</div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {blocker.boundaries.map((boundary) => (
+            <Pill key={boundary} label={boundary} tone="border-yellow-500/30 bg-yellow-500/10 text-yellow-100" />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SaaSCredentialManagementPanel({ comparison }: { comparison: HNCPacketSecurityComparison | null }) {
+  return (
+    <section className="space-y-4 rounded-md border border-green-500/30 bg-green-500/5 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <Lock className="h-4 w-4 text-green-300" />
+            Secure exchange key management
+          </h2>
+          <p className="mt-1 max-w-4xl text-sm text-muted-foreground">
+            Users can add, test, or update Binance, Kraken, Alpaca, and Capital credentials through the local .env path and optional user vault sync. Saved secrets are never printed back into the console.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Pill label="add or update keys" tone={statusTone.wired} />
+          <Pill label="stored values hidden" tone="border-green-500/30 bg-green-500/10 text-green-200" />
+          <Pill label="withdrawals must stay disabled" tone="border-yellow-500/30 bg-yellow-500/10 text-yellow-100" />
+        </div>
+      </div>
+      <HNCPacketSecurityComparisonPanel comparison={comparison} />
+      <ExchangeCredentialsManager />
+    </section>
+  );
+}
+
+function HNCPacketSecurityComparisonPanel({ comparison }: { comparison: HNCPacketSecurityComparison | null }) {
+  const summary = comparison?.summary || {};
+  const topRows = (comparison?.rows || [])
+    .slice()
+    .sort((a, b) => asNumber(b.score) - asNumber(a.score))
+    .slice(0, 4);
+  return (
+    <Card className="border-cyan-500/30 bg-cyan-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-cyan-300" />
+            HNC packet security comparison
+          </span>
+          <Pill
+            label={summary.breaker_passed ? "breaker passed" : "waiting for report"}
+            tone={summary.breaker_passed ? statusTone.wired : statusTone.partial}
+          />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-2 sm:grid-cols-4">
+          <div className="rounded-md border border-border/40 bg-black/20 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">swarm score</div>
+            <div className="mt-1 font-mono text-sm font-semibold">{summary.current_swarm_score ?? summary.current_hnc_score ?? "n/a"}/100</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-black/20 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">compared</div>
+            <div className="mt-1 font-mono text-sm font-semibold">{summary.compared_methods ?? 0} methods</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-black/20 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">vs HNC v1</div>
+            <div className="mt-1 font-mono text-sm font-semibold">+{summary.swarm_beats_hnc_by ?? 0}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-black/20 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">below KMS/HSM</div>
+            <div className="mt-1 font-mono text-sm font-semibold">-{summary.swarm_below_kms_hsm_by ?? summary.below_kms_hsm_by ?? 0}</div>
+          </div>
+        </div>
+        {summary.top_recommendation ? (
+          <div className="rounded-md border border-border/40 bg-black/20 p-3 text-xs text-foreground/85">
+            <span className="font-semibold">Next security upgrade: </span>
+            {summary.top_recommendation}
+          </div>
+        ) : null}
+        <div className="grid gap-2 lg:grid-cols-2">
+          {topRows.map((row) => (
+            <div key={row.method} className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-semibold">{row.method}</div>
+                <Badge variant="outline">{row.score}/100</Badge>
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground">{row.aureon_fit}</div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function AppShell() {
   const [state, setState] = useState<UnifiedFrontendState | null>(null);
   const [runtime, setRuntime] = useState<RuntimeObservation>({
@@ -414,6 +806,7 @@ function AppShell() {
     details: [],
   });
   const [tradingChecklist, setTradingChecklist] = useState<TradingIntelligenceChecklist | null>(null);
+  const [hncSecurityComparison, setHncSecurityComparison] = useState<HNCPacketSecurityComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState("overview");
 
@@ -444,6 +837,13 @@ function AppShell() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const refreshSecurity = async () => setHncSecurityComparison(await loadHNCPacketSecurityComparison());
+    refreshSecurity();
+    const timer = window.setInterval(refreshSecurity, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const inventory = state?.inventory || {};
   const plan = state?.plan || {};
   const organism = state?.organism || {};
@@ -462,6 +862,7 @@ function AppShell() {
   const manualActions = Object.entries(plan.safety_contract || {}).filter(([, value]) => Boolean(value));
   const activeScreen = screens.find((screen) => screen.id === active) || screens[0];
   const statusLines = organism.status_lines?.length ? organism.status_lines : runtime.statusLines;
+  const activeSecurityBlockers = screenSecurityBlockers[active] || [];
 
   const domainCounts = useMemo(() => inventory.counts?.by_domain || {}, [inventory.counts]);
   const topDomains = Object.entries(domainCounts)
@@ -521,6 +922,10 @@ function AppShell() {
           </Card>
         ) : null}
 
+        {activeSecurityBlockers.map((blocker) => (
+          <SecurityBlockerCard key={blocker.sourcePath} blocker={blocker} />
+        ))}
+        {active === "saas_security" ? <SaaSCredentialManagementPanel comparison={hncSecurityComparison} /> : null}
         <OrganismPulsePanel organism={organism} runtimeConnected={runtime.connected} />
         <AureonGeneratedOperationalConsole />
         <AureonWorkOrderExecutionConsole />

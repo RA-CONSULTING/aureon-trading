@@ -28,6 +28,56 @@ class FeedTarget:
         self.decision_feeds.append(kwargs)
 
 
+class FakeMarketHarp:
+    active_pluck_count = 1
+    active_ripple_count = 1
+
+    def __init__(self):
+        self.last_price_map = {}
+
+    def tick(self, price_map):
+        self.last_price_map = dict(price_map)
+        return {"ETHUSD": 0.72}
+
+    def status_lines(self):
+        return ["MARKET HARP: fake resonance active"]
+
+    def cross_class_summary(self):
+        return ["HARP CROSS-CLASS: fake crypto ripple"]
+
+
+class FakeCrossAssetCorrelator:
+    def __init__(self):
+        self.last_changes = {}
+
+    def update_batch(self, symbol_to_change):
+        self.last_changes = dict(symbol_to_change)
+
+    def get_category_moves(self, symbol_to_change):
+        return {"crypto": 1.1, "index": 0.4}
+
+    def get_regime(self, symbol_to_change):
+        return "RISK_ON"
+
+    def get_pre_signals(self, symbol_to_change, symbol_to_price, symbol_to_exchange, existing_symbols):
+        return [
+            trader_mod.SimpleNamespace(
+                leader="BTC",
+                follower="SOL",
+                follower_exchange="kraken",
+                follower_symbol="SOL/USD",
+                leader_move_pct=1.1,
+                expected_move_pct=0.7,
+                already_moved_pct=0.1,
+                remaining_pct=0.6,
+                correlation=0.82,
+                lag_seconds=120,
+                category="crypto",
+                regime="RISK_ON",
+            )
+        ]
+
+
 class UnifiedMarketTraderTests(unittest.TestCase):
     def _make_trader(self):
         trader = trader_mod.UnifiedMarketTrader.__new__(trader_mod.UnifiedMarketTrader)
@@ -57,6 +107,18 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader._stream_cache_health = {}
         trader._orderbook_pressure_cache = {}
         trader._fast_money_intelligence = {}
+        trader._dynamic_intelligence_budget = {}
+        trader._world_ecosystem_intelligence = {}
+        trader._world_ecosystem_at = 0.0
+        trader._world_macro_snapshot_cache = {}
+        trader._world_macro_snapshot_at = 0.0
+        trader._world_macro_fetch_inflight = False
+        trader._asset_waveform_models = {}
+        trader._scanner_fusion_matrix = {}
+        trader._market_harp = None
+        trader._cross_asset_correlator = None
+        trader._world_macro_provider = lambda: {}
+        trader._world_news_signal_provider = lambda: {}
         trader._extract_stream_cache_source_snapshot = lambda watchlist: {}  # type: ignore[method-assign]
         trader._last_tick_started_at = 0.0
         trader._last_tick_completed_at = 0.0
@@ -120,6 +182,103 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertGreaterEqual(beat["symbols"]["BTCUSD"]["support_count"], 2)
         self.assertTrue(beat["model_signal_feed"]["used"])
         self.assertIn("model_signal", beat["symbols"]["BTCUSD"])
+
+    def test_world_financial_ecosystem_feeds_central_beat_decision_symbols(self):
+        trader = self._make_trader()
+        trader._market_harp = FakeMarketHarp()
+        trader._cross_asset_correlator = FakeCrossAssetCorrelator()
+        trader._world_macro_provider = lambda: {
+            "timestamp": trader_mod.datetime.now().isoformat(),
+            "risk_on_off": "RISK_ON",
+            "market_regime": "BULLISH",
+            "crypto_fear_greed": 72,
+            "vix": 14.0,
+            "source": "test_macro",
+        }
+        trader._world_news_signal_provider = lambda: {
+            "fetched_at": trader_mod.datetime.now().isoformat(),
+            "sentiment": 0.4,
+            "headline_count": 8,
+            "themes": ["crypto", "macro"],
+            "summary": "risk-on news",
+        }
+        trader._extract_stream_cache_source_snapshot = lambda watchlist: {  # type: ignore[method-assign]
+            "source": "live_stream_cache",
+            "ready": True,
+            "symbols": {
+                "BTCUSD": {
+                    "symbol": "BTCUSD",
+                    "raw_symbol": "BTCUSDT",
+                    "confidence": 0.66,
+                    "side": "BUY",
+                    "price": 50000.0,
+                    "change_pct": 1.1,
+                    "age_sec": 0.4,
+                    "volume_24h": 1_000_000_000.0,
+                }
+            },
+        }
+        kraken_payload = {
+            "ok": True,
+            "candidate_snapshot": [{"symbol": "BTC/USD", "side": "BUY", "score": 0.8}],
+        }
+
+        beat = trader._build_central_beat_feed(kraken_payload, {"ok": False})
+
+        self.assertIn("world_financial_ecosystem", [source["source"] for source in beat["sources"]])
+        self.assertTrue(beat["world_financial_ecosystem"]["fed_to_decision_logic"])
+        self.assertGreaterEqual(beat["world_financial_ecosystem"]["usable_source_count"], 3)
+        self.assertIn("ETHUSD", beat["symbols"])
+        self.assertIn("SOLUSD", beat["symbols"])
+        self.assertIn("world_financial_ecosystem", beat["symbols"]["ETHUSD"]["sources"])
+        statuses = {
+            item["name"]: item["status"]
+            for item in trader._build_intelligence_mesh(central_beat=beat)["capabilities"]
+        }
+        self.assertEqual(statuses["MarketHarp"], "active")
+        self.assertEqual(statuses["CrossAssetCorrelator"], "active")
+        self.assertEqual(statuses["WorldFinancialEcosystemFeed"], "active")
+        self.assertEqual(statuses["NewsSignalBridge"], "active")
+
+    def test_historical_waveform_memory_feeds_central_beat_and_mesh(self):
+        trader = self._make_trader()
+        trader._build_asset_waveform_models = lambda normalized_symbols, sources: {  # type: ignore[method-assign]
+            "schema_version": 1,
+            "enabled": True,
+            "mode": "multi_horizon_asset_waveform_models",
+            "usable_symbol_count": 1,
+            "long_memory_ready_count": 1,
+            "decision_symbol_count": 1,
+            "fed_to_decision_logic": True,
+            "decision_symbols": {
+                "BTCUSD": {
+                    "symbol": "BTCUSD",
+                    "confidence": 0.72,
+                    "side": "BUY",
+                    "reason": "multi_horizon_historical_waveform",
+                    "usable_horizon_count": 10,
+                    "fast_memory_ready": True,
+                    "long_memory_ready": True,
+                    "directional_return_score": 1.4,
+                }
+            },
+        }
+        kraken_payload = {
+            "ok": True,
+            "candidate_snapshot": [{"symbol": "BTC/USD", "side": "BUY", "score": 0.6}],
+        }
+
+        beat = trader._build_central_beat_feed(kraken_payload, {"ok": False})
+
+        self.assertIn("asset_waveform_models", beat)
+        self.assertIn("historical_waveform_models", [source["source"] for source in beat["sources"]])
+        self.assertIn("historical_waveform", beat["symbols"]["BTCUSD"])
+        self.assertIn("historical_waveform_models", beat["symbols"]["BTCUSD"]["sources"])
+        statuses = {
+            item["name"]: item["status"]
+            for item in trader._build_intelligence_mesh(central_beat=beat)["capabilities"]
+        }
+        self.assertEqual(statuses["MultiHorizonWaveformMemory"], "active")
 
     def test_shared_market_feed_pushes_central_metrics_to_traders(self):
         trader = self._make_trader()
@@ -413,6 +572,150 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         self.assertEqual(order_flow["fast_money_intelligence"]["candidate_count"], 1)
         self.assertEqual(order_flow["fast_money_intelligence"]["orderbook_probe_count"], 1)
 
+    def test_scanner_fusion_cross_references_orderbook_waveforms_and_world_context(self):
+        trader = self._make_trader()
+        trader.kraken_ready = True
+        trader.capital_ready = True
+        trader._binance_diag = {"network_ok": True, "account_ok": True, "margin_available": True, "uk_mode": False}
+        trader._kraken_tradable_symbols = lambda: {"SOLUSD": "SOLUSDT"}  # type: ignore[method-assign]
+        trader._kraken_spot_tradable_symbols = lambda: {"SOLUSD": "SOLUSD"}  # type: ignore[method-assign]
+        trader._capital_tradable_symbols = lambda: {"SOLUSD": "SOLUSD"}  # type: ignore[method-assign]
+        trader._alpaca_tradable_symbols = lambda: {"SOLUSD": "SOL/USD"}  # type: ignore[method-assign]
+        trader._binance_tradable_symbols = lambda: {"SOLUSD": "SOLUSDT"}  # type: ignore[method-assign]
+        trader._orderbook_pressure_snapshot = lambda item: {  # type: ignore[method-assign]
+            "available": True,
+            "source": "test_orderbook",
+            "symbol": item.get("symbol"),
+            "side": item.get("side", "BUY"),
+            "pressure_side": item.get("side", "BUY"),
+            "score": 0.91,
+            "signed_imbalance": 0.38,
+        }
+        central_beat = {
+            "generated_at": "2026-05-14T12:00:00",
+            "source_count": 5,
+            "stream_cache": {"fresh": True, "symbol_count": 1},
+            "model_signal_feed": {"used": True},
+            "world_financial_ecosystem": {
+                "usable_source_count": 3,
+                "cross_asset": {"present": True, "active_this_cycle": True},
+                "market_harp": {"present": True, "active_this_cycle": True},
+                "news_signal": {"present": True, "usable_for_decision": True},
+            },
+            "asset_waveform_models": {"usable_symbol_count": 1, "long_memory_ready_count": 1},
+            "symbols": {
+                "SOLUSD": {
+                    "confidence": 0.78,
+                    "support_count": 5,
+                    "side": "BUY",
+                    "sources": ["live_stream_cache", "kraken", "binance", "world_financial_ecosystem", "historical_waveform_models"],
+                    "reference_price": 90.0,
+                    "change_pct": 0.86,
+                    "change_pct_abs_max": 1.05,
+                    "volume_24h": 72000000.0,
+                    "freshest_age_sec": 0.3,
+                    "fast_money_sources": ["live_stream_cache", "world_financial_ecosystem"],
+                    "model_alignment": True,
+                    "historical_waveform": {"confidence": 0.81, "side": "BUY", "long_memory_ready": True},
+                    "world_ecosystem_signal": {"confidence": 0.76, "side": "BUY", "downstream_stage": "profit_velocity"},
+                }
+            },
+        }
+        shared_market_feed = {"symbols": {"SOLUSD": 0.78}}
+
+        order_flow = trader._build_global_order_flow_feed({}, {}, central_beat, shared_market_feed)
+        top = order_flow["active_order_flow"][0]
+        scanner_matrix = order_flow["scanner_fusion_matrix"]
+        rows = {row["name"]: row for row in scanner_matrix["systems"]}
+        mesh_statuses = {item["name"]: item["status"] for item in order_flow["intelligence_mesh"]["capabilities"]}
+
+        self.assertTrue(scanner_matrix["fed_to_decision_logic"])
+        self.assertGreaterEqual(scanner_matrix["usable_system_count"], 8)
+        self.assertTrue(top["scanner_fusion"]["usable_for_decision"])
+        self.assertEqual(top["scanner_fusion"]["orderbook_alignment"], "aligned")
+        self.assertGreater(top["scanner_fusion_score"], 0.6)
+        self.assertGreaterEqual(top["scanner_fusion"]["cross_reference_count"], 6)
+        self.assertTrue(rows["LiveMomentumHunter"]["active_this_cycle"])
+        self.assertTrue(rows["OrderBookPressure"]["active_this_cycle"])
+        self.assertTrue(rows["GlobalWaveScanner"]["active_this_cycle"])
+        self.assertTrue(rows["PhantomSignalFilter"]["active_this_cycle"])
+        self.assertEqual(mesh_statuses["LiveMomentumHunter"], "active")
+        self.assertEqual(mesh_statuses["PhantomSignalFilter"], "active")
+
+    def test_dynamic_intelligence_budget_uses_low_cash_exchange_as_sensor(self):
+        class LowCashBinance:
+            def get_balance(self):
+                return {"USDT": 1.0}
+
+        trader = self._make_trader()
+        trader.kraken_ready = True
+        trader.binance = LowCashBinance()
+        trader._binance_diag = {"network_ok": True, "account_ok": True}
+
+        budget = trader._build_dynamic_intelligence_budget(
+            {
+                "portfolio_balances": {
+                    "source": "kraken_private_balance_cached_live",
+                    "tradable_cash_usd": 120.0,
+                    "total_usd_estimate": 140.0,
+                }
+            },
+            {},
+        )
+        trader._dynamic_intelligence_budget = budget
+
+        self.assertEqual(budget["exchanges"]["kraken"]["role"], "execution_priority")
+        self.assertEqual(budget["exchanges"]["binance"]["role"], "sensor_priority")
+        self.assertGreater(budget["stream_symbol_limit"], trader_mod.STREAM_CACHE_MAX_SYMBOLS)
+        self.assertGreater(budget["orderbook_probe_limit"], trader_mod.ORDERBOOK_PROBE_MAX_PER_TICK)
+        self.assertLessEqual(trader._dynamic_probe_interval("binance"), trader_mod.PROBE_SYMBOL_MIN_INTERVAL_SEC)
+
+    def test_dynamic_budget_expands_orderbook_probe_count(self):
+        trader = self._make_trader()
+        trader._dynamic_intelligence_budget = {
+            "schema_version": 1,
+            "mode": "balance_weighted_dynamic_ocean_wave_scan",
+            "orderbook_probe_limit": trader_mod.ORDERBOOK_PROBE_MAX_PER_TICK + 2,
+            "exchanges": {"binance": {"role": "sensor_priority"}},
+        }
+        calls = []
+
+        def pressure(item):
+            calls.append(item.get("symbol"))
+            return {
+                "available": True,
+                "source": "test_orderbook",
+                "pressure_side": "BUY",
+                "score": 0.8,
+            }
+
+        trader._orderbook_pressure_snapshot = pressure  # type: ignore[method-assign]
+        ranked = [
+            {
+                "symbol": f"COIN{i}USD",
+                "side": "BUY",
+                "confidence": 0.8,
+                "profit_velocity_score": 0.7 - (i * 0.01),
+                "execution_routes": [{"ready": True, "cash_capability": {"score": 0.7}}],
+                "fast_money_profile": {
+                    "fast_money_candidate": True,
+                    "fast_money_score": 0.9 - (i * 0.01),
+                    "volatility_pct": 1.0,
+                },
+            }
+            for i in range(trader_mod.ORDERBOOK_PROBE_MAX_PER_TICK + 3)
+        ]
+
+        summary = trader._attach_orderbook_fast_money_pressure(
+            ranked,
+            shadow_index={},
+            intelligence_mesh={"selection_mesh_score": 1.0},
+        )
+
+        self.assertEqual(len(calls), trader_mod.ORDERBOOK_PROBE_MAX_PER_TICK + 2)
+        self.assertEqual(summary["thresholds"]["dynamic_orderbook_probe_max_per_tick"], trader_mod.ORDERBOOK_PROBE_MAX_PER_TICK + 2)
+        self.assertEqual(summary["dynamic_intelligence_budget"]["mode"], "balance_weighted_dynamic_ocean_wave_scan")
+
     def test_intelligence_mesh_reports_capability_presence_and_active_bridges(self):
         trader = self._make_trader()
         central_beat = {
@@ -535,10 +838,24 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         class KrakenExec:
             def __init__(self):
                 self.spot_orders = []
+                self.margin_orders = []
+
+            def get_free_balance(self, asset):
+                return 500.0 if asset in {"USD", "ZUSD"} else 0.0
+
+            def best_price(self, symbol):
+                return {"price": 50000.0}
+
+            def get_pair_leverage(self, symbol):
+                return {"leverage_buy": [2, 3], "leverage_sell": [2], "pair": symbol}
 
             def place_market_order(self, symbol, side, quantity=None, quote_qty=None):
                 self.spot_orders.append((symbol, side, quantity, quote_qty))
                 return {"txid": [f"kraken-{len(self.spot_orders)}"], "status": "accepted"}
+
+            def place_margin_order(self, symbol, side, quantity, leverage=2, **kwargs):
+                self.margin_orders.append((symbol, side, quantity, leverage))
+                return {"orderId": f"kraken-margin-{len(self.margin_orders)}", "status": "FILLED"}
 
         class KrakenTrader:
             def __init__(self):
@@ -562,6 +879,9 @@ class UnifiedMarketTraderTests(unittest.TestCase):
 
             def get_24h_ticker(self, symbol):
                 return {"lastPrice": "50000"}
+
+            def best_price(self, symbol):
+                return {"price": 50000.0}
 
             def place_market_order(self, symbol, side, quantity=None, quote_qty=None):
                 self.spot_orders.append((symbol, side, quantity, quote_qty))
@@ -609,14 +929,13 @@ class UnifiedMarketTraderTests(unittest.TestCase):
             summary = trader._execute_runtime_order_actions(payload)
 
             self.assertEqual(summary["submitted_count"], 4)
-            self.assertEqual(summary["delegated_count"], 2)
+            self.assertEqual(summary["delegated_count"], 1)
             self.assertEqual(summary["held_count"], 0)
             self.assertEqual(summary["trade_path_state"], "available")
             self.assertEqual(trader.kraken.client.spot_orders[0], ("XBTUSD", "buy", None, trader_mod.KRAKEN_SPOT_QUOTE_USD))
+            self.assertEqual(trader.kraken.client.margin_orders[0][0], "XXBTZUSD")
             self.assertEqual(trader.alpaca.orders[0], ("BTC/USD", "buy", None, trader_mod.ORDER_EXECUTOR_QUOTE_USD))
             self.assertEqual(trader.binance.spot_orders[0], ("BTCUSDT", "BUY", None, trader_mod.ORDER_EXECUTOR_QUOTE_USD))
-            self.assertEqual(trader.binance.margin_orders[0][0], "BTCUSDT")
-            self.assertGreater(trader.binance.margin_orders[0][2], 0)
         finally:
             self._restore_env(old_env)
 
@@ -658,6 +977,172 @@ class UnifiedMarketTraderTests(unittest.TestCase):
             finally:
                 trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = old_state
                 trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = old_public
+
+    def test_kraken_spot_buy_can_use_gbp_quote_balance(self):
+        class KrakenExec:
+            def __init__(self):
+                self.orders = []
+
+            def get_account_balance(self):
+                return {"GBP": 100.0}
+
+            def convert_to_quote(self, asset, amount, quote):
+                if asset == "GBP" and quote == "USD":
+                    return float(amount) * 1.25
+                return 0.0
+
+            def get_ticker(self, symbol):
+                return {"price": 80.0, "bid": 79.9, "ask": 80.1}
+
+            def place_market_order(self, symbol, side, quantity=None, quote_qty=None):
+                self.orders.append((symbol, side, quantity, quote_qty))
+                return {"orderId": "KGBP1", "executedQty": "0.8125", "status": "FILLED"}
+
+        class KrakenTrader:
+            def __init__(self):
+                self.client = KrakenExec()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            old_state = trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH
+            old_public = trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH
+            trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = Path(tmp) / "state.json"
+            trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = Path(tmp) / "public.json"
+            try:
+                trader = self._make_trader()
+                trader.kraken = KrakenTrader()
+                result = trader._execute_kraken_spot_route("BUY", "XBTUSD", 65.0)
+
+                self.assertTrue(result["ok"], result)
+                self.assertEqual(result["quote_asset"], "GBP")
+                self.assertEqual(trader.kraken.client.orders[0][0], "XBTGBP")
+                self.assertAlmostEqual(trader.kraken.client.orders[0][3], 52.0)
+            finally:
+                trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = old_state
+                trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = old_public
+
+    def test_kraken_margin_route_submits_through_unified_executor(self):
+        old_env = self._with_live_executor_env()
+
+        class KrakenExec:
+            def __init__(self):
+                self.margin_orders = []
+
+            def best_price(self, symbol):
+                return {"price": 100.0}
+
+            def get_pair_leverage(self, symbol):
+                return {"leverage_buy": [2, 3], "leverage_sell": [2], "pair": symbol}
+
+            def place_margin_order(self, symbol, side, quantity, leverage=2, **kwargs):
+                self.margin_orders.append((symbol, side, quantity, leverage))
+                return {"orderId": "KM1", "status": "FILLED", "margin": True}
+
+        class KrakenTrader:
+            def __init__(self):
+                self.client = KrakenExec()
+
+        try:
+            trader = self._make_trader()
+            trader.kraken = KrakenTrader()
+            result = trader._execute_kraken_margin_route("BUY", "XBTUSD", 5.0)
+
+            self.assertTrue(result["ok"], result)
+            self.assertEqual(result["market_type"], "margin")
+            self.assertEqual(result["leverage"], trader_mod.KRAKEN_MARGIN_LEVERAGE)
+            self.assertEqual(trader.kraken.client.margin_orders[0][0], "XBTUSD")
+            self.assertGreater(trader.kraken.client.margin_orders[0][2], 0.0)
+        finally:
+            self._restore_env(old_env)
+
+    def test_kraken_spot_buy_goes_margin_only_when_spot_inventory_underwater(self):
+        class KrakenExec:
+            def get_account_balance(self):
+                return {"TRX": 100.0, "USD": 500.0}
+
+            def convert_to_quote(self, asset, amount, quote):
+                if asset == "TRX" and quote == "USD":
+                    return float(amount) * 0.90
+                return float(amount) if asset == quote else 0.0
+
+            def calculate_cost_basis(self, symbol):
+                return {
+                    "symbol": symbol,
+                    "avg_entry_price": 1.0,
+                    "total_quantity": 100.0,
+                    "total_fees": 0.10,
+                    "trade_count": 1,
+                }
+
+            def place_market_order(self, symbol, side, quantity=None, quote_qty=None):
+                raise AssertionError("spot buy should not execute while held spot inventory is underwater")
+
+        class KrakenTrader:
+            def __init__(self):
+                self.client = KrakenExec()
+
+        trader = self._make_trader()
+        trader.kraken = KrakenTrader()
+
+        posture = trader._kraken_spot_portfolio_posture(force=True)
+        result = trader._execute_kraken_spot_route("BUY", "TRXUSD", 65.0)
+
+        self.assertFalse(posture["spot_buy_allowed"])
+        self.assertEqual(posture["mode"], "margin_only_until_spot_profit")
+        self.assertEqual(result["reason"], "kraken_spot_inventory_underwater_margin_only")
+
+    def test_executor_skips_kraken_spot_buy_and_still_uses_margin_when_spot_underwater(self):
+        old_env = self._with_live_executor_env()
+        try:
+            trader = self._make_trader()
+            trader._kraken_spot_portfolio_posture = lambda force=False: {
+                "spot_buy_allowed": False,
+                "mode": "margin_only_until_spot_profit",
+                "negative_position_count": 1,
+                "assets": [{"asset": "TRX", "state": "negative_spot_position"}],
+            }  # type: ignore[method-assign]
+            trader._execute_kraken_spot_route = lambda side, symbol, quote_usd: {
+                "ok": False,
+                "venue": "kraken",
+                "market_type": "spot",
+                "symbol": symbol,
+                "side": side,
+                "reason": "kraken_spot_inventory_underwater_margin_only",
+            }  # type: ignore[method-assign]
+            trader._execute_kraken_margin_route = lambda side, symbol, quote_usd: {
+                "ok": True,
+                "venue": "kraken",
+                "market_type": "margin",
+                "symbol": symbol,
+                "side": side,
+                "submitted": True,
+            }  # type: ignore[method-assign]
+            payload = {
+                "combined": {"open_positions": 0},
+                "exchange_action_plan": {"order_intent_publish_enabled": True, "global_blockers": []},
+                "shared_order_flow": {
+                    "active_order_flow": [
+                        {
+                            "symbol": "TRXUSD",
+                            "side": "BUY",
+                            "confidence": 0.91,
+                            "execution_routes": [
+                                {"venue": "kraken", "market_type": "spot", "symbol": "TRXUSD", "ready": True},
+                                {"venue": "kraken", "market_type": "margin", "symbol": "TRXUSD", "ready": True},
+                            ],
+                        }
+                    ]
+                },
+            }
+            trader._last_tick_started_at = time.time()
+
+            summary = trader._execute_runtime_order_actions(payload)
+
+            self.assertEqual(summary["submitted_count"], 1)
+            self.assertEqual(summary["blocked_count"], 1)
+            self.assertEqual(summary["results"][0]["reason"], "kraken_spot_inventory_underwater_margin_only")
+            self.assertEqual(summary["results"][1]["market_type"], "margin")
+        finally:
+            self._restore_env(old_env)
 
     def test_kraken_spot_fast_profit_monitor_sells_only_true_net_profit(self):
         old_env = self._with_live_executor_env()
@@ -712,6 +1197,124 @@ class UnifiedMarketTraderTests(unittest.TestCase):
                 state = trader._load_kraken_spot_fast_profit_state()
                 self.assertEqual(state["open_positions"], [])
                 self.assertEqual(state["last_check"]["closed_count"], 1)
+            finally:
+                trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = old_state
+                trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = old_public
+                trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC = old_min
+                self._restore_env(old_env)
+
+    def test_kraken_spot_fast_profit_monitor_adopts_profitable_live_inventory(self):
+        old_env = self._with_live_executor_env()
+
+        class KrakenExec:
+            def __init__(self):
+                self.orders = []
+
+            def get_account_balance(self):
+                return {"TRX": 100.0}
+
+            def convert_to_quote(self, asset, amount, quote):
+                if asset == "TRX" and quote == "USD":
+                    return float(amount) * 0.40
+                return 0.0
+
+            def calculate_cost_basis(self, symbol):
+                return {
+                    "symbol": symbol,
+                    "avg_entry_price": 0.35,
+                    "total_quantity": 100.0,
+                    "total_fees": 0.02,
+                    "trade_count": 1,
+                }
+
+            def get_ticker(self, symbol):
+                return {"price": 0.40, "bid": 0.40, "ask": 0.401}
+
+            def place_market_order(self, symbol, side, quantity=None, quote_qty=None):
+                self.orders.append((symbol, side, quantity, quote_qty))
+                return {"orderId": "TRXSELL1", "status": "FILLED"}
+
+        class KrakenTrader:
+            def __init__(self):
+                self.client = KrakenExec()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            old_state = trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH
+            old_public = trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH
+            old_min = trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC
+            trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = Path(tmp) / "state.json"
+            trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = Path(tmp) / "public.json"
+            trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC = 0.0
+            try:
+                trader = self._make_trader()
+                trader.kraken = KrakenTrader()
+
+                closed = trader._monitor_kraken_spot_fast_profit()
+
+                self.assertEqual(len(closed), 1)
+                self.assertEqual(trader.kraken.client.orders[0][0], "TRXUSD")
+                self.assertEqual(trader.kraken.client.orders[0][1], "sell")
+                self.assertEqual(closed[0]["source"], "live_balance_cost_basis")
+                self.assertGreater(closed[0]["fast_profit_capture"]["true_net_profit_usd"], 0.0)
+            finally:
+                trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = old_state
+                trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = old_public
+                trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC = old_min
+                self._restore_env(old_env)
+
+    def test_kraken_spot_fast_profit_arms_deadman_when_market_sell_fails(self):
+        old_env = self._with_live_executor_env()
+
+        class KrakenExec:
+            def __init__(self):
+                self.trailing_orders = []
+
+            def get_ticker(self, symbol):
+                return {"price": 101.0, "bid": 101.0, "ask": 101.02}
+
+            def place_market_order(self, symbol, side, quantity=None, quote_qty=None):
+                return {"error": "temporary_exchange_reject"}
+
+            def place_trailing_stop_order(self, symbol, side, quantity, trailing_offset, offset_type="percent"):
+                self.trailing_orders.append((symbol, side, quantity, trailing_offset, offset_type))
+                return {"orderId": "DEADMAN1", "status": "NEW"}
+
+        class KrakenTrader:
+            def __init__(self):
+                self.client = KrakenExec()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            old_state = trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH
+            old_public = trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH
+            old_min = trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC
+            trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = Path(tmp) / "state.json"
+            trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = Path(tmp) / "public.json"
+            trader_mod.KRAKEN_SPOT_FAST_PROFIT_MIN_HOLD_SEC = 0.0
+            try:
+                trader = self._make_trader()
+                trader.kraken = KrakenTrader()
+                trader._kraken_spot_fast_profit_state = {
+                    "schema_version": 1,
+                    "open_positions": [{
+                        "id": "P1",
+                        "symbol": "XBTUSD",
+                        "quantity": 1.0,
+                        "entry_price": 100.0,
+                        "entry_value_usd": 100.0,
+                        "entry_fee_usd": 0.10,
+                        "opened_at_epoch": time.time() - 5.0,
+                        "status": "open",
+                    }],
+                    "closed_positions": [],
+                    "last_check": {},
+                }
+
+                closed = trader._monitor_kraken_spot_fast_profit()
+                state = trader._load_kraken_spot_fast_profit_state()
+
+                self.assertEqual(closed, [])
+                self.assertEqual(len(trader.kraken.client.trailing_orders), 1)
+                self.assertEqual(state["open_positions"][0]["deadman_switch"]["order_type"], "trailing_stop")
             finally:
                 trader_mod.KRAKEN_SPOT_POSITION_STATE_PATH = old_state
                 trader_mod.KRAKEN_SPOT_POSITION_PUBLIC_PATH = old_public

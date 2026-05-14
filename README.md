@@ -71,6 +71,9 @@ python scripts/aureon_ignition.py --audit-only
 | Flight test | `http://127.0.0.1:8791/api/flight-test` |
 | Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
 | Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
+| Scanner fusion proof | `state/aureon_scanner_fusion_matrix.json` |
+| World ecosystem proof | `state/aureon_world_financial_ecosystem_intelligence.json` |
+| 1h-to-1y waveform memory | `state/aureon_asset_waveform_models.json` |
 | Wake-up manifest | `state/aureon_wake_up_manifest.json` |
 | Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
 
@@ -80,6 +83,18 @@ Live trading requires configured exchange credentials and the existing runtime s
 
 The runtime reports connected-but-guarded states instead of hiding problems as generic offline failures. If the market feed is alive but a tick is stale, the console and `/api/terminal-state` show the reason, open-position state, and current tick phase. Direct execution routes are bounded by a route timeout so one slow exchange call cannot freeze the whole tick loop. Reboot decisions come from `/api/flight-test` and `/api/reboot-advice`; the production launcher should restart the runtime only when the flight-test says `can_reboot_now: true`, especially when open positions exist.
 
+### Live Trading Intelligence Proof
+
+Aureon now publishes a scanner-fusion matrix so operators can see which momentum, intelligence, counter-intelligence, order-book, volatility, world-market, waveform, model, shadow, and profit-timing systems are actually active in the current decision cycle. The runtime does not treat a scanner as active just because a file exists; it must have fresh evidence in the order-flow path.
+
+| Proof layer | What it shows |
+|---|---|
+| Scanner fusion matrix | `state/aureon_scanner_fusion_matrix.json` proves active systems, blockers, candidate `scanner_fusion_score`, cross-reference count, order-book alignment, phantom/noise filter state, and whether evidence fed the decision logic |
+| Trading intelligence checklist | `docs/audits/aureon_trading_intelligence_checklist.json` shows live market intelligence, HNC/Auris cognition, counter-intelligence, profit timing, and research/context mesh freshness |
+| World financial ecosystem | `state/aureon_world_financial_ecosystem_intelligence.json` folds macro, news, MarketHarp, cross-asset, and external context into CentralBeat where evidence is usable |
+| Multi-horizon waveform memory | `state/aureon_asset_waveform_models.json` builds 1 hour through 1 year asset waveforms from real stored/live observations and names any missing long-memory blocker |
+| Order-book and fast-money pressure | `shared_order_flow.fast_money_intelligence` and each candidate's `orderbook_pressure` show whether live book imbalance supports or opposes the trade side |
+
 ### Current Capability Map
 
 | Capability | Current surface |
@@ -87,9 +102,13 @@ The runtime reports connected-but-guarded states instead of hiding problems as g
 | Live/safe runtime supervision | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
 | Multi-exchange market coverage | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
 | Exchange clients | `aureon/exchanges/kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
+| Momentum/intelligence scanner fusion | `aureon/exchanges/unified_market_trader.py`, `state/aureon_scanner_fusion_matrix.json` |
+| 1h-to-1y financial waveform memory | `aureon/analytics/aureon_multi_horizon_waveform_model.py`, `state/aureon_asset_waveform_models.json` |
+| World financial ecosystem context | `state/aureon_world_financial_ecosystem_intelligence.json`, `shared_order_flow.world_financial_ecosystem` |
 | Spot/margin observation and readiness | Unified runtime feed plus flight-test and reboot-advice endpoints |
 | Cognitive order-intent path | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |
 | HNC/Auris evidence reporting | `aureon/autonomous/aureon_cognitive_trade_evidence.py`, `aureon/autonomous/aureon_harmonic_affect_state.py`, `aureon/autonomous/aureon_live_cognition_benchmark.py` |
+| HNC symbolic packet/vault research | `aureon/harmonic/hnc_quantum_packet_crypto.py`, `aureon/harmonic/hnc_symbolic_route_seal.py`, `aureon/vault/hnc_repo_singularity_vault.py`, `aureon/vault/hnc_swarm_key_store.py` |
 | Unified autonomous console | `frontend/src/App.tsx`, `frontend/src/services/aureonAutonomousFrontend.ts`, `frontend/src/hooks/useTerminalSync.ts` |
 | Accounting/HMRC support tooling | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
 | Local OS/task control | `aureon/autonomous/aureon_local_task_queue.py`, `aureon/autonomous/aureon_repo_explorer_service.py`, `aureon/autonomous/aureon_voice_command_bridge.py` |

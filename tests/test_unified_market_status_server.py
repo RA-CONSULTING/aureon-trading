@@ -20,8 +20,28 @@ class UnifiedMarketStatusServerFlightTestTests(unittest.TestCase):
         self.state_root = Path(self.tmp.name)
         self.old_status_path = status_server.STATUS_PATH
         self.old_intent_path = status_server.MARKET_INTENT_PATH
+        self.old_env_path = status_server.ENV_PATH
+        self.old_env_update_intent_path = status_server.ENV_UPDATE_INTENT_PATH
         status_server.STATUS_PATH = self.state_root / "unified_runtime_status.json"
         status_server.MARKET_INTENT_PATH = self.state_root / "aureon_market_reboot_intent.json"
+        status_server.ENV_PATH = self.state_root / ".env"
+        status_server.ENV_UPDATE_INTENT_PATH = self.state_root / "aureon_env_update_intent.json"
+        self.old_secret_env = {
+            key: os.environ.get(key)
+            for key in (
+                "KRAKEN_API_KEY",
+                "KRAKEN_API_SECRET",
+                "BINANCE_API_KEY",
+                "BINANCE_API_SECRET",
+                "ALPACA_API_KEY",
+                "ALPACA_SECRET_KEY",
+                "CAPITAL_API_KEY",
+                "CAPITAL_IDENTIFIER",
+                "CAPITAL_PASSWORD",
+                "AUREON_HNC_PACKET_MASTER_KEY",
+                "HNC_PACKET_MASTER_KEY",
+            )
+        }
         self.old_env = {
             key: os.environ.get(key)
             for key in (
@@ -37,7 +57,14 @@ class UnifiedMarketStatusServerFlightTestTests(unittest.TestCase):
     def tearDown(self):
         status_server.STATUS_PATH = self.old_status_path
         status_server.MARKET_INTENT_PATH = self.old_intent_path
+        status_server.ENV_PATH = self.old_env_path
+        status_server.ENV_UPDATE_INTENT_PATH = self.old_env_update_intent_path
         for key, value in self.old_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        for key, value in self.old_secret_env.items():
             if value is None:
                 os.environ.pop(key, None)
             else:
@@ -94,6 +121,68 @@ class UnifiedMarketStatusServerFlightTestTests(unittest.TestCase):
         self.assertTrue(flight["checks"]["downtime_window"])
         self.assertFalse(flight["checks"]["open_positions"])
         self.assertTrue(flight["reboot_advice"]["can_reboot_now"])
+
+    def test_env_credentials_status_reports_presence_without_secret_values(self):
+        status_server.ENV_PATH.write_text(
+            "KRAKEN_API_KEY=kraken-key\nKRAKEN_API_SECRET=kraken-secret-value\n",
+            encoding="utf-8",
+        )
+
+        status = status_server._env_credentials_status()
+
+        self.assertTrue(status["exchanges"]["kraken"]["present"])
+        self.assertEqual(status["exchanges"]["kraken"]["keys"]["KRAKEN_API_SECRET"]["length"], len("kraken-secret-value"))
+        self.assertNotIn("kraken-secret-value", json.dumps(status))
+        self.assertEqual(status["secret_policy"], "metadata_only_no_values_returned")
+
+    def test_env_credential_update_writes_env_and_marks_restart_required(self):
+        os.environ.pop("AUREON_HNC_PACKET_MASTER_KEY", None)
+        os.environ.pop("HNC_PACKET_MASTER_KEY", None)
+        updates = status_server._extract_env_updates(
+            "kraken",
+            {"krakenApiKey": "new-kraken-key", "krakenApiSecret": "new-kraken-secret"},
+        )
+        result = status_server._write_env_updates(updates)
+        intent = status_server._record_env_update_intent("kraken", result["updated_keys"])
+
+        env_text = status_server.ENV_PATH.read_text(encoding="utf-8")
+        status = status_server._env_credentials_status()
+
+        self.assertIn("KRAKEN_API_KEY=new-kraken-key", env_text)
+        self.assertIn("KRAKEN_API_SECRET=new-kraken-secret", env_text)
+        self.assertEqual(intent["status"], "pending")
+        self.assertTrue(status["restart_required"])
+        self.assertTrue(status_server.MARKET_INTENT_PATH.exists())
+        self.assertNotIn("new-kraken-secret", json.dumps(status))
+
+    def test_env_credential_update_packet_encrypts_when_hnc_master_key_present(self):
+        os.environ["AUREON_HNC_PACKET_MASTER_KEY"] = "test-hnc-master-key-for-env-packets-32-bytes"
+        updates = status_server._extract_env_updates(
+            "kraken",
+            {"krakenApiKey": "packet-kraken-key", "krakenApiSecret": "packet-kraken-secret"},
+        )
+        result = status_server._write_env_updates(updates)
+
+        env_text = status_server.ENV_PATH.read_text(encoding="utf-8")
+        status = status_server._env_credentials_status()
+
+        self.assertIn("KRAKEN_API_KEY=hncqp1:", env_text)
+        self.assertIn("KRAKEN_API_SECRET=hncqp1:", env_text)
+        self.assertNotIn("packet-kraken-secret", env_text)
+        self.assertEqual(result["hnc_packet_encrypted_keys"], ["KRAKEN_API_KEY", "KRAKEN_API_SECRET"])
+        self.assertTrue(status["hnc_packet_encryption"]["enabled"])
+        self.assertEqual(status["hnc_packet_encryption"]["encoded_key_count"], 2)
+        self.assertTrue(status_server.HNC_PACKET_EVIDENCE_PATH.exists())
+
+    def test_flight_test_treats_env_update_as_pending_restart(self):
+        self._write_status(open_positions=0)
+        status_server._record_env_update_intent("binance", ["BINANCE_API_KEY"])
+
+        flight = status_server._flight_test()
+
+        self.assertTrue(flight["checks"]["pending_restart"])
+        self.assertTrue(flight["reboot_advice"]["can_reboot_now"])
+        self.assertEqual(flight["env_update_intent"]["exchange"], "binance")
 
 
 if __name__ == "__main__":

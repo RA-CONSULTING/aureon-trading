@@ -11,6 +11,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, MutableMapping, Optional
 
+from aureon.harmonic.hnc_quantum_packet_crypto import (
+    ENV_PACKET_PREFIX,
+    HNCPacketError,
+    LEGACY_MASTER_KEY_ENV,
+    MASTER_KEY_ENV,
+    decode_env_packet,
+    is_env_packet,
+)
+
 
 SECRET_KEYS = {
     "KRAKEN_API_KEY",
@@ -27,6 +36,8 @@ SECRET_KEYS = {
     "COINAPI_API_KEY",
     "COINAPI_KEY",
     "SUPABASE_ANON_KEY",
+    MASTER_KEY_ENV,
+    LEGACY_MASTER_KEY_ENV,
 }
 
 KRAKEN_REQUIRED_ENV = ("KRAKEN_API_KEY", "KRAKEN_API_SECRET")
@@ -72,6 +83,8 @@ class EnvLoadReport:
     loaded_paths: list[str] = field(default_factory=list)
     candidate_paths: list[str] = field(default_factory=list)
     aliases_applied: list[dict[str, str]] = field(default_factory=list)
+    packets_decoded: list[dict[str, str]] = field(default_factory=list)
+    packet_errors: list[dict[str, str]] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
@@ -80,6 +93,8 @@ class EnvLoadReport:
             "loaded_paths": list(self.loaded_paths),
             "candidate_paths": list(self.candidate_paths),
             "aliases_applied": list(self.aliases_applied),
+            "packets_decoded": list(self.packets_decoded),
+            "packet_errors": list(self.packet_errors),
             "errors": list(self.errors),
         }
 
@@ -178,6 +193,30 @@ def apply_env_aliases(
     return applied
 
 
+def decode_hnc_env_packets(
+    environ: Optional[MutableMapping[str, str]] = None,
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    env = os.environ if environ is None else environ
+    master_key = str(env.get(MASTER_KEY_ENV) or env.get(LEGACY_MASTER_KEY_ENV) or "").strip()
+    decoded: list[dict[str, str]] = []
+    errors: list[dict[str, str]] = []
+    if not master_key:
+        return decoded, errors
+    for key, value in list(env.items()):
+        if key in {MASTER_KEY_ENV, LEGACY_MASTER_KEY_ENV}:
+            continue
+        if not is_env_packet(value):
+            continue
+        try:
+            env[key] = decode_env_packet(str(value), master_key, env_key=key)
+            decoded.append({"key": key, "format": ENV_PACKET_PREFIX.rstrip(":")})
+        except HNCPacketError as exc:
+            errors.append({"key": key, "error": str(exc)})
+        except Exception as exc:
+            errors.append({"key": key, "error": f"{type(exc).__name__}: {exc}"})
+    return decoded, errors
+
+
 def load_aureon_environment(
     repo_root: Optional[Path] = None,
     *,
@@ -211,6 +250,7 @@ def load_aureon_environment(
                 report.loaded_paths.append(str(path))
         except Exception as exc:
             report.errors.append(f"{path}: {type(exc).__name__}: {exc}")
+    report.packets_decoded, report.packet_errors = decode_hnc_env_packets(env)
     report.aliases_applied = apply_env_aliases(env, override=False)
     return report
 
@@ -250,6 +290,7 @@ def env_presence(
             "set": bool(value.strip()),
             "length": len(value),
             "secret": key in SECRET_KEYS,
+            "hnc_packet": is_env_packet(value),
         }
     return status
 
@@ -275,6 +316,7 @@ __all__ = [
     "apply_env_aliases",
     "candidate_env_paths",
     "enabled_credential_groups",
+    "decode_hnc_env_packets",
     "env_presence",
     "env_status_summary",
     "env_truthy",
