@@ -45,6 +45,7 @@ PUBLIC_MANIFESTS = {
     "harmonic_affect_state": "frontend/public/aureon_harmonic_affect_state.json",
     "live_cognition_benchmark": "frontend/public/aureon_live_cognition_benchmark.json",
     "hnc_cognitive_proof": "frontend/public/aureon_hnc_cognitive_proof.json",
+    "trading_intelligence_checklist": "frontend/public/aureon_trading_intelligence_checklist.json",
     "frontend_work_order_execution": "frontend/public/aureon_frontend_work_order_execution.json",
     "coding_agent_skill_base": "frontend/public/aureon_coding_agent_skill_base.json",
 }

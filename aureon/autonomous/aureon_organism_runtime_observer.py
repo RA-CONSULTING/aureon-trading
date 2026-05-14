@@ -51,6 +51,7 @@ CORE_REFRESH_MODULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("system_readiness", ("aureon.autonomous.aureon_system_readiness_audit",)),
     ("cognitive_trade_evidence", ("aureon.autonomous.aureon_cognitive_trade_evidence",)),
     ("harmonic_affect_state", ("aureon.autonomous.aureon_harmonic_affect_state",)),
+    ("trading_intelligence_checklist", ("aureon.autonomous.aureon_trading_intelligence_checklist",)),
 )
 
 HEAVY_REFRESH_MODULES: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -231,6 +232,17 @@ DOMAIN_MANIFESTS: tuple[dict[str, Any], ...] = (
         "required_summary_keys": ("hnc_coherence_score", "affect_phase", "resonance_frequency_hz"),
         "attention_keys": ("runtime_stale", "safety_blocker_count"),
         "next_action": "Run python -m aureon.autonomous.aureon_harmonic_affect_state.",
+    },
+    {
+        "id": "trading_intelligence_checklist",
+        "label": "Trading Intelligence Checklist",
+        "domain": "trading",
+        "path": "docs/audits/aureon_trading_intelligence_checklist.json",
+        "public_path": "frontend/public/aureon_trading_intelligence_checklist.json",
+        "fresh_seconds": 15 * 60,
+        "required_summary_keys": ("system_count", "fresh_usable_count", "decision_fed_count"),
+        "attention_keys": ("runtime_stale", "stale_or_blocked_count"),
+        "next_action": "Run python -m aureon.autonomous.aureon_trading_intelligence_checklist.",
     },
     {
         "id": "mind_wiring",

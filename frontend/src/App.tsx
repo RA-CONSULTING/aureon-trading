@@ -60,6 +60,44 @@ interface RuntimeObservation {
   details: Array<{ label: string; value: string }>;
 }
 
+interface TradingIntelligenceChecklistRow {
+  system: string;
+  category: string;
+  facet: string;
+  wire_path: string;
+  evidence_source: string;
+  last_timestamp?: string;
+  present: boolean;
+  active_this_cycle: boolean;
+  fresh: boolean;
+  usable_for_decision: boolean;
+  fed_to_decision_logic: boolean;
+  blocker?: string;
+  downstream_stage: string;
+}
+
+interface TradingIntelligenceChecklist {
+  status?: string;
+  generated_at?: string;
+  summary?: {
+    runtime_fresh?: boolean;
+    runtime_stale?: boolean;
+    stale_reason?: string;
+    system_count?: number;
+    present_count?: number;
+    active_count?: number;
+    fresh_usable_count?: number;
+    stale_or_blocked_count?: number;
+    decision_fed_count?: number;
+    direct_live_systems_passing?: number;
+    hnc_auris_passing?: number;
+    counter_intelligence_passing?: number;
+    profit_timing_passing?: number;
+    top_blockers?: Array<Record<string, unknown>>;
+  };
+  rows?: TradingIntelligenceChecklistRow[];
+}
+
 interface WakeUpManifest {
   runtime_feed_url?: string;
   runtime_flight_test_url?: string;
@@ -128,6 +166,10 @@ async function fetchJsonOrNull<T>(url: string, signal?: AbortSignal): Promise<T 
 
 async function loadWakeUpManifest(signal?: AbortSignal): Promise<WakeUpManifest | null> {
   return fetchJsonOrNull<WakeUpManifest>("/aureon_wake_up_manifest.json", signal);
+}
+
+async function loadTradingIntelligenceChecklist(signal?: AbortSignal): Promise<TradingIntelligenceChecklist | null> {
+  return fetchJsonOrNull<TradingIntelligenceChecklist>("/aureon_trading_intelligence_checklist.json", signal);
 }
 
 function flightTestUrlFor(endpoint: string, manifest?: WakeUpManifest | null): string {
@@ -354,6 +396,7 @@ function AppShell() {
     clearances: [],
     details: [],
   });
+  const [tradingChecklist, setTradingChecklist] = useState<TradingIntelligenceChecklist | null>(null);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState("overview");
 
@@ -374,6 +417,13 @@ function AppShell() {
     const refreshRuntime = async () => setRuntime(await loadRuntimeObservation());
     refreshRuntime();
     const timer = window.setInterval(refreshRuntime, 5000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshChecklist = async () => setTradingChecklist(await loadTradingIntelligenceChecklist());
+    refreshChecklist();
+    const timer = window.setInterval(refreshChecklist, 10000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -481,6 +531,7 @@ function AppShell() {
           {screens.map((screen) => (
             <TabsContent key={screen.id} value={screen.id} className="mt-0">
               <ScreenPanel screen={screen} inventory={inventory} />
+              {screen.id === "trading" ? <TradingIntelligenceChecklistPanel checklist={tradingChecklist} /> : null}
             </TabsContent>
           ))}
         </Tabs>
@@ -990,6 +1041,116 @@ function CapabilitySwitchboardPanel({ switchboard }: { switchboard: CapabilitySw
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function TradingIntelligenceChecklistPanel({ checklist }: { checklist: TradingIntelligenceChecklist | null }) {
+  const summary = checklist?.summary || {};
+  const rows = checklist?.rows || [];
+  const blockers = (summary.top_blockers || []).slice(0, 5);
+  const criticalRows = rows
+    .filter((row) => row.blocker || !row.usable_for_decision)
+    .slice(0, 8);
+  const categoryRows = [
+    { label: "direct live", value: summary.direct_live_systems_passing, total: rows.filter((row) => row.category === "live_market_intelligence").length },
+    { label: "HNC/Auris", value: summary.hnc_auris_passing, total: rows.filter((row) => row.category === "hnc_auris_cognition").length },
+    { label: "counter intel", value: summary.counter_intelligence_passing, total: rows.filter((row) => row.category === "counter_intelligence_validation").length },
+    { label: "profit timing", value: summary.profit_timing_passing, total: rows.filter((row) => row.category === "profit_timing").length },
+  ];
+
+  return (
+    <Card className="mt-4 bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          Trading Intelligence Freshness Checklist
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill
+            label={checklist?.status ? String(checklist.status).replace(/_/g, " ") : "checklist pending"}
+            tone={summary.runtime_fresh ? statusTone.wired : statusTone.orphaned}
+          />
+          <Pill
+            label={checklist?.generated_at ? `updated ${new Date(checklist.generated_at).toLocaleTimeString()}` : "no checklist timestamp"}
+            tone="border-border bg-muted/20 text-muted-foreground"
+          />
+          <Pill label="/aureon_trading_intelligence_checklist.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          {summary.stale_reason ? <Pill label={String(summary.stale_reason)} tone={statusTone.security_blocker} /> : null}
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">fresh usable</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.fresh_usable_count)}/{formatCompact(summary.system_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">decision fed</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.decision_fed_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">present</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.present_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">active</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.active_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">stale/blocked</div>
+            <div className="mt-1 text-lg font-semibold text-yellow-200">{formatCompact(summary.stale_or_blocked_count)}</div>
+          </div>
+        </div>
+
+        <div className="grid gap-2 md:grid-cols-4">
+          {categoryRows.map((item) => (
+            <div key={item.label} className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{item.label}</div>
+              <div className="mt-1 font-mono text-sm font-semibold">{formatCompact(item.value)}/{formatCompact(item.total)}</div>
+            </div>
+          ))}
+        </div>
+
+        {blockers.length ? (
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Top blockers</div>
+            {blockers.map((blocker, index) => (
+              <div key={`${String(blocker.system)}-${index}`} className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs">
+                <span className="font-semibold text-yellow-100">{String(blocker.system || "unknown")}</span>
+                <span className="ml-2 text-yellow-100/80">{String(blocker.blocker || "")}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <ScrollArea className="h-[260px] pr-3">
+          <div className="space-y-2">
+            {(criticalRows.length ? criticalRows : rows.slice(0, 8)).map((row) => (
+              <div key={`${row.system}-${row.downstream_stage}`} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium">{row.system}</div>
+                    <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{row.evidence_source}</div>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    <Pill label={row.downstream_stage.replace(/_/g, " ")} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+                    <Pill label={row.fed_to_decision_logic ? "decision fed" : "not fed"} tone={row.fed_to_decision_logic ? statusTone.wired : statusTone.partial} />
+                    <Pill label={row.usable_for_decision ? "fresh usable" : "held"} tone={row.usable_for_decision ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                </div>
+                {row.blocker ? <div className="mt-2 text-xs text-yellow-100">{row.blocker}</div> : null}
+              </div>
+            ))}
+            {!rows.length ? (
+              <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                Checklist not generated yet. Run python -m aureon.autonomous.aureon_trading_intelligence_checklist.
+              </div>
+            ) : null}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 }
 
