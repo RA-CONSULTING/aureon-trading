@@ -65,6 +65,8 @@ The trading intelligence checklist now folds that mapped data ocean back into Au
 
 The data ocean and live runtime now share an official exchange rate-limit registry in `aureon/core/exchange_rate_limit_registry.py`. Binance, Kraken, Alpaca, and Capital each publish different limit models, so Aureon does not treat them as one flat calls-per-minute pool. It reserves capacity for execution, balances, positions, and recovery on venues with active cash or open positions, then lets idle/no-cash venues spend more of their safe budget on live streams, quote probes, and candidate discovery. The public reports expose `official_rate_limit`, `cash_aware_call_plan`, and `rate_budget` so operators can see what the system believes it may call before it calls.
 
+The exchange data capability matrix sits on top of those reports. It answers the operator question: what does each exchange see, what can it trade, what is fresh this cycle, what is decision-fed, and what can be leveraged or optimized next. Use it when deciding whether Binance should widen crypto discovery, Kraken should reserve private calls for margin/collateral, Alpaca should spend more on stock/ETF snapshots, or Capital should focus on open-position P/L and high-volatility CFD streams.
+
 Private exchange history sync is deliberately capped in this supervisor so it does not hammer Kraken/Binance/Alpaca while live trading is active. The default Kraken private trade-history budget is `-KrakenAccountSyncMax 50`. If a venue is rate-limiting or you only want public/context data for a cycle, run:
 
 ```powershell
@@ -94,6 +96,7 @@ python scripts/aureon_ignition.py --audit-only
 | Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
 | Trading intelligence checklist | `http://127.0.0.1:8081/aureon_trading_intelligence_checklist.json` and `docs/audits/aureon_trading_intelligence_checklist.json` |
 | Exchange monitoring checklist | `docs/audits/aureon_exchange_monitoring_checklist.json` and `frontend/public/aureon_exchange_monitoring_checklist.json` |
+| Exchange data capability matrix | `docs/audits/aureon_exchange_data_capability_matrix.json` and `frontend/public/aureon_exchange_data_capability_matrix.json` |
 | Global financial coverage map | `docs/audits/aureon_global_financial_coverage_map.json` and `frontend/public/aureon_global_financial_coverage_map.json` |
 | Data ocean status | `state/aureon_data_ocean_status.json` and `frontend/public/aureon_data_ocean_status.json` |
 | Scanner fusion proof | `state/aureon_scanner_fusion_matrix.json` |
@@ -131,6 +134,7 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 | Multi-exchange market coverage | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
 | Planetary financial data ocean | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `docs/audits/aureon_global_financial_coverage_map.json` |
 | Official exchange rate budgets | `aureon/core/exchange_rate_limit_registry.py`, `api_governor`, `state/aureon_data_ocean_status.json` |
+| Exchange data capability matrix | `aureon/autonomous/aureon_exchange_data_capability_matrix.py`, `docs/audits/aureon_exchange_data_capability_matrix.json`, `frontend/public/aureon_exchange_data_capability_matrix.json` |
 | Metacognitive data context | `aureon/autonomous/aureon_trading_intelligence_checklist.py`, `docs/audits/aureon_trading_intelligence_checklist.json`, and the Trading console data-ocean card |
 | Exchange clients | `aureon/exchanges/kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
 | Momentum/intelligence scanner fusion | `aureon/exchanges/unified_market_trader.py`, `state/aureon_scanner_fusion_matrix.json` |

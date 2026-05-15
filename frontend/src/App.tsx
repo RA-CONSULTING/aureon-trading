@@ -180,6 +180,71 @@ interface ExchangeMonitoringChecklist {
   rows?: ExchangeMonitoringChecklistRow[];
 }
 
+interface ExchangeDataCapabilityRow {
+  exchange: string;
+  label: string;
+  system_role?: string;
+  markets?: string[];
+  trading_modes?: string[];
+  data_channels?: Array<{
+    name: string;
+    source?: string;
+    status?: string;
+    optimization_use?: string;
+  }>;
+  leveraged_for?: string[];
+  optimization_bias?: string;
+  current_state?: {
+    connected?: boolean;
+    active_feed?: boolean;
+    fresh_feed?: boolean;
+    ticker_count?: number;
+    decision_fed?: boolean;
+    fast_money_usable?: boolean;
+    waveform_history_active?: boolean;
+    credential_state?: string;
+    usable_for_mapping?: boolean;
+    usable_for_decision?: boolean;
+  };
+  optimization_policy?: {
+    safe_calls_per_min?: number;
+    execution_reserved_per_min?: number;
+    market_data_budget_per_min?: number;
+    cash_usd_estimate?: number;
+    position_count?: number;
+    cash_or_position_active?: boolean;
+    data_boost_eligible?: boolean;
+    stream_preferred?: boolean;
+    recommended_mode?: string;
+  };
+  gaps?: string[];
+  next_optimization?: string;
+}
+
+interface ExchangeDataCapabilityMatrix {
+  status?: string;
+  generated_at?: string;
+  summary?: {
+    exchange_count?: number;
+    connected_exchange_count?: number;
+    fresh_feed_count?: number;
+    decision_fed_count?: number;
+    fast_money_usable_count?: number;
+    waveform_ready_count?: number;
+    cash_active_exchange_count?: number;
+    data_boost_eligible_count?: number;
+    official_rate_limit_profile_count?: number;
+    total_ticker_count?: number;
+    runtime_stale?: boolean;
+    runtime_booting?: boolean;
+    trading_ready?: boolean;
+    data_ready?: boolean;
+    preflight_overall?: string;
+    stale_reason?: string;
+  };
+  rows?: ExchangeDataCapabilityRow[];
+}
+
 interface GlobalFinancialCoverageRow {
   domain: string;
   coverage: string;
@@ -578,6 +643,10 @@ async function loadExchangeMonitoringChecklist(signal?: AbortSignal): Promise<Ex
   return fetchJsonOrNull<ExchangeMonitoringChecklist>("/aureon_exchange_monitoring_checklist.json", signal);
 }
 
+async function loadExchangeDataCapabilityMatrix(signal?: AbortSignal): Promise<ExchangeDataCapabilityMatrix | null> {
+  return fetchJsonOrNull<ExchangeDataCapabilityMatrix>("/aureon_exchange_data_capability_matrix.json", signal);
+}
+
 async function loadGlobalFinancialCoverageMap(signal?: AbortSignal): Promise<GlobalFinancialCoverageMap | null> {
   return fetchJsonOrNull<GlobalFinancialCoverageMap>("/aureon_global_financial_coverage_map.json", signal);
 }
@@ -947,6 +1016,7 @@ function AppShell() {
   });
   const [tradingChecklist, setTradingChecklist] = useState<TradingIntelligenceChecklist | null>(null);
   const [exchangeChecklist, setExchangeChecklist] = useState<ExchangeMonitoringChecklist | null>(null);
+  const [exchangeDataMatrix, setExchangeDataMatrix] = useState<ExchangeDataCapabilityMatrix | null>(null);
   const [globalCoverageMap, setGlobalCoverageMap] = useState<GlobalFinancialCoverageMap | null>(null);
   const [hncSecurityComparison, setHncSecurityComparison] = useState<HNCPacketSecurityComparison | null>(null);
   const [loading, setLoading] = useState(true);
@@ -983,6 +1053,13 @@ function AppShell() {
     const refreshExchangeChecklist = async () => setExchangeChecklist(await loadExchangeMonitoringChecklist());
     refreshExchangeChecklist();
     const timer = window.setInterval(refreshExchangeChecklist, 10000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshExchangeDataMatrix = async () => setExchangeDataMatrix(await loadExchangeDataCapabilityMatrix());
+    refreshExchangeDataMatrix();
+    const timer = window.setInterval(refreshExchangeDataMatrix, 15000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -1112,6 +1189,7 @@ function AppShell() {
               {screen.id === "trading" ? (
                 <>
                   <GlobalFinancialCoveragePanel coverage={globalCoverageMap} />
+                  <ExchangeDataCapabilityMatrixPanel matrix={exchangeDataMatrix} />
                   <ExchangeMonitoringChecklistPanel checklist={exchangeChecklist} />
                   <TradingIntelligenceChecklistPanel checklist={tradingChecklist} />
                 </>
@@ -1895,6 +1973,133 @@ function ExchangeMonitoringChecklistPanel({ checklist }: { checklist: ExchangeMo
             ) : (
               <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
                 Exchange checklist not generated yet. Run python -m aureon.autonomous.aureon_exchange_monitoring_checklist.
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ExchangeDataCapabilityMatrixPanel({ matrix }: { matrix: ExchangeDataCapabilityMatrix | null }) {
+  const summary = matrix?.summary || {};
+  const rows = matrix?.rows || [];
+
+  return (
+    <Card className="mt-4 bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Database className="h-4 w-4 text-primary" />
+          Exchange Data Capability Matrix
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill
+            label={matrix?.status ? String(matrix.status).replace(/_/g, " ") : "capability matrix pending"}
+            tone={summary.runtime_stale ? statusTone.orphaned : summary.runtime_booting || summary.trading_ready === false || summary.data_ready === false ? statusTone.partial : statusTone.wired}
+          />
+          <Pill
+            label={matrix?.generated_at ? `updated ${new Date(matrix.generated_at).toLocaleTimeString()}` : "no matrix timestamp"}
+            tone="border-border bg-muted/20 text-muted-foreground"
+          />
+          <Pill label="/aureon_exchange_data_capability_matrix.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          {summary.stale_reason ? <Pill label={String(summary.stale_reason)} tone={statusTone.security_blocker} /> : null}
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">connected</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.connected_exchange_count)}/{formatCompact(summary.exchange_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">fresh feeds</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.fresh_feed_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">decision fed</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.decision_fed_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">cash active</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.cash_active_exchange_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">data boost</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.data_boost_eligible_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">tickers</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.total_ticker_count)}</div>
+          </div>
+        </div>
+
+        <ScrollArea className="h-[360px] pr-3">
+          <div className="space-y-3">
+            {rows.length ? (
+              rows.map((row) => {
+                const state = row.current_state || {};
+                const policy = row.optimization_policy || {};
+                return (
+                  <div key={row.exchange} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">{row.label || row.exchange}</div>
+                        {row.system_role ? <div className="mt-1 text-xs text-muted-foreground">{row.system_role}</div> : null}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        <Pill label={state.connected ? "client ready" : "client missing"} tone={state.connected ? statusTone.wired : statusTone.orphaned} />
+                        <Pill label={state.fresh_feed ? "fresh feed" : state.active_feed ? "feed stale" : "feed missing"} tone={state.fresh_feed ? statusTone.wired : statusTone.partial} />
+                        <Pill label={policy.data_boost_eligible ? "data boost" : "execution reserve"} tone={policy.data_boost_eligible ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-200" : "border-yellow-500/30 bg-yellow-500/10 text-yellow-200"} />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                      <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                        <div className="text-[10px] uppercase text-muted-foreground">safe calls/min</div>
+                        <div className="font-mono text-xs">{formatCompact(policy.safe_calls_per_min)}</div>
+                      </div>
+                      <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                        <div className="text-[10px] uppercase text-muted-foreground">market data/min</div>
+                        <div className="font-mono text-xs">{formatCompact(policy.market_data_budget_per_min)}</div>
+                      </div>
+                      <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                        <div className="text-[10px] uppercase text-muted-foreground">reserve/min</div>
+                        <div className="font-mono text-xs">{formatCompact(policy.execution_reserved_per_min)}</div>
+                      </div>
+                      <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                        <div className="text-[10px] uppercase text-muted-foreground">cash estimate</div>
+                        <div className="font-mono text-xs">{formatCompact(policy.cash_usd_estimate)}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {(row.trading_modes || []).slice(0, 5).map((mode) => (
+                        <Pill key={`${row.exchange}-${mode}`} label={mode.replace(/_/g, " ")} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+                      ))}
+                    </div>
+
+                    <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                      {(row.data_channels || []).slice(0, 6).map((channel) => (
+                        <div key={`${row.exchange}-${channel.name}`} className="rounded-md border border-border/40 bg-background/30 px-2 py-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-xs font-medium">{channel.name.replace(/_/g, " ")}</div>
+                            <Pill label={String(channel.status || "mapped").replace(/_/g, " ")} tone={String(channel.status || "").includes("missing") ? statusTone.orphaned : statusTone.wired} />
+                          </div>
+                          <div className="mt-1 text-[11px] text-muted-foreground">{channel.optimization_use || channel.source}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {row.next_optimization ? <div className="mt-3 text-xs text-foreground">{row.next_optimization}</div> : null}
+                    {(row.gaps || []).length ? <div className="mt-2 text-xs text-yellow-100">{(row.gaps || []).slice(0, 5).join(", ")}</div> : null}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                Capability matrix not generated yet. Run python -m aureon.autonomous.aureon_exchange_data_capability_matrix.
               </div>
             )}
           </div>

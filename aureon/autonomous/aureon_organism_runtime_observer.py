@@ -245,6 +245,17 @@ DOMAIN_MANIFESTS: tuple[dict[str, Any], ...] = (
         "next_action": "Run python -m aureon.autonomous.aureon_trading_intelligence_checklist.",
     },
     {
+        "id": "exchange_data_capability_matrix",
+        "label": "Exchange Data Capability Matrix",
+        "domain": "trading",
+        "path": "docs/audits/aureon_exchange_data_capability_matrix.json",
+        "public_path": "frontend/public/aureon_exchange_data_capability_matrix.json",
+        "fresh_seconds": 15 * 60,
+        "required_summary_keys": ("exchange_count", "official_rate_limit_profile_count", "data_boost_eligible_count"),
+        "attention_keys": ("runtime_stale",),
+        "next_action": "Run python -m aureon.autonomous.aureon_exchange_data_capability_matrix.",
+    },
+    {
         "id": "mind_wiring",
         "label": "Whole-Mind Wiring",
         "domain": "cognition",

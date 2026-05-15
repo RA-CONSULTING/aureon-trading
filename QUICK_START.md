@@ -76,6 +76,8 @@ If Kraken or another private account endpoint starts rate-limiting, keep the pub
 
 The data ocean uses `aureon/core/exchange_rate_limit_registry.py` to expose official provider limits and cash-aware call budgets. Check `state/aureon_data_ocean_status.json` for each live exchange row's `official_rate_limit`, `cash_aware_call_plan`, and `rate_budget`.
 
+To see what each exchange can observe, trade, leverage, and optimize, check `docs/audits/aureon_exchange_data_capability_matrix.json` or the Trading console. The matrix shows Binance, Kraken, Alpaca, and Capital data channels, fresh-feed state, decision-fed state, cash-aware rate plan, gaps, and next optimization.
+
 Validation-only:
 
 ```powershell
@@ -97,6 +99,7 @@ This is the development/audit ignition path. The production launcher is the full
 | Production launcher | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
 | Data ocean | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `aureon/autonomous/aureon_global_financial_coverage_map.py` |
 | Official exchange rate budgets | `aureon/core/exchange_rate_limit_registry.py` |
+| Exchange data capability matrix | `aureon/autonomous/aureon_exchange_data_capability_matrix.py` |
 | Market runtime | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
 | Exchange clients | `aureon/exchanges/kraken_client.py`, `aureon/exchanges/binance_client.py`, `aureon/exchanges/alpaca_client.py`, `aureon/exchanges/capital_client.py` |
 | Cognitive runtime | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |

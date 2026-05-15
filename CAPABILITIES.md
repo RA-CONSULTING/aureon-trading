@@ -34,6 +34,7 @@ Low-priority data ocean supervisor:
 | Multi-exchange market coverage | Runs unified market telemetry and exchange readiness for Kraken, Binance, Alpaca, and Capital. | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
 | Planetary financial data ocean | Maps configured/licensed financial signals across exchanges, history, macro, news, on-chain, forecasts, and internal knowledge without competing with execution/risk loops. | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `aureon_global_financial_coverage_map.py` |
 | Official exchange rate budgets | Records Binance, Kraken, Alpaca, and Capital provider limits, then builds cash-aware call plans that reserve execution capacity and boost idle/no-cash venue discovery safely. | `aureon/core/exchange_rate_limit_registry.py`, `api_governor`, `state/aureon_data_ocean_status.json` |
+| Exchange data capability matrix | Shows what each exchange can observe, trade, leverage, and optimize: data channels, modes, feed freshness, decision-fed state, call budget, gaps, and next optimization. | `aureon/autonomous/aureon_exchange_data_capability_matrix.py`, `docs/audits/aureon_exchange_data_capability_matrix.json`, `frontend/public/aureon_exchange_data_capability_matrix.json` |
 | Spot/margin observation and trading readiness | Tracks runtime state, open positions, stale ticks, and flight-test reboot decisions before action. | `/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
 | Runtime resilience and recovery | Shows connected-but-guarded states, tick phase, route timeouts, executor in-flight state, and safe reboot advice. | `/api/terminal-state`, `runtime_watchdog`, `executor_route_state` |
 | Exchange clients | Provides exchange-specific adapters for market data, balances, and order paths through the runtime gates. | `kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
@@ -82,6 +83,7 @@ Low-priority data ocean supervisor:
 | Cognitive trade evidence | `docs/audits/aureon_cognitive_trade_evidence.json` |
 | Harmonic affect state | `docs/audits/aureon_harmonic_affect_state.json` and `frontend/public/aureon_harmonic_affect_state.json` |
 | Exchange monitoring checklist | `docs/audits/aureon_exchange_monitoring_checklist.json` and `frontend/public/aureon_exchange_monitoring_checklist.json` |
+| Exchange data capability matrix | `docs/audits/aureon_exchange_data_capability_matrix.json` and `frontend/public/aureon_exchange_data_capability_matrix.json` |
 | Global financial coverage map | `docs/audits/aureon_global_financial_coverage_map.json` and `frontend/public/aureon_global_financial_coverage_map.json` |
 | Data ocean status | `state/aureon_data_ocean_status.json` and `frontend/public/aureon_data_ocean_status.json` |
 | Official exchange rate budget evidence | `state/aureon_data_ocean_status.json#sources[*].official_rate_limit` and `/api/terminal-state#api_governor` |

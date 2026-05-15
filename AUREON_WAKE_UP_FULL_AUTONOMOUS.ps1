@@ -411,6 +411,7 @@ function Invoke-Refresh {
         "aureon.autonomous.aureon_unified_ui_builder",
         "aureon.autonomous.aureon_trading_intelligence_checklist",
         "aureon.autonomous.aureon_exchange_monitoring_checklist",
+        "aureon.autonomous.aureon_exchange_data_capability_matrix",
         "aureon.autonomous.aureon_global_financial_coverage_map",
         "aureon.autonomous.aureon_organism_runtime_observer --refresh-core"
     )
