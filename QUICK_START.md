@@ -68,6 +68,12 @@ Run this in a second low-priority terminal when you want Aureon to widen live/hi
 .\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable
 ```
 
+If Kraken or another private account endpoint starts rate-limiting, keep the public/context ocean running without private account-history sync:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable -SkipAccountSync
+```
+
 Validation-only:
 
 ```powershell

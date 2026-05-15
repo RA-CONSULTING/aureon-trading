@@ -5,6 +5,8 @@ param(
     [switch]$DryRun,
     [switch]$RunOnce,
     [switch]$NoIngest,
+    [switch]$SkipAccountSync,
+    [int]$KrakenAccountSyncMax = 50,
     [int]$IntervalSeconds = 1800
 )
 
@@ -55,7 +57,7 @@ function Get-IngestProfile {
 Write-Ocean "Aureon planetary data ocean"
 Write-Ocean "Repo: $RepoRoot"
 Write-Ocean "Coverage profile: $CoverageProfile"
-Write-Ocean "Mode: budgeted adaptive=$($Adaptive.IsPresent), no ingest=$($NoIngest.IsPresent), dry run=$($DryRun.IsPresent), run once=$($RunOnce.IsPresent)"
+Write-Ocean "Mode: budgeted adaptive=$($Adaptive.IsPresent), no ingest=$($NoIngest.IsPresent), dry run=$($DryRun.IsPresent), run once=$($RunOnce.IsPresent), skip account sync=$($SkipAccountSync.IsPresent)"
 Write-Ocean "Priority: BelowNormal where supported"
 
 function Invoke-StatusRefresh {
@@ -73,6 +75,8 @@ function Invoke-IngestCycle {
     }
     $profile = Get-IngestProfile
     $args = @("scripts\python\ingest_global_memory.py", "--profile", $profile)
+    $args += @("--account-sync-max-kraken", [string]$KrakenAccountSyncMax, "--account-sync-binance-limit", "200", "--account-sync-alpaca-limit", "200")
+    if ($SkipAccountSync) { $args += "--skip-account-sync" }
     if ($DryRun) { $args += "--dry-run" }
     $null = Invoke-OceanPython -PythonArgs $args -AllowFailure
 }

@@ -44,10 +44,16 @@ SCHEMA_VERSION = 5
 
 def connect(db_path: str | None = None, *, check_same_thread: bool = True) -> sqlite3.Connection:
     paths = resolve_paths(db_path)
-    conn = sqlite3.connect(str(paths.db_path), check_same_thread=check_same_thread)
+    busy_timeout_ms = int(os.getenv("AUREON_SQLITE_BUSY_TIMEOUT_MS", "60000") or "60000")
+    conn = sqlite3.connect(
+        str(paths.db_path),
+        check_same_thread=check_same_thread,
+        timeout=max(1.0, busy_timeout_ms / 1000.0),
+    )
     conn.row_factory = sqlite3.Row
 
     # Keep this resilient for long-running ingestion jobs.
+    conn.execute(f"PRAGMA busy_timeout={busy_timeout_ms};")
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA temp_store=MEMORY;")

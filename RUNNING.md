@@ -89,6 +89,12 @@ docs/audits/aureon_global_financial_coverage_map.json
 frontend/public/aureon_global_financial_coverage_map.json
 ```
 
+Private account-history sync is budgeted so it does not overload Kraken or other account APIs while the live runtime is active. The default Kraken private trade-history cap is `50` records per cycle. To run only public/context/history ingestion for a cycle, use:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable -SkipAccountSync
+```
+
 For a no-ingest validation pass:
 
 ```powershell

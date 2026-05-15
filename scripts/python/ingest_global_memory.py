@@ -125,16 +125,32 @@ def _maybe_add_no_resume(args: argparse.Namespace, cmd: List[str]) -> List[str]:
     return cmd
 
 
+def _account_sync_cmd(args: argparse.Namespace) -> List[str]:
+    return _add_db_arg(
+        args,
+        [
+            str(_script("sync_global_history_db.py")),
+            "--max-kraken",
+            str(int(args.account_sync_max_kraken)),
+            "--binance-limit",
+            str(int(args.account_sync_binance_limit)),
+            "--alpaca-limit",
+            str(int(args.account_sync_alpaca_limit)),
+        ],
+    )
+
+
 def _standard_plan(args: argparse.Namespace) -> List[Tuple[str, List[str]]]:
     # Mirrors scripts/runners/ingest_all_global_history.cmd (but with controlled args).
     plan: List[Tuple[str, List[str]]] = []
 
-    plan.append(
-        (
-            "[1/7] Sync account trades (Kraken, Binance, Alpaca, Capital)",
-            _add_db_arg(args, [str(_script("sync_global_history_db.py"))]),
+    if not args.skip_account_sync:
+        plan.append(
+            (
+                "[1/7] Sync account trades (Kraken, Binance, Alpaca, Capital; budgeted)",
+                _account_sync_cmd(args),
+            )
         )
-    )
     plan.append(
         (
             "[2/7] yfinance broad ingest (5y daily, all categories)",
@@ -190,6 +206,7 @@ def _standard_plan(args: argparse.Namespace) -> List[Tuple[str, List[str]]]:
                     "--sources",
                     "all",
                     "--seed-events",
+                    "true",
                 ],
             ),
         )
@@ -219,12 +236,13 @@ def _max_plan(args: argparse.Namespace) -> List[Tuple[str, List[str]]]:
     """
     plan: List[Tuple[str, List[str]]] = []
 
-    plan.append(
-        (
-            "[1/8] Sync account trades (Kraken, Binance, Alpaca, Capital)",
-            _add_db_arg(args, [str(_script("sync_global_history_db.py"))]),
+    if not args.skip_account_sync:
+        plan.append(
+            (
+                "[1/8] Sync account trades (Kraken, Binance, Alpaca, Capital; budgeted)",
+                _account_sync_cmd(args),
+            )
         )
-    )
 
     plan.append(
         (
@@ -365,6 +383,10 @@ def main() -> int:
     ap.add_argument("--coinapi-minute-days", type=int, default=180, help="Days of minute CoinAPI history for majors")
     ap.add_argument("--alpaca-minute-days", type=int, default=30, help="Days of Alpaca minute bars for equities/ETFs")
     ap.add_argument("--include-trades", action="store_true", help="Also ingest heavy trade ticks in deep CoinAPI step")
+    ap.add_argument("--skip-account-sync", action="store_true", help="Skip private exchange account-history endpoints")
+    ap.add_argument("--account-sync-max-kraken", type=int, default=50, help="Max Kraken private trades per cycle")
+    ap.add_argument("--account-sync-binance-limit", type=int, default=200, help="Binance private trades per symbol per cycle")
+    ap.add_argument("--account-sync-alpaca-limit", type=int, default=200, help="Alpaca closed orders per cycle")
 
     args = ap.parse_args()
 
@@ -399,6 +421,7 @@ def main() -> int:
                         "--sources",
                         "all",
                         "--seed-events",
+                        "true",
                     ],
                 ),
                 dry_run=bool(args.dry_run),

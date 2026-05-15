@@ -63,6 +63,12 @@ The data ocean is budgeted and lower priority than execution, positions, risk, a
 
 The trading intelligence checklist now folds that mapped data ocean back into Aureon's HNC/Auris decision evidence as a metacognitive context layer. That means live tick streams, exchange coverage, historical waveform memory, and source-health proof are visible to the organism's decision logic as "usable for thought" even when live execution is still held by runtime freshness. In practice, the console can show that the wider financial map is clean and mapped while also showing the exact blocker, such as a stale runtime tick, that prevents live action.
 
+Private exchange history sync is deliberately capped in this supervisor so it does not hammer Kraken/Binance/Alpaca while live trading is active. The default Kraken private trade-history budget is `-KrakenAccountSyncMax 50`. If a venue is rate-limiting or you only want public/context data for a cycle, run:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable -SkipAccountSync
+```
+
 ### Safe Validation
 
 ```powershell
