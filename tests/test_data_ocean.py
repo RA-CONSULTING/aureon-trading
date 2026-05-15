@@ -82,8 +82,12 @@ def test_data_ocean_marks_live_and_history_sources_usable_without_leaking_secret
 
     assert rows["binance_live"]["credential_state"] == "configured"
     assert rows["binance_live"]["usable_for_mapping"] is True
+    assert rows["binance_live"]["official_rate_limit"]["official_limit_model"]
+    assert rows["binance_live"]["cash_aware_call_plan"]["exchange"] == "binance"
+    assert rows["binance_live"]["rate_budget"]["mode"] == "official_rate_limit_cash_aware_budgeted_adaptive"
     assert rows["yfinance_history"]["credential_state"] == "not_required"
     assert rows["yfinance_history"]["usable_for_mapping"] is True
+    assert report["summary"]["official_exchange_rate_limits_known"] >= 4
     assert "secret-key-value" not in serialized
     assert "secret-secret-value" not in serialized
 
@@ -105,6 +109,8 @@ def test_data_ocean_reads_dotenv_configuration_without_serializing_values(tmp_pa
 
     assert rows["kraken_live"]["credential_state"] == "configured"
     assert rows["kraken_live"]["usable_for_mapping"] is True
+    assert rows["kraken_live"]["official_rate_limit"]["official_limits"]["private_history_counter_increment"] == 4
+    assert rows["kraken_live"]["cash_aware_call_plan"]["stream_preferred"] is True
     assert "dotenv-key-value" not in serialized
     assert "dotenv-secret-value" not in serialized
 

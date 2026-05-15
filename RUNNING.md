@@ -95,6 +95,8 @@ Private account-history sync is budgeted so it does not overload Kraken or other
 .\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable -SkipAccountSync
 ```
 
+The data ocean report includes the official exchange rate-limit registry from `aureon/core/exchange_rate_limit_registry.py`. Live exchange rows expose `official_rate_limit` and `cash_aware_call_plan`: venues with active cash or positions reserve calls for execution, balances, positions, and recovery; idle/no-cash venues can use more of their safe provider budget for streams, quote probes, and candidate discovery.
+
 For a no-ingest validation pass:
 
 ```powershell
@@ -108,6 +110,7 @@ For a no-ingest validation pass:
 | Production wrapper | `AUREON_PRODUCTION_LIVE.cmd` |
 | Full wake-up launcher | `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
 | Data ocean supervisor | `AUREON_DATA_OCEAN.cmd`, `AUREON_DATA_OCEAN.ps1` |
+| Official exchange rate budgets | `aureon/core/exchange_rate_limit_registry.py` |
 | Market runtime | `aureon/exchanges/unified_market_trader.py` |
 | Runtime status server | `aureon/exchanges/unified_market_status_server.py` |
 | Kraken client | `aureon/exchanges/kraken_client.py` |

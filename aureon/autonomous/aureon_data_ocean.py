@@ -18,6 +18,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
+from aureon.core.exchange_rate_limit_registry import (
+    build_cash_aware_rate_plan,
+    get_exchange_rate_limit,
+    official_rate_limit_profiles,
+)
+
 
 SCHEMA_VERSION = "aureon-data-ocean-status-v1"
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -542,6 +548,7 @@ def evaluate_data_ocean_sources(
     ingest_attempts = ingest_attempts if isinstance(ingest_attempts, dict) else _read_json(root / INGEST_ATTEMPTS_PATH, {})
     env = env if env is not None else _merged_env(root)
     runtime_stale = _as_bool(runtime.get("stale")) if isinstance(runtime, dict) else False
+    cash_aware_plan = build_cash_aware_rate_plan(runtime)
     conn = _connect_existing(root)
     rows: list[dict[str, Any]] = []
     try:
@@ -595,6 +602,29 @@ def evaluate_data_ocean_sources(
             else:
                 governor_action = "explained_not_configured"
                 reason = credential_state
+            official_rate_limit: Optional[dict[str, Any]] = None
+            cash_call_plan: Optional[dict[str, Any]] = None
+            dynamic_rate_budget: Optional[dict[str, Any]] = None
+            if source.kind == "live_exchange":
+                profile = get_exchange_rate_limit(source.live_exchange)
+                if profile is not None:
+                    official_rate_limit = profile.to_public_dict()
+                cash_call_plan = cash_aware_plan.get(source.live_exchange)
+                if isinstance(cash_call_plan, dict):
+                    dynamic_rate_budget = {
+                        "cadence_sec": source.cadence_sec,
+                        "priority": source.priority,
+                        "registry_max_calls_per_hour": source.max_calls_per_hour,
+                        "cash_aware_market_data_budget_per_hour": cash_call_plan.get("market_data_budget_per_hour"),
+                        "cash_aware_safe_calls_per_hour": cash_call_plan.get("safe_calls_per_hour"),
+                        "mode": "official_rate_limit_cash_aware_budgeted_adaptive",
+                    }
+            rate_budget = dynamic_rate_budget or {
+                "cadence_sec": source.cadence_sec,
+                "priority": source.priority,
+                "max_calls_per_hour": source.max_calls_per_hour,
+                "mode": "budgeted_adaptive",
+            }
             rows.append(
                 {
                     "source_id": source.source_id,
@@ -614,12 +644,9 @@ def evaluate_data_ocean_sources(
                     "last_success_at": evidence.get("last_success_at"),
                     "last_error": evidence.get("last_error") or "",
                     "last_attempt": attempt,
-                    "rate_budget": {
-                        "cadence_sec": source.cadence_sec,
-                        "priority": source.priority,
-                        "max_calls_per_hour": source.max_calls_per_hour,
-                        "mode": "budgeted_adaptive",
-                    },
+                    "rate_budget": rate_budget,
+                    "official_rate_limit": official_rate_limit,
+                    "cash_aware_call_plan": cash_call_plan,
                     "governor_action": governor_action,
                     "reason": reason,
                     "command": list(source.command),
@@ -657,6 +684,8 @@ def evaluate_data_ocean_sources(
             "coverage_percent": coverage_percent,
             "accounted_percent": accounted_percent,
             "runtime_stale": runtime_stale,
+            "official_exchange_rate_limits_known": len(official_rate_limit_profiles()),
+            "cash_aware_exchange_plan": cash_aware_plan,
             "top_gaps": [
                 {"source_id": row["source_id"], "reason": row["reason"], "next_action": row["next_action"]}
                 for row in rows

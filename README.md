@@ -63,6 +63,8 @@ The data ocean is budgeted and lower priority than execution, positions, risk, a
 
 The trading intelligence checklist now folds that mapped data ocean back into Aureon's HNC/Auris decision evidence as a metacognitive context layer. That means live tick streams, exchange coverage, historical waveform memory, and source-health proof are visible to the organism's decision logic as "usable for thought" even when live execution is still held by runtime freshness. In practice, the console can show that the wider financial map is clean and mapped while also showing the exact blocker, such as a stale runtime tick, that prevents live action.
 
+The data ocean and live runtime now share an official exchange rate-limit registry in `aureon/core/exchange_rate_limit_registry.py`. Binance, Kraken, Alpaca, and Capital each publish different limit models, so Aureon does not treat them as one flat calls-per-minute pool. It reserves capacity for execution, balances, positions, and recovery on venues with active cash or open positions, then lets idle/no-cash venues spend more of their safe budget on live streams, quote probes, and candidate discovery. The public reports expose `official_rate_limit`, `cash_aware_call_plan`, and `rate_budget` so operators can see what the system believes it may call before it calls.
+
 Private exchange history sync is deliberately capped in this supervisor so it does not hammer Kraken/Binance/Alpaca while live trading is active. The default Kraken private trade-history budget is `-KrakenAccountSyncMax 50`. If a venue is rate-limiting or you only want public/context data for a cycle, run:
 
 ```powershell
@@ -128,6 +130,7 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 | Live/safe runtime supervision | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
 | Multi-exchange market coverage | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
 | Planetary financial data ocean | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `docs/audits/aureon_global_financial_coverage_map.json` |
+| Official exchange rate budgets | `aureon/core/exchange_rate_limit_registry.py`, `api_governor`, `state/aureon_data_ocean_status.json` |
 | Metacognitive data context | `aureon/autonomous/aureon_trading_intelligence_checklist.py`, `docs/audits/aureon_trading_intelligence_checklist.json`, and the Trading console data-ocean card |
 | Exchange clients | `aureon/exchanges/kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
 | Momentum/intelligence scanner fusion | `aureon/exchanges/unified_market_trader.py`, `state/aureon_scanner_fusion_matrix.json` |

@@ -120,6 +120,22 @@ def _env_float(name: str, default: float) -> float:
     except Exception:
         return default
 
+try:
+    from aureon.core.exchange_rate_limit_registry import (
+        governor_default_for_exchange as _official_governor_default,
+        official_rate_limit_profiles as _official_rate_limit_profiles,
+        quote_fraction_default_for_exchange as _official_quote_fraction_default,
+    )
+except Exception:
+    def _official_governor_default(exchange: str, fallback: float) -> float:
+        return fallback
+
+    def _official_quote_fraction_default(exchange: str, fallback: float, *, cash_active: bool = True) -> float:
+        return fallback
+
+    def _official_rate_limit_profiles() -> Dict[str, Dict[str, Any]]:
+        return {}
+
 LOCAL_HOST = "127.0.0.1"
 LOCAL_PORT = 8790
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -450,20 +466,32 @@ class ExchangeCallGovernor:
     def __init__(self, limits: Optional[Dict[str, Dict[str, float]]] = None):
         defaults = {
             "kraken": {
-                "calls_per_min": _env_float("UNIFIED_KRAKEN_CALLS_PER_MIN", 60.0),
-                "quote_ceiling": _env_float("UNIFIED_KRAKEN_QUOTE_BUDGET_FRACTION", 0.55),
+                "calls_per_min": _env_float("UNIFIED_KRAKEN_CALLS_PER_MIN", _official_governor_default("kraken", 60.0)),
+                "quote_ceiling": _env_float(
+                    "UNIFIED_KRAKEN_QUOTE_BUDGET_FRACTION",
+                    _official_quote_fraction_default("kraken", 0.55, cash_active=True),
+                ),
             },
             "capital": {
-                "calls_per_min": _env_float("UNIFIED_CAPITAL_CALLS_PER_MIN", 45.0),
-                "quote_ceiling": _env_float("UNIFIED_CAPITAL_QUOTE_BUDGET_FRACTION", 0.45),
+                "calls_per_min": _env_float("UNIFIED_CAPITAL_CALLS_PER_MIN", _official_governor_default("capital", 45.0)),
+                "quote_ceiling": _env_float(
+                    "UNIFIED_CAPITAL_QUOTE_BUDGET_FRACTION",
+                    _official_quote_fraction_default("capital", 0.45, cash_active=True),
+                ),
             },
             "alpaca": {
-                "calls_per_min": _env_float("UNIFIED_ALPACA_CALLS_PER_MIN", 120.0),
-                "quote_ceiling": _env_float("UNIFIED_ALPACA_QUOTE_BUDGET_FRACTION", 0.70),
+                "calls_per_min": _env_float("UNIFIED_ALPACA_CALLS_PER_MIN", _official_governor_default("alpaca", 120.0)),
+                "quote_ceiling": _env_float(
+                    "UNIFIED_ALPACA_QUOTE_BUDGET_FRACTION",
+                    _official_quote_fraction_default("alpaca", 0.70, cash_active=True),
+                ),
             },
             "binance": {
-                "calls_per_min": _env_float("UNIFIED_BINANCE_CALLS_PER_MIN", 240.0),
-                "quote_ceiling": _env_float("UNIFIED_BINANCE_QUOTE_BUDGET_FRACTION", 0.70),
+                "calls_per_min": _env_float("UNIFIED_BINANCE_CALLS_PER_MIN", _official_governor_default("binance", 240.0)),
+                "quote_ceiling": _env_float(
+                    "UNIFIED_BINANCE_QUOTE_BUDGET_FRACTION",
+                    _official_quote_fraction_default("binance", 0.70, cash_active=True),
+                ),
             },
         }
         for exchange, override in (limits or {}).items():
@@ -592,22 +620,27 @@ class ExchangeCallGovernor:
         now = time.time()
         with self._lock:
             exchanges: Dict[str, Any] = {}
+            official_profiles = _official_rate_limit_profiles()
             for exchange, cfg in self._limits.items():
                 calls = self._trim(exchange, now)
                 max_per_min = max(1, int(float(cfg.get("calls_per_min", 60.0) or 60.0)))
                 stats = dict(self._stats_for(exchange))
+                official = official_profiles.get(exchange, {})
                 exchanges[exchange] = {
                     "max_calls_per_min": max_per_min,
                     "recent_calls_60s": len(calls),
                     "utilization": round(len(calls) / max_per_min, 4),
                     "quote_budget_fraction": round(float(cfg.get("quote_ceiling", 0.60) or 0.60), 4),
+                    "official_limit_model": official.get("official_limit_model", ""),
+                    "official_doc_url": official.get("official_doc_url", ""),
+                    "stream_preferred": bool(official.get("stream_preferred", False)),
                     "backoff_sec": round(max(0.0, self._backoff_until.get(exchange, 0.0) - now), 3),
                     "cache_entries": sum(1 for key in self._cache if key.startswith(f"{exchange}:")),
                     **stats,
                 }
             return {
                 "generated_at": datetime.now().isoformat(),
-                "policy": "execution_and_positions_first_quotes_cached_and_budgeted",
+                "policy": "official_limits_execution_and_positions_first_quotes_cached_and_cash_aware",
                 "probe_symbol_min_interval_sec": PROBE_SYMBOL_MIN_INTERVAL_SEC,
                 "probe_symbol_stale_ttl_sec": PROBE_SYMBOL_STALE_TTL_SEC,
                 "exchanges": exchanges,

@@ -33,6 +33,7 @@ Low-priority data ocean supervisor:
 | Live/safe runtime supervision | Starts and supervises the organism from one terminal, publishes manifests, and keeps reboot timing visible. | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
 | Multi-exchange market coverage | Runs unified market telemetry and exchange readiness for Kraken, Binance, Alpaca, and Capital. | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
 | Planetary financial data ocean | Maps configured/licensed financial signals across exchanges, history, macro, news, on-chain, forecasts, and internal knowledge without competing with execution/risk loops. | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `aureon_global_financial_coverage_map.py` |
+| Official exchange rate budgets | Records Binance, Kraken, Alpaca, and Capital provider limits, then builds cash-aware call plans that reserve execution capacity and boost idle/no-cash venue discovery safely. | `aureon/core/exchange_rate_limit_registry.py`, `api_governor`, `state/aureon_data_ocean_status.json` |
 | Spot/margin observation and trading readiness | Tracks runtime state, open positions, stale ticks, and flight-test reboot decisions before action. | `/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
 | Runtime resilience and recovery | Shows connected-but-guarded states, tick phase, route timeouts, executor in-flight state, and safe reboot advice. | `/api/terminal-state`, `runtime_watchdog`, `executor_route_state` |
 | Exchange clients | Provides exchange-specific adapters for market data, balances, and order paths through the runtime gates. | `kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
@@ -83,6 +84,7 @@ Low-priority data ocean supervisor:
 | Exchange monitoring checklist | `docs/audits/aureon_exchange_monitoring_checklist.json` and `frontend/public/aureon_exchange_monitoring_checklist.json` |
 | Global financial coverage map | `docs/audits/aureon_global_financial_coverage_map.json` and `frontend/public/aureon_global_financial_coverage_map.json` |
 | Data ocean status | `state/aureon_data_ocean_status.json` and `frontend/public/aureon_data_ocean_status.json` |
+| Official exchange rate budget evidence | `state/aureon_data_ocean_status.json#sources[*].official_rate_limit` and `/api/terminal-state#api_governor` |
 
 ## Runtime Modes
 
