@@ -21,12 +21,16 @@ RUNTIME_STATUS_PATH = Path("state/unified_runtime_status.json")
 DEFAULT_OUTPUT_JSON = REPO_ROOT / "docs/audits/aureon_trading_intelligence_checklist.json"
 DEFAULT_OUTPUT_MD = REPO_ROOT / "docs/audits/aureon_trading_intelligence_checklist.md"
 DEFAULT_PUBLIC_JSON = REPO_ROOT / "frontend/public/aureon_trading_intelligence_checklist.json"
+DATA_OCEAN_STATUS_PATH = Path("state/aureon_data_ocean_status.json")
+GLOBAL_COVERAGE_PATH = Path("docs/audits/aureon_global_financial_coverage_map.json")
+EXCHANGE_CHECKLIST_PATH = Path("docs/audits/aureon_exchange_monitoring_checklist.json")
 
 LIVE_MARKET = "live_market_intelligence"
 HNC_AURIS = "hnc_auris_cognition"
 COUNTER_INTELLIGENCE = "counter_intelligence_validation"
 PROFIT_TIMING = "profit_timing"
 RESEARCH_CONTEXT = "research_context_mesh"
+META_COGNITIVE = "metacognitive_data_context"
 
 HNC_AURIS_NAMES = {
     "HNCMasterProtocol",
@@ -65,6 +69,11 @@ RESEARCH_NAMES = {
     "ResearchCorpusIndex",
     "QueenRepositoryScanner",
     "MinerBrain",
+}
+META_COGNITIVE_NAMES = {
+    "DataOceanCognitiveContext",
+    "PlanetaryCoverageMap",
+    "ExchangeWaveformMemory",
 }
 LIVE_NAMES = {
     "LiveExchangeFeeds",
@@ -152,6 +161,8 @@ def _mesh(runtime: dict[str, Any]) -> dict[str, Any]:
 
 
 def _category_for(name: str, facet: str, wire: str) -> str:
+    if name in META_COGNITIVE_NAMES or facet in {"metacognitive_data_context", "planetary_financial_ocean", "exchange_waveform_memory"}:
+        return META_COGNITIVE
     if name in HNC_AURIS_NAMES or wire == "hnc_proof" or facet in {"hnc_harmonic", "harmonic_affect", "oracle_forecast", "capital_logic"}:
         return HNC_AURIS
     if name in COUNTER_NAMES or facet in {"noise_filter", "self_validation", "prediction_truth"}:
@@ -166,6 +177,8 @@ def _category_for(name: str, facet: str, wire: str) -> str:
 
 
 def _stage_for(name: str, category: str, wire: str) -> str:
+    if category == META_COGNITIVE:
+        return "metacognitive_context"
     if name == "AurisNodes":
         return "auris_state"
     if category == HNC_AURIS:
@@ -184,6 +197,8 @@ def _evidence_timestamp(runtime: dict[str, Any], stage: str, fallback: str) -> s
     shadow = runtime.get("shadow_trading") if isinstance(runtime.get("shadow_trading"), dict) else {}
     hnc = runtime.get("hnc_cognitive_proof") if isinstance(runtime.get("hnc_cognitive_proof"), dict) else {}
     watchdog = runtime.get("runtime_watchdog") if isinstance(runtime.get("runtime_watchdog"), dict) else {}
+    if stage == "metacognitive_context":
+        return str(runtime.get("dashboard_generated_at") or watchdog.get("heartbeat_at") or fallback)
     if stage in {"hnc_proof", "auris_state"}:
         return str(hnc.get("generated_at") or fallback)
     if stage == "shadow_validation":
@@ -191,6 +206,131 @@ def _evidence_timestamp(runtime: dict[str, Any], stage: str, fallback: str) -> s
     if stage in {"exchange_action_plan", "profit_velocity"}:
         return str(plan.get("generated_at") or fallback)
     return str(watchdog.get("heartbeat_at") or runtime.get("dashboard_generated_at") or fallback)
+
+
+def _summary_from_report(report: Any) -> dict[str, Any]:
+    if not isinstance(report, dict):
+        return {}
+    summary = report.get("summary")
+    return summary if isinstance(summary, dict) else {}
+
+
+def _metacognitive_data_context(root: Path, runtime: dict[str, Any]) -> dict[str, Any]:
+    data_ocean = _read_json(root / DATA_OCEAN_STATUS_PATH, {})
+    global_map = _read_json(root / GLOBAL_COVERAGE_PATH, {})
+    exchange_checklist = _read_json(root / EXCHANGE_CHECKLIST_PATH, {})
+    data_summary = _summary_from_report(data_ocean)
+    global_summary = _summary_from_report(global_map)
+    exchange_summary = _summary_from_report(exchange_checklist)
+    present = bool(data_ocean or global_map or exchange_checklist)
+
+    mapping_complete = bool(
+        data_ocean.get("mapping_complete")
+        or global_map.get("mapping_complete")
+        or data_summary.get("coverage_percent") == 100.0
+        or global_summary.get("mapping_complete")
+    )
+    coverage_percent = max(
+        _as_float(data_summary.get("coverage_percent")),
+        _as_float(global_summary.get("coverage_percent")),
+    )
+    configured_reachable_count = max(
+        _as_int(data_summary.get("configured_reachable_count")),
+        _as_int(global_summary.get("configured_reachable_source_count")),
+    )
+    usable_source_count = max(
+        _as_int(data_summary.get("usable_source_count")),
+        _as_int(global_summary.get("usable_source_count")),
+    )
+    decision_usable_source_count = max(
+        _as_int(data_summary.get("decision_usable_source_count")),
+        _as_int(global_summary.get("decision_usable_source_count")),
+        _as_int(global_summary.get("decision_fed_exchange_count")),
+    )
+    active_live_source_count = _as_int(global_summary.get("active_live_source_count"))
+    fresh_exchange_count = _as_int(exchange_summary.get("fresh_exchange_count") or global_summary.get("fresh_exchange_count"))
+    waveform_history_exchange_count = _as_int(exchange_summary.get("waveform_history_exchange_count"))
+    if waveform_history_exchange_count <= 0:
+        waveform_history_exchange_count = fresh_exchange_count if bool(global_summary.get("history_db_present")) else 0
+    live_ticker_count = _as_int(global_summary.get("live_ticker_count"))
+    history_rows = _as_int(global_summary.get("total_history_rows"))
+    fresh_domain_count = _as_int(global_summary.get("fresh_domain_count"))
+    usable_domain_count = _as_int(global_summary.get("usable_domain_count"))
+
+    coverage_ready = bool(coverage_percent >= 99.0)
+    sources_ready = bool(configured_reachable_count == 0 or usable_source_count >= configured_reachable_count)
+    live_ready = bool(active_live_source_count > 0 and live_ticker_count > 0)
+    history_ready = bool(history_rows > 0)
+    exchange_waveform_ready = bool(fresh_exchange_count > 0 and waveform_history_exchange_count > 0)
+    usable_for_metacognition = bool(
+        present and mapping_complete and coverage_ready and sources_ready and live_ready and history_ready and exchange_waveform_ready
+    )
+    runtime_fresh = _runtime_fresh(runtime)
+    usable_for_live_decision = bool(usable_for_metacognition and runtime_fresh)
+    blockers: list[str] = []
+    if not present:
+        blockers.append("metacognitive_data_reports_missing")
+    if present and not mapping_complete:
+        blockers.append("configured_registry_not_fully_mapped")
+    if present and not coverage_ready:
+        blockers.append("coverage_below_configured_threshold")
+    if present and not sources_ready:
+        blockers.append("configured_sources_not_all_usable_for_mapping")
+    if present and not live_ready:
+        blockers.append("live_ticker_context_missing")
+    if present and not history_ready:
+        blockers.append("historical_waveform_memory_missing")
+    if present and not exchange_waveform_ready:
+        blockers.append("exchange_waveform_memory_not_proven")
+    if usable_for_metacognition and not runtime_fresh:
+        blockers.append(_stale_reason(runtime) if _runtime_stale(runtime) else "runtime_data_not_ready")
+
+    factors = [
+        1.0 if mapping_complete else 0.0,
+        _clamp01(coverage_percent / 100.0),
+        _ratio(usable_source_count, configured_reachable_count),
+        _ratio(active_live_source_count, 4),
+        _clamp01(live_ticker_count / 3000.0),
+        _clamp01(history_rows / 60000.0),
+        _ratio(fresh_exchange_count, 4),
+    ]
+    cleanliness = round(sum(factors) / len(factors), 6) if factors else 0.0
+    if usable_for_live_decision:
+        phrase = "Planetary data ocean is mapped, fresh, and cleared for live decision context."
+    elif usable_for_metacognition:
+        phrase = "Planetary data ocean is mapped and usable for thought, but live action waits on runtime freshness."
+    elif present:
+        phrase = "Planetary data ocean is partially visible; Aureon can learn from it but must keep filling gaps."
+    else:
+        phrase = "Planetary data ocean evidence is missing from this cycle."
+
+    return {
+        "present": present,
+        "usable_for_metacognition": usable_for_metacognition,
+        "usable_for_live_decision": usable_for_live_decision,
+        "decision_blocker": ", ".join(dict.fromkeys(blockers)),
+        "mapping_complete": mapping_complete,
+        "coverage_percent": round(coverage_percent, 6),
+        "configured_reachable_source_count": configured_reachable_count,
+        "usable_source_count": usable_source_count,
+        "decision_usable_source_count": decision_usable_source_count,
+        "active_live_source_count": active_live_source_count,
+        "fresh_exchange_count": fresh_exchange_count,
+        "waveform_history_exchange_count": waveform_history_exchange_count,
+        "live_ticker_count": live_ticker_count,
+        "history_rows": history_rows,
+        "fresh_domain_count": fresh_domain_count,
+        "usable_domain_count": usable_domain_count,
+        "cognitive_cleanliness_score": cleanliness,
+        "planetary_context_ready": bool(mapping_complete and coverage_ready and sources_ready and live_ready),
+        "exchange_waveform_ready": exchange_waveform_ready,
+        "state_phrase": phrase,
+        "evidence_sources": [
+            str(DATA_OCEAN_STATUS_PATH).replace("\\", "/"),
+            str(GLOBAL_COVERAGE_PATH).replace("\\", "/"),
+            str(EXCHANGE_CHECKLIST_PATH).replace("\\", "/"),
+        ],
+    }
 
 
 def _row(
@@ -273,8 +413,8 @@ def _candidate_has_model_signal(candidate: Any) -> bool:
     return isinstance(candidate, dict) and isinstance(candidate.get("model_signal"), dict) and bool(candidate.get("model_signal"))
 
 
-def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
-    root = REPO_ROOT
+def _synthetic_rows(runtime: dict[str, Any], root: Path = REPO_ROOT) -> list[dict[str, Any]]:
+    code_root = root if (root / "aureon").exists() else REPO_ROOT
     plan = runtime.get("exchange_action_plan") if isinstance(runtime.get("exchange_action_plan"), dict) else {}
     shadow = runtime.get("shadow_trading") if isinstance(runtime.get("shadow_trading"), dict) else {}
     hnc = runtime.get("hnc_cognitive_proof") if isinstance(runtime.get("hnc_cognitive_proof"), dict) else {}
@@ -337,6 +477,7 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
                 break
     fast_money_path = "aureon/exchanges/unified_market_trader.py"
     orderbook_path = "aureon/analytics/aureon_whale_orderbook_analyzer.py"
+    meta_context = _metacognitive_data_context(root, runtime)
     rows = [
         _row(
             name="LiveStreamCacheRuntime",
@@ -356,7 +497,7 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
             facet="fast_money_selection",
             wire="profit_context",
             path=fast_money_path,
-            present=bool((root / fast_money_path).exists()),
+            present=bool((code_root / fast_money_path).exists()),
             active=fast_money_active,
             fed=fast_money_fed,
             runtime=runtime,
@@ -369,7 +510,7 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
             facet="orderbook_pressure",
             wire="direct_live_signal",
             path=orderbook_path,
-            present=bool((root / orderbook_path).exists()),
+            present=bool((code_root / orderbook_path).exists()),
             active=orderbook_active,
             fed=orderbook_fed,
             runtime=runtime,
@@ -476,6 +617,51 @@ def _synthetic_rows(runtime: dict[str, Any]) -> list[dict[str, Any]]:
             stage="shadow_validation",
         ),
     ]
+    if meta_context.get("present"):
+        meta_blockers = [meta_context["decision_blocker"]] if meta_context.get("decision_blocker") else []
+        rows.extend(
+            [
+                _row(
+                    name="DataOceanCognitiveContext",
+                    facet="metacognitive_data_context",
+                    wire="hnc_proof",
+                    path=str(DATA_OCEAN_STATUS_PATH).replace("\\", "/"),
+                    present=bool((root / DATA_OCEAN_STATUS_PATH).exists()),
+                    active=bool(meta_context.get("usable_for_metacognition")),
+                    fed=True,
+                    runtime=runtime,
+                    evidence_source="state/aureon_data_ocean_status.json#summary",
+                    stage="metacognitive_context",
+                    extra_blockers=meta_blockers,
+                ),
+                _row(
+                    name="PlanetaryCoverageMap",
+                    facet="planetary_financial_ocean",
+                    wire="hnc_proof",
+                    path=str(GLOBAL_COVERAGE_PATH).replace("\\", "/"),
+                    present=bool((root / GLOBAL_COVERAGE_PATH).exists()),
+                    active=bool(meta_context.get("planetary_context_ready")),
+                    fed=True,
+                    runtime=runtime,
+                    evidence_source="docs/audits/aureon_global_financial_coverage_map.json#summary",
+                    stage="metacognitive_context",
+                    extra_blockers=meta_blockers,
+                ),
+                _row(
+                    name="ExchangeWaveformMemory",
+                    facet="exchange_waveform_memory",
+                    wire="hnc_proof",
+                    path=str(EXCHANGE_CHECKLIST_PATH).replace("\\", "/"),
+                    present=bool((root / EXCHANGE_CHECKLIST_PATH).exists()),
+                    active=bool(meta_context.get("exchange_waveform_ready")),
+                    fed=True,
+                    runtime=runtime,
+                    evidence_source="docs/audits/aureon_exchange_monitoring_checklist.json#summary",
+                    stage="metacognitive_context",
+                    extra_blockers=meta_blockers,
+                ),
+            ]
+        )
     return rows
 
 
@@ -491,7 +677,7 @@ def _dedupe_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return list(by_name.values())
 
 
-def _summary(rows: list[dict[str, Any]], runtime: dict[str, Any]) -> dict[str, Any]:
+def _summary(rows: list[dict[str, Any]], runtime: dict[str, Any], root: Path = REPO_ROOT) -> dict[str, Any]:
     runtime_fresh = _runtime_fresh(runtime)
     stream_cache = runtime.get("live_stream_cache") if isinstance(runtime.get("live_stream_cache"), dict) else {}
     shared_order_flow = runtime.get("shared_order_flow") if isinstance(runtime.get("shared_order_flow"), dict) else {}
@@ -502,7 +688,11 @@ def _summary(rows: list[dict[str, Any]], runtime: dict[str, Any]) -> dict[str, A
         operating_cycle = hnc.get("operating_cycle") or {}
     if not operating_cycle and isinstance(hnc.get("hnc_operating_cycle"), dict):
         operating_cycle = hnc.get("hnc_operating_cycle") or {}
-    categories = {category: [row for row in rows if row.get("category") == category] for category in (LIVE_MARKET, HNC_AURIS, COUNTER_INTELLIGENCE, PROFIT_TIMING, RESEARCH_CONTEXT)}
+    categories = {
+        category: [row for row in rows if row.get("category") == category]
+        for category in (LIVE_MARKET, HNC_AURIS, COUNTER_INTELLIGENCE, PROFIT_TIMING, RESEARCH_CONTEXT, META_COGNITIVE)
+    }
+    meta_context = _metacognitive_data_context(root, runtime)
     fresh_usable = [row for row in rows if row.get("usable_for_decision")]
     stale_or_blocked = [row for row in rows if not row.get("usable_for_decision")]
     decision_fed = [row for row in rows if row.get("fed_to_decision_logic")]
@@ -558,6 +748,8 @@ def _summary(rows: list[dict[str, Any]], runtime: dict[str, Any]) -> dict[str, A
         "counter_intelligence_passing": sum(1 for row in categories[COUNTER_INTELLIGENCE] if row.get("usable_for_decision")),
         "profit_timing_passing": sum(1 for row in categories[PROFIT_TIMING] if row.get("usable_for_decision")),
         "research_context_passing": sum(1 for row in categories[RESEARCH_CONTEXT] if row.get("usable_for_decision")),
+        "metacognitive_context_passing": sum(1 for row in categories[META_COGNITIVE] if row.get("usable_for_decision")),
+        "metacognitive_data_context": meta_context,
         "category_counts": {
             category: {
                 "total": len(items),
@@ -667,6 +859,7 @@ def _decision_trust(rows: list[dict[str, Any]], runtime: dict[str, Any], summary
     hnc_ratio = _category_fed_ratio(summary, HNC_AURIS)
     counter_ratio = _category_fed_ratio(summary, COUNTER_INTELLIGENCE)
     profit_ratio = _category_fed_ratio(summary, PROFIT_TIMING)
+    meta_ratio = _category_fed_ratio(summary, META_COGNITIVE)
     route_ratio = _ratio(plan.get("ready_venue_count", 0), plan.get("venue_count", 0))
     candidate = _top_candidate_scores(runtime)
     hnc_score = _hnc_score(runtime)
@@ -683,6 +876,9 @@ def _decision_trust(rows: list[dict[str, Any]], runtime: dict[str, Any], summary
         + (hnc_score * 0.05)
         + (shadow_score * 0.03)
     )
+    meta_counts = summary.get("category_counts", {}).get(META_COGNITIVE, {}) if isinstance(summary.get("category_counts"), dict) else {}
+    if isinstance(meta_counts, dict) and _as_int(meta_counts.get("total")) > 0:
+        evidence_score = _clamp01((evidence_score * 0.9) + (meta_ratio * 0.1))
     runtime_fresh = bool(summary.get("runtime_fresh"))
     runtime_clearances = _runtime_clearance_items(runtime)
     live_action_score = evidence_score if runtime_fresh else round(evidence_score * 0.35, 6)
@@ -736,6 +932,7 @@ def _decision_trust(rows: list[dict[str, Any]], runtime: dict[str, Any], summary
             "hnc_ratio": round(hnc_ratio, 6),
             "counter_intelligence_ratio": round(counter_ratio, 6),
             "profit_timing_ratio": round(profit_ratio, 6),
+            "metacognitive_context_ratio": round(meta_ratio, 6),
             "route_ratio": round(route_ratio, 6),
             "hnc_score": round(hnc_score, 6),
             "shadow_score": round(shadow_score, 6),
@@ -751,8 +948,8 @@ def build_trading_intelligence_checklist(root: Optional[Path] = None) -> dict[st
     runtime = _read_json(root / runtime_rel, {})
     if not isinstance(runtime, dict):
         runtime = {}
-    rows = _dedupe_rows(_capability_rows(runtime) + _synthetic_rows(runtime))
-    summary = _summary(rows, runtime)
+    rows = _dedupe_rows(_capability_rows(runtime) + _synthetic_rows(runtime, root))
+    summary = _summary(rows, runtime, root)
     decision_trust = _decision_trust(rows, runtime, summary)
     summary.update(
         {
@@ -776,6 +973,7 @@ def build_trading_intelligence_checklist(root: Optional[Path] = None) -> dict[st
             "fed_to_decision_logic": "system evidence is wired into exchange_action_plan, HNC/Auris proof, shadow validation, or profit velocity ranking",
             "usable_for_decision": "present, active, fed, and runtime fresh-live",
             "self_trust": "Aureon trusts aligned evidence to decide; live action still requires fresh runtime truth and clear execution state",
+            "metacognitive_data_context": "data-ocean, global coverage, and exchange-monitoring reports feed HNC/Auris as wider context while runtime freshness remains authoritative",
             "no_execution_change": "checklist is proof/visibility only and does not loosen live exchange mutation rules",
         },
         "decision_trust": decision_trust,
@@ -786,6 +984,7 @@ def build_trading_intelligence_checklist(root: Optional[Path] = None) -> dict[st
 def render_markdown(report: dict[str, Any]) -> str:
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
     rows = report.get("rows") if isinstance(report.get("rows"), list) else []
+    meta = summary.get("metacognitive_data_context") if isinstance(summary.get("metacognitive_data_context"), dict) else {}
     lines = [
         "# Aureon Trading Intelligence Checklist",
         "",
@@ -797,6 +996,15 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Evidence self-trust: {summary.get('evidence_self_trust_score', 0)}",
         f"- Live action trust: {summary.get('decision_self_trust_score', 0)}",
         f"- Decision posture: {summary.get('decision_posture', '')}",
+        "- Metacognitive data context: mapped={mapped} coverage={coverage}% live_sources={live_sources} tickers={tickers} history_rows={history_rows} usable_for_thought={thought} usable_for_live_decision={live}".format(
+            mapped=meta.get("mapping_complete", False),
+            coverage=meta.get("coverage_percent", 0),
+            live_sources=meta.get("active_live_source_count", 0),
+            tickers=meta.get("live_ticker_count", 0),
+            history_rows=meta.get("history_rows", 0),
+            thought=meta.get("usable_for_metacognition", False),
+            live=meta.get("usable_for_live_decision", False),
+        ),
         "- Live stream cache: fresh={fresh} symbols={symbols} top={top}".format(
             fresh=(summary.get("live_stream_cache", {}) or {}).get("fresh", False)
             if isinstance(summary.get("live_stream_cache"), dict)

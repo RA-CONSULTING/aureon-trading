@@ -35,6 +35,7 @@ This version brings Kraken, Binance, Alpaca, and Capital into one market state; 
 | Run the whole organism | [RUNNING.md](RUNNING.md), then `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
 | Validate before live operation | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
 | Watch live trading state | `http://127.0.0.1:8791/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
+| Expand licensed/reachable market data | `.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable` |
 | Use the autonomous console | `http://127.0.0.1:8081/` and [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) |
 | Understand HNC/Auris cognition | [CAPABILITIES.md](CAPABILITIES.md), HNC/Auris evidence files, and the live cognition benchmark |
 | Use accounting/HMRC support | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py` and the accounting context bridge |
@@ -49,6 +50,18 @@ cd C:\path\to\aureon-trading
 ```
 
 This starts the production supervisor, market runtime, telemetry/status server, mind hub, self-questioning loop, organism observer, manifest refresh, and unified console.
+
+### Low-Priority Planetary Data Ocean
+
+Run this in a second terminal when you want Aureon to keep widening its market map without stalling the live trading loop:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable
+```
+
+The data ocean is budgeted and lower priority than execution, positions, risk, and live order-intent. It tracks every configured repo-backed source and calls coverage complete only when 100% of the licensed/reachable registry is fresh and usable, or each missing source is explicitly explained as unlicensed, unavailable, unconfigured, or rate-limited.
+
+The trading intelligence checklist now folds that mapped data ocean back into Aureon's HNC/Auris decision evidence as a metacognitive context layer. That means live tick streams, exchange coverage, historical waveform memory, and source-health proof are visible to the organism's decision logic as "usable for thought" even when live execution is still held by runtime freshness. In practice, the console can show that the wider financial map is clean and mapped while also showing the exact blocker, such as a stale runtime tick, that prevents live action.
 
 ### Safe Validation
 
@@ -72,6 +85,9 @@ python scripts/aureon_ignition.py --audit-only
 | Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
 | Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
 | Trading intelligence checklist | `http://127.0.0.1:8081/aureon_trading_intelligence_checklist.json` and `docs/audits/aureon_trading_intelligence_checklist.json` |
+| Exchange monitoring checklist | `docs/audits/aureon_exchange_monitoring_checklist.json` and `frontend/public/aureon_exchange_monitoring_checklist.json` |
+| Global financial coverage map | `docs/audits/aureon_global_financial_coverage_map.json` and `frontend/public/aureon_global_financial_coverage_map.json` |
+| Data ocean status | `state/aureon_data_ocean_status.json` and `frontend/public/aureon_data_ocean_status.json` |
 | Scanner fusion proof | `state/aureon_scanner_fusion_matrix.json` |
 | World ecosystem proof | `state/aureon_world_financial_ecosystem_intelligence.json` |
 | 1h-to-1y waveform memory | `state/aureon_asset_waveform_models.json` |
@@ -82,7 +98,7 @@ Live trading requires configured exchange credentials and the existing runtime s
 
 ### Live Runtime Resilience
 
-The runtime reports connected-but-guarded states instead of hiding problems as generic offline failures. If the market feed is alive but a tick is stale, the console and `/api/terminal-state` show the reason, open-position state, and current tick phase. Direct execution routes and venue position ticks are bounded so one slow exchange call cannot freeze the whole tick loop. The Binance live-stream cache writes a REST snapshot before WebSocket streaming and fills WebSocket gaps with budgeted public ticker snapshots, so momentum and fast-money scanners still receive fresh world-market evidence when a stream stalls. Reboot decisions come from `/api/flight-test` and `/api/reboot-advice`; the production launcher should restart the runtime only when the flight-test says `can_reboot_now: true`, especially when open positions exist.
+The runtime reports connected-but-guarded states instead of hiding problems as generic offline failures. If the market feed is alive but a tick is stale, the console and `/api/terminal-state` show the reason, open-position state, and current tick phase. Direct execution routes and venue position ticks are bounded so one slow exchange call cannot freeze the whole tick loop. The live stream cache writes a Binance REST snapshot before WebSocket streaming, fills WebSocket gaps with budgeted public ticker snapshots, and now merges Kraken public ticks plus authenticated Alpaca and Capital snapshots when those credentials exist. That single shared cache gives momentum, fast-money, order-book, and waveform scanners fresher evidence from the whole financial ecosystem without forcing live orders through every venue. Reboot decisions come from `/api/flight-test` and `/api/reboot-advice`; the production launcher should restart the runtime only when the flight-test says `can_reboot_now: true`, especially when open positions exist.
 
 ### Live Trading Intelligence Proof
 
@@ -92,6 +108,9 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 |---|---|
 | Scanner fusion matrix | `state/aureon_scanner_fusion_matrix.json` proves active systems, blockers, candidate `scanner_fusion_score`, cross-reference count, order-book alignment, phantom/noise filter state, and whether evidence fed the decision logic |
 | Trading intelligence checklist | `docs/audits/aureon_trading_intelligence_checklist.json` shows live market intelligence, HNC/Auris cognition, counter-intelligence, profit timing, and research/context mesh freshness |
+| Metacognitive data context | The checklist adds `DataOceanCognitiveContext`, `PlanetaryCoverageMap`, and `ExchangeWaveformMemory` rows proving that the mapped financial data ocean is feeding the HNC/Auris evidence layer |
+| Multi-exchange live cache | `ws_cache/ws_prices.json` publishes `source_health` for Binance, Kraken, Alpaca, and Capital so the decision layer knows which venue data is active this cycle |
+| Planetary waveform recorder | `state/aureon_live_waveform_recorder.json` proves budgeted live cache ticks were written into `state/aureon_global_history.sqlite` for 1h-to-1y waveform memory |
 | World financial ecosystem | `state/aureon_world_financial_ecosystem_intelligence.json` folds macro, news, MarketHarp, cross-asset, and external context into CentralBeat where evidence is usable |
 | Multi-horizon waveform memory | `state/aureon_asset_waveform_models.json` builds 1 hour through 1 year asset waveforms from real stored/live observations and names any missing long-memory blocker |
 | Order-book and fast-money pressure | `shared_order_flow.fast_money_intelligence` and each candidate's `orderbook_pressure` show whether live book imbalance supports or opposes the trade side |
@@ -102,6 +121,8 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 |---|---|
 | Live/safe runtime supervision | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
 | Multi-exchange market coverage | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
+| Planetary financial data ocean | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `docs/audits/aureon_global_financial_coverage_map.json` |
+| Metacognitive data context | `aureon/autonomous/aureon_trading_intelligence_checklist.py`, `docs/audits/aureon_trading_intelligence_checklist.json`, and the Trading console data-ocean card |
 | Exchange clients | `aureon/exchanges/kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
 | Momentum/intelligence scanner fusion | `aureon/exchanges/unified_market_trader.py`, `state/aureon_scanner_fusion_matrix.json` |
 | 1h-to-1y financial waveform memory | `aureon/analytics/aureon_multi_horizon_waveform_model.py`, `state/aureon_asset_waveform_models.json` |

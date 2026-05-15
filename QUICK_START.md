@@ -60,6 +60,20 @@ state/aureon_wake_up_manifest.json
 frontend/public/aureon_wake_up_manifest.json
 ```
 
+## 5. Optional Data Ocean
+
+Run this in a second low-priority terminal when you want Aureon to widen live/history/context coverage without blocking the trading runtime:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable
+```
+
+Validation-only:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -ValidateOnly -DryRun -RunOnce -NoIngest
+```
+
 ## Dev And Audit Mode
 
 ```powershell
@@ -73,6 +87,7 @@ This is the development/audit ignition path. The production launcher is the full
 | Area | Paths |
 |---|---|
 | Production launcher | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
+| Data ocean | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `aureon/autonomous/aureon_global_financial_coverage_map.py` |
 | Market runtime | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
 | Exchange clients | `aureon/exchanges/kraken_client.py`, `aureon/exchanges/binance_client.py`, `aureon/exchanges/alpaca_client.py`, `aureon/exchanges/capital_client.py` |
 | Cognitive runtime | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |

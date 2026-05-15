@@ -179,6 +179,52 @@ def _by_name(report: dict, name: str) -> dict:
     return next(row for row in report["rows"] if row["system"] == name)
 
 
+def _write_metacognitive_context(root: Path, *, runtime_stale: bool = False) -> None:
+    _write_json(
+        root / "state" / "aureon_data_ocean_status.json",
+        {
+            "schema_version": "aureon-data-ocean-status-v1",
+            "mapping_complete": True,
+            "summary": {
+                "coverage_percent": 100.0,
+                "configured_reachable_count": 4,
+                "usable_source_count": 4,
+                "decision_usable_source_count": 0 if runtime_stale else 4,
+            },
+        },
+    )
+    _write_json(
+        root / "docs" / "audits" / "aureon_global_financial_coverage_map.json",
+        {
+            "schema_version": "aureon-global-financial-coverage-map-v1",
+            "summary": {
+                "mapping_complete": True,
+                "coverage_percent": 100.0,
+                "configured_reachable_source_count": 4,
+                "usable_source_count": 4,
+                "active_live_source_count": 4,
+                "fresh_exchange_count": 4,
+                "live_ticker_count": 3026,
+                "total_history_rows": 62364,
+                "fresh_domain_count": 5,
+                "usable_domain_count": 4,
+                "history_db_present": True,
+            },
+        },
+    )
+    _write_json(
+        root / "docs" / "audits" / "aureon_exchange_monitoring_checklist.json",
+        {
+            "schema_version": "aureon-exchange-monitoring-checklist-v1",
+            "summary": {
+                "fresh_exchange_count": 4,
+                "waveform_history_exchange_count": 4,
+                "runtime_stale": runtime_stale,
+            },
+        },
+    )
+
+
 def test_fresh_runtime_marks_intelligence_as_fresh_usable_and_decision_fed(tmp_path):
     _write_json(tmp_path / "state" / "unified_runtime_status.json", _runtime_payload(stale=False))
 
@@ -204,6 +250,47 @@ def test_fresh_runtime_marks_intelligence_as_fresh_usable_and_decision_fed(tmp_p
     assert _by_name(report, "FastMoneySelectorRuntime")["usable_for_decision"] is True
     assert _by_name(report, "OrderBookPressureRuntime")["usable_for_decision"] is True
     assert report["summary"]["fast_money_intelligence"]["candidate_count"] == 3
+
+
+def test_metacognitive_data_context_feeds_hnc_auris_when_reports_are_mapped(tmp_path):
+    _write_json(tmp_path / "state" / "unified_runtime_status.json", _runtime_payload(stale=False))
+    _write_metacognitive_context(tmp_path, runtime_stale=False)
+
+    report = build_trading_intelligence_checklist(tmp_path)
+    summary = report["summary"]["metacognitive_data_context"]
+    context = _by_name(report, "DataOceanCognitiveContext")
+    coverage = _by_name(report, "PlanetaryCoverageMap")
+    waveform = _by_name(report, "ExchangeWaveformMemory")
+
+    assert summary["mapping_complete"] is True
+    assert summary["coverage_percent"] == 100.0
+    assert summary["live_ticker_count"] == 3026
+    assert summary["history_rows"] == 62364
+    assert summary["usable_for_metacognition"] is True
+    assert summary["usable_for_live_decision"] is True
+    assert context["category"] == "metacognitive_data_context"
+    assert context["downstream_stage"] == "metacognitive_context"
+    assert context["fed_to_decision_logic"] is True
+    assert context["usable_for_decision"] is True
+    assert coverage["usable_for_decision"] is True
+    assert waveform["usable_for_decision"] is True
+    assert report["decision_trust"]["inputs"]["metacognitive_context_ratio"] == 1.0
+
+
+def test_metacognitive_data_context_stays_usable_for_thought_when_runtime_stale(tmp_path):
+    _write_json(tmp_path / "state" / "unified_runtime_status.json", _runtime_payload(stale=True))
+    _write_metacognitive_context(tmp_path, runtime_stale=True)
+
+    report = build_trading_intelligence_checklist(tmp_path)
+    summary = report["summary"]["metacognitive_data_context"]
+    context = _by_name(report, "DataOceanCognitiveContext")
+
+    assert summary["usable_for_metacognition"] is True
+    assert summary["usable_for_live_decision"] is False
+    assert "tick_in_progress_stalled" in summary["decision_blocker"]
+    assert context["fed_to_decision_logic"] is True
+    assert context["usable_for_decision"] is False
+    assert "tick_in_progress_stalled" in context["blocker"]
 
 
 def test_stale_runtime_keeps_wiring_but_blocks_fresh_usable_decision(tmp_path):

@@ -120,6 +120,12 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader._world_macro_provider = lambda: {}
         trader._world_news_signal_provider = lambda: {}
         trader._extract_stream_cache_source_snapshot = lambda watchlist: {}  # type: ignore[method-assign]
+        trader._build_asset_waveform_models = lambda normalized_symbols, sources: {  # type: ignore[method-assign]
+            "schema_version": 1,
+            "enabled": True,
+            "decision_symbols": {},
+            "fed_to_decision_logic": False,
+        }
         trader._last_tick_started_at = 0.0
         trader._last_tick_completed_at = 0.0
         trader._last_tick_error = ""
@@ -135,6 +141,10 @@ class UnifiedMarketTraderTests(unittest.TestCase):
         trader._capital_tick_lock = trader_mod.threading.Lock()
         trader._capital_tick_inflight = {}
         trader._latest_capital_tick_state = {}
+        trader._exchange_dashboard_lock = trader_mod.threading.Lock()
+        trader._exchange_dashboard_inflight = {}
+        trader._latest_exchange_dashboard_state = {}
+        trader._latest_exchange_dashboard_payloads = {}
         trader._tick_phase = "idle"
         trader._tick_phase_at = time.time()
         trader._thought_bus = None
@@ -1560,6 +1570,37 @@ class UnifiedMarketTraderTests(unittest.TestCase):
             self.assertEqual(trader._capital_tick_snapshot()["closed_count"], 1)
         finally:
             trader_mod.CAPITAL_TICK_TIMEOUT_SEC = old_timeout
+
+    def test_exchange_dashboard_payload_timeout_serves_cached_payload(self):
+        trader = self._make_trader()
+        old_timeout = trader_mod.EXCHANGE_DASHBOARD_PAYLOAD_TIMEOUT_SEC
+        trader_mod.EXCHANGE_DASHBOARD_PAYLOAD_TIMEOUT_SEC = 0.05
+        trader._latest_exchange_dashboard_payloads["capital"] = {
+            "ok": True,
+            "exchange": "capital",
+            "positions": [{"symbol": "BTCUSD"}],
+            "stats": {"total_pnl_gbp": 1.25},
+        }
+
+        def slow_dashboard():
+            time.sleep(0.2)
+            return {"ok": True, "exchange": "capital", "positions": []}
+
+        try:
+            payload = trader._run_dashboard_payload_with_timeout(
+                "capital",
+                slow_dashboard,
+                fallback_extra={"stats": {}},
+            )
+
+            self.assertTrue(payload["served_from_cache"])
+            self.assertEqual(payload["positions"][0]["symbol"], "BTCUSD")
+            self.assertEqual(payload["dashboard_fetch_state"]["reason"], "capital_dashboard_payload_timeout")
+            self.assertTrue(trader._exchange_dashboard_snapshot()["capital"]["running"])
+            time.sleep(0.25)
+            self.assertFalse(trader._exchange_dashboard_snapshot()["capital"].get("running", False))
+        finally:
+            trader_mod.EXCHANGE_DASHBOARD_PAYLOAD_TIMEOUT_SEC = old_timeout
 
     def test_runtime_health_uses_cached_state_and_flags_missing_systems(self):
         trader = self._make_trader()

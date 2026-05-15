@@ -94,6 +94,30 @@ interface TradingIntelligenceChecklist {
     hnc_auris_passing?: number;
     counter_intelligence_passing?: number;
     profit_timing_passing?: number;
+    metacognitive_context_passing?: number;
+    metacognitive_data_context?: {
+      present?: boolean;
+      usable_for_metacognition?: boolean;
+      usable_for_live_decision?: boolean;
+      decision_blocker?: string;
+      mapping_complete?: boolean;
+      coverage_percent?: number;
+      configured_reachable_source_count?: number;
+      usable_source_count?: number;
+      decision_usable_source_count?: number;
+      active_live_source_count?: number;
+      fresh_exchange_count?: number;
+      waveform_history_exchange_count?: number;
+      live_ticker_count?: number;
+      history_rows?: number;
+      fresh_domain_count?: number;
+      usable_domain_count?: number;
+      cognitive_cleanliness_score?: number;
+      planetary_context_ready?: boolean;
+      exchange_waveform_ready?: boolean;
+      state_phrase?: string;
+      evidence_sources?: string[];
+    };
     evidence_self_trust_score?: number;
     decision_self_trust_score?: number;
     decision_posture?: string;
@@ -114,6 +138,103 @@ interface TradingIntelligenceChecklist {
     self_instruction?: string;
   };
   rows?: TradingIntelligenceChecklistRow[];
+}
+
+interface ExchangeMonitoringChecklistRow {
+  exchange: string;
+  label: string;
+  markets?: string[];
+  connected: boolean;
+  cache_present: boolean;
+  cache_active: boolean;
+  cache_fresh: boolean;
+  ticker_count: number;
+  action_plan_venue_count: number;
+  known_venues?: string[];
+  waveform_history_active: boolean;
+  feeds_decision_logic: boolean;
+  usable_for_fast_money: boolean;
+  monitored_now?: string[];
+  missing?: string[];
+  required_for_fast_money?: string[];
+  last_timestamp?: string | number;
+  age_sec?: number | null;
+}
+
+interface ExchangeMonitoringChecklist {
+  status?: string;
+  generated_at?: string;
+  summary?: {
+    runtime_stale?: boolean;
+    stale_reason?: string;
+    exchange_count?: number;
+    connected_exchange_count?: number;
+    active_exchange_count?: number;
+    fresh_exchange_count?: number;
+    decision_fed_exchange_count?: number;
+    fast_money_usable_exchange_count?: number;
+    waveform_history_exchange_count?: number;
+    total_tickers_monitored?: number;
+    top_missing?: Array<Record<string, unknown>>;
+  };
+  rows?: ExchangeMonitoringChecklistRow[];
+}
+
+interface GlobalFinancialCoverageRow {
+  domain: string;
+  coverage: string;
+  live_count: number;
+  history_count: number;
+  fresh: boolean;
+  usable: boolean;
+  missing?: string[];
+  next_action?: string;
+}
+
+interface DataOceanSourceStatus {
+  source_id: string;
+  title: string;
+  category: string;
+  asset_classes?: string[];
+  credential_state: string;
+  active: boolean;
+  fresh: boolean;
+  usable_for_mapping: boolean;
+  usable_for_decision?: boolean;
+  decision_blocker?: string;
+  row_count: number;
+  governor_action: string;
+  reason?: string;
+  next_action?: string;
+}
+
+interface GlobalFinancialCoverageMap {
+  status?: string;
+  generated_at?: string;
+  summary?: {
+    domain_count?: number;
+    usable_domain_count?: number;
+    fresh_domain_count?: number;
+    live_ticker_count?: number;
+    active_live_source_count?: number;
+    fresh_exchange_count?: number;
+    decision_fed_exchange_count?: number;
+    history_db_present?: boolean;
+    history_db_size_bytes?: number;
+    total_history_rows?: number;
+    source_count?: number;
+    configured_reachable_source_count?: number;
+    usable_source_count?: number;
+    decision_usable_source_count?: number;
+    fresh_source_count?: number;
+    credential_missing_source_count?: number;
+    coverage_percent?: number;
+    accounted_percent?: number;
+    mapping_complete?: boolean;
+    top_missing?: Array<Record<string, unknown>>;
+  };
+  rows?: GlobalFinancialCoverageRow[];
+  source_registry?: DataOceanSourceStatus[];
 }
 
 interface HNCPacketSecurityComparison {
@@ -451,6 +572,14 @@ async function loadWakeUpManifest(signal?: AbortSignal): Promise<WakeUpManifest 
 
 async function loadTradingIntelligenceChecklist(signal?: AbortSignal): Promise<TradingIntelligenceChecklist | null> {
   return fetchJsonOrNull<TradingIntelligenceChecklist>("/aureon_trading_intelligence_checklist.json", signal);
+}
+
+async function loadExchangeMonitoringChecklist(signal?: AbortSignal): Promise<ExchangeMonitoringChecklist | null> {
+  return fetchJsonOrNull<ExchangeMonitoringChecklist>("/aureon_exchange_monitoring_checklist.json", signal);
+}
+
+async function loadGlobalFinancialCoverageMap(signal?: AbortSignal): Promise<GlobalFinancialCoverageMap | null> {
+  return fetchJsonOrNull<GlobalFinancialCoverageMap>("/aureon_global_financial_coverage_map.json", signal);
 }
 
 async function loadHNCPacketSecurityComparison(signal?: AbortSignal): Promise<HNCPacketSecurityComparison | null> {
@@ -817,6 +946,8 @@ function AppShell() {
     details: [],
   });
   const [tradingChecklist, setTradingChecklist] = useState<TradingIntelligenceChecklist | null>(null);
+  const [exchangeChecklist, setExchangeChecklist] = useState<ExchangeMonitoringChecklist | null>(null);
+  const [globalCoverageMap, setGlobalCoverageMap] = useState<GlobalFinancialCoverageMap | null>(null);
   const [hncSecurityComparison, setHncSecurityComparison] = useState<HNCPacketSecurityComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState("overview");
@@ -845,6 +976,20 @@ function AppShell() {
     const refreshChecklist = async () => setTradingChecklist(await loadTradingIntelligenceChecklist());
     refreshChecklist();
     const timer = window.setInterval(refreshChecklist, 10000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshExchangeChecklist = async () => setExchangeChecklist(await loadExchangeMonitoringChecklist());
+    refreshExchangeChecklist();
+    const timer = window.setInterval(refreshExchangeChecklist, 10000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshGlobalCoverage = async () => setGlobalCoverageMap(await loadGlobalFinancialCoverageMap());
+    refreshGlobalCoverage();
+    const timer = window.setInterval(refreshGlobalCoverage, 15000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -964,7 +1109,13 @@ function AppShell() {
           {screens.map((screen) => (
             <TabsContent key={screen.id} value={screen.id} className="mt-0">
               <ScreenPanel screen={screen} inventory={inventory} />
-              {screen.id === "trading" ? <TradingIntelligenceChecklistPanel checklist={tradingChecklist} /> : null}
+              {screen.id === "trading" ? (
+                <>
+                  <GlobalFinancialCoveragePanel coverage={globalCoverageMap} />
+                  <ExchangeMonitoringChecklistPanel checklist={exchangeChecklist} />
+                  <TradingIntelligenceChecklistPanel checklist={tradingChecklist} />
+                </>
+              ) : null}
             </TabsContent>
           ))}
         </Tabs>
@@ -1477,10 +1628,287 @@ function CapabilitySwitchboardPanel({ switchboard }: { switchboard: CapabilitySw
   );
 }
 
+function GlobalFinancialCoveragePanel({ coverage }: { coverage: GlobalFinancialCoverageMap | null }) {
+  const summary = coverage?.summary || {};
+  const rows = coverage?.rows || [];
+  const sources = coverage?.source_registry || [];
+  const blockedSources = sources.filter((source) => !source.usable_for_mapping).slice(0, 8);
+  const missing = (summary.top_missing || []).slice(0, 6);
+  const coveragePercent = Math.round(asNumber(summary.coverage_percent));
+  const accountedPercent = Math.round(asNumber(summary.accounted_percent));
+
+  return (
+    <Card className="mt-4 bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <LineChart className="h-4 w-4 text-primary" />
+          Global Financial Coverage Map
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill
+            label={coverage?.status ? String(coverage.status).replace(/_/g, " ") : "coverage map pending"}
+            tone={summary.mapping_complete ? statusTone.wired : statusTone.partial}
+          />
+          <Pill
+            label={coverage?.generated_at ? `updated ${new Date(coverage.generated_at).toLocaleTimeString()}` : "no map timestamp"}
+            tone="border-border bg-muted/20 text-muted-foreground"
+          />
+          <Pill label="/aureon_global_financial_coverage_map.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+        </div>
+
+        <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] uppercase text-cyan-100/80">configured source coverage</div>
+              <div className="mt-1 text-lg font-semibold text-cyan-50">{coveragePercent}% mapped</div>
+              <div className="mt-1 text-xs text-cyan-50/70">
+                {formatCompact(summary.usable_source_count)}/{formatCompact(summary.configured_reachable_source_count)} configured/reachable sources usable; {accountedPercent}% accounted.
+              </div>
+            </div>
+            <Pill
+              label={summary.mapping_complete ? "100% mapped for configured registry" : "expanding map"}
+              tone={summary.mapping_complete ? statusTone.wired : statusTone.partial}
+            />
+          </div>
+          <Progress value={coveragePercent} className="mt-3 h-2" />
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">usable domains</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.usable_domain_count)}/{formatCompact(summary.domain_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">fresh domains</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.fresh_domain_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">live tickers</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.live_ticker_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">live sources</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.active_live_source_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">history rows</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.total_history_rows)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">missing creds</div>
+            <div className="mt-1 text-lg font-semibold text-yellow-200">{formatCompact(summary.credential_missing_source_count)}</div>
+          </div>
+        </div>
+
+        {missing.length ? (
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Map gaps</div>
+            {missing.map((item, index) => (
+              <div key={`${String(item.domain)}-${index}`} className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs">
+                <span className="font-semibold text-yellow-100">{String(item.domain || "unknown")}</span>
+                <span className="ml-2 text-yellow-100/80">{String(item.missing || "")}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {blockedSources.length ? (
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Source registry gaps</div>
+            {blockedSources.map((source) => (
+              <div key={source.source_id} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-semibold">{source.title || source.source_id}</span>
+                  <div className="flex flex-wrap gap-1">
+                    <Pill label={source.credential_state || "unknown"} tone={source.credential_state === "missing" ? statusTone.security_blocker : statusTone.partial} />
+                    <Pill label={source.governor_action || "checking"} tone={source.usable_for_mapping ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                </div>
+                <div className="mt-1 text-muted-foreground">{source.reason || source.next_action || "No blocker detail."}</div>
+                {source.decision_blocker ? <div className="mt-1 text-yellow-100">Decision hold: {source.decision_blocker.replace(/_/g, " ")}</div> : null}
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {(source.asset_classes || []).slice(0, 5).map((assetClass) => (
+                    <Pill key={`${source.source_id}-${assetClass}`} label={assetClass.replace(/_/g, " ")} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <ScrollArea className="h-[235px] pr-3">
+          <div className="space-y-2">
+            {rows.length ? (
+              rows.map((row) => (
+                <div key={row.domain} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">{row.domain.replace(/_/g, " ")}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{row.coverage}</div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      <Pill label={row.fresh ? "fresh" : "not fresh"} tone={row.fresh ? statusTone.wired : statusTone.partial} />
+                      <Pill label={row.usable ? "usable" : "gap"} tone={row.usable ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                  </div>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                      <div className="text-[10px] uppercase text-muted-foreground">live count</div>
+                      <div className="font-mono text-xs">{formatCompact(row.live_count)}</div>
+                    </div>
+                    <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                      <div className="text-[10px] uppercase text-muted-foreground">history count</div>
+                      <div className="font-mono text-xs">{formatCompact(row.history_count)}</div>
+                    </div>
+                  </div>
+                  {row.next_action ? <div className="mt-2 text-xs text-muted-foreground">{row.next_action}</div> : null}
+                </div>
+              ))
+            ) : (
+              <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                Coverage map not generated yet. Run python -m aureon.autonomous.aureon_global_financial_coverage_map.
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ExchangeMonitoringChecklistPanel({ checklist }: { checklist: ExchangeMonitoringChecklist | null }) {
+  const summary = checklist?.summary || {};
+  const rows = checklist?.rows || [];
+  const missing = (summary.top_missing || []).slice(0, 6);
+
+  return (
+    <Card className="mt-4 bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Radio className="h-4 w-4 text-primary" />
+          Exchange Monitoring Checklist
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill
+            label={checklist?.status ? String(checklist.status).replace(/_/g, " ") : "exchange checklist pending"}
+            tone={summary.runtime_stale ? statusTone.orphaned : statusTone.wired}
+          />
+          <Pill
+            label={checklist?.generated_at ? `updated ${new Date(checklist.generated_at).toLocaleTimeString()}` : "no checklist timestamp"}
+            tone="border-border bg-muted/20 text-muted-foreground"
+          />
+          <Pill label="/aureon_exchange_monitoring_checklist.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          {summary.stale_reason ? <Pill label={String(summary.stale_reason)} tone={statusTone.security_blocker} /> : null}
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">connected</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.connected_exchange_count)}/{formatCompact(summary.exchange_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">active feeds</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.active_exchange_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">fresh feeds</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.fresh_exchange_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">decision fed</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.decision_fed_exchange_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">waveforms</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.waveform_history_exchange_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">tickers</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.total_tickers_monitored)}</div>
+          </div>
+        </div>
+
+        {missing.length ? (
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Missing by exchange</div>
+            {missing.map((item, index) => (
+              <div key={`${String(item.exchange)}-${index}`} className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs">
+                <span className="font-semibold text-yellow-100">{String(item.exchange || "unknown")}</span>
+                <span className="ml-2 text-yellow-100/80">{String(item.missing || "")}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <ScrollArea className="h-[280px] pr-3">
+          <div className="space-y-2">
+            {rows.length ? (
+              rows.map((row) => (
+                <div key={row.exchange} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">{row.label || row.exchange}</div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {(row.markets || []).slice(0, 4).map((market) => (
+                          <Pill key={market} label={market.replace(/_/g, " ")} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      <Pill label={row.connected ? "client ready" : "client missing"} tone={row.connected ? statusTone.wired : statusTone.orphaned} />
+                      <Pill label={row.cache_fresh ? "fresh feed" : row.cache_active ? "feed stale" : "feed missing"} tone={row.cache_fresh ? statusTone.wired : statusTone.partial} />
+                      <Pill label={row.feeds_decision_logic ? "decision fed" : "not fed"} tone={row.feeds_decision_logic ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                    <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                      <div className="text-[10px] uppercase text-muted-foreground">tickers</div>
+                      <div className="font-mono text-xs">{formatCompact(row.ticker_count)}</div>
+                    </div>
+                    <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                      <div className="text-[10px] uppercase text-muted-foreground">venues</div>
+                      <div className="font-mono text-xs">{formatCompact(row.action_plan_venue_count)}</div>
+                    </div>
+                    <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                      <div className="text-[10px] uppercase text-muted-foreground">waveform</div>
+                      <div className="font-mono text-xs">{row.waveform_history_active ? "active" : "missing"}</div>
+                    </div>
+                    <div className="rounded-md border border-border/40 bg-background/30 px-2 py-1">
+                      <div className="text-[10px] uppercase text-muted-foreground">fast money</div>
+                      <div className="font-mono text-xs">{row.usable_for_fast_money ? "usable" : "held"}</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {(row.monitored_now || []).slice(0, 6).map((item) => (
+                      <Pill key={item} label={item.replace(/_/g, " ")} tone="border-green-500/30 bg-green-500/10 text-green-100" />
+                    ))}
+                  </div>
+                  {(row.missing || []).length ? (
+                    <div className="mt-2 text-xs text-yellow-100">{(row.missing || []).slice(0, 5).join(", ")}</div>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                Exchange checklist not generated yet. Run python -m aureon.autonomous.aureon_exchange_monitoring_checklist.
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
 function TradingIntelligenceChecklistPanel({ checklist }: { checklist: TradingIntelligenceChecklist | null }) {
   const summary = checklist?.summary || {};
   const trust = checklist?.decision_trust;
   const rows = checklist?.rows || [];
+  const metaContext = summary.metacognitive_data_context;
   const blockers = (summary.top_blockers || []).slice(0, 5);
   const criticalRows = rows
     .filter((row) => row.blocker || !row.usable_for_decision)
@@ -1490,6 +1918,7 @@ function TradingIntelligenceChecklistPanel({ checklist }: { checklist: TradingIn
     { label: "HNC/Auris", value: summary.hnc_auris_passing, total: rows.filter((row) => row.category === "hnc_auris_cognition").length },
     { label: "counter intel", value: summary.counter_intelligence_passing, total: rows.filter((row) => row.category === "counter_intelligence_validation").length },
     { label: "profit timing", value: summary.profit_timing_passing, total: rows.filter((row) => row.category === "profit_timing").length },
+    { label: "meta context", value: summary.metacognitive_context_passing, total: rows.filter((row) => row.category === "metacognitive_data_context").length },
   ];
 
   return (
@@ -1560,7 +1989,53 @@ function TradingIntelligenceChecklistPanel({ checklist }: { checklist: TradingIn
           </div>
         ) : null}
 
-        <div className="grid gap-2 md:grid-cols-4">
+        {metaContext?.present ? (
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="text-[11px] uppercase text-emerald-100/80">metacognitive data ocean</div>
+                <div className="mt-1 text-sm text-emerald-50">
+                  {metaContext.state_phrase || "Global data context is being measured."}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <Pill
+                  label={metaContext.usable_for_metacognition ? "usable for thought" : "filling gaps"}
+                  tone={metaContext.usable_for_metacognition ? statusTone.wired : statusTone.partial}
+                />
+                <Pill
+                  label={metaContext.usable_for_live_decision ? "live decision usable" : "runtime gated"}
+                  tone={metaContext.usable_for_live_decision ? statusTone.wired : statusTone.orphaned}
+                />
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="rounded-md border border-emerald-400/20 bg-background/30 p-2">
+                <div className="text-[10px] uppercase text-emerald-100/70">mapped</div>
+                <div className="font-mono text-sm text-emerald-50">{Math.round(asNumber(metaContext.coverage_percent))}%</div>
+              </div>
+              <div className="rounded-md border border-emerald-400/20 bg-background/30 p-2">
+                <div className="text-[10px] uppercase text-emerald-100/70">live sources</div>
+                <div className="font-mono text-sm text-emerald-50">{formatCompact(metaContext.active_live_source_count)}</div>
+              </div>
+              <div className="rounded-md border border-emerald-400/20 bg-background/30 p-2">
+                <div className="text-[10px] uppercase text-emerald-100/70">tickers</div>
+                <div className="font-mono text-sm text-emerald-50">{formatCompact(metaContext.live_ticker_count)}</div>
+              </div>
+              <div className="rounded-md border border-emerald-400/20 bg-background/30 p-2">
+                <div className="text-[10px] uppercase text-emerald-100/70">history rows</div>
+                <div className="font-mono text-sm text-emerald-50">{formatCompact(metaContext.history_rows)}</div>
+              </div>
+              <div className="rounded-md border border-emerald-400/20 bg-background/30 p-2">
+                <div className="text-[10px] uppercase text-emerald-100/70">cleanliness</div>
+                <div className="font-mono text-sm text-emerald-50">{Math.round(asNumber(metaContext.cognitive_cleanliness_score) * 100)}%</div>
+              </div>
+            </div>
+            {metaContext.decision_blocker ? <div className="mt-2 text-[11px] text-yellow-100">{metaContext.decision_blocker}</div> : null}
+          </div>
+        ) : null}
+
+        <div className="grid gap-2 md:grid-cols-5">
           {categoryRows.map((item) => (
             <div key={item.label} className="rounded-md border border-border/40 bg-muted/10 p-3">
               <div className="text-[11px] uppercase text-muted-foreground">{item.label}</div>

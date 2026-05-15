@@ -20,15 +20,24 @@ Dev/audit ignition:
 python scripts/aureon_ignition.py --audit-only
 ```
 
+Low-priority data ocean supervisor:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable
+```
+
 ## Capability Table
 
 | Capability | What it does | Primary surfaces |
 |---|---|---|
 | Live/safe runtime supervision | Starts and supervises the organism from one terminal, publishes manifests, and keeps reboot timing visible. | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
 | Multi-exchange market coverage | Runs unified market telemetry and exchange readiness for Kraken, Binance, Alpaca, and Capital. | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
+| Planetary financial data ocean | Maps configured/licensed financial signals across exchanges, history, macro, news, on-chain, forecasts, and internal knowledge without competing with execution/risk loops. | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `aureon_global_financial_coverage_map.py` |
 | Spot/margin observation and trading readiness | Tracks runtime state, open positions, stale ticks, and flight-test reboot decisions before action. | `/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
 | Runtime resilience and recovery | Shows connected-but-guarded states, tick phase, route timeouts, executor in-flight state, and safe reboot advice. | `/api/terminal-state`, `runtime_watchdog`, `executor_route_state` |
 | Exchange clients | Provides exchange-specific adapters for market data, balances, and order paths through the runtime gates. | `kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
+| Multi-exchange live market cache | Keeps Binance websocket/REST, Kraken public ticker, Alpaca snapshot, and Capital snapshot evidence in one shared cache with per-source health so scanners can use fresh venue data without overloading APIs. | `aureon/data_feeds/ws_market_data_feeder.py`, `aureon/data_feeds/unified_market_cache.py`, `ws_cache/ws_prices.json` |
+| Planetary waveform history recorder | Persists budgeted live cache ticks into the global history database so multi-horizon models can compare fresh energy against 1h-to-1y memory. | `aureon/data_feeds/ws_market_data_feeder.py --history-recording`, `state/aureon_global_history.sqlite`, `state/aureon_live_waveform_recorder.json` |
 | Cognitive order-intent path | Lets the cognitive layer observe, ask, reason, and emit order-intent evidence into the runtime rather than bypassing exchange gates. | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |
 | HNC/Auris harmonic affect reporting | Produces timestamped cognitive trade evidence, harmonic affect state, and benchmark reporting. | `aureon_cognitive_trade_evidence.py`, `aureon_harmonic_affect_state.py`, `aureon_live_cognition_benchmark.py` |
 | Self-questioning and mind hub | Runs the local thought/action hub and self-questioning loop for operator-visible reasoning. | `http://127.0.0.1:13002/api/thoughts` |
@@ -71,6 +80,9 @@ python scripts/aureon_ignition.py --audit-only
 | Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
 | Cognitive trade evidence | `docs/audits/aureon_cognitive_trade_evidence.json` |
 | Harmonic affect state | `docs/audits/aureon_harmonic_affect_state.json` and `frontend/public/aureon_harmonic_affect_state.json` |
+| Exchange monitoring checklist | `docs/audits/aureon_exchange_monitoring_checklist.json` and `frontend/public/aureon_exchange_monitoring_checklist.json` |
+| Global financial coverage map | `docs/audits/aureon_global_financial_coverage_map.json` and `frontend/public/aureon_global_financial_coverage_map.json` |
+| Data ocean status | `state/aureon_data_ocean_status.json` and `frontend/public/aureon_data_ocean_status.json` |
 
 ## Runtime Modes
 

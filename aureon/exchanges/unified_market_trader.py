@@ -184,6 +184,7 @@ KRAKEN_TICK_MIN_INTERVAL_SEC = max(0.5, _env_float("UNIFIED_KRAKEN_TICK_MIN_INTE
 KRAKEN_TICK_TIMEOUT_SEC = max(KRAKEN_TICK_MIN_INTERVAL_SEC, _env_float("UNIFIED_KRAKEN_TICK_TIMEOUT_SEC", 20.0))
 CAPITAL_TICK_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_CAPITAL_TICK_MIN_INTERVAL_SEC", 2.0))
 CAPITAL_TICK_TIMEOUT_SEC = max(CAPITAL_TICK_MIN_INTERVAL_SEC, _env_float("UNIFIED_CAPITAL_TICK_TIMEOUT_SEC", 20.0))
+EXCHANGE_DASHBOARD_PAYLOAD_TIMEOUT_SEC = max(1.0, _env_float("UNIFIED_EXCHANGE_DASHBOARD_PAYLOAD_TIMEOUT_SEC", 6.0))
 ORDER_INTENT_MIN_INTERVAL_SEC = max(1.0, _env_float("UNIFIED_ORDER_INTENT_MIN_INTERVAL_SEC", 8.0))
 ORDER_INTENT_MIN_CONFIDENCE = max(0.0, min(1.0, _env_float("UNIFIED_ORDER_INTENT_MIN_CONFIDENCE", 0.35)))
 ORDER_INTENT_MAX_PER_CYCLE = max(1, int(_env_float("UNIFIED_ORDER_INTENT_MAX_PER_CYCLE", 4.0)))
@@ -749,6 +750,10 @@ class UnifiedMarketTrader:
         self._capital_tick_lock = threading.Lock()
         self._capital_tick_inflight: Dict[str, Any] = {}
         self._latest_capital_tick_state: Dict[str, Any] = {}
+        self._exchange_dashboard_lock = threading.Lock()
+        self._exchange_dashboard_inflight: Dict[str, Dict[str, Any]] = {}
+        self._latest_exchange_dashboard_state: Dict[str, Dict[str, Any]] = {}
+        self._latest_exchange_dashboard_payloads: Dict[str, Dict[str, Any]] = {}
         self._kraken_spot_fast_profit_state: Dict[str, Any] = {}
         self._kraken_spot_portfolio_posture_cache: Dict[str, Any] = {}
         self._kraken_spot_portfolio_posture_at: float = 0.0
@@ -1750,6 +1755,160 @@ class UnifiedMarketTrader:
             payload.update(extra)
         return payload
 
+    def _ensure_exchange_dashboard_state(self) -> None:
+        if not hasattr(self, "_exchange_dashboard_lock") or self._exchange_dashboard_lock is None:
+            self._exchange_dashboard_lock = threading.Lock()
+        if not hasattr(self, "_exchange_dashboard_inflight") or self._exchange_dashboard_inflight is None:
+            self._exchange_dashboard_inflight = {}
+        if not hasattr(self, "_latest_exchange_dashboard_state") or self._latest_exchange_dashboard_state is None:
+            self._latest_exchange_dashboard_state = {}
+        if not hasattr(self, "_latest_exchange_dashboard_payloads") or self._latest_exchange_dashboard_payloads is None:
+            self._latest_exchange_dashboard_payloads = {}
+
+    def _exchange_dashboard_snapshot(self) -> Dict[str, Any]:
+        self._ensure_exchange_dashboard_state()
+        now = time.time()
+        with self._exchange_dashboard_lock:
+            states = {name: dict(state) for name, state in self._latest_exchange_dashboard_state.items()}
+            inflight = {name: dict(state) for name, state in self._exchange_dashboard_inflight.items()}
+        for name, state in inflight.items():
+            if state.get("running"):
+                started_at = float(state.get("started_at", now) or now)
+                states[name] = {
+                    **states.get(name, {}),
+                    **state,
+                    "running_sec": round(max(0.0, now - started_at), 3),
+                    "timeout_sec": EXCHANGE_DASHBOARD_PAYLOAD_TIMEOUT_SEC,
+                }
+        return states
+
+    def _dashboard_payload_fallback(
+        self,
+        exchange: str,
+        state: Dict[str, Any],
+        extra: Dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        self._ensure_exchange_dashboard_state()
+        cached = self._latest_exchange_dashboard_payloads.get(exchange)
+        if isinstance(cached, dict) and cached:
+            payload = self._copy_payload(cached)
+            payload.setdefault("exchange", exchange)
+            payload["dashboard_fetch_state"] = dict(state)
+            payload["served_from_cache"] = True
+            return payload
+        payload = self._unavailable_exchange_payload(
+            exchange,
+            str(state.get("reason") or "dashboard_payload_unavailable"),
+            extra=extra,
+        )
+        payload["dashboard_fetch_state"] = dict(state)
+        return payload
+
+    def _run_dashboard_payload_with_timeout(
+        self,
+        exchange: str,
+        fn: Callable[[], Dict[str, Any]],
+        *,
+        fallback_extra: Dict[str, Any] | None = None,
+    ) -> Dict[str, Any]:
+        self._ensure_exchange_dashboard_state()
+        now = time.time()
+        timeout_sec = EXCHANGE_DASHBOARD_PAYLOAD_TIMEOUT_SEC
+        with self._exchange_dashboard_lock:
+            existing = self._exchange_dashboard_inflight.get(exchange, {})
+            if existing.get("running"):
+                started_at = float(existing.get("started_at", now) or now)
+                state = {
+                    "ok": False,
+                    "held": True,
+                    "running": True,
+                    "reason": f"{exchange}_dashboard_payload_inflight",
+                    "started_at_iso": existing.get("started_at_iso"),
+                    "running_sec": round(max(0.0, now - started_at), 3),
+                    "timeout_sec": timeout_sec,
+                }
+                self._latest_exchange_dashboard_state[exchange] = dict(state)
+                return self._dashboard_payload_fallback(exchange, state, fallback_extra)
+            self._exchange_dashboard_inflight[exchange] = {
+                "running": True,
+                "started_at": now,
+                "started_at_iso": datetime.fromtimestamp(now).isoformat(),
+                "timeout_sec": timeout_sec,
+            }
+
+        result_queue: queue.Queue = queue.Queue(maxsize=1)
+
+        def runner() -> None:
+            error: Optional[Exception] = None
+            payload: Dict[str, Any] = {}
+            try:
+                raw = fn()
+                payload = raw if isinstance(raw, dict) else {}
+            except Exception as e:
+                error = e
+            completed_at = time.time()
+            state = {
+                "ok": bool(error is None and payload),
+                "running": False,
+                "elapsed_sec": round(max(0.0, completed_at - now), 3),
+                "timeout_sec": timeout_sec,
+                "completed_after_timeout": bool(completed_at - now > timeout_sec),
+                "completed_at_iso": datetime.fromtimestamp(completed_at).isoformat(),
+            }
+            if error is not None:
+                state["error"] = str(error)
+                state["reason"] = f"{exchange}_dashboard_payload_error"
+            elif not payload:
+                state["reason"] = f"{exchange}_dashboard_payload_empty"
+            with self._exchange_dashboard_lock:
+                self._exchange_dashboard_inflight[exchange] = {
+                    "running": False,
+                    "started_at": now,
+                    "completed_at": completed_at,
+                    "timeout_sec": timeout_sec,
+                }
+                self._latest_exchange_dashboard_state[exchange] = dict(state)
+                if payload:
+                    self._latest_exchange_dashboard_payloads[exchange] = self._copy_payload(payload)
+            try:
+                result_queue.put_nowait((payload, state, error))
+            except queue.Full:
+                pass
+
+        thread = threading.Thread(target=runner, name=f"aureon-{exchange}-dashboard-payload", daemon=True)
+        thread.start()
+        thread.join(timeout_sec)
+        if thread.is_alive():
+            state = {
+                "ok": False,
+                "held": True,
+                "timeout": True,
+                "running": True,
+                "reason": f"{exchange}_dashboard_payload_timeout",
+                "running_sec": round(max(0.0, time.time() - now), 3),
+                "timeout_sec": timeout_sec,
+                "source": "unified_market_trader.exchange_dashboard_payload",
+            }
+            with self._exchange_dashboard_lock:
+                self._latest_exchange_dashboard_state[exchange] = dict(state)
+            return self._dashboard_payload_fallback(exchange, state, fallback_extra)
+        try:
+            payload, state, error = result_queue.get_nowait()
+        except queue.Empty:
+            state = {
+                "ok": False,
+                "held": True,
+                "reason": f"{exchange}_dashboard_payload_finished_without_result",
+                "timeout_sec": timeout_sec,
+            }
+            with self._exchange_dashboard_lock:
+                self._latest_exchange_dashboard_state[exchange] = dict(state)
+            return self._dashboard_payload_fallback(exchange, state, fallback_extra)
+        if error is not None or not payload:
+            return self._dashboard_payload_fallback(exchange, state, fallback_extra)
+        payload["dashboard_fetch_state"] = dict(state)
+        return payload
+
     def _build_bootstrap_dashboard_payload(self) -> Dict[str, Any]:
         now_iso = datetime.now().isoformat()
         kraken_error = self.kraken_error or ("startup_pending" if self.kraken is not None else "not_ready")
@@ -1846,14 +2005,26 @@ class UnifiedMarketTrader:
         }
 
     def _build_combined_payload(self) -> Dict[str, Any]:
-        kraken_payload = self.kraken.get_local_dashboard_state() if self.kraken_ready and self.kraken is not None else self._unavailable_exchange_payload(
-            "kraken",
-            self.kraken_error or "not_ready",
+        kraken_payload = (
+            self._run_dashboard_payload_with_timeout("kraken", self.kraken.get_local_dashboard_state)
+            if self.kraken_ready and self.kraken is not None
+            else self._unavailable_exchange_payload(
+                "kraken",
+                self.kraken_error or "not_ready",
+            )
         )
-        capital_payload = self.capital.get_dashboard_payload() if self.capital_ready and self.capital is not None else self._unavailable_exchange_payload(
-            "capital",
-            self.capital_error or "not_ready",
-            extra={"stats": {}},
+        capital_payload = (
+            self._run_dashboard_payload_with_timeout(
+                "capital",
+                self.capital.get_dashboard_payload,
+                fallback_extra={"stats": {}},
+            )
+            if self.capital_ready and self.capital is not None
+            else self._unavailable_exchange_payload(
+                "capital",
+                self.capital_error or "not_ready",
+                extra={"stats": {}},
+            )
         )
         self._dynamic_intelligence_budget = self._build_dynamic_intelligence_budget(kraken_payload, capital_payload)
         central_beat = self._build_central_beat_feed(kraken_payload, capital_payload)
@@ -2669,7 +2840,9 @@ class UnifiedMarketTrader:
         try:
             from aureon.data_feeds.unified_market_cache import get_market_cache
 
-            tickers = get_market_cache().get_all_tickers(max_age=STREAM_CACHE_MAX_AGE_SEC)
+            market_cache = get_market_cache()
+            tickers = market_cache.get_all_tickers(max_age=STREAM_CACHE_MAX_AGE_SEC)
+            source_health = market_cache.get_source_health() if hasattr(market_cache, "get_source_health") else {}
         except Exception as e:
             self._stream_cache_empty_health(f"stream_cache_unavailable:{e}")
             return {}
@@ -2754,6 +2927,12 @@ class UnifiedMarketTrader:
             "usable_for_decision": True,
             "symbol_count": len(symbols),
             "raw_ticker_count": len(tickers),
+            "exchange_source_health": source_health,
+            "active_exchange_sources": [
+                source
+                for source, item in (source_health.items() if isinstance(source_health, dict) else [])
+                if isinstance(item, dict) and item.get("active")
+            ],
             "max_age_sec": STREAM_CACHE_MAX_AGE_SEC,
             "base_max_symbols": STREAM_CACHE_MAX_SYMBOLS,
             "dynamic_max_symbols": stream_symbol_limit,
@@ -2772,6 +2951,7 @@ class UnifiedMarketTrader:
             "mode": "websocket_cache_preferred_over_rest_quotes",
             "symbols": symbols,
             "stream_health": health,
+            "exchange_source_health": source_health,
             "top_symbol": strongest.get("symbol"),
             "top_side": strongest.get("side"),
             "top_confidence": strongest.get("confidence"),
@@ -4179,9 +4359,6 @@ class UnifiedMarketTrader:
         if not symbol:
             return 0.0
         try:
-            stream_price = self._estimate_stream_price(symbol)
-            if stream_price > 0:
-                return stream_price
             if venue == "kraken":
                 client = self._kraken_spot_client()
                 probe_interval = self._dynamic_probe_interval("kraken")
@@ -4195,7 +4372,9 @@ class UnifiedMarketTrader:
                         stale_ttl_sec=PROBE_SYMBOL_STALE_TTL_SEC,
                     )
                     if isinstance(ticker, dict):
-                        return float(ticker.get("price") or ticker.get("lastPrice") or ticker.get("last") or 0.0)
+                        price = float(ticker.get("price") or ticker.get("lastPrice") or ticker.get("last") or 0.0)
+                        if price > 0:
+                            return price
                 if client is not None and hasattr(client, "get_ticker"):
                     ticker = self._governor().call(
                         "kraken",
@@ -4206,7 +4385,9 @@ class UnifiedMarketTrader:
                         stale_ttl_sec=PROBE_SYMBOL_STALE_TTL_SEC,
                     )
                     if isinstance(ticker, dict):
-                        return float(ticker.get("price") or ticker.get("lastPrice") or ticker.get("last") or 0.0)
+                        price = float(ticker.get("price") or ticker.get("lastPrice") or ticker.get("last") or 0.0)
+                        if price > 0:
+                            return price
             if venue == "alpaca" and self.alpaca is not None:
                 probe_interval = self._dynamic_probe_interval("alpaca")
                 ticker = self._governor().call(
@@ -4218,7 +4399,9 @@ class UnifiedMarketTrader:
                     stale_ttl_sec=PROBE_SYMBOL_STALE_TTL_SEC,
                 )
                 if isinstance(ticker, dict):
-                    return float(ticker.get("price") or ticker.get("last") or ticker.get("mark_price") or 0.0)
+                    price = float(ticker.get("price") or ticker.get("last") or ticker.get("mark_price") or 0.0)
+                    if price > 0:
+                        return price
             if venue == "binance" and self.binance is not None:
                 probe_interval = self._dynamic_probe_interval("binance")
                 ticker = self._governor().call(
@@ -4230,7 +4413,12 @@ class UnifiedMarketTrader:
                     stale_ttl_sec=PROBE_SYMBOL_STALE_TTL_SEC,
                 )
                 if isinstance(ticker, dict):
-                    return float(ticker.get("lastPrice") or ticker.get("weightedAvgPrice") or ticker.get("price") or 0.0)
+                    price = float(ticker.get("lastPrice") or ticker.get("weightedAvgPrice") or ticker.get("price") or 0.0)
+                    if price > 0:
+                        return price
+            stream_price = self._estimate_stream_price(symbol)
+            if stream_price > 0:
+                return stream_price
         except Exception as e:
             logger.debug("Price estimate failed for %s %s: %s", venue, symbol, e)
         return 0.0
@@ -8634,6 +8822,7 @@ class UnifiedMarketTrader:
             "executor_route_state": self._executor_route_snapshot(),
             "kraken_tick_state": self._kraken_tick_snapshot(),
             "capital_tick_state": self._capital_tick_snapshot(),
+            "exchange_dashboard_state": self._exchange_dashboard_snapshot(),
             "runtime_writer": {
                 "owns_lock": bool(getattr(self, "_owns_runtime_status", True)),
                 "pid": os.getpid(),

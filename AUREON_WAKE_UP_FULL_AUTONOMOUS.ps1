@@ -250,7 +250,15 @@ function Test-LiveStreamCacheFresh {
         $item = Get-Item -LiteralPath $resolved -ErrorAction Stop
         if ($item.Length -le 0) { return $false }
         $age = ((Get-Date) - $item.LastWriteTime).TotalSeconds
-        return ($age -le $MaxAgeSec)
+        if ($age -gt $MaxAgeSec) { return $false }
+        try {
+            $payload = Get-Content -LiteralPath $resolved -Raw -ErrorAction Stop | ConvertFrom-Json
+            if ($null -eq $payload.ticker_cache) { return $false }
+            $tickerCount = @($payload.ticker_cache.PSObject.Properties).Count
+            return ($tickerCount -gt 0)
+        } catch {
+            return $false
+        }
     } catch {
         return $false
     }
@@ -402,6 +410,8 @@ function Invoke-Refresh {
         "aureon.autonomous.aureon_autonomous_capability_switchboard",
         "aureon.autonomous.aureon_unified_ui_builder",
         "aureon.autonomous.aureon_trading_intelligence_checklist",
+        "aureon.autonomous.aureon_exchange_monitoring_checklist",
+        "aureon.autonomous.aureon_global_financial_coverage_map",
         "aureon.autonomous.aureon_organism_runtime_observer --refresh-core"
     )
 
@@ -1208,7 +1218,7 @@ if (-not $SkipMarketTelemetry -and $env:AUREON_DISABLE_LIVE_STREAM_CACHE -ne "1"
     $streamOut = ($env:WS_PRICE_CACHE_PATH -replace '"', '')
     $streamInterval = ($env:WS_FEED_WRITE_INTERVAL_S -replace '"', '')
     $streamFreshMaxAgeSec = [Math]::Max(15.0, ([double]$streamInterval * 20.0))
-    $streamArgs = "-m aureon.data_feeds.ws_market_data_feeder --binance --quiet --out `"$streamOut`" --write-interval-s $streamInterval"
+    $streamArgs = "-m aureon.data_feeds.ws_market_data_feeder --binance --kraken --alpaca --capital --history-recording --quiet --out `"$streamOut`" --write-interval-s $streamInterval"
     if (-not (Test-LiveStreamCacheFresh -Path $streamOut -MaxAgeSec $streamFreshMaxAgeSec)) {
         Write-Aureon "Live stream cache missing/stale; restarting stream feeder" "WATCH"
         Stop-MatchingProcess -Pattern "aureon.data_feeds.ws_market_data_feeder" -Name "Live market stream cache"

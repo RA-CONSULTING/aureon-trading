@@ -4735,5 +4735,3275 @@
         "symbol": "SAGAUSDT"
       }
     ]
+  },
+  "c21697329642": {
+    "bot_id": "c21697329642",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1778800453.8074121,
+    "last_seen": 1778830100.979917,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 126,
+    "confidence": 0.8,
+    "frequency": 0.0229,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 10.992503034445676,
+    "last_bsr": 2.58,
+    "action_history": [
+      {
+        "ts": 1778820978,
+        "action": "SELLING",
+        "bsr": 0.45,
+        "power": 11.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821891,
+        "action": "SELLING",
+        "bsr": 0.26,
+        "power": 10.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822177,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 10.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822379,
+        "action": "NEUTRAL",
+        "bsr": 0.95,
+        "power": 10.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822525,
+        "action": "NEUTRAL",
+        "bsr": 1.03,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822545,
+        "action": "NEUTRAL",
+        "bsr": 1.04,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822796,
+        "action": "BUYING",
+        "bsr": 1.38,
+        "power": 10.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823241,
+        "action": "SELLING",
+        "bsr": 0.28,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823332,
+        "action": "NEUTRAL",
+        "bsr": 1.14,
+        "power": 9.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823958,
+        "action": "SELLING",
+        "bsr": 0.51,
+        "power": 9.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824054,
+        "action": "BUYING",
+        "bsr": 5.86,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824088,
+        "action": "BUYING",
+        "bsr": 3.14,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824151,
+        "action": "NEUTRAL",
+        "bsr": 0.87,
+        "power": 9.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824174,
+        "action": "NEUTRAL",
+        "bsr": 1.21,
+        "power": 9.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824197,
+        "action": "BUYING",
+        "bsr": 2.13,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824879,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 10.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824911,
+        "action": "NEUTRAL",
+        "bsr": 1.27,
+        "power": 10.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825064,
+        "action": "BUYING",
+        "bsr": 3.06,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825146,
+        "action": "BUYING",
+        "bsr": 2.02,
+        "power": 10.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825498,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825534,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 9.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825755,
+        "action": "SELLING",
+        "bsr": 0.39,
+        "power": 9.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825910,
+        "action": "SELLING",
+        "bsr": 0.4,
+        "power": 9.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825943,
+        "action": "SELLING",
+        "bsr": 0.46,
+        "power": 10.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826041,
+        "action": "NEUTRAL",
+        "bsr": 1.0,
+        "power": 10.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826374,
+        "action": "NEUTRAL",
+        "bsr": 0.98,
+        "power": 10.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826912,
+        "action": "SELLING",
+        "bsr": 0.1,
+        "power": 10.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827081,
+        "action": "SELLING",
+        "bsr": 0.13,
+        "power": 10.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827128,
+        "action": "SELLING",
+        "bsr": 0.2,
+        "power": 10.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827365,
+        "action": "NEUTRAL",
+        "bsr": 1.2,
+        "power": 11.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827415,
+        "action": "NEUTRAL",
+        "bsr": 1.24,
+        "power": 10.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827467,
+        "action": "BUYING",
+        "bsr": 1.3,
+        "power": 10.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827488,
+        "action": "BUYING",
+        "bsr": 1.32,
+        "power": 10.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827617,
+        "action": "BUYING",
+        "bsr": 1.43,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827848,
+        "action": "BUYING",
+        "bsr": 1.45,
+        "power": 11.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827871,
+        "action": "BUYING",
+        "bsr": 1.46,
+        "power": 11.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827893,
+        "action": "BUYING",
+        "bsr": 1.47,
+        "power": 11.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827926,
+        "action": "BUYING",
+        "bsr": 1.52,
+        "power": 11.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828005,
+        "action": "BUYING",
+        "bsr": 1.61,
+        "power": 11.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828042,
+        "action": "BUYING",
+        "bsr": 2.02,
+        "power": 10.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828756,
+        "action": "SELLING",
+        "bsr": 0.71,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829600,
+        "action": "BUYING",
+        "bsr": 5.16,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829685,
+        "action": "BUYING",
+        "bsr": 5.56,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829734,
+        "action": "BUYING",
+        "bsr": 5.25,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829819,
+        "action": "BUYING",
+        "bsr": 4.18,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829907,
+        "action": "BUYING",
+        "bsr": 3.57,
+        "power": 10.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829995,
+        "action": "BUYING",
+        "bsr": 3.43,
+        "power": 11.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778830029,
+        "action": "BUYING",
+        "bsr": 3.21,
+        "power": 13.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778830073,
+        "action": "BUYING",
+        "bsr": 2.82,
+        "power": 11.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778830101,
+        "action": "BUYING",
+        "bsr": 2.58,
+        "power": 11.0,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "9d7378010e6c": {
+    "bot_id": "9d7378010e6c",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778800453.8074121,
+    "last_seen": 1778829224.8397243,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 37,
+    "confidence": 0.91,
+    "frequency": 2.1685,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 88.8045479335228,
+    "last_bsr": 0.73,
+    "action_history": [
+      {
+        "ts": 1778800454,
+        "action": "NEUTRAL",
+        "bsr": 1.26,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778800482,
+        "action": "BUYING",
+        "bsr": 1.35,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778800511,
+        "action": "BUYING",
+        "bsr": 1.39,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778800612,
+        "action": "NEUTRAL",
+        "bsr": 1.3,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778802448,
+        "action": "NEUTRAL",
+        "bsr": 1.25,
+        "power": 88.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778803174,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804846,
+        "action": "BUYING",
+        "bsr": 2.7,
+        "power": 88.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778805349,
+        "action": "BUYING",
+        "bsr": 3.56,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806214,
+        "action": "NEUTRAL",
+        "bsr": 0.96,
+        "power": 90.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806520,
+        "action": "SELLING",
+        "bsr": 0.74,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807155,
+        "action": "NEUTRAL",
+        "bsr": 1.06,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807334,
+        "action": "NEUTRAL",
+        "bsr": 0.86,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807583,
+        "action": "SELLING",
+        "bsr": 0.65,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778808365,
+        "action": "NEUTRAL",
+        "bsr": 1.23,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778808406,
+        "action": "BUYING",
+        "bsr": 1.44,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778809345,
+        "action": "NEUTRAL",
+        "bsr": 0.83,
+        "power": 88.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778809373,
+        "action": "NEUTRAL",
+        "bsr": 0.82,
+        "power": 88.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778809398,
+        "action": "NEUTRAL",
+        "bsr": 0.82,
+        "power": 88.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778809444,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 88.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778810596,
+        "action": "NEUTRAL",
+        "bsr": 0.98,
+        "power": 88.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811686,
+        "action": "SELLING",
+        "bsr": 0.66,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778812529,
+        "action": "NEUTRAL",
+        "bsr": 0.77,
+        "power": 88.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813591,
+        "action": "BUYING",
+        "bsr": 1.51,
+        "power": 88.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813619,
+        "action": "BUYING",
+        "bsr": 1.49,
+        "power": 87.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813647,
+        "action": "BUYING",
+        "bsr": 1.41,
+        "power": 87.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813934,
+        "action": "BUYING",
+        "bsr": 3.03,
+        "power": 88.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816533,
+        "action": "SELLING",
+        "bsr": 0.43,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816614,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820177,
+        "action": "SELLING",
+        "bsr": 0.5,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820224,
+        "action": "SELLING",
+        "bsr": 0.71,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820245,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821104,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824911,
+        "action": "NEUTRAL",
+        "bsr": 1.23,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825064,
+        "action": "BUYING",
+        "bsr": 3.11,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826162,
+        "action": "SELLING",
+        "bsr": 0.73,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827617,
+        "action": "BUYING",
+        "bsr": 1.52,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829225,
+        "action": "SELLING",
+        "bsr": 0.73,
+        "power": 88.8,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "f81c91408cc3": {
+    "bot_id": "f81c91408cc3",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778801220.6041203,
+    "last_seen": 1778830100.979917,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 33,
+    "confidence": 0.91,
+    "frequency": 1.5601,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 88.77244199951556,
+    "last_bsr": 2.52,
+    "action_history": [
+      {
+        "ts": 1778801221,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 89.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778801264,
+        "action": "SELLING",
+        "bsr": 0.36,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778801302,
+        "action": "SELLING",
+        "bsr": 0.38,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778803211,
+        "action": "SELLING",
+        "bsr": 0.36,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804077,
+        "action": "NEUTRAL",
+        "bsr": 0.86,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804114,
+        "action": "SELLING",
+        "bsr": 0.75,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804166,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804695,
+        "action": "BUYING",
+        "bsr": 3.16,
+        "power": 88.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778805126,
+        "action": "BUYING",
+        "bsr": 2.23,
+        "power": 88.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806347,
+        "action": "SELLING",
+        "bsr": 0.45,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806402,
+        "action": "SELLING",
+        "bsr": 0.52,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807359,
+        "action": "NEUTRAL",
+        "bsr": 0.87,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807387,
+        "action": "NEUTRAL",
+        "bsr": 0.85,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807998,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778808920,
+        "action": "SELLING",
+        "bsr": 0.48,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778808979,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 89.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778809299,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 88.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778809467,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 88.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778810647,
+        "action": "NEUTRAL",
+        "bsr": 1.27,
+        "power": 87.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811942,
+        "action": "SELLING",
+        "bsr": 0.49,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778812569,
+        "action": "SELLING",
+        "bsr": 0.76,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778812654,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813392,
+        "action": "BUYING",
+        "bsr": 1.69,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778819158,
+        "action": "SELLING",
+        "bsr": 0.67,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820978,
+        "action": "SELLING",
+        "bsr": 0.53,
+        "power": 88.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821891,
+        "action": "SELLING",
+        "bsr": 0.26,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826374,
+        "action": "NEUTRAL",
+        "bsr": 1.08,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827081,
+        "action": "SELLING",
+        "bsr": 0.14,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827128,
+        "action": "SELLING",
+        "bsr": 0.21,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829187,
+        "action": "SELLING",
+        "bsr": 0.66,
+        "power": 88.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829856,
+        "action": "BUYING",
+        "bsr": 3.66,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829907,
+        "action": "BUYING",
+        "bsr": 3.26,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778830101,
+        "action": "BUYING",
+        "bsr": 2.52,
+        "power": 88.8,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "2ded46fb6b24": {
+    "bot_id": "2ded46fb6b24",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1778801263.7287612,
+    "last_seen": 1778829855.5317748,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 103,
+    "confidence": 0.8,
+    "frequency": 0.387,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 10.185689103302774,
+    "last_bsr": 3.77,
+    "action_history": [
+      {
+        "ts": 1778816487,
+        "action": "SELLING",
+        "bsr": 0.41,
+        "power": 10.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816533,
+        "action": "SELLING",
+        "bsr": 0.41,
+        "power": 10.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816614,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816638,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816928,
+        "action": "NEUTRAL",
+        "bsr": 1.26,
+        "power": 10.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816962,
+        "action": "BUYING",
+        "bsr": 1.32,
+        "power": 9.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816996,
+        "action": "BUYING",
+        "bsr": 1.59,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817024,
+        "action": "BUYING",
+        "bsr": 1.94,
+        "power": 11.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817088,
+        "action": "BUYING",
+        "bsr": 2.69,
+        "power": 11.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817204,
+        "action": "BUYING",
+        "bsr": 3.07,
+        "power": 11.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817236,
+        "action": "BUYING",
+        "bsr": 3.18,
+        "power": 9.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817261,
+        "action": "BUYING",
+        "bsr": 3.23,
+        "power": 9.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817380,
+        "action": "BUYING",
+        "bsr": 2.65,
+        "power": 11.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817410,
+        "action": "BUYING",
+        "bsr": 2.59,
+        "power": 9.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820145,
+        "action": "SELLING",
+        "bsr": 0.43,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820224,
+        "action": "SELLING",
+        "bsr": 0.7,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820904,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 12.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821104,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 10.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821134,
+        "action": "SELLING",
+        "bsr": 0.63,
+        "power": 12.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821926,
+        "action": "SELLING",
+        "bsr": 0.29,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822983,
+        "action": "BUYING",
+        "bsr": 1.37,
+        "power": 11.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823568,
+        "action": "SELLING",
+        "bsr": 0.41,
+        "power": 10.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823778,
+        "action": "SELLING",
+        "bsr": 0.45,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824122,
+        "action": "BUYING",
+        "bsr": 1.61,
+        "power": 9.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824278,
+        "action": "BUYING",
+        "bsr": 4.15,
+        "power": 9.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824957,
+        "action": "BUYING",
+        "bsr": 2.64,
+        "power": 9.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825217,
+        "action": "NEUTRAL",
+        "bsr": 0.85,
+        "power": 10.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825246,
+        "action": "SELLING",
+        "bsr": 0.71,
+        "power": 10.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825432,
+        "action": "SELLING",
+        "bsr": 0.63,
+        "power": 10.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825454,
+        "action": "SELLING",
+        "bsr": 0.63,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825828,
+        "action": "SELLING",
+        "bsr": 0.32,
+        "power": 9.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826130,
+        "action": "NEUTRAL",
+        "bsr": 0.89,
+        "power": 10.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826162,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 10.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826280,
+        "action": "NEUTRAL",
+        "bsr": 0.77,
+        "power": 10.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826414,
+        "action": "BUYING",
+        "bsr": 1.32,
+        "power": 10.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826615,
+        "action": "BUYING",
+        "bsr": 1.7,
+        "power": 10.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827269,
+        "action": "NEUTRAL",
+        "bsr": 1.03,
+        "power": 10.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827763,
+        "action": "BUYING",
+        "bsr": 1.44,
+        "power": 10.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827827,
+        "action": "BUYING",
+        "bsr": 1.44,
+        "power": 11.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828998,
+        "action": "BUYING",
+        "bsr": 1.56,
+        "power": 10.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829022,
+        "action": "BUYING",
+        "bsr": 1.43,
+        "power": 10.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829054,
+        "action": "NEUTRAL",
+        "bsr": 1.18,
+        "power": 10.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829082,
+        "action": "NEUTRAL",
+        "bsr": 0.98,
+        "power": 10.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829125,
+        "action": "SELLING",
+        "bsr": 0.69,
+        "power": 11.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829187,
+        "action": "SELLING",
+        "bsr": 0.57,
+        "power": 11.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829225,
+        "action": "SELLING",
+        "bsr": 0.63,
+        "power": 11.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829370,
+        "action": "BUYING",
+        "bsr": 1.63,
+        "power": 10.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829421,
+        "action": "BUYING",
+        "bsr": 2.34,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829792,
+        "action": "BUYING",
+        "bsr": 4.48,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829856,
+        "action": "BUYING",
+        "bsr": 3.77,
+        "power": 10.2,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "7cb6540ad039": {
+    "bot_id": "7cb6540ad039",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778801409.5467172,
+    "last_seen": 1778828042.4594967,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 11,
+    "confidence": 0.91,
+    "frequency": 4.4666,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.14988164129686,
+    "last_bsr": 2.01,
+    "action_history": [
+      {
+        "ts": 1778801410,
+        "action": "SELLING",
+        "bsr": 0.6,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778805963,
+        "action": "SELLING",
+        "bsr": 0.77,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807617,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807806,
+        "action": "SELLING",
+        "bsr": 0.34,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778808753,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811378,
+        "action": "BUYING",
+        "bsr": 1.36,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813502,
+        "action": "BUYING",
+        "bsr": 1.55,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817261,
+        "action": "BUYING",
+        "bsr": 3.24,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823332,
+        "action": "BUYING",
+        "bsr": 1.38,
+        "power": 90.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825432,
+        "action": "SELLING",
+        "bsr": 0.65,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828042,
+        "action": "BUYING",
+        "bsr": 2.01,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "bcaf73a397f9": {
+    "bot_id": "bcaf73a397f9",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778801440.09403,
+    "last_seen": 1778830028.8814557,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 51,
+    "confidence": 0.91,
+    "frequency": 0.8008,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 86.26104633137301,
+    "last_bsr": 2.11,
+    "action_history": [
+      {
+        "ts": 1778802487,
+        "action": "BUYING",
+        "bsr": 1.91,
+        "power": 88.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778802521,
+        "action": "BUYING",
+        "bsr": 2.89,
+        "power": 87.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778802628,
+        "action": "BUYING",
+        "bsr": 6.24,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778802715,
+        "action": "BUYING",
+        "bsr": 4.11,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778802757,
+        "action": "BUYING",
+        "bsr": 2.29,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778803641,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804203,
+        "action": "SELLING",
+        "bsr": 0.6,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804635,
+        "action": "BUYING",
+        "bsr": 2.78,
+        "power": 87.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804663,
+        "action": "BUYING",
+        "bsr": 3.43,
+        "power": 89.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807084,
+        "action": "NEUTRAL",
+        "bsr": 1.16,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807468,
+        "action": "SELLING",
+        "bsr": 0.73,
+        "power": 89.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778809549,
+        "action": "NEUTRAL",
+        "bsr": 0.8,
+        "power": 88.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778810093,
+        "action": "SELLING",
+        "bsr": 0.62,
+        "power": 88.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778810175,
+        "action": "SELLING",
+        "bsr": 0.52,
+        "power": 87.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778810926,
+        "action": "BUYING",
+        "bsr": 1.71,
+        "power": 84.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778810946,
+        "action": "BUYING",
+        "bsr": 1.67,
+        "power": 85.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811236,
+        "action": "NEUTRAL",
+        "bsr": 0.86,
+        "power": 89.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778812417,
+        "action": "SELLING",
+        "bsr": 0.56,
+        "power": 87.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813313,
+        "action": "BUYING",
+        "bsr": 1.66,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813418,
+        "action": "BUYING",
+        "bsr": 1.71,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814298,
+        "action": "BUYING",
+        "bsr": 2.79,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814845,
+        "action": "BUYING",
+        "bsr": 1.39,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814905,
+        "action": "BUYING",
+        "bsr": 1.95,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816928,
+        "action": "NEUTRAL",
+        "bsr": 1.09,
+        "power": 89.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816962,
+        "action": "BUYING",
+        "bsr": 1.34,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816996,
+        "action": "BUYING",
+        "bsr": 1.68,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817024,
+        "action": "BUYING",
+        "bsr": 1.59,
+        "power": 88.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817088,
+        "action": "BUYING",
+        "bsr": 2.2,
+        "power": 87.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817204,
+        "action": "BUYING",
+        "bsr": 2.43,
+        "power": 87.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817380,
+        "action": "BUYING",
+        "bsr": 2.19,
+        "power": 88.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817410,
+        "action": "BUYING",
+        "bsr": 2.57,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817851,
+        "action": "BUYING",
+        "bsr": 19.09,
+        "power": 84.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817879,
+        "action": "BUYING",
+        "bsr": 18.82,
+        "power": 85.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817969,
+        "action": "BUYING",
+        "bsr": 2.2,
+        "power": 85.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822379,
+        "action": "NEUTRAL",
+        "bsr": 0.97,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822525,
+        "action": "NEUTRAL",
+        "bsr": 1.1,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822983,
+        "action": "BUYING",
+        "bsr": 1.39,
+        "power": 88.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823241,
+        "action": "SELLING",
+        "bsr": 0.31,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823778,
+        "action": "SELLING",
+        "bsr": 0.45,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824151,
+        "action": "NEUTRAL",
+        "bsr": 0.87,
+        "power": 90.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824174,
+        "action": "NEUTRAL",
+        "bsr": 1.19,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825146,
+        "action": "BUYING",
+        "bsr": 1.83,
+        "power": 88.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826280,
+        "action": "SELLING",
+        "bsr": 0.72,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826414,
+        "action": "BUYING",
+        "bsr": 1.37,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827467,
+        "action": "BUYING",
+        "bsr": 1.47,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829370,
+        "action": "BUYING",
+        "bsr": 1.83,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829734,
+        "action": "BUYING",
+        "bsr": 5.33,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829819,
+        "action": "BUYING",
+        "bsr": 4.15,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829995,
+        "action": "BUYING",
+        "bsr": 2.95,
+        "power": 88.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778830029,
+        "action": "BUYING",
+        "bsr": 2.11,
+        "power": 86.3,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "a7feef952c12": {
+    "bot_id": "a7feef952c12",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778801479.309636,
+    "last_seen": 1778830073.2096248,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 18,
+    "confidence": 0.91,
+    "frequency": 2.5574,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 88.77759519545745,
+    "last_bsr": 2.45,
+    "action_history": [
+      {
+        "ts": 1778801479,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778802911,
+        "action": "NEUTRAL",
+        "bsr": 1.15,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778803414,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806810,
+        "action": "SELLING",
+        "bsr": 0.75,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806843,
+        "action": "SELLING",
+        "bsr": 0.65,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807970,
+        "action": "SELLING",
+        "bsr": 0.35,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778809972,
+        "action": "SELLING",
+        "bsr": 0.43,
+        "power": 90.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778810273,
+        "action": "SELLING",
+        "bsr": 0.51,
+        "power": 87.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811087,
+        "action": "BUYING",
+        "bsr": 1.38,
+        "power": 86.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811268,
+        "action": "NEUTRAL",
+        "bsr": 0.94,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778812483,
+        "action": "SELLING",
+        "bsr": 0.71,
+        "power": 88.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778813290,
+        "action": "BUYING",
+        "bsr": 1.57,
+        "power": 88.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814996,
+        "action": "BUYING",
+        "bsr": 3.47,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821134,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 87.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825454,
+        "action": "SELLING",
+        "bsr": 0.59,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826130,
+        "action": "NEUTRAL",
+        "bsr": 0.77,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828756,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778830073,
+        "action": "BUYING",
+        "bsr": 2.45,
+        "power": 88.8,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "a80eb56b0095": {
+    "bot_id": "a80eb56b0095",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778803044.2680721,
+    "last_seen": 1778829599.7931385,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 17,
+    "confidence": 0.91,
+    "frequency": 3.4279,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.99855445632795,
+    "last_bsr": 5.85,
+    "action_history": [
+      {
+        "ts": 1778803044,
+        "action": "SELLING",
+        "bsr": 0.54,
+        "power": 90.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806064,
+        "action": "NEUTRAL",
+        "bsr": 1.15,
+        "power": 90.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806962,
+        "action": "SELLING",
+        "bsr": 0.41,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778806985,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807254,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 89.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811346,
+        "action": "NEUTRAL",
+        "bsr": 1.25,
+        "power": 89.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811405,
+        "action": "BUYING",
+        "bsr": 1.45,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814876,
+        "action": "BUYING",
+        "bsr": 1.74,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814929,
+        "action": "BUYING",
+        "bsr": 2.21,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816487,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820904,
+        "action": "SELLING",
+        "bsr": 0.47,
+        "power": 87.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822177,
+        "action": "NEUTRAL",
+        "bsr": 0.86,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823568,
+        "action": "SELLING",
+        "bsr": 0.35,
+        "power": 89.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824054,
+        "action": "BUYING",
+        "bsr": 6.99,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825910,
+        "action": "SELLING",
+        "bsr": 0.38,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827763,
+        "action": "BUYING",
+        "bsr": 1.38,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829600,
+        "action": "BUYING",
+        "bsr": 5.85,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "07dd4ef664b5": {
+    "bot_id": "07dd4ef664b5",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778803358.2021453,
+    "last_seen": 1778829791.5155866,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 26,
+    "confidence": 0.91,
+    "frequency": 0.7477,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.91010535020453,
+    "last_bsr": 4.52,
+    "action_history": [
+      {
+        "ts": 1778803358,
+        "action": "NEUTRAL",
+        "bsr": 0.89,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778803973,
+        "action": "NEUTRAL",
+        "bsr": 1.08,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804017,
+        "action": "NEUTRAL",
+        "bsr": 1.0,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804054,
+        "action": "NEUTRAL",
+        "bsr": 0.91,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778810463,
+        "action": "NEUTRAL",
+        "bsr": 0.88,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778811331,
+        "action": "NEUTRAL",
+        "bsr": 0.99,
+        "power": 88.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820278,
+        "action": "NEUTRAL",
+        "bsr": 1.05,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821926,
+        "action": "SELLING",
+        "bsr": 0.27,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823958,
+        "action": "SELLING",
+        "bsr": 0.52,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825246,
+        "action": "SELLING",
+        "bsr": 0.71,
+        "power": 88.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825498,
+        "action": "SELLING",
+        "bsr": 0.58,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825943,
+        "action": "SELLING",
+        "bsr": 0.45,
+        "power": 89.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827269,
+        "action": "NEUTRAL",
+        "bsr": 1.14,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827365,
+        "action": "BUYING",
+        "bsr": 1.45,
+        "power": 88.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827827,
+        "action": "BUYING",
+        "bsr": 1.44,
+        "power": 88.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827848,
+        "action": "BUYING",
+        "bsr": 1.45,
+        "power": 88.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827871,
+        "action": "BUYING",
+        "bsr": 1.48,
+        "power": 87.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827926,
+        "action": "BUYING",
+        "bsr": 1.58,
+        "power": 87.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828005,
+        "action": "BUYING",
+        "bsr": 1.63,
+        "power": 87.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828998,
+        "action": "BUYING",
+        "bsr": 1.73,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829022,
+        "action": "BUYING",
+        "bsr": 1.64,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829054,
+        "action": "BUYING",
+        "bsr": 1.36,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829082,
+        "action": "NEUTRAL",
+        "bsr": 1.11,
+        "power": 88.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829125,
+        "action": "NEUTRAL",
+        "bsr": 0.81,
+        "power": 88.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829685,
+        "action": "BUYING",
+        "bsr": 5.96,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829792,
+        "action": "BUYING",
+        "bsr": 4.52,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "e843d3699d41": {
+    "bot_id": "e843d3699d41",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778803778.073773,
+    "last_seen": 1778827893.3942957,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 17,
+    "confidence": 0.91,
+    "frequency": 2.8357,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 88.01243229113417,
+    "last_bsr": 1.49,
+    "action_history": [
+      {
+        "ts": 1778803778,
+        "action": "NEUTRAL",
+        "bsr": 1.04,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804307,
+        "action": "BUYING",
+        "bsr": 2.07,
+        "power": 90.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804353,
+        "action": "BUYING",
+        "bsr": 2.52,
+        "power": 90.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804392,
+        "action": "BUYING",
+        "bsr": 2.91,
+        "power": 90.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778804464,
+        "action": "BUYING",
+        "bsr": 3.11,
+        "power": 90.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778805317,
+        "action": "BUYING",
+        "bsr": 4.07,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778812339,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 87.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814602,
+        "action": "NEUTRAL",
+        "bsr": 1.1,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778820145,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824088,
+        "action": "BUYING",
+        "bsr": 4.15,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824278,
+        "action": "BUYING",
+        "bsr": 4.33,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825217,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 89.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825534,
+        "action": "SELLING",
+        "bsr": 0.61,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826912,
+        "action": "SELLING",
+        "bsr": 0.11,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827415,
+        "action": "BUYING",
+        "bsr": 1.34,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827488,
+        "action": "BUYING",
+        "bsr": 1.48,
+        "power": 89.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827893,
+        "action": "BUYING",
+        "bsr": 1.49,
+        "power": 88.0,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "68b138881799": {
+    "bot_id": "68b138881799",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778806116.0171874,
+    "last_seen": 1778829421.0122607,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 13,
+    "confidence": 0.91,
+    "frequency": 3.9826,
+    "shape": "spiral",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.64633251083792,
+    "last_bsr": 2.52,
+    "action_history": [
+      {
+        "ts": 1778806116,
+        "action": "BUYING",
+        "bsr": 1.5,
+        "power": 90.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778807938,
+        "action": "SELLING",
+        "bsr": 0.33,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814638,
+        "action": "NEUTRAL",
+        "bsr": 1.03,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778814787,
+        "action": "NEUTRAL",
+        "bsr": 1.04,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816739,
+        "action": "NEUTRAL",
+        "bsr": 0.83,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822545,
+        "action": "NEUTRAL",
+        "bsr": 1.1,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778822796,
+        "action": "BUYING",
+        "bsr": 1.53,
+        "power": 89.3,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824122,
+        "action": "BUYING",
+        "bsr": 1.72,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824879,
+        "action": "NEUTRAL",
+        "bsr": 0.9,
+        "power": 89.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825755,
+        "action": "SELLING",
+        "bsr": 0.37,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826041,
+        "action": "NEUTRAL",
+        "bsr": 0.84,
+        "power": 88.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826615,
+        "action": "BUYING",
+        "bsr": 1.84,
+        "power": 89.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778829421,
+        "action": "BUYING",
+        "bsr": 2.52,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "66ccf52bbac2": {
+    "bot_id": "66ccf52bbac2",
+    "firm_id": "susquehanna",
+    "firm_name": "SIG",
+    "animal": "\ud83e\udd8a Fox",
+    "band": "scalper",
+    "first_seen": 1778806484.8945038,
+    "last_seen": 1778825827.6547287,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 6,
+    "confidence": 0.91,
+    "frequency": 4.8227,
+    "shape": "spiral",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 90.11070779913118,
+    "last_bsr": 0.3,
+    "action_history": [
+      {
+        "ts": 1778806485,
+        "action": "SELLING",
+        "bsr": 0.69,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778816638,
+        "action": "SELLING",
+        "bsr": 0.64,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817236,
+        "action": "BUYING",
+        "bsr": 3.19,
+        "power": 90.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824197,
+        "action": "BUYING",
+        "bsr": 1.98,
+        "power": 89.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778824957,
+        "action": "BUYING",
+        "bsr": 2.6,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778825828,
+        "action": "SELLING",
+        "bsr": 0.3,
+        "power": 90.1,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "spiral"
+  },
+  "d0aad4e42b59": {
+    "bot_id": "d0aad4e42b59",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1778815178.4671254,
+    "last_seen": 1778828195.224072,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 7,
+    "confidence": 0.8,
+    "frequency": 0.222,
+    "shape": "surge",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 17.22949654163507,
+    "last_bsr": 0.49,
+    "action_history": [
+      {
+        "ts": 1778815178,
+        "action": "BUYING",
+        "bsr": 8.33,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815202,
+        "action": "BUYING",
+        "bsr": 8.98,
+        "power": 9.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815231,
+        "action": "BUYING",
+        "bsr": 10.11,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815282,
+        "action": "BUYING",
+        "bsr": 10.83,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823807,
+        "action": "BUYING",
+        "bsr": 1.44,
+        "power": 10.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828130,
+        "action": "BUYING",
+        "bsr": 3.02,
+        "power": 11.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828195,
+        "action": "SELLING",
+        "bsr": 0.49,
+        "power": 17.2,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "surge"
+  },
+  "c663712b88a1": {
+    "bot_id": "c663712b88a1",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778815178.4671254,
+    "last_seen": 1778815282.2963583,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 4,
+    "confidence": 0.81,
+    "frequency": 1.3969,
+    "shape": "surge",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.86231064579525,
+    "last_bsr": 11.59,
+    "action_history": [
+      {
+        "ts": 1778815178,
+        "action": "BUYING",
+        "bsr": 9.38,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815202,
+        "action": "BUYING",
+        "bsr": 9.55,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815231,
+        "action": "BUYING",
+        "bsr": 10.44,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815282,
+        "action": "BUYING",
+        "bsr": 11.59,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "surge"
+  },
+  "9f63b3a4214d": {
+    "bot_id": "9f63b3a4214d",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1778815551.3962345,
+    "last_seen": 1778828507.6212516,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 13,
+    "confidence": 0.8,
+    "frequency": 0.011,
+    "shape": "taper",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 10.505263699346997,
+    "last_bsr": 0.93,
+    "action_history": [
+      {
+        "ts": 1778815551,
+        "action": "BUYING",
+        "bsr": 10.27,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815582,
+        "action": "BUYING",
+        "bsr": 9.62,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815622,
+        "action": "BUYING",
+        "bsr": 8.82,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815745,
+        "action": "BUYING",
+        "bsr": 6.85,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815831,
+        "action": "BUYING",
+        "bsr": 4.69,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815880,
+        "action": "BUYING",
+        "bsr": 4.44,
+        "power": 9.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821263,
+        "action": "SELLING",
+        "bsr": 0.43,
+        "power": 12.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821280,
+        "action": "NEUTRAL",
+        "bsr": 0.9,
+        "power": 11.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826814,
+        "action": "SELLING",
+        "bsr": 0.13,
+        "power": 10.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826880,
+        "action": "SELLING",
+        "bsr": 0.11,
+        "power": 10.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828375,
+        "action": "SELLING",
+        "bsr": 0.44,
+        "power": 11.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828467,
+        "action": "NEUTRAL",
+        "bsr": 1.01,
+        "power": 10.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828508,
+        "action": "NEUTRAL",
+        "bsr": 0.93,
+        "power": 10.5,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "05dfe2fa59ab": {
+    "bot_id": "05dfe2fa59ab",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778815551.3962345,
+    "last_seen": 1778828467.0681393,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 4,
+    "confidence": 0.81,
+    "frequency": 1.8835,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 88.97718211912023,
+    "last_bsr": 0.74,
+    "action_history": [
+      {
+        "ts": 1778815551,
+        "action": "BUYING",
+        "bsr": 10.64,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826814,
+        "action": "SELLING",
+        "bsr": 0.13,
+        "power": 89.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778826880,
+        "action": "SELLING",
+        "bsr": 0.11,
+        "power": 89.4,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828467,
+        "action": "SELLING",
+        "bsr": 0.74,
+        "power": 89.0,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "9a66cbaf848a": {
+    "bot_id": "9a66cbaf848a",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778815581.8858654,
+    "last_seen": 1778815581.8858654,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 3.3728,
+    "shape": "taper",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.9,
+    "last_bsr": 9.59,
+    "action_history": [
+      {
+        "ts": 1778815582,
+        "action": "BUYING",
+        "bsr": 9.59,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      }
+    ]
+  },
+  "d1a1c5454585": {
+    "bot_id": "d1a1c5454585",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778815621.5860367,
+    "last_seen": 1778828507.6212516,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 2,
+    "confidence": 0.81,
+    "frequency": 2.4316,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 89.2212469133217,
+    "last_bsr": 0.69,
+    "action_history": [
+      {
+        "ts": 1778815622,
+        "action": "BUYING",
+        "bsr": 8.77,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828508,
+        "action": "SELLING",
+        "bsr": 0.69,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "934087f325aa": {
+    "bot_id": "934087f325aa",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778815745.402784,
+    "last_seen": 1778828375.3219192,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 3,
+    "confidence": 0.81,
+    "frequency": 4.6191,
+    "shape": "taper",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 88.18319148282822,
+    "last_bsr": 0.42,
+    "action_history": [
+      {
+        "ts": 1778815745,
+        "action": "BUYING",
+        "bsr": 7.33,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778815880,
+        "action": "BUYING",
+        "bsr": 4.37,
+        "power": 89.8,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828375,
+        "action": "SELLING",
+        "bsr": 0.42,
+        "power": 88.2,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "01379d0ba0ac": {
+    "bot_id": "01379d0ba0ac",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778815831.0978289,
+    "last_seen": 1778815831.0978289,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 1.366,
+    "shape": "taper",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.9,
+    "last_bsr": 4.67,
+    "action_history": [
+      {
+        "ts": 1778815831,
+        "action": "BUYING",
+        "bsr": 4.67,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      }
+    ]
+  },
+  "8e4c20856445": {
+    "bot_id": "8e4c20856445",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1778817521.0346189,
+    "last_seen": 1778817574.3412359,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 3,
+    "confidence": 0.8,
+    "frequency": 0.2698,
+    "shape": "taper",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 12.82753241211363,
+    "last_bsr": 10.11,
+    "action_history": [
+      {
+        "ts": 1778817521,
+        "action": "BUYING",
+        "bsr": 3.85,
+        "power": 9.6,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817550,
+        "action": "BUYING",
+        "bsr": 8.56,
+        "power": 13.7,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817574,
+        "action": "BUYING",
+        "bsr": 10.11,
+        "power": 12.8,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "f44e1c479c03": {
+    "bot_id": "f44e1c479c03",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778817521.0346189,
+    "last_seen": 1778817521.0346189,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 3.0676,
+    "shape": "taper",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 89.9,
+    "last_bsr": 3.83,
+    "action_history": [
+      {
+        "ts": 1778817521,
+        "action": "BUYING",
+        "bsr": 3.83,
+        "power": 89.9,
+        "symbol": "XRPUSDT"
+      }
+    ]
+  },
+  "7f99358913d8": {
+    "bot_id": "7f99358913d8",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778817549.6672723,
+    "last_seen": 1778821279.652003,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 4,
+    "confidence": 0.81,
+    "frequency": 0.8328,
+    "shape": "taper",
+    "last_action": "NEUTRAL",
+    "last_direction": "neutral",
+    "last_power_pct": 88.18146217807518,
+    "last_bsr": 0.99,
+    "action_history": [
+      {
+        "ts": 1778817550,
+        "action": "BUYING",
+        "bsr": 5.64,
+        "power": 86.0,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778817574,
+        "action": "BUYING",
+        "bsr": 7.25,
+        "power": 86.9,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821263,
+        "action": "SELLING",
+        "bsr": 0.33,
+        "power": 87.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821280,
+        "action": "NEUTRAL",
+        "bsr": 0.99,
+        "power": 88.2,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "taper"
+  },
+  "da9f93a75b7b": {
+    "bot_id": "da9f93a75b7b",
+    "firm_id": "grid_bot",
+    "firm_name": "Grid Bot Army",
+    "animal": "\ud83e\udd16 Robot",
+    "band": "market_maker",
+    "first_seen": 1778821494.5559068,
+    "last_seen": 1778827148.3208504,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 3,
+    "confidence": 0.8,
+    "frequency": 0.429,
+    "shape": "surge",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 10.040722265774114,
+    "last_bsr": 0.39,
+    "action_history": [
+      {
+        "ts": 1778821495,
+        "action": "NEUTRAL",
+        "bsr": 0.97,
+        "power": 10.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778821533,
+        "action": "SELLING",
+        "bsr": 0.74,
+        "power": 10.1,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778827148,
+        "action": "SELLING",
+        "bsr": 0.39,
+        "power": 10.0,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "surge"
+  },
+  "f9cf3f3e2ba8": {
+    "bot_id": "f9cf3f3e2ba8",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778821494.5559068,
+    "last_seen": 1778828195.224072,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 3,
+    "confidence": 0.81,
+    "frequency": 1.2487,
+    "shape": "surge",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 82.33584301026539,
+    "last_bsr": 0.69,
+    "action_history": [
+      {
+        "ts": 1778821495,
+        "action": "NEUTRAL",
+        "bsr": 0.99,
+        "power": 89.5,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778823807,
+        "action": "BUYING",
+        "bsr": 1.47,
+        "power": 89.2,
+        "symbol": "XRPUSDT"
+      },
+      {
+        "ts": 1778828195,
+        "action": "SELLING",
+        "bsr": 0.69,
+        "power": 82.3,
+        "symbol": "XRPUSDT"
+      }
+    ],
+    "last_shape": "surge"
+  },
+  "ce074ebe1edb": {
+    "bot_id": "ce074ebe1edb",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778821532.6360893,
+    "last_seen": 1778821532.6360893,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 1,
+    "confidence": 0.8,
+    "frequency": 4.3907,
+    "shape": "surge",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 89.6,
+    "last_bsr": 0.74,
+    "action_history": [
+      {
+        "ts": 1778821533,
+        "action": "SELLING",
+        "bsr": 0.74,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      }
+    ]
+  },
+  "aff343e787f6": {
+    "bot_id": "aff343e787f6",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778827148.3208504,
+    "last_seen": 1778827148.3208504,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 4.7799,
+    "shape": "surge",
+    "last_action": "SELLING",
+    "last_direction": "bearish",
+    "last_power_pct": 89.6,
+    "last_bsr": 0.4,
+    "action_history": [
+      {
+        "ts": 1778827148,
+        "action": "SELLING",
+        "bsr": 0.4,
+        "power": 89.6,
+        "symbol": "XRPUSDT"
+      }
+    ]
+  },
+  "bb7111f7cded": {
+    "bot_id": "bb7111f7cded",
+    "firm_id": "wintermute",
+    "firm_name": "Wintermute",
+    "animal": "\ud83d\udc27 Penguin",
+    "band": "scalper",
+    "first_seen": 1778828130.2195525,
+    "last_seen": 1778828130.2195525,
+    "first_symbol": "XRPUSDT",
+    "last_symbol": "XRPUSDT",
+    "sighting_count": 1,
+    "confidence": 0.81,
+    "frequency": 2.8465,
+    "shape": "surge",
+    "last_action": "BUYING",
+    "last_direction": "bullish",
+    "last_power_pct": 87.9,
+    "last_bsr": 2.88,
+    "action_history": [
+      {
+        "ts": 1778828130,
+        "action": "BUYING",
+        "bsr": 2.88,
+        "power": 87.9,
+        "symbol": "XRPUSDT"
+      }
+    ]
   }
 }

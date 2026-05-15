@@ -132,6 +132,7 @@ class UnifiedMarketCache:
         
         # In-memory cache
         self._tickers: Dict[str, CachedTicker] = {}
+        self._source_health: Dict[str, Dict[str, Any]] = {}
         self._cache_lock = threading.Lock()
         self._last_file_read = 0.0
         self._file_read_interval = 1.0  # Read file max once per second
@@ -167,6 +168,16 @@ class UnifiedMarketCache:
                 file_ts = _as_timestamp(data.get('generated_at'), 0.0)
                 if now - file_ts > ttl * 2:  # File too old
                     continue
+
+                source_health = data.get('source_health', {})
+                if isinstance(source_health, dict):
+                    with self._cache_lock:
+                        for source_key, health in source_health.items():
+                            if isinstance(health, dict):
+                                health_copy = dict(health)
+                                health_copy.setdefault("cache_path", path)
+                                health_copy.setdefault("file_generated_at", file_ts)
+                                self._source_health[str(source_key)] = health_copy
                 
                 ticker_cache = data.get('ticker_cache', {})
                 for key, t in ticker_cache.items():
@@ -254,6 +265,21 @@ class UnifiedMarketCache:
         self._read_cache_files()
         with self._cache_lock:
             return {s: t for s, t in self._tickers.items() if t.is_fresh(max_age)}
+
+    def get_source_health(self) -> Dict[str, Dict[str, Any]]:
+        """Get latest source-health metadata published by the shared cache writer."""
+        self._read_cache_files()
+        now = time.time()
+        with self._cache_lock:
+            health: Dict[str, Dict[str, Any]] = {}
+            for source_key, item in self._source_health.items():
+                if not isinstance(item, dict):
+                    continue
+                copied = dict(item)
+                ts = _as_timestamp(copied.get("generated_at") or copied.get("file_generated_at"), 0.0)
+                copied["age_sec"] = max(0.0, now - ts) if ts > 0 else copied.get("age_sec", None)
+                health[source_key] = copied
+            return health
     
     def get_all_prices(self, max_age: float = CACHE_TTL_SECONDS) -> Dict[str, float]:
         """Get all fresh prices as symbol -> price dict"""

@@ -14,6 +14,7 @@ The launcher starts the production supervisor, market runtime, status/telemetry 
 |---|---|
 | Full Windows production supervisor | `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
 | Validate launcher and flags without opening services | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
+| Low-priority data ocean supervisor | `.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable` |
 | Dev/audit ignition path | `python scripts/aureon_ignition.py --audit-only` |
 | Standalone runtime status server | `python aureon/exchanges/unified_market_status_server.py --port 8791` |
 | Frontend development server | `cd frontend; npm run dev` |
@@ -71,12 +72,36 @@ state/aureon_wake_up_manifest.json
 frontend/public/aureon_wake_up_manifest.json
 ```
 
+## Run The Data Ocean
+
+Use a second PowerShell terminal for wide market mapping and historical/context refresh:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable
+```
+
+This supervisor runs below normal priority and keeps heavy ingestion/backfill separate from live trading. Its reports are:
+
+```text
+state/aureon_data_ocean_status.json
+frontend/public/aureon_data_ocean_status.json
+docs/audits/aureon_global_financial_coverage_map.json
+frontend/public/aureon_global_financial_coverage_map.json
+```
+
+For a no-ingest validation pass:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -ValidateOnly -DryRun -RunOnce -NoIngest
+```
+
 ## What The Launcher Starts
 
 | Surface | Active path |
 |---|---|
 | Production wrapper | `AUREON_PRODUCTION_LIVE.cmd` |
 | Full wake-up launcher | `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
+| Data ocean supervisor | `AUREON_DATA_OCEAN.cmd`, `AUREON_DATA_OCEAN.ps1` |
 | Market runtime | `aureon/exchanges/unified_market_trader.py` |
 | Runtime status server | `aureon/exchanges/unified_market_status_server.py` |
 | Kraken client | `aureon/exchanges/kraken_client.py` |
@@ -98,6 +123,8 @@ frontend/public/aureon_wake_up_manifest.json
 | Terminal sync hook | `frontend/src/hooks/useTerminalSync.ts` |
 | Accounting pack generator | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py` |
 | Accounting context bridge | `aureon/queen/accounting_context_bridge.py` |
+| Data ocean registry/governor | `aureon/autonomous/aureon_data_ocean.py` |
+| Global financial coverage map | `aureon/autonomous/aureon_global_financial_coverage_map.py` |
 
 ## Runtime Modes
 

@@ -21,6 +21,15 @@ def test_unified_market_cache_reads_ws_prices_default_cache(tmp_path, monkeypatc
                 "generated_at": now,
                 "source": "binance_ws",
                 "prices": {"BTC": 50123.45},
+                "source_health": {
+                    "binance": {
+                        "source": "binance_ws",
+                        "active": True,
+                        "fresh": True,
+                        "ticker_count": 1,
+                        "generated_at": now,
+                    }
+                },
                 "ticker_cache": {
                     "BTCUSDT": {
                         "price": 50123.45,
@@ -41,5 +50,8 @@ def test_unified_market_cache_reads_ws_prices_default_cache(tmp_path, monkeypatc
     assert ticker is not None
     assert ticker.price == 50123.45
     assert ticker.source == "binance_ws"
+    source_health = cache_mod.get_market_cache().get_source_health()
+    assert source_health["binance"]["active"] is True
+    assert source_health["binance"]["ticker_count"] == 1
     cache_mod.UnifiedMarketCache._instance = None
     cache_mod._cache_instance = None

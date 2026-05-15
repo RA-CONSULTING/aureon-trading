@@ -143,11 +143,13 @@ Kings_Accounting_Suite/**/*.xlsx
 
 # Local generated organism/audit/frontend state
 docs/audits/
+frontend/public/*.json
 frontend/public/aureon_*.json
 frontend/vite.config.ts.timestamp-*.mjs
 autonomy/
 accounting/
 uploads/
+bussiness accounts/
 data/exchange_account_archives/
 .obsidian/
 Untitled.canvas
