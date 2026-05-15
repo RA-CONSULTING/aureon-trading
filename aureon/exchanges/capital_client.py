@@ -696,7 +696,39 @@ class CapitalClient:
             })
         return out
 
-    def place_market_order(self, symbol: str, side: str, quantity: float) -> Dict[str, Any]:
+    @staticmethod
+    def _add_optional_order_controls(payload: Dict[str, Any], **controls: Any) -> None:
+        """Attach Capital order controls without emitting empty fields."""
+        mapping = {
+            "profit_level": "profitLevel",
+            "profit_distance": "profitDistance",
+            "profit_amount": "profitAmount",
+            "stop_level": "stopLevel",
+            "stop_distance": "stopDistance",
+            "stop_amount": "stopAmount",
+            "trailing_stop": "trailingStop",
+            "good_till_date": "goodTillDate",
+        }
+        for source, target in mapping.items():
+            value = controls.get(source)
+            if value is None or value == "":
+                continue
+            payload[target] = value
+
+    def place_market_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        *,
+        profit_level: Optional[float] = None,
+        profit_distance: Optional[float] = None,
+        profit_amount: Optional[float] = None,
+        stop_level: Optional[float] = None,
+        stop_distance: Optional[float] = None,
+        stop_amount: Optional[float] = None,
+        trailing_stop: Optional[bool] = None,
+    ) -> Dict[str, Any]:
         """Place a market order."""
         if not self.enabled:
             return {'error': 'Client disabled'}
@@ -730,6 +762,16 @@ class CapitalClient:
             "forceOpen": True,
             "currencyCode": os.getenv('CAPITAL_ACCOUNT_CURRENCY', 'GBP').upper()
         }
+        self._add_optional_order_controls(
+            payload,
+            profit_level=profit_level,
+            profit_distance=profit_distance,
+            profit_amount=profit_amount,
+            stop_level=stop_level,
+            stop_distance=stop_distance,
+            stop_amount=stop_amount,
+            trailing_stop=trailing_stop,
+        )
         
         try:
             response = self._request('POST', path, json_body=payload)
@@ -756,6 +798,154 @@ class CapitalClient:
                 'side': side,
                 'quantity': quantity,
             }
+
+    def get_working_orders(self) -> List[Dict[str, Any]]:
+        """Return pending Capital.com working orders."""
+        if not self.enabled:
+            return []
+        try:
+            response = self._request('GET', '/workingorders')
+            if response.status_code == 200:
+                data = response.json() or {}
+                return data.get('workingOrders', data.get('orders', [])) or []
+            logger.warning(f"Capital.com working orders fetch failed ({response.status_code}): {response.text[:200]}")
+            return []
+        except Exception as e:
+            logger.error(f"Capital.com working orders error: {e}")
+            return []
+
+    def place_working_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        level: float,
+        *,
+        order_type: str = "LIMIT",
+        profit_level: Optional[float] = None,
+        profit_distance: Optional[float] = None,
+        profit_amount: Optional[float] = None,
+        stop_level: Optional[float] = None,
+        stop_distance: Optional[float] = None,
+        stop_amount: Optional[float] = None,
+        trailing_stop: Optional[bool] = None,
+        good_till_date: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create a pending limit/stop working order with optional take-profit controls."""
+        if not self.enabled:
+            return {'error': 'Client disabled'}
+        direction = "BUY" if str(side).upper() == "BUY" else "SELL"
+        market = self._resolve_market(symbol) or {}
+        epic = market.get('epic') or symbol
+        payload: Dict[str, Any] = {
+            "epic": epic,
+            "direction": direction,
+            "size": quantity,
+            "level": level,
+            "type": str(order_type or "LIMIT").upper(),
+            "guaranteedStop": False,
+        }
+        self._add_optional_order_controls(
+            payload,
+            profit_level=profit_level,
+            profit_distance=profit_distance,
+            profit_amount=profit_amount,
+            stop_level=stop_level,
+            stop_distance=stop_distance,
+            stop_amount=stop_amount,
+            trailing_stop=trailing_stop,
+            good_till_date=good_till_date,
+        )
+        try:
+            response = self._request('POST', '/workingorders', json_body=payload)
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, dict):
+                    data.setdefault("submitted_payload", payload)
+                return data
+            logger.error(f"Capital.com working order failed: {response.text}")
+            return {
+                'rejected': True,
+                'error': 'http_error',
+                'status_code': response.status_code,
+                'reason': response.text,
+                'symbol': symbol,
+                'side': side,
+                'quantity': quantity,
+                'level': level,
+            }
+        except Exception as e:
+            logger.error(f"Capital.com working order error: {e}")
+            return {
+                'rejected': True,
+                'error': 'exception',
+                'reason': str(e),
+                'symbol': symbol,
+                'side': side,
+                'quantity': quantity,
+                'level': level,
+            }
+
+    def update_position_limits(
+        self,
+        deal_id: str,
+        *,
+        profit_level: Optional[float] = None,
+        profit_distance: Optional[float] = None,
+        profit_amount: Optional[float] = None,
+        stop_level: Optional[float] = None,
+        stop_distance: Optional[float] = None,
+        stop_amount: Optional[float] = None,
+        trailing_stop: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Update take-profit/stop controls on an existing Capital.com position."""
+        if not self.enabled:
+            return {'success': False, 'error': 'client_disabled'}
+        if not deal_id:
+            return {'success': False, 'error': 'missing_deal_id'}
+        payload: Dict[str, Any] = {"guaranteedStop": False}
+        self._add_optional_order_controls(
+            payload,
+            profit_level=profit_level,
+            profit_distance=profit_distance,
+            profit_amount=profit_amount,
+            stop_level=stop_level,
+            stop_distance=stop_distance,
+            stop_amount=stop_amount,
+            trailing_stop=trailing_stop,
+        )
+        try:
+            response = self._request('PUT', f'/positions/{deal_id}', json_body=payload)
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, dict):
+                    data.setdefault("submitted_payload", payload)
+                return {'success': True, 'deal_id': deal_id, 'data': data}
+            logger.warning(f"Capital.com update_position_limits failed ({response.status_code}): {response.text[:200]}")
+            return {'success': False, 'deal_id': deal_id, 'status_code': response.status_code, 'error': response.text[:200]}
+        except Exception as e:
+            logger.error(f"Capital.com update_position_limits exception: {e}")
+            return {'success': False, 'deal_id': deal_id, 'error': str(e)}
+
+    def delete_working_order(self, deal_id: str) -> Dict[str, Any]:
+        """Cancel a pending Capital.com working order by deal ID."""
+        if not self.enabled:
+            return {'success': False, 'error': 'client_disabled'}
+        if not deal_id:
+            return {'success': False, 'error': 'missing_deal_id'}
+        try:
+            response = self._request('DELETE', f'/workingorders/{deal_id}')
+            if response.status_code in (200, 204):
+                try:
+                    data = response.json()
+                except Exception:
+                    data = {}
+                return {'success': True, 'deal_id': deal_id, 'data': data}
+            logger.warning(f"Capital.com delete_working_order failed ({response.status_code}): {response.text[:200]}")
+            return {'success': False, 'deal_id': deal_id, 'status_code': response.status_code, 'error': response.text[:200]}
+        except Exception as e:
+            logger.error(f"Capital.com delete_working_order exception: {e}")
+            return {'success': False, 'deal_id': deal_id, 'error': str(e)}
 
     def confirm_order(self, deal_reference: str) -> Dict[str, Any]:
         """Fetch confirmation for a previously submitted deal reference."""

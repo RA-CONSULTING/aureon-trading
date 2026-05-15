@@ -101,6 +101,16 @@ The data ocean report includes the official exchange rate-limit registry from `a
 
 The exchange data capability matrix turns that into an operator checklist for each venue: data channels, trading modes, fresh feed state, decision-fed state, official call budget, cash-aware optimization mode, gaps, and next optimization. It is published to `docs/audits/aureon_exchange_data_capability_matrix.json` and mirrored to `frontend/public/aureon_exchange_data_capability_matrix.json` for the Trading console.
 
+Capital.com live expansion is controlled by the Capital Survival Brain in the Trading console. The runtime publishes `capital_risk_envelope`, `capital_trade_evidence`, `capital_confidence_ratchet`, `capital_unified_waveform_check`, `capital_no_loss_hold_queue`, and `capital_pending_order_envelope`; live Capital entries are dynamically sized or held when portfolio reserve, margin utilization, stress buffer, concentration, confidence, or cross-exchange waveform evidence is not strong enough.
+
+Build or widen the Capital tradable asset book when you want every discovered Capital market mapped to epic, cost, margin, leverage, minimum deal size, and execution route:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.exchanges.capital_asset_registry --max-snapshots 250
+```
+
+The registry writes `state/capital_tradable_asset_registry.sqlite`, `state/aureon_capital_tradable_asset_registry.json`, and audit/public JSON/CSV/Markdown outputs. Pending Capital bids are planned as working orders with broker take-profit evidence, but submission remains opt-in through `CAPITAL_PENDING_ORDER_SUBMIT_ENABLED=1`; the survival envelope blocks ladders that would be unsafe if all pending orders filled at once.
+
 For a no-ingest validation pass:
 
 ```powershell
@@ -122,6 +132,9 @@ For a no-ingest validation pass:
 | Binance client | `aureon/exchanges/binance_client.py` |
 | Alpaca client | `aureon/exchanges/alpaca_client.py` |
 | Capital client | `aureon/exchanges/capital_client.py` |
+| Capital survival brain | `aureon/exchanges/capital_cfd_trader.py`, `/api/terminal-state#capital_risk_envelope` |
+| Capital asset registry | `aureon/exchanges/capital_asset_registry.py`, `state/capital_tradable_asset_registry.sqlite` |
+| Capital pending order controls | `capital_pending_order_envelope`, `CapitalClient.place_working_order`, `CapitalClient.update_position_limits` |
 | Self-questioning loop | `aureon/autonomous/aureon_self_questioning_ai.py` |
 | Mind hub | `aureon/autonomous/aureon_mind_thought_action_hub.py` |
 | Organism observer | `aureon/autonomous/aureon_organism_runtime_observer.py` |
@@ -166,6 +179,7 @@ Before live operation, confirm:
 - The launcher validation command passes.
 - `http://127.0.0.1:8791/api/terminal-state` reports `trading_ready: true` and `data_ready: true`.
 - `stale` is `false`, or the console clearly shows a guarded state while waiting.
+- Capital.com entries show a positive stress buffer and clear waveform/ratchet state in the Capital Survival Brain before dynamic live slots expand.
 - `http://127.0.0.1:8791/api/flight-test` allows reboot only when the runtime is in a safe downtime window.
 
 ## Dev And Audit Paths

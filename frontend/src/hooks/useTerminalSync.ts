@@ -535,6 +535,11 @@ export function useTerminalSync(enabled: boolean = true, intervalMs: number = 50
             capitalCandidates: Array.isArray(capital.candidate_snapshot) ? capital.candidate_snapshot.slice(0, 3) : [],
             krakenShadows: krakenShadows.length,
             capitalShadows: capitalShadows.length,
+            capitalRiskEnvelope: capital.capital_risk_envelope || combined.capital_risk_envelope || {},
+            capitalTradeEvidence: capital.capital_trade_evidence || combined.capital_trade_evidence || {},
+            capitalConfidenceRatchet: capital.capital_confidence_ratchet || combined.capital_confidence_ratchet || {},
+            capitalUnifiedWaveformCheck: capital.capital_unified_waveform_check || combined.capital_unified_waveform_check || {},
+            capitalNoLossHoldQueue: capital.capital_no_loss_hold_queue || combined.capital_no_loss_hold_queue || {},
           },
         });
 

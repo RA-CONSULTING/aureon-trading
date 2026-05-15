@@ -35,6 +35,9 @@ Low-priority data ocean supervisor:
 | Planetary financial data ocean | Maps configured/licensed financial signals across exchanges, history, macro, news, on-chain, forecasts, and internal knowledge without competing with execution/risk loops. | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `aureon_global_financial_coverage_map.py` |
 | Official exchange rate budgets | Records Binance, Kraken, Alpaca, and Capital provider limits, then builds cash-aware call plans that reserve execution capacity and boost idle/no-cash venue discovery safely. | `aureon/core/exchange_rate_limit_registry.py`, `api_governor`, `state/aureon_data_ocean_status.json` |
 | Exchange data capability matrix | Shows what each exchange can observe, trade, leverage, and optimize: data channels, modes, feed freshness, decision-fed state, call budget, gaps, and next optimization. | `aureon/autonomous/aureon_exchange_data_capability_matrix.py`, `docs/audits/aureon_exchange_data_capability_matrix.json`, `frontend/public/aureon_exchange_data_capability_matrix.json` |
+| Capital wave-validated portfolio brain | Lets Capital expand beyond fixed buy/sell lanes only when portfolio memory, margin survival, stress buffer, cross-exchange waveform checks, and confidence ratchet pass. | `aureon/exchanges/capital_cfd_trader.py`, `/api/terminal-state#capital_risk_envelope`, Trading console Capital Survival Brain |
+| Capital tradable asset registry | Records every discovered Capital market, epic, estimated cost, margin, leverage, minimum deal size, and the exact buy/sell/close/pending-order code route. | `aureon/exchanges/capital_asset_registry.py`, `state/capital_tradable_asset_registry.sqlite`, `docs/audits/aureon_capital_tradable_asset_registry.json` |
+| Capital pending order survival | Plans limit bids with broker take-profit evidence and blocks unsafe working-order ladders by assuming every pending order fills together. | `capital_pending_order_envelope`, `CapitalClient.place_working_order`, `CapitalClient.update_position_limits` |
 | Spot/margin observation and trading readiness | Tracks runtime state, open positions, stale ticks, and flight-test reboot decisions before action. | `/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
 | Runtime resilience and recovery | Shows connected-but-guarded states, tick phase, route timeouts, executor in-flight state, and safe reboot advice. | `/api/terminal-state`, `runtime_watchdog`, `executor_route_state` |
 | Exchange clients | Provides exchange-specific adapters for market data, balances, and order paths through the runtime gates. | `kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
@@ -105,7 +108,7 @@ Low-priority data ocean supervisor:
 | Kraken | Spot/margin-capable client path under unified exchange runtime. |
 | Binance | Market and trade adapter with symbol normalization and account readiness checks. |
 | Alpaca | Stocks/crypto adapter with account and position readiness checks. |
-| Capital | CFD account and position adapter integrated into unified runtime state. |
+| Capital | CFD account and position adapter with tradable asset registry, portfolio survival envelope, dynamic live lanes, no-loss hold queue, broker take-profit, pending-order survival, fast profit capture, and signed trade evidence. |
 
 The unified runtime is responsible for coordinating these clients. Individual exchange bots are not the recommended public run path.
 

@@ -78,6 +78,16 @@ The data ocean uses `aureon/core/exchange_rate_limit_registry.py` to expose offi
 
 To see what each exchange can observe, trade, leverage, and optimize, check `docs/audits/aureon_exchange_data_capability_matrix.json` or the Trading console. The matrix shows Binance, Kraken, Alpaca, and Capital data channels, fresh-feed state, decision-fed state, cash-aware rate plan, gaps, and next optimization.
 
+For Capital.com, watch the Trading console's Capital Survival Brain. It shows the live `capital_risk_envelope`, confidence ratchet, waveform contradiction check, no-loss hold queue, pending-order survival envelope, and whether dynamic live slots can expand without putting the whole Capital portfolio at risk.
+
+To build the Capital tradable asset book, including epic, estimated cost, margin, leverage, minimum deal size, and execution route:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.exchanges.capital_asset_registry --max-snapshots 250
+```
+
+Pending bids and take-profit planning are budgeted separately. Aureon treats every pending Capital working order as if it could fill together, then blocks unsafe ladders before they can threaten the whole account.
+
 Validation-only:
 
 ```powershell

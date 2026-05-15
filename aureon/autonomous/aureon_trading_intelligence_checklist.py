@@ -49,6 +49,12 @@ COUNTER_NAMES = {
     "RuntimeWatchdog",
     "APIGovernor",
     "ExchangeRouteClearance",
+    "CapitalPortfolioMemory",
+    "CapitalLeverageEnvelope",
+    "CapitalStressBuffer",
+    "CapitalDynamicLaneControl",
+    "CapitalUnifiedWaveformCheck",
+    "CapitalConfidenceRatchet",
 }
 PROFIT_NAMES = {
     "MicroMomentumGoal",
@@ -420,6 +426,18 @@ def _synthetic_rows(runtime: dict[str, Any], root: Path = REPO_ROOT) -> list[dic
     hnc = runtime.get("hnc_cognitive_proof") if isinstance(runtime.get("hnc_cognitive_proof"), dict) else {}
     watchdog = runtime.get("runtime_watchdog") if isinstance(runtime.get("runtime_watchdog"), dict) else {}
     governor = runtime.get("api_governor") if isinstance(runtime.get("api_governor"), dict) else {}
+    capital_risk = runtime.get("capital_risk_envelope") if isinstance(runtime.get("capital_risk_envelope"), dict) else {}
+    capital_evidence = runtime.get("capital_trade_evidence") if isinstance(runtime.get("capital_trade_evidence"), dict) else {}
+    capital_ratchet = runtime.get("capital_confidence_ratchet") if isinstance(runtime.get("capital_confidence_ratchet"), dict) else {}
+    capital_waveform = runtime.get("capital_unified_waveform_check") if isinstance(runtime.get("capital_unified_waveform_check"), dict) else {}
+    if not capital_risk and isinstance(runtime.get("capital"), dict):
+        capital_risk = runtime["capital"].get("capital_risk_envelope") if isinstance(runtime["capital"].get("capital_risk_envelope"), dict) else {}
+    if not capital_evidence and isinstance(runtime.get("capital"), dict):
+        capital_evidence = runtime["capital"].get("capital_trade_evidence") if isinstance(runtime["capital"].get("capital_trade_evidence"), dict) else {}
+    if not capital_ratchet and isinstance(runtime.get("capital"), dict):
+        capital_ratchet = runtime["capital"].get("capital_confidence_ratchet") if isinstance(runtime["capital"].get("capital_confidence_ratchet"), dict) else {}
+    if not capital_waveform and isinstance(runtime.get("capital"), dict):
+        capital_waveform = runtime["capital"].get("capital_unified_waveform_check") if isinstance(runtime["capital"].get("capital_unified_waveform_check"), dict) else {}
     stream_cache = runtime.get("live_stream_cache") if isinstance(runtime.get("live_stream_cache"), dict) else {}
     shared_order_flow = runtime.get("shared_order_flow") if isinstance(runtime.get("shared_order_flow"), dict) else {}
     fast_money = shared_order_flow.get("fast_money_intelligence") if isinstance(shared_order_flow.get("fast_money_intelligence"), dict) else {}
@@ -580,6 +598,94 @@ def _synthetic_rows(runtime: dict[str, Any], root: Path = REPO_ROOT) -> list[dic
             stage="exchange_action_plan",
         ),
         _row(
+            name="CapitalPortfolioMemory",
+            facet="capital_portfolio_memory",
+            wire="exchange_action_plan",
+            path="aureon/exchanges/capital_cfd_trader.py",
+            present=bool(capital_risk),
+            active=bool(capital_risk.get("equity_gbp") is not None),
+            fed=bool(capital_risk),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#capital_risk_envelope",
+            stage="exchange_action_plan",
+        ),
+        _row(
+            name="CapitalLeverageEnvelope",
+            facet="capital_leverage_survival",
+            wire="exchange_action_plan",
+            path="aureon/exchanges/capital_cfd_trader.py",
+            present=bool(capital_risk),
+            active=bool(capital_risk.get("margin_utilization_after_pct") is not None),
+            fed=bool(capital_risk),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#capital_risk_envelope",
+            stage="exchange_action_plan",
+            extra_blockers=list(capital_risk.get("blockers", [])) if isinstance(capital_risk.get("blockers"), list) else [],
+        ),
+        _row(
+            name="CapitalStressBuffer",
+            facet="capital_stress_buffer",
+            wire="exchange_action_plan",
+            path="aureon/exchanges/capital_cfd_trader.py",
+            present=bool(capital_risk),
+            active=bool(_as_float(capital_risk.get("stress_buffer_before_gbp"), 0.0) >= 0.0),
+            fed=bool(capital_risk),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#capital_risk_envelope.stress_buffer_before_gbp",
+            stage="exchange_action_plan",
+            extra_blockers=[] if _as_float(capital_risk.get("stress_buffer_before_gbp"), 0.0) >= 0.0 else ["capital_stress_buffer_negative"],
+        ),
+        _row(
+            name="CapitalDynamicLaneControl",
+            facet="dynamic_live_slot_control",
+            wire="exchange_action_plan",
+            path="aureon/exchanges/capital_cfd_trader.py",
+            present=bool(capital_risk),
+            active=bool(capital_risk.get("dynamic_lane_expansion_enabled")),
+            fed=bool(capital_risk),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#capital_risk_envelope.dynamic_lane_expansion_enabled",
+            stage="exchange_action_plan",
+        ),
+        _row(
+            name="CapitalUnifiedWaveformCheck",
+            facet="unified_waveform_contradiction_check",
+            wire="hnc_proof",
+            path="aureon/exchanges/capital_cfd_trader.py",
+            present=bool(capital_waveform),
+            active=bool(capital_waveform.get("ok")),
+            fed=bool(capital_waveform),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#capital_unified_waveform_check",
+            stage="hnc_proof",
+            extra_blockers=list(capital_waveform.get("blockers", [])) if isinstance(capital_waveform.get("blockers"), list) else [],
+        ),
+        _row(
+            name="CapitalConfidenceRatchet",
+            facet="confidence_ratchet",
+            wire="hnc_proof",
+            path="aureon/exchanges/capital_cfd_trader.py",
+            present=bool(capital_ratchet),
+            active=bool(capital_ratchet.get("enabled", True) and capital_ratchet.get("ok", True)),
+            fed=bool(capital_ratchet),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#capital_confidence_ratchet",
+            stage="hnc_proof",
+            extra_blockers=[] if bool(capital_ratchet.get("ok", True)) else [str(capital_ratchet.get("reason") or "confidence_ratchet_blocked")],
+        ),
+        _row(
+            name="CapitalWhoWhatWhereWhenHowEvidence",
+            facet="who_what_where_when_how_act",
+            wire="hnc_proof",
+            path="aureon/exchanges/capital_cfd_trader.py",
+            present=bool(capital_evidence),
+            active=bool(capital_evidence.get("act", {}).get("evidence_complete", bool(capital_evidence)) if isinstance(capital_evidence.get("act"), dict) else bool(capital_evidence)),
+            fed=bool(capital_evidence),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#capital_trade_evidence",
+            stage="hnc_proof",
+        ),
+        _row(
             name="ExchangeRouteClearance",
             facet="route_validation",
             wire="exchange_action_plan",
@@ -617,6 +723,8 @@ def _synthetic_rows(runtime: dict[str, Any], root: Path = REPO_ROOT) -> list[dic
             stage="shadow_validation",
         ),
     ]
+    if not (capital_risk or capital_evidence or capital_ratchet or capital_waveform):
+        rows = [row for row in rows if not str(row.get("system") or "").startswith("Capital")]
     if meta_context.get("present"):
         meta_blockers = [meta_context["decision_blocker"]] if meta_context.get("decision_blocker") else []
         rows.extend(

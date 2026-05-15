@@ -47,6 +47,8 @@ def set_module_lambda_engine(engine: Any) -> None:
 
 CAPITAL_TRACE_PATH = Path(os.getenv("CAPITAL_TRACE_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_cfd_last_exchange_trace.json"))).resolve()
 CAPITAL_PROMOTION_LOG_PATH = Path(os.getenv("CAPITAL_PROMOTION_LOG_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "state", "capital_shadow_promotions.jsonl"))).resolve()
+CAPITAL_ASSET_REGISTRY_PATH = Path(os.getenv("CAPITAL_ASSET_REGISTRY_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "state", "aureon_capital_tradable_asset_registry.json"))).resolve()
+CAPITAL_ASSET_REGISTRY_AUDIT_PATH = Path(os.getenv("CAPITAL_ASSET_REGISTRY_AUDIT_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "docs", "audits", "aureon_capital_tradable_asset_registry.json"))).resolve()
 
 # ── IMPORT GUARDS ──────────────────────────────────────────────────────────────
 try:
@@ -235,6 +237,14 @@ def _env_bool(name: str, default: bool) -> bool:
     return str(raw).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_text(name: str, default: str) -> str:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    text = str(raw).strip()
+    return text or default
+
+
 CFD_CONFIG: Dict[str, float] = {
     "max_positions":      _env_float("CAPITAL_MAX_POSITIONS", 4.0),   # Up to 4 concurrent positions
     "price_ttl_secs":    _env_float("CAPITAL_PRICE_TTL_SECS", 10.0),  # Price cache lifetime
@@ -284,6 +294,59 @@ CAPITAL_FOCUS_SYMBOLS = tuple(
     for symbol in str(os.getenv("CAPITAL_FOCUS_SYMBOLS", "") or "").split(",")
     if symbol.strip()
 )
+CAPITAL_RISK_MODE = _env_text("CAPITAL_RISK_MODE", "conservative").strip().lower()
+CAPITAL_ALLOW_DYNAMIC_LANE_EXPANSION = _env_bool("CAPITAL_ALLOW_DYNAMIC_LANE_EXPANSION", True)
+CAPITAL_LOSS_CLOSE_POLICY = _env_text("CAPITAL_LOSS_CLOSE_POLICY", "never_self_close_loss").strip().lower()
+CAPITAL_CONFIDENCE_RATCHET_ENABLED = _env_bool("CAPITAL_CONFIDENCE_RATCHET_ENABLED", True)
+CAPITAL_REQUIRE_WHO_WHAT_WHERE_WHEN_HOW = _env_bool("CAPITAL_REQUIRE_WHO_WHAT_WHERE_WHEN_HOW", True)
+CAPITAL_REQUIRE_CROSS_EXCHANGE_CONFIRMATION = _env_bool("CAPITAL_REQUIRE_CROSS_EXCHANGE_CONFIRMATION", True)
+CAPITAL_FREE_CASH_RESERVE_PCT = _env_float("CAPITAL_FREE_CASH_RESERVE_PCT", 0.45)
+CAPITAL_MIN_SURVIVAL_BUFFER_GBP = _env_float("CAPITAL_MIN_SURVIVAL_BUFFER_GBP", 10.0)
+CAPITAL_MAX_MARGIN_UTILIZATION_PCT = _env_float("CAPITAL_MAX_MARGIN_UTILIZATION_PCT", 0.35)
+CAPITAL_MAX_GROSS_NOTIONAL_TO_EQUITY = _env_float("CAPITAL_MAX_GROSS_NOTIONAL_TO_EQUITY", 1.25)
+CAPITAL_MAX_SINGLE_SYMBOL_EXPOSURE_PCT = _env_float("CAPITAL_MAX_SINGLE_SYMBOL_EXPOSURE_PCT", 0.20)
+CAPITAL_MAX_DIRECTIONAL_EXPOSURE_PCT = _env_float("CAPITAL_MAX_DIRECTIONAL_EXPOSURE_PCT", 0.40)
+CAPITAL_RATCHET_MIN_CONFIDENCE_DELTA = _env_float("CAPITAL_RATCHET_MIN_CONFIDENCE_DELTA", 0.02)
+CAPITAL_RATCHET_MIN_RISK_ADJUSTED_DELTA = _env_float("CAPITAL_RATCHET_MIN_RISK_ADJUSTED_DELTA", 0.02)
+CAPITAL_RATCHET_ETA_IMPROVEMENT_PCT = _env_float("CAPITAL_RATCHET_ETA_IMPROVEMENT_PCT", 0.05)
+CAPITAL_SHADOW_BIRD_IN_HAND_ENABLED = _env_bool("CAPITAL_SHADOW_BIRD_IN_HAND_ENABLED", True)
+CAPITAL_SHADOW_QUICK_ETA_ANCHOR_MULTIPLE = _env_float("CAPITAL_SHADOW_QUICK_ETA_ANCHOR_MULTIPLE", 1.25)
+CAPITAL_SHADOW_LONG_ETA_TAKE_HOME_MULTIPLIER = _env_float("CAPITAL_SHADOW_LONG_ETA_TAKE_HOME_MULTIPLIER", 1.75)
+CAPITAL_SHADOW_LONG_ETA_CONFIDENCE_FLOOR = _env_float("CAPITAL_SHADOW_LONG_ETA_CONFIDENCE_FLOOR", 0.72)
+CAPITAL_SHADOW_UTILITY_SCORE_MULTIPLIER = _env_float("CAPITAL_SHADOW_UTILITY_SCORE_MULTIPLIER", 8.0)
+CAPITAL_BROKER_TAKE_PROFIT_ENABLED = _env_bool("CAPITAL_BROKER_TAKE_PROFIT_ENABLED", True)
+CAPITAL_BROKER_STOP_LOSS_ENABLED = _env_bool("CAPITAL_BROKER_STOP_LOSS_ENABLED", False)
+CAPITAL_PENDING_ORDER_PLANNING_ENABLED = _env_bool("CAPITAL_PENDING_ORDER_PLANNING_ENABLED", True)
+CAPITAL_PENDING_ORDER_SUBMIT_ENABLED = _env_bool("CAPITAL_PENDING_ORDER_SUBMIT_ENABLED", False)
+CAPITAL_MAX_PENDING_WORKING_ORDERS = int(_env_float("CAPITAL_MAX_PENDING_WORKING_ORDERS", 4.0))
+CAPITAL_MAX_PENDING_PER_SYMBOL = int(_env_float("CAPITAL_MAX_PENDING_PER_SYMBOL", 1.0))
+CAPITAL_PENDING_MARGIN_BUDGET_PCT = _env_float("CAPITAL_PENDING_MARGIN_BUDGET_PCT", 0.20)
+CAPITAL_PENDING_PULLBACK_PCT = _env_float("CAPITAL_PENDING_PULLBACK_PCT", 0.08)
+CAPITAL_PENDING_ORDER_TTL_MINUTES = _env_float("CAPITAL_PENDING_ORDER_TTL_MINUTES", 15.0)
+CAPITAL_STRESS_MOVE_FLOORS = {
+    "forex": _env_float("CAPITAL_STRESS_MOVE_PCT_FOREX", 0.75),
+    "indices": _env_float("CAPITAL_STRESS_MOVE_PCT_INDICES", 1.5),
+    "index": _env_float("CAPITAL_STRESS_MOVE_PCT_INDICES", 1.5),
+    "commodities": _env_float("CAPITAL_STRESS_MOVE_PCT_COMMODITIES", 2.0),
+    "commodity": _env_float("CAPITAL_STRESS_MOVE_PCT_COMMODITIES", 2.0),
+    "stocks": _env_float("CAPITAL_STRESS_MOVE_PCT_STOCKS", 3.0),
+    "stock": _env_float("CAPITAL_STRESS_MOVE_PCT_STOCKS", 3.0),
+    "shares": _env_float("CAPITAL_STRESS_MOVE_PCT_STOCKS", 3.0),
+    "share": _env_float("CAPITAL_STRESS_MOVE_PCT_STOCKS", 3.0),
+    "unknown": _env_float("CAPITAL_STRESS_MOVE_PCT_UNKNOWN", 3.0),
+}
+CAPITAL_MARGIN_FALLBACK_PCT = {
+    "forex": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_FOREX", 5.0),
+    "indices": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_INDICES", 10.0),
+    "index": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_INDICES", 10.0),
+    "commodities": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_COMMODITIES", 10.0),
+    "commodity": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_COMMODITIES", 10.0),
+    "stocks": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_STOCKS", 20.0),
+    "stock": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_STOCKS", 20.0),
+    "shares": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_STOCKS", 20.0),
+    "share": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_STOCKS", 20.0),
+    "unknown": _env_float("CAPITAL_FALLBACK_MARGIN_PCT_UNKNOWN", 20.0),
+}
 
 
 # ── DATA CLASSES ───────────────────────────────────────────────────────────────
@@ -341,6 +404,11 @@ class CFDShadowTrade:
     peak_move_pct: float = 0.0
     validated: bool = False
     validation_time: float = 0.0
+    expected_net_profit: float = 0.0
+    eta_to_target: float = 0.0
+    shadow_utility_score: float = 0.0
+    deadman_ready: bool = True
+    decision_evidence: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def age_secs(self) -> float:
@@ -483,6 +551,18 @@ class CapitalCFDTrader:
         self._last_mycelium_message: Dict[str, Any] = {}
         self._last_fast_profit_capture: Dict[str, Any] = {}
         self._fast_profit_capture_by_deal: Dict[str, Dict[str, Any]] = {}
+        self._capital_risk_envelope: Dict[str, Any] = {}
+        self._capital_trade_evidence: Dict[str, Any] = {}
+        self._capital_unified_waveform_check: Dict[str, Any] = {}
+        self._capital_no_loss_hold_queue: Dict[str, Any] = {}
+        self._capital_pending_order_envelope: Dict[str, Any] = {}
+        self._capital_last_working_order_submit: Dict[str, Any] = {}
+        self._capital_confidence_ratchet: Dict[str, Any] = {
+            "schema_version": 1,
+            "enabled": CAPITAL_CONFIDENCE_RATCHET_ENABLED,
+            "last_live_candidate": {},
+            "last_reset_reason": "",
+        }
         self._swarm_snapshot: Dict[str, Any] = {
             "enabled": True,
             "leader": {},
@@ -1602,6 +1682,922 @@ class CapitalCFDTrader:
         preflight["reason"] = "ok"
         return preflight
 
+    def _asset_class_key(self, value: Any) -> str:
+        text = str(value or "unknown").strip().lower()
+        if text in {"forex", "fx", "currency", "currencies"}:
+            return "forex"
+        if text in {"indices", "index", "indice"}:
+            return "indices"
+        if text in {"commodities", "commodity", "metals", "energy"}:
+            return "commodities"
+        if text in {"stocks", "stock", "shares", "share", "equity", "equities"}:
+            return "stocks"
+        return text or "unknown"
+
+    def _fallback_margin_pct(self, asset_class: Any) -> float:
+        key = self._asset_class_key(asset_class)
+        return float(CAPITAL_MARGIN_FALLBACK_PCT.get(key, CAPITAL_MARGIN_FALLBACK_PCT["unknown"]) or 0.0)
+
+    def _stress_move_pct(self, asset_class: Any, cfg: Optional[dict] = None) -> float:
+        key = self._asset_class_key(asset_class)
+        floor = float(CAPITAL_STRESS_MOVE_FLOORS.get(key, CAPITAL_STRESS_MOVE_FLOORS["unknown"]) or 0.0)
+        sl_pct = float((cfg or {}).get("sl_pct", 0.0) or 0.0)
+        return max(floor, sl_pct)
+
+    def _candidate_lookup(self, symbol: str, direction: str) -> Dict[str, Any]:
+        canon = self._canonical_symbol(symbol)
+        wanted = str(direction or "").upper()
+        for item in list(getattr(self, "_latest_candidate_snapshot", []) or []):
+            if self._canonical_symbol(item.get("symbol")) == canon and str(item.get("direction") or "BUY").upper() == wanted:
+                return dict(item)
+        for item in list(getattr(self, "_latest_candidate_snapshot", []) or []):
+            if self._canonical_symbol(item.get("symbol")) == canon:
+                return dict(item)
+        return {}
+
+    def _scaled_preflight(self, preflight: Dict[str, Any], requested_size: float) -> Dict[str, Any]:
+        scaled = dict(preflight or {})
+        old_size = max(float(scaled.get("requested_size", 0.0) or 0.0), 0.0)
+        new_size = max(float(requested_size or 0.0), 0.0)
+        ratio = (new_size / old_size) if old_size > 0 else 0.0
+        scaled["requested_size"] = new_size
+        for key in (
+            "notional",
+            "estimated_margin_required",
+            "expected_gross_profit",
+            "expected_net_profit",
+            "round_trip_cost",
+        ):
+            if scaled.get(key) is not None:
+                try:
+                    scaled[key] = float(scaled.get(key) or 0.0) * ratio
+                except Exception:
+                    pass
+        return scaled
+
+    def _position_notional(self, pos: CFDPosition) -> float:
+        price = float(getattr(pos, "current_price", 0.0) or getattr(pos, "entry_price", 0.0) or 0.0)
+        return max(0.0, float(getattr(pos, "size", 0.0) or 0.0) * price)
+
+    def _position_margin_estimate(self, pos: CFDPosition) -> float:
+        cfg = CAPITAL_UNIVERSE.get(str(getattr(pos, "symbol", "") or "").upper(), {})
+        asset_class = cfg.get("class", getattr(pos, "asset_class", "unknown"))
+        return self._position_notional(pos) * (self._fallback_margin_pct(asset_class) / 100.0)
+
+    def _build_no_loss_hold_queue(self) -> Dict[str, Any]:
+        holds: List[Dict[str, Any]] = []
+        total_negative = 0.0
+        for pos in list(getattr(self, "positions", []) or []):
+            pnl = self._position_pnl_gbp(pos)
+            if pnl < 0:
+                total_negative += pnl
+                holds.append({
+                    "symbol": pos.symbol,
+                    "deal_id": pos.deal_id,
+                    "direction": pos.direction,
+                    "size": pos.size,
+                    "entry_price": pos.entry_price,
+                    "current_price": pos.current_price,
+                    "pnl_gbp": pnl,
+                    "age_secs": pos.age_secs,
+                    "policy": CAPITAL_LOSS_CLOSE_POLICY,
+                })
+        queue = {
+            "schema_version": 1,
+            "enabled": CAPITAL_LOSS_CLOSE_POLICY == "never_self_close_loss",
+            "policy": CAPITAL_LOSS_CLOSE_POLICY,
+            "losing_position_count": len(holds),
+            "total_unrealized_negative_gbp": total_negative,
+            "positions": holds[-12:],
+        }
+        self._capital_no_loss_hold_queue = queue
+        return queue
+
+    def _build_capital_risk_envelope(
+        self,
+        *,
+        candidate: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        capital = self.get_capital_snapshot()
+        equity = max(0.0, float(capital.get("equity_gbp", 0.0) or 0.0))
+        free = max(0.0, float(capital.get("free_gbp", 0.0) or 0.0))
+        used = max(0.0, float(capital.get("used_gbp", 0.0) or 0.0))
+        reserve_required = max(CAPITAL_MIN_SURVIVAL_BUFFER_GBP, equity * max(0.0, CAPITAL_FREE_CASH_RESERVE_PCT))
+        positions = list(getattr(self, "positions", []) or [])
+        gross_existing = 0.0
+        estimated_margin_existing = 0.0
+        symbol_gross: Dict[str, float] = {}
+        direction_gross: Dict[str, float] = {"BUY": 0.0, "SELL": 0.0}
+        asset_class_gross: Dict[str, float] = {}
+        net_by_symbol: Dict[str, float] = {}
+        stress_pct_by_symbol: Dict[str, float] = {}
+        losing_positions = 0
+
+        for pos in positions:
+            symbol = str(getattr(pos, "symbol", "") or "").upper()
+            direction = str(getattr(pos, "direction", "") or "").upper()
+            cfg = CAPITAL_UNIVERSE.get(symbol, {})
+            asset_class = self._asset_class_key(cfg.get("class", getattr(pos, "asset_class", "unknown")))
+            notional = self._position_notional(pos)
+            gross_existing += notional
+            estimated_margin_existing += self._position_margin_estimate(pos)
+            symbol_gross[symbol] = symbol_gross.get(symbol, 0.0) + notional
+            direction_gross[direction] = direction_gross.get(direction, 0.0) + notional
+            asset_class_gross[asset_class] = asset_class_gross.get(asset_class, 0.0) + notional
+            sign = 1.0 if direction == "BUY" else -1.0
+            net_by_symbol[symbol] = net_by_symbol.get(symbol, 0.0) + (sign * notional)
+            stress_pct_by_symbol[symbol] = max(stress_pct_by_symbol.get(symbol, 0.0), self._stress_move_pct(asset_class, cfg))
+            if self._position_pnl_gbp(pos) < 0:
+                losing_positions += 1
+
+        def _stress_loss(nets: Dict[str, float], stress_pcts: Dict[str, float]) -> float:
+            total = 0.0
+            for sym, net_notional in nets.items():
+                total += abs(float(net_notional or 0.0)) * (float(stress_pcts.get(sym, CAPITAL_STRESS_MOVE_FLOORS["unknown"]) or 0.0) / 100.0)
+            return total
+
+        existing_stress_loss = _stress_loss(net_by_symbol, stress_pct_by_symbol)
+        candidate = dict(candidate or {})
+        cand_symbol = str(candidate.get("symbol") or "").upper()
+        cand_direction = str(candidate.get("direction") or "BUY").upper()
+        cand_size = max(0.0, float(candidate.get("size", 0.0) or 0.0))
+        cand_price = max(0.0, float(candidate.get("price", 0.0) or 0.0))
+        cand_asset_class = self._asset_class_key(candidate.get("asset_class", "unknown"))
+        cand_notional = cand_size * cand_price
+        cand_margin_pct = float(candidate.get("margin_factor_pct", 0.0) or 0.0)
+        if cand_margin_pct <= 0:
+            cand_margin_pct = self._fallback_margin_pct(cand_asset_class)
+        cand_margin = float(candidate.get("estimated_margin_required", 0.0) or 0.0)
+        if cand_margin <= 0 and cand_notional > 0:
+            cand_margin = cand_notional * (cand_margin_pct / 100.0)
+
+        net_after = dict(net_by_symbol)
+        symbol_after = dict(symbol_gross)
+        direction_after = dict(direction_gross)
+        asset_class_after = dict(asset_class_gross)
+        stress_pct_after = dict(stress_pct_by_symbol)
+        hedge_candidate = False
+        if cand_symbol and cand_notional > 0:
+            cand_sign = 1.0 if cand_direction == "BUY" else -1.0
+            net_after[cand_symbol] = net_after.get(cand_symbol, 0.0) + (cand_sign * cand_notional)
+            symbol_after[cand_symbol] = symbol_after.get(cand_symbol, 0.0) + cand_notional
+            direction_after[cand_direction] = direction_after.get(cand_direction, 0.0) + cand_notional
+            asset_class_after[cand_asset_class] = asset_class_after.get(cand_asset_class, 0.0) + cand_notional
+            stress_pct_after[cand_symbol] = max(stress_pct_after.get(cand_symbol, 0.0), self._stress_move_pct(cand_asset_class, candidate.get("cfg") if isinstance(candidate.get("cfg"), dict) else None))
+            for pos in positions:
+                if (
+                    str(getattr(pos, "symbol", "") or "").upper() == cand_symbol
+                    and str(getattr(pos, "direction", "") or "").upper() != cand_direction
+                    and self._position_pnl_gbp(pos) < 0
+                ):
+                    hedge_candidate = True
+                    break
+
+        stress_after = _stress_loss(net_after, stress_pct_after)
+        estimated_margin_used = max(used, estimated_margin_existing)
+        margin_after = estimated_margin_used + cand_margin
+        gross_after = gross_existing + cand_notional
+        free_after_margin = free - cand_margin
+        stress_buffer_before = free - reserve_required - existing_stress_loss
+        stress_buffer_after = free_after_margin - reserve_required - stress_after
+        margin_util_after = (margin_after / equity) if equity > 0 else 1.0
+        gross_leverage_after = (gross_after / equity) if equity > 0 else 0.0
+        single_symbol_pct = (symbol_after.get(cand_symbol, 0.0) / equity) if equity > 0 and cand_symbol else 0.0
+        directional_pct = (direction_after.get(cand_direction, 0.0) / equity) if equity > 0 and cand_direction else 0.0
+
+        blockers: List[str] = []
+        if equity <= 0 or free <= 0:
+            blockers.append("capital_account_balance_unavailable")
+        if cand_symbol and cand_notional <= 0:
+            blockers.append("candidate_notional_unavailable")
+        survival_threat = stress_buffer_before < 0
+        if survival_threat and CAPITAL_LOSS_CLOSE_POLICY == "never_self_close_loss":
+            if not hedge_candidate:
+                blockers.append("no_loss_hold_survival_threat_freeze_new_entries")
+            elif stress_after >= existing_stress_loss:
+                blockers.append("hedge_does_not_improve_stress_survival")
+        if cand_symbol and free_after_margin < reserve_required:
+            blockers.append("reserve_buffer_would_be_breached")
+        if cand_symbol and margin_util_after > max(0.0, CAPITAL_MAX_MARGIN_UTILIZATION_PCT):
+            blockers.append("margin_utilization_limit")
+        if cand_symbol and gross_leverage_after > max(0.0, CAPITAL_MAX_GROSS_NOTIONAL_TO_EQUITY):
+            blockers.append("gross_notional_leverage_limit")
+        if cand_symbol and single_symbol_pct > max(0.0, CAPITAL_MAX_SINGLE_SYMBOL_EXPOSURE_PCT):
+            blockers.append("single_symbol_concentration_limit")
+        if cand_symbol and directional_pct > max(0.0, CAPITAL_MAX_DIRECTIONAL_EXPOSURE_PCT):
+            blockers.append("directional_exposure_limit")
+        if cand_symbol and stress_buffer_after < 0:
+            blockers.append("stress_buffer_negative_after_trade")
+
+        envelope = {
+            "schema_version": 1,
+            "mode": CAPITAL_RISK_MODE,
+            "loss_close_policy": CAPITAL_LOSS_CLOSE_POLICY,
+            "dynamic_lane_expansion_enabled": CAPITAL_ALLOW_DYNAMIC_LANE_EXPANSION,
+            "equity_gbp": equity,
+            "free_gbp": free,
+            "used_gbp": used,
+            "reserve_required_gbp": reserve_required,
+            "existing_gross_notional_gbp": gross_existing,
+            "existing_estimated_margin_gbp": estimated_margin_existing,
+            "existing_stress_loss_gbp": existing_stress_loss,
+            "stress_buffer_before_gbp": stress_buffer_before,
+            "candidate_symbol": cand_symbol,
+            "candidate_direction": cand_direction,
+            "candidate_size": cand_size,
+            "candidate_notional_gbp": cand_notional,
+            "candidate_estimated_margin_gbp": cand_margin,
+            "candidate_margin_factor_pct": cand_margin_pct,
+            "candidate_hedge": hedge_candidate,
+            "gross_notional_after_gbp": gross_after,
+            "margin_used_after_gbp": margin_after,
+            "free_after_candidate_margin_gbp": free_after_margin,
+            "stress_loss_after_gbp": stress_after,
+            "stress_buffer_after_gbp": stress_buffer_after,
+            "margin_utilization_after_pct": margin_util_after,
+            "gross_notional_to_equity_after": gross_leverage_after,
+            "single_symbol_exposure_after_pct": single_symbol_pct,
+            "directional_exposure_after_pct": directional_pct,
+            "losing_position_count": losing_positions,
+            "survival_threat": survival_threat,
+            "new_entries_allowed": not blockers,
+            "blocked": bool(blockers),
+            "blockers": blockers,
+            "position_count": len(positions),
+            "max_positions": int(CFD_CONFIG["max_positions"]),
+            "limits": {
+                "reserve_pct": CAPITAL_FREE_CASH_RESERVE_PCT,
+                "min_survival_buffer_gbp": CAPITAL_MIN_SURVIVAL_BUFFER_GBP,
+                "max_margin_utilization_pct": CAPITAL_MAX_MARGIN_UTILIZATION_PCT,
+                "max_gross_notional_to_equity": CAPITAL_MAX_GROSS_NOTIONAL_TO_EQUITY,
+                "max_single_symbol_exposure_pct": CAPITAL_MAX_SINGLE_SYMBOL_EXPOSURE_PCT,
+                "max_directional_exposure_pct": CAPITAL_MAX_DIRECTIONAL_EXPOSURE_PCT,
+            },
+            "generated_at": datetime.now().isoformat(),
+        }
+        self._capital_risk_envelope = envelope
+        return envelope
+
+    def _capital_broker_exit_controls(
+        self,
+        *,
+        direction: str,
+        entry_price: float,
+        size: float,
+        cfg: dict,
+    ) -> Dict[str, Any]:
+        """Build broker-side profit controls for live or pending Capital orders."""
+        direction = str(direction or "BUY").upper()
+        price = max(float(entry_price or 0.0), 0.0)
+        size = max(float(size or 0.0), 0.0)
+        effective_tp_pct = self._effective_tp_pct(price, size, cfg) if price > 0 and size > 0 else 0.0
+        sl_pct = float(cfg.get("sl_pct", 0.0) or 0.0)
+        if direction == "BUY":
+            profit_level = price * (1.0 + effective_tp_pct / 100.0) if effective_tp_pct > 0 else 0.0
+            stop_level = price * (1.0 - sl_pct / 100.0) if sl_pct > 0 else 0.0
+        else:
+            profit_level = price * (1.0 - effective_tp_pct / 100.0) if effective_tp_pct > 0 else 0.0
+            stop_level = price * (1.0 + sl_pct / 100.0) if sl_pct > 0 else 0.0
+
+        controls: Dict[str, Any] = {
+            "schema_version": 1,
+            "broker_take_profit_enabled": CAPITAL_BROKER_TAKE_PROFIT_ENABLED,
+            "broker_stop_loss_enabled": CAPITAL_BROKER_STOP_LOSS_ENABLED,
+            "loss_close_policy": CAPITAL_LOSS_CLOSE_POLICY,
+            "direction": direction,
+            "entry_price": price,
+            "size": size,
+            "effective_tp_pct": effective_tp_pct,
+            "profit_level": profit_level,
+            "stop_level": stop_level,
+            "submit_kwargs": {},
+        }
+        if CAPITAL_BROKER_TAKE_PROFIT_ENABLED and profit_level > 0:
+            controls["submit_kwargs"]["profit_level"] = profit_level
+        if (
+            CAPITAL_BROKER_STOP_LOSS_ENABLED
+            and CAPITAL_LOSS_CLOSE_POLICY != "never_self_close_loss"
+            and stop_level > 0
+        ):
+            controls["submit_kwargs"]["stop_level"] = stop_level
+        elif CAPITAL_BROKER_STOP_LOSS_ENABLED and CAPITAL_LOSS_CLOSE_POLICY == "never_self_close_loss":
+            controls["stop_loss_hold_reason"] = "loss_close_policy_never_self_close_loss"
+        return controls
+
+    def _capital_pending_order_level(self, direction: str, ticker: dict, cfg: dict) -> float:
+        direction = str(direction or "BUY").upper()
+        explicit = float(cfg.get("limit_entry_price", 0.0) or cfg.get("pending_entry_price", 0.0) or 0.0)
+        if explicit > 0:
+            return explicit
+        pullback_pct = max(0.0, float(cfg.get("pending_pullback_pct", CAPITAL_PENDING_PULLBACK_PCT) or 0.0))
+        ask = float(ticker.get("ask") or ticker.get("price") or 0.0)
+        bid = float(ticker.get("bid") or ticker.get("price") or 0.0)
+        ref = ask if direction == "BUY" else bid
+        if ref <= 0:
+            ref = float(ticker.get("price") or 0.0)
+        if ref <= 0:
+            return 0.0
+        if direction == "BUY":
+            return ref * (1.0 - pullback_pct / 100.0)
+        return ref * (1.0 + pullback_pct / 100.0)
+
+    def _working_order_summary(self, raw: dict) -> Dict[str, Any]:
+        raw_dict = raw if isinstance(raw, dict) else {}
+        data = raw_dict.get("workingOrderData", raw_dict.get("workingOrder", raw_dict.get("order", raw_dict)))
+        market = raw_dict.get("marketData", raw_dict.get("market", {}))
+        if not isinstance(data, dict):
+            data = {}
+        if not isinstance(market, dict):
+            market = {}
+        direction = str(data.get("direction") or raw_dict.get("direction") or "").upper()
+        level = float(data.get("level") or data.get("orderLevel") or raw_dict.get("level") or raw_dict.get("orderLevel") or 0.0)
+        size = float(data.get("size") or data.get("orderSize") or raw_dict.get("size") or raw_dict.get("orderSize") or 0.0)
+        symbol = str(market.get("symbol") or market.get("instrumentName") or data.get("symbol") or data.get("epic") or "").upper()
+        cfg = CAPITAL_UNIVERSE.get(symbol, {})
+        margin_pct = self._fallback_margin_pct(cfg.get("class", "unknown"))
+        notional = max(0.0, level * size)
+        return {
+            "deal_id": str(data.get("dealId") or data.get("dealReference") or raw_dict.get("dealId") or ""),
+            "symbol": symbol,
+            "epic": str(data.get("epic") or market.get("epic") or raw_dict.get("epic") or ""),
+            "direction": direction or "UNKNOWN",
+            "size": size,
+            "level": level,
+            "profit_level": float(data.get("profitLevel") or raw_dict.get("profitLevel") or 0.0),
+            "notional": notional,
+            "estimated_margin_required": notional * (margin_pct / 100.0),
+        }
+
+    def _fetch_capital_working_orders(self) -> List[Dict[str, Any]]:
+        client = getattr(self, "client", None)
+        if client is None or not hasattr(client, "get_working_orders"):
+            return []
+        try:
+            return [self._working_order_summary(item) for item in client.get_working_orders()]  # type: ignore[attr-defined]
+        except Exception:
+            return []
+
+    def _build_capital_pending_order_plan(
+        self,
+        symbol: str,
+        direction: str,
+        cfg: dict,
+        ticker: dict,
+        preflight: Dict[str, Any],
+        size: float,
+    ) -> Dict[str, Any]:
+        direction = str(direction or "BUY").upper()
+        level = self._capital_pending_order_level(direction, ticker, cfg)
+        margin_pct = float(preflight.get("margin_factor_pct", 0.0) or 0.0)
+        if margin_pct <= 0:
+            margin_pct = self._fallback_margin_pct(cfg.get("class", "unknown"))
+        notional = max(0.0, level * max(float(size or 0.0), 0.0))
+        estimated_margin = notional * (margin_pct / 100.0)
+        controls = self._capital_broker_exit_controls(
+            direction=direction,
+            entry_price=level,
+            size=size,
+            cfg=cfg,
+        )
+        blockers: List[str] = []
+        if not CAPITAL_PENDING_ORDER_PLANNING_ENABLED:
+            blockers.append("pending_order_planning_disabled")
+        if level <= 0:
+            blockers.append("pending_level_unavailable")
+        if size <= 0:
+            blockers.append("pending_size_unavailable")
+        if not controls.get("submit_kwargs", {}).get("profit_level"):
+            blockers.append("pending_take_profit_not_attached")
+        if str(preflight.get("market_status") or "UNKNOWN").upper() not in {"TRADEABLE", "OPEN", "ONLINE", "EDITS_ONLY"}:
+            blockers.append("market_not_tradeable_for_working_order")
+        return {
+            "schema_version": 1,
+            "enabled": CAPITAL_PENDING_ORDER_PLANNING_ENABLED,
+            "submit_enabled": CAPITAL_PENDING_ORDER_SUBMIT_ENABLED,
+            "symbol": symbol,
+            "direction": direction,
+            "order_type": "LIMIT",
+            "size": float(size or 0.0),
+            "level": level,
+            "profit_level": float(controls.get("profit_level") or 0.0),
+            "stop_level": float(controls.get("stop_level") or 0.0),
+            "broker_exit_controls": controls,
+            "notional": notional,
+            "margin_factor_pct": margin_pct,
+            "estimated_margin_required": estimated_margin,
+            "pullback_pct": float(cfg.get("pending_pullback_pct", CAPITAL_PENDING_PULLBACK_PCT) or CAPITAL_PENDING_PULLBACK_PCT),
+            "blockers": blockers,
+            "ready": not blockers,
+            "generated_at": datetime.now().isoformat(),
+        }
+
+    def _build_capital_pending_order_survival_envelope(
+        self,
+        planned_orders: List[Dict[str, Any]],
+        *,
+        existing_working_orders: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        capital = self.get_capital_snapshot()
+        equity = max(0.0, float(capital.get("equity_gbp", 0.0) or 0.0))
+        free = max(0.0, float(capital.get("free_gbp", 0.0) or 0.0))
+        existing = list(existing_working_orders if existing_working_orders is not None else self._fetch_capital_working_orders())
+        planned = [dict(order) for order in planned_orders if isinstance(order, dict)]
+
+        existing_margin = sum(float(order.get("estimated_margin_required", 0.0) or 0.0) for order in existing)
+        planned_margin = sum(float(order.get("estimated_margin_required", 0.0) or 0.0) for order in planned)
+        planned_notional = sum(float(order.get("notional", 0.0) or 0.0) for order in planned)
+        pending_count_after = len(existing) + len(planned)
+        symbol_counts: Dict[str, int] = {}
+        direction_counts: Dict[str, int] = {}
+        stress_loss_if_all_fill = 0.0
+        for order in existing + planned:
+            symbol = str(order.get("symbol") or "").upper()
+            direction = str(order.get("direction") or "UNKNOWN").upper()
+            if symbol:
+                symbol_counts[symbol] = symbol_counts.get(symbol, 0) + 1
+            direction_counts[direction] = direction_counts.get(direction, 0) + 1
+            cfg = CAPITAL_UNIVERSE.get(symbol, {})
+            stress_loss_if_all_fill += float(order.get("notional", 0.0) or 0.0) * (
+                self._stress_move_pct(cfg.get("class", "unknown"), cfg) / 100.0
+            )
+
+        base = self._build_capital_risk_envelope()
+        reserve_required = max(CAPITAL_MIN_SURVIVAL_BUFFER_GBP, equity * max(0.0, CAPITAL_FREE_CASH_RESERVE_PCT))
+        pending_margin_budget = free * max(0.0, CAPITAL_PENDING_MARGIN_BUDGET_PCT)
+        stress_buffer_after_all_fill = (
+            float(base.get("stress_buffer_before_gbp", 0.0) or 0.0)
+            - existing_margin
+            - planned_margin
+            - stress_loss_if_all_fill
+        )
+        blockers: List[str] = []
+        if not CAPITAL_PENDING_ORDER_PLANNING_ENABLED:
+            blockers.append("pending_order_planning_disabled")
+        if not CAPITAL_PENDING_ORDER_SUBMIT_ENABLED:
+            blockers.append("pending_order_submission_disabled")
+        if equity <= 0 or free <= 0:
+            blockers.append("capital_account_balance_unavailable")
+        if pending_count_after > max(0, CAPITAL_MAX_PENDING_WORKING_ORDERS):
+            blockers.append("max_pending_working_orders")
+        for symbol, count in symbol_counts.items():
+            if count > max(1, CAPITAL_MAX_PENDING_PER_SYMBOL):
+                blockers.append(f"max_pending_per_symbol:{symbol}")
+        if planned_margin + existing_margin > pending_margin_budget:
+            blockers.append("pending_margin_budget_limit")
+        if free - reserve_required - existing_margin - planned_margin < 0:
+            blockers.append("reserve_buffer_would_be_breached_by_pending_orders")
+        if stress_buffer_after_all_fill < 0:
+            blockers.append("stress_buffer_negative_if_all_pending_fill")
+        for order in planned:
+            for blocker in order.get("blockers", []) or []:
+                blockers.append(str(blocker))
+        blockers = list(dict.fromkeys(blockers))
+        envelope = {
+            "schema_version": 1,
+            "enabled": CAPITAL_PENDING_ORDER_PLANNING_ENABLED,
+            "submit_enabled": CAPITAL_PENDING_ORDER_SUBMIT_ENABLED,
+            "mode": "all_pending_fill_survival_check",
+            "equity_gbp": equity,
+            "free_gbp": free,
+            "reserve_required_gbp": reserve_required,
+            "existing_working_order_count": len(existing),
+            "planned_order_count": len(planned),
+            "pending_count_after": pending_count_after,
+            "max_pending_working_orders": CAPITAL_MAX_PENDING_WORKING_ORDERS,
+            "max_pending_per_symbol": CAPITAL_MAX_PENDING_PER_SYMBOL,
+            "existing_pending_margin_gbp": existing_margin,
+            "planned_pending_margin_gbp": planned_margin,
+            "planned_pending_notional_gbp": planned_notional,
+            "pending_margin_budget_gbp": pending_margin_budget,
+            "stress_loss_if_all_pending_fill_gbp": stress_loss_if_all_fill,
+            "stress_buffer_after_all_pending_fill_gbp": stress_buffer_after_all_fill,
+            "symbol_counts": symbol_counts,
+            "direction_counts": direction_counts,
+            "planned_orders": planned[-8:],
+            "existing_working_orders": existing[-8:],
+            "can_submit_pending_orders": not blockers,
+            "blocked": bool(blockers),
+            "blockers": blockers,
+            "generated_at": datetime.now().isoformat(),
+        }
+        self._capital_pending_order_envelope = envelope
+        return envelope
+
+    def _build_capital_pending_order_context(
+        self,
+        symbol: str,
+        direction: str,
+        cfg: dict,
+        ticker: dict,
+        preflight: Dict[str, Any],
+        size: float,
+    ) -> Dict[str, Any]:
+        plan = self._build_capital_pending_order_plan(symbol, direction, cfg, ticker, preflight, size)
+        envelope = self._build_capital_pending_order_survival_envelope([plan])
+        return {
+            "schema_version": 1,
+            "plan": plan,
+            "envelope": envelope,
+            "ready_to_submit": bool(plan.get("ready") and envelope.get("can_submit_pending_orders")),
+        }
+
+    def _submit_capital_pending_order(self, plan: Dict[str, Any], envelope: Dict[str, Any]) -> Dict[str, Any]:
+        client = getattr(self, "client", None)
+        if client is None or not hasattr(client, "place_working_order"):
+            return {"ok": False, "reason": "capital_client_missing_working_order_route"}
+        if not bool(envelope.get("can_submit_pending_orders")):
+            return {"ok": False, "reason": "pending_survival_envelope_blocked", "envelope": envelope}
+        controls = plan.get("broker_exit_controls", {}) if isinstance(plan.get("broker_exit_controls"), dict) else {}
+        submit_kwargs = dict(controls.get("submit_kwargs", {}) or {})
+        try:
+            result = client.place_working_order(  # type: ignore[attr-defined]
+                plan.get("symbol"),
+                plan.get("direction"),
+                float(plan.get("size") or 0.0),
+                float(plan.get("level") or 0.0),
+                order_type=str(plan.get("order_type") or "LIMIT"),
+                **submit_kwargs,
+            )
+        except Exception as exc:
+            result = {"rejected": True, "error": "exception", "reason": str(exc)}
+        submit = {
+            "ok": not bool(isinstance(result, dict) and (result.get("rejected") or result.get("error"))),
+            "result": result,
+            "plan": plan,
+            "envelope": envelope,
+            "generated_at": datetime.now().isoformat(),
+        }
+        self._capital_last_working_order_submit = submit
+        return submit
+
+    def _risk_sized_candidate(
+        self,
+        symbol: str,
+        direction: str,
+        cfg: dict,
+        ticker: dict,
+        preflight: Dict[str, Any],
+        requested_size: float,
+    ) -> Tuple[dict, float, Dict[str, Any], Dict[str, Any]]:
+        price = float(preflight.get("price") or ticker.get("price") or ticker.get("ask") or ticker.get("bid") or 0.0)
+        candidate = {
+            "symbol": symbol,
+            "direction": direction,
+            "size": requested_size,
+            "price": price,
+            "asset_class": cfg.get("class", "unknown"),
+            "margin_factor_pct": float(preflight.get("margin_factor_pct", 0.0) or 0.0),
+            "estimated_margin_required": float(preflight.get("estimated_margin_required", 0.0) or 0.0),
+            "cfg": dict(cfg),
+        }
+        envelope = self._build_capital_risk_envelope(candidate=candidate)
+        if envelope.get("new_entries_allowed"):
+            return dict(cfg), requested_size, preflight, envelope
+
+        minimum_size = float(preflight.get("minimum_deal_size", 0.0) or 0.0)
+        floor_size = max(minimum_size, requested_size * 0.10)
+        if floor_size <= 0 or floor_size >= requested_size:
+            return dict(cfg), requested_size, preflight, envelope
+
+        best_size = 0.0
+        best_preflight: Dict[str, Any] = {}
+        best_envelope: Dict[str, Any] = {}
+        low, high = floor_size, requested_size
+        for _ in range(12):
+            mid = (low + high) / 2.0
+            scaled = self._scaled_preflight(preflight, mid)
+            test_candidate = dict(candidate)
+            test_candidate["size"] = mid
+            test_candidate["estimated_margin_required"] = float(scaled.get("estimated_margin_required", 0.0) or 0.0)
+            test_envelope = self._build_capital_risk_envelope(candidate=test_candidate)
+            if test_envelope.get("new_entries_allowed"):
+                best_size = mid
+                best_preflight = scaled
+                best_envelope = test_envelope
+                low = mid
+            else:
+                high = mid
+        if best_size >= floor_size and best_envelope:
+            adjusted = dict(cfg)
+            adjusted["size"] = best_size
+            best_envelope["downsized_from"] = requested_size
+            best_envelope["downsized_to"] = best_size
+            return adjusted, best_size, best_preflight, best_envelope
+        return dict(cfg), requested_size, preflight, envelope
+
+    def _central_beat_signal_for_symbol(self, symbol: str) -> Dict[str, Any]:
+        central_symbols = getattr(self, "_central_beat_symbols", {}) or {}
+        canon = self._canonical_symbol(symbol)
+        aliases = {
+            "GOLD": ["GOLD", "XAUUSD", "GC", "GCUSD"],
+            "SILVER": ["SILVER", "XAGUSD", "SI", "SIUSD"],
+            "OILCRUDE": ["OILCRUDE", "OIL", "CL", "CLUSD", "USOIL"],
+            "NATURALGAS": ["NATURALGAS", "NG", "NGUSD"],
+        }
+        for key in [symbol, canon, *aliases.get(canon, [])]:
+            if key in central_symbols and isinstance(central_symbols.get(key), dict):
+                return dict(central_symbols.get(key) or {})
+            key_canon = self._canonical_symbol(key)
+            for raw_key, value in central_symbols.items():
+                if self._canonical_symbol(raw_key) == key_canon and isinstance(value, dict):
+                    return dict(value)
+        return {}
+
+    def _build_unified_waveform_check(self, symbol: str, direction: str, candidate: Dict[str, Any]) -> Dict[str, Any]:
+        direction = str(direction or "BUY").upper()
+        central_signal = self._central_beat_signal_for_symbol(symbol)
+        central_regime = getattr(self, "_central_beat_regime", {}) or {}
+        blockers: List[str] = []
+        confirmations: List[str] = []
+        contradictions: List[str] = []
+        if central_signal:
+            central_side = str(central_signal.get("side") or "").upper()
+            central_strength = float(central_signal.get("strength", 0.0) or 0.0)
+            support_count = int(central_signal.get("support_count", 0) or 0)
+            if central_side == direction:
+                confirmations.append("central_beat_symbol_alignment")
+            elif central_side in {"BUY", "SELL"} and central_strength >= 0.35 and support_count >= 2:
+                contradictions.append("central_beat_symbol_contradiction")
+        if isinstance(central_regime, dict) and central_regime:
+            regime_bias = str(central_regime.get("bias") or "").upper()
+            regime_conf = float(central_regime.get("confidence", 0.0) or 0.0)
+            if regime_bias == direction and regime_conf >= 0.35:
+                confirmations.append("central_beat_regime_alignment")
+            elif regime_bias in {"BUY", "SELL"} and regime_bias != direction and regime_conf >= 0.75:
+                contradictions.append("central_beat_regime_contradiction")
+
+        timeline_action = str(candidate.get("timeline_action") or "").lower()
+        if timeline_action:
+            expected = "buy" if direction == "BUY" else "sell"
+            confidence = float(candidate.get("timeline_confidence", 0.0) or 0.0)
+            if timeline_action == expected:
+                confirmations.append("timeline_oracle_alignment")
+            elif timeline_action not in {"hold", "wait"} and confidence >= 0.65:
+                contradictions.append("timeline_oracle_contradiction")
+        fusion_coherence = float(candidate.get("fusion_global_coherence", 0.0) or 0.0)
+        if fusion_coherence >= 0.4:
+            confirmations.append("harmonic_fusion_coherence")
+        if CAPITAL_REQUIRE_CROSS_EXCHANGE_CONFIRMATION and not confirmations:
+            confirmations.append("local_capital_signal_no_cross_contradiction")
+        if contradictions:
+            blockers.extend(contradictions)
+        check = {
+            "schema_version": 1,
+            "symbol": symbol,
+            "direction": direction,
+            "ok": not blockers,
+            "confirmations": confirmations,
+            "contradictions": contradictions,
+            "blockers": blockers,
+            "central_signal": central_signal,
+            "central_regime": central_regime if isinstance(central_regime, dict) else {},
+            "candidate_score": float(candidate.get("score", 0.0) or 0.0),
+            "timeline_action": timeline_action,
+            "timeline_confidence": float(candidate.get("timeline_confidence", 0.0) or 0.0),
+            "fusion_global_coherence": fusion_coherence,
+            "generated_at": datetime.now().isoformat(),
+        }
+        self._capital_unified_waveform_check = check
+        return check
+
+    def _candidate_quality(self, symbol: str, direction: str, cfg: dict, preflight: Dict[str, Any]) -> Dict[str, Any]:
+        candidate = self._candidate_lookup(symbol, direction)
+        score = float(candidate.get("score", 0.0) or 0.0)
+        self_conf = float(candidate.get("self_confidence", 0.0) or 0.0)
+        timeline_conf = float(candidate.get("timeline_confidence", 0.0) or 0.0)
+        fusion_conf = float(candidate.get("fusion_global_coherence", 0.0) or 0.0)
+        confidence = max(min(1.0, score / 10.0), self_conf, timeline_conf, fusion_conf)
+        eta = float(candidate.get("eta_to_target", 0.0) or 0.0)
+        if eta <= 0:
+            price = float(preflight.get("price", 0.0) or 0.0)
+            size = float(preflight.get("requested_size", cfg.get("size", 0.0)) or 0.0)
+            required_tp_pct = self._required_tp_pct_for_profit(price, size) if price > 0 and size > 0 else 999.0
+            change = abs(float(candidate.get("change_pct", 0.0) or 0.0))
+            eta = required_tp_pct / max(change, 0.01) if required_tp_pct > 0 else 999.0
+        expected_net = float(preflight.get("expected_net_profit", candidate.get("expected_net_profit", 0.0)) or 0.0)
+        equity = float(self.get_capital_snapshot().get("equity_gbp", 0.0) or 0.0)
+        risk_adjusted = confidence / max(eta, 0.10)
+        if equity > 0:
+            risk_adjusted += max(0.0, expected_net) / equity
+        return {
+            "symbol": symbol,
+            "direction": direction,
+            "score": score,
+            "confidence": max(0.0, min(1.0, confidence)),
+            "eta_to_target": eta,
+            "expected_net_profit_gbp": expected_net,
+            "risk_adjusted_score": risk_adjusted,
+            "source_candidate": candidate,
+        }
+
+    def _build_confidence_ratchet_check(self, quality: Dict[str, Any]) -> Dict[str, Any]:
+        if not CAPITAL_CONFIDENCE_RATCHET_ENABLED:
+            check = {"enabled": False, "ok": True, "reason": "disabled", "quality": quality}
+            self._capital_confidence_ratchet = {**dict(getattr(self, "_capital_confidence_ratchet", {}) or {}), **check}
+            return check
+        last = dict(getattr(self, "_capital_confidence_ratchet", {}) or {}).get("last_live_candidate", {})
+        if not isinstance(last, dict) or not last:
+            check = {"enabled": True, "ok": True, "reason": "first_live_candidate", "quality": quality, "last_live_candidate": {}}
+            self._capital_confidence_ratchet = {**dict(getattr(self, "_capital_confidence_ratchet", {}) or {}), **check}
+            return check
+        conf = float(quality.get("confidence", 0.0) or 0.0)
+        eta = float(quality.get("eta_to_target", 999.0) or 999.0)
+        risk_score = float(quality.get("risk_adjusted_score", 0.0) or 0.0)
+        last_conf = float(last.get("confidence", 0.0) or 0.0)
+        last_eta = float(last.get("eta_to_target", 999.0) or 999.0)
+        last_risk = float(last.get("risk_adjusted_score", 0.0) or 0.0)
+        confidence_better = conf >= last_conf + CAPITAL_RATCHET_MIN_CONFIDENCE_DELTA
+        eta_better = eta <= last_eta * (1.0 - CAPITAL_RATCHET_ETA_IMPROVEMENT_PCT)
+        risk_better = risk_score >= last_risk + CAPITAL_RATCHET_MIN_RISK_ADJUSTED_DELTA
+        ok = bool(confidence_better or eta_better or risk_better)
+        reasons = []
+        if confidence_better:
+            reasons.append("confidence_improved")
+        if eta_better:
+            reasons.append("eta_improved")
+        if risk_better:
+            reasons.append("risk_adjusted_score_improved")
+        if not reasons:
+            reasons.append("weaker_than_previous_live_candidate")
+        check = {
+            "enabled": True,
+            "ok": ok,
+            "reason": ",".join(reasons),
+            "quality": quality,
+            "last_live_candidate": last,
+            "thresholds": {
+                "confidence_delta": CAPITAL_RATCHET_MIN_CONFIDENCE_DELTA,
+                "eta_improvement_pct": CAPITAL_RATCHET_ETA_IMPROVEMENT_PCT,
+                "risk_adjusted_delta": CAPITAL_RATCHET_MIN_RISK_ADJUSTED_DELTA,
+            },
+        }
+        self._capital_confidence_ratchet = {**dict(getattr(self, "_capital_confidence_ratchet", {}) or {}), **check}
+        return check
+
+    def _commit_confidence_ratchet(self, quality: Dict[str, Any], deal_id: str) -> None:
+        if not CAPITAL_CONFIDENCE_RATCHET_ENABLED:
+            return
+        committed = dict(quality)
+        committed["deal_id"] = deal_id
+        committed["committed_at"] = datetime.now().isoformat()
+        self._capital_confidence_ratchet = {
+            "schema_version": 1,
+            "enabled": True,
+            "last_live_candidate": committed,
+            "last_reset_reason": "",
+            "ok": True,
+            "reason": "committed_live_candidate",
+        }
+
+    def _build_capital_trade_evidence(
+        self,
+        *,
+        symbol: str,
+        direction: str,
+        size: float,
+        cfg: dict,
+        ticker: dict,
+        preflight: Dict[str, Any],
+        envelope: Dict[str, Any],
+        waveform: Dict[str, Any],
+        ratchet: Dict[str, Any],
+        action: str,
+    ) -> Dict[str, Any]:
+        candidate = self._candidate_lookup(symbol, direction)
+        evidence = {
+            "schema_version": 1,
+            "who": {
+                "strategy": "CapitalCFDTrader",
+                "agent": "capital_wave_validated_live_expansion",
+                "cognitive_layer": "HNC/Auris/Capital risk envelope",
+                "signer": "capital_confidence_ratchet",
+            },
+            "what": {
+                "symbol": symbol,
+                "direction": direction,
+                "size": size,
+                "asset_class": cfg.get("class", "unknown"),
+                "price": float(preflight.get("price") or ticker.get("price") or 0.0),
+                "expected_net_profit_gbp": float(preflight.get("expected_net_profit", 0.0) or 0.0),
+                "round_trip_cost_gbp": float(preflight.get("round_trip_cost", 0.0) or 0.0),
+                "estimated_margin_required_gbp": float(preflight.get("estimated_margin_required", 0.0) or 0.0),
+            },
+            "where": {
+                "primary_exchange": "capital",
+                "cross_market_evidence": waveform,
+                "candidate_source": candidate,
+            },
+            "when": {
+                "generated_at": datetime.now().isoformat(),
+                "market_status": preflight.get("market_status", "UNKNOWN"),
+                "ticker_has_live_bid_ask": self._has_live_reading(ticker),
+            },
+            "how": {
+                "risk_envelope": envelope,
+                "confidence_ratchet": ratchet,
+                "preflight": preflight,
+            },
+            "act": {
+                "requested_action": action,
+                "approved": bool(envelope.get("new_entries_allowed") and waveform.get("ok") and ratchet.get("ok")),
+                "blockers": list(envelope.get("blockers", [])) + list(waveform.get("blockers", [])) + ([] if ratchet.get("ok") else [str(ratchet.get("reason") or "ratchet_blocked")]),
+            },
+        }
+        if CAPITAL_REQUIRE_WHO_WHAT_WHERE_WHEN_HOW:
+            missing = [key for key in ("who", "what", "where", "when", "how", "act") if not evidence.get(key)]
+            evidence["act"]["evidence_complete"] = not missing
+            evidence["act"]["missing_evidence_sections"] = missing
+        self._capital_trade_evidence = evidence
+        return evidence
+
+    def _prepare_live_trade_candidate(
+        self,
+        symbol: str,
+        direction: str,
+        cfg: dict,
+        ticker: dict,
+        requested_size: float,
+        *,
+        action: str,
+    ) -> Dict[str, Any]:
+        working_cfg = {**dict(cfg), "direction": direction, "size": requested_size}
+        preflight = self._capital_preflight(symbol, requested_size, ticker, working_cfg)
+        if (not preflight.get("ok")) and "below Capital minimum" in str(preflight.get("reason") or ""):
+            adjusted = self._sized_cfg_from_preflight(working_cfg, preflight)
+            if adjusted is not None:
+                working_cfg = {**dict(adjusted), "direction": direction}
+                requested_size = float(working_cfg.get("size", requested_size) or requested_size)
+                preflight = self._capital_preflight(symbol, requested_size, ticker, working_cfg)
+        if not self._preflight_allows_slot_fill(preflight):
+            envelope = self._build_capital_risk_envelope(candidate={
+                "symbol": symbol,
+                "direction": direction,
+                "size": requested_size,
+                "price": float(preflight.get("price") or ticker.get("price") or 0.0),
+                "asset_class": working_cfg.get("class", "unknown"),
+                "margin_factor_pct": float(preflight.get("margin_factor_pct", 0.0) or 0.0),
+                "estimated_margin_required": float(preflight.get("estimated_margin_required", 0.0) or 0.0),
+                "cfg": working_cfg,
+            })
+            quality = self._candidate_quality(symbol, direction, working_cfg, preflight)
+            waveform = self._build_unified_waveform_check(symbol, direction, quality.get("source_candidate", {}))
+            ratchet = self._build_confidence_ratchet_check(quality)
+            evidence = self._build_capital_trade_evidence(
+                symbol=symbol,
+                direction=direction,
+                size=requested_size,
+                cfg=working_cfg,
+                ticker=ticker,
+                preflight=preflight,
+                envelope=envelope,
+                waveform=waveform,
+                ratchet=ratchet,
+                action=action,
+            )
+            pending_context = self._build_capital_pending_order_context(symbol, direction, working_cfg, ticker, preflight, requested_size)
+            evidence.setdefault("how", {})["pending_order_survival"] = pending_context.get("envelope", {})
+            evidence.setdefault("act", {})["pending_order_plan"] = pending_context.get("plan", {})
+            evidence.setdefault("act", {})["pending_order_ready_to_submit"] = bool(pending_context.get("ready_to_submit"))
+            self._capital_trade_evidence = evidence
+            return {"ok": False, "reason": str(preflight.get("reason") or "preflight_failed"), "cfg": working_cfg, "size": requested_size, "preflight": preflight, "envelope": envelope, "waveform": waveform, "ratchet": ratchet, "evidence": evidence}
+
+        working_cfg, size, preflight, envelope = self._risk_sized_candidate(symbol, direction, working_cfg, ticker, preflight, requested_size)
+        quality = self._candidate_quality(symbol, direction, working_cfg, preflight)
+        waveform = self._build_unified_waveform_check(symbol, direction, quality.get("source_candidate", {}))
+        ratchet = self._build_confidence_ratchet_check(quality)
+        evidence = self._build_capital_trade_evidence(
+            symbol=symbol,
+            direction=direction,
+            size=size,
+            cfg=working_cfg,
+            ticker=ticker,
+            preflight=preflight,
+            envelope=envelope,
+            waveform=waveform,
+            ratchet=ratchet,
+            action=action,
+        )
+        pending_context = self._build_capital_pending_order_context(symbol, direction, working_cfg, ticker, preflight, size)
+        evidence.setdefault("how", {})["pending_order_survival"] = pending_context.get("envelope", {})
+        evidence.setdefault("act", {})["pending_order_plan"] = pending_context.get("plan", {})
+        evidence.setdefault("act", {})["pending_order_ready_to_submit"] = bool(pending_context.get("ready_to_submit"))
+        self._capital_trade_evidence = evidence
+        blockers = list(envelope.get("blockers", [])) + list(waveform.get("blockers", []))
+        if not ratchet.get("ok"):
+            blockers.append(str(ratchet.get("reason") or "confidence_ratchet_blocked"))
+        return {
+            "ok": bool(envelope.get("new_entries_allowed") and waveform.get("ok") and ratchet.get("ok")),
+            "reason": "ok" if not blockers else ",".join(dict.fromkeys(blockers)),
+            "cfg": working_cfg,
+            "size": size,
+            "preflight": preflight,
+            "envelope": envelope,
+            "waveform": waveform,
+            "ratchet": ratchet,
+            "quality": quality,
+            "evidence": evidence,
+        }
+
     def _sized_cfg_from_preflight(self, cfg: dict, preflight: Dict[str, Any]) -> Optional[dict]:
         """Raise size to Capital's minimum when that is affordable and otherwise valid."""
         adjusted = dict(cfg)
@@ -2318,6 +3314,7 @@ class CapitalCFDTrader:
             return False
         if bool(preflight.get("ok")):
             return True
+        return False
         reason = str(preflight.get("reason") or "").lower()
         # Allow estimated-margin failures: the margin estimate uses the instrument's
         # native currency (e.g. USD) but available_balance is in GBP — no FX conversion
@@ -2393,6 +3390,10 @@ class CapitalCFDTrader:
                 "direction": direction,
                 "occupied": open_pos is not None,
                 "hunting": open_pos is None,
+                "open_count": sum(1 for pos in self.positions if str(pos.direction or "").upper() == direction),
+                "dynamic_expansion": CAPITAL_ALLOW_DYNAMIC_LANE_EXPANSION,
+                "max_positions": int(CFD_CONFIG["max_positions"]),
+                "risk_new_entries_allowed": bool(dict(getattr(self, "_capital_risk_envelope", {}) or {}).get("new_entries_allowed", True)),
                 "position_symbol": getattr(open_pos, "symbol", ""),
                 "validated_shadow_symbol": getattr(validated_shadow, "symbol", ""),
                 "queued_shadow_symbol": getattr(queued_shadow, "symbol", ""),
@@ -2409,6 +3410,118 @@ class CapitalCFDTrader:
         self._lane_snapshot = lanes
         return lanes
 
+    def _candidate_shadow_confidence(self, item: Dict[str, Any]) -> float:
+        score_conf = max(0.0, min(1.0, float(item.get("score", 0.0) or 0.0) / 10.0))
+        values = [
+            score_conf,
+            float(item.get("self_confidence", 0.0) or 0.0),
+            float(item.get("timeline_confidence", 0.0) or 0.0),
+            float(item.get("fusion_global_coherence", 0.0) or 0.0),
+            float(item.get("brain_coherence", 0.0) or 0.0),
+        ]
+        return max(0.0, min(1.0, max(values)))
+
+    def _shadow_revenue_profile(
+        self,
+        item: Dict[str, Any],
+        *,
+        quick_anchor: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        expected_net = float(item.get("expected_net_profit", 0.0) or 0.0)
+        eta = float(item.get("eta_to_target", 999.0) or 999.0)
+        if eta <= 0:
+            eta = 999.0
+        confidence = self._candidate_shadow_confidence(item)
+        take_home = expected_net * confidence
+        velocity = take_home / max(eta, 0.10)
+        deadman_ready = bool(CAPITAL_DEADMAN_ENABLED and (CFD_FLAGS.get("profit_only_closes") or CAPITAL_FAST_PROFIT_CAPTURE_ENABLED))
+        blockers: List[str] = []
+        reasons: List[str] = []
+        posture = "bird_in_hand_fast_take_home"
+        selectable = True
+
+        if expected_net <= 0:
+            blockers.append("expected_take_home_not_positive")
+            selectable = False
+        if not deadman_ready:
+            blockers.append("profit_capture_deadman_not_ready")
+            selectable = False
+
+        quick_eta = float((quick_anchor or {}).get("eta_to_target", eta) or eta)
+        quick_take_home = float((quick_anchor or {}).get("certainty_adjusted_take_home_gbp", take_home) or take_home)
+        longer_than_anchor = bool(quick_anchor and eta > quick_eta * CAPITAL_SHADOW_QUICK_ETA_ANCHOR_MULTIPLE)
+        take_home_edge = take_home / max(quick_take_home, 0.000001)
+        if longer_than_anchor:
+            if (
+                take_home_edge >= CAPITAL_SHADOW_LONG_ETA_TAKE_HOME_MULTIPLIER
+                and confidence >= CAPITAL_SHADOW_LONG_ETA_CONFIDENCE_FLOOR
+            ):
+                posture = "two_birds_caged_take_home_edge"
+                reasons.append("long_eta_allowed_take_home_and_certainty_edge")
+            else:
+                posture = "bird_in_hand_preferred_over_uncertain_long_eta"
+                blockers.append("long_eta_lacks_take_home_certainty_edge")
+                selectable = False
+        elif quick_anchor:
+            reasons.append("quick_take_home_anchor")
+
+        utility = velocity if selectable else 0.0
+        return {
+            "schema_version": 1,
+            "policy": "bird_in_hand_vs_two_in_bush",
+            "posture": posture,
+            "expected_net_profit_gbp": expected_net,
+            "confidence": confidence,
+            "certainty_adjusted_take_home_gbp": take_home,
+            "eta_to_target": eta,
+            "quick_anchor_eta": quick_eta,
+            "quick_anchor_take_home_gbp": quick_take_home,
+            "take_home_edge_ratio": take_home_edge,
+            "revenue_velocity_gbp_per_eta": velocity,
+            "shadow_utility_score": utility,
+            "deadman_ready": deadman_ready,
+            "profit_capture_required": True,
+            "shadow_selectable": selectable,
+            "blockers": blockers,
+            "reasons": reasons or (["fastest_reliable_net_profit"] if selectable else blockers),
+        }
+
+    def _apply_shadow_revenue_priority(self, scored: List[Dict[str, Any]]) -> None:
+        if not CAPITAL_SHADOW_BIRD_IN_HAND_ENABLED:
+            return
+        eligible_profiles: List[Dict[str, Any]] = []
+        for item in scored:
+            if float(item.get("score", 0.0) or 0.0) <= 0:
+                continue
+            profile = self._shadow_revenue_profile(item)
+            if profile.get("shadow_selectable"):
+                eligible_profiles.append(profile)
+        quick_anchor = None
+        if eligible_profiles:
+            quick_anchor = min(
+                eligible_profiles,
+                key=lambda profile: (
+                    float(profile.get("eta_to_target", 999.0) or 999.0),
+                    -float(profile.get("certainty_adjusted_take_home_gbp", 0.0) or 0.0),
+                ),
+            )
+        for item in scored:
+            if float(item.get("score", 0.0) or 0.0) <= 0:
+                continue
+            profile = self._shadow_revenue_profile(item, quick_anchor=quick_anchor)
+            item["shadow_revenue_priority"] = profile
+            item["shadow_utility_score"] = float(profile.get("shadow_utility_score", 0.0) or 0.0)
+            item["shadow_selectable"] = bool(profile.get("shadow_selectable"))
+            if not profile.get("shadow_selectable"):
+                item["score"] = 0.0
+                item["hft_reason"] = str(profile.get("posture") or "shadow_revenue_priority_block")
+                continue
+            item["score"] = float(item.get("score", 0.0) or 0.0) + min(
+                3.0,
+                max(0.0, float(profile.get("shadow_utility_score", 0.0) or 0.0))
+                * CAPITAL_SHADOW_UTILITY_SCORE_MULTIPLIER,
+            )
+
     def _build_swarm_snapshot(self, scored: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Build a lightweight multi-agent consensus over ranked Capital candidates."""
         ranked = [
@@ -2416,7 +3529,13 @@ class CapitalCFDTrader:
             for item in scored
             if float(item.get("score", 0.0) or 0.0) > 0
         ]
-        ranked.sort(key=lambda item: float(item.get("score", 0.0) or 0.0), reverse=True)
+        ranked.sort(
+            key=lambda item: (
+                float(item.get("shadow_utility_score", 0.0) or 0.0),
+                float(item.get("score", 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
         if not ranked:
             return {"enabled": True, "leader": {}, "votes": [], "ranked": []}
 
@@ -2512,6 +3631,8 @@ class CapitalCFDTrader:
                 "expected_net_profit": float(source.get("expected_net_profit", 0.0) or 0.0),
                 "spread_pct": float(source.get("spread_pct", 0.0) or 0.0),
                 "eta_to_target": float(source.get("eta_to_target", 0.0) or 0.0),
+                "shadow_utility_score": float(source.get("shadow_utility_score", 0.0) or 0.0),
+                "shadow_revenue_priority": dict(source.get("shadow_revenue_priority", {}) or {}),
             })
 
         leader = dict(ranked_consensus[0]) if ranked_consensus else {}
@@ -2580,14 +3701,15 @@ class CapitalCFDTrader:
             self._self_confidence_snapshot = snapshot
             return dict(snapshot)
 
-        opened = float((self.stats or {}).get("trades_opened", 0.0) or 0.0)
+        stats = getattr(self, "stats", {}) or {}
+        opened = float(stats.get("trades_opened", 0.0) or 0.0)
         validated = float(getattr(self, "_shadow_validated_count", 0) or 0.0)
         failed = float(getattr(self, "_shadow_failed_count", 0) or 0.0)
         completed_cycles = validated + failed
         if completed_cycles > 0:
             recent_success_ratio = validated / completed_cycles
         elif opened > 0:
-            wins = float((self.stats or {}).get("winning_trades", 0.0) or 0.0)
+            wins = float(stats.get("winning_trades", 0.0) or 0.0)
             recent_success_ratio = wins / max(opened, 1.0)
         else:
             recent_success_ratio = 0.5
@@ -2633,10 +3755,11 @@ class CapitalCFDTrader:
     def _compute_growth_metrics(self) -> Dict[str, Any]:
         runtime_secs = max(1.0, time.time() - float(getattr(self, "start_time", time.time()) or time.time()))
         runtime_hours = runtime_secs / 3600.0
-        pnl_gbp = float((self.stats or {}).get("total_pnl_gbp", 0.0) or 0.0)
-        trades_closed = int((self.stats or {}).get("trades_closed", 0.0) or 0.0)
-        wins = int((self.stats or {}).get("winning_trades", 0.0) or 0.0)
-        losses = int((self.stats or {}).get("losing_trades", 0.0) or 0.0)
+        stats = getattr(self, "stats", {}) or {}
+        pnl_gbp = float(stats.get("total_pnl_gbp", 0.0) or 0.0)
+        trades_closed = int(stats.get("trades_closed", 0.0) or 0.0)
+        wins = int(stats.get("winning_trades", 0.0) or 0.0)
+        losses = int(stats.get("losing_trades", 0.0) or 0.0)
         equity_now = float(self.get_capital_snapshot().get("equity_gbp", 0.0) or 0.0)
         equity_start = float(getattr(self, "starting_equity_gbp", 0.0) or 0.0)
         equity_growth_pct = ((equity_now - equity_start) / equity_start * 100.0) if equity_start > 0 else 0.0
@@ -2740,11 +3863,13 @@ class CapitalCFDTrader:
         timeline_confidence = float(latest_target.get("timeline_confidence", 0.0) or 0.0)
         fusion_coherence = float(latest_target.get("fusion_global_coherence", 0.0) or 0.0)
         brain_coherence = 0.0
+        live_candidate: Dict[str, Any] = {}
         for candidate in getattr(self, "_latest_candidate_snapshot", []):
             if (
                 self._canonical_symbol(candidate.get("symbol")) == self._canonical_symbol(shadow.symbol)
                 and str(candidate.get("direction") or "").upper() == direction
             ):
+                live_candidate = dict(candidate)
                 brain_coherence = float(candidate.get("brain_coherence", 0.0) or 0.0)
                 break
 
@@ -2763,6 +3888,17 @@ class CapitalCFDTrader:
             "brain_alignment": brain_coherence >= 0.10,
             "probability_matrix": probability_ok,
         }
+        revenue_profile = dict((shadow.decision_evidence or {}).get("shadow_revenue_priority", {}) or {})
+        live_candidate_has_revenue = bool(
+            live_candidate.get("shadow_revenue_priority")
+            or "expected_net_profit" in live_candidate
+            or "eta_to_target" in live_candidate
+        )
+        if live_candidate_has_revenue:
+            revenue_profile = self._shadow_revenue_profile(live_candidate)
+        evidence_attached = bool(shadow.decision_evidence or live_candidate_has_revenue)
+        checks["bird_in_hand_revenue_logic"] = bool(revenue_profile.get("shadow_selectable", True)) if evidence_attached else True
+        checks["profit_capture_deadman"] = bool(revenue_profile.get("deadman_ready", shadow.deadman_ready)) if evidence_attached else True
         confidence = self._compute_self_confidence({
             "brain_coherence": brain_coherence,
             "timeline_confidence": timeline_confidence,
@@ -2778,6 +3914,7 @@ class CapitalCFDTrader:
             "brain_coherence": brain_coherence,
             "probability": probability,
             "self_confidence": confidence,
+            "shadow_revenue_priority": revenue_profile,
             "history_lookback_days": CAPITAL_HISTORY_LOOKBACK_DAYS,
             "validation_window_secs": float(confidence.get("validation_window_secs", self.SHADOW_MIN_VALIDATE) or self.SHADOW_MIN_VALIDATE),
             "reason": "aligned" if ok else "gate_misaligned",
@@ -2789,7 +3926,7 @@ class CapitalCFDTrader:
             return False
         if counts is None:
             counts = self._direction_counts()
-        if counts.get(direction, 0) >= 1:
+        if not CAPITAL_ALLOW_DYNAMIC_LANE_EXPANSION and counts.get(direction, 0) >= 1:
             return False
         if self._cooldown_info(symbol, direction) is not None:
             return False
@@ -2855,7 +3992,15 @@ class CapitalCFDTrader:
 
         self._apply_hft_analysis(scored)
         self._apply_intelligence_overlays(scored)
-        scored.sort(key=lambda item: float(item.get("score", 0.0) or 0.0), reverse=True)
+        self._apply_shadow_revenue_priority(scored)
+        scored.sort(
+            key=lambda item: (
+                bool(item.get("shadow_selectable", True)),
+                float(item.get("shadow_utility_score", 0.0) or 0.0),
+                float(item.get("score", 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
         self._latest_candidate_snapshot = scored[:7]
         self._swarm_snapshot = self._build_swarm_snapshot(scored)
 
@@ -2910,6 +4055,8 @@ class CapitalCFDTrader:
                         "orchestrator_reason": str(candidate.get("orchestrator_reason", "") or ""),
                         "swarm_score": float(swarm_leader.get("swarm_score", 0.0) or 0.0),
                         "swarm_votes": int(swarm_leader.get("votes", 0) or 0),
+                        "shadow_utility_score": float(candidate.get("shadow_utility_score", 0.0) or 0.0),
+                        "shadow_revenue_priority": dict(candidate.get("shadow_revenue_priority", {}) or {}),
                     })
                     break
             self._feed_unified_decision_engine(
@@ -2932,7 +4079,7 @@ class CapitalCFDTrader:
         opened_any = False
         direction_counts = self._direction_counts()
         for direction in ("BUY", "SELL"):
-            if direction_counts.get(direction, 0) >= 1:
+            if not CAPITAL_ALLOW_DYNAMIC_LANE_EXPANSION and direction_counts.get(direction, 0) >= 1:
                 continue
             candidates_ready = self._ranked_live_slot_candidates(direction)
             last_attempt = float(self._last_slot_fill_attempt.get(direction, 0.0) or 0.0)
@@ -3070,6 +4217,14 @@ class CapitalCFDTrader:
                 ordered_candidates.append(candidate_lookup[key])
         if not ordered_candidates:
             ordered_candidates = list(getattr(self, "_latest_candidate_snapshot", []) or [])
+            ordered_candidates.sort(
+                key=lambda item: (
+                    bool(item.get("shadow_selectable", True)),
+                    float(item.get("shadow_utility_score", 0.0) or 0.0),
+                    float(item.get("score", 0.0) or 0.0),
+                ),
+                reverse=True,
+            )
 
         for candidate in ordered_candidates:
             symbol = str(candidate.get("symbol") or "").upper()
@@ -3081,6 +4236,7 @@ class CapitalCFDTrader:
                 and cfg
                 and ticker
                 and float(candidate.get("score", 0.0) or 0.0) > 0
+                and bool(candidate.get("shadow_selectable", True))
                 and self._can_open_candidate(symbol, direction, direction_counts)
             ):
                 ranked.append((symbol, {**dict(cfg), "direction": direction}, ticker))
@@ -3108,10 +4264,18 @@ class CapitalCFDTrader:
         size = float(cfg.get("size", 0.0) or 0.0)
         target_move_pct = self._effective_tp_pct(price, size, cfg)
         score = 0.0
+        source_candidate: Dict[str, Any] = {}
         for candidate in self._latest_candidate_snapshot:
-            if self._canonical_symbol(candidate.get("symbol")) == self._canonical_symbol(symbol):
+            if (
+                self._canonical_symbol(candidate.get("symbol")) == self._canonical_symbol(symbol)
+                and str(candidate.get("direction") or "BUY").upper() == direction
+            ):
+                source_candidate = dict(candidate)
                 score = float(candidate.get("score", 0.0) or 0.0)
                 break
+        revenue_profile = dict(source_candidate.get("shadow_revenue_priority", {}) or {})
+        if not revenue_profile and source_candidate:
+            revenue_profile = self._shadow_revenue_profile(source_candidate)
         shadow = CFDShadowTrade(
             symbol=symbol,
             direction=direction,
@@ -3120,6 +4284,16 @@ class CapitalCFDTrader:
             entry_price=price,
             target_move_pct=max(target_move_pct, 0.0001),
             score=score,
+            expected_net_profit=float(source_candidate.get("expected_net_profit", 0.0) or 0.0),
+            eta_to_target=float(source_candidate.get("eta_to_target", 0.0) or 0.0),
+            shadow_utility_score=float(source_candidate.get("shadow_utility_score", 0.0) or 0.0),
+            deadman_ready=bool(revenue_profile.get("deadman_ready", True)),
+            decision_evidence={
+                "candidate": source_candidate,
+                "shadow_revenue_priority": revenue_profile,
+                "deadman_switch_required": True,
+                "profit_capture_policy": "positive_net_profit_only",
+            },
         )
         self.shadow_trades.append(shadow)
         self._append_promotion_event(
@@ -3132,6 +4306,10 @@ class CapitalCFDTrader:
                 "target_move_pct": shadow.target_move_pct,
                 "size": size,
                 "score": score,
+                "expected_net_profit": shadow.expected_net_profit,
+                "eta_to_target": shadow.eta_to_target,
+                "shadow_utility_score": shadow.shadow_utility_score,
+                "shadow_revenue_priority": revenue_profile,
             },
         )
         self._latest_monitor_line = (
@@ -3246,6 +4424,36 @@ class CapitalCFDTrader:
         base_size = float(cfg.get("size", 0.01) or 0.01)
         queen_sizing = float(cfg.get("queen_sizing", 1.0) or 1.0)
         size = max(base_size * 0.10, base_size * queen_sizing)  # floor at 10% of base
+        prepared = self._prepare_live_trade_candidate(
+            symbol,
+            direction,
+            dict(cfg),
+            ticker,
+            float(size),
+            action="open_live",
+        )
+        if not prepared.get("ok"):
+            prepared_preflight = prepared.get("preflight") if isinstance(prepared.get("preflight"), dict) else {}
+            if not bool(prepared_preflight.get("ok", True)):
+                self._latest_order_error = f"{symbol} preflight failed: {prepared.get('reason') or prepared_preflight.get('reason') or 'preflight_failed'}"
+            else:
+                self._latest_order_error = f"{symbol} live candidate blocked: {prepared.get('reason') or 'risk_or_waveform_failed'}"
+            self._write_exchange_trace({
+                "symbol": symbol,
+                "direction": direction,
+                "size": size,
+                "ticker": dict(ticker),
+                "preflight": prepared.get("preflight", {}),
+                "capital_risk_envelope": prepared.get("envelope", {}),
+                "capital_unified_waveform_check": prepared.get("waveform", {}),
+                "capital_confidence_ratchet": prepared.get("ratchet", {}),
+                "capital_trade_evidence": prepared.get("evidence", {}),
+                "validated": False,
+                "final_error": self._latest_order_error,
+            })
+            return None
+        cfg = dict(prepared.get("cfg") or cfg)
+        size = float(prepared.get("size", size) or size)
         effective_tp_pct = self._effective_tp_pct(entry_price, size, cfg)
         if direction == "BUY":
             tp_price = entry_price * (1 + effective_tp_pct / 100)
@@ -3255,19 +4463,30 @@ class CapitalCFDTrader:
             sl_price = entry_price * (1 + cfg["sl_pct"] / 100)
 
         try:
-            preflight = self._capital_preflight(symbol, float(size), ticker, cfg)
+            preflight = dict(prepared.get("preflight") or {})
             trace_payload: Dict[str, Any] = {
                 "symbol": symbol,
                 "direction": direction,
                 "size": size,
                 "ticker": dict(ticker),
                 "preflight": preflight,
+                "capital_risk_envelope": prepared.get("envelope", {}),
+                "capital_unified_waveform_check": prepared.get("waveform", {}),
+                "capital_confidence_ratchet": prepared.get("ratchet", {}),
+                "capital_trade_evidence": prepared.get("evidence", {}),
                 "known_deal_ids_before": [],
                 "order_response": None,
                 "confirm_response": None,
                 "positions_snapshots": [],
                 "validated": False,
             }
+            broker_exit_controls = self._capital_broker_exit_controls(
+                direction=direction,
+                entry_price=entry_price,
+                size=size,
+                cfg=cfg,
+            )
+            trace_payload["broker_exit_controls"] = broker_exit_controls
             if not preflight.get("ok"):
                 reason = str(preflight.get("reason") or "unknown").lower()
                 # Soft-fail: margin estimate uses instrument native currency (e.g. USD)
@@ -3287,7 +4506,16 @@ class CapitalCFDTrader:
                 for raw in self.client.get_positions()
             }
             trace_payload["known_deal_ids_before"] = sorted([d for d in known_deal_ids if d])
-            result = self.client.place_market_order(symbol, direction, size)
+            try:
+                result = self.client.place_market_order(
+                    symbol,
+                    direction,
+                    size,
+                    **dict(broker_exit_controls.get("submit_kwargs", {}) or {}),
+                )
+            except TypeError:
+                result = self.client.place_market_order(symbol, direction, size)
+                trace_payload["broker_exit_controls_fallback"] = "client_signature_without_exit_kwargs"
             trace_payload["order_response"] = dict(result) if isinstance(result, dict) else result
             if result.get("rejected") or result.get("error"):
                 reason = result.get("reason") or result.get("error", "unknown")
@@ -3396,10 +4624,26 @@ class CapitalCFDTrader:
                 )
             pos.epic = epic or pos.epic
             pos.current_price = fill_price if fill_price > 0 else pos.current_price
+            if CAPITAL_BROKER_TAKE_PROFIT_ENABLED and hasattr(self.client, "update_position_limits"):
+                exact_controls = self._capital_broker_exit_controls(
+                    direction=pos.direction,
+                    entry_price=pos.entry_price,
+                    size=pos.size,
+                    cfg=cfg,
+                )
+                try:
+                    update = self.client.update_position_limits(  # type: ignore[attr-defined]
+                        pos.deal_id,
+                        **dict(exact_controls.get("submit_kwargs", {}) or {}),
+                    )
+                    trace_payload["broker_exit_update"] = dict(update) if isinstance(update, dict) else update
+                except Exception as _update_exc:
+                    trace_payload["broker_exit_update"] = {"error": str(_update_exc)}
             self.positions = [p for p in self.positions if p.deal_id != pos.deal_id]
             self.positions.append(pos)
             self.stats["trades_opened"] += 1
             self._latest_order_error = ""
+            self._commit_confidence_ratchet(dict(prepared.get("quality") or {}), pos.deal_id)
             trace_payload["validated"] = True
             trace_payload["validated_deal_id"] = pos.deal_id
             trace_payload["validated_position"] = {
@@ -4126,6 +5370,7 @@ class CapitalCFDTrader:
         pnl = self.stats["total_pnl_gbp"]
         gate = "ARMED" if HAS_QUAD_GATES else "open"
         capital = self.get_capital_snapshot()
+        risk_envelope = self._build_capital_risk_envelope()
         eq_delta = capital["equity_gbp"] - self.starting_equity_gbp if self.starting_equity_gbp > 0 else 0.0
         runtime_m = (time.time() - self.start_time) / 60.0
 
@@ -4135,6 +5380,12 @@ class CapitalCFDTrader:
                 f"  Equity={capital['equity_gbp']:.2f} GBP | Free={capital['free_gbp']:.2f} GBP | "
                 f"Used={capital['used_gbp']:.2f} GBP | Budget={capital['budget_gbp']:.2f} GBP | "
                 f"EqDelta={eq_delta:+.2f} GBP"
+            ),
+            (
+                f"  Capital risk: reserve={float(risk_envelope.get('reserve_required_gbp', 0.0) or 0.0):.2f} GBP | "
+                f"stress_buffer={float(risk_envelope.get('stress_buffer_before_gbp', 0.0) or 0.0):+.2f} GBP | "
+                f"gross={float(risk_envelope.get('existing_gross_notional_gbp', 0.0) or 0.0):.2f} GBP | "
+                f"dynamic_slots={'on' if CAPITAL_ALLOW_DYNAMIC_LANE_EXPANSION else 'off'}"
             ),
             f"  CAPITAL CFD: {len(self.positions)} open / {c} closed | "
             f"W:{w} L:{l} | PnL:{pnl:+.2f} GBP | gate:{gate}",
@@ -4345,9 +5596,47 @@ class CapitalCFDTrader:
             f"PnL:{self.stats['total_pnl_gbp']:+.2f} GBP"
         )
 
+    def _load_capital_asset_registry_summary(self) -> Dict[str, Any]:
+        """Read the Capital tradable asset registry without dragging the full book into runtime."""
+        for path in (CAPITAL_ASSET_REGISTRY_PATH, CAPITAL_ASSET_REGISTRY_AUDIT_PATH):
+            try:
+                if not path.exists():
+                    continue
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                summary = payload.get("summary", {}) if isinstance(payload.get("summary"), dict) else {}
+                return {
+                    "generated_at": payload.get("generated_at", ""),
+                    "schema_version": payload.get("schema_version", ""),
+                    "path": str(path),
+                    "public_path": "frontend/public/aureon_capital_tradable_asset_registry.json",
+                    "database_path": "state/capital_tradable_asset_registry.sqlite",
+                    "total_markets": int(summary.get("total_markets", 0) or 0),
+                    "snapshot_enriched_count": int(summary.get("snapshot_enriched_count", 0) or 0),
+                    "trade_ready_count": int(summary.get("trade_ready_count", 0) or 0),
+                    "trade_route_configured_count": int(summary.get("trade_route_configured_count", 0) or 0),
+                    "cost_known_count": int(summary.get("cost_known_count", 0) or 0),
+                    "margin_known_count": int(summary.get("margin_known_count", 0) or 0),
+                    "top_blockers": list(summary.get("top_blockers", []) or [])[:6],
+                    "asset_classes": dict(summary.get("asset_classes", {}) or {}),
+                }
+            except Exception as exc:
+                return {
+                    "generated_at": "",
+                    "path": str(path),
+                    "error": str(exc),
+                }
+        return {
+            "generated_at": "",
+            "path": str(CAPITAL_ASSET_REGISTRY_PATH),
+            "missing": True,
+            "next_action": "Run python -m aureon.exchanges.capital_asset_registry --max-snapshots 100",
+        }
+
     def get_dashboard_payload(self) -> Dict[str, Any]:
         """Expose Capital trader state in the same local-dashboard style as the margin trader."""
         capital = self.get_capital_snapshot()
+        risk_envelope = self._build_capital_risk_envelope()
+        no_loss_queue = self._build_no_loss_hold_queue()
         growth = self._compute_growth_metrics()
         return {
             "exchange": "capital",
@@ -4358,6 +5647,14 @@ class CapitalCFDTrader:
             "used_gbp": capital["used_gbp"],
             "budget_gbp": capital["budget_gbp"],
             "target_pct_equity": capital["target_pct_equity"],
+            "capital_risk_envelope": risk_envelope,
+            "capital_trade_evidence": dict(getattr(self, "_capital_trade_evidence", {}) or {}),
+            "capital_confidence_ratchet": dict(getattr(self, "_capital_confidence_ratchet", {}) or {}),
+            "capital_unified_waveform_check": dict(getattr(self, "_capital_unified_waveform_check", {}) or {}),
+            "capital_no_loss_hold_queue": no_loss_queue,
+            "capital_pending_order_envelope": dict(getattr(self, "_capital_pending_order_envelope", {}) or {}),
+            "capital_last_working_order_submit": dict(getattr(self, "_capital_last_working_order_submit", {}) or {}),
+            "capital_asset_registry": self._load_capital_asset_registry_summary(),
             "positions": [
                 {
                     "symbol": pos.symbol,
@@ -4386,6 +5683,11 @@ class CapitalCFDTrader:
                     "current_move_pct": shadow.current_move_pct,
                     "peak_move_pct": shadow.peak_move_pct,
                     "target_move_pct": shadow.target_move_pct,
+                    "expected_net_profit": shadow.expected_net_profit,
+                    "eta_to_target": shadow.eta_to_target,
+                    "shadow_utility_score": shadow.shadow_utility_score,
+                    "deadman_ready": shadow.deadman_ready,
+                    "decision_evidence": dict(shadow.decision_evidence or {}),
                     "age_secs": shadow.age_secs,
                     "validated": shadow.validated,
                 }

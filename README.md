@@ -67,6 +67,16 @@ The data ocean and live runtime now share an official exchange rate-limit regist
 
 The exchange data capability matrix sits on top of those reports. It answers the operator question: what does each exchange see, what can it trade, what is fresh this cycle, what is decision-fed, and what can be leveraged or optimized next. Use it when deciding whether Binance should widen crypto discovery, Kraken should reserve private calls for margin/collateral, Alpaca should spend more on stock/ETF snapshots, or Capital should focus on open-position P/L and high-volatility CFD streams.
 
+Capital.com now runs through a wave-validated portfolio brain instead of a fixed one-buy/one-sell lane. `aureon/exchanges/capital_cfd_trader.py` publishes `capital_risk_envelope`, `capital_trade_evidence`, `capital_confidence_ratchet`, `capital_unified_waveform_check`, `capital_no_loss_hold_queue`, and `capital_pending_order_envelope` into `/api/terminal-state`. The trader can expand live Capital positions dynamically only when free cash, used margin, gross exposure, symbol concentration, directional exposure, stress buffer, cross-exchange waveform evidence, and confidence ratchet all pass. Profit capture remains fast, while losing positions are held under the no-loss policy and new entries freeze if the held loss would threaten portfolio survival.
+
+Capital also has a tradable asset registry/database. `aureon/exchanges/capital_asset_registry.py` reads the Capital market catalogue, records every discovered epic/symbol, enriches budgeted markets with live price, spread, minimum deal size, margin factor, estimated leverage, minimum notional, and required margin, then publishes JSON, CSV, Markdown, and SQLite outputs. It records both direct market order routes and pending working-order routes so Aureon knows what code buys, sells, closes, or cancels each asset:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.exchanges.capital_asset_registry --max-snapshots 250
+```
+
+Pending bids and take-profit planning now have their own survival envelope. Market orders can attach a broker-side `profitLevel`; existing positions can have take-profit controls updated after fill confirmation; pending Capital working orders are planned through `POST /workingorders` with take-profit evidence. Submission is off by default (`CAPITAL_PENDING_ORDER_SUBMIT_ENABLED=0`) until explicitly enabled, and every planned pending order is stress-tested as if all pending orders fill together. That prevents the unsafe pattern where many bids trigger during the same dip and consume the whole portfolio.
+
 Private exchange history sync is deliberately capped in this supervisor so it does not hammer Kraken/Binance/Alpaca while live trading is active. The default Kraken private trade-history budget is `-KrakenAccountSyncMax 50`. If a venue is rate-limiting or you only want public/context data for a cycle, run:
 
 ```powershell
@@ -95,6 +105,7 @@ python scripts/aureon_ignition.py --audit-only
 | Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
 | Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
 | Trading intelligence checklist | `http://127.0.0.1:8081/aureon_trading_intelligence_checklist.json` and `docs/audits/aureon_trading_intelligence_checklist.json` |
+| Capital tradable asset registry | `docs/audits/aureon_capital_tradable_asset_registry.json`, `docs/audits/aureon_capital_tradable_asset_registry.csv`, and `state/capital_tradable_asset_registry.sqlite` |
 | Exchange monitoring checklist | `docs/audits/aureon_exchange_monitoring_checklist.json` and `frontend/public/aureon_exchange_monitoring_checklist.json` |
 | Exchange data capability matrix | `docs/audits/aureon_exchange_data_capability_matrix.json` and `frontend/public/aureon_exchange_data_capability_matrix.json` |
 | Global financial coverage map | `docs/audits/aureon_global_financial_coverage_map.json` and `frontend/public/aureon_global_financial_coverage_map.json` |
@@ -135,6 +146,9 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 | Planetary financial data ocean | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `docs/audits/aureon_global_financial_coverage_map.json` |
 | Official exchange rate budgets | `aureon/core/exchange_rate_limit_registry.py`, `api_governor`, `state/aureon_data_ocean_status.json` |
 | Exchange data capability matrix | `aureon/autonomous/aureon_exchange_data_capability_matrix.py`, `docs/audits/aureon_exchange_data_capability_matrix.json`, `frontend/public/aureon_exchange_data_capability_matrix.json` |
+| Capital wave-validated portfolio brain | `aureon/exchanges/capital_cfd_trader.py`, `/api/terminal-state#capital_risk_envelope`, Trading console Capital Survival Brain |
+| Capital tradable asset book | `aureon/exchanges/capital_asset_registry.py`, `state/capital_tradable_asset_registry.sqlite`, `docs/audits/aureon_capital_tradable_asset_registry.json` |
+| Capital pending bid and TP survival | `capital_pending_order_envelope`, `CapitalClient.place_working_order`, broker `profitLevel`, all-pending-fill stress budget |
 | Metacognitive data context | `aureon/autonomous/aureon_trading_intelligence_checklist.py`, `docs/audits/aureon_trading_intelligence_checklist.json`, and the Trading console data-ocean card |
 | Exchange clients | `aureon/exchanges/kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
 | Momentum/intelligence scanner fusion | `aureon/exchanges/unified_market_trader.py`, `state/aureon_scanner_fusion_matrix.json` |

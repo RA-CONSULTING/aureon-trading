@@ -7,6 +7,7 @@ param(
     [switch]$NoIngest,
     [switch]$SkipAccountSync,
     [int]$KrakenAccountSyncMax = 50,
+    [int]$CapitalAssetRegistrySnapshots = 100,
     [int]$IntervalSeconds = 1800
 )
 
@@ -57,13 +58,14 @@ function Get-IngestProfile {
 Write-Ocean "Aureon planetary data ocean"
 Write-Ocean "Repo: $RepoRoot"
 Write-Ocean "Coverage profile: $CoverageProfile"
-Write-Ocean "Mode: budgeted adaptive=$($Adaptive.IsPresent), no ingest=$($NoIngest.IsPresent), dry run=$($DryRun.IsPresent), run once=$($RunOnce.IsPresent), skip account sync=$($SkipAccountSync.IsPresent)"
+Write-Ocean "Mode: budgeted adaptive=$($Adaptive.IsPresent), no ingest=$($NoIngest.IsPresent), dry run=$($DryRun.IsPresent), run once=$($RunOnce.IsPresent), skip account sync=$($SkipAccountSync.IsPresent), capital snapshots=$CapitalAssetRegistrySnapshots"
 Write-Ocean "Priority: BelowNormal where supported"
 
 function Invoke-StatusRefresh {
     $dataArgs = @("-m", "aureon.autonomous.aureon_data_ocean", "--coverage-profile", $CoverageProfile, "--adaptive")
     if ($DryRun -or $ValidateOnly) { $dataArgs += "--dry-run" }
     $null = Invoke-OceanPython -PythonArgs $dataArgs
+    $null = Invoke-OceanPython -PythonArgs @("-m", "aureon.exchanges.capital_asset_registry", "--max-snapshots", [string]$CapitalAssetRegistrySnapshots) -AllowFailure
     $null = Invoke-OceanPython -PythonArgs @("-m", "aureon.autonomous.aureon_exchange_monitoring_checklist") -AllowFailure
     $null = Invoke-OceanPython -PythonArgs @("-m", "aureon.autonomous.aureon_exchange_data_capability_matrix") -AllowFailure
     $null = Invoke-OceanPython -PythonArgs @("-m", "aureon.autonomous.aureon_global_financial_coverage_map")

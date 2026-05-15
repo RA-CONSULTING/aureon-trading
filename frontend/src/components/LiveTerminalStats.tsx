@@ -282,6 +282,10 @@ export function LiveTerminalStats() {
   const capitalPnl = safeNumber(summary?.capitalSessionPnlGbp);
   const krakenOpen = safeNumber(summary?.krakenOpenPositions, krakenPositions.length);
   const capitalOpen = safeNumber(summary?.capitalOpenPositions, capitalPositions.length);
+  const capitalRisk = summary?.capitalRiskEnvelope || {};
+  const capitalRatchet = summary?.capitalConfidenceRatchet || {};
+  const capitalWaveform = summary?.capitalUnifiedWaveformCheck || {};
+  const capitalNoLossQueue = summary?.capitalNoLossHoldQueue || {};
   const queenVoice = state.queenVoice;
 
   return (
@@ -397,6 +401,45 @@ export function LiveTerminalStats() {
             <ExchangeMetric label="Session P&L" value={formatSigned(capitalPnl, 2, '£')} className={capitalPnl >= 0 ? 'text-green-500' : 'text-red-500'} />
             <ExchangeMetric label="Open Positions" value={`${capitalOpen}`} />
             <ExchangeMetric label="Shadows" value={`${safeNumber(summary?.capitalShadows, capitalShadows.length)}`} />
+          </div>
+          <div className="mt-3 rounded border border-border/40 bg-background/60 p-2 font-mono text-[10px]">
+            <div className="mb-1 font-semibold text-foreground">Capital Survival Brain</div>
+            <div className="grid gap-1 text-muted-foreground">
+              <div className="flex justify-between gap-2">
+                <span>Reserve</span>
+                <span className="text-foreground">GBP {safeNumber(capitalRisk.reserve_required_gbp).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span>Stress Buffer</span>
+                <span className={safeNumber(capitalRisk.stress_buffer_before_gbp) >= 0 ? 'text-green-500' : 'text-red-500'}>
+                  GBP {safeNumber(capitalRisk.stress_buffer_before_gbp).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span>Dynamic Slots</span>
+                <span className={capitalRisk.dynamic_lane_expansion_enabled ? 'text-green-500' : 'text-muted-foreground'}>
+                  {capitalRisk.dynamic_lane_expansion_enabled ? 'armed' : 'base lanes'}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span>Waveform</span>
+                <span className={capitalWaveform.ok === false ? 'text-red-500' : 'text-green-500'}>
+                  {capitalWaveform.ok === false ? 'contradiction' : 'clear'}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span>Ratchet</span>
+                <span className={capitalRatchet.ok === false ? 'text-yellow-500' : 'text-green-500'}>
+                  {capitalRatchet.reason || 'ready'}
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span>No-loss queue</span>
+                <span className={safeNumber(capitalNoLossQueue.losing_position_count) > 0 ? 'text-yellow-500' : 'text-muted-foreground'}>
+                  {safeNumber(capitalNoLossQueue.losing_position_count)} held
+                </span>
+              </div>
+            </div>
           </div>
           <div className="mt-3 space-y-2">
             {capitalPositions.length > 0 ? (

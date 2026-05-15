@@ -39,12 +39,21 @@ class ClientStub:
     def close_position(self, deal_id: str):
         return dict(self._close_result)
 
-    def place_market_order(self, symbol: str, side: str, size: float):
+    def place_market_order(self, symbol: str, side: str, size: float, **kwargs):
         side = side.upper()
         if side in {"BUY", "SELL"}:
-            self.order_calls.append((symbol, side, size))
+            self.order_calls.append((symbol, side, size, kwargs))
             return dict(self._open_result)
         return dict(self._fallback_result)
+
+    def get_working_orders(self):
+        return []
+
+    def place_working_order(self, symbol: str, side: str, size: float, level: float, **kwargs):
+        return {"dealReference": "WREF1", "submitted": True, "kwargs": kwargs}
+
+    def update_position_limits(self, deal_id: str, **kwargs):
+        return {"success": True, "deal_id": deal_id, "kwargs": kwargs}
 
     def confirm_order(self, deal_reference: str):
         return dict(self._confirm_result)
@@ -139,6 +148,18 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader._last_wave_factors = {}
         trader._last_fast_profit_capture = {}
         trader._fast_profit_capture_by_deal = {}
+        trader._capital_risk_envelope = {}
+        trader._capital_trade_evidence = {}
+        trader._capital_unified_waveform_check = {}
+        trader._capital_no_loss_hold_queue = {}
+        trader._capital_pending_order_envelope = {}
+        trader._capital_last_working_order_submit = {}
+        trader._capital_confidence_ratchet = {
+            "schema_version": 1,
+            "enabled": True,
+            "last_live_candidate": {},
+            "last_reset_reason": "",
+        }
         trader._lambda_engine = None
         trader._probability_nexus = None
         trader._ensure_live_refresh = lambda: None
@@ -836,7 +857,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(len(closed), 1)
         self.assertEqual(opened, ["GOLD"])
 
-    def test_ranked_opportunities_skips_direction_that_is_already_open(self):
+    def test_ranked_opportunities_allows_extra_direction_when_dynamic_expansion_enabled(self):
         trader = self._build_trader(ClientStub())
         trader.positions = [
             CFDPosition(
@@ -861,7 +882,7 @@ class TestCapitalCFDSync(unittest.TestCase):
 
         ranked = trader._ranked_opportunities()
 
-        self.assertEqual([(sym, cfg["direction"]) for sym, cfg, _ in ranked], [("SILVER", "SELL")])
+        self.assertEqual([(sym, cfg["direction"]) for sym, cfg, _ in ranked], [("GOLD", "BUY"), ("SILVER", "SELL")])
 
     def test_tick_can_open_one_buy_and_one_sell_in_same_cycle(self):
         trader = self._build_trader(ClientStub())
@@ -948,6 +969,71 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(snapshot["leader"]["direction"], "BUY")
         self.assertGreaterEqual(snapshot["leader"]["votes"], 3)
 
+    def test_shadow_revenue_priority_prefers_fast_reliable_take_home(self):
+        trader = self._build_trader(ClientStub())
+        scored = [
+            {
+                "symbol": "SILVER",
+                "direction": "BUY",
+                "score": 4.0,
+                "expected_net_profit": 0.04,
+                "eta_to_target": 0.5,
+                "self_confidence": 0.70,
+                "timeline_confidence": 0.70,
+            },
+            {
+                "symbol": "GOLD",
+                "direction": "BUY",
+                "score": 5.0,
+                "expected_net_profit": 0.05,
+                "eta_to_target": 4.0,
+                "self_confidence": 0.55,
+                "timeline_confidence": 0.55,
+            },
+        ]
+
+        trader._apply_shadow_revenue_priority(scored)
+
+        self.assertTrue(scored[0]["shadow_selectable"])
+        self.assertFalse(scored[1]["shadow_selectable"])
+        self.assertEqual(scored[1]["score"], 0.0)
+        self.assertEqual(
+            scored[1]["shadow_revenue_priority"]["posture"],
+            "bird_in_hand_preferred_over_uncertain_long_eta",
+        )
+
+    def test_shadow_revenue_priority_allows_longer_eta_when_take_home_is_caged(self):
+        trader = self._build_trader(ClientStub())
+        scored = [
+            {
+                "symbol": "SILVER",
+                "direction": "BUY",
+                "score": 4.0,
+                "expected_net_profit": 0.04,
+                "eta_to_target": 0.5,
+                "self_confidence": 0.70,
+                "timeline_confidence": 0.70,
+            },
+            {
+                "symbol": "GOLD",
+                "direction": "BUY",
+                "score": 5.0,
+                "expected_net_profit": 0.20,
+                "eta_to_target": 2.0,
+                "self_confidence": 0.82,
+                "timeline_confidence": 0.82,
+            },
+        ]
+
+        trader._apply_shadow_revenue_priority(scored)
+
+        self.assertTrue(scored[1]["shadow_selectable"])
+        self.assertEqual(
+            scored[1]["shadow_revenue_priority"]["posture"],
+            "two_birds_caged_take_home_edge",
+        )
+        self.assertGreater(scored[1]["shadow_revenue_priority"]["take_home_edge_ratio"], 1.75)
+
     def test_ranked_opportunities_uses_swarm_order_when_available(self):
         trader = self._build_trader(ClientStub())
         trader._latest_candidate_snapshot = [
@@ -968,6 +1054,116 @@ class TestCapitalCFDSync(unittest.TestCase):
         ranked = trader._ranked_opportunities()
 
         self.assertEqual([(sym, cfg["direction"]) for sym, cfg, _ in ranked], [("SILVER", "BUY"), ("GOLD", "SELL")])
+
+    def test_create_shadow_carries_bird_in_hand_evidence(self):
+        trader = self._build_trader(ClientStub())
+        trader._latest_candidate_snapshot = [{
+            "symbol": "SILVER",
+            "direction": "BUY",
+            "score": 4.0,
+            "expected_net_profit": 0.04,
+            "eta_to_target": 0.5,
+            "self_confidence": 0.70,
+            "shadow_utility_score": 0.056,
+            "shadow_revenue_priority": {
+                "posture": "bird_in_hand_fast_take_home",
+                "expected_net_profit_gbp": 0.04,
+                "eta_to_target": 0.5,
+                "deadman_ready": True,
+                "shadow_selectable": True,
+            },
+        }]
+
+        shadow = trader._create_shadow(
+            "SILVER",
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45, "direction": "BUY"},
+            {"price": 100.0, "ask": 100.05, "bid": 99.95},
+        )
+
+        self.assertIsNotNone(shadow)
+        assert shadow is not None
+        self.assertEqual(shadow.expected_net_profit, 0.04)
+        self.assertEqual(shadow.eta_to_target, 0.5)
+        self.assertTrue(shadow.deadman_ready)
+        self.assertEqual(
+            shadow.decision_evidence["shadow_revenue_priority"]["posture"],
+            "bird_in_hand_fast_take_home",
+        )
+
+    def test_pending_order_plan_attaches_take_profit_and_survival_evidence(self):
+        trader = self._build_trader(ClientStub(
+            accounts=[{"accountId": "A1", "balance": 1000.0, "available": 1000.0, "currency": "GBP"}],
+        ))
+        preflight = {
+            "ok": True,
+            "market_status": "TRADEABLE",
+            "price": 100.0,
+            "minimum_deal_size": 1.0,
+            "margin_factor_pct": 10.0,
+            "estimated_margin_required": 10.0,
+        }
+
+        context = trader._build_capital_pending_order_context(
+            "SILVER",
+            "BUY",
+            {"class": "commodity", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45},
+            {"price": 100.0, "ask": 100.0, "bid": 99.9},
+            preflight,
+            1.0,
+        )
+
+        plan = context["plan"]
+        envelope = context["envelope"]
+        self.assertLess(plan["level"], 100.0)
+        self.assertGreater(plan["profit_level"], plan["level"])
+        self.assertIn("profit_level", plan["broker_exit_controls"]["submit_kwargs"])
+        self.assertIn("pending_order_submission_disabled", envelope["blockers"])
+        self.assertFalse(context["ready_to_submit"])
+
+    def test_pending_order_survival_blocks_hundred_bids_if_all_fill(self):
+        trader = self._build_trader(ClientStub(
+            accounts=[{"accountId": "A1", "balance": 1000.0, "available": 1000.0, "currency": "GBP"}],
+        ))
+        planned = [
+            {
+                "symbol": f"AAPL{i % 3}",
+                "direction": "BUY",
+                "size": 1.0,
+                "level": 100.0,
+                "notional": 100.0,
+                "estimated_margin_required": 20.0,
+                "profit_level": 101.0,
+                "blockers": [],
+            }
+            for i in range(100)
+        ]
+
+        envelope = trader._build_capital_pending_order_survival_envelope(
+            planned,
+            existing_working_orders=[],
+        )
+
+        self.assertTrue(envelope["blocked"])
+        self.assertEqual(envelope["pending_count_after"], 100)
+        self.assertIn("max_pending_working_orders", envelope["blockers"])
+        self.assertIn("pending_margin_budget_limit", envelope["blockers"])
+
+    def test_submit_pending_order_requires_survival_envelope_green(self):
+        trader = self._build_trader(ClientStub())
+        plan = {
+            "symbol": "SILVER",
+            "direction": "BUY",
+            "size": 1.0,
+            "level": 100.0,
+            "order_type": "LIMIT",
+            "broker_exit_controls": {"submit_kwargs": {"profit_level": 101.0}},
+        }
+        blocked = {"can_submit_pending_orders": False, "blockers": ["max_pending_working_orders"]}
+
+        result = trader._submit_capital_pending_order(plan, blocked)
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["reason"], "pending_survival_envelope_blocked")
 
     def test_apply_intelligence_overlays_can_block_candidate_via_orchestrator(self):
         class OrchestratorStub:
@@ -1061,6 +1257,7 @@ class TestCapitalCFDSync(unittest.TestCase):
         trader = self._build_trader(ClientStub(
             open_result={"dealReference": "REF-DELAY"},
             confirm_result={"dealId": "DDELAY", "level": 7282.6},
+            accounts=[{"accountId": "A1", "balance": 50000.0, "available": 50000.0, "currency": "GBP"}],
         ))
         trader.client._position_batches = [[], [], [live_position]]
 
@@ -1100,6 +1297,7 @@ class TestCapitalCFDSync(unittest.TestCase):
                 "rejectReason": "RISK_CHECK",
                 "status": "DELETED",
             },
+            accounts=[{"accountId": "A1", "balance": 50000.0, "available": 50000.0, "currency": "GBP"}],
         ))
 
         result = trader._open_position(
@@ -1162,6 +1360,7 @@ class TestCapitalCFDSync(unittest.TestCase):
             positions=[live_position],
             open_result={"dealReference": "REF1"},
             confirm_result={"dealId": "DOPEN", "level": 7282.6},
+            accounts=[{"accountId": "A1", "balance": 50000.0, "available": 50000.0, "currency": "GBP"}],
         ))
 
         result = trader._open_position(
@@ -1195,6 +1394,7 @@ class TestCapitalCFDSync(unittest.TestCase):
             positions=[live_position],
             open_result={"dealReference": "REFSELL"},
             confirm_result={"dealId": "DSELL", "level": 7249.8},
+            accounts=[{"accountId": "A1", "balance": 50000.0, "available": 50000.0, "currency": "GBP"}],
         )
         trader = self._build_trader(client)
 
@@ -1208,7 +1408,123 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(result.direction, "SELL")
         self.assertLess(result.tp_price, result.entry_price)
         self.assertGreater(result.sl_price, result.entry_price)
-        self.assertEqual(client.order_calls[-1], ("SILVER", "SELL", 1))
+        self.assertEqual(client.order_calls[-1][:3], ("SILVER", "SELL", 1))
+        self.assertIn("profit_level", client.order_calls[-1][3])
+
+    def test_capital_live_expansion_stress_reaches_broker_submit_path(self):
+        class DynamicClientStub(ClientStub):
+            def __init__(self):
+                super().__init__(
+                    positions=[],
+                    accounts=[{"accountId": "A1", "balance": 100000.0, "available": 100000.0, "currency": "GBP"}],
+                )
+                self._sequence = 0
+
+            def _resolve_market(self, symbol: str):
+                return {"epic": f"CS.D.{symbol}.CFD.IP", "symbol": symbol}
+
+            def _get_market_snapshot(self, epic: str):
+                symbol = epic.split(".")[2] if "." in epic else "MARKET"
+                return {
+                    "instrument": {"epic": epic, "name": symbol},
+                    "snapshot": {"marketStatus": "TRADEABLE", "bid": 99.95, "offer": 100.05},
+                    "dealingRules": {"minDealSize": {"value": 1}},
+                    "depositBands": [{"min": 0, "max": 999999999, "margin": 5.0}],
+                }
+
+            def place_market_order(self, symbol: str, side: str, size: float, **kwargs):
+                self._sequence += 1
+                deal_id = f"DSTRESS{self._sequence}"
+                self.order_calls.append((symbol, side.upper(), size, kwargs))
+                self._open_result = {"dealReference": f"REF-{deal_id}", "dealId": deal_id}
+                self._confirm_result = {"dealId": deal_id, "level": 100.0}
+                self._positions.append({
+                    "position": {
+                        "dealId": deal_id,
+                        "direction": side.upper(),
+                        "size": size,
+                        "level": 100.0,
+                    },
+                    "market": {
+                        "epic": f"CS.D.{symbol}.CFD.IP",
+                        "symbol": symbol,
+                        "bid": 99.95,
+                        "offer": 100.05,
+                        "instrumentType": "SHARES",
+                    },
+                })
+                return dict(self._open_result)
+
+        trader = self._build_trader(DynamicClientStub())
+        trader._central_beat_regime = {"bias": "BUY", "confidence": 0.5}
+        trader._central_beat_symbols = {
+            "ALPHA": {"side": "BUY", "strength": 0.66, "support_count": 3},
+            "BRAVO": {"side": "BUY", "strength": 0.70, "support_count": 3},
+            "CHARLIE": {"side": "BUY", "strength": 0.74, "support_count": 4},
+        }
+        trader._latest_candidate_snapshot = [
+            {
+                "symbol": "ALPHA",
+                "direction": "BUY",
+                "score": 6.4,
+                "self_confidence": 0.64,
+                "timeline_action": "buy",
+                "timeline_confidence": 0.64,
+                "fusion_global_coherence": 0.45,
+                "eta_to_target": 8.0,
+            },
+            {
+                "symbol": "BRAVO",
+                "direction": "BUY",
+                "score": 7.1,
+                "self_confidence": 0.71,
+                "timeline_action": "buy",
+                "timeline_confidence": 0.71,
+                "fusion_global_coherence": 0.50,
+                "eta_to_target": 7.0,
+            },
+            {
+                "symbol": "CHARLIE",
+                "direction": "BUY",
+                "score": 8.0,
+                "self_confidence": 0.80,
+                "timeline_action": "buy",
+                "timeline_confidence": 0.80,
+                "fusion_global_coherence": 0.55,
+                "eta_to_target": 5.5,
+            },
+            {
+                "symbol": "DELTA",
+                "direction": "BUY",
+                "score": 5.0,
+                "self_confidence": 0.50,
+                "timeline_action": "buy",
+                "timeline_confidence": 0.50,
+                "fusion_global_coherence": 0.42,
+                "eta_to_target": 9.0,
+            },
+        ]
+
+        opened = []
+        for symbol in ("ALPHA", "BRAVO", "CHARLIE"):
+            opened.append(trader._open_position(
+                symbol,
+                {"class": "stock", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45, "direction": "BUY"},
+                {"price": 100.0, "ask": 100.05, "bid": 99.95, "epic": f"CS.D.{symbol}.CFD.IP"},
+            ))
+
+        blocked = trader._open_position(
+            "DELTA",
+            {"class": "stock", "size": 1, "tp_pct": 0.75, "sl_pct": 0.45, "direction": "BUY"},
+            {"price": 100.0, "ask": 100.05, "bid": 99.95, "epic": "CS.D.DELTA.CFD.IP"},
+        )
+
+        self.assertEqual([pos.deal_id for pos in opened if pos is not None], ["DSTRESS1", "DSTRESS2", "DSTRESS3"])
+        self.assertIsNone(blocked)
+        self.assertEqual(len(trader.client.order_calls), 3)
+        self.assertEqual(trader.stats["trades_opened"], 3.0)
+        self.assertTrue(trader._capital_trade_evidence["act"]["evidence_complete"])
+        self.assertIn("weaker_than_previous_live_candidate", trader._latest_order_error)
 
     def test_monitor_keeps_position_when_close_fails_and_exchange_still_reports_it(self):
         trader = CapitalCFDTrader.__new__(CapitalCFDTrader)
@@ -1446,20 +1762,29 @@ class TestCapitalCFDSync(unittest.TestCase):
         self.assertEqual(direction, "BUY")
         self.assertGreater(boosted_score, plain_score)
 
-    def test_fill_live_monitoring_slots_opens_one_buy_and_one_sell(self):
+    def test_fill_live_monitoring_slots_opens_buy_and_sell_when_risk_preflight_passes(self):
         trader = self._build_trader(ClientStub())
         trader._last_slot_fill_attempt = {"BUY": 0.0, "SELL": 0.0}
         trader._capital_preflight = lambda symbol, size, ticker, cfg=None: {
-            "ok": False,
-            "reason": "expected net profit -0.0010 does not clear costs 0.0020",
+            "ok": True,
+            "reason": "ok",
             "price": ticker.get("price"),
             "bid": ticker.get("bid"),
             "ask": ticker.get("ask"),
+            "requested_size": size,
+            "expected_net_profit": 0.01,
+            "estimated_margin_required": 0.01,
+            "margin_factor_pct": 1.0,
         }
         opened = []
         class Opened:
             def __init__(self, deal_id):
                 self.deal_id = deal_id
+        trader._prepare_live_trade_candidate = lambda symbol, direction, cfg, ticker, requested_size, action: {
+            "ok": True,
+            "cfg": dict(cfg),
+            "size": requested_size,
+        }
         trader._open_position = lambda symbol, cfg, ticker: opened.append((symbol, cfg["direction"])) or Opened(f"{symbol}-{cfg['direction']}")
         trader._latest_candidate_snapshot = [
             {"symbol": "SILVER", "direction": "BUY", "score": 0.0},
@@ -1474,6 +1799,126 @@ class TestCapitalCFDSync(unittest.TestCase):
 
         self.assertTrue(result)
         self.assertEqual(opened, [("SILVER", "BUY"), ("GOLD", "SELL")])
+
+    def test_capital_risk_envelope_blocks_symbol_concentration(self):
+        trader = self._build_trader(ClientStub(accounts=[
+            {"accountId": "A1", "balance": 100.0, "available": 100.0, "currency": "GBP"}
+        ]))
+
+        envelope = trader._build_capital_risk_envelope(candidate={
+            "symbol": "AAPL",
+            "direction": "BUY",
+            "size": 1.0,
+            "price": 50.0,
+            "asset_class": "stocks",
+            "estimated_margin_required": 10.0,
+            "margin_factor_pct": 20.0,
+            "cfg": {"class": "stocks", "sl_pct": 0.25},
+        })
+
+        self.assertFalse(envelope["new_entries_allowed"])
+        self.assertIn("single_symbol_concentration_limit", envelope["blockers"])
+
+    def test_prepare_live_trade_blocks_cross_exchange_waveform_contradiction(self):
+        trader = self._build_trader(ClientStub(accounts=[
+            {"accountId": "A1", "balance": 10000.0, "available": 10000.0, "currency": "GBP"}
+        ]))
+        trader._central_beat_symbols = {
+            "GOLD": {"side": "SELL", "strength": 0.9, "support_count": 3}
+        }
+        trader._latest_candidate_snapshot = [{
+            "symbol": "GOLD",
+            "direction": "BUY",
+            "score": 8.0,
+            "self_confidence": 0.8,
+            "eta_to_target": 0.5,
+        }]
+        ticker = {"price": 100.0, "bid": 99.9, "ask": 100.1}
+        cfg = {"class": "commodities", "size": 0.01, "tp_pct": 0.2, "sl_pct": 0.25}
+        trader._capital_preflight = lambda symbol, size, ticker, cfg=None: {
+            "ok": True,
+            "reason": "ok",
+            "requested_size": size,
+            "price": ticker["price"],
+            "bid": ticker["bid"],
+            "ask": ticker["ask"],
+            "minimum_deal_size": 0.0,
+            "expected_net_profit": 0.10,
+            "estimated_margin_required": 0.10,
+            "margin_factor_pct": 10.0,
+        }
+
+        prepared = trader._prepare_live_trade_candidate("GOLD", "BUY", cfg, ticker, 0.01, action="open_live")
+
+        self.assertFalse(prepared["ok"])
+        self.assertIn("central_beat_symbol_contradiction", prepared["reason"])
+        self.assertFalse(trader._capital_trade_evidence["act"]["approved"])
+
+    def test_confidence_ratchet_blocks_weaker_follow_up(self):
+        trader = self._build_trader(ClientStub())
+        trader._capital_confidence_ratchet = {
+            "schema_version": 1,
+            "enabled": True,
+            "last_live_candidate": {
+                "symbol": "GOLD",
+                "direction": "BUY",
+                "confidence": 0.90,
+                "eta_to_target": 0.5,
+                "risk_adjusted_score": 1.8,
+            },
+        }
+
+        check = trader._build_confidence_ratchet_check({
+            "symbol": "SILVER",
+            "direction": "BUY",
+            "confidence": 0.60,
+            "eta_to_target": 1.2,
+            "risk_adjusted_score": 0.5,
+        })
+
+        self.assertFalse(check["ok"])
+        self.assertIn("weaker_than_previous_live_candidate", check["reason"])
+
+    def test_open_position_blocks_insufficient_margin_before_exchange_order(self):
+        client = ClientStub(accounts=[
+            {"accountId": "A1", "balance": 1.0, "available": 1.0, "currency": "GBP"}
+        ], market_snapshot={
+            "instrument": {"epic": "CS.D.SILVER.CFD.IP", "name": "Silver"},
+            "snapshot": {"marketStatus": "TRADEABLE", "bid": 99.9, "offer": 100.1},
+            "dealingRules": {"minDealSize": {"value": 0.01}, "marginFactor": {"unit": "PERCENTAGE", "value": 5.0}},
+        })
+        trader = self._build_trader(client)
+        ticker = {"price": 100.0, "bid": 99.9, "ask": 100.1, "epic": "CS.D.SILVER.CFD.IP"}
+        cfg = {"class": "commodities", "size": 1.0, "tp_pct": 0.2, "sl_pct": 0.25, "direction": "BUY"}
+
+        pos = trader._open_position("SILVER", cfg, ticker)
+
+        self.assertIsNone(pos)
+        self.assertEqual(client.order_calls, [])
+        self.assertIn("live candidate blocked", trader._latest_order_error.lower())
+
+    def test_no_loss_hold_queue_reports_losing_positions(self):
+        trader = self._build_trader(ClientStub())
+        trader.positions = [
+            CFDPosition(
+                symbol="SILVER",
+                deal_id="D1",
+                epic="CS.D.SILVER.CFD.IP",
+                direction="BUY",
+                size=1.0,
+                entry_price=100.0,
+                tp_price=101.0,
+                sl_price=99.0,
+                asset_class="commodities",
+                current_price=99.5,
+            )
+        ]
+
+        queue = trader._build_no_loss_hold_queue()
+
+        self.assertTrue(queue["enabled"])
+        self.assertEqual(queue["losing_position_count"], 1)
+        self.assertLess(queue["total_unrealized_negative_gbp"], 0)
 
 
 if __name__ == "__main__":
