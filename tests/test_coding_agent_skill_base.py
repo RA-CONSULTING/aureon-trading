@@ -110,3 +110,20 @@ def test_goal_engine_routes_code_builder_terminal_goal(tmp_path: Path, monkeypat
     assert plan.status == "completed"
     assert plan.steps[0].intent == "coding_agent_skill_base"
     assert plan.steps[0].validation_result["valid"] is True
+
+
+def test_goal_engine_routes_visual_asset_prompt_without_agentcore(tmp_path: Path, monkeypatch) -> None:
+    _fake_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    engine = GoalExecutionEngine()
+    plan = engine.submit_goal("drwaw me a image of a cat and open the file and show me it")
+
+    assert plan.status == "completed"
+    assert [step.intent for step in plan.steps] == ["visual_asset_request"]
+    assert plan.steps[0].validation_result["valid"] is True
+    payload = plan.steps[0].result["result"]
+    assert payload["status"] == "visual_asset_ready"
+    assert payload["public_url"].startswith("/aureon_visual_artifacts/")
+    assert Path(payload["asset_path"]).exists()
+    assert "cat" in payload["subject"]

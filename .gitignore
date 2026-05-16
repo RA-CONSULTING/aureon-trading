@@ -145,6 +145,7 @@ Kings_Accounting_Suite/**/*.xlsx
 docs/audits/
 frontend/public/*.json
 frontend/public/aureon_*.json
+frontend/public/aureon_visual_artifacts/
 frontend/vite.config.ts.timestamp-*.mjs
 autonomy/
 accounting/

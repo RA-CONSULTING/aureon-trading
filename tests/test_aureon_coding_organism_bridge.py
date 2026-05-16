@@ -229,6 +229,42 @@ def test_submit_coding_prompt_can_run_focused_test_command(tmp_path: Path, monke
     assert "coding bridge ok" in result["tests"]["results"][0]["stdout_tail"]
 
 
+def test_submit_coding_prompt_visual_artifact_prompt_finishes_cleanly(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "aureon").mkdir()
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "drwaw me a image of a cat and open the file and show me it",
+        source="test",
+        run_tests=False,
+        include_desktop=False,
+        root=tmp_path,
+        goal_engine=GoalExecutionEngine(),
+        scope_approved=True,
+        scope_answers={
+            "goal": "Create a cat visual artifact from the dashboard prompt.",
+            "deliverables": "A public SVG visual artifact, evidence JSON, and handover public URL.",
+            "target_system": "frontend/public/aureon_visual_artifacts and frontend/public/aureon_visual_asset_request.json",
+            "constraints": "No live trading, payment, filing, credential, or external mutation.",
+            "acceptance": "Goal route completes, the SVG exists, and a public URL is written.",
+        },
+    )
+
+    route_steps = result["goal_route"]["plan"]["steps"]
+    assert result["ok"] is True
+    assert result["summary"]["goal_route_clean"] is True
+    assert result["finished_product_audit"]["ready_for_client"] is True
+    assert [step["intent"] for step in route_steps] == ["visual_asset_request"]
+    assert not {"open_app", "list_dir"}.intersection({step["intent"] for step in route_steps})
+    assert any("aureon_visual_artifacts" in item for item in result["what"]["target_files"])
+    assert (tmp_path / "frontend" / "public" / "aureon_visual_asset_request.json").exists()
+
+
 def test_coding_organism_status_reads_last_run_and_queues(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",

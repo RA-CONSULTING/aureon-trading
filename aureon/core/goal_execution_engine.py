@@ -854,6 +854,18 @@ class GoalExecutionEngine:
             plan.success_criteria = "All current frontend work orders represented as execution records"
             return plan
 
+        visual_asset = self._match_visual_asset_goal(text)
+        if visual_asset:
+            steps = [GoalStep(
+                title=f"Create visual asset for {visual_asset['subject']}",
+                intent="visual_asset_request",
+                params=visual_asset,
+                expected_outcome="Aureon public visual artifact and evidence packet generated",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Visual asset written to frontend public artifacts with evidence"
+            return plan
+
         ui_repair = self._match_operational_ui_self_repair_goal(text)
         if ui_repair:
             steps = [GoalStep(
@@ -1088,6 +1100,56 @@ class GoalExecutionEngine:
                 "aureon/autonomous/aureon_coding_organism_bridge.py",
                 "frontend/src/components/generated/AureonCodingOrganismConsole.tsx",
                 "tests/test_aureon_coding_organism_bridge.py",
+            ],
+        }
+
+    def _match_visual_asset_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect direct visual artifact requests before desktop heuristics split them."""
+        import re as _re
+
+        lower = (text or "").lower()
+        direct_visual_action = _re.search(
+            r"\b(?:draw|drwaw|generate|create|make|render|paint|sketch)\b",
+            lower,
+        )
+        visual_noun = _re.search(
+            r"\b(?:image|picture|illustration|drawing|art|graphic|visual|logo|diagram|cat)\b",
+            lower,
+        )
+        if not (direct_visual_action and visual_noun):
+            return None
+
+        system_build = (
+            "aureon" in lower
+            and _re.search(r"\b(?:capability|system|wire|bridge|agent|code|repo|frontend|backend)\b", lower)
+            and not _re.search(r"\b(?:draw me|show me|open the file|display it|view it)\b", lower)
+        )
+        if system_build:
+            return None
+
+        subject = "requested visual"
+        patterns = [
+            r"\b(?:image|picture|illustration|drawing|art|graphic|visual)\s+(?:of|for)\s+(?:a|an|the)?\s*([a-zA-Z0-9 _-]{2,80})",
+            r"\b(?:draw|drwaw|generate|create|make|render|paint|sketch)\s+(?:me\s+)?(?:a|an|the)?\s*(?:image|picture|illustration|drawing|art|graphic|visual)?\s*(?:of|for)?\s*(?:a|an|the)?\s*([a-zA-Z0-9 _-]{2,80})",
+        ]
+        for pattern in patterns:
+            match = _re.search(pattern, lower)
+            if match:
+                candidate = _re.split(r"\b(?:and|then|open|show|display|view|save)\b", match.group(1))[0]
+                candidate = candidate.strip(" ._-")
+                if candidate:
+                    subject = candidate
+                    break
+        return {
+            "goal": text,
+            "subject": subject,
+            "open_requested": bool(_re.search(r"\b(?:open|show|display|view)\b", lower)),
+            "authoring_contract": "goal_engine_visual_asset_request_to_artifact_worker",
+            "target_files": [
+                "frontend/public/aureon_visual_asset_request.json",
+                "frontend/public/aureon_visual_artifacts",
+                "docs/audits/aureon_visual_asset_request.json",
+                "state/aureon_visual_asset_request_last_run.json",
             ],
         }
 
@@ -2280,6 +2342,33 @@ class GoalExecutionEngine:
                 "error": str(exc),
             }
 
+    def _execute_visual_asset_request(self, step: GoalStep) -> Dict[str, Any]:
+        """Create a public visual artifact and evidence packet without AgentCore."""
+        try:
+            from aureon.autonomous.aureon_visual_asset_request import build_and_write_visual_asset_request
+
+            result = build_and_write_visual_asset_request(
+                str(step.params.get("goal") or step.title),
+                open_requested=bool(step.params.get("open_requested")),
+            )
+            return {
+                "success": result.get("status") == "visual_asset_ready",
+                "result": result,
+                "tool_used": "visual_asset_request",
+                "target_files": result.get("target_files", []),
+                "output_files": result.get("output_files", []),
+                "artifact_path": result.get("asset_path"),
+                "public_url": result.get("public_url"),
+                "error": None if result.get("status") == "visual_asset_ready" else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "visual_asset_request",
+                "error": str(exc),
+            }
+
     def _execute_self_author_operational_ui(self, step: GoalStep) -> Dict[str, Any]:
         """Author the live operations UI through Aureon's own Queen code path."""
         try:
@@ -2648,6 +2737,9 @@ class GoalExecutionEngine:
         if step.intent == "coding_work_journal_ui":
             return self._execute_coding_work_journal_ui(step)
 
+        if step.intent == "visual_asset_request":
+            return self._execute_visual_asset_request(step)
+
         if step.intent == "self_repair_operational_ui":
             return self._execute_self_repair_operational_ui(step)
 
@@ -2932,6 +3024,22 @@ class GoalExecutionEngine:
                 "valid": False,
                 "reason": "Agent company registry missing role coverage, agent configs, authority boundaries, or surface/work-order mapping",
                 "confidence": 0.25,
+            }
+
+        if intent == "visual_asset_request":
+            payload = result.get("result") or {}
+            asset_path = payload.get("asset_path") if isinstance(payload, dict) else ""
+            public_url = payload.get("public_url") if isinstance(payload, dict) else ""
+            if success and asset_path and public_url and os.path.exists(asset_path):
+                return {
+                    "valid": True,
+                    "reason": f"Visual artifact verified at {asset_path}",
+                    "confidence": 0.94,
+                }
+            return {
+                "valid": False,
+                "reason": "Visual artifact missing output file or public URL",
+                "confidence": 0.2,
             }
 
         if intent == "coding_work_journal_ui":

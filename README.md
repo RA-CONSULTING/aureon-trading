@@ -200,6 +200,8 @@ For coding-only evidence without desktop handoff:
 
 Coding evidence is written to `state/aureon_coding_organism_last_run.json`, `docs/audits/aureon_coding_organism_bridge.json`, `docs/audits/aureon_coding_organism_bridge.md`, and `frontend/public/aureon_coding_organism_bridge.json`. The proof checklist includes `hnc_auris_drift_proof`, which reads the current HNC cognitive proof and harmonic affect evidence. If HNC proof, the master formula, or Auris nodes are missing, failing, or stale, the finished product is held and the snagging list names the blocker.
 
+Direct artifact prompts, such as asking Aureon to draw a simple image and show it, route through `visual_asset_request` once the client job is scoped. The route writes a public SVG under `/aureon_visual_artifacts/...`, publishes `frontend/public/aureon_visual_asset_request.json`, and avoids the old `open_app`/`list_dir` fallback when AgentCore is unavailable. In the dashboard, use **Full Coding Job** for a complete handover, or let **Send To Aureon** ask missing scope questions first.
+
 After pulling a code update, relaunch the production supervisor so the already-running mind hub loads the newest coding bridge:
 
 ```powershell
