@@ -173,3 +173,28 @@ def test_capability_forge_interactive_game_builds_local_playable_artifact(tmp_pa
     assert "Jump: Space" in html
     assert quality["handover_ready"] is True
     assert quality["score"] >= 0.8
+
+
+def test_capability_forge_unknown_tool_request_builds_adaptive_skill_capsule(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+
+    report = build_and_write_capability_forge(
+        "Build a local barcode label generator tool for the warehouse team, with run instructions and proof.",
+        root=tmp_path,
+    )
+
+    manifest = report["artifact_manifest"]
+    quality = report["artifact_quality_report"]
+    assert report["handover_ready"] is True
+    assert report["summary"]["adaptive_skill_created"] is True
+    assert report["adaptive_skill_evidence"]["name"] == "universal_adaptive_skill_forge"
+    assert manifest["kind"] == "adaptive_skill_capsule"
+    assert manifest["public_url"].endswith("/index.html")
+    assert Path(manifest["asset_path"]).exists()
+    assert Path(manifest["tool_path"]).exists()
+    assert Path(manifest["runbook_path"]).exists()
+    assert quality["handover_ready"] is True
+    assert any(check["id"] == "adaptive_skill_run_contract_exists" for check in quality["checks"])

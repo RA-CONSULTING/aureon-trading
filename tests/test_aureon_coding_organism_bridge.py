@@ -378,6 +378,44 @@ def test_submit_coding_prompt_game_uses_adaptive_forge_not_agentcore(tmp_path: P
     assert "aureon_generated_apps" in manifest["public_url"]
 
 
+def test_submit_coding_prompt_unknown_tool_uses_universal_adaptive_skill(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "aureon").mkdir()
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "Build a local barcode label generator tool for the warehouse team, with run instructions and proof.",
+        source="test",
+        run_tests=False,
+        include_desktop=False,
+        root=tmp_path,
+        goal_engine=RaisingGoalEngine(),
+        scope_approved=True,
+        scope_answers={
+            "goal": "Build a local barcode label generator tool for the warehouse team.",
+            "deliverables": "Adaptive local skill capsule, browser preview, runbook, Python run contract, and proof.",
+            "target_system": "frontend/public/aureon_adaptive_skills and Aureon coding cockpit artifact preview.",
+            "constraints": "Local-only, no live trading, payment, filing, credential, or destructive OS action.",
+            "acceptance": "The skill capsule files exist, preview URL works, and no blocking snags remain.",
+        },
+    )
+
+    route_steps = result["goal_route"]["plan"]["steps"]
+    payload = route_steps[0]["result"]["result"]
+    manifest = payload["artifact_manifest"]
+    assert result["ok"] is True
+    assert [step["intent"] for step in route_steps] == ["capability_forge"]
+    assert payload["adaptive_skill_evidence"]["name"] == "universal_adaptive_skill_forge"
+    assert manifest["kind"] == "adaptive_skill_capsule"
+    assert "aureon_adaptive_skills" in manifest["public_url"]
+    assert Path(manifest["asset_path"]).exists()
+    assert Path(manifest["tool_path"]).exists()
+
+
 def test_coding_organism_status_reads_last_run_and_queues(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",

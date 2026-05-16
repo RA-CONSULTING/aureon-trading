@@ -401,6 +401,7 @@ export function AureonCodingOrganismConsole() {
   const creativeSnags = Array.isArray(creativeGuardian.snagging_list) ? creativeGuardian.snagging_list : [];
   const qualityChecks = Array.isArray(qualityReport.checks) ? qualityReport.checks : [];
   const qualitySnags = Array.isArray(qualityReport.snags) ? qualityReport.snags : [];
+  const adaptiveSkill = (capabilityForge.adaptive_skill_evidence || capabilityForge.adaptive_skill_report?.adaptive_skill || {}) as JsonMap;
   const approvalState = localApprovalState || capabilityForge.approval_state?.state || clientJob.approval_state?.state || qualityReport.approval_state?.state || "waiting_for_forge";
   const scopeOfWorks = clientJob.scope_of_works || {};
   const clientQuestions = Array.isArray(clientJob.client_questions) ? clientJob.client_questions : [];
@@ -722,6 +723,12 @@ export function AureonCodingOrganismConsole() {
             <Mini label="Tools" value={(capabilityForge.local_tools_used || []).length || 0} />
             <Mini label="Snags" value={qualitySnags.length} />
           </div>
+          {adaptiveSkill.name ? (
+            <div className="mt-3 rounded-md border border-teal-300/25 bg-background/25 p-3 text-xs text-teal-50/80">
+              <span className="font-medium text-teal-50">Adaptive skill:</span> {adaptiveSkill.name}
+              {adaptiveSkill.skill_contract ? <span> - {adaptiveSkill.skill_contract}</span> : null}
+            </div>
+          ) : null}
 
           <div className="mt-3 grid gap-3 lg:grid-cols-2">
             <div className="rounded-md border border-teal-300/25 bg-background/25 p-3">

@@ -1267,9 +1267,54 @@ def _is_interactive_app_prompt(prompt: str) -> bool:
     )
 
 
+def _prefer_adaptive_forge_prompt(prompt: str) -> bool:
+    text = str(prompt or "").lower()
+    if any(keyword in text for keyword in ("video", "clip", "animation", "mp4", "webm", "image", "picture", "draw", "pdf", "document")):
+        return False
+    return _is_interactive_app_prompt(prompt) or any(
+        keyword in text
+        for keyword in (
+            "local tool",
+            "tool",
+            "skill",
+            "calculator",
+            "converter",
+            "generator",
+            "workflow",
+            "micro app",
+            "html app",
+            "code on the fly",
+            "on the fly",
+        )
+    )
+
+
 def _is_build_prompt(prompt: str) -> bool:
     text = str(prompt or "").lower()
-    return any(keyword in text for keyword in ("build", "make", "create", "code", "write", "ui", "app", "game"))
+    return any(
+        keyword in text
+        for keyword in (
+            "build",
+            "make",
+            "create",
+            "code",
+            "write",
+            "ui",
+            "app",
+            "game",
+            "tool",
+            "skill",
+            "calculator",
+            "converter",
+            "generator",
+            "workflow",
+            "implement",
+            "fix",
+            "repair",
+            "enhance",
+            "adapt",
+        )
+    )
 
 
 def _route_mentions_agentcore_unavailable(value: Any) -> bool:
@@ -1425,7 +1470,7 @@ def submit_coding_prompt(
     queue.next_task()
 
     if scope_locked:
-        if _is_interactive_app_prompt(execution_prompt):
+        if _prefer_adaptive_forge_prompt(execution_prompt):
             route = _route_local_capability_forge(execution_prompt, root)
         else:
             route = _route_goal(execution_prompt, goal_engine=goal_engine)
