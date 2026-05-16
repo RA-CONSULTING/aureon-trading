@@ -114,6 +114,7 @@ def test_unified_ui_builder_writes_component_spec_and_evidence(tmp_path: Path):
     assert "frontend/src/components/WarRoomDashboard.tsx" in spec["templates_used"]
     assert "aureon_code_expression_context_v1" in spec["expression_context"]["schema_features"]
     assert "AureonGeneratedOperationalConsole" in component_text
+    assert "AureonCodingOrganismConsole" in component_text
     assert "Four-Exchange Coverage" in component_text
     assert "HNC/Auris" in component_text
     assert "API_SECRET" not in json.dumps(spec)
@@ -162,3 +163,19 @@ def test_self_review_and_repair_operational_ui_repairs_bad_component(tmp_path: P
     assert result["repair_actions"]
     assert "QueenCodeArchitect.write_file" in result["authoring_path"]
     assert "AureonGeneratedOperationalConsole" in target.read_text(encoding="utf-8")
+
+
+def test_self_review_catches_path_specific_export_mismatch(tmp_path: Path):
+    _fake_repo(tmp_path)
+    target = tmp_path / "frontend" / "src" / "components" / "generated" / "AureonCodingOrganismConsole.tsx"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("export function AureonGeneratedOperationalConsole() { return null; }", encoding="utf-8")
+
+    review = review_operational_ui(
+        root=tmp_path,
+        component_path=Path("frontend/src/components/generated/AureonCodingOrganismConsole.tsx"),
+        run_build=False,
+    )
+
+    assert review["success"] is False
+    assert any(issue["code"] == "missing_expected_component_export" for issue in review["issues"])

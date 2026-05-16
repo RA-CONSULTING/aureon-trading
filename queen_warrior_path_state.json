@@ -3,7 +3,7 @@
   "ceremony_count": 0,
   "combat_mode": "stealth",
   "last_assessment": {
-    "timestamp": 1778837742.9455216,
+    "timestamp": 1778870580.5550659,
     "ira_hit_and_run_score": 0.5,
     "ira_stealth_score": 0.95,
     "ira_cell_integrity": 0.95,
@@ -13,7 +13,7 @@
     "sun_tzu_deception_active": false,
     "sun_tzu_enemy_weakness": "NO_CLEAR_WEAKNESS - Continue observation",
     "sun_tzu_can_win_without_fight": false,
-    "moon_phase": 0.473565389215608,
+    "moon_phase": 0.48643585739309003,
     "active_frequency": 639,
     "ancestors_invoked": [],
     "ceremony_power": 0.0,
@@ -24,9 +24,9 @@
     "lion_strength": 0.0,
     "hummingbird_agility": 0.4,
     "ant_swarm_mode": false,
-    "counter_phase_angle": 24.82222517022028,
+    "counter_phase_angle": 77.08410323945333,
     "harmonic_alignment": 1.0,
-    "neutralization_power": 0.5689506254728341,
+    "neutralization_power": 0.7141225089984815,
     "recommended_philosophy": "GHOST_DANCE - Invoke ancestors, await guidance",
     "recommended_combat_mode": "stealth",
     "recommended_action": "OBSERVE - Continue intelligence gathering",
@@ -39,5 +39,5 @@
       "Active Frequency: Connection Hz"
     ]
   },
-  "last_updated": 1778837742.9455216
+  "last_updated": 1778870580.5550659
 }

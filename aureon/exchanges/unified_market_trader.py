@@ -149,6 +149,9 @@ EXECUTION_RESULT_STATE_PATH = RUNTIME_STATUS_PATH.with_name("unified_exchange_ex
 EXECUTION_RESULT_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "aureon_unified_exchange_execution_results.json"
 KRAKEN_SPOT_POSITION_STATE_PATH = RUNTIME_STATUS_PATH.with_name("kraken_spot_fast_profit_positions.json")
 KRAKEN_SPOT_POSITION_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "kraken_spot_fast_profit_positions.json"
+KRAKEN_ASSET_REGISTRY_STATE_PATH = RUNTIME_STATUS_PATH.with_name("aureon_kraken_tradable_asset_registry.json")
+KRAKEN_ASSET_REGISTRY_AUDIT_PATH = REPO_ROOT / "docs" / "audits" / "aureon_kraken_tradable_asset_registry.json"
+KRAKEN_ASSET_REGISTRY_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "aureon_kraken_tradable_asset_registry.json"
 SHADOW_TRADE_LOG_PATH = RUNTIME_STATUS_PATH.with_name("unified_shadow_trade_report.jsonl")
 SHADOW_TRADE_STATE_PATH = RUNTIME_STATUS_PATH.with_name("unified_shadow_trade_report.json")
 SHADOW_TRADE_PUBLIC_PATH = REPO_ROOT / "frontend" / "public" / "aureon_unified_shadow_trade_report.json"
@@ -2113,6 +2116,7 @@ class UnifiedMarketTrader:
             "intelligence_mesh": intelligence_mesh,
             "exchange_action_plan": exchange_action_plan,
             "kraken_spot_fast_profit": self._load_kraken_spot_fast_profit_state(),
+            "kraken_asset_registry": self._load_kraken_asset_registry_summary(),
             "preflight": self._build_preflight_report(),
             "api_governor": self._api_governor_snapshot(),
             "dynamic_intelligence_budget": getattr(self, "_dynamic_intelligence_budget", {}) or {},
@@ -2130,6 +2134,7 @@ class UnifiedMarketTrader:
                 "capital_confidence_ratchet": capital_payload.get("capital_confidence_ratchet", {}) if isinstance(capital_payload, dict) else {},
                 "capital_unified_waveform_check": capital_payload.get("capital_unified_waveform_check", {}) if isinstance(capital_payload, dict) else {},
                 "capital_no_loss_hold_queue": capital_payload.get("capital_no_loss_hold_queue", {}) if isinstance(capital_payload, dict) else {},
+                "kraken_asset_registry": self._load_kraken_asset_registry_summary(),
                 "portfolio_balances": {
                     "kraken": kraken_payload.get("portfolio_balances") or kraken_payload.get("balance_snapshot") or {},
                     "capital": capital_payload.get("portfolio_balances") or capital_payload.get("balance_snapshot") or {},
@@ -2139,6 +2144,46 @@ class UnifiedMarketTrader:
         self._latest_dashboard_payload = self._copy_payload(payload)
         self._write_runtime_status_file()
         return payload
+
+    def _load_kraken_asset_registry_summary(self) -> Dict[str, Any]:
+        """Read the Kraken tradable asset registry without dragging the full book into runtime."""
+        for path in (KRAKEN_ASSET_REGISTRY_STATE_PATH, KRAKEN_ASSET_REGISTRY_AUDIT_PATH, KRAKEN_ASSET_REGISTRY_PUBLIC_PATH):
+            try:
+                if not path.exists():
+                    continue
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                summary = payload.get("summary", {}) if isinstance(payload.get("summary"), dict) else {}
+                survival_policy = payload.get("survival_policy", {}) if isinstance(payload.get("survival_policy"), dict) else {}
+                return {
+                    "generated_at": payload.get("generated_at", ""),
+                    "schema_version": payload.get("schema_version", ""),
+                    "path": str(path),
+                    "public_path": "frontend/public/aureon_kraken_tradable_asset_registry.json",
+                    "database_path": "state/kraken_tradable_asset_registry.sqlite",
+                    "total_pairs": int(summary.get("total_pairs", 0) or 0),
+                    "ticker_enriched_count": int(summary.get("ticker_enriched_count", 0) or 0),
+                    "spot_trade_ready_count": int(summary.get("spot_trade_ready_count", 0) or 0),
+                    "margin_pair_count": int(summary.get("margin_pair_count", 0) or 0),
+                    "margin_trade_ready_count": int(summary.get("margin_trade_ready_count", 0) or 0),
+                    "cost_known_count": int(summary.get("cost_known_count", 0) or 0),
+                    "fee_known_count": int(summary.get("fee_known_count", 0) or 0),
+                    "take_profit_route_count": int(summary.get("take_profit_route_count", 0) or 0),
+                    "asset_classes": dict(summary.get("asset_classes", {}) or {}),
+                    "top_blockers": list(summary.get("top_blockers", []) or [])[:6],
+                    "survival_policy": survival_policy,
+                }
+            except Exception as exc:
+                return {
+                    "generated_at": "",
+                    "path": str(path),
+                    "error": str(exc),
+                }
+        return {
+            "generated_at": "",
+            "path": str(KRAKEN_ASSET_REGISTRY_STATE_PATH),
+            "missing": True,
+            "next_action": "Run python -m aureon.exchanges.kraken_asset_registry --max-tickers 100",
+        }
 
     def _kraken_equity_from_payload(self, payload: Dict[str, Any]) -> float:
         for key in ("equity", "equity_usd", "portfolio_value_usd", "portfolio_value"):

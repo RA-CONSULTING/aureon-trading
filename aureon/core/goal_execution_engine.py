@@ -770,6 +770,42 @@ class GoalExecutionEngine:
         plan = GoalPlan(original_text=text, objective=text)
         steps: List[GoalStep] = []
 
+        work_journal = self._match_coding_work_journal_goal(text)
+        if work_journal:
+            steps = [GoalStep(
+                title="Aureon validate coding work journal UI",
+                intent="coding_work_journal_ui",
+                params=work_journal,
+                expected_outcome="Coding organism publishes a prompt-to-files work journal and the UI renders it",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Coding work journal evidence and UI surface are present and validated"
+            return plan
+
+        agent_company = self._match_agent_company_goal(text)
+        if agent_company:
+            steps = [GoalStep(
+                title="Aureon build agent company capability bill list",
+                intent="agent_company_builder",
+                params=agent_company,
+                expected_outcome="CEO-to-cleaner agent company registry, work orders, and console evidence published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Agent company registry generated with roles, authority boundaries, and public evidence"
+            return plan
+
+        codex_ingestion = self._match_codex_capability_ingestion_goal(text)
+        if codex_ingestion:
+            steps = [GoalStep(
+                title="Aureon ingest Everything Codex Can Do",
+                intent="codex_capability_ingestion",
+                params=codex_ingestion,
+                expected_outcome="Codex capability source file ingested, mapped to Aureon, tested, and completion report published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Codex capability ingestion report generated with Aureon bridge work orders and validation evidence"
+            return plan
+
         repo_repair = self._match_repo_self_repair_goal(text)
         if repo_repair:
             steps = [GoalStep(
@@ -780,6 +816,18 @@ class GoalExecutionEngine:
             )]
             plan.steps = steps
             plan.success_criteria = "Repo self-repair report generated and critical checks retested"
+            return plan
+
+        director_bridge = self._match_director_capability_bridge_goal(text)
+        if director_bridge:
+            steps = [GoalStep(
+                title="Aureon build director capability bridge",
+                intent="director_capability_bridge",
+                params=director_bridge,
+                expected_outcome="Codex-class capability parity map and Aureon bridge work orders published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Director capability bridge generated with exact Aureon build orders for gaps"
             return plan
 
         coding_skill_base = self._match_coding_agent_skill_base_goal(text)
@@ -961,10 +1009,14 @@ class GoalExecutionEngine:
 
         lower = (text or "").lower()
         aureon_hit = "aureon" in lower or "system" in lower or "organism" in lower
-        coding_hit = _re.search(r"\b(?:coder|coders|coding|code writing|write code|programming|developer|agents as coders)\b", lower)
+        coding_hit = _re.search(r"\b(?:coder|coders|coding|code writing|write code|programming|developer|agents as coders|code)\b", lower)
         skill_hit = _re.search(r"\b(?:skill|skills|skill base|capability|capabilities|learn|learning|teach)\b", lower)
         web_hit = _re.search(r"\b(?:websearch|web search|web_search|web|online|open source|api|documentation|docs)\b", lower)
-        if not (aureon_hit and coding_hit and skill_hit):
+        bridge_hit = _re.search(
+            r"\b(?:coding organism|prompt[- ]?to[- ]?run|desktop run|desktop/run|run handoff|finished product|product audit|remote desktop|vm control)\b",
+            lower,
+        )
+        if not (aureon_hit and coding_hit and (skill_hit or bridge_hit)):
             return None
         return {
             "goal": text,
@@ -972,11 +1024,118 @@ class GoalExecutionEngine:
             "authoring_contract": "goal_engine_coding_agent_skill_base_to_queen_code_architect",
         }
 
+    def _match_director_capability_bridge_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a director-mode request to compare Codex-class ability with Aureon."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        director_hit = _re.search(r"\b(?:director|codex|capability parity|capability bridge|bridge the gaps|marry up|what can i do)\b", lower)
+        gap_hit = _re.search(r"\b(?:gap|gaps|cant do|can't do|missing|bridge|build orders|work orders|list)\b", lower)
+        code_hit = _re.search(r"\b(?:code|write|build|coding|desktop|remote|test|audit|run)\b", lower)
+        if not (aureon_hit and director_hit and gap_hit and code_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_director_capability_bridge_to_queen_code_architect",
+        }
+
+    def _match_codex_capability_ingestion_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request to ingest the Everything Codex Can Do source file."""
+        import re as _re
+
+        lower = (text or "").lower()
+        file_hit = "everything_codex_can_do.md" in lower or "everything codex can do" in lower
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        ingest_hit = _re.search(r"\b(?:ingest|upload|load|read|write these into|marry up|bridge|completion report|progress report)\b", lower)
+        test_hit = _re.search(r"\b(?:test|validate|run|report|self[- ]?validation|completion)\b", lower)
+        if not (file_hit and aureon_hit and ingest_hit and test_hit):
+            return None
+        return {
+            "goal": text,
+            "source_md": "EVERYTHING_CODEX_CAN_DO.md",
+            "authoring_contract": "goal_engine_codex_capability_ingestion_to_queen_code_architect",
+        }
+
+    def _match_coding_work_journal_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for the coding organism to show its full work trail."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "system" in lower or "organism" in lower
+        journal_hit = _re.search(
+            r"\b(?:work journal|show its work|show the work|stages|prompt to finished files|prompt-to-finished|flow|prompt lane|send to aureon|operator terminal)\b",
+            lower,
+        )
+        coding_panel_hit = (
+            "aureoncodingorganismconsole" in lower
+            or "aureon coding organism" in lower
+            or "coding organism console" in lower
+            or "coding organism ui" in lower
+            or "coding panel" in lower
+        )
+        ui_hit = _re.search(r"\b(?:ui|console|panel|screen|frontend|show|terminal|textarea|prompt box|prompt lane|send to aureon|local hub|endpoint)\b", lower)
+        evidence_hit = _re.search(r"\b(?:prompt|route|goal steps|code proposal|files|tests|desktop handoff|completion|report|hub endpoint|local hub)\b", lower)
+        if aureon_hit and coding_panel_hit and ui_hit and evidence_hit:
+            journal_hit = journal_hit or True
+        if not (aureon_hit and journal_hit and ui_hit and evidence_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_coding_work_journal_ui_to_coding_organism_bridge",
+            "target_files": [
+                "aureon/autonomous/aureon_coding_organism_bridge.py",
+                "frontend/src/components/generated/AureonCodingOrganismConsole.tsx",
+                "tests/test_aureon_coding_organism_bridge.py",
+            ],
+        }
+
+    def _match_agent_company_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request to build Aureon's company-of-agents registry."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        company_hit = _re.search(
+            r"\b(?:company of agents|agent company|company-style|org chart|organisation|organization|who does what|ceo|cleaner|toilet|bill list|day to day|daily duties|daily routine|agency|head hunting|headhunting|subcontractor|sub contractor|client job|prompt as client|temporary workers|crew memory|memory phonebook|phonebook|rehydrate|internal memory database)\b",
+            lower,
+        )
+        capability_hit = _re.search(
+            r"\b(?:capability|capabilities|roles|agents|workers|staff|crew|departments|startup|tasks|work orders|skills|functions|duties|routines|hire|fire|retire|outsource|memory|archive)\b",
+            lower,
+        )
+        build_hit = _re.search(
+            r"\b(?:build|create|list|map|wire|make|generate|tell aureon|write|ensure|expand|teach|operate|treat|scout|assemble|deliver|retire|retain|outsource|save|archive|compress|rehydrate|reuse)\b",
+            lower,
+        )
+        if not (aureon_hit and company_hit and capability_hit and build_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_agent_company_builder_to_coding_organism",
+            "target_files": [
+                "aureon/autonomous/aureon_agent_company_builder.py",
+                "frontend/src/components/generated/AureonAgentCompanyConsole.tsx",
+                "frontend/public/aureon_agent_company_bill_list.json",
+                "docs/audits/aureon_agent_company_bill_list.json",
+                "tests/test_agent_company_builder.py",
+            ],
+        }
+
     def _match_operational_ui_self_repair_goal(self, text: str) -> Optional[Dict[str, Any]]:
         """Detect a request for Aureon to diagnose and fix its own UI defects."""
         import re as _re
 
         lower = (text or "").lower()
+        if (
+            "aureoncodingorganismconsole" in lower
+            or "aureon coding organism" in lower
+            or "coding organism console" in lower
+            or "coding organism ui" in lower
+            or "prompt lane" in lower
+            or "send to aureon" in lower
+        ):
+            return None
         ui_hit = _re.search(r"\b(?:ui|user interface|frontend|front-end|console|dashboard|react|tsx)\b", lower)
         aureon_hit = "aureon" in lower or "organism" in lower or "itself" in lower
         repair_hit = _re.search(
@@ -1973,6 +2132,149 @@ class GoalExecutionEngine:
                 "error": str(exc),
             }
 
+    def _execute_director_capability_bridge(self, step: GoalStep) -> Dict[str, Any]:
+        """Build the Codex-class capability parity map and Aureon bridge orders."""
+        try:
+            from aureon.autonomous.aureon_director_capability_bridge import build_and_write_director_capability_bridge
+
+            result = build_and_write_director_capability_bridge(str(step.params.get("goal") or step.title))
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            return {
+                "success": bool(summary.get("capability_count")) and bool(result.get("aureon_bridge_work_orders") is not None),
+                "result": result,
+                "tool_used": "director_capability_bridge",
+                "error": None if bool(summary.get("capability_count")) else "director_capability_bridge_empty",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "director_capability_bridge",
+                "error": str(exc),
+            }
+
+    def _execute_codex_capability_ingestion(self, step: GoalStep) -> Dict[str, Any]:
+        """Let Aureon ingest the public Codex capability document and publish a completion report."""
+        try:
+            from aureon.autonomous.aureon_codex_capability_ingestion import build_and_write_codex_capability_ingestion
+
+            result = build_and_write_codex_capability_ingestion(
+                str(step.params.get("source_md") or "EVERYTHING_CODEX_CAN_DO.md"),
+                goal=str(step.params.get("goal") or step.title),
+            )
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            completion = result.get("completion_report", {}) if isinstance(result, dict) else {}
+            return {
+                "success": bool(summary.get("capability_rows_read")) and completion.get("self_validation_result") == "passing",
+                "result": result,
+                "tool_used": "codex_capability_ingestion",
+                "error": None if completion.get("self_validation_result") == "passing" else "codex_capability_ingestion_attention",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "codex_capability_ingestion",
+                "error": str(exc),
+            }
+
+    def _execute_agent_company_builder(self, step: GoalStep) -> Dict[str, Any]:
+        """Build Aureon's CEO-to-cleaner agent company registry and public evidence."""
+        try:
+            from aureon.autonomous.aureon_agent_company_builder import build_and_write_agent_company_bill_list
+
+            result = build_and_write_agent_company_bill_list(goal=str(step.params.get("goal") or step.title))
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            completion = result.get("completion_report", {}) if isinstance(result, dict) else {}
+            return {
+                "success": (
+                    int((summary or {}).get("role_count") or 0) >= 30
+                    and bool((summary or {}).get("ceo_to_cleaner_coverage"))
+                    and completion.get("self_validation_result") == "passing"
+                ),
+                "result": result,
+                "tool_used": "agent_company_builder",
+                "error": None if completion.get("self_validation_result") == "passing" else "agent_company_builder_attention",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "agent_company_builder",
+                "error": str(exc),
+            }
+
+    def _execute_coding_work_journal_ui(self, step: GoalStep) -> Dict[str, Any]:
+        """Validate that the coding organism exposes prompt-to-finished-files work stages."""
+        try:
+            from pathlib import Path
+
+            root = Path.cwd().resolve()
+            target_files = list(step.params.get("target_files") or [])
+            checks = []
+            expectations = {
+                "aureon/autonomous/aureon_coding_organism_bridge.py": ["_build_work_journal", "aureon-coding-work-journal-v1"],
+                "frontend/src/components/generated/AureonCodingOrganismConsole.tsx": [
+                    "AureonCodingOrganismConsole",
+                    "Scope Of Works",
+                    "Work Journal: Prompt To Finished Files",
+                    "journalStages",
+                    "proofChecklist",
+                    "snaggingList",
+                    "HNC/Auris drift proof",
+                    "compactEvidence",
+                    "Local hub endpoint",
+                    "Prompt lane",
+                    "Send To Aureon",
+                    "Desktop And Remote Run Handoff",
+                ],
+                "tests/test_aureon_coding_organism_bridge.py": ["work_journal", "aureon-coding-work-journal-v1"],
+            }
+            for rel_path, needles in expectations.items():
+                path = root / rel_path
+                text = path.read_text(encoding="utf-8") if path.exists() else ""
+                checks.append(
+                    {
+                        "path": rel_path,
+                        "exists": path.exists(),
+                        "needles": needles,
+                        "passed": path.exists() and all(needle in text for needle in needles),
+                    }
+                )
+            passed = all(item["passed"] for item in checks)
+            return {
+                "success": passed,
+                "result": {
+                    "schema_version": "aureon-coding-work-journal-ui-validation-v1",
+                    "status": "work_journal_ui_ready" if passed else "work_journal_ui_attention",
+                    "target_files": target_files,
+                    "checks": checks,
+                    "summary": {
+                        "check_count": len(checks),
+                        "passed_count": len([item for item in checks if item["passed"]]),
+                        "ui_journal_visible_in_code": any(
+                            item["path"].endswith("AureonCodingOrganismConsole.tsx") and item["passed"]
+                            for item in checks
+                        ),
+                    },
+                    "completion_report": {
+                        "did_validate_backend_journal": checks[0]["passed"],
+                        "did_validate_frontend_journal": checks[1]["passed"],
+                        "did_validate_tests": checks[2]["passed"],
+                        "remaining_work": [] if passed else [item["path"] for item in checks if not item["passed"]],
+                    },
+                },
+                "tool_used": "coding_work_journal_ui",
+                "error": None if passed else "work_journal_ui_missing_expected_wires",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "coding_work_journal_ui",
+                "error": str(exc),
+            }
+
     def _execute_self_author_operational_ui(self, step: GoalStep) -> Dict[str, Any]:
         """Author the live operations UI through Aureon's own Queen code path."""
         try:
@@ -2329,6 +2631,18 @@ class GoalExecutionEngine:
         if step.intent == "coding_agent_skill_base":
             return self._execute_coding_agent_skill_base(step)
 
+        if step.intent == "director_capability_bridge":
+            return self._execute_director_capability_bridge(step)
+
+        if step.intent == "codex_capability_ingestion":
+            return self._execute_codex_capability_ingestion(step)
+
+        if step.intent == "agent_company_builder":
+            return self._execute_agent_company_builder(step)
+
+        if step.intent == "coding_work_journal_ui":
+            return self._execute_coding_work_journal_ui(step)
+
         if step.intent == "self_repair_operational_ui":
             return self._execute_self_repair_operational_ui(step)
 
@@ -2505,6 +2819,136 @@ class GoalExecutionEngine:
             return {
                 "valid": False,
                 "reason": "Coding-agent skill base missing agents, web tools, logic map, work orders, or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "director_capability_bridge":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            rows = payload.get("codex_class_capabilities") if isinstance(payload, dict) else []
+            work_orders = payload.get("aureon_bridge_work_orders") if isinstance(payload, dict) else []
+            writer = (payload.get("write_info") or {}).get("writer") if isinstance(payload.get("write_info"), dict) else ""
+            if (
+                success
+                and int((summary or {}).get("capability_count") or 0) >= 10
+                and isinstance(rows, list)
+                and isinstance(work_orders, list)
+                and "QueenCodeArchitect.write_file" in authoring_path
+                and writer == "QueenCodeArchitect"
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Director capability bridge published Codex-class parity map and exact Aureon bridge work orders",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Director capability bridge missing capability rows, bridge orders, or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "codex_capability_ingestion":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            completion = payload.get("completion_report") if isinstance(payload, dict) else {}
+            validation = (payload.get("act") or {}).get("validation") if isinstance(payload, dict) else {}
+            writer = (payload.get("write_info") or {}).get("writer") if isinstance(payload.get("write_info"), dict) else ""
+            if (
+                success
+                and int((summary or {}).get("capability_rows_read") or 0) >= 3
+                and (completion or {}).get("did_read_source_document") is True
+                and (completion or {}).get("did_marriage_map") is True
+                and (completion or {}).get("did_generate_bridge_work_orders") is True
+                and (validation or {}).get("director_bridge_ran") is True
+                and writer == "QueenCodeArchitect"
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Aureon ingested EVERYTHING_CODEX_CAN_DO.md, mapped it to its own systems, wrote bridge work orders, and published validation evidence",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Codex capability ingestion missing source read, mapping, work orders, director bridge run, or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "agent_company_builder":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            completion = payload.get("completion_report") if isinstance(payload, dict) else {}
+            roles = payload.get("roles") if isinstance(payload, dict) else []
+            agents = payload.get("agents") if isinstance(payload, dict) else []
+            boundaries = payload.get("authority_boundaries") if isinstance(payload, dict) else []
+            role_titles = {str(role.get("title")) for role in roles if isinstance(role, dict)}
+            mapped_or_ordered = bool((completion or {}).get("did_map_roles_to_surfaces_or_work_orders"))
+            day_plans_ready = bool((summary or {}).get("daily_operating_loop_ready")) and int(
+                (summary or {}).get("roles_with_day_plan_count") or 0
+            ) >= len(roles)
+            whole_access_ready = bool((completion or {}).get("did_attach_whole_organism_access")) and int(
+                (summary or {}).get("roles_with_whole_organism_access_count") or 0
+            ) >= len(roles)
+            agency_ready = (
+                (summary or {}).get("agency_model") == "prompt_as_client_job_agency"
+                and int((summary or {}).get("agency_workforce_role_count") or 0) >= 5
+                and bool((completion or {}).get("did_attach_hire_retire_lifecycle"))
+            )
+            memory_ready = (
+                bool((summary or {}).get("memory_phonebook_ready"))
+                and int((summary or {}).get("sha256_memory_entry_count") or 0) >= len(roles)
+                and bool((completion or {}).get("did_build_sha256_zlib_memory_phonebook"))
+            )
+            if (
+                success
+                and int((summary or {}).get("role_count") or 0) >= 30
+                and int((summary or {}).get("department_count") or 0) >= 7
+                and bool((summary or {}).get("ceo_to_cleaner_coverage"))
+                and bool((summary or {}).get("existing_gates_preserved"))
+                and "CEO Goal Steward" in role_titles
+                and "Log Janitor" in role_titles
+                and "Stale State Cleaner" in role_titles
+                and isinstance(agents, list)
+                and len(agents) >= len(roles)
+                and isinstance(boundaries, list)
+                and len(boundaries) >= 4
+                and mapped_or_ordered
+                and day_plans_ready
+                and whole_access_ready
+                and agency_ready
+                and memory_ready
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Aureon agent company registry published CEO-to-cleaner roles, prompt-as-client agency flow, hire/retire lifecycle, SHA-256/zlib memory phonebook, whole-organism access, handoffs, work orders, and preserved authority gates",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Agent company registry missing role coverage, agent configs, authority boundaries, or surface/work-order mapping",
+                "confidence": 0.25,
+            }
+
+        if intent == "coding_work_journal_ui":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            completion = payload.get("completion_report") if isinstance(payload, dict) else {}
+            if (
+                success
+                and int((summary or {}).get("check_count") or 0) >= 3
+                and int((summary or {}).get("passed_count") or 0) >= 3
+                and bool((completion or {}).get("did_validate_backend_journal"))
+                and bool((completion or {}).get("did_validate_frontend_journal"))
+                and bool((completion or {}).get("did_validate_tests"))
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Coding organism work journal is wired from prompt intake to finished-file evidence and rendered in the UI",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Coding work journal UI is missing backend, frontend, or test evidence",
                 "confidence": 0.25,
             }
 

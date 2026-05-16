@@ -842,6 +842,8 @@ export function AureonGeneratedOperationalConsole() {
   );
 }
 
+export const AureonCodingOrganismConsole = AureonGeneratedOperationalConsole;
+
 function Panel({ title, icon: Icon, children }: { title: string; icon: typeof Activity; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-border/50 bg-muted/10">
@@ -1040,6 +1042,22 @@ def review_operational_ui(
     checks["required_marker_count"] = len(REQUIRED_UI_MARKERS) - len(missing_markers)
     if missing_markers:
         issues.append({"severity": "blocking", "code": "missing_required_ui_markers", "markers": missing_markers})
+
+    expected_export = component.stem if component.stem.startswith("Aureon") else ""
+    checks["expected_component_export"] = expected_export
+    if expected_export:
+        export_markers = (
+            f"export function {expected_export}",
+            f"export const {expected_export}",
+            f"export default function {expected_export}",
+        )
+        if not any(marker in component_text for marker in export_markers):
+            issues.append({
+                "severity": "blocking",
+                "code": "missing_expected_component_export",
+                "expected_export": expected_export,
+                "path": component.relative_to(repo_root).as_posix() if component.exists() else component.as_posix(),
+            })
 
     leaked_markers = [
         marker for marker in BLOCKED_OUTPUT_MARKERS

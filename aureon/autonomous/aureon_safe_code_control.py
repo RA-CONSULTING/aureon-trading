@@ -59,6 +59,7 @@ class SafeCodeControl:
         self.last_error = ""
         self.max_pending = 50
         self.max_recent = 25
+        self._load_existing()
         self._persist()
 
     def propose(self, proposal: CodeProposal) -> Dict[str, Any]:
@@ -151,6 +152,20 @@ class SafeCodeControl:
 
     def _persist(self) -> None:
         self.state_path.write_text(json.dumps(self.status(), indent=2), encoding="utf-8")
+
+    def _load_existing(self) -> None:
+        if not self.state_path.exists():
+            return
+        try:
+            data = json.loads(self.state_path.read_text(encoding="utf-8"))
+        except Exception:
+            return
+        if isinstance(data.get("pending_proposals"), list):
+            self.pending_proposals = data["pending_proposals"][-self.max_pending :]
+        if isinstance(data.get("recent_reviews"), list):
+            self.recent_reviews = data["recent_reviews"][-self.max_recent :]
+        self.enabled = bool(data.get("enabled", self.enabled))
+        self.last_error = str(data.get("last_error") or "")
 
 
 def build_default_code_controller() -> SafeCodeControl:

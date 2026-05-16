@@ -1,0 +1,368 @@
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+from aureon.autonomous.aureon_coding_organism_bridge import (
+    get_coding_organism_status,
+    submit_coding_prompt,
+)
+from aureon.core.goal_execution_engine import GoalExecutionEngine
+
+
+def _fake_expression_context(*args, **kwargs):
+    return {
+        "schema_features": ["aureon_code_expression_context_v1"],
+        "ok": True,
+        "voice_summary": "Aureon routed the code goal through its own coding organism.",
+        "runtime_summary": "coding organism bridge state translated",
+        "redaction_applied": False,
+    }
+
+
+class FakeGoalEngine:
+    def submit_goal(self, prompt: str):
+        return {
+            "goal_id": "goal-test",
+            "original_text": prompt,
+            "objective": prompt,
+            "status": "completed",
+            "success_criteria": "route, write proposal, test",
+            "steps": [
+                {
+                    "step_id": "step-1",
+                    "title": "Inspect and patch",
+                    "intent": "coding_agent_skill_base",
+                    "status": "completed",
+                    "result": {
+                        "target_files": ["aureon/demo.py"],
+                        "files_written": ["aureon/demo.py"],
+                    },
+                    "validation_result": {"valid": True, "changed_files": ["aureon/demo.py"]},
+                }
+            ],
+        }
+
+    def get_status(self):
+        return {"goals_submitted": 1, "goals_completed": 1}
+
+
+class RaisingGoalEngine:
+    def submit_goal(self, prompt: str):
+        raise AssertionError("goal engine should not run before scope is locked")
+
+
+def _write_hnc_fixture(root: Path, *, passed: bool = True) -> None:
+    hnc = root / "state" / "aureon_hnc_cognitive_proof.json"
+    hnc.parent.mkdir(parents=True, exist_ok=True)
+    hnc.write_text(
+        json.dumps(
+            {
+                "status": "passing" if passed else "blocked",
+                "passed": passed,
+                "master_formula": {"passed": passed, "score": 0.91},
+                "auris_nodes": {"passed": passed, "coherence": 0.88},
+            }
+        ),
+        encoding="utf-8",
+    )
+    harmonic = root / "docs" / "audits" / "aureon_harmonic_affect_state.json"
+    harmonic.parent.mkdir(parents=True, exist_ok=True)
+    harmonic.write_text(
+        json.dumps(
+            {
+                "summary": {"hnc_coherence_score": 0.88, "safety_blocker_count": 0},
+                "signals": {
+                    "cognitive_trade_summary": {"runtime_stale": False},
+                    "organism_summary": {"runtime_feed_status": "online"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_incomplete_prompt_stops_at_scope_questions(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "fix it",
+        source="test",
+        run_tests=False,
+        root=tmp_path,
+        goal_engine=RaisingGoalEngine(),
+    )
+
+    assert result["ok"] is False
+    assert result["status"] == "coding_organism_needs_client_scope"
+    assert result["summary"]["scope_status"] == "needs_client_scope"
+    assert result["summary"]["scope_locked"] is False
+    assert result["summary"]["goal_engine_routed"] is False
+    assert result["summary"]["safe_code_proposal_created"] is False
+    assert result["goal_route"]["skipped"] is True
+    assert result["goal_route"]["skip_reason"] == "scope_of_works_not_locked"
+    assert result["client_job"]["client_questions"]
+    assert result["client_job"]["handover_status"]["client_visible_product"] is False
+    assert result["finished_product_audit"]["status"] == "finished_product_scope_pending"
+    assert any(stage["id"] == "scope_of_works" and not stage["ok"] for stage in result["work_journal"]["stages"])
+    assert any(stage["id"] == "agent_team_assignment" and not stage["ok"] for stage in result["work_journal"]["stages"])
+
+
+def test_scope_approval_turns_client_answers_into_route_context(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    _write_hnc_fixture(tmp_path)
+    captured = {}
+
+    class CapturingGoalEngine(FakeGoalEngine):
+        def submit_goal(self, prompt: str):
+            captured["prompt"] = prompt
+            return super().submit_goal(prompt)
+
+    result = submit_coding_prompt(
+        "fix it",
+        source="test",
+        run_tests=False,
+        root=tmp_path,
+        goal_engine=CapturingGoalEngine(),
+        scope_approved=True,
+        base_job_id="coding-job-original",
+        scope_answers={
+            "goal": "Repair the coding organism scope gate.",
+            "deliverables": "Backend evidence, UI panel, and tests.",
+            "target_system": "aureon/autonomous/aureon_coding_organism_bridge.py",
+            "constraints": "Preserve existing runtime behavior.",
+            "acceptance": "Focused tests pass and no blocking snags remain.",
+        },
+    )
+
+    assert result["ok"] is True
+    assert result["summary"]["scope_locked"] is True
+    assert result["summary"]["goal_engine_routed"] is True
+    assert result["client_job"]["variation_order"]["created"] is True
+    assert result["client_job"]["handover_status"]["client_visible_product"] is True
+    assert "Client-approved scope answers" in captured["prompt"]
+    assert result["finished_product_audit"]["ready_for_client"] is True
+    assert result["finished_product_audit"]["handover_status"]["blocking_snag_count"] == 0
+
+
+def test_submit_coding_prompt_writes_evidence_and_proposal(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "Aureon should inspect the repo and make the smallest safe code patch.",
+        source="test",
+        run_tests=False,
+        root=tmp_path,
+        goal_engine=FakeGoalEngine(),
+    )
+
+    assert result["ok"] is True
+    assert result["schema_version"] == "aureon-coding-organism-bridge-v1"
+    assert result["summary"]["goal_engine_routed"] is True
+    assert result["summary"]["safe_code_proposal_created"] is True
+    assert result["summary"]["target_file_count"] == 1
+    assert result["summary"]["desktop_handoff_created"] is True
+    assert result["summary"]["ready_to_run"] is True
+    assert result["what"]["target_files"] == ["aureon/demo.py"]
+    assert result["act"]["proposal_created"] is True
+    assert result["act"]["desktop_handoff_created"] is True
+    assert result["desktop_run_flow"]["status"] == "desktop_run_handoff_ready"
+    assert result["desktop_run_flow"]["local_desktop_controller"]["dry_run"] is True
+    assert result["desktop_run_flow"]["remote_vm_control"]["tool_count"] >= 20
+    assert result["finished_product_audit"]["status"] == "finished_product_ready"
+    assert result["summary"]["hnc_auris_drift_proof_ok"] is True
+    assert "hnc_auris_drift_proof" in [item["id"] for item in result["client_job"]["proof_checklist"]]
+    assert result["work_journal"]["schema_version"] == "aureon-coding-work-journal-v1"
+    assert result["work_journal"]["status"] == "complete"
+    assert result["work_journal"]["stage_count"] >= 8
+    journal_ids = {stage["id"] for stage in result["work_journal"]["stages"]}
+    assert {"prompt_received", "goal_routed", "code_proposal", "verification", "evidence_published", "finished_product"}.issubset(journal_ids)
+    assert "GoalExecutionEngine.submit_goal" in result["how"]["authoring_path"]
+    assert "SafeDesktopControl desktop/run handoff" in result["how"]["authoring_path"]
+
+    state = tmp_path / "state" / "aureon_coding_organism_last_run.json"
+    audit = tmp_path / "docs" / "audits" / "aureon_coding_organism_bridge.json"
+    public = tmp_path / "frontend" / "public" / "aureon_coding_organism_bridge.json"
+    md = tmp_path / "docs" / "audits" / "aureon_coding_organism_bridge.md"
+    assert state.exists()
+    assert audit.exists()
+    assert public.exists()
+    assert md.exists()
+
+    persisted = json.loads(public.read_text(encoding="utf-8"))
+    assert persisted["safe_code_status"]["pending_count"] == 1
+    assert persisted["task"]["kind"] == "coding_organism_prompt"
+    assert persisted["desktop_run_flow"]["desktop_handoff_action"]["status"] == "pending"
+
+
+def test_submit_coding_prompt_can_run_focused_test_command(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "Aureon should run a test after routing this code goal.",
+        source="test",
+        run_tests=True,
+        root=tmp_path,
+        goal_engine=FakeGoalEngine(),
+        test_commands=[[sys.executable, "-c", "print('coding bridge ok')"]],
+    )
+
+    assert result["ok"] is True
+    assert result["tests"]["ok"] is True
+    assert result["tests"]["command_count"] == 1
+    assert "coding bridge ok" in result["tests"]["results"][0]["stdout_tail"]
+
+
+def test_coding_organism_status_reads_last_run_and_queues(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    _write_hnc_fixture(tmp_path)
+    submit_coding_prompt(
+        "Aureon should publish coding evidence.",
+        source="test",
+        run_tests=False,
+        root=tmp_path,
+        goal_engine=FakeGoalEngine(),
+    )
+
+    status = get_coding_organism_status(root=tmp_path)
+
+    assert status["available"] is True
+    assert status["status"] == "coding_organism_ready"
+    assert status["last_run"]["summary"]["safe_code_proposal_created"] is True
+    assert status["last_run"]["summary"]["desktop_handoff_created"] is True
+    assert status["safe_code_status"]["pending_count"] == 1
+    assert status["task_queue_status"]["recent_completed"]
+
+
+def test_submit_coding_prompt_can_skip_desktop_handoff(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "Aureon should route without desktop handoff for this audit-only run.",
+        source="test",
+        run_tests=False,
+        include_desktop=False,
+        root=tmp_path,
+        goal_engine=FakeGoalEngine(),
+    )
+
+    assert result["ok"] is True
+    assert result["summary"]["desktop_handoff_created"] is False
+    assert result["desktop_run_flow"]["status"] == "desktop_run_handoff_skipped"
+
+
+def test_hnc_auris_drift_proof_blocks_finished_handover_when_failing(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    _write_hnc_fixture(tmp_path, passed=False)
+
+    result = submit_coding_prompt(
+        "Aureon should inspect the repo and make the smallest safe code patch.",
+        source="test",
+        run_tests=False,
+        root=tmp_path,
+        goal_engine=FakeGoalEngine(),
+    )
+
+    assert result["ok"] is False
+    assert result["summary"]["hnc_auris_drift_proof_ok"] is False
+    assert result["summary"]["blocking_snag_count"] >= 1
+    assert result["finished_product_audit"]["ready_for_client"] is False
+    proof = {item["id"]: item for item in result["client_job"]["proof_checklist"]}
+    assert proof["hnc_auris_drift_proof"]["ok"] is False
+    assert "hnc_cognitive_proof_not_passing" in result["hnc_auris_drift_proof"]["blockers"]
+
+
+def test_goal_engine_routes_coding_work_journal_ui(tmp_path: Path, monkeypatch) -> None:
+    files = {
+        "aureon/autonomous/aureon_coding_organism_bridge.py": "_build_work_journal\n'aureon-coding-work-journal-v1'\n",
+        "frontend/src/components/generated/AureonCodingOrganismConsole.tsx": (
+            "AureonCodingOrganismConsole\n"
+            "Scope Of Works\n"
+            "Work Journal: Prompt To Finished Files\n"
+            "journalStages\n"
+            "proofChecklist\n"
+            "snaggingList\n"
+            "HNC/Auris drift proof\n"
+            "compactEvidence\n"
+            "Local hub endpoint\n"
+            "Prompt lane\n"
+            "Send To Aureon\n"
+            "Desktop And Remote Run Handoff\n"
+        ),
+        "tests/test_aureon_coding_organism_bridge.py": "work_journal\n'aureon-coding-work-journal-v1'\n",
+    }
+    for rel_path, content in files.items():
+        path = tmp_path / rel_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    plan = GoalExecutionEngine().submit_goal(
+        "Aureon must show its work from prompt to finished files in the UI with goal steps, "
+        "code proposal, tests, desktop handoff, and completion report."
+    )
+
+    assert plan.status == "completed"
+    assert plan.steps[0].intent == "coding_work_journal_ui"
+    assert plan.steps[0].validation_result["valid"] is True
+
+
+def test_goal_engine_routes_coding_organism_prompt_lane_to_journal_ui(tmp_path: Path, monkeypatch) -> None:
+    files = {
+        "aureon/autonomous/aureon_coding_organism_bridge.py": "_build_work_journal\n'aureon-coding-work-journal-v1'\n",
+        "frontend/src/components/generated/AureonCodingOrganismConsole.tsx": (
+            "AureonCodingOrganismConsole\n"
+            "Scope Of Works\n"
+            "Work Journal: Prompt To Finished Files\n"
+            "journalStages\n"
+            "proofChecklist\n"
+            "snaggingList\n"
+            "HNC/Auris drift proof\n"
+            "compactEvidence\n"
+            "Local hub endpoint\n"
+            "Prompt lane\n"
+            "Send To Aureon\n"
+            "Desktop And Remote Run Handoff\n"
+        ),
+        "tests/test_aureon_coding_organism_bridge.py": "work_journal\n'aureon-coding-work-journal-v1'\n",
+    }
+    for rel_path, content in files.items():
+        path = tmp_path / rel_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    plan = GoalExecutionEngine().submit_goal(
+        "Aureon must improve its coding organism console prompt lane so the UI shows "
+        "the local hub endpoint, Send To Aureon, tests, desktop handoff, and files."
+    )
+
+    assert plan.status == "completed"
+    assert plan.steps[0].intent == "coding_work_journal_ui"
+    assert plan.steps[0].validation_result["valid"] is True

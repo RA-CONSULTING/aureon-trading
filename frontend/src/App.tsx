@@ -30,6 +30,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AureonGeneratedOperationalConsole } from "@/components/generated/AureonGeneratedOperationalConsole";
 import { AureonWorkOrderExecutionConsole } from "@/components/generated/AureonWorkOrderExecutionConsole";
 import { AureonCodingAgentSkillBaseConsole } from "@/components/generated/AureonCodingAgentSkillBaseConsole";
+import { AureonCodingOrganismConsole } from "@/components/generated/AureonCodingOrganismConsole";
+import { AureonDirectorCapabilityBridgeConsole } from "@/components/generated/AureonDirectorCapabilityBridgeConsole";
+import { AureonAgentCompanyConsole } from "@/components/generated/AureonAgentCompanyConsole";
 import { ExchangeCredentialsManager } from "@/components/ExchangeCredentialsManager";
 import {
   CapabilitySwitchboardManifest,
@@ -1163,6 +1166,9 @@ function AppShell() {
         <AureonGeneratedOperationalConsole />
         <AureonWorkOrderExecutionConsole />
         <AureonCodingAgentSkillBaseConsole />
+        <AureonCodingOrganismConsole />
+        <AureonDirectorCapabilityBridgeConsole />
+        <AureonAgentCompanyConsole />
         <FrontendEvolutionPanel evolution={evolution} />
         <CapabilitySwitchboardPanel switchboard={switchboard} />
 

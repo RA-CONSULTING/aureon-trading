@@ -430,6 +430,7 @@ def _synthetic_rows(runtime: dict[str, Any], root: Path = REPO_ROOT) -> list[dic
     capital_evidence = runtime.get("capital_trade_evidence") if isinstance(runtime.get("capital_trade_evidence"), dict) else {}
     capital_ratchet = runtime.get("capital_confidence_ratchet") if isinstance(runtime.get("capital_confidence_ratchet"), dict) else {}
     capital_waveform = runtime.get("capital_unified_waveform_check") if isinstance(runtime.get("capital_unified_waveform_check"), dict) else {}
+    kraken_registry = runtime.get("kraken_asset_registry") if isinstance(runtime.get("kraken_asset_registry"), dict) else {}
     if not capital_risk and isinstance(runtime.get("capital"), dict):
         capital_risk = runtime["capital"].get("capital_risk_envelope") if isinstance(runtime["capital"].get("capital_risk_envelope"), dict) else {}
     if not capital_evidence and isinstance(runtime.get("capital"), dict):
@@ -438,6 +439,8 @@ def _synthetic_rows(runtime: dict[str, Any], root: Path = REPO_ROOT) -> list[dic
         capital_ratchet = runtime["capital"].get("capital_confidence_ratchet") if isinstance(runtime["capital"].get("capital_confidence_ratchet"), dict) else {}
     if not capital_waveform and isinstance(runtime.get("capital"), dict):
         capital_waveform = runtime["capital"].get("capital_unified_waveform_check") if isinstance(runtime["capital"].get("capital_unified_waveform_check"), dict) else {}
+    if not kraken_registry and isinstance(runtime.get("combined"), dict):
+        kraken_registry = runtime["combined"].get("kraken_asset_registry") if isinstance(runtime["combined"].get("kraken_asset_registry"), dict) else {}
     stream_cache = runtime.get("live_stream_cache") if isinstance(runtime.get("live_stream_cache"), dict) else {}
     shared_order_flow = runtime.get("shared_order_flow") if isinstance(runtime.get("shared_order_flow"), dict) else {}
     fast_money = shared_order_flow.get("fast_money_intelligence") if isinstance(shared_order_flow.get("fast_money_intelligence"), dict) else {}
@@ -598,6 +601,45 @@ def _synthetic_rows(runtime: dict[str, Any], root: Path = REPO_ROOT) -> list[dic
             stage="exchange_action_plan",
         ),
         _row(
+            name="KrakenTradableAssetRegistry",
+            facet="kraken_spot_margin_asset_book",
+            wire="direct_live_signal",
+            path="aureon/exchanges/kraken_asset_registry.py",
+            present=bool(kraken_registry and not kraken_registry.get("missing")),
+            active=bool(_as_int(kraken_registry.get("spot_trade_ready_count")) > 0),
+            fed=bool(kraken_registry),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#kraken_asset_registry",
+            stage="market_feed",
+            extra_blockers=[] if _as_int(kraken_registry.get("spot_trade_ready_count")) > 0 else [str(kraken_registry.get("next_action") or "kraken_asset_registry_not_ready")],
+        ),
+        _row(
+            name="KrakenMarginCostEnvelope",
+            facet="kraken_margin_survival",
+            wire="exchange_action_plan",
+            path="aureon/exchanges/kraken_asset_registry.py",
+            present=bool(kraken_registry and not kraken_registry.get("missing")),
+            active=bool(_as_int(kraken_registry.get("margin_trade_ready_count")) > 0),
+            fed=bool(kraken_registry),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#kraken_asset_registry.survival_policy",
+            stage="exchange_action_plan",
+            extra_blockers=[] if _as_int(kraken_registry.get("margin_trade_ready_count")) > 0 else ["kraken_margin_pairs_not_ready_or_not_sampled"],
+        ),
+        _row(
+            name="KrakenPendingOrderSurvival",
+            facet="kraken_pending_order_survival",
+            wire="exchange_action_plan",
+            path="aureon/exchanges/kraken_asset_registry.py",
+            present=bool(kraken_registry and not kraken_registry.get("missing")),
+            active=bool(isinstance(kraken_registry.get("survival_policy"), dict)),
+            fed=bool(kraken_registry),
+            runtime=runtime,
+            evidence_source="state/unified_runtime_status.json#kraken_asset_registry.survival_policy",
+            stage="exchange_action_plan",
+            extra_blockers=[] if isinstance(kraken_registry.get("survival_policy"), dict) else ["kraken_pending_order_survival_policy_missing"],
+        ),
+        _row(
             name="CapitalPortfolioMemory",
             facet="capital_portfolio_memory",
             wire="exchange_action_plan",
@@ -725,6 +767,8 @@ def _synthetic_rows(runtime: dict[str, Any], root: Path = REPO_ROOT) -> list[dic
     ]
     if not (capital_risk or capital_evidence or capital_ratchet or capital_waveform):
         rows = [row for row in rows if not str(row.get("system") or "").startswith("Capital")]
+    if not kraken_registry:
+        rows = [row for row in rows if not str(row.get("system") or "").startswith("Kraken")]
     if meta_context.get("present"):
         meta_blockers = [meta_context["decision_blocker"]] if meta_context.get("decision_blocker") else []
         rows.extend(

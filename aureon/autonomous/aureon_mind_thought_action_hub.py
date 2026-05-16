@@ -634,6 +634,10 @@ class MindThoughtActionHub:
         self.app.router.add_get('/api/flight-test', self.handle_flight_test)
         self.app.router.add_get('/api/reboot-advice', self.handle_flight_test)
         self.app.router.add_get('/api/goal-pursuit', self.handle_goal_pursuit)
+        self.app.router.add_get('/api/coding/status', self.handle_coding_status)
+        self.app.router.add_post('/api/coding/prompt', self.handle_coding_prompt)
+        self.app.router.add_options('/api/coding/status', self.handle_coding_options)
+        self.app.router.add_options('/api/coding/prompt', self.handle_coding_options)
         self.app.router.add_get('/api/self-questioning/status', self.handle_self_questioning_status)
         self.app.router.add_post('/api/self-questioning/ask', self.handle_self_questioning_ask)
 
@@ -1391,6 +1395,80 @@ class MindThoughtActionHub:
     async def handle_goal_pursuit(self, request):
         """API endpoint for the current safest goal-pursuit assessment."""
         return web.json_response(self._run_goal_pursuit_assessment())
+
+    def _coding_cors_headers(self) -> Dict[str, str]:
+        return {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+        }
+
+    async def handle_coding_options(self, request):
+        """CORS preflight for the local coding organism prompt lane."""
+        return web.Response(status=204, headers=self._coding_cors_headers())
+
+    async def handle_coding_status(self, request):
+        """API endpoint for Aureon's coding organism bridge status."""
+        try:
+            from aureon.autonomous.aureon_coding_organism_bridge import get_coding_organism_status
+
+            payload = await asyncio.to_thread(get_coding_organism_status)
+            return web.json_response(payload, headers=self._coding_cors_headers())
+        except Exception as exc:
+            return web.json_response(
+                {"available": False, "error": str(exc)},
+                status=500,
+                headers=self._coding_cors_headers(),
+            )
+
+    async def handle_coding_prompt(self, request):
+        """Accept an operator coding prompt and route it through Aureon's own coding systems."""
+        try:
+            body = await request.json()
+        except Exception:
+            raw = await request.text()
+            body = {"prompt": raw}
+
+        prompt = str(body.get("prompt") or body.get("goal") or body.get("message") or "").strip()
+        if not prompt:
+            return web.json_response(
+                {"ok": False, "error": "prompt is required"},
+                status=400,
+                headers=self._coding_cors_headers(),
+            )
+
+        run_tests = bool(body.get("run_tests", True))
+        include_desktop = bool(body.get("include_desktop", True))
+        scope_answers = body.get("scope_answers") if isinstance(body.get("scope_answers"), dict) else {}
+        scope_approved = bool(body.get("scope_approved", False))
+        base_job_id = str(body.get("base_job_id") or "").strip()
+        try:
+            from aureon.autonomous.aureon_coding_organism_bridge import submit_coding_prompt
+
+            result = await asyncio.to_thread(
+                submit_coding_prompt,
+                prompt,
+                source="mind_thought_action_hub",
+                run_tests=run_tests,
+                include_desktop=include_desktop,
+                scope_answers=scope_answers,
+                scope_approved=scope_approved,
+                base_job_id=base_job_id,
+            )
+            self.recent_actions.append({
+                "ts": time.time(),
+                "source": "mind_thought_action_hub",
+                "type": "coding_prompt",
+                "summary": prompt[:120],
+                "status": result.get("status"),
+            })
+            return web.json_response(result, headers=self._coding_cors_headers())
+        except Exception as exc:
+            return web.json_response(
+                {"ok": False, "error": str(exc)},
+                status=500,
+                headers=self._coding_cors_headers(),
+            )
 
     async def handle_self_questioning_status(self, request):
         """API endpoint for the Ollama + Obsidian self-questioning loop."""

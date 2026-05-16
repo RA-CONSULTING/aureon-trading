@@ -26,7 +26,7 @@ For the full operator runbook, see [RUNNING.md](RUNNING.md). For the end-to-end 
 
 The current public version is the unified live organism runtime, not a single bot or a legacy dashboard. Start it with `AUREON_PRODUCTION_LIVE.cmd`, watch it from the unified console at `http://127.0.0.1:8081/`, and read the live runtime feed from `http://127.0.0.1:8791/api/terminal-state`.
 
-This version brings Kraken, Binance, Alpaca, and Capital into one market state; exposes connected, guarded, and live-action modes; keeps reboot advice visible; and includes the OS/task, LLM, self-coding, desktop, frontend work-order, accounting, HNC/Auris, and whole-knowledge voice layers.
+This version brings Kraken, Binance, Alpaca, and Capital into one market state; exposes connected, guarded, and live-action modes; keeps reboot advice visible; and includes the OS/task, LLM, self-coding, desktop/run handoff, frontend work-order, accounting, HNC/Auris, and whole-knowledge voice layers.
 
 ### Read This First
 
@@ -77,6 +77,14 @@ Capital also has a tradable asset registry/database. `aureon/exchanges/capital_a
 
 Pending bids and take-profit planning now have their own survival envelope. Market orders can attach a broker-side `profitLevel`; existing positions can have take-profit controls updated after fill confirmation; pending Capital working orders are planned through `POST /workingorders` with take-profit evidence. Submission is off by default (`CAPITAL_PENDING_ORDER_SUBMIT_ENABLED=0`) until explicitly enabled, and every planned pending order is stress-tested as if all pending orders fill together. That prevents the unsafe pattern where many bids trigger during the same dip and consume the whole portfolio.
 
+Kraken now has the same evidence discipline in Kraken-native form. `aureon/exchanges/kraken_asset_registry.py` reads Kraken `AssetPairs`, enriches budgeted pairs with live ticker, spread, order minimum, cost minimum, maker/taker fee tiers, leverage availability, spot readiness, margin readiness, and the exact code routes for spot buy/sell, post-only limit, take-profit, margin long/short, and reduce-only close. It also exposes a pending-order survival envelope for crypto so Aureon can plan spot and margin ladders while assuming every resting order may fill together:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.exchanges.kraken_asset_registry --max-tickers 250
+```
+
+The data ocean runs this registry automatically with `-KrakenAssetRegistryTickers`. Its summary appears in `/api/terminal-state#kraken_asset_registry` and the trading intelligence checklist as `KrakenTradableAssetRegistry`, `KrakenMarginCostEnvelope`, and `KrakenPendingOrderSurvival`.
+
 Private exchange history sync is deliberately capped in this supervisor so it does not hammer Kraken/Binance/Alpaca while live trading is active. The default Kraken private trade-history budget is `-KrakenAccountSyncMax 50`. If a venue is rate-limiting or you only want public/context data for a cycle, run:
 
 ```powershell
@@ -106,6 +114,7 @@ python scripts/aureon_ignition.py --audit-only
 | Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
 | Trading intelligence checklist | `http://127.0.0.1:8081/aureon_trading_intelligence_checklist.json` and `docs/audits/aureon_trading_intelligence_checklist.json` |
 | Capital tradable asset registry | `docs/audits/aureon_capital_tradable_asset_registry.json`, `docs/audits/aureon_capital_tradable_asset_registry.csv`, and `state/capital_tradable_asset_registry.sqlite` |
+| Kraken tradable asset registry | `docs/audits/aureon_kraken_tradable_asset_registry.json`, `docs/audits/aureon_kraken_tradable_asset_registry.csv`, and `state/kraken_tradable_asset_registry.sqlite` |
 | Exchange monitoring checklist | `docs/audits/aureon_exchange_monitoring_checklist.json` and `frontend/public/aureon_exchange_monitoring_checklist.json` |
 | Exchange data capability matrix | `docs/audits/aureon_exchange_data_capability_matrix.json` and `frontend/public/aureon_exchange_data_capability_matrix.json` |
 | Global financial coverage map | `docs/audits/aureon_global_financial_coverage_map.json` and `frontend/public/aureon_global_financial_coverage_map.json` |
@@ -117,6 +126,63 @@ python scripts/aureon_ignition.py --audit-only
 | Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
 
 Live trading requires configured exchange credentials and the existing runtime safety gates to be clear. The docs describe how to run Aureon; they do not bypass stale-data, position, credential, API-rate, payment, filing, or security boundaries.
+
+### Coding Organism And Client Job Flow
+
+The current coding lane is no longer a raw "prompt in, half-built answer out" surface. Aureon treats each coding prompt as a client job with a construction-company workflow: scope of works, temporary agent team assignment, timed phases, proof checklist, HNC/Auris anti-drift proof, snagging list, and only then a finished client handover.
+
+To run it with the whole organism, start production mode first:
+
+```powershell
+cd C:\path\to\aureon-trading
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
+
+Then open the unified console and use the **Aureon Coding Organism** panel:
+
+```text
+http://127.0.0.1:8081/
+```
+
+The mind hub exposes the same lane over HTTP:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:13002/api/coding/prompt `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"prompt":"Aureon must inspect this coding goal, define the scope of works, assign the agent team, propose the safest patch, run focused tests, complete HNC/Auris drift proof, clear snagging, and publish the finished handover.","run_tests":true,"include_desktop":true}' |
+  ConvertTo-Json -Depth 8
+```
+
+If the prompt is under-scoped, Aureon returns `coding_organism_needs_client_scope` with `client_job.client_questions` and does **not** hand the work to the team. Submit the client answers with `scope_approved:true`:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:13002/api/coding/prompt `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"prompt":"Aureon must build the requested coding change.","scope_approved":true,"scope_answers":{"goal":"State the exact outcome","deliverables":"Files, UI, tests, report","target_system":"Name the paths or subsystem","constraints":"Preserve safety and public interfaces","acceptance":"Tests pass, HNC/Auris drift proof passes, no blocking snags"},"run_tests":true,"include_desktop":true}' |
+  ConvertTo-Json -Depth 8
+```
+
+Terminal-only coding run:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon must inspect this coding goal, lock scope, route it through the goal engine, propose the smallest safe patch, run focused tests, and publish client-job evidence."
+```
+
+For coding-only evidence without desktop handoff:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --no-desktop --prompt "Aureon must audit this coding goal and publish proof without desktop handoff."
+```
+
+Coding evidence is written to `state/aureon_coding_organism_last_run.json`, `docs/audits/aureon_coding_organism_bridge.json`, `docs/audits/aureon_coding_organism_bridge.md`, and `frontend/public/aureon_coding_organism_bridge.json`. The proof checklist includes `hnc_auris_drift_proof`, which reads the current HNC cognitive proof and harmonic affect evidence. If HNC proof, the master formula, or Auris nodes are missing, failing, or stale, the finished product is held and the snagging list names the blocker.
+
+After pulling a code update, relaunch the production supervisor so the already-running mind hub loads the newest coding bridge:
+
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
 
 ### Live Runtime Resilience
 
@@ -149,6 +215,8 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 | Capital wave-validated portfolio brain | `aureon/exchanges/capital_cfd_trader.py`, `/api/terminal-state#capital_risk_envelope`, Trading console Capital Survival Brain |
 | Capital tradable asset book | `aureon/exchanges/capital_asset_registry.py`, `state/capital_tradable_asset_registry.sqlite`, `docs/audits/aureon_capital_tradable_asset_registry.json` |
 | Capital pending bid and TP survival | `capital_pending_order_envelope`, `CapitalClient.place_working_order`, broker `profitLevel`, all-pending-fill stress budget |
+| Kraken spot/margin asset and cost book | `aureon/exchanges/kraken_asset_registry.py`, `state/kraken_tradable_asset_registry.sqlite`, `/api/terminal-state#kraken_asset_registry` |
+| Kraken pending order survival | `build_kraken_order_survival_envelope`, maker/taker fee estimate, spot quote budget, margin collateral, stress-loss buffer |
 | Metacognitive data context | `aureon/autonomous/aureon_trading_intelligence_checklist.py`, `docs/audits/aureon_trading_intelligence_checklist.json`, and the Trading console data-ocean card |
 | Exchange clients | `aureon/exchanges/kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
 | Momentum/intelligence scanner fusion | `aureon/exchanges/unified_market_trader.py`, `state/aureon_scanner_fusion_matrix.json` |
@@ -162,6 +230,9 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 | Accounting/HMRC support tooling | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
 | Local OS/task control | `aureon/autonomous/aureon_local_task_queue.py`, `aureon/autonomous/aureon_repo_explorer_service.py`, `aureon/autonomous/aureon_voice_command_bridge.py` |
 | Code authoring and review | `aureon/autonomous/aureon_safe_code_control.py`, `aureon/autonomous/aureon_queen_code_bridge.py`, `aureon/code_architect/` |
+| Operator coding organism bridge | `aureon/autonomous/aureon_coding_organism_bridge.py`, `http://127.0.0.1:13002/api/coding/prompt`, `frontend/src/components/generated/AureonCodingOrganismConsole.tsx`; includes scope-of-works gate, client questions, proof checklist, HNC/Auris drift proof, snagging list, and finished handover hold |
+| Prompt-to-run desktop audit | `aureon/autonomous/aureon_coding_organism_bridge.py#desktop_run_flow`, `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/vm_control/`, `state/aureon_coding_organism_desktop_state.json` |
+| Director capability bridge | `aureon/autonomous/aureon_director_capability_bridge.py`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/src/components/generated/AureonDirectorCapabilityBridgeConsole.tsx` |
 | Self-authored operational UI | `aureon/autonomous/aureon_unified_ui_builder.py`, `frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx` |
 | Frontend work-order execution | `aureon/autonomous/aureon_frontend_work_order_executor.py`, `frontend/src/components/generated/AureonWorkOrderExecutionConsole.tsx` |
 | Repo self-repair loop | `aureon/autonomous/aureon_repo_self_repair.py`, `docs/audits/aureon_repo_self_repair.json` |
@@ -186,10 +257,21 @@ Aureon includes local operating-system style capabilities in addition to trading
 | LLM reasoning | `aureon/inhouse_ai/llm_adapter.py` | Uses local LLM when available; audit mode falls back to `AureonBrain` |
 | Code proposals | `aureon/autonomous/aureon_safe_code_control.py` | Proposals queue for review by default; `AUREON_CODE_AUTO_APPROVE=1` is explicit opt-in |
 | Queen code bridge | `aureon/autonomous/aureon_queen_code_bridge.py` | Routes ThoughtBus/code events into the proposal queue |
+| Operator coding prompt | `aureon/autonomous/aureon_coding_organism_bridge.py` | Prompts Aureon through task queue, `GoalExecutionEngine`, safe code queue, focused tests, finished-product audit, desktop/run handoff, and evidence publishing |
 | Skills | `aureon/code_architect/` and `aureon/vault/voice/skill_executor_bridge.py` | Validated SkillLibrary and skill execution artefacts |
 | Voice/task bridge | `aureon/autonomous/aureon_voice_command_bridge.py` | Routes speech/text intents into task, code, repo, and desktop queues |
 | Desktop control | `aureon/autonomous/aureon_safe_desktop_control.py` | Local-only, dry-run by default, arm/disarm, emergency stop, allowlisted actions |
 | Laptop hardware abstraction | `aureon/autonomous/aureon_laptop_control.py` | Raw local capability layer; public active path should route through safe desktop control |
+
+The intended cognitive flow is:
+
+```text
+user prompt -> mind hub/CLI -> GoalExecutionEngine -> code proposal/work route
+-> focused tests/build checks -> finished_product_audit
+-> SafeDesktopControl/VMControlDispatcher run handoff -> console evidence
+```
+
+The desktop/run layer is connected to the coding organism as an evidence and handoff surface. It is dry-run by default, writes pending desktop actions instead of silently taking over the machine, and reports available VM/remote-control tools so the operator can see what would be used to inspect, click, type, run, or verify a finished product.
 
 ### Active Self-Coding And Self-Repair Layer
 
@@ -201,6 +283,8 @@ Aureon now has an explicit self-coding workflow. Operator goals are routed throu
 | Frontend work-order executor | Converts the frontend evolution queue into safe adapter records, blocker cards, generated links, and archive decisions. | `state/aureon_frontend_work_order_execution_last_run.json`, `frontend/src/components/generated/AureonWorkOrderExecutionConsole.tsx` |
 | Repo self-repair | Runs repo checks, builds a bug report, applies scoped safe repairs through Queen writer paths, and retests. | `state/aureon_repo_self_repair_last_run.json`, `docs/audits/aureon_repo_self_repair.json` |
 | Coding-agent skill base | Teaches Aureon coder agents to learn from official docs, search/fetch the web, search the repo, and decide who/what/where/when/how before writing files. | `state/aureon_coding_agent_skill_base_last_run.json`, `docs/audits/aureon_coding_agent_skill_base.json`, `frontend/public/aureon_coding_agent_skill_base.json` |
+| Coding organism bridge | Lets an operator prompt Aureon to route a coding task through the organism, write/propose code work, run focused tests, create a finished-product audit, queue the desktop/run handoff, and publish who/what/where/when/how/act evidence. | `state/aureon_coding_organism_last_run.json`, `docs/audits/aureon_coding_organism_bridge.json`, `frontend/public/aureon_coding_organism_bridge.json`, `state/aureon_coding_organism_desktop_state.json` |
+| Director capability bridge | Compares Codex-class agent capabilities with Aureon's live surfaces, marks ready/partial/gap status, and emits exact Aureon build prompts for every missing bridge. | `state/aureon_director_capability_bridge_last_run.json`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/public/aureon_director_capability_bridge.json` |
 | Whole-knowledge voice core | Turns repo, vault, HNC/Auris, cognitive state, sensory-state evidence, and human language sources into original document, console, and conversation prose. | `state/aureon_expression_profile.json`, `state/aureon_voice_last_run.json`, document Markdown/PDF artifacts |
 
 The coding-agent skill base currently publishes a `who_what_where_when_how_ready` logic map. That map tells Aureon's agents:
@@ -219,13 +303,17 @@ Generated public console panels live in `frontend/src/components/generated/` and
 AureonGeneratedOperationalConsole.tsx
 AureonWorkOrderExecutionConsole.tsx
 AureonCodingAgentSkillBaseConsole.tsx
+AureonCodingOrganismConsole.tsx
+AureonDirectorCapabilityBridgeConsole.tsx
 ```
 
 Focused validation currently passes:
 
 ```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon must inspect this coding goal, propose the smallest safe code route, and run focused tests."
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon director mode must create a Codex-class capability list, marry it to Aureon capabilities, bridge the gaps, and publish exact code work orders."
 .\.venv\Scripts\python.exe -m pytest tests/test_safe_code_control.py tests/test_inhouse_llm_adapter_audit_mode.py tests/test_goal_capability_map.py tests/test_capability_growth_loop.py tests/vault/test_skill_executor_bridge.py -q
-.\.venv\Scripts\python.exe -m pytest tests/test_coding_agent_skill_base.py tests/test_goal_execution_engine_self_ui.py tests/test_aureon_repo_self_repair.py tests/test_frontend_work_order_executor.py -q
+.\.venv\Scripts\python.exe -m pytest tests/test_aureon_coding_organism_bridge.py tests/test_coding_agent_skill_base.py tests/test_goal_execution_engine_self_ui.py tests/test_aureon_repo_self_repair.py tests/test_frontend_work_order_executor.py -q
 cd frontend
 npm run build
 ```

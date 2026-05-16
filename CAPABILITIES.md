@@ -38,6 +38,8 @@ Low-priority data ocean supervisor:
 | Capital wave-validated portfolio brain | Lets Capital expand beyond fixed buy/sell lanes only when portfolio memory, margin survival, stress buffer, cross-exchange waveform checks, and confidence ratchet pass. | `aureon/exchanges/capital_cfd_trader.py`, `/api/terminal-state#capital_risk_envelope`, Trading console Capital Survival Brain |
 | Capital tradable asset registry | Records every discovered Capital market, epic, estimated cost, margin, leverage, minimum deal size, and the exact buy/sell/close/pending-order code route. | `aureon/exchanges/capital_asset_registry.py`, `state/capital_tradable_asset_registry.sqlite`, `docs/audits/aureon_capital_tradable_asset_registry.json` |
 | Capital pending order survival | Plans limit bids with broker take-profit evidence and blocks unsafe working-order ladders by assuming every pending order fills together. | `capital_pending_order_envelope`, `CapitalClient.place_working_order`, `CapitalClient.update_position_limits` |
+| Kraken spot/margin asset registry | Records Kraken AssetPairs, ticker/spread, order minimum, cost minimum, maker/taker fee tiers, margin leverage, take-profit route, and exact spot/margin code route. | `aureon/exchanges/kraken_asset_registry.py`, `state/kraken_tradable_asset_registry.sqlite`, `/api/terminal-state#kraken_asset_registry` |
+| Kraken pending order survival | Stress-tests planned crypto spot/margin ladders as if every pending order fills, including spot quote budget, maker/taker fees, margin collateral, and stress-loss buffer. | `build_kraken_order_survival_envelope`, Trading intelligence checklist `KrakenPendingOrderSurvival` |
 | Spot/margin observation and trading readiness | Tracks runtime state, open positions, stale ticks, and flight-test reboot decisions before action. | `/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
 | Runtime resilience and recovery | Shows connected-but-guarded states, tick phase, route timeouts, executor in-flight state, and safe reboot advice. | `/api/terminal-state`, `runtime_watchdog`, `executor_route_state` |
 | Exchange clients | Provides exchange-specific adapters for market data, balances, and order paths through the runtime gates. | `kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
@@ -48,7 +50,10 @@ Low-priority data ocean supervisor:
 | Self-questioning and mind hub | Runs the local thought/action hub and self-questioning loop for operator-visible reasoning. | `http://127.0.0.1:13002/api/thoughts` |
 | Local OS/task capability | Queues goals, searches the repo, inspects files, and routes operator/voice tasks into visible state. | `aureon_local_task_queue.py`, `aureon_repo_explorer_service.py`, `aureon_voice_command_bridge.py` |
 | LLM capability | Uses local LLM backends when available and AureonBrain fallback in audit mode. | `aureon/inhouse_ai/llm_adapter.py` |
-| Code-writing capability | Produces reviewable code tasks and patch proposals, and connects to CodeArchitect/SkillLibrary for validated skills. | `aureon_safe_code_control.py`, `aureon_queen_code_bridge.py`, `aureon/code_architect/` |
+| Code-writing capability | Produces reviewable code tasks and patch proposals, routes operator prompts through the organism, and connects to CodeArchitect/SkillLibrary for validated skills. | `aureon_safe_code_control.py`, `aureon_queen_code_bridge.py`, `aureon_coding_organism_bridge.py`, `aureon/code_architect/` |
+| Operator coding organism bridge | Accepts a coding prompt from CLI or the mind hub, routes it through `GoalExecutionEngine`, queues safe code work, runs focused tests, publishes who/what/where/when/how/act evidence, and creates the finished-product audit. | `aureon/autonomous/aureon_coding_organism_bridge.py`, `/api/coding/prompt`, `frontend/src/components/generated/AureonCodingOrganismConsole.tsx` |
+| Director capability bridge | Maps Codex-class capabilities against Aureon's current systems, scores ready/partial/gap coverage, and queues exact Aureon build prompts for missing bridge systems. | `aureon/autonomous/aureon_director_capability_bridge.py`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/src/components/generated/AureonDirectorCapabilityBridgeConsole.tsx` |
+| Desktop/run handoff | Connects finished coding products to a dry-run local desktop handoff and the VM/remote-control tool registry so inspection, browser checks, typing, clicking, shell runs, and screenshots are part of the same evidence flow. | `aureon_safe_desktop_control.py`, `aureon/autonomous/vm_control/`, `state/aureon_coding_organism_desktop_state.json` |
 | Desktop capability | Offers local desktop action proposals with dry-run default, arm/disarm, emergency stop, and allowlisted actions. | `aureon_safe_desktop_control.py`, `aureon_queen_desktop_bridge.py`, `aureon_laptop_control.py` |
 | Unified autonomous console | Shows organism pulse, runtime mirror, blockers, exchange state, evolution queue, audits, and current capability modes. | `frontend/src/App.tsx`, `frontend/src/services/aureonAutonomousFrontend.ts`, `frontend/src/hooks/useTerminalSync.ts` |
 | Accounting/HMRC support pack tooling | Generates statutory support packs, CT support notes, and accounting evidence while keeping filing manual. | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
@@ -64,7 +69,7 @@ Low-priority data ocean supervisor:
 | Trading/portfolio/risk | Convert market state into readiness, intent, position, and execution evidence. | `aureon/trading/`, `aureon/portfolio/`, `aureon/strategies/` |
 | Scanners/analytics | Find movement, anomalies, backtest context, and opportunity candidates. | `aureon/scanners/`, `aureon/analytics/` |
 | Cognition/agents | Ask questions, route goals, choose capabilities, and expose thought/action state. | `aureon/autonomous/`, `/api/thoughts` |
-| OS/code/desktop layer | Search the repo, queue tasks, propose code, execute validated skills, and drive local desktop actions through safe controllers. | `aureon_repo_explorer_service.py`, `aureon_safe_code_control.py`, `aureon_safe_desktop_control.py`, `aureon/code_architect/` |
+| OS/code/desktop layer | Search the repo, queue tasks, route coding prompts, propose code, execute validated skills, audit the finished product, and drive local/remote desktop run handoffs through safe controllers. | `aureon_repo_explorer_service.py`, `aureon_coding_organism_bridge.py`, `aureon_safe_code_control.py`, `aureon_safe_desktop_control.py`, `aureon/autonomous/vm_control/`, `aureon/code_architect/` |
 | HNC/Auris evidence | Timestamp coherence, cognitive trade evidence, harmonic affect, and benchmark state. | `docs/audits/`, `aureon/autonomous/aureon_live_cognition_benchmark.py` |
 | Frontend console | Give the operator a single live surface for runtime, blockers, audits, and capability modes. | `frontend/src/App.tsx`, `frontend/public/` |
 | Accounting/HMRC support | Build evidence packs and manual filing support without changing accounts totals silently. | `Kings_Accounting_Suite/tools/`, `aureon/queen/accounting_context_bridge.py` |
@@ -81,6 +86,10 @@ Low-priority data ocean supervisor:
 | Flight test | `http://127.0.0.1:8791/api/flight-test` |
 | Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
 | Mind thoughts | `http://127.0.0.1:13002/api/thoughts` |
+| Coding organism prompt | `POST http://127.0.0.1:13002/api/coding/prompt` |
+| Coding organism status | `http://127.0.0.1:13002/api/coding/status` |
+| Director capability bridge | `docs/audits/aureon_director_capability_bridge.json` and `frontend/public/aureon_director_capability_bridge.json` |
+| Coding desktop handoff state | `state/aureon_coding_organism_desktop_state.json` |
 | Wake-up manifest | `state/aureon_wake_up_manifest.json` |
 | Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
 | Cognitive trade evidence | `docs/audits/aureon_cognitive_trade_evidence.json` |
@@ -105,7 +114,7 @@ Low-priority data ocean supervisor:
 
 | Exchange | Current role |
 |---|---|
-| Kraken | Spot/margin-capable client path under unified exchange runtime. |
+| Kraken | Spot/margin-capable crypto client with tradable asset registry, maker/taker fee evidence, leverage map, pending-order survival, take-profit route, fast-profit monitor, and runtime-gated live execution path. |
 | Binance | Market and trade adapter with symbol normalization and account readiness checks. |
 | Alpaca | Stocks/crypto adapter with account and position readiness checks. |
 | Capital | CFD account and position adapter with tradable asset registry, portfolio survival envelope, dynamic live lanes, no-loss hold queue, broker take-profit, pending-order survival, fast profit capture, and signed trade evidence. |

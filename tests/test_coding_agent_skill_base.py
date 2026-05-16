@@ -80,3 +80,18 @@ def test_goal_engine_routes_coder_skill_goal(tmp_path: Path, monkeypatch) -> Non
     evidence = json.loads((tmp_path / "state" / "aureon_coding_agent_skill_base_last_run.json").read_text(encoding="utf-8"))
     assert evidence["write_info"]["writer"] == "QueenCodeArchitect"
     assert evidence["coding_logic_map"]["status"] == "who_what_where_when_how_ready"
+
+
+def test_goal_engine_routes_coding_desktop_handoff_goal(tmp_path: Path, monkeypatch) -> None:
+    _fake_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    engine = GoalExecutionEngine()
+    plan = engine.submit_goal(
+        "Aureon must connect the remote desktop run handoff to the coding organism "
+        "so the user prompt becomes a finished product audit."
+    )
+
+    assert plan.status == "completed"
+    assert plan.steps[0].intent == "coding_agent_skill_base"
+    assert plan.steps[0].validation_result["valid"] is True

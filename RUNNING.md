@@ -15,6 +15,8 @@ The launcher starts the production supervisor, market runtime, status/telemetry 
 | Full Windows production supervisor | `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
 | Validate launcher and flags without opening services | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
 | Low-priority data ocean supervisor | `.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable` |
+| Prompt Aureon coding organism | `.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon, inspect this coding goal and run the focused tests."` |
+| Director capability bridge | `.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon director mode must create a Codex-class capability list, marry it to Aureon capabilities, bridge the gaps, and publish exact code work orders."` |
 | Dev/audit ignition path | `python scripts/aureon_ignition.py --audit-only` |
 | Standalone runtime status server | `python aureon/exchanges/unified_market_status_server.py --port 8791` |
 | Frontend development server | `cd frontend; npm run dev` |
@@ -63,6 +65,7 @@ Invoke-RestMethod http://127.0.0.1:8791/api/terminal-state | ConvertTo-Json -Dep
 Invoke-RestMethod http://127.0.0.1:8791/api/flight-test | ConvertTo-Json -Depth 8
 Invoke-RestMethod http://127.0.0.1:8791/api/reboot-advice | ConvertTo-Json -Depth 8
 Invoke-RestMethod http://127.0.0.1:13002/api/thoughts | ConvertTo-Json -Depth 8
+Invoke-RestMethod http://127.0.0.1:13002/api/coding/status | ConvertTo-Json -Depth 8
 ```
 
 The console also reads the wake-up manifest from:
@@ -101,6 +104,44 @@ The data ocean report includes the official exchange rate-limit registry from `a
 
 The exchange data capability matrix turns that into an operator checklist for each venue: data channels, trading modes, fresh feed state, decision-fed state, official call budget, cash-aware optimization mode, gaps, and next optimization. It is published to `docs/audits/aureon_exchange_data_capability_matrix.json` and mirrored to `frontend/public/aureon_exchange_data_capability_matrix.json` for the Trading console.
 
+## Prompt Aureon To Code
+
+After the production launcher has the mind hub alive, use the Coding Organism panel in the console or post directly to the hub:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:13002/api/coding/prompt `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"prompt":"Aureon, inspect this code goal, choose the safest route, propose the patch, run focused tests, audit the finished product, and prepare the desktop run handoff.","run_tests":true,"include_desktop":true}' |
+  ConvertTo-Json -Depth 8
+```
+
+For a terminal-only run:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon must inspect this coding goal, propose the smallest safe code route, and run focused tests."
+```
+
+The bridge writes `state/aureon_coding_organism_last_run.json`, `docs/audits/aureon_coding_organism_bridge.json`, and `frontend/public/aureon_coding_organism_bridge.json`. By default it also creates a finished-product audit and a dry-run desktop/run handoff in `state/aureon_coding_organism_desktop_state.json`, using `aureon/autonomous/aureon_safe_desktop_control.py` and the VM-control tool registry as the run surface.
+
+That coding path is the full cognitive loop:
+
+```text
+operator prompt -> mind hub or CLI -> GoalExecutionEngine route
+-> safe code proposal/work queue -> focused tests/build checks
+-> finished_product_audit -> desktop/remote run handoff -> console evidence
+```
+
+Use `--no-desktop` on the CLI, or `"include_desktop": false` through the HTTP endpoint, only when you want a coding evidence run without desktop/run handoff.
+
+To ask Aureon to compare itself against a Codex-class coding/operator agent and create exact bridge work orders for anything missing:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon director mode must create a Codex-class capability list, marry it to Aureon capabilities, bridge the gaps, and publish exact code work orders."
+```
+
+This writes `state/aureon_director_capability_bridge_last_run.json`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/public/aureon_director_capability_bridge.json`, and the `AureonDirectorCapabilityBridgeConsole` panel.
+
 Capital.com live expansion is controlled by the Capital Survival Brain in the Trading console. The runtime publishes `capital_risk_envelope`, `capital_trade_evidence`, `capital_confidence_ratchet`, `capital_unified_waveform_check`, `capital_no_loss_hold_queue`, and `capital_pending_order_envelope`; live Capital entries are dynamically sized or held when portfolio reserve, margin utilization, stress buffer, concentration, confidence, or cross-exchange waveform evidence is not strong enough.
 
 Build or widen the Capital tradable asset book when you want every discovered Capital market mapped to epic, cost, margin, leverage, minimum deal size, and execution route:
@@ -110,6 +151,14 @@ Build or widen the Capital tradable asset book when you want every discovered Ca
 ```
 
 The registry writes `state/capital_tradable_asset_registry.sqlite`, `state/aureon_capital_tradable_asset_registry.json`, and audit/public JSON/CSV/Markdown outputs. Pending Capital bids are planned as working orders with broker take-profit evidence, but submission remains opt-in through `CAPITAL_PENDING_ORDER_SUBMIT_ENABLED=1`; the survival envelope blocks ladders that would be unsafe if all pending orders filled at once.
+
+Build or widen the Kraken crypto asset/cost book when you want every Kraken spot and margin pair mapped to AssetPairs metadata, order minimums, cost minimums, maker/taker fees, leverage options, take-profit route, margin route, and pending-order survival policy:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.exchanges.kraken_asset_registry --max-tickers 250
+```
+
+The data ocean calls this automatically with `-KrakenAssetRegistryTickers`. The registry writes `state/kraken_tradable_asset_registry.sqlite`, `state/aureon_kraken_tradable_asset_registry.json`, and audit/public JSON/CSV/Markdown outputs. Runtime publishes the summary at `/api/terminal-state#kraken_asset_registry`, and the trading intelligence checklist turns it into Kraken spot readiness, margin cost readiness, and pending-order survival rows.
 
 For a no-ingest validation pass:
 
@@ -129,6 +178,8 @@ For a no-ingest validation pass:
 | Market runtime | `aureon/exchanges/unified_market_trader.py` |
 | Runtime status server | `aureon/exchanges/unified_market_status_server.py` |
 | Kraken client | `aureon/exchanges/kraken_client.py` |
+| Kraken asset/cost registry | `aureon/exchanges/kraken_asset_registry.py`, `state/kraken_tradable_asset_registry.sqlite` |
+| Kraken pending order survival | `build_kraken_order_survival_envelope`, `/api/terminal-state#kraken_asset_registry` |
 | Binance client | `aureon/exchanges/binance_client.py` |
 | Alpaca client | `aureon/exchanges/alpaca_client.py` |
 | Capital client | `aureon/exchanges/capital_client.py` |
@@ -148,6 +199,9 @@ For a no-ingest validation pass:
 | Frontend shell | `frontend/src/App.tsx` |
 | Frontend autonomous service | `frontend/src/services/aureonAutonomousFrontend.ts` |
 | Terminal sync hook | `frontend/src/hooks/useTerminalSync.ts` |
+| Coding organism bridge | `aureon/autonomous/aureon_coding_organism_bridge.py`, `frontend/src/components/generated/AureonCodingOrganismConsole.tsx` |
+| Director capability bridge | `aureon/autonomous/aureon_director_capability_bridge.py`, `frontend/src/components/generated/AureonDirectorCapabilityBridgeConsole.tsx` |
+| Desktop/run handoff | `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/vm_control/`, `state/aureon_coding_organism_desktop_state.json` |
 | Accounting pack generator | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py` |
 | Accounting context bridge | `aureon/queen/accounting_context_bridge.py` |
 | Data ocean registry/governor | `aureon/autonomous/aureon_data_ocean.py` |
