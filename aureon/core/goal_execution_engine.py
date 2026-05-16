@@ -770,18 +770,6 @@ class GoalExecutionEngine:
         plan = GoalPlan(original_text=text, objective=text)
         steps: List[GoalStep] = []
 
-        work_journal = self._match_coding_work_journal_goal(text)
-        if work_journal:
-            steps = [GoalStep(
-                title="Aureon validate coding work journal UI",
-                intent="coding_work_journal_ui",
-                params=work_journal,
-                expected_outcome="Coding organism publishes a prompt-to-files work journal and the UI renders it",
-            )]
-            plan.steps = steps
-            plan.success_criteria = "Coding work journal evidence and UI surface are present and validated"
-            return plan
-
         agent_company = self._match_agent_company_goal(text)
         if agent_company:
             steps = [GoalStep(
@@ -828,6 +816,18 @@ class GoalExecutionEngine:
             )]
             plan.steps = steps
             plan.success_criteria = "Director capability bridge generated with exact Aureon build orders for gaps"
+            return plan
+
+        work_journal = self._match_coding_work_journal_goal(text)
+        if work_journal:
+            steps = [GoalStep(
+                title="Aureon validate coding work journal UI",
+                intent="coding_work_journal_ui",
+                params=work_journal,
+                expected_outcome="Coding organism publishes a prompt-to-files work journal and the UI renders it",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Coding work journal evidence and UI surface are present and validated"
             return plan
 
         coding_skill_base = self._match_coding_agent_skill_base_goal(text)

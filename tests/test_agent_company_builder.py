@@ -124,6 +124,28 @@ def test_agent_company_roles_have_day_jobs_and_whole_organism_access(tmp_path: P
         assert role["workforce_lifecycle"]["retire_when"]
 
 
+def test_agent_company_compares_big_market_ai_systems(tmp_path: Path) -> None:
+    _seed_repo(tmp_path)
+
+    report = build_agent_company_bill_list(root=tmp_path, goal="market ai capability expansion hiring plan")
+
+    providers = {item["provider"] for item in report["capability_market_comparison"]}
+    assert {
+        "OpenAI",
+        "Anthropic",
+        "Google",
+        "Microsoft",
+        "GitHub",
+        "Replit",
+        "Cursor",
+        "Cognition",
+    }.issubset(providers)
+    assert report["summary"]["market_ai_system_count"] >= 8
+    assert report["completion_report"]["did_compare_market_ai_systems"] is True
+    assert all(item["hired_temporary_workers"] for item in report["capability_market_comparison"])
+    assert all("authority_boundary" in item["next_work_order"] for item in report["capability_market_comparison"])
+
+
 def test_agent_company_models_prompts_as_client_jobs_and_temp_crews(tmp_path: Path) -> None:
     _seed_repo(tmp_path)
 
@@ -236,5 +258,34 @@ def test_coding_organism_journal_includes_agent_company_report(tmp_path: Path, m
     assert result["summary"]["agent_company_report_created"] is True
     assert result["agent_company_report"]["schema_version"] == SCHEMA_VERSION
     assert result["agent_company_report"]["summary"]["daily_operating_loop_ready"] is True
+    stage_ids = {stage["id"] for stage in result["work_journal"]["stages"]}
+    assert "agent_company_bill_list" in stage_ids
+
+
+def test_market_ai_expansion_prompt_routes_to_agent_company_before_work_journal(tmp_path: Path, monkeypatch) -> None:
+    _seed_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    result = submit_coding_prompt(
+        "Aureon coding organism must run a market AI capability expansion client job: "
+        "compare OpenAI Codex, Anthropic Claude Code, Gemini/Jules, Microsoft Agent Framework, "
+        "GitHub Copilot, Replit, Cursor, and Devin; hire temporary workers; map work orders; "
+        "publish proof and client handover.",
+        source="test",
+        run_tests=False,
+        include_desktop=False,
+        scope_approved=True,
+        scope_answers={
+            "goal": "Compare market AI coding-agent capability patterns with Aureon.",
+            "deliverables": "Agent-company report, market comparison, worker hires, work orders, proof.",
+            "target_system": "Aureon agent company and coding organism reports.",
+            "constraints": "Preserve authority boundaries and do not expose secrets.",
+            "acceptance": "Agent-company report is created and includes direct market AI systems.",
+        },
+        root=tmp_path,
+    )
+
+    assert result["summary"]["agent_company_report_created"] is True
+    assert result["agent_company_report"]["summary"]["market_ai_system_count"] >= 8
     stage_ids = {stage["id"] for stage in result["work_journal"]["stages"]}
     assert "agent_company_bill_list" in stage_ids

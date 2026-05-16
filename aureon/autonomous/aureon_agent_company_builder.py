@@ -156,6 +156,222 @@ MARKET_CAPABILITY_TAXONOMY: list[dict[str, Any]] = [
 ]
 
 
+MARKET_AI_SYSTEMS: list[dict[str, Any]] = [
+    {
+        "id": "openai_agents_codex",
+        "provider": "OpenAI",
+        "systems": ["Agents SDK", "Codex"],
+        "official_sources": [
+            "https://developers.openai.com/api/docs/guides/agents",
+            "https://developers.openai.com/codex/cloud",
+        ],
+        "market_capabilities": [
+            "tool use",
+            "specialist handoffs",
+            "stateful multi-step work",
+            "guardrails",
+            "tracing and observability",
+            "background coding tasks",
+            "repo read/edit/run",
+            "GitHub pull-request handoff",
+        ],
+        "aureon_current_equivalent": [
+            "GoalExecutionEngine",
+            "aureon_coding_organism_bridge",
+            "SafeCodeControl",
+            "LocalTaskQueue",
+            "agent company registry",
+            "director capability bridge",
+        ],
+        "primary_gap": "Codex-style parallel cloud worktrees and first-class PR creation remain work orders, not a fully active Aureon lane.",
+        "temporary_hires": ["Tool Bridge Architect", "Workflow Foreman", "Release Manager"],
+    },
+    {
+        "id": "anthropic_claude_code_tools",
+        "provider": "Anthropic",
+        "systems": ["Claude tool use", "Claude Code", "computer use", "MCP"],
+        "official_sources": [
+            "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview",
+            "https://code.claude.com/docs/en/how-claude-code-works",
+            "https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool",
+        ],
+        "market_capabilities": [
+            "client/server tools",
+            "strict tool schemas",
+            "agentic gather-act-verify loop",
+            "bash/text editor/code execution",
+            "computer screenshots and mouse/keyboard control",
+            "MCP connectors",
+            "session logs and resumability",
+        ],
+        "aureon_current_equivalent": [
+            "SafeDesktopControl",
+            "VMControlDispatcher",
+            "ToolRegistry",
+            "coding organism proof checklist",
+            "state/docs/frontend evidence",
+        ],
+        "primary_gap": "Browser/computer smoke checks exist as safe controller surfaces but need a dedicated browser evidence bridge.",
+        "temporary_hires": ["Browser Smoke Inspector", "HNC/Auris Drift Officer", "Test Pilot"],
+    },
+    {
+        "id": "google_gemini_jules",
+        "provider": "Google",
+        "systems": ["Gemini API", "Jules"],
+        "official_sources": [
+            "https://ai.google.dev/gemini-api/docs/function-calling",
+            "https://jules.google/docs/",
+        ],
+        "market_capabilities": [
+            "function calling",
+            "grounding/search",
+            "code execution",
+            "Live API patterns",
+            "GitHub-connected autonomous coding VM",
+            "bug fixes, documentation, and feature tasks",
+        ],
+        "aureon_current_equivalent": [
+            "ToolRegistry",
+            "research/vault memory",
+            "coding-agent skill base",
+            "GoalExecutionEngine",
+        ],
+        "primary_gap": "Fresh official-doc web learning is mapped but should become a required preflight for unfamiliar code domains.",
+        "temporary_hires": ["Market AI Scout", "Research Scout", "Capability Cartographer"],
+    },
+    {
+        "id": "microsoft_agent_framework",
+        "provider": "Microsoft",
+        "systems": ["Agent Framework", "Semantic Kernel", "AutoGen lineage"],
+        "official_sources": [
+            "https://learn.microsoft.com/en-us/agent-framework/overview/",
+        ],
+        "market_capabilities": [
+            "agents with tools and MCP servers",
+            "graph workflows",
+            "checkpointing",
+            "human-in-the-loop",
+            "memory/context providers",
+            "middleware",
+            "type-safe routing",
+        ],
+        "aureon_current_equivalent": [
+            "OrganismContractStack",
+            "GoalExecutionEngine",
+            "ThoughtBus",
+            "LocalTaskQueue",
+            "agent company handoff map",
+        ],
+        "primary_gap": "Typed graph checkpoints and resumable workflow state are partial; route checkpoints need stronger UI and replay controls.",
+        "temporary_hires": ["Project Manager", "Workflow Foreman", "Archive Librarian"],
+    },
+    {
+        "id": "github_copilot_cloud_agent",
+        "provider": "GitHub",
+        "systems": ["Copilot cloud agent"],
+        "official_sources": [
+            "https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent",
+        ],
+        "market_capabilities": [
+            "repo research",
+            "implementation plans",
+            "branch changes",
+            "diff review",
+            "pull requests",
+            "custom agents",
+            "test and documentation work",
+        ],
+        "aureon_current_equivalent": [
+            "RepoSelfCatalog",
+            "SafeCodeControl",
+            "GoalExecutionEngine",
+            "README/RUNNING release docs",
+        ],
+        "primary_gap": "Aureon can prepare commit/push work by operator request, but a dedicated git release bridge with PR evidence is still missing.",
+        "temporary_hires": ["Release Manager", "Secret Keeper", "Test Pilot"],
+    },
+    {
+        "id": "replit_agent",
+        "provider": "Replit",
+        "systems": ["Replit Agent"],
+        "official_sources": [
+            "https://docs.replit.com/core-concepts/agent",
+        ],
+        "market_capabilities": [
+            "plain-language app building",
+            "plan mode before code",
+            "infrastructure setup",
+            "testing",
+            "iteration",
+            "deployment",
+            "files/docs/data visualization",
+        ],
+        "aureon_current_equivalent": [
+            "client job scope gate",
+            "AureonCodingOrganismConsole",
+            "frontend/public evidence",
+            "external capability bridge",
+        ],
+        "primary_gap": "Deployment packaging and live browser QA need a more explicit handover checklist before public release.",
+        "temporary_hires": ["Product Manager", "Browser Smoke Inspector", "Release Manager"],
+    },
+    {
+        "id": "cursor_background_agents",
+        "provider": "Cursor",
+        "systems": ["Background Agents", "Rules", "MCP"],
+        "official_sources": [
+            "https://docs.cursor.com/en/background-agents",
+            "https://docs.cursor.com/en/context",
+        ],
+        "market_capabilities": [
+            "background coding agents",
+            "repository rules",
+            "agent instructions",
+            "MCP tool connections",
+            "autonomous bug/doc/update tasks",
+        ],
+        "aureon_current_equivalent": [
+            "LocalTaskQueue",
+            "EVERYTHING_CODEX_CAN_DO.md",
+            "agent company memory phonebook",
+            "coding-agent skill base",
+        ],
+        "primary_gap": "Aureon has role memory and skill docs, but needs stronger per-repo rules and reusable task templates.",
+        "temporary_hires": ["Archive Librarian", "Runbook Writer", "Implementation Worker"],
+    },
+    {
+        "id": "devin",
+        "provider": "Cognition",
+        "systems": ["Devin"],
+        "official_sources": [
+            "https://docs.devin.ai/get-started/devin-intro",
+            "https://docs.devin.ai/work-with-devin/advanced-capabilities",
+        ],
+        "market_capabilities": [
+            "write/run/test code",
+            "tickets and features",
+            "bug repro and fixes",
+            "migrations/refactors",
+            "parallel managed sessions",
+            "session analysis",
+            "playbooks",
+            "knowledge management",
+            "scheduled sessions",
+            "terminal/IDE/browser views",
+        ],
+        "aureon_current_equivalent": [
+            "agent company agency model",
+            "subcontractor lifecycle",
+            "memory phonebook",
+            "coding organism client job flow",
+            "SafeDesktopControl",
+        ],
+        "primary_gap": "Managed child sessions are represented as temporary crews; execution needs a worker coordinator with file ownership and merge evidence.",
+        "temporary_hires": ["Agent Company COO", "Workflow Foreman", "Workforce Retirement Clerk"],
+    },
+]
+
+
 AUTHORITY_BOUNDARIES: list[dict[str, Any]] = [
     {
         "id": "live_trading_runtime_gated",
@@ -839,6 +1055,9 @@ def _summary(roles: list[AgentCompanyRole], work_orders: list[dict[str, Any]]) -
         "work_order_count": len(work_orders),
         "authority_boundary_count": len(AUTHORITY_BOUNDARIES),
         "market_capability_count": len(MARKET_CAPABILITY_TAXONOMY),
+        "market_ai_system_count": len(MARKET_AI_SYSTEMS),
+        "capability_market_comparison_count": len(MARKET_AI_SYSTEMS),
+        "direct_market_systems_compared": [system["provider"] for system in MARKET_AI_SYSTEMS],
         "coverage_percent": round((len(active) / max(len(roles), 1)) * 100, 2),
         "registry_mode": "registry_ui_first",
         "executable_agents_created": False,
@@ -863,12 +1082,64 @@ def _summary(roles: list[AgentCompanyRole], work_orders: list[dict[str, Any]]) -
     }
 
 
+def _market_capability_comparison(roles: list[AgentCompanyRole]) -> list[dict[str, Any]]:
+    roles_by_title = {role.title: role for role in roles}
+    comparison: list[dict[str, Any]] = []
+    for system in MARKET_AI_SYSTEMS:
+        hire_titles = [str(title) for title in system.get("temporary_hires", [])]
+        hired = []
+        for title in hire_titles:
+            role = roles_by_title.get(title)
+            if role:
+                hired.append(
+                    {
+                        "role_id": role.role_id,
+                        "title": role.title,
+                        "department": role.department,
+                        "authority_level": role.authority_level,
+                        "existing_surfaces": role.existing_surfaces,
+                        "work_order_count": len(role.work_orders),
+                    }
+                )
+            else:
+                hired.append(
+                    {
+                        "role_id": _slug(title),
+                        "title": title,
+                        "department": "agency_workforce",
+                        "authority_level": "work_order_required",
+                        "existing_surfaces": [],
+                        "work_order_count": 1,
+                    }
+                )
+        comparison.append(
+            {
+                **system,
+                "aureon_gap_status": "partially_wired" if system.get("aureon_current_equivalent") else "missing",
+                "hired_temporary_workers": hired,
+                "next_work_order": {
+                    "title": f"Bridge {system['provider']} capability pattern into Aureon",
+                    "status": "ready_for_scoped_work_order",
+                    "authority_boundary": "no live trading, payment, filing, credential reveal, destructive OS action, or external mutation bypass",
+                    "acceptance": [
+                        "source-backed capability row exists",
+                        "Aureon current surface or explicit gap named",
+                        "temporary workers and handoffs assigned",
+                        "proof artifact published before client handover",
+                    ],
+                },
+            }
+        )
+    return comparison
+
+
 def build_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = "") -> dict[str, Any]:
     root = Path(root or _default_root()).resolve()
     generated_at = utc_now()
     roles = [_materialize_role(root, role) for role in _role_specs()]
     work_orders = [order for role in roles for order in role.work_orders]
     memory_phonebook = _memory_phonebook_for_roles(root, roles, generated_at)
+    market_comparison = _market_capability_comparison(roles)
     departments = []
     for department in DEPARTMENTS:
         department_roles = [role for role in roles if role.department == department["id"]]
@@ -899,6 +1170,8 @@ def build_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = ""
         "status": "agent_company_registry_ready",
         "summary": _summary(roles, work_orders),
         "capability_taxonomy_sources": MARKET_CAPABILITY_TAXONOMY,
+        "market_ai_systems": MARKET_AI_SYSTEMS,
+        "capability_market_comparison": market_comparison,
         "agency_operating_model": AGENCY_OPERATING_MODEL,
         "prompt_client_job_lifecycle": PROMPT_CLIENT_JOB_LIFECYCLE,
         "subcontractor_retirement_policy": SUBCONTRACTOR_RETIREMENT_POLICY,
@@ -922,6 +1195,7 @@ def build_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = ""
             "when": "Built on demand from the current repo and public agent-system capability patterns.",
             "how": [
                 "map market capability taxonomy",
+                "compare big AI/coding-agent systems with current Aureon surfaces",
                 "treat prompt as client job",
                 "attach agency/head-hunting intake and subcontractor lifecycle",
                 "materialize Aureon startup departments",
@@ -941,6 +1215,7 @@ def build_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = ""
             "did_attach_agency_prompt_job_model": True,
             "did_attach_hire_retire_lifecycle": all(bool(role.workforce_lifecycle) for role in roles),
             "did_build_sha256_zlib_memory_phonebook": memory_phonebook.get("summary", {}).get("entry_count") == len(roles),
+            "did_compare_market_ai_systems": len(market_comparison) == len(MARKET_AI_SYSTEMS),
             "did_preserve_existing_authority_gates": True,
             "did_map_roles_to_surfaces_or_work_orders": all(
                 bool(role.existing_surfaces or role.work_orders) for role in roles
@@ -1023,6 +1298,7 @@ def _make_markdown(report: dict[str, Any]) -> str:
         f"- Departments: {summary.get('department_count')}",
         f"- Active surface roles: {summary.get('active_surface_role_count')}",
         f"- Work orders: {summary.get('work_order_count')}",
+        f"- Market AI systems compared: {summary.get('market_ai_system_count')}",
         f"- Agency workforce roles: {summary.get('agency_workforce_role_count')}",
         f"- Prompt-as-client lifecycle steps: {summary.get('agency_lifecycle_step_count')}",
         f"- Subcontractor-eligible roles: {summary.get('subcontractor_eligible_role_count')}",
@@ -1092,6 +1368,22 @@ def _make_markdown(report: dict[str, Any]) -> str:
     )
     for boundary in report.get("authority_boundaries", []):
         lines.append(f"- **{boundary.get('title')}**: {boundary.get('rule')}")
+    lines.extend(["", "## Market AI System Comparison", ""])
+    for item in report.get("capability_market_comparison", []):
+        hires = ", ".join(worker.get("title", "") for worker in item.get("hired_temporary_workers", []))
+        capabilities = ", ".join(item.get("market_capabilities", []))
+        equivalents = ", ".join(item.get("aureon_current_equivalent", []))
+        lines.extend(
+            [
+                f"### {item.get('provider')} - {', '.join(item.get('systems', []))}",
+                f"- Market capabilities: {capabilities}",
+                f"- Aureon equivalent: {equivalents}",
+                f"- Gap: {item.get('primary_gap')}",
+                f"- Temporary hires: {hires}",
+                f"- Boundary: {(item.get('next_work_order') or {}).get('authority_boundary')}",
+                "",
+            ]
+        )
     lines.extend(["", "## Departments", ""])
     roles_by_id = {role.get("role_id"): role for role in report.get("roles", [])}
     for department in report.get("departments", []):
@@ -1110,6 +1402,10 @@ def _make_markdown(report: dict[str, Any]) -> str:
     lines.extend(["## Market Capability Sources", ""])
     for source in report.get("capability_taxonomy_sources", []):
         lines.append(f"- {source.get('title')}: {source.get('official_source')}")
+    lines.extend(["", "## Direct Market AI Sources", ""])
+    for item in report.get("market_ai_systems", []):
+        for source in item.get("official_sources", []):
+            lines.append(f"- {item.get('provider')}: {source}")
     return "\n".join(lines).strip() + "\n"
 
 
