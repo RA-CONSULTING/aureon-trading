@@ -54,6 +54,9 @@ export function AureonAgentCompanyConsole() {
   const handoffMap = Array.isArray(report.handoff_map) ? report.handoff_map : [];
   const dailyLoop = Array.isArray(report.daily_operating_loop) ? report.daily_operating_loop : [];
   const accessPolicy = report.whole_organism_access_policy || {};
+  const myceliumDoctrine = report.mycelium_organisation_doctrine || {};
+  const myceliumMap = Array.isArray(myceliumDoctrine.metaphor_map) ? myceliumDoctrine.metaphor_map : [];
+  const myceliumPrinciples = Array.isArray(myceliumDoctrine.operating_principles) ? myceliumDoctrine.operating_principles : [];
   const agencyModel = report.agency_operating_model || {};
   const clientJobLifecycle = Array.isArray(report.prompt_client_job_lifecycle) ? report.prompt_client_job_lifecycle : [];
   const retirementPolicy = report.subcontractor_retirement_policy || {};
@@ -97,6 +100,7 @@ export function AureonAgentCompanyConsole() {
           <Stat icon={Users} label="recruited" value={summary.recruited_worker_count || 0} />
           <Stat icon={Network} label="online scans" value={summary.online_recruitment_search_count || 0} />
           <Stat icon={Network} label="memory packs" value={summary.sha256_memory_entry_count || 0} />
+          <Stat icon={Network} label="mycelium map" value={summary.mycelium_metaphor_count || myceliumMap.length || 0} />
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[1.15fr_0.85fr]">
@@ -172,6 +176,33 @@ export function AureonAgentCompanyConsole() {
           </div>
 
           <div className="space-y-3">
+            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="text-sm font-medium text-emerald-50">Mycelium Organisation Ethos</div>
+                <Badge variant={summary.mycelium_doctrine_ready ? "success" : "warning"}>
+                  {String(myceliumDoctrine.ethos || "waiting").replace(/_/g, " ")}
+                </Badge>
+              </div>
+              <div className="text-[11px] text-muted-foreground">{myceliumDoctrine.one_line || "Waiting for mycelium doctrine."}</div>
+              <div className="mt-2 space-y-1">
+                {myceliumMap.slice(0, 5).map((item: JsonMap) => (
+                  <div key={item.mycelium_part} className="rounded border border-emerald-400/20 bg-background/20 px-2 py-1.5">
+                    <div className="text-[11px] font-medium">
+                      {String(item.mycelium_part || "").replace(/_/g, " ")} {"->"} {item.aureon_part}
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">{item.function}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 grid gap-1">
+                {myceliumPrinciples.slice(0, 4).map((principle: string) => (
+                  <div key={principle} className="rounded border border-emerald-400/20 bg-background/15 px-2 py-1 text-[11px] text-muted-foreground">
+                    {principle}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="rounded-md border border-violet-500/30 bg-violet-500/10 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="text-sm font-medium text-violet-50">Prompt As Client Job</div>

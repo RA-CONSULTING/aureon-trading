@@ -88,6 +88,15 @@ def test_agent_company_builder_creates_ceo_to_cleaner_registry(tmp_path: Path) -
     assert report["summary"]["roles_with_whole_organism_access_count"] == report["summary"]["role_count"]
     assert report["summary"]["not_one_trick_role_count"] == report["summary"]["role_count"]
     assert report["summary"]["daily_operating_loop_ready"] is True
+    assert report["summary"]["mycelium_ethos"] == "mycelium_network_organisation"
+    assert report["summary"]["mycelium_doctrine_ready"] is True
+    assert report["mycelium_organisation_doctrine"]["ethos"] == "mycelium_network_organisation"
+    assert len(report["mycelium_organisation_doctrine"]["metaphor_map"]) >= 5
+    assert any(
+        item["mycelium_part"] == "fruiting_bodies"
+        and "temporary recruited agents" in item["aureon_part"]
+        for item in report["mycelium_organisation_doctrine"]["metaphor_map"]
+    )
     assert report["summary"]["agency_model"] == "prompt_as_client_job_agency"
     assert report["summary"]["agency_workforce_role_count"] >= 5
     assert report["summary"]["roles_with_workforce_lifecycle_count"] == report["summary"]["role_count"]
@@ -100,6 +109,7 @@ def test_agent_company_builder_creates_ceo_to_cleaner_registry(tmp_path: Path) -
     assert report["workforce_memory_phonebook"]["summary"]["sha256_addressed"] is True
     assert report["workforce_memory_phonebook"]["summary"]["zlib_compressed"] is True
     assert "_bundle_payloads" not in report["workforce_memory_phonebook"]
+    assert report["completion_report"]["did_attach_mycelium_organisation_doctrine"] is True
 
 
 def test_agent_company_roles_have_day_jobs_and_whole_organism_access(tmp_path: Path) -> None:

@@ -489,6 +489,60 @@ UNIVERSAL_ORGANISM_SURFACES: list[str] = [
 ]
 
 
+MYCELIUM_ORGANISATION_DOCTRINE: dict[str, Any] = {
+    "ethos": "mycelium_network_organisation",
+    "one_line": (
+        "Aureon behaves like a mycelium organisation: distributed sensing, local specialist action, "
+        "shared memory, explicit nutrient/data flow, and temporary fruiting bodies for client jobs."
+    ),
+    "metaphor_map": [
+        {
+            "mycelium_part": "hyphae",
+            "aureon_part": "ThoughtBus, handoffs, manifests, and public evidence files",
+            "function": "carry context, questions, blockers, proofs, and work packets between roles",
+        },
+        {
+            "mycelium_part": "fruiting_bodies",
+            "aureon_part": "temporary recruited agents and subcontractor crews",
+            "function": "appear for a client job, do visible work, then retire after handover",
+        },
+        {
+            "mycelium_part": "spores",
+            "aureon_part": "SHA-256/zlib memory phonebook and archived skill packs",
+            "function": "preserve reusable patterns so future jobs can regrow the right workers quickly",
+        },
+        {
+            "mycelium_part": "nutrient_flow",
+            "aureon_part": "runtime state, data ocean, repo search, vault memory, tests, and market evidence",
+            "function": "route scarce attention and tool budget toward the role that can use it best",
+        },
+        {
+            "mycelium_part": "immune_response",
+            "aureon_part": "HNC/Auris drift checks, secret redaction, runtime gates, and snagging inspection",
+            "function": "reject stale, unsafe, contradictory, or unproven work before client handover",
+        },
+    ],
+    "operating_principles": [
+        "no single role is the whole organism",
+        "every role can sense the wider organism before acting inside its authority",
+        "client prompts create temporary work clusters, not permanent clutter",
+        "memory is retained as compressed reusable evidence, not as uncontrolled staff growth",
+        "fresh internal and online evidence flows to the worker best placed to use it",
+        "handover happens only after proof, anti-drift review, snagging, and archive",
+    ],
+    "decision_rule": (
+        "If a job needs a capability, recruit or regrow the smallest capable crew, connect it to the "
+        "organism through evidence-bearing handoffs, validate the work, then retire the crew into memory."
+    ),
+    "evidence_paths": [
+        str(DEFAULT_AUDIT_JSON),
+        str(DEFAULT_AUDIT_MD),
+        str(DEFAULT_PUBLIC_JSON),
+        str(DEFAULT_PHONEBOOK_STATE_JSON),
+    ],
+}
+
+
 WHOLE_ORGANISM_ACCESS_POLICY: dict[str, Any] = {
     "access_model": "whole_organism_with_role_authority",
     "purpose": (
@@ -1139,6 +1193,10 @@ def _summary(
         "roles_with_whole_organism_access_count": len(whole_access),
         "not_one_trick_role_count": len(not_one_trick),
         "daily_operating_loop_ready": bool(DAILY_OPERATING_LOOP) and len(day_plan) == len(roles),
+        "mycelium_ethos": MYCELIUM_ORGANISATION_DOCTRINE["ethos"],
+        "mycelium_doctrine_ready": True,
+        "mycelium_metaphor_count": len(MYCELIUM_ORGANISATION_DOCTRINE["metaphor_map"]),
+        "mycelium_operating_principle_count": len(MYCELIUM_ORGANISATION_DOCTRINE["operating_principles"]),
         "agency_model": AGENCY_OPERATING_MODEL["model"],
         "agency_lifecycle_step_count": len(PROMPT_CLIENT_JOB_LIFECYCLE),
         "agency_workforce_role_count": len(agency_roles),
@@ -1566,6 +1624,7 @@ def build_agent_company_bill_list(
         "market_ai_systems": MARKET_AI_SYSTEMS,
         "capability_market_comparison": market_comparison,
         "recruitment_engine": recruitment_engine,
+        "mycelium_organisation_doctrine": MYCELIUM_ORGANISATION_DOCTRINE,
         "agency_operating_model": AGENCY_OPERATING_MODEL,
         "prompt_client_job_lifecycle": PROMPT_CLIENT_JOB_LIFECYCLE,
         "subcontractor_retirement_policy": SUBCONTRACTOR_RETIREMENT_POLICY,
@@ -1590,6 +1649,7 @@ def build_agent_company_bill_list(
             "how": [
                 "map market capability taxonomy",
                 "compare big AI/coding-agent systems with current Aureon surfaces",
+                "apply mycelium organisation doctrine to handoffs, temporary crews, and memory",
                 "run internal repo search and optional online recruitment search",
                 "recruit temporary worker blueprints for the client proposal",
                 "treat prompt as client job",
@@ -1613,6 +1673,8 @@ def build_agent_company_bill_list(
             "did_build_sha256_zlib_memory_phonebook": memory_phonebook.get("summary", {}).get("entry_count") == len(roles),
             "did_compare_market_ai_systems": len(market_comparison) == len(MARKET_AI_SYSTEMS),
             "did_build_recruitment_engine": recruitment_engine.get("status") == "recruitment_ready",
+            "did_attach_mycelium_organisation_doctrine": MYCELIUM_ORGANISATION_DOCTRINE["ethos"]
+            == "mycelium_network_organisation",
             "did_build_agent_blueprints": bool(recruitment_engine.get("agent_blueprints")),
             "did_run_internal_skill_search": bool(recruitment_engine.get("internal_skill_searches")),
             "did_run_online_skill_search_when_requested": (
@@ -1710,6 +1772,8 @@ def _make_markdown(report: dict[str, Any]) -> str:
         f"- Subcontractor-eligible roles: {summary.get('subcontractor_eligible_role_count')}",
         f"- SHA-256 memory entries: {summary.get('sha256_memory_entry_count')}",
         f"- Zlib memory archive ready: {summary.get('zlib_memory_archive_ready')}",
+        f"- Mycelium ethos: {summary.get('mycelium_ethos')}",
+        f"- Mycelium doctrine ready: {summary.get('mycelium_doctrine_ready')}",
         f"- Roles with day plans: {summary.get('roles_with_day_plan_count')}",
         f"- Whole-organism access roles: {summary.get('roles_with_whole_organism_access_count')}",
         f"- Daily operating loop ready: {summary.get('daily_operating_loop_ready')}",
@@ -1719,6 +1783,28 @@ def _make_markdown(report: dict[str, Any]) -> str:
         report.get("agency_operating_model", {}).get("analogy", ""),
         "",
     ]
+    mycelium = report.get("mycelium_organisation_doctrine", {})
+    lines.extend(
+        [
+            "## Mycelium Organisation Doctrine",
+            "",
+            mycelium.get("one_line", ""),
+            "",
+            f"- Ethos: {mycelium.get('ethos')}",
+            f"- Decision rule: {mycelium.get('decision_rule')}",
+            "",
+            "### Mycelium Map",
+            "",
+        ]
+    )
+    for item in mycelium.get("metaphor_map", []):
+        lines.append(
+            f"- **{item.get('mycelium_part')}** -> {item.get('aureon_part')}: {item.get('function')}"
+        )
+    lines.extend(["", "### Operating Principles", ""])
+    for principle in mycelium.get("operating_principles", []):
+        lines.append(f"- {principle}")
+    lines.extend(["", "### Agency Principles", ""])
     for principle in report.get("agency_operating_model", {}).get("principles", []):
         lines.append(f"- {principle}")
     lines.extend(["", "### Client Job Lifecycle", ""])

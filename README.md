@@ -28,6 +28,8 @@ The current public version is the unified live organism runtime, not a single bo
 
 This version brings Kraken, Binance, Alpaca, and Capital into one market state; exposes connected, guarded, and live-action modes; keeps reboot advice visible; and includes the OS/task, LLM, self-coding, desktop/run handoff, frontend work-order, accounting, HNC/Auris, and whole-knowledge voice layers.
 
+The current organism ethos is a mycelium network organisation. Aureon treats prompts as client jobs, grows temporary agent crews for the work, moves context through evidence-bearing handoffs, keeps reusable skills in a SHA-256/zlib memory phonebook, and retires temporary workers after proof and handover. The agent-company report exposes this doctrine in `docs/audits/aureon_agent_company_bill_list.json`, `docs/audits/aureon_agent_company_bill_list.md`, and `frontend/public/aureon_agent_company_bill_list.json`.
+
 ### Read This First
 
 | Need | Start here |
