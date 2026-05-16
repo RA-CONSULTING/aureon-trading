@@ -543,6 +543,86 @@ MYCELIUM_ORGANISATION_DOCTRINE: dict[str, Any] = {
 }
 
 
+BIO_COSMIC_ORGANISATION_DOCTRINE: dict[str, Any] = {
+    "ethos": "bio_cosmic_living_system_organisation",
+    "one_line": (
+        "Aureon learns its operating ethos from living and patterning systems: cells, tissues, organs, "
+        "immune response, ant colonies, mycelium, forests, ecosystems, and stars used as long-range "
+        "navigation patterns."
+    ),
+    "scale_ladder": [
+        {
+            "scale": "cell",
+            "lesson": "small units sense, decide, exchange signals, repair damage, and preserve local boundaries",
+            "aureon_translation": "each agent keeps role scope, evidence, inputs, outputs, health checks, and repair routes",
+            "proof_signal": "role day plan, standing checks, authority boundary, and validation result",
+        },
+        {
+            "scale": "tissue",
+            "lesson": "similar cells coordinate to make a stable working layer",
+            "aureon_translation": "departments group related workers and make shared handoffs predictable",
+            "proof_signal": "department role list, work orders, handoff map, and active surface count",
+        },
+        {
+            "scale": "organ",
+            "lesson": "specialist systems do deep work while staying connected to whole-body needs",
+            "aureon_translation": "trading, research, accounting, engineering, security, memory, and UI departments own specialist outputs",
+            "proof_signal": "department evidence files, tests, runtime status, and client handover checks",
+        },
+        {
+            "scale": "nervous_system",
+            "lesson": "fast signals and feedback loops decide where attention and action should go next",
+            "aureon_translation": "ThoughtBus, GoalExecutionEngine, runtime observer, live console, and HNC/Auris proofs coordinate the system",
+            "proof_signal": "who/what/where/when/how/act packet, live timestamp, blocker list, and phase state",
+        },
+        {
+            "scale": "immune_system",
+            "lesson": "the organism rejects stale, unsafe, contradictory, or unproven action before damage spreads",
+            "aureon_translation": "secret redaction, HNC/Auris drift checks, runtime gates, test pilots, and snagging inspection hold weak work",
+            "proof_signal": "redaction status, guard state, tests, snags, and completion report",
+        },
+        {
+            "scale": "ant_colony",
+            "lesson": "many simple workers create intelligent paths through local signals, queues, and feedback",
+            "aureon_translation": "temporary crews split work, hand off evidence, and converge on validated deliverables",
+            "proof_signal": "recruited workers, agent blueprints, phase timers, and work-order progress",
+        },
+        {
+            "scale": "mycelium",
+            "lesson": "distributed networks move nutrients, warnings, and memory where they are needed",
+            "aureon_translation": "repo search, vault memory, data ocean, public artifacts, and compressed phonebook packs feed the right worker",
+            "proof_signal": "internal search hits, online scan status, memory bundle hash, and source paths",
+        },
+        {
+            "scale": "forest_ecosystem",
+            "lesson": "health is portfolio-wide: growth, decay, recycling, and competition must stay balanced",
+            "aureon_translation": "cleanup queues, archive routes, stale-state reports, capability gaps, and risk envelopes keep the organism balanced",
+            "proof_signal": "stale state list, cleanup work orders, archive evidence, and risk/survival envelope",
+        },
+        {
+            "scale": "stars_and_constellations",
+            "lesson": "distant fixed patterns help navigation while local weather still decides immediate action",
+            "aureon_translation": "long-range goals, historical waveform memory, source-linked research, and strategic maps guide short-cycle decisions",
+            "proof_signal": "goal contract, waveform model, research source, forecast horizon, and runtime freshness",
+        },
+    ],
+    "operating_laws": [
+        "local autonomy with whole-organism awareness",
+        "specialist depth with explicit handoffs",
+        "fast feedback before irreversible action",
+        "immune rejection of unsafe or unproven work",
+        "swarm recruitment for jobs too broad for one role",
+        "memory compression after every accepted job",
+        "long-range pattern navigation without ignoring live local evidence",
+    ],
+    "client_job_translation": (
+        "Every prompt becomes an ecosystem event: scope the signal, recruit the needed colony, route nutrients "
+        "and memory, validate with immune checks, hand over only ripe work, then compost the temporary crew into "
+        "reusable skill memory."
+    ),
+}
+
+
 WHOLE_ORGANISM_ACCESS_POLICY: dict[str, Any] = {
     "access_model": "whole_organism_with_role_authority",
     "purpose": (
@@ -1197,6 +1277,10 @@ def _summary(
         "mycelium_doctrine_ready": True,
         "mycelium_metaphor_count": len(MYCELIUM_ORGANISATION_DOCTRINE["metaphor_map"]),
         "mycelium_operating_principle_count": len(MYCELIUM_ORGANISATION_DOCTRINE["operating_principles"]),
+        "bio_cosmic_ethos": BIO_COSMIC_ORGANISATION_DOCTRINE["ethos"],
+        "bio_cosmic_doctrine_ready": True,
+        "bio_cosmic_scale_count": len(BIO_COSMIC_ORGANISATION_DOCTRINE["scale_ladder"]),
+        "bio_cosmic_operating_law_count": len(BIO_COSMIC_ORGANISATION_DOCTRINE["operating_laws"]),
         "agency_model": AGENCY_OPERATING_MODEL["model"],
         "agency_lifecycle_step_count": len(PROMPT_CLIENT_JOB_LIFECYCLE),
         "agency_workforce_role_count": len(agency_roles),
@@ -1625,6 +1709,7 @@ def build_agent_company_bill_list(
         "capability_market_comparison": market_comparison,
         "recruitment_engine": recruitment_engine,
         "mycelium_organisation_doctrine": MYCELIUM_ORGANISATION_DOCTRINE,
+        "bio_cosmic_organisation_doctrine": BIO_COSMIC_ORGANISATION_DOCTRINE,
         "agency_operating_model": AGENCY_OPERATING_MODEL,
         "prompt_client_job_lifecycle": PROMPT_CLIENT_JOB_LIFECYCLE,
         "subcontractor_retirement_policy": SUBCONTRACTOR_RETIREMENT_POLICY,
@@ -1650,6 +1735,7 @@ def build_agent_company_bill_list(
                 "map market capability taxonomy",
                 "compare big AI/coding-agent systems with current Aureon surfaces",
                 "apply mycelium organisation doctrine to handoffs, temporary crews, and memory",
+                "apply cells-to-stars doctrine to departments, immune checks, swarm work, and long-range pattern navigation",
                 "run internal repo search and optional online recruitment search",
                 "recruit temporary worker blueprints for the client proposal",
                 "treat prompt as client job",
@@ -1675,6 +1761,8 @@ def build_agent_company_bill_list(
             "did_build_recruitment_engine": recruitment_engine.get("status") == "recruitment_ready",
             "did_attach_mycelium_organisation_doctrine": MYCELIUM_ORGANISATION_DOCTRINE["ethos"]
             == "mycelium_network_organisation",
+            "did_attach_bio_cosmic_organisation_doctrine": BIO_COSMIC_ORGANISATION_DOCTRINE["ethos"]
+            == "bio_cosmic_living_system_organisation",
             "did_build_agent_blueprints": bool(recruitment_engine.get("agent_blueprints")),
             "did_run_internal_skill_search": bool(recruitment_engine.get("internal_skill_searches")),
             "did_run_online_skill_search_when_requested": (
@@ -1774,6 +1862,8 @@ def _make_markdown(report: dict[str, Any]) -> str:
         f"- Zlib memory archive ready: {summary.get('zlib_memory_archive_ready')}",
         f"- Mycelium ethos: {summary.get('mycelium_ethos')}",
         f"- Mycelium doctrine ready: {summary.get('mycelium_doctrine_ready')}",
+        f"- Bio-cosmic ethos: {summary.get('bio_cosmic_ethos')}",
+        f"- Bio-cosmic scale ladder: {summary.get('bio_cosmic_scale_count')}",
         f"- Roles with day plans: {summary.get('roles_with_day_plan_count')}",
         f"- Whole-organism access roles: {summary.get('roles_with_whole_organism_access_count')}",
         f"- Daily operating loop ready: {summary.get('daily_operating_loop_ready')}",
@@ -1804,6 +1894,32 @@ def _make_markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "### Operating Principles", ""])
     for principle in mycelium.get("operating_principles", []):
         lines.append(f"- {principle}")
+    bio_cosmic = report.get("bio_cosmic_organisation_doctrine", {})
+    lines.extend(
+        [
+            "",
+            "## Cells To Stars Living-System Doctrine",
+            "",
+            bio_cosmic.get("one_line", ""),
+            "",
+            f"- Ethos: {bio_cosmic.get('ethos')}",
+            f"- Client job translation: {bio_cosmic.get('client_job_translation')}",
+            "",
+            "### Scale Ladder",
+            "",
+        ]
+    )
+    for item in bio_cosmic.get("scale_ladder", []):
+        lines.extend(
+            [
+                f"- **{item.get('scale')}**: {item.get('lesson')}",
+                f"  - Aureon: {item.get('aureon_translation')}",
+                f"  - Proof: {item.get('proof_signal')}",
+            ]
+        )
+    lines.extend(["", "### Operating Laws", ""])
+    for law in bio_cosmic.get("operating_laws", []):
+        lines.append(f"- {law}")
     lines.extend(["", "### Agency Principles", ""])
     for principle in report.get("agency_operating_model", {}).get("principles", []):
         lines.append(f"- {principle}")

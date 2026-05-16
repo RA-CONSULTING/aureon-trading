@@ -57,6 +57,9 @@ export function AureonAgentCompanyConsole() {
   const myceliumDoctrine = report.mycelium_organisation_doctrine || {};
   const myceliumMap = Array.isArray(myceliumDoctrine.metaphor_map) ? myceliumDoctrine.metaphor_map : [];
   const myceliumPrinciples = Array.isArray(myceliumDoctrine.operating_principles) ? myceliumDoctrine.operating_principles : [];
+  const bioCosmicDoctrine = report.bio_cosmic_organisation_doctrine || {};
+  const bioCosmicScale = Array.isArray(bioCosmicDoctrine.scale_ladder) ? bioCosmicDoctrine.scale_ladder : [];
+  const bioCosmicLaws = Array.isArray(bioCosmicDoctrine.operating_laws) ? bioCosmicDoctrine.operating_laws : [];
   const agencyModel = report.agency_operating_model || {};
   const clientJobLifecycle = Array.isArray(report.prompt_client_job_lifecycle) ? report.prompt_client_job_lifecycle : [];
   const retirementPolicy = report.subcontractor_retirement_policy || {};
@@ -101,6 +104,7 @@ export function AureonAgentCompanyConsole() {
           <Stat icon={Network} label="online scans" value={summary.online_recruitment_search_count || 0} />
           <Stat icon={Network} label="memory packs" value={summary.sha256_memory_entry_count || 0} />
           <Stat icon={Network} label="mycelium map" value={summary.mycelium_metaphor_count || myceliumMap.length || 0} />
+          <Stat icon={Network} label="bio scale" value={summary.bio_cosmic_scale_count || bioCosmicScale.length || 0} />
         </div>
 
         <div className="grid gap-3 xl:grid-cols-[1.15fr_0.85fr]">
@@ -198,6 +202,31 @@ export function AureonAgentCompanyConsole() {
                 {myceliumPrinciples.slice(0, 4).map((principle: string) => (
                   <div key={principle} className="rounded border border-emerald-400/20 bg-background/15 px-2 py-1 text-[11px] text-muted-foreground">
                     {principle}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-md border border-violet-500/30 bg-violet-500/10 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="text-sm font-medium text-violet-50">Cells To Stars Doctrine</div>
+                <Badge variant={summary.bio_cosmic_doctrine_ready ? "success" : "warning"}>
+                  {String(bioCosmicDoctrine.ethos || "waiting").replace(/_/g, " ")}
+                </Badge>
+              </div>
+              <div className="text-[11px] text-muted-foreground">{bioCosmicDoctrine.one_line || "Waiting for living-system doctrine."}</div>
+              <div className="mt-2 grid gap-1">
+                {bioCosmicScale.slice(0, 6).map((item: JsonMap) => (
+                  <div key={item.scale} className="rounded border border-violet-400/20 bg-background/20 px-2 py-1.5">
+                    <div className="text-[11px] font-medium">{String(item.scale || "").replace(/_/g, " ")}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">{item.aureon_translation}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 grid gap-1">
+                {bioCosmicLaws.slice(0, 4).map((law: string) => (
+                  <div key={law} className="rounded border border-violet-400/20 bg-background/15 px-2 py-1 text-[11px] text-muted-foreground">
+                    {law}
                   </div>
                 ))}
               </div>

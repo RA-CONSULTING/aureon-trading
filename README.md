@@ -30,6 +30,8 @@ This version brings Kraken, Binance, Alpaca, and Capital into one market state; 
 
 The current organism ethos is a mycelium network organisation. Aureon treats prompts as client jobs, grows temporary agent crews for the work, moves context through evidence-bearing handoffs, keeps reusable skills in a SHA-256/zlib memory phonebook, and retires temporary workers after proof and handover. The agent-company report exposes this doctrine in `docs/audits/aureon_agent_company_bill_list.json`, `docs/audits/aureon_agent_company_bill_list.md`, and `frontend/public/aureon_agent_company_bill_list.json`.
 
+Aureon also carries a cells-to-stars living-system doctrine. Cells define local role autonomy and repair, tissues become departments, organs become specialist subsystems, the nervous system is ThoughtBus and runtime feedback, the immune system is proof/snag/security rejection, ant colonies model temporary worker swarms, mycelium models memory and handoff flow, forest ecosystems model cleanup/recycling/balance, and stars/constellations model long-range navigation from historical waveforms, goals, and research.
+
 ### Read This First
 
 | Need | Start here |
