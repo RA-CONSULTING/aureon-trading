@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import base64
 import hashlib
+import sys
+import types
 import zlib
 from pathlib import Path
 
@@ -146,6 +148,55 @@ def test_agent_company_compares_big_market_ai_systems(tmp_path: Path) -> None:
     assert all("authority_boundary" in item["next_work_order"] for item in report["capability_market_comparison"])
 
 
+def test_agent_company_recruits_workers_from_scope_and_internal_search(tmp_path: Path) -> None:
+    _seed_repo(tmp_path)
+
+    report = build_agent_company_bill_list(
+        root=tmp_path,
+        goal="Client needs an online-search coding agent crew with browser smoke tests, work orders, proof, and release handover.",
+    )
+    recruitment = report["recruitment_engine"]
+
+    assert recruitment["status"] == "recruitment_ready"
+    assert recruitment["summary"]["recruited_worker_count"] >= 6
+    assert recruitment["summary"]["agent_blueprint_count"] == recruitment["summary"]["recruited_worker_count"]
+    assert recruitment["summary"]["internal_search_count"] >= 3
+    assert recruitment["summary"]["internal_hit_count"] > 0
+    titles = {worker["title"] for worker in recruitment["recruited_workers"]}
+    assert {"Skill Headhunter", "Subcontractor Crew Builder", "Test Pilot"}.issubset(titles)
+    assert all(blueprint["scope_contract"]["client_goal"] for blueprint in recruitment["agent_blueprints"])
+    assert report["completion_report"]["did_build_recruitment_engine"] is True
+    assert report["completion_report"]["did_build_agent_blueprints"] is True
+
+
+def test_agent_company_online_recruitment_search_uses_agent_core_when_requested(tmp_path: Path, monkeypatch) -> None:
+    _seed_repo(tmp_path)
+
+    class FakeAgentCore:
+        def web_search(self, query: str, num_results: int = 5) -> list[dict[str, str]]:
+            return [{"title": "Official agent docs", "url": "https://example.test/docs", "snippet": query[:60]}]
+
+    fake_module = types.ModuleType("aureon.autonomous.aureon_agent_core")
+    fake_module.AureonAgentCore = FakeAgentCore
+    monkeypatch.setitem(sys.modules, "aureon.autonomous.aureon_agent_core", fake_module)
+
+    report = build_agent_company_bill_list(
+        root=tmp_path,
+        goal="go online search agent roles and recruit workers",
+        online=True,
+        online_limit=2,
+    )
+    online = report["recruitment_engine"]["online_skill_searches"]
+
+    assert online["enabled"] is True
+    assert online["status"] == "search_complete"
+    assert len(online["searches"]) == 2
+    assert all(search["result_count"] == 1 for search in online["searches"])
+    assert report["summary"]["online_recruitment_search_enabled"] is True
+    assert report["summary"]["online_recruitment_search_count"] == 2
+    assert report["completion_report"]["did_run_online_skill_search_when_requested"] is True
+
+
 def test_agent_company_models_prompts_as_client_jobs_and_temp_crews(tmp_path: Path) -> None:
     _seed_repo(tmp_path)
 
@@ -240,6 +291,20 @@ def test_goal_engine_routes_agent_company_builder(tmp_path: Path, monkeypatch) -
     evidence = json.loads((tmp_path / "state/aureon_agent_company_last_run.json").read_text(encoding="utf-8"))
     assert evidence["completion_report"]["did_include_ceo_to_cleaner_roles"] is True
     assert evidence["completion_report"]["daily_operating_loop_ready"] is True
+
+
+def test_goal_engine_marks_agent_company_online_recruitment_requests(tmp_path: Path, monkeypatch) -> None:
+    _seed_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    engine = GoalExecutionEngine()
+    plan = engine._decompose_goal(
+        "Aureon must create an agent company and go online with internet search capabilities "
+        "to recruit roles, skill sets, work orders, and tests."
+    )
+
+    assert plan.steps[0].intent == "agent_company_builder"
+    assert plan.steps[0].params["online"] is True
 
 
 def test_coding_organism_journal_includes_agent_company_report(tmp_path: Path, monkeypatch) -> None:

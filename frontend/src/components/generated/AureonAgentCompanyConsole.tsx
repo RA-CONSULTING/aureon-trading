@@ -59,6 +59,12 @@ export function AureonAgentCompanyConsole() {
   const retirementPolicy = report.subcontractor_retirement_policy || {};
   const memoryPhonebook = report.workforce_memory_phonebook || {};
   const memorySummary = memoryPhonebook.summary || {};
+  const recruitmentEngine = report.recruitment_engine || {};
+  const recruitmentSummary = recruitmentEngine.summary || {};
+  const recruitedWorkers = Array.isArray(recruitmentEngine.recruited_workers) ? recruitmentEngine.recruited_workers : [];
+  const recruitmentStages = Array.isArray(recruitmentEngine.stage_flow) ? recruitmentEngine.stage_flow : [];
+  const onlineSearch = recruitmentEngine.online_skill_searches || {};
+  const onlineSearches = Array.isArray(onlineSearch.searches) ? onlineSearch.searches : [];
   const topWorkOrders = useMemo(() => workOrders.slice(0, 5), [workOrders]);
 
   return (
@@ -88,6 +94,8 @@ export function AureonAgentCompanyConsole() {
           <Stat icon={Network} label="whole access" value={summary.roles_with_whole_organism_access_count || 0} />
           <Stat icon={BriefcaseBusiness} label="agency roles" value={summary.agency_workforce_role_count || 0} />
           <Stat icon={Workflow} label="temp-ready" value={summary.subcontractor_eligible_role_count || 0} />
+          <Stat icon={Users} label="recruited" value={summary.recruited_worker_count || 0} />
+          <Stat icon={Network} label="online scans" value={summary.online_recruitment_search_count || 0} />
           <Stat icon={Network} label="memory packs" value={summary.sha256_memory_entry_count || 0} />
         </div>
 
@@ -178,6 +186,51 @@ export function AureonAgentCompanyConsole() {
                       <Badge variant="outline" className="text-[10px]">{step.owner}</Badge>
                     </div>
                     <div className="mt-1 text-[11px] text-muted-foreground">{step.action}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="text-sm font-medium text-cyan-50">Recruitment Engine</div>
+                <Badge variant={recruitmentEngine.status === "recruitment_ready" ? "success" : "warning"}>
+                  {recruitmentEngine.status || "waiting"}
+                </Badge>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="rounded border border-cyan-400/20 bg-background/25 p-2">
+                  <div className="text-xs font-medium">Search Stack</div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    internal hits {recruitmentSummary.internal_hit_count || 0}; online {String(recruitmentSummary.online_enabled ?? false)}; status {recruitmentSummary.online_status || "not requested"}
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {onlineSearches.slice(0, 3).map((search: JsonMap) => (
+                      <div key={search.id || search.query} className="truncate text-[11px] text-muted-foreground">
+                        {search.query} ({search.result_count || 0})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded border border-cyan-400/20 bg-background/25 p-2">
+                  <div className="text-xs font-medium">Recruited Crew</div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    {recruitedWorkers.length || 0} workers; blueprints {recruitmentSummary.agent_blueprint_count || 0}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {recruitedWorkers.slice(0, 6).map((worker: JsonMap) => (
+                      <Badge key={worker.role_id} variant="outline" className="text-[10px]">
+                        {worker.title}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2 space-y-1">
+                {recruitmentStages.slice(0, 4).map((stage: JsonMap) => (
+                  <div key={stage.stage} className="rounded border border-cyan-400/20 bg-background/20 px-2 py-1.5">
+                    <div className="text-[11px] font-medium">{String(stage.stage || "").replace(/_/g, " ")}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">{stage.owner}: {stage.action}</div>
                   </div>
                 ))}
               </div>

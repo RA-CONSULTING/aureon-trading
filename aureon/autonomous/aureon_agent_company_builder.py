@@ -372,6 +372,74 @@ MARKET_AI_SYSTEMS: list[dict[str, Any]] = [
 ]
 
 
+RECRUITMENT_STAGE_FLOW: list[dict[str, str]] = [
+    {
+        "stage": "scope_intake",
+        "owner": "Client Brief Broker",
+        "action": "Turn the prompt into a client proposal with goal, deliverables, constraints, and acceptance proof.",
+    },
+    {
+        "stage": "internal_skill_search",
+        "owner": "Capability Cartographer",
+        "action": "Search Aureon's repo, reports, memory, and existing surfaces before looking outside.",
+    },
+    {
+        "stage": "online_skill_scan",
+        "owner": "Skill Headhunter",
+        "action": "Use bounded online search/fetch for role skills, official docs, and current market agent patterns when the scope needs them.",
+    },
+    {
+        "stage": "crew_recruitment",
+        "owner": "Subcontractor Crew Builder",
+        "action": "Select permanent and temporary roles with explicit authority, tools, handoffs, and evidence requirements.",
+    },
+    {
+        "stage": "agent_blueprint",
+        "owner": "Tool Bridge Architect",
+        "action": "Build the worker blueprint: who, skills, tools, inputs, outputs, tests, authority, memory, and retirement rule.",
+    },
+    {
+        "stage": "delivery_work_orders",
+        "owner": "Workflow Foreman",
+        "action": "Create scoped work orders for the recruited team and keep implementation behind proof gates.",
+    },
+    {
+        "stage": "handover_and_archive",
+        "owner": "Release Manager",
+        "action": "Publish the client handover and archive reusable worker memory into the SHA-256/zlib phonebook.",
+    },
+]
+
+
+RECRUITMENT_ONLINE_QUERIES: list[dict[str, str]] = [
+    {
+        "id": "agent_orchestration_roles",
+        "query": "official docs AI agent orchestration handoffs tools guardrails coding agent",
+        "skill_focus": "agent_orchestration",
+    },
+    {
+        "id": "software_agent_workflow",
+        "query": "official docs autonomous coding agent plan edit test pull request workflow",
+        "skill_focus": "coding_delivery",
+    },
+    {
+        "id": "multi_agent_memory",
+        "query": "official docs multi agent memory checkpoint workflow human in the loop",
+        "skill_focus": "workflow_memory",
+    },
+    {
+        "id": "browser_desktop_testing",
+        "query": "official docs agent computer use browser testing code verification",
+        "skill_focus": "browser_desktop_verification",
+    },
+    {
+        "id": "web_grounding_research",
+        "query": "official docs agent web search grounding citations source linked research",
+        "skill_focus": "web_grounding",
+    },
+]
+
+
 AUTHORITY_BOUNDARIES: list[dict[str, Any]] = [
     {
         "id": "live_trading_runtime_gated",
@@ -1033,7 +1101,11 @@ def _public_phonebook(phonebook: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in phonebook.items() if key != "_bundle_payloads"}
 
 
-def _summary(roles: list[AgentCompanyRole], work_orders: list[dict[str, Any]]) -> dict[str, Any]:
+def _summary(
+    roles: list[AgentCompanyRole],
+    work_orders: list[dict[str, Any]],
+    recruitment_engine: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
     active = [role for role in roles if role.existing_surfaces]
     day_plan = [role for role in roles if len(role.day_to_day) >= 5 and role.standing_checks]
     whole_access = [role for role in roles if (role.whole_organism_access or {}).get("allowed_surfaces")]
@@ -1047,6 +1119,8 @@ def _summary(roles: list[AgentCompanyRole], work_orders: list[dict[str, Any]]) -
         role for role in roles if (role.workforce_lifecycle or {}).get("employment_model") == "subcontractor_eligible"
     ]
     agency_roles = [role for role in roles if role.department == "agency_workforce"]
+    recruitment_engine = recruitment_engine or {}
+    recruitment_summary = recruitment_engine.get("summary") if isinstance(recruitment_engine.get("summary"), dict) else {}
     return {
         "department_count": len(DEPARTMENTS),
         "role_count": len(roles),
@@ -1074,11 +1148,317 @@ def _summary(roles: list[AgentCompanyRole], work_orders: list[dict[str, Any]]) -
         "memory_phonebook_ready": True,
         "sha256_memory_entry_count": len(roles),
         "zlib_memory_archive_ready": True,
+        "recruitment_engine_ready": recruitment_engine.get("status") == "recruitment_ready",
+        "recruited_worker_count": int(recruitment_summary.get("recruited_worker_count") or 0),
+        "agent_blueprint_count": int(recruitment_summary.get("agent_blueprint_count") or 0),
+        "internal_recruitment_hit_count": int(recruitment_summary.get("internal_hit_count") or 0),
+        "online_recruitment_search_enabled": bool(recruitment_summary.get("online_enabled")),
+        "online_recruitment_search_count": int(recruitment_summary.get("online_search_count") or 0),
         "existing_gates_preserved": True,
         "ceo_to_cleaner_coverage": all(
             title in {role.title for role in roles}
             for title in ("CEO Goal Steward", "Log Janitor", "Stale State Cleaner")
         ),
+    }
+
+
+def _goal_terms(goal: str) -> list[str]:
+    terms = [
+        word
+        for word in re.findall(r"[a-z0-9][a-z0-9_\-]{2,}", (goal or "").lower())
+        if word
+        not in {
+            "the",
+            "and",
+            "that",
+            "with",
+            "for",
+            "must",
+            "into",
+            "from",
+            "this",
+            "client",
+            "system",
+            "aureon",
+            "organism",
+        }
+    ]
+    preferred = [
+        "agent",
+        "agents",
+        "coding",
+        "search",
+        "online",
+        "skills",
+        "roles",
+        "scope",
+        "proposal",
+        "workers",
+        "hiring",
+        "handoff",
+        "tests",
+        "browser",
+        "desktop",
+        "memory",
+        "github",
+        "web",
+        "build",
+        "proof",
+    ]
+    ordered = [term for term in preferred if term in terms]
+    for term in terms:
+        if term not in ordered:
+            ordered.append(term)
+    return ordered[:18]
+
+
+def _internal_recruitment_search(root: Path, queries: Sequence[str], limit_per_query: int = 5) -> list[dict[str, Any]]:
+    search_roots = [
+        root / "aureon",
+        root / "docs",
+        root / "frontend" / "src",
+        root / "tests",
+        root / "README.md",
+        root / "CAPABILITIES.md",
+        root / "RUNNING.md",
+        root / "EVERYTHING_CODEX_CAN_DO.md",
+    ]
+    files: list[Path] = []
+    for search_root in search_roots:
+        if search_root.is_file():
+            files.append(search_root)
+        elif search_root.exists():
+            for path in search_root.rglob("*"):
+                if path.is_file() and path.suffix.lower() in {".py", ".ts", ".tsx", ".md", ".json"}:
+                    files.append(path)
+    hits_by_query: list[dict[str, Any]] = []
+    for query in queries:
+        words = [word for word in re.findall(r"[a-z0-9_]+", query.lower()) if len(word) >= 3]
+        hits: list[dict[str, Any]] = []
+        for path in files[:2500]:
+            rel = path.relative_to(root).as_posix() if path.is_relative_to(root) else str(path)
+            haystack = rel.lower()
+            try:
+                text = path.read_text(encoding="utf-8", errors="ignore")[:24000].lower()
+            except Exception:
+                text = ""
+            score = sum(2 for word in words if word in haystack) + sum(1 for word in words if word in text)
+            if score:
+                hits.append({"path": rel, "score": score, "reason": "repo_surface_or_content_match"})
+        hits.sort(key=lambda item: (-int(item["score"]), item["path"]))
+        hits_by_query.append({"query": query, "hit_count": len(hits), "hits": hits[:limit_per_query]})
+    return hits_by_query
+
+
+def _run_online_recruitment_search(enabled: bool, limit: int = 4) -> dict[str, Any]:
+    if not enabled:
+        return {
+            "enabled": False,
+            "status": "not_requested",
+            "searches": [],
+            "note": "Pass --online or route a prompt that asks for online/internet search to run bounded search probes.",
+        }
+    searches: list[dict[str, Any]] = []
+    try:
+        from aureon.autonomous.aureon_agent_core import AureonAgentCore
+
+        agent = AureonAgentCore()
+        for query in RECRUITMENT_ONLINE_QUERIES[: max(1, min(int(limit or 4), len(RECRUITMENT_ONLINE_QUERIES)))]:
+            results = agent.web_search(query["query"], num_results=3)
+            searches.append(
+                {
+                    **query,
+                    "status": "searched",
+                    "result_count": len(results) if isinstance(results, list) else 0,
+                    "results": results[:3] if isinstance(results, list) else [],
+                }
+            )
+    except Exception as exc:
+        return {
+            "enabled": True,
+            "status": "search_failed",
+            "error": f"{type(exc).__name__}: {exc}",
+            "searches": searches,
+        }
+    return {
+        "enabled": True,
+        "status": "search_complete",
+        "searches": searches,
+    }
+
+
+def _select_recruited_workers(roles: list[AgentCompanyRole], goal_terms: Sequence[str]) -> list[AgentCompanyRole]:
+    terms = {term.lower() for term in goal_terms}
+    priority_titles = {
+        "Client Brief Broker",
+        "Skill Headhunter",
+        "Subcontractor Crew Builder",
+        "Capability Cartographer",
+        "Tool Bridge Architect",
+        "Workflow Foreman",
+        "Implementation Worker",
+        "Test Pilot",
+        "Browser Smoke Inspector",
+        "HNC/Auris Drift Officer",
+        "Release Manager",
+        "Archive Librarian",
+    }
+    recruited: list[tuple[int, AgentCompanyRole]] = []
+    for role in roles:
+        searchable = " ".join(
+            [
+                role.title,
+                role.department,
+                role.mission,
+                " ".join(role.capabilities),
+                " ".join(role.tools_allowed),
+                " ".join(role.aureon_surfaces),
+            ]
+        ).lower()
+        score = sum(1 for term in terms if term in searchable)
+        if role.title in priority_titles:
+            score += 4
+        if score > 0:
+            recruited.append((score, role))
+    recruited.sort(key=lambda item: (-item[0], item[1].department, item[1].title))
+    seen: set[str] = set()
+    selected: list[AgentCompanyRole] = []
+    for _score, role in recruited:
+        if role.role_id in seen:
+            continue
+        seen.add(role.role_id)
+        selected.append(role)
+        if len(selected) >= 14:
+            break
+    return selected
+
+
+def _agent_blueprint_for(role: AgentCompanyRole, goal: str) -> dict[str, Any]:
+    return {
+        "agent_id": f"temp_{role.role_id}",
+        "source_role_id": role.role_id,
+        "title": role.title,
+        "employment_model": (role.workforce_lifecycle or {}).get("employment_model", "subcontractor_eligible"),
+        "scope_contract": {
+            "client_goal": goal,
+            "who": role.title,
+            "what": role.mission,
+            "where": role.aureon_surfaces or role.missing_surfaces,
+            "when": "created during client job recruitment after scope lock",
+            "how": role.capabilities,
+            "act": "work only through allowed tools, publish evidence, and hand off to QA/release",
+        },
+        "skills_to_load": role.capabilities,
+        "tools_allowed": role.tools_allowed,
+        "inputs": role.inputs,
+        "outputs": role.outputs,
+        "handoffs_in": role.handoffs_in,
+        "handoffs_out": role.handoffs_out,
+        "evidence_required": role.evidence_required,
+        "tests": role.tests,
+        "authority_level": role.authority_level,
+        "blocked_actions": WHOLE_ORGANISM_ACCESS_POLICY["blocked_actions"],
+        "memory_policy": role.workforce_lifecycle,
+        "retire_after": "client acceptance or variation-order close",
+    }
+
+
+def _build_recruitment_engine(
+    *,
+    root: Path,
+    goal: str,
+    roles: list[AgentCompanyRole],
+    online: bool = False,
+    online_limit: int = 4,
+) -> dict[str, Any]:
+    terms = _goal_terms(goal)
+    search_queries = [
+        " ".join(terms[:8]) or "agent company capability recruitment",
+        "coding agent worker roles tests handoff proof",
+        "online search official docs agent skills tool use",
+        "client proposal scope work orders acceptance tests",
+    ]
+    internal_searches = _internal_recruitment_search(root, search_queries)
+    online_search = _run_online_recruitment_search(online, limit=online_limit)
+    recruited_roles = _select_recruited_workers(roles, terms)
+    blueprints = [_agent_blueprint_for(role, goal) for role in recruited_roles]
+    internal_hit_count = sum(int(item.get("hit_count") or 0) for item in internal_searches)
+    online_searches = online_search.get("searches") if isinstance(online_search.get("searches"), list) else []
+    return {
+        "schema_version": "aureon-agent-recruitment-engine-v1",
+        "status": "recruitment_ready",
+        "mode": "scope_internal_search_online_skill_scan_recruit_build_archive",
+        "client_scope": {
+            "goal": goal,
+            "detected_terms": terms,
+            "scope_rule": "complete scope locks recruitment; incomplete scope returns client questions before crew selection",
+        },
+        "stage_flow": RECRUITMENT_STAGE_FLOW,
+        "search_capability": {
+            "internal_repo_search": True,
+            "online_search_requested": bool(online),
+            "online_search_tool": "AureonAgentCore.web_search",
+            "online_search_policy": "bounded read-only skill search; source summaries only; no credentials or mutations",
+            "source_priority": [
+                "existing Aureon repo surfaces",
+                "state/docs/frontend evidence reports",
+                "official docs and source-linked web results",
+                "job/role skill patterns as work-order hints only",
+            ],
+        },
+        "internal_skill_searches": internal_searches,
+        "online_skill_searches": online_search,
+        "recruited_workers": [
+            {
+                "role_id": role.role_id,
+                "title": role.title,
+                "department": role.department,
+                "authority_level": role.authority_level,
+                "capabilities": role.capabilities,
+                "tools_allowed": role.tools_allowed,
+                "why_recruited": "matches client scope, required capability terms, or core delivery/QA/release role",
+            }
+            for role in recruited_roles
+        ],
+        "agent_blueprints": blueprints,
+        "client_proposal_build_plan": [
+            {
+                "step": "lock_scope",
+                "owner": "Client Brief Broker",
+                "proof": "scope includes goal, deliverables, target systems, constraints, and acceptance",
+            },
+            {
+                "step": "search_and_recruit",
+                "owner": "Skill Headhunter",
+                "proof": "internal hits and online searches are recorded with source links or clear unavailable status",
+            },
+            {
+                "step": "build_worker_blueprints",
+                "owner": "Subcontractor Crew Builder",
+                "proof": "each recruited role has skills, tools, handoffs, tests, authority, and retirement contract",
+            },
+            {
+                "step": "execute_or_queue_work_orders",
+                "owner": "Workflow Foreman",
+                "proof": "safe work orders name file targets, tests, and authority boundary",
+            },
+            {
+                "step": "handover",
+                "owner": "Release Manager",
+                "proof": "client-visible handover only after proof checklist and snagging pass",
+            },
+        ],
+        "summary": {
+            "detected_term_count": len(terms),
+            "internal_search_count": len(internal_searches),
+            "internal_hit_count": internal_hit_count,
+            "online_enabled": bool(online),
+            "online_status": online_search.get("status"),
+            "online_search_count": len(online_searches),
+            "recruited_worker_count": len(recruited_roles),
+            "agent_blueprint_count": len(blueprints),
+            "authority_gates_preserved": True,
+        },
     }
 
 
@@ -1133,13 +1513,26 @@ def _market_capability_comparison(roles: list[AgentCompanyRole]) -> list[dict[st
     return comparison
 
 
-def build_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = "") -> dict[str, Any]:
+def build_agent_company_bill_list(
+    *,
+    root: Optional[Path] = None,
+    goal: str = "",
+    online: bool = False,
+    online_limit: int = 4,
+) -> dict[str, Any]:
     root = Path(root or _default_root()).resolve()
     generated_at = utc_now()
     roles = [_materialize_role(root, role) for role in _role_specs()]
     work_orders = [order for role in roles for order in role.work_orders]
     memory_phonebook = _memory_phonebook_for_roles(root, roles, generated_at)
     market_comparison = _market_capability_comparison(roles)
+    recruitment_engine = _build_recruitment_engine(
+        root=root,
+        goal=goal,
+        roles=roles,
+        online=online,
+        online_limit=online_limit,
+    )
     departments = []
     for department in DEPARTMENTS:
         department_roles = [role for role in roles if role.department == department["id"]]
@@ -1168,10 +1561,11 @@ def build_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = ""
         "company_name": "Aureon Agent Company",
         "goal": goal,
         "status": "agent_company_registry_ready",
-        "summary": _summary(roles, work_orders),
+        "summary": _summary(roles, work_orders, recruitment_engine),
         "capability_taxonomy_sources": MARKET_CAPABILITY_TAXONOMY,
         "market_ai_systems": MARKET_AI_SYSTEMS,
         "capability_market_comparison": market_comparison,
+        "recruitment_engine": recruitment_engine,
         "agency_operating_model": AGENCY_OPERATING_MODEL,
         "prompt_client_job_lifecycle": PROMPT_CLIENT_JOB_LIFECYCLE,
         "subcontractor_retirement_policy": SUBCONTRACTOR_RETIREMENT_POLICY,
@@ -1196,6 +1590,8 @@ def build_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = ""
             "how": [
                 "map market capability taxonomy",
                 "compare big AI/coding-agent systems with current Aureon surfaces",
+                "run internal repo search and optional online recruitment search",
+                "recruit temporary worker blueprints for the client proposal",
                 "treat prompt as client job",
                 "attach agency/head-hunting intake and subcontractor lifecycle",
                 "materialize Aureon startup departments",
@@ -1216,6 +1612,12 @@ def build_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = ""
             "did_attach_hire_retire_lifecycle": all(bool(role.workforce_lifecycle) for role in roles),
             "did_build_sha256_zlib_memory_phonebook": memory_phonebook.get("summary", {}).get("entry_count") == len(roles),
             "did_compare_market_ai_systems": len(market_comparison) == len(MARKET_AI_SYSTEMS),
+            "did_build_recruitment_engine": recruitment_engine.get("status") == "recruitment_ready",
+            "did_build_agent_blueprints": bool(recruitment_engine.get("agent_blueprints")),
+            "did_run_internal_skill_search": bool(recruitment_engine.get("internal_skill_searches")),
+            "did_run_online_skill_search_when_requested": (
+                not online or (recruitment_engine.get("online_skill_searches") or {}).get("status") in {"search_complete", "search_failed"}
+            ),
             "did_preserve_existing_authority_gates": True,
             "did_map_roles_to_surfaces_or_work_orders": all(
                 bool(role.existing_surfaces or role.work_orders) for role in roles
@@ -1299,6 +1701,10 @@ def _make_markdown(report: dict[str, Any]) -> str:
         f"- Active surface roles: {summary.get('active_surface_role_count')}",
         f"- Work orders: {summary.get('work_order_count')}",
         f"- Market AI systems compared: {summary.get('market_ai_system_count')}",
+        f"- Recruited workers: {summary.get('recruited_worker_count')}",
+        f"- Agent blueprints: {summary.get('agent_blueprint_count')}",
+        f"- Internal recruitment hits: {summary.get('internal_recruitment_hit_count')}",
+        f"- Online recruitment searches: {summary.get('online_recruitment_search_count')}",
         f"- Agency workforce roles: {summary.get('agency_workforce_role_count')}",
         f"- Prompt-as-client lifecycle steps: {summary.get('agency_lifecycle_step_count')}",
         f"- Subcontractor-eligible roles: {summary.get('subcontractor_eligible_role_count')}",
@@ -1368,6 +1774,35 @@ def _make_markdown(report: dict[str, Any]) -> str:
     )
     for boundary in report.get("authority_boundaries", []):
         lines.append(f"- **{boundary.get('title')}**: {boundary.get('rule')}")
+    recruitment = report.get("recruitment_engine", {}) if isinstance(report.get("recruitment_engine"), dict) else {}
+    recruitment_summary = recruitment.get("summary", {}) if isinstance(recruitment.get("summary"), dict) else {}
+    lines.extend(
+        [
+            "",
+            "## Recruitment Engine",
+            "",
+            f"- Status: {recruitment.get('status')}",
+            f"- Mode: {recruitment.get('mode')}",
+            f"- Internal searches: {recruitment_summary.get('internal_search_count')}",
+            f"- Internal hits: {recruitment_summary.get('internal_hit_count')}",
+            f"- Online enabled: {recruitment_summary.get('online_enabled')}",
+            f"- Online status: {recruitment_summary.get('online_status')}",
+            f"- Recruited workers: {recruitment_summary.get('recruited_worker_count')}",
+            "",
+            "### Recruitment Stages",
+            "",
+        ]
+    )
+    for stage in recruitment.get("stage_flow", []):
+        lines.append(f"- **{stage.get('stage')}** ({stage.get('owner')}): {stage.get('action')}")
+    lines.extend(["", "### Recruited Temporary Crew", ""])
+    for worker in recruitment.get("recruited_workers", [])[:14]:
+        caps = ", ".join(worker.get("capabilities", [])[:4])
+        lines.append(f"- **{worker.get('title')}** ({worker.get('authority_level')}): {caps}")
+    lines.extend(["", "### Online Skill Searches", ""])
+    online = recruitment.get("online_skill_searches", {}) if isinstance(recruitment.get("online_skill_searches"), dict) else {}
+    for search in online.get("searches", []):
+        lines.append(f"- {search.get('query')} -> {search.get('result_count')} result(s)")
     lines.extend(["", "## Market AI System Comparison", ""])
     for item in report.get("capability_market_comparison", []):
         hires = ", ".join(worker.get("title", "") for worker in item.get("hired_temporary_workers", []))
@@ -1409,9 +1844,15 @@ def _make_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-def build_and_write_agent_company_bill_list(*, root: Optional[Path] = None, goal: str = "") -> dict[str, Any]:
+def build_and_write_agent_company_bill_list(
+    *,
+    root: Optional[Path] = None,
+    goal: str = "",
+    online: bool = False,
+    online_limit: int = 4,
+) -> dict[str, Any]:
     root = Path(root or _default_root()).resolve()
-    report = build_agent_company_bill_list(root=root, goal=goal)
+    report = build_agent_company_bill_list(root=root, goal=goal, online=online, online_limit=online_limit)
     memory_writes = _write_memory_phonebook(root, report)
     writes = [
         _write_json(_rooted(root, DEFAULT_STATE_PATH), report),
@@ -1432,8 +1873,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Build Aureon's agent company bill list.")
     parser.add_argument("--goal", default="")
     parser.add_argument("--json", action="store_true", help="Print JSON report.")
+    parser.add_argument("--online", action="store_true", help="Run bounded online recruitment skill searches.")
+    parser.add_argument("--online-limit", type=int, default=4)
     args = parser.parse_args(argv)
-    result = build_and_write_agent_company_bill_list(goal=args.goal)
+    result = build_and_write_agent_company_bill_list(goal=args.goal, online=args.online, online_limit=args.online_limit)
     print(json.dumps(result, indent=2, sort_keys=True, default=str) if args.json else _make_markdown(result))
     return 0 if result.get("write_info", {}).get("all_ok") else 1
 

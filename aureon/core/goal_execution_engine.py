@@ -1112,6 +1112,7 @@ class GoalExecutionEngine:
             return None
         return {
             "goal": text,
+            "online": bool(_re.search(r"\b(?:online|internet|web search|websearch|search job|job sites|official docs|external search|search capabilities)\b", lower)),
             "authoring_contract": "goal_engine_agent_company_builder_to_coding_organism",
             "target_files": [
                 "aureon/autonomous/aureon_agent_company_builder.py",
@@ -2183,7 +2184,10 @@ class GoalExecutionEngine:
         try:
             from aureon.autonomous.aureon_agent_company_builder import build_and_write_agent_company_bill_list
 
-            result = build_and_write_agent_company_bill_list(goal=str(step.params.get("goal") or step.title))
+            result = build_and_write_agent_company_bill_list(
+                goal=str(step.params.get("goal") or step.title),
+                online=bool(step.params.get("online")),
+            )
             summary = result.get("summary", {}) if isinstance(result, dict) else {}
             completion = result.get("completion_report", {}) if isinstance(result, dict) else {}
             return {
