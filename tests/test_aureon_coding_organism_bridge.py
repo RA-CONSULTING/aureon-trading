@@ -335,6 +335,49 @@ def test_submit_coding_prompt_video_artifact_survives_scope_wrapper(tmp_path: Pa
     assert Path(payload["asset_path"]).exists()
 
 
+def test_submit_coding_prompt_game_uses_adaptive_forge_not_agentcore(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "aureon").mkdir()
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "Make me a game where a man walks up to a glowing door and tell the end user how to play from the keyboard.",
+        source="test",
+        run_tests=False,
+        include_desktop=False,
+        root=tmp_path,
+        goal_engine=GoalExecutionEngine(),
+        scope_approved=True,
+        scope_answers={
+            "goal": "Make a playable local game where a man walks up to a glowing door.",
+            "deliverables": "Playable HTML game, keyboard instructions, quality proof, and public preview URL.",
+            "target_system": "frontend/public/aureon_generated_apps and Aureon coding cockpit artifact preview.",
+            "constraints": "Local-only, no live trading, payment, filing, credential, or destructive OS action.",
+            "acceptance": "A browser-openable HTML artifact exists, keyboard controls are visible, and no blocking snags remain.",
+        },
+    )
+
+    route_steps = result["goal_route"]["plan"]["steps"]
+    payload = route_steps[0]["result"]["result"]
+    manifest = payload["artifact_manifest"]
+    assert result["ok"] is True
+    assert result["summary"]["goal_route_clean"] is True
+    assert [step["intent"] for step in route_steps] == ["capability_forge"]
+    assert not {"create_dir", "write_file", "list_dir", "read_file"}.intersection(
+        {step["intent"] for step in route_steps}
+    )
+    assert payload["summary"]["adaptive_skill_created"] is True
+    assert payload["adaptive_skill_evidence"]["name"] == "local_html_game_forge"
+    assert manifest["kind"] == "html_game"
+    assert manifest["public_url"].endswith(".html")
+    assert Path(manifest["asset_path"]).exists()
+    assert "aureon_generated_apps" in manifest["public_url"]
+
+
 def test_coding_organism_status_reads_last_run_and_queues(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",

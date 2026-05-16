@@ -146,3 +146,30 @@ def test_capability_forge_public_json_has_required_report_fields(tmp_path: Path,
     ):
         assert key in public
         assert key in report
+
+
+def test_capability_forge_interactive_game_builds_local_playable_artifact(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+
+    report = build_and_write_capability_forge(
+        "Make me a game where a man walks up to a glowing door and tell the end user how to play from the keyboard.",
+        root=tmp_path,
+    )
+
+    manifest = report["artifact_manifest"]
+    quality = report["artifact_quality_report"]
+    assert report["handover_ready"] is True
+    assert report["summary"]["adaptive_skill_created"] is True
+    assert report["adaptive_skill_evidence"]["name"] == "local_html_game_forge"
+    assert manifest["kind"] == "html_game"
+    assert manifest["public_url"].endswith(".html")
+    assert manifest["preview_url"] == manifest["public_url"]
+    assert Path(manifest["asset_path"]).exists()
+    html = Path(manifest["asset_path"]).read_text(encoding="utf-8")
+    assert "Move: Arrow keys or WASD" in html
+    assert "Jump: Space" in html
+    assert quality["handover_ready"] is True
+    assert quality["score"] >= 0.8

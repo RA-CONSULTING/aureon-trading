@@ -1247,6 +1247,97 @@ def _route_goal(prompt: str, goal_engine: Any = None) -> Dict[str, Any]:
         return {"ok": False, "error": str(exc), "plan": {}, "engine_status": {}}
 
 
+def _is_interactive_app_prompt(prompt: str) -> bool:
+    text = str(prompt or "").lower()
+    if any(keyword in text for keyword in ("video", "clip", "animation", "mp4", "webm", "image", "picture", "draw")):
+        return False
+    return any(
+        keyword in text
+        for keyword in (
+            "game",
+            "playable",
+            "keyboard",
+            "arrow key",
+            "wasd",
+            "player",
+            "level",
+            "html app",
+            "walks up",
+        )
+    )
+
+
+def _is_build_prompt(prompt: str) -> bool:
+    text = str(prompt or "").lower()
+    return any(keyword in text for keyword in ("build", "make", "create", "code", "write", "ui", "app", "game"))
+
+
+def _route_mentions_agentcore_unavailable(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(_route_mentions_agentcore_unavailable(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_route_mentions_agentcore_unavailable(item) for item in value)
+    return "agentcore not available" in str(value or "").lower()
+
+
+def _route_local_capability_forge(prompt: str, root: Path, *, previous_route: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    try:
+        from aureon.autonomous.aureon_capability_forge import build_and_write_capability_forge
+
+        report = build_and_write_capability_forge(prompt, root=root)
+        manifest = report.get("artifact_manifest") if isinstance(report.get("artifact_manifest"), dict) else {}
+        output_files = [str(item) for item in report.get("output_files", []) if item]
+        for key in ("asset_path", "metadata_path", "preview_path", "public_url", "preview_url"):
+            value = manifest.get(key)
+            if value and str(value) not in output_files:
+                output_files.append(str(value))
+        validation = {
+            "valid": bool(report.get("handover_ready")),
+            "reason": "Local capability forge produced adaptive artifact/code evidence without AgentCore",
+            "changed_files": output_files,
+        }
+        step = {
+            "step_id": "adaptive-capability-forge",
+            "title": "Build through local adaptive capability forge",
+            "intent": "capability_forge",
+            "status": "completed" if report.get("ok") else "attention",
+            "validation_result": validation,
+            "result": {
+                "success": bool(report.get("ok")),
+                "tool_used": "capability_forge",
+                "target_files": output_files,
+                "files_written": output_files,
+                "output_files": output_files,
+                "result": report,
+            },
+        }
+        return {
+            "ok": bool(report.get("ok")),
+            "fallback_from_agentcore": bool(previous_route),
+            "previous_route": previous_route or {},
+            "plan": {
+                "goal_id": report.get("job_id", "adaptive-capability-forge"),
+                "objective": prompt,
+                "status": "completed" if report.get("ok") else "attention",
+                "success_criteria": "adaptive local artifact/code evidence, quality proof, and approval state",
+                "step_count": 1,
+                "steps": [step],
+            },
+            "engine_status": {
+                "route": "local_capability_forge",
+                "agentcore_required": False,
+                "adaptive_skill_created": (report.get("summary") or {}).get("adaptive_skill_created", False),
+            },
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "error": str(exc),
+            "plan": {},
+            "engine_status": {"route": "local_capability_forge", "agentcore_required": False},
+        }
+
+
 def _make_markdown(evidence: Dict[str, Any]) -> str:
     summary = evidence.get("summary", {})
     lines = [
@@ -1333,17 +1424,25 @@ def submit_coding_prompt(
     )
     queue.next_task()
 
-    route = (
-        _route_goal(execution_prompt, goal_engine=goal_engine)
-        if scope_locked
-        else {
+    if scope_locked:
+        if _is_interactive_app_prompt(execution_prompt):
+            route = _route_local_capability_forge(execution_prompt, root)
+        else:
+            route = _route_goal(execution_prompt, goal_engine=goal_engine)
+            if (
+                not _route_is_clean(route)
+                and _is_build_prompt(execution_prompt)
+                and _route_mentions_agentcore_unavailable(route)
+            ):
+                route = _route_local_capability_forge(execution_prompt, root, previous_route=route)
+    else:
+        route = {
             "ok": False,
             "skipped": True,
             "skip_reason": "scope_of_works_not_locked",
             "plan": {},
             "engine_status": {},
         }
-    )
     route_clean = _route_is_clean(route)
     plan_summary = route.get("plan", {})
     target_files = _extract_target_files(plan_summary)
@@ -1397,6 +1496,7 @@ def submit_coding_prompt(
                 "agent team handoff only after scope lock",
                 "agent creative process guardian reads metacognitive, sensory, HNC/Auris, and sentient-style evidence",
                 "GoalExecutionEngine.submit_goal",
+                "Adaptive local capability forge when AgentCore tool intents are unavailable",
                 "SafeCodeControl.propose",
                 "CapabilityForge and ArtifactQualityGate when the route produces media or local capability work",
                 "focused pytest validation",
