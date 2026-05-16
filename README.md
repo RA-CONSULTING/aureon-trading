@@ -164,6 +164,8 @@ Then open the unified console and use the **Aureon Coding Organism** panel:
 http://127.0.0.1:8081/
 ```
 
+The coding panel is the human dashboard for code work while the organism is active. It shows the full PowerShell launch command, the local coding endpoint, active/gated handover state, scope-of-works questions, run-tests and desktop-handoff toggles, a **Full Coding Job** button for complete client jobs, the proof checklist, snagging list, and the prompt-to-finished-files work journal.
+
 The mind hub exposes the same lane over HTTP:
 
 ```powershell

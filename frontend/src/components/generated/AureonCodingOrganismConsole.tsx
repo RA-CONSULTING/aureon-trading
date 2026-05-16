@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 type JsonMap = Record<string, any>;
 
 const HUB_BASE = "http://127.0.0.1:13002";
+const FULL_ORGANISM_COMMAND = ".\\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791";
+const TERMINAL_PROMPT_COMMAND =
+  "Invoke-RestMethod http://127.0.0.1:13002/api/coding/prompt -Method Post -ContentType \"application/json\" -Body $body";
 
 async function fetchJson(url: string): Promise<JsonMap> {
   try {
@@ -43,6 +46,7 @@ export function AureonCodingOrganismConsole() {
   const [status, setStatus] = useState<JsonMap>({});
   const [prompt, setPrompt] = useState("Connect Aureon coding systems, inspect the repo, propose the smallest safe patch, and run focused tests.");
   const [runTests, setRunTests] = useState(true);
+  const [includeDesktop, setIncludeDesktop] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [loadedFileName, setLoadedFileName] = useState("");
@@ -71,7 +75,7 @@ export function AureonCodingOrganismConsole() {
       const response = await fetch(`${HUB_BASE}/api/coding/prompt`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, run_tests: runTests, ...extraBody }),
+        body: JSON.stringify({ prompt, run_tests: runTests, include_desktop: includeDesktop, ...extraBody }),
       });
       const payload = await response.json();
       if (!response.ok) {
@@ -89,6 +93,21 @@ export function AureonCodingOrganismConsole() {
     await submitPrompt({
       scope_approved: true,
       scope_answers: scopeAnswers,
+      base_job_id: status.client_job?.job_id || "",
+    });
+  };
+
+  const sendFullCodingJob = async () => {
+    await submitPrompt({
+      scope_approved: true,
+      scope_answers: {
+        goal: prompt,
+        deliverables: "Repo changes or reports, code proposal, focused tests, proof checklist, snagging result, and client handover.",
+        target_system: "Aureon repository, coding organism bridge, generated console evidence, and target files named by the prompt.",
+        constraints: "Preserve live trading, payment, filing, credential, and destructive OS boundaries. Do not expose secrets.",
+        acceptance: "Goal route is clean, focused tests pass or are explicitly skipped, HNC/Auris proof is recorded, and blocking snags are zero.",
+        ...scopeAnswers,
+      },
       base_job_id: status.client_job?.job_id || "",
     });
   };
@@ -125,6 +144,9 @@ export function AureonCodingOrganismConsole() {
   const journal = status.work_journal || {};
   const journalStages = Array.isArray(journal.stages) ? journal.stages : [];
   const steps = Array.isArray(plan.steps) ? plan.steps : [];
+  const systemActive = Boolean(route.ok || summary.goal_engine_routed || status.status);
+  const hubActive = status.status !== "coding_organism_waiting_for_prompt" && !error;
+  const fullCodingReady = Boolean(summary.goal_route_clean && summary.tests_ok && summary.ready_to_run && !summary.blocking_snag_count);
 
   return (
     <Card className="mb-5 bg-card/80">
@@ -148,18 +170,31 @@ export function AureonCodingOrganismConsole() {
         </div>
 
         <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 p-3">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div className="text-sm font-medium text-cyan-50">Human Coding Cockpit</div>
+              <div className="mt-1 text-xs text-cyan-50/75">
+                Start the full organism in PowerShell, then use this panel as the human prompt terminal while Aureon scopes, recruits, builds, tests, snags, and hands over.
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={systemActive ? "success" : "warning"}>system {systemActive ? "active" : "waiting"}</Badge>
+              <Badge variant={hubActive ? "success" : "warning"}>hub {hubActive ? "reachable" : "checking"}</Badge>
+              <Badge variant={fullCodingReady ? "success" : "warning"}>handover {fullCodingReady ? "ready" : "gated"}</Badge>
+            </div>
+          </div>
           <div className="grid gap-2 text-xs md:grid-cols-3">
             <div>
-              <div className="uppercase text-cyan-100/70">Local hub endpoint</div>
+              <div className="uppercase text-cyan-100/70">Full organism terminal</div>
+              <div className="mt-1 font-mono text-cyan-50">{FULL_ORGANISM_COMMAND}</div>
+            </div>
+            <div>
+              <div className="uppercase text-cyan-100/70">Local coding endpoint</div>
               <div className="mt-1 font-mono text-cyan-50">{HUB_BASE}/api/coding/prompt</div>
             </div>
             <div>
-              <div className="uppercase text-cyan-100/70">Prompt lane</div>
-              <div className="mt-1 text-cyan-50">Send To Aureon turns this textarea into a queued coding-organism job.</div>
-            </div>
-            <div>
-              <div className="uppercase text-cyan-100/70">Run proof</div>
-              <div className="mt-1 text-cyan-50">The work journal must show route, files, tests, handoff, and finished-product evidence.</div>
+              <div className="uppercase text-cyan-100/70">PowerShell prompt call</div>
+              <div className="mt-1 font-mono text-cyan-50">{TERMINAL_PROMPT_COMMAND}</div>
             </div>
           </div>
         </div>
@@ -347,6 +382,15 @@ export function AureonCodingOrganismConsole() {
                 />
                 Run focused coding tests
               </label>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={includeDesktop}
+                  onChange={(event) => setIncludeDesktop(event.target.checked)}
+                  className="h-4 w-4"
+                />
+                Prepare desktop/run handoff
+              </label>
               <div className="flex gap-2">
                 <label className="inline-flex cursor-pointer items-center rounded-md border border-input bg-background px-3 py-2 text-xs font-medium hover:bg-accent hover:text-accent-foreground">
                   <Upload className="mr-2 h-4 w-4" />
@@ -355,6 +399,9 @@ export function AureonCodingOrganismConsole() {
                 </label>
                 <Button size="sm" variant="outline" onClick={refresh} disabled={busy}>
                   Refresh
+                </Button>
+                <Button size="sm" variant="outline" onClick={sendFullCodingJob} disabled={busy || !prompt.trim()}>
+                  Full Coding Job
                 </Button>
                 <Button size="sm" onClick={() => submitPrompt()} disabled={busy || !prompt.trim()}>
                   <Send className="mr-2 h-4 w-4" />
