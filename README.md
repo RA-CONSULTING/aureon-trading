@@ -32,6 +32,22 @@ The current organism ethos is a mycelium network organisation. Aureon treats pro
 
 Aureon also carries a cells-to-stars living-system doctrine. Cells define local role autonomy and repair, tissues become departments, organs become specialist subsystems, the nervous system is ThoughtBus and runtime feedback, the immune system is proof/snag/security rejection, ant colonies model temporary worker swarms, mycelium models memory and handoff flow, forest ecosystems model cleanup/recycling/balance, and stars/constellations model long-range navigation from historical waveforms, goals, and research.
 
+### Biological And Cosmic Operating Ethos
+
+| Living pattern | Aureon translation |
+|---|---|
+| Cell | Each agent has local state, role boundaries, health checks, repair routes, and evidence duties. |
+| Tissue | Departments group similar workers so handoffs and shared standards stay predictable. |
+| Organ | Trading, research, accounting, engineering, security, memory, and UI subsystems do specialist work for the whole organism. |
+| Nervous system | ThoughtBus, GoalExecutionEngine, runtime observer, and the console move fast signals through the organism. |
+| Immune system | HNC/Auris drift checks, tests, redaction, runtime gates, and snagging reject unsafe or weak work. |
+| Ant colony | Temporary crews split broad jobs into simple worker tasks, then converge through proof and handoff trails. |
+| Mycelium | Repo search, vault memory, data ocean evidence, and compressed memory packs move knowledge where it is needed. |
+| Forest ecosystem | Cleanup, archive, stale-state, and risk-survival loops keep growth, decay, recycling, and balance visible. |
+| Stars and constellations | Long-range goals, historical waveform memory, research, and strategic maps guide short-cycle decisions. |
+
+This is the operating ethos behind the agent-company system: scope the client signal, grow the right temporary crew, feed it with internal and online evidence, prove the work through immune checks, hand over only complete output, then compress the reusable memory back into the organism.
+
 ### Read This First
 
 | Need | Start here |
