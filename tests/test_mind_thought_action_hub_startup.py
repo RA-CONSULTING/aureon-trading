@@ -9,12 +9,13 @@ from aureon.autonomous.aureon_mind_thought_action_hub import MindThoughtActionHu
 
 
 class _FakeVoiceAdapter:
-    def __init__(self, text: str, model: str = "fake-voice"):
+    def __init__(self, text: str, model: str = "fake-voice", raw=None):
         self.text = text
         self.model = model
+        self.raw = raw
 
     def prompt(self, *args, **kwargs):
-        return SimpleNamespace(text=self.text, model=self.model, usage={"total_tokens": 7})
+        return SimpleNamespace(text=self.text, model=self.model, usage={"total_tokens": 7}, raw=self.raw)
 
 
 def test_hub_constructor_does_not_run_heavy_initialization(monkeypatch):
@@ -223,6 +224,20 @@ def test_flight_test_includes_goal_pursuit(monkeypatch):
 
 def test_phi_bridge_status_exposes_live_chat_lane(monkeypatch):
     monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+    monkeypatch.setattr(
+        MindThoughtActionHub,
+        "_ollama_cognitive_status_payload",
+        lambda self, force=False: {
+            "schema_version": "aureon-ollama-cognitive-bridge-v1",
+            "ok": True,
+            "status": "ollama_cognitive_bridge_ready",
+        },
+    )
+    monkeypatch.setattr(
+        MindThoughtActionHub,
+        "_get_phi_voice_adapter",
+        lambda self: _FakeVoiceAdapter("ready", model="aureon-ollama-hybrid:llama3:latest"),
+    )
 
     hub = MindThoughtActionHub()
     payload = hub._phi_bridge_status_payload()
@@ -231,10 +246,52 @@ def test_phi_bridge_status_exposes_live_chat_lane(monkeypatch):
     assert payload["chat"]["endpoint"] == "POST /api/phi-bridge/chat"
     assert payload["refresh_interval_ms"] >= 618
     assert "no credential reveal" in payload["authority_boundaries"]
+    assert payload["ollama_cognitive_bridge"]["schema_version"] == "aureon-ollama-cognitive-bridge-v1"
+
+
+def test_phi_voice_adapter_reload_resets_cached_backend(monkeypatch):
+    monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+    monkeypatch.setattr(
+        MindThoughtActionHub,
+        "_get_phi_voice_adapter",
+        lambda self: _FakeVoiceAdapter("ready", model="aureon-ollama-hybrid:llama3:latest"),
+    )
+
+    hub = MindThoughtActionHub()
+    payload = hub._reload_phi_voice_adapter()
+
+    assert payload["ok"] is True
+    assert payload["adapter_model"] == "aureon-ollama-hybrid:llama3:latest"
+
+
+def test_ollama_cognitive_status_payload_is_exposed(monkeypatch):
+    monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+
+    fake_payload = {
+        "schema_version": "aureon-ollama-cognitive-bridge-v1",
+        "ok": True,
+        "status": "ollama_cognitive_bridge_ready",
+        "summary": {"ollama_reachable": True, "cognitive_ready": True},
+    }
+
+    import aureon.autonomous.aureon_ollama_cognitive_bridge as bridge_module
+
+    monkeypatch.setattr(bridge_module, "build_and_write_ollama_cognitive_bridge", lambda: fake_payload)
+
+    hub = MindThoughtActionHub()
+    payload = hub._ollama_cognitive_status_payload(force=True)
+
+    assert payload["status"] == "ollama_cognitive_bridge_ready"
+    assert payload["summary"]["ollama_reachable"] is True
 
 
 def test_phi_bridge_chat_uses_voice_adapter_and_redacts_context(monkeypatch):
     monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+    monkeypatch.setattr(
+        MindThoughtActionHub,
+        "_ollama_cognitive_status_payload",
+        lambda self, force=False: {"schema_version": "aureon-ollama-cognitive-bridge-v1", "ok": True},
+    )
 
     hub = MindThoughtActionHub()
     monkeypatch.setattr(hub, "_get_phi_voice_adapter", lambda: _FakeVoiceAdapter("I can see the live coding cockpit."))
@@ -254,8 +311,44 @@ def test_phi_bridge_chat_uses_voice_adapter_and_redacts_context(monkeypatch):
     assert payload["history"][-1]["role"] == "assistant"
 
 
+def test_phi_bridge_chat_marks_ollama_context_weaver(monkeypatch):
+    monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+    monkeypatch.setattr(
+        MindThoughtActionHub,
+        "_ollama_cognitive_status_payload",
+        lambda self, force=False: {"schema_version": "aureon-ollama-cognitive-bridge-v1", "ok": True},
+    )
+
+    raw = {
+        "weaver": True,
+        "policy": "small_ollama_shards_then_aureon_recomposition",
+        "shards": [{"name": "intent_scope", "ok": True, "latency_ms": 5}],
+    }
+    hub = MindThoughtActionHub()
+    monkeypatch.setattr(
+        hub,
+        "_get_phi_voice_adapter",
+        lambda: _FakeVoiceAdapter(
+            "I split this into small Ollama packets and recomposed it through Aureon.",
+            model="aureon-ollama-weaver:llama3:latest",
+            raw=raw,
+        ),
+    )
+
+    payload = hub._run_phi_chat("use Ollama in smaller pieces", context={})
+
+    assert payload["reply_source"] == "ollama_cognitive_weaver"
+    assert payload["weaver_trace"]["weaver"] is True
+    assert payload["history"][-1]["weaver"]["shards"][0]["name"] == "intent_scope"
+
+
 def test_phi_bridge_chat_falls_back_when_llm_backend_is_missing(monkeypatch):
     monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+    monkeypatch.setattr(
+        MindThoughtActionHub,
+        "_ollama_cognitive_status_payload",
+        lambda self, force=False: {"schema_version": "aureon-ollama-cognitive-bridge-v1", "ok": False},
+    )
 
     hub = MindThoughtActionHub()
     monkeypatch.setattr(
@@ -277,6 +370,11 @@ def test_phi_bridge_chat_falls_back_when_llm_backend_is_missing(monkeypatch):
 
 def test_phi_bridge_chat_discards_late_reply_after_timeout(monkeypatch):
     monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+    monkeypatch.setattr(
+        MindThoughtActionHub,
+        "_ollama_cognitive_status_payload",
+        lambda self, force=False: {"schema_version": "aureon-ollama-cognitive-bridge-v1", "ok": True},
+    )
 
     hub = MindThoughtActionHub()
     monkeypatch.setattr(hub, "_get_phi_voice_adapter", lambda: _FakeVoiceAdapter("late local model reply"))

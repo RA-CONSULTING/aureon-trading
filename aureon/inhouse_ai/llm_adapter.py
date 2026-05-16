@@ -20,6 +20,7 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional
 
 logger = logging.getLogger("aureon.inhouse_ai.llm")
@@ -40,6 +41,46 @@ def _llm_http_disabled() -> bool:
 
 def _llm_timeout(default_s: float, audit_default_s: float) -> float:
     return audit_default_s if _env_truthy("AUREON_AUDIT_MODE") else default_s
+
+
+def _read_small_json(path: Path) -> Dict[str, Any]:
+    try:
+        if path.exists():
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+    return {}
+
+
+def _aureon_cognitive_context_summary() -> str:
+    """Return compact local cognitive proof for Aureon+Ollama system prompts."""
+    root = Path(__file__).resolve().parents[2]
+    bridge = _read_small_json(root / "frontend/public/aureon_ollama_cognitive_bridge.json")
+    guardian = _read_small_json(root / "frontend/public/aureon_agent_creative_process_guardian.json")
+    cognitive = _read_small_json(root / "frontend/public/aureon_cognitive_trade_evidence.json")
+    harmonic = _read_small_json(root / "frontend/public/aureon_harmonic_affect_state.json")
+
+    bridge_summary = bridge.get("summary") if isinstance(bridge.get("summary"), dict) else {}
+    guardian_summary = guardian.get("summary") if isinstance(guardian.get("summary"), dict) else {}
+    cognitive_summary = cognitive.get("summary") if isinstance(cognitive.get("summary"), dict) else {}
+    harmonic_summary = harmonic.get("summary") if isinstance(harmonic.get("summary"), dict) else {}
+    if not any((bridge_summary, guardian_summary, cognitive_summary, harmonic_summary)):
+        return ""
+
+    lines = [
+        "AUREON UNIFIED COGNITIVE SYSTEM CONTEXT",
+        f"ollama_bridge_status={bridge.get('status', 'unknown')}",
+        f"resolved_model={bridge_summary.get('resolved_model', '')}",
+        f"hnc_auris_ready={bridge_summary.get('hnc_auris_ready', guardian_summary.get('hnc_auris_ready', 'unknown'))}",
+        f"metacognitive_ready={bridge_summary.get('metacognitive_ready', guardian_summary.get('metacognitive_ready', 'unknown'))}",
+        f"role_contracts_ready={bridge_summary.get('role_contracts_ready', guardian_summary.get('who_what_where_when_how_act_ready', 'unknown'))}",
+        f"runtime_action_mode={cognitive_summary.get('action_mode', 'unknown')}",
+        f"harmonic_affect_phase={harmonic_summary.get('affect_phase', 'unknown')}",
+        "authority=no live trading, payment, official filing, credential reveal, or destructive OS bypass",
+        "identity=Aureon uses Ollama as its local language cortex and Aureon cognition as memory, guards, evidence, and fallback",
+    ]
+    return "\n".join(lines)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Response types
@@ -628,6 +669,16 @@ class AureonLocalAdapter(LLMAdapter):
                 if m not in candidates:
                     candidates.append(m)
 
+        # Ollama on CPU can spend a long time evaluating even a 1-token probe.
+        # If the requested model is present, trust the listing by default and
+        # let the real small-packet request be the proof. Operators can set
+        # AUREON_LLM_SKIP_PROBE=0 to restore strict probe-before-use behavior.
+        skip_probe_raw = os.environ.get("AUREON_LLM_SKIP_PROBE", "1" if self._prefer_native else "0")
+        if candidates and skip_probe_raw.strip().lower() in {"1", "true", "yes", "on"}:
+            self.model = candidates[0]
+            self._model_verified = True
+            return True
+
         for candidate in candidates:
             if self._probe_model(candidate):
                 if candidate != self.model:
@@ -1000,22 +1051,301 @@ class AureonHybridAdapter(LLMAdapter):
     ):
         self.local = AureonLocalAdapter(base_url=base_url, model=model, api_key=api_key)
         self.brain = AureonBrainAdapter()
+        self.model = f"aureon-ollama-hybrid:{self.local.model}"
+        self.last_weaver_trace: Dict[str, Any] = {}
+        self.last_dynamic_prompt_filter: Dict[str, Any] = {}
 
     def _enrich_system(self, system: str, messages: List[Dict[str, Any]]) -> str:
         """Prepend Brain intelligence to the system prompt."""
-        if not self.brain.health_check():
+        parts = [str(system or "").strip()]
+        cognitive_context = _aureon_cognitive_context_summary()
+        if cognitive_context:
+            parts.append(cognitive_context)
+        if self.brain.health_check():
+            context = self.brain._extract_context(messages, system)
+            brain_intel = self.brain._brain_reason(context)
+            parts.append(f"AUREON BRAIN INTELLIGENCE\n{brain_intel}\nEND AUREON BRAIN INTELLIGENCE")
+        return "\n\n".join(part for part in parts if part)
+
+    @staticmethod
+    def _clip(value: Any, limit: int) -> str:
+        text = str(value or "")
+        if len(text) <= limit:
+            return text
+        return text[: max(0, limit - 20)].rstrip() + "\n[clipped]"
+
+    @classmethod
+    def _message_text(cls, msg: Dict[str, Any]) -> str:
+        content = msg.get("content", "")
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts: List[str] = []
+            for item in content:
+                if isinstance(item, dict):
+                    parts.append(str(item.get("text") or item.get("content") or ""))
+                else:
+                    parts.append(str(item))
+            return "\n".join(part for part in parts if part)
+        if isinstance(content, dict):
+            return str(content.get("text") or content.get("content") or content)
+        return str(content)
+
+    @classmethod
+    def _flatten_messages_for_weaver(cls, messages: List[Dict[str, Any]]) -> str:
+        lines: List[str] = []
+        for msg in messages or []:
+            role = str(msg.get("role") or "user")
+            text = cls._message_text(msg)
+            if text.strip():
+                lines.append(f"{role}: {cls._clip(text, 1800)}")
+        return "\n\n".join(lines)
+
+    def _context_weaver_enabled(
+        self,
+        tools: Optional[List[Dict[str, Any]]],
+        max_tokens: int,
+        kwargs: Dict[str, Any],
+    ) -> bool:
+        if tools:
+            return False
+        if bool(kwargs.get("disable_context_weaver")):
+            return False
+        raw = os.environ.get("AUREON_OLLAMA_CONTEXT_WEAVER")
+        if raw is not None:
+            return raw.strip().lower() not in {"0", "false", "no", "off"}
+        # Default the weaver for short operator chat. Longer authoring calls can
+        # still use the normal local model unless the env var explicitly opts in.
+        return max_tokens <= 800
+
+    def _build_dynamic_filter(
+        self,
+        messages: List[Dict[str, Any]],
+        system: str,
+        kwargs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        if bool(kwargs.get("disable_dynamic_prompt_filter")):
+            return {}
+        try:
+            from aureon.autonomous.aureon_dynamic_prompt_filter import build_dynamic_prompt_filter
+
+            report = build_dynamic_prompt_filter(
+                messages,
+                system=system,
+                lane_hint=str(kwargs.get("dynamic_prompt_lane") or ""),
+                publish=True,
+            )
+            self.last_dynamic_prompt_filter = report
+            return report
+        except Exception as exc:
+            report = {
+                "schema_version": "aureon-dynamic-prompt-filter-v1",
+                "ok": False,
+                "status": "dynamic_prompt_filter_error",
+                "error": str(exc),
+            }
+            self.last_dynamic_prompt_filter = report
+            return report
+
+    def _system_with_dynamic_filter(self, system: str, filter_report: Dict[str, Any]) -> str:
+        if not filter_report:
+            return system
+        try:
+            from aureon.autonomous.aureon_dynamic_prompt_filter import render_filter_prompt_block
+
+            filter_block = render_filter_prompt_block(filter_report)
+            return "\n\n".join(part for part in [str(system or "").strip(), filter_block] if part)
+        except Exception:
             return system
 
-        context = self.brain._extract_context(messages, system)
-        brain_intel = self.brain._brain_reason(context)
+    def _finalize_dynamic_response(
+        self,
+        response: LLMResponse,
+        filter_report: Dict[str, Any],
+        *,
+        reply_source: str,
+    ) -> LLMResponse:
+        if not filter_report:
+            return response
+        try:
+            from aureon.autonomous.aureon_dynamic_prompt_filter import apply_dynamic_response_filter
 
-        enriched = (
-            f"{system}\n\n"
-            f"── AUREON BRAIN INTELLIGENCE ──\n"
-            f"{brain_intel}\n"
-            f"── END BRAIN INTELLIGENCE ──"
+            text, final_report = apply_dynamic_response_filter(
+                response.text,
+                filter_report,
+                reply_source=reply_source,
+                publish=True,
+            )
+            response.text = text
+            if isinstance(response.raw, dict):
+                raw = dict(response.raw)
+            elif response.raw is None:
+                raw = {}
+            else:
+                raw = {"upstream_raw": response.raw}
+            raw["dynamic_prompt_filter"] = final_report
+            response.raw = raw
+            self.last_dynamic_prompt_filter = final_report
+        except Exception as exc:
+            if isinstance(response.raw, dict):
+                raw = dict(response.raw)
+            elif response.raw is None:
+                raw = {}
+            else:
+                raw = {"upstream_raw": response.raw}
+            raw["dynamic_prompt_filter"] = {
+                "schema_version": "aureon-dynamic-prompt-filter-v1",
+                "ok": False,
+                "status": "dynamic_prompt_filter_finalize_error",
+                "error": str(exc),
+            }
+            response.raw = raw
+        return response
+
+    def _weaver_shard_plan(
+        self,
+        user_context: str,
+        enriched_system: str,
+        filter_report: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, str]]:
+        compact_system = self._clip(enriched_system, int(os.environ.get("AUREON_OLLAMA_WEAVER_SYSTEM_CHARS", "1600") or "1600"))
+        compact_user = self._clip(user_context, int(os.environ.get("AUREON_OLLAMA_WEAVER_INPUT_CHARS", "2200") or "2200"))
+        plan = [
+            {
+                "name": "intent_scope",
+                "system": "You are a small Ollama worker. Extract only intent. Be concise.",
+                "prompt": (
+                    "Aureon will compose the final answer. Summarize the operator intent, requested action, "
+                    "and any missing scope in <= 70 words.\n\n"
+                    f"Context:\n{compact_user}"
+                ),
+            },
+            {
+                "name": "evidence_state",
+                "system": "You are a small Ollama worker. Extract only evidence and blockers. Be concise.",
+                "prompt": (
+                    "Aureon will compose the final answer. From this system/dashboard evidence, list only the "
+                    "status, blockers, and proof that matter in <= 90 words. Do not invent evidence.\n\n"
+                    f"System evidence:\n{compact_system}\n\nOperator context:\n{compact_user}"
+                ),
+            },
+            {
+                "name": "answer_draft",
+                "system": "You are a small Ollama worker. Draft only the answer. Aureon will verify and compose.",
+                "prompt": (
+                    "Draft a direct first-person Aureon reply in <= 130 words. Use the evidence, avoid claims "
+                    "not proved, and mention existing safety gates when relevant.\n\n"
+                    f"System evidence:\n{self._clip(compact_system, 900)}\n\nOperator context:\n{compact_user}"
+                ),
+            },
+        ]
+        if filter_report:
+            try:
+                from aureon.autonomous.aureon_dynamic_prompt_filter import augment_weaver_shard_plan
+
+                plan = augment_weaver_shard_plan(plan, filter_report)
+            except Exception:
+                pass
+        try:
+            default_limit = "3" if str(os.environ.get("AUREON_OLLAMA_WEAVER_MODEL") or "").strip() else "2"
+            limit = int(os.environ.get("AUREON_OLLAMA_WEAVER_SHARD_LIMIT", default_limit) or default_limit)
+        except Exception:
+            limit = len(plan)
+        return plan[: max(1, min(len(plan), limit))]
+
+    def _run_weaver_shards(
+        self,
+        messages: List[Dict[str, Any]],
+        enriched_system: str,
+        temperature: float,
+        filter_report: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
+        user_context = self._flatten_messages_for_weaver(messages)
+        shard_tokens = int(os.environ.get("AUREON_OLLAMA_WEAVER_SHARD_TOKENS", "90") or "90")
+        weaver_model = str(os.environ.get("AUREON_OLLAMA_WEAVER_MODEL") or "").strip()
+        results: List[Dict[str, Any]] = []
+        for shard in self._weaver_shard_plan(user_context, enriched_system, filter_report):
+            started = time.time()
+            old_model = self.local.model
+            if weaver_model:
+                self.local.model = weaver_model
+            try:
+                response = self.local.prompt(
+                    [{"role": "user", "content": shard["prompt"]}],
+                    system=shard["system"],
+                    tools=None,
+                    max_tokens=max(16, shard_tokens),
+                    temperature=min(float(temperature), 0.3),
+                )
+            finally:
+                if weaver_model:
+                    self.local.model = old_model
+            results.append(
+                {
+                    "name": shard["name"],
+                    "ok": response.stop_reason != "error" and bool((response.text or "").strip()),
+                    "text": self._clip(response.text, 900).strip(),
+                    "model": response.model or self.local.model,
+                    "stop_reason": response.stop_reason,
+                    "latency_ms": int((time.time() - started) * 1000),
+                    "usage": response.usage or {},
+                }
+            )
+        return results
+
+    def _compose_weaver_response(
+        self,
+        messages: List[Dict[str, Any]],
+        shard_results: List[Dict[str, Any]],
+        filter_report: Optional[Dict[str, Any]] = None,
+    ) -> LLMResponse:
+        by_name = {str(item.get("name")): item for item in shard_results}
+        intent = str(by_name.get("intent_scope", {}).get("text") or "").strip()
+        evidence = str(by_name.get("evidence_state", {}).get("text") or "").strip()
+        draft = str(by_name.get("answer_draft", {}).get("text") or "").strip()
+        draft_stop = str(by_name.get("answer_draft", {}).get("stop_reason") or "")
+        success_count = sum(1 for item in shard_results if item.get("ok"))
+
+        if draft and draft_stop != "max_tokens":
+            final = draft
+        else:
+            final_parts = [
+                "I am using the context-weaver path: smaller Ollama workers read separate packets, then Aureon recomposes the final reply through its cognitive layer."
+            ]
+            if intent:
+                final_parts.append(f"Intent packet: {intent}")
+            if evidence:
+                final_parts.append(f"Evidence packet: {evidence}")
+            if draft:
+                final_parts.append(f"Draft packet held for truncation: {draft}")
+            if not intent and not evidence:
+                final_parts.append("I do not have a usable local-model shard yet, so I am holding claims to the evidence already in the dashboard.")
+            final = "\n".join(final_parts)
+
+        shard_model = str(os.environ.get("AUREON_OLLAMA_WEAVER_MODEL") or self.local.model)
+        raw_trace = {
+            "weaver": True,
+            "composer": "AureonHybridAdapter",
+            "policy": "small_ollama_shards_then_aureon_recomposition",
+            "shards": shard_results,
+            "primary_model": self.local.model,
+            "shard_model": shard_model,
+            "source_message_count": len(messages or []),
+        }
+        if filter_report:
+            raw_trace["dynamic_prompt_filter"] = filter_report
+        self.last_weaver_trace = raw_trace
+        return LLMResponse(
+            text=self._clip(final, 1600).strip(),
+            stop_reason="end_turn",
+            usage={
+                "weaver_shards": len(shard_results),
+                "successful_shards": success_count,
+                "total_tokens": sum(int((item.get("usage") or {}).get("total_tokens", 0) or 0) for item in shard_results),
+            },
+            model=f"aureon-ollama-weaver:{shard_model}",
+            raw=raw_trace,
         )
-        return enriched
 
     def prompt(
         self,
@@ -1026,19 +1356,63 @@ class AureonHybridAdapter(LLMAdapter):
         temperature: float = 0.7,
         **kwargs,
     ) -> LLMResponse:
-        enriched_system = self._enrich_system(system, messages)
+        dynamic_filter = self._build_dynamic_filter(messages, system, kwargs)
+        filtered_system = self._system_with_dynamic_filter(system, dynamic_filter)
+        direct_reply = ""
+        try:
+            meaning = dynamic_filter.get("meaning_resolver") if isinstance(dynamic_filter, dict) else {}
+            direct_reply = str((meaning or {}).get("direct_reply") or "")
+        except Exception:
+            direct_reply = ""
+        if direct_reply and not tools:
+            response = LLMResponse(
+                text=direct_reply,
+                stop_reason="end_turn",
+                usage={"dynamic_prompt_filter": 1},
+                model="aureon-dynamic-prompt-filter",
+                raw={"dynamic_prompt_filter": dynamic_filter},
+            )
+            return self._finalize_dynamic_response(
+                response,
+                dynamic_filter,
+                reply_source="aureon_dynamic_prompt_filter_direct",
+            )
+
+        enriched_system = self._enrich_system(filtered_system, messages)
 
         # Try local LLM first
         if not _llm_http_disabled() and self.local.health_check():
+            self.model = f"aureon-ollama-hybrid:{self.local.model}"
+            if self._context_weaver_enabled(tools, max_tokens, kwargs):
+                try:
+                    shard_results = self._run_weaver_shards(messages, enriched_system, temperature, dynamic_filter)
+                    if any(item.get("ok") for item in shard_results):
+                        response = self._compose_weaver_response(messages, shard_results, dynamic_filter)
+                        return self._finalize_dynamic_response(
+                            response,
+                            dynamic_filter,
+                            reply_source="ollama_cognitive_weaver",
+                        )
+                except Exception as exc:
+                    logger.warning("Ollama context weaver failed; falling back to single local prompt: %s", exc)
             response = self.local.prompt(
                 messages, enriched_system, tools, max_tokens, temperature, **kwargs
             )
             if response.stop_reason != "error":
-                return response
+                return self._finalize_dynamic_response(
+                    response,
+                    dynamic_filter,
+                    reply_source="ollama_cognitive_hybrid",
+                )
 
         # Fallback to brain-only
         logger.info("Local LLM unavailable — falling back to AureonBrain")
-        return self.brain.prompt(messages, system, tools, max_tokens, temperature, **kwargs)
+        response = self.brain.prompt(messages, filtered_system, tools, max_tokens, temperature, **kwargs)
+        return self._finalize_dynamic_response(
+            response,
+            dynamic_filter,
+            reply_source="aureon_brain_fallback",
+        )
 
     def stream(
         self,
@@ -1049,15 +1423,18 @@ class AureonHybridAdapter(LLMAdapter):
         temperature: float = 0.7,
         **kwargs,
     ) -> Generator[StreamChunk, None, None]:
-        enriched_system = self._enrich_system(system, messages)
+        dynamic_filter = self._build_dynamic_filter(messages, system, kwargs)
+        filtered_system = self._system_with_dynamic_filter(system, dynamic_filter)
+        enriched_system = self._enrich_system(filtered_system, messages)
 
         if not _llm_http_disabled() and self.local.health_check():
+            self.model = f"aureon-ollama-hybrid:{self.local.model}"
             yield from self.local.stream(
                 messages, enriched_system, tools, max_tokens, temperature, **kwargs
             )
         else:
             yield from self.brain.stream(
-                messages, system, tools, max_tokens, temperature, **kwargs
+                messages, filtered_system, tools, max_tokens, temperature, **kwargs
             )
 
     def health_check(self) -> bool:
@@ -1258,17 +1635,46 @@ def build_voice_adapter() -> LLMAdapter:
     Build a safe default adapter for the Vault Voice layer.
 
     Priority:
-      1. Local OpenAI-compatible server (Ollama/vLLM/llama.cpp) if reachable
-      2. Anthropic if ANTHROPIC_API_KEY is present
+      1. AureonHybridAdapter (local Ollama/vLLM/llama.cpp plus AureonBrain) if reachable
+      2. Explicit external backends only when requested
       3. Stub adapter with actionable configuration instructions
 
     Override with AUREON_VOICE_BACKEND:
-      - local | anthropic | brain
+      - local | ollama | ollama_hybrid | anthropic | brain
     """
     backend = (os.environ.get("AUREON_VOICE_BACKEND", "") or "").strip().lower()
 
     if backend in ("brain", "aureonbrain", "rule", "rules"):
         return AureonBrainAdapter()
+
+    if backend in ("hybrid", "ollama_hybrid", "cognitive", "cognitive_ollama", "aureon_hybrid"):
+        return AureonHybridAdapter()
+
+    if backend in ("ollama", "native_ollama", "ollama_native"):
+        try:
+            from aureon.integrations.ollama import OllamaLLMAdapter
+
+            adapter = OllamaLLMAdapter(
+                model=os.environ.get("AUREON_LLM_MODEL") or os.environ.get("AUREON_OLLAMA_MODEL") or None,
+                base_url=os.environ.get("AUREON_OLLAMA_BASE_URL") or None,
+                keep_alive=os.environ.get("AUREON_LLM_KEEP_ALIVE", "30m") or None,
+            )
+            if adapter.health_check():
+                return adapter
+        except Exception as exc:
+            return AureonStubAdapter(
+                "Ollama backend could not be initialized.\n"
+                f"Reason: {exc}\n"
+                "Start Ollama, install a model, then set AUREON_VOICE_BACKEND=ollama_hybrid for Aureon cognitive chat.",
+                model="ollama-unavailable",
+            )
+        return AureonStubAdapter(
+            "Ollama is not reachable or has no usable chat model.\n"
+            "Run: ollama serve\n"
+            "Then: ollama pull qwen2.5:0.5b\n"
+            "Then set: AUREON_VOICE_BACKEND=ollama_hybrid and AUREON_LLM_MODEL=qwen2.5:0.5b",
+            model="ollama-unavailable",
+        )
 
     if backend in ("anthropic", "claude"):
         if os.environ.get("ANTHROPIC_API_KEY"):
@@ -1280,19 +1686,28 @@ def build_voice_adapter() -> LLMAdapter:
             model="anthropic-unconfigured",
         )
 
-    # Default or explicitly local: try local first.
+    if backend in ("", "auto", "local", "aureon_ollama", "unified_cognitive"):
+        hybrid = AureonHybridAdapter()
+        if not _llm_http_disabled() and hybrid.local.health_check():
+            hybrid.model = f"aureon-ollama-hybrid:{hybrid.local.model}"
+            return hybrid
+        if backend in ("", "auto") and hybrid.brain.health_check():
+            return hybrid
+
+    if backend in ("plain_local", "local_only"):
+        local = AureonLocalAdapter()
+        if local.health_check():
+            return local
+
+    # Explicit local fallback: external providers are never selected implicitly.
     # Note: we intentionally do NOT auto-fall back to external providers in "auto"
     # mode, even if API keys are present. External use must be explicit via
     # AUREON_VOICE_BACKEND=anthropic, so tests/offline runs never hang.
-    local = AureonLocalAdapter()
-    if local.health_check():
-        return local
-
     return AureonStubAdapter(
         "No LLM backend is reachable.\n"
         "To enable real conversation for Vault voices:\n"
-        "  1) Start a local OpenAI-compatible server (recommended: Ollama)\n"
-        "     and ensure http://localhost:11434/v1 is available, or set AUREON_LLM_BASE_URL.\n"
-        "  2) Or set AUREON_VOICE_BACKEND=anthropic and ANTHROPIC_API_KEY.\n",
+        "  1) Start Ollama and install a local chat model.\n"
+        "  2) Set AUREON_VOICE_BACKEND=ollama_hybrid and AUREON_LLM_ALLOW_HTTP_IN_AUDIT=1.\n"
+        "  3) Set AUREON_LLM_MODEL to a local model such as llama3:latest for deeper replies.\n",
         model="no-backend",
     )

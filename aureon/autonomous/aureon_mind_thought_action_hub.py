@@ -627,6 +627,8 @@ class MindThoughtActionHub:
         self._phi_voice_adapter = None
         self.phi_chat_history = deque(maxlen=40)
         self._phi_chat_timeout_ids: Set[str] = set()
+        self._ollama_cognitive_status_cache: Dict[str, Any] = {}
+        self._ollama_cognitive_status_cache_at = 0.0
 
         # Setup web app
         self.app = web.Application()
@@ -646,8 +648,12 @@ class MindThoughtActionHub:
         self.app.router.add_post('/api/self-questioning/ask', self.handle_self_questioning_ask)
         self.app.router.add_get('/api/phi-bridge/status', self.handle_phi_bridge_status)
         self.app.router.add_post('/api/phi-bridge/chat', self.handle_phi_bridge_chat)
+        self.app.router.add_post('/api/phi-bridge/reload', self.handle_phi_bridge_reload)
         self.app.router.add_options('/api/phi-bridge/status', self.handle_coding_options)
         self.app.router.add_options('/api/phi-bridge/chat', self.handle_coding_options)
+        self.app.router.add_options('/api/phi-bridge/reload', self.handle_coding_options)
+        self.app.router.add_get('/api/ollama-cognitive/status', self.handle_ollama_cognitive_status)
+        self.app.router.add_options('/api/ollama-cognitive/status', self.handle_coding_options)
 
     def _initialization_status(self) -> str:
         if self.init_error:
@@ -1486,11 +1492,32 @@ class MindThoughtActionHub:
         return self._phi_bridge
 
     def _get_phi_voice_adapter(self):
+        if self._phi_voice_adapter is not None and self._phi_voice_adapter_needs_reload(self._phi_voice_adapter):
+            self._phi_voice_adapter = None
         if self._phi_voice_adapter is None:
             from aureon.inhouse_ai.llm_adapter import build_voice_adapter
 
             self._phi_voice_adapter = build_voice_adapter()
         return self._phi_voice_adapter
+
+    def _phi_voice_adapter_needs_reload(self, adapter: Any) -> bool:
+        model = str(getattr(adapter, "model", "") or getattr(adapter, "_model", "") or "").lower()
+        if model in {"no-backend", "ollama-unavailable", "anthropic-unconfigured"}:
+            return True
+        return False
+
+    def _reload_phi_voice_adapter(self) -> Dict[str, Any]:
+        self._phi_voice_adapter = None
+        adapter = self._get_phi_voice_adapter()
+        model = str(getattr(adapter, "model", "") or getattr(adapter, "_model", "") or "")
+        return {
+            "ok": not self._phi_voice_adapter_needs_reload(adapter),
+            "adapter_class": adapter.__class__.__name__,
+            "adapter_model": model,
+            "backend": os.environ.get("AUREON_VOICE_BACKEND", "") or "auto",
+            "llm_model": os.environ.get("AUREON_LLM_MODEL", ""),
+            "llm_http_allowed_in_audit": os.environ.get("AUREON_LLM_ALLOW_HTTP_IN_AUDIT", ""),
+        }
 
     def _phi_refresh_interval_ms(self, bridge_info: Dict[str, Any]) -> int:
         cadence = bridge_info.get("cadence") if isinstance(bridge_info, dict) else {}
@@ -1525,6 +1552,26 @@ class MindThoughtActionHub:
     def _recent_phi_messages(self, limit: int = 8) -> List[Dict[str, Any]]:
         return list(self.phi_chat_history)[-max(1, int(limit)):]
 
+    def _compact_phi_status_for_llm(self, status: Dict[str, Any]) -> Dict[str, Any]:
+        ollama = status.get("ollama_cognitive_bridge") if isinstance(status.get("ollama_cognitive_bridge"), dict) else {}
+        ollama_summary = ollama.get("summary") if isinstance(ollama.get("summary"), dict) else {}
+        chat = status.get("chat") if isinstance(status.get("chat"), dict) else {}
+        return {
+            "phi_status": status.get("status"),
+            "hub_status": status.get("hub_status"),
+            "adapter_model": chat.get("adapter_model"),
+            "adapter_class": chat.get("adapter_class"),
+            "backend": chat.get("backend"),
+            "llm_model": chat.get("llm_model"),
+            "ollama_status": ollama.get("status"),
+            "ollama_reachable": ollama_summary.get("ollama_reachable"),
+            "resolved_model": ollama_summary.get("resolved_model"),
+            "hnc_auris_ready": ollama_summary.get("hnc_auris_ready"),
+            "metacognitive_ready": ollama_summary.get("metacognitive_ready"),
+            "role_contracts_ready": ollama_summary.get("role_contracts_ready"),
+            "authority": status.get("authority_boundaries", [])[:5],
+        }
+
     def _phi_bridge_status_payload(self) -> Dict[str, Any]:
         try:
             bridge_info = self._get_phi_bridge().info()
@@ -1542,10 +1589,17 @@ class MindThoughtActionHub:
             error = str(exc)
 
         adapter_model = ""
+        adapter_class = ""
         adapter_ready = False
-        if self._phi_voice_adapter is not None:
-            adapter_model = str(getattr(self._phi_voice_adapter, "model", "") or getattr(self._phi_voice_adapter, "_model", "") or "")
+        try:
+            adapter = self._get_phi_voice_adapter()
+            adapter_model = str(getattr(adapter, "model", "") or getattr(adapter, "_model", "") or "")
+            adapter_class = adapter.__class__.__name__
             adapter_ready = True
+        except Exception:
+            adapter_ready = False
+
+        ollama_cognitive = self._ollama_cognitive_status_payload()
 
         return {
             "ok": available,
@@ -1564,7 +1618,12 @@ class MindThoughtActionHub:
                 "recent": self._recent_phi_messages(6),
                 "adapter_ready": adapter_ready,
                 "adapter_model": adapter_model,
+                "adapter_class": adapter_class,
+                "backend": os.environ.get("AUREON_VOICE_BACKEND", "") or "auto",
+                "llm_model": os.environ.get("AUREON_LLM_MODEL", ""),
+                "llm_http_allowed_in_audit": os.environ.get("AUREON_LLM_ALLOW_HTTP_IN_AUDIT", ""),
             },
+            "ollama_cognitive_bridge": ollama_cognitive,
             "authority_boundaries": [
                 "read-only dashboard conversation",
                 "no live trading mutation",
@@ -1582,6 +1641,41 @@ class MindThoughtActionHub:
             },
         }
 
+    def _ollama_cognitive_status_payload(self, force: bool = False) -> Dict[str, Any]:
+        cache_age = time.time() - float(self._ollama_cognitive_status_cache_at or 0.0)
+        if not force and self._ollama_cognitive_status_cache and cache_age < 5.0:
+            return self._ollama_cognitive_status_cache
+        try:
+            from aureon.autonomous.aureon_ollama_cognitive_bridge import (
+                build_and_write_ollama_cognitive_bridge,
+            )
+
+            payload = build_and_write_ollama_cognitive_bridge()
+        except Exception as exc:
+            payload = {
+                "schema_version": "aureon-ollama-cognitive-bridge-v1",
+                "ok": False,
+                "status": "ollama_cognitive_bridge_error",
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "error": str(exc),
+                "summary": {
+                    "ollama_reachable": False,
+                    "cognitive_ready": False,
+                    "hand_in_hand_ready": False,
+                },
+                "next_actions": [
+                    {
+                        "id": "inspect_ollama_cognitive_bridge",
+                        "severity": "blocking",
+                        "action": "Run the bridge module directly to see the local error.",
+                        "powershell": ".\\.venv\\Scripts\\python.exe -m aureon.autonomous.aureon_ollama_cognitive_bridge --json",
+                    }
+                ],
+            }
+        self._ollama_cognitive_status_cache = payload
+        self._ollama_cognitive_status_cache_at = time.time()
+        return payload
+
     def _fallback_phi_reply(self, message: str, context: Dict[str, Any], reason: str) -> str:
         coding = context.get("coding") if isinstance(context.get("coding"), dict) else {}
         status = coding.get("status") or coding.get("summary_status") or "dashboard observed"
@@ -1592,7 +1686,8 @@ class MindThoughtActionHub:
             "I am connected to the Phi Bridge and the local cockpit, but the live LLM backend did not return a usable reply. "
             f"Reason: {reason}. Current coding lane: {status}; scope: {scope}; {route_text}. "
             "I can still keep the dashboard live, publish evidence, and route coding prompts through the organism. "
-            "For full conversation, start the local LLM server or set AUREON_VOICE_BACKEND to an available backend."
+            "For full conversation, start Ollama, set AUREON_VOICE_BACKEND=ollama_hybrid, "
+            "set AUREON_LLM_ALLOW_HTTP_IN_AUDIT=1 for local-only safe observation, and reload the Phi adapter."
         )
 
     def _run_phi_chat(
@@ -1612,17 +1707,20 @@ class MindThoughtActionHub:
             "Keep live trading, payment, filing, credential, and destructive OS actions behind their existing gates."
         )
         history_messages = [
-            {"role": str(item.get("role") or "user"), "content": str(item.get("text") or "")[:1200]}
-            for item in self._recent_phi_messages(8)
+            {"role": str(item.get("role") or "user"), "content": str(item.get("text") or "")[:300]}
+            for item in self._recent_phi_messages(2)
             if item.get("role") in {"user", "assistant"}
         ]
+        if os.environ.get("AUREON_PHI_CHAT_INCLUDE_HISTORY", "0").strip().lower() not in {"1", "true", "yes", "on"}:
+            history_messages = []
+        compact_status = self._compact_phi_status_for_llm(status)
         messages = history_messages + [
             {
                 "role": "user",
                 "content": (
                     f"Operator message:\n{message}\n\n"
-                    f"Redacted dashboard context:\n{json.dumps(safe_context, ensure_ascii=False)[:5000]}\n\n"
-                    f"Phi Bridge status:\n{json.dumps(status, ensure_ascii=False)[:4000]}"
+                    f"Redacted dashboard context:\n{json.dumps(safe_context, ensure_ascii=False)[:700]}\n\n"
+                    f"Compact Phi/Ollama/Aureon status:\n{json.dumps(compact_status, ensure_ascii=False)[:1000]}"
                 ),
             }
         ]
@@ -1630,19 +1728,61 @@ class MindThoughtActionHub:
         reply_source = "local_llm"
         model = ""
         usage: Dict[str, Any] = {}
+        response_raw: Any = None
+
+        def classify_reply_source(adapter: Any, response_model: str, raw: Any) -> str:
+            source_hint = " ".join(
+                [
+                    response_model,
+                    str(getattr(adapter, "model", "") or getattr(adapter, "_model", "") or ""),
+                    adapter.__class__.__name__,
+                ]
+            ).lower()
+            if isinstance(raw, dict) and raw.get("weaver"):
+                return "ollama_cognitive_weaver"
+            if response_model.lower().startswith("aureon-brain"):
+                return "aureon_brain_fallback"
+            if "weaver" in source_hint:
+                return "ollama_cognitive_weaver"
+            if "hybrid" in source_hint:
+                return "ollama_cognitive_hybrid"
+            if "ollama" in source_hint:
+                return "ollama_local"
+            return "local_llm"
+
         try:
-            response = self._get_phi_voice_adapter().prompt(
+            adapter = self._get_phi_voice_adapter()
+            response = adapter.prompt(
                 messages,
                 system=system_prompt,
-                max_tokens=int(os.environ.get("AUREON_PHI_CHAT_MAX_TOKENS", "260")),
+                max_tokens=int(os.environ.get("AUREON_PHI_CHAT_MAX_TOKENS", "120")),
                 temperature=float(os.environ.get("AUREON_PHI_CHAT_TEMPERATURE", "0.25")),
             )
             reply = str(getattr(response, "text", "") or "").strip()
             model = str(getattr(response, "model", "") or "")
             usage = getattr(response, "usage", {}) or {}
+            response_raw = getattr(response, "raw", None)
             if not reply or reply.startswith("[ERROR]") or "No LLM backend is reachable" in reply:
-                reply_source = "guided_fallback"
-                reply = self._fallback_phi_reply(message, safe_context, reply or "no usable LLM reply")
+                if self._phi_voice_adapter_needs_reload(adapter):
+                    self._phi_voice_adapter = None
+                    adapter = self._get_phi_voice_adapter()
+                    response = adapter.prompt(
+                        messages,
+                        system=system_prompt,
+                        max_tokens=int(os.environ.get("AUREON_PHI_CHAT_MAX_TOKENS", "120")),
+                        temperature=float(os.environ.get("AUREON_PHI_CHAT_TEMPERATURE", "0.25")),
+                    )
+                    reply = str(getattr(response, "text", "") or "").strip()
+                    model = str(getattr(response, "model", "") or "")
+                    usage = getattr(response, "usage", {}) or {}
+                    response_raw = getattr(response, "raw", None)
+                if not reply or reply.startswith("[ERROR]") or "No LLM backend is reachable" in reply:
+                    reply_source = "guided_fallback"
+                    reply = self._fallback_phi_reply(message, safe_context, reply or "no usable LLM reply")
+                else:
+                    reply_source = classify_reply_source(adapter, model, response_raw)
+            else:
+                reply_source = classify_reply_source(adapter, model, response_raw)
         except Exception as exc:
             reply_source = "guided_fallback"
             reply = self._fallback_phi_reply(message, safe_context, str(exc))
@@ -1664,6 +1804,12 @@ class MindThoughtActionHub:
 
         generated_at = datetime.now(timezone.utc).isoformat()
         latency_ms = int((time.time() - started) * 1000)
+        weaver_trace = response_raw if isinstance(response_raw, dict) and response_raw.get("weaver") else None
+        dynamic_filter_trace = (
+            response_raw.get("dynamic_prompt_filter")
+            if isinstance(response_raw, dict) and isinstance(response_raw.get("dynamic_prompt_filter"), dict)
+            else None
+        )
         user_item = {"role": "user", "text": message[:1200], "ts": generated_at}
         assistant_item = {
             "role": "assistant",
@@ -1673,6 +1819,36 @@ class MindThoughtActionHub:
             "model": model,
             "latency_ms": latency_ms,
         }
+        if weaver_trace:
+            assistant_item["weaver"] = {
+                "policy": weaver_trace.get("policy"),
+                "shards": [
+                    {
+                        "name": shard.get("name"),
+                        "ok": shard.get("ok"),
+                        "latency_ms": shard.get("latency_ms"),
+                    }
+                    for shard in weaver_trace.get("shards", [])
+                    if isinstance(shard, dict)
+                ],
+            }
+        if dynamic_filter_trace:
+            assistant_item["dynamic_filter"] = {
+                "filter_mode": dynamic_filter_trace.get("filter_mode"),
+                "lane": dynamic_filter_trace.get("lane"),
+                "task_family": dynamic_filter_trace.get("task_family"),
+                "source_packets": [
+                    {
+                        "title": packet.get("title"),
+                        "source_path": packet.get("source_path"),
+                        "confidence": packet.get("confidence"),
+                    }
+                    for packet in dynamic_filter_trace.get("source_packets", [])
+                    if isinstance(packet, dict)
+                ][:4],
+                "hnc_auris_report": dynamic_filter_trace.get("hnc_auris_report", {}),
+                "handover_ready": dynamic_filter_trace.get("handover_ready"),
+            }
         self.phi_chat_history.append(user_item)
         self.phi_chat_history.append(assistant_item)
 
@@ -1686,6 +1862,8 @@ class MindThoughtActionHub:
                     "reply_source": reply_source,
                     "model": model,
                     "latency_ms": latency_ms,
+                    "weaver": bool(weaver_trace),
+                    "dynamic_prompt_filter": bool(dynamic_filter_trace),
                     "generated_at": generated_at,
                 },
             )
@@ -1714,11 +1892,31 @@ class MindThoughtActionHub:
             "history": self._recent_phi_messages(10),
             "context_summary": safe_context,
             "who_what_where_when_how_act": status.get("who_what_where_when_how_act", {}),
+            "weaver_trace": weaver_trace,
+            "dynamic_prompt_filter": dynamic_filter_trace,
         }
 
     async def handle_phi_bridge_status(self, request):
         """Live status for the Phi Bridge backed chat lane."""
         return web.json_response(self._phi_bridge_status_payload(), headers=self._coding_cors_headers())
+
+    async def handle_phi_bridge_reload(self, request):
+        """Reset the cached Phi voice adapter so Ollama/Aureon env changes are picked up."""
+        payload = self._reload_phi_voice_adapter()
+        payload.update({
+            "status": "phi_bridge_voice_adapter_reloaded",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "ollama_cognitive_bridge": self._ollama_cognitive_status_payload(force=True),
+        })
+        return web.json_response(payload, headers=self._coding_cors_headers())
+
+    async def handle_ollama_cognitive_status(self, request):
+        """Live proof that Ollama and Aureon's cognitive systems are handshaking."""
+        force = str(request.query.get("refresh", "")).lower() in {"1", "true", "yes"}
+        return web.json_response(
+            self._ollama_cognitive_status_payload(force=force),
+            headers=self._coding_cors_headers(),
+        )
 
     async def handle_phi_bridge_chat(self, request):
         """Let the operator talk to Aureon through the Phi Bridge and local voice adapter."""

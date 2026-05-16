@@ -40,6 +40,27 @@ LLM/cognitive order-intent authority: ON
 Production supervisor attached
 ```
 
+The production launcher now defaults the cockpit voice lane to local Aureon+Ollama cognition:
+
+```powershell
+$env:AUREON_VOICE_BACKEND = "ollama_hybrid"
+$env:AUREON_LLM_BASE_URL = "http://localhost:11434/v1"
+$env:AUREON_LLM_MODEL = "llama3:latest"
+$env:AUREON_LLM_ALLOW_HTTP_IN_AUDIT = "1"
+$env:AUREON_LLM_SKIP_PROBE = "1"
+$env:AUREON_LLM_REQUEST_TIMEOUT_S = "180"
+$env:AUREON_PHI_CHAT_TIMEOUT_S = "180"
+$env:AUREON_OLLAMA_CONTEXT_WEAVER = "1"
+$env:AUREON_OLLAMA_WEAVER_MODEL = "qwen2.5:0.5b"
+$env:AUREON_OLLAMA_WEAVER_SHARD_TOKENS = "90"
+```
+
+That keeps safe/audit observation mode from blocking local Ollama HTTP while all live trading, payment, filing, credential, and destructive OS gates remain closed. The context weaver splits large cockpit prompts into small Ollama packets, then lets Aureon's cognitive layer compose the final reply. `AUREON_LLM_SKIP_PROBE=1` avoids an expensive 1-token health probe on slow local CPU models; the actual shard calls still prove the path. If you change models while the hub is running, reload the cached Phi worker:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:13002/api/phi-bridge/reload -Method Post | ConvertTo-Json -Depth 8
+```
+
 ## Safe Validation
 
 Run this before a live session, after pulling updates, or after editing launch docs:
@@ -66,6 +87,7 @@ Invoke-RestMethod http://127.0.0.1:8791/api/flight-test | ConvertTo-Json -Depth 
 Invoke-RestMethod http://127.0.0.1:8791/api/reboot-advice | ConvertTo-Json -Depth 8
 Invoke-RestMethod http://127.0.0.1:13002/api/thoughts | ConvertTo-Json -Depth 8
 Invoke-RestMethod http://127.0.0.1:13002/api/coding/status | ConvertTo-Json -Depth 8
+Invoke-RestMethod http://127.0.0.1:13002/api/ollama-cognitive/status | ConvertTo-Json -Depth 8
 ```
 
 The console also reads the wake-up manifest from:

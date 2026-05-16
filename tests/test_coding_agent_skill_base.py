@@ -127,3 +127,40 @@ def test_goal_engine_routes_visual_asset_prompt_without_agentcore(tmp_path: Path
     assert payload["public_url"].startswith("/aureon_visual_artifacts/")
     assert Path(payload["asset_path"]).exists()
     assert "cat" in payload["subject"]
+
+
+def test_goal_engine_routes_video_artifact_prompt_without_agentcore(tmp_path: Path, monkeypatch) -> None:
+    _fake_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    engine = GoalExecutionEngine()
+    plan = engine.submit_goal("make a 1 second video of a dog and show me the finished file")
+
+    assert plan.status == "completed"
+    assert [step.intent for step in plan.steps] == ["visual_asset_request"]
+    assert plan.steps[0].validation_result["valid"] is True
+    payload = plan.steps[0].result["result"]
+    assert payload["status"] == "visual_asset_ready"
+    assert payload["asset_kind"] == "mp4"
+    assert payload["duration_seconds"] == 1
+    assert payload["public_url"].endswith(".webm")
+    assert payload["preview_url"].endswith("_preview.html")
+    assert Path(payload["asset_path"]).exists()
+
+
+def test_goal_engine_routes_operational_ui_before_generic_coding_scope(tmp_path: Path, monkeypatch) -> None:
+    _fake_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    prompt = (
+        "Aureon must build a read-only operational UI status card for the last public artifact URL, "
+        "media kind, proof status, and snag count. Target the frontend generated operational console, "
+        "preserve all safety gates, run tests or build proof, and hand over only when ready.\n\n"
+        "Client-approved scope answers:\n"
+        "- deliverables: Repo changes or reports, code proposal, focused tests, proof checklist, snagging result, and client handover.\n"
+        "- target_system: Aureon repository, coding organism bridge, generated console evidence, and target files named by the prompt.\n"
+        "- acceptance: Goal route is clean, focused tests pass or are explicitly skipped, HNC/Auris proof is recorded, and blocking snags are zero."
+    )
+    plan = GoalExecutionEngine()._decompose_goal(prompt)
+
+    assert [step.intent for step in plan.steps] == ["self_author_operational_ui"]

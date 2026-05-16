@@ -588,6 +588,8 @@ export function AureonGeneratedOperationalConsole() {
   );
 }
 
+export const AureonCodingOrganismConsole = AureonGeneratedOperationalConsole;
+
 function Panel({ title, icon: Icon, children }: { title: string; icon: typeof Activity; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-border/50 bg-muted/10">

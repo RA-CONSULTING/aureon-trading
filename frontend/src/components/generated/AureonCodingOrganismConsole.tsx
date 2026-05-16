@@ -14,6 +14,21 @@ type ChatMessage = {
   source?: string;
   model?: string;
   latency_ms?: number;
+  weaver?: { policy?: string; shards?: Array<{ name?: string; ok?: boolean; latency_ms?: number }> };
+  dynamic_filter?: {
+    filter_mode?: string;
+    lane?: string;
+    task_family?: string;
+    source_packets?: Array<{ title?: string; source_path?: string; confidence?: number }>;
+    hnc_auris_report?: JsonMap;
+    handover_ready?: boolean;
+  };
+};
+type ArtifactItem = {
+  url: string;
+  path?: string;
+  kind: "image" | "video" | "file";
+  title: string;
 };
 
 const HUB_BASE = "http://127.0.0.1:13002";
@@ -30,6 +45,10 @@ async function fetchJson(url: string): Promise<JsonMap> {
   } catch {
     return {};
   }
+}
+
+function hasPayload(value: unknown): value is JsonMap {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value) && Object.keys(value as JsonMap).length > 0;
 }
 
 function fmt(value: unknown): string {
@@ -51,6 +70,55 @@ function compactEvidence(stage: JsonMap): string {
   return parts.join(" | ") || "evidence attached";
 }
 
+function normalizePublicUrl(value: unknown): string {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith("/")) return raw;
+  const publicIndex = raw.replace(/\\/g, "/").indexOf("frontend/public/");
+  if (publicIndex >= 0) {
+    return `/${raw.replace(/\\/g, "/").slice(publicIndex + "frontend/public/".length)}`;
+  }
+  return raw.startsWith("aureon_") ? `/${raw}` : raw;
+}
+
+function artifactKind(url: string): ArtifactItem["kind"] {
+  const lower = url.toLowerCase();
+  if (/\.(svg|png|jpe?g|gif|webp)(?:$|\?)/.test(lower)) return "image";
+  if (/\.(mp4|webm|mov)(?:$|\?)/.test(lower)) return "video";
+  return "file";
+}
+
+function collectArtifacts(status: JsonMap): ArtifactItem[] {
+  const found: ArtifactItem[] = [];
+  const push = (urlValue: unknown, pathValue: unknown, titleValue: unknown) => {
+    const url = normalizePublicUrl(urlValue);
+    if (!url || found.some((item) => item.url === url)) return;
+    found.push({
+      url,
+      path: String(pathValue || ""),
+      kind: artifactKind(url),
+      title: String(titleValue || "Aureon artifact"),
+    });
+  };
+
+  const steps = status.goal_route?.plan?.steps;
+  if (Array.isArray(steps)) {
+    steps.forEach((step: JsonMap) => {
+      const result = step.execution_result || step.result?.result || step.result || {};
+      push(result.public_url, result.asset_path || result.artifact_path, step.title || step.intent);
+      push(result.preview_url, result.preview_path, step.title || step.intent);
+    });
+  }
+  push(status.public_url, status.asset_path || status.artifact_path, status.subject || status.status);
+  push(status.where?.public_url, status.where?.asset_path, status.what?.subject || "Aureon artifact");
+  push(status.artifact_manifest?.public_url, status.artifact_manifest?.asset_path, status.task_family || "Capability forge artifact");
+  push(status.artifact_manifest?.preview_url, status.artifact_manifest?.preview_path, status.task_family || "Capability forge preview");
+  push(status.capability_forge?.artifact_manifest?.public_url, status.capability_forge?.artifact_manifest?.asset_path, status.capability_forge?.task_family || "Capability forge artifact");
+  push(status.capability_forge?.artifact_manifest?.preview_url, status.capability_forge?.artifact_manifest?.preview_path, status.capability_forge?.task_family || "Capability forge preview");
+  return found;
+}
+
 export function AureonCodingOrganismConsole() {
   const [status, setStatus] = useState<JsonMap>({});
   const [prompt, setPrompt] = useState("Connect Aureon coding systems, inspect the repo, propose the smallest safe patch, and run focused tests.");
@@ -65,21 +133,51 @@ export function AureonCodingOrganismConsole() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatBusy, setChatBusy] = useState(false);
   const [chatError, setChatError] = useState("");
+  const [ollamaStatus, setOllamaStatus] = useState<JsonMap>({});
+  const [localApprovalState, setLocalApprovalState] = useState("");
+
+  const enrichWithForgeState = async (payload: JsonMap): Promise<JsonMap> => {
+    const forgeState = await fetchJson("/aureon_capability_forge.json");
+    const qualityState = await fetchJson("/aureon_artifact_quality_report.json");
+    const creativeGuardianState = await fetchJson("/aureon_agent_creative_process_guardian.json");
+    const ollamaCognitiveState = await fetchJson("/aureon_ollama_cognitive_bridge.json");
+    const dynamicFilterState = await fetchJson("/aureon_dynamic_prompt_filter.json");
+    const next = { ...payload };
+    if (hasPayload(forgeState) && !hasPayload(next.capability_forge)) {
+      next.capability_forge = forgeState;
+    }
+    if (hasPayload(qualityState) && !hasPayload(next.artifact_quality_report)) {
+      next.artifact_quality_report = qualityState;
+    }
+    if (hasPayload(creativeGuardianState) && !hasPayload(next.creative_process_guardian)) {
+      next.creative_process_guardian = creativeGuardianState;
+    }
+    if (hasPayload(ollamaCognitiveState) && !hasPayload(next.ollama_cognitive_bridge)) {
+      next.ollama_cognitive_bridge = ollamaCognitiveState;
+    }
+    if (hasPayload(dynamicFilterState) && !hasPayload(next.dynamic_prompt_filter)) {
+      next.dynamic_prompt_filter = dynamicFilterState;
+    }
+    return next;
+  };
 
   const refresh = async () => {
     const hubState = await fetchJson(`${HUB_BASE}/api/coding/status`);
     if (Object.keys(hubState).length) {
-      setStatus(hubState.last_run || hubState);
+      setStatus(await enrichWithForgeState(hubState.last_run || hubState));
       return;
     }
     const publicState = await fetchJson("/aureon_coding_organism_bridge.json");
-    setStatus(publicState);
+    setStatus(await enrichWithForgeState(publicState));
   };
 
   const refreshPhiBridge = async () => {
     const payload = await fetchJson(`${HUB_BASE}/api/phi-bridge/status`);
     if (!Object.keys(payload).length) return;
     setPhiStatus(payload);
+    if (hasPayload(payload.ollama_cognitive_bridge)) {
+      setOllamaStatus(payload.ollama_cognitive_bridge);
+    }
     const recent = payload.chat?.recent;
     if (Array.isArray(recent) && recent.length) {
       setChatMessages((current) =>
@@ -94,17 +192,33 @@ export function AureonCodingOrganismConsole() {
                 source: item.source,
                 model: item.model,
                 latency_ms: item.latency_ms,
+                weaver: item.weaver,
+                dynamic_filter: item.dynamic_filter,
               }))
       );
+    }
+  };
+
+  const refreshOllamaBridge = async () => {
+    const livePayload = await fetchJson(`${HUB_BASE}/api/ollama-cognitive/status`);
+    if (Object.keys(livePayload).length) {
+      setOllamaStatus(livePayload);
+      return;
+    }
+    const publicPayload = await fetchJson("/aureon_ollama_cognitive_bridge.json");
+    if (Object.keys(publicPayload).length) {
+      setOllamaStatus(publicPayload);
     }
   };
 
   useEffect(() => {
     refresh();
     refreshPhiBridge();
+    refreshOllamaBridge();
     const timer = window.setInterval(() => {
       refresh();
       refreshPhiBridge();
+      refreshOllamaBridge();
     }, LIVE_REFRESH_FALLBACK_MS);
     return () => window.clearInterval(timer);
   }, []);
@@ -176,6 +290,34 @@ export function AureonCodingOrganismConsole() {
           source: payload.reply_source,
           model: payload.model,
           latency_ms: payload.latency_ms,
+          dynamic_filter: payload.dynamic_prompt_filter
+            ? {
+                filter_mode: payload.dynamic_prompt_filter.filter_mode,
+                lane: payload.dynamic_prompt_filter.lane,
+                task_family: payload.dynamic_prompt_filter.task_family,
+                source_packets: Array.isArray(payload.dynamic_prompt_filter.source_packets)
+                  ? payload.dynamic_prompt_filter.source_packets.map((packet: JsonMap) => ({
+                      title: String(packet.title || ""),
+                      source_path: String(packet.source_path || ""),
+                      confidence: Number(packet.confidence || 0),
+                    }))
+                  : [],
+                hnc_auris_report: payload.dynamic_prompt_filter.hnc_auris_report || {},
+                handover_ready: Boolean(payload.dynamic_prompt_filter.handover_ready),
+              }
+            : undefined,
+          weaver: payload.weaver_trace
+            ? {
+                policy: payload.weaver_trace.policy,
+                shards: Array.isArray(payload.weaver_trace.shards)
+                  ? payload.weaver_trace.shards.map((shard: JsonMap) => ({
+                      name: String(shard.name || ""),
+                      ok: Boolean(shard.ok),
+                      latency_ms: Number(shard.latency_ms || 0),
+                    }))
+                  : [],
+              }
+            : undefined,
         },
       ]);
       await refreshPhiBridge();
@@ -184,6 +326,23 @@ export function AureonCodingOrganismConsole() {
       setChatError(err instanceof Error ? err.message : String(err));
     } finally {
       setChatBusy(false);
+    }
+  };
+
+  const reloadPhiVoiceWorker = async () => {
+    setChatError("");
+    try {
+      const response = await fetch(`${HUB_BASE}/api/phi-bridge/reload`, { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "phi voice reload failed");
+      }
+      if (hasPayload(payload.ollama_cognitive_bridge)) {
+        setOllamaStatus(payload.ollama_cognitive_bridge);
+      }
+      await refreshPhiBridge();
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -231,6 +390,18 @@ export function AureonCodingOrganismConsole() {
   const desktopController = desktop.local_desktop_controller || {};
   const productAudit = status.finished_product_audit || {};
   const clientJob = status.client_job || {};
+  const capabilityForge = status.capability_forge || clientJob.capability_forge || {};
+  const qualityReport = status.artifact_quality_report || clientJob.artifact_quality_report || capabilityForge.artifact_quality_report || {};
+  const creativeGuardian = status.creative_process_guardian || clientJob.creative_process_guardian || {};
+  const creativeSummary = creativeGuardian.summary || {};
+  const creativeMind = creativeGuardian.organism_mind_contract || {};
+  const creativeSources = Array.isArray(creativeMind.source_contracts) ? creativeMind.source_contracts : [];
+  const creativeLoop = Array.isArray(creativeGuardian.creative_process_loop) ? creativeGuardian.creative_process_loop : [];
+  const creativeRoleMap = Array.isArray(creativeGuardian.agent_creative_process_map) ? creativeGuardian.agent_creative_process_map : [];
+  const creativeSnags = Array.isArray(creativeGuardian.snagging_list) ? creativeGuardian.snagging_list : [];
+  const qualityChecks = Array.isArray(qualityReport.checks) ? qualityReport.checks : [];
+  const qualitySnags = Array.isArray(qualityReport.snags) ? qualityReport.snags : [];
+  const approvalState = localApprovalState || capabilityForge.approval_state?.state || clientJob.approval_state?.state || qualityReport.approval_state?.state || "waiting_for_forge";
   const scopeOfWorks = clientJob.scope_of_works || {};
   const clientQuestions = Array.isArray(clientJob.client_questions) ? clientJob.client_questions : [];
   const agentTeam = Array.isArray(clientJob.agent_team) ? clientJob.agent_team : [];
@@ -248,8 +419,20 @@ export function AureonCodingOrganismConsole() {
   const phiBridge = phiStatus.phi_bridge || {};
   const phiCadence = phiBridge.cadence || {};
   const phiReady = Boolean(phiStatus.ok);
+  const ollamaBridge = phiStatus.ollama_cognitive_bridge || status.ollama_cognitive_bridge || ollamaStatus || {};
+  const ollamaSummary = ollamaBridge.summary || {};
+  const ollamaModel = ollamaSummary.resolved_model || ollamaBridge.model_resolution?.resolved_model || ollamaBridge.model_resolution?.configured_model || "model waiting";
+  const ollamaChecks = Array.isArray(ollamaBridge.proof_checklist) ? ollamaBridge.proof_checklist : [];
+  const ollamaFlow = Array.isArray(ollamaBridge.handshake_flow) ? ollamaBridge.handshake_flow : [];
+  const ollamaActions = Array.isArray(ollamaBridge.next_actions) ? ollamaBridge.next_actions : [];
   const liveRefreshMs = Number(phiStatus.refresh_interval_ms || LIVE_REFRESH_FALLBACK_MS);
   const lastAssistant = [...chatMessages].reverse().find((item) => item.role === "assistant");
+  const dynamicFilterState = (lastAssistant?.dynamic_filter || phiStatus.dynamic_prompt_filter || status.dynamic_prompt_filter || {}) as JsonMap;
+  const dynamicSourcePackets = Array.isArray(dynamicFilterState.source_packets) ? dynamicFilterState.source_packets : [];
+  const dynamicHncAuris = dynamicFilterState.hnc_auris_report || {};
+  const dynamicAuris = dynamicHncAuris.auris_voice_filter || {};
+  const dynamicFilterReady = Boolean(dynamicFilterState.filter_mode || dynamicFilterState.lane || dynamicSourcePackets.length);
+  const artifactItems = collectArtifacts(status);
 
   return (
     <Card className="mb-5 bg-card/80">
@@ -270,6 +453,12 @@ export function AureonCodingOrganismConsole() {
           <Badge variant={summary.ready_to_run ? "success" : "warning"}>product {String(summary.finished_product_status || "audit pending").replace(/_/g, " ")}</Badge>
           <Badge variant={summary.blocking_snag_count ? "warning" : "success"}>snags {summary.blocking_snag_count || 0}</Badge>
           <Badge variant={summary.desktop_handoff_created ? "success" : "outline"}>desktop handoff {summary.desktop_handoff_created ? "ready" : "off"}</Badge>
+          <Badge variant={summary.artifact_quality_passed ? "success" : summary.artifact_quality_gate_present ? "warning" : "outline"}>
+            quality {summary.artifact_quality_gate_present ? `${Math.round(Number(summary.artifact_quality_score || 0) * 100)}%` : "waiting"}
+          </Badge>
+          <Badge variant={summary.creative_process_guardian_ok || creativeGuardian.ok ? "success" : creativeGuardian.schema_version ? "warning" : "outline"}>
+            mind guard {summary.creative_process_guardian_ok || creativeGuardian.ok ? "passed" : creativeGuardian.schema_version ? "attention" : "waiting"}
+          </Badge>
         </div>
 
         <div className="rounded-md border border-cyan-500/30 bg-cyan-500/10 p-3">
@@ -323,8 +512,14 @@ export function AureonCodingOrganismConsole() {
                 <RefreshCw className="mr-1 h-3 w-3" />
                 {fmt(liveRefreshMs)}ms
               </Badge>
-              <Badge variant={lastAssistant?.source === "local_llm" ? "success" : "outline"}>
+              <Badge variant={lastAssistant?.source === "local_llm" || lastAssistant?.source === "ollama_cognitive_hybrid" || lastAssistant?.source === "ollama_cognitive_weaver" ? "success" : "outline"}>
                 {lastAssistant?.source || phiStatus.chat?.adapter_model || "voice lane"}
+              </Badge>
+              <Badge variant={dynamicFilterReady ? "success" : "outline"}>
+                filter {dynamicFilterState.filter_mode || "waiting"}
+              </Badge>
+              <Badge variant={dynamicSourcePackets.length ? "success" : "outline"}>
+                {dynamicSourcePackets.length || 0} source packets
               </Badge>
             </div>
           </div>
@@ -345,6 +540,26 @@ export function AureonCodingOrganismConsole() {
                     <span>{message.latency_ms ? `${fmt(message.latency_ms)}ms` : message.source || ""}</span>
                   </div>
                   <div className="whitespace-pre-wrap leading-relaxed">{message.text}</div>
+                  {message.weaver?.shards?.length ? (
+                    <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-violet-50/70">
+                      {message.weaver.shards.map((shard) => (
+                        <Badge key={`${message.ts}-${shard.name}`} variant={shard.ok ? "success" : "warning"}>
+                          {String(shard.name || "shard").replace(/_/g, " ")}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : null}
+                  {message.dynamic_filter ? (
+                    <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-violet-50/70">
+                      <Badge variant="outline">{message.dynamic_filter.lane || "chat"}</Badge>
+                      <Badge variant="outline">{message.dynamic_filter.task_family || "conversation"}</Badge>
+                      {(message.dynamic_filter.source_packets || []).slice(0, 3).map((packet) => (
+                        <Badge key={`${message.ts}-${packet.source_path}`} variant="outline">
+                          {packet.title || packet.source_path || "source"}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ))}
               {!chatMessages.length ? (
@@ -354,6 +569,22 @@ export function AureonCodingOrganismConsole() {
               ) : null}
             </div>
           </ScrollArea>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-4">
+            <Mini label="Prompt Filter" value={dynamicFilterState.filter_mode || "waiting"} />
+            <Mini label="Lane" value={dynamicFilterState.lane || "chat"} />
+            <Mini label="Packets" value={dynamicSourcePackets.length || 0} />
+            <Mini label="Auris" value={dynamicAuris.accepted === false ? "hold" : dynamicAuris.accepted ? "pass" : "pending"} />
+          </div>
+          {dynamicSourcePackets.length ? (
+            <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-violet-50/75">
+              {dynamicSourcePackets.slice(0, 4).map((packet: JsonMap) => (
+                <Badge key={packet.source_path || packet.title} variant="outline">
+                  {packet.title || packet.source_path}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
 
           <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto]">
             <Textarea
@@ -375,6 +606,85 @@ export function AureonCodingOrganismConsole() {
           {chatError ? <div className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-100">{chatError}</div> : null}
         </div>
 
+        <div className="rounded-md border border-sky-500/30 bg-sky-500/10 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <BrainCircuit className="mt-0.5 h-4 w-4 text-sky-100" />
+              <div>
+                <div className="text-sm font-medium text-sky-50">Ollama Cognitive Handshake</div>
+                <div className="mt-1 text-xs text-sky-50/75">
+                  Ollama acts as the local language worker while Aureon's metacognitive, HNC/Auris, role, and ThoughtBus evidence keep the answer grounded.
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={ollamaSummary.ollama_reachable ? "success" : "warning"}>
+                Ollama {ollamaSummary.ollama_reachable ? "reachable" : "offline"}
+              </Badge>
+              <Badge variant={ollamaBridge.ok ? "success" : "warning"}>
+                {ollamaBridge.status || "handshake waiting"}
+              </Badge>
+              <Badge variant={ollamaSummary.hnc_auris_ready ? "success" : "warning"}>
+                HNC/Auris {ollamaSummary.hnc_auris_ready ? "ready" : "held"}
+              </Badge>
+              <Badge variant={ollamaSummary.metacognitive_ready ? "success" : "warning"}>
+                cognition {ollamaSummary.metacognitive_ready ? "ready" : "held"}
+              </Badge>
+              <Button size="sm" variant="outline" onClick={reloadPhiVoiceWorker}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reload Voice Worker
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-5">
+            <Mini label="Model" value={ollamaModel} />
+            <Mini label="Installed" value={ollamaSummary.installed_model_count || 0} />
+            <Mini label="Running" value={ollamaSummary.running_model_count || 0} />
+            <Mini label="Sources" value={ollamaBridge.cognitive_readiness?.cognitive_source_count || 0} />
+            <Mini label="Blockers" value={ollamaSummary.blocking_check_count || 0} />
+          </div>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-3">
+            <div className="rounded-md border border-sky-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-sky-50">Handshake Proof</div>
+              <div className="space-y-1">
+                {ollamaChecks.slice(0, 8).map((check: JsonMap) => (
+                  <div key={check.id} className="flex items-center justify-between gap-2 rounded border border-sky-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <span>{check.label || check.id}</span>
+                    <Badge variant={check.ok ? "success" : check.blocking ? "warning" : "outline"}>{check.ok ? "pass" : "hold"}</Badge>
+                  </div>
+                ))}
+                {!ollamaChecks.length ? <div className="text-xs text-sky-50/70">Ollama proof appears after the bridge report or live hub endpoint responds.</div> : null}
+              </div>
+            </div>
+            <div className="rounded-md border border-sky-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-sky-50">Agent-Like Flow</div>
+              <div className="space-y-1">
+                {ollamaFlow.slice(0, 5).map((step: JsonMap) => (
+                  <div key={step.step} className="rounded border border-sky-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <div className="font-medium">{String(step.step || "").replace(/_/g, " ")}</div>
+                    <div className="mt-1 text-sky-50/70">{step.owner}</div>
+                  </div>
+                ))}
+                {!ollamaFlow.length ? <div className="text-xs text-sky-50/70">Handshake flow is waiting for the Ollama cognitive bridge report.</div> : null}
+              </div>
+            </div>
+            <div className="rounded-md border border-sky-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-sky-50">Setup / Repair Actions</div>
+              <div className="space-y-1">
+                {ollamaActions.slice(0, 4).map((action: JsonMap) => (
+                  <div key={action.id} className="rounded border border-sky-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <div className="font-medium">{action.action || action.id}</div>
+                    {action.powershell ? <div className="mt-1 font-mono text-sky-50/70">{action.powershell}</div> : null}
+                  </div>
+                ))}
+                {!ollamaActions.length ? <div className="text-xs text-sky-50/70">No repair actions are currently published.</div> : null}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-2 md:grid-cols-6">
           <Stat icon={BrainCircuit} label="plan steps" value={plan.step_count || summary.target_file_count || 0} />
           <Stat icon={ShieldCheck} label="pending proposals" value={safeCode.pending_count || summary.pending_code_proposal_count || 0} />
@@ -382,6 +692,155 @@ export function AureonCodingOrganismConsole() {
           <Stat icon={TestTube2} label="test commands" value={tests.command_count || 0} />
           <Stat icon={MousePointer2} label="VM tools" value={summary.remote_vm_tool_count || 0} />
           <Stat icon={CheckCircle2} label="route ok" value={route.ok ? "yes" : "no"} />
+        </div>
+
+        <div className="rounded-md border border-teal-500/30 bg-teal-500/10 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-teal-50">Local Capability Forge</div>
+              <div className="mt-1 text-xs text-teal-50/75">
+                Aureon classifies the job, recruits a local crew, keeps external providers reference-only, and blocks handover until quality proof passes.
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={capabilityForge.handover_ready || qualityReport.handover_ready ? "success" : "warning"}>
+                {capabilityForge.status || qualityReport.status || "forge waiting"}
+              </Badge>
+              <Badge variant="outline">{capabilityForge.task_family || qualityReport.task_family || "task pending"}</Badge>
+              <Badge variant={qualityReport.handover_ready ? "success" : qualityReport.schema_version ? "warning" : "outline"}>
+                score {qualityReport.schema_version ? `${Math.round(Number(qualityReport.score || 0) * 100)}%` : "waiting"}
+              </Badge>
+              <Badge variant={approvalState === "approved" ? "success" : approvalState === "rejected" ? "destructive" : "outline"}>
+                {String(approvalState).replace(/_/g, " ")}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-4">
+            <Mini label="Provider" value={capabilityForge.provider_policy || qualityReport.provider_policy || "local only"} />
+            <Mini label="Crew" value={(capabilityForge.recruited_crew || []).length || 0} />
+            <Mini label="Tools" value={(capabilityForge.local_tools_used || []).length || 0} />
+            <Mini label="Snags" value={qualitySnags.length} />
+          </div>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <div className="rounded-md border border-teal-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-teal-50">Quality Checks</div>
+              <div className="space-y-1">
+                {qualityChecks.slice(0, 7).map((check: JsonMap) => (
+                  <div key={check.id} className="flex items-center justify-between gap-2 rounded border border-teal-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <span>{check.label || check.id}</span>
+                    <Badge variant={check.ok ? "success" : check.blocking ? "warning" : "outline"}>{check.ok ? "pass" : "hold"}</Badge>
+                  </div>
+                ))}
+                {!qualityChecks.length ? <div className="text-xs text-teal-50/70">Quality proof appears after Aureon produces an artifact or forge report.</div> : null}
+              </div>
+            </div>
+            <div className="rounded-md border border-teal-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-teal-50">Client Approval Controls</div>
+              <div className="text-xs text-teal-50/75">
+                These controls record the human review decision after Aureon has produced local proof.
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setLocalApprovalState("approved")} disabled={!qualityReport.schema_version}>
+                  Approve
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setLocalApprovalState("revision_requested")} disabled={!qualityReport.schema_version}>
+                  Request Revision
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setLocalApprovalState("rejected")} disabled={!qualityReport.schema_version}>
+                  Reject
+                </Button>
+              </div>
+              {qualitySnags.length ? (
+                <div className="mt-3 space-y-1">
+                  {qualitySnags.slice(0, 4).map((snag: JsonMap) => (
+                    <div key={snag.id} className="rounded border border-yellow-400/30 bg-yellow-500/10 px-2 py-1 text-[11px] text-yellow-50">
+                      {snag.title || snag.id}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-fuchsia-50">Metacognitive Creative Process Guardian</div>
+              <div className="mt-1 text-xs text-fuchsia-50/75">
+                Every agent role must sense Aureon's metacognitive, sensory, HNC/Auris, and sentient-style evidence before declaring who, what, where, when, how, and act.
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={creativeGuardian.ok ? "success" : creativeGuardian.schema_version ? "warning" : "outline"}>
+                {creativeGuardian.status || "guardian waiting"}
+              </Badge>
+              <Badge variant={creativeSummary.hnc_auris_ready ? "success" : "warning"}>
+                HNC/Auris {creativeSummary.hnc_auris_ready ? "ready" : "held"}
+              </Badge>
+              <Badge variant={creativeSummary.who_what_where_when_how_act_ready ? "success" : "warning"}>
+                roles {creativeSummary.creative_process_ready_role_count || 0}/{creativeSummary.role_count || 0}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-5">
+            <Mini label="Metacognitive" value={creativeSummary.metacognitive_ready ? "ready" : "waiting"} />
+            <Mini label="Sensory" value={creativeSummary.sensory_ready ? "ready" : "waiting"} />
+            <Mini label="Sentient-style" value={creativeSummary.sentient_style_ready ? "ready" : "waiting"} />
+            <Mini label="Repo surfaces" value={creativeSummary.repo_agent_surface_count || 0} />
+            <Mini label="Snags" value={creativeSummary.blocking_snag_count || 0} />
+          </div>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-3">
+            <div className="rounded-md border border-fuchsia-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-fuchsia-50">Mind Sources</div>
+              <div className="space-y-1">
+                {creativeSources.slice(0, 6).map((source: JsonMap) => (
+                  <div key={source.name} className="flex items-center justify-between gap-2 rounded border border-fuchsia-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <span>{String(source.name || "").replace(/_/g, " ")}</span>
+                    <Badge variant={source.present && !source.stale ? "success" : source.present ? "warning" : "outline"}>
+                      {source.present ? (source.stale ? "stale" : "present") : "missing"}
+                    </Badge>
+                  </div>
+                ))}
+                {!creativeSources.length ? <div className="text-xs text-fuchsia-50/70">Mind source evidence appears after the guardian runs.</div> : null}
+              </div>
+            </div>
+            <div className="rounded-md border border-fuchsia-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-fuchsia-50">Creative Loop</div>
+              <div className="space-y-1">
+                {creativeLoop.slice(0, 6).map((step: JsonMap) => (
+                  <div key={step.step} className="rounded border border-fuchsia-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <div className="font-medium">{String(step.step || "").replace(/_/g, " ")}</div>
+                    <div className="mt-1 text-fuchsia-50/70">{step.owner}</div>
+                  </div>
+                ))}
+                {!creativeLoop.length ? <div className="text-xs text-fuchsia-50/70">The creative loop is waiting for guardian evidence.</div> : null}
+              </div>
+            </div>
+            <div className="rounded-md border border-fuchsia-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-fuchsia-50">Role Process Sample</div>
+              <div className="space-y-1">
+                {creativeRoleMap.slice(0, 6).map((role: JsonMap) => (
+                  <div key={role.role_id || role.title} className="flex items-center justify-between gap-2 rounded border border-fuchsia-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <span>{role.title || role.role_id}</span>
+                    <Badge variant={role.status === "creative_process_ready" ? "success" : "warning"}>
+                      {role.status === "creative_process_ready" ? "ready" : "hold"}
+                    </Badge>
+                  </div>
+                ))}
+                {!creativeRoleMap.length ? <div className="text-xs text-fuchsia-50/70">Role contracts appear after the agent company registry is loaded.</div> : null}
+              </div>
+              {creativeSnags.filter((snag: JsonMap) => snag.severity === "blocking").length ? (
+                <div className="mt-3 rounded border border-yellow-400/30 bg-yellow-500/10 px-2 py-1 text-[11px] text-yellow-50">
+                  {creativeSnags.filter((snag: JsonMap) => snag.severity === "blocking").length} blocking creative-process snag(s)
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
@@ -540,6 +999,40 @@ export function AureonCodingOrganismConsole() {
             </div>
           </ScrollArea>
         </div>
+
+        {artifactItems.length ? (
+          <div className="rounded-md border border-lime-500/30 bg-lime-500/10 p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-medium text-lime-50">Finished Artifacts</div>
+              <Badge variant="success">{artifactItems.length} visible</Badge>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {artifactItems.map((artifact) => (
+                <div key={artifact.url} className="rounded-md border border-lime-300/25 bg-background/30 p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs font-medium text-lime-50">{artifact.title}</div>
+                    <a
+                      href={artifact.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border border-lime-300/40 px-2 py-1 text-[11px] text-lime-50 hover:bg-lime-400/10"
+                    >
+                      Open Artifact
+                    </a>
+                  </div>
+                  {artifact.kind === "image" ? (
+                    <img src={artifact.url} alt={artifact.title} className="max-h-[320px] w-full rounded border border-lime-300/20 bg-white object-contain" />
+                  ) : artifact.kind === "video" ? (
+                    <video src={artifact.url} className="max-h-[320px] w-full rounded border border-lime-300/20 bg-black" controls />
+                  ) : (
+                    <div className="rounded border border-lime-300/20 bg-muted/20 p-3 font-mono text-[11px] text-muted-foreground">{artifact.url}</div>
+                  )}
+                  <div className="mt-2 truncate font-mono text-[10px] text-lime-50/70">{artifact.path || artifact.url}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid gap-3 lg:grid-cols-[1fr_0.8fr]">
           <div className="space-y-2">

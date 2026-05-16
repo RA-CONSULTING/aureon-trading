@@ -782,6 +782,18 @@ class GoalExecutionEngine:
             plan.success_criteria = "Agent company registry generated with roles, authority boundaries, and public evidence"
             return plan
 
+        creative_guardian = self._match_agent_creative_process_guardian_goal(text)
+        if creative_guardian:
+            steps = [GoalStep(
+                title="Aureon bind all agents to metacognitive creative process proof",
+                intent="agent_creative_process_guardian",
+                params=creative_guardian,
+                expected_outcome="Repo-wide agent creative process guardian published with HNC/Auris, metacognitive, sensory, and who/what/where/when/how/act proof",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Agent creative process guardian generated with mind-source proof and all roles mapped"
+            return plan
+
         codex_ingestion = self._match_codex_capability_ingestion_goal(text)
         if codex_ingestion:
             steps = [GoalStep(
@@ -830,28 +842,16 @@ class GoalExecutionEngine:
             plan.success_criteria = "Coding work journal evidence and UI surface are present and validated"
             return plan
 
-        coding_skill_base = self._match_coding_agent_skill_base_goal(text)
-        if coding_skill_base:
+        capability_forge = self._match_capability_forge_goal(text)
+        if capability_forge:
             steps = [GoalStep(
-                title="Aureon build coding-agent skill base",
-                intent="coding_agent_skill_base",
-                params=coding_skill_base,
-                expected_outcome="Coding agents, skill base, web-learning sources, and improvement work orders published",
+                title="Aureon build local capability forge and quality gate",
+                intent="capability_forge",
+                params=capability_forge,
+                expected_outcome="Local capability forge report, artifact quality gate, crew map, and approval evidence published",
             )]
             plan.steps = steps
-            plan.success_criteria = "Coding-agent skill base manifest generated with web/repo learning tools visible"
-            return plan
-
-        work_orders = self._match_frontend_work_order_goal(text)
-        if work_orders:
-            steps = [GoalStep(
-                title="Aureon execute frontend work orders",
-                intent="frontend_work_orders",
-                params=work_orders,
-                expected_outcome="Frontend work order execution manifest and adapter console generated",
-            )]
-            plan.steps = steps
-            plan.success_criteria = "All current frontend work orders represented as execution records"
+            plan.success_criteria = "Capability forge generated with local-only policy, quality gate, and after-apply approval state"
             return plan
 
         visual_asset = self._match_visual_asset_goal(text)
@@ -864,6 +864,18 @@ class GoalExecutionEngine:
             )]
             plan.steps = steps
             plan.success_criteria = "Visual asset written to frontend public artifacts with evidence"
+            return plan
+
+        work_orders = self._match_frontend_work_order_goal(text)
+        if work_orders:
+            steps = [GoalStep(
+                title="Aureon execute frontend work orders",
+                intent="frontend_work_orders",
+                params=work_orders,
+                expected_outcome="Frontend work order execution manifest and adapter console generated",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "All current frontend work orders represented as execution records"
             return plan
 
         ui_repair = self._match_operational_ui_self_repair_goal(text)
@@ -888,6 +900,18 @@ class GoalExecutionEngine:
             )]
             plan.steps = steps
             plan.success_criteria = "Self-authored UI component and provenance evidence generated"
+            return plan
+
+        coding_skill_base = self._match_coding_agent_skill_base_goal(text)
+        if coding_skill_base:
+            steps = [GoalStep(
+                title="Aureon build coding-agent skill base",
+                intent="coding_agent_skill_base",
+                params=coding_skill_base,
+                expected_outcome="Coding agents, skill base, web-learning sources, and improvement work orders published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Coding-agent skill base manifest generated with web/repo learning tools visible"
             return plan
 
         document_pdf = self._match_document_pdf_goal(text)
@@ -1103,6 +1127,35 @@ class GoalExecutionEngine:
             ],
         }
 
+    def _match_capability_forge_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon's local capability forge / quality gate."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        forge_hit = _re.search(
+            r"\b(?:capability forge|local capability forge|quality gate|half[- ]?baked cake|"
+            r"no half[- ]?baked|client-quality|artifact quality|regenerate weak|"
+            r"video quality|coding forge|local-only|provider policy|approval gate)\b",
+            lower,
+        )
+        build_hit = _re.search(r"\b(?:build|implement|create|wire|add|make|teach|tell aureon|validate|prove)\b", lower)
+        if not (aureon_hit and forge_hit and build_hit):
+            return None
+        return {
+            "goal": text,
+            "provider_policy": "local_only_v1",
+            "approval_gate": "after_apply",
+            "authoring_contract": "goal_engine_capability_forge_to_local_quality_gate",
+            "target_files": [
+                "aureon/autonomous/aureon_capability_forge.py",
+                "aureon/autonomous/aureon_artifact_quality_gate.py",
+                "frontend/src/components/generated/AureonCodingOrganismConsole.tsx",
+                "frontend/public/aureon_capability_forge.json",
+                "frontend/public/aureon_artifact_quality_report.json",
+            ],
+        }
+
     def _match_visual_asset_goal(self, text: str) -> Optional[Dict[str, Any]]:
         """Detect direct visual artifact requests before desktop heuristics split them."""
         import re as _re
@@ -1113,16 +1166,22 @@ class GoalExecutionEngine:
             lower,
         )
         visual_noun = _re.search(
-            r"\b(?:image|picture|illustration|drawing|art|graphic|visual|logo|diagram|cat)\b",
+            r"\b(?:image|picture|illustration|drawing|art|graphic|visual|logo|diagram|cat|dog|video|clip|animation|mp4)\b",
             lower,
         )
         if not (direct_visual_action and visual_noun):
             return None
 
+        visual_handover = _re.search(
+            r"\b(?:draw me|show me|show it|open it|open the file|display it|view it|"
+            r"finished artifact|public visual artifact|public video artifact|"
+            r"visual artifact|video artifact|playable public video artifact)\b",
+            lower,
+        )
         system_build = (
             "aureon" in lower
             and _re.search(r"\b(?:capability|system|wire|bridge|agent|code|repo|frontend|backend)\b", lower)
-            and not _re.search(r"\b(?:draw me|show me|open the file|display it|view it)\b", lower)
+            and not visual_handover
         )
         if system_build:
             return None
@@ -1183,6 +1242,37 @@ class GoalExecutionEngine:
                 "frontend/public/aureon_agent_company_bill_list.json",
                 "docs/audits/aureon_agent_company_bill_list.json",
                 "tests/test_agent_company_builder.py",
+            ],
+        }
+
+    def _match_agent_creative_process_guardian_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request to bind all Aureon agents to mind/HNC creative process proof."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        mind_hit = _re.search(
+            r"\b(?:metacognitive|metacogtive|meta[- ]?cognitive|hnc|harmonic nexus core|auris|"
+            r"sensory|sensistant|sentient|senitenat|sentinant|voice|mind systems?)\b",
+            lower,
+        )
+        agent_hit = _re.search(r"\b(?:agent|agents|workers|roles|crew|entire repo|repo-wide|whole organism)\b", lower)
+        process_hit = _re.search(
+            r"\b(?:who what where when how|who/what/where/when/how|act|creative process|creative processes|"
+            r"working correctly|proof|guard|ensure|establish|bind|wire)\b",
+            lower,
+        )
+        if not (aureon_hit and mind_hit and agent_hit and process_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_agent_creative_process_guardian_to_hnc_auris_metacognition",
+            "target_files": [
+                "aureon/autonomous/aureon_agent_creative_process_guardian.py",
+                "frontend/public/aureon_agent_creative_process_guardian.json",
+                "docs/audits/aureon_agent_creative_process_guardian.json",
+                "frontend/src/components/generated/AureonCodingOrganismConsole.tsx",
+                "tests/test_agent_creative_process_guardian.py",
             ],
         }
 
@@ -2271,6 +2361,59 @@ class GoalExecutionEngine:
                 "error": str(exc),
             }
 
+    def _execute_capability_forge(self, step: GoalStep) -> Dict[str, Any]:
+        """Build Aureon's local capability forge and quality gate evidence."""
+        try:
+            from aureon.autonomous.aureon_capability_forge import build_and_write_capability_forge
+
+            result = build_and_write_capability_forge(
+                str(step.params.get("goal") or step.title),
+                provider_policy=str(step.params.get("provider_policy") or "local_only_v1"),
+                approval_gate=str(step.params.get("approval_gate") or "after_apply"),
+            )
+            return {
+                "success": bool(result.get("ok")),
+                "result": result,
+                "tool_used": "capability_forge",
+                "target_files": result.get("output_files", []),
+                "output_files": result.get("output_files", []),
+                "error": None if result.get("ok") else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "capability_forge",
+                "error": str(exc),
+            }
+
+    def _execute_agent_creative_process_guardian(self, step: GoalStep) -> Dict[str, Any]:
+        """Build the repo-wide agent creative process guardian."""
+        try:
+            from aureon.autonomous.aureon_agent_creative_process_guardian import (
+                build_and_write_agent_creative_process_guardian,
+            )
+
+            result = build_and_write_agent_creative_process_guardian(
+                goal=str(step.params.get("goal") or step.title),
+            )
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            return {
+                "success": bool(summary.get("role_count")) and bool(summary.get("who_what_where_when_how_act_ready")),
+                "result": result,
+                "tool_used": "agent_creative_process_guardian",
+                "target_files": result.get("output_files", []),
+                "output_files": result.get("output_files", []),
+                "error": None if result.get("ok") else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "agent_creative_process_guardian",
+                "error": str(exc),
+            }
+
     def _execute_coding_work_journal_ui(self, step: GoalStep) -> Dict[str, Any]:
         """Validate that the coding organism exposes prompt-to-finished-files work stages."""
         try:
@@ -2734,6 +2877,12 @@ class GoalExecutionEngine:
         if step.intent == "agent_company_builder":
             return self._execute_agent_company_builder(step)
 
+        if step.intent == "capability_forge":
+            return self._execute_capability_forge(step)
+
+        if step.intent == "agent_creative_process_guardian":
+            return self._execute_agent_creative_process_guardian(step)
+
         if step.intent == "coding_work_journal_ui":
             return self._execute_coding_work_journal_ui(step)
 
@@ -3026,11 +3175,70 @@ class GoalExecutionEngine:
                 "confidence": 0.25,
             }
 
+        if intent == "capability_forge":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            quality = payload.get("artifact_quality_report") if isinstance(payload, dict) else {}
+            approval = payload.get("approval_state") if isinstance(payload, dict) else {}
+            references = payload.get("reference_patterns") if isinstance(payload, dict) else []
+            if (
+                success
+                and payload.get("provider_policy") == "local_only_v1"
+                and int((summary or {}).get("external_api_call_count") or 0) == 0
+                and bool((summary or {}).get("safe_code_route_recorded"))
+                and bool((quality or {}).get("handover_ready"))
+                and (approval or {}).get("state") == "pending_user_review_after_apply"
+                and isinstance(references, list)
+                and len(references) >= 8
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Local capability forge published task classification, reference-only market patterns, safe route evidence, artifact quality proof, and after-apply approval state",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Capability forge missing local-only policy, safe route evidence, quality proof, references, or approval state",
+                "confidence": 0.25,
+            }
+
+        if intent == "agent_creative_process_guardian":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            mind = payload.get("organism_mind_contract") if isinstance(payload, dict) else {}
+            roles = payload.get("agent_creative_process_map") if isinstance(payload, dict) else []
+            loop = payload.get("creative_process_loop") if isinstance(payload, dict) else []
+            if (
+                success
+                and int((summary or {}).get("role_count") or 0) >= 30
+                and bool((summary or {}).get("who_what_where_when_how_act_ready"))
+                and bool((summary or {}).get("metacognitive_ready"))
+                and bool((summary or {}).get("sensory_ready"))
+                and bool((summary or {}).get("hnc_auris_ready"))
+                and bool((summary or {}).get("sentient_style_ready"))
+                and isinstance(roles, list)
+                and len(roles) >= int((summary or {}).get("role_count") or 0)
+                and isinstance(loop, list)
+                and len(loop) >= 6
+                and bool((mind or {}).get("source_contracts"))
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Agent creative process guardian bound every role to metacognitive, sensory, HNC/Auris, sentient-style, and who/what/where/when/how/act proof",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Agent creative process guardian missing mind sources, HNC/Auris pass, role process declarations, or creative loop proof",
+                "confidence": 0.25,
+            }
+
         if intent == "visual_asset_request":
             payload = result.get("result") or {}
             asset_path = payload.get("asset_path") if isinstance(payload, dict) else ""
             public_url = payload.get("public_url") if isinstance(payload, dict) else ""
-            if success and asset_path and public_url and os.path.exists(asset_path):
+            quality = payload.get("artifact_quality_report") if isinstance(payload, dict) else {}
+            if success and asset_path and public_url and os.path.exists(asset_path) and bool(quality.get("handover_ready", True)):
                 return {
                     "valid": True,
                     "reason": f"Visual artifact verified at {asset_path}",

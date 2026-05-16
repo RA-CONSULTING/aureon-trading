@@ -171,10 +171,67 @@ The coding panel is the human dashboard for code work while the organism is acti
 The same panel now includes **Aureon Phi Live Chat**. This is the 1:1 talkback lane from the dashboard to the local mind hub: the frontend refreshes hub-first instead of static-JSON-first, polls on a 1s live cadence, reads the Phi Bridge heartbeat, and sends chat messages to `POST /api/phi-bridge/chat`. The endpoint redacts secret-like context, asks the local/in-house voice adapter first, publishes replies onto ThoughtBus, and falls back to an immediate guided Aureon reply when the local LLM server is asleep or too slow. To tune the local model path:
 
 ```powershell
-$env:AUREON_PHI_CHAT_TIMEOUT_S = "8"
-$env:AUREON_PHI_CHAT_MAX_TOKENS = "260"
-$env:AUREON_VOICE_BACKEND = "local"  # or "brain" / "anthropic" if explicitly configured
+$env:AUREON_PHI_CHAT_TIMEOUT_S = "180"
+$env:AUREON_PHI_CHAT_MAX_TOKENS = "120"
+$env:AUREON_VOICE_BACKEND = "ollama_hybrid"  # hand-in-hand Ollama plus Aureon cognition
+$env:AUREON_LLM_BASE_URL = "http://localhost:11434/v1"
+$env:AUREON_LLM_MODEL = "llama3:latest"
+$env:AUREON_LLM_KEEP_ALIVE = "30m"
+$env:AUREON_LLM_ALLOW_HTTP_IN_AUDIT = "1"
+$env:AUREON_LLM_SKIP_PROBE = "1"
+$env:AUREON_LLM_REQUEST_TIMEOUT_S = "180"
+$env:AUREON_LLM_PROBE_TIMEOUT_S = "120"
+$env:AUREON_OLLAMA_CONTEXT_WEAVER = "1"
+$env:AUREON_OLLAMA_WEAVER_MODEL = "qwen2.5:0.5b"  # optional fast local shard worker
+$env:AUREON_OLLAMA_WEAVER_SHARD_TOKENS = "90"
+$env:AUREON_DYNAMIC_FILTER_FULL_MEANING_RESOLVER = "0"
+$env:AUREON_DYNAMIC_FILTER_FULL_HNC_LOOP = "0"
+$env:AUREON_DYNAMIC_FILTER_FULL_WHOLE_VOICE = "0"
 ```
+
+The cockpit also includes **Ollama Cognitive Handshake** proof. This makes Ollama a named local language worker inside Aureon's organism instead of a vague external backend. The bridge probes the local Ollama server, resolves an installed model, checks HNC/Auris and metacognitive evidence, declares the agent-like handoff crew, and publishes repair actions when the model or cognitive proof is missing.
+
+The hybrid voice lane also has an **Ollama Context Weaver**. For short cockpit chat, Aureon splits the oversized dashboard context into small Ollama work packets, asks for intent, evidence/blockers, and optionally a draft answer, then Aureon's own cognitive layer recomposes the final response. This keeps Ollama and Aureon working hand in hand without pretending the local model can swallow the whole organism at once. Set `AUREON_OLLAMA_CONTEXT_WEAVER=0` to force the older single-prompt path for debugging. On slower CPU machines, keep the primary model as `llama3:latest` but set `AUREON_OLLAMA_WEAVER_MODEL=qwen2.5:0.5b` so the small shard workers answer quickly.
+
+The shared LLM lane now also has an **Aureon Dynamic Prompt Filter And Response Compiler**. Before any in-house hybrid LLM call, Aureon classifies the prompt lane, selects compact local source packets from Gary Leckey/Aureon research, injects MeaningResolver/HNC/Auris/whole-knowledge context, redacts secret-like values, and gives Ollama a clear operator answer contract. After the local model or AureonBrain answers, the response is filtered again through redaction and Auris/HNC evidence before it reaches the human. The cockpit shows the active filter mode, lane, source packets, Ollama shards, and Auris state beside the live chat.
+
+Run the filter directly when you want to test prompt compilation without sending a chat message:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_dynamic_prompt_filter --prompt "Explain the current Aureon coding cockpit state using Gary Leckey research, HNC/Auris proof, and clear operator language." --json
+```
+
+Fast cockpit chat uses light source packets by default. The deeper, heavier cognitive paths can be enabled for slower research turns:
+
+```powershell
+$env:AUREON_DYNAMIC_FILTER_FULL_MEANING_RESOLVER = "1"
+$env:AUREON_DYNAMIC_FILTER_FULL_HNC_LOOP = "1"
+$env:AUREON_DYNAMIC_FILTER_FULL_WHOLE_VOICE = "1"
+```
+
+Ollama setup and proof commands:
+
+```powershell
+ollama serve
+ollama list
+ollama pull llama3
+
+$env:AUREON_VOICE_BACKEND = "ollama_hybrid"
+$env:AUREON_LLM_MODEL = "llama3:latest"
+$env:AUREON_LLM_ALLOW_HTTP_IN_AUDIT = "1"
+$env:AUREON_LLM_SKIP_PROBE = "1"
+$env:AUREON_PHI_CHAT_TIMEOUT_S = "180"
+$env:AUREON_OLLAMA_CONTEXT_WEAVER = "1"
+$env:AUREON_OLLAMA_WEAVER_MODEL = "qwen2.5:0.5b"
+
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_ollama_cognitive_bridge --json
+Invoke-RestMethod http://127.0.0.1:13002/api/ollama-cognitive/status | ConvertTo-Json -Depth 8
+Invoke-RestMethod http://127.0.0.1:13002/api/phi-bridge/reload -Method Post | ConvertTo-Json -Depth 8
+```
+
+The bridge writes `state/aureon_ollama_cognitive_bridge_last_run.json`, `docs/audits/aureon_ollama_cognitive_bridge.json`, `docs/audits/aureon_ollama_cognitive_bridge.md`, and `frontend/public/aureon_ollama_cognitive_bridge.json`. It is local-only and does not change live trading, payment, filing, credential, or destructive OS authority. If Ollama is asleep, the Phi chat lane falls back to Aureon's in-house brain/fallback response and shows the repair action instead of pretending the model worked.
+
+The dynamic prompt filter writes `state/aureon_dynamic_prompt_filter_last_run.json`, `docs/audits/aureon_dynamic_prompt_filter.json`, `docs/audits/aureon_dynamic_prompt_filter.md`, and `frontend/public/aureon_dynamic_prompt_filter.json`. It changes prompt assembly and response quality only; it does not change execution authority.
 
 The mind hub exposes the same lane over HTTP:
 
@@ -226,6 +283,30 @@ For coding-only evidence without desktop handoff:
 Coding evidence is written to `state/aureon_coding_organism_last_run.json`, `docs/audits/aureon_coding_organism_bridge.json`, `docs/audits/aureon_coding_organism_bridge.md`, and `frontend/public/aureon_coding_organism_bridge.json`. The proof checklist includes `hnc_auris_drift_proof`, which reads the current HNC cognitive proof and harmonic affect evidence. If HNC proof, the master formula, or Auris nodes are missing, failing, or stale, the finished product is held and the snagging list names the blocker.
 
 Direct artifact prompts, such as asking Aureon to draw a simple image and show it, route through `visual_asset_request` once the client job is scoped. The route writes a public SVG under `/aureon_visual_artifacts/...`, publishes `frontend/public/aureon_visual_asset_request.json`, and avoids the old `open_app`/`list_dir` fallback when AgentCore is unavailable. In the dashboard, use **Full Coding Job** for a complete handover, or let **Send To Aureon** ask missing scope questions first.
+
+### Local Capability Forge And Quality Gate
+
+Aureon now has a local-only capability forge for mixed client jobs: coding, UI, image/graphic design, video, documents, research, and browser QA. The forge treats leading AI systems as reference patterns only, recruits a temporary internal crew, builds local artifacts, checks render/playback/test proof, regenerates or blocks weak output, and keeps the handover hidden until the artifact quality report passes. It does not call paid/cloud AI media or coding APIs in v1, and it does not bypass live trading, payment, filing, credential, or destructive OS gates.
+
+Run a forge job from PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_capability_forge --prompt "Make a 10 second video of a dog with a playable browser preview, GIF fallback, duration proof, and quality report." --json
+```
+
+The forge writes `state/aureon_capability_forge_last_run.json`, `docs/audits/aureon_capability_forge.json`, `docs/audits/aureon_capability_forge.md`, `frontend/public/aureon_capability_forge.json`, and `frontend/public/aureon_artifact_quality_report.json`. The **Aureon Coding Organism** cockpit reads those public files live and shows the task family, recruited crew, local tools, previews, quality checks, snags, and local Approve/Reject/Request Revision evidence controls. Video handover requires a playable WebM or GIF fallback plus an HTML browser preview; MP4-only output is not enough.
+
+### Agent Creative Process Guardian
+
+Aureon now has a repo-wide creative process guardian that binds every agent role to the organism's metacognitive, sensory, HNC/Auris, and sentient-style evidence before the role can claim creative work is ready. It reads the HNC cognitive proof, master formula, Auris nodes, harmonic affect state, cognitive evidence, voice/expression profile, agent company registry, coding skill logic map, and agent-like repo surfaces. Every role must publish `who`, `what`, `where`, `when`, `how`, and `act`, with authority boundaries and snags visible.
+
+Run the guardian directly:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_agent_creative_process_guardian --goal "Ensure every Aureon agent uses metacognitive, sensory, HNC/Auris, and who what where when how act proof." --json
+```
+
+The guardian writes `state/aureon_agent_creative_process_guardian_last_run.json`, `docs/audits/aureon_agent_creative_process_guardian.json`, `docs/audits/aureon_agent_creative_process_guardian.md`, and `frontend/public/aureon_agent_creative_process_guardian.json`. The coding cockpit includes this as a blocking proof item, so an agent handover can be held when mind evidence, Auris/HNC proof, or role process declarations are missing.
 
 After pulling a code update, relaunch the production supervisor so the already-running mind hub loads the newest coding bridge:
 
@@ -280,6 +361,10 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 | Local OS/task control | `aureon/autonomous/aureon_local_task_queue.py`, `aureon/autonomous/aureon_repo_explorer_service.py`, `aureon/autonomous/aureon_voice_command_bridge.py` |
 | Code authoring and review | `aureon/autonomous/aureon_safe_code_control.py`, `aureon/autonomous/aureon_queen_code_bridge.py`, `aureon/code_architect/` |
 | Operator coding organism bridge | `aureon/autonomous/aureon_coding_organism_bridge.py`, `http://127.0.0.1:13002/api/coding/prompt`, `http://127.0.0.1:13002/api/phi-bridge/chat`, `frontend/src/components/generated/AureonCodingOrganismConsole.tsx`; includes scope-of-works gate, live Phi talkback, client questions, proof checklist, HNC/Auris drift proof, snagging list, and finished handover hold |
+| Local capability forge and quality gate | `aureon/autonomous/aureon_capability_forge.py`, `aureon/autonomous/aureon_artifact_quality_gate.py`, `frontend/public/aureon_capability_forge.json`, `frontend/public/aureon_artifact_quality_report.json`; classifies client jobs, recruits the internal crew, builds local image/video/code evidence, proves render/playback/tests, blocks weak handover, and waits for approval |
+| Agent creative process guardian | `aureon/autonomous/aureon_agent_creative_process_guardian.py`, `frontend/public/aureon_agent_creative_process_guardian.json`; binds all agent roles to metacognitive, sensory, HNC/Auris, sentient-style, and who/what/where/when/how/act proof before handover |
+| Ollama cognitive handshake | `aureon/autonomous/aureon_ollama_cognitive_bridge.py`, `http://127.0.0.1:13002/api/ollama-cognitive/status`, `frontend/public/aureon_ollama_cognitive_bridge.json`; makes Ollama a local language worker inside Aureon's HNC/Auris, metacognitive, role-contract, ThoughtBus, and AureonBrain fallback flow |
+| Dynamic prompt filter and response compiler | `aureon/autonomous/aureon_dynamic_prompt_filter.py`, `aureon/inhouse_ai/llm_adapter.py`, `frontend/public/aureon_dynamic_prompt_filter.json`; builds compact source packets, HNC/Auris context, Ollama shard contracts, redaction, and final clear-operator replies for in-house LLM calls |
 | Prompt-to-run desktop audit | `aureon/autonomous/aureon_coding_organism_bridge.py#desktop_run_flow`, `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/vm_control/`, `state/aureon_coding_organism_desktop_state.json` |
 | Director capability bridge | `aureon/autonomous/aureon_director_capability_bridge.py`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/src/components/generated/AureonDirectorCapabilityBridgeConsole.tsx` |
 | Self-authored operational UI | `aureon/autonomous/aureon_unified_ui_builder.py`, `frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx` |
@@ -288,7 +373,7 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 | Coding-agent skill base | `aureon/autonomous/aureon_coding_agent_skill_base.py`, `frontend/src/components/generated/AureonCodingAgentSkillBaseConsole.tsx` |
 | Whole-knowledge voice core | `aureon/vault/voice/whole_knowledge_voice.py`, `aureon/vault/voice/document_artifact_skill.py` |
 | Desktop automation | `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/aureon_queen_desktop_bridge.py`, `aureon/autonomous/aureon_laptop_control.py` |
-| LLM and skill layer | `aureon/inhouse_ai/llm_adapter.py`, `aureon/core/aureon_cognitive_authoring_loop.py`, `aureon/code_architect/skill_library.py` |
+| LLM and skill layer | `aureon/inhouse_ai/llm_adapter.py`, `aureon/integrations/ollama/`, `aureon/autonomous/aureon_ollama_cognitive_bridge.py`, `aureon/core/aureon_cognitive_authoring_loop.py`, `aureon/code_architect/skill_library.py` |
 | Self-audit and security visibility | Runtime observer, readiness audit, capability switchboard, repo catalog, mind wiring audit, authorized local audit tooling |
 
 ### Whole-system guide for end users
@@ -333,6 +418,7 @@ Aureon now has an explicit self-coding workflow. Operator goals are routed throu
 | Repo self-repair | Runs repo checks, builds a bug report, applies scoped safe repairs through Queen writer paths, and retests. | `state/aureon_repo_self_repair_last_run.json`, `docs/audits/aureon_repo_self_repair.json` |
 | Coding-agent skill base | Teaches Aureon coder agents to learn from official docs, search/fetch the web, search the repo, and decide who/what/where/when/how before writing files. | `state/aureon_coding_agent_skill_base_last_run.json`, `docs/audits/aureon_coding_agent_skill_base.json`, `frontend/public/aureon_coding_agent_skill_base.json` |
 | Coding organism bridge | Lets an operator prompt Aureon to route a coding task through the organism, write/propose code work, run focused tests, create a finished-product audit, queue the desktop/run handoff, and publish who/what/where/when/how/act evidence. | `state/aureon_coding_organism_last_run.json`, `docs/audits/aureon_coding_organism_bridge.json`, `frontend/public/aureon_coding_organism_bridge.json`, `state/aureon_coding_organism_desktop_state.json` |
+| Dynamic prompt filter and response compiler | Builds compact local research packets, MeaningResolver/HNC/Auris/whole-knowledge context, Ollama shard contracts, redaction, fallback evidence, and clear operator replies for chat, coding, media, research, UI, and system-health lanes. | `state/aureon_dynamic_prompt_filter_last_run.json`, `docs/audits/aureon_dynamic_prompt_filter.json`, `frontend/public/aureon_dynamic_prompt_filter.json` |
 | Director capability bridge | Compares Codex-class agent capabilities with Aureon's live surfaces, marks ready/partial/gap status, and emits exact Aureon build prompts for every missing bridge. | `state/aureon_director_capability_bridge_last_run.json`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/public/aureon_director_capability_bridge.json` |
 | Whole-knowledge voice core | Turns repo, vault, HNC/Auris, cognitive state, sensory-state evidence, and human language sources into original document, console, and conversation prose. | `state/aureon_expression_profile.json`, `state/aureon_voice_last_run.json`, document Markdown/PDF artifacts |
 

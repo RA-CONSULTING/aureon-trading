@@ -265,6 +265,76 @@ def test_submit_coding_prompt_visual_artifact_prompt_finishes_cleanly(tmp_path: 
     assert (tmp_path / "frontend" / "public" / "aureon_visual_asset_request.json").exists()
 
 
+def test_submit_coding_prompt_visual_artifact_wins_over_coding_ui_words(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "aureon").mkdir()
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "Draw me an image of a dog and open it so I can see the finished artifact in the Aureon UI.",
+        source="test",
+        run_tests=False,
+        include_desktop=False,
+        root=tmp_path,
+        goal_engine=GoalExecutionEngine(),
+        scope_approved=True,
+        scope_answers={
+            "goal": "Draw me an image of a dog and open it so I can see the finished artifact in the Aureon UI.",
+            "deliverables": "A public SVG visual artifact, evidence JSON, and handover public URL.",
+            "target_system": "Aureon UI and frontend/public/aureon_visual_artifacts.",
+            "constraints": "No live trading, payment, filing, credential, or external mutation.",
+            "acceptance": "Goal route completes, the SVG exists, and the UI can show the public URL.",
+        },
+    )
+
+    route_steps = result["goal_route"]["plan"]["steps"]
+    assert result["summary"]["goal_route_clean"] is True
+    assert [step["intent"] for step in route_steps] == ["visual_asset_request"]
+    assert route_steps[0]["result"]["result"]["public_url"].endswith(".svg")
+
+
+def test_submit_coding_prompt_video_artifact_survives_scope_wrapper(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "aureon").mkdir()
+    _write_hnc_fixture(tmp_path)
+
+    result = submit_coding_prompt(
+        "Make a 1 second video of a dog running across the screen and show it in the Aureon UI. "
+        "Deliver a playable public video artifact, evidence packet, proof checklist, and no blocking snags.",
+        source="test",
+        run_tests=False,
+        include_desktop=False,
+        root=tmp_path,
+        goal_engine=GoalExecutionEngine(),
+        scope_approved=True,
+        scope_answers={
+            "goal": "Make a 1 second video of a dog running across the screen and show it in the Aureon UI.",
+            "deliverables": "A playable public video artifact, evidence JSON, and handover public URL.",
+            "target_system": "Aureon UI, Aureon repository, coding organism bridge, and frontend/public/aureon_visual_artifacts.",
+            "constraints": "No live trading, payment, filing, credential, or external mutation.",
+            "acceptance": "Goal route completes, the MP4 exists, and the UI can show the public URL.",
+        },
+    )
+
+    route_steps = result["goal_route"]["plan"]["steps"]
+    payload = route_steps[0]["result"]["result"]
+    assert result["summary"]["goal_route_clean"] is True
+    assert [step["intent"] for step in route_steps] == ["visual_asset_request"]
+    assert payload["asset_kind"] == "mp4"
+    assert payload["duration_seconds"] == 1
+    assert payload["public_url"].endswith(".webm")
+    assert payload["preview_url"].endswith("_preview.html")
+    assert Path(payload["asset_path"]).exists()
+
+
 def test_coding_organism_status_reads_last_run_and_queues(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",

@@ -43,6 +43,13 @@ DEFAULT_TASK_QUEUE_PATH = Path("state/aureon_coding_organism_task_queue.json")
 DEFAULT_CODE_STATE_PATH = Path("state/aureon_coding_organism_safe_code_state.json")
 DEFAULT_DESKTOP_STATE_PATH = Path("state/aureon_coding_organism_desktop_state.json")
 DEFAULT_DESKTOP_STOP_PATH = Path("state/aureon_coding_organism_desktop.stop")
+DEFAULT_CAPABILITY_FORGE_STATE_PATH = Path("state/aureon_capability_forge_last_run.json")
+DEFAULT_CAPABILITY_FORGE_AUDIT_JSON = Path("docs/audits/aureon_capability_forge.json")
+DEFAULT_CAPABILITY_FORGE_PUBLIC_JSON = Path("frontend/public/aureon_capability_forge.json")
+DEFAULT_ARTIFACT_QUALITY_PUBLIC_JSON = Path("frontend/public/aureon_artifact_quality_report.json")
+DEFAULT_CREATIVE_GUARDIAN_STATE_PATH = Path("state/aureon_agent_creative_process_guardian_last_run.json")
+DEFAULT_CREATIVE_GUARDIAN_AUDIT_JSON = Path("docs/audits/aureon_agent_creative_process_guardian.json")
+DEFAULT_CREATIVE_GUARDIAN_PUBLIC_JSON = Path("frontend/public/aureon_agent_creative_process_guardian.json")
 DEFAULT_HNC_PROOF_MAX_AGE_SEC = 172800
 HNC_PROOF_CANDIDATES = [
     Path("state/aureon_hnc_cognitive_proof.json"),
@@ -233,6 +240,23 @@ def _extract_step_payload(route: Dict[str, Any], schema_version: str) -> Dict[st
         payload = result.get("result") if isinstance(result.get("result"), dict) else {}
         if payload.get("schema_version") == schema_version:
             return payload
+    return {}
+
+
+def _extract_quality_payload(route: Dict[str, Any]) -> Dict[str, Any]:
+    plan = route.get("plan") if isinstance(route.get("plan"), dict) else {}
+    steps = plan.get("steps") if isinstance(plan.get("steps"), list) else []
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        result = step.get("result") if isinstance(step.get("result"), dict) else {}
+        payload = result.get("result") if isinstance(result.get("result"), dict) else {}
+        for candidate in (
+            payload.get("artifact_quality_report") if isinstance(payload, dict) else None,
+            result.get("artifact_quality_report") if isinstance(result, dict) else None,
+        ):
+            if isinstance(candidate, dict) and candidate.get("schema_version") == "aureon-artifact-quality-report-v1":
+                return candidate
     return {}
 
 
@@ -467,12 +491,14 @@ def _build_proof_checklist(
     tests: Dict[str, Any],
     desktop_flow: Dict[str, Any],
     hnc_drift_proof: Dict[str, Any],
+    artifact_quality_report: Optional[Dict[str, Any]] = None,
+    creative_process_guardian: Optional[Dict[str, Any]] = None,
     evidence_publish_planned: bool = True,
 ) -> List[Dict[str, Any]]:
     tests_ok = bool(tests.get("ok")) or bool(tests.get("skipped"))
     desktop_status = desktop_flow.get("local_desktop_controller", {})
     desktop_ok = bool(desktop_status.get("ok", True)) and not bool(desktop_status.get("emergency_stopped"))
-    return [
+    checklist = [
         {
             "id": "scope_locked",
             "label": "Scope of works locked",
@@ -524,6 +550,36 @@ def _build_proof_checklist(
             "evidence": "state/docs/frontend JSON and Markdown artifacts are part of the handover",
         },
     ]
+    if artifact_quality_report:
+        checklist.append(
+            {
+                "id": "artifact_quality_gate",
+                "label": "Artifact quality gate passed",
+                "ok": bool(artifact_quality_report.get("handover_ready")),
+                "blocking": True,
+                "evidence": (
+                    f"score {artifact_quality_report.get('score', 0)} / "
+                    f"minimum {artifact_quality_report.get('minimum_score', 0)}"
+                ),
+                "details": artifact_quality_report,
+            }
+        )
+    if creative_process_guardian:
+        summary = creative_process_guardian.get("summary") if isinstance(creative_process_guardian.get("summary"), dict) else {}
+        checklist.append(
+            {
+                "id": "agent_creative_process_guardian",
+                "label": "Agent creative process guardian passed",
+                "ok": bool(creative_process_guardian.get("ok")),
+                "blocking": True,
+                "evidence": (
+                    f"roles {summary.get('creative_process_ready_role_count', 0)} / "
+                    f"{summary.get('role_count', 0)} guarded; HNC/Auris {summary.get('hnc_auris_ready')}"
+                ),
+                "details": creative_process_guardian,
+            }
+        )
+    return checklist
 
 
 def _build_snagging_list(proof_checklist: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -854,6 +910,13 @@ def _build_finished_product_audit(
             "audit_json": str(_rooted(root, DEFAULT_AUDIT_JSON)),
             "audit_md": str(_rooted(root, DEFAULT_AUDIT_MD)),
             "public_json": str(_rooted(root, DEFAULT_PUBLIC_JSON)),
+            "capability_forge_state": str(_rooted(root, DEFAULT_CAPABILITY_FORGE_STATE_PATH)),
+            "capability_forge_audit": str(_rooted(root, DEFAULT_CAPABILITY_FORGE_AUDIT_JSON)),
+            "capability_forge_public": str(_rooted(root, DEFAULT_CAPABILITY_FORGE_PUBLIC_JSON)),
+            "artifact_quality_public": str(_rooted(root, DEFAULT_ARTIFACT_QUALITY_PUBLIC_JSON)),
+            "creative_guardian_state": str(_rooted(root, DEFAULT_CREATIVE_GUARDIAN_STATE_PATH)),
+            "creative_guardian_audit": str(_rooted(root, DEFAULT_CREATIVE_GUARDIAN_AUDIT_JSON)),
+            "creative_guardian_public": str(_rooted(root, DEFAULT_CREATIVE_GUARDIAN_PUBLIC_JSON)),
             "desktop_state": str(_rooted(root, DEFAULT_DESKTOP_STATE_PATH)),
         },
     }
@@ -877,6 +940,9 @@ def _build_work_journal(
     evidence_core: Dict[str, Any],
     target_files: List[str],
     agent_company_report: Optional[Dict[str, Any]] = None,
+    capability_forge_report: Optional[Dict[str, Any]] = None,
+    artifact_quality_report: Optional[Dict[str, Any]] = None,
+    creative_process_guardian: Optional[Dict[str, Any]] = None,
     client_job: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build the operator-facing trail from prompt to finished files."""
@@ -1007,6 +1073,52 @@ def _build_work_journal(
                     "whole_organism_access_policy": agent_company_report.get("whole_organism_access_policy", {}),
                     "prompt_client_job_lifecycle": agent_company_report.get("prompt_client_job_lifecycle", []),
                     "workforce_memory_phonebook": agent_company_report.get("workforce_memory_phonebook", {}),
+                },
+            }
+        )
+
+    if capability_forge_report or artifact_quality_report:
+        forge_summary = (capability_forge_report or {}).get("summary", {})
+        quality = artifact_quality_report or (capability_forge_report or {}).get("artifact_quality_report", {})
+        stage_rows.append(
+            {
+                "id": "capability_forge_quality_gate",
+                "title": "Capability forge and quality gate",
+                "status": (capability_forge_report or {}).get("status") or (quality or {}).get("status") or "artifact_quality_checked",
+                "ok": bool((quality or {}).get("handover_ready")),
+                "summary": (
+                    f"Task family {(capability_forge_report or {}).get('task_family', (quality or {}).get('task_family', 'artifact'))}; "
+                    f"quality score {(quality or {}).get('score', 0)}; "
+                    f"{len((quality or {}).get('snags', []))} quality snag(s)."
+                ),
+                "evidence": {
+                    "capability_forge": capability_forge_report or {},
+                    "artifact_quality_report": quality or {},
+                    "summary": forge_summary,
+                    "approval_state": (capability_forge_report or {}).get("approval_state", client_job.get("approval_state", {})),
+                },
+            }
+        )
+
+    if creative_process_guardian:
+        guardian_summary = creative_process_guardian.get("summary", {})
+        stage_rows.append(
+            {
+                "id": "agent_creative_process_guardian",
+                "title": "Agent creative process guardian",
+                "status": creative_process_guardian.get("status", "agent_creative_process_guardian_checked"),
+                "ok": bool(creative_process_guardian.get("ok")),
+                "summary": (
+                    f"{guardian_summary.get('creative_process_ready_role_count', 0)} / "
+                    f"{guardian_summary.get('role_count', 0)} role process(es) guarded; "
+                    f"{guardian_summary.get('present_mind_source_count', 0)} mind source(s) present."
+                ),
+                "evidence": {
+                    "summary": guardian_summary,
+                    "proof_checklist": creative_process_guardian.get("proof_checklist", []),
+                    "snagging_list": creative_process_guardian.get("snagging_list", []),
+                    "organism_mind_contract": creative_process_guardian.get("organism_mind_contract", {}),
+                    "published_files": creative_process_guardian.get("output_files", []),
                 },
             }
         )
@@ -1236,6 +1348,9 @@ def submit_coding_prompt(
     plan_summary = route.get("plan", {})
     target_files = _extract_target_files(plan_summary)
     agent_company_report = _extract_step_payload(route, "aureon-agent-company-bill-list-v1")
+    capability_forge_report = _extract_step_payload(route, "aureon-local-capability-forge-v1")
+    artifact_quality_report = _extract_quality_payload(route)
+    creative_process_guardian = _extract_step_payload(route, "aureon-agent-creative-process-guardian-v1")
 
     evidence_core = {
         "who": {
@@ -1245,6 +1360,7 @@ def submit_coding_prompt(
             "client_job_project_manager": "Project Manager",
             "snagging_owner": "Snagging Inspector",
             "hnc_drift_owner": "HNC/Auris Drift Proof",
+            "creative_process_guardian": "aureon.autonomous.aureon_agent_creative_process_guardian",
             "planner": "aureon.core.goal_execution_engine.GoalExecutionEngine",
             "proposal_controller": "aureon.autonomous.aureon_safe_code_control.SafeCodeControl",
         },
@@ -1255,6 +1371,9 @@ def submit_coding_prompt(
             "scope_locked": scope_locked,
             "target_files": target_files,
             "agent_company_report_created": bool(agent_company_report),
+            "capability_forge_report_created": bool(capability_forge_report),
+            "artifact_quality_gate_present": bool(artifact_quality_report),
+            "creative_process_guardian_created": bool(creative_process_guardian),
             "plan_status": plan_summary.get("status"),
             "step_count": plan_summary.get("step_count", 0),
         },
@@ -1276,8 +1395,10 @@ def submit_coding_prompt(
                 "ScopeOfWorks detector",
                 "client questions when scope is incomplete",
                 "agent team handoff only after scope lock",
+                "agent creative process guardian reads metacognitive, sensory, HNC/Auris, and sentient-style evidence",
                 "GoalExecutionEngine.submit_goal",
                 "SafeCodeControl.propose",
+                "CapabilityForge and ArtifactQualityGate when the route produces media or local capability work",
                 "focused pytest validation",
                 "proof checklist",
                 "HNC/Auris anti-drift proof",
@@ -1340,6 +1461,42 @@ def submit_coding_prompt(
     )
     evidence_core["act"]["desktop_handoff_created"] = include_desktop and scope_locked
     hnc_drift_proof = _build_hnc_auris_drift_proof(root)
+    if scope_locked and not creative_process_guardian:
+        try:
+            from aureon.autonomous.aureon_agent_creative_process_guardian import (
+                build_and_write_agent_creative_process_guardian,
+            )
+
+            creative_process_guardian = build_and_write_agent_creative_process_guardian(
+                root=root,
+                goal=prompt_text,
+            )
+        except Exception as exc:
+            creative_process_guardian = {
+                "schema_version": "aureon-agent-creative-process-guardian-v1",
+                "status": "agent_creative_process_guardian_error",
+                "ok": False,
+                "error": str(exc),
+                "summary": {"blocking_snag_count": 1},
+            }
+    evidence_core["what"]["creative_process_guardian_created"] = bool(creative_process_guardian)
+    evidence_core["act"]["creative_process_guardian_checked"] = bool(creative_process_guardian)
+    if capability_forge_report:
+        client_job["capability_forge"] = capability_forge_report
+    if artifact_quality_report:
+        client_job["artifact_quality_report"] = artifact_quality_report
+        client_job["approval_state"] = (
+            capability_forge_report.get("approval_state")
+            if isinstance(capability_forge_report.get("approval_state"), dict)
+            else {
+                "state": "pending_user_review_after_apply"
+                if artifact_quality_report.get("handover_ready")
+                else "blocked_by_quality_gate",
+                "policy": "after_apply",
+            }
+        )
+    if creative_process_guardian:
+        client_job["creative_process_guardian"] = creative_process_guardian
     proof_checklist = _build_proof_checklist(
         scope_locked=scope_locked,
         route_clean=route_clean,
@@ -1347,6 +1504,8 @@ def submit_coding_prompt(
         tests=tests,
         desktop_flow=desktop_flow,
         hnc_drift_proof=hnc_drift_proof,
+        artifact_quality_report=artifact_quality_report,
+        creative_process_guardian=creative_process_guardian,
     )
     snagging_list = _build_snagging_list(proof_checklist)
     client_job["proof_checklist"] = proof_checklist
@@ -1377,6 +1536,9 @@ def submit_coding_prompt(
         evidence_core=evidence_core,
         target_files=target_files,
         agent_company_report=agent_company_report,
+        capability_forge_report=capability_forge_report,
+        artifact_quality_report=artifact_quality_report,
+        creative_process_guardian=creative_process_guardian,
         client_job=client_job,
     )
 
@@ -1409,6 +1571,20 @@ def submit_coding_prompt(
             "blocking_snag_count": _blocking_snag_count(client_job.get("snagging_list", [])),
             "hnc_auris_drift_proof_ok": bool(hnc_drift_proof.get("ok")),
             "hnc_auris_drift_warnings": hnc_drift_proof.get("runtime_drift_warnings", []),
+            "creative_process_guardian_ok": bool(creative_process_guardian.get("ok")) if creative_process_guardian else None,
+            "creative_process_role_count": (creative_process_guardian.get("summary") or {}).get("role_count", 0)
+            if creative_process_guardian
+            else 0,
+            "creative_process_blocked_role_count": (creative_process_guardian.get("summary") or {}).get(
+                "blocked_role_count", 0
+            )
+            if creative_process_guardian
+            else 0,
+            "creative_process_hnc_auris_ready": (creative_process_guardian.get("summary") or {}).get(
+                "hnc_auris_ready", False
+            )
+            if creative_process_guardian
+            else False,
             "goal_engine_routed": bool(route.get("ok")),
             "goal_route_clean": route_clean,
             "safe_code_proposal_created": bool(proposal),
@@ -1417,6 +1593,11 @@ def submit_coding_prompt(
             "tests_ok": bool(tests.get("ok")) or bool(tests.get("skipped")),
             "target_file_count": len(target_files),
             "agent_company_report_created": bool(agent_company_report),
+            "capability_forge_report_created": bool(capability_forge_report),
+            "capability_forge_task_family": capability_forge_report.get("task_family", ""),
+            "artifact_quality_gate_present": bool(artifact_quality_report),
+            "artifact_quality_passed": bool(artifact_quality_report.get("handover_ready")) if artifact_quality_report else None,
+            "artifact_quality_score": artifact_quality_report.get("score") if artifact_quality_report else None,
             "agent_company_role_count": (agent_company_report.get("summary") or {}).get("role_count", 0),
             "agent_company_roles_with_day_plan": (agent_company_report.get("summary") or {}).get(
                 "roles_with_day_plan_count", 0
@@ -1450,6 +1631,9 @@ def submit_coding_prompt(
         "finished_product_audit": product_audit,
         "work_journal": work_journal,
         "agent_company_report": agent_company_report,
+        "capability_forge": capability_forge_report,
+        "artifact_quality_report": artifact_quality_report,
+        "creative_process_guardian": creative_process_guardian,
         **evidence_core,
     }
 
