@@ -311,6 +311,42 @@ def test_phi_bridge_chat_uses_voice_adapter_and_redacts_context(monkeypatch):
     assert payload["history"][-1]["role"] == "assistant"
 
 
+def test_phi_bridge_simple_chat_uses_fast_operator_path(monkeypatch):
+    monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+    monkeypatch.setattr(
+        MindThoughtActionHub,
+        "_ollama_cognitive_status_payload",
+        lambda self, force=False: {"schema_version": "aureon-ollama-cognitive-bridge-v1", "ok": True},
+    )
+
+    hub = MindThoughtActionHub()
+    monkeypatch.setattr(hub, "_get_phi_voice_adapter", lambda: (_ for _ in ()).throw(AssertionError("adapter should not run")))
+    monkeypatch.setattr(
+        hub,
+        "_phi_chat_dynamic_filter_trace",
+        lambda message, context: {
+            "filter_mode": "clear_operator",
+            "lane": "chat",
+            "task_family": "conversation",
+            "source_packets": [],
+            "hnc_auris_report": {},
+            "handover_ready": True,
+        },
+    )
+    monkeypatch.setattr(
+        hub,
+        "_brain_phi_fallback_reply",
+        lambda message, context, reason: ("Hello Gary Leckey. Operator chat is active.", "aureon_brain_chat_fallback", "aureon-brain-v1"),
+    )
+
+    payload = hub._run_phi_chat("hello my name is Gary Leckey", context={"symbol": "SOLUSDT"})
+
+    assert payload["reply_source"] == "aureon_brain_chat_fallback"
+    assert payload["reply"] == "Hello Gary Leckey. Operator chat is active."
+    assert payload["dynamic_prompt_filter"]["lane"] == "chat"
+    assert payload["history"][-1]["dynamic_filter"]["source_packets"] == []
+
+
 def test_phi_bridge_chat_marks_ollama_context_weaver(monkeypatch):
     monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
     monkeypatch.setattr(

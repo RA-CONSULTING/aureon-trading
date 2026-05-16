@@ -164,6 +164,24 @@ def latest_user_text(messages: Sequence[Dict[str, Any]]) -> str:
     return _message_text(messages[-1]) if messages else ""
 
 
+def _operator_message_from_wrapped_prompt(text: str) -> str:
+    """Return the human message from the Phi chat wrapper when present."""
+    value = str(text or "")
+    match = re.search(
+        r"(?is)\bOperator message:\s*(.*?)\n\s*Redacted dashboard context:",
+        value,
+    )
+    if match:
+        return match.group(1).strip()
+    match = re.search(
+        r"(?is)\bOperator message:\s*(.*?)\n\s*Compact Phi/Ollama/Aureon status:",
+        value,
+    )
+    if match:
+        return match.group(1).strip()
+    return value.strip()
+
+
 def _redact_string(text: str) -> str:
     if not text:
         return ""
@@ -268,6 +286,25 @@ def _tokens(text: str) -> List[str]:
     return [item for item in raw if item not in stop]
 
 
+def _is_simple_operator_chat(prompt: str) -> bool:
+    tokens = set(_tokens(prompt))
+    if not tokens:
+        return True
+    allowed = {
+        "hello",
+        "hey",
+        "morning",
+        "afternoon",
+        "evening",
+        "thanks",
+        "thank",
+        "name",
+        "gary",
+        "leckey",
+    }
+    return tokens.issubset(allowed)
+
+
 def _title_for(path: Path, text: str) -> str:
     for line in text.splitlines()[:80]:
         clean = line.strip().lstrip("#").strip()
@@ -347,6 +384,8 @@ def _indexed_docs(root_text: str) -> Tuple[Dict[str, Any], ...]:
 
 
 def select_source_packets(prompt: str, *, root: Optional[Path] = None, limit: int = 4) -> List[SourcePacket]:
+    if int(limit or 0) <= 0 or _is_simple_operator_chat(prompt):
+        return []
     root_path = Path(root) if root else repo_root()
     query_tokens = _tokens(prompt)
     boosted_tokens = set(query_tokens)
@@ -568,10 +607,14 @@ def build_dynamic_prompt_filter(
 ) -> Dict[str, Any]:
     started = time.time()
     root_path = Path(root) if root else repo_root()
-    prompt = _redact_string(latest_user_text(messages))
+    prompt = _operator_message_from_wrapped_prompt(_redact_string(latest_user_text(messages)))
     lane, task_family = classify_lane(prompt, system)
     if lane_hint:
         lane = str(lane_hint)
+        if lane == "chat":
+            task_family = "conversation"
+        elif lane in {"coding", "ui", "media", "research", "system_health"}:
+            task_family = lane if lane != "system_health" else "system_health"
     source_packets = select_source_packets(prompt, root=root_path, limit=int(os.environ.get("AUREON_DYNAMIC_FILTER_SOURCE_LIMIT", "4") or "4"))
     meaning, meaning_rendered = _meaning_block(prompt)
     hnc = _hnc_report(prompt)

@@ -48,9 +48,10 @@ import aiohttp
 from aiohttp import web
 import json
 import logging
+import re
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Set, Optional
+from typing import Any, Dict, List, Set, Optional, Tuple
 from collections import deque, defaultdict
 from pathlib import Path
 
@@ -1690,6 +1691,113 @@ class MindThoughtActionHub:
             "set AUREON_LLM_ALLOW_HTTP_IN_AUDIT=1 for local-only safe observation, and reload the Phi adapter."
         )
 
+    def _phi_chat_dynamic_filter_trace(self, message: str, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        try:
+            from aureon.autonomous.aureon_dynamic_prompt_filter import build_dynamic_prompt_filter
+
+            wrapped = (
+                f"Operator message:\n{message}\n\n"
+                f"Redacted dashboard context:\n{json.dumps(context, ensure_ascii=False)[:700]}\n\n"
+                "Compact Phi/Ollama/Aureon status:\n{\"fallback\":\"timeout_or_brain\"}"
+            )
+            return build_dynamic_prompt_filter(
+                [{"role": "user", "content": wrapped}],
+                system="Aureon Phi chat",
+                lane_hint="chat",
+            )
+        except Exception:
+            return None
+
+    @staticmethod
+    def _phi_dynamic_filter_summary(dynamic_filter_trace: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        if not dynamic_filter_trace:
+            return {}
+        return {
+            "filter_mode": dynamic_filter_trace.get("filter_mode"),
+            "lane": dynamic_filter_trace.get("lane"),
+            "task_family": dynamic_filter_trace.get("task_family"),
+            "source_packets": [
+                {
+                    "title": packet.get("title"),
+                    "source_path": packet.get("source_path"),
+                    "confidence": packet.get("confidence"),
+                }
+                for packet in dynamic_filter_trace.get("source_packets", [])
+                if isinstance(packet, dict)
+            ][:4],
+            "hnc_auris_report": dynamic_filter_trace.get("hnc_auris_report", {}),
+            "handover_ready": dynamic_filter_trace.get("handover_ready"),
+        }
+
+    def _brain_phi_fallback_reply(
+        self,
+        message: str,
+        context: Dict[str, Any],
+        reason: str,
+    ) -> Tuple[str, str, str]:
+        try:
+            from aureon.inhouse_ai.llm_adapter import AureonBrainAdapter
+
+            wrapped = (
+                f"Operator message:\n{message}\n\n"
+                f"Redacted dashboard context:\n{json.dumps(context, ensure_ascii=False)[:700]}\n\n"
+                "Compact Phi/Ollama/Aureon status:\n{\"fallback\":\"brain_chat\"}"
+            )
+            response = AureonBrainAdapter().prompt(
+                [{"role": "user", "content": wrapped}],
+                system="Aureon Phi chat quick fallback",
+                max_tokens=180,
+                temperature=0.2,
+            )
+            reply = str(getattr(response, "text", "") or "").strip()
+            model = str(getattr(response, "model", "") or "aureon-brain-v1")
+            if reply and not reply.lstrip().startswith("{"):
+                return reply, "aureon_brain_chat_fallback", model
+            if reply:
+                return (
+                    "I heard you through the Phi Bridge. The local model did not finish in time, and the quick brain fallback produced a trading-shaped internal signal, so I am holding that as internal evidence instead of showing it as chat. No live order is authorized from this conversation; ask for a read-only trading explanation if that is what you meant.",
+                    "aureon_brain_chat_fallback",
+                    model,
+                )
+        except Exception:
+            pass
+        return self._fallback_phi_reply(message, context, reason), "guided_fallback", ""
+
+    @staticmethod
+    def _is_fast_phi_operator_chat(message: str) -> bool:
+        lowered = str(message or "").lower()
+        if any(
+            phrase in lowered
+            for phrase in (
+                "what can you do",
+                "what can aureon do",
+                "what are your capabilities",
+                "what can u do",
+                "capabilitys",
+                "capabilities",
+            )
+        ):
+            return True
+        if "what can you see" in lowered and any(token in lowered for token in ("cockpit", "dashboard", "console")):
+            return True
+        tokens = set(re.findall(r"[a-zA-Z0-9_]{3,}", str(message or "").lower()))
+        tokens -= {"you", "the", "and", "are"}
+        if not tokens:
+            return True
+        allowed = {
+            "hello",
+            "hey",
+            "morning",
+            "afternoon",
+            "evening",
+            "thanks",
+            "thank",
+            "name",
+            "gary",
+            "leckey",
+        }
+        return tokens.issubset(allowed)
+
     def _run_phi_chat(
         self,
         message: str,
@@ -1750,42 +1858,54 @@ class MindThoughtActionHub:
                 return "ollama_local"
             return "local_llm"
 
-        try:
-            adapter = self._get_phi_voice_adapter()
-            response = adapter.prompt(
-                messages,
-                system=system_prompt,
-                max_tokens=int(os.environ.get("AUREON_PHI_CHAT_MAX_TOKENS", "120")),
-                temperature=float(os.environ.get("AUREON_PHI_CHAT_TEMPERATURE", "0.25")),
+        if self._is_fast_phi_operator_chat(message):
+            dynamic_filter_trace = self._phi_chat_dynamic_filter_trace(message, safe_context)
+            response_raw = {"dynamic_prompt_filter": dynamic_filter_trace} if dynamic_filter_trace else None
+            reply, reply_source, model = self._brain_phi_fallback_reply(
+                message,
+                safe_context,
+                "simple operator chat",
             )
-            reply = str(getattr(response, "text", "") or "").strip()
-            model = str(getattr(response, "model", "") or "")
-            usage = getattr(response, "usage", {}) or {}
-            response_raw = getattr(response, "raw", None)
-            if not reply or reply.startswith("[ERROR]") or "No LLM backend is reachable" in reply:
-                if self._phi_voice_adapter_needs_reload(adapter):
-                    self._phi_voice_adapter = None
-                    adapter = self._get_phi_voice_adapter()
-                    response = adapter.prompt(
-                        messages,
-                        system=system_prompt,
-                        max_tokens=int(os.environ.get("AUREON_PHI_CHAT_MAX_TOKENS", "120")),
-                        temperature=float(os.environ.get("AUREON_PHI_CHAT_TEMPERATURE", "0.25")),
-                    )
-                    reply = str(getattr(response, "text", "") or "").strip()
-                    model = str(getattr(response, "model", "") or "")
-                    usage = getattr(response, "usage", {}) or {}
-                    response_raw = getattr(response, "raw", None)
+            usage = {"fast_operator_chat": 1}
+        else:
+            try:
+                adapter = self._get_phi_voice_adapter()
+                response = adapter.prompt(
+                    messages,
+                    system=system_prompt,
+                    max_tokens=int(os.environ.get("AUREON_PHI_CHAT_MAX_TOKENS", "120")),
+                    temperature=float(os.environ.get("AUREON_PHI_CHAT_TEMPERATURE", "0.25")),
+                    dynamic_prompt_lane="chat",
+                )
+                reply = str(getattr(response, "text", "") or "").strip()
+                model = str(getattr(response, "model", "") or "")
+                usage = getattr(response, "usage", {}) or {}
+                response_raw = getattr(response, "raw", None)
                 if not reply or reply.startswith("[ERROR]") or "No LLM backend is reachable" in reply:
-                    reply_source = "guided_fallback"
-                    reply = self._fallback_phi_reply(message, safe_context, reply or "no usable LLM reply")
+                    if self._phi_voice_adapter_needs_reload(adapter):
+                        self._phi_voice_adapter = None
+                        adapter = self._get_phi_voice_adapter()
+                        response = adapter.prompt(
+                            messages,
+                            system=system_prompt,
+                            max_tokens=int(os.environ.get("AUREON_PHI_CHAT_MAX_TOKENS", "120")),
+                            temperature=float(os.environ.get("AUREON_PHI_CHAT_TEMPERATURE", "0.25")),
+                            dynamic_prompt_lane="chat",
+                        )
+                        reply = str(getattr(response, "text", "") or "").strip()
+                        model = str(getattr(response, "model", "") or "")
+                        usage = getattr(response, "usage", {}) or {}
+                        response_raw = getattr(response, "raw", None)
+                    if not reply or reply.startswith("[ERROR]") or "No LLM backend is reachable" in reply:
+                        reply_source = "guided_fallback"
+                        reply = self._fallback_phi_reply(message, safe_context, reply or "no usable LLM reply")
+                    else:
+                        reply_source = classify_reply_source(adapter, model, response_raw)
                 else:
                     reply_source = classify_reply_source(adapter, model, response_raw)
-            else:
-                reply_source = classify_reply_source(adapter, model, response_raw)
-        except Exception as exc:
-            reply_source = "guided_fallback"
-            reply = self._fallback_phi_reply(message, safe_context, str(exc))
+            except Exception as exc:
+                reply_source = "guided_fallback"
+                reply = self._fallback_phi_reply(message, safe_context, str(exc))
 
         if chat_id and chat_id in self._phi_chat_timeout_ids:
             self._phi_chat_timeout_ids.discard(chat_id)
@@ -1832,23 +1952,9 @@ class MindThoughtActionHub:
                     if isinstance(shard, dict)
                 ],
             }
-        if dynamic_filter_trace:
-            assistant_item["dynamic_filter"] = {
-                "filter_mode": dynamic_filter_trace.get("filter_mode"),
-                "lane": dynamic_filter_trace.get("lane"),
-                "task_family": dynamic_filter_trace.get("task_family"),
-                "source_packets": [
-                    {
-                        "title": packet.get("title"),
-                        "source_path": packet.get("source_path"),
-                        "confidence": packet.get("confidence"),
-                    }
-                    for packet in dynamic_filter_trace.get("source_packets", [])
-                    if isinstance(packet, dict)
-                ][:4],
-                "hnc_auris_report": dynamic_filter_trace.get("hnc_auris_report", {}),
-                "handover_ready": dynamic_filter_trace.get("handover_ready"),
-            }
+        dynamic_filter_summary = self._phi_dynamic_filter_summary(dynamic_filter_trace)
+        if dynamic_filter_summary:
+            assistant_item["dynamic_filter"] = dynamic_filter_summary
         self.phi_chat_history.append(user_item)
         self.phi_chat_history.append(assistant_item)
 
@@ -1934,9 +2040,9 @@ class MindThoughtActionHub:
             )
         context = body.get("context") if isinstance(body.get("context"), dict) else {}
         try:
-            timeout_s = max(3.0, float(os.environ.get("AUREON_PHI_CHAT_TIMEOUT_S", "8")))
+            timeout_s = max(3.0, float(os.environ.get("AUREON_PHI_CHAT_TIMEOUT_S", "35")))
         except Exception:
-            timeout_s = 8.0
+            timeout_s = 35.0
         chat_id = f"{time.time_ns()}-{len(self.phi_chat_history)}"
         try:
             payload = await asyncio.wait_for(
@@ -1950,16 +2056,25 @@ class MindThoughtActionHub:
                 self._phi_chat_timeout_ids.clear()
             safe_context = self._redact_phi_context(context)
             generated_at = datetime.now(timezone.utc).isoformat()
-            reply = self._fallback_phi_reply(message, safe_context, "LLM response timed out")
+            dynamic_filter_trace = self._phi_chat_dynamic_filter_trace(message, safe_context)
+            dynamic_filter_summary = self._phi_dynamic_filter_summary(dynamic_filter_trace)
+            reply, reply_source, model = self._brain_phi_fallback_reply(
+                message,
+                safe_context,
+                f"LLM response timed out after {timeout_s:.0f}s",
+            )
             self.phi_chat_history.append({"role": "user", "text": message[:1200], "ts": generated_at})
-            self.phi_chat_history.append({
+            assistant_item = {
                 "role": "assistant",
                 "text": reply,
                 "ts": generated_at,
-                "source": "guided_fallback",
-                "model": "",
+                "source": reply_source,
+                "model": model,
                 "latency_ms": int(timeout_s * 1000),
-            })
+            }
+            if dynamic_filter_summary:
+                assistant_item["dynamic_filter"] = dynamic_filter_summary
+            self.phi_chat_history.append(assistant_item)
             thought = self.thought_bus.publish(
                 Thought(
                     source="MindThoughtActionHub",
@@ -1967,9 +2082,10 @@ class MindThoughtActionHub:
                     payload={
                         "message_preview": message[:160],
                         "reply_preview": reply[:240],
-                        "reply_source": "guided_fallback",
-                        "model": "",
+                        "reply_source": reply_source,
+                        "model": model,
                         "latency_ms": int(timeout_s * 1000),
+                        "dynamic_prompt_filter": bool(dynamic_filter_trace),
                         "generated_at": generated_at,
                     },
                 )
@@ -1981,19 +2097,20 @@ class MindThoughtActionHub:
                 "source": "mind_thought_action_hub",
                 "type": "phi_bridge_chat",
                 "summary": message[:120],
-                "status": "guided_fallback_timeout",
+                "status": f"{reply_source}_timeout",
             })
             payload = {
                 "ok": True,
                 "status": "phi_bridge_chat_replied",
                 "generated_at": generated_at,
                 "reply": reply,
-                "reply_source": "guided_fallback",
-                "model": "",
+                "reply_source": reply_source,
+                "model": model,
                 "usage": {},
                 "latency_ms": int(timeout_s * 1000),
                 "history": self._recent_phi_messages(10),
                 "context_summary": safe_context,
+                "dynamic_prompt_filter": dynamic_filter_trace,
             }
             return web.json_response(payload, headers=self._coding_cors_headers())
 

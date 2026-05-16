@@ -44,6 +44,33 @@ def test_dynamic_prompt_filter_routes_and_publishes_source_packets(tmp_path, mon
     assert (tmp_path / "frontend/public/aureon_dynamic_prompt_filter.json").exists()
 
 
+def test_dynamic_prompt_filter_uses_operator_message_not_phi_context(tmp_path, monkeypatch):
+    _seed_research(tmp_path)
+    monkeypatch.setattr(prompt_filter, "_meaning_block", lambda prompt: ({}, ""))
+    monkeypatch.setattr(prompt_filter, "_hnc_report", lambda prompt: {"available": True})
+    monkeypatch.setattr(prompt_filter, "_voice_context", lambda root: {})
+
+    wrapped = (
+        "Operator message:\nhello my name is Gary Leckey\n\n"
+        "Redacted dashboard context:\n{\"coding\":{\"status\":\"ready\"},\"symbol\":\"SOLUSDT\"}\n\n"
+        "Compact Phi/Ollama/Aureon status:\n{\"backend\":\"aureon\"}"
+    )
+
+    report = prompt_filter.build_dynamic_prompt_filter(
+        [{"role": "user", "content": wrapped}],
+        system="Aureon coding cockpit",
+        root=tmp_path,
+        lane_hint="chat",
+        publish=False,
+    )
+
+    assert report["lane"] == "chat"
+    assert report["task_family"] == "conversation"
+    assert report["user_intent"] == "hello my name is Gary Leckey"
+    assert report["source_packets"] == []
+    assert "SOLUSDT" not in report["user_intent"]
+
+
 def test_dynamic_response_filter_redacts_and_holds_blocked_claim(tmp_path, monkeypatch):
     monkeypatch.setattr(
         prompt_filter,
@@ -113,3 +140,41 @@ def test_hybrid_adapter_attaches_dynamic_filter_trace(monkeypatch):
     assert response.text == "single local answer"
     assert response.raw["dynamic_prompt_filter"]["filter_mode"] == "clear_operator"
     assert response.raw["dynamic_prompt_filter"]["final_reply_source"] == "ollama_cognitive_hybrid"
+
+
+def test_brain_adapter_keeps_operator_chat_out_of_trading_json():
+    adapter = AureonBrainAdapter()
+    wrapped = (
+        "Operator message:\nhello my name is Gary Leckey\n\n"
+        "Redacted dashboard context:\n{\"screen\":\"console\",\"open_positions\":2,\"symbol\":\"SOLUSDT\"}\n\n"
+        "Compact Phi/Ollama/Aureon status:\n{\"ok\":true}"
+    )
+
+    context = adapter._extract_context([{"role": "user", "content": wrapped}], system="Aureon Phi chat")
+    response = adapter.prompt([{"role": "user", "content": wrapped}], system="Aureon Phi chat")
+
+    assert context["query"] == "hello my name is Gary Leckey"
+    assert context["symbols"] == []
+    assert context["action"] is None
+    assert "Gary Leckey" in response.text
+    assert "trading signal" in response.text
+    assert '"signal"' not in response.text
+    assert "SOLUSDT" not in response.text
+
+    capability = adapter.prompt(
+        [
+            {
+                "role": "user",
+                "content": (
+                    "Operator message:\nwhat can you do\n\n"
+                    "Redacted dashboard context:\n{\"screen\":\"console\",\"symbol\":\"SOLUSDT\"}\n\n"
+                    "Compact Phi/Ollama/Aureon status:\n{\"ok\":true}"
+                ),
+            }
+        ],
+        system="Aureon Phi chat",
+    )
+
+    assert "local client-job organism" in capability.text
+    assert '"signal"' not in capability.text
+    assert "SOLUSDT" not in capability.text

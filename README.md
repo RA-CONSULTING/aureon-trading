@@ -187,6 +187,8 @@ The coding panel is the human dashboard for code work while the organism is acti
 
 The same panel now includes **Aureon Phi Live Chat**. This is the 1:1 talkback lane from the dashboard to the local mind hub: the frontend refreshes hub-first instead of static-JSON-first, polls on a 1s live cadence, reads the Phi Bridge heartbeat, and sends chat messages to `POST /api/phi-bridge/chat`. The endpoint redacts secret-like context, asks the local/in-house voice adapter first, publishes replies onto ThoughtBus, and falls back to an immediate guided Aureon reply when the local LLM server is asleep or too slow. To tune the local model path:
 
+The Phi chat lane now treats the operator message as the authority for conversation classification. It extracts `Operator message:` from the wrapped dashboard payload before prompt filtering or AureonBrain fallback, so redacted cockpit context such as `console`, `open_positions`, or a visible `SOLUSDT` symbol cannot turn ordinary chat into a trading-signal JSON reply. Simple greetings, identity handshakes, capability questions, and cockpit-status questions use a fast operator-chat path with `chat` / `conversation` filter evidence and no unrelated source packets; heavier build, research, coding, UI, media, and system-health requests still route through the Ollama context weaver and Aureon response compiler.
+
 ```powershell
 $env:AUREON_PHI_CHAT_TIMEOUT_S = "180"
 $env:AUREON_PHI_CHAT_MAX_TOKENS = "120"

@@ -787,6 +787,23 @@ class AureonBrainAdapter(LLMAdapter):
         finally:
             AureonBrainAdapter._brain_load_attempted = True
 
+    @staticmethod
+    def _operator_message_from_wrapped_query(text: str) -> str:
+        value = str(text or "")
+        match = re.search(
+            r"(?is)\bOperator message:\s*(.*?)\n\s*Redacted dashboard context:",
+            value,
+        )
+        if match:
+            return match.group(1).strip()
+        match = re.search(
+            r"(?is)\bOperator message:\s*(.*?)\n\s*Compact Phi/Ollama/Aureon status:",
+            value,
+        )
+        if match:
+            return match.group(1).strip()
+        return value.strip()
+
     def _extract_context(self, messages: List[Dict[str, Any]], system: str) -> Dict[str, Any]:
         """Extract actionable context from conversation messages."""
         context: Dict[str, Any] = {"system": system, "query": "", "symbols": [], "action": None}
@@ -802,16 +819,24 @@ class AureonBrainAdapter(LLMAdapter):
                         elif isinstance(c, str):
                             parts.append(c)
                     content = " ".join(parts)
-                context["query"] = str(content)
+                context["query"] = self._operator_message_from_wrapped_query(str(content))
 
         # Extract symbols mentioned
         text = context["query"].upper()
-        common_symbols = [
-            "BTCUSDT", "ETHUSDT", "XRPUSDT", "SOLUSDT", "ADAUSDT",
-            "DOGEUSDT", "AVAXUSDT", "DOTUSDT", "MATICUSDT", "LINKUSDT",
-        ]
-        for sym in common_symbols:
-            if sym in text or sym.replace("USDT", "") in text:
+        common_symbols = {
+            "BTC": "BTCUSDT",
+            "ETH": "ETHUSDT",
+            "XRP": "XRPUSDT",
+            "SOL": "SOLUSDT",
+            "ADA": "ADAUSDT",
+            "DOGE": "DOGEUSDT",
+            "AVAX": "AVAXUSDT",
+            "DOT": "DOTUSDT",
+            "MATIC": "MATICUSDT",
+            "LINK": "LINKUSDT",
+        }
+        for base, sym in common_symbols.items():
+            if re.search(rf"\b{sym}\b", text) or re.search(rf"\b{base}\b", text):
                 context["symbols"].append(sym)
 
         # Detect action intent
@@ -825,8 +850,70 @@ class AureonBrainAdapter(LLMAdapter):
 
         return context
 
+    @staticmethod
+    def _is_market_context(context: Dict[str, Any]) -> bool:
+        if context.get("symbols"):
+            return True
+        lower = str(context.get("query") or "").lower()
+        market_terms = (
+            "trade",
+            "trading",
+            "market",
+            "signal",
+            "buy",
+            "sell",
+            "long",
+            "short",
+            "position",
+            "price",
+            "coin",
+            "crypto",
+            "ticker",
+            "exchange",
+            "portfolio",
+        )
+        return any(re.search(rf"\b{re.escape(term)}\b", lower) for term in market_terms)
+
+    def _operator_chat_reason(self, context: Dict[str, Any]) -> str:
+        query = str(context.get("query") or "").strip()
+        lowered = query.lower()
+        if any(
+            phrase in lowered
+            for phrase in (
+                "what can you do",
+                "what can aureon do",
+                "what are your capabilities",
+                "what can u do",
+                "capabilitys",
+                "capabilities",
+            )
+        ):
+            return (
+                "I can run Aureon as a local client-job organism: talk with you through Phi chat, scope coding jobs, "
+                "recruit the right internal roles, make safe code and UI changes, build local media artifacts, run tests "
+                "and browser proof, publish evidence, and hold weak work behind the quality gate. I still keep live trading, "
+                "payments, official filings, credential reveal, and destructive OS actions behind their existing gates."
+            )
+        if "what can you see" in lowered and any(token in lowered for token in ("cockpit", "dashboard", "console")):
+            return (
+                "I can see this as a Phi chat request attached to the local Aureon cockpit. I can use the redacted dashboard "
+                "context, route coding and UI jobs through the organism, publish proof, and report blockers. I will not claim "
+                "a file changed, test passed, trade executed, payment moved, filing submitted, or credential was handled unless "
+                "the evidence path proves it."
+            )
+        name_match = re.search(r"\bmy name is\s+([a-zA-Z][a-zA-Z .'-]{1,80})", query, flags=re.I)
+        name = name_match.group(1).strip().rstrip(".") if name_match else ""
+        greeting = f"Hello {name}." if name else "Hello."
+        return (
+            f"{greeting} I hear you through Aureon's local brain fallback, and I am treating this as operator chat, "
+            "not a trading signal. I can help route coding jobs, UI work, media builds, research, and system-health checks "
+            "through the local Aureon organism while keeping live trading, payments, filings, credentials, and destructive OS actions behind their gates."
+        )
+
     def _brain_reason(self, context: Dict[str, Any]) -> str:
         """Use AureonBrain to generate a reasoning response."""
+        if not self._is_market_context(context):
+            return self._operator_chat_reason(context)
         if not self._brain_loaded or not self._brain:
             return self._rule_engine_reason(context)
 
