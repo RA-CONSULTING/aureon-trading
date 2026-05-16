@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from abc import ABC, abstractmethod
@@ -1293,6 +1294,101 @@ class AureonHybridAdapter(LLMAdapter):
             )
         return results
 
+    @classmethod
+    def _latest_user_prompt(cls, messages: List[Dict[str, Any]]) -> str:
+        for msg in reversed(messages or []):
+            if str(msg.get("role") or "").lower() == "user":
+                return cls._message_text(msg)
+        return cls._message_text(messages[-1]) if messages else ""
+
+    @staticmethod
+    def _clean_weaver_text(text: str) -> str:
+        cleaned = str(text or "").strip()
+        cleaned = re.sub(r"(?im)^\s*(intent|evidence|draft)\s+packet\s*:\s*", "", cleaned)
+        cleaned = re.sub(r"(?im)^\s*I am using the context-weaver path:.*$", "", cleaned)
+        cleaned = re.sub(r"(?im)^\s*Aureon will compose the final answer\.?\s*$", "", cleaned)
+        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+        return cleaned.strip(" \n\t-")
+
+    @staticmethod
+    def _trim_incomplete_sentence(text: str) -> str:
+        candidate = str(text or "").strip()
+        if not candidate:
+            return ""
+        match = re.search(r"^(.+[.!?])(?:\s+[^.!?]*)?$", candidate, flags=re.S)
+        if match:
+            return match.group(1).strip()
+        return candidate
+
+    @staticmethod
+    def _is_capability_question(prompt: str) -> bool:
+        lowered = str(prompt or "").lower()
+        return any(
+            phrase in lowered
+            for phrase in (
+                "what can you do",
+                "what are your capabilities",
+                "what can aureon do",
+                "what can u do",
+                "capabilitys",
+                "capabilities",
+            )
+        )
+
+    @staticmethod
+    def _next_action_for_task(task_family: str) -> str:
+        if task_family == "coding":
+            return "Give me the coding job and I will scope it, recruit the workers, patch through safe routes, test it, and hold handover until proof passes."
+        if task_family == "media":
+            return "Give me the artifact brief and I will build local previews, playback/render proof, quality score, snags, and regeneration attempts before handover."
+        if task_family == "ui":
+            return "Give me the screen or workflow and I will wire the cockpit evidence, build the UI surface, run build/smoke proof, and show approval state."
+        if task_family == "research":
+            return "Give me the research question and I will use local source packets first, add approved web evidence when needed, then return proof and blockers."
+        return "Give me the job in the cockpit or terminal and I will route it through the right Aureon lane with proof and blockers visible."
+
+    def _capability_reply(self, filter_report: Optional[Dict[str, Any]]) -> str:
+        return "\n".join(
+            [
+                "I can run Aureon as a local client-job organism: talk with you through Phi chat, scope coding jobs, recruit the right internal roles, make safe code/UI changes, build local media artifacts, run tests and browser proof, publish evidence, and hold weak work behind the quality gate.",
+                "",
+                "Proof: this reply is coming through the Ollama context-weaver plus Aureon's dynamic prompt filter, so Ollama shards stay as evidence while Aureon compiles the final human answer.",
+                "Blockers: I still keep live trading, payments, official filings, credential reveal, and destructive OS actions behind the existing gates.",
+                "Next action: give me a job in the cockpit or terminal and I will scope it, route the crew, do the work through safe local paths, prove it, and show the handover only when the gate passes.",
+            ]
+        )
+
+    def _compile_weaver_reply(
+        self,
+        messages: List[Dict[str, Any]],
+        intent: str,
+        evidence: str,
+        draft: str,
+        draft_stop: str,
+        filter_report: Optional[Dict[str, Any]],
+    ) -> str:
+        prompt = self._latest_user_prompt(messages)
+        if self._is_capability_question(prompt):
+            return self._capability_reply(filter_report)
+
+        cleaned_draft = self._clean_weaver_text(draft)
+        if cleaned_draft:
+            if draft_stop == "max_tokens":
+                cleaned_draft = self._trim_incomplete_sentence(cleaned_draft)
+            if cleaned_draft:
+                return cleaned_draft
+
+        cleaned_intent = self._trim_incomplete_sentence(self._clean_weaver_text(intent))
+        cleaned_evidence = self._trim_incomplete_sentence(self._clean_weaver_text(evidence))
+        task_family = str((filter_report or {}).get("task_family") or "conversation")
+        parts = ["I can help with that."]
+        if cleaned_intent:
+            parts.append(f"I read the job as: {cleaned_intent}")
+        if cleaned_evidence:
+            parts.append(f"Current proof/blockers: {cleaned_evidence}")
+        parts.append(f"Next action: {self._next_action_for_task(task_family)}")
+        return "\n\n".join(parts)
+
     def _compose_weaver_response(
         self,
         messages: List[Dict[str, Any]],
@@ -1306,21 +1402,7 @@ class AureonHybridAdapter(LLMAdapter):
         draft_stop = str(by_name.get("answer_draft", {}).get("stop_reason") or "")
         success_count = sum(1 for item in shard_results if item.get("ok"))
 
-        if draft and draft_stop != "max_tokens":
-            final = draft
-        else:
-            final_parts = [
-                "I am using the context-weaver path: smaller Ollama workers read separate packets, then Aureon recomposes the final reply through its cognitive layer."
-            ]
-            if intent:
-                final_parts.append(f"Intent packet: {intent}")
-            if evidence:
-                final_parts.append(f"Evidence packet: {evidence}")
-            if draft:
-                final_parts.append(f"Draft packet held for truncation: {draft}")
-            if not intent and not evidence:
-                final_parts.append("I do not have a usable local-model shard yet, so I am holding claims to the evidence already in the dashboard.")
-            final = "\n".join(final_parts)
+        final = self._compile_weaver_reply(messages, intent, evidence, draft, draft_stop, filter_report)
 
         shard_model = str(os.environ.get("AUREON_OLLAMA_WEAVER_MODEL") or self.local.model)
         raw_trace = {
