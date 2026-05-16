@@ -46,6 +46,9 @@ DEFAULT_DESKTOP_STOP_PATH = Path("state/aureon_coding_organism_desktop.stop")
 DEFAULT_CAPABILITY_FORGE_STATE_PATH = Path("state/aureon_capability_forge_last_run.json")
 DEFAULT_CAPABILITY_FORGE_AUDIT_JSON = Path("docs/audits/aureon_capability_forge.json")
 DEFAULT_CAPABILITY_FORGE_PUBLIC_JSON = Path("frontend/public/aureon_capability_forge.json")
+DEFAULT_CAPABILITY_STRESS_AUDIT_STATE_PATH = Path("state/aureon_capability_stress_audit_last_run.json")
+DEFAULT_COMPLEX_BUILD_STRESS_AUDIT_STATE_PATH = Path("state/aureon_complex_build_stress_audit_last_run.json")
+DEFAULT_CODING_CAPABILITY_UNBLOCKER_STATE_PATH = Path("state/aureon_coding_capability_unblocker_last_run.json")
 DEFAULT_ARTIFACT_QUALITY_PUBLIC_JSON = Path("frontend/public/aureon_artifact_quality_report.json")
 DEFAULT_CREATIVE_GUARDIAN_STATE_PATH = Path("state/aureon_agent_creative_process_guardian_last_run.json")
 DEFAULT_CREATIVE_GUARDIAN_AUDIT_JSON = Path("docs/audits/aureon_agent_creative_process_guardian.json")
@@ -943,6 +946,7 @@ def _build_work_journal(
     capability_forge_report: Optional[Dict[str, Any]] = None,
     artifact_quality_report: Optional[Dict[str, Any]] = None,
     creative_process_guardian: Optional[Dict[str, Any]] = None,
+    coding_capability_unblocker: Optional[Dict[str, Any]] = None,
     client_job: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build the operator-facing trail from prompt to finished files."""
@@ -1119,6 +1123,29 @@ def _build_work_journal(
                     "snagging_list": creative_process_guardian.get("snagging_list", []),
                     "organism_mind_contract": creative_process_guardian.get("organism_mind_contract", {}),
                     "published_files": creative_process_guardian.get("output_files", []),
+                },
+            }
+        )
+
+    if coding_capability_unblocker:
+        unblock_summary = coding_capability_unblocker.get("summary", {})
+        stage_rows.append(
+            {
+                "id": "coding_capability_unblocker",
+                "title": "Coding capability gates",
+                "status": coding_capability_unblocker.get("status", "coding_capability_gates_checked"),
+                "ok": True,
+                "summary": (
+                    f"{unblock_summary.get('ready_gate_count', 0)} / "
+                    f"{unblock_summary.get('gate_count', 0)} coding gate(s) open; "
+                    f"{unblock_summary.get('converted_coding_blocker_count', 0)} blocker(s) converted to autonomous gates."
+                ),
+                "evidence": {
+                    "summary": unblock_summary,
+                    "autonomous_gates": coding_capability_unblocker.get("autonomous_gates", []),
+                    "source_discovery_routes": coding_capability_unblocker.get("source_discovery_routes", []),
+                    "autonomous_work_orders": coding_capability_unblocker.get("autonomous_work_orders", []),
+                    "published_files": coding_capability_unblocker.get("output_files", []),
                 },
             }
         )
@@ -1495,6 +1522,7 @@ def submit_coding_prompt(
     capability_forge_report = _extract_step_payload(route, "aureon-local-capability-forge-v1")
     artifact_quality_report = _extract_quality_payload(route)
     creative_process_guardian = _extract_step_payload(route, "aureon-agent-creative-process-guardian-v1")
+    coding_capability_unblocker = None
 
     evidence_core = {
         "who": {
@@ -1540,6 +1568,7 @@ def submit_coding_prompt(
                 "client questions when scope is incomplete",
                 "agent team handoff only after scope lock",
                 "agent creative process guardian reads metacognitive, sensory, HNC/Auris, and sentient-style evidence",
+                "coding capability unblocker converts missing tools, skills, dependencies, and proof gaps into autonomous gates",
                 "GoalExecutionEngine.submit_goal",
                 "Adaptive local capability forge when AgentCore tool intents are unavailable",
                 "SafeCodeControl.propose",
@@ -1626,6 +1655,26 @@ def submit_coding_prompt(
             }
     evidence_core["what"]["creative_process_guardian_created"] = bool(creative_process_guardian)
     evidence_core["act"]["creative_process_guardian_checked"] = bool(creative_process_guardian)
+    try:
+        from aureon.autonomous.aureon_coding_capability_unblocker import (
+            build_and_write_coding_capability_unblocker,
+        )
+
+        coding_capability_unblocker = build_and_write_coding_capability_unblocker(
+            execution_prompt if scope_locked else prompt_text,
+            root=root,
+            attach_to_bridge=False,
+        )
+    except Exception as exc:
+        coding_capability_unblocker = {
+            "schema_version": "aureon-coding-capability-unblocker-v1",
+            "status": "coding_capability_unblocker_error",
+            "ok": False,
+            "error": str(exc),
+            "summary": {"gate_repair_count": 1},
+        }
+    evidence_core["what"]["coding_capability_unblocker_created"] = bool(coding_capability_unblocker)
+    evidence_core["act"]["coding_capability_gates_checked"] = bool(coding_capability_unblocker)
     if capability_forge_report:
         client_job["capability_forge"] = capability_forge_report
     if artifact_quality_report:
@@ -1642,6 +1691,8 @@ def submit_coding_prompt(
         )
     if creative_process_guardian:
         client_job["creative_process_guardian"] = creative_process_guardian
+    if coding_capability_unblocker:
+        client_job["coding_capability_unblocker"] = coding_capability_unblocker
     proof_checklist = _build_proof_checklist(
         scope_locked=scope_locked,
         route_clean=route_clean,
@@ -1684,6 +1735,7 @@ def submit_coding_prompt(
         capability_forge_report=capability_forge_report,
         artifact_quality_report=artifact_quality_report,
         creative_process_guardian=creative_process_guardian,
+        coding_capability_unblocker=coding_capability_unblocker,
         client_job=client_job,
     )
 
@@ -1730,6 +1782,22 @@ def submit_coding_prompt(
             )
             if creative_process_guardian
             else False,
+            "coding_capability_unblocker_ok": bool(coding_capability_unblocker.get("ok"))
+            if coding_capability_unblocker
+            else None,
+            "coding_capability_ready_gate_count": (coding_capability_unblocker.get("summary") or {}).get(
+                "ready_gate_count", 0
+            )
+            if coding_capability_unblocker
+            else 0,
+            "coding_capability_gate_count": (coding_capability_unblocker.get("summary") or {}).get("gate_count", 0)
+            if coding_capability_unblocker
+            else 0,
+            "coding_capability_converted_blocker_count": (coding_capability_unblocker.get("summary") or {}).get(
+                "converted_coding_blocker_count", 0
+            )
+            if coding_capability_unblocker
+            else 0,
             "goal_engine_routed": bool(route.get("ok")),
             "goal_route_clean": route_clean,
             "safe_code_proposal_created": bool(proposal),
@@ -1779,6 +1847,7 @@ def submit_coding_prompt(
         "capability_forge": capability_forge_report,
         "artifact_quality_report": artifact_quality_report,
         "creative_process_guardian": creative_process_guardian,
+        "coding_capability_unblocker": coding_capability_unblocker,
         **evidence_core,
     }
 
@@ -1807,7 +1876,19 @@ def get_coding_organism_status(*, root: Optional[Path] = None) -> Dict[str, Any]
     public_state = _read_json(_rooted(root, DEFAULT_PUBLIC_JSON))
     code_state = _read_json(_rooted(root, DEFAULT_CODE_STATE_PATH))
     task_state = _read_json(_rooted(root, DEFAULT_TASK_QUEUE_PATH))
+    stress_audit_state = _read_json(_rooted(root, DEFAULT_CAPABILITY_STRESS_AUDIT_STATE_PATH))
+    complex_stress_state = _read_json(_rooted(root, DEFAULT_COMPLEX_BUILD_STRESS_AUDIT_STATE_PATH))
+    coding_capability_unblocker_state = _read_json(_rooted(root, DEFAULT_CODING_CAPABILITY_UNBLOCKER_STATE_PATH))
     last_run = state or public_state
+    if stress_audit_state and isinstance(last_run, dict):
+        last_run = dict(last_run)
+        last_run.setdefault("capability_stress_audit", stress_audit_state)
+    if complex_stress_state and isinstance(last_run, dict):
+        last_run = dict(last_run)
+        last_run.setdefault("complex_build_stress_audit", complex_stress_state)
+    if coding_capability_unblocker_state and isinstance(last_run, dict):
+        last_run = dict(last_run)
+        last_run.setdefault("coding_capability_unblocker", coding_capability_unblocker_state)
     return {
         "available": True,
         "schema_version": "aureon-coding-organism-status-v1",
@@ -1816,6 +1897,9 @@ def get_coding_organism_status(*, root: Optional[Path] = None) -> Dict[str, Any]
         "last_run": last_run,
         "safe_code_status": code_state,
         "task_queue_status": task_state,
+        "capability_stress_audit": stress_audit_state,
+        "complex_build_stress_audit": complex_stress_state,
+        "coding_capability_unblocker": coding_capability_unblocker_state,
         "endpoints": {
             "prompt": "POST /api/coding/prompt",
             "status": "GET /api/coding/status",

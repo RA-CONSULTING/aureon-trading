@@ -175,7 +175,7 @@ def test_capability_forge_interactive_game_builds_local_playable_artifact(tmp_pa
     assert quality["score"] >= 0.8
 
 
-def test_capability_forge_unknown_tool_request_builds_adaptive_skill_capsule(tmp_path: Path, monkeypatch) -> None:
+def test_capability_forge_barcode_tool_request_builds_domain_specific_skill(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
         _fake_expression_context,
@@ -190,11 +190,35 @@ def test_capability_forge_unknown_tool_request_builds_adaptive_skill_capsule(tmp
     quality = report["artifact_quality_report"]
     assert report["handover_ready"] is True
     assert report["summary"]["adaptive_skill_created"] is True
-    assert report["adaptive_skill_evidence"]["name"] == "universal_adaptive_skill_forge"
-    assert manifest["kind"] == "adaptive_skill_capsule"
+    assert report["adaptive_skill_evidence"]["name"] == "barcode_label_generator_skill"
+    assert manifest["kind"] == "barcode_label_generator"
     assert manifest["public_url"].endswith("/index.html")
     assert Path(manifest["asset_path"]).exists()
     assert Path(manifest["tool_path"]).exists()
     assert Path(manifest["runbook_path"]).exists()
     assert quality["handover_ready"] is True
-    assert any(check["id"] == "adaptive_skill_run_contract_exists" for check in quality["checks"])
+    assert any(check["id"] == "domain_specific_barcode_logic" and check["ok"] for check in quality["checks"])
+    tool_text = Path(manifest["tool_path"]).read_text(encoding="utf-8")
+    assert "CODE39_PATTERNS" in tool_text
+    assert "build_labels" in tool_text
+
+
+def test_capability_forge_generic_finished_tool_blocks_fake_handover(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
+        _fake_expression_context,
+    )
+
+    report = build_and_write_capability_forge(
+        "Build a local quantum spline inventory generator tool with run instructions and proof.",
+        root=tmp_path,
+    )
+
+    manifest = report["artifact_manifest"]
+    quality = report["artifact_quality_report"]
+    assert report["handover_ready"] is False
+    assert report["approval_state"]["state"] == "blocked_by_quality_gate"
+    assert manifest["kind"] == "adaptive_skill_capsule"
+    assert quality["handover_ready"] is False
+    assert quality["status"] == "artifact_quality_blocked"
+    assert any(snag["id"] == "missing_domain_specific_worker" for snag in quality["snags"])

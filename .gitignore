@@ -146,6 +146,7 @@ docs/audits/
 frontend/public/*.json
 frontend/public/aureon_*.json
 frontend/public/aureon_visual_artifacts/
+frontend/test-results/
 frontend/vite.config.ts.timestamp-*.mjs
 autonomy/
 accounting/

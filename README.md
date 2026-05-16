@@ -147,6 +147,23 @@ python scripts/aureon_ignition.py --audit-only
 | Wake-up manifest | `state/aureon_wake_up_manifest.json` |
 | Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
 
+### Unified Console Layout
+
+The unified autonomous console is organized as an operations-first dashboard instead of one long stacked feed. Open `http://127.0.0.1:8081/` for the default **Overview** tab, or deep-link to a specific operator lane:
+
+| Console lane | URL |
+|---|---|
+| Overview | `http://127.0.0.1:8081/#overview` |
+| Live Ops | `http://127.0.0.1:8081/#live-ops` |
+| Coding cockpit | `http://127.0.0.1:8081/#coding` |
+| Trading state | `http://127.0.0.1:8081/#trading` |
+| Security and boundaries | `http://127.0.0.1:8081/#security` |
+| Inventory and work orders | `http://127.0.0.1:8081/#inventory` |
+| Agent company | `http://127.0.0.1:8081/#agents` |
+| Evidence and artifacts | `http://127.0.0.1:8081/#evidence` |
+
+The shell keeps safety blockers visible, but moves heavy panels behind category tabs. Use the built-in filters to narrow blockers, work orders, source surfaces, and evidence artifacts while preserving the existing runtime, credential, payment, filing, trading, and destructive-action gates.
+
 Live trading requires configured exchange credentials and the existing runtime safety gates to be clear. The docs describe how to run Aureon; they do not bypass stale-data, position, credential, API-rate, payment, filing, or security boundaries.
 
 ### Coding Organism And Client Job Flow

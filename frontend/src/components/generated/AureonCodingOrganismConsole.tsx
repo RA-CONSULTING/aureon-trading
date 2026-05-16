@@ -116,6 +116,15 @@ function collectArtifacts(status: JsonMap): ArtifactItem[] {
   push(status.artifact_manifest?.preview_url, status.artifact_manifest?.preview_path, status.task_family || "Capability forge preview");
   push(status.capability_forge?.artifact_manifest?.public_url, status.capability_forge?.artifact_manifest?.asset_path, status.capability_forge?.task_family || "Capability forge artifact");
   push(status.capability_forge?.artifact_manifest?.preview_url, status.capability_forge?.artifact_manifest?.preview_path, status.capability_forge?.task_family || "Capability forge preview");
+  const complexCases = status.complex_build_stress_audit?.cases;
+  if (Array.isArray(complexCases)) {
+    complexCases.forEach((stressCase: JsonMap) => {
+      const manifest = stressCase.quality_report?.artifact_manifest || {};
+      const title = stressCase.id || stressCase.actual_artifacts?.kind || "Complex stress artifact";
+      push(manifest.preview_url || stressCase.actual_artifacts?.url, manifest.preview_path || stressCase.actual_artifacts?.path, title);
+      push(manifest.public_url || stressCase.actual_artifacts?.url, manifest.asset_path || stressCase.actual_artifacts?.path, title);
+    });
+  }
   return found;
 }
 
@@ -142,6 +151,9 @@ export function AureonCodingOrganismConsole() {
     const creativeGuardianState = await fetchJson("/aureon_agent_creative_process_guardian.json");
     const ollamaCognitiveState = await fetchJson("/aureon_ollama_cognitive_bridge.json");
     const dynamicFilterState = await fetchJson("/aureon_dynamic_prompt_filter.json");
+    const stressAuditState = await fetchJson("/aureon_capability_stress_audit.json");
+    const complexStressState = await fetchJson("/aureon_complex_build_stress_audit.json");
+    const codingCapabilityState = await fetchJson("/aureon_coding_capability_unblocker.json");
     const next = { ...payload };
     if (hasPayload(forgeState) && !hasPayload(next.capability_forge)) {
       next.capability_forge = forgeState;
@@ -157,6 +169,15 @@ export function AureonCodingOrganismConsole() {
     }
     if (hasPayload(dynamicFilterState) && !hasPayload(next.dynamic_prompt_filter)) {
       next.dynamic_prompt_filter = dynamicFilterState;
+    }
+    if (hasPayload(stressAuditState) && !hasPayload(next.capability_stress_audit)) {
+      next.capability_stress_audit = stressAuditState;
+    }
+    if (hasPayload(complexStressState) && !hasPayload(next.complex_build_stress_audit)) {
+      next.complex_build_stress_audit = complexStressState;
+    }
+    if (hasPayload(codingCapabilityState) && !hasPayload(next.coding_capability_unblocker)) {
+      next.coding_capability_unblocker = codingCapabilityState;
     }
     return next;
   };
@@ -392,6 +413,17 @@ export function AureonCodingOrganismConsole() {
   const clientJob = status.client_job || {};
   const capabilityForge = status.capability_forge || clientJob.capability_forge || {};
   const qualityReport = status.artifact_quality_report || clientJob.artifact_quality_report || capabilityForge.artifact_quality_report || {};
+  const stressAudit = status.capability_stress_audit || {};
+  const stressSummary = stressAudit.summary || {};
+  const stressCases = Array.isArray(stressAudit.cases) ? stressAudit.cases : [];
+  const complexStress = status.complex_build_stress_audit || {};
+  const complexSummary = complexStress.summary || {};
+  const complexCases = Array.isArray(complexStress.cases) ? complexStress.cases : [];
+  const codingCapability = status.coding_capability_unblocker || clientJob.coding_capability_unblocker || {};
+  const codingCapabilitySummary = codingCapability.summary || {};
+  const codingGates = Array.isArray(codingCapability.autonomous_gates) ? codingCapability.autonomous_gates : [];
+  const codingWorkOrders = Array.isArray(codingCapability.autonomous_work_orders) ? codingCapability.autonomous_work_orders : [];
+  const sourceRoutes = Array.isArray(codingCapability.source_discovery_routes) ? codingCapability.source_discovery_routes : [];
   const creativeGuardian = status.creative_process_guardian || clientJob.creative_process_guardian || {};
   const creativeSummary = creativeGuardian.summary || {};
   const creativeMind = creativeGuardian.organism_mind_contract || {};
@@ -459,6 +491,9 @@ export function AureonCodingOrganismConsole() {
           </Badge>
           <Badge variant={summary.creative_process_guardian_ok || creativeGuardian.ok ? "success" : creativeGuardian.schema_version ? "warning" : "outline"}>
             mind guard {summary.creative_process_guardian_ok || creativeGuardian.ok ? "passed" : creativeGuardian.schema_version ? "attention" : "waiting"}
+          </Badge>
+          <Badge variant={codingCapability.ok ? "success" : codingCapability.schema_version ? "warning" : "outline"}>
+            coding gates {codingCapabilitySummary.ready_gate_count || 0}/{codingCapabilitySummary.gate_count || 0}
           </Badge>
         </div>
 
@@ -695,6 +730,80 @@ export function AureonCodingOrganismConsole() {
           <Stat icon={CheckCircle2} label="route ok" value={route.ok ? "yes" : "no"} />
         </div>
 
+        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-emerald-50">Autonomous Coding Capability Gates</div>
+              <div className="mt-1 text-xs text-emerald-50/75">
+                Missing skills, tools, dependencies, tests, and source knowledge become autonomous gates; live trading, payments, filings, credentials, and destructive OS actions remain manual holds.
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={codingCapability.ok ? "success" : codingCapability.schema_version ? "warning" : "outline"}>
+                {codingCapability.status || "unblocker waiting"}
+              </Badge>
+              <Badge variant="outline">gates {codingCapabilitySummary.ready_gate_count || 0}/{codingCapabilitySummary.gate_count || 0}</Badge>
+              <Badge variant={Number(codingCapabilitySummary.converted_coding_blocker_count || 0) ? "success" : "outline"}>
+                converted {codingCapabilitySummary.converted_coding_blocker_count || 0}
+              </Badge>
+              <Badge variant={Number(codingCapabilitySummary.manual_authority_hold_count || 0) ? "warning" : "outline"}>
+                manual holds {codingCapabilitySummary.manual_authority_hold_count || 0}
+              </Badge>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-5">
+            <Mini label="Work orders" value={codingCapabilitySummary.work_order_count || 0} />
+            <Mini label="Source packets" value={codingCapabilitySummary.source_packet_count || 0} />
+            <Mini label="Research routes" value={codingCapabilitySummary.external_research_routes_ready || sourceRoutes.length || 0} />
+            <Mini label="Gate repairs" value={codingCapabilitySummary.gate_repair_count || 0} />
+            <Mini label="Policy" value={codingCapability.provider_policy || "local first"} />
+          </div>
+          <div className="mt-3 grid gap-2 lg:grid-cols-3">
+            <div className="rounded-md border border-emerald-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-emerald-50">System Gates</div>
+              <div className="space-y-1">
+                {codingGates.slice(0, 9).map((gate: JsonMap) => (
+                  <div key={gate.id} className="rounded border border-emerald-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{gate.title || gate.id}</span>
+                      <Badge variant={gate.open ? "success" : "warning"}>{gate.status || "waiting"}</Badge>
+                    </div>
+                    <div className="mt-1 text-emerald-50/70">{gate.next_action}</div>
+                  </div>
+                ))}
+                {!codingGates.length ? <div className="text-xs text-emerald-50/70">Run the unblocker to publish coding autonomy gates.</div> : null}
+              </div>
+            </div>
+            <div className="rounded-md border border-emerald-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-emerald-50">Source Discovery</div>
+              <div className="space-y-1">
+                {sourceRoutes.slice(0, 4).map((routeItem: JsonMap) => (
+                  <div key={routeItem.id} className="rounded border border-emerald-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <div className="font-medium">{routeItem.name || routeItem.id}</div>
+                    <div className="mt-1 text-emerald-50/70">{String(routeItem.mode || "").replace(/_/g, " ")}</div>
+                  </div>
+                ))}
+                {!sourceRoutes.length ? <div className="text-xs text-emerald-50/70">Source routes are waiting for the unblocker report.</div> : null}
+              </div>
+            </div>
+            <div className="rounded-md border border-emerald-300/25 bg-background/25 p-3">
+              <div className="mb-2 text-xs font-medium text-emerald-50">Autonomous Work Orders</div>
+              <div className="space-y-1">
+                {codingWorkOrders.slice(0, 5).map((workOrder: JsonMap) => (
+                  <div key={workOrder.id} className="rounded border border-emerald-300/20 bg-background/20 px-2 py-1 text-[11px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{String(workOrder.id || "").replace(/_/g, " ")}</span>
+                      <Badge variant="outline">{workOrder.priority || "P60"}</Badge>
+                    </div>
+                    <div className="mt-1 text-emerald-50/70">{workOrder.acceptance}</div>
+                  </div>
+                ))}
+                {!codingWorkOrders.length ? <div className="text-xs text-emerald-50/70">No unblocker work orders are published yet.</div> : null}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-md border border-teal-500/30 bg-teal-500/10 p-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -769,6 +878,98 @@ export function AureonCodingOrganismConsole() {
                 </div>
               ) : null}
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-amber-50">Capability Stress Audit</div>
+              <div className="mt-1 text-xs text-amber-50/75">
+                Aureon stress-tests task families, detects fake passes, and separates proven handovers from correctly held work.
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={stressAudit.ok ? "success" : stressAudit.schema_version ? "warning" : "outline"}>
+                {stressAudit.status || "audit waiting"}
+              </Badge>
+              <Badge variant={Number(stressSummary.fake_pass_count || 0) ? "warning" : "success"}>
+                fake passes {stressSummary.fake_pass_count || 0}
+              </Badge>
+              <Badge variant="outline">cases {stressSummary.passed_count || 0}/{stressSummary.case_count || 0}</Badge>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-4">
+            <Mini label="Proven now" value={(stressAudit.capability_scope?.proven_now || []).length || 0} />
+            <Mini label="Held correctly" value={(stressAudit.capability_scope?.correctly_blocked || []).length || 0} />
+            <Mini label="Needs repair" value={(stressAudit.capability_scope?.needs_repair || []).length || 0} />
+            <Mini label="Legacy findings" value={stressSummary.legacy_finding_count || 0} />
+          </div>
+          <div className="mt-3 grid gap-2 lg:grid-cols-2">
+            {stressCases.slice(0, 4).map((item: JsonMap) => (
+              <div key={item.id} className="rounded-md border border-amber-300/25 bg-background/25 p-2 text-xs text-amber-50/80">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-amber-50">{String(item.id || "case").replace(/_/g, " ")}</span>
+                  <Badge variant={item.ok ? "success" : "warning"}>{item.actual_handover ? "handover" : "held"}</Badge>
+                </div>
+                <div className="mt-1 text-amber-50/70">
+                  {item.artifact_kind || "artifact pending"} | score {Math.round(Number(item.quality_score || 0) * 100)}%
+                </div>
+              </div>
+            ))}
+            {!stressCases.length ? <div className="text-xs text-amber-50/70">Run the stress audit to publish capability scope evidence.</div> : null}
+          </div>
+        </div>
+
+        <div className="rounded-md border border-rose-500/30 bg-rose-500/10 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-rose-50">Complex Build Stress Certification</div>
+              <div className="mt-1 text-xs text-rose-50/75">
+                Mixed-mode certification for broad client jobs: sandbox builds, live repo probes, safe auto-repairs, fake-pass detection, and handover gates.
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={complexStress.ok ? "success" : complexStress.schema_version ? "warning" : "outline"}>
+                {complexStress.status || "certification waiting"}
+              </Badge>
+              <Badge variant={Number(complexSummary.fake_pass_count || 0) ? "warning" : "success"}>
+                fake passes {complexSummary.fake_pass_count || 0}
+              </Badge>
+              <Badge variant="outline">cases {complexSummary.passed_count || 0}/{complexSummary.case_count || 0}</Badge>
+              <Badge variant={Number(complexSummary.repair_attempt_count || 0) ? "warning" : "outline"}>
+                repairs {complexSummary.repair_attempt_count || 0}
+              </Badge>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-5">
+            <Mini label="Handover ready" value={complexSummary.handover_ready_count || 0} />
+            <Mini label="Correctly held" value={complexSummary.correctly_held_count || 0} />
+            <Mini label="Sandbox" value={complexSummary.sandbox_case_count || 0} />
+            <Mini label="Live repo" value={complexSummary.live_repo_case_count || 0} />
+            <Mini label="Needs repair" value={(complexStress.capability_scope?.needs_repair || []).length || 0} />
+          </div>
+          <div className="mt-3 grid gap-2 lg:grid-cols-2">
+            {complexCases.slice(0, 10).map((item: JsonMap) => {
+              const artifactUrl = normalizePublicUrl(item.quality_report?.artifact_manifest?.preview_url || item.actual_artifacts?.url || "");
+              return (
+                <div key={item.id} className="rounded-md border border-rose-300/25 bg-background/25 p-2 text-xs text-rose-50/80">
+                  <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-rose-50">{String(item.id || "case").replace(/_/g, " ")}</span>
+                  <Badge variant={item.ok ? "success" : "warning"}>{item.handover_state?.state || "waiting"}</Badge>
+                  </div>
+                  <div className="mt-1 text-rose-50/70">
+                  {item.actual_artifacts?.kind || "artifact pending"} | repairs {(item.repair_attempts || []).length || 0}
+                  </div>
+                  {artifactUrl ? (
+                    <a href={artifactUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-[11px] font-medium text-rose-100 underline underline-offset-2">
+                      Open preview
+                    </a>
+                  ) : null}
+                </div>
+              );
+            })}
+            {!complexCases.length ? <div className="text-xs text-rose-50/70">Run complex build certification to publish broad build/workload evidence.</div> : null}
           </div>
         </div>
 

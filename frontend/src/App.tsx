@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -24,6 +24,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -370,6 +371,71 @@ const safetyTone: Record<string, string> = {
   manual_filing_boundary: "border-orange-500/30 bg-orange-500/10 text-orange-300",
   admin_or_tenant_boundary: "border-yellow-500/30 bg-yellow-500/10 text-yellow-300",
 };
+
+type DashboardTabId = "overview" | "live-ops" | "coding" | "trading" | "security" | "inventory" | "agents" | "evidence";
+type BlockerFilter = "all" | "critical" | "security" | "runtime" | "stale";
+type WorkOrderFilter = "all" | "blocked" | "ready" | "archive" | "screen";
+type SurfaceFilter = "all" | "observation" | "security" | "live" | "credential" | "missing";
+type EvidenceFilter = "all" | "audit" | "public" | "runtime" | "report";
+
+interface DashboardTabConfig {
+  id: DashboardTabId;
+  title: string;
+  summary: string;
+  icon: typeof Activity;
+}
+
+const dashboardTabs: DashboardTabConfig[] = [
+  { id: "overview", title: "Overview", summary: "Health, blockers, runtime, and next actions.", icon: Eye },
+  { id: "live-ops", title: "Live Ops", summary: "Runtime shell, interfaces, and live telemetry.", icon: Radio },
+  { id: "coding", title: "Coding", summary: "Prompt lane, forge, tests, and handover proof.", icon: Settings },
+  { id: "trading", title: "Trading", summary: "Trading state, exchange checks, and risk gates.", icon: LineChart },
+  { id: "security", title: "Security", summary: "Boundaries, credentials, blockers, and safe routes.", icon: ShieldCheck },
+  { id: "inventory", title: "Inventory", summary: "Work orders, screens, surfaces, and migration queue.", icon: Database },
+  { id: "agents", title: "Agents", summary: "Aureon company, role map, and capability switchboard.", icon: Brain },
+  { id: "evidence", title: "Evidence", summary: "Artifacts, public manifests, reports, and proofs.", icon: FileText },
+];
+
+const blockerFilterOptions: Array<{ id: BlockerFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "critical", label: "Critical" },
+  { id: "security", label: "Security" },
+  { id: "runtime", label: "Runtime" },
+  { id: "stale", label: "Stale" },
+];
+
+const workOrderFilterOptions: Array<{ id: WorkOrderFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "blocked", label: "Blocked" },
+  { id: "ready", label: "Ready" },
+  { id: "archive", label: "Archive" },
+  { id: "screen", label: "Screen" },
+];
+
+const surfaceFilterOptions: Array<{ id: SurfaceFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "observation", label: "Observation" },
+  { id: "security", label: "Security" },
+  { id: "live", label: "Live" },
+  { id: "credential", label: "Credential" },
+  { id: "missing", label: "Missing" },
+];
+
+const evidenceFilterOptions: Array<{ id: EvidenceFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "audit", label: "Audit" },
+  { id: "public", label: "Public" },
+  { id: "runtime", label: "Runtime" },
+  { id: "report", label: "Report" },
+];
+
+function normalizeDashboardTab(hashOrValue?: string): DashboardTabId {
+  const raw = String(hashOrValue || "")
+    .replace(/^#\/?/, "")
+    .trim()
+    .toLowerCase();
+  return dashboardTabs.some((tab) => tab.id === raw) ? (raw as DashboardTabId) : "overview";
+}
 
 interface SecurityBlockerWorkOrder {
   title: string;
@@ -1024,6 +1090,25 @@ function AppShell() {
   const [hncSecurityComparison, setHncSecurityComparison] = useState<HNCPacketSecurityComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState("overview");
+  const [dashboardTab, setDashboardTabState] = useState<DashboardTabId>(() =>
+    typeof window === "undefined" ? "overview" : normalizeDashboardTab(window.location.hash),
+  );
+  const [blockerFilter, setBlockerFilter] = useState<BlockerFilter>("all");
+  const [workOrderFilter, setWorkOrderFilter] = useState<WorkOrderFilter>("all");
+  const [surfaceQuery, setSurfaceQuery] = useState("");
+  const [surfaceFilter, setSurfaceFilter] = useState<SurfaceFilter>("all");
+  const [evidenceFilter, setEvidenceFilter] = useState<EvidenceFilter>("all");
+
+  const setDashboardTab = (value: string) => {
+    const next = normalizeDashboardTab(value);
+    setDashboardTabState(next);
+    if (typeof window !== "undefined") {
+      const nextHash = `#${next}`;
+      if (window.location.hash !== nextHash) {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${nextHash}`);
+      }
+    }
+  };
 
   const refresh = async () => {
     setLoading(true);
@@ -1036,6 +1121,14 @@ function AppShell() {
     refresh();
     const timer = window.setInterval(refresh, 30000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const syncHash = () => setDashboardTabState(normalizeDashboardTab(window.location.hash));
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
   }, []);
 
   useEffect(() => {
@@ -1097,8 +1190,15 @@ function AppShell() {
   const highBlindSpotCount = asNumber(organismSummary.high_blind_spot_count);
   const manualActions = Object.entries(plan.safety_contract || {}).filter(([, value]) => Boolean(value));
   const activeScreen = screens.find((screen) => screen.id === active) || screens[0];
+  const tradingScreen = screens.find((screen) => screen.id === "trading") || activeScreen;
+  const securityScreen = screens.find((screen) => screen.id === "saas_security") || activeScreen;
+  const selectedDashboardTab = dashboardTabs.find((tab) => tab.id === dashboardTab) || dashboardTabs[0];
   const statusLines = organism.status_lines?.length ? organism.status_lines : runtime.statusLines;
-  const activeSecurityBlockers = screenSecurityBlockers[active] || [];
+  const allSecurityBlockers = Object.values(screenSecurityBlockers).flat();
+  const filteredSecurityBlockers = allSecurityBlockers.filter((blocker) => matchesBlockerFilter(blocker, blockerFilter));
+  const tradingSecurityBlockers = (screenSecurityBlockers.trading || []).filter((blocker) =>
+    matchesBlockerFilter(blocker, blockerFilter),
+  );
 
   const domainCounts = useMemo(() => inventory.counts?.by_domain || {}, [inventory.counts]);
   const topDomains = Object.entries(domainCounts)
@@ -1107,7 +1207,7 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border/50 bg-background/95">
+      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-4 px-4 py-5 lg:px-6">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
             <div>
@@ -1120,6 +1220,7 @@ function AppShell() {
                   {blindSpotCount ? `${blindSpotCount} blind spots` : "fresh pulse"}
                 </Badge>
                 <Badge variant="outline">{plan.status || "manifest pending"}</Badge>
+                <Badge variant="secondary">{selectedDashboardTab.title}</Badge>
               </div>
               <p className="mt-1 max-w-4xl text-sm text-muted-foreground">
                 Aureon works through its trading, accounting, research, vault, cognition, SaaS security, and self-audit systems while this shell exposes evidence, blockers, and manual-only boundaries.
@@ -1134,6 +1235,7 @@ function AppShell() {
                 label={runtime.connected ? (runtime.clearancePending ? "runtime feed checking" : "runtime feed live") : "runtime feed offline"}
                 tone={runtime.connected ? (runtime.clearancePending ? statusTone.orphaned : statusTone.wired) : statusTone.security_blocker}
               />
+              <Pill label={`view ${selectedDashboardTab.title}`} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
               <Pill label={`loaded ${state?.loadedAt ? new Date(state.loadedAt).toLocaleTimeString() : "pending"}`} tone="border-border bg-muted/20 text-muted-foreground" />
             </div>
           </div>
@@ -1158,202 +1260,759 @@ function AppShell() {
           </Card>
         ) : null}
 
-        {activeSecurityBlockers.map((blocker) => (
-          <SecurityBlockerCard key={blocker.sourcePath} blocker={blocker} />
-        ))}
-        {active === "saas_security" ? <SaaSCredentialManagementPanel comparison={hncSecurityComparison} /> : null}
-        <OrganismPulsePanel organism={organism} runtimeConnected={runtime.connected} />
-        <AureonGeneratedOperationalConsole />
-        <AureonWorkOrderExecutionConsole />
-        <AureonCodingAgentSkillBaseConsole />
-        <AureonCodingOrganismConsole />
-        <AureonDirectorCapabilityBridgeConsole />
-        <AureonAgentCompanyConsole />
-        <FrontendEvolutionPanel evolution={evolution} />
-        <CapabilitySwitchboardPanel switchboard={switchboard} />
+        <Tabs value={dashboardTab} onValueChange={setDashboardTab} className="space-y-5">
+          <Card className="border-border/60 bg-card/95">
+            <CardContent className="p-2">
+              <ScrollArea className="w-full">
+                <TabsList className="h-auto min-w-max justify-start gap-1 bg-transparent p-0">
+                  {dashboardTabs.map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <TabsTrigger
+                        key={tab.id}
+                        value={tab.id}
+                        data-testid={`dashboard-tab-${tab.id}`}
+                        className="min-h-12 gap-2 whitespace-nowrap px-3 py-2 text-left"
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="flex flex-col items-start leading-tight">
+                          <span>{tab.title}</span>
+                          <span className="hidden max-w-[180px] truncate text-[10px] font-normal text-muted-foreground lg:block">
+                            {tab.summary}
+                          </span>
+                        </span>
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+              </ScrollArea>
+            </CardContent>
+          </Card>
 
-        <Tabs value={active} onValueChange={setActive}>
-          <ScrollArea className="w-full">
-            <TabsList className="mb-4 h-auto min-w-max justify-start gap-1 bg-card/80 p-1">
-              {screens.map((screen) => {
-                const Icon = screenIcons[screen.id] || Activity;
-                const missing = screen.missing_capabilities?.length || 0;
-                return (
-                  <TabsTrigger key={screen.id} value={screen.id} className="gap-2 whitespace-nowrap px-3 py-2">
-                    <Icon className="h-4 w-4" />
-                    <span>{screen.title}</span>
-                    {missing ? <span className="rounded bg-yellow-500/20 px-1.5 text-[10px] text-yellow-200">{missing}</span> : null}
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </ScrollArea>
+          <TabsContent value="overview" className="mt-0 space-y-5" data-testid="dashboard-content-overview">
+            <DashboardStatusBanner
+              tab={selectedDashboardTab}
+              runtime={runtime}
+              securityBlockers={securityBlockers}
+              blindSpotCount={blindSpotCount}
+              percent={percent}
+            />
+            <SecurityBlockerLane
+              title="Visible Blockers"
+              description="Filtered top blockers stay visible without flooding every tab."
+              blockers={filteredSecurityBlockers}
+              filter={blockerFilter}
+              onFilterChange={setBlockerFilter}
+              maxItems={3}
+            />
+            <OrganismPulsePanel organism={organism} runtimeConnected={runtime.connected} />
+            <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+              <RuntimeMirrorPanel runtime={runtime} statusLines={statusLines} />
+              <SafetyBoundariesPanel manualActions={manualActions} percent={percent} summary={summary} />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+              <DomainSpreadPanel topDomains={topDomains} totalSurfaceCount={summary.surface_count} />
+              <CurrentScreenFocusPanel screen={activeScreen} />
+            </div>
+          </TabsContent>
 
-          {screens.map((screen) => (
-            <TabsContent key={screen.id} value={screen.id} className="mt-0">
-              <ScreenPanel screen={screen} inventory={inventory} />
-              {screen.id === "trading" ? (
-                <>
-                  <GlobalFinancialCoveragePanel coverage={globalCoverageMap} />
-                  <ExchangeDataCapabilityMatrixPanel matrix={exchangeDataMatrix} />
-                  <ExchangeMonitoringChecklistPanel checklist={exchangeChecklist} />
-                  <TradingIntelligenceChecklistPanel checklist={tradingChecklist} />
-                </>
-              ) : null}
-            </TabsContent>
-          ))}
+          <TabsContent value="live-ops" className="mt-0 space-y-5" data-testid="dashboard-content-live-ops">
+            <AureonGeneratedOperationalConsole />
+            <RuntimeMirrorPanel runtime={runtime} statusLines={statusLines} />
+          </TabsContent>
+
+          <TabsContent value="coding" className="mt-0 space-y-5" data-testid="dashboard-content-coding">
+            <AureonCodingOrganismConsole />
+            <AureonCodingAgentSkillBaseConsole />
+            <AureonDirectorCapabilityBridgeConsole />
+          </TabsContent>
+
+          <TabsContent value="trading" className="mt-0 space-y-5" data-testid="dashboard-content-trading">
+            <SecurityBlockerLane
+              title="Trading Blockers"
+              description="Live order, credential, and exchange-mutation boundaries remain visible here."
+              blockers={tradingSecurityBlockers}
+              filter={blockerFilter}
+              onFilterChange={setBlockerFilter}
+            />
+            {tradingScreen ? (
+              <ScreenPanel
+                screen={tradingScreen}
+                inventory={inventory}
+                surfaceQuery={surfaceQuery}
+                surfaceFilter={surfaceFilter}
+              />
+            ) : null}
+            <GlobalFinancialCoveragePanel coverage={globalCoverageMap} />
+            <ExchangeDataCapabilityMatrixPanel matrix={exchangeDataMatrix} />
+            <ExchangeMonitoringChecklistPanel checklist={exchangeChecklist} />
+            <TradingIntelligenceChecklistPanel checklist={tradingChecklist} />
+          </TabsContent>
+
+          <TabsContent value="security" className="mt-0 space-y-5" data-testid="dashboard-content-security">
+            <SecurityBlockerLane
+              title="Security And Authority Blockers"
+              description="Use these filters to separate credential, runtime, stale, and critical review work."
+              blockers={filteredSecurityBlockers}
+              filter={blockerFilter}
+              onFilterChange={setBlockerFilter}
+            />
+            <SaaSCredentialManagementPanel comparison={hncSecurityComparison} />
+            {securityScreen ? (
+              <ScreenPanel
+                screen={securityScreen}
+                inventory={inventory}
+                surfaceQuery={surfaceQuery}
+                surfaceFilter={surfaceFilter}
+              />
+            ) : null}
+            <SafetyBoundariesPanel manualActions={manualActions} percent={percent} summary={summary} />
+          </TabsContent>
+
+          <TabsContent value="inventory" className="mt-0 space-y-5" data-testid="dashboard-content-inventory">
+            <FilterHeader
+              title="Work Order Filters"
+              description="Keep the migration queue scannable by status or by the selected screen."
+            >
+              <FilterButtons options={workOrderFilterOptions} value={workOrderFilter} onChange={setWorkOrderFilter} />
+            </FilterHeader>
+            <FrontendEvolutionPanel evolution={evolution} filter={workOrderFilter} activeScreenId={active} />
+            <AureonWorkOrderExecutionConsole />
+            <ScreenTabsPanel
+              screens={screens}
+              active={active}
+              onActiveChange={setActive}
+              inventory={inventory}
+              surfaceQuery={surfaceQuery}
+              onSurfaceQueryChange={setSurfaceQuery}
+              surfaceFilter={surfaceFilter}
+              onSurfaceFilterChange={setSurfaceFilter}
+            />
+            <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+              <DomainSpreadPanel topDomains={topDomains} totalSurfaceCount={summary.surface_count} />
+              <CurrentScreenFocusPanel screen={activeScreen} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="agents" className="mt-0 space-y-5" data-testid="dashboard-content-agents">
+            <AureonAgentCompanyConsole />
+            <CapabilitySwitchboardPanel switchboard={switchboard} />
+            <AureonDirectorCapabilityBridgeConsole />
+          </TabsContent>
+
+          <TabsContent value="evidence" className="mt-0 space-y-5" data-testid="dashboard-content-evidence">
+            <EvidencePanel
+              state={state}
+              runtime={runtime}
+              filter={evidenceFilter}
+              onFilterChange={setEvidenceFilter}
+            />
+            <AureonWorkOrderExecutionConsole />
+            <AureonDirectorCapabilityBridgeConsole />
+          </TabsContent>
         </Tabs>
-
-        <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <Card className="bg-card/80">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Radio className="h-4 w-4 text-primary" />
-                Runtime Mirror
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                {(runtime.metrics.length ? runtime.metrics : [
-                  { label: "portfolio", value: "offline" },
-                  { label: "open positions", value: "offline" },
-                  { label: "trades", value: "offline" },
-                  { label: "mode", value: "observe" },
-                ]).map((metric) => (
-                  <div key={metric.label} className="rounded-md border border-border/40 bg-muted/10 p-3">
-                    <div className="text-[11px] uppercase text-muted-foreground">{metric.label}</div>
-                    <div className="mt-1 truncate font-mono text-sm font-semibold">{metric.value}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Pill label={runtime.connected ? (runtime.clearancePending ? "connected checking" : "connected clear") : "offline"} tone={runtime.connected ? (runtime.clearancePending ? statusTone.orphaned : statusTone.wired) : statusTone.partial} />
-                <Pill label={runtime.generatedAt ? `updated ${new Date(runtime.generatedAt).toLocaleTimeString()}` : "no runtime timestamp"} tone="border-border bg-muted/20 text-muted-foreground" />
-                {runtime.endpoint ? <Pill label={runtime.endpoint.replace("http://127.0.0.1:", "")} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-300" /> : null}
-                {runtime.clearances.map((clearance) => (
-                  <Pill key={clearance} label={clearance} tone={statusTone.security_blocker} />
-                ))}
-              </div>
-              {runtime.details.length ? (
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  {runtime.details.map((detail) => (
-                    <div key={detail.label} className="rounded-md border border-border/40 bg-muted/10 p-3">
-                      <div className="text-[11px] uppercase text-muted-foreground">{detail.label}</div>
-                      <div className="mt-1 truncate font-mono text-sm font-semibold">{detail.value}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-              <div className="rounded-md border border-border/50 bg-black/35 p-3">
-                {statusLines.length ? (
-                  <pre className="max-h-52 overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-5 text-foreground">
-                    {statusLines.slice(-24).join("\n")}
-                  </pre>
-                ) : (
-                  <div className="font-mono text-[11px] text-muted-foreground">Waiting for runtime status...</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/80">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Lock className="h-4 w-4 text-primary" />
-                Safety And Manual Boundaries
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                {manualActions.map(([key]) => (
-                  <div key={key} className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-muted/10 px-3 py-2">
-                    <span className="text-sm">{key.replace(/_/g, " ")}</span>
-                    <Badge variant="outline">visible</Badge>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Inventory readiness</span>
-                  <span>{percent}%</span>
-                </div>
-                <Progress value={percent} className="h-2" />
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-md border border-border/40 bg-muted/10 p-3">
-                  <div className="text-xs text-muted-foreground">orphaned frontend</div>
-                  <div className="mt-1 text-lg font-semibold">{formatCompact(summary.orphaned_frontend_count)}</div>
-                </div>
-                <div className="rounded-md border border-border/40 bg-muted/10 p-3">
-                  <div className="text-xs text-muted-foreground">uncalled functions</div>
-                  <div className="mt-1 text-lg font-semibold">{formatCompact(summary.uncalled_supabase_function_count)}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-5 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <Card className="bg-card/80">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Domain Spread</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {topDomains.map(([domain, count]) => {
-                const width = Math.min(100, Math.round((asNumber(count) / Math.max(1, asNumber(summary.surface_count))) * 100));
-                return (
-                  <div key={domain}>
-                    <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="capitalize text-muted-foreground">{domain.replace(/_/g, " ")}</span>
-                      <span className="font-mono">{count}</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded bg-muted/30">
-                      <div className="h-full bg-primary" style={{ width: `${Math.max(4, width)}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/80">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Current Screen Focus</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {activeScreen ? (
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-lg font-semibold">{activeScreen.title}</div>
-                    <p className="mt-1 text-sm text-muted-foreground">{activeScreen.goal}</p>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <div className="rounded-md border border-border/40 bg-muted/10 p-3">
-                      <div className="text-xs text-muted-foreground">source surfaces</div>
-                      <div className="mt-1 text-lg font-semibold">{activeScreen.source_surface_count}</div>
-                    </div>
-                    <div className="rounded-md border border-border/40 bg-muted/10 p-3">
-                      <div className="text-xs text-muted-foreground">backend functions</div>
-                      <div className="mt-1 text-lg font-semibold">{activeScreen.backend_functions.length}</div>
-                    </div>
-                    <div className="rounded-md border border-border/40 bg-muted/10 p-3">
-                      <div className="text-xs text-muted-foreground">missing items</div>
-                      <div className="mt-1 text-lg font-semibold">{activeScreen.missing_capabilities.length}</div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">No screen plan available.</div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
 
         <div className="mt-5 text-xs text-muted-foreground">
           Sources: {state?.inventorySource || "pending"}, {state?.planSource || "pending"}, {state?.organismSource || "pending"}, {state?.evolutionSource || "pending"}, and {state?.switchboardSource || "pending"}. Generated screens: {formatCompact(planSummary.screen_count)}. Readiness signal: {percent}%.
         </div>
       </main>
     </div>
+  );
+}
+
+function DashboardStatusBanner({
+  tab,
+  runtime,
+  securityBlockers,
+  blindSpotCount,
+  percent,
+}: {
+  tab: DashboardTabConfig;
+  runtime: RuntimeObservation;
+  securityBlockers: number;
+  blindSpotCount: number;
+  percent: number;
+}) {
+  const Icon = tab.icon;
+  return (
+    <Card className="bg-card/80">
+      <CardContent className="grid gap-4 p-4 lg:grid-cols-[1fr_1.2fr]">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="rounded-md border border-border/50 bg-muted/20 p-2">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-lg font-semibold">{tab.title}</div>
+            <p className="mt-1 text-sm text-muted-foreground">{tab.summary}</p>
+          </div>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-4">
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">runtime</div>
+            <div className="mt-1 truncate text-sm font-semibold">
+              {runtime.connected ? (runtime.clearancePending ? "checking" : "live") : "offline"}
+            </div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">blockers</div>
+            <div className="mt-1 text-sm font-semibold">{formatCompact(securityBlockers)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">blind spots</div>
+            <div className="mt-1 text-sm font-semibold">{formatCompact(blindSpotCount)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">readiness</div>
+            <div className="mt-1 text-sm font-semibold">{percent}%</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FilterButtons<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ id: T; label: string }>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {options.map((option) => (
+        <Button
+          key={option.id}
+          type="button"
+          variant={value === option.id ? "secondary" : "ghost"}
+          size="sm"
+          className="h-8 px-2 text-xs"
+          onClick={() => onChange(option.id)}
+        >
+          {option.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function FilterHeader({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <Card className="bg-card/80">
+      <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="text-sm font-semibold">{title}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{description}</div>
+        </div>
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+function blockerSearchText(blocker: SecurityBlockerWorkOrder): string {
+  return [
+    blocker.title,
+    blocker.workOrder,
+    blocker.sourcePath,
+    blocker.target,
+    blocker.priority,
+    blocker.status,
+    blocker.reason,
+    blocker.nextStep,
+    ...blocker.boundaries,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function matchesBlockerFilter(blocker: SecurityBlockerWorkOrder, filter: BlockerFilter): boolean {
+  const text = blockerSearchText(blocker);
+  if (filter === "critical") return blocker.priority.toUpperCase() === "P100";
+  if (filter === "security") return text.includes("security") || text.includes("credential") || text.includes("kyc");
+  if (filter === "runtime") return text.includes("runtime") || text.includes("trading") || text.includes("order") || text.includes("live");
+  if (filter === "stale") return text.includes("stale") || text.includes("legacy") || text.includes("review");
+  return true;
+}
+
+function SecurityBlockerLane({
+  title,
+  description,
+  blockers,
+  filter,
+  onFilterChange,
+  maxItems,
+}: {
+  title: string;
+  description: string;
+  blockers: SecurityBlockerWorkOrder[];
+  filter: BlockerFilter;
+  onFilterChange: (value: BlockerFilter) => void;
+  maxItems?: number;
+}) {
+  const visible = maxItems ? blockers.slice(0, maxItems) : blockers;
+  return (
+    <section className="space-y-3">
+      <FilterHeader title={title} description={`${description} Showing ${visible.length}/${blockers.length}.`}>
+        <FilterButtons options={blockerFilterOptions} value={filter} onChange={onFilterChange} />
+      </FilterHeader>
+      {visible.length ? (
+        <div className="space-y-3">
+          {visible.map((blocker) => (
+            <SecurityBlockerCard key={`${blocker.target}-${blocker.sourcePath}`} blocker={blocker} />
+          ))}
+        </div>
+      ) : (
+        <Card className="bg-card/80">
+          <CardContent className="p-4 text-sm text-muted-foreground">No blockers match the current filter.</CardContent>
+        </Card>
+      )}
+    </section>
+  );
+}
+
+function RuntimeMirrorPanel({
+  runtime,
+  statusLines,
+}: {
+  runtime: RuntimeObservation;
+  statusLines: string[];
+}) {
+  return (
+    <Card className="bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Radio className="h-4 w-4 text-primary" />
+          Runtime Mirror
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {(runtime.metrics.length ? runtime.metrics : [
+            { label: "portfolio", value: "offline" },
+            { label: "open positions", value: "offline" },
+            { label: "trades", value: "offline" },
+            { label: "mode", value: "observe" },
+          ]).map((metric) => (
+            <div key={metric.label} className="rounded-md border border-border/40 bg-muted/10 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{metric.label}</div>
+              <div className="mt-1 truncate font-mono text-sm font-semibold">{metric.value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Pill label={runtime.connected ? (runtime.clearancePending ? "connected checking" : "connected clear") : "offline"} tone={runtime.connected ? (runtime.clearancePending ? statusTone.orphaned : statusTone.wired) : statusTone.partial} />
+          <Pill label={runtime.generatedAt ? `updated ${new Date(runtime.generatedAt).toLocaleTimeString()}` : "no runtime timestamp"} tone="border-border bg-muted/20 text-muted-foreground" />
+          {runtime.endpoint ? <Pill label={runtime.endpoint.replace("http://127.0.0.1:", "")} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-300" /> : null}
+          {runtime.clearances.map((clearance) => (
+            <Pill key={clearance} label={clearance} tone={statusTone.security_blocker} />
+          ))}
+        </div>
+        {runtime.details.length ? (
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {runtime.details.map((detail) => (
+              <div key={detail.label} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">{detail.label}</div>
+                <div className="mt-1 truncate font-mono text-sm font-semibold">{detail.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <div className="rounded-md border border-border/50 bg-black/35 p-3">
+          {statusLines.length ? (
+            <pre className="max-h-52 overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-5 text-foreground">
+              {statusLines.slice(-24).join("\n")}
+            </pre>
+          ) : (
+            <div className="font-mono text-[11px] text-muted-foreground">Waiting for runtime status...</div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SafetyBoundariesPanel({
+  manualActions,
+  percent,
+  summary,
+}: {
+  manualActions: Array<[string, unknown]>;
+  percent: number;
+  summary: Record<string, unknown>;
+}) {
+  return (
+    <Card className="bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Lock className="h-4 w-4 text-primary" />
+          Safety And Manual Boundaries
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          {manualActions.map(([key]) => (
+            <div key={key} className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-muted/10 px-3 py-2">
+              <span className="text-sm">{key.replace(/_/g, " ")}</span>
+              <Badge variant="outline">visible</Badge>
+            </div>
+          ))}
+          {!manualActions.length ? <div className="text-sm text-muted-foreground">No manual boundary manifest is loaded yet.</div> : null}
+        </div>
+        <div>
+          <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Inventory readiness</span>
+            <span>{percent}%</span>
+          </div>
+          <Progress value={percent} className="h-2" />
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-xs text-muted-foreground">orphaned frontend</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.orphaned_frontend_count)}</div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+            <div className="text-xs text-muted-foreground">uncalled functions</div>
+            <div className="mt-1 text-lg font-semibold">{formatCompact(summary.uncalled_supabase_function_count)}</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DomainSpreadPanel({
+  topDomains,
+  totalSurfaceCount,
+}: {
+  topDomains: Array<[string, unknown]>;
+  totalSurfaceCount: unknown;
+}) {
+  return (
+    <Card className="bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Domain Spread</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {topDomains.map(([domain, count]) => {
+          const width = Math.min(100, Math.round((asNumber(count) / Math.max(1, asNumber(totalSurfaceCount))) * 100));
+          return (
+            <div key={domain}>
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="capitalize text-muted-foreground">{domain.replace(/_/g, " ")}</span>
+                <span className="font-mono">{String(count)}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded bg-muted/30">
+                <div className="h-full bg-primary" style={{ width: `${Math.max(4, width)}%` }} />
+              </div>
+            </div>
+          );
+        })}
+        {!topDomains.length ? <div className="text-sm text-muted-foreground">Domain counts are not loaded yet.</div> : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CurrentScreenFocusPanel({ screen }: { screen?: FrontendScreenPlan }) {
+  return (
+    <Card className="bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Current Screen Focus</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {screen ? (
+          <div className="space-y-4">
+            <div>
+              <div className="text-lg font-semibold">{screen.title}</div>
+              <p className="mt-1 text-sm text-muted-foreground">{screen.goal}</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+                <div className="text-xs text-muted-foreground">source surfaces</div>
+                <div className="mt-1 text-lg font-semibold">{screen.source_surface_count}</div>
+              </div>
+              <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+                <div className="text-xs text-muted-foreground">backend functions</div>
+                <div className="mt-1 text-lg font-semibold">{screen.backend_functions.length}</div>
+              </div>
+              <div className="rounded-md border border-border/40 bg-muted/10 p-3">
+                <div className="text-xs text-muted-foreground">missing items</div>
+                <div className="mt-1 text-lg font-semibold">{screen.missing_capabilities.length}</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">No screen plan available.</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ScreenTabsPanel({
+  screens,
+  active,
+  onActiveChange,
+  inventory,
+  surfaceQuery,
+  onSurfaceQueryChange,
+  surfaceFilter,
+  onSurfaceFilterChange,
+}: {
+  screens: FrontendScreenPlan[];
+  active: string;
+  onActiveChange: (value: string) => void;
+  inventory: SaaSInventoryManifest;
+  surfaceQuery: string;
+  onSurfaceQueryChange: (value: string) => void;
+  surfaceFilter: SurfaceFilter;
+  onSurfaceFilterChange: (value: SurfaceFilter) => void;
+}) {
+  if (!screens.length) {
+    return (
+      <Card className="bg-card/80">
+        <CardContent className="p-4 text-sm text-muted-foreground">No screen plan is loaded yet.</CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <section className="space-y-4">
+      <FilterHeader
+        title="Source Surface Filters"
+        description="Search and narrow screen surfaces by boundary or wiring state."
+      >
+        <div className="flex w-full flex-col gap-2 lg:w-auto lg:min-w-[560px] lg:flex-row lg:items-center lg:justify-end">
+          <div className="relative w-full lg:max-w-[280px]">
+            <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={surfaceQuery}
+              onChange={(event) => onSurfaceQueryChange(event.target.value)}
+              placeholder="Search paths, domains, boundaries..."
+              className="h-9 pl-8"
+            />
+          </div>
+          <FilterButtons options={surfaceFilterOptions} value={surfaceFilter} onChange={onSurfaceFilterChange} />
+        </div>
+      </FilterHeader>
+
+      <Tabs value={active} onValueChange={onActiveChange}>
+        <ScrollArea className="w-full">
+          <TabsList className="mb-4 h-auto min-w-max justify-start gap-1 bg-card/80 p-1">
+            {screens.map((screen) => {
+              const Icon = screenIcons[screen.id] || Activity;
+              const missing = screen.missing_capabilities?.length || 0;
+              return (
+                <TabsTrigger key={screen.id} value={screen.id} className="gap-2 whitespace-nowrap px-3 py-2">
+                  <Icon className="h-4 w-4" />
+                  <span>{screen.title}</span>
+                  {missing ? <span className="rounded bg-yellow-500/20 px-1.5 text-[10px] text-yellow-200">{missing}</span> : null}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </ScrollArea>
+
+        {screens.map((screen) => (
+          <TabsContent key={screen.id} value={screen.id} className="mt-0">
+            <ScreenPanel
+              screen={screen}
+              inventory={inventory}
+              surfaceQuery={surfaceQuery}
+              surfaceFilter={surfaceFilter}
+            />
+          </TabsContent>
+        ))}
+      </Tabs>
+    </section>
+  );
+}
+
+interface EvidenceItem {
+  id: string;
+  label: string;
+  type: Exclude<EvidenceFilter, "all">;
+  path: string;
+  status: string;
+  detail: string;
+}
+
+function buildEvidenceItems(state: UnifiedFrontendState | null, runtime: RuntimeObservation): EvidenceItem[] {
+  const items: EvidenceItem[] = [
+    {
+      id: "inventory",
+      label: "SaaS and frontend inventory",
+      type: "audit",
+      path: state?.inventorySource || "pending",
+      status: state?.inventory.status || "pending",
+      detail: "Surface inventory, blockers, orphaned frontend, and Supabase function coverage.",
+    },
+    {
+      id: "plan",
+      label: "Unified frontend plan",
+      type: "audit",
+      path: state?.planSource || "pending",
+      status: state?.plan.status || "pending",
+      detail: "Canonical screens, safety contract, generated outputs, and missing capability map.",
+    },
+    {
+      id: "organism",
+      label: "Organism runtime status",
+      type: "audit",
+      path: state?.organismSource || "pending",
+      status: state?.organism.status || "pending",
+      detail: "Freshness, blind spots, runtime pulse, and next-action lines.",
+    },
+    {
+      id: "evolution",
+      label: "Frontend evolution queue",
+      type: "audit",
+      path: state?.evolutionSource || "pending",
+      status: state?.evolution.status || "pending",
+      detail: "Work orders, ready adapters, blocked migrations, and archive candidates.",
+    },
+    {
+      id: "switchboard",
+      label: "Autonomous capability switchboard",
+      type: "audit",
+      path: state?.switchboardSource || "pending",
+      status: state?.switchboard.status || "pending",
+      detail: "Autonomous modes, presentation intents, blockers, and anti-drift gates.",
+    },
+    {
+      id: "runtime-feed",
+      label: "Runtime feed",
+      type: "runtime",
+      path: runtime.endpoint || "offline",
+      status: runtime.connected ? (runtime.clearancePending ? "checking" : "connected") : "offline",
+      detail: "Live local terminal-state endpoint used by the runtime mirror.",
+    },
+    {
+      id: "coding-organism",
+      label: "Coding organism bridge",
+      type: "public",
+      path: "/aureon_coding_organism_bridge.json",
+      status: "public artifact",
+      detail: "Prompt-to-client-job evidence, proof checks, handover state, and finished artifacts.",
+    },
+    {
+      id: "capability-forge",
+      label: "Local capability forge",
+      type: "public",
+      path: "/aureon_capability_forge.json",
+      status: "public artifact",
+      detail: "Local-only build, media, coding, quality gate, and regeneration evidence.",
+    },
+    {
+      id: "quality-report",
+      label: "Artifact quality report",
+      type: "public",
+      path: "/aureon_artifact_quality_report.json",
+      status: "public artifact",
+      detail: "Render/playback proof, snags, scores, and handover gating.",
+    },
+    {
+      id: "complex-stress",
+      label: "Complex build stress certification",
+      type: "public",
+      path: "/aureon_complex_build_stress_audit.json",
+      status: "public artifact",
+      detail: "Complex case matrix, repair attempts, fake-pass detection, and handover certification.",
+    },
+    {
+      id: "coding-unblocker",
+      label: "Autonomous coding capability gates",
+      type: "public",
+      path: "/aureon_coding_capability_unblocker.json",
+      status: "public artifact",
+      detail: "Coding routes, learning/research gates, safe auto-repair authority, and open-source references.",
+    },
+    {
+      id: "bridge-report",
+      label: "Coding organism audit report",
+      type: "report",
+      path: "docs/audits/aureon_coding_organism_bridge.md",
+      status: "markdown report",
+      detail: "Human-readable bridge report for the latest coding organism run.",
+    },
+    {
+      id: "forge-report",
+      label: "Capability forge audit report",
+      type: "report",
+      path: "docs/audits/aureon_capability_forge.md",
+      status: "markdown report",
+      detail: "Human-readable capability forge and quality gate report.",
+    },
+  ];
+  return items;
+}
+
+function EvidencePanel({
+  state,
+  runtime,
+  filter,
+  onFilterChange,
+}: {
+  state: UnifiedFrontendState | null;
+  runtime: RuntimeObservation;
+  filter: EvidenceFilter;
+  onFilterChange: (value: EvidenceFilter) => void;
+}) {
+  const items = buildEvidenceItems(state, runtime);
+  const visible = filter === "all" ? items : items.filter((item) => item.type === filter);
+
+  return (
+    <Card className="bg-card/80">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-col gap-3 text-base lg:flex-row lg:items-center lg:justify-between">
+          <span className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            Evidence And Public Artifacts
+          </span>
+          <FilterButtons options={evidenceFilterOptions} value={filter} onChange={onFilterChange} />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-3 lg:grid-cols-2">
+          {visible.map((item) => {
+            const isLink = item.path.startsWith("/") || item.path.startsWith("http://") || item.path.startsWith("https://");
+            return (
+              <div key={item.id} className="rounded-md border border-border/40 bg-muted/10 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold">{item.label}</div>
+                    {isLink ? (
+                      <a className="mt-1 block truncate font-mono text-[11px] text-cyan-200 hover:underline" href={item.path} target="_blank" rel="noreferrer">
+                        {item.path}
+                      </a>
+                    ) : (
+                      <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{item.path}</div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    <Pill label={item.type} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+                    <Pill label={item.status} tone="border-border bg-muted/20 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">{item.detail}</div>
+              </div>
+            );
+          })}
+        </div>
+        {!visible.length ? <div className="text-sm text-muted-foreground">No evidence artifacts match the current filter.</div> : null}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -1489,18 +2148,43 @@ function OrganismPulsePanel({
   );
 }
 
-function FrontendEvolutionPanel({ evolution }: { evolution: FrontendEvolutionQueueManifest }) {
+function matchesWorkOrderFilter(
+  order: NonNullable<FrontendEvolutionQueueManifest["work_orders"]>[number],
+  filter: WorkOrderFilter,
+  activeScreenId?: string,
+): boolean {
+  const status = String(order.status || "").toLowerCase();
+  if (filter === "blocked") return status.includes("blocked");
+  if (filter === "ready") return status.includes("ready") || status.includes("adapter");
+  if (filter === "archive") return status.includes("archive");
+  if (filter === "screen") return Boolean(activeScreenId) && order.target_screen === activeScreenId;
+  return true;
+}
+
+function FrontendEvolutionPanel({
+  evolution,
+  filter = "all",
+  activeScreenId,
+}: {
+  evolution: FrontendEvolutionQueueManifest;
+  filter?: WorkOrderFilter;
+  activeScreenId?: string;
+}) {
   const summary = evolution.summary || {};
   const orders = [...(evolution.work_orders || [])]
+    .filter((order) => matchesWorkOrderFilter(order, filter, activeScreenId))
     .sort((a, b) => asNumber(b.priority) - asNumber(a.priority))
-    .slice(0, 10);
+    .slice(0, filter === "all" ? 10 : 30);
 
   return (
     <Card className="mb-5 bg-card/80">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Activity className="h-4 w-4 text-primary" />
-          Frontend Evolution Queue
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            Frontend Evolution Queue
+          </span>
+          <Pill label={`showing ${formatCompact(orders.length)}`} tone="border-border bg-muted/20 text-muted-foreground" />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -2297,8 +2981,46 @@ function TradingIntelligenceChecklistPanel({ checklist }: { checklist: TradingIn
   );
 }
 
-function ScreenPanel({ screen, inventory }: { screen: FrontendScreenPlan; inventory: SaaSInventoryManifest }) {
-  const surfaces = surfacesForScreen(inventory, screen);
+function surfaceSearchText(surface: ReturnType<typeof surfacesForScreen>[number]): string {
+  return [
+    surface.path,
+    surface.purpose,
+    surface.wiring_status,
+    surface.safety_class,
+    surface.missing_next_step,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function matchesSurfaceFilter(surface: ReturnType<typeof surfacesForScreen>[number], filter: SurfaceFilter): boolean {
+  const text = surfaceSearchText(surface);
+  if (filter === "observation") return surface.safety_class === "observation";
+  if (filter === "security") return text.includes("security") || text.includes("boundary") || text.includes("blocker");
+  if (filter === "live") return text.includes("live") || text.includes("trading") || text.includes("order");
+  if (filter === "credential") return text.includes("credential") || text.includes("auth") || text.includes("key");
+  if (filter === "missing") return Boolean(surface.missing_next_step) || surface.wiring_status === "orphaned" || surface.wiring_status === "partial";
+  return true;
+}
+
+function ScreenPanel({
+  screen,
+  inventory,
+  surfaceQuery = "",
+  surfaceFilter = "all",
+}: {
+  screen: FrontendScreenPlan;
+  inventory: SaaSInventoryManifest;
+  surfaceQuery?: string;
+  surfaceFilter?: SurfaceFilter;
+}) {
+  const query = surfaceQuery.trim().toLowerCase();
+  const allSurfaces = surfacesForScreen(inventory, screen);
+  const surfaces = allSurfaces.filter((surface) => {
+    const matchesQuery = !query || surfaceSearchText(surface).includes(query);
+    return matchesQuery && matchesSurfaceFilter(surface, surfaceFilter);
+  });
   const Icon = screenIcons[screen.id] || Activity;
 
   return (
@@ -2362,6 +3084,7 @@ function ScreenPanel({ screen, inventory }: { screen: FrontendScreenPlan; invent
           <CardTitle className="flex items-center gap-2 text-base">
             <FileText className="h-4 w-4 text-primary" />
             Source Surfaces
+            <Pill label={`${formatCompact(surfaces.length)}/${formatCompact(allSurfaces.length)}`} tone="border-border bg-muted/20 text-muted-foreground" />
           </CardTitle>
         </CardHeader>
         <CardContent>

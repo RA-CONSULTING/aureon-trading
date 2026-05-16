@@ -378,7 +378,7 @@ def test_submit_coding_prompt_game_uses_adaptive_forge_not_agentcore(tmp_path: P
     assert "aureon_generated_apps" in manifest["public_url"]
 
 
-def test_submit_coding_prompt_unknown_tool_uses_universal_adaptive_skill(tmp_path: Path, monkeypatch) -> None:
+def test_submit_coding_prompt_barcode_tool_uses_domain_specific_adaptive_skill(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "aureon.autonomous.aureon_safe_code_control.build_code_expression_context",
         _fake_expression_context,
@@ -409,8 +409,8 @@ def test_submit_coding_prompt_unknown_tool_uses_universal_adaptive_skill(tmp_pat
     manifest = payload["artifact_manifest"]
     assert result["ok"] is True
     assert [step["intent"] for step in route_steps] == ["capability_forge"]
-    assert payload["adaptive_skill_evidence"]["name"] == "universal_adaptive_skill_forge"
-    assert manifest["kind"] == "adaptive_skill_capsule"
+    assert payload["adaptive_skill_evidence"]["name"] == "barcode_label_generator_skill"
+    assert manifest["kind"] == "barcode_label_generator"
     assert "aureon_adaptive_skills" in manifest["public_url"]
     assert Path(manifest["asset_path"]).exists()
     assert Path(manifest["tool_path"]).exists()
