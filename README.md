@@ -132,6 +132,8 @@ python scripts/aureon_ignition.py --audit-only
 | Flight test | `http://127.0.0.1:8791/api/flight-test` |
 | Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
 | Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
+| Phi Bridge live chat status | `http://127.0.0.1:13002/api/phi-bridge/status` |
+| Phi Bridge live chat | `POST http://127.0.0.1:13002/api/phi-bridge/chat` |
 | Trading intelligence checklist | `http://127.0.0.1:8081/aureon_trading_intelligence_checklist.json` and `docs/audits/aureon_trading_intelligence_checklist.json` |
 | Capital tradable asset registry | `docs/audits/aureon_capital_tradable_asset_registry.json`, `docs/audits/aureon_capital_tradable_asset_registry.csv`, and `state/capital_tradable_asset_registry.sqlite` |
 | Kraken tradable asset registry | `docs/audits/aureon_kraken_tradable_asset_registry.json`, `docs/audits/aureon_kraken_tradable_asset_registry.csv`, and `state/kraken_tradable_asset_registry.sqlite` |
@@ -166,6 +168,14 @@ http://127.0.0.1:8081/
 
 The coding panel is the human dashboard for code work while the organism is active. It shows the full PowerShell launch command, the local coding endpoint, active/gated handover state, scope-of-works questions, run-tests and desktop-handoff toggles, a **Full Coding Job** button for complete client jobs, the proof checklist, snagging list, and the prompt-to-finished-files work journal.
 
+The same panel now includes **Aureon Phi Live Chat**. This is the 1:1 talkback lane from the dashboard to the local mind hub: the frontend refreshes hub-first instead of static-JSON-first, polls on a 1s live cadence, reads the Phi Bridge heartbeat, and sends chat messages to `POST /api/phi-bridge/chat`. The endpoint redacts secret-like context, asks the local/in-house voice adapter first, publishes replies onto ThoughtBus, and falls back to an immediate guided Aureon reply when the local LLM server is asleep or too slow. To tune the local model path:
+
+```powershell
+$env:AUREON_PHI_CHAT_TIMEOUT_S = "8"
+$env:AUREON_PHI_CHAT_MAX_TOKENS = "260"
+$env:AUREON_VOICE_BACKEND = "local"  # or "brain" / "anthropic" if explicitly configured
+```
+
 The mind hub exposes the same lane over HTTP:
 
 ```powershell
@@ -173,6 +183,21 @@ Invoke-RestMethod http://127.0.0.1:13002/api/coding/prompt `
   -Method Post `
   -ContentType "application/json" `
   -Body '{"prompt":"Aureon must inspect this coding goal, define the scope of works, assign the agent team, propose the safest patch, run focused tests, complete HNC/Auris drift proof, clear snagging, and publish the finished handover.","run_tests":true,"include_desktop":true}' |
+  ConvertTo-Json -Depth 8
+```
+
+Live Phi chat can also be tested from PowerShell:
+
+```powershell
+$body = @{
+  message = "Aureon, what can you see in the coding cockpit right now?"
+  context = @{ coding = @{ status = "manual_probe"; route_clean = $true; scope_status = "scope_locked" } }
+} | ConvertTo-Json -Depth 6
+
+Invoke-RestMethod http://127.0.0.1:13002/api/phi-bridge/chat `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body |
   ConvertTo-Json -Depth 8
 ```
 
@@ -254,7 +279,7 @@ Aureon now publishes a scanner-fusion matrix so operators can see which momentum
 | Accounting/HMRC support tooling | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
 | Local OS/task control | `aureon/autonomous/aureon_local_task_queue.py`, `aureon/autonomous/aureon_repo_explorer_service.py`, `aureon/autonomous/aureon_voice_command_bridge.py` |
 | Code authoring and review | `aureon/autonomous/aureon_safe_code_control.py`, `aureon/autonomous/aureon_queen_code_bridge.py`, `aureon/code_architect/` |
-| Operator coding organism bridge | `aureon/autonomous/aureon_coding_organism_bridge.py`, `http://127.0.0.1:13002/api/coding/prompt`, `frontend/src/components/generated/AureonCodingOrganismConsole.tsx`; includes scope-of-works gate, client questions, proof checklist, HNC/Auris drift proof, snagging list, and finished handover hold |
+| Operator coding organism bridge | `aureon/autonomous/aureon_coding_organism_bridge.py`, `http://127.0.0.1:13002/api/coding/prompt`, `http://127.0.0.1:13002/api/phi-bridge/chat`, `frontend/src/components/generated/AureonCodingOrganismConsole.tsx`; includes scope-of-works gate, live Phi talkback, client questions, proof checklist, HNC/Auris drift proof, snagging list, and finished handover hold |
 | Prompt-to-run desktop audit | `aureon/autonomous/aureon_coding_organism_bridge.py#desktop_run_flow`, `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/vm_control/`, `state/aureon_coding_organism_desktop_state.json` |
 | Director capability bridge | `aureon/autonomous/aureon_director_capability_bridge.py`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/src/components/generated/AureonDirectorCapabilityBridgeConsole.tsx` |
 | Self-authored operational UI | `aureon/autonomous/aureon_unified_ui_builder.py`, `frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx` |
@@ -550,7 +575,7 @@ Pure Python 3.11+ multi-agent autonomous trading research toolkit:
 | **HNC Human Loop** | `aureon/queen/hnc_human_loop.py` | Full 8-stage pipeline per human utterance: intent → Λ(t) tick → Auris vote → φ prime train → φ bridge ascension → vibration adder → motion code → temporal ground |
 | **Temporal Ground Station** | `aureon/queen/temporal_ground.py` | Four-layer stability system: ZPE vacuum floor · temporal multiverse hash chain · cognitive flux superposition · stability governor |
 | **Harmonic Text Alignment** | `aureon/harmonic/harmonic_text_alignment.py` | Score any text against the HNC 6-mode lattice — deterministic, no LLM |
-| **Phi Bridge** | `aureon/harmonic/phi_bridge.py` | φ²-cadenced device-to-device peer sync at golden-ratio heartbeat |
+| **Phi Bridge** | `aureon/harmonic/phi_bridge.py`, `http://127.0.0.1:13002/api/phi-bridge/chat` | φ²-cadenced device-to-device peer sync plus live cockpit talkback through the local mind hub |
 | **Auris Voice Filter** | `aureon/harmonic/auris_voice_filter.py` | 3-gate coherence filter: 9-node Auris consensus + Λ(t)/Γ + harmonic text alignment |
 | **Meaning Resolver** | `aureon/queen/meaning_resolver.py` | Pattern-gated retrieval before LLM call: math eval · Auris snapshot · research corpus · vault scan · skill match |
 

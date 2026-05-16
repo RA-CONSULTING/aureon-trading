@@ -1,10 +1,20 @@
 import asyncio
 import json
 import os
+from types import SimpleNamespace
 
 os.environ.setdefault("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", "1")
 
 from aureon.autonomous.aureon_mind_thought_action_hub import MindThoughtActionHub
+
+
+class _FakeVoiceAdapter:
+    def __init__(self, text: str, model: str = "fake-voice"):
+        self.text = text
+        self.model = model
+
+    def prompt(self, *args, **kwargs):
+        return SimpleNamespace(text=self.text, model=self.model, usage={"total_tokens": 7})
 
 
 def test_hub_constructor_does_not_run_heavy_initialization(monkeypatch):
@@ -209,3 +219,72 @@ def test_flight_test_includes_goal_pursuit(monkeypatch):
 
     assert payload["goal_pursuit"]["decision"] == "pursue_goal_with_full_live_capability"
     assert payload["reboot_advice"]["should_reboot"] is False
+
+
+def test_phi_bridge_status_exposes_live_chat_lane(monkeypatch):
+    monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+
+    hub = MindThoughtActionHub()
+    payload = hub._phi_bridge_status_payload()
+
+    assert payload["service"] == "aureon_phi_bridge_chat"
+    assert payload["chat"]["endpoint"] == "POST /api/phi-bridge/chat"
+    assert payload["refresh_interval_ms"] >= 618
+    assert "no credential reveal" in payload["authority_boundaries"]
+
+
+def test_phi_bridge_chat_uses_voice_adapter_and_redacts_context(monkeypatch):
+    monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+
+    hub = MindThoughtActionHub()
+    monkeypatch.setattr(hub, "_get_phi_voice_adapter", lambda: _FakeVoiceAdapter("I can see the live coding cockpit."))
+
+    payload = hub._run_phi_chat(
+        "what can you see?",
+        context={
+            "coding": {"status": "coding_organism_ready", "route_clean": True},
+            "api_key": "secret-value",
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["reply_source"] == "local_llm"
+    assert payload["reply"] == "I can see the live coding cockpit."
+    assert payload["context_summary"]["api_key"] == "[redacted]"
+    assert payload["history"][-1]["role"] == "assistant"
+
+
+def test_phi_bridge_chat_falls_back_when_llm_backend_is_missing(monkeypatch):
+    monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+
+    hub = MindThoughtActionHub()
+    monkeypatch.setattr(
+        hub,
+        "_get_phi_voice_adapter",
+        lambda: _FakeVoiceAdapter("No LLM backend is reachable.", model="no-backend"),
+    )
+
+    payload = hub._run_phi_chat(
+        "are you alive?",
+        context={"coding": {"status": "ready", "scope_status": "scope_locked", "route_clean": False}},
+    )
+
+    assert payload["ok"] is True
+    assert payload["reply_source"] == "guided_fallback"
+    assert "Phi Bridge" in payload["reply"]
+    assert "route needs attention" in payload["reply"]
+
+
+def test_phi_bridge_chat_discards_late_reply_after_timeout(monkeypatch):
+    monkeypatch.setattr(MindThoughtActionHub, "_init_systems", lambda self: None)
+
+    hub = MindThoughtActionHub()
+    monkeypatch.setattr(hub, "_get_phi_voice_adapter", lambda: _FakeVoiceAdapter("late local model reply"))
+    hub._phi_chat_timeout_ids.add("late-1")
+
+    payload = hub._run_phi_chat("slow reply", context={}, chat_id="late-1")
+
+    assert payload["status"] == "phi_bridge_chat_late_reply_discarded"
+    assert payload["reply_source"] == "discarded_late_reply"
+    assert payload["history"] == []
+    assert "late-1" not in hub._phi_chat_timeout_ids

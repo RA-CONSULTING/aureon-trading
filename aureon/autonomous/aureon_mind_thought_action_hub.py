@@ -49,7 +49,7 @@ from aiohttp import web
 import json
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Set, Optional
 from collections import deque, defaultdict
 from pathlib import Path
@@ -623,6 +623,10 @@ class MindThoughtActionHub:
         self._init_task = None
         self._self_questioning_task = None
         self._goal_pursuit_task = None
+        self._phi_bridge = None
+        self._phi_voice_adapter = None
+        self.phi_chat_history = deque(maxlen=40)
+        self._phi_chat_timeout_ids: Set[str] = set()
 
         # Setup web app
         self.app = web.Application()
@@ -640,6 +644,10 @@ class MindThoughtActionHub:
         self.app.router.add_options('/api/coding/prompt', self.handle_coding_options)
         self.app.router.add_get('/api/self-questioning/status', self.handle_self_questioning_status)
         self.app.router.add_post('/api/self-questioning/ask', self.handle_self_questioning_ask)
+        self.app.router.add_get('/api/phi-bridge/status', self.handle_phi_bridge_status)
+        self.app.router.add_post('/api/phi-bridge/chat', self.handle_phi_bridge_chat)
+        self.app.router.add_options('/api/phi-bridge/status', self.handle_coding_options)
+        self.app.router.add_options('/api/phi-bridge/chat', self.handle_coding_options)
 
     def _initialization_status(self) -> str:
         if self.init_error:
@@ -1469,6 +1477,327 @@ class MindThoughtActionHub:
                 status=500,
                 headers=self._coding_cors_headers(),
             )
+
+    def _get_phi_bridge(self):
+        if self._phi_bridge is None:
+            from aureon.harmonic.phi_bridge import get_phi_bridge
+
+            self._phi_bridge = get_phi_bridge()
+        return self._phi_bridge
+
+    def _get_phi_voice_adapter(self):
+        if self._phi_voice_adapter is None:
+            from aureon.inhouse_ai.llm_adapter import build_voice_adapter
+
+            self._phi_voice_adapter = build_voice_adapter()
+        return self._phi_voice_adapter
+
+    def _phi_refresh_interval_ms(self, bridge_info: Dict[str, Any]) -> int:
+        cadence = bridge_info.get("cadence") if isinstance(bridge_info, dict) else {}
+        try:
+            interval_s = float((cadence or {}).get("interval_s") or 0.382)
+        except Exception:
+            interval_s = 0.382
+        # Keep the dashboard close to the phi heartbeat while staying gentle on the local hub.
+        return int(max(618, min(1618, interval_s * 1000.0)))
+
+    def _redact_phi_context(self, value: Any, depth: int = 0) -> Any:
+        if depth > 3:
+            return "[truncated]"
+        if isinstance(value, dict):
+            clean: Dict[str, Any] = {}
+            for key, item in list(value.items())[:40]:
+                text_key = str(key)
+                lowered = text_key.lower()
+                if any(token in lowered for token in ("secret", "token", "password", "api_key", "apikey", "credential")):
+                    clean[text_key] = "[redacted]"
+                else:
+                    clean[text_key] = self._redact_phi_context(item, depth + 1)
+            return clean
+        if isinstance(value, list):
+            return [self._redact_phi_context(item, depth + 1) for item in value[:20]]
+        if isinstance(value, str):
+            return value[:1200] + ("..." if len(value) > 1200 else "")
+        if isinstance(value, (int, float, bool)) or value is None:
+            return value
+        return str(value)[:400]
+
+    def _recent_phi_messages(self, limit: int = 8) -> List[Dict[str, Any]]:
+        return list(self.phi_chat_history)[-max(1, int(limit)):]
+
+    def _phi_bridge_status_payload(self) -> Dict[str, Any]:
+        try:
+            bridge_info = self._get_phi_bridge().info()
+            available = True
+            error = ""
+        except Exception as exc:
+            bridge_info = {
+                "ok": False,
+                "service": "phi_bridge",
+                "cadence": {"interval_s": 1.0, "frequency_hz": 1.0, "peer_count": 0},
+                "peer_count": 0,
+                "desktop": {},
+            }
+            available = False
+            error = str(exc)
+
+        adapter_model = ""
+        adapter_ready = False
+        if self._phi_voice_adapter is not None:
+            adapter_model = str(getattr(self._phi_voice_adapter, "model", "") or getattr(self._phi_voice_adapter, "_model", "") or "")
+            adapter_ready = True
+
+        return {
+            "ok": available,
+            "available": available,
+            "error": error,
+            "status": "phi_bridge_live_chat_ready" if available else "phi_bridge_unavailable",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "service": "aureon_phi_bridge_chat",
+            "hub_initialized": self.initialized,
+            "hub_status": self._initialization_status(),
+            "refresh_interval_ms": self._phi_refresh_interval_ms(bridge_info),
+            "phi_bridge": bridge_info,
+            "chat": {
+                "endpoint": "POST /api/phi-bridge/chat",
+                "history_count": len(self.phi_chat_history),
+                "recent": self._recent_phi_messages(6),
+                "adapter_ready": adapter_ready,
+                "adapter_model": adapter_model,
+            },
+            "authority_boundaries": [
+                "read-only dashboard conversation",
+                "no live trading mutation",
+                "no payment or filing mutation",
+                "no credential reveal",
+                "no destructive OS action",
+            ],
+            "who_what_where_when_how_act": {
+                "who": "MindThoughtActionHub + PhiBridge + local voice adapter",
+                "what": "Live operator conversation and dashboard heartbeat evidence",
+                "where": "http://127.0.0.1:13002/api/phi-bridge/chat",
+                "when": "on operator chat and phi-cadenced dashboard refresh",
+                "how": "redacted context, local/in-house LLM adapter, ThoughtBus publication, safe fallback",
+                "act": "answer, publish evidence, keep mutation gates closed",
+            },
+        }
+
+    def _fallback_phi_reply(self, message: str, context: Dict[str, Any], reason: str) -> str:
+        coding = context.get("coding") if isinstance(context.get("coding"), dict) else {}
+        status = coding.get("status") or coding.get("summary_status") or "dashboard observed"
+        scope = coding.get("scope_status") or "scope state unknown"
+        route_clean = coding.get("route_clean")
+        route_text = "route clean" if route_clean else "route needs attention" if route_clean is False else "route state unknown"
+        return (
+            "I am connected to the Phi Bridge and the local cockpit, but the live LLM backend did not return a usable reply. "
+            f"Reason: {reason}. Current coding lane: {status}; scope: {scope}; {route_text}. "
+            "I can still keep the dashboard live, publish evidence, and route coding prompts through the organism. "
+            "For full conversation, start the local LLM server or set AUREON_VOICE_BACKEND to an available backend."
+        )
+
+    def _run_phi_chat(
+        self,
+        message: str,
+        context: Optional[Dict[str, Any]] = None,
+        chat_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        started = time.time()
+        safe_context = self._redact_phi_context(context or {})
+        status = self._phi_bridge_status_payload()
+        system_prompt = (
+            "You are Aureon speaking to the human operator through the Phi Bridge and the local coding cockpit. "
+            "Use first person as Aureon. Be concise, concrete, and honest about what the dashboard evidence shows. "
+            "Do not claim that files were changed, tests passed, trades executed, payments made, filings submitted, "
+            "or credentials handled unless the supplied evidence explicitly proves it. Never reveal secrets. "
+            "Keep live trading, payment, filing, credential, and destructive OS actions behind their existing gates."
+        )
+        history_messages = [
+            {"role": str(item.get("role") or "user"), "content": str(item.get("text") or "")[:1200]}
+            for item in self._recent_phi_messages(8)
+            if item.get("role") in {"user", "assistant"}
+        ]
+        messages = history_messages + [
+            {
+                "role": "user",
+                "content": (
+                    f"Operator message:\n{message}\n\n"
+                    f"Redacted dashboard context:\n{json.dumps(safe_context, ensure_ascii=False)[:5000]}\n\n"
+                    f"Phi Bridge status:\n{json.dumps(status, ensure_ascii=False)[:4000]}"
+                ),
+            }
+        ]
+
+        reply_source = "local_llm"
+        model = ""
+        usage: Dict[str, Any] = {}
+        try:
+            response = self._get_phi_voice_adapter().prompt(
+                messages,
+                system=system_prompt,
+                max_tokens=int(os.environ.get("AUREON_PHI_CHAT_MAX_TOKENS", "260")),
+                temperature=float(os.environ.get("AUREON_PHI_CHAT_TEMPERATURE", "0.25")),
+            )
+            reply = str(getattr(response, "text", "") or "").strip()
+            model = str(getattr(response, "model", "") or "")
+            usage = getattr(response, "usage", {}) or {}
+            if not reply or reply.startswith("[ERROR]") or "No LLM backend is reachable" in reply:
+                reply_source = "guided_fallback"
+                reply = self._fallback_phi_reply(message, safe_context, reply or "no usable LLM reply")
+        except Exception as exc:
+            reply_source = "guided_fallback"
+            reply = self._fallback_phi_reply(message, safe_context, str(exc))
+
+        if chat_id and chat_id in self._phi_chat_timeout_ids:
+            self._phi_chat_timeout_ids.discard(chat_id)
+            return {
+                "ok": True,
+                "status": "phi_bridge_chat_late_reply_discarded",
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "reply": "",
+                "reply_source": "discarded_late_reply",
+                "model": model,
+                "usage": usage,
+                "latency_ms": int((time.time() - started) * 1000),
+                "history": self._recent_phi_messages(10),
+                "context_summary": safe_context,
+            }
+
+        generated_at = datetime.now(timezone.utc).isoformat()
+        latency_ms = int((time.time() - started) * 1000)
+        user_item = {"role": "user", "text": message[:1200], "ts": generated_at}
+        assistant_item = {
+            "role": "assistant",
+            "text": reply,
+            "ts": generated_at,
+            "source": reply_source,
+            "model": model,
+            "latency_ms": latency_ms,
+        }
+        self.phi_chat_history.append(user_item)
+        self.phi_chat_history.append(assistant_item)
+
+        thought = self.thought_bus.publish(
+            Thought(
+                source="MindThoughtActionHub",
+                topic="phi_bridge.chat.reply",
+                payload={
+                    "message_preview": message[:160],
+                    "reply_preview": reply[:240],
+                    "reply_source": reply_source,
+                    "model": model,
+                    "latency_ms": latency_ms,
+                    "generated_at": generated_at,
+                },
+            )
+        )
+        if not self.recent_thoughts or self.recent_thoughts[-1].id != thought.id:
+            self._on_thought(thought)
+        self.recent_actions.append({
+            "ts": time.time(),
+            "source": "mind_thought_action_hub",
+            "type": "phi_bridge_chat",
+            "summary": message[:120],
+            "status": reply_source,
+        })
+
+        return {
+            "ok": True,
+            "status": "phi_bridge_chat_replied",
+            "generated_at": generated_at,
+            "reply": reply,
+            "reply_source": reply_source,
+            "model": model,
+            "usage": usage,
+            "latency_ms": latency_ms,
+            "refresh_interval_ms": status.get("refresh_interval_ms"),
+            "phi_bridge": status.get("phi_bridge", {}),
+            "history": self._recent_phi_messages(10),
+            "context_summary": safe_context,
+            "who_what_where_when_how_act": status.get("who_what_where_when_how_act", {}),
+        }
+
+    async def handle_phi_bridge_status(self, request):
+        """Live status for the Phi Bridge backed chat lane."""
+        return web.json_response(self._phi_bridge_status_payload(), headers=self._coding_cors_headers())
+
+    async def handle_phi_bridge_chat(self, request):
+        """Let the operator talk to Aureon through the Phi Bridge and local voice adapter."""
+        try:
+            body = await request.json()
+        except Exception:
+            raw = await request.text()
+            body = {"message": raw}
+        message = str(body.get("message") or body.get("prompt") or body.get("question") or "").strip()
+        if not message:
+            return web.json_response(
+                {"ok": False, "error": "message is required"},
+                status=400,
+                headers=self._coding_cors_headers(),
+            )
+        context = body.get("context") if isinstance(body.get("context"), dict) else {}
+        try:
+            timeout_s = max(3.0, float(os.environ.get("AUREON_PHI_CHAT_TIMEOUT_S", "8")))
+        except Exception:
+            timeout_s = 8.0
+        chat_id = f"{time.time_ns()}-{len(self.phi_chat_history)}"
+        try:
+            payload = await asyncio.wait_for(
+                asyncio.to_thread(self._run_phi_chat, message, context, chat_id),
+                timeout=timeout_s,
+            )
+            return web.json_response(payload, headers=self._coding_cors_headers())
+        except asyncio.TimeoutError:
+            self._phi_chat_timeout_ids.add(chat_id)
+            if len(self._phi_chat_timeout_ids) > 256:
+                self._phi_chat_timeout_ids.clear()
+            safe_context = self._redact_phi_context(context)
+            generated_at = datetime.now(timezone.utc).isoformat()
+            reply = self._fallback_phi_reply(message, safe_context, "LLM response timed out")
+            self.phi_chat_history.append({"role": "user", "text": message[:1200], "ts": generated_at})
+            self.phi_chat_history.append({
+                "role": "assistant",
+                "text": reply,
+                "ts": generated_at,
+                "source": "guided_fallback",
+                "model": "",
+                "latency_ms": int(timeout_s * 1000),
+            })
+            thought = self.thought_bus.publish(
+                Thought(
+                    source="MindThoughtActionHub",
+                    topic="phi_bridge.chat.reply",
+                    payload={
+                        "message_preview": message[:160],
+                        "reply_preview": reply[:240],
+                        "reply_source": "guided_fallback",
+                        "model": "",
+                        "latency_ms": int(timeout_s * 1000),
+                        "generated_at": generated_at,
+                    },
+                )
+            )
+            if not self.recent_thoughts or self.recent_thoughts[-1].id != thought.id:
+                self._on_thought(thought)
+            self.recent_actions.append({
+                "ts": time.time(),
+                "source": "mind_thought_action_hub",
+                "type": "phi_bridge_chat",
+                "summary": message[:120],
+                "status": "guided_fallback_timeout",
+            })
+            payload = {
+                "ok": True,
+                "status": "phi_bridge_chat_replied",
+                "generated_at": generated_at,
+                "reply": reply,
+                "reply_source": "guided_fallback",
+                "model": "",
+                "usage": {},
+                "latency_ms": int(timeout_s * 1000),
+                "history": self._recent_phi_messages(10),
+                "context_summary": safe_context,
+            }
+            return web.json_response(payload, headers=self._coding_cors_headers())
 
     async def handle_self_questioning_status(self, request):
         """API endpoint for the Ollama + Obsidian self-questioning loop."""

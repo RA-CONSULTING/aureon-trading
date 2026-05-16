@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from "react";
-import { BrainCircuit, CheckCircle2, Code2, FileText, MousePointer2, Send, ShieldCheck, TestTube2, Upload } from "lucide-react";
+import { BrainCircuit, CheckCircle2, Code2, FileText, MessageSquare, MousePointer2, Radio, RefreshCw, Send, ShieldCheck, TestTube2, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 
 type JsonMap = Record<string, any>;
+type ChatMessage = {
+  role: "user" | "assistant";
+  text: string;
+  ts?: string;
+  source?: string;
+  model?: string;
+  latency_ms?: number;
+};
 
 const HUB_BASE = "http://127.0.0.1:13002";
+const LIVE_REFRESH_FALLBACK_MS = 1000;
 const FULL_ORGANISM_COMMAND = ".\\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791";
 const TERMINAL_PROMPT_COMMAND =
   "Invoke-RestMethod http://127.0.0.1:13002/api/coding/prompt -Method Post -ContentType \"application/json\" -Body $body";
@@ -51,20 +60,52 @@ export function AureonCodingOrganismConsole() {
   const [error, setError] = useState("");
   const [loadedFileName, setLoadedFileName] = useState("");
   const [scopeAnswers, setScopeAnswers] = useState<Record<string, string>>({});
+  const [phiStatus, setPhiStatus] = useState<JsonMap>({});
+  const [chatInput, setChatInput] = useState("What can you see in the coding cockpit right now?");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatError, setChatError] = useState("");
 
   const refresh = async () => {
-    const publicState = await fetchJson("/aureon_coding_organism_bridge.json");
-    if (Object.keys(publicState).length) {
-      setStatus(publicState);
+    const hubState = await fetchJson(`${HUB_BASE}/api/coding/status`);
+    if (Object.keys(hubState).length) {
+      setStatus(hubState.last_run || hubState);
       return;
     }
-    const hubState = await fetchJson(`${HUB_BASE}/api/coding/status`);
-    setStatus(hubState.last_run || hubState);
+    const publicState = await fetchJson("/aureon_coding_organism_bridge.json");
+    setStatus(publicState);
+  };
+
+  const refreshPhiBridge = async () => {
+    const payload = await fetchJson(`${HUB_BASE}/api/phi-bridge/status`);
+    if (!Object.keys(payload).length) return;
+    setPhiStatus(payload);
+    const recent = payload.chat?.recent;
+    if (Array.isArray(recent) && recent.length) {
+      setChatMessages((current) =>
+        current.length
+          ? current
+          : recent
+              .filter((item: JsonMap) => item.role === "user" || item.role === "assistant")
+              .map((item: JsonMap) => ({
+                role: item.role,
+                text: String(item.text || ""),
+                ts: item.ts,
+                source: item.source,
+                model: item.model,
+                latency_ms: item.latency_ms,
+              }))
+      );
+    }
   };
 
   useEffect(() => {
     refresh();
-    const timer = window.setInterval(refresh, 15000);
+    refreshPhiBridge();
+    const timer = window.setInterval(() => {
+      refresh();
+      refreshPhiBridge();
+    }, LIVE_REFRESH_FALLBACK_MS);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -86,6 +127,63 @@ export function AureonCodingOrganismConsole() {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const sendPhiChat = async () => {
+    const message = chatInput.trim();
+    if (!message || chatBusy) return;
+    setChatBusy(true);
+    setChatError("");
+    setChatInput("");
+    setChatMessages((current) => [
+      ...current.slice(-18),
+      { role: "user", text: message, ts: new Date().toISOString() },
+    ]);
+    try {
+      const response = await fetch(`${HUB_BASE}/api/phi-bridge/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          context: {
+            coding: {
+              status: status.status,
+              scope_status: summary.scope_status,
+              route_clean: summary.goal_route_clean,
+              tests_ok: summary.tests_ok,
+              ready_to_run: summary.ready_to_run,
+              blocking_snags: summary.blocking_snag_count || 0,
+              goal: status.what?.goal || prompt.slice(0, 240),
+            },
+            dashboard: {
+              panel: "AureonCodingOrganismConsole",
+              endpoint: `${HUB_BASE}/api/phi-bridge/chat`,
+            },
+          },
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "phi bridge chat failed");
+      }
+      setChatMessages((current) => [
+        ...current.slice(-19),
+        {
+          role: "assistant",
+          text: String(payload.reply || "No reply published."),
+          ts: payload.generated_at,
+          source: payload.reply_source,
+          model: payload.model,
+          latency_ms: payload.latency_ms,
+        },
+      ]);
+      await refreshPhiBridge();
+      await refresh();
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setChatBusy(false);
     }
   };
 
@@ -147,6 +245,11 @@ export function AureonCodingOrganismConsole() {
   const systemActive = Boolean(route.ok || summary.goal_engine_routed || status.status);
   const hubActive = status.status !== "coding_organism_waiting_for_prompt" && !error;
   const fullCodingReady = Boolean(summary.goal_route_clean && summary.tests_ok && summary.ready_to_run && !summary.blocking_snag_count);
+  const phiBridge = phiStatus.phi_bridge || {};
+  const phiCadence = phiBridge.cadence || {};
+  const phiReady = Boolean(phiStatus.ok);
+  const liveRefreshMs = Number(phiStatus.refresh_interval_ms || LIVE_REFRESH_FALLBACK_MS);
+  const lastAssistant = [...chatMessages].reverse().find((item) => item.role === "assistant");
 
   return (
     <Card className="mb-5 bg-card/80">
@@ -197,6 +300,79 @@ export function AureonCodingOrganismConsole() {
               <div className="mt-1 font-mono text-cyan-50">{TERMINAL_PROMPT_COMMAND}</div>
             </div>
           </div>
+        </div>
+
+        <div className="rounded-md border border-violet-500/30 bg-violet-500/10 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <MessageSquare className="mt-0.5 h-4 w-4 text-violet-100" />
+              <div>
+                <div className="text-sm font-medium text-violet-50">Aureon Phi Live Chat</div>
+                <div className="mt-1 text-xs text-violet-50/75">
+                  Local organism chat through Phi Bridge, ThoughtBus, and the in-house voice adapter.
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={phiReady ? "success" : "warning"}>phi {phiReady ? "connected" : "checking"}</Badge>
+              <Badge variant="outline">
+                <Radio className="mr-1 h-3 w-3" />
+                {Number(phiCadence.frequency_hz || 0).toFixed(2)}Hz
+              </Badge>
+              <Badge variant="outline">
+                <RefreshCw className="mr-1 h-3 w-3" />
+                {fmt(liveRefreshMs)}ms
+              </Badge>
+              <Badge variant={lastAssistant?.source === "local_llm" ? "success" : "outline"}>
+                {lastAssistant?.source || phiStatus.chat?.adapter_model || "voice lane"}
+              </Badge>
+            </div>
+          </div>
+
+          <ScrollArea className="mt-3 h-[180px] rounded-md border border-violet-300/20 bg-background/25 p-3 pr-4">
+            <div className="space-y-2">
+              {chatMessages.map((message, index) => (
+                <div
+                  key={`${message.ts || index}-${message.role}`}
+                  className={`rounded-md border px-3 py-2 text-xs ${
+                    message.role === "assistant"
+                      ? "border-violet-300/30 bg-violet-500/10 text-violet-50"
+                      : "border-cyan-300/25 bg-cyan-500/10 text-cyan-50"
+                  }`}
+                >
+                  <div className="mb-1 flex items-center justify-between gap-2 text-[10px] uppercase opacity-75">
+                    <span>{message.role === "assistant" ? "Aureon" : "Operator"}</span>
+                    <span>{message.latency_ms ? `${fmt(message.latency_ms)}ms` : message.source || ""}</span>
+                  </div>
+                  <div className="whitespace-pre-wrap leading-relaxed">{message.text}</div>
+                </div>
+              ))}
+              {!chatMessages.length ? (
+                <div className="rounded-md border border-violet-300/20 bg-background/20 p-3 text-xs text-violet-50/75">
+                  The chat lane is waiting for your first live message.
+                </div>
+              ) : null}
+            </div>
+          </ScrollArea>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto]">
+            <Textarea
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              onKeyDown={(event) => {
+                if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                  event.preventDefault();
+                  sendPhiChat();
+                }
+              }}
+              className="min-h-[72px] bg-background/60 text-xs"
+            />
+            <Button className="md:self-end" size="sm" onClick={sendPhiChat} disabled={chatBusy || !chatInput.trim()}>
+              <Send className="mr-2 h-4 w-4" />
+              Talk To Aureon
+            </Button>
+          </div>
+          {chatError ? <div className="mt-2 rounded-md border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-100">{chatError}</div> : null}
         </div>
 
         <div className="grid gap-2 md:grid-cols-6">
