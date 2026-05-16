@@ -95,3 +95,18 @@ def test_goal_engine_routes_coding_desktop_handoff_goal(tmp_path: Path, monkeypa
     assert plan.status == "completed"
     assert plan.steps[0].intent == "coding_agent_skill_base"
     assert plan.steps[0].validation_result["valid"] is True
+
+
+def test_goal_engine_routes_code_builder_terminal_goal(tmp_path: Path, monkeypatch) -> None:
+    _fake_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    engine = GoalExecutionEngine()
+    plan = engine.submit_goal(
+        "Connect Aureon coding systems, inspect the repo, propose the smallest safe patch, "
+        "and run focused tests so the code builder terminal works."
+    )
+
+    assert plan.status == "completed"
+    assert plan.steps[0].intent == "coding_agent_skill_base"
+    assert plan.steps[0].validation_result["valid"] is True

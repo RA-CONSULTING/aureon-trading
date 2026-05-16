@@ -1013,7 +1013,8 @@ class GoalExecutionEngine:
         skill_hit = _re.search(r"\b(?:skill|skills|skill base|capability|capabilities|learn|learning|teach)\b", lower)
         web_hit = _re.search(r"\b(?:websearch|web search|web_search|web|online|open source|api|documentation|docs)\b", lower)
         bridge_hit = _re.search(
-            r"\b(?:coding organism|prompt[- ]?to[- ]?run|desktop run|desktop/run|run handoff|finished product|product audit|remote desktop|vm control)\b",
+            r"\b(?:coding organism|coding systems?|code builder|coding builder|coding lane|coding terminal|terminal chat|"
+            r"prompt[- ]?to[- ]?run|desktop run|desktop/run|run handoff|finished product|product audit|remote desktop|vm control)\b",
             lower,
         )
         if not (aureon_hit and coding_hit and (skill_hit or bridge_hit)):
