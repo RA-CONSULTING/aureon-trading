@@ -1336,6 +1336,30 @@ class AureonHybridAdapter(LLMAdapter):
         )
 
     @staticmethod
+    def _is_cockpit_status_question(prompt: str) -> bool:
+        lowered = str(prompt or "").lower()
+        return "what can you see" in lowered and any(
+            token in lowered for token in ("coding cockpit", "cockpit", "dashboard", "console")
+        )
+
+    @staticmethod
+    def _is_bad_weaver_draft(text: str) -> bool:
+        lowered = str(text or "").strip().lower()
+        if not lowered:
+            return True
+        boilerplate = (
+            "aureon will verify and compose",
+            "aureon will compose the final answer",
+            "i will verify and compose",
+            "will verify and compose",
+        )
+        if any(phrase in lowered for phrase in boilerplate) and len(lowered) < 160:
+            return True
+        if lowered in {"ok", "ready", "done", "yes"}:
+            return True
+        return False
+
+    @staticmethod
     def _next_action_for_task(task_family: str) -> str:
         if task_family == "coding":
             return "Give me the coding job and I will scope it, recruit the workers, patch through safe routes, test it, and hold handover until proof passes."
@@ -1358,6 +1382,20 @@ class AureonHybridAdapter(LLMAdapter):
             ]
         )
 
+    def _cockpit_status_reply(self, evidence: str) -> str:
+        cleaned_evidence = self._trim_incomplete_sentence(self._clean_weaver_text(evidence))
+        parts = [
+            "I can see the coding cockpit through the live Phi chat lane, the Ollama context-weaver, and Aureon's dynamic prompt filter.",
+        ]
+        if cleaned_evidence:
+            parts.append(f"Proof/blockers: {cleaned_evidence}")
+        else:
+            parts.append("Proof/blockers: the hub is reachable, but the evidence shard did not return a useful summary, so I am not inventing extra status.")
+        parts.append(
+            "Next action: send a coding job from the cockpit or terminal and I will scope it, recruit the crew, run the safe local route, test it, and hold handover until proof passes."
+        )
+        return "\n\n".join(parts)
+
     def _compile_weaver_reply(
         self,
         messages: List[Dict[str, Any]],
@@ -1370,9 +1408,11 @@ class AureonHybridAdapter(LLMAdapter):
         prompt = self._latest_user_prompt(messages)
         if self._is_capability_question(prompt):
             return self._capability_reply(filter_report)
+        if self._is_cockpit_status_question(prompt):
+            return self._cockpit_status_reply(evidence)
 
         cleaned_draft = self._clean_weaver_text(draft)
-        if cleaned_draft:
+        if cleaned_draft and not self._is_bad_weaver_draft(cleaned_draft):
             if draft_stop == "max_tokens":
                 cleaned_draft = self._trim_incomplete_sentence(cleaned_draft)
             if cleaned_draft:
