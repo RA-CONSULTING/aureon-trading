@@ -469,6 +469,44 @@ interface LiveGoalTradeAudit {
     sandbox_paper_requirements?: Array<Record<string, unknown>>;
     snapshot?: Record<string, unknown>;
   };
+  live_trade_signal_fabric_proof?: {
+    state?: string;
+    present?: boolean;
+    generated_at?: string;
+    status?: string;
+    thoughtbus_receiving?: boolean;
+    mycelium_receiving?: boolean;
+    active_trace_count?: number;
+    complete_trace_count?: number;
+    broken_trace_count?: number;
+    live_order_submitted_count?: number;
+    broker_ack_count?: number;
+    position_open_count?: number;
+    outcome_recorded_count?: number;
+    p95_phase_latency_ms?: number;
+    api_rate_pressure_count?: number;
+    latest_live_trade_trace?: Record<string, unknown>;
+    blockers?: string[];
+    snapshot?: Record<string, unknown>;
+  };
+  live_trade_signal_fabric_stress_proof?: {
+    state?: string;
+    present?: boolean;
+    generated_at?: string;
+    status?: string;
+    trace_count?: number;
+    certified_trace_count?: number;
+    complete_trace_count?: number;
+    broken_chain_count?: number;
+    broker_requirement_gap_count?: number;
+    rate_budget_missing_count?: number;
+    api_rate_pressure_count?: number;
+    stale_trace_count?: number;
+    bus_delivery_count?: number;
+    mycelium_delivery_count?: number;
+    blockers?: string[];
+    snapshot?: Record<string, unknown>;
+  };
   goal_trade_proof?: {
     proof_state?: string;
     live_trade_produced?: boolean;
@@ -486,6 +524,9 @@ interface LiveGoalTradeAudit {
     blockers?: string[];
     next_action?: string;
   };
+  capital_3p_live_execution_certification_proof?: Record<string, unknown>;
+  capital_3p_blocker_burndown_proof?: Record<string, unknown>;
+  performance_readiness_proof?: Record<string, unknown>;
 }
 
 interface OrderLifecycleStressAudit {
@@ -546,10 +587,12 @@ interface CapitalEcosystemIntelligenceCompany {
   mode?: string;
   goal?: Record<string, unknown>;
   summary?: {
+    three_p_goal?: number;
     candidate_count?: number;
     trade_ready_candidate_count?: number;
     net_positive_candidate_count?: number;
     revenue_intent_candidate_count?: number;
+    three_p_intent_eligible_count?: number;
     false_positive_reject_count?: number;
     active_watchlist_count?: number;
     active_watchlist_limit?: number;
@@ -559,7 +602,10 @@ interface CapitalEcosystemIntelligenceCompany {
     shadow_hedge_count?: number;
     shadow_hedges_only?: boolean;
     close_first_opportunity_count?: number;
+    three_p_close_opportunity_count?: number;
+    active_capital_position_count?: number;
     active_lifecycle_route_count?: number;
+    duplicate_route_blocked_count?: number;
     top_velocity_score?: number;
     blocker_count?: number;
     no_external_hedge_mutation?: boolean;
@@ -586,19 +632,25 @@ interface CapitalRevenueLogicStressAudit {
   generated_at?: string;
   mode?: string;
   summary?: {
+    three_p_goal?: number;
     candidate_count?: number;
     trade_ready_candidate_count?: number;
     net_positive_candidate_count?: number;
+    three_p_floor_passed_count?: number;
     intent_eligible_candidate_count?: number;
     candidate_level_intent_eligible_count?: number;
+    three_p_intent_eligible_count?: number;
     false_positive_reject_count?: number;
     active_watchlist_count?: number;
     bench_watchlist_count?: number;
     close_first_opportunity_count?: number;
+    three_p_close_opportunity_count?: number;
+    active_capital_position_count?: number;
     duplicate_route_blocked_count?: number;
     shadow_confirmation_count?: number;
     external_shadow_only?: boolean;
     live_gates_blocking?: boolean;
+    capital_live_gates_armed?: boolean;
     no_live_mutation?: boolean;
   };
   candidate_revenue_proof?: Record<string, unknown>;
@@ -619,11 +671,14 @@ interface CapitalRevenueLiveGateReadinessAudit {
   generated_at?: string;
   mode?: string;
   summary?: {
+    three_p_goal?: number;
     net_positive_candidate_count?: number;
     ready_now_candidate_count?: number;
+    three_p_ready_candidate_count?: number;
     blocked_candidate_count?: number;
     missing_gate_count?: number;
     runtime_gates_clear?: boolean;
+    capital_live_gates_armed?: boolean;
     recovered_exit_clear?: boolean;
     duplicate_routes_blocked?: boolean;
     broker_correlation_complete?: boolean;
@@ -640,6 +695,275 @@ interface CapitalRevenueLiveGateReadinessAudit {
   external_confirmation_proof?: Record<string, unknown>;
   blockers?: string[];
   manual_boundaries?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
+interface CapitalThreePLiveExecutionCertificationAudit {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    three_p_goal?: number;
+    net_positive_candidate_count?: number;
+    ready_for_intent_count?: number;
+    fresh_snapshot_candidate_count?: number;
+    duplicate_route_blocked_count?: number;
+    recovered_position_count?: number;
+    recovered_exit_clear?: boolean;
+    capital_live_gates_armed?: boolean;
+    executor_ready?: boolean;
+    broker_correlation_complete?: boolean;
+    capital_broker_requirements_certified?: boolean;
+    external_confirmation_shadow_only?: boolean;
+    no_external_mutation?: boolean;
+    no_live_mutation?: boolean;
+    blocker_count?: number;
+  };
+  candidate_execution_rows?: Array<Record<string, unknown>>;
+  fresh_snapshot_proof?: Record<string, unknown>;
+  duplicate_route_proof?: Record<string, unknown>;
+  recovered_exit_proof?: Record<string, unknown>;
+  capital_broker_requirement_proof?: Record<string, unknown>;
+  external_confirmation_requirement_proof?: Record<string, unknown>;
+  live_executor_readiness?: Record<string, unknown>;
+  blockers?: string[];
+  manual_boundaries?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
+interface CapitalThreePBlockerBurndownAudit {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    three_p_goal?: number;
+    candidate_count?: number;
+    ready_for_capital_intent_count?: number;
+    fresh_snapshot_candidate_count?: number;
+    stale_snapshot_candidate_count?: number;
+    duplicate_route_blocked_count?: number;
+    recovered_position_count?: number;
+    recovered_exit_clear?: boolean;
+    external_live_intent_count?: number;
+    external_executor_attempt_count?: number;
+    external_live_route_leak?: boolean;
+    runtime_artifact_mismatch?: boolean;
+    capital_only_live_execution?: boolean;
+    shadow_confirmation_count?: number;
+    live_gates_armed?: boolean;
+    no_broker_mutation_from_audit?: boolean;
+    blocker_count?: number;
+  };
+  candidate_burndown_rows?: Array<Record<string, unknown>>;
+  fresh_snapshot_proof?: Record<string, unknown>;
+  duplicate_route_proof?: Record<string, unknown>;
+  recovered_exit_proof?: Record<string, unknown>;
+  capital_only_execution_guard?: Record<string, unknown>;
+  external_confirmation_rows?: Array<Record<string, unknown>>;
+  runtime_reconciliation?: Record<string, unknown>;
+  blockers?: string[];
+  manual_boundaries?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
+interface PerformanceReadinessAudit {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    script_count?: number;
+    scripts_wired_count?: number;
+    organism_registered_count?: number;
+    artifact_count?: number;
+    artifact_present_count?: number;
+    super_sweep_pass?: boolean;
+    super_sweep_steps?: string;
+    full_suite_pass?: boolean;
+    latency_stress_pass?: boolean;
+    latency_p95_observed_ms?: number;
+    latency_p95_budget_ms?: number;
+    threshold_pass_cases?: number;
+    threshold_fail_cases?: number;
+    api_concurrency_valid_exchange_count?: number;
+    api_concurrency_total_recommended_calls_per_min?: number;
+    api_rate_benchmark_valid_exchange_count?: number;
+    no_broker_mutation?: boolean;
+    blocker_count?: number;
+  };
+  script_wiring?: Array<Record<string, unknown>>;
+  artifact_wiring?: Record<string, unknown>;
+  blockers?: string[];
+  manual_boundaries?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
+interface AureonMurgeUnityBridge {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    track_count?: number;
+    staged_track_count?: number;
+    missing_track_count?: number;
+    adapter_row_count?: number;
+    collision_count?: number;
+    online_requirement_count?: number;
+    unity_ready?: boolean;
+    hidden_activation?: boolean;
+  };
+  unity_track_rows?: Array<Record<string, unknown>>;
+  organism_adapter_rows?: Array<Record<string, unknown>>;
+  collision_rows?: Array<Record<string, unknown>>;
+  online_requirement_baseline?: Array<Record<string, unknown>>;
+  next_unity_actions?: Array<Record<string, unknown>>;
+  blockers?: string[];
+  manual_boundaries?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
+interface AureonMurgeRuntimeActivationStressAudit {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    service_count?: number;
+    service_present_count?: number;
+    service_health_pass_count?: number;
+    dependency_ready_count?: number;
+    dependency_check_count?: number;
+    npm_audit_present_count?: number;
+    npm_high_vulnerability_count?: number;
+    npm_critical_vulnerability_count?: number;
+    local_launch_ready?: boolean;
+    web_health_passed?: boolean;
+    runtime_health_passed?: boolean;
+    desktop_gate_enabled?: boolean;
+    activation_gate_enabled_count?: number;
+    terminal_guard_count?: number;
+    terminal_guard_passing_count?: number;
+    electron_security_pass_count?: number;
+    electron_security_check_count?: number;
+    windows_launcher_present?: boolean;
+    host_bash_assumption_removed?: boolean;
+    collision_count?: number;
+    unity_ready?: boolean;
+    thoughtbus_mycelium_required?: boolean;
+    blocker_count?: number;
+    no_trading_gate_bypass?: boolean;
+    no_cloud_deploy?: boolean;
+    no_credential_migration?: boolean;
+  };
+  activation_service_rows?: Array<Record<string, unknown>>;
+  activation_gate_rows?: Array<Record<string, unknown>>;
+  package_readiness_rows?: Array<Record<string, unknown>>;
+  dependency_readiness_rows?: Array<Record<string, unknown>>;
+  launch_log_rows?: Array<Record<string, unknown>>;
+  npm_audit_rows?: Array<Record<string, unknown>>;
+  windows_compatibility_rows?: Array<Record<string, unknown>>;
+  terminal_sandbox_guard_rows?: Array<Record<string, unknown>>;
+  electron_security_rows?: Array<Record<string, unknown>>;
+  online_requirement_baseline?: Array<Record<string, unknown>>;
+  unity_collision_rows?: Array<Record<string, unknown>>;
+  fabric_visibility_proof?: Record<string, unknown>;
+  next_activation_actions?: Array<Record<string, unknown>>;
+  blockers?: string[];
+  manual_boundaries?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
+interface LiveTradeSignalFabric {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    event_count?: number;
+    thoughtbus_receiving?: boolean;
+    mycelium_receiving?: boolean;
+    active_trace_count?: number;
+    complete_trace_count?: number;
+    broken_trace_count?: number;
+    live_order_submitted_count?: number;
+    broker_ack_count?: number;
+    position_open_count?: number;
+    outcome_recorded_count?: number;
+    p95_phase_latency_ms?: number;
+    api_rate_pressure_count?: number;
+  };
+  thoughtbus_proof?: Record<string, unknown>;
+  mycelium_proof?: Record<string, unknown>;
+  active_traces?: Array<Record<string, unknown>>;
+  phase_counts?: Record<string, number>;
+  broken_chains?: Array<Record<string, unknown>>;
+  rate_pressure?: Array<Record<string, unknown>>;
+  latest_live_trade_trace?: Record<string, unknown>;
+  source_paths?: Record<string, unknown>;
+}
+
+interface LiveTradeSignalFabricStressAudit {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    event_count?: number;
+    trace_count?: number;
+    certified_trace_count?: number;
+    complete_trace_count?: number;
+    broken_chain_count?: number;
+    missing_required_phase_count?: number;
+    stable_id_gap_count?: number;
+    broker_requirement_gap_count?: number;
+    rate_budget_missing_count?: number;
+    api_rate_pressure_count?: number;
+    stale_trace_count?: number;
+    bus_delivery_count?: number;
+    mycelium_delivery_count?: number;
+    thoughtbus_receiving?: boolean;
+    mycelium_receiving?: boolean;
+    p95_phase_latency_ms?: number;
+    no_broker_mutation?: boolean;
+    burn_down_ready?: boolean;
+    chain_certification_state?: string;
+    capital_a_to_b_ready?: boolean;
+    recovered_trace_count?: number;
+    publisher_gap_count?: number;
+    api_budget_gap_count?: number;
+    broker_gap_count?: number;
+    complete_capital_chain_count?: number;
+    producer_repair_row_count?: number;
+    rate_budget_certified_count?: number;
+    rate_budget_uncertified_count?: number;
+    recovered_broker_truth_count?: number;
+    external_live_route_leak_count?: number;
+    executor_gate_respected?: boolean;
+    no_direct_broker_mutation?: boolean;
+    producer_burndown_state?: string;
+    producer_wired_count?: number;
+    producer_silent_count?: number;
+    producer_rate_missing_count?: number;
+  };
+  trace_certification_rows?: Array<Record<string, unknown>>;
+  burn_down_rows?: Array<Record<string, unknown>>;
+  producer_repair_rows?: Array<Record<string, unknown>>;
+  producer_wiring_rows?: Array<Record<string, unknown>>;
+  publisher_heartbeat_rows?: Array<Record<string, unknown>>;
+  next_live_trace_requirements?: Array<Record<string, unknown>>;
+  fresh_capital_trace_candidate?: Record<string, unknown>;
+  producer_burndown_state?: string;
+  rate_budget_certification_rows?: Array<Record<string, unknown>>;
+  recovered_broker_truth_rows?: Array<Record<string, unknown>>;
+  chain_certification_state?: string;
+  capital_a_to_b_ready?: boolean;
+  recovered_trace_rows?: Array<Record<string, unknown>>;
+  publisher_gap_rows?: Array<Record<string, unknown>>;
+  api_budget_gap_rows?: Array<Record<string, unknown>>;
+  broker_requirement_gap_rows?: Array<Record<string, unknown>>;
+  next_repair_actions?: Array<Record<string, unknown>>;
+  broker_requirement_proof?: Record<string, unknown>;
+  phase_order_proof?: Record<string, unknown>;
+  api_rate_budget_proof?: Record<string, unknown>;
+  bus_mycelium_proof?: Record<string, unknown>;
+  stale_phase_proof?: Record<string, unknown>;
+  blockers?: string[];
   source_paths?: Record<string, unknown>;
 }
 
@@ -1101,6 +1425,34 @@ async function loadCapitalRevenueLogicStressAudit(signal?: AbortSignal): Promise
 
 async function loadCapitalRevenueLiveGateReadinessAudit(signal?: AbortSignal): Promise<CapitalRevenueLiveGateReadinessAudit | null> {
   return fetchJsonOrNull<CapitalRevenueLiveGateReadinessAudit>("/aureon_capital_revenue_live_gate_readiness_audit.json", signal);
+}
+
+async function loadCapitalThreePLiveExecutionCertificationAudit(signal?: AbortSignal): Promise<CapitalThreePLiveExecutionCertificationAudit | null> {
+  return fetchJsonOrNull<CapitalThreePLiveExecutionCertificationAudit>("/aureon_capital_3p_live_execution_certification_audit.json", signal);
+}
+
+async function loadCapitalThreePBlockerBurndownAudit(signal?: AbortSignal): Promise<CapitalThreePBlockerBurndownAudit | null> {
+  return fetchJsonOrNull<CapitalThreePBlockerBurndownAudit>("/aureon_capital_3p_blocker_burndown_audit.json", signal);
+}
+
+async function loadPerformanceReadinessAudit(signal?: AbortSignal): Promise<PerformanceReadinessAudit | null> {
+  return fetchJsonOrNull<PerformanceReadinessAudit>("/aureon_performance_readiness_audit.json", signal);
+}
+
+async function loadAureonMurgeUnityBridge(signal?: AbortSignal): Promise<AureonMurgeUnityBridge | null> {
+  return fetchJsonOrNull<AureonMurgeUnityBridge>("/aureon_murge_unity_bridge.json", signal);
+}
+
+async function loadAureonMurgeRuntimeActivationStressAudit(signal?: AbortSignal): Promise<AureonMurgeRuntimeActivationStressAudit | null> {
+  return fetchJsonOrNull<AureonMurgeRuntimeActivationStressAudit>("/aureon_murge_runtime_activation_stress_audit.json", signal);
+}
+
+async function loadLiveTradeSignalFabric(signal?: AbortSignal): Promise<LiveTradeSignalFabric | null> {
+  return fetchJsonOrNull<LiveTradeSignalFabric>("/aureon_live_trade_signal_fabric.json", signal);
+}
+
+async function loadLiveTradeSignalFabricStressAudit(signal?: AbortSignal): Promise<LiveTradeSignalFabricStressAudit | null> {
+  return fetchJsonOrNull<LiveTradeSignalFabricStressAudit>("/aureon_live_trade_signal_fabric_stress_audit.json", signal);
 }
 
 async function loadCapitalLiveDryStressAudit(signal?: AbortSignal): Promise<CapitalEcosystemLiveDryStressAudit | null> {
@@ -1616,6 +1968,1370 @@ function CapitalEcosystemIntelligencePanel({ ecosystem }: { ecosystem: CapitalEc
             {blockers.slice(0, 8).map((blocker) => (
               <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
             ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CapitalThreePMissionPanel({
+  ecosystem,
+  revenue,
+  liveGate,
+  liveDry,
+}: {
+  ecosystem: CapitalEcosystemIntelligenceCompany | null;
+  revenue: CapitalRevenueLogicStressAudit | null;
+  liveGate: CapitalRevenueLiveGateReadinessAudit | null;
+  liveDry: CapitalEcosystemLiveDryStressAudit | null;
+}) {
+  const ecosystemSummary = ecosystem?.summary || {};
+  const revenueSummary = revenue?.summary || {};
+  const liveGateSummary = liveGate?.summary || {};
+  const liveDrySummary = liveDry?.summary || {};
+  const netRows = asRecordArray(revenue?.net_positive_candidates);
+  const rejectRows = asRecordArray(revenue?.rejected_false_positives);
+  const closeRows = asRecordArray(ecosystem?.close_first_opportunities);
+  const shadowRows = asRecordArray(ecosystem?.shadow_hedges);
+  const readinessRows = asRecordArray(liveGate?.candidate_readiness_rows);
+  const missionBlockers = uniqueStrings([
+    ...((revenue?.blockers || []) as string[]),
+    ...((liveGate?.blockers || []) as string[]),
+    ...((liveDry?.blockers || []) as string[]),
+  ]);
+  const threePGoal = revenueSummary.three_p_goal ?? ecosystemSummary.three_p_goal ?? liveGateSummary.three_p_goal ?? 0.03;
+  const liveArmed = Boolean(liveGateSummary.capital_live_gates_armed ?? revenueSummary.capital_live_gates_armed);
+  const readyNow = asNumber(liveGateSummary.ready_now_candidate_count);
+
+  return (
+    <Card className="border-lime-500/30 bg-lime-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Gauge className="h-4 w-4 text-lime-300" />
+            Capital 3p Mission
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={`3p floor GBP ${formatCompact(threePGoal)}`} tone="border-lime-500/30 bg-lime-500/10 text-lime-100" />
+            <Pill label={liveArmed ? "live gates armed" : "live gates held"} tone={liveArmed ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={`${formatCompact(readyNow)} ready now`} tone={readyNow ? statusTone.wired : statusTone.orphaned} />
+            <Pill label="read-only evidence" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            ["Universe", ecosystemSummary.candidate_count],
+            ["Trade ready", ecosystemSummary.trade_ready_candidate_count],
+            ["3p candidates", revenueSummary.three_p_floor_passed_count ?? revenueSummary.net_positive_candidate_count],
+            ["Intent eligible", revenueSummary.three_p_intent_eligible_count ?? revenueSummary.intent_eligible_candidate_count],
+            ["False rejects", revenueSummary.false_positive_reject_count],
+            ["Active watchlist", `${formatCompact(ecosystemSummary.active_watchlist_count)}/${formatCompact(ecosystemSummary.active_watchlist_limit || 40)}`],
+            ["Bench", `${formatCompact(ecosystemSummary.bench_watchlist_count)}/${formatCompact(ecosystemSummary.bench_watchlist_limit || 100)}`],
+            ["Open positions", liveDrySummary.recovered_position_count ?? ecosystemSummary.active_capital_position_count],
+            ["Close first", revenueSummary.three_p_close_opportunity_count ?? ecosystemSummary.close_first_opportunity_count],
+            ["Duplicate blocks", revenueSummary.duplicate_route_blocked_count ?? ecosystemSummary.duplicate_route_blocked_count],
+            ["Mutation controls", "none"],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-lime-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Top 3p-eligible candidates</div>
+              <Pill label="Capital only" tone="border-lime-500/30 bg-lime-500/10 text-lime-100" />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {netRows.length ? netRows.slice(0, 8).map((item) => (
+                <div key={String(item.candidate_id || item.route_key || item.symbol)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{String(item.symbol || item.epic || "capital")}</span>
+                    <span className="font-mono text-lime-100">{formatCompact(item.expected_net_revenue)}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">
+                    {String(item.side || "WATCH")} / 3p {String(item.three_p_floor_passed ?? "unknown")} / route {String(item.route_key || "pending")}
+                  </div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No Capital candidate currently clears the 3p net floor.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Gate state and rejects</div>
+              <Pill label={`${formatCompact(missionBlockers.length)} blockers`} tone={missionBlockers.length ? statusTone.security_blocker : statusTone.wired} />
+            </div>
+            <div className="grid gap-2">
+              {readinessRows.length ? readinessRows.slice(0, 4).map((item) => {
+                const missing = Array.isArray(item.missing_live_gate_ids) ? item.missing_live_gate_ids.map((gate) => String(gate)).filter(Boolean) : [];
+                return (
+                  <div key={String(item.candidate_id || item.route_key || item.symbol)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{String(item.symbol || "candidate")}</span>
+                      <Pill label={item.ready_now ? "ready" : "held"} tone={item.ready_now ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{missing.slice(0, 4).join(", ") || "all live gates clear"}</div>
+                  </div>
+                );
+              }) : rejectRows.length ? rejectRows.slice(0, 4).map((item) => (
+                <div key={String(item.candidate_id || item.route_key || item.symbol)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{String(item.symbol || "reject")}</span>
+                    <span className="font-mono text-muted-foreground">{formatCompact(item.expected_net_revenue)}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">
+                    {Array.isArray(item.revenue_blockers) ? item.revenue_blockers.map(String).slice(0, 3).join(", ") : "3p/cost gate"}
+                  </div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  Live-gate rows are pending.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Close-first rows</div>
+              <Pill label={`${formatCompact(closeRows.length)} positions`} tone={closeRows.length ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="grid gap-2">
+              {closeRows.length ? closeRows.slice(0, 5).map((item) => (
+                <div key={String(item.lifecycle_id || item.route_key || item.deal_id)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{String(item.symbol || "Capital position")}</span>
+                    <span className="font-mono text-muted-foreground">{String(item.current_status || "monitor")}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(item.close_priority || "monitor existing position")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No close-first rows are visible.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Shadow confirmation rows</div>
+              <Pill label="no external order intent" tone={statusTone.wired} />
+            </div>
+            <div className="grid gap-2">
+              {shadowRows.length ? shadowRows.slice(0, 5).map((item) => (
+                <div key={String(item.hedge_candidate_id || item.target_candidate_id || item.target_symbol)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{String(item.source_exchange || "exchange")} -&gt; {String(item.target_symbol || "Capital")}</span>
+                    <span className="font-mono text-muted-foreground">{formatCompact(item.hedge_confidence)}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(item.authority || "shadow_only")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  Shadow confirmation rows are pending.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {missionBlockers.length ? (
+          <div className="flex flex-wrap gap-1">
+            {missionBlockers.slice(0, 12).map((blocker) => (
+              <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CapitalThreePLiveExecutionCertificationPanel({ audit }: { audit: CapitalThreePLiveExecutionCertificationAudit | null }) {
+  const summary = audit?.summary || {};
+  const rows = asRecordArray(audit?.candidate_execution_rows);
+  const fresh = asRecord(audit?.fresh_snapshot_proof);
+  const duplicate = asRecord(audit?.duplicate_route_proof);
+  const recovered = asRecord(audit?.recovered_exit_proof);
+  const broker = asRecord(audit?.capital_broker_requirement_proof);
+  const external = asRecord(audit?.external_confirmation_requirement_proof);
+  const executor = asRecord(audit?.live_executor_readiness);
+  const blockers = ((audit?.blockers || []) as string[]).filter(Boolean);
+  const ready = audit?.status === "capital_3p_live_execution_certified" && blockers.length === 0;
+  const statusLabel = String(audit?.status || "3p execution pending").replace(/_/g, " ");
+  const rowBlockers = (value: unknown) => (Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : []);
+
+  return (
+    <Card className="border-green-500/30 bg-green-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-green-300" />
+            3p Live Execution Certification
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={statusLabel} tone={ready ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={`${formatCompact(summary.ready_for_intent_count)} ready for intent`} tone={summary.ready_for_intent_count ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={`${formatCompact(summary.net_positive_candidate_count)} 3p candidates`} tone="border-green-500/30 bg-green-500/10 text-green-100" />
+            <Pill label="/aureon_capital_3p_live_execution_certification_audit.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            ["3p floor", `GBP ${formatCompact(summary.three_p_goal ?? 0.03)}`],
+            ["Fresh snapshots", summary.fresh_snapshot_candidate_count],
+            ["Duplicate blocks", summary.duplicate_route_blocked_count],
+            ["Recovered positions", summary.recovered_position_count],
+            ["Recovered exit", summary.recovered_exit_clear ? "clear" : "held"],
+            ["Live gates", summary.capital_live_gates_armed ? "armed" : "held"],
+            ["Executor", summary.executor_ready ? "ready" : "held"],
+            ["Broker proof", summary.capital_broker_requirements_certified ? "certified" : "attention"],
+            ["External", summary.no_external_mutation ? "shadow only" : "attention"],
+            ["Mutation controls", "none"],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-green-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Why not live now</div>
+              <Pill label="existing executor path only" tone="border-green-500/30 bg-green-500/10 text-green-100" />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {rows.length ? rows.slice(0, 8).map((item) => {
+                const missing = rowBlockers(item.missing_execution_gate_ids);
+                return (
+                  <div key={String(item.candidate_id || item.route_key || item.symbol)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{String(item.symbol || item.epic || "capital")}</span>
+                      <span className="font-mono text-green-100">{formatCompact(item.expected_net_revenue)}</span>
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">
+                      {String(item.side || "WATCH")} / {String(item.execution_state || "blocked before intent").replace(/_/g, " ")}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {missing.length ? missing.slice(0, 5).map((gate) => (
+                        <Pill key={gate} label={gate.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+                      )) : (
+                        <Pill label="ready for existing executor intent" tone={statusTone.wired} />
+                      )}
+                    </div>
+                    {item.next_required_evidence ? (
+                      <div className="mt-2 text-muted-foreground">{String(item.next_required_evidence)}</div>
+                    ) : null}
+                  </div>
+                );
+              }) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No net-positive 3p Capital candidates are visible.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Capital broker proof</div>
+              <Pill label={summary.capital_broker_requirements_certified ? "stress certified" : "attention"} tone={summary.capital_broker_requirements_certified ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="grid gap-2">
+              {[
+                ["watchlist", `${formatCompact(fresh.active_watchlist_count)}/${formatCompact(fresh.active_watchlist_limit || 40)} epics`],
+                ["snapshot proof", `${formatCompact(fresh.fresh_snapshot_candidate_count)} fresh / ${formatCompact(fresh.stale_snapshot_candidate_count)} stale`],
+                ["active routes", formatCompact(duplicate.active_lifecycle_count)],
+                ["recovered chain", String(recovered.recovered_close_chain_status || "unknown").replace(/_/g, " ")],
+                ["close requests", formatCompact(recovered.recovered_close_request_count)],
+                ["outcomes", formatCompact(recovered.recovered_outcome_recorded_count)],
+                ["deal id rule", broker.deal_id_required ? "required" : "attention"],
+                ["position absence", broker.position_absence_and_pnl_required_for_close ? "plus P/L" : "attention"],
+                ["external venues", external.external_shadow_only ? "confirmation only" : "attention"],
+                ["executor packet", String(executor.order_intent_packet_status || "unknown").replace(/_/g, " ")],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="uppercase text-muted-foreground">{String(label)}</span>
+                    <span className="font-mono text-foreground/90">{String(value ?? "0")}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {blockers.length ? (
+          <div className="flex flex-wrap gap-1">
+            {blockers.slice(0, 12).map((blocker) => (
+              <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CapitalThreePBlockerBurndownPanel({ audit }: { audit: CapitalThreePBlockerBurndownAudit | null }) {
+  const summary = audit?.summary || {};
+  const rows = asRecordArray(audit?.candidate_burndown_rows);
+  const guard = asRecord(audit?.capital_only_execution_guard);
+  const runtime = asRecord(audit?.runtime_reconciliation);
+  const fresh = asRecord(audit?.fresh_snapshot_proof);
+  const duplicate = asRecord(audit?.duplicate_route_proof);
+  const recovered = asRecord(audit?.recovered_exit_proof);
+  const externalRows = asRecordArray(audit?.external_confirmation_rows);
+  const blockers = ((audit?.blockers || []) as string[]).filter(Boolean);
+  const ready = audit?.status === "capital_3p_ready" && blockers.length === 0;
+  const statusLabel = String(audit?.status || "3p burn-down pending").replace(/_/g, " ");
+  const rowBlockers = (value: unknown) => (Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : []);
+
+  return (
+    <Card className="border-amber-500/30 bg-amber-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-300" />
+            3p Blocker Burn-Down
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={statusLabel} tone={ready ? statusTone.wired : statusTone.security_blocker} />
+            <Pill label={`${formatCompact(summary.ready_for_capital_intent_count)} ready`} tone={summary.ready_for_capital_intent_count ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={`${formatCompact(summary.blocker_count)} blockers`} tone={summary.blocker_count ? statusTone.security_blocker : statusTone.wired} />
+            <Pill label="/aureon_capital_3p_blocker_burndown_audit.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            ["3p floor", `GBP ${formatCompact(summary.three_p_goal ?? 0.03)}`],
+            ["Candidates", summary.candidate_count],
+            ["Fresh / stale", `${formatCompact(summary.fresh_snapshot_candidate_count)} / ${formatCompact(summary.stale_snapshot_candidate_count)}`],
+            ["Duplicate routes", summary.duplicate_route_blocked_count],
+            ["Recovered positions", summary.recovered_position_count],
+            ["Recovered exit", summary.recovered_exit_clear ? "clear" : "held"],
+            ["External intents", summary.external_live_intent_count],
+            ["External attempts", summary.external_executor_attempt_count],
+            ["Capital-only", summary.capital_only_live_execution ? "yes" : "no"],
+            ["Mutation from audit", summary.no_broker_mutation_from_audit ? "none" : "attention"],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-amber-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Capital candidate burn-down</div>
+              <Pill label="Capital executor only" tone="border-amber-500/30 bg-amber-500/10 text-amber-100" />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {rows.length ? rows.slice(0, 8).map((item) => {
+                const missing = rowBlockers(item.missing_burndown_gate_ids);
+                return (
+                  <div key={String(item.candidate_id || item.route_key || item.symbol)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{String(item.symbol || item.epic || "capital")}</span>
+                      <span className="font-mono text-amber-100">{formatCompact(item.expected_net_revenue)}</span>
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">
+                      {String(item.side || "WATCH")} / {String(item.route_key || "route pending")}
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>bid/ask {item.bid_ask_fresh ? "fresh" : "stale"}</span>
+                      <span>OHLC {item.ohlc_profile_fresh ? "fresh" : "stale"}</span>
+                      <span>route {item.active_route_conflict ? "blocked" : "clear"}</span>
+                      <span>lifecycle {String(item.lifecycle_state || "unknown").replace(/_/g, " ")}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {missing.length ? missing.slice(0, 5).map((gate) => (
+                        <Pill key={gate} label={gate.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+                      )) : (
+                        <Pill label="ready for Capital intent" tone={statusTone.wired} />
+                      )}
+                    </div>
+                    {item.next_required_evidence ? (
+                      <div className="mt-2 text-muted-foreground">{String(item.next_required_evidence)}</div>
+                    ) : null}
+                  </div>
+                );
+              }) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No Capital 3p burn-down candidates are visible.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Runtime reconciliation</div>
+              <Pill label={runtime.runtime_artifact_mismatch ? "mismatch" : "reconciled"} tone={runtime.runtime_artifact_mismatch ? statusTone.security_blocker : statusTone.wired} />
+            </div>
+            <div className="grid gap-2">
+              {[
+                ["watchlist", `${formatCompact(fresh.active_watchlist_count)}/${formatCompact(fresh.active_watchlist_limit || 40)} epics`],
+                ["stream limit", fresh.watchlist_within_capital_stream_limit ? "within limit" : "over limit"],
+                ["active routes", formatCompact(duplicate.active_lifecycle_route_count)],
+                ["duplicate rule", String(duplicate.clearance_rule || "broker absence/outcome")],
+                ["recovered chain", String(recovered.recovered_close_chain_status || "unknown").replace(/_/g, " ")],
+                ["live gates", runtime.live_gates_armed ? "armed" : "held"],
+                ["external live rows", formatCompact((guard.external_live_rows as unknown[] | undefined)?.length || 0)],
+                ["shadow rows", formatCompact(summary.shadow_confirmation_count)],
+                ["artifact match", runtime.runtime_artifact_mismatch ? "attention" : "ok"],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="uppercase text-muted-foreground">{String(label)}</span>
+                    <span className="max-w-[12rem] truncate text-right font-mono text-foreground/90">{String(value ?? "0")}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {externalRows.some((row) => String(row.status || "").includes("leak")) ? (
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">External route leak evidence</div>
+            <div className="grid gap-2 md:grid-cols-3">
+              {externalRows.filter((row) => String(row.status || "").includes("leak")).slice(0, 6).map((item, index) => (
+                <div key={`${String(item.route_key || item.venue || "external")}-${index}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{String(item.venue || "external")}</span>
+                    <span className="font-mono text-red-100">{String(item.leak_type || "leak").replace(/_/g, " ")}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(item.route_key || item.symbol || "route missing")}</div>
+                  {item.reason ? <div className="mt-1 text-muted-foreground">{String(item.reason)}</div> : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {blockers.length ? (
+          <div className="flex flex-wrap gap-1">
+            {blockers.slice(0, 12).map((blocker) => (
+              <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PerformanceReadinessPanel({ audit }: { audit: PerformanceReadinessAudit | null }) {
+  const summary = audit?.summary || {};
+  const scriptRows = asRecordArray(audit?.script_wiring);
+  const artifactRows = Object.entries(audit?.artifact_wiring || {}).map(([key, value]) => ({
+    key,
+    ...asRecord(value),
+  }));
+  const blockers = ((audit?.blockers || []) as string[]).filter(Boolean);
+  const ready = audit?.status === "performance_readiness_wired" && blockers.length === 0;
+  const statusLabel = String(audit?.status || "performance readiness pending").replace(/_/g, " ");
+  const refsCount = (value: unknown) => (Array.isArray(value) ? value.length : 0);
+  const allScriptsWired = Boolean(summary.script_count && summary.scripts_wired_count === summary.script_count);
+
+  return (
+    <Card className="border-sky-500/30 bg-sky-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Gauge className="h-4 w-4 text-sky-300" />
+            Performance Readiness
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={statusLabel} tone={ready ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={`${formatCompact(summary.scripts_wired_count)}/${formatCompact(summary.script_count)} scripts`} tone={allScriptsWired ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={summary.no_broker_mutation ? "no broker mutation" : "mutation check attention"} tone={summary.no_broker_mutation ? statusTone.wired : statusTone.security_blocker} />
+            <Pill label="/aureon_performance_readiness_audit.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            ["Organism registered", `${formatCompact(summary.organism_registered_count)}/${formatCompact(summary.script_count)}`],
+            ["Artifacts present", `${formatCompact(summary.artifact_present_count)}/${formatCompact(summary.artifact_count)}`],
+            ["Super sweep", summary.super_sweep_pass ? `pass ${summary.super_sweep_steps || ""}` : "attention"],
+            ["Full suite", summary.full_suite_pass ? "pass" : "attention"],
+            ["Latency p95", `${formatCompact(summary.latency_p95_observed_ms)} / ${formatCompact(summary.latency_p95_budget_ms)} ms`],
+            ["Threshold cases", `${formatCompact(summary.threshold_pass_cases)} pass / ${formatCompact(summary.threshold_fail_cases)} fail`],
+            ["API exchanges", summary.api_concurrency_valid_exchange_count],
+            ["Calls/min", summary.api_concurrency_total_recommended_calls_per_min],
+            ["Rate benchmark", `${formatCompact(summary.api_rate_benchmark_valid_exchange_count)} valid`],
+            ["Blockers", summary.blocker_count],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-sky-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Latest diagnostic scripts</div>
+              <Pill label="organism validation domain" tone="border-sky-500/30 bg-sky-500/10 text-sky-100" />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {scriptRows.length ? scriptRows.map((row) => {
+                const wired = Boolean(row.wired);
+                return (
+                  <div key={String(row.path || row.module)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.path || "diagnostic")}</span>
+                      <Pill label={wired ? "wired" : "attention"} tone={wired ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.module || "module pending")}</div>
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>present {row.present ? "yes" : "no"}</span>
+                      <span>organism {row.organism_registered ? "yes" : "no"}</span>
+                      <span>refs {formatCompact(refsCount(row.referenced_by))}</span>
+                      <span className="truncate">{String(row.organism_topic || "topic pending")}</span>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  Performance diagnostic wiring has not published yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Generated stress artifacts</div>
+              <Pill label={summary.full_suite_pass ? "suite passing" : "suite attention"} tone={summary.full_suite_pass ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="grid gap-2">
+              {artifactRows.slice(0, 10).map((row) => (
+                <div key={String(row.key)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate uppercase text-muted-foreground">{String(row.key).replace(/_/g, " ")}</span>
+                    <span className={row.present ? "font-mono text-sky-100" : "font-mono text-amber-100"}>{row.present ? "present" : "missing"}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.path || "")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {blockers.length ? (
+          <div className="flex flex-wrap gap-1">
+            {blockers.slice(0, 12).map((blocker) => (
+              <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AureonMurgeUnityPanel({ bridge }: { bridge: AureonMurgeUnityBridge | null }) {
+  const summary = bridge?.summary || {};
+  const tracks = asRecordArray(bridge?.unity_track_rows);
+  const adapters = asRecordArray(bridge?.organism_adapter_rows);
+  const collisions = asRecordArray(bridge?.collision_rows);
+  const requirements = asRecordArray(bridge?.online_requirement_baseline);
+  const actions = asRecordArray(bridge?.next_unity_actions);
+  const blockers = ((bridge?.blockers || []) as string[]).filter(Boolean);
+  const ready = Boolean(summary.unity_ready) && blockers.length === 0;
+  const statusLabel = String(bridge?.status || "unity bridge pending").replace(/_/g, " ");
+
+  return (
+    <Card className="border-cyan-500/30 bg-cyan-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Server className="h-4 w-4 text-cyan-300" />
+            Aureon MURGE Unity Bridge
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={statusLabel} tone={ready ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={`${formatCompact(summary.staged_track_count)}/${formatCompact(summary.track_count)} tracks staged`} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-100" />
+            <Pill label={`${formatCompact(summary.collision_count)} collisions`} tone={summary.collision_count ? statusTone.security_blocker : statusTone.wired} />
+            <Pill label="/aureon_murge_unity_bridge.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          {[
+            ["tracks", summary.track_count],
+            ["staged", summary.staged_track_count],
+            ["missing", summary.missing_track_count],
+            ["adapters", summary.adapter_row_count],
+            ["online gates", summary.online_requirement_count],
+            ["hidden activation", summary.hidden_activation ? "yes" : "no"],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-cyan-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Unity tracks</div>
+              <Pill label="namespaced, no overwrite" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-100" />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {tracks.length ? tracks.slice(0, 8).map((row) => (
+                <div key={String(row.track_id || row.target)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.track_id || "track").replace(/_/g, " ")}</span>
+                    <Pill label={row.staged ? "staged" : "missing"} tone={row.staged ? statusTone.wired : statusTone.security_blocker} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.target || row.path || "")}</div>
+                  <div className="mt-1 font-mono text-[11px] text-muted-foreground">{formatCompact(row.file_count)} files</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  MURGE unity tracks are pending.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Adapter relation</div>
+              <Pill label={`${formatCompact(adapters.length)} rows`} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-100" />
+            </div>
+            <div className="grid gap-2">
+              {adapters.length ? adapters.slice(0, 6).map((row) => (
+                <div key={String(row.track_id)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.track_id || "adapter").replace(/_/g, " ")}</span>
+                    <span className="font-mono text-muted-foreground">{String(row.status || "pending")}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.adapter || "adapter path pending")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  Adapter rows are pending.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Collision review</div>
+            <div className="grid gap-2">
+              {collisions.length ? collisions.slice(0, 4).map((row) => (
+                <div key={String(row.path)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="font-medium">{String(row.path || "collision")}</div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.merge_action || row.collision_reason || "review required")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No direct path collisions.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Online baseline</div>
+            <div className="grid gap-2">
+              {requirements.slice(0, 4).map((row) => (
+                <div key={String(row.surface)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="font-medium">{String(row.surface || "requirement").replace(/_/g, " ")}</div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.unity_gate || row.source || "")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Next unity actions</div>
+            <div className="grid gap-2">
+              {actions.slice(0, 5).map((row) => (
+                <div key={String(row.id)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="font-mono text-cyan-100">{String(row.priority || "P?")} {String(row.id || "")}</div>
+                  <div className="mt-1 text-muted-foreground">{String(row.action || "wire next adapter")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {blockers.length ? (
+          <div className="flex flex-wrap gap-1">
+            {blockers.slice(0, 10).map((blocker) => (
+              <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AureonMurgeRuntimeActivationPanel({ audit }: { audit: AureonMurgeRuntimeActivationStressAudit | null }) {
+  const summary = audit?.summary || {};
+  const services = asRecordArray(audit?.activation_service_rows);
+  const gates = asRecordArray(audit?.activation_gate_rows);
+  const dependencies = asRecordArray(audit?.dependency_readiness_rows);
+  const launchLogs = asRecordArray(audit?.launch_log_rows);
+  const npmAuditRows = asRecordArray(audit?.npm_audit_rows);
+  const terminalRows = asRecordArray(audit?.terminal_sandbox_guard_rows);
+  const electronRows = asRecordArray(audit?.electron_security_rows);
+  const windowsRows = asRecordArray(audit?.windows_compatibility_rows);
+  const actions = asRecordArray(audit?.next_activation_actions);
+  const blockers = ((audit?.blockers || []) as string[]).filter(Boolean);
+  const ready = Boolean(summary.local_launch_ready) && blockers.length === 0;
+  const statusLabel = String(audit?.status || "runtime activation pending").replace(/_/g, " ");
+
+  return (
+    <Card className="border-sky-500/30 bg-sky-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Radio className="h-4 w-4 text-sky-300" />
+            MURGE Runtime Activation
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={statusLabel} tone={ready ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={`${formatCompact(summary.service_health_pass_count)}/${formatCompact(summary.service_count)} health`} tone={summary.service_health_pass_count === summary.service_count ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={summary.no_trading_gate_bypass ? "no trading bypass" : "gate attention"} tone={summary.no_trading_gate_bypass ? statusTone.wired : statusTone.security_blocker} />
+            <Pill label="/aureon_murge_runtime_activation_stress_audit.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          {[
+            ["services", `${formatCompact(summary.service_present_count)}/${formatCompact(summary.service_count)}`],
+            ["dependencies", `${formatCompact(summary.dependency_ready_count)}/${formatCompact(summary.dependency_check_count)}`],
+            ["npm high", summary.npm_high_vulnerability_count],
+            ["web health", summary.web_health_passed ? "pass" : "pending"],
+            ["runtime health", summary.runtime_health_passed ? "pass" : "pending"],
+            ["terminal guards", `${formatCompact(summary.terminal_guard_passing_count)}/${formatCompact(summary.terminal_guard_count)}`],
+            ["electron", `${formatCompact(summary.electron_security_pass_count)}/${formatCompact(summary.electron_security_check_count)}`],
+            ["collisions", summary.collision_count],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-sky-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Local services</div>
+              <Pill label="localhost only" tone="border-sky-500/30 bg-sky-500/10 text-sky-100" />
+            </div>
+            <div className="grid gap-2 md:grid-cols-3">
+              {services.length ? services.map((row) => (
+                <div key={String(row.id)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.label || row.id || "service")}</span>
+                    <Pill label={String(row.status || "pending").replace(/_/g, " ")} tone={row.health_ok ? statusTone.wired : row.present ? statusTone.orphaned : statusTone.security_blocker} />
+                  </div>
+                  <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{String(row.command || "")}</div>
+                  <div className="mt-1 text-[11px] text-muted-foreground">port {String(row.port || "n/a")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  Activation service rows are pending.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Activation gates</div>
+              <Pill label={`${formatCompact(summary.activation_gate_enabled_count)} enabled`} tone={summary.activation_gate_enabled_count ? statusTone.orphaned : statusTone.wired} />
+            </div>
+            <div className="grid gap-2">
+              {gates.map((row) => (
+                <div key={String(row.gate)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-mono">{String(row.gate || "gate")}</span>
+                    <Pill label={row.enabled ? "enabled" : "guarded off"} tone={row.enabled ? statusTone.orphaned : statusTone.wired} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Dependency readiness</div>
+              <Pill label="npm ci lockfile baseline" tone="border-sky-500/30 bg-sky-500/10 text-sky-100" />
+            </div>
+            <div className="grid gap-2">
+              {dependencies.length ? dependencies.map((row) => {
+                const missing = Array.isArray(row.missing_modules) ? row.missing_modules.map(String).filter(Boolean) : [];
+                return (
+                  <div key={String(row.id)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.id || "dependencies").replace(/_/g, " ")}</span>
+                      <Pill label={String(row.status || "pending").replace(/_/g, " ")} tone={missing.length ? statusTone.orphaned : statusTone.wired} />
+                    </div>
+                    <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{String(row.install_command || "npm ci")}</div>
+                    {missing.length ? <div className="mt-1 line-clamp-2 text-muted-foreground">missing {missing.slice(0, 5).join(", ")}</div> : null}
+                  </div>
+                );
+              }) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  Dependency readiness rows are pending.
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">NPM audit and launch logs</div>
+            <div className="grid gap-2">
+              {npmAuditRows.length ? npmAuditRows.map((row) => (
+                <div key={String(row.id)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.id || "npm audit").replace(/_/g, " ")}</span>
+                    <Pill label={String(row.status || "pending").replace(/_/g, " ")} tone={asNumber(row.high_vulnerabilities) || asNumber(row.critical_vulnerabilities) ? statusTone.security_blocker : statusTone.wired} />
+                  </div>
+                  <div className="mt-1 text-muted-foreground">
+                    high {formatCompact(row.high_vulnerabilities)} / critical {formatCompact(row.critical_vulnerabilities)} / total {formatCompact(row.total_vulnerabilities)}
+                  </div>
+                </div>
+              )) : null}
+              {launchLogs.length ? launchLogs.map((row) => (
+                <div key={String(row.service)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.service || "service")}</span>
+                    <span className="font-mono text-muted-foreground">{String(row.status || "pending")}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.stderr_path || row.stdout_path || "")}</div>
+                </div>
+              )) : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Windows guard</div>
+            <div className="grid gap-2">
+              {windowsRows.slice(0, 4).map((row) => (
+                <div key={String(row.id)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="font-medium">{String(row.id || "windows").replace(/_/g, " ")}</div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.status || row.platform || "pending")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Terminal and sandbox</div>
+            <div className="grid gap-2">
+              {terminalRows.map((row) => (
+                <div key={String(row.surface)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{String(row.surface || "surface").replace(/_/g, " ")}</span>
+                    <Pill label={row.code_guard_present ? "guard present" : "guard missing"} tone={row.code_guard_present ? statusTone.wired : statusTone.security_blocker} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.status || "")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Electron and next actions</div>
+            <div className="grid gap-2">
+              {electronRows.slice(0, 4).map((row) => (
+                <div key={String(row.check)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">{String(row.check || "check").replace(/_/g, " ")}</span>
+                    <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.security_blocker} />
+                  </div>
+                </div>
+              ))}
+              {actions.slice(0, 2).map((row) => (
+                <div key={String(row.id)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="font-mono text-sky-100">{String(row.priority || "P?")} {String(row.id || "")}</div>
+                  <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.action || "")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {blockers.length ? (
+          <div className="flex flex-wrap gap-1">
+            {blockers.slice(0, 12).map((blocker) => (
+              <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LiveSignalFabricPanel({
+  fabric,
+  stress,
+  audit,
+}: {
+  fabric: LiveTradeSignalFabric | null;
+  stress: LiveTradeSignalFabricStressAudit | null;
+  audit: LiveGoalTradeAudit | null;
+}) {
+  const proofSnapshot = asRecord(audit?.live_trade_signal_fabric_proof?.snapshot);
+  const proof = audit?.live_trade_signal_fabric_proof || {};
+  const stressProof = audit?.live_trade_signal_fabric_stress_proof || {};
+  const stressSnapshot = asRecord(stressProof.snapshot);
+  const stressSource = stress || (Object.keys(stressSnapshot).length ? (stressSnapshot as LiveTradeSignalFabricStressAudit) : null);
+  const source = fabric || (Object.keys(proofSnapshot).length ? (proofSnapshot as LiveTradeSignalFabric) : null);
+  const summary = source?.summary || {};
+  const stressSummary = stressSource?.summary || {};
+  const thoughtbus = asRecord(source?.thoughtbus_proof);
+  const mycelium = asRecord(source?.mycelium_proof);
+  const traces = asRecordArray(source?.active_traces);
+  const stressRows = asRecordArray(stressSource?.trace_certification_rows);
+  const burnDownRows = asRecordArray(stressSource?.burn_down_rows);
+  const producerRepairRows = asRecordArray(stressSource?.producer_repair_rows);
+  const producerWiringRows = asRecordArray(stressSource?.producer_wiring_rows);
+  const publisherHeartbeatRows = asRecordArray(stressSource?.publisher_heartbeat_rows);
+  const nextLiveTraceRequirements = asRecordArray(stressSource?.next_live_trace_requirements);
+  const freshCapitalTraceCandidate = asRecord(stressSource?.fresh_capital_trace_candidate);
+  const rateBudgetCertificationRows = asRecordArray(stressSource?.rate_budget_certification_rows);
+  const recoveredBrokerTruthRows = asRecordArray(stressSource?.recovered_broker_truth_rows);
+  const recoveredTraceRows = asRecordArray(stressSource?.recovered_trace_rows);
+  const publisherGapRows = asRecordArray(stressSource?.publisher_gap_rows);
+  const apiBudgetGapRows = asRecordArray(stressSource?.api_budget_gap_rows);
+  const brokerGapRows = asRecordArray(stressSource?.broker_requirement_gap_rows);
+  const repairRows = asRecordArray(stressSource?.next_repair_actions);
+  const broken = asRecordArray(source?.broken_chains);
+  const ratePressure = asRecordArray(source?.rate_pressure);
+  const phases = Object.entries(source?.phase_counts || {});
+  const blockers = [...(((proof.blockers || []) as string[]).filter(Boolean)), ...(((stressSource?.blockers || stressProof.blockers || []) as string[]).filter(Boolean))];
+  const active = Boolean(summary.thoughtbus_receiving && summary.mycelium_receiving && !summary.broken_trace_count && !summary.api_rate_pressure_count && !stressSummary.broker_requirement_gap_count && !stressSummary.rate_budget_missing_count);
+  const statusLabel = String(source?.status || proof.status || proof.state || "signal fabric pending").replace(/_/g, " ");
+  const stressStatusLabel = String(stressSource?.status || stressProof.status || stressProof.state || "stress pending").replace(/_/g, " ");
+
+  return (
+    <Card className="border-emerald-500/30 bg-emerald-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Brain className="h-4 w-4 text-emerald-300" />
+            Live Signal Fabric
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={statusLabel} tone={active ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={summary.thoughtbus_receiving ? "ThoughtBus receiving" : "ThoughtBus attention"} tone={summary.thoughtbus_receiving ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={summary.mycelium_receiving ? "Mycelium receiving" : "Mycelium attention"} tone={summary.mycelium_receiving ? statusTone.wired : statusTone.orphaned} />
+            <Pill label="/aureon_live_trade_signal_fabric.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+            <Pill label="/aureon_live_trade_signal_fabric_stress_audit.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            ["events", summary.event_count],
+            ["active traces", summary.active_trace_count],
+            ["complete traces", summary.complete_trace_count],
+            ["broken chains", summary.broken_trace_count],
+            ["submitted", summary.live_order_submitted_count],
+            ["broker ack", summary.broker_ack_count],
+            ["open positions", summary.position_open_count],
+            ["outcomes", summary.outcome_recorded_count],
+            ["p95 latency", `${formatCompact(summary.p95_phase_latency_ms)} ms`],
+            ["rate pressure", summary.api_rate_pressure_count],
+            ["stress", stressStatusLabel],
+            ["certified traces", `${formatCompact(stressSummary.certified_trace_count)}/${formatCompact(stressSummary.trace_count)}`],
+            ["broker gaps", stressSummary.broker_requirement_gap_count],
+            ["rate gaps", stressSummary.rate_budget_missing_count],
+            ["stale traces", stressSummary.stale_trace_count],
+            ["burn-down", stressSummary.burn_down_ready ? "ready" : "attention"],
+            ["chain state", stressSummary.chain_certification_state || stressSource?.chain_certification_state || "pending"],
+            ["Capital A-to-B", stressSummary.capital_a_to_b_ready || stressSource?.capital_a_to_b_ready ? "ready" : "not ready"],
+            ["publisher gaps", stressSummary.publisher_gap_count],
+            ["producer repairs", stressSummary.producer_repair_row_count],
+            ["recovered traces", stressSummary.recovered_trace_count],
+            ["recovered broker", stressSummary.recovered_broker_truth_count],
+            ["rate certified", `${formatCompact(stressSummary.rate_budget_certified_count)}/${formatCompact(asNumber(stressSummary.rate_budget_certified_count) + asNumber(stressSummary.rate_budget_uncertified_count))}`],
+            ["external leaks", stressSummary.external_live_route_leak_count],
+            ["Capital chains", stressSummary.complete_capital_chain_count],
+            ["producer state", stressSummary.producer_burndown_state || stressSource?.producer_burndown_state || "pending"],
+            ["wired producers", stressSummary.producer_wired_count],
+            ["silent producers", stressSummary.producer_silent_count],
+            ["rate-missing producers", stressSummary.producer_rate_missing_count],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-emerald-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-md border border-emerald-500/20 bg-black/20 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="text-xs uppercase text-muted-foreground">Stress certification</div>
+            <Pill label={stressStatusLabel} tone={stressSummary.certified_trace_count && !stressSummary.broker_requirement_gap_count && !stressSummary.rate_budget_missing_count ? statusTone.wired : statusTone.orphaned} />
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              ["missing phases", stressSummary.missing_required_phase_count],
+              ["stable ID gaps", stressSummary.stable_id_gap_count],
+              ["bus deliveries", stressSummary.bus_delivery_count],
+              ["mycelium deliveries", stressSummary.mycelium_delivery_count],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                <div className="uppercase text-muted-foreground">{String(label)}</div>
+                <div className="mt-1 font-mono text-emerald-100">{formatCompact(value as number)}</div>
+              </div>
+            ))}
+          </div>
+          {stressRows.length ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {stressRows.slice(0, 4).map((row) => {
+                const rowBlockers = Array.isArray(row.blockers) ? row.blockers.map(String).filter(Boolean) : [];
+                return (
+                  <div key={String(row.trace_id || row.lifecycle_id)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.symbol || row.route_key || "stress trace")}</span>
+                      <Pill label={String(row.trace_health || row.latest_phase || "pending").replace(/_/g, " ")} tone={rowBlockers.length ? statusTone.orphaned : statusTone.wired} />
+                    </div>
+                    <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{String(row.trace_id || "")}</div>
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>next {String(row.next_required_phase || "complete")}</span>
+                      <span>broker {String(row.last_broker_proof || "pending")}</span>
+                      <span>max latency {formatCompact(row.max_phase_latency_ms)}ms</span>
+                      <span>P/L {String(row.last_net_pnl ?? "pending")}</span>
+                    </div>
+                    {rowBlockers.length ? (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {rowBlockers.slice(0, 5).map((blocker) => (
+                          <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="rounded-md border border-amber-500/20 bg-black/20 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="text-xs uppercase text-muted-foreground">Burn-down action rows</div>
+            <div className="flex flex-wrap gap-1">
+              <Pill label={stressSummary.no_direct_broker_mutation ? "no direct broker mutation" : "mutation proof attention"} tone={stressSummary.no_direct_broker_mutation ? statusTone.wired : statusTone.security_blocker} />
+              <Pill label={stressSummary.executor_gate_respected ? "executor gate respected" : "executor gate attention"} tone={stressSummary.executor_gate_respected ? statusTone.wired : statusTone.security_blocker} />
+            </div>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {burnDownRows.length ? burnDownRows.slice(0, 6).map((row) => {
+              const missing = Array.isArray(row.missing_required_phases) ? row.missing_required_phases.map(String).filter(Boolean) : [];
+              const ids = Array.isArray(row.stable_id_gaps) ? row.stable_id_gaps.map(String).filter(Boolean) : [];
+              const rate = Array.isArray(row.rate_budget_missing_phases) ? row.rate_budget_missing_phases.map(String).filter(Boolean) : [];
+              const broker = Array.isArray(row.broker_requirement_gaps) ? row.broker_requirement_gaps.map(String).filter(Boolean) : [];
+              const gaps = [...missing, ...ids, ...rate, ...broker];
+              return (
+                <div key={String(row.trace_id || row.route_key || row.latest_phase)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.symbol || row.route_key || "trade flow")}</span>
+                    <Pill label={String(row.classification || "attention").replace(/_/g, " ")} tone={row.classification === "complete_chain" ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.next_repair_action || "publish next phase proof")}</div>
+                  <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                    <span>producer {String(row.next_producer_to_fix || "pending")}</span>
+                    <span>next {String(row.next_required_phase || "complete")}</span>
+                    <span>latest {String(row.latest_phase || "pending")}</span>
+                    <span>{row.blocked_before_broker_mutation ? "blocked before broker" : "downstream proof"}</span>
+                  </div>
+                  {gaps.length ? (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {gaps.slice(0, 5).map((gap) => (
+                        <Pill key={gap} label={gap.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            }) : (
+              <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                No burn-down gaps are visible in the current fabric stress artifact.
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              ["recovered context", recoveredTraceRows.length],
+              ["producer repairs", producerRepairRows.length || publisherGapRows.length],
+              ["rate proof rows", rateBudgetCertificationRows.length],
+              ["API budget gaps", apiBudgetGapRows.length],
+              ["broker proof gaps", brokerGapRows.length],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                <div className="uppercase text-muted-foreground">{String(label)}</div>
+                <div className="mt-1 font-mono text-amber-100">{formatCompact(value as number)}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            {producerWiringRows.length ? (
+              <div className="rounded-md border border-border/40 bg-black/20 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="uppercase text-muted-foreground">Producer wiring</span>
+                  <Pill label={String(stressSummary.producer_burndown_state || stressSource?.producer_burndown_state || "pending").replace(/_/g, " ")} tone={stressSummary.capital_a_to_b_ready ? statusTone.wired : statusTone.orphaned} />
+                </div>
+                {producerWiringRows.slice(0, 5).map((row, index) => (
+                  <div key={`${String(row.phase || "producer")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{String(row.phase || "phase").replace(/_/g, " ")}</span>
+                      <span className={row.state === "producer_wired" || row.state === "complete_a_to_b" ? "font-mono text-emerald-100" : "font-mono text-amber-100"}>{String(row.state || "pending").replace(/_/g, " ")}</span>
+                    </div>
+                    <div className="truncate text-muted-foreground">{String(row.producer || "producer pending")}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {producerRepairRows.length ? (
+              <div className="rounded-md border border-border/40 bg-black/20 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="uppercase text-muted-foreground">Producer repair</span>
+                  <Pill label={`${formatCompact(producerRepairRows.length)} rows`} tone={statusTone.orphaned} />
+                </div>
+                {producerRepairRows.slice(0, 4).map((row, index) => (
+                  <div key={`${String(row.missing_phase || row.missing_id || "producer")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                    <div className="font-medium">{String(row.missing_phase || row.missing_id || "missing proof").replace(/_/g, " ")}</div>
+                    <div className="truncate text-muted-foreground">{String(row.next_producer_to_fix || row.missing_publisher || "producer pending")}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {nextLiveTraceRequirements.length ? (
+              <div className="rounded-md border border-border/40 bg-black/20 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="uppercase text-muted-foreground">Next live trace requirements</span>
+                  <Pill label={`${formatCompact(nextLiveTraceRequirements.length)} requirements`} tone={statusTone.orphaned} />
+                </div>
+                {nextLiveTraceRequirements.slice(0, 4).map((row, index) => {
+                  const missing = Array.isArray(row.missing_field_set) ? row.missing_field_set.map(String).filter(Boolean) : [];
+                  return (
+                    <div key={`${String(row.phase || row.requirement || "requirement")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                      <div className="font-medium">{String(row.phase || row.requirement || "proof").replace(/_/g, " ")}</div>
+                      <div className="truncate text-muted-foreground">{String(row.producer || "producer pending")} / {missing.slice(0, 2).join(", ") || "proof required"}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+            {Object.keys(freshCapitalTraceCandidate).length ? (
+              <div className="rounded-md border border-border/40 bg-black/20 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="uppercase text-muted-foreground">Fresh Capital trace</span>
+                  <Pill label={String(freshCapitalTraceCandidate.state || "pending").replace(/_/g, " ")} tone={freshCapitalTraceCandidate.capital_a_to_b_ready ? statusTone.wired : statusTone.orphaned} />
+                </div>
+                <div className="truncate text-muted-foreground">route {String(freshCapitalTraceCandidate.route_key || "waiting")}</div>
+                <div className="mt-1 truncate text-muted-foreground">next {String(freshCapitalTraceCandidate.next_required_phase || "signal_generated").replace(/_/g, " ")}</div>
+              </div>
+            ) : null}
+            {publisherHeartbeatRows.length ? (
+              <div className="rounded-md border border-border/40 bg-black/20 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="uppercase text-muted-foreground">Publisher heartbeats</span>
+                  <Pill label={`${formatCompact(publisherHeartbeatRows.length)} publishers`} tone={statusTone.wired} />
+                </div>
+                {publisherHeartbeatRows.slice(0, 4).map((row, index) => (
+                  <div key={`${String(row.source_system || "source")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                    <div className="font-medium">{String(row.source_system || "publisher")}</div>
+                    <div className="truncate text-muted-foreground">{String(row.latest_phase || "phase pending")} / {formatCompact(row.event_count)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {rateBudgetCertificationRows.length ? (
+              <div className="rounded-md border border-border/40 bg-black/20 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="uppercase text-muted-foreground">Rate-budget proof</span>
+                  <Pill label={`${formatCompact(stressSummary.rate_budget_certified_count)} certified`} tone={stressSummary.rate_budget_uncertified_count ? statusTone.orphaned : statusTone.wired} />
+                </div>
+                {rateBudgetCertificationRows.slice(0, 4).map((row, index) => {
+                  const missingTags = Array.isArray(row.missing_api_budget_tags) ? row.missing_api_budget_tags.map(String).filter(Boolean) : [];
+                  return (
+                    <div key={`${String(row.phase || "rate")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium">{String(row.phase || "phase").replace(/_/g, " ")}</span>
+                        <span className={row.rate_budget_certified ? "font-mono text-emerald-100" : "font-mono text-amber-100"}>{row.rate_budget_certified ? "certified" : "missing"}</span>
+                      </div>
+                      <div className="truncate text-muted-foreground">{missingTags.length ? missingTags.slice(0, 2).join(", ") : String(row.api_budget_source || "proof present")}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+            {recoveredBrokerTruthRows.length ? (
+              <div className="rounded-md border border-border/40 bg-black/20 p-3 text-xs">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="uppercase text-muted-foreground">Recovered broker truth</span>
+                  <Pill label={`${formatCompact(recoveredBrokerTruthRows.length)} recovered`} tone={statusTone.orphaned} />
+                </div>
+                {recoveredBrokerTruthRows.slice(0, 4).map((row, index) => (
+                  <div key={`${String(row.trace_id || "recovered")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                    <div className="font-medium">{String(row.symbol || row.route_key || "broker proof")}</div>
+                    <div className="truncate text-muted-foreground">{String(row.last_broker_proof || "broker proof pending")} / {String(row.recovered_context_status || "recovered")}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {repairRows.length ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {repairRows.slice(0, 4).map((row, index) => (
+                <div key={`${String(row.classification || "repair")}-${index}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.next_producer_to_fix || "producer pending")}</span>
+                    <span className="font-mono text-amber-100">{String(row.next_required_phase || "next proof")}</span>
+                  </div>
+                  <div className="mt-1 text-muted-foreground">{String(row.action || "Attach missing proof to the fabric event.")}</div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">A-to-B traces</div>
+              <Pill label="existing executor path" tone="border-emerald-500/30 bg-emerald-500/10 text-emerald-100" />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {traces.length ? traces.slice(0, 8).map((trace) => {
+                const missing = Array.isArray(trace.missing_phases) ? trace.missing_phases.map(String) : [];
+                const phasesForTrace = Array.isArray(trace.phases) ? trace.phases.map(String) : [];
+                return (
+                  <div key={String(trace.trace_id || trace.lifecycle_id)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(trace.symbol || trace.route_key || "trade trace")}</span>
+                      <Pill label={String(trace.latest_phase || "waiting").replace(/_/g, " ")} tone={missing.length ? statusTone.orphaned : statusTone.wired} />
+                    </div>
+                    <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{String(trace.trace_id || "")}</div>
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>route {String(trace.route_key || "pending")}</span>
+                      <span>broker {String(trace.last_broker_proof || "pending")}</span>
+                      <span>latency {formatCompact(trace.duration_ms)}ms</span>
+                      <span>P/L {String(trace.last_net_pnl ?? "pending")}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {(missing.length ? missing : phasesForTrace.slice(-5)).slice(0, 6).map((phase) => (
+                        <Pill key={phase} label={phase.replace(/_/g, " ")} tone={missing.length ? statusTone.orphaned : "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No live trade-flow trace has been published yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Bus and mycelium proof</div>
+              <Pill label="active organism visibility" tone="border-emerald-500/30 bg-emerald-500/10 text-emerald-100" />
+            </div>
+            <div className="grid gap-2">
+              {[
+                ["ThoughtBus", thoughtbus.receiving ? "receiving" : thoughtbus.latest_reason || "attention"],
+                ["Thoughts", formatCompact(thoughtbus.published_count)],
+                ["Mycelium", mycelium.receiving ? "receiving" : mycelium.latest_reason || "attention"],
+                ["Ingested", formatCompact(mycelium.ingested_count)],
+                ["Phase types", formatCompact(phases.length)],
+                ["Broken chains", formatCompact(broken.length)],
+                ["Rate pressure", formatCompact(ratePressure.length)],
+                ["Source", "/aureon_live_trade_signal_fabric.json"],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="uppercase text-muted-foreground">{String(label)}</span>
+                    <span className="max-w-[12rem] truncate text-right font-mono text-foreground/90">{String(value ?? "0")}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {phases.length ? (
+          <div className="flex flex-wrap gap-1">
+            {phases.slice(0, 14).map(([phase, count]) => (
+              <Pill key={phase} label={`${phase.replace(/_/g, " ")} ${formatCompact(count)}`} tone="border-border bg-muted/20 text-muted-foreground" />
+            ))}
+          </div>
+        ) : null}
+
+        {[...blockers, ...broken.map((item) => String(item.latest_phase || "broken_chain")), ...ratePressure.map((item) => String(item.phase || "rate_pressure"))].filter(Boolean).length ? (
+          <div className="flex flex-wrap gap-1">
+            {[...blockers, ...broken.map((item) => String(item.latest_phase || "broken_chain")), ...ratePressure.map((item) => String(item.phase || "rate_pressure"))]
+              .filter(Boolean)
+              .slice(0, 12)
+              .map((blocker, index) => (
+                <Pill key={`${blocker}-${index}`} label={String(blocker).replace(/_/g, " ")} tone={statusTone.security_blocker} />
+              ))}
           </div>
         ) : null}
       </CardContent>
@@ -2233,6 +3949,13 @@ function AppShell() {
   const [capitalEcosystemIntelligence, setCapitalEcosystemIntelligence] = useState<CapitalEcosystemIntelligenceCompany | null>(null);
   const [capitalRevenueLogicStressAudit, setCapitalRevenueLogicStressAudit] = useState<CapitalRevenueLogicStressAudit | null>(null);
   const [capitalRevenueLiveGateReadinessAudit, setCapitalRevenueLiveGateReadinessAudit] = useState<CapitalRevenueLiveGateReadinessAudit | null>(null);
+  const [capitalThreePLiveExecutionCertificationAudit, setCapitalThreePLiveExecutionCertificationAudit] = useState<CapitalThreePLiveExecutionCertificationAudit | null>(null);
+  const [capitalThreePBlockerBurndownAudit, setCapitalThreePBlockerBurndownAudit] = useState<CapitalThreePBlockerBurndownAudit | null>(null);
+  const [performanceReadinessAudit, setPerformanceReadinessAudit] = useState<PerformanceReadinessAudit | null>(null);
+  const [aureonMurgeUnityBridge, setAureonMurgeUnityBridge] = useState<AureonMurgeUnityBridge | null>(null);
+  const [aureonMurgeRuntimeActivation, setAureonMurgeRuntimeActivation] = useState<AureonMurgeRuntimeActivationStressAudit | null>(null);
+  const [liveTradeSignalFabric, setLiveTradeSignalFabric] = useState<LiveTradeSignalFabric | null>(null);
+  const [liveTradeSignalFabricStressAudit, setLiveTradeSignalFabricStressAudit] = useState<LiveTradeSignalFabricStressAudit | null>(null);
   const [capitalLiveDryStressAudit, setCapitalLiveDryStressAudit] = useState<CapitalEcosystemLiveDryStressAudit | null>(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
@@ -2354,6 +4077,55 @@ function AppShell() {
   }, []);
 
   useEffect(() => {
+    const refreshCapitalThreePExecution = async () => setCapitalThreePLiveExecutionCertificationAudit(await loadCapitalThreePLiveExecutionCertificationAudit());
+    refreshCapitalThreePExecution();
+    const timer = window.setInterval(refreshCapitalThreePExecution, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshCapitalThreePBurndown = async () => setCapitalThreePBlockerBurndownAudit(await loadCapitalThreePBlockerBurndownAudit());
+    refreshCapitalThreePBurndown();
+    const timer = window.setInterval(refreshCapitalThreePBurndown, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshPerformanceReadiness = async () => setPerformanceReadinessAudit(await loadPerformanceReadinessAudit());
+    refreshPerformanceReadiness();
+    const timer = window.setInterval(refreshPerformanceReadiness, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshMurgeUnity = async () => setAureonMurgeUnityBridge(await loadAureonMurgeUnityBridge());
+    refreshMurgeUnity();
+    const timer = window.setInterval(refreshMurgeUnity, MANIFEST_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshMurgeRuntimeActivation = async () => setAureonMurgeRuntimeActivation(await loadAureonMurgeRuntimeActivationStressAudit());
+    refreshMurgeRuntimeActivation();
+    const timer = window.setInterval(refreshMurgeRuntimeActivation, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshLiveTradeSignalFabric = async () => setLiveTradeSignalFabric(await loadLiveTradeSignalFabric());
+    refreshLiveTradeSignalFabric();
+    const timer = window.setInterval(refreshLiveTradeSignalFabric, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshLiveTradeSignalFabricStress = async () => setLiveTradeSignalFabricStressAudit(await loadLiveTradeSignalFabricStressAudit());
+    refreshLiveTradeSignalFabricStress();
+    const timer = window.setInterval(refreshLiveTradeSignalFabricStress, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     const refreshCapitalLiveDryStress = async () => setCapitalLiveDryStressAudit(await loadCapitalLiveDryStressAudit());
     refreshCapitalLiveDryStress();
     const timer = window.setInterval(refreshCapitalLiveDryStress, FAST_PANEL_REFRESH_MS);
@@ -2407,9 +4179,16 @@ function AppShell() {
         orderLifecycleStressAudit,
         capitalRevenueLogicStressAudit,
         capitalRevenueLiveGateReadinessAudit,
+        capitalThreePLiveExecutionCertificationAudit,
+        capitalThreePBlockerBurndownAudit,
+        performanceReadinessAudit,
+        aureonMurgeUnityBridge,
+        aureonMurgeRuntimeActivation,
+        liveTradeSignalFabric,
+        liveTradeSignalFabricStressAudit,
         now,
       }),
-    [state, runtime, tradingChecklist, exchangeChecklist, exchangeDataMatrix, globalCoverageMap, hncSecurityComparison, liveGoalTradeAudit, orderLifecycleStressAudit, capitalRevenueLogicStressAudit, capitalRevenueLiveGateReadinessAudit, now],
+    [state, runtime, tradingChecklist, exchangeChecklist, exchangeDataMatrix, globalCoverageMap, hncSecurityComparison, liveGoalTradeAudit, orderLifecycleStressAudit, capitalRevenueLogicStressAudit, capitalRevenueLiveGateReadinessAudit, capitalThreePLiveExecutionCertificationAudit, capitalThreePBlockerBurndownAudit, performanceReadinessAudit, aureonMurgeUnityBridge, aureonMurgeRuntimeActivation, liveTradeSignalFabric, liveTradeSignalFabricStressAudit, now],
   );
 
   const domainCounts = useMemo(() => inventory.counts?.by_domain || {}, [inventory.counts]);
@@ -2530,6 +4309,8 @@ function AppShell() {
               maxItems={3}
             />
             <OrganismPulsePanel organism={organism} runtimeConnected={runtime.connected} />
+            <AureonMurgeUnityPanel bridge={aureonMurgeUnityBridge} />
+            <AureonMurgeRuntimeActivationPanel audit={aureonMurgeRuntimeActivation} />
             <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
               <RuntimeMirrorPanel runtime={runtime} statusLines={statusLines} />
               <SafetyBoundariesPanel manualActions={manualActions} percent={percent} summary={summary} />
@@ -2565,6 +4346,18 @@ function AppShell() {
               runtimeClearancePending={runtime.clearancePending}
               runtimeStaleReason={runtime.staleReason}
             />
+            <CapitalThreePMissionPanel
+              ecosystem={capitalEcosystemIntelligence}
+              revenue={capitalRevenueLogicStressAudit}
+              liveGate={capitalRevenueLiveGateReadinessAudit}
+              liveDry={capitalLiveDryStressAudit}
+            />
+            <CapitalThreePLiveExecutionCertificationPanel audit={capitalThreePLiveExecutionCertificationAudit} />
+            <CapitalThreePBlockerBurndownPanel audit={capitalThreePBlockerBurndownAudit} />
+            <PerformanceReadinessPanel audit={performanceReadinessAudit} />
+            <AureonMurgeUnityPanel bridge={aureonMurgeUnityBridge} />
+            <AureonMurgeRuntimeActivationPanel audit={aureonMurgeRuntimeActivation} />
+            <LiveSignalFabricPanel fabric={liveTradeSignalFabric} stress={liveTradeSignalFabricStressAudit} audit={liveGoalTradeAudit} />
             <CapitalEcosystemIntelligencePanel ecosystem={capitalEcosystemIntelligence} />
             <CapitalRevenueLogicStressPanel audit={capitalRevenueLogicStressAudit} />
             <CapitalRevenueLiveGateReadinessPanel audit={capitalRevenueLiveGateReadinessAudit} />
@@ -2782,6 +4575,13 @@ function buildFreshnessItems({
   orderLifecycleStressAudit,
   capitalRevenueLogicStressAudit,
   capitalRevenueLiveGateReadinessAudit,
+  capitalThreePLiveExecutionCertificationAudit,
+  capitalThreePBlockerBurndownAudit,
+  performanceReadinessAudit,
+  aureonMurgeUnityBridge,
+  aureonMurgeRuntimeActivation,
+  liveTradeSignalFabric,
+  liveTradeSignalFabricStressAudit,
   now,
 }: {
   state: UnifiedFrontendState | null;
@@ -2795,6 +4595,13 @@ function buildFreshnessItems({
   orderLifecycleStressAudit: OrderLifecycleStressAudit | null;
   capitalRevenueLogicStressAudit: CapitalRevenueLogicStressAudit | null;
   capitalRevenueLiveGateReadinessAudit: CapitalRevenueLiveGateReadinessAudit | null;
+  capitalThreePLiveExecutionCertificationAudit: CapitalThreePLiveExecutionCertificationAudit | null;
+  capitalThreePBlockerBurndownAudit: CapitalThreePBlockerBurndownAudit | null;
+  performanceReadinessAudit: PerformanceReadinessAudit | null;
+  aureonMurgeUnityBridge: AureonMurgeUnityBridge | null;
+  aureonMurgeRuntimeActivation: AureonMurgeRuntimeActivationStressAudit | null;
+  liveTradeSignalFabric: LiveTradeSignalFabric | null;
+  liveTradeSignalFabricStressAudit: LiveTradeSignalFabricStressAudit | null;
   now: number;
 }): FreshnessItem[] {
   const items: FreshnessItem[] = [];
@@ -2852,6 +4659,13 @@ function buildFreshnessItems({
   addManifest("order-lifecycle-stress", "Lifecycle stress certification", orderLifecycleStressAudit?.generated_at, orderLifecycleStressAudit?.status, "/aureon_order_lifecycle_stress_audit.json", FAST_PANEL_REFRESH_MS, 60, 900);
   addManifest("capital-revenue-logic", "Capital revenue logic stress", capitalRevenueLogicStressAudit?.generated_at, capitalRevenueLogicStressAudit?.status, "/aureon_capital_revenue_logic_stress_audit.json", FAST_PANEL_REFRESH_MS, 20, 120);
   addManifest("capital-revenue-live-gate", "Capital live-gate readiness", capitalRevenueLiveGateReadinessAudit?.generated_at, capitalRevenueLiveGateReadinessAudit?.status, "/aureon_capital_revenue_live_gate_readiness_audit.json", FAST_PANEL_REFRESH_MS, 20, 120);
+  addManifest("capital-3p-live-execution", "Capital 3p execution certification", capitalThreePLiveExecutionCertificationAudit?.generated_at, capitalThreePLiveExecutionCertificationAudit?.status, "/aureon_capital_3p_live_execution_certification_audit.json", FAST_PANEL_REFRESH_MS, 20, 120);
+  addManifest("capital-3p-blocker-burndown", "Capital 3p blocker burn-down", capitalThreePBlockerBurndownAudit?.generated_at, capitalThreePBlockerBurndownAudit?.status, "/aureon_capital_3p_blocker_burndown_audit.json", FAST_PANEL_REFRESH_MS, 20, 120);
+  addManifest("performance-readiness", "Performance readiness", performanceReadinessAudit?.generated_at, performanceReadinessAudit?.status, "/aureon_performance_readiness_audit.json", FAST_PANEL_REFRESH_MS, 60, 900);
+  addManifest("aureon-murge-unity", "MURGE unity bridge", aureonMurgeUnityBridge?.generated_at, aureonMurgeUnityBridge?.status, "/aureon_murge_unity_bridge.json", MANIFEST_REFRESH_MS, 120, 1800);
+  addManifest("aureon-murge-runtime-activation", "MURGE runtime activation", aureonMurgeRuntimeActivation?.generated_at, aureonMurgeRuntimeActivation?.status, "/aureon_murge_runtime_activation_stress_audit.json", FAST_PANEL_REFRESH_MS, 20, 180);
+  addManifest("live-signal-fabric", "Live signal fabric", liveTradeSignalFabric?.generated_at, liveTradeSignalFabric?.status, "/aureon_live_trade_signal_fabric.json", FAST_PANEL_REFRESH_MS, 10, 120);
+  addManifest("live-signal-fabric-stress", "Live signal fabric stress", liveTradeSignalFabricStressAudit?.generated_at, liveTradeSignalFabricStressAudit?.status, "/aureon_live_trade_signal_fabric_stress_audit.json", FAST_PANEL_REFRESH_MS, 10, 120);
   addManifest("hnc-security", "HNC security", hncSecurityComparison?.generated_at, hncSecurityComparison?.status, "/hnc_packet_security_comparison.json", MANIFEST_REFRESH_MS, 3600, 86400);
 
   (state?.organism.domains || []).slice(0, 16).forEach((domain) => {

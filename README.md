@@ -55,6 +55,7 @@ This is the operating ethos behind the agent-company system: scope the client si
 | Run the whole organism | [RUNNING.md](RUNNING.md), then `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
 | Validate before live operation | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
 | Watch live trading state | `http://127.0.0.1:8791/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
+| Run the MURGE local companion runtime | `.\scripts\aureon_murge\start_murge_local_runtime.ps1`, then open the MURGE Runtime Activation panel in `http://127.0.0.1:8081/#trading` |
 | Expand licensed/reachable market data | `.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable` |
 | Use the autonomous console | `http://127.0.0.1:8081/` and [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) |
 | Understand HNC/Auris cognition | [CAPABILITIES.md](CAPABILITIES.md), HNC/Auris evidence files, and the live cognition benchmark |
@@ -162,6 +163,44 @@ python scripts/aureon_ignition.py --audit-only
 | 1h-to-1y waveform memory | `state/aureon_asset_waveform_models.json` |
 | Wake-up manifest | `state/aureon_wake_up_manifest.json` |
 | Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
+
+### AUREON MURGE Local Companion Runtime
+
+The extracted **AUREON MURGE** bundle is wired as a local companion runtime for Aureon, not as a replacement for `AUREON_PRODUCTION_LIVE.cmd`. The main trading organism remains owned by the production supervisor on port `8791` and the unified console on port `8081`. MURGE adds a local web app, runtime server, desktop-shell readiness lane, and activation evidence so the wider Aureon face and extended reach can be launched only when its own health and safety gates are visible.
+
+Install or refresh the locked MURGE dependencies from the committed lockfiles:
+
+```powershell
+cd C:\path\to\aureon-trading
+Push-Location integrations\aureon_murge\runtime; npm ci; Pop-Location
+Push-Location integrations\aureon_murge\web_app; npm ci; Pop-Location
+Push-Location integrations\aureon_murge\desktop; npm ci; Pop-Location
+```
+
+Start the local guarded MURGE services:
+
+```powershell
+.\scripts\aureon_murge\start_murge_local_runtime.ps1
+```
+
+The launcher starts only localhost services by default:
+
+| MURGE surface | Local URL | Purpose |
+|---|---|---|
+| MURGE web app | `http://127.0.0.1:4173/api/aureon/status` | Local companion web health and activation state |
+| MURGE runtime server | `http://127.0.0.1:7331/health` | Runtime health |
+| MURGE runtime info | `http://127.0.0.1:7331/api/runtime/info` | Terminal, sandbox, Docker, and guard state |
+| Activation audit | `http://127.0.0.1:8081/aureon_murge_runtime_activation_stress_audit.json` | Public evidence consumed by the Trading panel |
+
+Regenerate the activation stress evidence after dependency installs or service changes:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_murge_runtime_activation_stress_audit --json --no-external-fabric
+```
+
+The Trading screen exposes a read-only **MURGE Runtime Activation** panel with service health, dependency readiness, npm audit rows, launch logs, Windows compatibility, Electron security checks, ThoughtBus/Mycelium visibility, and activation blockers. Current expected guard posture is local-only: `MURGE_HOST_TERMINAL_ENABLED`, `MURGE_SANDBOX_ENABLED`, `MURGE_DESKTOP_ENABLED`, `MURGE_PROVIDER_API_ENABLED`, and `MURGE_CLOUDFLARE_ENABLED` are all off unless an operator explicitly enables and certifies that lane.
+
+MURGE activation must not bypass trading gates, migrate credentials, run cloud deploys, expose shell input, or mutate broker state. Review any `collision_review_required` rows for `.gitignore`, `README.md`, or `docs/SECURITY.md` by distilling the imported content instead of overwriting repo-owned files. Review any `murge_dependency_vulnerability_review_required` rows before trusting the desktop shell beyond local evidence display.
 
 ### Unified Console Layout
 
