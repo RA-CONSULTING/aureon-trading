@@ -52,7 +52,7 @@ This is the operating ethos behind the agent-company system: scope the client si
 
 | Need | Start here |
 |---|---|
-| Run the whole organism | [RUNNING.md](RUNNING.md), then `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
+| Run the whole organism | See **Full System Startup** below — two terminals, organism + Flameborn |
 | Validate before live operation | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
 | Watch live trading state | `http://127.0.0.1:8791/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
 | Launch Flameborn frontend (replaces MURGE) | `bash scripts/start_aureon_with_flameborn.sh` or `.\scripts\start_aureon_with_flameborn.ps1` — opens `http://127.0.0.1:4173` with Aureon brain bridge |
@@ -106,6 +106,77 @@ bash scripts/check_flameborn_integration.sh
 ```
 
 Returns exit code 0 only when Aureon Vault UI and Flameborn Web are both reachable and the cross-connectivity bridge works.
+
+---
+
+## Full System Startup
+
+To run **everything** with all capabilities switched on, open **two PowerShell terminals**.
+
+### Terminal 1 — Aureon Organism (Brain)
+
+```powershell
+cd C:\Users\user\aureon-trading
+.\AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1 -FullCognitiveOrderCapability -AccountsAutonomous -Restart -WaitForRefresh
+```
+
+**What starts:**
+- Market data stream cache (Binance, Kraken, Alpaca, Capital)
+- Ignition organism core
+- Unified market trader (dry-run / safe observation)
+- Market status server (`http://127.0.0.1:8790`)
+- Mind thought/action hub (`http://127.0.0.1:13002`)
+- Self-questioning AI loop
+- Autonomous self-run coding loop
+- Organism runtime observer
+- Unified frontend console (`http://127.0.0.1:8081`)
+- Cognitive order-intent authority (AI generates trade ideas; runtime gates execution)
+- Autonomous accounting build
+
+### Terminal 2 — Flameborn Frontend (Face)
+
+```powershell
+cd C:\Users\user\aureon-trading
+.\scripts\start_aureon_with_flameborn.ps1 -StartRuntime -EnableHostTerminal -EnableSandbox
+```
+
+**What starts:**
+- Aureon Vault UI (`http://127.0.0.1:5566`)
+- Flameborn Web App (`http://127.0.0.1:4173`)
+- Flameborn Runtime (`http://127.0.0.1:7331`)
+- Host terminal bridge (safe shell via web UI)
+- Docker sandbox
+
+### Dashboard URLs
+
+| Service | URL |
+|---|---|
+| Unified console (main organism UI) | `http://127.0.0.1:8081/` |
+| Flameborn chat / classroom / terminal | `http://127.0.0.1:4173/` |
+| Market runtime feed | `http://127.0.0.1:8790/api/terminal-state` |
+| Market flight-test / health | `http://127.0.0.1:8790/api/flight-test` |
+| Mind hub (thoughts API) | `http://127.0.0.1:13002/api/thoughts` |
+| Aureon Vault (Flameborn bridge) | `http://127.0.0.1:5566/api/status` |
+
+### ⚠️ Live Trading Warning
+
+**Do NOT add `-Production` unless you want real exchange mutations.**
+- `-Production` arms **actual buy/sell orders** on configured exchanges
+- It requires `-LiveTrading -ConfirmLiveTrading` for safety
+- For observation / dry-run mode, **omit `-Production`**
+- Only use live trading when you have:
+  1. Exchange API keys configured
+  2. All open positions closed/reconciled
+  3. Read the flight-test output confirming safe state
+
+### Prerequisites
+
+```powershell
+python --version      # Python 3.10+ (or .venv present)
+node --version        # Node.js 18+
+npm --version         # npm 9+
+ollama list           # Optional — for local LLM voices
+```
 
 ---
 
