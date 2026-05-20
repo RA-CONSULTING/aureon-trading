@@ -12,14 +12,14 @@ a decision object (or None).
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Sequence
 import time
 import math
 import numpy as np
-from aureon_memory_core import memory  # 🧠 MEMORY CORE INTEGRATION
+from aureon.core.aureon_memory_core import memory  # 🧠 MEMORY CORE INTEGRATION
 
 @dataclass(frozen=True)
 class BrainParams:

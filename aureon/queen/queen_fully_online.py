@@ -1,4 +1,4 @@
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 import time
 import json
@@ -33,7 +33,7 @@ if sys.platform == 'win32':
 
 # --- Imports from Aureon Ecosystem ---
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, BUS_AVAILABLE
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, BUS_AVAILABLE
 except ImportError:
     BUS_AVAILABLE = False
     class ThoughtBus:
@@ -43,7 +43,7 @@ except ImportError:
 
 try:
     # Try to import existing voice engine, or fallback to mock
-    from queen_voice_engine import QueenVoice
+    from aureon.queen.queen_voice_engine import QueenVoice
 except ImportError:
     class QueenVoice:
         def speak(self, text, mood="neutral"):
@@ -53,7 +53,7 @@ except ImportError:
 
 try:
     # Try to import hive mind for neural decisions
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
 except ImportError:
     class QueenHiveMind:
         def get_guidance(self, context): return {"action": "observe", "confidence": 0.5}
@@ -68,34 +68,34 @@ except ImportError:
 
 # --- MISSING SYSTEMS INTEGRATION ---
 try:
-    from aureon_timeline_oracle import TimelineOracle
+    from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
 except ImportError:
     TimelineOracle = None
 
 try:
-    from mycelium_whale_sonar import WhaleSonar
+    from aureon.core.mycelium_whale_sonar import WhaleSonar
 except ImportError:
     WhaleSonar = None
 
 try:
-    from aureon_stargate_protocol import StargateProtocolEngine
+    from aureon.wisdom.aureon_stargate_protocol import StargateProtocolEngine
 except ImportError:
     StargateProtocolEngine = None
 
 try:
-    from queen_neuron import QueenNeuron
+    from aureon.queen.queen_neuron import QueenNeuron
 except ImportError:
     QueenNeuron = None
 
 try:
-    from queen_loss_learning import QueenLossLearningSystem
+    from aureon.queen.queen_loss_learning import QueenLossLearningSystem
 except ImportError:
     QueenLossLearningSystem = None
 
 # --- NEW DREAMING SYSTEMS ---
 try:
-    from aureon_enigma_dream import DreamEngine
-    from queen_dream_scheduler import DreamScheduler
+    from aureon.wisdom.aureon_enigma_dream import DreamEngine
+    from aureon.queen.queen_dream_scheduler import DreamScheduler
     DREAM_SYSTEMS_AVAILABLE = True
 except ImportError:
     DreamEngine = None
@@ -104,7 +104,7 @@ except ImportError:
 
 # --- NEW CONSCIOUSNESS MODEL ---
 try:
-    from queen_consciousness_model import QueenConsciousness, BrainInput, ConsciousThought
+    from aureon.queen.queen_consciousness_model import QueenConsciousness, BrainInput, ConsciousThought
     CONSCIOUSNESS_MODEL_AVAILABLE = True
 except ImportError:
     CONSCIOUSNESS_MODEL_AVAILABLE = False
@@ -112,7 +112,7 @@ except ImportError:
 
 # --- CONSCIOUSNESS MEASUREMENT (Self-Awareness) ---
 try:
-    from queen_consciousness_measurement import get_consciousness_measurement, ConsciousnessMetrics, EnvironmentalReading
+    from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement, ConsciousnessMetrics, EnvironmentalReading
     CONSCIOUSNESS_MEASUREMENT_AVAILABLE = True
 except ImportError:
     CONSCIOUSNESS_MEASUREMENT_AVAILABLE = False
@@ -120,7 +120,7 @@ except ImportError:
 
 # --- CONSCIENCE (The Jiminy Cricket) ---
 try:
-    from queen_conscience import get_conscience, QueenConscience, ConscienceVerdict
+    from aureon.queen.queen_conscience import get_conscience, QueenConscience, ConscienceVerdict
     CONSCIENCE_AVAILABLE = True
 except ImportError:
     CONSCIENCE_AVAILABLE = False
@@ -128,7 +128,7 @@ except ImportError:
 
 # --- WORLD UNDERSTANDING (Her Reality Context) ---
 try:
-    from queen_world_understanding import get_world_understanding, QueensWorldUnderstanding
+    from aureon.queen.queen_world_understanding import get_world_understanding, QueensWorldUnderstanding
     WORLD_UNDERSTANDING_AVAILABLE = True
 except ImportError:
     WORLD_UNDERSTANDING_AVAILABLE = False
@@ -136,12 +136,12 @@ except ImportError:
 
 # --- BRAIN MODULES ---
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
 except ImportError:
     MinerBrain = None
 
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
 except ImportError:
     ProbabilityUltimateIntelligence = None
 

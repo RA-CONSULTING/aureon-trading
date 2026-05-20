@@ -14,7 +14,7 @@ The goal: Give Queen Sero "Hindsight 20/20" so she can make sense of the present
 Gary Leckey | January 2026 | Knowledge Is Power
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -25,8 +25,8 @@ from typing import Dict, List, Any
 from datetime import datetime
 
 # Import capability modules
-from aureon_elephant_learning import ElephantMemory, LearnedPattern, TradingWisdom
-from coinbase_historical_feed import CoinbaseHistoricalFeed
+from aureon.intelligence.aureon_elephant_learning import ElephantMemory, LearnedPattern, TradingWisdom
+from aureon.exchanges.coinbase_historical_feed import CoinbaseHistoricalFeed
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] 📚 %(message)s')

@@ -28,7 +28,7 @@ import logging
 
 # Import ThoughtBus for pub/sub messaging
 try:
-    from aureon_thought_bus import ThoughtBus
+    from aureon.core.aureon_thought_bus import ThoughtBus
 except ImportError:
     ThoughtBus = None
 

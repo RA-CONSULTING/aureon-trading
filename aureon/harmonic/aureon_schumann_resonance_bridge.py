@@ -137,17 +137,34 @@ class SchumannResonanceBridge:
                 active_sources.append('USGS-Magnetometer')
                 logger.debug(f"✅ USGS: {fundamental:.3f}Hz, Disturbance={earth_disturbance:.0%}")
         
-        # 3️⃣ If no live data, use intelligent simulation
+        # 3️⃣ If no live data, decide whether to use the simulation
+        # fallback. Stage AE: production posture is sim-OFF — we
+        # return the cached reading if available, else None, so the
+        # consumer can detect "no live Schumann data" rather than
+        # quietly receive a diurnal-pattern fake. AUREON_ALLOW_SIM_FALLBACK=1
+        # restores the old behaviour for dev / test / backtest.
         if not fundamental:
-            sim_data = self._simulate_schumann()
-            fundamental = sim_data['fundamental']
-            harmonics = sim_data['harmonics']
-            amplitude = sim_data['amplitude']
-            quality = sim_data['quality']
-            coherence_boost = sim_data['coherence_boost']
-            earth_disturbance = sim_data['disturbance']
-            active_sources.append('Simulation')
-            logger.debug(f"📊 Simulation: {fundamental:.3f}Hz (using diurnal patterns)")
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if simulation_fallback_allowed():
+                sim_data = self._simulate_schumann()
+                fundamental = sim_data['fundamental']
+                harmonics = sim_data['harmonics']
+                amplitude = sim_data['amplitude']
+                quality = sim_data['quality']
+                coherence_boost = sim_data['coherence_boost']
+                earth_disturbance = sim_data['disturbance']
+                active_sources.append('Simulation')
+                logger.debug(f"📊 Simulation: {fundamental:.3f}Hz (using diurnal patterns)")
+            else:
+                log_blocked_fallback("schumann_resonance_bridge",
+                                     "no_live_source_available")
+                # Return the cached reading if it's still in the cache
+                # window (stale-but-real beats synthetic), else None.
+                if self.cache is not None:
+                    return self.cache
+                return None  # type: ignore[return-value]
         
         # Categorize resonance phase
         resonance_phase = self._categorize_phase(amplitude, quality, earth_disturbance)

@@ -13,7 +13,7 @@ Proves that the intelligence matrix can correctly identify:
 Gary Leckey | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import random
 import json
@@ -22,11 +22,11 @@ from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass, field
 
 # Import our intelligence systems
-from probability_intelligence_matrix import (
+from aureon.strategies.probability_intelligence_matrix import (
     get_probability_matrix, calculate_intelligent_probability,
     record_outcome, ProbabilityIntelligence
 )
-from improved_eta_calculator import ImprovedETACalculator
+from aureon.analytics.improved_eta_calculator import ImprovedETACalculator
 
 
 @dataclass

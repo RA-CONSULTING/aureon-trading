@@ -20,7 +20,7 @@ Gary Leckey | January 2026 | The Math Works
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json
@@ -30,7 +30,7 @@ from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime
 
 try:
-    from kraken_fee_tracker import get_kraken_fee_tracker, is_stable_fx_pair
+    from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker, is_stable_fx_pair
     _KRAKEN_FEE_TRACKER_AVAILABLE = True
 except ImportError:
     _KRAKEN_FEE_TRACKER_AVAILABLE = False

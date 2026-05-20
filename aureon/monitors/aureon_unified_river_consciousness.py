@@ -24,7 +24,7 @@ Gary Leckey | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -162,21 +162,21 @@ class UnifiedRiverConsciousness:
     def _init_subsystems(self):
         """Initialize all subsystems for unity"""
         try:
-            from aureon_quantum_mirror_scanner import QuantumMirrorScanner
+            from aureon.scanners.aureon_quantum_mirror_scanner import QuantumMirrorScanner
             self._quantum_scanner = QuantumMirrorScanner()
             logger.info("   🔮 Quantum Mirror Scanner: ONLINE")
         except ImportError:
             logger.warning("   ⚠️ Quantum Mirror Scanner: OFFLINE")
             
         try:
-            from aureon_probability_nexus import AureonProbabilityNexus
+            from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
             self._probability_nexus = AureonProbabilityNexus(exchange='alpaca')
             logger.info("   📊 Probability Nexus: ONLINE")
         except ImportError:
             logger.warning("   ⚠️ Probability Nexus: OFFLINE")
             
         try:
-            from aureon_global_wave_scanner import WaveState
+            from aureon.scanners.aureon_global_wave_scanner import WaveState
             self._wave_scanner = True  # Just mark as available
             logger.info("   🌊 Wave Scanner: ONLINE")
         except ImportError:

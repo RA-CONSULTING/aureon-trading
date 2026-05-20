@@ -20,7 +20,7 @@ Gary Leckey | Orca Kills Now | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -117,7 +117,7 @@ class OrcaKillExecutor:
         """Initialize exchange connections."""
         # Kraken - ALWAYS get real balance, only use dry_run for orders
         try:
-            from kraken_client import get_kraken_client
+            from aureon.exchanges.kraken_client import get_kraken_client
             self.kraken = get_kraken_client()
             if self.kraken:
                 # Store original dry_run state
@@ -693,7 +693,7 @@ def orca_execute_kill(symbol: str, exchange: str, side: str,
 
 def orca_hunt_and_kill(dry_run: bool = False):
     """🦈 Run full hunt cycle and execute best kill."""
-    from aureon_live_momentum_hunter import LiveMomentumHunter
+    from aureon.scanners.aureon_live_momentum_hunter import LiveMomentumHunter
     
     # Hunt
     hunter = LiveMomentumHunter(dry_run=dry_run)

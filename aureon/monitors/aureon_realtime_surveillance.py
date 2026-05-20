@@ -21,7 +21,7 @@
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -515,7 +515,7 @@ class AureonSurveillanceSystem:
 
         # Feed into Autonomy Hub (The Big Wheel) for unified decision making
         try:
-            from aureon_autonomy_hub import get_autonomy_hub
+            from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
             hub = get_autonomy_hub()
             hub.data_bridge.ingest_surveillance_alert({
                 'alert_type': alert.alert_type,
@@ -592,10 +592,27 @@ class SimulatedFeed:
         }
         
     async def start(self):
-        """Start simulated feed"""
+        """Start simulated feed.
+
+        ⚠ Synthetic-only feed — generates random.gauss price walks plus
+        scripted whale/coordinated/manipulation events. Gated behind
+        AUREON_ALLOW_SIM_FALLBACK so production refuses to start. Wire a
+        real exchange feed before enabling in production.
+        """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_realtime_surveillance.start",
+                                 "synthetic_feed")
+            raise RuntimeError(
+                "aureon_realtime_surveillance.start() emits a synthetic "
+                "market feed (random.gauss). Set AUREON_ALLOW_SIM_FALLBACK=1 "
+                "for dev, or wire a real exchange feed."
+            )
         self.running = True
         logger.info("📡 Starting simulated market feed...")
-        
+
         while self.running:
             for symbol, base_price in self.base_prices.items():
                 # Add some randomness with bot-like patterns

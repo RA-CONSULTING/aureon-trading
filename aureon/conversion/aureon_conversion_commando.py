@@ -37,7 +37,7 @@ Gary Leckey's 1885 CAPM Game | January 2026
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import os
@@ -684,7 +684,7 @@ class AdaptiveConversionCommando:
         if not self.bus:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self.bus.publish(Thought(source="conversion_commando", topic=f"commando.{topic}", payload=payload))
         except Exception:
             pass
@@ -693,7 +693,7 @@ class AdaptiveConversionCommando:
         if not self.bus:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self.bus.publish(Thought(source="conversion_commando", topic=f"mycelium.link.{topic}", payload=payload))
         except Exception:
             pass
@@ -1162,7 +1162,7 @@ if __name__ == "__main__":
     os.environ.setdefault("AUREON_LADDER_MODE", "suggest")
 
     # Lazy import to avoid circular deps
-    from aureon_conversion_ladder import ConversionLadder
+    from aureon.conversion.aureon_conversion_ladder import ConversionLadder
 
     class DummyClient:
         dry_run = True

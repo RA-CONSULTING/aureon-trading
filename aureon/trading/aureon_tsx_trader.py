@@ -11,7 +11,7 @@ Usage:
     python aureon_tsx_trader.py --mode live     # Real money
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -22,7 +22,7 @@ import argparse
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -355,7 +355,7 @@ def execute_trade(client: BinanceClient, symbol: str, side: str, quantity: float
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class TSXTrader:
-    def __init__(self, config: TradingConfig, paper_mode: bool = True):
+    def __init__(self, config: TradingConfig, paper_mode: bool = False):
         self.config = config
         self.paper_mode = paper_mode
         self.client = get_binance_client()

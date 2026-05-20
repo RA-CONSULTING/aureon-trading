@@ -33,7 +33,7 @@ _lyra = None
 def _get_lyra():
     global _lyra
     if _lyra is None:
-        from aureon_lyra import get_lyra
+        from aureon.trading.aureon_lyra import get_lyra
         _lyra = get_lyra()
     return _lyra
 
@@ -127,7 +127,7 @@ def print_lyra_report():
 def _broadcast(event_type: str, data: Dict):
     """Broadcast to ThoughtBus if available."""
     try:
-        from aureon_mind_thought_action_hub import ThoughtBus
+        from aureon.autonomous.aureon_mind_thought_action_hub import ThoughtBus
         bus = ThoughtBus.get_instance() if hasattr(ThoughtBus, "get_instance") else None
         if bus and hasattr(bus, "emit"):
             bus.emit({

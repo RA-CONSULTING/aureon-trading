@@ -50,7 +50,7 @@ This is the COMPLETE integration of ALL TSX systems into a unified Python trader
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import math
 import time
@@ -61,7 +61,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 from typing import Dict, List, Optional, Tuple
 import requests
-from binance_client import get_binance_client
+from aureon.exchanges.binance_client import get_binance_client
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PRIME SENTINEL IDENTITY
@@ -1115,6 +1115,9 @@ class AureonOmega:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
+    # 🟡 DEMO ENTRY — runs Aureon Omega against a 10-tick synthetic price walk
+    # (random.uniform). Production should call AureonOmegaSystem methods
+    # directly with real market data, not invoke main(). Banner only.
     print("""
 ═══════════════════════════════════════════════════════════════════════════════
       AUREON OMEGA - THE COMPLETE UNIFIED TRADING ORCHESTRATOR

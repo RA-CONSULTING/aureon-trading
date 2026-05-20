@@ -2,6 +2,11 @@
 """
 💎👑 COMPOUND KING: 30-DAY MASTER PLAN 👑💎
 
+🟡 STANDALONE COMPOUND-PROJECTION SIMULATOR — simulate_day() generates
+   synthetic returns (target_return * random.uniform(0.5, 1.15)) and
+   trade counts. Not imported by production code; only the __main__
+   block calls run_simulation(). Projection harness, not a trade executor.
+
 "COMPOUND IS KING. TIME IS YOUR WEAPON."
 
 Starting: £76
@@ -16,7 +21,7 @@ Day 21: £2,000 → £25,000 (UNLOCK PDT)
 Day 30: £25,000 → £100K+ (NUCLEAR MODE)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 from dataclasses import dataclass
 from typing import List

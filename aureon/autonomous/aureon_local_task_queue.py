@@ -34,6 +34,7 @@ class LocalTaskQueue:
         self.recent_completed: List[Dict[str, Any]] = []
         self.max_tasks = 100
         self.max_recent = 25
+        self._load_existing()
         self._persist()
 
     def enqueue(self, task: LocalTask) -> Dict[str, Any]:
@@ -76,6 +77,18 @@ class LocalTaskQueue:
 
     def _persist(self) -> None:
         self.state_path.write_text(json.dumps(self.status(), indent=2), encoding="utf-8")
+
+    def _load_existing(self) -> None:
+        if not self.state_path.exists():
+            return
+        try:
+            data = json.loads(self.state_path.read_text(encoding="utf-8"))
+        except Exception:
+            return
+        if isinstance(data.get("tasks"), list):
+            self.tasks = data["tasks"][-self.max_tasks :]
+        if isinstance(data.get("recent_completed"), list):
+            self.recent_completed = data["recent_completed"][-self.max_recent :]
 
 
 def build_default_task_queue() -> LocalTaskQueue:

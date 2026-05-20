@@ -65,14 +65,16 @@ class MarginGoalRecorder:
 
         candidates_raw is the sorted list of tuples:
           (info, side, vol, trade_val, max_lev, total_score,
-           required_move_pct, round_trip_fee, goal_score, eta_minutes)
+           required_move_pct, round_trip_fee, goal_score, eta_minutes,
+           optional route_to_profit)
         """
         scan_id = f"scan_{int(time.time() * 1000)}"
         ts = datetime.now().isoformat()
 
         rows = []
         for rank, item in enumerate(candidates_raw[:10]):  # top 10 only
-            info, side, vol, trade_val, max_lev, total_score, req_pct, fees, goal_score, eta_min = item
+            info, side, vol, trade_val, max_lev, total_score, req_pct, fees, goal_score, eta_min, *rest = item
+            route_to_profit = rest[0] if rest else None
             rows.append({
                 "rank":            rank + 1,
                 "pair":            info.pair,
@@ -86,6 +88,7 @@ class MarginGoalRecorder:
                 "round_trip_fees": round(fees, 4),
                 "goal_score":      round(goal_score, 4),
                 "eta_minutes":     round(eta_min, 1) if eta_min < 9999 else None,
+                "route_to_profit":  round(route_to_profit, 4) if route_to_profit is not None else None,
                 "total_score":     round(total_score, 4),
                 "selected":        (info.pair == winner_pair and side == winner_side),
             })

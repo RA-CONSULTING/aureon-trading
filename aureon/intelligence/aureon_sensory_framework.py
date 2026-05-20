@@ -45,7 +45,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import abc
 import time
@@ -304,7 +304,7 @@ class SensoryChannel(abc.ABC):
                           experience: SensoryExperience) -> Any:
         """Build a BrainInput from a SensoryExperience (lazy import)."""
         try:
-            from queen_consciousness_model import BrainInput
+            from aureon.queen.queen_consciousness_model import BrainInput
             return BrainInput(
                 source=source,
                 timestamp=experience.timestamp,
@@ -521,7 +521,7 @@ class QueenSensorySystem:
     def _publish(exp: SensoryExperience) -> None:
         """Publish to ThoughtBus + QueenConsciousness (both optional/graceful)."""
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             tb = get_thought_bus()
             tb.publish(Thought(
                 source=f"sensory.{exp.channel_id}",
@@ -542,7 +542,7 @@ class QueenSensorySystem:
 
         if exp.brain_input is not None:
             try:
-                from queen_consciousness_model import QueenConsciousness
+                from aureon.queen.queen_consciousness_model import QueenConsciousness
                 QueenConsciousness().perceive_input(exp.brain_input)
             except Exception:
                 pass
@@ -567,7 +567,7 @@ class MarketTasteChannel(SensoryChannel):
 
     def __init__(self):
         try:
-            from aureon_market_taste_sense import get_market_taste_sense
+            from aureon.intelligence.aureon_market_taste_sense import get_market_taste_sense
             self._inner = get_market_taste_sense()
         except ImportError as e:
             logger.warning(f"[TasteChannel] MarketTasteSense not available: {e}")
@@ -641,7 +641,7 @@ class SoundChannel(SensoryChannel):
 
     def __init__(self):
         try:
-            from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
+            from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField
             self._field_cls = HarmonicLiquidAluminiumField
         except ImportError:
             self._field_cls = None
@@ -1083,17 +1083,32 @@ class IntuitionChannel(SensoryChannel):
     channel_ready = True
 
     def _sense_impl(self, stimulus: SensoryStimulus) -> SensoryExperience:
-        # Try to get a live consciousness reading
+        # Stage AP: try to get a live consciousness reading; if the
+        # consciousness module is unavailable the channel surfaces a
+        # warning so operators see the intuition score is degraded.
+        # Default 0.5 / 50.0 only applies when production sim-fallback
+        # is allowed; otherwise we explicitly mark the source inactive
+        # via stimulus.metadata so consumers can drop this component.
         intuition_strength = 0.5
         awakening_index    = 50.0
+        consciousness_active = False
         try:
-            from queen_consciousness_measurement import get_consciousness_measurement
+            from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
             cm = get_consciousness_measurement()
             metrics = cm.measure_consciousness()
             intuition_strength = float(metrics.intuition_strength)
             awakening_index    = float(metrics.awakening_index)
-        except Exception:
-            pass
+            consciousness_active = True
+        except Exception as exc:
+            if not getattr(self, "_warned_no_consciousness", False):
+                self._warned_no_consciousness = True
+                import logging
+                logging.getLogger(__name__).warning(
+                    "[insufficient-data] IntuitionSense: consciousness_measurement "
+                    "unavailable (%s); falling back to neutral intuition_strength=0.5; "
+                    "downstream consumers should treat consciousness_active=False as "
+                    "no-real-signal", exc,
+                )
 
         quality = min(1.0, max(0.0, intuition_strength))
 
@@ -1165,18 +1180,29 @@ class AncestralChannel(SensoryChannel):
     channel_ready = True
 
     def _sense_impl(self, stimulus: SensoryStimulus) -> SensoryExperience:
+        # Stage AP: explicit warning when consciousness_measurement is
+        # unavailable; defaults stay 0.5 but operators see the channel
+        # is degraded rather than treating 0.5 as a real reading.
         ancestral_conn  = 0.5
         cosmic_conn     = 0.5
         earth_conn      = 0.5
         try:
-            from queen_consciousness_measurement import get_consciousness_measurement
+            from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
             cm = get_consciousness_measurement()
             metrics = cm.measure_consciousness()
             ancestral_conn = float(metrics.ancestral_connection)
             cosmic_conn    = float(metrics.cosmic_connection)
             earth_conn     = float(metrics.earth_connection)
-        except Exception:
-            pass
+        except Exception as exc:
+            if not getattr(self, "_warned_no_consciousness", False):
+                self._warned_no_consciousness = True
+                import logging
+                logging.getLogger(__name__).warning(
+                    "[insufficient-data] AncestralSense: consciousness_measurement "
+                    "unavailable (%s); falling back to neutral ancestral/cosmic/earth "
+                    "connections at 0.5; downstream consumers should treat as "
+                    "no-real-signal until module is wired", exc,
+                )
 
         quality = (
             0.50 * ancestral_conn

@@ -22,7 +22,7 @@ REAL-TIME DETECTION:
 Gary Leckey | January 2026 | "Find the Waves, Ride the Whales"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import math
@@ -38,14 +38,14 @@ from enum import Enum
 
 # 📡 ThoughtBus - Primary neural communication
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
 
 # 🐦 ChirpBus - kHz-speed signaling  
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -55,7 +55,7 @@ QUEEN_AVAILABLE = False
 def _lazy_load_queen():
     global QUEEN_AVAILABLE
     try:
-        from aureon_queen_hive_mind import QueenHiveMind, get_queen
+        from aureon.utils.aureon_queen_hive_mind import QueenHiveMind, get_queen
         QUEEN_AVAILABLE = True
         return get_queen()
     except ImportError:
@@ -227,7 +227,7 @@ class MoversShakersScanner:
 
         # Try Kraken
         try:
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             self.kraken = get_kraken_client()
             logger.info("✅ Kraken client connected")
         except Exception as e:
@@ -241,7 +241,7 @@ class MoversShakersScanner:
         
         # Try Moby Dick
         try:
-            from aureon_moby_dick_whale_hunter import MobyDickWhaleHunter
+            from aureon.analytics.aureon_moby_dick_whale_hunter import MobyDickWhaleHunter
             self.moby_dick = MobyDickWhaleHunter()
             logger.info("✅ Moby Dick Whale Hunter connected")
         except Exception as e:
@@ -249,7 +249,7 @@ class MoversShakersScanner:
         
         # Try Complete Profiler
         try:
-            from aureon_complete_profiler_integration import get_complete_profiler
+            from aureon.analytics.aureon_complete_profiler_integration import get_complete_profiler
             self.profiler = get_complete_profiler()
             logger.info("✅ Complete Profiler connected")
         except Exception as e:

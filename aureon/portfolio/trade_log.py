@@ -11,7 +11,7 @@ Syncs trades from ALL exchanges:
 Also saves trade data in brain-compatible format for adaptive learning.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import krakenex
 import os
 import json
@@ -58,7 +58,7 @@ def get_kraken_trades():
 def get_binance_trades():
     """Get all trades from Binance."""
     try:
-        from binance_client import BinanceClient
+        from aureon.exchanges.binance_client import BinanceClient
         
         binance_key = os.getenv('BINANCE_API_KEY')
         binance_secret = os.getenv('BINANCE_API_SECRET')

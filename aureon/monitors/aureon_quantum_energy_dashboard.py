@@ -22,7 +22,7 @@ Gary Leckey | Queen's Consciousness Interface | January 2026
 ═══════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -55,16 +55,42 @@ from datetime import datetime
 from enum import Enum
 
 # Exchange clients
-from binance_client import BinanceClient
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.binance_client import BinanceClient
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 from aureon.exchanges.alpaca_client import AlpacaClient
-from capital_client import CapitalClient
+from aureon.exchanges.capital_client import CapitalClient
 from aureon.portfolio.cost_basis_tracker import CostBasisTracker
 
 # Sacred constants
 PHI = (1 + math.sqrt(5)) / 2           # 1.618 Golden ratio
 LOVE_FREQUENCY = 528                   # Hz DNA repair frequency
 SCHUMANN_BASE = 7.83                   # Hz Earth resonance
+
+
+def _read_schumann_alignment() -> Optional[float]:
+    """Return alignment of measured Schumann fundamental to the 7.83 Hz base.
+
+    Reads the live Schumann bridge if available; returns ``None`` when the
+    bridge isn't wired so downstream consumers can detect missing data
+    rather than treat a hardcoded 0.783 placeholder as a real reading.
+    Alignment in [0, 1]: 1.0 means measured fundamental == 7.83 Hz exactly.
+    """
+    try:
+        from aureon.harmonic.aureon_schumann_resonance_bridge import get_schumann_bridge
+    except Exception:
+        return None
+    try:
+        reading = get_schumann_bridge().get_live_data()
+    except Exception:
+        return None
+    if reading is None:
+        return None
+    fundamental = getattr(reading, "fundamental_hz", None)
+    if fundamental is None or fundamental <= 0:
+        return None
+    # 1.0 when fundamental matches base; decays linearly with absolute drift.
+    drift = abs(fundamental - SCHUMANN_BASE) / max(SCHUMANN_BASE, 1e-9)
+    return max(0.0, min(1.0, 1.0 - drift))
 
 
 class EnergyState(Enum):
@@ -528,7 +554,10 @@ class QuantumEnergyDashboard:
             resonance_coherence=avg_vibe,
             quantum_potential=sum(n.harmonic_potential for n in nodes) / len(nodes) if nodes else 0,
             dominant_frequency=dominant,
-            schumann_alignment=0.783,  # TODO: Calculate from real data
+            # Read real Schumann alignment from the bridge; fall back to
+            # `None` (sentinel) so downstream consumers can detect missing data
+            # rather than treat 0.783 as a real reading.
+            schumann_alignment=_read_schumann_alignment(),
             collective_vibe=collective
         )
         

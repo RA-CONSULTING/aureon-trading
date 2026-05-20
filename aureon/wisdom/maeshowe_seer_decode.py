@@ -1058,7 +1058,7 @@ class OracleMaeshowe:
         seer module is not available.
         """
         try:
-            from aureon_seer import OracleReading as _OracleReading
+            from aureon.intelligence.aureon_seer import OracleReading as _OracleReading
         except ImportError:
             _OracleReading = None
 

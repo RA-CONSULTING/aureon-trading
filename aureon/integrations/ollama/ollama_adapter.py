@@ -62,6 +62,7 @@ class OllamaLLMAdapter(LLMAdapter):
         )
         if model:
             self.bridge.chat_model = model
+        self.model = self.bridge.chat_model
         self.default_options: Dict[str, Any] = dict(default_options or {})
 
     # ─────────────────────────────────────────────────────────────────────

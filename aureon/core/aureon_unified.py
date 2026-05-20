@@ -48,13 +48,13 @@ COMMUNICATION PROTOCOL:
 
 Author: Gary Leckey / Aureon System
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, time, logging, argparse, json, math
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 from decimal import Decimal, ROUND_DOWN
 from dataclasses import dataclass, field, asdict
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 
 try:
     from dotenv import load_dotenv
@@ -443,8 +443,10 @@ class MasterEquationSystem:
         """
         ticker = self.data.get_ticker(symbol)
         if not ticker:
+            logger.warning("[insufficient-data] compute_substrate returning "
+                           "neutral 0.5 (no ticker for %s)", symbol)
             return 0.5
-        
+
         price = float(ticker.get('lastPrice', 0))
         change = float(ticker.get('priceChangePercent', 0))
         volume = float(ticker.get('quoteVolume', 0))
@@ -510,8 +512,10 @@ class MasterEquationSystem:
         """
         ticker = self.data.get_ticker(symbol)
         if not ticker:
+            logger.warning("[insufficient-data] compute_observer returning "
+                           "neutral 0.5 (no ticker for %s)", symbol)
             return 0.5
-        
+
         change = float(ticker.get('priceChangePercent', 0))
         
         # Sigmoid mapping
@@ -523,6 +527,9 @@ class MasterEquationSystem:
         E(t) = Echo component (feedback from previous Lambda)
         """
         if len(self.lambda_history) < 3:
+            logger.warning("[insufficient-data] compute_echo returning neutral "
+                           "0.5 (need 3 lambda samples, got %d)",
+                           len(self.lambda_history))
             return 0.5
         
         # Exponentially weighted average of past Lambda values

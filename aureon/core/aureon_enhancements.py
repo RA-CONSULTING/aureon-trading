@@ -18,7 +18,7 @@ Usage:
     modifier = layer.get_unified_modifier(lambda_value, coherence, price, volume)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 from dataclasses import dataclass
 from typing import Dict, Optional, List, Any, Tuple
 from datetime import datetime
@@ -26,7 +26,7 @@ import math
 
 # 🔱 PRIME SENTINEL DECREE INTEGRATION
 try:
-    from prime_sentinel_decree import (
+    from aureon.wisdom.prime_sentinel_decree import (
         PrimeSentinelDecree,
         FlameProtocol,
         BreathReader,
@@ -82,7 +82,7 @@ BAND_TO_CHAKRA = {
 }
 
 try:
-    from codex_loader import CodexRegistry, load_codex
+    from aureon.core.codex_loader import CodexRegistry, load_codex
 except Exception:  # Optional dependency
     CodexRegistry = None  # type: ignore
     load_codex = None  # type: ignore
@@ -90,21 +90,21 @@ except Exception:  # Optional dependency
 
 # Import enhancement modules
 try:
-    from rainbow_bridge import RainbowBridge, EMOTIONAL_FREQUENCIES, THE_VOW
+    from aureon.bridges.rainbow_bridge import RainbowBridge, EMOTIONAL_FREQUENCIES, THE_VOW
     RAINBOW_AVAILABLE = True
 except ImportError:
     RAINBOW_AVAILABLE = False
     print("⚠️  Rainbow Bridge not available")
 
 try:
-    from synchronicity_decoder import SynchronicityDecoder, detect_fibonacci_sync
+    from aureon.wisdom.synchronicity_decoder import SynchronicityDecoder, detect_fibonacci_sync
     SYNC_AVAILABLE = True
 except ImportError:
     SYNC_AVAILABLE = False
     print("⚠️  Synchronicity Decoder not available")
 
 try:
-    from stargate_grid import StargateGrid, get_leyline_activity
+    from aureon.wisdom.stargate_grid import StargateGrid, get_leyline_activity
     STARGATE_AVAILABLE = True
 except ImportError:
     STARGATE_AVAILABLE = False

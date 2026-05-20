@@ -20,7 +20,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -43,17 +43,17 @@ import requests
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import V14 enhancements
-from s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14ScoringEngine
+from aureon.strategies.s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG, V14ScoringEngine
 
 # Import trading systems
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
     
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     MYCELIUM_AVAILABLE = True
 except ImportError:
     MYCELIUM_AVAILABLE = False

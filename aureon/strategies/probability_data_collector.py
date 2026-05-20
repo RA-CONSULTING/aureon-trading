@@ -18,7 +18,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -34,7 +34,7 @@ import random
 # Import trading components
 # Mocking imports if they fail to ensure the collector runs
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     
     # Add get_ticker method to BinanceClient if missing
     def _get_ticker(self, symbol):
@@ -65,7 +65,7 @@ except ImportError:
         def get_klines(self, symbol, interval, limit): return []
 
 try:
-    from hnc_probability_matrix import HNCProbabilityIntegration
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
 except ImportError:
     class HNCProbabilityIntegration:
         def calculate_probability(self, *args): return 0.5
@@ -227,7 +227,7 @@ class ProbabilityCollector:
 
                 # Feed validation accuracy back into Autonomy Hub feedback loop
                 try:
-                    from aureon_autonomy_hub import get_autonomy_hub
+                    from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
                     hub = get_autonomy_hub()
                     # Update predictor accuracy scores based on real validation
                     with hub.feedback_loop._lock:

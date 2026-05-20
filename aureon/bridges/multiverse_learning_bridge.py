@@ -31,7 +31,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import logging
 from typing import Dict, List, Optional, Any
@@ -94,12 +94,12 @@ class MultiverseLearningBridge:
         if not wave_data or not wave_data.get('available'):
             return
         try:
-            from aureon_seer_integration import seer_inject_wave_context
+            from aureon.intelligence.aureon_seer_integration import seer_inject_wave_context
             seer_inject_wave_context(wave_data)
         except Exception:
             pass
         try:
-            from aureon_lyra_integration import lyra_inject_wave_context
+            from aureon.trading.aureon_lyra_integration import lyra_inject_wave_context
             lyra_inject_wave_context(wave_data)
         except Exception:
             pass
@@ -334,7 +334,7 @@ class MultiverseLearningBridge:
         Oracle of Harmony uses herd_coherence as a portfolio coherence signal.
         """
         try:
-            from aureon_seer_integration import seer_update_context
+            from aureon.intelligence.aureon_seer_integration import seer_update_context
             seer_update_context(market_data=package)
             logger.debug(
                 f"[LearningBridge] Seer updated — "
@@ -353,7 +353,7 @@ class MultiverseLearningBridge:
         Chamber of Spirit receives scout_energy as collective Auris node state.
         """
         try:
-            from aureon_lyra_integration import lyra_update_context
+            from aureon.trading.aureon_lyra_integration import lyra_update_context
             lyra_update_context(market_data=package)
             logger.debug(
                 f"[LearningBridge] Lyra updated — "
@@ -369,7 +369,7 @@ class MultiverseLearningBridge:
         if time.time() - self._last_broadcast < _BROADCAST_MIN_INTERVAL:
             return
         try:
-            from aureon_mind_thought_action_hub import ThoughtBus
+            from aureon.autonomous.aureon_mind_thought_action_hub import ThoughtBus
             bus = ThoughtBus.get_instance() if hasattr(ThoughtBus, 'get_instance') else None
             if bus and hasattr(bus, 'emit'):
                 bus.emit({
@@ -388,7 +388,7 @@ class MultiverseLearningBridge:
     def _seer_aligned(self) -> bool:
         """True if Seer's latest vision grade is CLEAR_RESONANCE or better."""
         try:
-            from aureon_seer_integration import seer_get_vision
+            from aureon.intelligence.aureon_seer_integration import seer_get_vision
             vision = seer_get_vision()
             grade  = vision.get('grade', '') if vision else ''
             return grade in ('DIVINE_HARMONY', 'CLEAR_RESONANCE', 'PARTIAL_HARMONY')
@@ -398,7 +398,7 @@ class MultiverseLearningBridge:
     def _lyra_aligned(self) -> bool:
         """True if Lyra's latest resonance grade is not SILENCE."""
         try:
-            from aureon_lyra_integration import lyra_should_trade
+            from aureon.trading.aureon_lyra_integration import lyra_should_trade
             return lyra_should_trade()
         except Exception:
             return True   # neutral if unavailable
@@ -419,7 +419,7 @@ def get_bridge() -> MultiverseLearningBridge:
     """
     global _BRIDGE
     if _BRIDGE is None:
-        from stallion_multiverse import MULTIVERSE
+        from aureon.simulation.stallion_multiverse import MULTIVERSE
         _BRIDGE = MultiverseLearningBridge(MULTIVERSE)
     return _BRIDGE
 

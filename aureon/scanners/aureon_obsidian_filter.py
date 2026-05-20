@@ -14,7 +14,7 @@ Obsidian's properties are metaphorically translated into digital signal processi
 - **Revealing Truth (Sheen)**: A clarity function that enhances the signal-to-noise ratio.
 - **Protection**: A shielding function that reduces the impact of negative sentiment spikes.
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -43,7 +43,7 @@ CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 ChirpDirection = None
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -52,7 +52,7 @@ except ImportError:
 HARMONIC_ALPHABET_AVAILABLE = False
 to_harmonics = None
 try:
-    from aureon_harmonic_alphabet import to_harmonics
+    from aureon.harmonic.aureon_harmonic_alphabet import to_harmonics
     HARMONIC_ALPHABET_AVAILABLE = True
 except ImportError:
     HARMONIC_ALPHABET_AVAILABLE = False

@@ -24,7 +24,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import logging
 from dataclasses import dataclass, field
@@ -33,14 +33,14 @@ from typing import Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 try:
-    from stallion_tracker import classify_phase, StallionPhase
+    from aureon.utils.stallion_tracker import classify_phase, StallionPhase
     _STALLION_AVAILABLE = True
 except ImportError:
     _STALLION_AVAILABLE = False
     classify_phase = None
 
 try:
-    from dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
+    from aureon.trading.dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
     _DTP_AVAILABLE = True
 except ImportError:
     _DTP_AVAILABLE = False

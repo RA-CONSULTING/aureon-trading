@@ -24,7 +24,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -75,7 +75,7 @@ def _env_bool_optional(name: str) -> Optional[bool]:
 # ═══════════════════════════════════════════════════════════════════════════
 
 try:
-    from aureon_hft_harmonic_mycelium import get_hft_engine, HFTTick
+    from aureon.harmonic.aureon_hft_harmonic_mycelium import get_hft_engine, HFTTick
     HFT_ENGINE_AVAILABLE = True
 except ImportError as e:
     HFT_ENGINE_AVAILABLE = False
@@ -337,7 +337,7 @@ class AlpacaScannerBridge:
         """Lazy initialization of SSE client."""
         if self._sse_client is None:
             try:
-                from alpaca_sse_client import AlpacaSSEClient
+                from aureon.exchanges.alpaca_sse_client import AlpacaSSEClient
                 self._sse_client = AlpacaSSEClient()
                 
                 # Wire callbacks

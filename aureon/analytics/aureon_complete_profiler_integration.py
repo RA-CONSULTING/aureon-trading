@@ -52,7 +52,7 @@ OUTPUT EXAMPLE:
 Gary Leckey | January 2026 | Complete Intelligence Integration
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import math
@@ -84,10 +84,10 @@ logger = logging.getLogger(__name__)
 
 # Import our systems
 try:
-    from aureon_whale_profiler_system import (
+    from aureon.analytics.aureon_whale_profiler_system import (
         WhaleProfilerSystem, get_whale_profiler, WhaleClass, StrategyType
     )
-    from aureon_moby_dick_whale_hunter import (
+    from aureon.analytics.aureon_moby_dick_whale_hunter import (
         MobyDickWhaleHunter, get_moby_dick_hunter, WhalePrediction
     )
 except ImportError as e:
@@ -204,7 +204,7 @@ class CompleteProfilerIntegration:
         # Log to Moby Dick for prediction
         if self.moby_dick_hunter:
             try:
-                from aureon_moby_dick_whale_hunter import GamEncounter
+                from aureon.analytics.aureon_moby_dick_whale_hunter import GamEncounter
                 self.moby_dick_hunter.log_gam_encounter(GamEncounter(
                     exchange=exchange,
                     symbol=symbol,

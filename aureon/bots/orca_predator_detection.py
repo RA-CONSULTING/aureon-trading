@@ -2,6 +2,10 @@
 """
 🦈🔍 ORCA PREDATOR DETECTION SYSTEM - WHO'S HUNTING WHO? 🔍🦈
 ═══════════════════════════════════════════════════════════════════════════════
+🟡 The PredatorDetector class records REAL orders + REAL price reactions.
+   `simulate_hunting_scenario()` (run only under __main__) uses synthetic
+   random orders for demonstration; do not call from production paths.
+═══════════════════════════════════════════════════════════════════════════════
 
 DETECTS WHEN MARKET MAKERS ARE ADAPTING TO *YOUR* PATTERNS
 
@@ -20,7 +24,7 @@ Gary Leckey | Counter-Intelligence Division | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json

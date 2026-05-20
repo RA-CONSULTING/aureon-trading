@@ -32,7 +32,7 @@ Integration:
 - Drives continuous improvement in strategy
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -142,7 +142,7 @@ class QueenResearchEngine:
         
         # Wire to thought bus if available
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             self.thought_bus = get_thought_bus()
             self.Thought = Thought
             logger.info("🔍 Research Engine: WIRED to ThoughtBus")
@@ -157,7 +157,7 @@ class QueenResearchEngine:
         
         # Wire to goal engine if available
         try:
-            from aureon_quantum_goal_engine import get_goal_engine
+            from aureon.simulation.aureon_quantum_goal_engine import get_goal_engine
             self.goal_engine = get_goal_engine()
             logger.info("🔍 Research Engine: WIRED to Goal Engine")
         except Exception as e:
@@ -292,9 +292,13 @@ class QueenResearchEngine:
     def research_web(self, query: str, max_results: int = 5) -> List[ResearchFinding]:
         """
         Research via web search.
-        
-        NOTE: This is a placeholder that simulates research.
-        In production, you'd integrate with:
+
+        ⚠ STUB: returns hardcoded "example.com" findings with hardcoded
+        relevance scores (0.85 / 0.72 / 0.65). Gated behind
+        AUREON_ALLOW_SIM_FALLBACK so production refuses to inject fake
+        research findings into the autonomous orchestrator.
+
+        In production, integrate with:
         - DuckDuckGo API
         - Google Custom Search API
         - Bing Search API
@@ -302,12 +306,19 @@ class QueenResearchEngine:
         - CoinGecko API
         - Alpha Vantage
         """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_queen_research_engine.research_web",
+                                 "synthetic_findings")
+            return []
         findings = []
-        
+
         try:
-            # Simulated research for now
+            # Simulated research for now (gated above)
             # In real implementation, make actual API calls
-            
+
             simulated_findings = [
                 {
                     "content": f"Trading strategy research result for: {query}",

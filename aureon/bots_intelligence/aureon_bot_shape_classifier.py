@@ -10,7 +10,7 @@ Publishes:
 - topic: `whale.shape.detected` payload: {symbol, detected_at, shape: {subtype, score, reason}, spectrogram_summary}
 """
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import math
@@ -21,10 +21,10 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from aureon_thought_bus import get_thought_bus, Thought
+from aureon.core.aureon_thought_bus import get_thought_bus, Thought
 
 try:
-    from whale_metrics import whale_shape_detected_total
+    from aureon.bots.whale_metrics import whale_shape_detected_total
     METRICS_AVAILABLE = True
 except ImportError:
     METRICS_AVAILABLE = False
@@ -36,7 +36,7 @@ except ImportError:
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon.core.aureon_chirp_bus import get_chirp_bus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -45,21 +45,21 @@ except ImportError:
 # 🌐 GLOBAL MARKET INTEGRATION
 # ════════════════════════════════════════════════════════════════════════════════
 try:
-    from kraken_client import KrakenClient
+    from aureon.exchanges.kraken_client import KrakenClient
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
     KrakenClient = None
 
 try:
-    from binance_ws_client import BinanceWebSocketClient
+    from aureon.exchanges.binance_ws_client import BinanceWebSocketClient
     BINANCE_WS_AVAILABLE = True
 except ImportError:
     BINANCE_WS_AVAILABLE = False
     BinanceWebSocketClient = None
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CAPITAL_AVAILABLE = False
@@ -158,7 +158,7 @@ class BotShapeClassifier:
         # Integrate harmonic analyzer (if available) for frequency/coherence/phase features
         harmonic_info = {}
         try:
-            from aureon_probability_nexus import HarmonicAnalyzer
+            from aureon.bridges.aureon_probability_nexus import HarmonicAnalyzer
             ha = HarmonicAnalyzer()
             # HarmonicAnalyzer expects a price list; pass the last 100 prices if available
             freq, coh, ph = ha.analyze(list(prices[-100:]))
@@ -335,7 +335,7 @@ if __name__ == '__main__':
     ap.add_argument('symbol', nargs='?', default='TESTCOIN/USD')
     args = ap.parse_args()
 
-    from aureon_thought_bus import get_thought_bus, Thought
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
     tb = get_thought_bus()
 
     # publish synthetic market ticks (sine + noise)

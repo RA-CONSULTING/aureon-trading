@@ -26,7 +26,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -454,7 +454,7 @@ class AureonBacktestEngine:
         # 🌊 Harmonic Fusion - frequency analysis
         self.harmonic_fusion = None
         try:
-            from aureon_harmonic_fusion import HarmonicWaveFusion, HarmonicFusionConfig
+            from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion, HarmonicFusionConfig
             config = HarmonicFusionConfig(max_symbols=100)
             self.harmonic_fusion = HarmonicWaveFusion(config)
             logger.info("🌊 Harmonic Fusion System LOADED")
@@ -464,7 +464,7 @@ class AureonBacktestEngine:
         # 〰️ Harmonic Underlay - waveform patterns
         self.harmonic_underlay = None
         try:
-            from aureon_harmonic_underlay import HarmonicUnderlay
+            from aureon.harmonic.aureon_harmonic_underlay import HarmonicUnderlay
             self.harmonic_underlay = HarmonicUnderlay()
             logger.info("〰️ Harmonic Underlay LOADED")
         except Exception as e:
@@ -473,7 +473,7 @@ class AureonBacktestEngine:
         # 🔮 Probability Nexus - statistical edge
         self.prob_nexus = None
         try:
-            from aureon_probability_nexus import ProbabilityMatrix
+            from aureon.bridges.aureon_probability_nexus import ProbabilityMatrix
             self.prob_nexus = ProbabilityMatrix()
             logger.info("🔮 Probability Matrix LOADED")
         except Exception as e:
@@ -483,7 +483,7 @@ class AureonBacktestEngine:
         self.obsidian_filter = None
         if self.use_obsidian:
             try:
-                from aureon_obsidian_filter import AureonObsidianFilter
+                from aureon.scanners.aureon_obsidian_filter import AureonObsidianFilter
                 self.obsidian_filter = AureonObsidianFilter()
                 logger.info("🔮 Obsidian Filter LOADED")
             except Exception as e:
@@ -492,7 +492,7 @@ class AureonBacktestEngine:
         # 🧠 Adaptive Learner - learns from winners
         self.adaptive_learner = None
         try:
-            from adaptive_prime_profit_gate import AdaptivePrimeProfitGate
+            from aureon.utils.adaptive_prime_profit_gate import AdaptivePrimeProfitGate
             self.adaptive_learner = AdaptivePrimeProfitGate()
             logger.info("🧠 Adaptive Prime Profit Gate LOADED")
         except Exception as e:
@@ -501,7 +501,7 @@ class AureonBacktestEngine:
         # 🌀 Labyrinth Navigator - market path finding
         self.labyrinth = None
         try:
-            from aureon_multiverse_live import LabyrinthMapper
+            from aureon.simulation.aureon_multiverse_live import LabyrinthMapper
             self.labyrinth = LabyrinthMapper()
             logger.info("🌀 Labyrinth Mapper LOADED")
         except Exception as e:
@@ -510,7 +510,7 @@ class AureonBacktestEngine:
         # 🗼 Lighthouse - momentum beacon
         self.lighthouse = None
         try:
-            from aureon_lighthouse import LighthousePatternDetector, LighthouseConfig
+            from aureon.analytics.aureon_lighthouse import LighthousePatternDetector, LighthouseConfig
             self.lighthouse = LighthousePatternDetector(LighthouseConfig())
             logger.info("🗼 Lighthouse Pattern Detector LOADED")
         except Exception as e:

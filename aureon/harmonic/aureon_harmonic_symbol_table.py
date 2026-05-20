@@ -1,7 +1,7 @@
 # aureon_harmonic_symbol_table.py
 # EXPANDED: Now uses 2-byte IDs (0x0000-0xFFFF) to support 65,000+ symbols
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import zlib

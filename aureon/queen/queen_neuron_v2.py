@@ -25,7 +25,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import numpy as np
@@ -161,7 +161,7 @@ class QueenNeuronV2:
         
         # Import the Grand Big Wheel for happiness tracking
         try:
-            from queen_pursuit_of_happiness import get_pursuit_of_happiness, PursuitOfHappiness
+            from aureon.queen.queen_pursuit_of_happiness import get_pursuit_of_happiness, PursuitOfHappiness
             self.happiness_engine: Optional[PursuitOfHappiness] = get_pursuit_of_happiness()
             logger.info("🎡💜 Grand Big Wheel connected to neural system")
         except ImportError:

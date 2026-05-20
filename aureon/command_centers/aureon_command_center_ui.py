@@ -35,7 +35,7 @@ Combines ALL existing models and systems into ONE dashboard:
 Gary Leckey | January 2026 | ALL SYSTEMS → UNIFIED UI
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -73,7 +73,7 @@ from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass, field, asdict
 from collections import deque
 from pathlib import Path
-from binance_client import get_binance_client
+from aureon.exchanges.binance_client import get_binance_client
 
 try:
     from aiohttp import web

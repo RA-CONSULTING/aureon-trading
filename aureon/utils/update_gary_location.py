@@ -17,7 +17,7 @@ Examples:
 import sys
 sys.path.insert(0, '/workspaces/aureon-trading')
 
-from aureon_live_aura_location_tracker import LiveAuraLocationTracker
+from aureon.utils.aureon_live_aura_location_tracker import LiveAuraLocationTracker
 
 
 def update_location(lat: float, lon: float):

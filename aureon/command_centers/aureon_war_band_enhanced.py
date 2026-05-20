@@ -23,7 +23,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import json
 import os
@@ -34,31 +34,31 @@ from dataclasses import dataclass, field
 
 # Core War Band imports
 try:
-    from aureon_war_band import WarBand
+    from aureon.command_centers.aureon_war_band import WarBand
 except ImportError:
     WarBand = None
 
 # Enhancement imports
 try:
-    from aureon_enhancements import EnhancementLayer, EnhancementResult
+    from aureon.core.aureon_enhancements import EnhancementLayer, EnhancementResult
 except ImportError:
     EnhancementLayer = None
     EnhancementResult = None
 
 try:
-    from s5_v14_dance_enhancements import V14DanceEnhancer, V14ScoringEngine, V14_CONFIG
+    from aureon.strategies.s5_v14_dance_enhancements import V14DanceEnhancer, V14ScoringEngine, V14_CONFIG
 except ImportError:
     V14DanceEnhancer = None
     V14ScoringEngine = None
     V14_CONFIG = {'entry_score_threshold': 8, 'profit_target_pct': 1.52}
 
 try:
-    from aureon_7day_planner import Aureon7DayPlanner
+    from aureon.autonomous.aureon_7day_planner import Aureon7DayPlanner
 except ImportError:
     Aureon7DayPlanner = None
 
 try:
-    from aureon_barter_navigator import BarterNavigator
+    from aureon.trading.aureon_barter_navigator import BarterNavigator
 except ImportError:
     BarterNavigator = None
 

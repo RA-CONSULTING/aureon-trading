@@ -24,7 +24,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -990,7 +990,7 @@ class StargateProtocolEngine:
         """Emit a thought to the ThoughtBus if available"""
         if self._thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source="stargate_protocol",
                     topic=topic,
@@ -1316,14 +1316,14 @@ def create_stargate_engine(with_integrations: bool = True) -> StargateProtocolEn
     
     if with_integrations:
         try:
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             thought_bus = ThoughtBus()
             logger.info("✅ ThoughtBus integration enabled")
         except ImportError:
             logger.warning("⚠️ ThoughtBus not available")
             
         try:
-            from aureon_memory_core import AureonMemoryCore
+            from aureon.core.aureon_memory_core import AureonMemoryCore
             memory_core = AureonMemoryCore()
             logger.info("✅ Memory Core integration enabled")
         except ImportError:

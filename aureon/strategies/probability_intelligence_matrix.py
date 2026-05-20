@@ -23,7 +23,7 @@ THE SOLUTION: Intelligence Matrix
 Gary Leckey | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import math
 import json
@@ -154,7 +154,7 @@ class ProbabilityIntelligenceMatrix:
         
         # Wire improved ETA calculator
         try:
-            from improved_eta_calculator import ImprovedETACalculator
+            from aureon.analytics.improved_eta_calculator import ImprovedETACalculator
             self.eta_calc = ImprovedETACalculator()
             self.eta_calc_available = True
         except ImportError:

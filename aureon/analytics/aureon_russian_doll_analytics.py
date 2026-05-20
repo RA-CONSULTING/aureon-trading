@@ -17,7 +17,7 @@ Integration Points:
 - aureon_thought_bus.py: Cross-module signal distribution
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 THOUGHT_BUS_AVAILABLE = False
 _thought_bus = None
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     _thought_bus = get_thought_bus()
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:

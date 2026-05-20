@@ -101,7 +101,7 @@ def load_nexus_snapshot(use_cache: bool = False) -> NexusSnapshot:
                     raise ValueError("Invalid cache format")
         else:
             # Only boot nexus if cache not available
-            from aureon_probability_nexus import AureonProbabilityNexus
+            from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
             logger.info("Loading live nexus predictions...")
             nexus = AureonProbabilityNexus()
             predictions = nexus.make_predictions()

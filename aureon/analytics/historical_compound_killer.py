@@ -2,6 +2,11 @@
 """
 🔮💎 HISTORICAL COMPOUND KILLER 💎🔮
 
+🟡 STANDALONE BACKTEST SIMULATOR — simulate_day() generates synthetic
+   gain_pct / loss_pct via random.uniform. Not imported by production
+   code; only the __main__ block calls run_simulation(). Backtest harness,
+   not a trade executor.
+
 Uses HISTORICAL patterns (80-94% win rates) compounded over time.
 
 Strategy:
@@ -13,7 +18,7 @@ Strategy:
 THE PRESENT IS A GIFT. THE PAST UNWRAPS IT.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 from dataclasses import dataclass
 from typing import List

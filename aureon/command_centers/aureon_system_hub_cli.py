@@ -17,7 +17,7 @@ Author: Aureon Trading System
 Date: January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -35,7 +35,7 @@ if sys.platform == 'win32':
         pass
 
 import argparse
-from aureon_system_hub import SystemRegistry
+from aureon.command_centers.aureon_system_hub import SystemRegistry
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel

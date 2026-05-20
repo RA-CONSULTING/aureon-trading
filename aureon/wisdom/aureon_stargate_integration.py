@@ -18,7 +18,7 @@ Frequency Mapping:
 - Mt Shasta (963 Hz) → Crypto, unity consciousness
 """
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -43,13 +43,13 @@ import math
 from typing import Any, Dict, Optional, List, Tuple
 from collections import defaultdict
 
-from aureon_thought_bus import get_thought_bus, Thought
+from aureon.core.aureon_thought_bus import get_thought_bus, Thought
 
 logger = logging.getLogger(__name__)
 
 # Try to import stargate protocol
 try:
-    from aureon_stargate_protocol import PLANETARY_STARGATES, StargateNode, PHI
+    from aureon.wisdom.aureon_stargate_protocol import PLANETARY_STARGATES, StargateNode, PHI
     STARGATE_AVAILABLE = True
 except ImportError:
     STARGATE_AVAILABLE = False

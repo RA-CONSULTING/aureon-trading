@@ -13,7 +13,7 @@ Using existing MultiExchangeClient infrastructure.
 Gary Leckey | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -23,7 +23,7 @@ from typing import Optional, Tuple, Dict, Any
 os.environ['LIVE'] = '1'
 os.environ['DRY_RUN'] = '0'
 
-from aureon_unified_ecosystem import MultiExchangeClient, CONFIG, get_platform_fee
+from aureon.trading.aureon_unified_ecosystem import MultiExchangeClient, CONFIG, get_platform_fee
 
 
 def get_symbol_filters(client: MultiExchangeClient, exchange: str, symbol: str) -> Dict[str, Any]:

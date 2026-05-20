@@ -15,7 +15,7 @@ Features:
 From $7.39 → Billions through hive coordination!
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -53,18 +53,18 @@ PHI = (1 + math.sqrt(5)) / 2  # 1.618033989 - Golden Ratio
 PERFECTION_ANGLE = 306.0  # 360 - 54 (golden angle complement)
 
 # Import our systems
-from live_portfolio_growth_tracker import LivePortfolioTracker
-from quantum_black_box_billion import QuantumBlackBox
+from aureon.portfolio.live_portfolio_growth_tracker import LivePortfolioTracker
+from aureon.strategies.quantum_black_box_billion import QuantumBlackBox
 
 # Import exchange clients
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_AVAILABLE = True
 except ImportError:
     BINANCE_AVAILABLE = False
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 except ImportError:
     KrakenClient = None
 
@@ -273,12 +273,37 @@ class HiveMindTrader:
         return total_balance > 0
     
     def _get_exchange_balance(self, client: any, exchange: str) -> float:
-        """Get total USD balance from exchange."""
+        """Get total USD balance from exchange.
+
+        Stage AN: was using hardcoded BTC=$95000 / ETH=$3400 multipliers
+        (months-old reference prices). Real multipliers now come from the
+        live-data fallback chain so a missing/stale primary feed doesn't
+        warp portfolio totals broadcast to the operator dashboard.
+        """
         try:
             if exchange == 'binance':
                 usdt = client.get_free_balance('USDT')
-                btc = client.get_free_balance('BTC') * 95000  # Approx BTC price
-                eth = client.get_free_balance('ETH') * 3400   # Approx ETH price
+                btc_qty = client.get_free_balance('BTC')
+                eth_qty = client.get_free_balance('ETH')
+                btc_price = eth_price = 0.0
+                if btc_qty or eth_qty:
+                    try:
+                        from aureon.observer.real_price_fallback import (
+                            get_real_prices_with_fallback,
+                        )
+                        prices, _ = get_real_prices_with_fallback(
+                            symbols=['BTC/USD', 'ETH/USD'],
+                            max_cache_age_sec=60.0, timeout_sec=4.0,
+                        )
+                        btc_price = float(prices.get('BTC/USD', 0.0))
+                        eth_price = float(prices.get('ETH/USD', 0.0))
+                    except Exception:
+                        btc_price = eth_price = 0.0
+                # Skip components where we couldn't get a real price rather
+                # than fabricate the multiplier. Caller sees true USDT plus
+                # whatever crypto we could value with real data.
+                btc = btc_qty * btc_price if btc_price > 0 else 0.0
+                eth = eth_qty * eth_price if eth_price > 0 else 0.0
                 return usdt + btc + eth
             elif exchange == 'kraken':
                 bal = client.get_account_balance()

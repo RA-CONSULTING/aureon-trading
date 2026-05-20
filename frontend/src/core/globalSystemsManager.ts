@@ -218,6 +218,11 @@ export interface GlobalState {
     }>;
     krakenShadows?: number;
     capitalShadows?: number;
+    capitalRiskEnvelope?: any;
+    capitalTradeEvidence?: any;
+    capitalConfidenceRatchet?: any;
+    capitalUnifiedWaveformCheck?: any;
+    capitalNoLossHoldQueue?: any;
   };
 
   // ════════════════════════════════════════════════════════════════

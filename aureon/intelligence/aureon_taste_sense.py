@@ -16,7 +16,7 @@ Three compound categories:
   placebo       — neutral controls (distilled water, saline)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import math
@@ -172,7 +172,7 @@ class MolecularSequencer:
         return 800.0, "Illumination", "peak"
 
     def build_experience(self, mol: MolecularData) -> TasteExperience:
-        from queen_consciousness_model import BrainInput  # late import avoids circularity
+        from aureon.queen.queen_consciousness_model import BrainInput  # late import avoids circularity
 
         props = self.sequence(mol)
         hz, emotion, band = self.map_to_frequency(props)

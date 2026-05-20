@@ -36,7 +36,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from collections import deque
 from pathlib import Path
 
@@ -50,8 +50,9 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 try:
-    from dotenv import load_dotenv
-    load_dotenv(os.path.join(_REPO_ROOT, ".env"), override=False)
+    from aureon.core.aureon_env import load_aureon_environment
+
+    load_aureon_environment(Path(_REPO_ROOT), override=False)
 except Exception:
     pass
 
@@ -61,7 +62,7 @@ try:
     HAS_ETA_PREDICTOR = True
 except ImportError:
     try:
-        from margin_eta_predictor import MarginETAPredictor
+        from aureon.monitors.margin_eta_predictor import MarginETAPredictor
         HAS_ETA_PREDICTOR = True
     except ImportError:
         HAS_ETA_PREDICTOR = False
@@ -70,7 +71,7 @@ except ImportError:
 
 # Dead Man's Switch - Dynamic Take Profit
 try:
-    from dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
+    from aureon.trading.dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
     HAS_DTP = True
 except ImportError:
     HAS_DTP = False
@@ -79,16 +80,52 @@ except ImportError:
 
 # Margin Wave Rider - pre-entry 250% margin safety gate
 try:
-    from margin_wave_rider import MarginWaveRider, WAVE_CONFIG
+    from aureon.trading.margin_wave_rider import MarginWaveRider, WAVE_CONFIG
     HAS_WAVE_RIDER = True
 except ImportError:
     HAS_WAVE_RIDER = False
     MarginWaveRider = None
     WAVE_CONFIG = {'entry_min_margin_pct': 250.0, 'danger_margin_pct': 110.0}
 
+# Dynamic margin sizing - live collateral-aware position planner
+try:
+    from aureon.trading.dynamic_margin_sizer import (
+        DynamicMarginConfig,
+        DynamicMarginSizer,
+        MarginCapitalSnapshot,
+        PositionSizePlan,
+    )
+    HAS_DYNAMIC_MARGIN_SIZER = True
+except ImportError:
+    HAS_DYNAMIC_MARGIN_SIZER = False
+    DynamicMarginConfig = None
+    DynamicMarginSizer = None
+    MarginCapitalSnapshot = None
+    PositionSizePlan = None
+
+# Human-time trade cognition - projection and verification audit trail
+try:
+    from aureon.trading.temporal_trade_cognition import TemporalTradeCognition
+    HAS_TEMPORAL_TRADE_COGNITION = True
+except ImportError:
+    HAS_TEMPORAL_TRADE_COGNITION = False
+    TemporalTradeCognition = None
+
+# Unified margin brain - final approve/wait/reject decision layer
+try:
+    from aureon.trading.unified_margin_brain import (
+        MarginBrainConfig,
+        UnifiedMarginDecisionBrain,
+    )
+    HAS_UNIFIED_MARGIN_BRAIN = True
+except ImportError:
+    HAS_UNIFIED_MARGIN_BRAIN = False
+    MarginBrainConfig = None
+    UnifiedMarginDecisionBrain = None
+
 # Stallion Tracker - Apache phase intelligence (ROPING→BUCKING→TIRING→TAMED)
 try:
-    from stallion_tracker import classify_phase, StallionPhase
+    from aureon.utils.stallion_tracker import classify_phase, StallionPhase
     HAS_STALLION = True
 except ImportError:
     HAS_STALLION = False
@@ -97,7 +134,7 @@ except ImportError:
 
 # Stallion Multiverse - parallel shadow rides + 1-hour rotation
 try:
-    from stallion_multiverse import StallionMultiverse, MULTIVERSE_CONFIG
+    from aureon.simulation.stallion_multiverse import StallionMultiverse, MULTIVERSE_CONFIG
     HAS_MULTIVERSE = True
 except ImportError:
     HAS_MULTIVERSE = False
@@ -106,7 +143,7 @@ except ImportError:
 
 # Multiverse Learning Bridge - adaptive learning → Seer, Lyra, pre-trade
 try:
-    from multiverse_learning_bridge import MultiverseLearningBridge
+    from aureon.bridges.multiverse_learning_bridge import MultiverseLearningBridge
     HAS_LEARNING_BRIDGE = True
 except ImportError:
     HAS_LEARNING_BRIDGE = False
@@ -114,7 +151,7 @@ except ImportError:
 
 # Autonomous Trading Orchestrator - central nervous system for all systems
 try:
-    from autonomous_trading_orchestrator import AutonomousOrchestrator
+    from aureon.autonomous.autonomous_trading_orchestrator import AutonomousOrchestrator
     HAS_ORCHESTRATOR = True
 except ImportError:
     HAS_ORCHESTRATOR = False
@@ -122,7 +159,7 @@ except ImportError:
 
 # Goal Recorder — proof file for entry goal vs actual outcome
 try:
-    from margin_goal_recorder import MarginGoalRecorder
+    from aureon.monitors.margin_goal_recorder import MarginGoalRecorder
     HAS_GOAL_RECORDER = True
 except ImportError:
     HAS_GOAL_RECORDER = False
@@ -130,7 +167,7 @@ except ImportError:
 
 # Macro Intelligence — pre-execution market context (F&G, BTC trend, dominance, news)
 try:
-    from macro_intelligence import MacroIntelligence
+    from aureon.intelligence.macro_intelligence import MacroIntelligence
     HAS_MACRO_INTEL = True
 except ImportError:
     HAS_MACRO_INTEL = False
@@ -138,57 +175,70 @@ except ImportError:
 
 # Additional repo scanners for mission selection enrichment
 try:
-    from aureon_seer import get_seer
+    from aureon.intelligence.aureon_seer import get_seer
     HAS_SEER = True
 except ImportError:
     HAS_SEER = False
     get_seer = None
 
 try:
-    from war_strategy import should_attack, get_quick_kill_estimate
+    from aureon.command_centers.war_strategy import should_attack, get_quick_kill_estimate
     HAS_WAR_STRATEGY = True
 except ImportError:
     HAS_WAR_STRATEGY = False
     should_attack = None
     get_quick_kill_estimate = None
 
-try:
-    from unified_sniper_brain import get_unified_brain
-    HAS_SNIPER_BRAIN = True
-except ImportError:
-    HAS_SNIPER_BRAIN = False
-    get_unified_brain = None
+HAS_SNIPER_BRAIN = False
+get_unified_brain = None
+
+
+def _load_unified_sniper_brain():
+    """Lazy-load the heavy sniper brain only when a live trader is constructed."""
+    global HAS_SNIPER_BRAIN, get_unified_brain
+    if get_unified_brain is not None:
+        return get_unified_brain
+    try:
+        from aureon.trading.unified_sniper_brain import get_unified_brain as factory
+
+        get_unified_brain = factory
+        HAS_SNIPER_BRAIN = True
+        return get_unified_brain
+    except Exception:
+        HAS_SNIPER_BRAIN = False
+        get_unified_brain = None
+        return None
 
 try:
-    from nexus_predictor import NexusPredictor
+    from aureon.intelligence.nexus_predictor import NexusPredictor
     HAS_NEXUS_PREDICTOR = True
 except ImportError:
     HAS_NEXUS_PREDICTOR = False
     NexusPredictor = None
 
 try:
-    from aureon_lattice import LatticeEngine
+    from aureon.core.aureon_lattice import LatticeEngine
     HAS_LATTICE = True
 except ImportError:
     HAS_LATTICE = False
     LatticeEngine = None
 
 try:
-    from aureon_seer_integration import seer_get_vision
+    from aureon.intelligence.aureon_seer_integration import seer_get_vision
     HAS_SEER_INTEGRATION = True
 except ImportError:
     HAS_SEER_INTEGRATION = False
     seer_get_vision = None
 
 try:
-    from aureon_lyra_integration import lyra_get_resonance
+    from aureon.trading.aureon_lyra_integration import lyra_get_resonance
     HAS_LYRA_INTEGRATION = True
 except ImportError:
     HAS_LYRA_INTEGRATION = False
     lyra_get_resonance = None
 
 try:
-    from aureon_atn_monitor import get_atn_monitor
+    from aureon.atn.aureon_atn_monitor import get_atn_monitor
     HAS_ATN_MONITOR = True
 except ImportError:
     HAS_ATN_MONITOR = False
@@ -266,7 +316,7 @@ try:
     HAS_KRAKEN_FEE_TRACKER = True
 except ImportError:
     try:
-        from kraken_fee_tracker import get_kraken_fee_tracker
+        from aureon.exchanges.kraken_fee_tracker import get_kraken_fee_tracker
         HAS_KRAKEN_FEE_TRACKER = True
     except ImportError:
         HAS_KRAKEN_FEE_TRACKER = False
@@ -568,6 +618,21 @@ KRAKEN_CLOSE_FEE = 0.0035     # Actual observed closing fee rate
 KRAKEN_ROLLOVER_RATE = 0.0001 # 0.01% per 4 hours (Kraken margin rollover)
 KRAKEN_ROLLOVER_INTERVAL = 4 * 3600  # 4 hours in seconds
 MARGIN_BUFFER = 0.70          # Use 70% of free margin (30% safety for margin level)
+KRAKEN_FAST_PROFIT_CAPTURE_ENABLED = os.getenv("KRAKEN_FAST_PROFIT_CAPTURE_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
+KRAKEN_FAST_PROFIT_MIN_USD = max(0.0, float(os.getenv("KRAKEN_FAST_PROFIT_MIN_USD", "0.01")))
+KRAKEN_FAST_PROFIT_MIN_HOLD_SECS = max(0.0, float(os.getenv("KRAKEN_FAST_PROFIT_MIN_HOLD_SECS", "1.0")))
+KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT = max(
+    float(LIQUIDATION_FORCE),
+    float(os.getenv("KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT", str(LIQUIDATION_WARN))),
+)
+KRAKEN_MARGIN_CAPITAL_CACHE_TTL_SEC = max(3.0, float(os.getenv("KRAKEN_MARGIN_CAPITAL_CACHE_TTL_SEC", "20.0")))
+KRAKEN_SPOT_BALANCE_CACHE_TTL_SEC = max(5.0, float(os.getenv("KRAKEN_SPOT_BALANCE_CACHE_TTL_SEC", "30.0")))
+KRAKEN_TRUTH_CHECK_INTERVAL_SEC = max(30.0, float(os.getenv("KRAKEN_TRUTH_CHECK_INTERVAL_SEC", "120.0")))
+DYNAMIC_MIN_NOTIONAL_USD = float(os.getenv("KRAKEN_DYNAMIC_MIN_NOTIONAL_USD", "5.0"))
+DYNAMIC_MIN_PROFIT_USD = float(os.getenv("KRAKEN_DYNAMIC_MIN_PROFIT_USD", "0.05"))
+DYNAMIC_TARGET_EQUITY_FRACTION = float(os.getenv("KRAKEN_DYNAMIC_TARGET_EQUITY_FRACTION", "0.01"))
+TINY_ACCOUNT_EQUITY_USD = float(os.getenv("KRAKEN_TINY_ACCOUNT_EQUITY_USD", "50.0"))
+TINY_ACCOUNT_MARGIN_BUFFER = float(os.getenv("KRAKEN_TINY_ACCOUNT_MARGIN_BUFFER", "0.90"))
 STATE_FILE = "kraken_margin_army_state.json"
 RESULTS_FILE = "kraken_margin_army_results.json"
 USD_QUOTES = {"USD", "ZUSD"}
@@ -988,6 +1053,7 @@ class MarginPairInfo:
     leverage_sell: list
     max_leverage: int
     ordermin: float
+    costmin: float
     lot_decimals: int
     price_decimals: int
     binance_symbol: str = ""
@@ -1015,6 +1081,8 @@ class ActiveTrade:
     binance_symbol: str = ""
     rollover_fees: float = 0.0
     last_rollover_check: float = 0.0
+    profit_target_usd: float = 0.0
+    cognition_plan: dict = field(default_factory=dict)
 
     def to_dict(self):
         return asdict(self)
@@ -1038,6 +1106,8 @@ class ShadowTrade:
     volume: float
     trade_val: float
     pair_info_key: str      # Key into margin_pairs dict
+    profit_target_usd: float = 0.0
+    cognition_context: dict = field(default_factory=dict)
     # Tracking
     best_price: float = 0.0   # Best price seen (highest for buy, lowest for sell)
     worst_price: float = 0.0  # Worst price seen
@@ -3036,7 +3106,7 @@ class KrakenMarginArmyTrader:
         if dry_run:
             os.environ["KRAKEN_DRY_RUN"] = "true"
         try:
-            from kraken_client import KrakenClient
+            from aureon.exchanges.kraken_client import KrakenClient
         except ImportError:
             from aureon.exchanges.kraken_client import KrakenClient
         self.client = KrakenClient()
@@ -3086,6 +3156,15 @@ class KrakenMarginArmyTrader:
         self._latest_monitor_line = ""
         self._latest_status_lines: List[str] = []
         self._latest_dashboard_payload: Dict[str, Any] = {}
+        self._last_margin_capital = None
+        self._last_margin_capital_at = 0.0
+        self._last_margin_capital_error = ""
+        self._last_spot_balance_snapshot: Dict[str, Any] = {}
+        self._last_spot_balance_snapshot_at = 0.0
+        self._last_truth_check_at = 0.0
+        self._latest_truth_check: Dict[str, Any] = {}
+        self._last_fast_profit_capture: Dict[str, Any] = {}
+        self._fast_profit_capture_by_order: Dict[str, Dict[str, Any]] = {}
         self._local_dashboard_server: Optional[ThreadingHTTPServer] = None
         self._local_dashboard_thread: Optional[threading.Thread] = None
         self._last_danger_check = 0
@@ -3105,6 +3184,40 @@ class KrakenMarginArmyTrader:
             entry_min_margin_pct=MARGIN_WAVE_ENTRY_PCT,
             danger_margin_pct=LIQUIDATION_FORCE,
         ) if HAS_WAVE_RIDER else None
+        self.dynamic_sizer = (
+            DynamicMarginSizer(DynamicMarginConfig(
+                max_free_margin_fraction=MARGIN_BUFFER,
+                tiny_account_max_free_margin_fraction=TINY_ACCOUNT_MARGIN_BUFFER,
+                tiny_account_equity_usd=TINY_ACCOUNT_EQUITY_USD,
+                entry_min_margin_pct=MARGIN_WAVE_ENTRY_PCT,
+                min_free_margin_usd=WAVE_CONFIG.get("min_free_margin_usd", 5.0),
+                fallback_min_notional_usd=DYNAMIC_MIN_NOTIONAL_USD,
+                min_profit_target_usd=DYNAMIC_MIN_PROFIT_USD,
+                target_equity_fraction=DYNAMIC_TARGET_EQUITY_FRACTION,
+            ))
+            if HAS_DYNAMIC_MARGIN_SIZER else None
+        )
+        self.temporal_cognition = (
+            TemporalTradeCognition()
+            if HAS_TEMPORAL_TRADE_COGNITION and TemporalTradeCognition is not None
+            else None
+        )
+        self.margin_decision_brain = (
+            UnifiedMarginDecisionBrain(
+                MarginBrainConfig(max_eta_minutes=GOAL_MAX_ETA_MINUTES)
+            )
+            if (
+                HAS_UNIFIED_MARGIN_BRAIN
+                and UnifiedMarginDecisionBrain is not None
+                and MarginBrainConfig is not None
+            )
+            else None
+        )
+        self._candidate_cognition_context: Dict[str, Dict[str, Any]] = {}
+        self._latest_trade_cognition: Dict[str, Any] = {}
+        self._last_cognition_status: Dict[str, str] = {}
+        self._latest_margin_brain_decision: Dict[str, Any] = {}
+        self._margin_brain_decisions: Dict[str, Any] = {}
         # Stallion Multiverse - 1-hour ride limit + parallel shadow rides
         self.multiverse: object = StallionMultiverse() if HAS_MULTIVERSE else None
         self._multiverse_ride_registered = False
@@ -3125,10 +3238,8 @@ class KrakenMarginArmyTrader:
         # Macro Intelligence — market-wide context fed into every entry decision
         self.macro: object = MacroIntelligence() if HAS_MACRO_INTEL else None
         self.seer = get_seer() if HAS_SEER and get_seer is not None else None
-        self.sniper_brain = (
-            get_unified_brain(exchange='kraken')
-            if HAS_SNIPER_BRAIN and get_unified_brain is not None else None
-        )
+        sniper_factory = _load_unified_sniper_brain()
+        self.sniper_brain = sniper_factory(exchange='kraken') if sniper_factory is not None else None
         self.nexus_predictor = NexusPredictor() if HAS_NEXUS_PREDICTOR and NexusPredictor is not None else None
         self.lattice = LatticeEngine() if HAS_LATTICE and LatticeEngine is not None else None
         self.atn_monitor = get_atn_monitor() if HAS_ATN_MONITOR and get_atn_monitor is not None else None
@@ -3499,48 +3610,252 @@ class KrakenMarginArmyTrader:
             self._validator_snapshot = {"symbol": symbol, "error": str(e)}
             return (((profit_target_usd / trade_value) * 100) if trade_value > 0 else 0.0), 0.0
 
-    def _apply_brain_gate_to_candidates(self, candidates: List[Tuple]) -> List[Tuple]:
-        """Apply AureonBrain as a final selector gate over ranked Kraken candidates."""
-        if self.signal_brain is None or not candidates:
-            return candidates
+    def _cognition_key(self, pair: str, side: str) -> str:
+        return f"{pair}|{side}".lower()
 
-        population_scores = [float(item[5]) for item in candidates]
-        gated: List[Tuple] = []
-        brain_snapshot: Dict[str, Any] = {}
-        for item in candidates:
+    def _build_candidate_cognition_context(
+        self,
+        *,
+        info: MarginPairInfo,
+        side: str,
+        required_move_pct: float,
+        eta_minutes: float,
+        goal_score: float,
+        route_to_profit: float,
+        profit_target_usd: float,
+        projection: Optional[dict] = None,
+        timeline: Optional[dict] = None,
+        alignment: Optional[dict] = None,
+    ) -> Dict[str, Any]:
+        projection = projection or {}
+        timeline = timeline or {}
+        alignment = alignment or {}
+        projection_conf = float(projection.get("confidence", 0.0) or 0.0)
+        live_match = float(projection.get("live_match", 0.0) or 0.0)
+        timeline_conf = float(timeline.get("confidence", 0.0) or 0.0)
+        alignment_score = max(0.0, min(1.0, (float(alignment.get("score", 0.0) or 0.0) + 2.0) / 4.0))
+        goal_conf = max(0.0, min(1.0, float(goal_score or 0.0) / 3.5))
+        confidence = max(0.05, min(0.99, (
+            projection_conf + live_match + timeline_conf + alignment_score + goal_conf
+        ) / 5.0))
+        return {
+            "pair": info.pair,
+            "side": side,
+            "ticker_symbol": info.binance_symbol,
+            "required_move_pct": float(required_move_pct or 0.0),
+            "eta_minutes": float(eta_minutes or 0.0),
+            "goal_score": float(goal_score or 0.0),
+            "route_to_profit": float(route_to_profit or 0.0),
+            "profit_target_usd": float(profit_target_usd or 0.0),
+            "confidence": confidence,
+            "probability": max(0.05, min(0.99, 0.35 + confidence * 0.55)),
+            "reason": (
+                f"required_move={required_move_pct:.3f}% "
+                f"eta={eta_minutes:.2f}m goal={goal_score:.2f} "
+                f"timeline={timeline.get('action', 'hold')} "
+                f"projection={projection.get('side', side)}"
+            ),
+            "sources": {
+                "projection": projection,
+                "timeline": timeline,
+                "alignment": alignment,
+                "goal_score": float(goal_score or 0.0),
+                "route_to_profit": float(route_to_profit or 0.0),
+            },
+        }
+
+    def _build_trade_cognition_plan(
+        self,
+        *,
+        pair_info: MarginPairInfo,
+        side: str,
+        entry_price: float,
+        target_price: float,
+        trade_value: float,
+        profit_target_usd: float,
+        cognition_context: Optional[dict] = None,
+    ) -> dict:
+        if getattr(self, "temporal_cognition", None) is None:
+            return {}
+        ctx = dict(cognition_context or {})
+        required_move_pct = float(ctx.get("required_move_pct", 0.0) or 0.0)
+        if required_move_pct <= 0 and trade_value > 0:
+            required_move_pct, _, _ = self._estimate_required_move_pct(
+                trade_value, profit_target_usd, symbol=pair_info.pair
+            )
+        plan = self.temporal_cognition.plan_trade(
+            pair=pair_info.pair,
+            side=side,
+            ticker_symbol=pair_info.binance_symbol,
+            entry_price=entry_price,
+            target_price=target_price,
+            required_move_pct=required_move_pct,
+            profit_target_usd=profit_target_usd,
+            eta_minutes=ctx.get("eta_minutes"),
+            confidence=float(ctx.get("confidence", 0.5) or 0.5),
+            probability=ctx.get("probability"),
+            reason=str(ctx.get("reason", "margin entry projection")),
+            sources=ctx.get("sources", ctx),
+        )
+        self._latest_trade_cognition = plan
+        self._publish_trade_cognition("trade.cognition.plan", plan)
+        return plan
+
+    def _verify_trade_cognition(
+        self,
+        trade: ActiveTrade,
+        current_price: float,
+        validated_net_pnl: float,
+    ) -> dict:
+        plan = dict(getattr(trade, "cognition_plan", {}) or {})
+        if not plan or getattr(self, "temporal_cognition", None) is None:
+            return {}
+        verification = self.temporal_cognition.verify(
+            plan,
+            current_price=current_price,
+            validated_net_pnl=validated_net_pnl,
+        )
+        trade.cognition_plan = self.temporal_cognition.with_verification(plan, verification)
+        self._latest_trade_cognition = trade.cognition_plan
+        order_id = str(getattr(trade, "order_id", "") or "")
+        if not hasattr(self, "_last_cognition_status"):
+            self._last_cognition_status = {}
+        previous = self._last_cognition_status.get(order_id)
+        status = str(verification.get("status", ""))
+        if status and status != previous:
+            self._last_cognition_status[order_id] = status
+            logger.info(
+                f"[CognitionTime] {trade.pair} {trade.side.upper()} "
+                f"status={status} progress={verification.get('price_progress', 0):.2f} "
+                f"time={verification.get('time_progress', 0):.2f} "
+                f"due_in={verification.get('seconds_to_eta', 0):.0f}s"
+            )
+            self._publish_trade_cognition("trade.cognition.verify", verification)
+        return verification
+
+    def _publish_trade_cognition(self, topic: str, payload: dict) -> None:
+        thought_bus = getattr(self, "thought_bus", None)
+        if thought_bus is None or Thought is None or not payload:
+            return
+        try:
+            thought_bus.publish(Thought(
+                source="kraken_margin_trader",
+                topic=topic,
+                payload=payload,
+                meta={"mode": "kraken_margin"},
+            ))
+        except Exception as e:
+            logger.debug(f"Trade cognition publish failed: {e}")
+
+    def _candidate_brain_payload(self, item: Tuple, cognition_context: Optional[dict] = None) -> Dict[str, Any]:
+        """Convert the ranked candidate tuple into the brain's stable contract."""
+        info, side, _vol, trade_val, lev, score, req, fees, goal_score, eta, route = item
+        ctx = cognition_context or {}
+        return {
+            "pair": getattr(info, "pair", ""),
+            "side": side,
+            "score": float(score or 0.0),
+            "required_move_pct": float(req or 0.0),
+            "estimated_fees": float(fees or 0.0),
+            "goal_score": float(goal_score or 0.0),
+            "eta_minutes": float(eta or 0.0),
+            "route_to_profit": float(route or 0.0),
+            "spread_pct": float(getattr(info, "spread_pct", 0.0) or 0.0),
+            "momentum_pct": float(getattr(info, "momentum", 0.0) or 0.0),
+            "leverage": int(lev or 0),
+            "trade_value": float(trade_val or 0.0),
+            "profit_target_usd": float(ctx.get("profit_target_usd", 0.0) or 0.0),
+        }
+
+    def _apply_brain_gate_to_candidates(self, candidates: List[Tuple]) -> List[Tuple]:
+        """Apply the legacy signal brain and unified margin brain gates."""
+        if getattr(self, "signal_brain", None) is None or not candidates:
+            gated = candidates
+            brain_snapshot: Dict[str, Any] = {}
+        else:
+            population_scores = [float(item[5]) for item in candidates]
+            gated: List[Tuple] = []
+            brain_snapshot: Dict[str, Any] = {}
+            for item in candidates:
+                info, side, vol, trade_val, lev, score, req, fees, gs, eta, route = item
+                threshold = max(0.05, min(2.0, abs(float(info.momentum)) or 0.05))
+                features = {
+                    "momentum": float(info.momentum),
+                    "volatility": max(float(info.spread_pct), float(req) / 4.0, 0.0001),
+                    "trend_strength": min(abs(float(info.momentum)) / threshold, 1.0),
+                    "rsi": 50.0 + max(-40.0, min(40.0, float(info.momentum) * 8.0)),
+                }
+                try:
+                    decision = self.signal_brain.decide(
+                        symbol=info.pair,
+                        base_score=float(score),
+                        features=features,
+                        population_scores=population_scores,
+                    )
+                except Exception as e:
+                    brain_snapshot[info.pair] = {"error": str(e)}
+                    gated.append(item)
+                    continue
+
+                if decision is None:
+                    brain_snapshot[info.pair] = {"decision": "rejected"}
+                    continue
+
+                brain_snapshot[info.pair] = {
+                    "decision": "accepted",
+                    "score": float(decision.score),
+                    "coherence": float(decision.coherence),
+                }
+                gated.append((info, side, vol, trade_val, lev, float(decision.score), req, fees, gs, eta, route))
+
+        margin_brain = getattr(self, "margin_decision_brain", None)
+        if margin_brain is None or not gated:
+            self._brain_snapshot = brain_snapshot
+            return gated
+
+        final_gated: List[Tuple] = []
+        margin_decisions: Dict[str, Any] = {}
+        population_scores = [float(item[5]) for item in gated]
+        for item in gated:
             info, side, vol, trade_val, lev, score, req, fees, gs, eta, route = item
-            threshold = max(0.05, min(2.0, abs(float(info.momentum)) or 0.05))
-            features = {
-                "momentum": float(info.momentum),
-                "volatility": max(float(info.spread_pct), float(req) / 4.0, 0.0001),
-                "trend_strength": min(abs(float(info.momentum)) / threshold, 1.0),
-                "rsi": 50.0 + max(-40.0, min(40.0, float(info.momentum) * 8.0)),
-            }
+            key = self._cognition_key(getattr(info, "pair", ""), side)
+            ctx = dict(getattr(self, "_candidate_cognition_context", {}).get(key, {}) or {})
+            payload = self._candidate_brain_payload(item, ctx)
             try:
-                decision = self.signal_brain.decide(
-                    symbol=info.pair,
-                    base_score=float(score),
-                    features=features,
+                decision = margin_brain.evaluate_candidate(
+                    payload,
+                    cognition_context=ctx,
                     population_scores=population_scores,
                 )
             except Exception as e:
-                brain_snapshot[info.pair] = {"error": str(e)}
-                gated.append(item)
+                brain_snapshot.setdefault(info.pair, {})["unified_margin_brain"] = {"error": str(e)}
+                final_gated.append(item)
                 continue
 
-            if decision is None:
-                brain_snapshot[info.pair] = {"decision": "rejected"}
+            decision_dict = decision.to_dict()
+            margin_decisions[info.pair] = decision_dict
+            brain_snapshot.setdefault(info.pair, {})["unified_margin_brain"] = decision_dict
+            ctx["brain_decision"] = decision_dict
+            ctx["confidence"] = max(float(ctx.get("confidence", 0.0) or 0.0), float(decision.confidence))
+            ctx["probability"] = max(float(ctx.get("probability", 0.0) or 0.0), float(decision.probability))
+            self._candidate_cognition_context[key] = ctx
+            self._publish_trade_cognition("brain.margin.decision", decision_dict)
+
+            if not decision.approved:
+                logger.debug(
+                    f"[MarginBrain] {info.pair} {side.upper()} waiting: "
+                    f"{'; '.join(decision.vetoes) or 'not enough support'}"
+                )
                 continue
 
-            brain_snapshot[info.pair] = {
-                "decision": "accepted",
-                "score": float(decision.score),
-                "coherence": float(decision.coherence),
-            }
-            gated.append((info, side, vol, trade_val, lev, float(decision.score), req, fees, gs, eta, route))
+            final_gated.append((
+                info, side, vol, trade_val, lev,
+                float(decision.adjusted_score), req, fees, gs, eta, route
+            ))
 
+        self._margin_brain_decisions = margin_decisions
         self._brain_snapshot = brain_snapshot
-        return gated
+        return final_gated
 
     def _validated_net_pnl(self, symbol: str, exit_value: float, net_pnl: float) -> float:
         """Apply extra slippage/spread buffer to reported net P&L when available."""
@@ -4960,28 +5275,223 @@ class KrakenMarginArmyTrader:
         )
         return data
 
+    def _margin_capital_from_trade_balance(self, tb: Dict[str, Any]):
+        if MarginCapitalSnapshot is None:
+            equity = float(tb.get("equity", tb.get("equity_value", tb.get("e", 0.0))) or 0.0)
+            margin_used = float(tb.get("margin_amount", tb.get("m", 0.0)) or 0.0)
+            free_margin = float(
+                tb.get("free_margin", tb.get("margin_free", tb.get("mf", max(0.0, equity - margin_used)))) or 0.0
+            )
+            return type("MarginCapitalSnapshotFallback", (), {
+                "equity": equity,
+                "free_margin": free_margin,
+                "margin_used": margin_used,
+                "unrealized_pnl": float(tb.get("unrealized_pnl", tb.get("n", 0.0)) or 0.0),
+                "margin_level": float(tb.get("margin_level", tb.get("ml", 0.0)) or 0.0),
+                "trade_balance": float(tb.get("trade_balance", tb.get("tb", 0.0)) or 0.0),
+            })()
+        return MarginCapitalSnapshot.from_trade_balance(tb)
+
+    def _get_margin_capital(self, *, force: bool = False):
+        """Return a normalized live margin snapshot, cached so private API stalls do not freeze the loop."""
+        if getattr(self, "dry_run", False):
+            if MarginCapitalSnapshot is not None:
+                return MarginCapitalSnapshot(
+                    equity=10000.0,
+                    free_margin=10000.0,
+                    margin_used=0.0,
+                    unrealized_pnl=0.0,
+                    margin_level=0.0,
+                    trade_balance=10000.0,
+                )
+        now = time.time()
+        cached = getattr(self, "_last_margin_capital", None)
+        cached_at = float(getattr(self, "_last_margin_capital_at", 0.0) or 0.0)
+        if cached is not None and not force and (now - cached_at) < KRAKEN_MARGIN_CAPITAL_CACHE_TTL_SEC:
+            return cached
+
+        try:
+            rate_status = self.client.get_rate_limit_status() if hasattr(self.client, "get_rate_limit_status") else {}
+            if cached is not None and isinstance(rate_status, dict) and rate_status.get("in_backoff"):
+                self._last_margin_capital_error = "kraken_private_api_in_backoff_using_cached_margin_capital"
+                return cached
+        except Exception:
+            pass
+
+        try:
+            tb = self.client.get_trade_balance()
+            snapshot = self._margin_capital_from_trade_balance(tb)
+            self._last_margin_capital = snapshot
+            self._last_margin_capital_at = time.time()
+            self._last_margin_capital_error = ""
+            return snapshot
+        except Exception as e:
+            self._last_margin_capital_error = str(e)
+            if cached is not None:
+                return cached
+            raise
+
+    def _dynamic_profit_target_for_equity(self, equity: float) -> float:
+        if getattr(self, "dynamic_sizer", None) is None:
+            return PROFIT_TARGET_USD
+        return self.dynamic_sizer.profit_target_usd(equity, PROFIT_TARGET_USD)
+
+    def _dynamic_profit_target_for_trade(self, trade_value: float = 0.0) -> float:
+        try:
+            return self._dynamic_profit_target_for_equity(self._get_margin_capital().equity)
+        except Exception:
+            return PROFIT_TARGET_USD
+
+    def _trade_profit_target(self, trade: ActiveTrade) -> float:
+        stored = float(getattr(trade, "profit_target_usd", 0.0) or 0.0)
+        if stored > 0:
+            return stored
+        return self._dynamic_profit_target_for_trade(float(getattr(trade, "cost", 0.0) or 0.0))
+
+    def _plan_dynamic_margin_position(
+        self,
+        pair_info: MarginPairInfo,
+        leverage: int,
+        *,
+        split_slot: bool = False,
+        snapshot=None,
+    ):
+        """Plan a position from the latest Kraken free margin and pair limits."""
+        if getattr(self, "dynamic_sizer", None) is None or PositionSizePlan is None:
+            return None
+        snapshot = snapshot or self._get_margin_capital()
+        return self.dynamic_sizer.plan(
+            snapshot,
+            price=pair_info.last_price,
+            ordermin=pair_info.ordermin,
+            costmin=getattr(pair_info, "costmin", 0.0),
+            lot_decimals=pair_info.lot_decimals,
+            leverage=leverage,
+            max_profit_target_usd=PROFIT_TARGET_USD,
+            split_slot=split_slot,
+        )
+
+    def _usd_value_for_asset_balance(self, asset: str, amount: float) -> float:
+        asset_norm = KRAKEN_BASE_MAP.get(str(asset or "").upper(), str(asset or "").upper())
+        if amount <= 0:
+            return 0.0
+        if asset_norm in {"USD", "USDT", "USDC", "DAI"}:
+            return amount
+        if asset_norm == "GBP":
+            return amount * float(os.getenv("KRAKEN_GBP_USD_RATE", "1.27"))
+        if asset_norm == "EUR":
+            return amount * float(os.getenv("KRAKEN_EUR_USD_RATE", "1.08"))
+        price = 0.0
+        try:
+            if getattr(self, "market", None) is not None:
+                price = float(self.market.get_single_price(f"{asset_norm}USDT") or 0.0)
+        except Exception:
+            price = 0.0
+        if price <= 0:
+            try:
+                ticker = self.client.best_price(f"{asset_norm}USD")
+                price = float(ticker.get("price", 0.0) or 0.0)
+            except Exception:
+                price = 0.0
+        return amount * price if price > 0 else 0.0
+
+    def _get_spot_balance_snapshot(self, *, force: bool = False) -> Dict[str, Any]:
+        """Return live Kraken spot/cash balances with cached USD valuation for the runtime mirror."""
+        now = time.time()
+        cached = getattr(self, "_last_spot_balance_snapshot", {}) or {}
+        cached_at = float(getattr(self, "_last_spot_balance_snapshot_at", 0.0) or 0.0)
+        if cached and not force and (now - cached_at) < KRAKEN_SPOT_BALANCE_CACHE_TTL_SEC:
+            return dict(cached)
+
+        balances: Dict[str, float] = {}
+        try:
+            if hasattr(self.client, "get_account_balance"):
+                balances = {
+                    str(asset).upper(): float(amount)
+                    for asset, amount in self.client.get_account_balance().items()
+                    if float(amount or 0.0) > 0
+                }
+        except Exception as e:
+            if cached:
+                snapshot = dict(cached)
+                snapshot["stale"] = True
+                snapshot["error"] = str(e)
+                return snapshot
+            snapshot = {
+                "generated_at": datetime.now().isoformat(),
+                "source": "kraken_private_balance",
+                "available": False,
+                "stale": True,
+                "error": str(e),
+                "balances": {},
+                "total_usd_estimate": 0.0,
+                "tradable_cash_usd": 0.0,
+            }
+            self._last_spot_balance_snapshot = snapshot
+            self._last_spot_balance_snapshot_at = now
+            return snapshot
+
+        valued_balances: Dict[str, Dict[str, Any]] = {}
+        total_usd = 0.0
+        tradable_cash_usd = 0.0
+        for asset, amount in sorted(balances.items()):
+            usd_value = self._usd_value_for_asset_balance(asset, amount)
+            total_usd += usd_value
+            if KRAKEN_BASE_MAP.get(asset, asset) in {"USD", "USDT", "USDC", "DAI", "GBP", "EUR"}:
+                tradable_cash_usd += usd_value
+            valued_balances[asset] = {
+                "amount": round(float(amount), 12),
+                "usd_estimate": round(float(usd_value), 6),
+            }
+
+        snapshot = {
+            "generated_at": datetime.now().isoformat(),
+            "source": "kraken_private_balance_cached_live",
+            "available": bool(balances),
+            "stale": False,
+            "balances": valued_balances,
+            "asset_count": len(valued_balances),
+            "total_usd_estimate": round(float(total_usd), 6),
+            "tradable_cash_usd": round(float(tradable_cash_usd), 6),
+            "cache_ttl_sec": KRAKEN_SPOT_BALANCE_CACHE_TTL_SEC,
+        }
+        self._last_spot_balance_snapshot = snapshot
+        self._last_spot_balance_snapshot_at = time.time()
+        return dict(snapshot)
+
     def _get_capital_snapshot(self) -> dict:
         """Return current Kraken portfolio metrics for sizing and UI."""
-        if self.dry_run:
-            equity = 10000.0
-            free_margin = 10000.0
-            margin_used = 0.0
-            unrealized = 0.0
-        else:
-            tb = self.client.get_trade_balance()
-            equity = float(tb.get("equity", tb.get("equity_value", 0.0)) or 0.0)
-            free_margin = float(tb.get("free_margin", tb.get("margin_free", 0.0)) or 0.0)
-            margin_used = float(tb.get("margin_amount", tb.get("m", 0.0)) or 0.0)
-            unrealized = float(tb.get("unrealized_pnl", tb.get("n", 0.0)) or 0.0)
-        budget = free_margin * MARGIN_BUFFER
-        target_pct_equity = (PROFIT_TARGET_USD / equity * 100.0) if equity > 0 else 0.0
+        snapshot = self._get_margin_capital()
+        self._last_margin_capital = snapshot
+        margin_equity = float(snapshot.equity or 0.0)
+        free_margin = float(snapshot.free_margin or 0.0)
+        margin_used = float(snapshot.margin_used or 0.0)
+        unrealized = float(getattr(snapshot, "unrealized_pnl", 0.0) or 0.0)
+        spot_snapshot = self._get_spot_balance_snapshot()
+        spot_value_usd = float(spot_snapshot.get("total_usd_estimate", 0.0) or 0.0)
+        spot_cash_usd = float(spot_snapshot.get("tradable_cash_usd", 0.0) or 0.0)
+        equity = max(margin_equity, spot_value_usd)
+        if margin_equity <= 0:
+            free_margin = max(free_margin, spot_cash_usd)
+        budget_fraction = TINY_ACCOUNT_MARGIN_BUFFER if equity <= TINY_ACCOUNT_EQUITY_USD else MARGIN_BUFFER
+        budget = free_margin * budget_fraction
+        profit_target_usd = self._dynamic_profit_target_for_equity(equity)
+        target_pct_equity = (profit_target_usd / equity * 100.0) if equity > 0 else 0.0
         return {
             "equity": equity,
+            "margin_equity": margin_equity,
+            "spot_value_usd": spot_value_usd,
+            "spot_cash_usd": spot_cash_usd,
             "free_margin": free_margin,
             "margin_used": margin_used,
             "unrealized": unrealized,
             "budget": budget,
+            "budget_fraction": budget_fraction,
+            "profit_target_usd": profit_target_usd,
             "target_pct_equity": target_pct_equity,
+            "balance_snapshot": spot_snapshot,
+            "margin_capital_error": getattr(self, "_last_margin_capital_error", ""),
+            "portfolio_value_source": "margin_trade_balance" if margin_equity >= spot_value_usd else "spot_balance",
         }
 
     def _track_equity_metrics(self, equity: float) -> tuple[float, float]:
@@ -5021,6 +5531,7 @@ class KrakenMarginArmyTrader:
                 "unrealized_pnl": unrealized_pnl,
                 "exchange": "kraken",
                 "opened_at": datetime.fromtimestamp(trade.open_time).isoformat() if getattr(trade, "open_time", 0) else "",
+                "cognition_plan": getattr(trade, "cognition_plan", {}) or {},
             })
         return positions
 
@@ -5077,7 +5588,18 @@ class KrakenMarginArmyTrader:
             )
             payload = {
                 "user_id": self.dashboard_user_id,
+                "equity": equity,
+                "equity_usd": equity,
                 "portfolio_value": equity,
+                "portfolio_value_usd": equity,
+                "free_margin": float(capital["free_margin"] or 0.0),
+                "margin_used": float(capital["margin_used"] or 0.0),
+                "margin_equity_usd": float(capital.get("margin_equity", 0.0) or 0.0),
+                "spot_balance_value_usd": float(capital.get("spot_value_usd", 0.0) or 0.0),
+                "spot_cash_usd": float(capital.get("spot_cash_usd", 0.0) or 0.0),
+                "portfolio_value_source": capital.get("portfolio_value_source", ""),
+                "balance_snapshot": capital.get("balance_snapshot", {}),
+                "portfolio_balances": capital.get("balance_snapshot", {}),
                 "peak_equity": max(self._peak_equity_seen, equity, self.starting_equity),
                 "current_drawdown": current_drawdown,
                 "max_drawdown": max_drawdown,
@@ -5123,6 +5645,9 @@ class KrakenMarginArmyTrader:
                 "status_lines": self._latest_status_lines[-16:],
                 "registry_snapshot": self._registry_snapshot,
                 "decision_snapshot": self._decision_snapshot,
+                "brain_snapshot": getattr(self, "_brain_snapshot", {}),
+                "margin_brain": getattr(self, "_latest_margin_brain_decision", {}),
+                "margin_brain_decisions": getattr(self, "_margin_brain_decisions", {}),
                 "harmonic_snapshot": self._harmonic_snapshot,
                 "quantum_snapshot": self._quantum_snapshot,
                 "timeline_snapshot": self._timeline_snapshot,
@@ -5132,6 +5657,9 @@ class KrakenMarginArmyTrader:
                 "ocean_snapshot": self._ocean_snapshot,
                 "thought_bus_snapshot": self._thought_bus_snapshot,
                 "cognition_snapshot": self._cognition_snapshot,
+                "trade_cognition": getattr(self, "_latest_trade_cognition", {}),
+                "truth_check": getattr(self, "_latest_truth_check", {}),
+                "kraken_fast_profit_capture": getattr(self, "_last_fast_profit_capture", {}),
             }
             self._latest_dashboard_payload = dict(payload)
             self._last_dashboard_push = now
@@ -5258,6 +5786,7 @@ class KrakenMarginArmyTrader:
                 continue
             pair_info = pairs_data.get(internal, {})
             ordermin = float(pair_info.get("ordermin", 0.0001))
+            costmin = float(pair_info.get("costmin", 0.0) or 0.0)
             lot_decimals = int(pair_info.get("lot_decimals", 8))
             price_decimals = int(pair_info.get("pair_decimals", 4))
 
@@ -5274,6 +5803,7 @@ class KrakenMarginArmyTrader:
                 leverage_sell=mp["leverage_sell"],
                 max_leverage=mp["max_leverage"],
                 ordermin=ordermin,
+                costmin=costmin,
                 lot_decimals=lot_decimals,
                 price_decimals=price_decimals,
                 binance_symbol=binance_sym,
@@ -5319,27 +5849,27 @@ class KrakenMarginArmyTrader:
         Returns: (pair_info, side, volume, trade_value, leverage) or None
         """
         try:
-            tb = self.client.get_trade_balance()
-            free_margin = tb.get("free_margin", 0)
-            equity = tb.get("equity", 0)
+            capital = self._get_capital_snapshot()
         except Exception as e:
             logger.error(f"Could not get trade balance: {e}")
             return None
 
-        if free_margin < 5.0:
-            logger.warning(f"Not enough free margin: ${free_margin:.2f}")
-            return None
-
-        capital = self._get_capital_snapshot()
         equity = capital["equity"]
         free_margin = capital["free_margin"]
         margin_used = capital["margin_used"]
         margin_budget = capital["budget"]
+        capital_snapshot = getattr(self, "_last_margin_capital", None)
         target_pct_equity = capital["target_pct_equity"]
+        profit_target_usd = capital["profit_target_usd"]
+
+        if free_margin < WAVE_CONFIG.get("min_free_margin_usd", 5.0):
+            logger.warning(f"Not enough free margin: ${free_margin:.2f}")
+            return None
+
         logger.info(
             f"ARMY: equity=${equity:.2f} | free=${free_margin:.2f} | "
             f"used=${margin_used:.2f} | budget=${margin_budget:.2f} | "
-            f"target={target_pct_equity:.3f}% eq"
+            f"target=${profit_target_usd:.2f} ({target_pct_equity:.3f}% eq)"
         )
         self._refresh_unified_intel_snapshot()
 
@@ -5359,6 +5889,7 @@ class KrakenMarginArmyTrader:
                 pass
 
         candidates = []
+        self._candidate_cognition_context = {}
         for _, info in self.margin_pairs.items():
             if info.last_price <= 0:
                 continue
@@ -5393,9 +5924,18 @@ class KrakenMarginArmyTrader:
             leverages = info.leverage_buy if side == "buy" else info.leverage_sell
 
             max_lev = max(leverages)
-            notional = margin_budget * max_lev
-            if notional < MIN_TRADE_USD:
+            split_slot = (side == "buy" and self.active_short) or (side == "sell" and self.active_long)
+            plan = self._plan_dynamic_margin_position(
+                info, max_lev, split_slot=split_slot, snapshot=capital_snapshot
+            )
+            if plan is None:
+                logger.debug(f"{info.pair}: dynamic sizer unavailable")
                 continue
+            if not plan.approved:
+                logger.debug(f"{info.pair}: sizing blocked - {plan.reason}")
+                continue
+            notional = plan.notional
+            target_usd = plan.profit_target_usd
 
             # ── WAVE RIDER: pre-entry 250% margin gate ────────────────
             # Cap notional to the largest size that keeps projected
@@ -5405,13 +5945,14 @@ class KrakenMarginArmyTrader:
                 wave_ok, wave_check = self.wave_rider.check(
                     equity=equity,
                     margin_used=margin_used,
-                    new_notional=notional,
+                    new_notional=plan.notional,
                     leverage=max_lev,
+                    free_margin=free_margin,
                 )
                 if not wave_ok:
                     # Try capping to max safe notional instead of skipping
-                    if wave_check.max_safe_notional >= MIN_TRADE_USD:
-                        notional = wave_check.max_safe_notional
+                    if wave_check.max_safe_notional >= plan.min_notional:
+                        notional = min(wave_check.max_safe_notional, plan.notional)
                         logger.debug(
                             f"[WaveRider] {info.pair}: capped notional to "
                             f"${notional:.2f} (projected {wave_check.projected_margin_pct:.0f}%)"
@@ -5426,21 +5967,22 @@ class KrakenMarginArmyTrader:
                         f"[WaveRider] {info.pair}: {wave_check.reason}"
                     )
 
-            vol = notional / info.last_price
-            vol = max(vol, info.ordermin)
-            vol = round(vol, info.lot_decimals)
-            if vol < info.ordermin:
-                vol = info.ordermin
-            trade_val = vol * info.last_price
+            vol = plan.volume
+            trade_val = plan.notional
+            logger.debug(
+                f"{info.pair}: dynamic size ${trade_val:.2f} notional "
+                f"({max_lev}x, margin=${plan.required_margin:.2f}, "
+                f"projected_ml={plan.projected_margin_pct:.0f}%, target=${target_usd:.2f})"
+            )
 
             round_trip_fee, _, _ = self._estimate_round_trip_fee(
                 trade_val, symbol=info.pair
             )
             required_move_pct, _, _ = self._estimate_required_move_pct(
-                trade_val, PROFIT_TARGET_USD, symbol=info.pair
+                trade_val, target_usd, symbol=info.pair
             )
             validator_required_move_pct, validator_round_trip_cost = self._validator_required_move_pct(
-                trade_val, PROFIT_TARGET_USD, symbol=info.pair
+                trade_val, target_usd, symbol=info.pair
             )
             if validator_required_move_pct > required_move_pct:
                 required_move_pct = validator_required_move_pct
@@ -5682,6 +6224,42 @@ class KrakenMarginArmyTrader:
                           )
 
             route_to_profit = goal_score / max(required_move_pct, 0.01)
+            projection_summary = {
+                "side": side,
+                "confidence": max(
+                    float(prob_nex.get("probability", 0.0) or 0.0),
+                    float(truth_pred.get("confidence", 0.0) or 0.0),
+                    float(quantum.get("beneficial_probability", 0.0) or 0.0),
+                ),
+                "live_match": min(1.0, stream_velocity),
+                "edge": float(prob_nex.get("bonus", 0.0) or 0.0),
+            }
+            alignment_summary = {
+                "score": (
+                    float(timeline.get("bonus", 0.0) or 0.0)
+                    + float(fusion.get("bonus", 0.0) or 0.0)
+                    + float(harmonic.get("bonus", 0.0) or 0.0)
+                    + float(quantum.get("bonus", 0.0) or 0.0)
+                ) / 4.0,
+                "timeline": timeline,
+                "fusion": fusion,
+                "harmonic": harmonic,
+                "quantum": quantum,
+            }
+            self._candidate_cognition_context[self._cognition_key(info.pair, side)] = (
+                self._build_candidate_cognition_context(
+                    info=info,
+                    side=side,
+                    required_move_pct=required_move_pct,
+                    eta_minutes=eta_minutes,
+                    goal_score=goal_score,
+                    route_to_profit=route_to_profit,
+                    profit_target_usd=target_usd,
+                    projection=projection_summary,
+                    timeline=timeline,
+                    alignment=alignment_summary,
+                )
+            )
             candidates.append((info, side, vol, trade_val, max_lev,
                               total_score, required_move_pct, round_trip_fee,
                               goal_score, eta_minutes, route_to_profit))
@@ -5692,7 +6270,7 @@ class KrakenMarginArmyTrader:
 
         candidates = self._apply_brain_gate_to_candidates(candidates)
         if not candidates:
-            logger.info("No candidates passed AureonBrain final gate")
+            logger.info("No candidates passed final brain gates")
             return None
 
         # Multiverse scout boost: if the multiverse already knows the next
@@ -5730,6 +6308,18 @@ class KrakenMarginArmyTrader:
             )
 
         best = candidates[0]
+        best_ctx = getattr(self, "_candidate_cognition_context", {}).get(
+            self._cognition_key(best[0].pair, best[1]),
+            {},
+        )
+        if best_ctx.get("brain_decision"):
+            self._latest_margin_brain_decision = dict(best_ctx["brain_decision"])
+            logger.info(
+                f"[MarginBrain] chose {best[0].pair} {best[1].upper()} | "
+                f"action={self._latest_margin_brain_decision.get('action')} "
+                f"conf={float(self._latest_margin_brain_decision.get('confidence', 0.0) or 0.0):.2f} "
+                f"eta={float(self._latest_margin_brain_decision.get('eta_minutes', 0.0) or 0.0):.2f}m"
+            )
         self._feed_unified_decision_engine(
             best[0].pair,
             best[1],
@@ -5811,11 +6401,12 @@ class KrakenMarginArmyTrader:
                 pass
 
         # Calculate required move for profit
+        profit_target_usd = self._dynamic_profit_target_for_trade(trade_val)
         round_trip_fee, _, _ = self._estimate_round_trip_fee(
             trade_val, symbol=pair_info.pair
         )
         required_move_pct, _, _ = self._estimate_required_move_pct(
-            trade_val, PROFIT_TARGET_USD, symbol=pair_info.pair
+            trade_val, profit_target_usd, symbol=pair_info.pair
         )
 
         research = self.intel.pre_strike_research(
@@ -5878,7 +6469,9 @@ class KrakenMarginArmyTrader:
     #  EXECUTION - Kraken API (open/close only)
     # ----------------------------------------------------------
     def open_position(self, pair_info: MarginPairInfo, side: str,
-                      volume: float, leverage: int) -> Optional[ActiveTrade]:
+                      volume: float, leverage: int,
+                      profit_target_usd: Optional[float] = None,
+                      cognition_context: Optional[dict] = None) -> Optional[ActiveTrade]:
         """Open THE ONE margin position - Kraken API call."""
         if pair_info.binance_symbol:
             self._start_stream_for(pair_info.binance_symbol)
@@ -5947,11 +6540,25 @@ class KrakenMarginArmyTrader:
             # Estimate exit fee conservatively
             exit_fee_est = trade_val * close_fee_rate
             total_fees = entry_fee + exit_fee_est
+            target_usd = (
+                float(profit_target_usd)
+                if profit_target_usd and profit_target_usd > 0
+                else self._dynamic_profit_target_for_trade(trade_val)
+            )
 
             if side == "buy":
-                breakeven = price + (total_fees + PROFIT_TARGET_USD) / volume
+                breakeven = price + (total_fees + target_usd) / volume
             else:
-                breakeven = price - (total_fees + PROFIT_TARGET_USD) / volume
+                breakeven = price - (total_fees + target_usd) / volume
+            cognition_plan = self._build_trade_cognition_plan(
+                pair_info=pair_info,
+                side=side,
+                entry_price=price,
+                target_price=breakeven,
+                trade_value=trade_val,
+                profit_target_usd=target_usd,
+                cognition_context=cognition_context,
+            )
 
             trade = ActiveTrade(
                 pair=pair_info.pair,
@@ -5965,6 +6572,8 @@ class KrakenMarginArmyTrader:
                 cost=trade_val,
                 breakeven_price=breakeven,
                 binance_symbol=pair_info.binance_symbol,
+                profit_target_usd=target_usd,
+                cognition_plan=cognition_plan,
             )
             # Place into correct slot: buy→long, sell→short
             if side == "buy":
@@ -5992,7 +6601,7 @@ class KrakenMarginArmyTrader:
             logger.info(
                 f"POSITION OPENED: {pair_info.pair} {side.upper()} | "
                 f"Entry: ~${price:,.4f} | Target: ${breakeven:,.4f} | "
-                f"Fees: ${total_fees:.2f} | Order: {order_id}"
+                f"Profit goal: ${target_usd:.2f} | Fees: ${total_fees:.2f} | Order: {order_id}"
             )
             # Link this order_id to the scan that chose it
             if self._goal_recorder is not None and self._pending_scan_id:
@@ -6090,6 +6699,11 @@ class KrakenMarginArmyTrader:
             rollover = getattr(trade, 'rollover_fees', 0.0)
             net_pnl = gross_pnl - trade.entry_fee - exit_fee - rollover
             total_fees = trade.entry_fee + exit_fee + rollover
+            cognition_verification = self._verify_trade_cognition(
+                trade,
+                current_price=current_price,
+                validated_net_pnl=net_pnl,
+            )
 
             completed = {
                 "pair": trade.pair,
@@ -6110,7 +6724,12 @@ class KrakenMarginArmyTrader:
                 "hold_seconds": time.time() - trade.entry_time,
                 "order_id": trade.order_id,
                 "close_order_id": close_id,
+                "cognition_plan": getattr(trade, "cognition_plan", {}) or {},
+                "cognition_verification": cognition_verification,
             }
+            fast_capture = getattr(self, "_fast_profit_capture_by_order", {}).pop(str(trade.order_id), None)
+            if isinstance(fast_capture, dict) and fast_capture:
+                completed["fast_profit_capture"] = fast_capture
             self.completed_trades.append(completed)
             # Record outcome against the scan that selected this trade
             if self._goal_recorder is not None:
@@ -6244,6 +6863,96 @@ class KrakenMarginArmyTrader:
 
         self.stream.sync_symbols(deduped)
 
+    def _kraken_margin_fast_profit_capture_decision(
+        self,
+        trade: ActiveTrade,
+        *,
+        current_price: float,
+        net_pnl: float,
+        validated_net_pnl: float,
+        total_fees: float,
+        exit_fee: float,
+        rollover: float,
+        stream_live: bool,
+    ) -> Dict[str, Any]:
+        """Decide whether a Kraken margin position has true profit worth capturing now."""
+        now = time.time()
+        hold_seconds = max(0.0, now - float(getattr(trade, "entry_time", now) or now))
+        blockers: List[str] = []
+        if not KRAKEN_FAST_PROFIT_CAPTURE_ENABLED:
+            blockers.append("fast_profit_capture_disabled")
+        if hold_seconds < KRAKEN_FAST_PROFIT_MIN_HOLD_SECS:
+            blockers.append("min_hold_time_not_met")
+        if validated_net_pnl < KRAKEN_FAST_PROFIT_MIN_USD:
+            blockers.append("validated_net_profit_below_minimum_after_all_costs")
+        if net_pnl < 0:
+            blockers.append("raw_net_profit_negative_after_fees")
+
+        capital = {
+            "available": False,
+            "equity": 0.0,
+            "free_margin": 0.0,
+            "margin_used": 0.0,
+            "margin_level": 0.0,
+            "collateral_pressure": False,
+        }
+        try:
+            snapshot = self._get_margin_capital()
+            margin_level = float(getattr(snapshot, "margin_level", 0.0) or 0.0)
+            capital.update(
+                {
+                    "available": True,
+                    "equity": round(float(getattr(snapshot, "equity", 0.0) or 0.0), 6),
+                    "free_margin": round(float(getattr(snapshot, "free_margin", 0.0) or 0.0), 6),
+                    "margin_used": round(float(getattr(snapshot, "margin_used", 0.0) or 0.0), 6),
+                    "margin_level": round(margin_level, 6),
+                    "collateral_pressure": bool(0 < margin_level < KRAKEN_FAST_PROFIT_COLLATERAL_WARN_PCT),
+                }
+            )
+        except Exception as e:
+            capital["reason"] = str(e)
+
+        ready = bool(not blockers)
+        decision = {
+            "schema_version": 1,
+            "generated_at": datetime.now().isoformat(),
+            "mode": "kraken_margin_true_profit_first_past_the_post",
+            "pair": trade.pair,
+            "side": trade.side,
+            "order_id": str(getattr(trade, "order_id", "")),
+            "current_price": round(float(current_price), 8),
+            "entry_price": round(float(trade.entry_price), 8),
+            "volume": round(float(trade.volume), 12),
+            "leverage": int(trade.leverage),
+            "hold_seconds": round(hold_seconds, 3),
+            "stream_live": bool(stream_live),
+            "min_true_profit_usd": round(KRAKEN_FAST_PROFIT_MIN_USD, 6),
+            "min_hold_seconds": round(KRAKEN_FAST_PROFIT_MIN_HOLD_SECS, 3),
+            "gross_minus_all_costs_usd": round(float(net_pnl), 8),
+            "validated_true_profit_usd": round(float(validated_net_pnl), 8),
+            "costs": {
+                "entry_fee_usd": round(float(getattr(trade, "entry_fee", 0.0) or 0.0), 8),
+                "estimated_exit_fee_usd": round(float(exit_fee), 8),
+                "rollover_fees_usd": round(float(rollover), 8),
+                "total_costs_usd": round(float(total_fees), 8),
+            },
+            "collateral": capital,
+            "ready_to_capture": ready,
+            "blockers": blockers,
+            "reason": "capture_true_profit_after_costs" if ready else ",".join(blockers),
+            "collateral_note": (
+                "Live Kraken trade-balance is checked because spot cash movement can reduce margin headroom."
+                if capital.get("available")
+                else "Collateral snapshot unavailable this cycle; profit decision still uses net fee math."
+            ),
+        }
+        self._last_fast_profit_capture = decision
+        if ready:
+            if not hasattr(self, "_fast_profit_capture_by_order"):
+                self._fast_profit_capture_by_order = {}
+            self._fast_profit_capture_by_order[str(getattr(trade, "order_id", ""))] = decision
+        return decision
+
     def _emit_monitor_snapshot(
         self,
         trade: ActiveTrade,
@@ -6299,6 +7008,7 @@ class KrakenMarginArmyTrader:
             trade = self.active_trade
         if not trade:
             return None
+        target_usd = self._trade_profit_target(trade)
 
         # === LIVE STREAM PRICE (sub-100ms) — preferred ===
         current_price = 0.0
@@ -6355,9 +7065,9 @@ class KrakenMarginArmyTrader:
             _, close_fee_rate = self._get_open_close_fee_rates(trade.pair)
             total_fees_est = trade.entry_fee + (trade.cost * close_fee_rate) + rollover_fees
             if trade.side == "buy":
-                trade.breakeven_price = trade.entry_price + (total_fees_est + PROFIT_TARGET_USD) / trade.volume
+                trade.breakeven_price = trade.entry_price + (total_fees_est + target_usd) / trade.volume
             else:
-                trade.breakeven_price = trade.entry_price - (total_fees_est + PROFIT_TARGET_USD) / trade.volume
+                trade.breakeven_price = trade.entry_price - (total_fees_est + target_usd) / trade.volume
             self._save_state()
 
         if trade.side == "buy":
@@ -6372,6 +7082,11 @@ class KrakenMarginArmyTrader:
         net_pnl = gross_pnl - trade.entry_fee - exit_fee - rollover
         validated_net_pnl = self._validated_net_pnl(trade.pair, exit_value, net_pnl)
         total_fees = trade.entry_fee + exit_fee + rollover
+        cognition_verification = self._verify_trade_cognition(
+            trade,
+            current_price=current_price,
+            validated_net_pnl=validated_net_pnl,
+        )
 
         if hold_time < 60:
             hold_str = f"{int(hold_time)}s"
@@ -6426,6 +7141,28 @@ class KrakenMarginArmyTrader:
                     )
 
         # ── STALLION PHASE ────────────────────────────────────────────────────
+        fast_capture = self._kraken_margin_fast_profit_capture_decision(
+            trade,
+            current_price=current_price,
+            net_pnl=net_pnl,
+            validated_net_pnl=validated_net_pnl,
+            total_fees=total_fees,
+            exit_fee=exit_fee,
+            rollover=rollover,
+            stream_live=stream_live,
+        )
+        if fast_capture.get("ready_to_capture"):
+            logger.info(
+                "[KRAKEN FAST PROFIT] true net=%+.4f after all costs (fees=%.4f, hold=%.1fs) - closing now",
+                validated_net_pnl,
+                total_fees,
+                hold_time,
+            )
+            return self.close_position(
+                reason=f"FAST_PROFIT_CAPTURE (${validated_net_pnl:+.4f} true_after_costs)",
+                trade=trade,
+            )
+
         stallion_str = ""
         if HAS_STALLION and classify_phase is not None:
             # Pull live margin level for wave capacity (best-effort)
@@ -6462,10 +7199,10 @@ class KrakenMarginArmyTrader:
             except Exception:
                 pass
 
-        if validated_net_pnl >= PROFIT_TARGET_USD:
+        if validated_net_pnl >= target_usd:
             status = f"TARGET HIT +${validated_net_pnl:.2f} validated - CLOSING!"
         elif validated_net_pnl > 0:
-            status = f"+${validated_net_pnl:.2f} validated (need ${PROFIT_TARGET_USD - validated_net_pnl:.2f} more -> ${trade.breakeven_price:.4f})"
+            status = f"+${validated_net_pnl:.2f} validated (need ${target_usd - validated_net_pnl:.2f} more -> ${trade.breakeven_price:.4f})"
         elif gross_pnl > 0:
             status = f"Gross+ but fees/friction eating (validated ${validated_net_pnl:+.2f}, fees=${total_fees:.2f})"
         else:
@@ -6493,7 +7230,7 @@ class KrakenMarginArmyTrader:
         # === 1-HOUR ROTATION CHECK — only rotate when profitable ===
         if self.multiverse is not None and self.multiverse.is_rotation_due():
             _next = self.multiverse.get_next_stallion()
-            if validated_net_pnl >= PROFIT_TARGET_USD:
+            if validated_net_pnl >= target_usd:
                 # Profitable — rotate to next stallion
                 logger.info(
                     f"[Multiverse] 1-hour ride limit reached on {trade.pair} "
@@ -6518,7 +7255,7 @@ class KrakenMarginArmyTrader:
                     self.multiverse.start_real_ride(trade.pair, time.time())  # reset clock
 
         # === THE GBP1 PROFIT GATE - close immediately ===
-        if validated_net_pnl >= PROFIT_TARGET_USD:
+        if validated_net_pnl >= target_usd:
             return self.close_position(reason=f"PROFIT_TARGET (${validated_net_pnl:+.2f} validated)", trade=trade)
 
         # === LIVE STREAM INTEL (log-only, NO closing on loss) ===
@@ -6636,8 +7373,11 @@ class KrakenMarginArmyTrader:
             danger_note=danger_note,
         )
 
-        # === TRUTH CHECK: Reconcile with Kraken every ~2 minutes ===
-        if int(hold_time) % 120 < MONITOR_INTERVAL + 1:
+        # === TRUTH CHECK: Reconcile with Kraken on a real interval, not modulo time.
+        # Keep the monitor alive if Kraken private endpoints are slow/rate-limited;
+        # the unified supervisor separately times the whole Kraken tick.
+        if now - float(getattr(self, "_last_truth_check_at", 0.0) or 0.0) >= KRAKEN_TRUTH_CHECK_INTERVAL_SEC:
+            self._last_truth_check_at = now
             try:
                 tb = self.client.get_trade_balance()
                 ml = tb.get("margin_level", 0)
@@ -6665,6 +7405,17 @@ class KrakenMarginArmyTrader:
                     f"Position pnl=${kraken_pnl:+.2f} fee=${kraken_fee:.4f} | "
                     f"Our net=${net_pnl:+.2f} fees=${total_fees:.4f}"
                 )
+                self._latest_truth_check = {
+                    "generated_at": datetime.now().isoformat(),
+                    "ok": True,
+                    "pair": trade.pair,
+                    "kraken_equity": float(kraken_equity or 0.0),
+                    "margin_level": float(ml or 0.0),
+                    "kraken_unrealized_pnl": float(kraken_pnl or 0.0),
+                    "kraken_fee": float(kraken_fee or 0.0),
+                    "local_net_pnl": float(net_pnl or 0.0),
+                    "validated_net_pnl": float(validated_net_pnl or 0.0),
+                }
                 # Update entry_fee if Kraken shows different (includes rollover)
                 if kraken_fee > 0 and abs(kraken_fee - trade.entry_fee) > 0.001:
                     logger.info(f"Fee drift: Kraken=${kraken_fee:.4f} vs ours=${trade.entry_fee:.4f}")
@@ -6684,10 +7435,17 @@ class KrakenMarginArmyTrader:
                 elif 0 < ml < LIQUIDATION_WARN:
                     logger.warning(f"WARNING: Margin level {ml:.1f}%")
             except Exception as e:
+                self._latest_truth_check = {
+                    "generated_at": datetime.now().isoformat(),
+                    "ok": False,
+                    "pair": trade.pair,
+                    "error": str(e),
+                    "using_local_position_state": True,
+                }
                 if self.dry_run:
                     logger.debug(f"Truth check failed: {e}")
                 else:
-                    raise RuntimeError(f"Live truth check failed: {e}")
+                    logger.warning(f"Live truth check deferred: {e}")
 
         return None
 
@@ -6752,11 +7510,12 @@ class KrakenMarginArmyTrader:
                     leverage = 1
 
                 breakeven_price = entry_price
+                target_usd = self._dynamic_profit_target_for_trade(cost)
                 if volume > 0 and entry_price > 0:
                     if side == "buy":
-                        breakeven_price = entry_price + (fee_total + PROFIT_TARGET_USD) / volume
+                        breakeven_price = entry_price + (fee_total + target_usd) / volume
                     elif side == "sell":
-                        breakeven_price = entry_price - (fee_total + PROFIT_TARGET_USD) / volume
+                        breakeven_price = entry_price - (fee_total + target_usd) / volume
 
                 trade = ActiveTrade(
                     pair=alt_pair,
@@ -6770,6 +7529,7 @@ class KrakenMarginArmyTrader:
                     cost=cost,
                     breakeven_price=breakeven_price,
                     binance_symbol=self._binance_symbol_for_pair(alt_pair),
+                    profit_target_usd=target_usd,
                 )
                 primary_trade = live_positions_by_slot[slot]
                 extras_key = "extra_active_longs" if slot == "active_long" else "extra_active_shorts"
@@ -6814,7 +7574,7 @@ class KrakenMarginArmyTrader:
                 if reconciled is not None:
                     if td:
                         filtered = {k: v for k, v in td.items() if k in valid_fields}
-                        for key in ("breakeven_price", "rollover_fees", "last_rollover_check"):
+                        for key in ("breakeven_price", "rollover_fees", "last_rollover_check", "profit_target_usd", "cognition_plan"):
                             value = filtered.get(key)
                             if value not in (None, "", 0):
                                 setattr(reconciled, key, value)
@@ -6994,11 +7754,39 @@ class KrakenMarginArmyTrader:
         if entry_price <= 0:
             return None
 
+        profit_target_usd = self._dynamic_profit_target_for_trade(trade_val)
         required_move_pct, open_fee_rate, close_fee_rate = self._estimate_required_move_pct(
-            trade_val, PROFIT_TARGET_USD, symbol=pair_info.pair
+            trade_val, profit_target_usd, symbol=pair_info.pair
         )
         round_trip_fee_pct = (open_fee_rate + close_fee_rate) * 100
         target_move_pct = required_move_pct
+        cognition_context = dict(
+            getattr(self, "_candidate_cognition_context", {}).get(
+                self._cognition_key(pair_info.pair, side),
+                {},
+            )
+        )
+        if not cognition_context:
+            eta_minutes = 999.0
+            if abs(pair_info.momentum) > 0:
+                pct_per_minute = abs(pair_info.momentum) / (24 * 60) * max(1, lev)
+                eta_minutes = required_move_pct / pct_per_minute if pct_per_minute > 0 else 999.0
+            cognition_context = self._build_candidate_cognition_context(
+                info=pair_info,
+                side=side,
+                required_move_pct=required_move_pct,
+                eta_minutes=eta_minutes,
+                goal_score=0.0,
+                route_to_profit=0.0,
+                profit_target_usd=profit_target_usd,
+            )
+        brain_decision = dict(cognition_context.get("brain_decision", {}) or {})
+        if brain_decision and not bool(brain_decision.get("approved", True)):
+            logger.info(
+                f"[MarginBrain] {pair_info.pair} {side.upper()} chose WAIT before shadow: "
+                f"{'; '.join(brain_decision.get('vetoes', []) or ['not enough support'])}"
+            )
+            return None
 
         shadow = ShadowTrade(
             pair=pair_info.pair,
@@ -7011,6 +7799,8 @@ class KrakenMarginArmyTrader:
             volume=vol,
             trade_val=trade_val,
             pair_info_key=pair_info.pair,
+            profit_target_usd=profit_target_usd,
+            cognition_context=cognition_context,
         )
 
         self.shadow_trades.append(shadow)
@@ -7071,6 +7861,15 @@ class KrakenMarginArmyTrader:
         if not pair_info:
             logger.warning(f"Pair info missing for {shadow.pair_info_key}")
             return None
+        brain_decision = dict(getattr(shadow, "cognition_context", {}).get("brain_decision", {}) or {})
+        if brain_decision and not bool(brain_decision.get("approved", True)):
+            logger.info(
+                f"SHADOW VALIDATED but MarginBrain says WAIT for {shadow.pair}: "
+                f"{'; '.join(brain_decision.get('vetoes', []) or ['not enough support'])}"
+            )
+            self._set_shadow_cooldown(shadow.pair, seconds=self.SHADOW_PAIR_COOLDOWN * 2)
+            self.shadow_trades.remove(shadow)
+            return None
 
         # Run intel research on the validated shadow
         approved, final_side = self.research_target(
@@ -7092,25 +7891,18 @@ class KrakenMarginArmyTrader:
             flip_levs = pair_info.leverage_sell if side == "sell" else pair_info.leverage_buy
             lev = max(flip_levs) if flip_levs else lev
 
-        # Recalculate volume based on current margin
-        try:
-            tb = self.client.get_trade_balance()
-            free_margin = tb.get("free_margin", 0)
-        except Exception:
-            free_margin = 10.0
-
-        # If both slots will be used, use half the margin
-        if (side == "buy" and self.active_short) or (side == "sell" and self.active_long):
-            margin_budget = free_margin * MARGIN_BUFFER * 0.5
-        else:
-            margin_budget = free_margin * MARGIN_BUFFER
-
-        notional = margin_budget * lev
-        if notional < MIN_TRADE_USD:
-            logger.warning(f"Not enough margin to promote shadow (${notional:.2f} notional)")
-            self._set_shadow_cooldown(shadow.pair, seconds=self.SHADOW_PAIR_COOLDOWN * 2)
-            self.shadow_trades.remove(shadow)
+        split_slot = (side == "buy" and self.active_short) or (side == "sell" and self.active_long)
+        plan = self._plan_dynamic_margin_position(pair_info, lev, split_slot=split_slot)
+        if plan is None or not plan.approved:
+            reason = "dynamic sizer unavailable" if plan is None else plan.reason
+            logger.warning(f"Not enough safe margin to promote shadow: {reason}")
             return None
+
+        notional = plan.notional
+        vol = plan.volume
+        shadow.trade_val = notional
+        shadow.volume = vol
+        shadow.profit_target_usd = plan.profit_target_usd
 
         # ── WAVE RIDER: final 250% margin gate before real capital ────
         if self.wave_rider:
@@ -7118,15 +7910,16 @@ class KrakenMarginArmyTrader:
                 tb2 = self.client.get_trade_balance()
                 eq2 = float(tb2.get("equity", tb2.get("equity_value", 0)) or 0)
                 mu2 = float(tb2.get("margin_amount", tb2.get("m", 0)) or 0)
+                free2 = float(tb2.get("free_margin", tb2.get("margin_free", tb2.get("mf", 0))) or 0)
             except Exception:
-                eq2, mu2 = 0.0, 0.0
+                eq2, mu2, free2 = 0.0, 0.0, 0.0
 
             if eq2 > 0:
-                wave_ok, wave_check = self.wave_rider.check(eq2, mu2, notional, lev)
+                wave_ok, wave_check = self.wave_rider.check(eq2, mu2, notional, lev, free_margin=free2)
                 if not wave_ok:
-                    if wave_check.max_safe_notional >= MIN_TRADE_USD:
+                    if wave_check.max_safe_notional >= plan.min_notional:
                         # Cap to safe size rather than abandoning entirely
-                        notional = wave_check.max_safe_notional
+                        notional = min(wave_check.max_safe_notional, notional)
                         logger.info(
                             f"[WaveRider] Shadow {shadow.pair}: notional capped to "
                             f"${notional:.2f} — projected margin "
@@ -7149,6 +7942,8 @@ class KrakenMarginArmyTrader:
         vol = notional / pair_info.last_price if pair_info.last_price > 0 else shadow.volume
         vol = max(vol, pair_info.ordermin)
         vol = round(vol, pair_info.lot_decimals)
+        shadow.volume = vol
+        shadow.trade_val = vol * pair_info.last_price if pair_info.last_price > 0 else notional
 
         logger.info(
             f"SHADOW VALIDATED -> DEPLOYING REAL: {shadow.pair} {side.upper()} {lev}x | "
@@ -7156,7 +7951,14 @@ class KrakenMarginArmyTrader:
             f"Prediction CONFIRMED — going LIVE!"
         )
 
-        trade = self.open_position(pair_info, side, vol, lev)
+        trade = self.open_position(
+            pair_info,
+            side,
+            vol,
+            lev,
+            profit_target_usd=shadow.profit_target_usd,
+            cognition_context=shadow.cognition_context,
+        )
         if trade:
             self.shadow_validated_count += 1
             self._start_stream_for(trade.binance_symbol)
@@ -7195,7 +7997,7 @@ class KrakenMarginArmyTrader:
                 f"Used=${capital['margin_used']:.2f} UPNL=${capital['unrealized']:+.2f}"
             ),
             (
-                f"Budget=${capital['budget']:.2f} Target=${PROFIT_TARGET_USD:.2f} "
+                f"Budget=${capital['budget']:.2f} Target=${capital['profit_target_usd']:.2f} "
                 f"EqDelta=${equity_delta:+.2f}"
             ),
         ]
@@ -7225,6 +8027,14 @@ class KrakenMarginArmyTrader:
             status_lines.append(
                 f"ExtraLive: longs={len(self.extra_active_longs)} shorts={len(self.extra_active_shorts)}"
             )
+        fast_capture = getattr(self, "_last_fast_profit_capture", {}) or {}
+        if fast_capture:
+            status_lines.append(
+                "FastProfit: "
+                f"ready={bool(fast_capture.get('ready_to_capture'))} "
+                f"net=${float(fast_capture.get('validated_true_profit_usd', 0.0) or 0.0):+.4f} "
+                f"reason={fast_capture.get('reason') or 'measuring'}"
+            )
         status_lines.append(
             f"History: closed={closed_count} wins={wins} losses={losses} win_rate={win_rate:.1f}% avg={avg_net:+.2f}"
         )
@@ -7240,7 +8050,7 @@ class KrakenMarginArmyTrader:
         print(f"{'=' * 65}")
         print(f"  ARMY STATUS | Runtime: {hours}h {mins}m")
         print(f"  Equity: ${capital['equity']:.2f} | Free: ${capital['free_margin']:.2f} | Used: ${capital['margin_used']:.2f} | UPNL: ${capital['unrealized']:+.2f}")
-        print(f"  Budget: ${capital['budget']:.2f} | Target/trade: ${PROFIT_TARGET_USD:.2f} ({capital['target_pct_equity']:.3f}% of equity) | Since start: ${equity_delta:+.2f}")
+        print(f"  Budget: ${capital['budget']:.2f} | Target/trade: ${capital['profit_target_usd']:.2f} ({capital['target_pct_equity']:.3f}% of equity) | Since start: ${equity_delta:+.2f}")
         if self.stream:
             stream_mode = "LIVE" if self.stream.is_alive() else ("CONNECTED" if self.stream.connected else "REST")
             stream_age_ms = (
@@ -7315,6 +8125,16 @@ class KrakenMarginArmyTrader:
                 )
             elif ds.get("error"):
                 print(f"  [DECISION ENGINE] error={ds['error']}")
+        latest_brain = getattr(self, "_latest_margin_brain_decision", {})
+        if latest_brain:
+            print(
+                f"  [MARGIN BRAIN] {latest_brain.get('pair', '?')} "
+                f"{str(latest_brain.get('side', '?')).upper()} "
+                f"{latest_brain.get('action', '?')} "
+                f"conf={float(latest_brain.get('confidence', 0.0) or 0.0):.2f} "
+                f"risk={float(latest_brain.get('risk', 0.0) or 0.0):.2f} "
+                f"eta={float(latest_brain.get('eta_minutes', 0.0) or 0.0):.2f}m"
+            )
         if self._thought_bus_snapshot:
             tbs = self._thought_bus_snapshot
             if tbs.get("error"):
@@ -7402,7 +8222,7 @@ class KrakenMarginArmyTrader:
                     f"    {t.get('pair', '?')} {str(t.get('side', '?')).upper()} "
                     f"${pnl:+.2f} | hold={hold_str} | reason={t.get('reason', '?')}"
                 )
-        print(f"  Target: ${PROFIT_TARGET_USD} per trade (approx GBP1)")
+        print(f"  Target: ${capital['profit_target_usd']:.2f} per trade (dynamic)")
         print(f"{'=' * 65}")
         print()
 
@@ -7442,7 +8262,7 @@ class KrakenMarginArmyTrader:
         MIN_LAST_CANDLE_PCT  = 0.08    # Current impulse should be alive, but not extreme
         MAX_SPREAD_PCT       = 0.45    # Allow more pairs; scoring still penalizes wide spread
         MIN_LEVERAGE         = 3       # Minimum leverage to bother
-        MISSION_PROFIT_MIN   = PROFIT_TARGET_USD  # Realized profit target after fees
+        MISSION_PROFIT_MIN   = PROFIT_TARGET_USD  # Updated after live capital snapshot
         SCAN_INTERVAL_SEC    = 1       # Seconds between re-scans when hunting
         HUNT_TIMEOUT_SEC     = 300     # Keep hunting for up to 5 minutes per patrol
         MIN_PROJ_CONF        = 0.52    # Projection should lean clearly, not just random drift
@@ -7474,15 +8294,17 @@ class KrakenMarginArmyTrader:
 
         # ── Step 2: Check available capital ───────────────────────────────
         try:
-            tb    = self.client.get_trade_balance()
-            free_margin = tb.get("free_margin", 0.0)
-            equity      = tb.get("equity", 0.0)
+            capital = self._get_capital_snapshot()
+            free_margin = capital["free_margin"]
+            equity = capital["equity"]
+            MISSION_PROFIT_MIN = capital["profit_target_usd"]
+            capital_snapshot = getattr(self, "_last_margin_capital", None)
         except Exception as e:
             logger.error(f"MISSION: Cannot get trade balance: {e}")
             return {'traded': False, 'reason': 'balance_error', 'net_pnl': 0.0,
                     'pair': None, 'side': None}
 
-        margin_budget = free_margin * MARGIN_BUFFER
+        margin_budget = capital["budget"]
         print(f"\n💰 Capital: ${equity:.2f} equity  |  ${free_margin:.2f} free"
               f"  |  Budget: ${margin_budget:.2f}")
         if equity > 0:
@@ -7661,16 +8483,16 @@ class KrakenMarginArmyTrader:
                 continue
 
             # ── Position size ──────────────────────────────────────────────
-            notional = margin_budget * max_lev
-            if notional < MIN_TRADE_USD:
+            split_slot = (side == "buy" and self.active_short) or (side == "sell" and self.active_long)
+            plan = self._plan_dynamic_margin_position(
+                info, max_lev, split_slot=split_slot, snapshot=capital_snapshot
+            )
+            if plan is None or not plan.approved:
                 reject_stats["notional"] += 1
                 continue
-            vol_qty  = notional / info.last_price
-            vol_qty  = max(vol_qty, info.ordermin)
-            vol_qty  = round(vol_qty, info.lot_decimals)
-            if vol_qty < info.ordermin:
-                continue
-            trade_val = vol_qty * info.last_price
+            MISSION_PROFIT_MIN = plan.profit_target_usd
+            vol_qty = plan.volume
+            trade_val = plan.notional
 
             # ── Check achievability: can it move enough in 1 minute? ───────
             # Use 1-min ATR (average of high-low range of last 5 candles)
@@ -7830,6 +8652,7 @@ class KrakenMarginArmyTrader:
                 "vol":          vol_qty,
                 "trade_val":    trade_val,
                 "leverage":     max_lev,
+                "profit_target_usd": MISSION_PROFIT_MIN,
                 "streak":       streak_count,
                 "vol_surge":    vol_surge,
                 "mom_3c_pct":   mom_3c,
@@ -7948,11 +8771,15 @@ class KrakenMarginArmyTrader:
                     if not levs2 or max(levs2)<MIN_LEVERAGE:
                         continue
                     lev2 = max(levs2)
-                    notional2 = margin_budget * lev2
-                    if notional2 < MIN_TRADE_USD:
+                    split2 = (side2 == "buy" and self.active_short) or (side2 == "sell" and self.active_long)
+                    plan2 = self._plan_dynamic_margin_position(
+                        info2, lev2, split_slot=split2, snapshot=capital_snapshot
+                    )
+                    if plan2 is None or not plan2.approved:
                         continue
-                    vq2 = max(round(notional2/info2.last_price, info2.lot_decimals), info2.ordermin)
-                    tv2 = vq2 * info2.last_price
+                    vq2 = plan2.volume
+                    tv2 = plan2.notional
+                    MISSION_PROFIT_MIN = plan2.profit_target_usd
                     atr2 = (sum(abs(float(k[2])-float(k[3]))/float(k[4])*100
                                 for k in klines2[-6:-1])/5) if len(klines2)>=6 else 0.5
                     if atr2 < 0.02:
@@ -8043,6 +8870,7 @@ class KrakenMarginArmyTrader:
                     candidates.append({
                         "info": info2, "side": side2, "vol": vq2,
                         "trade_val": tv2, "leverage": lev2,
+                        "profit_target_usd": MISSION_PROFIT_MIN,
                         "streak": sc2, "vol_surge": vs2, "mom_3c_pct": m2,
                         "last_c_pct": m2_last,
                         "atr_1m_pct": atr2, "required_pct": rp2,
@@ -8097,6 +8925,7 @@ class KrakenMarginArmyTrader:
         vol_b    = best["vol"]
         lev_b    = best["leverage"]
         tv_b     = best["trade_val"]
+        MISSION_PROFIT_MIN = float(best.get("profit_target_usd", MISSION_PROFIT_MIN) or MISSION_PROFIT_MIN)
         self._feed_unified_decision_engine(
             info_b.pair,
             side_b,
@@ -8147,7 +8976,31 @@ class KrakenMarginArmyTrader:
 
         # ── Step 4: Open the position ──────────────────────────────────────
         print(f"\n⚡ Opening {side_b.upper()} position...")
-        trade = self.open_position(info_b, side_b, vol_b, lev_b)
+        mission_cognition_context = self._build_candidate_cognition_context(
+            info=info_b,
+            side=side_b,
+            required_move_pct=float(best.get("required_pct", 0.0) or 0.0),
+            eta_minutes=float(best.get("eta_min", 0.0) or 0.0),
+            goal_score=float(best.get("signal_edge", 0.0) or 0.0),
+            route_to_profit=float(best.get("signal_edge", 0.0) or 0.0),
+            profit_target_usd=MISSION_PROFIT_MIN,
+            projection={
+                "side": best.get("proj_side", side_b),
+                "confidence": float(best.get("proj_conf", 0.0) or 0.0),
+                "live_match": float(best.get("proj_live", 0.0) or 0.0),
+                "edge": float(best.get("proj_edge", 0.0) or 0.0),
+            },
+            timeline={"action": side_b, "confidence": float(best.get("proj_conf", 0.0) or 0.0)},
+            alignment={"score": float(best.get("align", 0.0) or 0.0)},
+        )
+        trade = self.open_position(
+            info_b,
+            side_b,
+            vol_b,
+            lev_b,
+            profit_target_usd=MISSION_PROFIT_MIN,
+            cognition_context=mission_cognition_context,
+        )
         if not trade:
             print("❌ MISSION FAILED: Order rejected by Kraken. Aborting.")
             return {'traded': False, 'reason': 'order_rejected', 'net_pnl': 0.0,
@@ -8198,6 +9051,11 @@ class KrakenMarginArmyTrader:
             _, close_fee_rate = self._get_open_close_fee_rates(trade.pair)
             exit_fee_est = current * trade.volume * close_fee_rate
             net_pnl = gross - trade.entry_fee - exit_fee_est
+            mission_cognition = self._verify_trade_cognition(
+                trade,
+                current_price=current,
+                validated_net_pnl=net_pnl,
+            )
             max_net_pnl = max(max_net_pnl, net_pnl)
             status_icon = "UP" if net_pnl > 0 else "WAIT"
             status_line = (
@@ -8368,7 +9226,7 @@ class KrakenMarginArmyTrader:
         print(f"  Stream: {'Binance WebSocket (sub-second)' if HAS_WEBSOCKET else 'REST polling (2s)'}")
         print(f"  Shadow: Simulated plays validate predictions before real capital")
         print(f"  Execution: Kraken API (open/close only)")
-        print(f"  Profit target: ${PROFIT_TARGET_USD} per position (approx GBP1)")
+        print(f"  Profit target: dynamic per position (capped at ${PROFIT_TARGET_USD:.2f})")
         print(f"  Policy: NO STOP LOSS — only close on PROFIT or liquidation risk")
         print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("=" * 70)
@@ -8383,7 +9241,7 @@ class KrakenMarginArmyTrader:
         print(
             f"  Capital: equity=${capital['equity']:.2f} | free=${capital['free_margin']:.2f} | "
             f"used=${capital['margin_used']:.2f} | budget=${capital['budget']:.2f} | "
-            f"target={capital['target_pct_equity']:.3f}% eq"
+            f"target=${capital['profit_target_usd']:.2f} ({capital['target_pct_equity']:.3f}% eq)"
         )
         print("=" * 70)
 

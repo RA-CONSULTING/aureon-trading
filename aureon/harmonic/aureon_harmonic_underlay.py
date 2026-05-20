@@ -11,7 +11,7 @@ Visualizes the "Harmonic Underlays" of the ecosystem by:
 "See the dominant wave harmonics via global population coherence and the bridges connecting the entire ecosystem."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -22,8 +22,8 @@ from datetime import datetime
 from typing import List, Dict
 
 # Import Ecosystem Components
-from aureon_bridge import AureonBridge
-from hnc_6d_harmonic_waveform import SixDimensionalHarmonicEngine, WaveState
+from aureon.bridges.aureon_bridge import AureonBridge
+from aureon.strategies.hnc_6d_harmonic_waveform import SixDimensionalHarmonicEngine, WaveState
 
 # Configure Logging
 logging.basicConfig(

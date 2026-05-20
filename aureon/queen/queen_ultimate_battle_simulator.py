@@ -717,14 +717,14 @@ class QueenBattleSimulator:
         self.manipulation_hunter = None
         
         try:
-            from queen_warrior_path import QueenWarriorPath
+            from aureon.queen.queen_warrior_path import QueenWarriorPath
             self.warrior_path = QueenWarriorPath()
             print("   ⚔️ Warrior Path: LOADED")
         except ImportError:
             print("   ⚔️ Warrior Path: Not available (using built-in)")
         
         try:
-            from aureon_historical_manipulation_hunter import HistoricalManipulationHunter
+            from aureon.analytics.aureon_historical_manipulation_hunter import HistoricalManipulationHunter
             self.manipulation_hunter = HistoricalManipulationHunter()
             print("   📜 Manipulation Hunter: LOADED")
         except ImportError:

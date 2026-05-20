@@ -19,7 +19,7 @@ Features:
 
 Target: Predict (shape_subtype, expected_profit, win_probability)
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -60,7 +60,7 @@ except ImportError:
 
 # Try to import elephant memory
 try:
-    from aureon_elephant_learning import ElephantMemory, LearnedPattern
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory, LearnedPattern
     ELEPHANT_AVAILABLE = True
 except ImportError:
     ELEPHANT_AVAILABLE = False

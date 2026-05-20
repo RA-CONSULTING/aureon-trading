@@ -9,7 +9,7 @@ Master table of contents for all project documentation.
 |----------|-------------|
 | [Navigation Guide](NAVIGATION_GUIDE.md) | Learning paths for traders, developers, researchers |
 | [Quick Start](QUICK_START.md) | Get running in 10 minutes |
-| [Windows Setup](WINDOWS_SETUP_GUIDE.md) | Windows-specific installation |
+| [Windows Setup](windows/WINDOWS_SETUP_GUIDE.md) | Windows-specific installation |
 | [Scripts Index](SCRIPTS_INDEX.md) | Find the right startup script |
 
 ## Architecture & System Design
@@ -22,22 +22,22 @@ Master table of contents for all project documentation.
 | [Repo Mindmap](architecture/REPO_MINDMAP.md) | Complete file inventory |
 | [Continuous Market Pipeline](architecture/CONTINUOUS_MARKET_WORLDVIEW_PIPELINE.md) | Always-on coherence system |
 | [Theory to Code](architecture/THEORY_TO_CODE.md) | Research concepts → implementations |
-| [System Landscape](SYSTEM_LANDSCAPE.md) | High-level subsystem overview |
+| [System Landscape](architecture/SYSTEM_LANDSCAPE.md) | High-level subsystem overview |
 | [HNC White Paper](HNC_UNIFIED_WHITE_PAPER.md) | Harmonic Nexus Core mathematical framework |
 
 ## Trading Operations
 | Document | Description |
 |----------|-------------|
 | [Live Trading Runbook](LIVE_TRADING_RUNBOOK.md) | Day-to-day trading operations |
-| [Dashboard Guide](DASHBOARD_GUIDE.md) | Live monitoring dashboard |
-| [Multi-Broker Guide](MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
+| [Dashboard Guide](dashboards/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
+| [Multi-Broker Guide](integrations/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
 
 ## Deployment
 | Document | Description |
 |----------|-------------|
-| [Deployment Guide](DEPLOYMENT_GUIDE.md) | General deployment |
-| [DigitalOcean Guide](DIGITALOCEAN_DEPLOYMENT.md) | DigitalOcean App Platform |
-| [Production Checklist](PRODUCTION_CHECKLIST.md) | Pre-production validation |
+| [Deployment Guide](deployment/DEPLOYMENT_GUIDE.md) | General deployment |
+| [DigitalOcean Guide](deployment/DIGITALOCEAN_DEPLOYMENT.md) | DigitalOcean App Platform |
+| [Production Checklist](runbooks/PRODUCTION_CHECKLIST.md) | Pre-production validation |
 
 ## Research
 | Document | Description |
@@ -51,6 +51,6 @@ Master table of contents for all project documentation.
 ## Contributing
 | Document | Description |
 |----------|-------------|
-| [Contributing Guide](../CONTRIBUTING.md) | How to contribute |
-| [Code of Conduct](../CODE_OF_CONDUCT.md) | Community standards |
-| [Changelog](../CHANGELOG.md) | Version history |
+| [Contributing Guide](CONTRIBUTING.md) | How to contribute |
+| [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards |
+| [Changelog](CHANGELOG.md) | Version history |

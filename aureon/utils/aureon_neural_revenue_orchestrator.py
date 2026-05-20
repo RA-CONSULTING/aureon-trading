@@ -20,7 +20,7 @@ Author: Aureon Trading System
 Date: January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -119,19 +119,19 @@ class NeuralRevenueOrchestrator:
         try:
             # 1. Load System Registry (Mycelium Integration)
             print("\n🍄 Loading Mycelium System Registry...")
-            from aureon_system_hub_mycelium import MyceliumSystemRegistry
+            from aureon.command_centers.aureon_system_hub_mycelium import MyceliumSystemRegistry
             self.system_registry = MyceliumSystemRegistry()
             print("   ✅ System registry connected")
 
             # 2. Initialize ThoughtBus
             print("\n💭 Loading ThoughtBus...")
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             self.thought_bus = ThoughtBus()
             print("   ✅ Neural communication bus active")
 
             # 3. Load Global Orchestrator
             print("\n🌍 Loading Global Orchestrator...")
-            from aureon_global_orchestrator import GlobalAureonOrchestrator
+            from aureon.autonomous.aureon_global_orchestrator import GlobalAureonOrchestrator
             self.global_orchestrator = GlobalAureonOrchestrator(
                 initial_balance_gbp=self.initial_capital,
                 dry_run=self.dry_run
@@ -140,13 +140,13 @@ class NeuralRevenueOrchestrator:
 
             # 4. Load Full Orchestrator
             print("\n🔗 Loading Full Orchestrator...")
-            from aureon_full_orchestrator import AureonFullOrchestrator
+            from aureon.autonomous.aureon_full_orchestrator import AureonFullOrchestrator
             self.full_orchestrator = AureonFullOrchestrator()
             print("   ✅ Full orchestrator ready")
 
             # 5. Load Revenue Board
             print("\n💰 Loading Revenue Board...")
-            from aureon_revenue_board import RevenueBoard
+            from aureon.portfolio.aureon_revenue_board import RevenueBoard
             self.revenue_board = RevenueBoard(initial_equity=self.initial_capital)
             print("   ✅ Revenue tracking active")
 

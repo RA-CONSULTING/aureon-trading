@@ -928,7 +928,7 @@ def main() -> None:
     end   = datetime.now(timezone.utc)
     start = end - timedelta(days=args.days)
 
-    from aureon_atn_backtest import (
+    from aureon.atn.aureon_atn_backtest import (
         fetch_earthquakes, fetch_solar_flares,
         fetch_geomagnetic_storms, PlanetaryEvent,
     )

@@ -23,7 +23,7 @@ Verdict thresholds
   NOT VERIFIED    — below PARTIAL thresholds
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import math
@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from aureon_taste_sense import MolecularData, MolecularSequencer, TasteSense, TasteExperience
+from aureon.intelligence.aureon_taste_sense import MolecularData, MolecularSequencer, TasteSense, TasteExperience
 
 # ─── Category frequency discrimination bands ──────────────────────────────────
 # The sequencer maps taste_score → Hz.  We expect each category to populate
@@ -234,7 +234,7 @@ class BlindTasteTrialEngine:
         consciousness module unavailable).
         """
         try:
-            from queen_consciousness_measurement import get_consciousness_measurement
+            from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
             cm = get_consciousness_measurement()
             before = cm.measure_consciousness().awakening_index
 
@@ -402,7 +402,7 @@ class BlindTasteReport:
     def _wire_to_queen(self) -> None:
         """Push trial statistics into all Queen Sero learning subsystems."""
         try:
-            from aureon_taste_learning_integration import TasteTrialIntegration
+            from aureon.intelligence.aureon_taste_learning_integration import TasteTrialIntegration
             TasteTrialIntegration().wire(self.stats)
         except Exception as exc:
             logger.warning(f"[BlindTasteReport] Queen integration skipped: {exc}")

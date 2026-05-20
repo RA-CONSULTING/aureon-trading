@@ -23,7 +23,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "All Systems. All Platforms. One Forecast."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -41,16 +41,16 @@ os.environ['LIVE'] = '1'
 os.environ['DRY_RUN'] = '0'
 
 # Import all prediction systems
-from earth_resonance_engine import EarthResonanceEngine, get_earth_engine
-from hnc_imperial_predictability import CosmicStateEngine, PredictabilityEngine, CosmicPhase, CosmicState
-from hnc_probability_matrix import TemporalFrequencyAnalyzer, ProbabilityMatrix, ProbabilityState
+from aureon.harmonic.earth_resonance_engine import EarthResonanceEngine, get_earth_engine
+from aureon.strategies.hnc_imperial_predictability import CosmicStateEngine, PredictabilityEngine, CosmicPhase, CosmicState
+from aureon.strategies.hnc_probability_matrix import TemporalFrequencyAnalyzer, ProbabilityMatrix, ProbabilityState
 
 # Import all exchange clients
-from binance_client import BinanceClient, get_binance_client
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.binance_client import BinanceClient, get_binance_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 from aureon.exchanges.alpaca_client import AlpacaClient
-from capital_client import CapitalClient
-from unified_exchange_client import MultiExchangeClient
+from aureon.exchanges.capital_client import CapitalClient
+from aureon.trading.unified_exchange_client import MultiExchangeClient
 
 # ═══════════════════════════════════════════════════════════════════════════
 # CONSTANTS
@@ -307,14 +307,25 @@ class UniversalForecastEngine:
         # ─────────────────────────────────────────────────────────────────
         # 1A. EARTH RESONANCE ENGINE
         # ─────────────────────────────────────────────────────────────────
-        self.earth_engine.update_schumann_state(market_volatility=0.0)
-        gate_dict = self.earth_engine.get_trading_gate_status_dict()
-        
-        status.earth_coherence = gate_dict['coherence']
-        status.earth_phase_lock = 0.7 if gate_dict['phase_locked'] else 0.4
-        status.earth_phi_boost = self.earth_engine.get_phi_position_multiplier()
-        status.earth_open = gate_dict['gate_open']
-        status.earth_reason = gate_dict['reason']
+        try:
+            self.earth_engine.update_schumann_state(market_volatility=0.0)
+            gate_dict = self.earth_engine.get_trading_gate_status_dict()
+            status.earth_coherence = gate_dict['coherence']
+            status.earth_phase_lock = 0.7 if gate_dict['phase_locked'] else 0.4
+            status.earth_phi_boost = self.earth_engine.get_phi_position_multiplier()
+            status.earth_open = gate_dict['gate_open']
+            status.earth_reason = gate_dict['reason']
+        except RuntimeError as exc:
+            # No live Schumann data + no sim fallback. Earth gate closed.
+            import logging
+            logging.getLogger(__name__).warning(
+                f"earth_resonance unavailable, earth gate closed: {exc}"
+            )
+            status.earth_coherence = None
+            status.earth_phase_lock = 0.4
+            status.earth_phi_boost = 1.0
+            status.earth_open = False
+            status.earth_reason = f"earth_resonance_unavailable: {exc}"
         
         # ─────────────────────────────────────────────────────────────────
         # 1B. COSMIC STATE ENGINE (Imperial Predictability)
@@ -496,7 +507,12 @@ class UniversalForecastEngine:
         return alignment
     
     def _compute_fibonacci_alignment(self, prices: List[float]) -> float:
-        """Compute Fibonacci retracement alignment"""
+        """Compute Fibonacci retracement alignment.
+
+        ⚠ Insufficient-data fallback returns neutral 0.5. Caller cannot
+        distinguish "computed neutral" from "no data". Wire prices≥3 to
+        get a real alignment score.
+        """
         if len(prices) < 3:
             return 0.5
         

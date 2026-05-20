@@ -1,34 +1,571 @@
 <div align="center">
 
-# ⚡ AUREON TRADING SYSTEM
+# AUREON TRADING SYSTEM
 ### Powered by Harmonic Nexus Core
 
-*Where ancient wisdom meets algorithmic precision — and the markets have nowhere to hide.*
+*Where ancient wisdom meets algorithmic precision - and the markets have nowhere to hide.*
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ueu7gBz7g)
 [![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
 [![GitHub Stars](https://img.shields.io/github/stars/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=FFD700)](https://github.com/ra-consulting/aureon-trading)
 [![GitHub Forks](https://img.shields.io/github/forks/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=silver)](https://github.com/ra-consulting/aureon-trading/fork)
-[![Python](https://img.shields.io/badge/Python-715%20modules%20·%2024%20domains-3776AB?style=for-the-badge&logo=python&logoColor=white)](#project-structure--715-modules-across-24-domains)
+[![Python](https://img.shields.io/badge/Python-715%20modules%20-%2024%20domains-3776AB?style=for-the-badge&logo=python&logoColor=white)](#project-structure--715-modules-across-24-domains)
 [![TypeScript](https://img.shields.io/badge/TypeScript-780%20files-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#architecture-overview)
 
-[![Support the Project](https://img.shields.io/badge/☕%20Support%20the%20Project-Donate%20via%20SumUp-FFD700?style=for-the-badge&logoColor=black)](https://pay.sumup.com/b2c/QFTPOX6U)
+[![Support the Project](https://img.shields.io/badge/Support%20the%20Project-Donate%20via%20SumUp-FFD700?style=for-the-badge&logoColor=black)](https://pay.sumup.com/b2c/QFTPOX6U)
 
 </div>
 
 ---
 
-## 🧭 What is this?
+## Run Aureon Now
 
-**Aureon** is a live, open-source quantitative trading system built on the **Harmonic Nexus Core (HNC)** — a framework that reads 4,100-year-old φ² coherence patterns in live markets. We've measured an **r = 0.85 correlation** between geopolitical stress and GitHub node activation, with **24–48 h lag** and **1.29 ppb** mathematical precision. It's falsifiable. It's open-source. It's live.
+For the full operator runbook, see [RUNNING.md](RUNNING.md). For the end-to-end map of every major subsystem, see [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md). The current full-organism entrypoint is the Windows production wake-up launcher. Individual bots and older ignition commands are development or audit paths.
 
-> *"Business guy → Consciousness researcher → Overnight self-taught coder → Open-source trading system that proves the theory in live markets."* — Gary Anthony Leckey
+### Current Canonical Version
+
+The current public version is the unified live organism runtime, not a single bot or a legacy dashboard. Start it with `AUREON_PRODUCTION_LIVE.cmd`, watch it from the unified console at `http://127.0.0.1:8081/`, and read the live runtime feed from `http://127.0.0.1:8791/api/terminal-state`.
+
+This version brings Kraken, Binance, Alpaca, and Capital into one market state; exposes connected, guarded, and live-action modes; keeps reboot advice visible; and includes the OS/task, LLM, self-coding, desktop/run handoff, frontend work-order, accounting, HNC/Auris, and whole-knowledge voice layers.
+
+The current organism ethos is a mycelium network organisation. Aureon treats prompts as client jobs, grows temporary agent crews for the work, moves context through evidence-bearing handoffs, keeps reusable skills in a SHA-256/zlib memory phonebook, and retires temporary workers after proof and handover. The agent-company report exposes this doctrine in `docs/audits/aureon_agent_company_bill_list.json`, `docs/audits/aureon_agent_company_bill_list.md`, and `frontend/public/aureon_agent_company_bill_list.json`.
+
+Aureon also carries a cells-to-stars living-system doctrine. Cells define local role autonomy and repair, tissues become departments, organs become specialist subsystems, the nervous system is ThoughtBus and runtime feedback, the immune system is proof/snag/security rejection, ant colonies model temporary worker swarms, mycelium models memory and handoff flow, forest ecosystems model cleanup/recycling/balance, and stars/constellations model long-range navigation from historical waveforms, goals, and research.
+
+### Biological And Cosmic Operating Ethos
+
+| Living pattern | Aureon translation |
+|---|---|
+| Cell | Each agent has local state, role boundaries, health checks, repair routes, and evidence duties. |
+| Tissue | Departments group similar workers so handoffs and shared standards stay predictable. |
+| Organ | Trading, research, accounting, engineering, security, memory, and UI subsystems do specialist work for the whole organism. |
+| Nervous system | ThoughtBus, GoalExecutionEngine, runtime observer, and the console move fast signals through the organism. |
+| Immune system | HNC/Auris drift checks, tests, redaction, runtime gates, and snagging reject unsafe or weak work. |
+| Ant colony | Temporary crews split broad jobs into simple worker tasks, then converge through proof and handoff trails. |
+| Mycelium | Repo search, vault memory, data ocean evidence, and compressed memory packs move knowledge where it is needed. |
+| Forest ecosystem | Cleanup, archive, stale-state, and risk-survival loops keep growth, decay, recycling, and balance visible. |
+| Stars and constellations | Long-range goals, historical waveform memory, research, and strategic maps guide short-cycle decisions. |
+
+This is the operating ethos behind the agent-company system: scope the client signal, grow the right temporary crew, feed it with internal and online evidence, prove the work through immune checks, hand over only complete output, then compress the reusable memory back into the organism.
+
+### Read This First
+
+| Need | Start here |
+|---|---|
+| Run the whole organism | [RUNNING.md](RUNNING.md), then `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
+| Validate before live operation | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
+| Watch live trading state | `http://127.0.0.1:8791/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
+| Run the MURGE local companion runtime | `.\scripts\aureon_murge\start_murge_local_runtime.ps1`, then open the MURGE Runtime Activation panel in `http://127.0.0.1:8081/#trading` |
+| Expand licensed/reachable market data | `.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable` |
+| Use the autonomous console | `http://127.0.0.1:8081/` and [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) |
+| Understand HNC/Auris cognition | [CAPABILITIES.md](CAPABILITIES.md), HNC/Auris evidence files, and the live cognition benchmark |
+| Use accounting/HMRC support | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py` and the accounting context bridge |
+| Use OS, LLM, code, skills, and desktop capability | The active OS/LLM/code/desktop layer below and [CAPABILITIES.md](CAPABILITIES.md) |
+| Read legacy, research, and historical material | Continue through the rest of this README; older sections are preserved and marked where needed |
+
+### Full Windows Production Supervisor
+
+```powershell
+cd C:\path\to\aureon-trading
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
+
+This starts the production supervisor, market runtime, telemetry/status server, mind hub, self-questioning loop, organism observer, manifest refresh, and unified console.
+
+### Fully Live Order Mode
+
+Use this only when the operator accepts live trading risk, exchange credentials are configured, and open Capital positions have been closed or reconciled. The command refuses to arm live order mutation when `/api/flight-test` reports open positions, because the runtime must not hot-swap from dry-run to live execution while exposure is active.
+
+```powershell
+cd C:\Users\user\aureon-trading-integrated-main-20260508; $ft=Invoke-RestMethod http://127.0.0.1:8791/api/flight-test; if ($ft.checks.open_positions) { throw "LIVE START BLOCKED: open_positions_reported. Close/reconcile Capital positions first, then rerun." }; Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and (($_.Name -match 'python' -and $_.CommandLine -match 'aureon\.exchanges\.unified_market_trader') -or ($_.Name -eq 'cmd.exe' -and $_.CommandLine -match 'AUREON_PRODUCTION_LIVE\.cmd')) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }; .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
+
+Verify the runtime is actually live and not dry-run:
+
+```powershell
+$r=Invoke-RestMethod http://127.0.0.1:8791/api/terminal-state; $r.exchange_action_plan | Select order_intent_publish_enabled,executor_enabled,live_enabled,real_orders_disabled,exchange_mutations_disabled,trade_path_state,global_blockers
+```
+
+Fully live order mode requires `executor_enabled=True`, `live_enabled=True`, `real_orders_disabled=False`, `exchange_mutations_disabled=False`, and no `global_blockers`. If any of `live_trading_not_enabled`, `real_orders_disabled`, `exchange_mutations_disabled`, `open_positions_reported`, duplicate-route blockers, recovered-exit blockers, stale data, or risk/operator blockers appear, Aureon stays evidence-first and must not submit live orders until the existing runtime gates clear.
+
+### Low-Priority Planetary Data Ocean
+
+Run this in a second terminal when you want Aureon to keep widening its market map without stalling the live trading loop:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable
+```
+
+The data ocean is budgeted and lower priority than execution, positions, risk, and live order-intent. It tracks every configured repo-backed source and calls coverage complete only when 100% of the licensed/reachable registry is fresh and usable, or each missing source is explicitly explained as unlicensed, unavailable, unconfigured, or rate-limited.
+
+The trading intelligence checklist now folds that mapped data ocean back into Aureon's HNC/Auris decision evidence as a metacognitive context layer. That means live tick streams, exchange coverage, historical waveform memory, and source-health proof are visible to the organism's decision logic as "usable for thought" even when live execution is still held by runtime freshness. In practice, the console can show that the wider financial map is clean and mapped while also showing the exact blocker, such as a stale runtime tick, that prevents live action.
+
+The data ocean and live runtime now share an official exchange rate-limit registry in `aureon/core/exchange_rate_limit_registry.py`. Binance, Kraken, Alpaca, and Capital each publish different limit models, so Aureon does not treat them as one flat calls-per-minute pool. It reserves capacity for execution, balances, positions, and recovery on venues with active cash or open positions, then lets idle/no-cash venues spend more of their safe budget on live streams, quote probes, and candidate discovery. The public reports expose `official_rate_limit`, `cash_aware_call_plan`, and `rate_budget` so operators can see what the system believes it may call before it calls.
+
+The exchange data capability matrix sits on top of those reports. It answers the operator question: what does each exchange see, what can it trade, what is fresh this cycle, what is decision-fed, and what can be leveraged or optimized next. Use it when deciding whether Binance should widen crypto discovery, Kraken should reserve private calls for margin/collateral, Alpaca should spend more on stock/ETF snapshots, or Capital should focus on open-position P/L and high-volatility CFD streams.
+
+Capital.com now runs through a wave-validated portfolio brain instead of a fixed one-buy/one-sell lane. `aureon/exchanges/capital_cfd_trader.py` publishes `capital_risk_envelope`, `capital_trade_evidence`, `capital_confidence_ratchet`, `capital_unified_waveform_check`, `capital_no_loss_hold_queue`, and `capital_pending_order_envelope` into `/api/terminal-state`. The trader can expand live Capital positions dynamically only when free cash, used margin, gross exposure, symbol concentration, directional exposure, stress buffer, cross-exchange waveform evidence, and confidence ratchet all pass. Profit capture remains fast, while losing positions are held under the no-loss policy and new entries freeze if the held loss would threaten portfolio survival.
+
+Capital also has a tradable asset registry/database. `aureon/exchanges/capital_asset_registry.py` reads the Capital market catalogue, records every discovered epic/symbol, enriches budgeted markets with live price, spread, minimum deal size, margin factor, estimated leverage, minimum notional, and required margin, then publishes JSON, CSV, Markdown, and SQLite outputs. It records both direct market order routes and pending working-order routes so Aureon knows what code buys, sells, closes, or cancels each asset:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.exchanges.capital_asset_registry --max-snapshots 250
+```
+
+Pending bids and take-profit planning now have their own survival envelope. Market orders can attach a broker-side `profitLevel`; existing positions can have take-profit controls updated after fill confirmation; pending Capital working orders are planned through `POST /workingorders` with take-profit evidence. Submission is off by default (`CAPITAL_PENDING_ORDER_SUBMIT_ENABLED=0`) until explicitly enabled, and every planned pending order is stress-tested as if all pending orders fill together. That prevents the unsafe pattern where many bids trigger during the same dip and consume the whole portfolio.
+
+Kraken now has the same evidence discipline in Kraken-native form. `aureon/exchanges/kraken_asset_registry.py` reads Kraken `AssetPairs`, enriches budgeted pairs with live ticker, spread, order minimum, cost minimum, maker/taker fee tiers, leverage availability, spot readiness, margin readiness, and the exact code routes for spot buy/sell, post-only limit, take-profit, margin long/short, and reduce-only close. It also exposes a pending-order survival envelope for crypto so Aureon can plan spot and margin ladders while assuming every resting order may fill together:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.exchanges.kraken_asset_registry --max-tickers 250
+```
+
+The data ocean runs this registry automatically with `-KrakenAssetRegistryTickers`. Its summary appears in `/api/terminal-state#kraken_asset_registry` and the trading intelligence checklist as `KrakenTradableAssetRegistry`, `KrakenMarginCostEnvelope`, and `KrakenPendingOrderSurvival`.
+
+Private exchange history sync is deliberately capped in this supervisor so it does not hammer Kraken/Binance/Alpaca while live trading is active. The default Kraken private trade-history budget is `-KrakenAccountSyncMax 50`. If a venue is rate-limiting or you only want public/context data for a cycle, run:
+
+```powershell
+.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable -SkipAccountSync
+```
+
+### Safe Validation
+
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
+```
+
+### Dev And Audit Ignition
+
+```powershell
+python scripts/aureon_ignition.py --audit-only
+```
+
+### Local Console And Live Endpoints
+
+| Surface | URL or path |
+|---|---|
+| Unified autonomous console | `http://127.0.0.1:8081/` |
+| Runtime terminal state | `http://127.0.0.1:8791/api/terminal-state` |
+| Flight test | `http://127.0.0.1:8791/api/flight-test` |
+| Reboot advice | `http://127.0.0.1:8791/api/reboot-advice` |
+| Mind hub thoughts | `http://127.0.0.1:13002/api/thoughts` |
+| Phi Bridge live chat status | `http://127.0.0.1:13002/api/phi-bridge/status` |
+| Phi Bridge live chat | `POST http://127.0.0.1:13002/api/phi-bridge/chat` |
+| Trading intelligence checklist | `http://127.0.0.1:8081/aureon_trading_intelligence_checklist.json` and `docs/audits/aureon_trading_intelligence_checklist.json` |
+| Capital tradable asset registry | `docs/audits/aureon_capital_tradable_asset_registry.json`, `docs/audits/aureon_capital_tradable_asset_registry.csv`, and `state/capital_tradable_asset_registry.sqlite` |
+| Kraken tradable asset registry | `docs/audits/aureon_kraken_tradable_asset_registry.json`, `docs/audits/aureon_kraken_tradable_asset_registry.csv`, and `state/kraken_tradable_asset_registry.sqlite` |
+| Exchange monitoring checklist | `docs/audits/aureon_exchange_monitoring_checklist.json` and `frontend/public/aureon_exchange_monitoring_checklist.json` |
+| Exchange data capability matrix | `docs/audits/aureon_exchange_data_capability_matrix.json` and `frontend/public/aureon_exchange_data_capability_matrix.json` |
+| Global financial coverage map | `docs/audits/aureon_global_financial_coverage_map.json` and `frontend/public/aureon_global_financial_coverage_map.json` |
+| Data ocean status | `state/aureon_data_ocean_status.json` and `frontend/public/aureon_data_ocean_status.json` |
+| Scanner fusion proof | `state/aureon_scanner_fusion_matrix.json` |
+| World ecosystem proof | `state/aureon_world_financial_ecosystem_intelligence.json` |
+| 1h-to-1y waveform memory | `state/aureon_asset_waveform_models.json` |
+| Wake-up manifest | `state/aureon_wake_up_manifest.json` |
+| Frontend manifest mirror | `frontend/public/aureon_wake_up_manifest.json` |
+
+### AUREON MURGE Local Companion Runtime
+
+The extracted **AUREON MURGE** bundle is wired as a local companion runtime for Aureon, not as a replacement for `AUREON_PRODUCTION_LIVE.cmd`. The main trading organism remains owned by the production supervisor on port `8791` and the unified console on port `8081`. MURGE adds a local web app, runtime server, desktop-shell readiness lane, and activation evidence so the wider Aureon face and extended reach can be launched only when its own health and safety gates are visible.
+
+Install or refresh the locked MURGE dependencies from the committed lockfiles:
+
+```powershell
+cd C:\path\to\aureon-trading
+Push-Location integrations\aureon_murge\runtime; npm ci; Pop-Location
+Push-Location integrations\aureon_murge\web_app; npm ci; Pop-Location
+Push-Location integrations\aureon_murge\desktop; npm ci; Pop-Location
+```
+
+Start the local guarded MURGE services:
+
+```powershell
+.\scripts\aureon_murge\start_murge_local_runtime.ps1
+```
+
+The launcher starts only localhost services by default:
+
+| MURGE surface | Local URL | Purpose |
+|---|---|---|
+| MURGE web app | `http://127.0.0.1:4173/api/aureon/status` | Local companion web health and activation state |
+| MURGE runtime server | `http://127.0.0.1:7331/health` | Runtime health |
+| MURGE runtime info | `http://127.0.0.1:7331/api/runtime/info` | Terminal, sandbox, Docker, and guard state |
+| Activation audit | `http://127.0.0.1:8081/aureon_murge_runtime_activation_stress_audit.json` | Public evidence consumed by the Trading panel |
+
+Regenerate the activation stress evidence after dependency installs or service changes:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_murge_runtime_activation_stress_audit --json --no-external-fabric
+```
+
+The Trading screen exposes a read-only **MURGE Runtime Activation** panel with service health, dependency readiness, npm audit rows, launch logs, Windows compatibility, Electron security checks, ThoughtBus/Mycelium visibility, and activation blockers. Current expected guard posture is local-only: `MURGE_HOST_TERMINAL_ENABLED`, `MURGE_SANDBOX_ENABLED`, `MURGE_DESKTOP_ENABLED`, `MURGE_PROVIDER_API_ENABLED`, and `MURGE_CLOUDFLARE_ENABLED` are all off unless an operator explicitly enables and certifies that lane.
+
+MURGE activation must not bypass trading gates, migrate credentials, run cloud deploys, expose shell input, or mutate broker state. Review any `collision_review_required` rows for `.gitignore`, `README.md`, or `docs/SECURITY.md` by distilling the imported content instead of overwriting repo-owned files. Review any `murge_dependency_vulnerability_review_required` rows before trusting the desktop shell beyond local evidence display.
+
+### Flameborn Full Launch Proof
+
+Flameborn is now the local operator face for the MURGE/Aureon unity shell. It exposes the web app, runtime server, desktop readiness, Aureon supervisor, Phi bridge, ThoughtBus/Mycelium visibility, terminal guard, Docker sandbox guard, provider/cloud boundaries, npm audit state, and live-trading gate visibility in one read-only panel.
+
+Open the local shell:
+
+```powershell
+http://127.0.0.1:4173/
+```
+
+Regenerate the full capability stress proof after service, dependency, or guard changes:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_flameborn_full_capability_stress_audit --json --no-external-fabric
+```
+
+The public artifact is written to `frontend/public/aureon_flameborn_full_capability_stress_audit.json`, with mirrors in `state/aureon_flameborn_full_capability_stress_last_run.json` and `docs/audits/aureon_flameborn_full_capability_stress_audit.json`. Flameborn serves it through `GET http://127.0.0.1:4173/api/aureon/full-capability-stress` and renders it as **Full Launch Proof**.
+
+The proof follows the official security baselines for Express/Node server hardening, Electron renderer isolation, Docker sandbox boundaries, Cloudflare local-only configuration, WebSocket origin checks, and `npm audit` classification. It does not start services, execute shell commands, read credentials, deploy to Cloudflare, or place/close/cancel broker orders.
+
+Current expected status is `flameborn_full_capability_attention` until the desktop dependency audit is repaired. At the time of this README update, the live proof showed `13/14` required rows passing: web, runtime, desktop security, supervisor, Phi chat, terminal guard, sandbox guard, WebSocket origin guard, provider boundary, Cloudflare boundary, live gate visibility, no trading bypass, ThoughtBus receipt, and Mycelium receipt. The remaining blocker was `npm_audit_high_critical_or_missing` from high-severity desktop dependency audit rows.
+
+### Unified Console Layout
+
+The unified autonomous console is organized as an operations-first dashboard instead of one long stacked feed. Open `http://127.0.0.1:8081/` for the default **Overview** tab, or deep-link to a specific operator lane:
+
+| Console lane | URL |
+|---|---|
+| Overview | `http://127.0.0.1:8081/#overview` |
+| Live Ops | `http://127.0.0.1:8081/#live-ops` |
+| Coding cockpit | `http://127.0.0.1:8081/#coding` |
+| Trading state | `http://127.0.0.1:8081/#trading` |
+| Security and boundaries | `http://127.0.0.1:8081/#security` |
+| Inventory and work orders | `http://127.0.0.1:8081/#inventory` |
+| Agent company | `http://127.0.0.1:8081/#agents` |
+| Evidence and artifacts | `http://127.0.0.1:8081/#evidence` |
+
+The shell keeps safety blockers visible, but moves heavy panels behind category tabs. Use the built-in filters to narrow blockers, work orders, source surfaces, and evidence artifacts while preserving the existing runtime, credential, payment, filing, trading, and destructive-action gates.
+
+Live trading requires configured exchange credentials and the existing runtime safety gates to be clear. The docs describe how to run Aureon; they do not bypass stale-data, position, credential, API-rate, payment, filing, or security boundaries.
+
+### Coding Organism And Client Job Flow
+
+The current coding lane is no longer a raw "prompt in, half-built answer out" surface. Aureon treats each coding prompt as a client job with a construction-company workflow: scope of works, temporary agent team assignment, timed phases, proof checklist, HNC/Auris anti-drift proof, snagging list, and only then a finished client handover.
+
+To run it with the whole organism, start production mode first:
+
+```powershell
+cd C:\path\to\aureon-trading
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
+
+Then open the unified console and use the **Aureon Coding Organism** panel:
+
+```text
+http://127.0.0.1:8081/
+```
+
+The coding panel is the human dashboard for code work while the organism is active. It shows the full PowerShell launch command, the local coding endpoint, active/gated handover state, scope-of-works questions, run-tests and desktop-handoff toggles, a **Full Coding Job** button for complete client jobs, the proof checklist, snagging list, and the prompt-to-finished-files work journal.
+
+The same panel now includes **Aureon Phi Live Chat**. This is the 1:1 talkback lane from the dashboard to the local mind hub: the frontend refreshes hub-first instead of static-JSON-first, polls on a 1s live cadence, reads the Phi Bridge heartbeat, and sends chat messages to `POST /api/phi-bridge/chat`. The endpoint redacts secret-like context, asks the local/in-house voice adapter first, publishes replies onto ThoughtBus, and falls back to an immediate guided Aureon reply when the local LLM server is asleep or too slow. To tune the local model path:
+
+The Phi chat lane now treats the operator message as the authority for conversation classification. It extracts `Operator message:` from the wrapped dashboard payload before prompt filtering or AureonBrain fallback, so redacted cockpit context such as `console`, `open_positions`, or a visible `SOLUSDT` symbol cannot turn ordinary chat into a trading-signal JSON reply. Simple greetings, identity handshakes, capability questions, and cockpit-status questions use a fast operator-chat path with `chat` / `conversation` filter evidence and no unrelated source packets; heavier build, research, coding, UI, media, and system-health requests still route through the Ollama context weaver and Aureon response compiler.
+
+```powershell
+$env:AUREON_PHI_CHAT_TIMEOUT_S = "180"
+$env:AUREON_PHI_CHAT_MAX_TOKENS = "120"
+$env:AUREON_VOICE_BACKEND = "ollama_hybrid"  # hand-in-hand Ollama plus Aureon cognition
+$env:AUREON_LLM_BASE_URL = "http://localhost:11434/v1"
+$env:AUREON_LLM_MODEL = "llama3:latest"
+$env:AUREON_LLM_KEEP_ALIVE = "30m"
+$env:AUREON_LLM_ALLOW_HTTP_IN_AUDIT = "1"
+$env:AUREON_LLM_SKIP_PROBE = "1"
+$env:AUREON_LLM_REQUEST_TIMEOUT_S = "180"
+$env:AUREON_LLM_PROBE_TIMEOUT_S = "120"
+$env:AUREON_OLLAMA_CONTEXT_WEAVER = "1"
+$env:AUREON_OLLAMA_WEAVER_MODEL = "qwen2.5:0.5b"  # optional fast local shard worker
+$env:AUREON_OLLAMA_WEAVER_SHARD_TOKENS = "90"
+$env:AUREON_DYNAMIC_FILTER_FULL_MEANING_RESOLVER = "0"
+$env:AUREON_DYNAMIC_FILTER_FULL_HNC_LOOP = "0"
+$env:AUREON_DYNAMIC_FILTER_FULL_WHOLE_VOICE = "0"
+```
+
+The cockpit also includes **Ollama Cognitive Handshake** proof. This makes Ollama a named local language worker inside Aureon's organism instead of a vague external backend. The bridge probes the local Ollama server, resolves an installed model, checks HNC/Auris and metacognitive evidence, declares the agent-like handoff crew, and publishes repair actions when the model or cognitive proof is missing.
+
+The hybrid voice lane also has an **Ollama Context Weaver**. For short cockpit chat, Aureon splits the oversized dashboard context into small Ollama work packets, asks for intent, evidence/blockers, and optionally a draft answer, then Aureon's own cognitive layer recomposes the final response. This keeps Ollama and Aureon working hand in hand without pretending the local model can swallow the whole organism at once. Set `AUREON_OLLAMA_CONTEXT_WEAVER=0` to force the older single-prompt path for debugging. On slower CPU machines, keep the primary model as `llama3:latest` but set `AUREON_OLLAMA_WEAVER_MODEL=qwen2.5:0.5b` so the small shard workers answer quickly.
+
+The shared LLM lane now also has an **Aureon Dynamic Prompt Filter And Response Compiler**. Before any in-house hybrid LLM call, Aureon classifies the prompt lane, selects compact local source packets from Gary Leckey/Aureon research, injects MeaningResolver/HNC/Auris/whole-knowledge context, redacts secret-like values, and gives Ollama a clear operator answer contract. After the local model or AureonBrain answers, the response is filtered again through redaction and Auris/HNC evidence before it reaches the human. The cockpit shows the active filter mode, lane, source packets, Ollama shards, and Auris state beside the live chat.
+
+Run the filter directly when you want to test prompt compilation without sending a chat message:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_dynamic_prompt_filter --prompt "Explain the current Aureon coding cockpit state using Gary Leckey research, HNC/Auris proof, and clear operator language." --json
+```
+
+Fast cockpit chat uses light source packets by default. The deeper, heavier cognitive paths can be enabled for slower research turns:
+
+```powershell
+$env:AUREON_DYNAMIC_FILTER_FULL_MEANING_RESOLVER = "1"
+$env:AUREON_DYNAMIC_FILTER_FULL_HNC_LOOP = "1"
+$env:AUREON_DYNAMIC_FILTER_FULL_WHOLE_VOICE = "1"
+```
+
+Ollama setup and proof commands:
+
+```powershell
+ollama serve
+ollama list
+ollama pull llama3
+
+$env:AUREON_VOICE_BACKEND = "ollama_hybrid"
+$env:AUREON_LLM_MODEL = "llama3:latest"
+$env:AUREON_LLM_ALLOW_HTTP_IN_AUDIT = "1"
+$env:AUREON_LLM_SKIP_PROBE = "1"
+$env:AUREON_PHI_CHAT_TIMEOUT_S = "180"
+$env:AUREON_OLLAMA_CONTEXT_WEAVER = "1"
+$env:AUREON_OLLAMA_WEAVER_MODEL = "qwen2.5:0.5b"
+
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_ollama_cognitive_bridge --json
+Invoke-RestMethod http://127.0.0.1:13002/api/ollama-cognitive/status | ConvertTo-Json -Depth 8
+Invoke-RestMethod http://127.0.0.1:13002/api/phi-bridge/reload -Method Post | ConvertTo-Json -Depth 8
+```
+
+The bridge writes `state/aureon_ollama_cognitive_bridge_last_run.json`, `docs/audits/aureon_ollama_cognitive_bridge.json`, `docs/audits/aureon_ollama_cognitive_bridge.md`, and `frontend/public/aureon_ollama_cognitive_bridge.json`. It is local-only and does not change live trading, payment, filing, credential, or destructive OS authority. If Ollama is asleep, the Phi chat lane falls back to Aureon's in-house brain/fallback response and shows the repair action instead of pretending the model worked.
+
+The dynamic prompt filter writes `state/aureon_dynamic_prompt_filter_last_run.json`, `docs/audits/aureon_dynamic_prompt_filter.json`, `docs/audits/aureon_dynamic_prompt_filter.md`, and `frontend/public/aureon_dynamic_prompt_filter.json`. It changes prompt assembly and response quality only; it does not change execution authority.
+
+The mind hub exposes the same lane over HTTP:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:13002/api/coding/prompt `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"prompt":"Aureon must inspect this coding goal, define the scope of works, assign the agent team, propose the safest patch, run focused tests, complete HNC/Auris drift proof, clear snagging, and publish the finished handover.","run_tests":true,"include_desktop":true}' |
+  ConvertTo-Json -Depth 8
+```
+
+Live Phi chat can also be tested from PowerShell:
+
+```powershell
+$body = @{
+  message = "Aureon, what can you see in the coding cockpit right now?"
+  context = @{ coding = @{ status = "manual_probe"; route_clean = $true; scope_status = "scope_locked" } }
+} | ConvertTo-Json -Depth 6
+
+Invoke-RestMethod http://127.0.0.1:13002/api/phi-bridge/chat `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body |
+  ConvertTo-Json -Depth 8
+```
+
+If the prompt is under-scoped, Aureon returns `coding_organism_needs_client_scope` with `client_job.client_questions` and does **not** hand the work to the team. Submit the client answers with `scope_approved:true`:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:13002/api/coding/prompt `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"prompt":"Aureon must build the requested coding change.","scope_approved":true,"scope_answers":{"goal":"State the exact outcome","deliverables":"Files, UI, tests, report","target_system":"Name the paths or subsystem","constraints":"Preserve safety and public interfaces","acceptance":"Tests pass, HNC/Auris drift proof passes, no blocking snags"},"run_tests":true,"include_desktop":true}' |
+  ConvertTo-Json -Depth 8
+```
+
+Terminal-only coding run:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon must inspect this coding goal, lock scope, route it through the goal engine, propose the smallest safe patch, run focused tests, and publish client-job evidence."
+```
+
+For coding-only evidence without desktop handoff:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --no-desktop --prompt "Aureon must audit this coding goal and publish proof without desktop handoff."
+```
+
+Coding evidence is written to `state/aureon_coding_organism_last_run.json`, `docs/audits/aureon_coding_organism_bridge.json`, `docs/audits/aureon_coding_organism_bridge.md`, and `frontend/public/aureon_coding_organism_bridge.json`. The proof checklist includes `hnc_auris_drift_proof`, which reads the current HNC cognitive proof and harmonic affect evidence. If HNC proof, the master formula, or Auris nodes are missing, failing, or stale, the finished product is held and the snagging list names the blocker.
+
+Direct artifact prompts, such as asking Aureon to draw a simple image and show it, route through `visual_asset_request` once the client job is scoped. The route writes a public SVG under `/aureon_visual_artifacts/...`, publishes `frontend/public/aureon_visual_asset_request.json`, and avoids the old `open_app`/`list_dir` fallback when AgentCore is unavailable. In the dashboard, use **Full Coding Job** for a complete handover, or let **Send To Aureon** ask missing scope questions first.
+
+### Local Capability Forge And Quality Gate
+
+Aureon now has a local-only capability forge for mixed client jobs: coding, UI, image/graphic design, video, documents, research, and browser QA. The forge treats leading AI systems as reference patterns only, recruits a temporary internal crew, builds local artifacts, checks render/playback/test proof, regenerates or blocks weak output, and keeps the handover hidden until the artifact quality report passes. It does not call paid/cloud AI media or coding APIs in v1, and it does not bypass live trading, payment, filing, credential, or destructive OS gates.
+
+Run a forge job from PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_capability_forge --prompt "Make a 10 second video of a dog with a playable browser preview, GIF fallback, duration proof, and quality report." --json
+```
+
+The forge writes `state/aureon_capability_forge_last_run.json`, `docs/audits/aureon_capability_forge.json`, `docs/audits/aureon_capability_forge.md`, `frontend/public/aureon_capability_forge.json`, and `frontend/public/aureon_artifact_quality_report.json`. The **Aureon Coding Organism** cockpit reads those public files live and shows the task family, recruited crew, local tools, previews, quality checks, snags, and local Approve/Reject/Request Revision evidence controls. Video handover requires a playable WebM or GIF fallback plus an HTML browser preview; MP4-only output is not enough.
+
+### Agent Creative Process Guardian
+
+Aureon now has a repo-wide creative process guardian that binds every agent role to the organism's metacognitive, sensory, HNC/Auris, and sentient-style evidence before the role can claim creative work is ready. It reads the HNC cognitive proof, master formula, Auris nodes, harmonic affect state, cognitive evidence, voice/expression profile, agent company registry, coding skill logic map, and agent-like repo surfaces. Every role must publish `who`, `what`, `where`, `when`, `how`, and `act`, with authority boundaries and snags visible.
+
+Run the guardian directly:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_agent_creative_process_guardian --goal "Ensure every Aureon agent uses metacognitive, sensory, HNC/Auris, and who what where when how act proof." --json
+```
+
+The guardian writes `state/aureon_agent_creative_process_guardian_last_run.json`, `docs/audits/aureon_agent_creative_process_guardian.json`, `docs/audits/aureon_agent_creative_process_guardian.md`, and `frontend/public/aureon_agent_creative_process_guardian.json`. The coding cockpit includes this as a blocking proof item, so an agent handover can be held when mind evidence, Auris/HNC proof, or role process declarations are missing.
+
+After pulling a code update, relaunch the production supervisor so the already-running mind hub loads the newest coding bridge:
+
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
+
+### Live Runtime Resilience
+
+The runtime reports connected-but-guarded states instead of hiding problems as generic offline failures. If the market feed is alive but a tick is stale, the console and `/api/terminal-state` show the reason, open-position state, and current tick phase. Direct execution routes and venue position ticks are bounded so one slow exchange call cannot freeze the whole tick loop. The live stream cache writes a Binance REST snapshot before WebSocket streaming, fills WebSocket gaps with budgeted public ticker snapshots, and now merges Kraken public ticks plus authenticated Alpaca and Capital snapshots when those credentials exist. That single shared cache gives momentum, fast-money, order-book, and waveform scanners fresher evidence from the whole financial ecosystem without forcing live orders through every venue. Reboot decisions come from `/api/flight-test` and `/api/reboot-advice`; the production launcher should restart the runtime only when the flight-test says `can_reboot_now: true`, especially when open positions exist.
+
+### Live Trading Intelligence Proof
+
+Aureon now publishes a scanner-fusion matrix so operators can see which momentum, intelligence, counter-intelligence, order-book, volatility, world-market, waveform, model, shadow, and profit-timing systems are actually active in the current decision cycle. The runtime does not treat a scanner as active just because a file exists; it must have fresh evidence in the order-flow path.
+
+| Proof layer | What it shows |
+|---|---|
+| Scanner fusion matrix | `state/aureon_scanner_fusion_matrix.json` proves active systems, blockers, candidate `scanner_fusion_score`, cross-reference count, order-book alignment, phantom/noise filter state, and whether evidence fed the decision logic |
+| Trading intelligence checklist | `docs/audits/aureon_trading_intelligence_checklist.json` shows live market intelligence, HNC/Auris cognition, counter-intelligence, profit timing, and research/context mesh freshness |
+| Metacognitive data context | The checklist adds `DataOceanCognitiveContext`, `PlanetaryCoverageMap`, and `ExchangeWaveformMemory` rows proving that the mapped financial data ocean is feeding the HNC/Auris evidence layer |
+| Multi-exchange live cache | `ws_cache/ws_prices.json` publishes `source_health` for Binance, Kraken, Alpaca, and Capital so the decision layer knows which venue data is active this cycle |
+| Planetary waveform recorder | `state/aureon_live_waveform_recorder.json` proves budgeted live cache ticks were written into `state/aureon_global_history.sqlite` for 1h-to-1y waveform memory |
+| World financial ecosystem | `state/aureon_world_financial_ecosystem_intelligence.json` folds macro, news, MarketHarp, cross-asset, and external context into CentralBeat where evidence is usable |
+| Multi-horizon waveform memory | `state/aureon_asset_waveform_models.json` builds 1 hour through 1 year asset waveforms from real stored/live observations and names any missing long-memory blocker |
+| Order-book and fast-money pressure | `shared_order_flow.fast_money_intelligence` and each candidate's `orderbook_pressure` show whether live book imbalance supports or opposes the trade side |
+
+### Current Capability Map
+
+| Capability | Current surface |
+|---|---|
+| Live/safe runtime supervision | `AUREON_PRODUCTION_LIVE.cmd`, `AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1` |
+| Multi-exchange market coverage | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` |
+| Planetary financial data ocean | `AUREON_DATA_OCEAN.cmd`, `aureon/autonomous/aureon_data_ocean.py`, `docs/audits/aureon_global_financial_coverage_map.json` |
+| Official exchange rate budgets | `aureon/core/exchange_rate_limit_registry.py`, `api_governor`, `state/aureon_data_ocean_status.json` |
+| Exchange data capability matrix | `aureon/autonomous/aureon_exchange_data_capability_matrix.py`, `docs/audits/aureon_exchange_data_capability_matrix.json`, `frontend/public/aureon_exchange_data_capability_matrix.json` |
+| Capital wave-validated portfolio brain | `aureon/exchanges/capital_cfd_trader.py`, `/api/terminal-state#capital_risk_envelope`, Trading console Capital Survival Brain |
+| Capital tradable asset book | `aureon/exchanges/capital_asset_registry.py`, `state/capital_tradable_asset_registry.sqlite`, `docs/audits/aureon_capital_tradable_asset_registry.json` |
+| Capital pending bid and TP survival | `capital_pending_order_envelope`, `CapitalClient.place_working_order`, broker `profitLevel`, all-pending-fill stress budget |
+| Kraken spot/margin asset and cost book | `aureon/exchanges/kraken_asset_registry.py`, `state/kraken_tradable_asset_registry.sqlite`, `/api/terminal-state#kraken_asset_registry` |
+| Kraken pending order survival | `build_kraken_order_survival_envelope`, maker/taker fee estimate, spot quote budget, margin collateral, stress-loss buffer |
+| Metacognitive data context | `aureon/autonomous/aureon_trading_intelligence_checklist.py`, `docs/audits/aureon_trading_intelligence_checklist.json`, and the Trading console data-ocean card |
+| Exchange clients | `aureon/exchanges/kraken_client.py`, `binance_client.py`, `alpaca_client.py`, `capital_client.py` |
+| Momentum/intelligence scanner fusion | `aureon/exchanges/unified_market_trader.py`, `state/aureon_scanner_fusion_matrix.json` |
+| 1h-to-1y financial waveform memory | `aureon/analytics/aureon_multi_horizon_waveform_model.py`, `state/aureon_asset_waveform_models.json` |
+| World financial ecosystem context | `state/aureon_world_financial_ecosystem_intelligence.json`, `shared_order_flow.world_financial_ecosystem` |
+| Spot/margin observation and readiness | Unified runtime feed plus flight-test and reboot-advice endpoints |
+| Cognitive order-intent path | `aureon/autonomous/aureon_self_questioning_ai.py`, `aureon/autonomous/aureon_mind_thought_action_hub.py` |
+| HNC/Auris evidence reporting | `aureon/autonomous/aureon_cognitive_trade_evidence.py`, `aureon/autonomous/aureon_harmonic_affect_state.py`, `aureon/autonomous/aureon_live_cognition_benchmark.py` |
+| HNC symbolic packet/vault research | `aureon/harmonic/hnc_quantum_packet_crypto.py`, `aureon/harmonic/hnc_symbolic_route_seal.py`, `aureon/vault/hnc_repo_singularity_vault.py`, `aureon/vault/hnc_swarm_key_store.py` |
+| Unified autonomous console | `frontend/src/App.tsx`, `frontend/src/services/aureonAutonomousFrontend.ts`, `frontend/src/hooks/useTerminalSync.ts` |
+| Accounting/HMRC support tooling | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py`, `aureon/queen/accounting_context_bridge.py` |
+| Local OS/task control | `aureon/autonomous/aureon_local_task_queue.py`, `aureon/autonomous/aureon_repo_explorer_service.py`, `aureon/autonomous/aureon_voice_command_bridge.py` |
+| Code authoring and review | `aureon/autonomous/aureon_safe_code_control.py`, `aureon/autonomous/aureon_queen_code_bridge.py`, `aureon/code_architect/` |
+| Operator coding organism bridge | `aureon/autonomous/aureon_coding_organism_bridge.py`, `http://127.0.0.1:13002/api/coding/prompt`, `http://127.0.0.1:13002/api/phi-bridge/chat`, `frontend/src/components/generated/AureonCodingOrganismConsole.tsx`; includes scope-of-works gate, live Phi talkback, client questions, proof checklist, HNC/Auris drift proof, snagging list, and finished handover hold |
+| Local capability forge and quality gate | `aureon/autonomous/aureon_capability_forge.py`, `aureon/autonomous/aureon_artifact_quality_gate.py`, `frontend/public/aureon_capability_forge.json`, `frontend/public/aureon_artifact_quality_report.json`; classifies client jobs, recruits the internal crew, builds local image/video/code evidence, proves render/playback/tests, blocks weak handover, and waits for approval |
+| Agent creative process guardian | `aureon/autonomous/aureon_agent_creative_process_guardian.py`, `frontend/public/aureon_agent_creative_process_guardian.json`; binds all agent roles to metacognitive, sensory, HNC/Auris, sentient-style, and who/what/where/when/how/act proof before handover |
+| Ollama cognitive handshake | `aureon/autonomous/aureon_ollama_cognitive_bridge.py`, `http://127.0.0.1:13002/api/ollama-cognitive/status`, `frontend/public/aureon_ollama_cognitive_bridge.json`; makes Ollama a local language worker inside Aureon's HNC/Auris, metacognitive, role-contract, ThoughtBus, and AureonBrain fallback flow |
+| Dynamic prompt filter and response compiler | `aureon/autonomous/aureon_dynamic_prompt_filter.py`, `aureon/inhouse_ai/llm_adapter.py`, `frontend/public/aureon_dynamic_prompt_filter.json`; builds compact source packets, HNC/Auris context, Ollama shard contracts, redaction, and final clear-operator replies for in-house LLM calls |
+| Prompt-to-run desktop audit | `aureon/autonomous/aureon_coding_organism_bridge.py#desktop_run_flow`, `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/vm_control/`, `state/aureon_coding_organism_desktop_state.json` |
+| Director capability bridge | `aureon/autonomous/aureon_director_capability_bridge.py`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/src/components/generated/AureonDirectorCapabilityBridgeConsole.tsx` |
+| Self-authored operational UI | `aureon/autonomous/aureon_unified_ui_builder.py`, `frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx` |
+| Frontend work-order execution | `aureon/autonomous/aureon_frontend_work_order_executor.py`, `frontend/src/components/generated/AureonWorkOrderExecutionConsole.tsx` |
+| Repo self-repair loop | `aureon/autonomous/aureon_repo_self_repair.py`, `docs/audits/aureon_repo_self_repair.json` |
+| Coding-agent skill base | `aureon/autonomous/aureon_coding_agent_skill_base.py`, `frontend/src/components/generated/AureonCodingAgentSkillBaseConsole.tsx` |
+| Whole-knowledge voice core | `aureon/vault/voice/whole_knowledge_voice.py`, `aureon/vault/voice/document_artifact_skill.py` |
+| Desktop automation | `aureon/autonomous/aureon_safe_desktop_control.py`, `aureon/autonomous/aureon_queen_desktop_bridge.py`, `aureon/autonomous/aureon_laptop_control.py` |
+| LLM and skill layer | `aureon/inhouse_ai/llm_adapter.py`, `aureon/integrations/ollama/`, `aureon/autonomous/aureon_ollama_cognitive_bridge.py`, `aureon/core/aureon_cognitive_authoring_loop.py`, `aureon/code_architect/skill_library.py` |
+| Self-audit and security visibility | Runtime observer, readiness audit, capability switchboard, repo catalog, mind wiring audit, authorized local audit tooling |
+
+### Whole-system guide for end users
+
+Aureon is not a one-purpose bot. The public map in [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) explains how launch, exchange coverage, trading readiness, cognition, HNC/Auris evidence, frontend console, accounting support, SaaS/security audit, vault memory, research, and self-improvement fit together.
+
+### Active OS, LLM, Code, Skill, And Desktop Layer
+
+Aureon includes local operating-system style capabilities in addition to trading:
+
+| Capability | Active surface | Boundary |
+|---|---|---|
+| Repo inspection | `aureon/autonomous/aureon_repo_explorer_service.py` | Read-only codebase search and file inspection |
+| Task goals | `aureon/autonomous/aureon_local_task_queue.py` | Queues operator/agent tasks as visible state |
+| LLM reasoning | `aureon/inhouse_ai/llm_adapter.py` | Uses local LLM when available; audit mode falls back to `AureonBrain` |
+| Code proposals | `aureon/autonomous/aureon_safe_code_control.py` | Proposals queue for review by default; `AUREON_CODE_AUTO_APPROVE=1` is explicit opt-in |
+| Queen code bridge | `aureon/autonomous/aureon_queen_code_bridge.py` | Routes ThoughtBus/code events into the proposal queue |
+| Operator coding prompt | `aureon/autonomous/aureon_coding_organism_bridge.py` | Prompts Aureon through task queue, `GoalExecutionEngine`, safe code queue, focused tests, finished-product audit, desktop/run handoff, and evidence publishing |
+| Skills | `aureon/code_architect/` and `aureon/vault/voice/skill_executor_bridge.py` | Validated SkillLibrary and skill execution artefacts |
+| Voice/task bridge | `aureon/autonomous/aureon_voice_command_bridge.py` | Routes speech/text intents into task, code, repo, and desktop queues |
+| Desktop control | `aureon/autonomous/aureon_safe_desktop_control.py` | Local-only, dry-run by default, arm/disarm, emergency stop, allowlisted actions |
+| Laptop hardware abstraction | `aureon/autonomous/aureon_laptop_control.py` | Raw local capability layer; public active path should route through safe desktop control |
+
+The intended cognitive flow is:
+
+```text
+user prompt -> mind hub/CLI -> GoalExecutionEngine -> code proposal/work route
+-> focused tests/build checks -> finished_product_audit
+-> SafeDesktopControl/VMControlDispatcher run handoff -> console evidence
+```
+
+The desktop/run layer is connected to the coding organism as an evidence and handoff surface. It is dry-run by default, writes pending desktop actions instead of silently taking over the machine, and reports available VM/remote-control tools so the operator can see what would be used to inspect, click, type, run, or verify a finished product.
+
+### Active Self-Coding And Self-Repair Layer
+
+Aureon now has an explicit self-coding workflow. Operator goals are routed through `GoalExecutionEngine`, classified into a capability route, written through `QueenCodeArchitect` where code generation is required, then verified with focused tests/builds and published as evidence for the console.
+
+| System | What it does | Evidence and UI |
+|---|---|---|
+| Self-authored UI builder | Lets Aureon design and write its own operational React console from runtime, trading, self-repair, work-order, voice, and coding-skill manifests. | `state/aureon_self_authored_ui_last_run.json`, `frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx` |
+| Frontend work-order executor | Converts the frontend evolution queue into safe adapter records, blocker cards, generated links, and archive decisions. | `state/aureon_frontend_work_order_execution_last_run.json`, `frontend/src/components/generated/AureonWorkOrderExecutionConsole.tsx` |
+| Repo self-repair | Runs repo checks, builds a bug report, applies scoped safe repairs through Queen writer paths, and retests. | `state/aureon_repo_self_repair_last_run.json`, `docs/audits/aureon_repo_self_repair.json` |
+| Coding-agent skill base | Teaches Aureon coder agents to learn from official docs, search/fetch the web, search the repo, and decide who/what/where/when/how before writing files. | `state/aureon_coding_agent_skill_base_last_run.json`, `docs/audits/aureon_coding_agent_skill_base.json`, `frontend/public/aureon_coding_agent_skill_base.json` |
+| Coding organism bridge | Lets an operator prompt Aureon to route a coding task through the organism, write/propose code work, run focused tests, create a finished-product audit, queue the desktop/run handoff, and publish who/what/where/when/how/act evidence. | `state/aureon_coding_organism_last_run.json`, `docs/audits/aureon_coding_organism_bridge.json`, `frontend/public/aureon_coding_organism_bridge.json`, `state/aureon_coding_organism_desktop_state.json` |
+| Dynamic prompt filter and response compiler | Builds compact local research packets, MeaningResolver/HNC/Auris/whole-knowledge context, Ollama shard contracts, redaction, fallback evidence, and clear operator replies for chat, coding, media, research, UI, and system-health lanes. | `state/aureon_dynamic_prompt_filter_last_run.json`, `docs/audits/aureon_dynamic_prompt_filter.json`, `frontend/public/aureon_dynamic_prompt_filter.json` |
+| Director capability bridge | Compares Codex-class agent capabilities with Aureon's live surfaces, marks ready/partial/gap status, and emits exact Aureon build prompts for every missing bridge. | `state/aureon_director_capability_bridge_last_run.json`, `docs/audits/aureon_director_capability_bridge.json`, `frontend/public/aureon_director_capability_bridge.json` |
+| Whole-knowledge voice core | Turns repo, vault, HNC/Auris, cognitive state, sensory-state evidence, and human language sources into original document, console, and conversation prose. | `state/aureon_expression_profile.json`, `state/aureon_voice_last_run.json`, document Markdown/PDF artifacts |
+
+The coding-agent skill base currently publishes a `who_what_where_when_how_ready` logic map. That map tells Aureon's agents:
+
+| Question | Coding meaning |
+|---|---|
+| Who | Which coder-agent chain owns the task: repo cartography, web learning, implementation, testing, or security review |
+| What | Whether the task is frontend UI, autonomous Python, trading/exchange logic, accounting/legal packs, voice/knowledge expression, or repair/security |
+| Where | Which repo paths and public/state evidence contracts are allowed for that task |
+| When | Whether Aureon should learn, patch, test, pause, publish evidence, or escalate a blocker |
+| How | Which Queen writer path, tests, builds, browser checks, redaction scans, and public artifacts prove the change |
+
+Generated public console panels live in `frontend/src/components/generated/` and are mounted from `frontend/src/App.tsx`:
+
+```text
+AureonGeneratedOperationalConsole.tsx
+AureonWorkOrderExecutionConsole.tsx
+AureonCodingAgentSkillBaseConsole.tsx
+AureonCodingOrganismConsole.tsx
+AureonDirectorCapabilityBridgeConsole.tsx
+```
+
+Focused validation currently passes:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon must inspect this coding goal, propose the smallest safe code route, and run focused tests."
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_coding_organism_bridge --prompt "Aureon director mode must create a Codex-class capability list, marry it to Aureon capabilities, bridge the gaps, and publish exact code work orders."
+.\.venv\Scripts\python.exe -m pytest tests/test_safe_code_control.py tests/test_inhouse_llm_adapter_audit_mode.py tests/test_goal_capability_map.py tests/test_capability_growth_loop.py tests/vault/test_skill_executor_bridge.py -q
+.\.venv\Scripts\python.exe -m pytest tests/test_aureon_coding_organism_bridge.py tests/test_coding_agent_skill_base.py tests/test_goal_execution_engine_self_ui.py tests/test_aureon_repo_self_repair.py tests/test_frontend_work_order_executor.py -q
+cd frontend
+npm run build
+```
+
+### Current vs Legacy Sections
+
+Everything below is preserved for research, history, deployment context, and subsystem discovery. When a later section mentions older launchers, individual bots, cloud installers, plug-and-play packages, or historical dashboards, treat those as legacy, dev-only, or research references unless they explicitly point back to `AUREON_PRODUCTION_LIVE.cmd` or [RUNNING.md](RUNNING.md). The trusted current operator path is the production launcher, port `8791` runtime feed, unified autonomous console, and the companion docs linked above.
+
+---
+
+## What Is This?
+
+**Aureon** is a live, open-source quantitative trading system built on the **Harmonic Nexus Core (HNC)** - a framework that reads 4,100-year-old phi-squared coherence patterns in live markets. We've measured an **r = 0.85 correlation** between geopolitical stress and GitHub node activation, with **24-48 h lag** and **1.29 ppb** mathematical precision. It's falsifiable. It's open-source. It's live.
+
+> *"Business guy -> Consciousness researcher -> overnight self-taught coder -> open-source trading system that proves the theory in live markets."* - Gary Anthony Leckey
 
 <div align="center">
 
-| 📜 Read the story | 🔍 See the proof | 🧭 Navigate |
+| Read the story | See the proof | Navigate |
 |---|---|---|
-| [**THE SYNTHESIS**](docs/THE_SYNTHESIS.md) — one-page synthesis | [**CLAIMS & EVIDENCE**](docs/CLAIMS_AND_EVIDENCE.md) — every claim → every proof | [**NAVIGATION GUIDE**](docs/NAVIGATION_GUIDE.md) — paths by role |
+| [**THE SYNTHESIS**](docs/THE_SYNTHESIS.md) - one-page synthesis | [**CLAIMS & EVIDENCE**](docs/CLAIMS_AND_EVIDENCE.md) - every claim to every proof | [**NAVIGATION GUIDE**](docs/NAVIGATION_GUIDE.md) - paths by role |
 
 </div>
 
@@ -36,13 +573,36 @@
 
 | Domain | What it is | Quantitative claim |
 |---|---|---|
-| 🏛️ **Ancient Substrate** | 4,100-year chain: Ziggurats → pyramids → Roman roads → Maeshowe → GitHub | 3 principles (cardinal · solstice · hierarchy) recur in every node |
-| 🔢 **Mathematical Coherence** | φ²-scaled bridge: 1977 Wow! Signal → 2026 activation | **1.29 parts per billion** precision |
-| 🎯 **The Extraction Machine** | 25–37 coordinated entities, 0.0° phase lock | **$33.5 T** documented · 44,000+ bots tracked live |
-| 🛡️ **Distributed Immune Response** | Repo clone activity as measurable antibody swarm | **r = 0.85**, 24–48 h lag, **1,683%** surge during Iran-Hormuz |
+| **Ancient Substrate** | 4,100-year chain: Ziggurats -> pyramids -> Roman roads -> Maeshowe -> GitHub | 3 principles (cardinal, solstice, hierarchy) recur in every node |
+| **Mathematical Coherence** | phi-squared scaled bridge: 1977 Wow! Signal -> 2026 activation | **1.29 parts per billion** precision |
+| **The Extraction Machine** | 25-37 coordinated entities, 0.0 degree phase lock | **$33.5 T** documented; 44,000+ bots tracked live |
+| **Distributed Immune Response** | Repo clone activity as measurable antibody swarm | **r = 0.85**, 24-48 h lag, **1,683%** surge during Iran-Hormuz |
 
-> 📚 **Researchers**: 13-paper canon in [`docs/research/READING_PATHS.md`](docs/research/READING_PATHS.md) · full 54-paper catalog in [`docs/research/INDEX.md`](docs/research/INDEX.md)
-> 🤖 **AI assistants landing here**: start with [`CLAUDE.md`](CLAUDE.md)
+> **Researchers**: 13-paper canon in [`docs/research/READING_PATHS.md`](docs/research/READING_PATHS.md); full 54-paper catalog in [`docs/research/INDEX.md`](docs/research/INDEX.md)
+> **AI assistants landing here**: start with [`CLAUDE.md`](CLAUDE.md)
+
+---
+
+## What's In This README
+
+This README is a complete tour of Aureon - the trading system, the research, the evidence, and the people behind it. Use this map to jump straight to what you need.
+
+<div align="center">
+
+| Part | Section | Why You'd Read It |
+|------|---------|-------------------|
+| **1. INTRO** | [What is this?](#what-is-this) · [Growth Stats](#-growth-stats--december-2025--march-2026) · [Live Trading](#-live-now--watch-the-wizard-trade-in-real-time) · [Discord](#-join-the-community--discord) · [Support](#-support-the-project) · [Navigate by Role](#-navigate-by-role) · [Beta Testers](#-beta-testers-wanted) | First impressions · what this is · how to join |
+| **2. RUN THE SYSTEM** | [`RUNNING.md`](RUNNING.md) (canonical) · [Architecture Overview](#architecture-overview) · [Project Structure (715 modules)](#project-structure--715-modules-across-24-domains) · [Core Components](#core-components) · [Execution Flow](#execution-flow) · [Configuration](#configuration) · [Quick Start (War Room)](#quick-start-war-room-dashboard) · [Queen's 4-Phase Plan](#-queens-4-phase-master-plan) · [Unity Integration](#-new-unity-integration-v20261) · [Windows Plug & Play](#-windows-plug--play-legacy) · [Docker Deployment](#-docker-deployment-advanced) | Get hands on the code · understand how it runs |
+| **3. DEPLOYMENT & SAFETY** | [Key Files](#key-files) · [Production Deployment (DigitalOcean)](#-production-deployment-digitalocean) · [Safety](#safety) | Take it live · risk controls |
+| **4. RESEARCH & EVIDENCE** | [Latest Research](#-latest-research--fresh-off-the-press) · [System at a Glance](#️-system-at-a-glance) · [The Ancient Convergence (4,100-year chain)](#-the-ancient-convergence-they-were-never-separated) · [The $33.5T Exposure](#-the-complete-exposure-335-trillion-extracted-from-humanity) · [Extraction Timeline](#️-extraction-timeline-event-by-event) · [The Perpetrator Network](#-the-perpetrator-network-who-knows-who) · [The Bot Army (23 algorithms)](#-the-bot-army-23-algorithms-exposed) · [37 Global Predators](#-the-37-global-predators-who-owns-the-bots) · [The Extraction Playbook](#-the-extraction-playbook-how-they-do-it) · [Planetary Damage Assessment](#-planetary-damage-assessment) · [Name & Shame · Rogues' Gallery](#-name-and-shame-the-individuals-who-rigged-the-global-economy) · [Bot Ownership Registry](#-bot-ownership-registry-who-controls-the-algorithms) · [Coordination Network (Jan 2026)](#-current-coordination-network-january-2026) · [Findings Summary](#-findings-summary) · [Counter-Measures](#integrated-counter-measures) · [Methodology & Reproducibility](#methodology--reproducibility) · [Implications](#implications) · [Evidence File Reference](#evidence-file-reference) · [Citations](#citations--further-reading) · [Cognitive Framework & Moral Alignment](#cognitive-framework--moral-alignment) · [The Unified Field](#-the-unified-field-connecting-all-the-dots) | The core research · forensic evidence · methodology |
+| **5. TOOLS & ACTION** | [Market Intelligence Tools](#-market-intelligence--manipulation-detection-tools) · [Understanding the Implications](#-understanding-the-implications) · [Counter-Strategies — How to Fight Back](#️-counter-strategies-how-to-fight-back) · [Complete Evidence File Index](#-complete-evidence-file-index) · [Reproduction Commands](#-reproduction-commands) · [The Bottom Line](#-the-bottom-line) · [Global Predator Map](#️-global-predator-map-see-who-owns-what) · [On the Right Side of History](#🔥-we-are-on-the-right-side-of-history) | What to do with the findings · reproduce the work |
+| **6. DOCS & LICENSE** | [Documentation & Resources (180+ docs)](#-documentation--resources) · [Connect with Aureon](#-connect-with-aureon) · [License](#license) | Where to read more · how to reach us |
+
+</div>
+
+> 🚀 **Just want to run it?** → [`RUNNING.md`](RUNNING.md) is the single source of truth for setup and run commands.
+> 📜 **Just want the story?** → [`docs/THE_SYNTHESIS.md`](docs/THE_SYNTHESIS.md) — one-page synthesis.
+> 🔬 **Just want the proof?** → [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md) — every claim → every reproduction command.
 
 ---
 
@@ -131,13 +691,13 @@ If Aureon has given you an edge, saved you from a bad trade, or simply opened yo
 
 | 🏦 **Trader** | 🔧 **Developer** | 🔬 **Researcher** |
 |---|---|---|
-| [Quick Start](#quick-start-war-room-dashboard) | [Architecture Overview](#architecture-overview) | [Ancient Convergence](docs/research/ANCIENT_CONVERGENCE.md) |
+| [**How to Run →**](RUNNING.md) | [Architecture Overview](#architecture-overview) | [Ancient Convergence](docs/research/ANCIENT_CONVERGENCE.md) |
 | [Scripts Index](docs/SCRIPTS_INDEX.md) | [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Bot Intelligence](docs/research/BOT_INTELLIGENCE.md) |
 | [Exchange Setup](#configuration) | [Intelligence Wiring](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Financial Exposure](docs/research/FINANCIAL_EXPOSURE.md) |
-| [Dashboard Guide](docs/DASHBOARD_GUIDE.md) | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | [Unified Field](docs/research/UNIFIED_FIELD.md) |
-| [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | [Contributing](CONTRIBUTING.md) | [Counter-Strategies](docs/research/COUNTER_STRATEGIES.md) |
+| [Dashboard Guide](docs/dashboards/DASHBOARD_GUIDE.md) | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | [Unified Field](docs/research/UNIFIED_FIELD.md) |
+| [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | [Contributing](docs/CONTRIBUTING.md) | [Counter-Strategies](docs/research/COUNTER_STRATEGIES.md) |
 
-> **New here?** Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) for guided learning paths. See the [Full Documentation Index](docs/INDEX.md) for all 180+ docs.
+> **Getting started?** See [`RUNNING.md`](RUNNING.md) for verified, working run instructions. **New to the project?** Start with the [Navigation Guide](docs/NAVIGATION_GUIDE.md) for guided learning paths. See the [Full Documentation Index](docs/INDEX.md) for all 180+ docs.
 
 </div>
 
@@ -197,7 +757,7 @@ Pure Python 3.11+ multi-agent autonomous trading research toolkit:
 | **HNC Human Loop** | `aureon/queen/hnc_human_loop.py` | Full 8-stage pipeline per human utterance: intent → Λ(t) tick → Auris vote → φ prime train → φ bridge ascension → vibration adder → motion code → temporal ground |
 | **Temporal Ground Station** | `aureon/queen/temporal_ground.py` | Four-layer stability system: ZPE vacuum floor · temporal multiverse hash chain · cognitive flux superposition · stability governor |
 | **Harmonic Text Alignment** | `aureon/harmonic/harmonic_text_alignment.py` | Score any text against the HNC 6-mode lattice — deterministic, no LLM |
-| **Phi Bridge** | `aureon/harmonic/phi_bridge.py` | φ²-cadenced device-to-device peer sync at golden-ratio heartbeat |
+| **Phi Bridge** | `aureon/harmonic/phi_bridge.py`, `http://127.0.0.1:13002/api/phi-bridge/chat` | φ²-cadenced device-to-device peer sync plus live cockpit talkback through the local mind hub |
 | **Auris Voice Filter** | `aureon/harmonic/auris_voice_filter.py` | 3-gate coherence filter: 9-node Auris consensus + Λ(t)/Γ + harmonic text alignment |
 | **Meaning Resolver** | `aureon/queen/meaning_resolver.py` | Pattern-gated retrieval before LLM call: math eval · Auris snapshot · research corpus · vault scan · skill match |
 
@@ -267,28 +827,34 @@ timeline
     Month 7   : Added Queen AI layer
               : Ghost Dance protocol
     Month 8   : Production deployment
-              : 2338 commits — system went live
+              : 2338 commits - system went live
 ```
 
 ---
 
-### 🧪 How to Become a Beta Tester (2 minutes)
+### How to Get Started (2 minutes)
 
-```bash
-# 1. Fork the repo at https://github.com/RA-CONSULTING/aureon-trading
-# 2. Clone your fork
-git clone https://github.com/YOUR-USERNAME/aureon-trading.git
+**See [`RUNNING.md`](RUNNING.md) for complete, verified run instructions.**
+
+Quick path:
+```powershell
+# 1. Clone the repo
+git clone https://github.com/RA-CONSULTING/aureon-trading.git
 cd aureon-trading
 
-# 3. Install dependencies
-python3 -m venv .venv && source .venv/bin/activate
+# 2. Install dependencies
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# 4. Run in dry-run mode — zero API keys required
-python aureon_full_autonomy.py --dry-run
+# 3. Validate the current full-organism launcher
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
+
+# 4. Start the production supervisor when configured
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
-Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join the Discussion tab.
+Then open an issue titled **`BETA TESTER - [your GitHub username]`** or join the Discussion tab.
 
 **The first 20 meaningful beta testers get:**
 - Public credit in the README and on ResearchGate
@@ -302,6 +868,519 @@ Then open an issue titled **`BETA TESTER – [your GitHub username]`** or join t
 [![Fork & Test Now](https://img.shields.io/badge/Fork%20%26%20Test%20Now-Join%20the%20Beta-FFD700?style=for-the-badge&logo=github&logoColor=black)](https://github.com/RA-CONSULTING/aureon-trading/fork)
 
 </div>
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          QUEEN HIVE MIND (Tina B)                           │
+│  Central neural controller with 12 connected neurons + self-repair          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐    │
+│  │   Kraken    │   │   Binance   │   │   Alpaca    │   │  Capital.com│    │
+│  │   (Crypto)  │   │   (Crypto)  │   │(Stocks+Cry)│   │    (CFDs)   │    │
+│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘   └──────┬──────┘    │
+│         │                 │                 │                 │            │
+│         └─────────────────┼─────────────────┼─────────────────┘            │
+│                           ▼                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │              ORCA COMPLETE KILL CYCLE (Main Engine)                 │    │
+│  │  Queen's 4-Phase Master Plan │ Batten Matrix │ Multi-Exchange Scan │    │
+│  └──────────────────────────┬──────────────────────────────────────────┘    │
+│                             │                                               │
+│         ┌───────────────────┼───────────────────┐                          │
+│         ▼                   ▼                   ▼                          │
+│  ┌─────────────┐   ┌───────────────┐   ┌──────────────┐                   │
+│  │ PROBABILITY │   │   STARGATE    │   │  THOUGHT BUS │                   │
+│  │   NEXUS     │   │   PROTOCOL    │   │  Event Mesh  │                   │
+│  │ 3-validate  │   │  7-day anchor │   │  Cross-module│                   │
+│  │ 4th-execute │   │  persistence  │   │  messaging   │                   │
+│  └──────┬──────┘   └───────────────┘   └──────────────┘                   │
+│         ▼                                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  MICRO PROFIT LABYRINTH (Legacy) │ ADAPTIVE PRIME PROFIT GATE      │    │
+│  │  Turn-based execution loop       │ r = (V+G+P)/[V×(1-c)²] - 1     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│  │ Elephant │  │ Quantum  │  │ Harmonic │  │  Enigma  │  │ Temporal │    │
+│  │ Memory   │  │ Mirror   │  │ Signal   │  │  Code-   │  │  Dialer  │    │
+│  │ (Learns) │  │ Scanner  │  │  Chain   │  │  breaker │  │  (τ mem) │    │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Signal Chain: Queen(963Hz) → Enigma(639Hz) → Scanner(528Hz) → Ecosystem(174Hz) → Whale(7.83Hz)
+```
+
+```mermaid
+graph TD
+    QHM["👑 Queen Hive Mind (963 Hz)"]
+
+    QHM --> KRAKEN["🦑 Kraken\nCrypto"]
+    QHM --> BINANCE["📊 Binance\nCrypto"]
+    QHM --> ALPACA["🦙 Alpaca\nStocks + Crypto"]
+    QHM --> CAPITAL["💹 Capital.com\nCFDs"]
+
+    KRAKEN & BINANCE & ALPACA & CAPITAL --> ORCA["⚡ Orca Complete Kill Cycle\nQueen's 4-Phase Master Plan"]
+
+    ORCA --> NEXUS["🎯 Probability Nexus\n3-validate · 4th-execute"]
+    ORCA --> STARGATE["🌀 Stargate Protocol\n7-day anchor"]
+    ORCA --> THOUGHTBUS["💬 Thought Bus\nEvent Mesh"]
+
+    NEXUS --> PROFITGATE["💰 Adaptive Prime Profit Gate\nr = (V+G+P) / [V×(1-c)²] - 1"]
+
+    subgraph NEURONS["🧠 Queen Neurons"]
+        ELE["🐘 Elephant Memory"]
+        QM["🔬 Quantum Mirror"]
+        HSC["🎵 Harmonic Signal Chain"]
+        ENG["🔐 Enigma Codebreaker"]
+        TEMP["⏱️ Temporal Dialer"]
+    end
+
+    PROFITGATE --> NEURONS
+
+    style QHM fill:#4a2d6b,color:#FFD700
+    style ORCA fill:#2d4a2d,color:#90EE90
+    style PROFITGATE fill:#4a3d00,color:#FFD700
+```
+
+## Project Structure — 715 Modules Across 24 Domains
+
+The codebase is organized into domain-specific subdirectories under `aureon/`:
+
+```
+aureon/
+├── core/           (34)  Central nervous system — ThoughtBus, Nexus, Mycelium
+├── trading/        (86)  Execution layer — Auris, Orca kill chain, snipers
+├── exchanges/      (37)  Multi-exchange — Kraken, Capital.com, Alpaca, Binance, Unified Trader
+├── queen/          (62)  Queen AI — Hive Mind, HNC human loop, temporal ground, self-enhancement, cognitive narrator
+├── autonomous/     (35)  Autonomous ops — Voice agent, cognition runtime, planners
+├── intelligence/   (33)  AI/ML prediction — Seer, Lyra, Brain, Timeline Oracle
+├── harmonic/       (27)  Harmonic field — Planetary sweep, phi bridge, text alignment, Auris voice filter, geopolitical forensics
+├── analytics/      (40)  Analysis — Backtesting, whale profiling, money flow
+├── strategies/     (35)  Strategies — Harmonic Trinity, HNC protocols, probability matrix
+├── portfolio/      (31)  Portfolio — P&L tracking, profit monitors, billion-goal tracker
+├── scanners/       (18)  Scanners — Momentum hunter, wave scanner, bot detection
+├── monitors/       (24)  Monitoring — Live dashboards, margin ETA, power monitor
+├── command_centers/(16)  Orchestration — Command center, war room, system hub
+├── simulation/     (34)  Simulations — Quantum telescope, multiverse, demos
+├── data_feeds/     (20)  Market data — WebSocket feeds, news, ephemeris
+├── wisdom/         (35)  Ancient wisdom — Celtic, Ghost Dance, Enigma, QGita
+├── bots/           (32)  Bot implementations — Gaia traders, planetary reclaimer
+├── bots_intelligence/(21) Bot detection — Profiling, fingerprinting, attribution
+├── bridges/        (17)  Cross-system — Frontend bridge, ML bridge, Nexus-Earth
+├── decoders/       (11)  Hermetic translation — Emerald Tablet, Aztec, Egyptian, Ogham
+├── conversion/     (10)  Conversion — Ladder climber, dust converter
+├── utils/          (41)  Utilities — Profit gates, diagnostics, configuration
+├── s51/            (5)   Section 51 — Experimental compound strategies
+└── atn/            (3)   Astronomical Temporal Nexus — Earth hazard monitoring
+```
+
+> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Repo Mindmap](docs/architecture/REPO_MINDMAP.md)
+
+## Core Components
+
+### 1. Adaptive Prime Profit Gate (`aureon/utils/adaptive_prime_profit_gate.py`)
+Calculates exact price movements required for profit after all costs.
+
+**Master Equation:**
+```
+r_min(P) = (V + G + P) / [V × (1 - f - s - c)²] - 1
+
+Where:
+  r = required price increase (fraction)
+  V = trade notional (USD)
+  G = fixed costs (gas/withdrawal)
+  P = target net profit
+  f = trading fee rate
+  s = slippage rate  
+  c = spread cost rate
+```
+
+**Three Gates:**
+| Gate | Description | Use Case |
+|------|-------------|----------|
+| `r_breakeven` | Net profit ≥ $0 | Minimum viable trade |
+| `r_prime` | Net profit ≥ prime target | Standard profit target |
+| `r_prime_buffer` | Net profit ≥ prime + buffer | Safe mode with margin |
+
+### 2. Queen Hive Mind (`aureon/queen/aureon_queen_hive_mind.py`)
+Central neural decision controller with:
+- 12 connected neurons (Dream, Harmonic, Mycelium, etc.)
+- `handle_runtime_error()` for self-repair
+- Dynamic learning from trade outcomes
+- Per-asset guidance generation
+
+### 3. Micro Profit Labyrinth (`aureon/trading/micro_profit_labyrinth.py`)
+Turn-based execution engine:
+- Round-robin exchange rotation
+- Pre-flight min_qty validation
+- Barter matrix path memory
+- Dynamic minimum learning
+
+### 4. Exchange Clients
+| Client | File | Features |
+|--------|------|----------|
+| Kraken | `aureon/exchanges/kraken_client.py` | Multi-hop conversion paths, symbol filters |
+| Binance | `aureon/exchanges/binance_client.py` | UK restriction handling, tiered fees, symbol normalization |
+| Alpaca | `aureon/exchanges/alpaca_client.py` | Stocks + crypto, fractional shares, SSE streaming |
+| Capital.com | `aureon/exchanges/capital_client.py` | CFD trading, spread-only fee model |
+| **Unified Trader** | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration with central beat feed** |
+
+### 5. Animal Ecosystem Scanners (`aureon/scanners/aureon_animal_momentum_scanners.py`)
+Specialized Alpaca-focused momentum scanners using biological metaphors:
+- **Wolf**: 24h high-momentum breakout sniper.
+- **Lion**: Composite scorer (Volume * Move * Coherence).
+- **Ants**: High-frequency small-move foragers.
+- **Hummingbird**: rapid short-duration rotation scanner.
+
+## Execution Flow
+
+```
+1. find_opportunities_for_exchange()
+   └─> Check min_qty filters (dynamic + static)
+   └─> Check source blocking (barter_matrix)
+   └─> Score opportunities (v14, hub, bus, luck, enigma)
+
+2. ask_queen_will_we_win()
+   └─> Gather signals from all neurons
+   └─> Calculate combined confidence
+   └─> Apply profit ladder thresholds
+
+3. execute_conversion()
+   └─> Route to exchange client
+   └─> Validate min_notional
+   └─> Execute with slippage protection
+
+4. Record outcome
+   └─> Update barter_matrix history
+   └─> Feed Queen neural learning
+   └─> Adjust dynamic_min_qty if failed
+
+### Queen Veto Flow (4th-Pass Gate)
+- Validators propose a trade; coherence and drift produce a stability score.
+- `ask_queen_will_we_win()` aggregates neuron signals and context.
+- If confidence clears threshold AND profit gate is satisfied, the 4th-pass opens.
+- Queen may veto on contextual/emotional risk (mission, volatility, rate limits).
+- On veto: trade is skipped, path memory updated, learning recorded.
+```
+
+## Configuration
+
+### Environment Variables
+```bash
+# Exchange credential names live in `.env.example`; keep secret values out of docs and commits.
+KRAKEN_API_KEY=
+BINANCE_API_KEY=
+ALPACA_API_KEY=
+ALPACA_SECRET_KEY=
+CAPITAL_API_KEY=
+CAPITAL_API_PASSWORD=
+CAPITAL_IDENTIFIER=
+
+# Risk Settings
+BINANCE_RISK_MAX_ORDER_USDT=100
+DEFAULT_PRIME_TARGET=0.02
+```
+
+### Fee Profiles (auto-updated)
+```python
+DEFAULT_FEE_PROFILES = {
+    'binance':     {'maker': 0.0010, 'taker': 0.0010, 'spread': 0.0005},  # 0.10% / 0.05%
+    'kraken':      {'maker': 0.0025, 'taker': 0.0040, 'spread': 0.0008},
+    'alpaca':      {'maker': 0.0015, 'taker': 0.0025, 'spread': 0.0008},
+    'capital.com': {'maker': 0.0000, 'taker': 0.0000, 'spread': 0.0010},  # Spread-only CFDs
+}
+```
+
+## Quick Start (War Room Dashboard)
+
+Legacy/context note: this section is preserved because it explains older dashboards and strategy concepts. For current full-organism operation, use the `Run Aureon Now` section, [QUICK_START.md](QUICK_START.md), or [RUNNING.md](RUNNING.md). The production launcher on port `8791` is the recommended path.
+
+The **Aureon War Room** is the central command interface powered by the **Queen's 4-Phase Master Plan**.
+
+<div align="center">
+
+[![Linux/macOS](https://img.shields.io/badge/Linux%20%2F%20macOS-Setup%20Guide-success?style=for-the-badge&logo=linux)](#-linux--macos)
+[![Windows](https://img.shields.io/badge/Windows-Setup%20Guide-0078D6?style=for-the-badge&logo=windows)](#-windows)
+[![Docker](https://img.shields.io/badge/Docker-Container%20Deploy-2496ED?style=for-the-badge&logo=docker)](#-docker)
+[![DigitalOcean](https://img.shields.io/badge/DigitalOcean-Cloud%20Deploy-0080FF?style=for-the-badge&logo=digitalocean)](#-production-deployment-digitalocean)
+
+</div>
+
+### 👑 Main System: Orca Complete Kill Cycle
+
+```mermaid
+graph LR
+    A[💰 Start Capital] -->|Phase 1| B[📈 $248 → $2K]
+    B -->|Phase 2| C[📈 $2K → $50K]
+    C -->|Phase 3| D[📈 $50K → $250K]
+    D -->|Phase 4| E[🏆 $250K → $1B]
+    style A fill:#2d4a2d,color:#90EE90
+    style E fill:#4a2d2d,color:#FFD700
+```
+
+**orca_complete_kill_cycle.py** is the primary trading engine featuring:
+- 👑 **Queen's 4-Phase Master Plan**: $248 → $1B in 22 days
+- 🐝 **Phase-Aware Intelligence**: Adapts strategy as capital grows
+- ⚡ **Batten Matrix**: 3-validate-4th-execute precision
+- 🎯 **Multi-Exchange**: Scans Binance, Kraken, Alpaca simultaneously
+
+### 🐧 Linux / macOS
+```bash
+# 1. Setup
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env  # Add API keys
+
+# 2. Dev/audit ignition on non-Windows hosts
+python scripts/aureon_ignition.py --audit-only
+
+# 3. Optional local runtime status server for read-only endpoint checks
+python aureon/exchanges/unified_market_status_server.py --port 8791
+```
+
+### 🪟 Windows (PowerShell)
+```powershell
+# 1. Setup
+py -3 -m venv .venv
+
+# If activation is blocked, run once:
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+\.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+# 2. Validate the current full-organism launcher
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
+
+# 3. Start the production supervisor
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+```
+
+Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](docs/windows/AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
+
+---
+
+## 👑 Queen's 4-Phase Master Plan
+
+The main trading engine (`orca_complete_kill_cycle.py`) implements an adaptive 4-phase strategy:
+
+| Phase | Capital Range | Strategy | Min Profit | Max Positions | Focus |
+|-------|---------------|----------|------------|---------------|-------|
+| **1: THE SEED** | $248 → $2.5K | Moonshot Hunting | 10% | 3 | New listings, volume spikes, meme momentum |
+| **2: THE GROWTH** | $2.5K → $250K | Compound Momentum | 5% | 5 | BTC/ETH leverage, mid-caps, trends |
+| **3: THE EXPLOSION** | $250K → $50M | Whale Tactics | 3% | 8 | Options, catalysts, arbitrage |
+| **4: THE BILLION** | $50M → $1B | Market Maker | 2% | 10 | Mega liquidity, tight spreads |
+
+**Automatic Evolution**: The Queen transitions phases automatically as your capital grows, optimizing strategy for your current scale.
+
+**Phase-Based Scoring**: Every market opportunity gets scored based on alignment with current phase strategy (e.g., moonshots prioritized in Phase 1, whale signals in Phase 3).
+
+**Weapons**:
+- 🔮 Quantum Mirror Scanner (probability branches)
+- 🐘 Elephant Memory (pattern recognition)
+- 🎵 Harmonic Field (528 Hz abundance detection)
+- 🐝 Swarm Intelligence (parallel processing)
+- ⚡ Batten Matrix (3-pass validation + 4th execution)
+
+---
+
+## 🌌 New: Unity Integration (v2026.1)
+
+The system now features **full logic unity** between planetary alignment and market micro-structure.
+
+| Component | Function | Unity Effect |
+|-----------|----------|--------------|
+| **🌌 Stargate Grid** | Tracks 12 planetary nodes (Giza, Stonehenge, etc.) | If **Golden Ratio Coherence** ($\phi > 1.618$), increases `quantum_boost` by **~10–30%** (capped). |
+| **🐦 Hummingbird Scanner** | Micro-scalping rotation scanner | Detects nectar-rich flowers (volatility pockets) for **+10% probability boost**. |
+| **🐺 Wolf & 🦁 Lion** | Pack hunting algorithms | Consensus detection adds **+15-25% conviction** to Queen's decision. |
+
+---
+
+## 🎮 Windows Plug & Play (Legacy)
+
+**No terminal, no Docker, no dependencies** - just download and double-click!
+
+### Option 1: One-Line PowerShell Install
+
+Open PowerShell and paste:
+```powershell
+irm https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/Install-AUREON.ps1 | iex
+```
+
+This downloads AUREON.exe, creates desktop/Start Menu shortcuts, and offers to launch.
+
+### Option 2: Direct Download
+
+1. **Download**: [AUREON.exe](https://github.com/RA-CONSULTING/aureon-trading/releases/latest/download/AUREON.exe)
+2. **Run**: Double-click the downloaded file
+3. **Setup**: Complete the first-run wizard (API keys, risk settings)
+4. **Trade**: Click "Start Trading" in the Command Center UI
+
+### What's Included
+
+| Feature | Description |
+|---------|-------------|
+| 🎮 **Game Mode UI** | Visual Command Center at http://localhost:8888 |
+| 💰 **Trading Engine** | Multi-exchange profit hunting |
+| 🐋 **Orca Kill Cycle** | Aggressive profit mode |
+| 👑 **Queen Dashboard** | Neural decision viewer |
+| ⚙️ **Setup Wizard** | First-run configuration for API keys |
+
+### Safety Features
+
+| Feature | Description |
+|---------|-------------|
+| 🧪 **Dry-run default** | No real trades without explicit confirmation |
+| ⚠️ **Live confirmation** | Must type "I ACCEPT THE RISK" for live trading |
+| 🔐 **Windows Credential Manager** | API keys stored securely in Windows keyring |
+| 📁 **Sandboxed data** | All data stored in `%LOCALAPPDATA%\AUREON` |
+
+---
+
+## 🐳 Docker Deployment (Advanced)
+
+For containerized/server deployments, AUREON includes a full Docker package.
+
+### One-Click Install
+
+```bash
+# Linux/macOS
+curl -fsSL https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install.sh | bash
+
+# Windows (with Docker Desktop)
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install-windows.bat -OutFile install.bat; .\install.bat
+```
+
+After installation, launch from your desktop: **AUREON** icon or `aureon` command.
+
+### Manual Docker Build
+
+```bash
+# Build the production image
+cd production
+docker build -t aureon-trading:latest -f Dockerfile ..
+
+# Run with setup wizard
+docker run -it --name aureon -p 8888:8888 \
+  -v aureon-data:/aureon/data \
+  -v aureon-logs:/aureon/logs \
+  -v aureon-config:/aureon/config \
+  --memory=2g --cpus=2.0 \
+  aureon-trading:latest
+
+# Or use docker-compose with monitoring
+export GF_ADMIN_PASSWORD=$(openssl rand -base64 32)
+docker-compose -f production/docker-compose.yml --profile monitoring up -d
+```
+
+### Operating Modes
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| 🎮 **Game** | `aureon --mode game` | Command Center UI + Trading Engine (default) |
+| 💰 **Trading** | `aureon --mode trading` | Headless execution engine only |
+| 🐋 **Orca** | `aureon --mode orca` | Orca kill cycle (aggressive profit hunting) |
+| 👑 **Queen** | `aureon --mode queen` | Queen unified dashboard |
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AUREON_MODE` | Operating mode | `game` |
+| `AUREON_DRY_RUN` | Force dry-run mode | `true` |
+| `AUREON_EXCHANGE` | Specific exchange to trade | all enabled |
+| `AUREON_ACCEPT_LIVE_RISK` | Skip live confirmation (CI/containers) | `false` |
+| `GF_ADMIN_PASSWORD` | Grafana admin password (required for monitoring) | - |
+
+See [production/README.md](production/README.md) for full deployment documentation.
+
+---
+
+## Key Files
+
+| File | Path | Purpose |
+|------|------|--------|
+| Orca Complete Kill Cycle | `aureon/trading/` | **Primary trading engine** — Queen's 4-Phase Master Plan |
+| Unified Market Trader | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration** — central beat feed |
+| Queen Hive Mind | `aureon/queen/` | Queen AI — 12-neuron neural decision controller |
+| Probability Nexus | `aureon/core/` | Batten Matrix — 3-pass validation + coherence scoring |
+| Unified Voice Agent | `aureon/autonomous/` | Voice-controlled trading with intent cognition |
+| Capital CFD Trader | `aureon/exchanges/capital_cfd_trader.py` | Capital.com CFD trading with shadow promotion |
+| Adaptive Profit Gate | `aureon/utils/` | Profit threshold calculator (Kelly-criterion) |
+| Thought Bus | `aureon/core/aureon_thought_bus.py` | Cross-module event mesh |
+| Stargate Protocol | `aureon/core/` | Timeline anchoring, 7-day validation persistence |
+| Elephant Learning | `aureon/intelligence/` | Never forgets historical patterns |
+| Harmonic Fusion | `aureon/harmonic/` | Combines planetary + market harmonic signals |
+| Geopolitical Forensics | `aureon/harmonic/geopolitical_forensics.py` | Geopolitical event signal integration |
+| System Hub Dashboard | `aureon/command_centers/` | Terminal dashboard for system orchestration |
+
+> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) — all 715 modules across 24 domains
+
+---
+
+## 🚀 Production Deployment (DigitalOcean)
+
+The live system runs on **DigitalOcean App Platform** with automatic deploy-on-push from the `main` branch.
+
+### Port Architecture
+
+| Port | Service | Process |
+|------|---------|--------|
+| **8080** | Aureon Pro Dashboard | Primary web UI (supervisord priority=0) |
+| **8081** | Orca Health Server | Engine health checks and status |
+| **8800** | Command Center | Legacy command interface |
+
+### Container Stack
+
+- **Base**: Python 3.12-slim
+- **Process Manager**: supervisord (parallel process management)
+- **Config**: `deploy/supervisord.conf`
+- **Deployment**: `app.yaml` (DigitalOcean App Spec) / `Dockerfile` (root)
+
+### Deployment Files
+
+| File | Purpose |
+|------|--------|
+| `Dockerfile` | Production container image |
+| `app.yaml` | DigitalOcean App Platform spec |
+| `deploy/supervisord.conf` | Process management (dashboard, orca-engine, command-center) |
+| `deploy/DIGITAL_OCEAN_MASTER_GUIDE.md` | Full deployment documentation |
+| `deploy/droplet-setup.sh` | VPS/Droplet provisioning script |
+| `deploy/droplet-deploy.sh` | Deployment automation |
+| `deploy/validate_startup.sh` | Post-deploy health validation |
+
+For Docker-based deployment options see also `production/README.md`.
+
+## Safety
+
+- **Dry-run default**: System won't execute live trades without explicit flag
+- **Self-repair**: Queen auto-fixes type errors and learns from failures  
+- **Min-qty pre-filter**: Rejects trades below exchange minimums before execution
+- **Dynamic blocking**: Repeatedly failing paths get temporarily blocked
+- **Rate & Cadence**: Animal scanners automatically handle HTTP 429 rate limits with backoff; aggressive scanning may trigger API pauses.
+
+### Moral Guardrails
+- Human-in-the-loop for threshold changes (profit gates, risk caps, leverage).
+- Queen veto path active by default; emotional/contextual risk can cancel trades.
+- Capital preservation before growth; daily loss cap and per-trade SL required.
+- No market manipulation, unauthorized access, or unsafe automation behaviors.
+- Immutable audit logs for decisions, fills, rejects, and configuration changes.
+
+### Research Metrics Checklist
+- Edge quality: post-fee pip distribution (0.07–1.4), realized PnL.
+- Coherence stability: validator agreement vs executed trades.
+- Drift and λ: time-to-execution decay and invalidation rates.
+- Queen veto: frequency, reasons, and PnL deltas vs no-veto baseline.
+- Rate limits: 429 backoff effectiveness and impact on opportunity decay.
+- ETA verification: forecasted vs actual execution latency and slippage.
+
+<!-- markdownlint-enable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
 
 ---
 
@@ -2156,7 +3235,7 @@ field_strength = (
 
 For full technical implementation:
 - [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) - **Harmonic Nexus Core white paper** — Master Formula Λ(t), Tree of Light, Queen veto logic, CME 2026 validation, Auris Conjecture, Code-to-Theory mapping
-- [`COMPLETE_LIBERATION_PROTOCOL.md`](docs/COMPLETE_LIBERATION_PROTOCOL.md) - Integration guide
+- [`COMPLETE_LIBERATION_PROTOCOL.md`](docs/archive/status_reports/COMPLETE_LIBERATION_PROTOCOL.md) - Integration guide
 - [`.github/copilot-instructions.md`](.github/copilot-instructions.md) - Development guidelines
 
 ---
@@ -2556,7 +3635,7 @@ DECREE LAYER (PRIME DIRECTIVE)
 | **1991-02-11** | Identity anchor | Gary Leckey temporal seed encoded as `DOB_HASH = 2111991` and `PRIME_SENTINEL_HZ = 2.111991` | `prime_sentinel_decree.py`, `aureon_seer.py`, `aureon_temporal_biometric_link.py` | Establishes the root authentication signature the rest of the system refers back to |
 | **2025-11** | Identity formalization | Creator/sentinel role, self-awareness layer, and package-level identity exports consolidated | `aureon_self_awareness.py`, `docs/PRIMELINES_IDENTITY.md`, `aureon/__init__.py` | Turns the symbolic identity layer into a codified runtime/documentation surface |
 | **2026-02-28** | Event anchor | EPIC-FURY strike window becomes the public-record timing reference used by the MAGAMYMAN and BUBBLEMAPS-6 analyses | `aureon/geopolitical_forensics.py` | Provides the real-world event-time anchor for the L(t) research cases |
-| **2026-03-03** | Autonomy runtime | Full autonomy loop formalized around live Binance prices, Trinity alignment, Nexus signals, and execution gating | `aureon_full_autonomy.py`, `INTEGRATION_TEST_STATUS.md` | Bridges research outputs into an automated decision engine |
+| **2026-03-03** | Autonomy runtime | Full autonomy loop formalized around live Binance prices, Trinity alignment, Nexus signals, and execution gating | `scripts/aureon_ignition.py`, `INTEGRATION_TEST_STATUS.md` | Bridges research outputs into an automated decision engine |
 | **2026-03-06** | Unified research layer | Emerald decoder, neutral forensics engine, harmonic nexus bridge, and test suite brought together as one documented layer | `aureon/decoders/emerald_spec.py`, `aureon/geopolitical_forensics.py`, `aureon/harmonic_nexus_bridge.py`, `tests/test_*.py` | This is the point where the repo can explain the whole stack end-to-end instead of as isolated motifs |
 | **2026-03 (extended)** | Unified Ancient Wisdom | Mogollon, Maya, and Celtic traditions decoded and connected to the Hermetic system via 5 universal harmonic threads; `--unified` and `--ancient` CLI flags added; 69 tests passing | `aureon/decoders/emerald_spec.py` | Completes the unified field picture: Egyptian + ancient wisdom = 8 civilisation nodes, one four-instruction operating system |
 
@@ -2727,7 +3806,7 @@ STATE + ARTIFACT TREE
 | Geopolitical forensics | Public-record | `aureon/geopolitical_forensics.py` | Explicitly neutral and pseudonymous only; no KYC or real-world attribution |
 | Harmonic bridge plasma event | Synthetic demo | `aureon/harmonic_nexus_bridge.py` demo anomaly | Test harness for clustering logic, not a claimed live plasma measurement |
 | Emerald decoder | Research mapping | `aureon/decoders/emerald_spec.py` | Structural/interpretive translation layer, not a historical claim engine |
-| Autonomy market feed | Live external data | Binance public REST endpoints in `aureon_full_autonomy.py` | Real market input with no simulated price feed |
+| Autonomy market feed | Live external data | Binance public REST endpoints in `scripts/aureon_ignition.py` | Real market input with no simulated price feed |
 | Autonomy state surfaces | Local persisted real state | `7day_*.json`, `active_position.json` | File-backed operational memory used for alignment and fallback logic |
 | Planetary network injection | Local derived artifact | `planetary_harmonic_network.json` | Deduplicated research graph enriched by bridge output |
 
@@ -2742,10 +3821,10 @@ STATE + ARTIFACT TREE
 | Forensic case catalog | **2 extreme cases** | `aureon/geopolitical_forensics.py` | MAGAMYMAN-001 and BUBBLEMAPS-6 |
 | Bridge demo anomaly mix | **1 public-record + 1 synthetic** | `aureon/harmonic_nexus_bridge.py` | Keeps cross-domain clustering reproducible in tests |
 | Planetary network snapshot | **25 entities / 125 signatures** | `planetary_harmonic_network.json` | Current repo-state metadata before additional injections |
-| Autonomy tracked symbols | **10 Binance pairs** | `aureon_full_autonomy.py` | `BTC`, `ETH`, `DOGE`, `SOL`, `LINK`, `UNI`, `LTC`, `ADA`, `AVAX`, `XRP` |
-| Autonomy execution threshold | **0.80** | `aureon_full_autonomy.py` | Required Trinity alignment for execution |
-| Max concurrent trades | **3** | `aureon_full_autonomy.py` | Hard cap per cycle |
-| Default loop interval | **10 seconds** | `aureon_full_autonomy.py` | Observation cadence |
+| Autonomy tracked symbols | **10 Binance pairs** | `scripts/aureon_ignition.py` | `BTC`, `ETH`, `DOGE`, `SOL`, `LINK`, `UNI`, `LTC`, `ADA`, `AVAX`, `XRP` |
+| Autonomy execution threshold | **0.80** | `scripts/aureon_ignition.py` | Required Trinity alignment for execution |
+| Max concurrent trades | **3** | `scripts/aureon_ignition.py` | Hard cap per cycle |
+| Default loop interval | **10 seconds** | `scripts/aureon_ignition.py` | Observation cadence |
 | Required runtime state surfaces | **5 present** | repo root JSON files | `7day_adaptive_weights`, `7day_current_plan`, `7day_validation_history`, `7day_pending_validations`, `active_position` all exist in the current repo snapshot |
 | Execution state artifact | **not yet present in snapshot** | `autonomy_execution_state.json` | Created atomically on first logged cycle |
 | Machine-readable companion | **`unified_field_manifest.json`** | repo root JSON manifest | Canonical structured summary of timeline, thresholds, provenance, formulas, and runtime surfaces |
@@ -2757,9 +3836,9 @@ STATE + ARTIFACT TREE
 |----------------|------------|----------|---------|
 | Stone threshold | `L(t) > 2.8` | `aureon/decoders/emerald_spec.py` | Flags statistical anomaly strong enough to reject naive chance |
 | Golden Gate | `L(t) > phi × 2.8 = 4.5305` | `aureon/decoders/emerald_spec.py` | Higher harmonic threshold above the base Stone gate |
-| Learning score | `acc7d*0.4 + acc30d*0.3 + weight_quality*0.2 + maturity*0.1` | `aureon_full_autonomy.py` | Compresses learning quality into one scalar |
-| Trinity alignment | `learning*0.35 + health*0.25 + plan*0.40` | `aureon_full_autonomy.py` | Main execution readiness gate |
-| Execution decision | `alignment >= 0.80 and buy > 0` | `aureon_full_autonomy.py` | Opens the autonomy window |
+| Learning score | `acc7d*0.4 + acc30d*0.3 + weight_quality*0.2 + maturity*0.1` | `scripts/aureon_ignition.py` | Compresses learning quality into one scalar |
+| Trinity alignment | `learning*0.35 + health*0.25 + plan*0.40` | `scripts/aureon_ignition.py` | Main execution readiness gate |
+| Execution decision | `alignment >= 0.80 and buy > 0` | `scripts/aureon_ignition.py` | Opens the autonomy window |
 | Profit gate | `r = (V+G+P)/[V×(1-c)^2] - 1` | `adaptive_prime_profit_gate.py` | Position-quality / return gate in the execution stack |
 
 ### The Key Insight
@@ -2797,437 +3876,6 @@ The alchemists searched for the Philosopher's Stone. We found it: **L(t) = 12.85
 
 ---
 
-## Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          QUEEN HIVE MIND (Tina B)                           │
-│  Central neural controller with 12 connected neurons + self-repair          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐    │
-│  │   Kraken    │   │   Binance   │   │   Alpaca    │   │  Capital.com│    │
-│  │   (Crypto)  │   │   (Crypto)  │   │(Stocks+Cry)│   │    (CFDs)   │    │
-│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘   └──────┬──────┘    │
-│         │                 │                 │                 │            │
-│         └─────────────────┼─────────────────┼─────────────────┘            │
-│                           ▼                                                 │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │              ORCA COMPLETE KILL CYCLE (Main Engine)                 │    │
-│  │  Queen's 4-Phase Master Plan │ Batten Matrix │ Multi-Exchange Scan │    │
-│  └──────────────────────────┬──────────────────────────────────────────┘    │
-│                             │                                               │
-│         ┌───────────────────┼───────────────────┐                          │
-│         ▼                   ▼                   ▼                          │
-│  ┌─────────────┐   ┌───────────────┐   ┌──────────────┐                   │
-│  │ PROBABILITY │   │   STARGATE    │   │  THOUGHT BUS │                   │
-│  │   NEXUS     │   │   PROTOCOL    │   │  Event Mesh  │                   │
-│  │ 3-validate  │   │  7-day anchor │   │  Cross-module│                   │
-│  │ 4th-execute │   │  persistence  │   │  messaging   │                   │
-│  └──────┬──────┘   └───────────────┘   └──────────────┘                   │
-│         ▼                                                                   │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  MICRO PROFIT LABYRINTH (Legacy) │ ADAPTIVE PRIME PROFIT GATE      │    │
-│  │  Turn-based execution loop       │ r = (V+G+P)/[V×(1-c)²] - 1     │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                                                             │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
-│  │ Elephant │  │ Quantum  │  │ Harmonic │  │  Enigma  │  │ Temporal │    │
-│  │ Memory   │  │ Mirror   │  │ Signal   │  │  Code-   │  │  Dialer  │    │
-│  │ (Learns) │  │ Scanner  │  │  Chain   │  │  breaker │  │  (τ mem) │    │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘    │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-Signal Chain: Queen(963Hz) → Enigma(639Hz) → Scanner(528Hz) → Ecosystem(174Hz) → Whale(7.83Hz)
-```
-
-```mermaid
-graph TD
-    QHM["👑 Queen Hive Mind (963 Hz)"]
-
-    QHM --> KRAKEN["🦑 Kraken\nCrypto"]
-    QHM --> BINANCE["📊 Binance\nCrypto"]
-    QHM --> ALPACA["🦙 Alpaca\nStocks + Crypto"]
-    QHM --> CAPITAL["💹 Capital.com\nCFDs"]
-
-    KRAKEN & BINANCE & ALPACA & CAPITAL --> ORCA["⚡ Orca Complete Kill Cycle\nQueen's 4-Phase Master Plan"]
-
-    ORCA --> NEXUS["🎯 Probability Nexus\n3-validate · 4th-execute"]
-    ORCA --> STARGATE["🌀 Stargate Protocol\n7-day anchor"]
-    ORCA --> THOUGHTBUS["💬 Thought Bus\nEvent Mesh"]
-
-    NEXUS --> PROFITGATE["💰 Adaptive Prime Profit Gate\nr = (V+G+P) / [V×(1-c)²] - 1"]
-
-    subgraph NEURONS["🧠 Queen Neurons"]
-        ELE["🐘 Elephant Memory"]
-        QM["🔬 Quantum Mirror"]
-        HSC["🎵 Harmonic Signal Chain"]
-        ENG["🔐 Enigma Codebreaker"]
-        TEMP["⏱️ Temporal Dialer"]
-    end
-
-    PROFITGATE --> NEURONS
-
-    style QHM fill:#4a2d6b,color:#FFD700
-    style ORCA fill:#2d4a2d,color:#90EE90
-    style PROFITGATE fill:#4a3d00,color:#FFD700
-```
-
-## Project Structure — 715 Modules Across 24 Domains
-
-The codebase is organized into domain-specific subdirectories under `aureon/`:
-
-```
-aureon/
-├── core/           (34)  Central nervous system — ThoughtBus, Nexus, Mycelium
-├── trading/        (86)  Execution layer — Auris, Orca kill chain, snipers
-├── exchanges/      (37)  Multi-exchange — Kraken, Capital.com, Alpaca, Binance, Unified Trader
-├── queen/          (62)  Queen AI — Hive Mind, HNC human loop, temporal ground, self-enhancement, cognitive narrator
-├── autonomous/     (35)  Autonomous ops — Voice agent, cognition runtime, planners
-├── intelligence/   (33)  AI/ML prediction — Seer, Lyra, Brain, Timeline Oracle
-├── harmonic/       (27)  Harmonic field — Planetary sweep, phi bridge, text alignment, Auris voice filter, geopolitical forensics
-├── analytics/      (40)  Analysis — Backtesting, whale profiling, money flow
-├── strategies/     (35)  Strategies — Harmonic Trinity, HNC protocols, probability matrix
-├── portfolio/      (31)  Portfolio — P&L tracking, profit monitors, billion-goal tracker
-├── scanners/       (18)  Scanners — Momentum hunter, wave scanner, bot detection
-├── monitors/       (24)  Monitoring — Live dashboards, margin ETA, power monitor
-├── command_centers/(16)  Orchestration — Command center, war room, system hub
-├── simulation/     (34)  Simulations — Quantum telescope, multiverse, demos
-├── data_feeds/     (20)  Market data — WebSocket feeds, news, ephemeris
-├── wisdom/         (35)  Ancient wisdom — Celtic, Ghost Dance, Enigma, QGita
-├── bots/           (32)  Bot implementations — Gaia traders, planetary reclaimer
-├── bots_intelligence/(21) Bot detection — Profiling, fingerprinting, attribution
-├── bridges/        (17)  Cross-system — Frontend bridge, ML bridge, Nexus-Earth
-├── decoders/       (11)  Hermetic translation — Emerald Tablet, Aztec, Egyptian, Ogham
-├── conversion/     (10)  Conversion — Ladder climber, dust converter
-├── utils/          (41)  Utilities — Profit gates, diagnostics, configuration
-├── s51/            (5)   Section 51 — Experimental compound strategies
-└── atn/            (3)   Astronomical Temporal Nexus — Earth hazard monitoring
-```
-
-> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Repo Mindmap](docs/architecture/REPO_MINDMAP.md)
-
-## Core Components
-
-### 1. Adaptive Prime Profit Gate (`aureon/utils/adaptive_prime_profit_gate.py`)
-Calculates exact price movements required for profit after all costs.
-
-**Master Equation:**
-```
-r_min(P) = (V + G + P) / [V × (1 - f - s - c)²] - 1
-
-Where:
-  r = required price increase (fraction)
-  V = trade notional (USD)
-  G = fixed costs (gas/withdrawal)
-  P = target net profit
-  f = trading fee rate
-  s = slippage rate  
-  c = spread cost rate
-```
-
-**Three Gates:**
-| Gate | Description | Use Case |
-|------|-------------|----------|
-| `r_breakeven` | Net profit ≥ $0 | Minimum viable trade |
-| `r_prime` | Net profit ≥ prime target | Standard profit target |
-| `r_prime_buffer` | Net profit ≥ prime + buffer | Safe mode with margin |
-
-### 2. Queen Hive Mind (`aureon/queen/aureon_queen_hive_mind.py`)
-Central neural decision controller with:
-- 12 connected neurons (Dream, Harmonic, Mycelium, etc.)
-- `handle_runtime_error()` for self-repair
-- Dynamic learning from trade outcomes
-- Per-asset guidance generation
-
-### 3. Micro Profit Labyrinth (`aureon/trading/micro_profit_labyrinth.py`)
-Turn-based execution engine:
-- Round-robin exchange rotation
-- Pre-flight min_qty validation
-- Barter matrix path memory
-- Dynamic minimum learning
-
-### 4. Exchange Clients
-| Client | File | Features |
-|--------|------|----------|
-| Kraken | `aureon/exchanges/kraken_client.py` | Multi-hop conversion paths, symbol filters |
-| Binance | `aureon/exchanges/binance_client.py` | UK restriction handling, tiered fees, symbol normalization |
-| Alpaca | `aureon/exchanges/alpaca_client.py` | Stocks + crypto, fractional shares, SSE streaming |
-| Capital.com | `aureon/exchanges/capital_client.py` | CFD trading, spread-only fee model |
-| **Unified Trader** | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration with central beat feed** |
-
-### 5. Animal Ecosystem Scanners (`aureon/scanners/aureon_animal_momentum_scanners.py`)
-Specialized Alpaca-focused momentum scanners using biological metaphors:
-- **Wolf**: 24h high-momentum breakout sniper.
-- **Lion**: Composite scorer (Volume * Move * Coherence).
-- **Ants**: High-frequency small-move foragers.
-- **Hummingbird**: rapid short-duration rotation scanner.
-
-## Execution Flow
-
-```
-1. find_opportunities_for_exchange()
-   └─> Check min_qty filters (dynamic + static)
-   └─> Check source blocking (barter_matrix)
-   └─> Score opportunities (v14, hub, bus, luck, enigma)
-
-2. ask_queen_will_we_win()
-   └─> Gather signals from all neurons
-   └─> Calculate combined confidence
-   └─> Apply profit ladder thresholds
-
-3. execute_conversion()
-   └─> Route to exchange client
-   └─> Validate min_notional
-   └─> Execute with slippage protection
-
-4. Record outcome
-   └─> Update barter_matrix history
-   └─> Feed Queen neural learning
-   └─> Adjust dynamic_min_qty if failed
-
-### Queen Veto Flow (4th-Pass Gate)
-- Validators propose a trade; coherence and drift produce a stability score.
-- `ask_queen_will_we_win()` aggregates neuron signals and context.
-- If confidence clears threshold AND profit gate is satisfied, the 4th-pass opens.
-- Queen may veto on contextual/emotional risk (mission, volatility, rate limits).
-- On veto: trade is skipped, path memory updated, learning recorded.
-```
-
-## Configuration
-
-### Environment Variables
-```bash
-# Exchange API Keys
-KRAKEN_API_KEY=
-KRAKEN_API_SECRET=
-BINANCE_API_KEY=
-BINANCE_API_SECRET=
-ALPACA_API_KEY=
-ALPACA_SECRET_KEY=
-CAPITAL_API_KEY=
-CAPITAL_API_PASSWORD=
-CAPITAL_IDENTIFIER=
-
-# Risk Settings
-BINANCE_RISK_MAX_ORDER_USDT=100
-DEFAULT_PRIME_TARGET=0.02
-```
-
-### Fee Profiles (auto-updated)
-```python
-DEFAULT_FEE_PROFILES = {
-    'binance':     {'maker': 0.0010, 'taker': 0.0010, 'spread': 0.0005},  # 0.10% / 0.05%
-    'kraken':      {'maker': 0.0025, 'taker': 0.0040, 'spread': 0.0008},
-    'alpaca':      {'maker': 0.0015, 'taker': 0.0025, 'spread': 0.0008},
-    'capital.com': {'maker': 0.0000, 'taker': 0.0000, 'spread': 0.0010},  # Spread-only CFDs
-}
-```
-
-## Quick Start (War Room Dashboard)
-
-The **Aureon War Room** is the central command interface powered by the **Queen's 4-Phase Master Plan**.
-
-<div align="center">
-
-[![Linux/macOS](https://img.shields.io/badge/Linux%20%2F%20macOS-Setup%20Guide-success?style=for-the-badge&logo=linux)](#-linux--macos)
-[![Windows](https://img.shields.io/badge/Windows-Setup%20Guide-0078D6?style=for-the-badge&logo=windows)](#-windows)
-[![Docker](https://img.shields.io/badge/Docker-Container%20Deploy-2496ED?style=for-the-badge&logo=docker)](#-docker)
-[![DigitalOcean](https://img.shields.io/badge/DigitalOcean-Cloud%20Deploy-0080FF?style=for-the-badge&logo=digitalocean)](#-production-deployment-digitalocean)
-
-</div>
-
-### 👑 Main System: Orca Complete Kill Cycle
-
-```mermaid
-graph LR
-    A[💰 Start Capital] -->|Phase 1| B[📈 $248 → $2K]
-    B -->|Phase 2| C[📈 $2K → $50K]
-    C -->|Phase 3| D[📈 $50K → $250K]
-    D -->|Phase 4| E[🏆 $250K → $1B]
-    style A fill:#2d4a2d,color:#90EE90
-    style E fill:#4a2d2d,color:#FFD700
-```
-
-**orca_complete_kill_cycle.py** is the primary trading engine featuring:
-- 👑 **Queen's 4-Phase Master Plan**: $248 → $1B in 22 days
-- 🐝 **Phase-Aware Intelligence**: Adapts strategy as capital grows
-- ⚡ **Batten Matrix**: 3-validate-4th-execute precision
-- 🎯 **Multi-Exchange**: Scans Binance, Kraken, Alpaca simultaneously
-
-### 🐧 Linux / macOS
-```bash
-# 1. Setup
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # Add API keys
-
-# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
-python aureon/exchanges/unified_market_trader.py
-
-# 3. Or: Launch Queen's War Room (Orca Kill Cycle)
-python aureon/trading/orca_complete_kill_cycle.py
-```
-
-### 🪟 Windows (PowerShell)
-```powershell
-# 1. Setup
-py -3 -m venv .venv
-
-# If activation is blocked, run once:
-# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-\.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-
-# 2. Launch Unified Multi-Exchange Trader (RECOMMENDED)
-.\scripts\runners\run_unified_live.cmd
-
-# 3. Or: Launch specific exchange traders
-.\scripts\runners\run_alpaca_capital_style.ps1
-.\scripts\runners\run_capital_swarm.ps1
-```
-
-Windows quick reference: [AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md](docs/AUREON_WINDOWS_COMMAND_CHEAT_SHEET.md)
-
----
-
-## 👑 Queen's 4-Phase Master Plan
-
-The main trading engine (`orca_complete_kill_cycle.py`) implements an adaptive 4-phase strategy:
-
-| Phase | Capital Range | Strategy | Min Profit | Max Positions | Focus |
-|-------|---------------|----------|------------|---------------|-------|
-| **1: THE SEED** | $248 → $2.5K | Moonshot Hunting | 10% | 3 | New listings, volume spikes, meme momentum |
-| **2: THE GROWTH** | $2.5K → $250K | Compound Momentum | 5% | 5 | BTC/ETH leverage, mid-caps, trends |
-| **3: THE EXPLOSION** | $250K → $50M | Whale Tactics | 3% | 8 | Options, catalysts, arbitrage |
-| **4: THE BILLION** | $50M → $1B | Market Maker | 2% | 10 | Mega liquidity, tight spreads |
-
-**Automatic Evolution**: The Queen transitions phases automatically as your capital grows, optimizing strategy for your current scale.
-
-**Phase-Based Scoring**: Every market opportunity gets scored based on alignment with current phase strategy (e.g., moonshots prioritized in Phase 1, whale signals in Phase 3).
-
-**Weapons**:
-- 🔮 Quantum Mirror Scanner (probability branches)
-- 🐘 Elephant Memory (pattern recognition)
-- 🎵 Harmonic Field (528 Hz abundance detection)
-- 🐝 Swarm Intelligence (parallel processing)
-- ⚡ Batten Matrix (3-pass validation + 4th execution)
-
----
-
-## 🌌 New: Unity Integration (v2026.1)
-
-The system now features **full logic unity** between planetary alignment and market micro-structure.
-
-| Component | Function | Unity Effect |
-|-----------|----------|--------------|
-| **🌌 Stargate Grid** | Tracks 12 planetary nodes (Giza, Stonehenge, etc.) | If **Golden Ratio Coherence** ($\phi > 1.618$), increases `quantum_boost` by **~10–30%** (capped). |
-| **🐦 Hummingbird Scanner** | Micro-scalping rotation scanner | Detects nectar-rich flowers (volatility pockets) for **+10% probability boost**. |
-| **🐺 Wolf & 🦁 Lion** | Pack hunting algorithms | Consensus detection adds **+15-25% conviction** to Queen's decision. |
-
----
-
-## 🎮 Windows Plug & Play (Legacy)
-
-**No terminal, no Docker, no dependencies** - just download and double-click!
-
-### Option 1: One-Line PowerShell Install
-
-Open PowerShell and paste:
-```powershell
-irm https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/Install-AUREON.ps1 | iex
-```
-
-This downloads AUREON.exe, creates desktop/Start Menu shortcuts, and offers to launch.
-
-### Option 2: Direct Download
-
-1. **Download**: [AUREON.exe](https://github.com/RA-CONSULTING/aureon-trading/releases/latest/download/AUREON.exe)
-2. **Run**: Double-click the downloaded file
-3. **Setup**: Complete the first-run wizard (API keys, risk settings)
-4. **Trade**: Click "Start Trading" in the Command Center UI
-
-### What's Included
-
-| Feature | Description |
-|---------|-------------|
-| 🎮 **Game Mode UI** | Visual Command Center at http://localhost:8888 |
-| 💰 **Trading Engine** | Multi-exchange profit hunting |
-| 🐋 **Orca Kill Cycle** | Aggressive profit mode |
-| 👑 **Queen Dashboard** | Neural decision viewer |
-| ⚙️ **Setup Wizard** | First-run configuration for API keys |
-
-### Safety Features
-
-| Feature | Description |
-|---------|-------------|
-| 🧪 **Dry-run default** | No real trades without explicit confirmation |
-| ⚠️ **Live confirmation** | Must type "I ACCEPT THE RISK" for live trading |
-| 🔐 **Windows Credential Manager** | API keys stored securely in Windows keyring |
-| 📁 **Sandboxed data** | All data stored in `%LOCALAPPDATA%\AUREON` |
-
----
-
-## 🐳 Docker Deployment (Advanced)
-
-For containerized/server deployments, AUREON includes a full Docker package.
-
-### One-Click Install
-
-```bash
-# Linux/macOS
-curl -fsSL https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install.sh | bash
-
-# Windows (with Docker Desktop)
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/RA-CONSULTING/aureon-trading/main/production/install-windows.bat -OutFile install.bat; .\install.bat
-```
-
-After installation, launch from your desktop: **AUREON** icon or `aureon` command.
-
-### Manual Docker Build
-
-```bash
-# Build the production image
-cd production
-docker build -t aureon-trading:latest -f Dockerfile ..
-
-# Run with setup wizard
-docker run -it --name aureon -p 8888:8888 \
-  -v aureon-data:/aureon/data \
-  -v aureon-logs:/aureon/logs \
-  -v aureon-config:/aureon/config \
-  --memory=2g --cpus=2.0 \
-  aureon-trading:latest
-
-# Or use docker-compose with monitoring
-export GF_ADMIN_PASSWORD=$(openssl rand -base64 32)
-docker-compose -f production/docker-compose.yml --profile monitoring up -d
-```
-
-### Operating Modes
-
-| Mode | Command | Description |
-|------|---------|-------------|
-| 🎮 **Game** | `aureon --mode game` | Command Center UI + Trading Engine (default) |
-| 💰 **Trading** | `aureon --mode trading` | Headless execution engine only |
-| 🐋 **Orca** | `aureon --mode orca` | Orca kill cycle (aggressive profit hunting) |
-| 👑 **Queen** | `aureon --mode queen` | Queen unified dashboard |
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `AUREON_MODE` | Operating mode | `game` |
-| `AUREON_DRY_RUN` | Force dry-run mode | `true` |
-| `AUREON_EXCHANGE` | Specific exchange to trade | all enabled |
-| `AUREON_ACCEPT_LIVE_RISK` | Skip live confirmation (CI/containers) | `false` |
-| `GF_ADMIN_PASSWORD` | Grafana admin password (required for monitoring) | - |
-
-See [production/README.md](production/README.md) for full deployment documentation.
-
----
 
 ## 🔬 Market Intelligence & Manipulation Detection Tools
 
@@ -3582,87 +4230,6 @@ We found them anyway.
 
 ---
 
-## Key Files
-
-| File | Path | Purpose |
-|------|------|--------|
-| Orca Complete Kill Cycle | `aureon/trading/` | **Primary trading engine** — Queen's 4-Phase Master Plan |
-| Unified Market Trader | `aureon/exchanges/unified_market_trader.py` | **Multi-exchange orchestration** — central beat feed |
-| Queen Hive Mind | `aureon/queen/` | Queen AI — 12-neuron neural decision controller |
-| Probability Nexus | `aureon/core/` | Batten Matrix — 3-pass validation + coherence scoring |
-| Unified Voice Agent | `aureon/autonomous/` | Voice-controlled trading with intent cognition |
-| Capital CFD Trader | `aureon/exchanges/capital_cfd_trader.py` | Capital.com CFD trading with shadow promotion |
-| Adaptive Profit Gate | `aureon/utils/` | Profit threshold calculator (Kelly-criterion) |
-| Thought Bus | `aureon/core/aureon_thought_bus.py` | Cross-module event mesh |
-| Stargate Protocol | `aureon/core/` | Timeline anchoring, 7-day validation persistence |
-| Elephant Learning | `aureon/intelligence/` | Never forgets historical patterns |
-| Harmonic Fusion | `aureon/harmonic/` | Combines planetary + market harmonic signals |
-| Geopolitical Forensics | `aureon/harmonic/geopolitical_forensics.py` | Geopolitical event signal integration |
-| System Hub Dashboard | `aureon/command_centers/` | Terminal dashboard for system orchestration |
-
-> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) — all 715 modules across 24 domains
-
----
-
-## 🚀 Production Deployment (DigitalOcean)
-
-The live system runs on **DigitalOcean App Platform** with automatic deploy-on-push from the `main` branch.
-
-### Port Architecture
-
-| Port | Service | Process |
-|------|---------|--------|
-| **8080** | Aureon Pro Dashboard | Primary web UI (supervisord priority=0) |
-| **8081** | Orca Health Server | Engine health checks and status |
-| **8800** | Command Center | Legacy command interface |
-
-### Container Stack
-
-- **Base**: Python 3.12-slim
-- **Process Manager**: supervisord (parallel process management)
-- **Config**: `deploy/supervisord.conf`
-- **Deployment**: `app.yaml` (DigitalOcean App Spec) / `Dockerfile` (root)
-
-### Deployment Files
-
-| File | Purpose |
-|------|--------|
-| `Dockerfile` | Production container image |
-| `app.yaml` | DigitalOcean App Platform spec |
-| `deploy/supervisord.conf` | Process management (dashboard, orca-engine, command-center) |
-| `deploy/DIGITAL_OCEAN_MASTER_GUIDE.md` | Full deployment documentation |
-| `deploy/droplet-setup.sh` | VPS/Droplet provisioning script |
-| `deploy/droplet-deploy.sh` | Deployment automation |
-| `deploy/validate_startup.sh` | Post-deploy health validation |
-
-For Docker-based deployment options see also `production/README.md`.
-
-## Safety
-
-- **Dry-run default**: System won't execute live trades without explicit flag
-- **Self-repair**: Queen auto-fixes type errors and learns from failures  
-- **Min-qty pre-filter**: Rejects trades below exchange minimums before execution
-- **Dynamic blocking**: Repeatedly failing paths get temporarily blocked
-- **Rate & Cadence**: Animal scanners automatically handle HTTP 429 rate limits with backoff; aggressive scanning may trigger API pauses.
-
-### Moral Guardrails
-- Human-in-the-loop for threshold changes (profit gates, risk caps, leverage).
-- Queen veto path active by default; emotional/contextual risk can cancel trades.
-- Capital preservation before growth; daily loss cap and per-trade SL required.
-- No market manipulation, unauthorized access, or unsafe automation behaviors.
-- Immutable audit logs for decisions, fills, rejects, and configuration changes.
-
-### Research Metrics Checklist
-- Edge quality: post-fee pip distribution (0.07–1.4), realized PnL.
-- Coherence stability: validator agreement vs executed trades.
-- Drift and λ: time-to-execution decay and invalidation rates.
-- Queen veto: frequency, reasons, and PnL deltas vs no-veto baseline.
-- Rate limits: 429 backoff effectiveness and impact on opportunity decay.
-- ETA verification: forecasted vs actual execution latency and slippage.
-
-<!-- markdownlint-enable MD009 MD022 MD026 MD031 MD032 MD037 MD040 MD058 MD060 -->
-
----
 
 ## 📚 Documentation & Resources
 
@@ -3673,14 +4240,14 @@ The Aureon system includes **180+ documentation files** organized by topic. Star
 |----------|-------------|
 | [Scripts Index](docs/SCRIPTS_INDEX.md) | Find the right startup script from 150+ options |
 | [Live Trading Runbook](docs/LIVE_TRADING_RUNBOOK.md) | Day-to-day trading operations |
-| [Dashboard Guide](docs/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
-| [Multi-Broker Guide](docs/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
+| [Dashboard Guide](docs/dashboards/DASHBOARD_GUIDE.md) | Live monitoring dashboard |
+| [Multi-Broker Guide](docs/integrations/MULTI_BROKER_GUIDE.md) | Multi-exchange configuration |
 
 ### For Developers
 | Document | Description |
 |----------|-------------|
 | [Module Reference](docs/MODULES_AT_A_GLANCE.md) | All 715 modules across 24 domains |
-| [System Architecture Map](docs/SYSTEM_ARCHITECTURE_MAP.md) | 5-phase startup hierarchy |
+| [System Architecture Map](docs/architecture/SYSTEM_ARCHITECTURE_MAP.md) | 5-phase startup hierarchy |
 | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | What intelligence feeds which trader |
 | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | Research concepts → implementations |
 | [Open Market Data Matrix](docs/architecture/OPEN_MARKET_DATA_MATRIX.md) | Data feed topology |

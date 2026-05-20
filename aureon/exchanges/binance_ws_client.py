@@ -18,7 +18,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import json
@@ -47,7 +47,7 @@ except ImportError:
 
 # 🌊 Harmonic Liquid Aluminium Field - live flowing waveform visualization
 try:
-    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = True
 except ImportError:
     HARMONIC_LIQUID_ALUMINIUM_AVAILABLE = False

@@ -38,7 +38,7 @@ CANDIDATE_PAIRS = [
 #  DEAD MAN'S SWITCH IMPORT
 # ══════════════════════════════════════════════════════════════
 try:
-    from dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
+    from aureon.trading.dynamic_take_profit import DynamicTakeProfit, DTP_CONFIG
     _DTP_AVAILABLE = True
 except ImportError:
     _DTP_AVAILABLE = False
@@ -49,7 +49,7 @@ except ImportError:
 #  MARGIN WAVE RIDER IMPORT
 # ══════════════════════════════════════════════════════════════
 try:
-    from margin_wave_rider import MarginWaveRider, WAVE_CONFIG
+    from aureon.trading.margin_wave_rider import MarginWaveRider, WAVE_CONFIG
     _WAVE_RIDER_AVAILABLE = True
     _wave_rider = MarginWaveRider()
 except ImportError:
@@ -61,7 +61,7 @@ except ImportError:
 #  STALLION TRACKER IMPORT
 # ══════════════════════════════════════════════════════════════
 try:
-    from stallion_tracker import classify_phase as _classify_phase
+    from aureon.utils.stallion_tracker import classify_phase as _classify_phase
     _STALLION_AVAILABLE = True
 except ImportError:
     _STALLION_AVAILABLE = False
@@ -71,7 +71,7 @@ except ImportError:
 #  STALLION MULTIVERSE IMPORT
 # ══════════════════════════════════════════════════════════════
 try:
-    from stallion_multiverse import StallionMultiverse, MULTIVERSE_CONFIG
+    from aureon.simulation.stallion_multiverse import StallionMultiverse, MULTIVERSE_CONFIG
     _MULTIVERSE_AVAILABLE = True
 except ImportError:
     _MULTIVERSE_AVAILABLE = False
@@ -82,7 +82,7 @@ except ImportError:
 #  MULTIVERSE LEARNING BRIDGE IMPORT
 # ══════════════════════════════════════════════════════════════
 try:
-    from multiverse_learning_bridge import MultiverseLearningBridge
+    from aureon.bridges.multiverse_learning_bridge import MultiverseLearningBridge
     _LEARNING_BRIDGE_AVAILABLE = True
 except ImportError:
     _LEARNING_BRIDGE_AVAILABLE = False
@@ -90,7 +90,7 @@ except ImportError:
 
 
 def main():
-    from kraken_client import KrakenClient
+    from aureon.exchanges.kraken_client import KrakenClient
     client = KrakenClient()
 
     assert not client.dry_run, "ERROR: Client is in dry-run mode!"

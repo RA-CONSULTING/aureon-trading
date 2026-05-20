@@ -41,7 +41,7 @@ OUTPUT: Single unified field value that predicts market direction
 Gary Leckey & GitHub Copilot | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import math
 import time
 import json
@@ -198,13 +198,13 @@ class GlobalHarmonicField:
     def _init_engines(self):
         """Lazily initialize connected engines."""
         try:
-            from aureon_miner_brain import WisdomCognitionEngine
+            from aureon.utils.aureon_miner_brain import WisdomCognitionEngine
             self._wisdom_engine = WisdomCognitionEngine()
         except Exception as e:
             logger.warning(f"Wisdom engine not available: {e}")
         
         try:
-            from penny_profit_engine import get_penny_engine
+            from aureon.trading.penny_profit_engine import get_penny_engine
             self._penny_engine = get_penny_engine()
         except Exception as e:
             logger.warning(f"Penny engine not available: {e}")

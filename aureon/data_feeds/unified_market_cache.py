@@ -20,7 +20,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json
@@ -45,7 +45,9 @@ logger = logging.getLogger(__name__)
 # Cache file paths
 CACHE_DIR = os.getenv('MARKET_CACHE_DIR', 'ws_cache')
 UNIFIED_CACHE_PATH = os.path.join(CACHE_DIR, 'unified_prices.json')
+WS_PRICE_CACHE_PATH = os.getenv('WS_PRICE_CACHE_PATH', os.path.join(CACHE_DIR, 'ws_prices.json'))
 BINANCE_CACHE_PATH = os.path.join(CACHE_DIR, 'binance_ws_prices.json')
+BINANCE_CACHE_PATHS = list(dict.fromkeys([WS_PRICE_CACHE_PATH, BINANCE_CACHE_PATH]))
 KRAKEN_CACHE_PATH = os.path.join(CACHE_DIR, 'kraken_prices.json')
 
 # Cache TTL (how old data can be before considered stale)
@@ -59,6 +61,22 @@ DEFAULT_SYMBOLS = [
     'FTM', 'NEAR', 'APT', 'INJ', 'TIA', 'SEI', 'SUI', 'OP', 'ARB', 'RENDER',
     'TRUMP', 'BAT', 'SKY', 'MANA', 'SAND', 'AXS', 'ENJ', 'GALA', 'IMX', 'BLUR'
 ]
+
+
+def _as_timestamp(value: Any, default: float = 0.0) -> float:
+    """Return a Unix timestamp from cache values that may be float or ISO text."""
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except Exception:
+        pass
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+        except Exception:
+            return default
+    return default
 
 
 @dataclass
@@ -114,6 +132,7 @@ class UnifiedMarketCache:
         
         # In-memory cache
         self._tickers: Dict[str, CachedTicker] = {}
+        self._source_health: Dict[str, Dict[str, Any]] = {}
         self._cache_lock = threading.Lock()
         self._last_file_read = 0.0
         self._file_read_interval = 1.0  # Read file max once per second
@@ -123,7 +142,7 @@ class UnifiedMarketCache:
         
         logger.info(f"🌐 UnifiedMarketCache initialized (cache dir: {CACHE_DIR})")
     
-    def _read_cache_files(self) -> None:
+    def _read_cache_files(self, requested_max_age: Optional[float] = None) -> None:
         """Read all cache files and merge into memory"""
         now = time.time()
         if now - self._last_file_read < self._file_read_interval:
@@ -133,11 +152,16 @@ class UnifiedMarketCache:
         
         # Priority order: Binance WS > Unified > Kraken REST
         cache_files = [
-            (BINANCE_CACHE_PATH, 'binance_ws', WS_CACHE_TTL_SECONDS),
+            *[(path, 'binance_ws', WS_CACHE_TTL_SECONDS) for path in BINANCE_CACHE_PATHS],
             (UNIFIED_CACHE_PATH, 'unified', CACHE_TTL_SECONDS),
             (KRAKEN_CACHE_PATH, 'kraken_rest', CACHE_TTL_SECONDS),
         ]
         
+        try:
+            read_age_budget = max(0.0, float(requested_max_age or 0.0))
+        except Exception:
+            read_age_budget = 0.0
+
         for path, source, ttl in cache_files:
             try:
                 if not os.path.exists(path):
@@ -146,9 +170,22 @@ class UnifiedMarketCache:
                 with open(path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 
-                file_ts = data.get('generated_at', 0)
-                if now - file_ts > ttl * 2:  # File too old
+                file_ts = _as_timestamp(data.get('generated_at'), 0.0)
+                file_age_budget = max(ttl * 2, read_age_budget)
+                if file_age_budget <= 0:
+                    file_age_budget = ttl * 2
+                if now - file_ts > file_age_budget:  # File too old for this read
                     continue
+
+                source_health = data.get('source_health', {})
+                if isinstance(source_health, dict):
+                    with self._cache_lock:
+                        for source_key, health in source_health.items():
+                            if isinstance(health, dict):
+                                health_copy = dict(health)
+                                health_copy.setdefault("cache_path", path)
+                                health_copy.setdefault("file_generated_at", file_ts)
+                                self._source_health[str(source_key)] = health_copy
                 
                 ticker_cache = data.get('ticker_cache', {})
                 for key, t in ticker_cache.items():
@@ -165,7 +202,7 @@ class UnifiedMarketCache:
                     
                     # Skip if we already have fresher data
                     existing = self._tickers.get(symbol)
-                    ticker_ts = t.get('timestamp', file_ts)
+                    ticker_ts = _as_timestamp(t.get('timestamp'), file_ts)
                     if existing and existing.timestamp > ticker_ts:
                         continue
                     
@@ -218,7 +255,7 @@ class UnifiedMarketCache:
         symbol = symbol.upper()
         
         # Refresh from files
-        self._read_cache_files()
+        self._read_cache_files(max_age)
         
         with self._cache_lock:
             ticker = self._tickers.get(symbol)
@@ -233,9 +270,24 @@ class UnifiedMarketCache:
     
     def get_all_tickers(self, max_age: float = CACHE_TTL_SECONDS) -> Dict[str, CachedTicker]:
         """Get all fresh tickers"""
-        self._read_cache_files()
+        self._read_cache_files(max_age)
         with self._cache_lock:
             return {s: t for s, t in self._tickers.items() if t.is_fresh(max_age)}
+
+    def get_source_health(self) -> Dict[str, Dict[str, Any]]:
+        """Get latest source-health metadata published by the shared cache writer."""
+        self._read_cache_files(CACHE_TTL_SECONDS)
+        now = time.time()
+        with self._cache_lock:
+            health: Dict[str, Dict[str, Any]] = {}
+            for source_key, item in self._source_health.items():
+                if not isinstance(item, dict):
+                    continue
+                copied = dict(item)
+                ts = _as_timestamp(copied.get("generated_at") or copied.get("file_generated_at"), 0.0)
+                copied["age_sec"] = max(0.0, now - ts) if ts > 0 else copied.get("age_sec", None)
+                health[source_key] = copied
+            return health
     
     def get_all_prices(self, max_age: float = CACHE_TTL_SECONDS) -> Dict[str, float]:
         """Get all fresh prices as symbol -> price dict"""

@@ -23,7 +23,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -266,7 +266,7 @@ class QueenUnifiedNeuralChain:
         """Initialize ThoughtBus for message passing"""
         print("\n💭 Initializing ThoughtBus...")
         try:
-            from aureon_thought_bus import ThoughtBus, Thought
+            from aureon.core.aureon_thought_bus import ThoughtBus, Thought
             self.thought_bus = ThoughtBus()
             self.Thought = Thought
             print("   ✅ ThoughtBus connected")
@@ -277,14 +277,14 @@ class QueenUnifiedNeuralChain:
         """Initialize System Registry (Mind Map)"""
         print("\n🗺️ Initializing System Registry (Mind Map)...")
         try:
-            from aureon_system_hub_mycelium import MyceliumSystemRegistry
+            from aureon.command_centers.aureon_system_hub_mycelium import MyceliumSystemRegistry
             self.system_registry = MyceliumSystemRegistry()
             self.system_registry.scan_workspace()
             system_count = sum(c.system_count for c in self.system_registry.categories.values())
             print(f"   ✅ System Registry loaded ({system_count} systems)")
         except ImportError:
             try:
-                from aureon_system_hub import SystemRegistry
+                from aureon.command_centers.aureon_system_hub import SystemRegistry
                 self.system_registry = SystemRegistry()
                 self.system_registry.scan_workspace()
                 system_count = sum(c.system_count for c in self.system_registry.categories.values())

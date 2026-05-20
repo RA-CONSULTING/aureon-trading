@@ -102,6 +102,7 @@ class AureonVault:
 
     # Topics we care about (topic prefix → vault category)
     DEFAULT_SUBSCRIPTIONS: List[str] = [
+        # Legacy / core — already here before stage 6
         "queen.cortex.state",
         "queen.cortex.gamma_spike",
         "mycelium.mind.state",
@@ -115,6 +116,31 @@ class AureonVault:
         "vm.action",
         "aureon.master.directive",
         "aureon.lighthouse.burns",
+        # Stage 6.2 — persona-layer topics the vault was deaf to
+        "persona.collapse",
+        "persona.thought",
+        "persona.intent.rally",
+        "persona.intent.velocity_alert",
+        "persona.painter.composition",
+        "persona.child.curiosity",
+        "persona.elder.recurrence",
+        "persona.right.field",
+        "goal.submit.request",
+        "goal.submitted",
+        "goal.progress",
+        "goal.completed",
+        "goal.abandoned",
+        "goal.echo",
+        "goal.echo.summary",
+        "goal.echo.orphaned",
+        "queen.conscience.verdict",
+        "symbolic.life.pulse",
+        "life.event",
+        "conversation.turn",
+        "conversation.ambient",
+        "meta.reflection",
+        "flight.check.pulse",
+        "standing.wave.bond",
     ]
 
     def __init__(self, max_size: int = 10000):
@@ -208,6 +234,26 @@ class AureonVault:
         )
         self.add(content)
         self._update_synthesised_state(topic, content.payload)
+        # Stage 6.3 — announce every new card so HashResonanceIndex can
+        # update its bonding lookup. No-op if no bus is wired, and we
+        # never publish the vault.card.added for vault.card.added itself
+        # (belt-and-braces against feedback loops).
+        if self._thought_bus is not None and topic != "vault.card.added":
+            try:
+                from aureon.core.aureon_thought_bus import Thought as _T
+                self._thought_bus.publish(_T(
+                    source="aureon_vault",
+                    topic="vault.card.added",
+                    payload={
+                        "content_id": content.content_id,
+                        "category": content.category,
+                        "source_topic": content.source_topic,
+                        "harmonic_hash": content.harmonic_hash,
+                        "timestamp": content.timestamp,
+                    },
+                ))
+            except Exception:
+                pass
         return content
 
     def add(self, content: VaultContent) -> None:
@@ -250,6 +296,46 @@ class AureonVault:
             return "master_directive"
         if topic.startswith("aureon.lighthouse"):
             return "lighthouse"
+        # Stage 6.2 — persona-layer categories
+        if topic.startswith("persona.collapse"):
+            return "persona_collapse"
+        if topic.startswith("persona.thought"):
+            return "persona_thought"
+        if topic.startswith("persona.intent"):
+            return "persona_intent"
+        if topic.startswith("persona.painter") or topic.startswith("persona.child") \
+                or topic.startswith("persona.elder") or topic.startswith("persona.right"):
+            return "persona_artefact"
+        if topic.startswith("goal.echo.summary"):
+            return "goal_summary"
+        if topic.startswith("goal.echo.orphaned"):
+            return "goal_orphaned"
+        if topic.startswith("goal.echo"):
+            return "goal_echo"
+        if topic == "goal.submit.request":
+            return "goal_request"
+        if topic == "goal.submitted":
+            return "goal_submitted"
+        if topic == "goal.progress":
+            return "goal_progress"
+        if topic == "goal.completed":
+            return "goal_completed"
+        if topic == "goal.abandoned":
+            return "goal_abandoned"
+        if topic.startswith("queen.conscience"):
+            return "conscience_verdict"
+        if topic == "symbolic.life.pulse":
+            return "sls_pulse"
+        if topic == "life.event":
+            return "life_event"
+        if topic.startswith("conversation"):
+            return "conversation"
+        if topic == "meta.reflection":
+            return "meta_reflection"
+        if topic == "flight.check.pulse":
+            return "flight_check"
+        if topic == "standing.wave.bond":
+            return "wave_bond"
         return "generic"
 
     def _update_synthesised_state(self, topic: str, payload: Dict[str, Any]) -> None:

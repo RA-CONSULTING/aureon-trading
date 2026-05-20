@@ -54,7 +54,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -94,7 +94,7 @@ logger = logging.getLogger(__name__)
 
 # 🕰️ TEMPORAL SYSTEMS
 try:
-    from aureon_temporal_dialer import TemporalDialer, QuantumPacket, DialMode
+    from aureon.intelligence.aureon_temporal_dialer import TemporalDialer, QuantumPacket, DialMode
     DIALER_AVAILABLE = True
 except ImportError:
     DIALER_AVAILABLE = False
@@ -110,7 +110,7 @@ except ImportError:
     TemporalLadder = Any
 
 try:
-    from aureon_timeline_oracle import TimelineOracle
+    from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
     ORACLE_AVAILABLE = True
 except ImportError:
     ORACLE_AVAILABLE = False
@@ -118,28 +118,28 @@ except ImportError:
 
 # 🎵 HARMONIC SYSTEMS
 try:
-    from aureon_harmonic_chain_master import HarmonicChainMaster, ChainLayer, ChainState
+    from aureon.harmonic.aureon_harmonic_chain_master import HarmonicChainMaster, ChainLayer, ChainState
     CHAIN_MASTER_AVAILABLE = True
 except ImportError:
     CHAIN_MASTER_AVAILABLE = False
     HarmonicChainMaster = None
 
 try:
-    from global_harmonic_field import GlobalHarmonicField, GlobalHarmonicFieldState
+    from aureon.harmonic.global_harmonic_field import GlobalHarmonicField, GlobalHarmonicFieldState
     FIELD_AVAILABLE = True
 except ImportError:
     FIELD_AVAILABLE = False
     GlobalHarmonicField = None
 
 try:
-    from aureon_harmonic_signal_chain import HarmonicSignalChain, ChainSignal
+    from aureon.harmonic.aureon_harmonic_signal_chain import HarmonicSignalChain, ChainSignal
     SIGNAL_CHAIN_AVAILABLE = True
 except ImportError:
     SIGNAL_CHAIN_AVAILABLE = False
     HarmonicSignalChain = None
 
 try:
-    from aureon_harmonic_fusion import HarmonicFusion
+    from aureon.harmonic.aureon_harmonic_fusion import HarmonicFusion
     FUSION_AVAILABLE = True
 except ImportError:
     FUSION_AVAILABLE = False
@@ -147,21 +147,21 @@ except ImportError:
 
 # 🧠 INTELLIGENCE SYSTEMS
 try:
-    from aureon_probability_nexus import ProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import ProbabilityNexus
     NEXUS_AVAILABLE = True
 except ImportError:
     NEXUS_AVAILABLE = False
     ProbabilityNexus = None
 
 try:
-    from aureon_elephant_learning import ElephantMemory, QueenElephantBrain
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory, QueenElephantBrain
     ELEPHANT_AVAILABLE = True
 except ImportError:
     ELEPHANT_AVAILABLE = False
     ElephantMemory = None
 
 try:
-    from queen_neuron import QueenNeuron, create_queen_neuron
+    from aureon.queen.queen_neuron import QueenNeuron, create_queen_neuron
     NEURON_AVAILABLE = True
 except ImportError:
     NEURON_AVAILABLE = False
@@ -169,7 +169,7 @@ except ImportError:
 
 # 📡 COMMUNICATION
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False

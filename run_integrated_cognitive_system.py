@@ -16,7 +16,15 @@ Usage:
 import argparse
 import io
 import logging
+import os
 import sys
+
+# Route all voice/LLM calls through the local AureonBrain adapter (no Ollama
+# probes) unless the user has explicitly configured an LLM backend.
+# This keeps boot time under ~10 s by skipping Ollama model cold-start probes.
+os.environ.setdefault("AUREON_VOICE_BACKEND", "brain")
+os.environ.setdefault("AUREON_LLM_PROBE_TIMEOUT_S", "3")
+os.environ.setdefault("AUREON_LLM_HEALTH_TIMEOUT_S", "2")
 
 # Force UTF-8 on Windows
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")

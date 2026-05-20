@@ -368,7 +368,7 @@ class QueenWarriorPath:
         """Lazy load Strategic Warfare Scanner"""
         if self._strategic_warfare is None:
             try:
-                from aureon_strategic_warfare_scanner import StrategicWarfareScanner
+                from aureon.scanners.aureon_strategic_warfare_scanner import StrategicWarfareScanner
                 self._strategic_warfare = StrategicWarfareScanner()
                 logger.info("⚔️ Strategic Warfare Scanner loaded")
             except ImportError as e:
@@ -380,7 +380,7 @@ class QueenWarriorPath:
         """Lazy load Ghost Dance Protocol"""
         if self._ghost_dance is None:
             try:
-                from aureon_ghost_dance_protocol import GhostDanceProtocol
+                from aureon.wisdom.aureon_ghost_dance_protocol import GhostDanceProtocol
                 self._ghost_dance = GhostDanceProtocol()
                 logger.info("🌌 Ghost Dance Protocol loaded")
             except ImportError as e:
@@ -392,7 +392,7 @@ class QueenWarriorPath:
         """Lazy load Historical Manipulation Hunter"""
         if self._manipulation_hunter is None:
             try:
-                from aureon_historical_manipulation_hunter import HistoricalManipulationHunter
+                from aureon.analytics.aureon_historical_manipulation_hunter import HistoricalManipulationHunter
                 self._manipulation_hunter = HistoricalManipulationHunter()
                 logger.info("📜 Historical Manipulation Hunter loaded")
             except ImportError as e:
@@ -404,7 +404,7 @@ class QueenWarriorPath:
         """Lazy load Harmonic Counter-Frequency Engine"""
         if self._harmonic_engine is None:
             try:
-                from aureon_harmonic_counter_frequency import extract_harmonic_signature
+                from aureon.harmonic.aureon_harmonic_counter_frequency import extract_harmonic_signature
                 self._harmonic_engine = True  # Module is function-based
                 logger.info("🎵 Harmonic Counter-Frequency Engine loaded")
             except ImportError as e:
@@ -416,7 +416,7 @@ class QueenWarriorPath:
         """Lazy load Animal Momentum Scanners"""
         if self._animal_scanners is None:
             try:
-                from aureon_animal_momentum_scanners import (
+                from aureon.scanners.aureon_animal_momentum_scanners import (
                     WolfScanner, LionCompositeScanner, 
                     AntSwarmScanner, HummingbirdScanner
                 )

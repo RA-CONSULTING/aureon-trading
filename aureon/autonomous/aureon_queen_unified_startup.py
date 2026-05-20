@@ -27,7 +27,7 @@ All systems emit to ThoughtBus → Dashboard displays real-time data
 Gary Leckey & Tina Brown | January 2026 | UNIFIED QUEEN CONTROL
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -54,6 +54,7 @@ from datetime import datetime
 from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Optional, Any
 from pathlib import Path
+from aureon.core.aureon_runtime_safety import apply_safe_runtime_environment, require_real_orders_allowed
 
 # Configure logging
 logging.basicConfig(
@@ -99,8 +100,12 @@ class QueenUnifiedStartup:
     Streams live telemetry to ThoughtBus for dashboard display.
     """
     
-    def __init__(self, dry_run: bool = False):
+    def __init__(self, dry_run: bool = True):
         self.dry_run = dry_run
+        if dry_run:
+            apply_safe_runtime_environment()
+        else:
+            require_real_orders_allowed("Queen Unified Startup")
         self.state = UnifiedState()
         self.thought_bus = None
         self.queen = None
@@ -174,7 +179,7 @@ class QueenUnifiedStartup:
         
         print("\n📡 Initializing ThoughtBus...")
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self.thought_bus = get_thought_bus()
             print("   ✅ ThoughtBus connected - consciousness sharing active")
             
@@ -195,7 +200,7 @@ class QueenUnifiedStartup:
         self._update_system_status("queen_hive_mind", "starting")
         
         try:
-            from aureon_queen_hive_mind import QueenHiveMind
+            from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
             self.queen = QueenHiveMind()
             self.state.queen_active = True
             self._update_system_status("queen_hive_mind", "running")
@@ -219,7 +224,7 @@ class QueenUnifiedStartup:
         print("\n🕵️ Loading Counter-Intelligence System...")
         self._update_system_status("counter_intelligence", "starting")
         try:
-            from aureon_queen_counter_intelligence import queen_counter_intelligence
+            from aureon.utils.aureon_queen_counter_intelligence import queen_counter_intelligence
             self.counter_intel = queen_counter_intelligence
             self._update_system_status("counter_intelligence", "running")
             print("   ✅ Counter-Intelligence active - exploiting firm patterns")
@@ -233,7 +238,7 @@ class QueenUnifiedStartup:
         print("\n🦈 Loading Orca Killer Whale Intelligence...")
         self._update_system_status("orca_intelligence", "starting")
         try:
-            from aureon_orca_intelligence import OrcaIntelligence
+            from aureon.bots_intelligence.aureon_orca_intelligence import OrcaIntelligence
             self.orca = OrcaIntelligence()
             self._update_system_status("orca_intelligence", "running")
             print("   ✅ Orca Intelligence active - whale hunting mode")
@@ -247,7 +252,7 @@ class QueenUnifiedStartup:
         print("\n🌊 Loading Global Wave Scanner...")
         self._update_system_status("global_wave_scanner", "starting")
         try:
-            from aureon_global_wave_scanner import GlobalWaveScanner
+            from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
             self.wave_scanner = GlobalWaveScanner()
             self._update_system_status("global_wave_scanner", "running")
             print("   ✅ Wave Scanner active - A-Z market coverage")
@@ -261,7 +266,7 @@ class QueenUnifiedStartup:
         print("\n🐋 Loading Whale Orderbook Analyzer...")
         self._update_system_status("whale_orderbook_analyzer", "starting")
         try:
-            from aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
+            from aureon.analytics.aureon_whale_orderbook_analyzer import WhaleOrderbookAnalyzer
             self.whale_analyzer = WhaleOrderbookAnalyzer(
                 poll_symbols=["BTC/USD", "ETH/USD", "SOL/USD"],
                 poll_interval=2.0,
@@ -286,7 +291,7 @@ class QueenUnifiedStartup:
         print("\n🎯 Loading Probability Nexus...")
         self._update_system_status("probability_nexus", "starting")
         try:
-            from aureon_probability_nexus import probability_nexus_instance
+            from aureon.bridges.aureon_probability_nexus import probability_nexus_instance
             self._update_system_status("probability_nexus", "running")
             print("   ✅ Probability Nexus active - 3-pass validation ready")
             results["probability_nexus"] = True
@@ -300,7 +305,7 @@ class QueenUnifiedStartup:
         self._update_system_status("micro_profit_labyrinth", "starting")
         try:
             # Import the labyrinth module
-            import micro_profit_labyrinth
+            import aureon.trading.micro_profit_labyrinth as micro_profit_labyrinth
             self._update_system_status("micro_profit_labyrinth", "running")
             print("   ✅ Micro Profit Labyrinth loaded - snowball mode ready")
             results["micro_profit_labyrinth"] = True

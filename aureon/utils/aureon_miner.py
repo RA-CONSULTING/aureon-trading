@@ -16,7 +16,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From trading to mining - one unified system"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 # ═══════════════════════════════════════════════════════════════════════════
 # WINDOWS UTF-8 FIX - MUST BE BEFORE ALL OTHER IMPORTS
 # ═══════════════════════════════════════════════════════════════════════════
@@ -79,7 +79,7 @@ if sys.platform == 'win32':
 
 # Import Miner Brain - Unified Wisdom Cognition Engine
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     BRAIN_AVAILABLE = True
 except ImportError:
     MinerBrain = None
@@ -87,7 +87,7 @@ except ImportError:
 
 # Import V11 Power Station - Multi-Exchange Trading Grid
 try:
-    from v11_power_station_live import V11PowerStationLive, V11Config
+    from aureon.trading.v11_power_station_live import V11PowerStationLive, V11Config
     V11_AVAILABLE = True
 except ImportError:
     V11PowerStationLive = None
@@ -6948,7 +6948,7 @@ class HarmonicMiningOptimizer:
     def _load_aureon_hooks(self):
         """Load Aureon probability/harmonic systems if available"""
         try:
-            from aureon_probability_nexus import AureonProbabilityNexus
+            from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
             self._probability_matrix = AureonProbabilityNexus()
             logger.info("🔮 Probability Matrix: CONNECTED to miner")
         except ImportError:
@@ -6962,14 +6962,14 @@ class HarmonicMiningOptimizer:
             logger.debug("Earth Resonance Engine not available for mining")
         
         try:
-            from hnc_imperial_predictability import ImperialPredictabilityEngine
+            from aureon.strategies.hnc_imperial_predictability import ImperialPredictabilityEngine
             self._imperial_engine = ImperialPredictabilityEngine()
             logger.info("🌌 Imperial Engine: CONNECTED to miner")
         except ImportError:
             logger.debug("Imperial Engine not available for mining")
 
         try:
-            from aureon_enhancements import EnhancementLayer
+            from aureon.core.aureon_enhancements import EnhancementLayer
             self._enhancement_layer = EnhancementLayer()
             logger.info("🌈 Enhancement Layer: CONNECTED to miner")
         except ImportError as e:
@@ -6978,7 +6978,7 @@ class HarmonicMiningOptimizer:
             logger.error(f"Enhancement Layer initialization failed: {e}")
 
         try:
-            from aureon_piano import AureonPiano
+            from aureon.trading.aureon_piano import AureonPiano
             self._piano = AureonPiano()
             self.brain._piano = self._piano
             logger.info("🎹 Aureon Piano: CONNECTED to miner")
@@ -7591,7 +7591,7 @@ class MiningSession:
     def _init_binance_api(self):
         """Initialize Binance Pool API client if this is a Binance pool"""
         try:
-            from binance_client import BinancePoolAPI
+            from aureon.exchanges.binance_client import BinancePoolAPI
             self._binance_pool_api = BinancePoolAPI()
             logger.info(f"[{self.session_id}] Binance Pool API connected")
         except Exception as e:
@@ -7849,7 +7849,7 @@ class AureonMiner:
     def _load_binance_pool(self):
         """Load Binance Pool client for live earnings tracking"""
         try:
-            from binance_client import BinancePoolClient, BinanceClient
+            from aureon.exchanges.binance_client import BinancePoolClient, BinanceClient
             
             # Check if Binance API keys are configured
             api_key = os.getenv('BINANCE_API_KEY')

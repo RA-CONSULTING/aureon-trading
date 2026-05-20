@@ -6,7 +6,7 @@ import logging
 import time
 from datetime import datetime
 
-from alpaca_capital_style_trader import AlpacaCapitalStyleTrader
+from aureon.exchanges.alpaca_capital_style_trader import AlpacaCapitalStyleTrader
 
 
 logger = logging.getLogger("alpaca_capital_runner")

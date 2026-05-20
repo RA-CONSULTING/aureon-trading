@@ -15,7 +15,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json
@@ -32,21 +32,21 @@ logger = logging.getLogger(__name__)
 
 # Import Queen's learning systems
 try:
-    from queen_loss_learning import QueenLossLearningSystem
+    from aureon.queen.queen_loss_learning import QueenLossLearningSystem
     LOSS_LEARNING_AVAILABLE = True
 except ImportError:
     QueenLossLearningSystem = None
     LOSS_LEARNING_AVAILABLE = False
 
 try:
-    from queen_online_researcher import QueenOnlineResearcher
+    from aureon.queen.queen_online_researcher import QueenOnlineResearcher
     RESEARCHER_AVAILABLE = True
 except ImportError:
     QueenOnlineResearcher = None
     RESEARCHER_AVAILABLE = False
 
 try:
-    from capital_client import CapitalClient
+    from aureon.exchanges.capital_client import CapitalClient
     CAPITAL_AVAILABLE = True
 except ImportError:
     CapitalClient = None

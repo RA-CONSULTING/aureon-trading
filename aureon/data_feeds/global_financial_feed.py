@@ -29,7 +29,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From Prime to Probability - The Entire Earth's Pulse"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import time
@@ -43,7 +43,7 @@ from collections import deque
 import logging
 
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     ThoughtBus = None
@@ -655,7 +655,7 @@ class GlobalFinancialFeed:
 
         # Feed into Autonomy Hub (The Big Wheel)
         try:
-            from aureon_autonomy_hub import get_autonomy_hub
+            from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
             hub = get_autonomy_hub()
             hub.data_bridge.ingest_macro_snapshot(snapshot.to_dict())
         except Exception:
@@ -785,7 +785,7 @@ def integrate_with_probability_matrix():
     Hook to integrate global financial feed with HNC Probability Matrix.
     """
     try:
-        from hnc_probability_matrix import HNCProbabilityIntegration
+        from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
         
         feed = GlobalFinancialFeed()
         integration = HNCProbabilityIntegration()

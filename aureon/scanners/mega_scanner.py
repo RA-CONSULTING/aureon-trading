@@ -15,7 +15,7 @@ Scans ALL exchanges for:
 Gary Leckey & GitHub Copilot | January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import asyncio
@@ -32,14 +32,14 @@ load_dotenv()
 # ════════════════════════════════════════════════════════════════════════════════
 
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_OK = True
 except ImportError:
     KrakenClient = None
     KRAKEN_OK = False
 
 try:
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     BINANCE_OK = True
 except ImportError:
     BinanceClient = None
@@ -53,7 +53,7 @@ except ImportError:
     ALPACA_OK = False
 
 try:
-    from crypto_market_map import CryptoMarketMap, SYMBOL_TO_SECTOR, CRYPTO_SECTORS
+    from aureon.data_feeds.crypto_market_map import CryptoMarketMap, SYMBOL_TO_SECTOR, CRYPTO_SECTORS
     MARKET_MAP_OK = True
 except ImportError:
     CryptoMarketMap = None

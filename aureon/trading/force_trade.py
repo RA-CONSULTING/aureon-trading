@@ -10,7 +10,7 @@ Usage:
     python force_trade.py BTCGBP       # Force trade on specific symbol
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -29,7 +29,7 @@ load_dotenv()
 import time
 from datetime import datetime
 
-from queen_force_trade_governance import evaluate_queen_force_trade_authority
+from aureon.queen.queen_force_trade_governance import evaluate_queen_force_trade_authority
 
 def force_trade():
     """Force execute a single trade"""
@@ -65,7 +65,7 @@ def force_trade():
     print()
     
     # Import after setting environment
-    from aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
+    from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
     
     # Override config for force trade
     CONFIG['FORCE_TRADE'] = True
@@ -86,7 +86,7 @@ def force_trade():
     # Force load Binance data since that's where we have API keys
     print("   📊 Loading Binance market data...")
     try:
-        from binance_client import get_binance_client
+        from aureon.exchanges.binance_client import get_binance_client
         binance = get_binance_client()
         tickers = binance.get_24h_tickers()
         

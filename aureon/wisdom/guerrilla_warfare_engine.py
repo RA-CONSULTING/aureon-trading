@@ -72,7 +72,7 @@ Gary Leckey | December 2025
 "The flame ignited cannot be extinguished - it only grows stronger."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -762,7 +762,7 @@ class FlyingColumnCommander:
         # Try to get dynamic penny threshold
         penny_target = column.target_profit
         try:
-            from aureon_unified_ecosystem import get_penny_threshold
+            from aureon.trading.aureon_unified_ecosystem import get_penny_threshold
             penny = get_penny_threshold(column.exchange, column.entry_value)
             if penny:
                 penny_target = penny['win_gte']

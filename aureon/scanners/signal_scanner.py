@@ -19,7 +19,7 @@ def main():
     seer_ok = True
     seer_risk_mod = 1.0
     try:
-        from aureon_seer import get_seer
+        from aureon.intelligence.aureon_seer import get_seer
         seer = get_seer()
         vision = seer.see()
         grade = vision.grade
@@ -136,7 +136,7 @@ def main():
     # ── 3. War Strategy Signals ──────────────────────────────────────
     print("\n[3] WAR STRATEGY — Quick Kill Probability")
     try:
-        from war_strategy import should_attack, get_quick_kill_estimate
+        from aureon.command_centers.war_strategy import should_attack, get_quick_kill_estimate
         for coin, dscore, conf, mom, price in bullish_symbols[:10]:
             try:
                 go, reason, priority = should_attack(coin, 'kraken')
@@ -152,7 +152,7 @@ def main():
     # ── 4. Sniper Brain Entry Signals ────────────────────────────────
     print("\n[4] SNIPER BRAIN — Entry Signal Scoring")
     try:
-        from unified_sniper_brain import get_unified_brain
+        from aureon.trading.unified_sniper_brain import get_unified_brain
         sniper = get_unified_brain(exchange='kraken')
         for coin, dscore, conf, mom, price in bullish_symbols[:10]:
             try:
@@ -170,7 +170,7 @@ def main():
     # ── 5. Nexus Predictor ───────────────────────────────────────────
     print("\n[5] NEXUS PREDICTOR — 79.6% Win Rate Validation")
     try:
-        from nexus_predictor import NexusPredictor
+        from aureon.intelligence.nexus_predictor import NexusPredictor
         nexus = NexusPredictor()
         for coin, dscore, conf, mom, price in bullish_symbols[:10]:
             try:
@@ -194,7 +194,7 @@ def main():
     # ── 6. Miner Brain / Timeline Oracle ─────────────────────────────
     print("\n[6] MINER BRAIN — Timeline Oracle Predictions")
     try:
-        from aureon_miner_brain import MinerBrain
+        from aureon.utils.aureon_miner_brain import MinerBrain
         miner = MinerBrain()
         for coin, dscore, conf, mom, price in bullish_symbols[:5]:
             try:

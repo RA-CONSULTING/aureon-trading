@@ -696,7 +696,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p.add_argument("--fmp-key", default=None, help="FMP API key (or env FMP_API_KEY)")
     p.add_argument("--news-key", default=None, help="World News API key (or env WORLD_NEWS_API_KEY)")
     p.add_argument(
-        "--seed-events", default="true",
+        "--seed-events", nargs="?", const="true", default="true",
         help="Include hard-coded geopolitical seed events (default: true)",
     )
     return p.parse_args(argv)

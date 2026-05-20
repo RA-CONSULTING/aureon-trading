@@ -23,7 +23,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -54,7 +54,7 @@ from enum import Enum
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import numpy as np
-from metrics import MetricCounter, skipped_anchor_counter
+from aureon.core.metrics import MetricCounter, skipped_anchor_counter
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,7 @@ class ValidationRecord:
         return asdict(self)
 
 
-from metrics import skipped_anchor_counter
+from aureon.core.metrics import skipped_anchor_counter
 
 @dataclass
 class TimelineAnchor:
@@ -763,7 +763,7 @@ class TimelineAnchorValidator:
         """Emit thought to ThoughtBus if available"""
         if self._thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source="timeline_anchor_validator",
                     topic=topic,
@@ -817,21 +817,21 @@ def create_timeline_validator(with_integrations: bool = True) -> TimelineAnchorV
     
     if with_integrations:
         try:
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             thought_bus = ThoughtBus()
             logger.info("✅ ThoughtBus integration enabled")
         except ImportError:
             logger.warning("⚠️ ThoughtBus not available")
             
         try:
-            from aureon_quantum_mirror_scanner import create_quantum_scanner
+            from aureon.scanners.aureon_quantum_mirror_scanner import create_quantum_scanner
             quantum_scanner = create_quantum_scanner(with_integrations=False)
             logger.info("✅ Quantum Scanner integration enabled")
         except ImportError:
             logger.warning("⚠️ Quantum Scanner not available")
             
         try:
-            from aureon_stargate_protocol import create_stargate_engine
+            from aureon.wisdom.aureon_stargate_protocol import create_stargate_engine
             stargate_engine = create_stargate_engine(with_integrations=False)
             logger.info("✅ Stargate Protocol integration enabled")
         except ImportError:

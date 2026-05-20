@@ -14,7 +14,7 @@ Gary Leckey | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -46,7 +46,7 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
-from alpaca_options_client import (
+from aureon.exchanges.alpaca_options_client import (
     AlpacaOptionsClient, get_options_client, 
     OptionContract, OptionQuote, OptionType, TradingLevel
 )
@@ -190,7 +190,7 @@ class QueenOptionsScanner:
         # Try to connect to Queen Hive
         self.queen = None
         try:
-            from aureon_queen_hive_mind import get_queen_hive
+            from aureon.utils.aureon_queen_hive_mind import get_queen_hive
             self.queen = get_queen_hive()
             logger.info("👑 Queen Hive connected to Options Scanner")
         except Exception as e:

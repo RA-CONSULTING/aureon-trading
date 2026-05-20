@@ -20,7 +20,7 @@
 ╚════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -787,7 +787,7 @@ async def queen_research_and_enhance():
     2. Generates code enhancements
     3. Applies them to the codebase
     """
-    from queen_code_architect import get_code_architect
+    from aureon.queen.queen_code_architect import get_code_architect
     
     researcher = get_online_researcher()
     architect = get_code_architect()

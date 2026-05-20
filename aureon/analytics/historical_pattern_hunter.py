@@ -2,6 +2,13 @@
 """
 💎🔮 HISTORICAL PATTERN HUNTER: PREDICT THE FUTURE FROM THE PAST 🔮💎
 
+🟡 STANDALONE BACKTEST SIMULATOR — execute_pattern_trade() simulates wins
+   via random.random() < pattern.win_rate and profit via
+   pattern.avg_profit_pct * random.uniform(0.85, 1.15). The class is not
+   imported by production code; only the __main__ block calls run_simulation().
+   Do NOT call execute_pattern_trade or run_simulation from a live path —
+   this is a backtest harness, not a trade executor.
+
 "THE PRESENT IS A GIFT. USE THE PAST TO UNWRAP IT."
 
 This uses ACTUAL historical patterns from adaptive_learning_history.json
@@ -17,7 +24,7 @@ Strategy:
 £76 → £100,000 in 24 hours using HISTORICAL INTELLIGENCE
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import random
 import time
 import json
@@ -26,8 +33,8 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional
 
 try:
-    from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
-    from probability_intelligence_matrix import ProbabilityIntelligenceMatrix
+    from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+    from aureon.strategies.probability_intelligence_matrix import ProbabilityIntelligenceMatrix
 except ImportError:
     ProbabilityUltimateIntelligence = None
     ProbabilityIntelligenceMatrix = None

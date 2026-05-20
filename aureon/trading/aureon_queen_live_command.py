@@ -13,7 +13,7 @@
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -57,7 +57,7 @@ QUEEN_AVAILABLE = False
 queen_hive = None
 
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     queen_hive = QueenHiveMind()
     QUEEN_AVAILABLE = True
     logger.info("👑 QUEEN HIVE MIND LOADED!")
@@ -65,7 +65,7 @@ except ImportError:
     logger.warning("Queen Hive Mind not available")
     
 try:
-    from aureon_enigma import Enigma
+    from aureon.wisdom.aureon_enigma import Enigma
     enigma = Enigma()
     ENIGMA_AVAILABLE = True
     logger.info("🔐 ENIGMA DECODER LOADED!")
@@ -74,7 +74,7 @@ except:
     enigma = None
 
 try:
-    from aureon_elephant_learning import ElephantMemory
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory
     elephant = ElephantMemory()
     ELEPHANT_AVAILABLE = True
     logger.info("🐘 ELEPHANT MEMORY LOADED!")
@@ -83,7 +83,7 @@ except:
     elephant = None
 
 try:
-    from aureon_probability_nexus import ProbabilityNexus
+    from aureon.bridges.aureon_probability_nexus import ProbabilityNexus
     nexus = ProbabilityNexus()
     NEXUS_AVAILABLE = True
     logger.info("🎯 PROBABILITY NEXUS LOADED!")
@@ -529,18 +529,31 @@ async def run_queen_command_center():
         print("The Queen never truly sleeps. She watches always.")
         
     except ImportError:
-        # Run in standalone mode
-        print("Running in standalone mode (no aiohttp)")
+        # Run in standalone mode (DEV ONLY — synthetic prices fed into the
+        # analyzer). Gated behind AUREON_ALLOW_SIM_FALLBACK so production
+        # raises rather than feeding fake BTC/ETH ticks into downstream logic.
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_queen_live_command.standalone",
+                                 "no_aiohttp")
+            raise RuntimeError(
+                "aiohttp unavailable; refusing to fall back to synthetic "
+                "BTC/ETH/flow ticks in production. Install aiohttp or set "
+                "AUREON_ALLOW_SIM_FALLBACK=1 for dev-mode synthetic standalone."
+            )
+        print("Running in standalone mode (no aiohttp) — DEV ONLY synthetic feed")
         while True:
-            # Simulate some data
+            # DEV-ONLY synthetic data (gated above)
             import random
             analyzer.feed_price('BTC/USD', 96000 + random.uniform(-500, 500), time.time())
             analyzer.feed_price('ETH/USD', 3300 + random.uniform(-50, 50), time.time())
             analyzer.feed_flow('BTC/USD', random.uniform(100000, 500000), random.uniform(80000, 400000))
-            
+
             if random.random() > 0.7:
                 analyzer.feed_bot_detection('MICROSTRATEGY_BOT', random.uniform(0.4, 0.7), 'BTC/USD')
-                
+
             print_queen_dashboard(analyzer)
             time.sleep(3)
 

@@ -4,7 +4,7 @@
 Connects to running Aureon processes and extracts real-time metrics
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -101,7 +101,7 @@ class LiveSystemsMonitor:
         """Check Thought Bus message files for activity"""
         try:
             # Check if Thought Bus is generating messages
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             bus = ThoughtBus()
             
             # Check message count

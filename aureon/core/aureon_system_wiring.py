@@ -20,7 +20,7 @@ All systems receive real data from aureon_real_data_feed_hub
 Gary Leckey & Tina Brown | January 2026 | SYSTEM WIRING
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -219,7 +219,7 @@ def wire_all_systems():
     Wire ALL system categories to the real data feed.
     This is the main entry point to enable real intelligence across the platform.
     """
-    from aureon_real_data_feed_hub import get_feed_hub, start_global_feed
+    from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub, start_global_feed
     
     hub = get_feed_hub()
     wired_count = 0
@@ -292,7 +292,7 @@ def inject_data_to_system(system_name: str, topic: str, data: Dict[str, Any]):
     # Neural Networks - inject via global state or method calls
     if system_name == "aureon_queen_hive_mind":
         try:
-            from aureon_queen_hive_mind import get_queen
+            from aureon.utils.aureon_queen_hive_mind import get_queen
             queen = get_queen()
             if queen and hasattr(queen, 'receive_intelligence'):
                 queen.receive_intelligence(topic, data)
@@ -304,7 +304,7 @@ def inject_data_to_system(system_name: str, topic: str, data: Dict[str, Any]):
     
     elif system_name == "aureon_miner_brain":
         try:
-            from aureon_miner_brain import miner_brain
+            from aureon.utils.aureon_miner_brain import miner_brain
             if miner_brain and hasattr(miner_brain, 'receive_signal'):
                 miner_brain.receive_signal(topic, data)
         except:
@@ -312,7 +312,7 @@ def inject_data_to_system(system_name: str, topic: str, data: Dict[str, Any]):
     
     elif system_name == "aureon_probability_nexus":
         try:
-            from aureon_probability_nexus import probability_nexus
+            from aureon.bridges.aureon_probability_nexus import probability_nexus
             if probability_nexus and hasattr(probability_nexus, 'update_intelligence'):
                 probability_nexus.update_intelligence(data)
         except:
@@ -320,7 +320,7 @@ def inject_data_to_system(system_name: str, topic: str, data: Dict[str, Any]):
     
     elif system_name == "aureon_mycelium":
         try:
-            from aureon_mycelium import mycelium_network
+            from aureon.core.aureon_mycelium import mycelium_network
             if mycelium_network and hasattr(mycelium_network, 'propagate'):
                 mycelium_network.propagate(topic, data)
         except:
@@ -328,7 +328,7 @@ def inject_data_to_system(system_name: str, topic: str, data: Dict[str, Any]):
     
     elif system_name == "aureon_enigma_integration":
         try:
-            from aureon_enigma_integration import enigma_integration
+            from aureon.wisdom.aureon_enigma_integration import enigma_integration
             if enigma_integration and hasattr(enigma_integration, 'decode_signal'):
                 enigma_integration.decode_signal(data)
         except:
@@ -339,7 +339,7 @@ def inject_data_to_system(system_name: str, topic: str, data: Dict[str, Any]):
         if "validated" in topic and data.get("composite_score", 0) > 0.618:
             try:
                 if system_name == "micro_profit_labyrinth":
-                    from micro_profit_labyrinth import receive_validated_signal
+                    from aureon.trading.micro_profit_labyrinth import receive_validated_signal
                     receive_validated_signal(data)
             except:
                 pass
@@ -350,7 +350,7 @@ def inject_data_to_system(system_name: str, topic: str, data: Dict[str, Any]):
 
 def wire_single_system(system_name: str, topics: List[str] = None):
     """Wire a single system to real data feed"""
-    from aureon_real_data_feed_hub import get_feed_hub
+    from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub
     
     hub = get_feed_hub()
     
@@ -397,7 +397,7 @@ def wire_queen_hive_mind():
     
     # Also inject a method into Queen for receiving intelligence
     try:
-        from aureon_queen_hive_mind import QueenHiveMind
+        from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
         
         def receive_intelligence(self, topic: str, data: Dict):
             """Receive real intelligence from feed hub"""

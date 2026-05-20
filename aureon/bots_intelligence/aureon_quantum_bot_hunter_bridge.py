@@ -13,7 +13,7 @@
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -32,7 +32,7 @@ import websockets
 import aiohttp
 
 # Import our enhanced quantum telescope
-from aureon_enhanced_quantum_telescope import EnhancedQuantumGeometryEngine, EnhancedQuantumBotHunter
+from aureon.simulation.aureon_enhanced_quantum_telescope import EnhancedQuantumGeometryEngine, EnhancedQuantumBotHunter
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(message)s')
 logger = logging.getLogger(__name__)

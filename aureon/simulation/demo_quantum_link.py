@@ -42,8 +42,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 # Import Queen and the biometric link
-from aureon_queen_hive_mind import QueenHiveMind
-from aureon_temporal_biometric_link import get_temporal_biometric_link
+from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
+from aureon.intelligence.aureon_temporal_biometric_link import get_temporal_biometric_link
 
 def print_banner(text):
     """Print a fancy banner"""

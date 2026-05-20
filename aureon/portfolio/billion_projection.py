@@ -3,11 +3,11 @@
 🌌⚡ AUREON BILLION DOLLAR PROJECTION ⚡🌌
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
+from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
 
 def format_money(amount: float) -> str:
     if amount >= 1_000_000_000:

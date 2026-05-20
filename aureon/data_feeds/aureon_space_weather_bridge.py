@@ -143,6 +143,27 @@ class SpaceWeatherBridge:
         except Exception as e:
             logger.debug(f"NASA flares unavailable: {e}")
         
+        # Stage AE: if NO live source supplied any value, every field
+        # would be from FALLBACK_VALUES — fully synthetic. Production
+        # posture: return the previously-cached reading (stale-but-real)
+        # if available, else None, so consumers can detect "no live
+        # space weather" rather than receive Kp=3.0 baseline as if it
+        # were real. AUREON_ALLOW_SIM_FALLBACK=1 restores the old
+        # behaviour for dev / test / backtest. We check BEFORE
+        # constructing + caching the synthetic reading, otherwise we'd
+        # poison the cache with the fallback values.
+        if not active_sources:
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if not simulation_fallback_allowed():
+                log_blocked_fallback("space_weather_bridge",
+                                     "all_noaa_fetches_failed")
+                # Return PREVIOUS cache (which holds a real reading
+                # from the last successful fetch); do NOT update cache
+                # with synthetic values.
+                return self.cache  # may be None on first call
+
         # Create reading
         kp_category = self._categorize_kp(kp_index)
         reading = SpaceWeatherReading(
@@ -156,13 +177,13 @@ class SpaceWeatherBridge:
             geomagnetic_storm_3day=geomagnetic_storm_3day,
             active_sources=active_sources,
         )
-        
+
         # Cache and return
         self.cache = reading
         self.last_update = now
         self.error_count = 0
-        
-        logger.info(f"🌍☀️ Space Weather Update: Kp={kp_index:.1f} ({kp_category}), Wind={solar_wind_speed:.0f}km/s, Sources={', '.join(active_sources)}")
+
+        logger.info(f"🌍☀️ Space Weather Update: Kp={kp_index:.1f} ({kp_category}), Wind={solar_wind_speed:.0f}km/s, Sources={', '.join(active_sources) or 'FALLBACK_VALUES'}")
         return reading
     
     def _fetch_kp_index(self) -> Optional[Dict]:

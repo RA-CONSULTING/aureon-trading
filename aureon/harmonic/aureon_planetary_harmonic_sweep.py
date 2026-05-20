@@ -11,7 +11,7 @@ Output: Complete frequency map + coordination graph + counter-measures
 
 🌍⚡ NO ENTITY LEFT UNSCANNED ⚡🌍
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'

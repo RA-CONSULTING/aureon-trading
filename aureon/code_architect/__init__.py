@@ -61,6 +61,10 @@ from aureon.code_architect.observer import (
 from aureon.code_architect.writer import (
     SkillWriter,
 )
+from aureon.code_architect.expression import (
+    CODE_EXPRESSION_SCHEMA,
+    build_code_expression_context,
+)
 from aureon.code_architect.validator import (
     SkillValidator,
     ValidationResult,
@@ -91,6 +95,8 @@ __all__ = [
     "ObservationEngine",
     "ObservedPattern",
     "SkillWriter",
+    "CODE_EXPRESSION_SCHEMA",
+    "build_code_expression_context",
     "SkillValidator",
     "ValidationResult",
     "SkillExecutor",

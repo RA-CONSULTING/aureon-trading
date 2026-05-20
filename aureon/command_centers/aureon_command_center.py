@@ -34,7 +34,7 @@ Features:
 ONE DASHBOARD TO RULE THEM ALL!
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import atexit
@@ -231,6 +231,12 @@ from pathlib import Path
 # Live vs demo mode
 DEMO_MODE = os.getenv("AUREON_COMMAND_CENTER_DEMO", "0").lower() in ("1", "true", "yes", "y")
 
+from aureon.core.aureon_runtime_safety import (
+    child_env_for_mode,
+    env_truthy,
+    live_block_reason,
+)
+
 # Windows deferred loading mode - start server first, load systems in background
 WINDOWS_FAST_START = sys.platform == 'win32'
 
@@ -245,7 +251,7 @@ except ImportError:
 
 # Thought Bus (needed for type annotations)
 try:
-    from aureon_thought_bus import Thought
+    from aureon.core.aureon_thought_bus import Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
@@ -275,162 +281,166 @@ def load_all_systems():
     
     # Core Intelligence
     try:
-        from aureon_thought_bus import Thought, get_thought_bus
+        from aureon.core.aureon_thought_bus import Thought, get_thought_bus
         SYSTEMS_STATUS['Thought Bus'] = True
         thought_bus = get_thought_bus()
     except ImportError:
         SYSTEMS_STATUS['Thought Bus'] = False
     
     try:
-        from aureon_mycelium import MyceliumNetwork
+        from aureon.core.aureon_mycelium import MyceliumNetwork
         SYSTEMS_STATUS['Mycelium Network'] = True
     except ImportError:
         SYSTEMS_STATUS['Mycelium Network'] = False
     
     try:
-        from aureon_enigma import AureonEnigma
+        from aureon.wisdom.aureon_enigma import AureonEnigma
         SYSTEMS_STATUS['Enigma Decoder'] = True
     except ImportError:
         SYSTEMS_STATUS['Enigma Decoder'] = False
     
     try:
-        from aureon_probability_nexus import AureonProbabilityNexus
+        from aureon.bridges.aureon_probability_nexus import EnhancedProbabilityNexus
         SYSTEMS_STATUS['Probability Nexus'] = True
     except ImportError:
         SYSTEMS_STATUS['Probability Nexus'] = False
     
     # 🛡️ SOUL SHIELD - Active Protection
     try:
-        from queen_soul_shield import QueenSoulShield
+        from aureon.queen.queen_soul_shield import QueenSoulShield
         SYSTEMS_STATUS['Soul Shield'] = True
         # Initialize shield but don't start monitoring (dashboard will trigger)
-        queen_shield_instance = QueenSoulShield(gary_frequency=528.422, verbose=False)
+        queen_shield_instance = QueenSoulShield(protected_soul="Gary Leckey")
         SYSTEMS_STATUS['Soul Shield Status'] = 'Ready'
-    except ImportError:
+    except Exception:
         SYSTEMS_STATUS['Soul Shield'] = False
         SYSTEMS_STATUS['Soul Shield Status'] = 'Unavailable'
     
     try:
-        from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+        from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
         SYSTEMS_STATUS['Ultimate Intelligence'] = True
     except ImportError:
         SYSTEMS_STATUS['Ultimate Intelligence'] = False
     
     try:
-        from aureon_elephant_learning import ElephantMemory
+        from aureon.intelligence.aureon_elephant_learning import ElephantMemory
         SYSTEMS_STATUS['Elephant Memory'] = True
     except ImportError:
         SYSTEMS_STATUS['Elephant Memory'] = False
     
     try:
-        from aureon_quantum_telescope import QuantumPrism
+        from aureon.simulation.aureon_quantum_telescope import QuantumPrism
         SYSTEMS_STATUS['Quantum Telescope'] = True
     except ImportError:
         SYSTEMS_STATUS['Quantum Telescope'] = False
     
     try:
-        from aureon_timeline_oracle import TimelineOracle
+        from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
         SYSTEMS_STATUS['Timeline Oracle'] = True
     except ImportError:
         SYSTEMS_STATUS['Timeline Oracle'] = False
     
     try:
-        from aureon_miner_brain import MinerBrain
+        from aureon.utils.aureon_miner_brain import MinerBrain
         SYSTEMS_STATUS['Miner Brain'] = True
     except ImportError:
         SYSTEMS_STATUS['Miner Brain'] = False
     
     try:
-        from aureon_harmonic_fusion import HarmonicWaveFusion
+        from aureon.harmonic.aureon_harmonic_fusion import HarmonicWaveFusion
         SYSTEMS_STATUS['Harmonic Fusion'] = True
     except ImportError:
         SYSTEMS_STATUS['Harmonic Fusion'] = False
     
     try:
-        from aureon_global_wave_scanner import GlobalWaveScanner
+        from aureon.scanners.aureon_global_wave_scanner import GlobalWaveScanner
         SYSTEMS_STATUS['Global Wave Scanner'] = True
     except ImportError:
         SYSTEMS_STATUS['Global Wave Scanner'] = False
     
     try:
-        import aureon_whale_integration
+        import aureon.analytics.aureon_whale_integration as aureon_whale_integration
         SYSTEMS_STATUS['Whale Integration'] = True
     except ImportError:
         SYSTEMS_STATUS['Whale Integration'] = False
     
     try:
-        from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
+        from aureon.bots_intelligence.aureon_orca_intelligence import OrcaKillerWhaleIntelligence
         SYSTEMS_STATUS['Orca Intelligence'] = True
     except ImportError:
         SYSTEMS_STATUS['Orca Intelligence'] = False
     
     try:
-        from aureon_queen_hive_mind import QueenHiveMind
+        from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
         SYSTEMS_STATUS['Queen Hive Mind'] = True
     except ImportError:
         SYSTEMS_STATUS['Queen Hive Mind'] = False
     
     try:
-        from aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES as TFS
+        from aureon.bots_intelligence.aureon_bot_intelligence_profiler import BotIntelligenceProfiler, TRADING_FIRM_SIGNATURES as TFS
         SYSTEMS_STATUS['Bot Intelligence'] = True
         TRADING_FIRM_SIGNATURES = TFS
     except ImportError:
         SYSTEMS_STATUS['Bot Intelligence'] = False
     
     try:
-        from aureon_internal_multiverse import InternalMultiverse
+        from aureon.simulation.aureon_internal_multiverse import InternalMultiverse
         SYSTEMS_STATUS['Internal Multiverse'] = True
     except ImportError:
         SYSTEMS_STATUS['Internal Multiverse'] = False
     
-    SYSTEMS_STATUS['Stargate Protocol'] = False
+    try:
+        from aureon.wisdom.aureon_stargate_protocol import StargateProtocolEngine
+        SYSTEMS_STATUS['Stargate Protocol'] = True
+    except ImportError:
+        SYSTEMS_STATUS['Stargate Protocol'] = False
     
     try:
-        from aureon_memory_core import AureonMemoryCore
+        from aureon.core.aureon_memory_core import AureonMemoryCore
         SYSTEMS_STATUS['Memory Core'] = True
     except ImportError:
         SYSTEMS_STATUS['Memory Core'] = False
     
     try:
-        from aureon_immune_system import AureonImmuneSystem
+        from aureon.core.aureon_immune_system import AureonImmuneSystem
         SYSTEMS_STATUS['Immune System'] = True
     except ImportError:
         SYSTEMS_STATUS['Immune System'] = False
     
     try:
-        from aureon_chirp_bus import get_chirp_bus, ChirpType
+        from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpType
         SYSTEMS_STATUS['Chirp Bus'] = True
     except ImportError:
         SYSTEMS_STATUS['Chirp Bus'] = False
     
     try:
-        from queen_voice_engine import QueenVoiceEngine, queen_voice as qv
+        from aureon.queen.queen_voice_engine import QueenVoiceEngine, queen_voice as qv
         SYSTEMS_STATUS['Queen Voice'] = True
         queen_voice = qv
     except ImportError:
         SYSTEMS_STATUS['Queen Voice'] = False
     
     try:
-        from aureon_lighthouse import LighthousePatternDetector
+        from aureon.analytics.aureon_lighthouse import LighthousePatternDetector
         SYSTEMS_STATUS['Lighthouse'] = True
     except ImportError:
         SYSTEMS_STATUS['Lighthouse'] = False
     
     try:
-        from aureon_harmonic_signal_chain import HarmonicSignalChain
+        from aureon.harmonic.aureon_harmonic_signal_chain import HarmonicSignalChain
         SYSTEMS_STATUS['Harmonic Signal Chain'] = True
     except ImportError:
         SYSTEMS_STATUS['Harmonic Signal Chain'] = False
     
     # Exchange clients
     try:
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         SYSTEMS_STATUS['Kraken Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Kraken Exchange'] = False
     
     try:
-        from binance_client import BinanceClient
+        from aureon.exchanges.binance_client import BinanceClient
         SYSTEMS_STATUS['Binance Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Binance Exchange'] = False
@@ -442,7 +452,7 @@ def load_all_systems():
         SYSTEMS_STATUS['Alpaca Exchange'] = False
     
     try:
-        from capital_client import CapitalClient
+        from aureon.exchanges.capital_client import CapitalClient
         SYSTEMS_STATUS['Capital Exchange'] = True
     except ImportError:
         SYSTEMS_STATUS['Capital Exchange'] = False
@@ -528,7 +538,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # THOUGHT BUS CHECK
     try:
         start = time.perf_counter()
-        from aureon_thought_bus import get_thought_bus, Thought
+        from aureon.core.aureon_thought_bus import get_thought_bus, Thought
         bus = get_thought_bus()
         # Send a ping thought using think()
         ping_ts = datetime.now().isoformat()
@@ -546,7 +556,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # MYCELIUM NETWORK CHECK
     try:
         start = time.perf_counter()
-        from aureon_mycelium import MyceliumNetwork
+        from aureon.core.aureon_mycelium import MyceliumNetwork
         myc = MyceliumNetwork(initial_capital=100.0)  # Default initial capital for flight check
         ping_ts = datetime.now().isoformat()
         node_count = len(myc.nodes) if hasattr(myc, 'nodes') else 'active'
@@ -563,7 +573,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # PROBABILITY NEXUS CHECK
     try:
         start = time.perf_counter()
-        from aureon_probability_nexus import AureonProbabilityNexus
+        from aureon.bridges.aureon_probability_nexus import AureonProbabilityNexus
         nexus = AureonProbabilityNexus()
         ping_ts = datetime.now().isoformat()
         win_rate = getattr(nexus, 'win_rate', 0.796)
@@ -580,7 +590,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # ULTIMATE INTELLIGENCE CHECK
     try:
         start = time.perf_counter()
-        from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+        from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
         intel = ProbabilityUltimateIntelligence()
         ping_ts = datetime.now().isoformat()
         patterns = getattr(intel, 'patterns_loaded', 0)
@@ -597,7 +607,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # MEMORY CORE CHECK
     try:
         start = time.perf_counter()
-        from aureon_memory_core import AureonMemoryCore
+        from aureon.core.aureon_memory_core import AureonMemoryCore
         mem = AureonMemoryCore()
         ping_ts = datetime.now().isoformat()
         stones = len(mem.stepping_stones) if hasattr(mem, 'stepping_stones') else 0
@@ -614,7 +624,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # IMMUNE SYSTEM CHECK
     try:
         start = time.perf_counter()
-        from aureon_immune_system import AureonImmuneSystem
+        from aureon.core.aureon_immune_system import AureonImmuneSystem
         immune = AureonImmuneSystem()
         ping_ts = datetime.now().isoformat()
         health = immune.get_system_health() if hasattr(immune, 'get_system_health') else 1.0
@@ -631,7 +641,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # LIGHTHOUSE CHECK
     try:
         start = time.perf_counter()
-        from aureon_lighthouse import LighthousePatternDetector
+        from aureon.analytics.aureon_lighthouse import LighthousePatternDetector
         lighthouse = LighthousePatternDetector()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -647,7 +657,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # WHALE INTEGRATION CHECK
     try:
         start = time.perf_counter()
-        import aureon_whale_integration
+        import aureon.analytics.aureon_whale_integration as aureon_whale_integration
         ping_ts = datetime.now().isoformat()
         latest = aureon_whale_integration.get_latest_prediction('BTC/USD')
         ping_ms = (time.perf_counter() - start) * 1000
@@ -663,7 +673,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # ORCA INTELLIGENCE CHECK
     try:
         start = time.perf_counter()
-        from aureon_orca_intelligence import OrcaKillerWhaleIntelligence
+        from aureon.bots_intelligence.aureon_orca_intelligence import OrcaKillerWhaleIntelligence
         orca = OrcaKillerWhaleIntelligence()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -679,7 +689,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # QUEEN HIVE MIND CHECK
     try:
         start = time.perf_counter()
-        from aureon_queen_hive_mind import QueenHiveMind
+        from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
         queen = QueenHiveMind()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -687,7 +697,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
         # Attempt to wire Orca to Queen here
         if 'Orca Intelligence' in results and results['Orca Intelligence'].status == 'GO':
             try:
-                from aureon_orca_intelligence import get_orca
+                from aureon.bots_intelligence.aureon_orca_intelligence import get_orca
                 orca = get_orca()
                 if hasattr(orca, 'wire_queen'):
                     if orca.wire_queen(queen):
@@ -722,7 +732,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # TIMELINE ORACLE CHECK
     try:
         start = time.perf_counter()
-        from aureon_timeline_oracle import TimelineOracle
+        from aureon.intelligence.aureon_timeline_oracle import TimelineOracle
         oracle = TimelineOracle()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -738,7 +748,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # KRAKEN EXCHANGE CHECK
     try:
         start = time.perf_counter()
-        from kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
         client = get_kraken_client()
         ping_ts = datetime.now().isoformat()
         # Try to get server time (proves connectivity)
@@ -756,7 +766,7 @@ def run_flight_check() -> Dict[str, FlightCheckResult]:
     # BINANCE EXCHANGE CHECK
     try:
         start = time.perf_counter()
-        from binance_client import BinanceClient
+        from aureon.exchanges.binance_client import BinanceClient
         client = get_binance_client()
         ping_ts = datetime.now().isoformat()
         ping_ms = (time.perf_counter() - start) * 1000
@@ -799,8 +809,22 @@ def print_flight_check_poem(results: Dict[str, FlightCheckResult]) -> str:
     
     go_count = sum(1 for r in results.values() if r.status == 'GO')
     total = len(results)
-    all_go = go_count == total
-    
+    # Compose `all_go` from the per-system check results AND the real
+    # exchange-connectivity health helper (single source of truth shared with
+    # the /health endpoint). Stops the dashboard from showing "ALL SYSTEMS GO"
+    # while Kraken/Binance/HNC daemon are actually unreachable.
+    all_systems_ok = go_count == total
+    real_health_ok, real_health_failures = (True, [])
+    try:
+        from aureon.queen.queen_quantum_frog import compute_real_health
+        real_health_ok, real_health_failures = compute_real_health()
+    except Exception:
+        # If the real-health helper itself fails, treat as unhealthy rather
+        # than silently passing — operator must see why.
+        real_health_ok = False
+        real_health_failures = ["compute_real_health_unavailable"]
+    all_go = all_systems_ok and real_health_ok
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     
     poem = f"""
@@ -832,7 +856,7 @@ def print_flight_check_poem(results: Dict[str, FlightCheckResult]) -> str:
     
     poem += f"""╠══════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                  ║
-║     FLIGHT STATUS: {'🟢 ALL SYSTEMS GO - CLEAR FOR LAUNCH!' if all_go else f'🔴 {total - go_count} SYSTEM(S) NOT READY      '}                       ║
+║     FLIGHT STATUS: {'🟢 ALL SYSTEMS GO - CLEAR FOR LAUNCH!' if all_go else (f'🔴 {total - go_count} SYSTEM(S) NOT READY      ' if not real_health_ok and all_systems_ok else f'🔴 LIVE-DATA UNHEALTHY: {", ".join(real_health_failures[:2])[:50]}'.ljust(48))}                       ║
 ║     SYSTEMS ONLINE: {go_count}/{total} ({go_count*100//total}%)                                                       ║
 ║                                                                                  ║
 ║     "With heartbeats confirmed and timestamps true,                              ║
@@ -854,6 +878,51 @@ LIVE_FEED_ENABLED = True
 # Trading engine toggle (real trading on/off)
 TRADING_LIVE_ENABLED = False
 TRADING_PROCESS: Optional[asyncio.subprocess.Process] = None
+TRADING_MODE = "off"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _build_trading_command(live: bool) -> List[str]:
+    cmd = [sys.executable, "-u", "-m", "aureon.trading.micro_profit_labyrinth"]
+    if live:
+        cmd.extend(["--live", "--yes", "--multi-exchange"])
+    else:
+        duration = os.getenv("AUREON_COMMAND_CENTER_DRY_RUN_DURATION", "86400")
+        cmd.extend(["--dry-run", "--multi-exchange", "--duration", duration])
+    return cmd
+
+
+async def _stop_trading_engine() -> None:
+    global TRADING_LIVE_ENABLED, TRADING_PROCESS, TRADING_MODE
+    if TRADING_PROCESS and TRADING_PROCESS.returncode is None:
+        TRADING_PROCESS.terminate()
+        try:
+            await asyncio.wait_for(TRADING_PROCESS.wait(), timeout=10)
+        except asyncio.TimeoutError:
+            TRADING_PROCESS.kill()
+    TRADING_PROCESS = None
+    TRADING_LIVE_ENABLED = False
+    TRADING_MODE = "off"
+
+
+async def _start_trading_engine(live: bool) -> None:
+    global TRADING_LIVE_ENABLED, TRADING_PROCESS, TRADING_MODE
+    if live:
+        reason = live_block_reason("Command Center")
+        if reason:
+            raise RuntimeError(reason)
+
+    cmd = _build_trading_command(live)
+    env = child_env_for_mode(live, os.environ)
+    TRADING_PROCESS = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=str(REPO_ROOT),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+        env=env,
+    )
+    TRADING_LIVE_ENABLED = live
+    TRADING_MODE = "live" if live else "dry_run"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # COMMAND CENTER HTML - THE EPIC INTERFACE
@@ -5829,6 +5898,10 @@ async def handle_api_state(request):
         'queen_message': state.queen_messages[-1] if state.queen_messages else "Queen SERO online. All systems operational.",
         'live_feed': LIVE_FEED_ENABLED,
         'trading_on': TRADING_LIVE_ENABLED,
+        'trading_mode': TRADING_MODE,
+        'safety': {
+            'live_block_reason': live_block_reason("Command Center"),
+        },
     })
 
 async def handle_live_toggle(request):
@@ -5840,38 +5913,30 @@ async def handle_live_toggle(request):
 
 async def handle_trading_toggle(request):
     """Toggle real trading engine on/off"""
-    global TRADING_LIVE_ENABLED, TRADING_PROCESS
+    global TRADING_LIVE_ENABLED, TRADING_PROCESS, TRADING_MODE
 
-    if TRADING_LIVE_ENABLED:
-        # Stop trading engine
-        if TRADING_PROCESS and TRADING_PROCESS.returncode is None:
-            TRADING_PROCESS.terminate()
-            try:
-                await asyncio.wait_for(TRADING_PROCESS.wait(), timeout=10)
-            except asyncio.TimeoutError:
-                TRADING_PROCESS.kill()
-        TRADING_PROCESS = None
-        TRADING_LIVE_ENABLED = False
+    if TRADING_PROCESS and TRADING_PROCESS.returncode is None:
+        await _stop_trading_engine()
     else:
-        # Start trading engine in LIVE mode (no dry-run)
-        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"]
-        env = dict(os.environ)
-        # Propagate debug flag if set in Command Center environment
-        if env.get("AUREON_DEBUG_STARTUP") == "1":
-            env["AUREON_DEBUG_STARTUP"] = "1"
-        # Force unbuffered output for reliable streaming
-        env["PYTHONUNBUFFERED"] = "1"
-        TRADING_PROCESS = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=str(Path(__file__).resolve().parent),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            env=env,
-        )
-        TRADING_LIVE_ENABLED = True
+        reason = live_block_reason("Command Center")
+        if reason:
+            await broadcast_to_clients({
+                'type': 'trading',
+                'enabled': False,
+                'mode': TRADING_MODE,
+                'blocked': True,
+                'reason': reason,
+            })
+            return web.json_response({
+                'enabled': False,
+                'mode': TRADING_MODE,
+                'blocked': True,
+                'reason': reason,
+            }, status=423)
+        await _start_trading_engine(live=True)
 
-    await broadcast_to_clients({'type': 'trading', 'enabled': TRADING_LIVE_ENABLED})
-    return web.json_response({'enabled': TRADING_LIVE_ENABLED})
+    await broadcast_to_clients({'type': 'trading', 'enabled': TRADING_LIVE_ENABLED, 'mode': TRADING_MODE})
+    return web.json_response({'enabled': TRADING_LIVE_ENABLED, 'mode': TRADING_MODE})
 
 async def websocket_handler(request):
     """WebSocket handler for real-time updates"""
@@ -5904,6 +5969,7 @@ async def websocket_handler(request):
             'queen_message': state.queen_messages[-1] if state.queen_messages else "Welcome to the Command Center.",
             'live_feed': LIVE_FEED_ENABLED,
             'trading_on': TRADING_LIVE_ENABLED,
+            'trading_mode': TRADING_MODE,
         })
         
         async for msg in ws:
@@ -6084,7 +6150,7 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Kraken Exchange'):
             try:
                 if kraken_client is None:
-                    from kraken_client import KrakenClient, get_kraken_client
+                    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                     kraken_client = get_kraken_client()
                 kraken_bal = kraken_client.get_account_balance()
                 balances['kraken'] = _sum_fiat(kraken_bal) if kraken_bal else 'offline'
@@ -6096,7 +6162,7 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Binance Exchange'):
             try:
                 if binance_client is None:
-                    from binance_client import BinanceClient
+                    from aureon.exchanges.binance_client import BinanceClient
                     binance_client = get_binance_client()
                 acct = binance_client.account()
                 fiat = {}
@@ -6130,7 +6196,7 @@ async def update_balances_task():
         if SYSTEMS_STATUS.get('Capital Exchange'):
             try:
                 if capital_client is None:
-                    from capital_client import CapitalClient
+                    from aureon.exchanges.capital_client import CapitalClient
                     capital_client = CapitalClient()
                 capital_bal = capital_client.get_account_balance()
                 balances['capital'] = _sum_fiat(capital_bal) if capital_bal else 'offline'
@@ -6364,7 +6430,7 @@ async def handle_flight_check(request):
 
 async def monitor_trading_output():
     """Monitor output from the trading subprocess and broadcast logs/visuals"""
-    global TRADING_PROCESS
+    global TRADING_PROCESS, TRADING_LIVE_ENABLED, TRADING_MODE
     safe_print("👀 Starting Trading Process Monitor...")
     # Keep a tail buffer so we can show last lines if the process exits
     tail_buffer = deque(maxlen=40)
@@ -6513,6 +6579,8 @@ async def monitor_trading_output():
                             for line in tail_buffer:
                                 safe_print(f"   {line}")
                         TRADING_PROCESS = None
+                        TRADING_LIVE_ENABLED = False
+                        TRADING_MODE = "off"
                         # Auto-restart?
                     await asyncio.sleep(0.5)
             except Exception as e:
@@ -6548,35 +6616,36 @@ async def start_background_tasks(app):
         app['simulate_task'] = asyncio.create_task(simulate_data_task())
     app['balances_task'] = asyncio.create_task(update_balances_task())
     app['thought_bus_task'] = asyncio.create_task(thought_bus_listener_task())
-    
-    # 🚀 AUTO-START TRADING IMMEDIATELY ON BOOT!
-    global TRADING_PROCESS, TRADING_LIVE_ENABLED
-    safe_print("🚀💰 AUTO-STARTING TRADING ENGINE...")
-    try:
-        cmd = [sys.executable, "-u", "micro_profit_labyrinth.py", "--live", "--yes", "--multi-exchange"]
-        env = dict(os.environ)
-        if env.get("AUREON_DEBUG_STARTUP") == "1":
-            env["AUREON_DEBUG_STARTUP"] = "1"
-        env["PYTHONUNBUFFERED"] = "1"
-        TRADING_PROCESS = await asyncio.create_subprocess_exec(
-            *cmd,
-            cwd=str(Path(__file__).resolve().parent),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            env=env,
-        )
-        TRADING_LIVE_ENABLED = True
-        safe_print("✅💰 TRADING ENGINE STARTED - MAKING MONEY NOW!")
-        
-        # Start the monitor
-        app['monitor_task'] = asyncio.create_task(monitor_trading_output())
-        
-    except Exception as e:
-        safe_print(f"⚠️ Failed to auto-start trading: {e}")
+
+    # Trading engine startup is explicit. Safe startup can request dry-run so
+    # the whole interface is active without opening real exchange orders.
+    if env_truthy("AUREON_COMMAND_CENTER_AUTO_START_DRY_RUN"):
+        safe_print("AUTO-STARTING TRADING ENGINE IN DRY-RUN MODE...")
+        try:
+            await _start_trading_engine(live=False)
+            app['monitor_task'] = asyncio.create_task(monitor_trading_output())
+            safe_print("Trading engine dry-run process started.")
+        except Exception as e:
+            safe_print(f"Failed to auto-start dry-run trading: {e}")
+    elif env_truthy("AUREON_COMMAND_CENTER_AUTO_START_TRADING"):
+        reason = live_block_reason("Command Center auto-start")
+        if reason:
+            safe_print(f"Live trading auto-start blocked: {reason}")
+        else:
+            try:
+                await _start_trading_engine(live=True)
+                app['monitor_task'] = asyncio.create_task(monitor_trading_output())
+                safe_print("Live trading engine started by explicit environment gate.")
+            except Exception as e:
+                safe_print(f"Failed to auto-start live trading: {e}")
+    else:
+        safe_print("Trading engine auto-start disabled; Command Center is online in guarded mode.")
+    return
 
 async def cleanup_background_tasks(app):
     """Cleanup background tasks"""
-    for task_name in ['queen_task', 'simulate_task', 'balances_task', 'thought_bus_task']:
+    await _stop_trading_engine()
+    for task_name in ['queen_task', 'simulate_task', 'balances_task', 'thought_bus_task', 'monitor_task']:
         task = app.get(task_name)
         if task:
             task.cancel()

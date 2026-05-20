@@ -40,7 +40,7 @@ Gary Leckey & GitHub Copilot | November 2025
 "We're making history!" 🌌
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import hmac
 import hashlib
 import time

@@ -57,14 +57,14 @@ class OrcaSnowballLean:
     @property
     def kraken(self):
         if self._kraken is None:
-            from kraken_client import KrakenClient, get_kraken_client
+            from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
             self._kraken = get_kraken_client()
         return self._kraken
         
     @property  
     def binance(self):
         if self._binance is None:
-            from binance_client import BinanceClient
+            from aureon.exchanges.binance_client import BinanceClient
             self._binance = get_binance_client()
         return self._binance
         

@@ -22,7 +22,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -58,14 +58,14 @@ except ModuleNotFoundError:
     wikipedia = None
 
 try:
-    from aureon_elephant_learning import ElephantMemory, LearnedPattern, TradingWisdom
+    from aureon.intelligence.aureon_elephant_learning import ElephantMemory, LearnedPattern, TradingWisdom
     ELEPHANT_AVAILABLE = True
 except ImportError:
     ELEPHANT_AVAILABLE = False
     ElephantMemory = None
 
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     MYCELIUM_AVAILABLE = True
 except ImportError:
     MYCELIUM_AVAILABLE = False

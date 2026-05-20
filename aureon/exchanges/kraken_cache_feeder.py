@@ -19,7 +19,7 @@ Output schema (matches Binance feeder for compatibility):
 }
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -48,7 +48,7 @@ import json
 import time
 from typing import Any, Dict
 
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 
 
 def _atomic_write_json(path: str, data: Dict[str, Any]) -> None:

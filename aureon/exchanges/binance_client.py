@@ -1,4 +1,5 @@
 import os, time, hmac, hashlib, requests, json, logging
+from pathlib import Path
 from decimal import Decimal, InvalidOperation, ROUND_DOWN
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -7,11 +8,18 @@ try:
     load_dotenv()
 except Exception:
     pass
+
+try:
+    from aureon.core.aureon_env import load_aureon_environment
+
+    load_aureon_environment(Path(__file__).resolve().parents[2], override=False)
+except Exception:
+    pass
 from typing import Dict, Any, Set, List, Optional
 
 # Rate limiting utilities (TokenBucket, TTLCache)
 try:
-    from rate_limiter import TokenBucket, TTLCache
+    from aureon.core.rate_limiter import TokenBucket, TTLCache
 except Exception:
     TokenBucket = None
     TTLCache = None
@@ -251,7 +259,7 @@ class BinanceClient:
             if resp.status_code == 429:
                 # Metric: API 429
                 try:
-                    from metrics import api_429_counter
+                    from aureon.core.metrics import api_429_counter
                     api_429_counter.inc(1, exchange='binance', endpoint=path)
                 except Exception:
                     pass

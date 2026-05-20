@@ -11,7 +11,7 @@ Gary Leckey & GitHub Copilot | January 2026
 ⚠️  WARNING: THIS EXECUTES REAL TRADES WITH REAL MONEY! ⚠️
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import json
 import time
@@ -35,8 +35,8 @@ except ImportError:
 import requests
 
 # Import our systems
-from aureon_mycelium import MyceliumNetwork
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.core.aureon_mycelium import MyceliumNetwork
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 
 
 @dataclass
@@ -566,7 +566,7 @@ class S5LiveExecutionEngine:
 
         # Consult Autonomy Hub before executing (Big Wheel veto check)
         try:
-            from aureon_autonomy_hub import get_autonomy_hub
+            from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
             hub = get_autonomy_hub()
             hub_decision = hub.spin_cycle(opp.symbol)
             if hub_decision and hub_decision.direction == "HOLD":
@@ -579,7 +579,7 @@ class S5LiveExecutionEngine:
 
         # Consult War Planner (adversarial chess — can we survive the counter-move?)
         try:
-            from aureon_strategic_war_planner import get_war_planner
+            from aureon.command_centers.aureon_strategic_war_planner import get_war_planner
             planner = get_war_planner()
             war_plan = planner.plan(
                 symbol=opp.symbol, price=opp.entry_price or 0.0,

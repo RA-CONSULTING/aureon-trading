@@ -16,7 +16,7 @@ This gives us UNFAIR ADVANTAGE by knowing what firms are doing BEFORE they execu
 Gary Leckey | January 2026 | Know Thy Enemy, Beat Thy Enemy
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import json
@@ -537,18 +537,26 @@ class FirmIntelligenceCatalog:
     def _predict_activity_probability(self, firm_id: str, recent: List[FirmMovement]) -> float:
         """Predict probability of activity in next 24 hours."""
         if not recent:
+            logger.warning("[insufficient-data] _predict_activity_probability for "
+                           "firm %s: no recent movements; returning neutral 0.5",
+                           firm_id)
             return 0.5
-        
+
         # Calculate activity frequency
         if len(recent) < 2:
+            logger.warning("[insufficient-data] _predict_activity_probability for "
+                           "firm %s: only %d movement (need 2+); returning neutral 0.5",
+                           firm_id, len(recent))
             return 0.5
-        
+
         # Time between movements
         time_diffs = []
         for i in range(1, len(recent)):
             time_diffs.append(recent[i].timestamp - recent[i-1].timestamp)
-        
+
         if not time_diffs:
+            logger.warning("[insufficient-data] _predict_activity_probability for "
+                           "firm %s: no time deltas; returning neutral 0.5", firm_id)
             return 0.5
         
         avg_interval = sum(time_diffs) / len(time_diffs)
@@ -565,6 +573,8 @@ class FirmIntelligenceCatalog:
     def _predict_direction(self, firm_id: str, recent: List[FirmMovement]) -> str:
         """Predict next likely direction."""
         if not recent:
+            logger.warning("[insufficient-data] _predict_direction for firm %s: "
+                           "no recent movements; returning 'neutral'", firm_id)
             return "neutral"
         
         # Analyze recent bias
@@ -583,6 +593,9 @@ class FirmIntelligenceCatalog:
     def _calculate_prediction_confidence(self, firm_id: str, recent: List[FirmMovement]) -> float:
         """Calculate confidence in predictions."""
         if len(recent) < 5:
+            logger.warning("[insufficient-data] _calculate_prediction_confidence "
+                           "for firm %s: only %d movements (need 5+); returning "
+                           "low-confidence 0.3", firm_id, len(recent))
             return 0.3  # Low confidence with little data
         
         # Base confidence on pattern consistency

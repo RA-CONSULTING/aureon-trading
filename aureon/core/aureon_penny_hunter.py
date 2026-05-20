@@ -123,6 +123,8 @@ class PennyHunter:
         self._token = ""
         self._headers: Dict[str, str] = {}
         self._authenticated = False
+        self._auth_at: float = 0.0   # Epoch seconds of last successful auth
+        self._SESSION_TTL = 480.0    # Re-auth every 8min (Capital.com sessions ~10min)
         self._trades_total = 0
         self._profit_total = 0.0
         self._wins = 0
@@ -200,6 +202,7 @@ class PennyHunter:
                     "Content-Type": "application/json",
                 }
                 self._authenticated = True
+                self._auth_at = time.time()
                 self._starting_balance = self.get_balance()
                 self._last_balance = self._starting_balance
                 log.info(f"[PENNY] Capital.com authenticated — starting balance: £{self._starting_balance:.2f}")
@@ -208,11 +211,20 @@ class PennyHunter:
             log.debug(f"Auth error: {e}")
         return False
 
+    def _refresh_session(self) -> bool:
+        """Re-authenticate if session has expired (Capital.com sessions ~10min TTL)."""
+        self._authenticated = False
+        return self.authenticate()
+
     def get_positions(self) -> List[Dict]:
         if not self._authenticated:
             return []
         try:
             r = requests.get(f"{BASE_URL}/api/v1/positions", headers=self._headers, timeout=10)
+            if r.status_code in (401, 403):
+                log.info("[PENNY] Session expired — refreshing")
+                self._refresh_session()
+                return []
             return r.json().get("positions", []) if r.status_code == 200 else []
         except Exception:
             return []
@@ -285,6 +297,11 @@ class PennyHunter:
         1. Check open positions — close winners, cut losers
         2. If room for more — open new positions on momentum
         """
+        # Proactive session refresh — Capital.com sessions expire ~10min
+        if self._authenticated and time.time() - self._auth_at > self._SESSION_TTL:
+            log.debug("[PENNY] Proactive session refresh")
+            self._refresh_session()
+
         if not self._authenticated:
             if not self.authenticate():
                 return {"action": "auth_failed"}
@@ -372,6 +389,10 @@ class PennyHunter:
                 try:
                     r = requests.get(f"{BASE_URL}/api/v1/markets/{epic}",
                                      headers=self._headers, timeout=10)
+                    if r.status_code in (401, 403):
+                        log.info("[PENNY] Market data session expired — refreshing")
+                        self._refresh_session()
+                        break
                     if r.status_code == 200:
                         market = r.json()
                         snap = market.get("snapshot", {})
@@ -381,22 +402,34 @@ class PennyHunter:
                         spread = ask - bid if ask > bid > 0 else 0
 
                         size = instrument["min_size"]
-                        # Cost check: spread cost must be recoverable
                         spread_cost = spread * size
-                        min_movement = spread * 2  # Need at least 2x spread to profit
+                        price = (bid + ask) / 2 if bid and ask else bid or ask
 
-                        # Only trade if momentum > spread cost AND market is moving
-                        if abs(change) > 0.05 and spread_cost < 1.0:
-                            direction = "BUY" if change > 0 else "SELL"
-                            deal_id = self.open_position(epic, direction, size)
+                        # Composite multi-factor gate: momentum+volatility+volume
+                        _should_trade = False
+                        _direction = "BUY" if change > 0 else "SELL"
+                        if abs(change) > 0.01 and spread_cost < 1.0 and price > 0:
+                            try:
+                                from aureon.trading.composite_signal import score as _cs, get_survival_instinct
+                                _comp, _bd = _cs(epic=epic, change_pct=change, bid=bid, ask=ask,
+                                                 high=0.0, low=0.0, price=price)
+                                _survival = get_survival_instinct()
+                                _should_trade = _survival.should_trade(_comp)
+                                if not _should_trade:
+                                    log.debug(f"[PENNY] SKIP {epic} — composite {_comp:.3f} < threshold {_survival.threshold:.2f}")
+                            except Exception:
+                                _should_trade = abs(change) > 0.02
+
+                        if _should_trade:
+                            deal_id = self.open_position(epic, _direction, size)
                             if deal_id:
                                 result["opened"].append({
-                                    "epic": epic, "direction": direction,
+                                    "epic": epic, "direction": _direction,
                                     "size": size, "change": change,
                                     "spread": spread, "spread_cost": spread_cost,
                                 })
                                 open_count += 1
-                                log.info(f"[PENNY] {direction} {epic} | momentum:{change:+.2f}% | spread:{spread:.2f} | cost:£{spread_cost:.3f}")
+                                log.info(f"[PENNY] {_direction} {epic} | momentum:{change:+.2f}% | spread:{spread:.2f} | cost:£{spread_cost:.3f}")
                         elif spread_cost >= 1.0:
                             log.debug(f"[PENNY] SKIP {epic} — spread cost £{spread_cost:.3f} too high")
                 except Exception as e:

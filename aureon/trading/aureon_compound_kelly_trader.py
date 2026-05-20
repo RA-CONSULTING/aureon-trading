@@ -11,11 +11,11 @@ AUREON COMPOUND KELLY TRADER
 Author: Aureon System / Gary Leckey
 Date: November 28, 2025
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, json, time, logging, argparse, random
 from datetime import datetime
 from typing import List, Dict, Any
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 
 try:
     from dotenv import load_dotenv
@@ -126,7 +126,7 @@ class CompoundKellyTrader:
                     # Use Kelly criterion for sizing - pull LIVE win rate from Autonomy Hub
                     win_prob = 0.55  # Default fallback
                     try:
-                        from aureon_autonomy_hub import get_autonomy_hub
+                        from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
                         hub_wr = get_autonomy_hub().feedback_loop.get_rolling_win_rate()
                         if hub_wr > 0.0:
                             win_prob = max(0.51, min(0.85, hub_wr))  # Clamp to sane range

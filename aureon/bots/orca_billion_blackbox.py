@@ -23,7 +23,7 @@ BLACK BOX RECORDING:
 Gary Leckey | The Math Works | January 2026
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -58,17 +58,17 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Quantum prediction system
-from metatron_probability_billion_path import (
+from aureon.wisdom.metatron_probability_billion_path import (
     QueenAurisPingPong, ProbabilityMatrix, ProbabilityPrediction
 )
 
 # Exchange clients
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 from aureon.exchanges.alpaca_client import AlpacaClient
 
 # 🏴‍☠️👑 QUEEN QUANTUM COGNITION + BARONS BANNER - ELITE WHALE HUNTER
 try:
-    from queen_quantum_cognition import (
+    from aureon.queen.queen_quantum_cognition import (
         QueenQuantumCognition, get_quantum_cognition,
         QuantumCognitionState, BARONS_BANNER_AVAILABLE
     )
@@ -79,7 +79,7 @@ except ImportError:
 
 # Barons Banner direct import as fallback
 try:
-    from barons_banner import (
+    from aureon.wisdom.barons_banner import (
         BaronsBannerAnalyzer, BaronsMarketAdapter, BaronsAnalysis,
         MathematicalPattern, PHI as BARONS_PHI, FIBONACCI_SEQUENCE
     )
@@ -149,6 +149,10 @@ class BillionBlackBox:
     """
     
     def __init__(self, live_mode: bool = False):
+        # WARNING: live_mode is decorative — trade_loop always uses hardcoded
+        # prices and a random.gauss price walk regardless. This is a TRAINING
+        # RIG, not a real-trading path. The production live-trading path is
+        # aureon.strategies.quantum_warfare_live + the HNC live daemon.
         self.live_mode = live_mode
         self.start_time = time.time()
         self.trade_counter = 0
@@ -422,7 +426,9 @@ class BillionBlackBox:
         print("⚫🏴‍☠️ BLACK BOX AUTONOMOUS TRADING - RACE TO $1 BILLION 🏴‍☠️⚫")
         print("=" * 80)
         print()
-        print(f"Mode: {'🔴 LIVE TRADING' if self.live_mode else '🔶 DRY RUN'}")
+        # NOTE: trade_loop always simulates (hardcoded prices + random walk),
+        # regardless of live_mode. The label below is honest about that.
+        print(f"Mode: 🔶 SIMULATION (training rig — see quantum_warfare_live for real trading)")
         print(f"Max Positions: {max_positions}")
         print(f"Elite Hunting: {'🏴‍☠️ ACTIVE - FUCK THE 1%!' if self.elite_hunting_enabled else '❌ DISABLED'}")
         print()

@@ -5,7 +5,7 @@ AUREON LIVE TRADER - Active Trading System
 Trades BTC pairs using AUREON signals with proper position management.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import hmac
 import hashlib
 import time
@@ -17,7 +17,7 @@ import math
 
 # 🧠 MINER BRAIN INTEGRATION
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     BRAIN_AVAILABLE = True
 except ImportError:
     BRAIN_AVAILABLE = False

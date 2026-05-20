@@ -29,7 +29,7 @@ Three Behaviors:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import numpy as np
 import time
 import math
@@ -719,8 +719,8 @@ async def run_live_coherence():
     Run coherence analysis on live market data.
     """
     try:
-        from binance_client import BinanceClient
-        from kraken_client import KrakenClient
+        from aureon.exchanges.binance_client import BinanceClient
+        from aureon.exchanges.kraken_client import KrakenClient
     except ImportError:
         print("Market clients not available. Running demo instead.")
         run_demo()

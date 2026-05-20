@@ -25,7 +25,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -539,7 +539,7 @@ class PlanetSaverEngine:
         """Emit win event to Thought Bus"""
         if self._thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source="planet_saver",
                     topic="planet.win",
@@ -558,7 +558,7 @@ class PlanetSaverEngine:
         """Emit milestone event to Thought Bus"""
         if self._thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source="planet_saver",
                     topic="planet.milestone",

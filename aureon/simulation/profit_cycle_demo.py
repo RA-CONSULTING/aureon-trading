@@ -13,13 +13,13 @@ This is a deterministic demonstration: we artificially nudge prices
 Gary Leckey & GitHub Copilot | November 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import time
 
 sys.path.insert(0, '/workspaces/aureon-trading')
 
-from aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
+from aureon.trading.aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
 
 # Force deterministic environment for the demo
 CONFIG['EXCHANGE'] = 'kraken'

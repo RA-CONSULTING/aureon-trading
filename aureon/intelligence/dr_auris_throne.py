@@ -42,7 +42,7 @@ Architecture:
 Gary Leckey & Tina Brown | April 2026 | The Research Intelligence
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import math
@@ -123,7 +123,7 @@ class DrAurisThrone:
         # ThoughtBus
         self._thought_bus = None
         try:
-            from aureon_thought_bus import get_thought_bus
+            from aureon.core.aureon_thought_bus import get_thought_bus
             self._thought_bus = get_thought_bus()
         except Exception:
             pass
@@ -131,7 +131,7 @@ class DrAurisThrone:
         # Lambda Engine (HNC Master Formula)
         self._lambda_engine = None
         try:
-            from aureon_lambda_engine import LambdaEngine
+            from aureon.core.aureon_lambda_engine import LambdaEngine
             self._lambda_engine = LambdaEngine()
         except Exception:
             pass
@@ -139,7 +139,7 @@ class DrAurisThrone:
         # Space Weather Bridge (NOAA/NASA)
         self._space_weather_fn = None
         try:
-            from aureon_space_weather_bridge import get_cosmic_alignment_from_space_weather
+            from aureon.data_feeds.aureon_space_weather_bridge import get_cosmic_alignment_from_space_weather
             self._space_weather_fn = get_cosmic_alignment_from_space_weather
         except Exception:
             pass
@@ -147,7 +147,7 @@ class DrAurisThrone:
         # Schumann Resonance Bridge
         self._schumann_fn = None
         try:
-            from aureon_schumann_resonance_bridge import get_earth_blessing
+            from aureon.harmonic.aureon_schumann_resonance_bridge import get_earth_blessing
             self._schumann_fn = get_earth_blessing
         except Exception:
             pass
@@ -155,7 +155,7 @@ class DrAurisThrone:
         # Full Schumann reading
         self._schumann_reading_fn = None
         try:
-            from aureon_schumann_resonance_bridge import get_schumann_reading
+            from aureon.harmonic.aureon_schumann_resonance_bridge import get_schumann_reading
             self._schumann_reading_fn = get_schumann_reading
         except Exception:
             pass
@@ -163,7 +163,7 @@ class DrAurisThrone:
         # Earth Resonance Engine (trading gate)
         self._earth_gate_fn = None
         try:
-            from earth_resonance_engine import get_earth_engine
+            from aureon.harmonic.earth_resonance_engine import get_earth_engine
             engine = get_earth_engine()
             self._earth_gate_fn = engine.get_trading_gate_status
         except Exception:
@@ -295,7 +295,7 @@ class DrAurisThrone:
         # --- 4. HNC Lambda Engine ---
         if self._lambda_engine:
             try:
-                from aureon_lambda_engine import SubsystemReading
+                from aureon.core.aureon_lambda_engine import SubsystemReading
 
                 # Feed cosmic data as subsystem readings
                 readings = []
@@ -356,7 +356,7 @@ class DrAurisThrone:
         if self._thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             self._thought_bus.publish(Thought(
                 source="dr_auris_throne",
                 topic="auris.throne.cosmic_state",
@@ -403,7 +403,7 @@ class DrAurisThrone:
         if self._thought_bus is None:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
             alerts = []
             if state.kp_index >= 5:
                 alerts.append(f"GEOMAGNETIC STORM: Kp={state.kp_index}")

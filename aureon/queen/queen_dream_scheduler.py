@@ -1,7 +1,7 @@
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 from typing import Optional
-from aureon_enigma_dream import EnigmaDreamer as DreamEngine
+from aureon.wisdom.aureon_enigma_dream import EnigmaDreamer as DreamEngine
 
 class DreamScheduler:
     """Decides when the Queen should dream."""

@@ -17,7 +17,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -37,7 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Kraken Client
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -45,21 +45,21 @@ except ImportError:
 
 # Mycelium Hub
 try:
-    from mycelium_conversion_hub import get_conversion_hub, ConversionSignal
+    from aureon.conversion.mycelium_conversion_hub import get_conversion_hub, ConversionSignal
     HUB_AVAILABLE = True
 except ImportError:
     HUB_AVAILABLE = False
 
 # Rapid Stream
 try:
-    from rapid_conversion_stream import RapidConversionStream, RapidTickerCache
+    from aureon.conversion.rapid_conversion_stream import RapidConversionStream, RapidTickerCache
     STREAM_AVAILABLE = True
 except ImportError:
     STREAM_AVAILABLE = False
 
 # V14 Scoring
 try:
-    from s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG
+    from aureon.strategies.s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG
     V14_AVAILABLE = True
 except ImportError:
     V14_AVAILABLE = False

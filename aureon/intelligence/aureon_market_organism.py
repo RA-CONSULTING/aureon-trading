@@ -51,7 +51,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import math
 import time
@@ -812,7 +812,7 @@ class ManipulationChannel:
             return None
 
     def _sense_impl(self, stimulus: "SensoryStimulus") -> "SensoryExperience":
-        from aureon_sensory_framework import SensoryExperience
+        from aureon.intelligence.aureon_sensory_framework import SensoryExperience
 
         vol_history   = stimulus.raw_data.get("volume_history_30d", [])
         price_history = stimulus.raw_data.get("price_history_30d",  [])
@@ -866,7 +866,7 @@ class ManipulationChannel:
         # Build BrainInput
         brain_input = None
         try:
-            from queen_consciousness_model import BrainInput
+            from aureon.queen.queen_consciousness_model import BrainInput
             brain_input = BrainInput(
                 source="ManipulationSense",
                 timestamp=profile.timestamp,
@@ -1172,7 +1172,7 @@ class GlobalMarketOrganism:
     def _publish_ecosystem(health: float, hz: float, active_pd: List[Dict]) -> None:
         """Publish organism health to ThoughtBus."""
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             tb = get_thought_bus()
             tb.publish(Thought(
                 source="global_market_organism",
@@ -1207,7 +1207,7 @@ def register_manipulation_sense(queen_senses=None) -> ManipulationChannel:
     The channel will appear in sense_all(), RainbowReport, and rainbow_status().
     """
     if queen_senses is None:
-        from aureon_sensory_framework import get_queen_senses
+        from aureon.intelligence.aureon_sensory_framework import get_queen_senses
         queen_senses = get_queen_senses()
 
     ch = ManipulationChannel()
@@ -1348,7 +1348,7 @@ if __name__ == "__main__":
 
     register_manipulation_sense()
 
-    from aureon_sensory_framework import get_queen_senses, SensoryStimulus
+    from aureon.intelligence.aureon_sensory_framework import get_queen_senses, SensoryStimulus
     senses   = get_queen_senses()
 
     stimulus = SensoryStimulus(

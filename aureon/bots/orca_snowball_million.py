@@ -57,8 +57,8 @@ class QueenSnowball:
         self.state.started_at = datetime.now().isoformat()
         
         # Load exchange clients
-        from kraken_client import KrakenClient, get_kraken_client
-        from binance_client import BinanceClient
+        from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+        from aureon.exchanges.binance_client import BinanceClient
         
         self.kraken = get_kraken_client()
         try:
@@ -74,7 +74,7 @@ class QueenSnowball:
         log_queen("Wiring Queen Intelligence Systems...")
         
         try:
-            from aureon_queen_hive_mind import QueenHiveMind
+            from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
             self.queen = QueenHiveMind()
             log_queen("✅ Queen Hive Mind: ONLINE")
         except Exception as e:
@@ -82,14 +82,14 @@ class QueenSnowball:
             self.queen = None
             
         try:
-            from aureon_probability_nexus import ProbabilityNexus
+            from aureon.bridges.aureon_probability_nexus import ProbabilityNexus
             self.nexus = ProbabilityNexus()
             log_queen("✅ Probability Nexus: ONLINE")
         except:
             self.nexus = None
             
         try:
-            from aureon_miner_brain import MinerBrain
+            from aureon.utils.aureon_miner_brain import MinerBrain
             self.brain = MinerBrain()
             log_queen("✅ Miner Brain: ONLINE")
         except:

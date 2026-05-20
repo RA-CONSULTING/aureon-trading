@@ -20,7 +20,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -52,7 +52,7 @@ import hashlib
 CHIRP_BUS_AVAILABLE = False
 get_chirp_bus = None
 try:
-    from aureon_chirp_bus import get_chirp_bus
+    from aureon.core.aureon_chirp_bus import get_chirp_bus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -942,7 +942,14 @@ class QueenElephantBrain:
                 'reason': f"🐘⏰ BAD HOUR: Hour {current_hour} historically loses money"
             }
         
-        # Get pattern signals
+        # Get pattern signals.
+        # ⚠ Pass 0.0 as price; downstream consumers should treat 0.0 as
+        # "price not available" rather than a real reading. Logged once.
+        if not getattr(self, "_warned_zero_price", False):
+            self._warned_zero_price = True
+            logger.warning("[stub] aureon_elephant_learning.get_pattern_signals "
+                           "called with price=0.0 placeholder — wire real "
+                           "current price to populate the signal")
         signals = self.elephant.get_pattern_signals(
             f"{from_asset}{to_asset}",
             0,  # Would need real price

@@ -6,7 +6,7 @@ distribution, manipulation, support/resistance), stores patterns in Elephant Mem
 and publishes `whale.pattern.classified` Thoughts for downstream predictors.
 """
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import hashlib
 import logging
@@ -14,11 +14,11 @@ import time
 from dataclasses import asdict
 from typing import Any, Dict, Optional
 
-from aureon_thought_bus import get_thought_bus, Thought
-from aureon_elephant_learning import ElephantMemory, LearnedPattern
+from aureon.core.aureon_thought_bus import get_thought_bus, Thought
+from aureon.intelligence.aureon_elephant_learning import ElephantMemory, LearnedPattern
 
 try:
-    from whale_metrics import whale_pattern_classified_total, whale_pattern_confidence
+    from aureon.bots.whale_metrics import whale_pattern_classified_total, whale_pattern_confidence
     METRICS_AVAILABLE = True
 except ImportError:
     METRICS_AVAILABLE = False

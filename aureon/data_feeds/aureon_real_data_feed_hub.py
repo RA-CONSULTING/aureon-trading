@@ -19,7 +19,7 @@ Topics Published:
 Gary Leckey & Tina Brown | January 2026 | REAL DATA DISTRIBUTION
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -192,7 +192,7 @@ class RealDataFeedHub:
         """Initialize ThoughtBus and Intelligence Engine"""
         # Get ThoughtBus
         try:
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             # Use global thoughts file
             self.thought_bus = ThoughtBus(
                 max_memory=5000,
@@ -204,7 +204,7 @@ class RealDataFeedHub:
             
         # Get Intelligence Engine
         try:
-            from aureon_real_intelligence_engine import get_intelligence_engine
+            from aureon.intelligence.aureon_real_intelligence_engine import get_intelligence_engine
             self.intelligence_engine = get_intelligence_engine()
             logger.info("🧠 Real Intelligence Engine connected")
         except Exception as e:
@@ -221,7 +221,7 @@ class RealDataFeedHub:
         """Publish data to ThoughtBus"""
         if self.thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source="real_data_feed_hub",
                     topic=topic,
@@ -258,8 +258,41 @@ class RealDataFeedHub:
         if not self.intelligence_engine:
             return {"error": "Intelligence engine not available"}
         
-        # Use default prices if none provided
+        # Use real-data fallback chain if none provided. Only fall back to
+        # the hardcoded `_get_default_prices()` set when AUREON_ALLOW_SIM_FALLBACK
+        # is set (dev posture); production refuses to substitute hardcoded
+        # values and returns an empty distribution summary instead.
         if not prices:
+            try:
+                from aureon.observer.real_price_fallback import (
+                    get_real_prices_with_fallback,
+                )
+                wanted = list(self._get_default_prices().keys())
+                fetched, sources = get_real_prices_with_fallback(
+                    symbols=wanted, max_cache_age_sec=120.0, timeout_sec=5.0
+                )
+                if fetched:
+                    logger.info("[live-data] real_data_feed_hub resolved %d "
+                                "real prices via fallback chain (%s)",
+                                len(fetched), "+".join(sources))
+                    prices = fetched
+            except Exception as exc:
+                logger.warning("[live-data] real-price fallback chain raised: %s",
+                               exc)
+
+        if not prices:
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if not simulation_fallback_allowed():
+                log_blocked_fallback("real_data_feed_hub.gather_and_distribute",
+                                     "no_prices_after_fallback_chain")
+                logger.warning("[live-data] real_data_feed_hub: every real "
+                               "source returned no prices; refusing to "
+                               "distribute synthetic intelligence")
+                return {"error": "no_live_prices_after_fallback_chain",
+                        "sources_tried": "unified_cache+coingecko+kraken+binance",
+                        "timestamp": datetime.utcnow().isoformat() + "Z"}
             prices = self._get_default_prices()
         
         # Gather intelligence

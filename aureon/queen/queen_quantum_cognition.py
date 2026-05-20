@@ -34,7 +34,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import sys
 import os
@@ -54,7 +54,7 @@ from pathlib import Path
 # 🏴‍☠️👑 BARONS BANNER - ELITE WHALE DETECTION & COUNTER-MANIPULATION
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from barons_banner import (
+    from aureon.wisdom.barons_banner import (
         BaronsBannerAnalyzer,
         BaronsMarketAdapter,
         BaronsAnalysis,
@@ -77,7 +77,9 @@ if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
     try:
         import io
-        if hasattr(sys.stdout, 'buffer'):
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        elif hasattr(sys.stdout, 'buffer'):
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
     except Exception:
         pass

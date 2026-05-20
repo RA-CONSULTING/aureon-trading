@@ -1426,7 +1426,7 @@ class TheKing:
     def _auto_reconcile(self):
         """Automatic reconciliation with exchanges."""
         try:
-            from unified_exchange_client import UnifiedExchangeClient
+            from aureon.trading.unified_exchange_client import UnifiedExchangeClient
             for ex_name in ["kraken", "binance"]:
                 try:
                     client = UnifiedExchangeClient(ex_name)

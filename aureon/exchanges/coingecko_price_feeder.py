@@ -12,7 +12,7 @@ CoinGecko API is FREE with generous rate limits (10-30 calls/minute).
 We fetch prices for ALL Alpaca-tradeable crypto and cache locally.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -234,7 +234,7 @@ def run_price_feed(interval: float = 30.0, max_iterations: int = 0):
 
                 # Feed into Autonomy Hub (The Big Wheel)
                 try:
-                    from aureon_autonomy_hub import get_autonomy_hub
+                    from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
                     hub = get_autonomy_hub()
                     count = hub.data_bridge.ingest_price_cache(
                         {'ticker_cache': ticker_cache}, 'coingecko'

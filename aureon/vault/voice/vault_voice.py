@@ -373,6 +373,16 @@ VOICE_REGISTRY: Dict[str, type] = {
     "lover": LoverVoice,
 }
 
+# The ten quantum-superposition personas live in aureon_personas.py. They are
+# merged into VOICE_REGISTRY at import time so build_all_voices() and any
+# downstream lookup-by-name naturally include them, while the original seven
+# personas keep their existing behaviour.
+try:
+    from aureon.vault.voice.aureon_personas import AUREON_PERSONA_REGISTRY as _AUREON
+    VOICE_REGISTRY.update(_AUREON)
+except Exception:
+    pass
+
 
 def build_all_voices(adapter: Any = None) -> Dict[str, VaultVoice]:
     """Instantiate every voice with the given (or default) adapter."""

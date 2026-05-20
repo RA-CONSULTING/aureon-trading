@@ -17,7 +17,7 @@ Intelligence gathering system combining:
 MISSION: Identify hidden power structures, coordination networks, and strategic vulnerabilities
 in global financial markets using warfare intelligence methodologies.
 """
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -38,21 +38,24 @@ import numpy as np
 import requests
 import time
 import math
+import logging
 from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Optional, Tuple, Set
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 from collections import defaultdict
 
 # 🚌 Communication Buses
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
 
 try:
-    from aureon_chirp_bus import ChirpBus
+    from aureon.core.aureon_chirp_bus import ChirpBus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -398,6 +401,8 @@ class StrategicWarfareScanner:
     def calculate_stealth_score(self, market_data: List) -> float:
         """IRA: How well hidden are their operations? (0=visible, 1=covert)"""
         if not market_data:
+            logger.warning("[insufficient-data] calculate_stealth_score returning "
+                           "neutral 0.5 (empty market_data)")
             return 0.5
         
         # Stealth = low volatility + consistent volume = blend in
@@ -448,6 +453,8 @@ class StrategicWarfareScanner:
     def measure_patience(self, market_data: List) -> float:
         """Apache: How patient are they? (time between actions)"""
         if not market_data:
+            logger.warning("[insufficient-data] measure_patience returning "
+                           "neutral 0.5 (empty market_data)")
             return 0.5
         
         # Patience = low frequency of large moves

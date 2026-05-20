@@ -103,6 +103,7 @@ _WIRED_LOOPS: "set[str]" = set()
 def wire_integrations(
     vault: Any,
     loop: Any = None,
+    goal_engine: Any = None,
     enable_ollama: bool = True,
     enable_obsidian: bool = True,
     enable_pathway_mapping: bool = True,
@@ -146,6 +147,9 @@ def wire_integrations(
                     model=ollama_model,
                 )
                 _swap_voice_adapters(loop, result.ollama_adapter, result.notes)
+                if goal_engine is not None and hasattr(goal_engine, "set_ollama_adapter"):
+                    goal_engine.set_ollama_adapter(result.ollama_adapter)
+                    result.notes.append("goal_engine wired to OllamaLLMAdapter")
             else:
                 result.notes.append(
                     "ollama unreachable — voices keep using AureonBrainAdapter"

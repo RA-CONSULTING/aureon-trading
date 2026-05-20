@@ -16,7 +16,7 @@ Key features:
 - Lightweight metrics hooks for OpenTelemetry / Prometheus (best-effort)
 """
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import logging
 import threading
@@ -29,21 +29,21 @@ logger = logging.getLogger(__name__)
 
 # Attempt to import harmonic outcome helpers for WIN/LOSS encoding
 try:
-    from aureon_harmonic_alphabet import get_outcome_whale_code, encode_outcome, decode_outcome, WIN_THRESHOLD_USD
+    from aureon.harmonic.aureon_harmonic_alphabet import get_outcome_whale_code, encode_outcome, decode_outcome, WIN_THRESHOLD_USD
     _HARMONIC_OUTCOME_AVAILABLE = True
 except Exception:
     _HARMONIC_OUTCOME_AVAILABLE = False
 
 # Local imports - optional availability
 try:
-    from aureon_thought_bus import get_thought_bus, Thought
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except Exception:
     get_thought_bus = None
     THOUGHT_BUS_AVAILABLE = False
 
 try:
-    from aureon_harmonic_binary_protocol import encode_text_packet, BinaryDirection, BinaryMessageType
+    from aureon.harmonic.aureon_harmonic_binary_protocol import encode_text_packet, BinaryDirection, BinaryMessageType
     HARMONIC_BINARY_AVAILABLE = True
 except Exception:
     encode_text_packet = None
@@ -52,7 +52,7 @@ except Exception:
     HARMONIC_BINARY_AVAILABLE = False
 
 try:
-    from aureon_enigma_integration import get_enigma_integration
+    from aureon.wisdom.aureon_enigma_integration import get_enigma_integration
     ENIGMA_AVAILABLE = True
 except Exception:
     get_enigma_integration = None
@@ -331,7 +331,7 @@ class WhaleSonar:
             # Push into Enigma for decoding if available
             if self.enigma_integration and hasattr(self.enigma_integration, 'enigma'):
                 try:
-                    from aureon_enigma import InterceptedSignal
+                    from aureon.wisdom.aureon_enigma import InterceptedSignal
                     # InterceptedSignal is a lightweight container - set attributes to match its fields
                     # InterceptedSignal expects positional fields: source, timestamp, frequency, amplitude, phase
                     sig = InterceptedSignal(

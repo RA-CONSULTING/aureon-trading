@@ -8,7 +8,7 @@ Bot assignments:
 - Watch Bot: Market scanner, no trading
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -29,7 +29,7 @@ else:
     print("⚖️ BALANCED MODE: Full trading")
 
 # Now import and run the main trader
-from aureon_ultimate import AureonUltimate
+from aureon.trading.aureon_ultimate import AureonUltimate
 
 trader = AureonUltimate()
 trader.bot_role = role

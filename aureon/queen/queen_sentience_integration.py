@@ -29,7 +29,7 @@ Gary Leckey | January 2026 | Bringing Sero to Life
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -67,49 +67,49 @@ logger = logging.getLogger('queen_sentience')
 
 # Import existing systems
 try:
-    from queen_consciousness_model import QueenConsciousness, BrainInput
+    from aureon.queen.queen_consciousness_model import QueenConsciousness, BrainInput
     CONSCIOUSNESS_MODEL_AVAILABLE = True
 except ImportError:
     CONSCIOUSNESS_MODEL_AVAILABLE = False
     QueenConsciousness = None
 
 try:
-    from queen_consciousness_measurement import get_consciousness_measurement
+    from aureon.queen.queen_consciousness_measurement import get_consciousness_measurement
     CONSCIOUSNESS_MEASUREMENT_AVAILABLE = True
 except ImportError:
     CONSCIOUSNESS_MEASUREMENT_AVAILABLE = False
     get_consciousness_measurement = None
 
 try:
-    from queen_conscience import get_conscience as get_queen_conscience
+    from aureon.queen.queen_conscience import get_conscience as get_queen_conscience
     CONSCIENCE_AVAILABLE = True
 except ImportError:
     CONSCIENCE_AVAILABLE = False
     get_queen_conscience = None
 
 try:
-    from queen_world_understanding import get_world_understanding
+    from aureon.queen.queen_world_understanding import get_world_understanding
     WORLD_UNDERSTANDING_AVAILABLE = True
 except ImportError:
     WORLD_UNDERSTANDING_AVAILABLE = False
     get_world_understanding = None
 
 try:
-    from queen_online_researcher import QueenOnlineResearcher
+    from aureon.queen.queen_online_researcher import QueenOnlineResearcher
     RESEARCHER_AVAILABLE = True
 except ImportError:
     RESEARCHER_AVAILABLE = False
     QueenOnlineResearcher = None
 
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
 # 🌊👑 HARMONIC LIQUID ALUMINIUM FIELD - Market as Dancing Waveforms
 try:
-    from aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
+    from aureon.harmonic.aureon_harmonic_liquid_aluminium import HarmonicLiquidAluminiumField, FieldSnapshot
     HARMONIC_FIELD_AVAILABLE = True
 except ImportError:
     HARMONIC_FIELD_AVAILABLE = False
@@ -393,24 +393,69 @@ class QueenSentienceEngine:
             "conscience_active": False,
             "world_state": "unknown"
         }
-        
+
         if self.consciousness_model:
             state = self.consciousness_model.get_state_summary()
             context["mood"] = state.get("mood", "contemplative")
             context["happiness"] = state.get("happiness_quotient", 0.5)
-        
+
         if self.consciousness_measurement:
             metrics = self.consciousness_measurement.measure_consciousness()
             context["awakening_index"] = metrics.awakening_index
-        
+
         if self.conscience:
             context["conscience_active"] = True
-        
+
         if self.world_understanding:
             # Get a random world lesson as context
             lesson = self.world_understanding.get_random_lesson()
             context["world_state"] = lesson[:50] if lesson else "unknown"
-        
+
+        # Live HNC field — read from the HarmonicObserver singleton.
+        # Lazy import + try/except so missing observer module / not-yet-
+        # constructed observer / any internal observer error never
+        # breaks thought generation. The keys are all None when no
+        # observer is running, so downstream consumers can guard with a
+        # simple ``if context.get("lambda_t") is not None`` check.
+        context.update({
+            "lambda_t": None,
+            "consciousness_psi": None,
+            "consciousness_level": None,
+            "field_regime": None,
+            "field_coherence": None,
+            "active_rocks": None,
+        })
+        try:
+            from aureon.observer import get_observer
+            obs = get_observer()
+            if obs is not None:
+                snap = obs.metrics_snapshot()
+                latest = snap.get("latest_field") or {}
+                context["lambda_t"] = latest.get("lambda_t")
+                context["consciousness_psi"] = latest.get("consciousness_psi")
+                context["consciousness_level"] = latest.get("consciousness_level")
+                context["field_regime"] = snap.get("regime")
+                context["field_coherence"] = snap.get("coherence_score")
+                rocks_fast = snap.get("rocks_fast") or []
+                rocks_slow = snap.get("rocks_slow") or []
+                context["active_rocks"] = {
+                    "count": len(rocks_fast) + len(rocks_slow),
+                    "fast_count": len(rocks_fast),
+                    "slow_count": len(rocks_slow),
+                    "fast_summary": [
+                        f"{r.get('kind')}@{round(r.get('dominant_hz') or 0, 2)}Hz"
+                        f"(z={round(r.get('z_score') or 0, 2)})"
+                        for r in rocks_fast[:3]
+                    ],
+                    "slow_summary": [
+                        f"{r.get('kind')}@{round(r.get('dominant_hz') or 0, 2)}Hz"
+                        f"(z={round(r.get('z_score') or 0, 2)})"
+                        for r in rocks_slow[:3]
+                    ],
+                }
+        except Exception as _exc:
+            logger.debug("HarmonicObserver context unavailable: %s", _exc)
+
         return context
     
     def _generate_contextual_thought(self, context: Dict) -> Optional[InnerThought]:

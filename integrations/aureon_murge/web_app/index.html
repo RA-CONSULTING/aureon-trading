@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>flAmeBornLLC / LLM Academy</title>
+    <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="academy-shell">
+        <header class="academy-masthead">
+            <div class="brand-mark">
+                <img src="assets/flameborn-logo-current.svg" alt="flAmeBornLLC LLM Academy">
+            </div>
+            <div class="system-badge">
+                <span data-i18n="coreOnline">Core online</span>
+                <strong>v1.2 Core</strong>
+                <div class="language-toggle" aria-label="Language">
+                    <button id="langPl" type="button">PL</button>
+                    <button id="langEn" type="button">EN</button>
+                </div>
+            </div>
+        </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="brand">
+                <h1 data-i18n="academyConsole">Academy Console</h1>
+                <p data-i18n="providerDeck">Provider command deck</p>
+            </div>
+
+            <div class="control-group">
+                <label for="accessMode" data-i18n="mode">Tryb</label>
+                <select id="accessMode">
+                    <option value="free">FREE</option>
+                    <option value="normal">NORMAL</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="provider">Provider</label>
+                <select id="provider">
+                    <option value="gemini">Gemini</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="aureon">Aureon Brain</option>
+                    <option value="huggingface">Hugging Face</option>
+                    <option value="grok">Grok (xAI)</option>
+                    <option value="openai">GPT / OpenAI</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="model">Model</label>
+                <select id="model"></select>
+            </div>
+
+            <div class="control-group">
+                <label for="apiKey" id="apiKeyLabel">API key override</label>
+                <input type="password" id="apiKey" data-i18n-placeholder="optional" placeholder="Opcjonalnie">
+                <button id="saveApiKey" data-i18n="saveKey">Zapisz klucz</button>
+            </div>
+
+            <div class="control-group">
+                <label for="role" data-i18n="aiRole">Rola AI</label>
+                <select id="role">
+                    <option value="assistant" data-i18n="roleAssistant">Asystent</option>
+                    <option value="writer" data-i18n="roleWriter">Pisarz</option>
+                    <option value="coder" data-i18n="roleCoder">Programista</option>
+                    <option value="analyst" data-i18n="roleAnalyst">Analityk</option>
+                    <option value="teacher" data-i18n="roleTeacher">Nauczyciel</option>
+                    <option value="creative" data-i18n="roleCreative">Kreatywny</option>
+                    <option value="support">Support</option>
+                </select>
+            </div>
+
+            <section class="classroom-controls">
+                <div class="classroom-help-card">
+                    <strong>Local agent switch</strong>
+                    <span>Only on this PC: choose which agent persona runs in the app while keeping provider/model as a separate layer.</span>
+                </div>
+                <div class="control-group">
+                    <label for="assistantEngine" data-i18n="assistantEngine">Agent</label>
+                    <select id="assistantEngine">
+                        <option value="standard" data-i18n="assistantStandard">Standard chat</option>
+                        <option value="codex" data-i18n="assistantCodex">Codex Agent</option>
+                        <option value="aureon" data-i18n="assistantAureon">Aureon Agent</option>
+                        <option value="flameball" data-i18n="assistantFlameball">Aureon flAmeBall MODE</option>
+                        <option value="terminal" data-i18n="assistantTerminal">CLI Terminal</option>
+                        <option value="sandbox" data-i18n="assistantSandbox">Docker Sandbox</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="aureonResponseStyle" data-i18n="aureonResponseStyle">Tryb odpowiedzi Aureon</label>
+                    <select id="aureonResponseStyle">
+                        <option value="safe" data-i18n="aureonSafe">Safe</option>
+                        <option value="raw" data-i18n="aureonRaw">Raw</option>
+                    </select>
+                </div>
+                <div class="classroom-toggle-row legacy-assistant-toggle">
+                    <label for="localAureonAssistant">Legacy Aureon toggle</label>
+                    <input type="checkbox" id="localAureonAssistant">
+                </div>
+                <div class="assistant-engine-hint" id="assistantEngineHint">
+                    Choose an agent persona for this PC. Provider and model stay configurable separately.
+                </div>
+                <div class="control-group">
+                    <label for="swarmRoute" data-i18n="swarmRoute">Swarm route</label>
+                    <select id="swarmRoute">
+                        <option value="direct" data-i18n="swarmDirect">Direct</option>
+                        <option value="queen" data-i18n="swarmQueen">Queen</option>
+                        <option value="council" data-i18n="swarmCouncil">Council</option>
+                        <option value="architect" data-i18n="swarmArchitect">Architect</option>
+                        <option value="scout" data-i18n="swarmScout">Scout</option>
+                        <option value="vault" data-i18n="swarmVault">Vault</option>
+                    </select>
+                </div>
+            </section>
+
+            <section class="classroom-controls" data-lab-feature="observer-lab">
+                <div class="classroom-help-card">
+                    <strong>Aureon system sync</strong>
+                    <span>Detected live capabilities from Gary's updated Aureon repo. These modules can be used as context and integration targets.</span>
+                </div>
+                <div id="aureonSystemsCard" class="aureon-systems-card">
+                    <div class="empty-panel">Loading Aureon system capabilities...</div>
+                </div>
+            </section>
+
+            <section class="classroom-controls" data-lab-feature="observer-lab">
+                <div class="classroom-help-card">
+                    <strong>Full Launch Proof</strong>
+                    <span>Flameborn, MURGE runtime, desktop shell, Aureon supervisor, Phi bridge, guards, and trading gate visibility.</span>
+                </div>
+                <div id="fullCapabilityStressCard" class="aureon-systems-card">
+                    <div class="empty-panel">Loading Flameborn full launch proof...</div>
+                </div>
+            </section>
+
+            <details class="classroom-controls collapsible-tool" data-lab-feature="observer-lab">
+                <summary data-i18n="researchFeedTitle">Open Research Feed</summary>
+                <div class="classroom-help-card">
+                    <strong data-i18n="researchFeedTitle">Open Research Feed</strong>
+                    <span data-i18n="researchFeedHelp">Free no-key world data and research sources from Gary's world_data_ingester.</span>
+                </div>
+                <div class="control-group">
+                    <label for="researchQuery" data-i18n="researchQuery">Research query</label>
+                    <input type="text" id="researchQuery" data-i18n-placeholder="researchQueryPlaceholder" placeholder="e.g. neutrino phenomenology JAX TPU">
+                </div>
+                <div class="side-actions">
+                    <button id="researchSearchBtn" data-i18n="researchSearch">Load feed</button>
+                </div>
+                <div id="researchFeedCard" class="research-feed-card">
+                    <div class="empty-panel" data-i18n="researchFeedIdle">No research feed loaded yet.</div>
+                </div>
+            </details>
+
+            <div class="control-group">
+                <label for="temperature"><span data-i18n="temperature">Temperatura</span>: <span id="tempValue">0.7</span></label>
+                <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+            </div>
+
+            <div class="side-actions">
+                <button id="clearHistory" data-i18n="clearHistory">Wyczyść historię</button>
+                <button id="exportBtn">Export</button>
+            </div>
+
+            <section class="classroom-controls" data-lab-feature="observer-lab">
+                <div class="classroom-help-card">
+                    <strong data-i18n="classroomHelpTitle">Classroom obserwuje rozmowę w tle.</strong>
+                    <span data-i18n="classroomHelpText">Dodaj Gemma Observer, a agent będzie cicho analizował kontekst po każdej odpowiedzi.</span>
+                </div>
+                <div class="classroom-toggle-row">
+                    <label for="classroomMode" data-i18n="enableClassroom">Włącz Classroom</label>
+                    <input type="checkbox" id="classroomMode">
+                </div>
+                <button id="addGemmaObserverBtn" class="gemma-observer-btn" type="button" data-i18n="addGemmaObserver">Dodaj Gemma Observer</button>
+                <div class="control-group">
+                    <label for="observerDepth" data-i18n="observationDepth">Głębokość obserwacji</label>
+                    <select id="observerDepth">
+                        <option value="shallow" data-i18n="depthShallow">Lekka</option>
+                        <option value="standard" selected data-i18n="depthStandard">Normalna</option>
+                        <option value="deep" data-i18n="depthDeep">Głęboka</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="observerPreset" data-i18n="addOtherObserver">Dodaj innego obserwatora</label>
+                    <select id="observerPreset">
+                        <option value="gemma">Gemma Context Observer</option>
+                        <option value="aureon">Aureon Queen Observer</option>
+                        <option value="logic">Logic Auditor</option>
+                        <option value="code">Code Pattern Miner</option>
+                        <option value="memory">Memory Curator</option>
+                        <option value="workflow">Workflow Tracker</option>
+                    </select>
+                    <button id="addObserverBtn" data-i18n="addObserver">Dodaj obserwatora</button>
+                </div>
+            </section>
+
+            <div class="provider-status" id="providerStatus"></div>
+
+            <section class="desktop-panel" id="desktopPanel">
+                <div class="desktop-panel-top">
+                    <div>
+                        <strong>Desktop Control</strong>
+                        <p id="desktopModeLabel">Browser mode</p>
+                    </div>
+                    <button type="button" id="desktopRefreshBtn">Refresh</button>
+                </div>
+                <div id="desktopStatusCard" class="desktop-status-card">
+                    <div class="empty-panel">Desktop bridge not detected.</div>
+                </div>
+                <div class="desktop-action-grid">
+                    <button type="button" id="desktopRestartWebBtn">Restart Web</button>
+                    <button type="button" id="desktopRestartRuntimeBtn">Restart Runtime</button>
+                    <button type="button" id="desktopRestartAureonBtn">Restart Aureon</button>
+                    <button type="button" id="desktopOpenLogsBtn">Open Logs</button>
+                </div>
+            </section>
+        </aside>
+
+        <main class="chat-panel">
+            <div class="chat-header">
+                <div>
+                    <h2 data-i18n="missionChat">Mission Chat</h2>
+                    <p id="activeModelLabel">Gemini</p>
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div id="chatMessages" class="messages"></div>
+            </div>
+
+            <div class="status" id="status"></div>
+
+            <section class="flameball-executor" id="flameballExecutor">
+                <div class="flameball-header">
+                    <div>
+                        <h3>Aureon flAmeBallLLC MODE</h3>
+                        <p>Local execution chat: Aureon plans, runtime executes, sudo stays manual.</p>
+                    </div>
+                    <span id="flameballState" class="terminal-state">standby</span>
+                </div>
+                <div class="flameball-grid">
+                    <textarea id="flameballTask" spellcheck="false" placeholder="Describe a local task for Aureon Executor..."></textarea>
+                    <div class="flameball-actions">
+                        <button type="button" id="flameballPlanBtn">Ask Aureon For Plan</button>
+                        <button type="button" id="flameballRunBtn">Run Safe Commands</button>
+                        <button type="button" id="flameballCopyBtn">Copy Sudo/Blocked</button>
+                        <button type="button" id="flameballClearBtn">Clear</button>
+                    </div>
+                </div>
+                <div class="flameball-queue" id="flameballQueue">
+                    <div class="empty-panel">No execution plan loaded.</div>
+                </div>
+                <pre id="flameballOutput" class="terminal-output">Aureon Executor ready. Host runtime: http://127.0.0.1:7331</pre>
+            </section>
+
+            <div class="input-area">
+                <textarea id="userInput" data-i18n-placeholder="messagePlaceholder" placeholder="Message flAmeBorn LLM Academy... (Shift+Enter dla nowej linii)"></textarea>
+                <button id="sendBtn" data-i18n="send">Wyślij</button>
+            </div>
+
+            <section class="terminal-dock" id="terminalDock">
+                <div class="terminal-top">
+                    <div>
+                        <h3 data-i18n="terminalTitle">Local CLI Terminal</h3>
+                        <p id="terminalCwd">/home/l/CodexPROsSparrow</p>
+                    </div>
+                    <span id="terminalState" class="terminal-state">ready</span>
+                </div>
+                <div class="terminal-suggestions" id="terminalSuggestions">
+                    <button type="button" data-command="pwd">pwd</button>
+                    <button type="button" data-command="git status --short">git status</button>
+                    <button type="button" data-command="node --check server.mjs && node --check script.js">node check</button>
+                    <button type="button" data-command="curl -s http://127.0.0.1:4173/api/aureon/systems">aureon systems</button>
+                </div>
+                <textarea id="terminalCommand" spellcheck="false" data-i18n-placeholder="terminalPlaceholder" placeholder="Wpisz komendę lokalną..."></textarea>
+                <div class="terminal-actions">
+                    <label class="terminal-approval">
+                        <input type="checkbox" id="terminalApproval">
+                        <span data-i18n="terminalApprove">Zatwierdzam komendę podwyższonego ryzyka</span>
+                    </label>
+                    <button type="button" id="terminalCopyBtn" data-i18n="terminalCopy">Kopiuj</button>
+                    <button type="button" id="terminalRunBtn" data-i18n="terminalRun">Uruchom</button>
+                </div>
+                <pre id="terminalOutput" class="terminal-output">Local terminal ready.</pre>
+            </section>
+
+            <section class="terminal-dock host-shell-dock" id="hostShellDock">
+                <div class="terminal-top">
+                    <div>
+                        <h3>Host PTY Shell</h3>
+                        <p id="hostTerminalStatus">host terminal idle</p>
+                    </div>
+                    <span id="hostTerminalState" class="terminal-state">idle</span>
+                </div>
+                <div class="terminal-actions">
+                    <button type="button" id="hostTerminalConnectBtn">Connect Host</button>
+                    <button type="button" id="hostTerminalNewSessionBtn">New Host Session</button>
+                </div>
+                <div class="terminal-session-line">
+                    <span>Host session</span>
+                    <strong id="hostSessionLabel">host-default</strong>
+                </div>
+                <div class="terminal-tabs">
+                    <button type="button" class="terminal-tab active" data-terminal-view="host">Host PTY</button>
+                    <button type="button" class="terminal-tab" data-terminal-view="sandbox">Docker PTY</button>
+                </div>
+                <div id="hostXtermMount" class="xterm-mount terminal-view active"></div>
+            </section>
+
+            <section class="terminal-dock sandbox-dock terminal-view-shell" id="sandboxDock">
+                <div class="terminal-top">
+                    <div>
+                        <h3 data-i18n="sandboxTitle">Docker Sandbox Terminal</h3>
+                        <p id="sandboxStatus">checking sandbox runtime...</p>
+                    </div>
+                    <span id="sandboxState" class="terminal-state">checking</span>
+                </div>
+                <div class="terminal-actions">
+                    <button type="button" id="sandboxConnectBtn" data-i18n="sandboxConnect">Connect</button>
+                    <button type="button" id="sandboxNewSessionBtn">New Sandbox Session</button>
+                    <button type="button" id="sandboxStatusBtn" data-i18n="sandboxCheck">Check</button>
+                </div>
+                <div class="terminal-session-line">
+                    <span>Sandbox session</span>
+                    <strong id="sandboxSessionLabel">sandbox-default</strong>
+                </div>
+                <div class="terminal-tabs">
+                    <button type="button" class="terminal-tab" data-terminal-view="host">Host PTY</button>
+                    <button type="button" class="terminal-tab active" data-terminal-view="sandbox">Docker PTY</button>
+                </div>
+                <div id="xtermMount" class="xterm-mount"></div>
+            </section>
+        </main>
+
+        <aside class="classroom-panel" id="classroomPanel" aria-label="Classroom observer panel" data-lab-feature="observer-lab">
+            <div class="classroom-header">
+                <div>
+                    <h2>Classroom</h2>
+                    <p id="classroomState">Obserwatorzy czekają</p>
+                </div>
+                <span class="stream-pill" id="streamStatus">stream off</span>
+            </div>
+
+            <section class="observer-section">
+                <div class="section-title" data-i18n="aiObservers">Obserwatorzy AI</div>
+                <div id="observerCards" class="observer-cards"></div>
+            </section>
+
+            <section class="observer-section">
+                <div class="section-title" data-i18n="contextStream">Strumień kontekstu</div>
+                <div id="contextStream" class="context-stream"></div>
+            </section>
+
+            <section class="observer-section memory-section">
+                <div class="section-title" data-i18n="sessionMemory">Pamięć sesji</div>
+                <div id="memoryViz" class="memory-viz"></div>
+            </section>
+
+            <section class="observer-section">
+                <div class="section-title" data-i18n="metacognitionTitle">Metacognition Monitor</div>
+                <div id="metacognitionCard" class="metacognition-card">
+                    <div class="empty-panel" data-i18n="metacognitionIdle">Waiting for conversation evidence.</div>
+                </div>
+            </section>
+        </aside>
+    </div>
+    </div>
+
+    <div id="fallbackModal" class="fallback-modal hidden" aria-hidden="true">
+        <div class="fallback-card">
+            <div class="fallback-top">
+                <h3 data-i18n="freeMode">Tryb darmowy</h3>
+                <button id="closeFallbackBtn" class="fallback-close" data-i18n-aria-label="close" aria-label="Zamknij">✕</button>
+            </div>
+            <p id="fallbackReason" class="fallback-reason"></p>
+            <div class="fallback-actions">
+                <button class="fallback-link" data-target="https://gemini.google.com/app">Gemini Free</button>
+                <button class="fallback-link" data-target="https://chat.openai.com/">ChatGPT Free</button>
+                <button class="fallback-link" data-target="https://copilot.microsoft.com/">Copilot Free</button>
+            </div>
+            <p class="fallback-hint">
+                <span data-i18n="fallbackHint">Jeśli osadzenie jest blokowane przez dostawcę, otworzymy stronę w nowej karcie.</span>
+            </p>
+            <iframe id="fallbackFrame" class="fallback-frame" title="Free mode browser view"></iframe>
+        </div>
+    </div>
+
+    <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
+    <script src="node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

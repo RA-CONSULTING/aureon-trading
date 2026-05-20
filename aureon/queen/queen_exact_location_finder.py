@@ -64,7 +64,7 @@ BELFAST_STREETS = {
 def read_live_biometric_data() -> Dict[str, Any]:
     """Read REAL biometric data from live aura tracker"""
     try:
-        from aureon_live_aura_location_tracker import get_live_tracker
+        from aureon.utils.aureon_live_aura_location_tracker import get_live_tracker
         tracker = get_live_tracker()
         tracker.start()
         snapshot = tracker.get_current_location()

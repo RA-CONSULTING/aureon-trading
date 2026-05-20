@@ -13,7 +13,7 @@ Gary Leckey | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 import time
@@ -55,7 +55,7 @@ systems_loaded = []
 
 # 1. Queen Hive Mind
 try:
-    from aureon_queen_hive_mind import QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT, QUEEN_PROFIT_MANDATE
+    from aureon.utils.aureon_queen_hive_mind import QUEEN_MIN_COP, QUEEN_MIN_PROFIT_PCT, QUEEN_PROFIT_MANDATE
     print(f"✅ aureon_queen_hive_mind.py      → QUEEN_MIN_COP = {QUEEN_MIN_COP}")
     systems_loaded.append(("Queen Hive Mind", QUEEN_MIN_COP))
 except ImportError as e:
@@ -63,7 +63,7 @@ except ImportError as e:
 
 # 2. Harmonic Chain Master
 try:
-    from aureon_harmonic_chain_master import QUEEN_MIN_COP as HCM_COP
+    from aureon.harmonic.aureon_harmonic_chain_master import QUEEN_MIN_COP as HCM_COP
     print(f"✅ aureon_harmonic_chain_master.py → QUEEN_MIN_COP = {HCM_COP}")
     systems_loaded.append(("Harmonic Chain Master", HCM_COP))
 except ImportError as e:
@@ -71,7 +71,7 @@ except ImportError as e:
 
 # 3. Inception Engine
 try:
-    from aureon_inception_engine import QUEEN_MIN_COP as INC_COP, QUEEN_INCEPTION_PROFIT_FREQ
+    from aureon.intelligence.aureon_inception_engine import QUEEN_MIN_COP as INC_COP, QUEEN_INCEPTION_PROFIT_FREQ
     print(f"✅ aureon_inception_engine.py     → QUEEN_MIN_COP = {INC_COP}, Freq = {QUEEN_INCEPTION_PROFIT_FREQ} Hz")
     systems_loaded.append(("Inception Engine", INC_COP))
 except ImportError as e:
@@ -79,7 +79,7 @@ except ImportError as e:
 
 # 4. Internal Multiverse
 try:
-    from aureon_internal_multiverse import QUEEN_MIN_COP as MV_COP, QUEEN_MULTIVERSE_PROFIT_FREQ
+    from aureon.simulation.aureon_internal_multiverse import QUEEN_MIN_COP as MV_COP, QUEEN_MULTIVERSE_PROFIT_FREQ
     print(f"✅ aureon_internal_multiverse.py  → QUEEN_MIN_COP = {MV_COP}, Freq = {QUEEN_MULTIVERSE_PROFIT_FREQ} Hz")
     systems_loaded.append(("Internal Multiverse", MV_COP))
 except ImportError as e:
@@ -87,7 +87,7 @@ except ImportError as e:
 
 # 5. Gaia Lattice
 try:
-    from aureon_lattice import QUEEN_MIN_COP as LAT_COP, QUEEN_LATTICE_PROFIT_FREQ
+    from aureon.core.aureon_lattice import QUEEN_MIN_COP as LAT_COP, QUEEN_LATTICE_PROFIT_FREQ
     print(f"✅ aureon_lattice.py              → QUEEN_MIN_COP = {LAT_COP}, Freq = {QUEEN_LATTICE_PROFIT_FREQ} Hz")
     systems_loaded.append(("Gaia Lattice", LAT_COP))
 except ImportError as e:
@@ -95,7 +95,7 @@ except ImportError as e:
 
 # 6. HFT Harmonic Mycelium
 try:
-    from aureon_hft_harmonic_mycelium import QUEEN_MIN_COP as HFT_COP, QUEEN_HFT_MIN_EDGE_PCT
+    from aureon.harmonic.aureon_hft_harmonic_mycelium import QUEEN_MIN_COP as HFT_COP, QUEEN_HFT_MIN_EDGE_PCT
     print(f"✅ aureon_hft_harmonic_mycelium.py → QUEEN_MIN_COP = {HFT_COP}, Edge = {QUEEN_HFT_MIN_EDGE_PCT}%")
     systems_loaded.append(("HFT Harmonic Mycelium", HFT_COP))
 except ImportError as e:
@@ -103,7 +103,7 @@ except ImportError as e:
 
 # 7. Micro Momentum Goal
 try:
-    from aureon_micro_momentum_goal import QUEEN_MIN_COP as MMG_COP, QUEEN_MIN_GROSS_PCT
+    from aureon.conversion.aureon_micro_momentum_goal import QUEEN_MIN_COP as MMG_COP, QUEEN_MIN_GROSS_PCT
     print(f"✅ aureon_micro_momentum_goal.py  → QUEEN_MIN_COP = {MMG_COP}, Gross = {QUEEN_MIN_GROSS_PCT}%")
     systems_loaded.append(("Micro Momentum Goal", MMG_COP))
 except ImportError as e:
@@ -111,7 +111,7 @@ except ImportError as e:
 
 # 8. Miner Brain
 try:
-    from aureon_miner_brain import QUEEN_MIN_COP as MB_COP, QUEEN_BRAIN_PROFIT_FREQ
+    from aureon.utils.aureon_miner_brain import QUEEN_MIN_COP as MB_COP, QUEEN_BRAIN_PROFIT_FREQ
     print(f"✅ aureon_miner_brain.py          → QUEEN_MIN_COP = {MB_COP}, Freq = {QUEEN_BRAIN_PROFIT_FREQ} Hz")
     systems_loaded.append(("Miner Brain", MB_COP))
 except ImportError as e:
@@ -119,7 +119,7 @@ except ImportError as e:
 
 # 9. Harmonic Momentum Wave
 try:
-    from aureon_harmonic_momentum_wave import QUEEN_MIN_COP as HMW_COP
+    from aureon.harmonic.aureon_harmonic_momentum_wave import QUEEN_MIN_COP as HMW_COP
     print(f"✅ aureon_harmonic_momentum_wave.py → QUEEN_MIN_COP = {HMW_COP}")
     systems_loaded.append(("Harmonic Momentum Wave", HMW_COP))
 except ImportError as e:
@@ -127,7 +127,7 @@ except ImportError as e:
 
 # 10. Lighthouse
 try:
-    from aureon_lighthouse import QUEEN_MIN_COP as LH_COP
+    from aureon.analytics.aureon_lighthouse import QUEEN_MIN_COP as LH_COP
     print(f"✅ aureon_lighthouse.py           → QUEEN_MIN_COP = {LH_COP}")
     systems_loaded.append(("Lighthouse", LH_COP))
 except ImportError as e:
@@ -135,7 +135,7 @@ except ImportError as e:
 
 # 11. Math Angel
 try:
-    from aureon_math_angel import QUEEN_MIN_COP as MA_COP
+    from aureon.wisdom.aureon_math_angel import QUEEN_MIN_COP as MA_COP
     print(f"✅ aureon_math_angel.py           → QUEEN_MIN_COP = {MA_COP}")
     systems_loaded.append(("Math Angel", MA_COP))
 except ImportError as e:
@@ -143,7 +143,7 @@ except ImportError as e:
 
 # 12. Memory Core
 try:
-    from aureon_memory_core import QUEEN_MIN_COP as MC_COP
+    from aureon.core.aureon_memory_core import QUEEN_MIN_COP as MC_COP
     print(f"✅ aureon_memory_core.py          → QUEEN_MIN_COP = {MC_COP}")
     systems_loaded.append(("Memory Core", MC_COP))
 except ImportError as e:
@@ -236,62 +236,62 @@ frequencies = []
 
 # Check all systems for 188 Hz frequency
 try:
-    from aureon_inception_engine import QUEEN_INCEPTION_PROFIT_FREQ
+    from aureon.intelligence.aureon_inception_engine import QUEEN_INCEPTION_PROFIT_FREQ
     frequencies.append(('Inception Engine', QUEEN_INCEPTION_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_internal_multiverse import QUEEN_MULTIVERSE_PROFIT_FREQ
+    from aureon.simulation.aureon_internal_multiverse import QUEEN_MULTIVERSE_PROFIT_FREQ
     frequencies.append(('Internal Multiverse', QUEEN_MULTIVERSE_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_lattice import QUEEN_LATTICE_PROFIT_FREQ
+    from aureon.core.aureon_lattice import QUEEN_LATTICE_PROFIT_FREQ
     frequencies.append(('Gaia Lattice', QUEEN_LATTICE_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_live_momentum_hunter import QUEEN_HUNTER_PROFIT_FREQ
+    from aureon.scanners.aureon_live_momentum_hunter import QUEEN_HUNTER_PROFIT_FREQ
     frequencies.append(('Live Momentum Hunter', QUEEN_HUNTER_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_lighthouse import QUEEN_LIGHTHOUSE_PROFIT_FREQ
+    from aureon.analytics.aureon_lighthouse import QUEEN_LIGHTHOUSE_PROFIT_FREQ
     frequencies.append(('Lighthouse', QUEEN_LIGHTHOUSE_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_live_quantum_bridge import QUEEN_QUANTUM_PROFIT_FREQ
+    from aureon.data_feeds.aureon_live_quantum_bridge import QUEEN_QUANTUM_PROFIT_FREQ
     frequencies.append(('Quantum Bridge', QUEEN_QUANTUM_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_luck_field_mapper import QUEEN_LUCK_PROFIT_FREQ
+    from aureon.utils.aureon_luck_field_mapper import QUEEN_LUCK_PROFIT_FREQ
     frequencies.append(('Luck Field Mapper', QUEEN_LUCK_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_math_angel import QUEEN_ANGEL_PROFIT_FREQ
+    from aureon.wisdom.aureon_math_angel import QUEEN_ANGEL_PROFIT_FREQ
     frequencies.append(('Math Angel', QUEEN_ANGEL_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_memory_core import QUEEN_MEMORY_PROFIT_FREQ
+    from aureon.core.aureon_memory_core import QUEEN_MEMORY_PROFIT_FREQ
     frequencies.append(('Memory Core', QUEEN_MEMORY_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_micro_momentum_goal import QUEEN_MOMENTUM_PROFIT_FREQ
+    from aureon.conversion.aureon_micro_momentum_goal import QUEEN_MOMENTUM_PROFIT_FREQ
     frequencies.append(('Micro Momentum Goal', QUEEN_MOMENTUM_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_miner_brain import QUEEN_BRAIN_PROFIT_FREQ
+    from aureon.utils.aureon_miner_brain import QUEEN_BRAIN_PROFIT_FREQ
     frequencies.append(('Miner Brain', QUEEN_BRAIN_PROFIT_FREQ))
 except: pass
 
 try:
-    from aureon_moby_dick_whale_hunter import QUEEN_WHALE_PROFIT_FREQ
+    from aureon.analytics.aureon_moby_dick_whale_hunter import QUEEN_WHALE_PROFIT_FREQ
     frequencies.append(('Moby Dick Whale Hunter', QUEEN_WHALE_PROFIT_FREQ))
 except: pass
 

@@ -39,7 +39,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import math
 import time
@@ -48,7 +48,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
-from aureon_taste_sense import (
+from aureon.intelligence.aureon_taste_sense import (
     MolecularData,
     MolecularSequencer,
     TasteExperience,

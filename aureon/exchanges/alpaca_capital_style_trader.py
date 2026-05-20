@@ -46,7 +46,7 @@ except Exception:
     HAS_UNIFIED_DECISION = False
 
 try:
-    from autonomous_trading_orchestrator import AutonomousOrchestrator
+    from aureon.autonomous.autonomous_trading_orchestrator import AutonomousOrchestrator
     HAS_ALPACA_ORCHESTRATOR = True
 except Exception:
     AutonomousOrchestrator = None  # type: ignore

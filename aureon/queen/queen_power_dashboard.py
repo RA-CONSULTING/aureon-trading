@@ -18,7 +18,7 @@ All trading activity, balances, profits, and losses shown as ENERGY.
 Port: 8080 (Primary Interface)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -115,7 +115,7 @@ class QueenPowerDashboard:
     def _init_scanner(self):
         """Initialize the Queen Power Redistribution scanner for live data."""
         try:
-            from queen_power_redistribution import QueenPowerRedistribution
+            from aureon.queen.queen_power_redistribution import QueenPowerRedistribution
             self.scanner = QueenPowerRedistribution(dry_run=True)
             print("✅ Queen Power Scanner initialized - LIVE data enabled")
         except Exception as e:

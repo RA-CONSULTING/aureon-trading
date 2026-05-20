@@ -36,7 +36,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -83,7 +83,7 @@ ALL_EXCHANGES = ['binance', 'kraken', 'alpaca']
 
 # Mycelium Hub - ALL systems wired through here
 try:
-    from mycelium_conversion_hub import (
+    from aureon.conversion.mycelium_conversion_hub import (
         MyceliumConversionHub, get_conversion_hub,
         ConversionSignal, SystemSignal
     )
@@ -95,7 +95,7 @@ except ImportError as e:
 
 # V14 Labyrinth
 try:
-    from s5_v14_labyrinth import V14LabyrinthEngine, V14_LABYRINTH_CONFIG
+    from aureon.strategies.s5_v14_labyrinth import V14LabyrinthEngine, V14_LABYRINTH_CONFIG
     LABYRINTH_AVAILABLE = True
     print("🏆 V14 Labyrinth LOADED!")
 except ImportError:
@@ -103,7 +103,7 @@ except ImportError:
 
 # Conversion Commando
 try:
-    from aureon_conversion_commando import (
+    from aureon.conversion.aureon_conversion_commando import (
         AdaptiveConversionCommando, PairScanner, 
         FalconCommando, TortoiseCommando, ChameleonCommando, BeeCommando
     )
@@ -114,7 +114,7 @@ except ImportError:
 
 # Ultra Labyrinth
 try:
-    from s5_ultra_labyrinth import S5UltraLabyrinth
+    from aureon.strategies.s5_ultra_labyrinth import S5UltraLabyrinth
     ULTRA_AVAILABLE = True
     print("🌀 Ultra Labyrinth LOADED!")
 except ImportError:
@@ -122,7 +122,7 @@ except ImportError:
 
 # Pure Conversion Engine
 try:
-    from pure_conversion_engine import PureConversionEngine
+    from aureon.conversion.pure_conversion_engine import PureConversionEngine
     PURE_ENGINE_AVAILABLE = True
     print("🔄 Pure Conversion Engine LOADED!")
 except ImportError:

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Count assets with balance"""
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
-from binance_client import BinanceClient
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.exchanges.binance_client import BinanceClient
 
 client = get_binance_client()
 account = client.account()

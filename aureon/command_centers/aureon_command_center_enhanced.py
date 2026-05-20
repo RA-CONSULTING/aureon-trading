@@ -20,7 +20,7 @@ Features from Mind Map + Queen Unified + All Dashboards:
 Gary Leckey | January 2026 | FULL LIVE DATA STREAMING
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys, os
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -823,7 +823,16 @@ class AureonCommandCenterEnhanced:
             logger.debug(f"Error updating portfolio: {e}")
     
     async def _generate_mock_signals(self):
-        """Generate mock signals (replace with real system signals)."""
+        """Generate mock signals (replace with real system signals).
+
+        ⚠ Synthetic signal source — emits BUY/SELL signals with random
+        confidence/score from a fixed source list. Gated behind
+        AUREON_ALLOW_SIM_FALLBACK so production refuses to inject mock
+        signals into self.signals (where they could surface in operator UI).
+        """
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+        if not simulation_fallback_allowed():
+            return
         # In real implementation, listen to ThoughtBus or system outputs
         if len(self.signals) < 5 and time.time() % 10 < 1:  # Add signal every 10s
             import random
@@ -854,7 +863,16 @@ class AureonCommandCenterEnhanced:
             })
     
     async def _queen_commentary(self):
-        """Generate Queen's commentary."""
+        """Generate Queen's commentary.
+
+        ⚠ Synthetic Queen voice — picks from a hardcoded message list.
+        Gated behind AUREON_ALLOW_SIM_FALLBACK so production does not
+        broadcast canned Queen quotes ("Quantum coherence at 82%", etc.)
+        as if they were real readings.
+        """
+        from aureon.observer.live_data_policy import simulation_fallback_allowed
+        if not simulation_fallback_allowed():
+            return
         if time.time() % 15 < 1:  # Commentary every 15 seconds
             messages = [
                 "I am observing massive bot activity across multiple exchanges.",

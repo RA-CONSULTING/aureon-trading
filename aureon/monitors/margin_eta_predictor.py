@@ -131,7 +131,7 @@ def normalise_pair(pair: str) -> str:
 def load_from_kraken_api() -> List[dict]:
     """Fetch ALL live open margin positions via Kraken private API."""
     try:
-        from kraken_client import KrakenClient
+        from aureon.exchanges.kraken_client import KrakenClient
         client = KrakenClient()
         if client.dry_run:
             return []

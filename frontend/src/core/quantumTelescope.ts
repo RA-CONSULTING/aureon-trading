@@ -173,10 +173,11 @@ class QuantumLens {
       case GeometricSolid.Icosahedron:
         // Water resonates with high intensity (volume/liquidity)
         return (beam.intensity * 0.8 + beam.wavelength * 0.2);
-      case GeometricSolid.Dodecahedron:
+      case GeometricSolid.Dodecahedron: {
         // Ether resonates with harmonic wavelength patterns (PHI alignment)
         const phiHarmony = 1 - Math.abs((beam.wavelength * PHI) % 1 - 0.5) * 2;
         return (phiHarmony * 0.6 + (1 - beam.polarization) * 0.4);
+      }
       default:
         return 0;
     }

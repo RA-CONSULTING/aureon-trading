@@ -34,7 +34,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import logging
 from dataclasses import dataclass, field
@@ -57,7 +57,7 @@ try:
     HAS_MYCELIUM = True
 except Exception:
     try:
-        from aureon_mycelium import get_mycelium
+        from aureon.core.aureon_mycelium import get_mycelium
         HAS_MYCELIUM = True
     except Exception:
         get_mycelium = None  # type: ignore
@@ -703,7 +703,7 @@ class AutonomousOrchestrator:
         Does NOT call the full consensus — just the fast should_trade() gate.
         """
         try:
-            from aureon_seer_integration import seer_should_trade, seer_get_vision
+            from aureon.intelligence.aureon_seer_integration import seer_should_trade, seer_get_vision
             self._seer_ok    = seer_should_trade()
             vision           = seer_get_vision() or {}
             self._seer_grade = vision.get('grade', 'UNKNOWN')
@@ -712,7 +712,7 @@ class AutonomousOrchestrator:
             self._seer_grade = 'UNAVAILABLE'
 
         try:
-            from aureon_lyra_integration import lyra_should_trade, lyra_get_resonance
+            from aureon.trading.aureon_lyra_integration import lyra_should_trade, lyra_get_resonance
             self._lyra_ok    = lyra_should_trade()
             resonance        = lyra_get_resonance() or {}
             self._lyra_grade = resonance.get('grade', 'UNKNOWN')
@@ -738,7 +738,7 @@ class AutonomousOrchestrator:
             return self._consensus
 
         try:
-            from aureon_seer_integration import get_triumvirate_consensus
+            from aureon.intelligence.aureon_seer_integration import get_triumvirate_consensus
             logger.info("[Orchestrator] Running full Quadrumvirate consensus...")
             result = get_triumvirate_consensus()
             if result:

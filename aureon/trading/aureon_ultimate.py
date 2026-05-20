@@ -23,26 +23,26 @@ Gary Leckey | November 2025
 "We're making history! If you don't quit, you can't lose!" 🎵
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os, sys, time, math, json, logging, hmac, hashlib, random
 from collections import Counter, deque
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 from decimal import Decimal, ROUND_DOWN
 from dataclasses import dataclass, field
-from binance_client import BinanceClient
+from aureon.exchanges.binance_client import BinanceClient
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 except Exception:
     KrakenClient = None
-from aureon_commandos import QuackCommandos  # 🦆⚔️ THE ANIMAL ARMY
-from aureon_plums_guardian import PlumsGuardian, GuardianLimits  # 🇬🇧💎 UK SAFETY!
-from aureon_advanced_intelligence import AdvancedIntelligence, calculate_golden_ratio_alignment  # 🧠💎 THE MISSING PIECES!
-from lighthouse_metrics import LighthouseMetricsEngine
+from aureon.trading.aureon_commandos import QuackCommandos  # 🦆⚔️ THE ANIMAL ARMY
+from aureon.wisdom.aureon_plums_guardian import PlumsGuardian, GuardianLimits  # 🇬🇧💎 UK SAFETY!
+from aureon.intelligence.aureon_advanced_intelligence import AdvancedIntelligence, calculate_golden_ratio_alignment  # 🧠💎 THE MISSING PIECES!
+from aureon.analytics.lighthouse_metrics import LighthouseMetricsEngine
 
 # 🌉 BRIDGE INTEGRATION 🌉
 try:
-    from aureon_bridge import AureonBridge, Opportunity as BridgeOpportunity, CapitalState, Position as BridgePosition
+    from aureon.bridges.aureon_bridge import AureonBridge, Opportunity as BridgeOpportunity, CapitalState, Position as BridgePosition
     BRIDGE_AVAILABLE = True
 except ImportError as e:
     BRIDGE_AVAILABLE = False
@@ -51,7 +51,7 @@ except ImportError as e:
 
 # 🌌⚡ IMPERIAL PREDICTABILITY ENGINE ⚡🌌
 try:
-    from hnc_imperial_predictability import (
+    from aureon.strategies.hnc_imperial_predictability import (
         ImperialTradingIntegration, PredictabilityEngine, CosmicStateEngine,
         CosmicPhase, MarketTorque, ImperialPredictabilityMatrix
     )
@@ -62,7 +62,7 @@ except ImportError as e:
 
 # 🌌⚡ IMPERIAL PREDICTABILITY ENGINE ⚡🌌
 try:
-    from hnc_imperial_predictability import (
+    from aureon.strategies.hnc_imperial_predictability import (
         ImperialTradingIntegration, CosmicPhase, MarketTorque
     )
     IMPERIAL_AVAILABLE = True

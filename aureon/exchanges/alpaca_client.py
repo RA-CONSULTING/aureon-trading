@@ -62,6 +62,13 @@ try:
 except ImportError:
     pass
 
+try:
+    from aureon.core.aureon_env import load_aureon_environment
+
+    load_aureon_environment(Path(__file__).resolve().parents[2], override=False)
+except Exception:
+    pass
+
 logger = logging.getLogger(__name__)
 
 
@@ -108,7 +115,7 @@ class AlpacaClient:
         if prom_port:
             try:
                 try:
-                    from telemetry_server import start_telemetry_server
+                    from aureon.monitors.telemetry_server import start_telemetry_server
                 except ImportError:
                     from aureon.monitors.telemetry_server import start_telemetry_server
                 start_telemetry_server(int(prom_port))
@@ -142,13 +149,13 @@ class AlpacaClient:
         # Rate limiting and in-memory TTL caching for market data
         try:
             try:
-                from rate_limiter_v2 import AdaptiveRateLimiter  # type: ignore
+                from aureon.core.rate_limiter_v2 import AdaptiveRateLimiter  # type: ignore
             except ImportError:
                 from aureon.core.rate_limiter_v2 import AdaptiveRateLimiter  # type: ignore
         except ImportError:
             try:
                 try:
-                    from rate_limiter import TokenBucket  # type: ignore
+                    from aureon.core.rate_limiter import TokenBucket  # type: ignore
                 except ImportError:
                     from aureon.core.rate_limiter import TokenBucket  # type: ignore
             except ImportError:
@@ -173,7 +180,7 @@ class AlpacaClient:
 
         try:
             try:
-                from rate_limiter import TTLCache  # type: ignore
+                from aureon.core.rate_limiter import TTLCache  # type: ignore
             except ImportError:
                 from aureon.core.rate_limiter import TTLCache  # type: ignore
         except ImportError:
@@ -249,7 +256,7 @@ class AlpacaClient:
         self._market_data_hub = None
         try:
             try:
-                from market_data_hub import get_market_data_hub
+                from aureon.data_feeds.market_data_hub import get_market_data_hub
             except ImportError:
                 from aureon.data_feeds.market_data_hub import get_market_data_hub
             self._market_data_hub = get_market_data_hub(self)
@@ -261,7 +268,7 @@ class AlpacaClient:
         self._classify_request_type = None
         try:
             try:
-                from global_rate_budget import get_global_rate_budget, classify_request_type
+                from aureon.core.global_rate_budget import get_global_rate_budget, classify_request_type
             except ImportError:
                 from aureon.core.global_rate_budget import get_global_rate_budget, classify_request_type
             self._global_rate_budget = get_global_rate_budget()
@@ -276,7 +283,10 @@ class AlpacaClient:
             })
             self.is_authenticated = True
             self.auth_probe_warning = ""
-            self._probe_initial_auth()
+            # Run auth probe in daemon thread — real API call, but never blocks boot.
+            import threading as _threading
+            _t = _threading.Thread(target=self._probe_initial_auth, daemon=True, name="alpaca-auth-probe")
+            _t.start()
         else:
             logger.warning("Alpaca API keys not found in environment variables.")
             self.init_error = "credentials_missing"
@@ -374,7 +384,7 @@ class AlpacaClient:
                     
                     # Metric: API 429
                     try:
-                        from metrics import api_429_counter
+                        from aureon.core.metrics import api_429_counter
                         api_429_counter.inc(1, exchange='alpaca', endpoint=endpoint)
                     except Exception:
                         pass
@@ -2804,7 +2814,7 @@ class AlpacaClient:
         if self._market_data_hub:
             try:
                 try:
-                    from market_data_hub import start_market_data_hub
+                    from aureon.data_feeds.market_data_hub import start_market_data_hub
                 except ImportError:
                     from aureon.data_feeds.market_data_hub import start_market_data_hub
                 start_market_data_hub(self)
@@ -2816,7 +2826,7 @@ class AlpacaClient:
         """Stop the MarketDataHub prefetching service."""
         try:
             try:
-                from market_data_hub import stop_market_data_hub
+                from aureon.data_feeds.market_data_hub import stop_market_data_hub
             except ImportError:
                 from aureon.data_feeds.market_data_hub import stop_market_data_hub
             stop_market_data_hub()

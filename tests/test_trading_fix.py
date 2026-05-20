@@ -8,12 +8,20 @@ import sys
 import os
 import subprocess
 
-def test_command():
+def _command_starts():
     """Test the exact command the game launcher uses"""
     print("Testing the exact command the game launcher uses...")
 
     # This is what the game launcher should be running
-    cmd = [sys.executable, "micro_profit_labyrinth.py", "--dry-run", "--multi-exchange", "--duration", "86400"]
+    cmd = [
+        sys.executable,
+        "-m",
+        "aureon.trading.micro_profit_labyrinth",
+        "--dry-run",
+        "--multi-exchange",
+        "--duration",
+        "86400",
+    ]
 
     print(f"Command: {' '.join(cmd)}")
     print("Starting subprocess...")
@@ -43,9 +51,13 @@ def test_command():
         print(f"❌ ERROR: {e}")
         return False
 
+def test_command():
+    assert _command_starts()
+
+
 if __name__ == "__main__":
     print("🔍 Testing trading engine startup with duration parameter...")
-    success = test_command()
+    success = _command_starts()
     if success:
         print("\n✅ The fix works! The trading engine runs with --duration parameter.")
         print("   Make sure you git pull the latest changes on Windows.")

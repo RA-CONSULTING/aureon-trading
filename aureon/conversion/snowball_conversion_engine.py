@@ -22,7 +22,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -254,7 +254,7 @@ class SnowballEngine:
         self.kraken = None
         if not dry_run:
             try:
-                from kraken_client import KrakenClient, get_kraken_client
+                from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                 self.kraken = get_kraken_client()
             except:
                 logger.warning("⚠️ Kraken client not available - running in dry mode")

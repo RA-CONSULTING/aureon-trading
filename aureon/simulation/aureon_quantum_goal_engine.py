@@ -33,7 +33,7 @@ The Goal Engine is the DRIVER. The Queen is the EXECUTOR.
 Together = UNSTOPPABLE FORCE toward $1 BILLION.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -170,7 +170,7 @@ class QuantumGoalEngine:
         
         # Wire to thought bus if available
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             self.thought_bus = get_thought_bus()
             self.Thought = Thought
             logger.info("🎯 Goal Engine: WIRED to ThoughtBus")
@@ -181,7 +181,7 @@ class QuantumGoalEngine:
         
         # Wire to billion dollar tracker if available
         try:
-            from aureon_billion_goal_tracker import get_goal_tracker
+            from aureon.portfolio.aureon_billion_goal_tracker import get_goal_tracker
             self.billion_tracker = get_goal_tracker()
             logger.info("🎯 Goal Engine: WIRED to Billion Dollar Tracker")
         except Exception as e:
@@ -424,7 +424,7 @@ class QuantumGoalEngine:
         
         for _ in range(count):
             # Find next milestone from MILESTONES dict
-            from aureon_billion_goal_tracker import MILESTONES
+            from aureon.portfolio.aureon_billion_goal_tracker import MILESTONES
             next_milestones = [amt for amt in sorted(MILESTONES.keys()) if amt > current_balance]
             
             if next_milestones:

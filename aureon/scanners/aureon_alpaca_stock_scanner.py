@@ -14,7 +14,7 @@ Unlike crypto arbitrage, stock scanning focuses on:
 Gary Leckey | January 2026 | STOCK MOMENTUM MODE
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -40,14 +40,14 @@ from collections import deque
 
 # 🚌 Communication Buses
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
     ThoughtBus = None
 
 try:
-    from aureon_chirp_bus import ChirpBus
+    from aureon.core.aureon_chirp_bus import ChirpBus
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False

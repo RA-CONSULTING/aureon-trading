@@ -69,6 +69,7 @@ class SkillProposal:
     created_by: str = "code_architect"
     reasoning: str = ""                 # why the writer proposed this
     target: str = "vm"                  # vm | local | either
+    expression_context: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -86,6 +87,7 @@ class SkillProposal:
             "created_by": self.created_by,
             "reasoning": self.reasoning,
             "target": self.target,
+            "expression_context": self.expression_context,
         }
 
 
@@ -136,6 +138,7 @@ class Skill:
 
     # Tags
     tags: List[str] = field(default_factory=list)
+    expression_context: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def success_rate(self) -> float:
@@ -184,6 +187,7 @@ class Skill:
             "last_error": self.last_error,
             "mean_duration_s": round(self.mean_duration_s, 4),
             "tags": self.tags,
+            "expression_context": self.expression_context,
         }
 
     @classmethod
@@ -220,6 +224,7 @@ class Skill:
         skill.last_error = data.get("last_error")
         skill.mean_duration_s = float(data.get("mean_duration_s", 0.0) or 0.0)
         skill.tags = data.get("tags", []) or []
+        skill.expression_context = data.get("expression_context", {}) or {}
         return skill
 
     @classmethod
@@ -238,4 +243,5 @@ class Skill:
             observation_sources=proposal.observation_sources,
             target=proposal.target,
             status=SkillStatus.PROPOSED,
+            expression_context=proposal.expression_context,
         )

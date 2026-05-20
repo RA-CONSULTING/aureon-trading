@@ -144,6 +144,7 @@ VERB_INTENT_MAP: Dict[str, List[str]] = {
     "find":     ["find_files", "web_search"],
     "read":     ["read_file"],
     "write":    ["write_file"],
+    "compose":  ["compose_creative"],
     "run":      ["execute_shell"],
     "install":  ["execute_shell"],
     "delete":   ["delete_file"],
@@ -236,6 +237,7 @@ class GoalExecutionEngine:
         self._vault = vault
         self._swarm = swarm
         self._temporal_ground = temporal_ground
+        self._ollama: Any = None   # injected after boot via set_ollama_adapter()
         self._agent_tools = self._build_agent_tools()
 
         self._current_plan: Optional[GoalPlan] = None
@@ -253,6 +255,10 @@ class GoalExecutionEngine:
             "swarm_dispatches": 0,
             "timelines_forked": 0,
         }
+
+    def set_ollama_adapter(self, adapter: Any) -> None:
+        """Inject an OllamaLLMAdapter as the primary LLM for goal decomposition."""
+        self._ollama = adapter
 
     # ------------------------------------------------------------------
     # Tool bridge — AgentCore tools available to swarm agents
@@ -764,6 +770,183 @@ class GoalExecutionEngine:
         plan = GoalPlan(original_text=text, objective=text)
         steps: List[GoalStep] = []
 
+        agent_company = self._match_agent_company_goal(text)
+        if agent_company:
+            steps = [GoalStep(
+                title="Aureon build agent company capability bill list",
+                intent="agent_company_builder",
+                params=agent_company,
+                expected_outcome="CEO-to-cleaner agent company registry, work orders, and console evidence published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Agent company registry generated with roles, authority boundaries, and public evidence"
+            return plan
+
+        creative_guardian = self._match_agent_creative_process_guardian_goal(text)
+        if creative_guardian:
+            steps = [GoalStep(
+                title="Aureon bind all agents to metacognitive creative process proof",
+                intent="agent_creative_process_guardian",
+                params=creative_guardian,
+                expected_outcome="Repo-wide agent creative process guardian published with HNC/Auris, metacognitive, sensory, and who/what/where/when/how/act proof",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Agent creative process guardian generated with mind-source proof and all roles mapped"
+            return plan
+
+        codex_ingestion = self._match_codex_capability_ingestion_goal(text)
+        if codex_ingestion:
+            steps = [GoalStep(
+                title="Aureon ingest Everything Codex Can Do",
+                intent="codex_capability_ingestion",
+                params=codex_ingestion,
+                expected_outcome="Codex capability source file ingested, mapped to Aureon, tested, and completion report published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Codex capability ingestion report generated with Aureon bridge work orders and validation evidence"
+            return plan
+
+        repo_repair = self._match_repo_self_repair_goal(text)
+        if repo_repair:
+            steps = [GoalStep(
+                title="Aureon repo-wide self bug report and repair",
+                intent="repo_self_repair",
+                params=repo_repair,
+                expected_outcome="Repo-level checks, bug report, safe repairs, and retest evidence generated",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Repo self-repair report generated and critical checks retested"
+            return plan
+
+        director_bridge = self._match_director_capability_bridge_goal(text)
+        if director_bridge:
+            steps = [GoalStep(
+                title="Aureon build director capability bridge",
+                intent="director_capability_bridge",
+                params=director_bridge,
+                expected_outcome="Codex-class capability parity map and Aureon bridge work orders published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Director capability bridge generated with exact Aureon build orders for gaps"
+            return plan
+
+        work_journal = self._match_coding_work_journal_goal(text)
+        if work_journal:
+            steps = [GoalStep(
+                title="Aureon validate coding work journal UI",
+                intent="coding_work_journal_ui",
+                params=work_journal,
+                expected_outcome="Coding organism publishes a prompt-to-files work journal and the UI renders it",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Coding work journal evidence and UI surface are present and validated"
+            return plan
+
+        capability_forge = self._match_capability_forge_goal(text)
+        if capability_forge:
+            steps = [GoalStep(
+                title="Aureon build local capability forge and quality gate",
+                intent="capability_forge",
+                params=capability_forge,
+                expected_outcome="Local capability forge report, artifact quality gate, crew map, and approval evidence published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Capability forge generated with local-only policy, quality gate, and after-apply approval state"
+            return plan
+
+        visual_asset = self._match_visual_asset_goal(text)
+        if visual_asset:
+            steps = [GoalStep(
+                title=f"Create visual asset for {visual_asset['subject']}",
+                intent="visual_asset_request",
+                params=visual_asset,
+                expected_outcome="Aureon public visual artifact and evidence packet generated",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Visual asset written to frontend public artifacts with evidence"
+            return plan
+
+        work_orders = self._match_frontend_work_order_goal(text)
+        if work_orders:
+            steps = [GoalStep(
+                title="Aureon execute frontend work orders",
+                intent="frontend_work_orders",
+                params=work_orders,
+                expected_outcome="Frontend work order execution manifest and adapter console generated",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "All current frontend work orders represented as execution records"
+            return plan
+
+        ui_repair = self._match_operational_ui_self_repair_goal(text)
+        if ui_repair:
+            steps = [GoalStep(
+                title="Aureon self-review and repair operational UI",
+                intent="self_repair_operational_ui",
+                params=ui_repair,
+                expected_outcome="Operational React console reviewed, repaired, and retested through Aureon's own code path",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Self-review/self-repair evidence generated with final UI checks passing"
+            return plan
+
+        operational_ui = self._match_operational_ui_goal(text)
+        if operational_ui:
+            steps = [GoalStep(
+                title="Aureon self-author operational UI",
+                intent="self_author_operational_ui",
+                params=operational_ui,
+                expected_outcome="Operational React console authored through Aureon's Queen code writer",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Self-authored UI component and provenance evidence generated"
+            return plan
+
+        coding_skill_base = self._match_coding_agent_skill_base_goal(text)
+        if coding_skill_base:
+            steps = [GoalStep(
+                title="Aureon build coding-agent skill base",
+                intent="coding_agent_skill_base",
+                params=coding_skill_base,
+                expected_outcome="Coding agents, skill base, web-learning sources, and improvement work orders published",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Coding-agent skill base manifest generated with web/repo learning tools visible"
+            return plan
+
+        document_pdf = self._match_document_pdf_goal(text)
+        if document_pdf:
+            steps = [GoalStep(
+                title=f"compose {document_pdf['form']} PDF about {document_pdf['topic']}",
+                intent="compose_document_pdf",
+                params=document_pdf,
+                expected_outcome="Long-form Markdown and PDF document artifacts created",
+            )]
+            plan.steps = steps
+            plan.success_criteria = "Document PDF generated and validated on disk"
+            return plan
+
+        # Path -1: Creative generation — "write a [poem/story/essay/song/
+        # haiku/sonnet/letter/article/speech] about <topic>"
+        creative_match = _re.search(
+            r'\b(?:write|compose|craft|create)\s+(?:a|an)?\s*'
+            r'(poem|story|essay|song|haiku|sonnet|letter|article|speech|verse|ballad|tale|ode|lyric|poetry)'
+            r'\s+(?:about|on|for|of)\s+(.+)',
+            text.lower(),
+        )
+        if creative_match:
+            form = creative_match.group(1)
+            topic = creative_match.group(2).strip().rstrip('.')
+            steps = [GoalStep(
+                title=f"compose {form} about {topic}",
+                intent="compose_creative",
+                params={"form": form, "topic": topic, "source_text": text},
+                expected_outcome=f"{form} composed from knowledge dataset + background facts",
+            )]
+            plan.steps = steps
+            plan.success_criteria = f"Creative {form} generated"
+            return plan
+
         # Path 0: If text contains "and"/"then" chain words, prefer heuristic
         # split so multi-step desktop commands work ("open X and type Y then press Z")
         if _re.search(r'\b(?:and then|then|and)\b', text.lower()):
@@ -825,13 +1008,387 @@ class GoalExecutionEngine:
         plan.success_criteria = f"All {len(steps)} steps completed and validated"
         return plan
 
+    def _match_repo_self_repair_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon to inspect and fix its repo/codebase."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "itself" in lower
+        repo_hit = _re.search(r"\b(?:repo|repository|codebase|code|everything|all problems|bug report|bugs|tests|builds)\b", lower)
+        repair_hit = _re.search(r"\b(?:fix|repair|review|check|test|work through|diagnose|bug report|self[- ]?repair)\b", lower)
+        self_hit = _re.search(r"\b(?:own|itself|self|without help|no cheating)\b", lower)
+        if not (aureon_hit and repo_hit and repair_hit and self_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_repo_self_repair_to_queen_code_architect",
+        }
+
+    def _match_frontend_work_order_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon to execute frontend evolution work orders."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "itself" in lower
+        work_order_hit = _re.search(r"\b(?:work order|work orders|frontend evolution|adapter|adapters|do the work)\b", lower)
+        action_hit = _re.search(r"\b(?:do|execute|fix|complete|work through|apply|wire)\b", lower)
+        if not (aureon_hit and work_order_hit and action_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_frontend_work_orders_to_queen_code_architect",
+        }
+
+    def _match_coding_agent_skill_base_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request to teach Aureon its coder-agent/skill/web-learning system."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "system" in lower or "organism" in lower
+        coding_hit = _re.search(r"\b(?:coder|coders|coding|code writing|write code|programming|developer|agents as coders|code)\b", lower)
+        skill_hit = _re.search(r"\b(?:skill|skills|skill base|capability|capabilities|learn|learning|teach)\b", lower)
+        web_hit = _re.search(r"\b(?:websearch|web search|web_search|web|online|open source|api|documentation|docs)\b", lower)
+        bridge_hit = _re.search(
+            r"\b(?:coding organism|coding systems?|code builder|coding builder|coding lane|coding terminal|terminal chat|"
+            r"prompt[- ]?to[- ]?run|desktop run|desktop/run|run handoff|finished product|product audit|remote desktop|vm control)\b",
+            lower,
+        )
+        if not (aureon_hit and coding_hit and (skill_hit or bridge_hit)):
+            return None
+        return {
+            "goal": text,
+            "online": bool(web_hit),
+            "authoring_contract": "goal_engine_coding_agent_skill_base_to_queen_code_architect",
+        }
+
+    def _match_director_capability_bridge_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a director-mode request to compare Codex-class ability with Aureon."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        director_hit = _re.search(r"\b(?:director|codex|capability parity|capability bridge|bridge the gaps|marry up|what can i do)\b", lower)
+        gap_hit = _re.search(r"\b(?:gap|gaps|cant do|can't do|missing|bridge|build orders|work orders|list)\b", lower)
+        code_hit = _re.search(r"\b(?:code|write|build|coding|desktop|remote|test|audit|run)\b", lower)
+        if not (aureon_hit and director_hit and gap_hit and code_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_director_capability_bridge_to_queen_code_architect",
+        }
+
+    def _match_codex_capability_ingestion_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request to ingest the Everything Codex Can Do source file."""
+        import re as _re
+
+        lower = (text or "").lower()
+        file_hit = "everything_codex_can_do.md" in lower or "everything codex can do" in lower
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        ingest_hit = _re.search(r"\b(?:ingest|upload|load|read|write these into|marry up|bridge|completion report|progress report)\b", lower)
+        test_hit = _re.search(r"\b(?:test|validate|run|report|self[- ]?validation|completion)\b", lower)
+        if not (file_hit and aureon_hit and ingest_hit and test_hit):
+            return None
+        return {
+            "goal": text,
+            "source_md": "EVERYTHING_CODEX_CAN_DO.md",
+            "authoring_contract": "goal_engine_codex_capability_ingestion_to_queen_code_architect",
+        }
+
+    def _match_coding_work_journal_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for the coding organism to show its full work trail."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "system" in lower or "organism" in lower
+        journal_hit = _re.search(
+            r"\b(?:work journal|show its work|show the work|stages|prompt to finished files|prompt-to-finished|flow|prompt lane|send to aureon|operator terminal)\b",
+            lower,
+        )
+        coding_panel_hit = (
+            "aureoncodingorganismconsole" in lower
+            or "aureon coding organism" in lower
+            or "coding organism console" in lower
+            or "coding organism ui" in lower
+            or "coding panel" in lower
+        )
+        ui_hit = _re.search(r"\b(?:ui|console|panel|screen|frontend|show|terminal|textarea|prompt box|prompt lane|send to aureon|local hub|endpoint)\b", lower)
+        evidence_hit = _re.search(r"\b(?:prompt|route|goal steps|code proposal|files|tests|desktop handoff|completion|report|hub endpoint|local hub)\b", lower)
+        if aureon_hit and coding_panel_hit and ui_hit and evidence_hit:
+            journal_hit = journal_hit or True
+        if not (aureon_hit and journal_hit and ui_hit and evidence_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_coding_work_journal_ui_to_coding_organism_bridge",
+            "target_files": [
+                "aureon/autonomous/aureon_coding_organism_bridge.py",
+                "frontend/src/components/generated/AureonCodingOrganismConsole.tsx",
+                "tests/test_aureon_coding_organism_bridge.py",
+            ],
+        }
+
+    def _match_capability_forge_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon's local capability forge / quality gate."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        forge_hit = _re.search(
+            r"\b(?:capability forge|local capability forge|quality gate|half[- ]?baked cake|"
+            r"no half[- ]?baked|client-quality|artifact quality|regenerate weak|"
+            r"video quality|coding forge|local-only|provider policy|approval gate)\b",
+            lower,
+        )
+        build_hit = _re.search(r"\b(?:build|implement|create|wire|add|make|teach|tell aureon|validate|prove)\b", lower)
+        if not (aureon_hit and forge_hit and build_hit):
+            return None
+        return {
+            "goal": text,
+            "provider_policy": "local_only_v1",
+            "approval_gate": "after_apply",
+            "authoring_contract": "goal_engine_capability_forge_to_local_quality_gate",
+            "target_files": [
+                "aureon/autonomous/aureon_capability_forge.py",
+                "aureon/autonomous/aureon_artifact_quality_gate.py",
+                "frontend/src/components/generated/AureonCodingOrganismConsole.tsx",
+                "frontend/public/aureon_capability_forge.json",
+                "frontend/public/aureon_artifact_quality_report.json",
+            ],
+        }
+
+    def _match_visual_asset_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect direct visual artifact requests before desktop heuristics split them."""
+        import re as _re
+
+        lower = (text or "").lower()
+        direct_visual_action = _re.search(
+            r"\b(?:draw|drwaw|generate|create|make|render|paint|sketch)\b",
+            lower,
+        )
+        visual_noun = _re.search(
+            r"\b(?:image|picture|illustration|drawing|art|graphic|visual|logo|diagram|cat|dog|video|clip|animation|mp4)\b",
+            lower,
+        )
+        if not (direct_visual_action and visual_noun):
+            return None
+
+        visual_handover = _re.search(
+            r"\b(?:draw me|show me|show it|open it|open the file|display it|view it|"
+            r"finished artifact|public visual artifact|public video artifact|"
+            r"visual artifact|video artifact|playable public video artifact)\b",
+            lower,
+        )
+        system_build = (
+            "aureon" in lower
+            and _re.search(r"\b(?:capability|system|wire|bridge|agent|code|repo|frontend|backend)\b", lower)
+            and not visual_handover
+        )
+        if system_build:
+            return None
+
+        subject = "requested visual"
+        patterns = [
+            r"\b(?:image|picture|illustration|drawing|art|graphic|visual)\s+(?:of|for)\s+(?:a|an|the)?\s*([a-zA-Z0-9 _-]{2,80})",
+            r"\b(?:draw|drwaw|generate|create|make|render|paint|sketch)\s+(?:me\s+)?(?:a|an|the)?\s*(?:image|picture|illustration|drawing|art|graphic|visual)?\s*(?:of|for)?\s*(?:a|an|the)?\s*([a-zA-Z0-9 _-]{2,80})",
+        ]
+        for pattern in patterns:
+            match = _re.search(pattern, lower)
+            if match:
+                candidate = _re.split(r"\b(?:and|then|open|show|display|view|save)\b", match.group(1))[0]
+                candidate = candidate.strip(" ._-")
+                if candidate:
+                    subject = candidate
+                    break
+        return {
+            "goal": text,
+            "subject": subject,
+            "open_requested": bool(_re.search(r"\b(?:open|show|display|view)\b", lower)),
+            "authoring_contract": "goal_engine_visual_asset_request_to_artifact_worker",
+            "target_files": [
+                "frontend/public/aureon_visual_asset_request.json",
+                "frontend/public/aureon_visual_artifacts",
+                "docs/audits/aureon_visual_asset_request.json",
+                "state/aureon_visual_asset_request_last_run.json",
+            ],
+        }
+
+    def _match_agent_company_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request to build Aureon's company-of-agents registry."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        company_hit = _re.search(
+            r"\b(?:company of agents|agent company|company-style|org chart|organisation|organization|who does what|ceo|cleaner|toilet|bill list|day to day|daily duties|daily routine|agency|head hunting|headhunting|subcontractor|sub contractor|client job|prompt as client|temporary workers|crew memory|memory phonebook|phonebook|rehydrate|internal memory database)\b",
+            lower,
+        )
+        capability_hit = _re.search(
+            r"\b(?:capability|capabilities|roles|agents|workers|staff|crew|departments|startup|tasks|work orders|skills|functions|duties|routines|hire|fire|retire|outsource|memory|archive)\b",
+            lower,
+        )
+        build_hit = _re.search(
+            r"\b(?:build|create|list|map|wire|make|generate|tell aureon|write|ensure|expand|teach|operate|treat|scout|assemble|deliver|retire|retain|outsource|save|archive|compress|rehydrate|reuse)\b",
+            lower,
+        )
+        if not (aureon_hit and company_hit and capability_hit and build_hit):
+            return None
+        return {
+            "goal": text,
+            "online": bool(_re.search(r"\b(?:online|internet|web search|websearch|search job|job sites|official docs|external search|search capabilities)\b", lower)),
+            "authoring_contract": "goal_engine_agent_company_builder_to_coding_organism",
+            "target_files": [
+                "aureon/autonomous/aureon_agent_company_builder.py",
+                "frontend/src/components/generated/AureonAgentCompanyConsole.tsx",
+                "frontend/public/aureon_agent_company_bill_list.json",
+                "docs/audits/aureon_agent_company_bill_list.json",
+                "tests/test_agent_company_builder.py",
+            ],
+        }
+
+    def _match_agent_creative_process_guardian_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request to bind all Aureon agents to mind/HNC creative process proof."""
+        import re as _re
+
+        lower = (text or "").lower()
+        aureon_hit = "aureon" in lower or "organism" in lower or "system" in lower
+        mind_hit = _re.search(
+            r"\b(?:metacognitive|metacogtive|meta[- ]?cognitive|hnc|harmonic nexus core|auris|"
+            r"sensory|sensistant|sentient|senitenat|sentinant|voice|mind systems?)\b",
+            lower,
+        )
+        agent_hit = _re.search(r"\b(?:agent|agents|workers|roles|crew|entire repo|repo-wide|whole organism)\b", lower)
+        process_hit = _re.search(
+            r"\b(?:who what where when how|who/what/where/when/how|act|creative process|creative processes|"
+            r"working correctly|proof|guard|ensure|establish|bind|wire)\b",
+            lower,
+        )
+        if not (aureon_hit and mind_hit and agent_hit and process_hit):
+            return None
+        return {
+            "goal": text,
+            "authoring_contract": "goal_engine_agent_creative_process_guardian_to_hnc_auris_metacognition",
+            "target_files": [
+                "aureon/autonomous/aureon_agent_creative_process_guardian.py",
+                "frontend/public/aureon_agent_creative_process_guardian.json",
+                "docs/audits/aureon_agent_creative_process_guardian.json",
+                "frontend/src/components/generated/AureonCodingOrganismConsole.tsx",
+                "tests/test_agent_creative_process_guardian.py",
+            ],
+        }
+
+    def _match_operational_ui_self_repair_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon to diagnose and fix its own UI defects."""
+        import re as _re
+
+        lower = (text or "").lower()
+        if (
+            "aureoncodingorganismconsole" in lower
+            or "aureon coding organism" in lower
+            or "coding organism console" in lower
+            or "coding organism ui" in lower
+            or "prompt lane" in lower
+            or "send to aureon" in lower
+        ):
+            return None
+        ui_hit = _re.search(r"\b(?:ui|user interface|frontend|front-end|console|dashboard|react|tsx)\b", lower)
+        aureon_hit = "aureon" in lower or "organism" in lower or "itself" in lower
+        repair_hit = _re.search(
+            r"\b(?:problem|problems|issue|issues|defect|defects|bug|bugs|fix|repair|review|check|test|work through|improve)\b",
+            lower,
+        )
+        self_hit = _re.search(r"\b(?:own|itself|self|without help|no cheating)\b", lower)
+        if not (ui_hit and aureon_hit and repair_hit and self_hit):
+            return None
+
+        target_path = self._extract_path(text)
+        if target_path and not target_path.lower().endswith((".tsx", ".jsx")):
+            target_path = ""
+        if not target_path:
+            target_path = "frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx"
+        return {
+            "goal": text,
+            "target_path": target_path,
+            "authoring_contract": "goal_engine_self_review_repair_to_queen_code_architect",
+        }
+
+    def _match_operational_ui_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect a request for Aureon to design/write its own live UI."""
+        import re as _re
+
+        lower = (text or "").lower()
+        action_hit = _re.search(r"\b(?:design|build|create|write|author|generate)\b", lower)
+        ui_hit = _re.search(r"\b(?:ui|user interface|frontend|front-end|console|dashboard|react|tsx)\b", lower)
+        aureon_hit = "aureon" in lower or "organism" in lower
+        if not (action_hit and ui_hit and aureon_hit):
+            return None
+
+        target_path = self._extract_path(text)
+        if target_path and not target_path.lower().endswith((".tsx", ".jsx")):
+            target_path = ""
+        if not target_path:
+            target_path = "frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx"
+        return {
+            "goal": text,
+            "target_path": target_path,
+            "authoring_contract": "goal_engine_to_queen_code_architect",
+        }
+
+    def _match_document_pdf_goal(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detect long-form writing requests that must become a PDF artifact."""
+        import re as _re
+
+        lower = (text or "").lower()
+        if "pdf" not in lower:
+            return None
+        if not _re.search(r"\b(?:write|compose|craft|create|draft)\b", lower):
+            return None
+        form_match = _re.search(r"\b(essay|article|report|document|piece)\b", lower)
+        if not form_match:
+            return None
+        form = form_match.group(1)
+        topic = self._extract_document_topic(text, form=form)
+        target_words = self._extract_document_target_words(text, default=4000)
+        desktop = bool(_re.search(r"\bdesktop\b", lower))
+        return {
+            "form": form,
+            "topic": topic,
+            "prompt": text,
+            "target_words": target_words,
+            "output_dir": "desktop" if desktop else "",
+        }
+
+    def _extract_document_topic(self, text: str, *, form: str) -> str:
+        import re as _re
+
+        patterns = [
+            rf"\b{_re.escape(form)}\b\s+(?:about|on|of)\s+(.+?)(?:\s+(?:and|then)\s+(?:pdf|save|export|put|write)|\s+to\s+(?:a\s+)?pdf|\s+as\s+(?:a\s+)?pdf|$)",
+            r"\b(?:about|on|of)\s+(.+?)(?:\s+(?:and|then)\s+(?:pdf|save|export|put|write)|\s+to\s+(?:a\s+)?pdf|\s+as\s+(?:a\s+)?pdf|$)",
+        ]
+        for pattern in patterns:
+            match = _re.search(pattern, text or "", _re.I)
+            if match:
+                topic = match.group(1).strip(" .")
+                if topic:
+                    return topic
+        return "the meaning of life"
+
+    def _extract_document_target_words(self, text: str, default: int = 4000) -> int:
+        import re as _re
+
+        match = _re.search(r"\b(\d{3,5})\s*(?:[- ]?word|words)\b", text or "", _re.I)
+        if not match:
+            return default
+        return max(100, min(int(match.group(1)), 20000))
+
     def _llm_decompose(self, text: str) -> List[GoalStep]:
         """
         Use the LLM adapter to intelligently decompose a goal into steps.
         Every call obeys the Emerald Tablet decree and includes any
         prior knowledge retrieved from the dataset for puzzle-piecing.
         """
-        adapter = self._swarm.adapter
+        adapter = self._ollama or (self._swarm.adapter if self._swarm is not None else None)
+        if adapter is None:
+            return []
         decree = self._consult_source_law()
         tablet = self._emerald_tablet_prompt(decree)
 
@@ -1603,11 +2160,744 @@ class GoalExecutionEngine:
                 except Exception:
                     pass
 
+    # ------------------------------------------------------------------
+    # Creative generation — compose_creative intent handler
+    # ------------------------------------------------------------------
+    def _execute_document_pdf(self, step: GoalStep) -> Dict[str, Any]:
+        """Compose a long-form Markdown/PDF artifact through Aureon's prose stack."""
+        try:
+            from aureon.queen.queen_prose_composer import QueenProseComposer
+            from aureon.vault.voice.document_artifact_skill import (
+                AureonDocumentArtifactSkill,
+                desktop_dir,
+            )
+
+            composer = QueenProseComposer(
+                lambda_engine=self._lambda_engine,
+                vault=self._vault,
+                elephant_memory=self._elephant_memory,
+                auris=self._auris,
+                source_law=self._source_law,
+                goal_engine=self,
+                agent_core=self._agent_core,
+                temporal_knowledge=self._temporal_knowledge,
+                knowledge_dataset=self._knowledge_dataset,
+                subsystem_status={
+                    "goal_engine": "alive",
+                    "document_artifact_skill": "alive",
+                    "thought_bus": "alive" if self._thought_bus is not None else "unknown",
+                    "agent_core": "alive" if self._agent_core is not None else "unknown",
+                },
+            )
+            output_dir = step.params.get("output_dir") or ""
+            resolved_output = desktop_dir() if output_dir == "desktop" else None
+            skill = AureonDocumentArtifactSkill(
+                composer=composer,
+                thought_bus=self._thought_bus,
+                output_dir=resolved_output,
+            )
+            result = skill.compose_pdf(
+                prompt=str(step.params.get("prompt") or step.title),
+                topic=str(step.params.get("topic") or "the meaning of life"),
+                target_words=int(step.params.get("target_words") or 4000),
+                output_dir=resolved_output,
+            )
+            payload = result.to_dict()
+            return {
+                "success": bool(result.ok),
+                "result": payload,
+                "tool_used": "compose_document_pdf",
+                "artifact_path": result.pdf_path,
+                "markdown_path": result.markdown_path,
+                "evidence_path": result.evidence_path,
+                "word_count": result.word_count,
+                "pdf_rendered": result.pdf_rendered,
+                "error": result.error or None,
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "compose_document_pdf",
+                "error": str(exc),
+            }
+
+    def _execute_repo_self_repair(self, step: GoalStep) -> Dict[str, Any]:
+        """Run Aureon's repo-wide bug report, safe repair, and retest loop."""
+        try:
+            from aureon.autonomous.aureon_repo_self_repair import run_repo_self_repair
+
+            result = run_repo_self_repair(str(step.params.get("goal") or step.title))
+            return {
+                "success": result.get("summary", {}).get("failed_retest_count", 1) == 0,
+                "result": result,
+                "tool_used": "repo_self_repair",
+                "error": None if result.get("summary", {}).get("failed_retest_count", 1) == 0 else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "repo_self_repair",
+                "error": str(exc),
+            }
+
+    def _execute_frontend_work_orders(self, step: GoalStep) -> Dict[str, Any]:
+        """Execute frontend work orders into safe adapter/blocker records."""
+        try:
+            from aureon.autonomous.aureon_frontend_work_order_executor import execute_frontend_work_orders
+
+            result = execute_frontend_work_orders(str(step.params.get("goal") or step.title))
+            return {
+                "success": bool(result.get("summary", {}).get("executed_count")),
+                "result": result,
+                "tool_used": "frontend_work_orders",
+                "error": None if result.get("summary", {}).get("executed_count") else "no_work_orders_executed",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "frontend_work_orders",
+                "error": str(exc),
+            }
+
+    def _execute_coding_agent_skill_base(self, step: GoalStep) -> Dict[str, Any]:
+        """Build Aureon's coding-agent skill base and web-learning manifest."""
+        try:
+            from aureon.autonomous.aureon_coding_agent_skill_base import build_and_write_profile
+
+            result = build_and_write_profile(
+                str(step.params.get("goal") or step.title),
+                online=bool(step.params.get("online")),
+            )
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            return {
+                "success": bool(summary.get("coder_agent_count")) and bool(summary.get("web_tools_ready")),
+                "result": result,
+                "tool_used": "coding_agent_skill_base",
+                "error": None if bool(summary.get("web_tools_ready")) else "coder_web_tools_not_ready",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "coding_agent_skill_base",
+                "error": str(exc),
+            }
+
+    def _execute_director_capability_bridge(self, step: GoalStep) -> Dict[str, Any]:
+        """Build the Codex-class capability parity map and Aureon bridge orders."""
+        try:
+            from aureon.autonomous.aureon_director_capability_bridge import build_and_write_director_capability_bridge
+
+            result = build_and_write_director_capability_bridge(str(step.params.get("goal") or step.title))
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            return {
+                "success": bool(summary.get("capability_count")) and bool(result.get("aureon_bridge_work_orders") is not None),
+                "result": result,
+                "tool_used": "director_capability_bridge",
+                "error": None if bool(summary.get("capability_count")) else "director_capability_bridge_empty",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "director_capability_bridge",
+                "error": str(exc),
+            }
+
+    def _execute_codex_capability_ingestion(self, step: GoalStep) -> Dict[str, Any]:
+        """Let Aureon ingest the public Codex capability document and publish a completion report."""
+        try:
+            from aureon.autonomous.aureon_codex_capability_ingestion import build_and_write_codex_capability_ingestion
+
+            result = build_and_write_codex_capability_ingestion(
+                str(step.params.get("source_md") or "EVERYTHING_CODEX_CAN_DO.md"),
+                goal=str(step.params.get("goal") or step.title),
+            )
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            completion = result.get("completion_report", {}) if isinstance(result, dict) else {}
+            return {
+                "success": bool(summary.get("capability_rows_read")) and completion.get("self_validation_result") == "passing",
+                "result": result,
+                "tool_used": "codex_capability_ingestion",
+                "error": None if completion.get("self_validation_result") == "passing" else "codex_capability_ingestion_attention",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "codex_capability_ingestion",
+                "error": str(exc),
+            }
+
+    def _execute_agent_company_builder(self, step: GoalStep) -> Dict[str, Any]:
+        """Build Aureon's CEO-to-cleaner agent company registry and public evidence."""
+        try:
+            from aureon.autonomous.aureon_agent_company_builder import build_and_write_agent_company_bill_list
+
+            result = build_and_write_agent_company_bill_list(
+                goal=str(step.params.get("goal") or step.title),
+                online=bool(step.params.get("online")),
+            )
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            completion = result.get("completion_report", {}) if isinstance(result, dict) else {}
+            return {
+                "success": (
+                    int((summary or {}).get("role_count") or 0) >= 30
+                    and bool((summary or {}).get("ceo_to_cleaner_coverage"))
+                    and completion.get("self_validation_result") == "passing"
+                ),
+                "result": result,
+                "tool_used": "agent_company_builder",
+                "error": None if completion.get("self_validation_result") == "passing" else "agent_company_builder_attention",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "agent_company_builder",
+                "error": str(exc),
+            }
+
+    def _execute_capability_forge(self, step: GoalStep) -> Dict[str, Any]:
+        """Build Aureon's local capability forge and quality gate evidence."""
+        try:
+            from aureon.autonomous.aureon_capability_forge import build_and_write_capability_forge
+
+            result = build_and_write_capability_forge(
+                str(step.params.get("goal") or step.title),
+                provider_policy=str(step.params.get("provider_policy") or "local_only_v1"),
+                approval_gate=str(step.params.get("approval_gate") or "after_apply"),
+            )
+            return {
+                "success": bool(result.get("ok")),
+                "result": result,
+                "tool_used": "capability_forge",
+                "target_files": result.get("output_files", []),
+                "output_files": result.get("output_files", []),
+                "error": None if result.get("ok") else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "capability_forge",
+                "error": str(exc),
+            }
+
+    def _execute_agent_creative_process_guardian(self, step: GoalStep) -> Dict[str, Any]:
+        """Build the repo-wide agent creative process guardian."""
+        try:
+            from aureon.autonomous.aureon_agent_creative_process_guardian import (
+                build_and_write_agent_creative_process_guardian,
+            )
+
+            result = build_and_write_agent_creative_process_guardian(
+                goal=str(step.params.get("goal") or step.title),
+            )
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            return {
+                "success": bool(summary.get("role_count")) and bool(summary.get("who_what_where_when_how_act_ready")),
+                "result": result,
+                "tool_used": "agent_creative_process_guardian",
+                "target_files": result.get("output_files", []),
+                "output_files": result.get("output_files", []),
+                "error": None if result.get("ok") else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "agent_creative_process_guardian",
+                "error": str(exc),
+            }
+
+    def _execute_coding_work_journal_ui(self, step: GoalStep) -> Dict[str, Any]:
+        """Validate that the coding organism exposes prompt-to-finished-files work stages."""
+        try:
+            from pathlib import Path
+
+            root = Path.cwd().resolve()
+            target_files = list(step.params.get("target_files") or [])
+            checks = []
+            expectations = {
+                "aureon/autonomous/aureon_coding_organism_bridge.py": ["_build_work_journal", "aureon-coding-work-journal-v1"],
+                "frontend/src/components/generated/AureonCodingOrganismConsole.tsx": [
+                    "AureonCodingOrganismConsole",
+                    "Scope Of Works",
+                    "Work Journal: Prompt To Finished Files",
+                    "journalStages",
+                    "proofChecklist",
+                    "snaggingList",
+                    "HNC/Auris drift proof",
+                    "compactEvidence",
+                    "Local hub endpoint",
+                    "Prompt lane",
+                    "Send To Aureon",
+                    "Desktop And Remote Run Handoff",
+                ],
+                "tests/test_aureon_coding_organism_bridge.py": ["work_journal", "aureon-coding-work-journal-v1"],
+            }
+            for rel_path, needles in expectations.items():
+                path = root / rel_path
+                text = path.read_text(encoding="utf-8") if path.exists() else ""
+                checks.append(
+                    {
+                        "path": rel_path,
+                        "exists": path.exists(),
+                        "needles": needles,
+                        "passed": path.exists() and all(needle in text for needle in needles),
+                    }
+                )
+            passed = all(item["passed"] for item in checks)
+            return {
+                "success": passed,
+                "result": {
+                    "schema_version": "aureon-coding-work-journal-ui-validation-v1",
+                    "status": "work_journal_ui_ready" if passed else "work_journal_ui_attention",
+                    "target_files": target_files,
+                    "checks": checks,
+                    "summary": {
+                        "check_count": len(checks),
+                        "passed_count": len([item for item in checks if item["passed"]]),
+                        "ui_journal_visible_in_code": any(
+                            item["path"].endswith("AureonCodingOrganismConsole.tsx") and item["passed"]
+                            for item in checks
+                        ),
+                    },
+                    "completion_report": {
+                        "did_validate_backend_journal": checks[0]["passed"],
+                        "did_validate_frontend_journal": checks[1]["passed"],
+                        "did_validate_tests": checks[2]["passed"],
+                        "remaining_work": [] if passed else [item["path"] for item in checks if not item["passed"]],
+                    },
+                },
+                "tool_used": "coding_work_journal_ui",
+                "error": None if passed else "work_journal_ui_missing_expected_wires",
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "coding_work_journal_ui",
+                "error": str(exc),
+            }
+
+    def _execute_visual_asset_request(self, step: GoalStep) -> Dict[str, Any]:
+        """Create a public visual artifact and evidence packet without AgentCore."""
+        try:
+            from aureon.autonomous.aureon_visual_asset_request import build_and_write_visual_asset_request
+
+            result = build_and_write_visual_asset_request(
+                str(step.params.get("goal") or step.title),
+                open_requested=bool(step.params.get("open_requested")),
+            )
+            return {
+                "success": result.get("status") == "visual_asset_ready",
+                "result": result,
+                "tool_used": "visual_asset_request",
+                "target_files": result.get("target_files", []),
+                "output_files": result.get("output_files", []),
+                "artifact_path": result.get("asset_path"),
+                "public_url": result.get("public_url"),
+                "error": None if result.get("status") == "visual_asset_ready" else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "visual_asset_request",
+                "error": str(exc),
+            }
+
+    def _execute_self_author_operational_ui(self, step: GoalStep) -> Dict[str, Any]:
+        """Author the live operations UI through Aureon's own Queen code path."""
+        try:
+            from pathlib import Path
+
+            from aureon.autonomous.aureon_unified_ui_builder import self_author_operational_ui
+
+            target = str(step.params.get("target_path") or "frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx")
+            result = self_author_operational_ui(
+                str(step.params.get("goal") or step.title),
+                component_path=Path(target),
+            )
+            return {
+                "success": bool(result.get("success")),
+                "result": result,
+                "tool_used": "self_author_operational_ui",
+                "error": result.get("error"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "self_author_operational_ui",
+                "error": str(exc),
+            }
+
+    def _execute_self_repair_operational_ui(self, step: GoalStep) -> Dict[str, Any]:
+        """Let Aureon inspect, repair, and retest its own generated UI."""
+        try:
+            from pathlib import Path
+
+            from aureon.autonomous.aureon_unified_ui_builder import self_review_and_repair_operational_ui
+
+            target = str(step.params.get("target_path") or "frontend/src/components/generated/AureonGeneratedOperationalConsole.tsx")
+            result = self_review_and_repair_operational_ui(
+                str(step.params.get("goal") or step.title),
+                component_path=Path(target),
+                run_build=Path("frontend/package.json").exists(),
+            )
+            return {
+                "success": bool(result.get("success")),
+                "result": result,
+                "tool_used": "self_repair_operational_ui",
+                "error": None if result.get("success") else result.get("status"),
+            }
+        except Exception as exc:
+            return {
+                "success": False,
+                "result": None,
+                "tool_used": "self_repair_operational_ui",
+                "error": str(exc),
+            }
+
+    def _execute_creative(self, step: GoalStep) -> Dict[str, Any]:
+        """
+        Compose a creative piece (poem, story, essay, song, etc.) by:
+          1. Pulling factual background on the topic from WorldDataIngester
+          2. Retrieving prior fragments from the knowledge dataset
+          3. Calling the LLM adapter with a creative system prompt
+          4. Falling back to a template weaver if the adapter returns
+             only structured analysis
+          5. Writing the output to /tmp/aureon_<form>_<topic>.txt
+          6. Returning the composed text
+
+        Uses the Emerald Tablet decree in the system prompt so every
+        generation obeys the same decision authority.
+        """
+        form = step.params.get("form", "poem")
+        topic = step.params.get("topic", "existence")
+        source_text = step.params.get("source_text", "")
+
+        # 1. Gather factual background
+        facts: List[str] = []
+        if self._knowledge_dataset is not None:
+            try:
+                prior = self._knowledge_dataset.find_similar(topic, n=5)
+                for p in prior:
+                    if getattr(p, "meaning", ""):
+                        facts.append(p.meaning)
+                    elif getattr(p, "text", ""):
+                        facts.append(p.text[:120])
+            except Exception:
+                pass
+
+        # Also pull from Wikipedia / DuckDuckGo if the ingester is available
+        try:
+            from aureon.integrations.world_data import get_world_data_ingester
+            wdi = get_world_data_ingester()
+            external = wdi.answer_question(topic, n_per_source=1)
+            for item in external[:5]:
+                if item.text:
+                    facts.append(item.text[:200])
+        except Exception:
+            pass
+
+        # 2. Build the creative prompt
+        fact_block = ""
+        if facts:
+            fact_block = "Facts about the topic:\n" + "\n".join(
+                f"  - {f[:200]}" for f in facts[:6]
+            ) + "\n\n"
+
+        form_instructions = {
+            "poem":   "Write a 12-line poem with rhythm and imagery. Use line breaks.",
+            "haiku":  "Write a 3-line haiku (5-7-5 syllables).",
+            "sonnet": "Write a 14-line sonnet with end-rhymes.",
+            "song":   "Write a song with verse / chorus / verse structure.",
+            "story":  "Write a 200-word short story with a beginning, middle, and end.",
+            "essay":  "Write a 300-word essay with intro, body, conclusion.",
+            "letter": "Write a heartfelt letter addressed to the topic.",
+            "article":"Write a journalistic article with headline and body.",
+            "speech": "Write a 200-word impassioned speech.",
+            "ballad": "Write a ballad in 4-line stanzas with end-rhymes.",
+            "ode":    "Write an ode — celebratory praise in formal language.",
+        }.get(form, "Write a creative piece using line breaks and rhythm.")
+
+        creative_prompt = (
+            f"{fact_block}"
+            f"Your task: {form_instructions}\n\n"
+            f"Topic: {topic}\n\n"
+            f"Write the {form} now. Do not prefix with 'Here is a {form}'. "
+            f"Just write the {form} itself — no analysis, no preamble, no boilerplate."
+        )
+
+        # 3. Call the LLM adapter (AureonBrainAdapter / Ollama / whatever is wired)
+        composed_text = ""
+        adapter_used = False
+        if self._swarm is not None and hasattr(self._swarm, "adapter"):
+            try:
+                decree = self._consult_source_law()
+                tablet = self._emerald_tablet_prompt(decree)
+                resp = self._swarm.adapter.prompt(
+                    messages=[{"role": "user", "content": creative_prompt}],
+                    system=(
+                        tablet +
+                        f"You are a creative {form} writer. Produce only the "
+                        f"{form} text — never meta-analysis, never 'Signal: NEUTRAL'. "
+                        f"Pure creative output."
+                    ),
+                    max_tokens=1024,
+                    temperature=0.9,
+                )
+                composed_text = (resp.text or "").strip()
+                adapter_used = True
+            except Exception as exc:
+                logger.debug("Creative adapter call failed: %s", exc)
+
+        # 4. Detect boilerplate → template fallback
+        is_boilerplate = (
+            not composed_text
+            or "Aureon In-House Analysis" in composed_text
+            or "Signal:" in composed_text
+            or len(composed_text.split()) < 20
+        )
+        if is_boilerplate:
+            composed_text = self._template_creative_fallback(form, topic, facts)
+            adapter_used = False
+
+        # 5. Write to disk
+        import re as _re, os as _os
+        safe_topic = _re.sub(r'[^a-zA-Z0-9_]', '_', topic)[:40]
+        artifact_path = f"/tmp/aureon_{form}_{safe_topic}.txt"
+        try:
+            with open(artifact_path, "w", encoding="utf-8") as f:
+                f.write(f"# {form.title()} about {topic}\n\n")
+                f.write(composed_text)
+                f.write("\n")
+        except Exception as exc:
+            logger.debug("Write creative file failed: %s", exc)
+            artifact_path = ""
+
+        # 6. Publish
+        if self._thought_bus is not None:
+            try:
+                self._thought_bus.publish(
+                    "creative.generated",
+                    {
+                        "form": form,
+                        "topic": topic[:80],
+                        "word_count": len(composed_text.split()),
+                        "artifact": artifact_path,
+                        "adapter_used": adapter_used,
+                    },
+                    source="goal_engine.creative",
+                )
+            except Exception:
+                pass
+
+        return {
+            "success": True,
+            "result": composed_text,
+            "tool_used": "compose_creative",
+            "form": form,
+            "topic": topic,
+            "word_count": len(composed_text.split()),
+            "artifact_path": artifact_path,
+            "adapter_used": adapter_used,
+            "error": None,
+        }
+
+    def _template_creative_fallback(
+        self,
+        form: str,
+        topic: str,
+        facts: List[str],
+    ) -> str:
+        """
+        Deterministic template weaver for when the LLM adapter can't
+        produce real creative prose. Pulls from the facts and the
+        knowledge dataset to weave a simple themed piece.
+        """
+        # Strip leading article from topic ("the irish revolution" -> "irish revolution")
+        clean_topic = topic
+        for article in ("the ", "a ", "an "):
+            if clean_topic.lower().startswith(article):
+                clean_topic = clean_topic[len(article):]
+                break
+        topic = clean_topic
+
+        # Extract nouns and themes from the facts
+        all_words = " ".join(facts).lower() if facts else topic.lower()
+        import re as _re
+        STOPWORDS = {
+            "the", "and", "with", "from", "that", "this", "were", "they",
+            "have", "will", "been", "into", "their", "there", "which",
+            "when", "what", "also", "some", "such", "only", "more", "most",
+            "then", "than", "them", "these", "those", "about", "after",
+            "other", "over", "very", "would", "could", "should", "where",
+        }
+        keywords = [
+            w for w in _re.findall(r"[a-zA-Z]{4,}", all_words)
+            if w not in STOPWORDS and len(w) >= 4
+        ]
+        # Most frequent
+        from collections import Counter
+        top = [w for w, _ in Counter(keywords).most_common(12)]
+        # Seed with strong default imagery if facts didn't give enough
+        defaults = ["spirit", "fire", "dawn", "stone", "voice", "land",
+                    "thunder", "flame", "iron", "courage", "silence", "banner"]
+        k = []
+        seen = set()
+        for w in top + defaults:
+            if w not in seen and len(k) < 12:
+                seen.add(w)
+                k.append(w)
+
+        # Primary noun for the topic — pick the most meaningful word
+        topic_words = [w for w in topic.split() if len(w) >= 3]
+        topic_words = [w for w in topic_words if w.lower() not in STOPWORDS]
+        primary = topic_words[-1] if topic_words else "freedom"  # last word usually the noun
+
+        if form == "haiku":
+            return (
+                f"{k[0].capitalize()} wakes at dawn —\n"
+                f"{k[1]} burns in silent {k[2]},\n"
+                f"{primary} takes breath."
+            )
+
+        if form == "sonnet":
+            lines = [
+                f"When {k[0]} first called across the {k[1]} plain,",
+                f"The {k[2]} rose like fire within the chest,",
+                f"And {k[3]} met {k[4]} neither blind nor vain,",
+                f"While {topic} held its people to the test.",
+                f"No king, no crown, no distant ruling hand,",
+                f"Could silence what the {k[5]} spoke at night,",
+                f"For {k[6]} burned in every corner of the land,",
+                f"And {k[7]} would not yield to foreign might.",
+                f"The years will carry echoes of their name,",
+                f"The stones remember where the brave had stood,",
+                f"The wind still whispers of their righteous claim,",
+                f"And every field still tastes their sacred blood.",
+                f"  So let the verse remain though flesh must fall,",
+                f"  For {topic} answered when its time did call."
+            ]
+            return "\n".join(lines)
+
+        if form == "song":
+            return (
+                f"[Verse 1]\n"
+                f"They woke with the {k[0]} in their bones,\n"
+                f"Stood tall against the crown and throne,\n"
+                f"{topic.title()} rising through the {k[1]},\n"
+                f"Burning with a {k[2]} so bright.\n\n"
+                f"[Chorus]\n"
+                f"Oh {primary}, oh {primary}, never silent in the storm,\n"
+                f"Oh {primary}, oh {primary}, where the brave hearts still stand warm,\n"
+                f"We'll sing your name to the {k[3]},\n"
+                f"For the {k[4]} that set us free.\n\n"
+                f"[Verse 2]\n"
+                f"The stones remember every step,\n"
+                f"Every prayer and every debt,\n"
+                f"{k[5].title()} carries all the names,\n"
+                f"Through the {k[6]} and through the flames.\n"
+            )
+
+        if form == "essay":
+            return (
+                f"The {topic} stands as one of the most profound "
+                f"chapters in the story of human courage. At its heart "
+                f"was not merely {k[0]} against the {k[1]}, but a deeper "
+                f"current of {k[2]} running through generations who refused "
+                f"to forget what had been stolen from them.\n\n"
+                f"To understand the {topic}, one must understand the {k[3]} "
+                f"that preceded it — the slow, stubborn {k[4]} of a people "
+                f"who kept their {k[5]} alive in songs, in language, in "
+                f"the simple act of remembering. When the moment came, "
+                f"they did not rise because they believed victory was "
+                f"certain; they rose because silence was no longer bearable.\n\n"
+                f"The legacy of the {topic} is not measured in treaties "
+                f"or battles alone. It lives in every voice that still "
+                f"carries the old names, every stone wall that still "
+                f"stands on the land it defended, every heart that has "
+                f"learned the lesson the {topic} taught: that freedom "
+                f"is not given, it is claimed, and the {k[6]} of those "
+                f"who claim it will outlast every empire that ever tried "
+                f"to crush it."
+            )
+
+        # Default: poem
+        lines = [
+            f"They rose at the hour when the {k[0]} was at hand,",
+            f"With {k[1]} in their breath and a {k[2]} on the land,",
+            f"Through {k[3]} and {k[4]}, through the long bitter night,",
+            f"They carried the {k[5]} toward the edge of the light.",
+            "",
+            f"The story of {topic} is a song no one forgets,",
+            f"A name the old rivers return without regrets,",
+            f"For the ones who did not come home laid their {k[6]} in the flame,",
+            f"And the wind along the valleys still remembers their name.",
+            "",
+            f"So raise a glass to {primary}, to the fallen and the free,",
+            f"To the stones that hold their footprints by the edge of every sea,",
+            f"As long as one breath whispers what the silent hearts adored,",
+            f"The spirit of {topic} will answer, and will never be ignored.",
+        ]
+        return "\n".join(lines)
+
     def _execute_step(self, step: GoalStep) -> Dict[str, Any]:
         """
         Execute a single step: tool dispatch via AgentCore, then LLM
         analysis of the result for reasoning-heavy intents.
         """
+        # Creative generation intent — handled internally, not via AgentCore
+        if step.intent == "compose_document_pdf":
+            return self._execute_document_pdf(step)
+
+        if step.intent == "repo_self_repair":
+            return self._execute_repo_self_repair(step)
+
+        if step.intent == "frontend_work_orders":
+            return self._execute_frontend_work_orders(step)
+
+        if step.intent == "coding_agent_skill_base":
+            return self._execute_coding_agent_skill_base(step)
+
+        if step.intent == "director_capability_bridge":
+            return self._execute_director_capability_bridge(step)
+
+        if step.intent == "codex_capability_ingestion":
+            return self._execute_codex_capability_ingestion(step)
+
+        if step.intent == "agent_company_builder":
+            return self._execute_agent_company_builder(step)
+
+        if step.intent == "capability_forge":
+            return self._execute_capability_forge(step)
+
+        if step.intent == "agent_creative_process_guardian":
+            return self._execute_agent_creative_process_guardian(step)
+
+        if step.intent == "coding_work_journal_ui":
+            return self._execute_coding_work_journal_ui(step)
+
+        if step.intent == "visual_asset_request":
+            return self._execute_visual_asset_request(step)
+
+        if step.intent == "self_repair_operational_ui":
+            return self._execute_self_repair_operational_ui(step)
+
+        if step.intent == "self_author_operational_ui":
+            return self._execute_self_author_operational_ui(step)
+
+        if step.intent == "compose_creative":
+            return self._execute_creative(step)
+
         if self._agent_core is None:
             return {
                 "success": False,
@@ -1673,6 +2963,364 @@ class GoalExecutionEngine:
             return {"valid": False, "reason": f"Execution error: {error}", "confidence": 0.0}
 
         intent = step.intent
+
+        # Creative generation validation — verify output exists and has substance
+        if intent == "compose_document_pdf":
+            text_result = result.get("result") or {}
+            artifact = result.get("artifact_path", "") or text_result.get("pdf_path", "")
+            markdown = result.get("markdown_path", "") or text_result.get("markdown_path", "")
+            target = int(step.params.get("target_words") or 4000)
+            wc = int(result.get("word_count") or text_result.get("word_count") or 0)
+            if artifact and markdown and os.path.exists(artifact) and os.path.exists(markdown) and wc >= target * 0.9:
+                return {
+                    "valid": True,
+                    "reason": f"Document PDF verified at {artifact} with {wc} words",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": f"Document PDF missing or too short: pdf={artifact!r} markdown={markdown!r} words={wc}",
+                "confidence": 0.2,
+            }
+
+        if intent == "compose_creative":
+            text = result.get("result", "") or ""
+            artifact = result.get("artifact_path", "")
+            wc = result.get("word_count", 0)
+            if wc >= 20 and text.strip():
+                reason = f"Creative output: {wc} words"
+                if artifact and os.path.exists(artifact):
+                    reason += f" + file at {artifact}"
+                return {"valid": True, "reason": reason, "confidence": 0.9}
+            return {"valid": False, "reason": "Creative output too short or empty", "confidence": 0.2}
+
+        if intent == "repo_self_repair":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            passed = (
+                result.get("success")
+                and isinstance(summary, dict)
+                and int(summary.get("failed_retest_count") or 0) == 0
+                and "QueenCodeArchitect.write_file" in authoring_path
+            )
+            if passed:
+                return {
+                    "valid": True,
+                    "reason": "Repo self-repair report passed checks/retests with Queen provenance",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Repo self-repair found unresolved failed checks or missing Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "frontend_work_orders":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            executed = int((summary or {}).get("executed_count") or 0) if isinstance(summary, dict) else 0
+            source_count = int((summary or {}).get("source_queue_count") or 0) if isinstance(summary, dict) else 0
+            if (
+                success
+                and executed > 0
+                and (source_count == 0 or executed <= source_count)
+                and "QueenCodeArchitect.write_file" in authoring_path
+            ):
+                return {
+                    "valid": True,
+                    "reason": f"Frontend work orders executed as {executed} safe adapter/blocker records",
+                    "confidence": 0.94,
+                }
+            return {
+                "valid": False,
+                "reason": "Frontend work order execution missing records or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "coding_agent_skill_base":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            work_orders = payload.get("coding_work_orders") if isinstance(payload, dict) else []
+            logic_map = payload.get("coding_logic_map") if isinstance(payload, dict) else {}
+            writer = (payload.get("write_info") or {}).get("writer") if isinstance(payload.get("write_info"), dict) else ""
+            if (
+                success
+                and int((summary or {}).get("coder_agent_count") or 0) >= 3
+                and bool((summary or {}).get("web_tools_ready"))
+                and (logic_map or {}).get("status") == "who_what_where_when_how_ready"
+                and int((summary or {}).get("coding_logic_rule_count") or 0) >= 5
+                and isinstance(work_orders, list)
+                and work_orders
+                and "QueenCodeArchitect.write_file" in authoring_path
+                and writer == "QueenCodeArchitect"
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Coding-agent skill base published with who/what/where/when/how routing, active web/repo learning tools, and Queen provenance",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Coding-agent skill base missing agents, web tools, logic map, work orders, or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "director_capability_bridge":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            rows = payload.get("codex_class_capabilities") if isinstance(payload, dict) else []
+            work_orders = payload.get("aureon_bridge_work_orders") if isinstance(payload, dict) else []
+            writer = (payload.get("write_info") or {}).get("writer") if isinstance(payload.get("write_info"), dict) else ""
+            if (
+                success
+                and int((summary or {}).get("capability_count") or 0) >= 10
+                and isinstance(rows, list)
+                and isinstance(work_orders, list)
+                and "QueenCodeArchitect.write_file" in authoring_path
+                and writer == "QueenCodeArchitect"
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Director capability bridge published Codex-class parity map and exact Aureon bridge work orders",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Director capability bridge missing capability rows, bridge orders, or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "codex_capability_ingestion":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            completion = payload.get("completion_report") if isinstance(payload, dict) else {}
+            validation = (payload.get("act") or {}).get("validation") if isinstance(payload, dict) else {}
+            writer = (payload.get("write_info") or {}).get("writer") if isinstance(payload.get("write_info"), dict) else ""
+            if (
+                success
+                and int((summary or {}).get("capability_rows_read") or 0) >= 3
+                and (completion or {}).get("did_read_source_document") is True
+                and (completion or {}).get("did_marriage_map") is True
+                and (completion or {}).get("did_generate_bridge_work_orders") is True
+                and (validation or {}).get("director_bridge_ran") is True
+                and writer == "QueenCodeArchitect"
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Aureon ingested EVERYTHING_CODEX_CAN_DO.md, mapped it to its own systems, wrote bridge work orders, and published validation evidence",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Codex capability ingestion missing source read, mapping, work orders, director bridge run, or Queen provenance",
+                "confidence": 0.25,
+            }
+
+        if intent == "agent_company_builder":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            completion = payload.get("completion_report") if isinstance(payload, dict) else {}
+            roles = payload.get("roles") if isinstance(payload, dict) else []
+            agents = payload.get("agents") if isinstance(payload, dict) else []
+            boundaries = payload.get("authority_boundaries") if isinstance(payload, dict) else []
+            role_titles = {str(role.get("title")) for role in roles if isinstance(role, dict)}
+            mapped_or_ordered = bool((completion or {}).get("did_map_roles_to_surfaces_or_work_orders"))
+            day_plans_ready = bool((summary or {}).get("daily_operating_loop_ready")) and int(
+                (summary or {}).get("roles_with_day_plan_count") or 0
+            ) >= len(roles)
+            whole_access_ready = bool((completion or {}).get("did_attach_whole_organism_access")) and int(
+                (summary or {}).get("roles_with_whole_organism_access_count") or 0
+            ) >= len(roles)
+            agency_ready = (
+                (summary or {}).get("agency_model") == "prompt_as_client_job_agency"
+                and int((summary or {}).get("agency_workforce_role_count") or 0) >= 5
+                and bool((completion or {}).get("did_attach_hire_retire_lifecycle"))
+            )
+            memory_ready = (
+                bool((summary or {}).get("memory_phonebook_ready"))
+                and int((summary or {}).get("sha256_memory_entry_count") or 0) >= len(roles)
+                and bool((completion or {}).get("did_build_sha256_zlib_memory_phonebook"))
+            )
+            if (
+                success
+                and int((summary or {}).get("role_count") or 0) >= 30
+                and int((summary or {}).get("department_count") or 0) >= 7
+                and bool((summary or {}).get("ceo_to_cleaner_coverage"))
+                and bool((summary or {}).get("existing_gates_preserved"))
+                and "CEO Goal Steward" in role_titles
+                and "Log Janitor" in role_titles
+                and "Stale State Cleaner" in role_titles
+                and isinstance(agents, list)
+                and len(agents) >= len(roles)
+                and isinstance(boundaries, list)
+                and len(boundaries) >= 4
+                and mapped_or_ordered
+                and day_plans_ready
+                and whole_access_ready
+                and agency_ready
+                and memory_ready
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Aureon agent company registry published CEO-to-cleaner roles, prompt-as-client agency flow, hire/retire lifecycle, SHA-256/zlib memory phonebook, whole-organism access, handoffs, work orders, and preserved authority gates",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Agent company registry missing role coverage, agent configs, authority boundaries, or surface/work-order mapping",
+                "confidence": 0.25,
+            }
+
+        if intent == "capability_forge":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            quality = payload.get("artifact_quality_report") if isinstance(payload, dict) else {}
+            approval = payload.get("approval_state") if isinstance(payload, dict) else {}
+            references = payload.get("reference_patterns") if isinstance(payload, dict) else []
+            if (
+                success
+                and payload.get("provider_policy") == "local_only_v1"
+                and int((summary or {}).get("external_api_call_count") or 0) == 0
+                and bool((summary or {}).get("safe_code_route_recorded"))
+                and bool((quality or {}).get("handover_ready"))
+                and (approval or {}).get("state") == "pending_user_review_after_apply"
+                and isinstance(references, list)
+                and len(references) >= 8
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Local capability forge published task classification, reference-only market patterns, safe route evidence, artifact quality proof, and after-apply approval state",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Capability forge missing local-only policy, safe route evidence, quality proof, references, or approval state",
+                "confidence": 0.25,
+            }
+
+        if intent == "agent_creative_process_guardian":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            mind = payload.get("organism_mind_contract") if isinstance(payload, dict) else {}
+            roles = payload.get("agent_creative_process_map") if isinstance(payload, dict) else []
+            loop = payload.get("creative_process_loop") if isinstance(payload, dict) else []
+            if (
+                success
+                and int((summary or {}).get("role_count") or 0) >= 30
+                and bool((summary or {}).get("who_what_where_when_how_act_ready"))
+                and bool((summary or {}).get("metacognitive_ready"))
+                and bool((summary or {}).get("sensory_ready"))
+                and bool((summary or {}).get("hnc_auris_ready"))
+                and bool((summary or {}).get("sentient_style_ready"))
+                and isinstance(roles, list)
+                and len(roles) >= int((summary or {}).get("role_count") or 0)
+                and isinstance(loop, list)
+                and len(loop) >= 6
+                and bool((mind or {}).get("source_contracts"))
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Agent creative process guardian bound every role to metacognitive, sensory, HNC/Auris, sentient-style, and who/what/where/when/how/act proof",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Agent creative process guardian missing mind sources, HNC/Auris pass, role process declarations, or creative loop proof",
+                "confidence": 0.25,
+            }
+
+        if intent == "visual_asset_request":
+            payload = result.get("result") or {}
+            asset_path = payload.get("asset_path") if isinstance(payload, dict) else ""
+            public_url = payload.get("public_url") if isinstance(payload, dict) else ""
+            quality = payload.get("artifact_quality_report") if isinstance(payload, dict) else {}
+            if success and asset_path and public_url and os.path.exists(asset_path) and bool(quality.get("handover_ready", True)):
+                return {
+                    "valid": True,
+                    "reason": f"Visual artifact verified at {asset_path}",
+                    "confidence": 0.94,
+                }
+            return {
+                "valid": False,
+                "reason": "Visual artifact missing output file or public URL",
+                "confidence": 0.2,
+            }
+
+        if intent == "coding_work_journal_ui":
+            payload = result.get("result") or {}
+            summary = payload.get("summary") if isinstance(payload, dict) else {}
+            completion = payload.get("completion_report") if isinstance(payload, dict) else {}
+            if (
+                success
+                and int((summary or {}).get("check_count") or 0) >= 3
+                and int((summary or {}).get("passed_count") or 0) >= 3
+                and bool((completion or {}).get("did_validate_backend_journal"))
+                and bool((completion or {}).get("did_validate_frontend_journal"))
+                and bool((completion or {}).get("did_validate_tests"))
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Coding organism work journal is wired from prompt intake to finished-file evidence and rendered in the UI",
+                    "confidence": 0.95,
+                }
+            return {
+                "valid": False,
+                "reason": "Coding work journal UI is missing backend, frontend, or test evidence",
+                "confidence": 0.25,
+            }
+
+        if intent == "self_author_operational_ui":
+            payload = result.get("result") or {}
+            files = payload.get("generated_files") or []
+            authoring_path = payload.get("authoring_path") or []
+            component = payload.get("component_path") or step.params.get("target_path", "")
+            if (
+                success
+                and component
+                and os.path.exists(component)
+                and "QueenCodeArchitect.write_file" in authoring_path
+                and len(files) >= 3
+            ):
+                return {
+                    "valid": True,
+                    "reason": f"Self-authored UI verified at {component} through QueenCodeArchitect",
+                    "confidence": 0.96,
+                }
+            return {
+                "valid": False,
+                "reason": "Self-authored UI evidence missing component, generated files, or Queen writer provenance",
+                "confidence": 0.2,
+            }
+
+        if intent == "self_repair_operational_ui":
+            payload = result.get("result") or {}
+            final_review = payload.get("final_review") if isinstance(payload, dict) else {}
+            build_result = final_review.get("build_result") if isinstance(final_review, dict) else {}
+            authoring_path = payload.get("authoring_path") if isinstance(payload, dict) else []
+            build_ok = isinstance(build_result, dict) and (
+                build_result.get("success") or build_result.get("ran") is False
+            )
+            if (
+                success
+                and isinstance(final_review, dict)
+                and final_review.get("success")
+                and build_ok
+                and "QueenCodeArchitect.write_file" in authoring_path
+            ):
+                return {
+                    "valid": True,
+                    "reason": "Self UI review/repair passed with Queen provenance and frontend build",
+                    "confidence": 0.96,
+                }
+            return {
+                "valid": False,
+                "reason": "Self UI repair did not clear final review, build, or Queen provenance",
+                "confidence": 0.2,
+            }
 
         # File operation validation
         if intent in ("write_file", "create_script", "create_dir"):

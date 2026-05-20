@@ -48,7 +48,7 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
         let instructions = '';
         
         switch (err.code) {
-          case err.PERMISSION_DENIED:
+          case err.PERMISSION_DENIED: {
             errorMessage = 'Location access denied';
             const userAgent = navigator.userAgent.toLowerCase();
             if (userAgent.includes('chrome')) {
@@ -60,6 +60,7 @@ export const StargateStatus = ({ onLocationUpdate, celestialBoost = 0 }: Stargat
             }
             setPermissionState('denied');
             break;
+          }
           case err.POSITION_UNAVAILABLE:
             errorMessage = 'Location information unavailable - GPS may be disabled';
             break;

@@ -19,7 +19,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import math
@@ -140,14 +140,14 @@ class HarmonicSeedLoader:
         """Lazy-load exchange clients"""
         if not self._exchange_clients:
             try:
-                from kraken_client import KrakenClient, get_kraken_client
+                from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
                 self._exchange_clients['kraken'] = get_kraken_client()
                 logger.info("✅ Kraken client initialized")
             except Exception as e:
                 logger.warning(f"Could not init Kraken: {e}")
             
             try:
-                from binance_client import BinanceClient, get_binance_client
+                from aureon.exchanges.binance_client import BinanceClient, get_binance_client
                 self._exchange_clients['binance'] = BinanceClient()
                 logger.info("✅ Binance client initialized")
             except Exception as e:

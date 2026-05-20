@@ -16,7 +16,7 @@ FULL ECOSYSTEM INTEGRATION:
 THE PAST PREDICTS. THE PRESENT EXECUTES. THE FUTURE PROFITS.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -29,7 +29,7 @@ from dataclasses import dataclass, asdict
 
 # 🧠 THOUGHT BUS - UNIFIED CONSCIOUSNESS
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS = ThoughtBus(persist_path="historical_thoughts.jsonl")
     THOUGHT_BUS_AVAILABLE = True
     print("✅ Thought Bus: CONNECTED (unified consciousness)")
@@ -40,7 +40,7 @@ except ImportError:
 
 # 🍄 MYCELIUM NEURAL NETWORK
 try:
-    from aureon_mycelium import (
+    from aureon.core.aureon_mycelium import (
         MyceliumNeuralNetwork,
         Agent,
         Synapse,
@@ -54,7 +54,7 @@ except ImportError:
 
 # 🛡️ IMMUNE SYSTEM - SELF-HEALING
 try:
-    from aureon_immune_system import AureonImmuneSystem
+    from aureon.core.aureon_immune_system import AureonImmuneSystem
     IMMUNE_SYSTEM_AVAILABLE = True
     print("✅ Immune System: CONNECTED (self-healing)")
 except ImportError:
@@ -64,7 +64,7 @@ except ImportError:
 
 # 📊 MEMORY CORE - PERSISTENT LEARNING
 try:
-    from aureon_memory_core import memory as spiral_memory
+    from aureon.core.aureon_memory_core import memory as spiral_memory
     MEMORY_CORE_AVAILABLE = True
     print("✅ Memory Core: CONNECTED (persistent learning)")
 except ImportError:
@@ -74,13 +74,13 @@ except ImportError:
 
 # 💎 PROBABILITY SYSTEMS
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         ProbabilityUltimateIntelligence,
         get_ultimate_intelligence,
         ultimate_predict,
         record_ultimate_outcome
     )
-    from probability_intelligence_matrix import ProbabilityIntelligenceMatrix
+    from aureon.strategies.probability_intelligence_matrix import ProbabilityIntelligenceMatrix
     PROBABILITY_AVAILABLE = True
     print("✅ Probability Systems: CONNECTED (95% accuracy)")
 except ImportError as e:
@@ -89,9 +89,9 @@ except ImportError as e:
 
 # 📡 EXCHANGE CLIENTS
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     from aureon.exchanges.alpaca_client import AlpacaClient
-    from binance_client import BinanceClient
+    from aureon.exchanges.binance_client import BinanceClient
     EXCHANGES_AVAILABLE = True
     print("✅ Exchange Clients: AVAILABLE")
 except ImportError as e:
@@ -100,7 +100,7 @@ except ImportError as e:
 
 # 🏹 AUTO SCOUT - TARGET SCANNER
 try:
-    from auto_scout import run_scout_patrol
+    from aureon.scanners.auto_scout import run_scout_patrol
     AUTO_SCOUT_AVAILABLE = True
     print("✅ Auto Scout: AVAILABLE (target scanning)")
 except ImportError:
@@ -109,7 +109,7 @@ except ImportError:
 
 # 🎯 AUTO SNIPER - EXECUTION SYSTEM
 try:
-    from auto_sniper import check_and_kill
+    from aureon.scanners.auto_sniper import check_and_kill
     AUTO_SNIPER_AVAILABLE = True
     print("✅ Auto Sniper: AVAILABLE (auto execution)")
 except ImportError:
@@ -118,13 +118,13 @@ except ImportError:
 
 # 🎯 ETA SYSTEMS - TIME TO TARGET
 try:
-    from eta_verification_system import (
+    from aureon.analytics.eta_verification_system import (
         get_eta_verifier,
         register_eta,
         verify_kill as eta_verify_kill,
         get_corrected_eta
     )
-    from improved_eta_calculator import ImprovedETACalculator
+    from aureon.analytics.improved_eta_calculator import ImprovedETACalculator
     ETA_AVAILABLE = True
     print("✅ ETA Systems: AVAILABLE (time tracking)")
 except ImportError:
@@ -398,7 +398,7 @@ class AureonHistoricalLive:
         """Initialize exchange connections"""
         # Try unified client first
         try:
-            from unified_exchange_client import MultiExchangeClient
+            from aureon.trading.unified_exchange_client import MultiExchangeClient
             self.unified_client = MultiExchangeClient()
             print("✅ Unified Exchange Client: CONNECTED (all exchanges)")
             return
@@ -553,7 +553,7 @@ class AureonHistoricalLive:
         if self.scout_active and self.unified_client:
             try:
                 # Scout system provides pre-analyzed targets
-                from aureon_market_pulse import MarketPulse
+                from aureon.intelligence.aureon_market_pulse import MarketPulse
                 pulse = MarketPulse(self.unified_client)
                 market_analysis = pulse.analyze_market()
                 
@@ -616,9 +616,25 @@ class AureonHistoricalLive:
         return markets
     
     async def get_kraken_markets(self) -> List[Dict]:
-        """Get Kraken market data"""
-        # TODO: Implement real Kraken API calls
-        # For now, return mock data structure
+        """Get Kraken market data.
+
+        ⚠ STUB: returns hardcoded mock data with price=42000 and synthetic
+        momentum 0.12. Gated behind AUREON_ALLOW_SIM_FALLBACK so production
+        refuses to execute trades against fake market state.
+        """
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_historical_live.get_kraken_markets",
+                                 "stub_hardcoded_mock_prices")
+            raise RuntimeError(
+                "aureon_historical_live.get_kraken_markets is a stub "
+                "returning hardcoded BTC=42000 mock data. Implement real "
+                "Kraken API calls before invoking in production, or set "
+                "AUREON_ALLOW_SIM_FALLBACK=1 for stub-mode dev runs."
+            )
+        # DEV-ONLY hardcoded mock structure (gated above)
         return [
             {
                 'exchange': 'Kraken',
@@ -664,10 +680,21 @@ class AureonHistoricalLive:
         print(f"   Target: £{signal.predicted_target:,.2f} (+{signal.pattern.avg_profit_pct*100:.1f}%)")
         print(f"   Stop: £{signal.predicted_stop:,.2f} (-{signal.pattern.avg_loss_pct*100:.1f}%)")
         print(f"   Size: £{position_size:,.2f} ({signal.position_size_pct*100:.0f}%)")
-        
-        # TODO: Execute real trade via exchange API
-        # For now, create position object
-        
+
+        # ⚠ STUB: not yet wired to a real exchange API. Production refuses
+        # to fabricate "executed" position objects without a real fill.
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_historical_live.execute_signal",
+                                 "no_exchange_api_call")
+            raise RuntimeError(
+                "aureon_historical_live.execute_signal would fabricate a "
+                "LivePosition without calling any exchange API. Wire the real "
+                "Kraken/Alpaca/Binance order flow before invoking in production."
+            )
+        # DEV-ONLY: create paper-trade position object (gated above)
         position = LivePosition(
             signal=signal,
             entry_time=time.time(),

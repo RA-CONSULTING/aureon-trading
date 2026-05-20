@@ -14,7 +14,7 @@ Author: Aureon Trading System (Prime Sentinel)
 Version: 1.0.0
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -451,8 +451,12 @@ class SacredTextsSource(WisdomSource):
         passages = [p.strip() for p in content.split('\n\n') if len(p.strip()) > 50]
         
         for passage in passages[:15]:
-            # Ancient texts are inherently relevant
-            relevance = 0.6 + random.uniform(0, 0.3)
+            # Ancient texts are inherently relevant.
+            # Deterministic floor (0.6) — was 0.6 + random.uniform(0, 0.3),
+            # which produced a fake "relevance score" that propagated to
+            # autonomous broadcasts. The score is informational only and
+            # has no signal of true relevance, so we report the floor.
+            relevance = 0.6
             
             insight = WisdomInsight(
                 source="Sacred-Texts",

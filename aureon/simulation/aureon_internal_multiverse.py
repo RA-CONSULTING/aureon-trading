@@ -109,7 +109,7 @@ Gary Leckey & GitHub Copilot | January 2026
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import math
 import time
@@ -128,7 +128,7 @@ import threading
 # 🧠 MEMORY CORE INTEGRATION
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_memory_core import memory
+    from aureon.core.aureon_memory_core import memory
     MEMORY_AVAILABLE = True
 except ImportError:
     memory = None
@@ -138,7 +138,7 @@ except ImportError:
 # 🍄 MYCELIUM INTEGRATION
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_mycelium import Synapse, Neuron, Agent, Hive, MyceliumNetwork
+    from aureon.core.aureon_mycelium import Synapse, Neuron, Agent, Hive, MyceliumNetwork
     MYCELIUM_AVAILABLE = True
 except ImportError:
     MYCELIUM_AVAILABLE = False
@@ -149,7 +149,7 @@ except ImportError:
 # 💎 PROBABILITY ULTIMATE INTELLIGENCE
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from probability_ultimate_intelligence import (
+    from aureon.strategies.probability_ultimate_intelligence import (
         get_ultimate_intelligence, ultimate_predict, record_ultimate_outcome,
         UltimatePrediction
     )
@@ -162,7 +162,7 @@ except ImportError:
 # 🦅 CONVERSION COMMANDO INTEGRATION
 # ═══════════════════════════════════════════════════════════════════════════════
 try:
-    from aureon_conversion_commando import AdaptiveConversionCommando, DualProfitPathDecision
+    from aureon.conversion.aureon_conversion_commando import AdaptiveConversionCommando, DualProfitPathDecision
     COMMANDO_AVAILABLE = True
 except ImportError:
     COMMANDO_AVAILABLE = False

@@ -22,7 +22,7 @@ Pattern dimensions:
 - Clownfish: danger (<0.35), weak (0.35-0.55), neutral (0.55-0.75), strong (>0.75)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import time
 import os
@@ -40,21 +40,21 @@ def safe_print(*args, **kwargs):
             sys.stdout.flush()
     except (ValueError, OSError, IOError):
         pass  # Ignore I/O errors on closed file
-from probability_intelligence_matrix import (
+from aureon.strategies.probability_intelligence_matrix import (
     get_probability_matrix,
     ProbabilityIntelligence
 )
 
 # � ThoughtBus - Primary neural communication
 try:
-    from aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought, get_thought_bus
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     THOUGHT_BUS_AVAILABLE = False
 
 # 🐦 ChirpBus - kHz-speed signaling
 try:
-    from aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
+    from aureon.core.aureon_chirp_bus import get_chirp_bus, ChirpDirection, ChirpType
     CHIRP_BUS_AVAILABLE = True
 except ImportError:
     CHIRP_BUS_AVAILABLE = False
@@ -64,7 +64,7 @@ QUEEN_AVAILABLE = False
 def _lazy_load_queen():
     global QUEEN_AVAILABLE
     try:
-        from aureon_queen_hive_mind import QueenHiveMind, get_queen
+        from aureon.utils.aureon_queen_hive_mind import QueenHiveMind, get_queen
         QUEEN_AVAILABLE = True
         return get_queen()
     except ImportError:
@@ -82,7 +82,7 @@ def _lazy_load_clownfish():
     if ClownfishNode is not None:
         return CLOWNFISH_AVAILABLE
     try:
-        from aureon_unified_ecosystem import ClownfishNode as _ClownfishNode, MarketState as _MarketState
+        from aureon.trading.aureon_unified_ecosystem import ClownfishNode as _ClownfishNode, MarketState as _MarketState
         ClownfishNode = _ClownfishNode
         MarketState = _MarketState
         CLOWNFISH_AVAILABLE = True

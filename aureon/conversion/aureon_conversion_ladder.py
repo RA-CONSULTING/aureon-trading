@@ -13,7 +13,7 @@ It uses the repo's existing conversion plumbing via `MultiExchangeClient`.
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import time
@@ -113,7 +113,7 @@ class ConversionLadder:
         if not self.bus:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
 
             self.bus.publish(
                 Thought(source="ladder", topic=f"ladder.{topic}", payload=payload)
@@ -127,7 +127,7 @@ class ConversionLadder:
         if not self.bus:
             return
         try:
-            from aureon_thought_bus import Thought
+            from aureon.core.aureon_thought_bus import Thought
 
             self.bus.publish(
                 Thought(source="ladder", topic=f"mycelium.link.{topic}", payload=payload)

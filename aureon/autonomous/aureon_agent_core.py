@@ -513,9 +513,44 @@ class AureonAgentCore:
                     "snippet": snippet_el.get_text(strip=True) if snippet_el else "",
                     "url": link_el.get_text(strip=True) if link_el else "",
                 })
-            return results
+            return results or self._official_learning_search_fallback(query, num_results)
         except Exception as exc:
+            fallback = self._official_learning_search_fallback(query, num_results)
+            if fallback:
+                return fallback
             return [{"error": str(exc)}]
+
+    def _official_learning_search_fallback(self, query: str, num_results: int = 5) -> list:
+        """Return curated official learning sources when public search blocks bots."""
+
+        catalog = [
+            ("python", "Python documentation", "https://docs.python.org/3/", "Official Python language and standard library documentation."),
+            ("ast", "Python ast documentation", "https://docs.python.org/3/library/ast.html", "Official AST module reference for safe code analysis."),
+            ("pytest", "pytest documentation", "https://docs.pytest.org/", "Official pytest guide for fixtures, assertions, and test structure."),
+            ("typescript", "TypeScript documentation", "https://www.typescriptlang.org/docs/", "Official TypeScript handbook and language reference."),
+            ("react", "React documentation", "https://react.dev/learn", "Official React learning docs for components and state."),
+            ("vite", "Vite documentation", "https://vite.dev/guide/", "Official Vite guide for frontend builds."),
+            ("owasp", "OWASP ASVS", "https://owasp.org/www-project-application-security-verification-standard/", "Official OWASP application security verification standard."),
+            ("binance", "Binance API documentation", "https://developers.binance.com/docs", "Official Binance developer documentation."),
+            ("kraken", "Kraken API documentation", "https://docs.kraken.com/api/", "Official Kraken API documentation."),
+            ("alpaca", "Alpaca API documentation", "https://docs.alpaca.markets/", "Official Alpaca API documentation."),
+            ("github", "GitHub REST API documentation", "https://docs.github.com/en/rest", "Official GitHub REST API documentation."),
+            ("pypi", "PyPI JSON API", "https://warehouse.pypa.io/api-reference/json.html", "Official Warehouse/PyPI JSON API reference."),
+        ]
+        words = {word for word in re.findall(r"[a-z0-9]+", (query or "").lower()) if len(word) >= 3}
+        ranked: list[tuple[int, dict]] = []
+        for key, title, url, snippet in catalog:
+            haystack = f"{key} {title} {snippet}".lower()
+            score = sum(1 for word in words if word in haystack)
+            if score:
+                ranked.append((score, {"title": title, "snippet": snippet, "url": url, "source": "official_fallback"}))
+        if not ranked:
+            ranked = [
+                (1, {"title": title, "snippet": snippet, "url": url, "source": "official_fallback"})
+                for key, title, url, snippet in catalog
+            ]
+        ranked.sort(key=lambda item: (-item[0], item[1]["title"]))
+        return [item for _score, item in ranked[: max(1, min(int(num_results or 5), 10))]]
 
     def web_fetch(self, url: str) -> dict:
         """Fetch a web page and return its text content."""

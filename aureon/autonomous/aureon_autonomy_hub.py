@@ -30,7 +30,7 @@ Gary Leckey & Claude | February 2026
 =============================================================================
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import os
@@ -355,6 +355,35 @@ class PredictionBus:
         self._prediction_history: deque = deque(maxlen=500)
         self._lock = threading.Lock()
 
+        # Auto-wire the HarmonicObserver predictor. Idempotent and
+        # safe even if no observer has been constructed yet — the
+        # predictor returns NEUTRAL until a singleton is registered.
+        # Import inside __init__ to avoid any chance of circular import
+        # at module load time.
+        try:
+            from aureon.observer.wiring import auto_wire_prediction_bus
+            auto_wire_prediction_bus(self)
+        except Exception as _exc:
+            logger.debug("HarmonicObserver auto-wire skipped: %s", _exc)
+
+        # Auto-wire the WavePredictor predictor. Same pattern as the
+        # observer — idempotent, NEUTRAL until a singleton exists,
+        # never blocks PredictionBus construction.
+        try:
+            from aureon.observer.wave_predictor import auto_wire_prediction_bus as _wp_wire
+            _wp_wire(self)
+        except Exception as _exc:
+            logger.debug("WavePredictor auto-wire skipped: %s", _exc)
+
+        # Auto-wire the MomentumTracker predictor (Stage AC). Recency-
+        # weighted EMA momentum across all data sources fed into the
+        # daemon — operator can see momentum forming on the live feed.
+        try:
+            from aureon.observer.momentum import auto_wire_prediction_bus as _mt_wire
+            _mt_wire(self)
+        except Exception as _exc:
+            logger.debug("MomentumTracker auto-wire skipped: %s", _exc)
+
     def register_predictor(self, name: str, predict_fn: Callable):
         """Register a prediction engine. predict_fn(data_signals) -> UnifiedSignal"""
         self._predictors[name] = predict_fn
@@ -400,6 +429,9 @@ class PredictionBus:
             'qgita': 2.0,
             'whale_hunter': 1.0,
             'quantum_telescope': 0.5,
+            'harmonic_observer': 1.5,      # Theroux-style live HNC field describer
+            'wave_predictor': 1.0,         # wave-based next-tick directional forecast
+            'momentum_tracker': 1.2,       # recency-weighted multi-source momentum
         }
 
         for name, pred in predictions.items():
@@ -647,7 +679,7 @@ class FeedbackLoopEngine:
 
         # FEEDBACK 2: Feed outcome to NexusPredictor if available
         try:
-            from nexus_predictor import NexusPredictor
+            from aureon.intelligence.nexus_predictor import NexusPredictor
             nexus = _get_nexus_predictor()
             if nexus:
                 entry_pred = {}
@@ -732,7 +764,7 @@ class FeedbackLoopEngine:
     def _update_cost_model(self, trade_result: Dict):
         """Update adaptive profit gate with real cost data from actual trades."""
         try:
-            from adaptive_prime_profit_gate import get_adaptive_gate
+            from aureon.utils.adaptive_prime_profit_gate import get_adaptive_gate
             gate = get_adaptive_gate()
             if gate:
                 exchange = trade_result.get('exchange', 'kraken')
@@ -821,7 +853,7 @@ def _get_nexus_predictor():
     global _nexus_instance
     if _nexus_instance is None:
         try:
-            from nexus_predictor import NexusPredictor
+            from aureon.intelligence.nexus_predictor import NexusPredictor
             _nexus_instance = NexusPredictor()
             _nexus_instance.load_learning_state()
         except Exception:
@@ -928,7 +960,7 @@ def adapt_war_planner(data_signals: Dict[str, UnifiedSignal],
     global _war_planner_instance
     try:
         if _war_planner_instance is None:
-            from aureon_strategic_war_planner import get_war_planner
+            from aureon.command_centers.aureon_strategic_war_planner import get_war_planner
             _war_planner_instance = get_war_planner()
 
         # Extract price/volume from market signals
@@ -991,7 +1023,7 @@ def adapt_hnc_probability_matrix(data_signals: Dict[str, UnifiedSignal],
     global _hnc_instance
     try:
         if _hnc_instance is None:
-            from hnc_probability_matrix import TemporalFrequencyAnalyzer
+            from aureon.strategies.hnc_probability_matrix import TemporalFrequencyAnalyzer
             _hnc_instance = TemporalFrequencyAnalyzer()
 
         # Build current_data from available market signals
@@ -1046,7 +1078,7 @@ def adapt_imperial_predictability(data_signals: Dict[str, UnifiedSignal],
     global _imperial_instance
     try:
         if _imperial_instance is None:
-            from hnc_imperial_predictability import PredictabilityEngine
+            from aureon.strategies.hnc_imperial_predictability import PredictabilityEngine
             _imperial_instance = PredictabilityEngine()
 
         matrix = _imperial_instance.generate_matrix()
@@ -1091,7 +1123,7 @@ def adapt_probability_ultimate(data_signals: Dict[str, UnifiedSignal],
     global _ultimate_instance
     try:
         if _ultimate_instance is None:
-            from probability_ultimate_intelligence import ProbabilityUltimateIntelligence
+            from aureon.strategies.probability_ultimate_intelligence import ProbabilityUltimateIntelligence
             _ultimate_instance = ProbabilityUltimateIntelligence()
 
         # Build market state from data signals
@@ -1157,7 +1189,7 @@ def adapt_whale_hunter(data_signals: Dict[str, UnifiedSignal],
     global _whale_hunter_instance
     try:
         if _whale_hunter_instance is None:
-            from aureon_moby_dick_whale_hunter import MobyDickWhaleHunter
+            from aureon.analytics.aureon_moby_dick_whale_hunter import MobyDickWhaleHunter
             _whale_hunter_instance = MobyDickWhaleHunter()
 
         prediction = _whale_hunter_instance.predict_next_whale_appearance(symbol)
@@ -1203,7 +1235,7 @@ def adapt_quantum_telescope(data_signals: Dict[str, UnifiedSignal],
     global _quantum_telescope_instance
     try:
         if _quantum_telescope_instance is None:
-            from aureon_enhanced_quantum_telescope import EnhancedQuantumGeometryEngine
+            from aureon.simulation.aureon_enhanced_quantum_telescope import EnhancedQuantumGeometryEngine
             _quantum_telescope_instance = EnhancedQuantumGeometryEngine()
 
         # Build bot data from market signals
@@ -1297,7 +1329,7 @@ class AutonomyHub:
     def connect_thought_bus(self):
         """Wire into the ThoughtBus for system-wide integration."""
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             self._thought_bus = get_thought_bus()
 
             # Subscribe to ALL data topics and bridge them
@@ -1396,7 +1428,7 @@ class AutonomyHub:
         # STEP 7: Publish decision to ThoughtBus
         if self._thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 self._thought_bus.publish(Thought(
                     source="autonomy_hub",
                     topic="autonomy.decision",
@@ -1548,13 +1580,29 @@ _hub_instance: Optional[AutonomyHub] = None
 _hub_lock = threading.Lock()
 
 def get_autonomy_hub() -> AutonomyHub:
-    """Get or create the global AutonomyHub singleton."""
+    """Get or create the global AutonomyHub singleton.
+
+    Lazy construction: the first caller pays the cost of registering
+    all 11 predictors (9 hub-side + harmonic_observer + wave_predictor
+    auto-wires) and connecting the ThoughtBus. Subsequent callers get
+    the cached instance. Thread-safe via _hub_lock.
+
+    Stage T/V Vote 7 imports ``get_hub`` — that's an alias of this
+    function (added below) so older code paths that imported the short
+    name still resolve.
+    """
     global _hub_instance
     with _hub_lock:
         if _hub_instance is None:
             _hub_instance = AutonomyHub()
             _hub_instance.connect_thought_bus()
     return _hub_instance
+
+
+# Short alias used by aureon/bots/orca_complete_kill_cycle.py Vote 7
+# blocks (Stages T and V) and any other call site that wants the
+# concise name. Identity-equal to get_autonomy_hub.
+get_hub = get_autonomy_hub
 
 
 def spin(symbol: str = "BTCUSD") -> UnifiedSignal:

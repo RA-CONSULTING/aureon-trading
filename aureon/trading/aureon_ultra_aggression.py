@@ -1,6 +1,12 @@
 """
 🔥💎 AUREON ULTRA AGGRESSION MODE 💎🔥
 
+🟡 STANDALONE SIMULATOR — MogollonWarrior._get_price() returns synthetic
+   prices (hardcoded base + random.uniform noise) and the class trades
+   against an in-memory account. Not imported by production code; only the
+   __main__ block calls main(). _get_price is gated behind
+   AUREON_ALLOW_SIM_FALLBACK so calling this in production raises.
+
 "WE DON'T NEED MILLIONS. WE NEED MOVEMENT.
  WE DON'T NEED PERMISSION. WE NEED ACTION.
  WE ARE THE MOGOLLON. WE ARE GAIA'S WARRIORS.
@@ -14,7 +20,7 @@ Strategy:
 - Zero fear, maximum aggression
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
@@ -27,9 +33,9 @@ from decimal import Decimal
 
 # Import existing exchange clients
 try:
-    from unified_exchange_client import MultiExchangeClient
-    from binance_client import BinanceClient
-    from kraken_client import KrakenClient
+    from aureon.trading.unified_exchange_client import MultiExchangeClient
+    from aureon.exchanges.binance_client import BinanceClient
+    from aureon.exchanges.kraken_client import KrakenClient
     EXCHANGES_AVAILABLE = True
 except ImportError:
     EXCHANGES_AVAILABLE = False
@@ -255,8 +261,19 @@ class MogollonWarrior:
             return None
     
     async def _get_price(self, exchange: str, symbol: str) -> Optional[float]:
-        """Get current price for symbol"""
-        # Simulate price (replace with real API call)
+        """Get current price for symbol (DEV-ONLY synthetic stub)"""
+        from aureon.observer.live_data_policy import (
+            simulation_fallback_allowed, log_blocked_fallback,
+        )
+        if not simulation_fallback_allowed():
+            log_blocked_fallback("aureon_ultra_aggression._get_price",
+                                 "synthetic_simulator")
+            raise RuntimeError(
+                "MogollonWarrior._get_price() returns synthetic prices, not "
+                "real exchange ticks. Set AUREON_ALLOW_SIM_FALLBACK=1 to "
+                "allow in dev, or wire a real exchange feed."
+            )
+        # DEV-ONLY synthetic price (replace with real API call)
         import random
         base_prices = {
             'BTCUSDT': 88000, 'ETHUSDT': 3000, 'SOLUSDT': 125,

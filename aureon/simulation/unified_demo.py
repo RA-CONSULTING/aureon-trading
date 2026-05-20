@@ -15,14 +15,14 @@ Features tested:
 Gary Leckey | November 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
 import json
 import logging
 from threading import Thread
-from aureon_bridge import AureonBridge, Opportunity, CapitalState, Position, ControlCommand
+from aureon.bridges.aureon_bridge import AureonBridge, Opportunity, CapitalState, Position, ControlCommand
 
 # Configure logging
 logging.basicConfig(

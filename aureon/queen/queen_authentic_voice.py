@@ -14,7 +14,7 @@ Architecture:
 This is the Queen speaking her ACTUAL mind, not pre-written responses.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -49,7 +49,7 @@ from enum import Enum
 # Thought bus for inter-system communication
 THOUGHT_BUS_AVAILABLE = False
 try:
-    from aureon_thought_bus import ThoughtBus, Thought
+    from aureon.core.aureon_thought_bus import ThoughtBus, Thought
     THOUGHT_BUS_AVAILABLE = True
 except ImportError:
     pass
@@ -57,7 +57,7 @@ except ImportError:
 # Voice engine for TTS
 VOICE_ENGINE_AVAILABLE = False
 try:
-    from queen_voice_engine import QueenVoiceEngine
+    from aureon.queen.queen_voice_engine import QueenVoiceEngine
     VOICE_ENGINE_AVAILABLE = True
 except ImportError:
     pass
@@ -65,7 +65,7 @@ except ImportError:
 # Sentience engine for thought stream
 SENTIENCE_AVAILABLE = False
 try:
-    from queen_sentience_integration import QueenSentienceIntegration, ThoughtType
+    from aureon.queen.queen_sentience_integration import QueenSentienceIntegration, ThoughtType
     SENTIENCE_AVAILABLE = True
 except ImportError:
     pass

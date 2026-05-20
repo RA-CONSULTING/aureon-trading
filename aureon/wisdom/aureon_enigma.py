@@ -38,7 +38,7 @@
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import math
@@ -56,7 +56,7 @@ import numpy as np
 
 # 🎶 IMPORTS FOR HARMONIC ALPHABET 🎶
 try:
-    from aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicTone
+    from aureon.harmonic.aureon_harmonic_alphabet import to_harmonics, from_harmonics, HarmonicTone
     HARMONIC_ALPHABET_AVAILABLE = True
 except ImportError:
     HARMONIC_ALPHABET_AVAILABLE = False

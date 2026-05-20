@@ -59,7 +59,7 @@ Gary Leckey & Claude | February 2026
 =============================================================================
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import json
 import os
@@ -834,7 +834,7 @@ class StrategicWarPlanner:
         # Quantum Mirror
         if self._quantum_mirror is None:
             try:
-                from aureon_quantum_mirror_scanner import QuantumMirrorScanner
+                from aureon.scanners.aureon_quantum_mirror_scanner import QuantumMirrorScanner
                 self._quantum_mirror = QuantumMirrorScanner()
             except Exception:
                 pass
@@ -842,7 +842,7 @@ class StrategicWarPlanner:
         # Quantum Telescope
         if self._quantum_telescope is None:
             try:
-                from aureon_quantum_telescope import QuantumTelescope
+                from aureon.simulation.aureon_quantum_telescope import QuantumTelescope
                 self._quantum_telescope = QuantumTelescope()
             except Exception:
                 pass
@@ -850,7 +850,7 @@ class StrategicWarPlanner:
         # War Strategy
         if self._war_strategy is None:
             try:
-                from war_strategy import WarStrategy
+                from aureon.command_centers.war_strategy import WarStrategy
                 self._war_strategy = WarStrategy()
             except Exception:
                 pass
@@ -858,7 +858,7 @@ class StrategicWarPlanner:
         # Guerrilla Warfare Engine
         if self._guerrilla_engine is None:
             try:
-                from guerrilla_warfare_engine import IntelligenceNetwork
+                from aureon.wisdom.guerrilla_warfare_engine import IntelligenceNetwork
                 self._guerrilla_engine = IntelligenceNetwork()
             except Exception:
                 pass
@@ -866,7 +866,7 @@ class StrategicWarPlanner:
         # Miner Brain (speculation engine)
         if self._miner_brain is None:
             try:
-                from aureon_miner_brain import MinerBrain
+                from aureon.utils.aureon_miner_brain import MinerBrain
                 self._miner_brain = MinerBrain()
             except Exception:
                 pass
@@ -874,7 +874,7 @@ class StrategicWarPlanner:
         # Orca Predator Detection
         if self._orca_detector is None:
             try:
-                from orca_predator_detection import OrcaPredatorDetector
+                from aureon.bots.orca_predator_detection import OrcaPredatorDetector
                 self._orca_detector = OrcaPredatorDetector()
             except Exception:
                 pass
@@ -882,7 +882,7 @@ class StrategicWarPlanner:
         # HNC Probability Matrix
         if self._hnc_matrix is None:
             try:
-                from hnc_probability_matrix import TemporalFrequencyAnalyzer
+                from aureon.strategies.hnc_probability_matrix import TemporalFrequencyAnalyzer
                 self._hnc_matrix = TemporalFrequencyAnalyzer()
             except Exception:
                 pass
@@ -890,7 +890,7 @@ class StrategicWarPlanner:
         # Autonomy Hub
         if self._autonomy_hub is None:
             try:
-                from aureon_autonomy_hub import get_autonomy_hub
+                from aureon.autonomous.aureon_autonomy_hub import get_autonomy_hub
                 self._autonomy_hub = get_autonomy_hub()
             except Exception:
                 pass
@@ -1246,7 +1246,7 @@ class StrategicWarPlanner:
     def _publish_plan(self, plan: WarPlan):
         """Publish the plan to ThoughtBus for system-wide awareness."""
         try:
-            from aureon_thought_bus import get_thought_bus, Thought
+            from aureon.core.aureon_thought_bus import get_thought_bus, Thought
             bus = get_thought_bus()
             bus.publish(Thought(
                 source="war_planner",

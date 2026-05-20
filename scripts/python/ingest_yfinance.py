@@ -31,6 +31,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 # Repo-root / sys.path setup (same as ingest_market_history.py)
 # ---------------------------------------------------------------------------
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+_DATA_OCEAN_ATTEMPTS_PATH = _REPO_ROOT / "state" / "aureon_data_ocean_ingest_attempts.json"
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
@@ -93,6 +94,26 @@ def _json_dumps_safe(obj: Any) -> str:
         return "{}"
 
 
+def _write_data_ocean_attempt(source_id: str, payload: Dict[str, Any]) -> None:
+    try:
+        _DATA_OCEAN_ATTEMPTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        current: Dict[str, Any] = {}
+        if _DATA_OCEAN_ATTEMPTS_PATH.exists():
+            raw = json.loads(_DATA_OCEAN_ATTEMPTS_PATH.read_text(encoding="utf-8"))
+            current = raw if isinstance(raw, dict) else {}
+        current[source_id] = {
+            **payload,
+            "source_id": source_id,
+            "updated_at": datetime.now(tz=timezone.utc).isoformat(),
+        }
+        _DATA_OCEAN_ATTEMPTS_PATH.write_text(
+            json.dumps(current, indent=2, sort_keys=True, default=str),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+
 def _dt_from_ms(ts_ms: int) -> datetime:
     return datetime.fromtimestamp(ts_ms / 1000.0, tz=timezone.utc)
 
@@ -145,13 +166,13 @@ def _ingest_symbols(
     end_dt: datetime,
     interval: str,
     no_resume: bool,
-) -> None:
+) -> Dict[str, Any]:
     """Download and store OHLCV bars for *symbols* using yfinance."""
     try:
         import yfinance as yf
     except ImportError:
         print("[yfinance] ERROR: yfinance is not installed. Run: pip install yfinance")
-        return
+        return {"category": category, "symbol_count": len(symbols), "inserted": 0, "skipped": 0, "errors": 1, "empty_batches": 0}
 
     from aureon.core import aureon_global_history_db as ghdb  # type: ignore
 
@@ -173,12 +194,14 @@ def _ingest_symbols(
 
     if not work:
         print(f"[yfinance] {category}: all {len(symbols)} symbols already up to date")
-        return
+        return {"category": category, "symbol_count": len(symbols), "work_count": 0, "inserted": 0, "skipped": len(symbols), "errors": 0, "empty_batches": 0}
 
     print(f"[yfinance] {category}: ingesting {len(work)} symbols ({interval} bars)")
 
     total_inserted = 0
     total_skipped = 0
+    error_count = 0
+    empty_batch_count = 0
 
     # Process in batches.
     for batch_start in range(0, len(work), _BATCH_SIZE):
@@ -212,10 +235,12 @@ def _ingest_symbols(
             )
         except Exception as exc:
             print(f"[yfinance] download error for batch {batch[:3]}...: {exc}")
+            error_count += 1
             time.sleep(_BATCH_SLEEP)
             continue
 
         if df is None or df.empty:
+            empty_batch_count += 1
             time.sleep(_BATCH_SLEEP)
             continue
 
@@ -314,6 +339,15 @@ def _ingest_symbols(
         f"[yfinance] {category}: done — inserted={total_inserted} "
         f"skipped={total_skipped}"
     )
+    return {
+        "category": category,
+        "symbol_count": len(symbols),
+        "work_count": len(work),
+        "inserted": total_inserted,
+        "skipped": total_skipped,
+        "errors": error_count,
+        "empty_batches": empty_batch_count,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -397,11 +431,16 @@ def main() -> None:
     if not plan:
         print("[yfinance] nothing to do. Use --all, --category, or --stocks/--indices/... flags.")
         conn.close()
+        _write_data_ocean_attempt(
+            "yfinance_history",
+            {"status": "no_work", "reason": "no_symbols_requested", "inserted": 0, "errors": 0, "empty_batches": 0, "results": []},
+        )
         return
 
     # Execute --------------------------------------------------------------------
+    results: List[Dict[str, Any]] = []
     for category, symbols in plan:
-        _ingest_symbols(
+        result = _ingest_symbols(
             conn=conn,
             symbols=symbols,
             category=category,
@@ -410,8 +449,32 @@ def main() -> None:
             interval=args.interval,
             no_resume=args.no_resume,
         )
+        results.append(result)
 
     conn.close()
+    inserted_total = sum(int(item.get("inserted", 0) or 0) for item in results)
+    error_total = sum(int(item.get("errors", 0) or 0) for item in results)
+    empty_total = sum(int(item.get("empty_batches", 0) or 0) for item in results)
+    if inserted_total > 0:
+        status = "ok"
+        reason = ""
+    elif error_total or empty_total:
+        status = "provider_unavailable_or_no_data"
+        reason = "provider_returned_no_usable_rows"
+    else:
+        status = "no_work_or_up_to_date"
+        reason = "no_new_rows_inserted"
+    _write_data_ocean_attempt(
+        "yfinance_history",
+        {
+            "status": status,
+            "reason": reason,
+            "inserted": inserted_total,
+            "errors": error_total,
+            "empty_batches": empty_total,
+            "results": results,
+        },
+    )
     print("[yfinance] all done.")
 
 

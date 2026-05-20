@@ -12,7 +12,7 @@ Usage: python3 auto_sniper.py
 Press Ctrl+C to stop.
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import os
 import sys
@@ -210,7 +210,7 @@ def main():
     
     # Import exchange client
     try:
-        from unified_exchange_client import MultiExchangeClient
+        from aureon.trading.unified_exchange_client import MultiExchangeClient
         client = MultiExchangeClient()
     except ImportError as e:
         print(f"❌ Cannot import MultiExchangeClient: {e}")

@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # Lazy imports (avoid circular dependencies)
 def get_coordinator():
     try:
-        from aureon_system_coordinator import SystemCoordinator
+        from aureon.core.aureon_system_coordinator import SystemCoordinator
         if not hasattr(get_coordinator, '_instance'):
             get_coordinator._instance = SystemCoordinator()
         return get_coordinator._instance
@@ -42,7 +42,7 @@ def get_coordinator():
 
 def get_decision_engine():
     try:
-        from aureon_unified_decision_engine import UnifiedDecisionEngine
+        from aureon.intelligence.aureon_unified_decision_engine import UnifiedDecisionEngine
         if not hasattr(get_decision_engine, '_instance'):
             get_decision_engine._instance = UnifiedDecisionEngine()
         return get_decision_engine._instance
@@ -53,7 +53,7 @@ def get_decision_engine():
 
 def get_feed_hub():
     try:
-        from aureon_real_data_feed_hub import get_feed_hub as _get_feed_hub
+        from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub as _get_feed_hub
         return _get_feed_hub()
     except Exception as e:
         logger.warning(f"Could not get feed hub: {e}")
@@ -152,7 +152,7 @@ class UnifiedDashboardAPI:
 
             # Would send to actual Orca system (ThoughtBus topic)
             try:
-                from aureon_thought_bus import ThoughtBus
+                from aureon.core.aureon_thought_bus import ThoughtBus
                 tb = ThoughtBus()
                 tb.publish("orca.command", {
                     "command": command,

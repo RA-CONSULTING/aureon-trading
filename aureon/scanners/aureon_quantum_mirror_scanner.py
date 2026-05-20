@@ -24,7 +24,7 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════╝
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 
@@ -54,11 +54,11 @@ from typing import Dict, List, Optional, Any, Tuple, Callable
 from collections import deque
 from enum import Enum
 import numpy as np
-from metrics import MetricGauge
+from aureon.core.metrics import MetricGauge
 
 # 🔮 OBSIDIAN FILTER INTEGRATION
 try:
-    from aureon_obsidian_filter import AureonObsidianFilter
+    from aureon.scanners.aureon_obsidian_filter import AureonObsidianFilter
     OBSIDIAN_FILTER_AVAILABLE = True
 except Exception:
     AureonObsidianFilter = None
@@ -1036,7 +1036,7 @@ class QuantumMirrorScanner:
         """Emit thought to ThoughtBus if available"""
         if self._thought_bus:
             try:
-                from aureon_thought_bus import Thought
+                from aureon.core.aureon_thought_bus import Thought
                 thought = Thought(
                     source="quantum_mirror_scanner",
                     topic=topic,
@@ -1122,14 +1122,14 @@ def create_quantum_scanner(with_integrations: bool = True) -> QuantumMirrorScann
     
     if with_integrations:
         try:
-            from aureon_thought_bus import ThoughtBus
+            from aureon.core.aureon_thought_bus import ThoughtBus
             thought_bus = ThoughtBus()
             logger.info("✅ ThoughtBus integration enabled")
         except ImportError:
             logger.warning("⚠️ ThoughtBus not available")
             
         try:
-            from aureon_stargate_protocol import create_stargate_engine
+            from aureon.wisdom.aureon_stargate_protocol import create_stargate_engine
             stargate_engine = create_stargate_engine(with_integrations=False)
             logger.info("✅ Stargate Protocol integration enabled")
         except ImportError:

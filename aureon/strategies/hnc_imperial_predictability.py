@@ -25,7 +25,7 @@ Gary Leckey & GitHub Copilot | December 2025
 "From Atom to Multiverse - The Imperial Protocol Unfolds"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -274,12 +274,37 @@ class CosmicStateEngine:
         
         # Schumann Power oscillates with lunar
         SR = 17.2 + 12.8 * np.sin(2 * np.pi * t / 7 + PHI) * lunar_torsion
-        
-        # Solar flare (simulated with random component)
-        flare = 1.95 * np.exp(-0.1 * (t % 7)) + 0.5 * np.random.uniform(0, 1)
-        
-        # Kp index varies with solar cycle
-        kp = 1.5 + 3.5 * np.sin(2 * np.pi * (t + 2) / 7)
+
+        # Solar flare + Kp: prefer real-time readings from space_weather_bridge.
+        # Fallback to closed-form formula when the live feed is unavailable
+        # AND AUREON_ALLOW_SIM_FALLBACK is set.
+        flare = None
+        kp = None
+        try:
+            from aureon.data_feeds.aureon_space_weather_bridge import get_live_space_weather
+            sw = get_live_space_weather()
+            if sw is not None:
+                flare = float(sw.solar_flares_24h)
+                kp = float(sw.kp_index)
+        except Exception:
+            pass
+        if flare is None or kp is None:
+            from aureon.observer.live_data_policy import (
+                simulation_fallback_allowed, log_blocked_fallback,
+            )
+            if not simulation_fallback_allowed():
+                log_blocked_fallback("hnc_imperial_predictability", "no_space_weather")
+                # Use deterministic mid-band defaults rather than random — keeps
+                # downstream math working without injecting fakery into the field.
+                if flare is None:
+                    flare = 1.95 * np.exp(-0.1 * (t % 7))
+                if kp is None:
+                    kp = 1.5 + 3.5 * np.sin(2 * np.pi * (t + 2) / 7)
+            else:
+                if flare is None:
+                    flare = 1.95 * np.exp(-0.1 * (t % 7)) + 0.5 * np.random.uniform(0, 1)
+                if kp is None:
+                    kp = 1.5 + 3.5 * np.sin(2 * np.pi * (t + 2) / 7)
         
         # If we have market data, modulate based on VIX/fear
         if market_data:
@@ -782,7 +807,7 @@ class ImperialTradingIntegration:
         
         # Get distortion limit from CONFIG or use default
         try:
-            from aureon_unified_ecosystem import CONFIG
+            from aureon.trading.aureon_unified_ecosystem import CONFIG
             distortion_limit = CONFIG.get('IMPERIAL_DISTORTION_LIMIT', 0.15)
         except:
             distortion_limit = 0.15

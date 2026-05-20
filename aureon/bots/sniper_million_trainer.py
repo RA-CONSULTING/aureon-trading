@@ -2,13 +2,17 @@
 """
 🇮🇪🎯 SNIPER MILLION TRAINER - 1,000,000 CONFIRMED KILLS 🎯🇮🇪
 ================================================================
+🟡 STANDALONE TRAINING SIMULATOR — uses synthetic prices (random.gauss).
+   Not imported by production code. Do not call from
+   aureon/queen/, aureon/strategies/, or aureon/observer/.
+================================================================
 Train the sniper on 1 MILLION trades with 100% win rate.
 NO EXCEPTIONS. WE DON'T LOSE.
 
 "Every kill will be a confirmed net profit."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import json
 import time
 import random

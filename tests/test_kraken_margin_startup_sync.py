@@ -3,10 +3,85 @@ import unittest
 from unittest.mock import patch
 
 from aureon.exchanges.kraken_client import KrakenClient
-from aureon.exchanges.kraken_margin_penny_trader import KrakenMarginArmyTrader
+from aureon.exchanges.kraken_margin_penny_trader import ActiveTrade, KrakenMarginArmyTrader, MarginPairInfo
+from aureon.trading.dynamic_margin_sizer import DynamicMarginConfig, DynamicMarginSizer
+from aureon.trading.temporal_trade_cognition import TemporalTradeCognition
 
 
 class TestKrakenMarginStartupSync(unittest.TestCase):
+    def test_capital_snapshot_uses_live_spot_balances_when_margin_equity_is_zero(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.dry_run = False
+        trader.dynamic_sizer = None
+        trader.market = None
+        trader._last_margin_capital = None
+        trader._last_margin_capital_at = 0.0
+        trader._last_margin_capital_error = ""
+        trader._last_spot_balance_snapshot = {}
+        trader._last_spot_balance_snapshot_at = 0.0
+        trader.client = type("ClientStub", (), {
+            "get_trade_balance": staticmethod(lambda: {
+                "equity_value": "0.0",
+                "free_margin": "0.0",
+                "margin_amount": "0.0",
+                "unrealized_pnl": "0.0",
+            }),
+            "get_account_balance": staticmethod(lambda: {"GBP": 100.0, "USDT": 5.0}),
+        })()
+
+        snapshot = trader._get_capital_snapshot()
+
+        self.assertAlmostEqual(snapshot["equity"], 132.0)
+        self.assertAlmostEqual(snapshot["spot_value_usd"], 132.0)
+        self.assertAlmostEqual(snapshot["spot_cash_usd"], 132.0)
+        self.assertEqual(snapshot["portfolio_value_source"], "spot_balance")
+        self.assertEqual(snapshot["balance_snapshot"]["balances"]["GBP"]["amount"], 100.0)
+
+    def test_margin_fast_profit_capture_uses_true_net_after_fees_and_collateral_snapshot(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.dry_run = False
+        trader._last_fast_profit_capture = {}
+        trader._fast_profit_capture_by_order = {}
+        trader.client = type("ClientStub", (), {
+            "get_trade_balance": staticmethod(lambda: {
+                "equity_value": "100.0",
+                "free_margin": "72.0",
+                "margin_amount": "20.0",
+                "margin_level": "360.0",
+                "unrealized_pnl": "0.05",
+            })
+        })()
+        trade = ActiveTrade(
+            pair="BTC/USD",
+            side="buy",
+            volume=0.01,
+            entry_price=100.0,
+            leverage=3,
+            entry_fee=0.01,
+            entry_time=1_700_000_000.0,
+            order_id="MFAST",
+            cost=1.0,
+            breakeven_price=101.0,
+            binance_symbol="BTCUSDT",
+        )
+
+        decision = trader._kraken_margin_fast_profit_capture_decision(
+            trade,
+            current_price=101.0,
+            net_pnl=0.055,
+            validated_net_pnl=0.04,
+            total_fees=0.02,
+            exit_fee=0.01,
+            rollover=0.0,
+            stream_live=True,
+        )
+
+        self.assertTrue(decision["ready_to_capture"], decision)
+        self.assertEqual(decision["reason"], "capture_true_profit_after_costs")
+        self.assertEqual(decision["costs"]["total_costs_usd"], 0.02)
+        self.assertEqual(decision["collateral"]["margin_level"], 360.0)
+        self.assertIn("MFAST", trader._fast_profit_capture_by_order)
+
     def test_validator_required_move_pct_uses_trade_profit_validator_when_available(self):
         trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
         trader.trade_profit_validator = type("ValidatorStub", (), {
@@ -112,6 +187,82 @@ class TestKrakenMarginStartupSync(unittest.TestCase):
         self.assertEqual(trader.active_long.side, "buy")
         self.assertEqual(trader.active_long.order_id, "P123")
         self.assertGreater(trader.active_long.breakeven_price, trader.active_long.entry_price)
+
+    def test_dynamic_margin_plan_uses_live_free_margin_for_tiny_accounts(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.dry_run = False
+        trader.dynamic_sizer = DynamicMarginSizer(DynamicMarginConfig())
+        trader.client = type("ClientStub", (), {
+            "get_trade_balance": staticmethod(lambda: {
+                "equity_value": "10.0",
+                "free_margin": "10.0",
+                "margin_amount": "0.0",
+            })
+        })()
+        pair = MarginPairInfo(
+            pair="DOGE/USD",
+            internal="XDGUSD",
+            base="XXDG",
+            base_clean="DOGE",
+            quote="USD",
+            leverage_buy=[2, 3, 5],
+            leverage_sell=[2, 3, 5],
+            max_leverage=5,
+            ordermin=1.0,
+            costmin=5.0,
+            lot_decimals=4,
+            price_decimals=5,
+            binance_symbol="DOGEUSDT",
+            last_price=1.0,
+        )
+
+        plan = trader._plan_dynamic_margin_position(pair, 5)
+
+        self.assertTrue(plan.approved, plan.reason)
+        self.assertGreaterEqual(plan.notional, 5.0)
+        self.assertLess(plan.profit_target_usd, 1.27)
+
+    def test_trade_cognition_plan_records_expected_human_time(self):
+        trader = KrakenMarginArmyTrader.__new__(KrakenMarginArmyTrader)
+        trader.temporal_cognition = TemporalTradeCognition()
+        trader.thought_bus = None
+        pair = MarginPairInfo(
+            pair="DOGE/USD",
+            internal="XDGUSD",
+            base="XXDG",
+            base_clean="DOGE",
+            quote="USD",
+            leverage_buy=[5],
+            leverage_sell=[5],
+            max_leverage=5,
+            ordermin=1.0,
+            costmin=5.0,
+            lot_decimals=4,
+            price_decimals=5,
+            binance_symbol="DOGEUSDT",
+            last_price=1.0,
+        )
+
+        plan = trader._build_trade_cognition_plan(
+            pair_info=pair,
+            side="buy",
+            entry_price=1.0,
+            target_price=1.01,
+            trade_value=10.0,
+            profit_target_usd=0.10,
+            cognition_context={
+                "required_move_pct": 1.0,
+                "eta_minutes": 3.0,
+                "confidence": 0.75,
+            },
+        )
+
+        self.assertEqual(plan["pair"], "DOGE/USD")
+        self.assertAlmostEqual(plan["eta_minutes"], 3.0)
+        self.assertEqual(
+            plan["expected_by"]["epoch"] - plan["opened_at"]["epoch"],
+            180.0,
+        )
 
 
 if __name__ == "__main__":

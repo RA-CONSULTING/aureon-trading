@@ -9,7 +9,7 @@ in the calm nodes while HFTs fight each other.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -25,7 +25,7 @@ from typing import Dict, List, Optional
 from collections import deque
 
 # Import our quantum arsenal
-from aureon_quantum_warfare_engine import (
+from aureon.simulation.aureon_quantum_warfare_engine import (
     QuantumWarfareEngine, 
     QuantumTradeState,
     HFTInterferencePattern
@@ -42,14 +42,14 @@ BOT_SCANNER_AVAILABLE = True
 
 # Import Queen
 try:
-    from aureon_queen_hive_mind import QueenHiveMind
+    from aureon.utils.aureon_queen_hive_mind import QueenHiveMind
     QUEEN_AVAILABLE = True
 except ImportError:
     QUEEN_AVAILABLE = False
 
 # Import exchange clients
 try:
-    from kraken_client import KrakenClient, get_kraken_client
+    from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
     KRAKEN_AVAILABLE = True
 except ImportError:
     KRAKEN_AVAILABLE = False
@@ -158,11 +158,29 @@ class QuantumWarfareLive:
                         )
                         continue
                 
-                # Fallback to simulation
-                states[symbol] = self._simulate_market_data(symbol)
-                
+                # Stage AE: only substitute simulated market data when the
+                # operator has explicitly opted in via AUREON_ALLOW_SIM_FALLBACK.
+                # Default production posture: skip the symbol so we never trade
+                # on hardcoded 2024 prices ($98,500 BTC, $3,200 ETH, etc.) when
+                # the live ticker fetch hiccups.
+                from aureon.observer.live_data_policy import (
+                    simulation_fallback_allowed, log_blocked_fallback,
+                )
+                if simulation_fallback_allowed():
+                    states[symbol] = self._simulate_market_data(symbol)
+                else:
+                    log_blocked_fallback(f"quantum_warfare_live:{symbol}",
+                                         "ticker_returned_none")
+
             except Exception as e:
-                states[symbol] = self._simulate_market_data(symbol)
+                from aureon.observer.live_data_policy import (
+                    simulation_fallback_allowed, log_blocked_fallback,
+                )
+                if simulation_fallback_allowed():
+                    states[symbol] = self._simulate_market_data(symbol)
+                else:
+                    log_blocked_fallback(f"quantum_warfare_live:{symbol}",
+                                         f"ticker_exc:{type(e).__name__}")
         
         self.market_states = states
         return states
@@ -231,7 +249,10 @@ class QuantumWarfareLive:
                         pattern_id=f"{symbol}_{band_name}",
                         frequency_hz=detected_freq,
                         amplitude=len([i for i in intervals if 1/i > freq_range[0] and 1/i < freq_range[1]]) / len(intervals),
-                        phase=random.uniform(0, 2 * math.pi),
+                        # phase placeholder: was random.uniform(0, 2π); without
+                        # FFT-based phase recovery the value is unknown, so emit
+                        # 0.0 deterministically rather than inject noise.
+                        phase=0.0,
                         firm_attribution=firm,
                         predictability=0.7
                     )

@@ -16,7 +16,7 @@
 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -1024,7 +1024,7 @@ async def run_surveillance_dashboard():
     
     # Import the surveillance system
     try:
-        from aureon_realtime_surveillance import AureonSurveillanceSystem, SimulatedFeed, MarketTick
+        from aureon.monitors.aureon_realtime_surveillance import AureonSurveillanceSystem, SimulatedFeed, MarketTick
     except ImportError:
         logger.error("Cannot import surveillance system. Make sure aureon_realtime_surveillance.py exists.")
         return

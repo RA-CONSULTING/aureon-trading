@@ -2,6 +2,12 @@
 """
 🔮📊 AUREON 30-SECOND QUANTUM PREDICTION STREAM 📊🔮
 
+🟡 STANDALONE SIMULATOR — uses synthetic price ticks (random.gauss).
+   Not imported by production code. Do not call from
+   aureon/queen/, aureon/observer/, or the live HNC daemon.
+   The label "LIVE DATA STREAM" below refers to the simulator's
+   internal cadence, not exchange-feed connectivity.
+
 Three 30-second windows:
 1. CURRENT MARKET VALUATION (30s) - Total market state snapshot
 2. LIVE DATA STREAM (30s) - Real-time price feeds & probability calculations
@@ -15,7 +21,7 @@ Integrates:
 - 4 quantum space propagation (Beta, Alpha, Theta, Delta)
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -50,7 +56,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Import our consciousness system
-from metatron_probability_billion_path import (
+from aureon.wisdom.metatron_probability_billion_path import (
     QueenAurisPingPong, ProbabilityMatrix, BrainwaveState, QuantumSpace
 )
 

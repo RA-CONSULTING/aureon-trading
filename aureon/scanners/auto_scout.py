@@ -1,10 +1,10 @@
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import time
 import json
 import random
 import os
-from unified_exchange_client import MultiExchangeClient
-from aureon_market_pulse import MarketPulse
+from aureon.trading.unified_exchange_client import MultiExchangeClient
+from aureon.intelligence.aureon_market_pulse import MarketPulse
 
 # Configuration
 SCOUT_SIZE_USD = 12.0  # Size of each scout deployment

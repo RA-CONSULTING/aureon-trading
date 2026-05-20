@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Windows UTF-8 wrapper
 
-from queen_eternal_machine import QueenEternalMachine
+from aureon.queen.queen_eternal_machine import QueenEternalMachine
 
 queen = QueenEternalMachine(dry_run=True)
 

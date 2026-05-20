@@ -11,7 +11,7 @@ Usage:
 
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 if sys.platform == 'win32':
@@ -24,12 +24,12 @@ import logging
 from pathlib import Path
 from typing import List
 
-from aureon_hnc_surge_detector import HncSurgeDetector, SurgeWindow
-from aureon_real_data_feed_hub import get_feed_hub
+from aureon.bridges.aureon_hnc_surge_detector import HncSurgeDetector, SurgeWindow
+from aureon.data_feeds.aureon_real_data_feed_hub import get_feed_hub
 
 # Integrations: ThoughtBus for pub/sub and QGITA for Lighthouse validation
 try:
-    from aureon_thought_bus import get_thought_bus, Thought
+    from aureon.core.aureon_thought_bus import get_thought_bus, Thought
     THOUGHT_BUS_OK = True
 except Exception:
     get_thought_bus = None
@@ -37,7 +37,7 @@ except Exception:
     THOUGHT_BUS_OK = False
 
 try:
-    from aureon_qgita_framework import QGITAMarketAnalyzer
+    from aureon.wisdom.aureon_qgita_framework import QGITAMarketAnalyzer
     QGITA_OK = True
 except Exception:
     QGITAMarketAnalyzer = None
@@ -84,7 +84,7 @@ class HncLiveConnector:
 
         # Optional: lazy reference to BotShapeScanner (do not auto-start WS)
         try:
-            from aureon_bot_shape_scanner import BotShapeScanner
+            from aureon.bots_intelligence.aureon_bot_shape_scanner import BotShapeScanner
             self.bot_shape_scanner = BotShapeScanner(self.symbols)
             logger.info("BotShapeScanner: available (not auto-started)")
         except Exception:

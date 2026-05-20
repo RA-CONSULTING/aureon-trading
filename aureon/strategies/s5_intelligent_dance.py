@@ -16,7 +16,7 @@ INTEGRATIONS:
 "Learn more moves as you dance"
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import json
@@ -32,12 +32,12 @@ import math
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from kraken_client import KrakenClient, get_kraken_client
-from binance_client import BinanceClient
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
+from aureon.exchanges.binance_client import BinanceClient
 
 # 🧠 INTELLIGENT INTEGRATIONS
 try:
-    from aureon_mycelium import MyceliumNetwork
+    from aureon.core.aureon_mycelium import MyceliumNetwork
     MYCELIUM_AVAILABLE = True
     print("🍄 Mycelium Network WIRED - Distributed intelligence active!")
 except ImportError:
@@ -45,7 +45,7 @@ except ImportError:
     print("⚠️ Mycelium Network not available")
 
 try:
-    from hnc_probability_matrix import HNCProbabilityIntegration, ProbabilityMatrix
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration, ProbabilityMatrix
     PROB_MATRIX_AVAILABLE = True
     print("🔮 Probability Matrix WIRED - 7-day forecasting active!")
 except ImportError:
@@ -53,7 +53,7 @@ except ImportError:
     print("⚠️ Probability Matrix not available")
 
 try:
-    from aureon_unified_ecosystem import AdaptiveLearningEngine, CONFIG
+    from aureon.trading.aureon_unified_ecosystem import AdaptiveLearningEngine, CONFIG
     ADAPTIVE_LEARNER_AVAILABLE = True
     print("🧬 Adaptive Learning WIRED - Trade learning active!")
 except ImportError:
@@ -63,7 +63,7 @@ except ImportError:
 
 # 🧠⛏️ MINER BRAIN - Cognitive Trading Intelligence
 try:
-    from aureon_miner_brain import MinerBrain
+    from aureon.utils.aureon_miner_brain import MinerBrain
     MINER_BRAIN_AVAILABLE = True
     print("⛏️ Miner Brain WIRED - Cognitive intelligence active!")
 except ImportError:
@@ -72,7 +72,7 @@ except ImportError:
 
 # 🔭 QUANTUM TELESCOPE - Multi-dimensional analysis
 try:
-    from aureon_quantum_telescope import QuantumTelescope
+    from aureon.simulation.aureon_quantum_telescope import QuantumTelescope
     QUANTUM_AVAILABLE = True
     print("🔭 Quantum Telescope WIRED - Multi-dimensional active!")
 except ImportError:
@@ -320,7 +320,7 @@ class DanceIntelligence:
         # 🏆 V14 ENHANCER - 100% WIN RATE SCORING (NEW!)
         self.v14_enhancer = None
         try:
-            from s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG
+            from aureon.strategies.s5_v14_dance_enhancements import V14DanceEnhancer, V14_CONFIG
             self.v14_enhancer = V14DanceEnhancer()
             self.v14_config = V14_CONFIG
             print(f"   🏆 V14 Enhancer: Score {V14_CONFIG['entry_score_threshold']}+, {V14_CONFIG['profit_target_pct']}% target, NO STOP LOSS")

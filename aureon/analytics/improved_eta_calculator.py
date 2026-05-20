@@ -2,6 +2,10 @@
 """
 🔬🎯 IMPROVED ETA CALCULATOR - FIXING THE CORE LOGIC 🎯🔬
 ==========================================================
+🟡 The class itself takes real velocity / pnl values. The __main__
+   block at the bottom uses random.uniform to demo synthetic ticks.
+   Production paths must pass real measurements, not call __main__.
+==========================================================
 
 The old ETA calculation was naive:
     ETA = gap / velocity
@@ -19,7 +23,7 @@ Gary Leckey | December 2025
 "Math that matches reality."
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import math
 import time
 from dataclasses import dataclass, field

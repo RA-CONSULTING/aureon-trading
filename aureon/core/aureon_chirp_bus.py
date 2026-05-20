@@ -7,7 +7,7 @@ Ultra-compact kHz-rate signaling between running components using
 """
 
 from __future__ import annotations
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 
 import os
 import sys
@@ -188,7 +188,7 @@ class ChirpRingBuffer:
 
 
 try:
-    from aureon_harmonic_symbol_table import get_symbol_id
+    from aureon.harmonic.aureon_harmonic_symbol_table import get_symbol_id
     _SYMBOL_TABLE_AVAILABLE = True
 except Exception:
     _SYMBOL_TABLE_AVAILABLE = False

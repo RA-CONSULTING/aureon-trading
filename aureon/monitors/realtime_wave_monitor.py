@@ -9,7 +9,7 @@ Continuously updates wave patterns as new data arrives.
 Gary Leckey & GitHub Copilot | December 2025
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import json
 import math
@@ -86,12 +86,12 @@ def map_frequency_to_solfeggio(freq: float) -> str:
 def run_live_wave_monitor():
     """Run real-time wave monitoring"""
     # Use WebSocket client for streaming data
-    from binance_ws_client import BinanceWebSocketClient
-    from hnc_probability_matrix import HNCProbabilityIntegration
+    from aureon.exchanges.binance_ws_client import BinanceWebSocketClient
+    from aureon.strategies.hnc_probability_matrix import HNCProbabilityIntegration
     
     # Try to initialize ThoughtBus for system integration
     try:
-        from aureon_thought_bus import ThoughtBus, Thought
+        from aureon.core.aureon_thought_bus import ThoughtBus, Thought
         bus = ThoughtBus()
         print("  🧠 ThoughtBus Connected - Coherence signals will be broadcast")
     except ImportError:

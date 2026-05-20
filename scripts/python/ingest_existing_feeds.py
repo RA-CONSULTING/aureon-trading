@@ -43,6 +43,8 @@ except Exception:
     pass
 
 import argparse
+import builtins
+import io
 import json
 import os
 import time
@@ -52,6 +54,32 @@ from datetime import datetime, timezone
 # DB module (always required)
 # ---------------------------------------------------------------------------
 import aureon_global_history_db as db
+
+_STDOUT_FD: int | None = None
+try:
+    if hasattr(sys.__stdout__, "fileno"):
+        _STDOUT_FD = os.dup(sys.__stdout__.fileno())
+except Exception:
+    _STDOUT_FD = None
+
+
+def _restore_stdout() -> None:
+    """Recover after legacy feed modules replace and close stdout."""
+    if not getattr(sys.stdout, "closed", False):
+        return
+    if _STDOUT_FD is None:
+        sys.stdout = sys.__stdout__
+        return
+    try:
+        raw = os.fdopen(os.dup(_STDOUT_FD), "wb", closefd=True)
+        sys.stdout = io.TextIOWrapper(raw, encoding="utf-8", errors="replace", line_buffering=True)
+    except Exception:
+        sys.stdout = sys.__stdout__
+
+
+def print(*args, **kwargs):  # type: ignore[override]
+    _restore_stdout()
+    return builtins.print(*args, **kwargs)
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -108,6 +136,7 @@ def ingest_coingecko(conn, coins: list[str]) -> dict:
     except ImportError as exc:
         return {"status": "skipped", "reason": f"import failed: {exc}"}
 
+    _restore_stdout()
     print("\n[coingecko] Fetching prices ...")
     prices = fetch_coingecko_prices(coins)
     if not prices:
@@ -214,6 +243,7 @@ def ingest_news(conn, keywords: list[str]) -> dict:
     if not api_key:
         return {"status": "skipped", "reason": "WORLD_NEWS_API_KEY not set"}
 
+    _restore_stdout()
     print("\n[news] Fetching recent articles ...")
     import asyncio
 
@@ -313,6 +343,7 @@ def ingest_glassnode(conn, hours_back: int) -> dict:
     if not api_key:
         return {"status": "skipped", "reason": "GLASSNODE_API_KEY not set"}
 
+    _restore_stdout()
     print(f"\n[glassnode] Fetching on-chain data (last {hours_back}h) ...")
     client = GlassnodeClient()
     now = _now_ms()
@@ -403,6 +434,7 @@ def ingest_coinbase(conn, pairs: list[str]) -> dict:
     except ImportError as exc:
         return {"status": "skipped", "reason": f"import failed: {exc}"}
 
+    _restore_stdout()
     print(f"\n[coinbase] Fetching historical candles for {pairs} ...")
     feed = CoinbaseHistoricalFeed()
     now = _now_ms()
@@ -458,6 +490,7 @@ def ingest_macro_intel(conn) -> dict:
     except ImportError as exc:
         return {"status": "skipped", "reason": f"import failed: {exc}"}
 
+    _restore_stdout()
     print("\n[macro_intel] Fetching macro intelligence context ...")
     mi = MacroIntelligence()
     now = _now_ms()

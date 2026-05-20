@@ -22,7 +22,7 @@ Gary Leckey | The Smart Kill | January 2026
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
-from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from aureon.core.aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
 from typing import List, Optional
@@ -41,9 +41,9 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
-from orca_complete_kill_cycle import OrcaKillCycle
-from aureon_live_momentum_hunter import LiveMomentumHunter, HuntResult
-from kraken_client import KrakenClient, get_kraken_client
+from aureon.bots.orca_complete_kill_cycle import OrcaKillCycle
+from aureon.scanners.aureon_live_momentum_hunter import LiveMomentumHunter, HuntResult
+from aureon.exchanges.kraken_client import KrakenClient, get_kraken_client
 from aureon.exchanges.alpaca_client import AlpacaClient
 
 class OrcaSmartKillCycle:
