@@ -1,0 +1,39 @@
+{
+  "name": "flameborn-desktop-experiment",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FlameBorn Academy desktop-first experiment",
+  "author": "flAmeBorn Academy",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "smoke": "node smoke-check.cjs",
+    "pack:dir": "electron-builder --linux dir",
+    "dist:linux": "electron-builder --linux AppImage"
+  },
+  "devDependencies": {
+    "electron": "^36.3.2",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.flameborn.academy.desktop",
+    "productName": "FlameBorn Academy",
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "runtime-manager.cjs",
+      "smoke-check.cjs",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        "dir",
+        "AppImage"
+      ],
+      "category": "Development"
+    }
+  }
+}

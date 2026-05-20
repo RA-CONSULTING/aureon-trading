@@ -1,0 +1,10 @@
+.env
+.env.*
+node_modules/
+dist-workers/
+.wrangler/
+logs/
+npm-debug.log*
+yarn-error.log*
+*.log
+test_output.txt
