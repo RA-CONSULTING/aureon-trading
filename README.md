@@ -55,13 +55,59 @@ This is the operating ethos behind the agent-company system: scope the client si
 | Run the whole organism | [RUNNING.md](RUNNING.md), then `.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791` |
 | Validate before live operation | `.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791` |
 | Watch live trading state | `http://127.0.0.1:8791/api/terminal-state`, `/api/flight-test`, `/api/reboot-advice` |
-| Run the MURGE local companion runtime | `.\scripts\aureon_murge\start_murge_local_runtime.ps1`, then open the MURGE Runtime Activation panel in `http://127.0.0.1:8081/#trading` |
+| Launch Flameborn frontend (replaces MURGE) | `bash scripts/start_aureon_with_flameborn.sh` or `.\scripts\start_aureon_with_flameborn.ps1` — opens `http://127.0.0.1:4173` with Aureon brain bridge |
 | Expand licensed/reachable market data | `.\AUREON_DATA_OCEAN.cmd -Adaptive -CoverageProfile LicensedReachable` |
 | Use the autonomous console | `http://127.0.0.1:8081/` and [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) |
 | Understand HNC/Auris cognition | [CAPABILITIES.md](CAPABILITIES.md), HNC/Auris evidence files, and the live cognition benchmark |
 | Use accounting/HMRC support | `Kings_Accounting_Suite/tools/generate_statutory_filing_pack.py` and the accounting context bridge |
 | Use OS, LLM, code, skills, and desktop capability | The active OS/LLM/code/desktop layer below and [CAPABILITIES.md](CAPABILITIES.md) |
 | Read legacy, research, and historical material | Continue through the rest of this README; older sections are preserved and marked where needed |
+
+---
+
+## Flameborn Frontend Integration
+
+Aureon now ships with **Flameborn** — a first-class web frontend that replaces the legacy MURGE companion runtime. Flameborn runs on Node.js and communicates with the Aureon Python backend via HTTP API.
+
+### Quick Start
+
+```bash
+# Bash (Git Bash / macOS / Linux)
+bash scripts/start_aureon_with_flameborn.sh
+
+# PowerShell (Windows)
+.\scripts\start_aureon_with_flameborn.ps1
+```
+
+This starts:
+- **Aureon Vault UI** on `http://127.0.0.1:5566`
+- **Flameborn Web** on `http://127.0.0.1:4173`
+- *(Optional)* **Flameborn Runtime** on `http://127.0.0.1:7331` for host terminal + Docker sandbox
+
+### What Flameborn Provides
+
+- **Chat UI** with provider routing (OpenRouter, Gemini, local Ollama)
+- **Classroom Mode** — structured learning sessions
+- **Terminal Guard** — safe host shell access with destructive-command blocking
+- **Docker Sandbox** — isolated per-session containers
+- **Orchestrator Panel** — live trading orchestrator control
+- **Neural Pathway Mapper** — AST dependency graph of all `aureon/` modules
+- **Stress Test Suite** — smoke, load, spike, and soak tests
+- **Real-Time WebSocket Bridge** — bidirectional Aureon status + synthetic tick stream
+
+### Integration Docs
+
+Full architecture, environment variables, and Cloudflare deployment notes: [`docs/FLAMEBORN_INTEGRATION.md`](docs/FLAMEBORN_INTEGRATION.md)
+
+### Health Check
+
+```bash
+bash scripts/check_flameborn_integration.sh
+```
+
+Returns exit code 0 only when Aureon Vault UI and Flameborn Web are both reachable and the cross-connectivity bridge works.
+
+---
 
 ### Full Windows Production Supervisor
 
