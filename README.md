@@ -32,6 +32,24 @@ The current organism ethos is a mycelium network organisation. Aureon treats pro
 
 Aureon also carries a cells-to-stars living-system doctrine. Cells define local role autonomy and repair, tissues become departments, organs become specialist subsystems, the nervous system is ThoughtBus and runtime feedback, the immune system is proof/snag/security rejection, ant colonies model temporary worker swarms, mycelium models memory and handoff flow, forest ecosystems model cleanup/recycling/balance, and stars/constellations model long-range navigation from historical waveforms, goals, and research.
 
+### Live Trade-Flow Speed Proof
+
+The Trading screen now includes an **A-to-B Gain Speed** section inside Live Signal Fabric. It measures real current-session fabric events rather than estimating from logs:
+
+- **A-to-B** means `signal_generated -> position_open`.
+- **A-to-gain** means `signal_generated -> outcome_recorded` with positive `net_pnl`.
+- The speed proof is published in `frontend/public/aureon_live_trade_signal_fabric_stress_audit.json`.
+- The backend source is `aureon/autonomous/aureon_live_trade_signal_fabric_stress_audit.py`.
+- The UI source is `frontend/src/App.tsx`.
+
+Refresh the proof with:
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_live_trade_signal_fabric_stress_audit --real-only --json
+```
+
+The proof reports the fastest, p50, and p95 timings for the chain segments it can actually see. If the current runtime has signals but no `position_open` or positive `outcome_recorded`, the dashboard shows that as waiting for proof instead of inventing trade speed. This keeps the organism honest while still exposing the slowest phase pairs, missing timing links, ThoughtBus/Mycelium receipt, and zero direct broker mutation from the audit layer.
+
 ### Biological And Cosmic Operating Ethos
 
 | Living pattern | Aureon translation |

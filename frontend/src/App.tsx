@@ -940,6 +940,38 @@ interface LiveTradeSignalFabricStressAudit {
     producer_wired_count?: number;
     producer_silent_count?: number;
     producer_rate_missing_count?: number;
+    publisher_owner?: string;
+    dedupe_applied?: boolean;
+    dedupe_applied_count?: number;
+    session_scope?: Record<string, unknown>;
+    session_broken_trace_count?: number;
+    session_api_budget_gap_count?: number;
+    session_complete_capital_chain_count?: number;
+    session_external_live_route_leak_count?: number;
+    speed_scope?: string;
+    speed_real_data_only_mode?: boolean;
+    speed_trace_count?: number;
+    speed_session_trace_count?: number;
+    speed_complete_to_position_count?: number;
+    speed_session_complete_to_position_count?: number;
+    speed_outcome_recorded_count?: number;
+    speed_session_outcome_recorded_count?: number;
+    speed_positive_gain_count?: number;
+    speed_session_positive_gain_count?: number;
+    speed_a_to_b_fastest_ms?: number;
+    speed_a_to_b_p50_ms?: number;
+    speed_a_to_b_p95_ms?: number;
+    speed_a_to_gain_fastest_ms?: number;
+    speed_a_to_gain_p50_ms?: number;
+    speed_a_to_gain_p95_ms?: number;
+    speed_round_trip_to_outcome_fastest_ms?: number;
+    speed_round_trip_to_outcome_p50_ms?: number;
+    speed_round_trip_to_outcome_p95_ms?: number;
+    speed_repeat_cycle_fastest_ms?: number;
+    speed_repeat_cycle_p50_ms?: number;
+    speed_repeat_cycle_p95_ms?: number;
+    speed_latest_state?: string;
+    speed_current_answer?: string;
   };
   trace_certification_rows?: Array<Record<string, unknown>>;
   burn_down_rows?: Array<Record<string, unknown>>;
@@ -963,7 +995,354 @@ interface LiveTradeSignalFabricStressAudit {
   api_rate_budget_proof?: Record<string, unknown>;
   bus_mycelium_proof?: Record<string, unknown>;
   stale_phase_proof?: Record<string, unknown>;
+  session_scope?: Record<string, unknown>;
+  session_trace_rows?: Array<Record<string, unknown>>;
+  session_broken_trace_count?: number;
+  session_api_budget_gap_count?: number;
+  a_to_b_gain_speed_proof?: Record<string, unknown>;
+  speed_trace_rows?: Array<Record<string, unknown>>;
+  speed_session_trace_rows?: Array<Record<string, unknown>>;
+  speed_latency_rows?: Array<Record<string, unknown>>;
+  speed_missing_phase_rows?: Array<Record<string, unknown>>;
+  speed_repeat_cycle_rows?: Array<Record<string, unknown>>;
   blockers?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
+interface ParallelStrategyUnity {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    worker_count?: number;
+    healthy_worker_count?: number;
+    latest_signal_count?: number;
+    latest_intent_count?: number;
+    request_lease_count?: number;
+    request_denied_count?: number;
+    intent_queue_count?: number;
+    executable_intent_count?: number;
+    minimum_net_profit_gbp?: number;
+    unified_executor_authoritative?: boolean;
+    direct_broker_mutation_allowed?: boolean;
+    thoughtbus_mycelium_publish_enabled?: boolean;
+    ghost_dance_enabled?: boolean;
+    ghost_dance_protocol?: string;
+    ghost_phase_count?: number;
+    ghost_phase_collision_count?: number;
+    api_key_lock_family_count?: number;
+    ghost_phase_spread_sec?: number;
+    harmonic_api_piano_enabled?: boolean;
+    harmonic_api_piano_protocol?: string;
+    harmonic_tempo_multiplier?: number;
+    harmonic_coherence_blend?: number;
+    piano_key_count?: number;
+    piano_play_now_count?: number;
+    song_stop_guard?: string;
+    rainbow_harmonic_ladder_enabled?: boolean;
+    rainbow_harmonic_ladder_protocol?: string;
+    rainbow_ladder_step_count?: number;
+    rainbow_worker_ladder_count?: number;
+    rainbow_base_frequency_hz?: number;
+    rainbow_song_continuity_guard?: string;
+    power_station_request_governor_enabled?: boolean;
+    power_station_request_protocol?: string;
+    power_station_request_count?: number;
+    power_station_outbound_request_count?: number;
+    power_station_internal_request_count?: number;
+    power_station_authority_violation_count?: number;
+  };
+  shared_goal?: Record<string, unknown>;
+  ghost_dance?: Record<string, unknown>;
+  harmonic_api_piano?: Record<string, unknown>;
+  rainbow_harmonic_ladder?: Record<string, unknown>;
+  power_station_request_governor?: Record<string, unknown>;
+  piano_key_rows?: Array<Record<string, unknown>>;
+  rainbow_ladder_rows?: Array<Record<string, unknown>>;
+  rainbow_worker_rows?: Array<Record<string, unknown>>;
+  worker_rows?: Array<Record<string, unknown>>;
+  api_lease_rows?: Array<Record<string, unknown>>;
+  ghost_dance_lease_rows?: Array<Record<string, unknown>>;
+  rainbow_harmonic_lease_rows?: Array<Record<string, unknown>>;
+  power_station_request_rows?: Array<Record<string, unknown>>;
+  venue_budget_rows?: Array<Record<string, unknown>>;
+  strategy_intent_rows?: Array<Record<string, unknown>>;
+  manual_boundaries?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
+interface ParallelStrategyUnityStressAudit {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    worker_count?: number;
+    healthy_worker_count?: number;
+    stale_worker_count?: number;
+    attention_worker_count?: number;
+    intent_count?: number;
+    executable_intent_count?: number;
+    missing_intent_contract_count?: number;
+    lease_count?: number;
+    denied_lease_count?: number;
+    api_budget_gap_count?: number;
+    mutation_leak_count?: number;
+    denied_mutation_proof_count?: number;
+    duplicate_route_count?: number;
+    strategy_agreement_count?: number;
+    strategy_disagreement_count?: number;
+    ghost_dance_enabled?: boolean;
+    ghost_phase_count?: number;
+    ghost_unique_phase_count?: number;
+    ghost_api_key_lock_family_count?: number;
+    ghost_phase_collision_count?: number;
+    ghost_missing_phase_count?: number;
+    ghost_stale_historical_intent_phase_count?: number;
+    harmonic_api_piano_enabled?: boolean;
+    harmonic_tempo_multiplier?: number;
+    harmonic_coherence_blend?: number;
+    piano_key_count?: number;
+    piano_play_now_count?: number;
+    piano_missing_proof_count?: number;
+    piano_stale_historical_intent_count?: number;
+    song_stop_risk_count?: number;
+    rainbow_harmonic_ladder_enabled?: boolean;
+    rainbow_ladder_step_count?: number;
+    rainbow_worker_ladder_count?: number;
+    rainbow_base_frequency_hz?: number;
+    rainbow_missing_proof_count?: number;
+    rainbow_stale_historical_intent_count?: number;
+    rainbow_song_continuity_risk_count?: number;
+    power_station_request_governor_enabled?: boolean;
+    power_station_request_count?: number;
+    power_station_outbound_request_count?: number;
+    power_station_internal_request_count?: number;
+    power_station_missing_proof_count?: number;
+    power_station_stale_historical_intent_count?: number;
+    power_station_authority_violation_count?: number;
+    audit_self_validation_passed?: boolean;
+    audit_self_validation_failed_count?: number;
+    audit_self_validation_check_count?: number;
+    audit_self_validation_proof_basis?: string;
+    audit_replay_validation_passed?: boolean;
+    audit_replay_validation_failed_count?: number;
+    audit_replay_validation_check_count?: number;
+    audit_integrity_validation_passed?: boolean;
+    audit_integrity_validation_failed_count?: number;
+    audit_integrity_validation_check_count?: number;
+    audit_validation_quorum_passed?: boolean;
+    audit_validation_quorum_failed_count?: number;
+    audit_validation_quorum_check_count?: number;
+    audit_validation_quorum_pass_count?: number;
+    audit_validation_quorum_required_count?: number;
+    audit_artifact_provenance_passed?: boolean;
+    audit_artifact_provenance_failed_count?: number;
+    audit_artifact_provenance_check_count?: number;
+    audit_artifact_provenance_json_match_count?: number;
+    audit_artifact_provenance_json_artifact_count?: number;
+    audit_served_artifact_passed?: boolean;
+    audit_served_artifact_checked?: boolean;
+    audit_served_artifact_core_matches?: boolean;
+    audit_served_artifact_failed_count?: number;
+    audit_served_artifact_check_count?: number;
+    audit_freshness_sla_passed?: boolean;
+    audit_freshness_sla_failed_count?: number;
+    audit_freshness_sla_check_count?: number;
+    audit_freshness_sla_age_sec?: number;
+    audit_freshness_sla_validator_span_sec?: number;
+    audit_operator_surface_passed?: boolean;
+    audit_operator_surface_failed_count?: number;
+    audit_operator_surface_check_count?: number;
+    audit_operator_surface_required_panel_count?: number;
+    audit_operator_surface_mutation_control_count?: number;
+    audit_test_coverage_passed?: boolean;
+    audit_test_coverage_failed_count?: number;
+    audit_test_coverage_check_count?: number;
+    audit_test_coverage_validator_test_count?: number;
+    audit_test_coverage_validator_expected_count?: number;
+    audit_repair_coverage_passed?: boolean;
+    audit_repair_coverage_failed_count?: number;
+    audit_repair_coverage_check_count?: number;
+    audit_repair_coverage_repair_action_count?: number;
+    audit_repair_coverage_generic_repair_count?: number;
+    audit_runtime_repair_readiness_passed?: boolean;
+    audit_runtime_repair_readiness_failed_count?: number;
+    audit_runtime_repair_readiness_check_count?: number;
+    audit_runtime_repair_readiness_guarded_command_line_count?: number;
+    audit_runtime_repair_readiness_unsafe_command_count?: number;
+    audit_runtime_repair_readiness_post_restart_check_count?: number;
+    audit_repair_acceptance_passed?: boolean;
+    audit_repair_acceptance_failed_count?: number;
+    audit_repair_acceptance_check_count?: number;
+    audit_repair_acceptance_acceptance_row_count?: number;
+    audit_repair_acceptance_missing_acceptance_count?: number;
+    audit_repair_acceptance_unmapped_blocker_count?: number;
+    audit_consistency_matrix_passed?: boolean;
+    audit_consistency_matrix_failed_count?: number;
+    audit_consistency_matrix_check_count?: number;
+    audit_consistency_matrix_validator_count?: number;
+    audit_consistency_matrix_validator_pass_count?: number;
+    audit_consistency_matrix_inconsistent_validator_count?: number;
+    audit_evidence_lineage_passed?: boolean;
+    audit_evidence_lineage_failed_count?: number;
+    audit_evidence_lineage_check_count?: number;
+    audit_evidence_lineage_source_path_count?: number;
+    audit_evidence_lineage_output_file_count?: number;
+    audit_evidence_lineage_section_row_count?: number;
+    audit_evidence_lineage_missing_lineage_count?: number;
+    audit_validator_closure_passed?: boolean;
+    audit_validator_closure_failed_count?: number;
+    audit_validator_closure_check_count?: number;
+    audit_validator_closure_validator_count?: number;
+    audit_validator_closure_source_check_count?: number;
+    audit_validator_closure_failed_source_count?: number;
+    audit_public_contract_passed?: boolean;
+    audit_public_contract_failed_count?: number;
+    audit_public_contract_check_count?: number;
+    audit_public_contract_required_summary_field_count?: number;
+    audit_public_contract_required_array_field_count?: number;
+    audit_validation_chain_passed?: boolean;
+    audit_validation_chain_failed_count?: number;
+    audit_validation_chain_check_count?: number;
+    audit_validation_chain_validator_count?: number;
+    audit_validation_chain_validator_pass_count?: number;
+    runtime_alignment?: boolean;
+    runtime_reload_required?: boolean;
+    runtime_code_wired?: boolean;
+    runtime_embeds_parallel_unity?: boolean;
+    runtime_embeds_parallel_intents?: boolean;
+    state_snapshots_present?: boolean;
+    process_discovery_available?: boolean;
+    unified_market_trader_process_count?: number;
+    parallel_strategy_supervisor_process_count?: number;
+    wrong_python_process_count?: number;
+    source_stale_process_count?: number;
+    single_owner_repair_ready?: boolean;
+    guarded_repair_command_ready?: boolean;
+    restart_stop_target_count?: number;
+    restart_start_target_count?: number;
+    post_restart_check_count?: number;
+    fabric_visible?: boolean;
+    thoughtbus_receiving?: boolean;
+    mycelium_receiving?: boolean;
+    minimum_net_profit_gbp?: number;
+    unified_executor_authoritative?: boolean;
+    direct_broker_mutation_allowed?: boolean;
+    blocker_count?: number;
+  };
+  artifact_rows?: Array<Record<string, unknown>>;
+  worker_stress_rows?: Array<Record<string, unknown>>;
+  intent_contract_rows?: Array<Record<string, unknown>>;
+  lease_contract_rows?: Array<Record<string, unknown>>;
+  api_budget_stress_rows?: Array<Record<string, unknown>>;
+  mutation_authority_rows?: Array<Record<string, unknown>>;
+  denied_mutation_proof_rows?: Array<Record<string, unknown>>;
+  strategy_agreement_rows?: Array<Record<string, unknown>>;
+  ghost_dance_proof?: Record<string, unknown>;
+  ghost_phase_rows?: Array<Record<string, unknown>>;
+  ghost_phase_collision_rows?: Array<Record<string, unknown>>;
+  ghost_missing_worker_phase_rows?: Array<Record<string, unknown>>;
+  ghost_missing_lease_phase_rows?: Array<Record<string, unknown>>;
+  ghost_missing_intent_phase_rows?: Array<Record<string, unknown>>;
+  ghost_stale_historical_intent_phase_rows?: Array<Record<string, unknown>>;
+  harmonic_api_piano_proof?: Record<string, unknown>;
+  piano_key_rows?: Array<Record<string, unknown>>;
+  piano_missing_worker_rows?: Array<Record<string, unknown>>;
+  piano_missing_lease_rows?: Array<Record<string, unknown>>;
+  piano_missing_intent_rows?: Array<Record<string, unknown>>;
+  piano_stale_historical_intent_rows?: Array<Record<string, unknown>>;
+  piano_song_stop_risk_rows?: Array<Record<string, unknown>>;
+  rainbow_harmonic_ladder_proof?: Record<string, unknown>;
+  rainbow_ladder_rows?: Array<Record<string, unknown>>;
+  rainbow_worker_ladder_rows?: Array<Record<string, unknown>>;
+  rainbow_missing_worker_rows?: Array<Record<string, unknown>>;
+  rainbow_missing_lease_rows?: Array<Record<string, unknown>>;
+  rainbow_missing_intent_rows?: Array<Record<string, unknown>>;
+  rainbow_stale_historical_intent_rows?: Array<Record<string, unknown>>;
+  rainbow_song_continuity_risk_rows?: Array<Record<string, unknown>>;
+  power_station_request_proof?: Record<string, unknown>;
+  power_station_request_rows?: Array<Record<string, unknown>>;
+  power_station_missing_worker_rows?: Array<Record<string, unknown>>;
+  power_station_missing_lease_rows?: Array<Record<string, unknown>>;
+  power_station_missing_intent_rows?: Array<Record<string, unknown>>;
+  power_station_stale_historical_intent_rows?: Array<Record<string, unknown>>;
+  power_station_authority_violation_rows?: Array<Record<string, unknown>>;
+  audit_self_validation_proof?: Record<string, unknown>;
+  audit_self_validation_rows?: Array<Record<string, unknown>>;
+  audit_self_validation_failed_rows?: Array<Record<string, unknown>>;
+  audit_replay_validation_proof?: Record<string, unknown>;
+  audit_replay_validation_rows?: Array<Record<string, unknown>>;
+  audit_replay_validation_failed_rows?: Array<Record<string, unknown>>;
+  audit_integrity_validation_proof?: Record<string, unknown>;
+  audit_integrity_validation_rows?: Array<Record<string, unknown>>;
+  audit_integrity_validation_failed_rows?: Array<Record<string, unknown>>;
+  audit_validation_quorum_proof?: Record<string, unknown>;
+  audit_validation_quorum_rows?: Array<Record<string, unknown>>;
+  audit_validation_quorum_failed_rows?: Array<Record<string, unknown>>;
+  audit_artifact_provenance_proof?: Record<string, unknown>;
+  audit_artifact_provenance_rows?: Array<Record<string, unknown>>;
+  audit_artifact_provenance_failed_rows?: Array<Record<string, unknown>>;
+  audit_served_artifact_proof?: Record<string, unknown>;
+  audit_served_artifact_rows?: Array<Record<string, unknown>>;
+  audit_served_artifact_failed_rows?: Array<Record<string, unknown>>;
+  audit_freshness_sla_proof?: Record<string, unknown>;
+  audit_freshness_sla_rows?: Array<Record<string, unknown>>;
+  audit_freshness_sla_failed_rows?: Array<Record<string, unknown>>;
+  audit_operator_surface_proof?: Record<string, unknown>;
+  audit_operator_surface_rows?: Array<Record<string, unknown>>;
+  audit_operator_surface_failed_rows?: Array<Record<string, unknown>>;
+  audit_test_coverage_proof?: Record<string, unknown>;
+  audit_test_coverage_rows?: Array<Record<string, unknown>>;
+  audit_test_coverage_failed_rows?: Array<Record<string, unknown>>;
+  audit_test_coverage_validator_rows?: Array<Record<string, unknown>>;
+  audit_repair_coverage_proof?: Record<string, unknown>;
+  audit_repair_coverage_rows?: Array<Record<string, unknown>>;
+  audit_repair_coverage_failed_rows?: Array<Record<string, unknown>>;
+  audit_runtime_repair_readiness_proof?: Record<string, unknown>;
+  audit_runtime_repair_readiness_rows?: Array<Record<string, unknown>>;
+  audit_runtime_repair_readiness_failed_rows?: Array<Record<string, unknown>>;
+  audit_repair_acceptance_proof?: Record<string, unknown>;
+  audit_repair_acceptance_rows?: Array<Record<string, unknown>>;
+  audit_repair_acceptance_failed_rows?: Array<Record<string, unknown>>;
+  audit_repair_acceptance_blocker_rows?: Array<Record<string, unknown>>;
+  audit_consistency_matrix_proof?: Record<string, unknown>;
+  audit_consistency_matrix_rows?: Array<Record<string, unknown>>;
+  audit_consistency_matrix_failed_rows?: Array<Record<string, unknown>>;
+  audit_consistency_matrix_validator_rows?: Array<Record<string, unknown>>;
+  audit_evidence_lineage_proof?: Record<string, unknown>;
+  audit_evidence_lineage_rows?: Array<Record<string, unknown>>;
+  audit_evidence_lineage_failed_rows?: Array<Record<string, unknown>>;
+  audit_evidence_lineage_section_rows?: Array<Record<string, unknown>>;
+  audit_validator_closure_proof?: Record<string, unknown>;
+  audit_validator_closure_rows?: Array<Record<string, unknown>>;
+  audit_validator_closure_failed_rows?: Array<Record<string, unknown>>;
+  audit_validator_closure_source_rows?: Array<Record<string, unknown>>;
+  audit_public_contract_proof?: Record<string, unknown>;
+  audit_public_contract_rows?: Array<Record<string, unknown>>;
+  audit_public_contract_failed_rows?: Array<Record<string, unknown>>;
+  audit_validation_chain_proof?: Record<string, unknown>;
+  audit_validation_chain_rows?: Array<Record<string, unknown>>;
+  audit_validation_chain_failed_rows?: Array<Record<string, unknown>>;
+  audit_validation_chain_validator_rows?: Array<Record<string, unknown>>;
+  executor_dedupe_rows?: Array<Record<string, unknown>>;
+  stale_intent_rows?: Array<Record<string, unknown>>;
+  runtime_alignment_proof?: Record<string, unknown>;
+  runtime_alignment_burndown_rows?: Array<Record<string, unknown>>;
+  runtime_process_proof?: Record<string, unknown>;
+  runtime_process_rows?: Array<Record<string, unknown>>;
+  runtime_process_burndown_rows?: Array<Record<string, unknown>>;
+  single_owner_repair_plan?: Record<string, unknown>;
+  single_owner_stop_target_rows?: Array<Record<string, unknown>>;
+  single_owner_start_target_rows?: Array<Record<string, unknown>>;
+  post_restart_check_rows?: Array<Record<string, unknown>>;
+  single_owner_guard_validation_rows?: Array<Record<string, unknown>>;
+  guarded_repair_command_lines?: string[];
+  guarded_repair_command_preview?: string;
+  fabric_visibility_proof?: Record<string, unknown>;
+  shared_goal_proof?: Record<string, unknown>;
+  next_repair_actions?: Array<Record<string, unknown>>;
+  blockers?: string[];
+  manual_boundaries?: string[];
   source_paths?: Record<string, unknown>;
 }
 
@@ -1453,6 +1832,14 @@ async function loadLiveTradeSignalFabric(signal?: AbortSignal): Promise<LiveTrad
 
 async function loadLiveTradeSignalFabricStressAudit(signal?: AbortSignal): Promise<LiveTradeSignalFabricStressAudit | null> {
   return fetchJsonOrNull<LiveTradeSignalFabricStressAudit>("/aureon_live_trade_signal_fabric_stress_audit.json", signal);
+}
+
+async function loadParallelStrategyUnity(signal?: AbortSignal): Promise<ParallelStrategyUnity | null> {
+  return fetchJsonOrNull<ParallelStrategyUnity>("/aureon_parallel_strategy_unity.json", signal);
+}
+
+async function loadParallelStrategyUnityStressAudit(signal?: AbortSignal): Promise<ParallelStrategyUnityStressAudit | null> {
+  return fetchJsonOrNull<ParallelStrategyUnityStressAudit>("/aureon_parallel_strategy_unity_stress_audit.json", signal);
 }
 
 async function loadCapitalLiveDryStressAudit(signal?: AbortSignal): Promise<CapitalEcosystemLiveDryStressAudit | null> {
@@ -2918,6 +3305,1452 @@ function AureonMurgeRuntimeActivationPanel({ audit }: { audit: AureonMurgeRuntim
   );
 }
 
+function ParallelTradingSystemsPanel({ unity, stress }: { unity: ParallelStrategyUnity | null; stress: ParallelStrategyUnityStressAudit | null }) {
+  const summary = unity?.summary || {};
+  const stressSummary = stress?.summary || {};
+  const workers = asRecordArray(unity?.worker_rows);
+  const leases = asRecordArray(unity?.api_lease_rows);
+  const ghostState = asRecord(unity?.ghost_dance);
+  const pianoState = asRecord(unity?.harmonic_api_piano);
+  const rainbowState = asRecord(unity?.rainbow_harmonic_ladder);
+  const ghostPhaseRows = asRecordArray(stress?.ghost_phase_rows).length ? asRecordArray(stress?.ghost_phase_rows) : asRecordArray(ghostState.worker_phase_rows);
+  const pianoKeyRows = asRecordArray(stress?.piano_key_rows).length ? asRecordArray(stress?.piano_key_rows) : (asRecordArray(unity?.piano_key_rows).length ? asRecordArray(unity?.piano_key_rows) : asRecordArray(pianoState.piano_key_rows));
+  const rainbowRows = asRecordArray(stress?.rainbow_worker_ladder_rows).length ? asRecordArray(stress?.rainbow_worker_ladder_rows) : (asRecordArray(unity?.rainbow_worker_rows).length ? asRecordArray(unity?.rainbow_worker_rows) : asRecordArray(rainbowState.worker_phase_rows));
+  const rainbowMissingRows = [
+    ...asRecordArray(stress?.rainbow_missing_worker_rows),
+    ...asRecordArray(stress?.rainbow_missing_lease_rows),
+    ...asRecordArray(stress?.rainbow_missing_intent_rows),
+  ];
+  const rainbowHistoricalRows = asRecordArray(stress?.rainbow_stale_historical_intent_rows);
+  const rainbowRiskRows = asRecordArray(stress?.rainbow_song_continuity_risk_rows);
+  const powerRows = asRecordArray(stress?.power_station_request_rows).length ? asRecordArray(stress?.power_station_request_rows) : asRecordArray(unity?.power_station_request_rows);
+  const powerMissingRows = [
+    ...asRecordArray(stress?.power_station_missing_worker_rows),
+    ...asRecordArray(stress?.power_station_missing_lease_rows),
+    ...asRecordArray(stress?.power_station_missing_intent_rows),
+  ];
+  const powerHistoricalRows = asRecordArray(stress?.power_station_stale_historical_intent_rows);
+  const powerAuthorityRows = asRecordArray(stress?.power_station_authority_violation_rows);
+  const auditSelfValidationRows = asRecordArray(stress?.audit_self_validation_rows);
+  const auditSelfValidationFailedRows = asRecordArray(stress?.audit_self_validation_failed_rows);
+  const auditReplayValidationRows = asRecordArray(stress?.audit_replay_validation_rows);
+  const auditReplayValidationFailedRows = asRecordArray(stress?.audit_replay_validation_failed_rows);
+  const auditIntegrityValidationRows = asRecordArray(stress?.audit_integrity_validation_rows);
+  const auditIntegrityValidationFailedRows = asRecordArray(stress?.audit_integrity_validation_failed_rows);
+  const auditValidationQuorumRows = asRecordArray(stress?.audit_validation_quorum_rows);
+  const auditValidationQuorumFailedRows = asRecordArray(stress?.audit_validation_quorum_failed_rows);
+  const auditArtifactProvenanceRows = asRecordArray(stress?.audit_artifact_provenance_rows);
+  const auditArtifactProvenanceFailedRows = asRecordArray(stress?.audit_artifact_provenance_failed_rows);
+  const auditServedArtifactRows = asRecordArray(stress?.audit_served_artifact_rows);
+  const auditServedArtifactFailedRows = asRecordArray(stress?.audit_served_artifact_failed_rows);
+  const auditFreshnessSlaRows = asRecordArray(stress?.audit_freshness_sla_rows);
+  const auditFreshnessSlaFailedRows = asRecordArray(stress?.audit_freshness_sla_failed_rows);
+  const auditOperatorSurfaceRows = asRecordArray(stress?.audit_operator_surface_rows);
+  const auditOperatorSurfaceFailedRows = asRecordArray(stress?.audit_operator_surface_failed_rows);
+  const auditTestCoverageRows = asRecordArray(stress?.audit_test_coverage_rows);
+  const auditTestCoverageFailedRows = asRecordArray(stress?.audit_test_coverage_failed_rows);
+  const auditTestCoverageValidatorRows = asRecordArray(stress?.audit_test_coverage_validator_rows);
+  const auditRepairCoverageRows = asRecordArray(stress?.audit_repair_coverage_rows);
+  const auditRepairCoverageFailedRows = asRecordArray(stress?.audit_repair_coverage_failed_rows);
+  const auditRuntimeRepairReadinessRows = asRecordArray(stress?.audit_runtime_repair_readiness_rows);
+  const auditRuntimeRepairReadinessFailedRows = asRecordArray(stress?.audit_runtime_repair_readiness_failed_rows);
+  const auditRepairAcceptanceRows = asRecordArray(stress?.audit_repair_acceptance_rows);
+  const auditRepairAcceptanceFailedRows = asRecordArray(stress?.audit_repair_acceptance_failed_rows);
+  const auditRepairAcceptanceBlockerRows = asRecordArray(stress?.audit_repair_acceptance_blocker_rows);
+  const auditConsistencyMatrixRows = asRecordArray(stress?.audit_consistency_matrix_rows);
+  const auditConsistencyMatrixFailedRows = asRecordArray(stress?.audit_consistency_matrix_failed_rows);
+  const auditConsistencyMatrixValidatorRows = asRecordArray(stress?.audit_consistency_matrix_validator_rows);
+  const auditEvidenceLineageRows = asRecordArray(stress?.audit_evidence_lineage_rows);
+  const auditEvidenceLineageFailedRows = asRecordArray(stress?.audit_evidence_lineage_failed_rows);
+  const auditEvidenceLineageSectionRows = asRecordArray(stress?.audit_evidence_lineage_section_rows);
+  const auditValidatorClosureRows = asRecordArray(stress?.audit_validator_closure_rows);
+  const auditValidatorClosureFailedRows = asRecordArray(stress?.audit_validator_closure_failed_rows);
+  const auditValidatorClosureSourceRows = asRecordArray(stress?.audit_validator_closure_source_rows);
+  const auditPublicContractRows = asRecordArray(stress?.audit_public_contract_rows);
+  const auditPublicContractFailedRows = asRecordArray(stress?.audit_public_contract_failed_rows);
+  const auditValidationChainRows = asRecordArray(stress?.audit_validation_chain_rows);
+  const auditValidationChainFailedRows = asRecordArray(stress?.audit_validation_chain_failed_rows);
+  const auditValidationChainValidatorRows = asRecordArray(stress?.audit_validation_chain_validator_rows);
+  const ghostCollisionRows = asRecordArray(stress?.ghost_phase_collision_rows);
+  const ghostMissingRows = [
+    ...asRecordArray(stress?.ghost_missing_worker_phase_rows),
+    ...asRecordArray(stress?.ghost_missing_lease_phase_rows),
+    ...asRecordArray(stress?.ghost_missing_intent_phase_rows),
+  ];
+  const ghostHistoricalRows = asRecordArray(stress?.ghost_stale_historical_intent_phase_rows);
+  const pianoMissingRows = [
+    ...asRecordArray(stress?.piano_missing_worker_rows),
+    ...asRecordArray(stress?.piano_missing_lease_rows),
+    ...asRecordArray(stress?.piano_missing_intent_rows),
+  ];
+  const pianoHistoricalRows = asRecordArray(stress?.piano_stale_historical_intent_rows);
+  const pianoSongStopRows = asRecordArray(stress?.piano_song_stop_risk_rows);
+  const venues = asRecordArray(unity?.venue_budget_rows);
+  const intents = asRecordArray(unity?.strategy_intent_rows);
+  const stressWorkers = asRecordArray(stress?.worker_stress_rows);
+  const mutationRows = asRecordArray(stress?.mutation_authority_rows);
+  const budgetRows = asRecordArray(stress?.api_budget_stress_rows);
+  const intentContractRows = asRecordArray(stress?.intent_contract_rows);
+  const runtimeBurnDownRows = asRecordArray(stress?.runtime_alignment_burndown_rows);
+  const runtimeProcessRows = asRecordArray(stress?.runtime_process_rows);
+  const runtimeProcessBurnDownRows = asRecordArray(stress?.runtime_process_burndown_rows);
+  const stopTargetRows = asRecordArray(stress?.single_owner_stop_target_rows);
+  const startTargetRows = asRecordArray(stress?.single_owner_start_target_rows);
+  const postRestartRows = asRecordArray(stress?.post_restart_check_rows);
+  const guardValidationRows = asRecordArray(stress?.single_owner_guard_validation_rows);
+  const guardedCommandLines = Array.isArray(stress?.guarded_repair_command_lines) ? stress.guarded_repair_command_lines : [];
+  const repairRows = asRecordArray(stress?.next_repair_actions);
+  const sourcePaths = asRecord(unity?.source_paths);
+  const directMutation = Boolean(summary.direct_broker_mutation_allowed);
+  const allHealthy = asNumber(summary.worker_count) > 0 && asNumber(summary.worker_count) === asNumber(summary.healthy_worker_count);
+  const stressCertified = stress?.status === "parallel_strategy_stress_certified";
+  const active = Boolean(allHealthy && summary.unified_executor_authoritative && !directMutation && (!stress || stressCertified));
+  const statusLabel = String(unity?.status || "parallel strategy unity pending").replace(/_/g, " ");
+  const stressLabel = String(stress?.status || "stress audit pending").replace(/_/g, " ");
+
+  return (
+    <Card className="border-sky-500/30 bg-sky-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Radio className="h-4 w-4 text-sky-300" />
+            Parallel Trading Systems
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={statusLabel} tone={active ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={summary.unified_executor_authoritative ? "one executor" : "executor attention"} tone={summary.unified_executor_authoritative ? statusTone.wired : statusTone.security_blocker} />
+            <Pill label={directMutation ? "direct mutation leak" : "workers signal only"} tone={directMutation ? statusTone.security_blocker : statusTone.wired} />
+            <Pill label={stressLabel} tone={stressCertified ? statusTone.wired : statusTone.orphaned} />
+            <Pill label="/aureon_parallel_strategy_unity.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+            <Pill label="/aureon_parallel_strategy_unity_stress_audit.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          {[
+            ["workers", `${formatCompact(summary.healthy_worker_count)}/${formatCompact(summary.worker_count)}`],
+            ["signals", summary.latest_signal_count],
+            ["worker intents", summary.latest_intent_count],
+            ["intent queue", summary.intent_queue_count],
+            ["3p executable", summary.executable_intent_count],
+            ["leases", summary.request_lease_count],
+            ["denied leases", summary.request_denied_count],
+            ["3p goal", `GBP ${Number(summary.minimum_net_profit_gbp ?? 0.03).toFixed(2)}`],
+            ["ThoughtBus/Mycelium", summary.thoughtbus_mycelium_publish_enabled ? "publishing" : "pending"],
+            ["mode", unity?.mode || "pending"],
+            ["request broker", sourcePaths.request_broker_public || "/aureon_unified_exchange_request_broker.json"],
+            ["strategy intents", sourcePaths.strategy_intents_public || "/aureon_unified_strategy_intents.json"],
+            ["stress blockers", stressSummary.blocker_count],
+            ["stress stale workers", stressSummary.stale_worker_count],
+            ["intent gaps", stressSummary.missing_intent_contract_count],
+            ["budget gaps", stressSummary.api_budget_gap_count],
+            ["mutation leaks", stressSummary.mutation_leak_count],
+            ["strategy agreement", stressSummary.strategy_agreement_count],
+            ["strategy disagreement", stressSummary.strategy_disagreement_count],
+            ["Ghost Dance", summary.ghost_dance_enabled ? "active" : "attention"],
+            ["ghost phases", summary.ghost_phase_count ?? stressSummary.ghost_phase_count],
+            ["API locks", summary.api_key_lock_family_count ?? stressSummary.ghost_api_key_lock_family_count],
+            ["phase collisions", summary.ghost_phase_collision_count ?? stressSummary.ghost_phase_collision_count],
+            ["old ghost rows", stressSummary.ghost_stale_historical_intent_phase_count],
+            ["Harmonic Piano", summary.harmonic_api_piano_enabled ? "active" : "attention"],
+            ["tempo", summary.harmonic_tempo_multiplier ?? stressSummary.harmonic_tempo_multiplier],
+            ["piano keys", summary.piano_key_count ?? stressSummary.piano_key_count],
+            ["song-stop risk", stressSummary.song_stop_risk_count],
+            ["Rainbow Ladder", summary.rainbow_harmonic_ladder_enabled ? "active" : "attention"],
+            ["rainbow steps", summary.rainbow_ladder_step_count ?? stressSummary.rainbow_ladder_step_count],
+            ["base Hz", summary.rainbow_base_frequency_hz ?? stressSummary.rainbow_base_frequency_hz],
+            ["rainbow gaps", stressSummary.rainbow_missing_proof_count],
+            ["Power Station", summary.power_station_request_governor_enabled ? "governing" : "attention"],
+            ["PS requests", summary.power_station_request_count ?? stressSummary.power_station_request_count],
+            ["PS outbound", summary.power_station_outbound_request_count ?? stressSummary.power_station_outbound_request_count],
+            ["PS gaps", stressSummary.power_station_missing_proof_count],
+            ["self validation", stressSummary.audit_self_validation_passed ? "passed" : "attention"],
+            ["self checks", stressSummary.audit_self_validation_check_count],
+            ["self failures", stressSummary.audit_self_validation_failed_count],
+            ["replay validation", stressSummary.audit_replay_validation_passed ? "passed" : "attention"],
+            ["replay checks", stressSummary.audit_replay_validation_check_count],
+            ["replay failures", stressSummary.audit_replay_validation_failed_count],
+            ["integrity validation", stressSummary.audit_integrity_validation_passed ? "passed" : "attention"],
+            ["integrity checks", stressSummary.audit_integrity_validation_check_count],
+            ["integrity failures", stressSummary.audit_integrity_validation_failed_count],
+            ["validation quorum", stressSummary.audit_validation_quorum_passed ? "passed" : "attention"],
+            ["quorum", `${formatCompact(stressSummary.audit_validation_quorum_pass_count)}/${formatCompact(stressSummary.audit_validation_quorum_required_count)}`],
+            ["quorum failures", stressSummary.audit_validation_quorum_failed_count],
+            ["artifact provenance", stressSummary.audit_artifact_provenance_passed ? "passed" : "attention"],
+            ["artifact hashes", `${formatCompact(stressSummary.audit_artifact_provenance_json_match_count)}/${formatCompact(stressSummary.audit_artifact_provenance_json_artifact_count)}`],
+            ["artifact failures", stressSummary.audit_artifact_provenance_failed_count],
+            ["served artifact", stressSummary.audit_served_artifact_passed ? "passed" : "attention"],
+            ["served checked", stressSummary.audit_served_artifact_checked ? "yes" : "fixture skip"],
+            ["served failures", stressSummary.audit_served_artifact_failed_count],
+            ["freshness SLA", stressSummary.audit_freshness_sla_passed ? "passed" : "attention"],
+            ["audit age", `${formatCompact(stressSummary.audit_freshness_sla_age_sec)}s`],
+            ["freshness failures", stressSummary.audit_freshness_sla_failed_count],
+            ["operator surface", stressSummary.audit_operator_surface_passed ? "passed" : "attention"],
+            ["surface panels", stressSummary.audit_operator_surface_required_panel_count],
+            ["surface controls", stressSummary.audit_operator_surface_mutation_control_count],
+            ["test coverage", stressSummary.audit_test_coverage_passed ? "passed" : "attention"],
+            ["validator tests", `${formatCompact(stressSummary.audit_test_coverage_validator_test_count)}/${formatCompact(stressSummary.audit_test_coverage_validator_expected_count)}`],
+            ["coverage failures", stressSummary.audit_test_coverage_failed_count],
+            ["repair coverage", stressSummary.audit_repair_coverage_passed ? "passed" : "attention"],
+            ["repair rows", stressSummary.audit_repair_coverage_repair_action_count],
+            ["generic repairs", stressSummary.audit_repair_coverage_generic_repair_count],
+            ["runtime repair", stressSummary.audit_runtime_repair_readiness_passed ? "ready" : "attention"],
+            ["guard lines", stressSummary.audit_runtime_repair_readiness_guarded_command_line_count],
+            ["unsafe command", stressSummary.audit_runtime_repair_readiness_unsafe_command_count],
+            ["repair acceptance", stressSummary.audit_repair_acceptance_passed ? "mapped" : "attention"],
+            ["acceptance rows", stressSummary.audit_repair_acceptance_acceptance_row_count],
+            ["missing accepts", stressSummary.audit_repair_acceptance_missing_acceptance_count],
+            ["consistency matrix", stressSummary.audit_consistency_matrix_passed ? "passed" : "attention"],
+            ["matrix validators", `${formatCompact(stressSummary.audit_consistency_matrix_validator_pass_count)}/${formatCompact(stressSummary.audit_consistency_matrix_validator_count)}`],
+            ["matrix drift", stressSummary.audit_consistency_matrix_inconsistent_validator_count],
+            ["evidence lineage", stressSummary.audit_evidence_lineage_passed ? "passed" : "attention"],
+            ["lineage sections", stressSummary.audit_evidence_lineage_section_row_count],
+            ["lineage missing", stressSummary.audit_evidence_lineage_missing_lineage_count],
+            ["validator closure", stressSummary.audit_validator_closure_passed ? "passed" : "attention"],
+            ["closure validators", stressSummary.audit_validator_closure_validator_count],
+            ["closure sources", stressSummary.audit_validator_closure_source_check_count],
+            ["public contract", stressSummary.audit_public_contract_passed ? "passed" : "attention"],
+            ["contract fields", stressSummary.audit_public_contract_required_summary_field_count],
+            ["contract failures", stressSummary.audit_public_contract_failed_count],
+            ["validation chain", stressSummary.audit_validation_chain_passed ? "passed" : "attention"],
+            ["validator mirrors", `${formatCompact(stressSummary.audit_validation_chain_validator_pass_count)}/${formatCompact(stressSummary.audit_validation_chain_validator_count)}`],
+            ["chain failures", stressSummary.audit_validation_chain_failed_count],
+            ["runtime aligned", stressSummary.runtime_alignment ? "yes" : "attention"],
+            ["runtime reload", stressSummary.runtime_reload_required ? "required" : "not required"],
+            ["code wired", stressSummary.runtime_code_wired ? "yes" : "attention"],
+            ["state snapshots", stressSummary.state_snapshots_present ? "present" : "attention"],
+            ["UMT processes", stressSummary.unified_market_trader_process_count],
+            ["supervisor processes", stressSummary.parallel_strategy_supervisor_process_count],
+            ["wrong python", stressSummary.wrong_python_process_count],
+            ["repair ready", stressSummary.single_owner_repair_ready ? "yes" : "attention"],
+            ["guarded command", stressSummary.guarded_repair_command_ready ? "ready" : "attention"],
+            ["stop targets", stressSummary.restart_stop_target_count],
+            ["fabric visible", stressSummary.fabric_visible ? "yes" : "attention"],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 truncate font-mono text-sm font-semibold text-sky-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-md border border-sky-500/20 bg-black/20 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="text-xs uppercase text-muted-foreground">Stress audit burn-down</div>
+            <div className="flex flex-wrap gap-1">
+              <Pill label={stressCertified ? "certified" : "attention"} tone={stressCertified ? statusTone.wired : statusTone.orphaned} />
+              <Pill label={stressSummary.unified_executor_authoritative ? "executor owner proven" : "executor proof attention"} tone={stressSummary.unified_executor_authoritative ? statusTone.wired : statusTone.security_blocker} />
+              <Pill label={stressSummary.direct_broker_mutation_allowed ? "direct mutation leak" : "no direct worker mutation"} tone={stressSummary.direct_broker_mutation_allowed ? statusTone.security_blocker : statusTone.wired} />
+            </div>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              ["healthy workers", `${formatCompact(stressSummary.healthy_worker_count)}/${formatCompact(stressSummary.worker_count)}`],
+              ["missing intent fields", stressSummary.missing_intent_contract_count],
+              ["API budget gaps", stressSummary.api_budget_gap_count],
+              ["mutation leaks", stressSummary.mutation_leak_count],
+              ["denied mutation proof", stressSummary.denied_mutation_proof_count],
+              ["duplicate routes", stressSummary.duplicate_route_count],
+              ["ghost phases", stressSummary.ghost_unique_phase_count ?? summary.ghost_phase_count],
+              ["ghost missing", stressSummary.ghost_missing_phase_count],
+              ["ghost historical", stressSummary.ghost_stale_historical_intent_phase_count],
+              ["ghost collisions", stressSummary.ghost_phase_collision_count],
+              ["piano keys", stressSummary.piano_key_count ?? summary.piano_key_count],
+              ["piano play now", stressSummary.piano_play_now_count ?? summary.piano_play_now_count],
+              ["piano missing", stressSummary.piano_missing_proof_count],
+              ["piano historical", stressSummary.piano_stale_historical_intent_count],
+              ["song-stop risks", stressSummary.song_stop_risk_count],
+              ["rainbow ladder", stressSummary.rainbow_harmonic_ladder_enabled ? "active" : "attention"],
+              ["rainbow missing", stressSummary.rainbow_missing_proof_count],
+              ["rainbow risks", stressSummary.rainbow_song_continuity_risk_count],
+              ["power station", stressSummary.power_station_request_governor_enabled ? "active" : "attention"],
+              ["PS requests", stressSummary.power_station_request_count],
+              ["PS authority", stressSummary.power_station_authority_violation_count],
+              ["self validation", stressSummary.audit_self_validation_passed ? "passed" : "attention"],
+              ["self checks", stressSummary.audit_self_validation_check_count],
+              ["self failures", stressSummary.audit_self_validation_failed_count],
+              ["replay validation", stressSummary.audit_replay_validation_passed ? "passed" : "attention"],
+              ["replay checks", stressSummary.audit_replay_validation_check_count],
+              ["replay failures", stressSummary.audit_replay_validation_failed_count],
+              ["integrity validation", stressSummary.audit_integrity_validation_passed ? "passed" : "attention"],
+              ["integrity checks", stressSummary.audit_integrity_validation_check_count],
+              ["integrity failures", stressSummary.audit_integrity_validation_failed_count],
+              ["validation quorum", stressSummary.audit_validation_quorum_passed ? "passed" : "attention"],
+              ["quorum", `${formatCompact(stressSummary.audit_validation_quorum_pass_count)}/${formatCompact(stressSummary.audit_validation_quorum_required_count)}`],
+              ["quorum failures", stressSummary.audit_validation_quorum_failed_count],
+              ["artifact provenance", stressSummary.audit_artifact_provenance_passed ? "passed" : "attention"],
+              ["artifact hashes", `${formatCompact(stressSummary.audit_artifact_provenance_json_match_count)}/${formatCompact(stressSummary.audit_artifact_provenance_json_artifact_count)}`],
+              ["artifact failures", stressSummary.audit_artifact_provenance_failed_count],
+              ["served artifact", stressSummary.audit_served_artifact_passed ? "passed" : "attention"],
+              ["served checked", stressSummary.audit_served_artifact_checked ? "yes" : "fixture skip"],
+              ["served failures", stressSummary.audit_served_artifact_failed_count],
+              ["freshness SLA", stressSummary.audit_freshness_sla_passed ? "passed" : "attention"],
+              ["audit age", `${formatCompact(stressSummary.audit_freshness_sla_age_sec)}s`],
+              ["freshness failures", stressSummary.audit_freshness_sla_failed_count],
+              ["operator surface", stressSummary.audit_operator_surface_passed ? "passed" : "attention"],
+              ["surface panels", stressSummary.audit_operator_surface_required_panel_count],
+              ["surface controls", stressSummary.audit_operator_surface_mutation_control_count],
+              ["test coverage", stressSummary.audit_test_coverage_passed ? "passed" : "attention"],
+              ["validator tests", `${formatCompact(stressSummary.audit_test_coverage_validator_test_count)}/${formatCompact(stressSummary.audit_test_coverage_validator_expected_count)}`],
+              ["coverage failures", stressSummary.audit_test_coverage_failed_count],
+              ["repair coverage", stressSummary.audit_repair_coverage_passed ? "passed" : "attention"],
+              ["repair rows", stressSummary.audit_repair_coverage_repair_action_count],
+              ["generic repairs", stressSummary.audit_repair_coverage_generic_repair_count],
+              ["runtime repair", stressSummary.audit_runtime_repair_readiness_passed ? "ready" : "attention"],
+              ["guard lines", stressSummary.audit_runtime_repair_readiness_guarded_command_line_count],
+              ["unsafe command", stressSummary.audit_runtime_repair_readiness_unsafe_command_count],
+              ["repair acceptance", stressSummary.audit_repair_acceptance_passed ? "mapped" : "attention"],
+              ["acceptance rows", stressSummary.audit_repair_acceptance_acceptance_row_count],
+              ["missing accepts", stressSummary.audit_repair_acceptance_missing_acceptance_count],
+              ["consistency matrix", stressSummary.audit_consistency_matrix_passed ? "passed" : "attention"],
+              ["matrix validators", `${formatCompact(stressSummary.audit_consistency_matrix_validator_pass_count)}/${formatCompact(stressSummary.audit_consistency_matrix_validator_count)}`],
+              ["matrix drift", stressSummary.audit_consistency_matrix_inconsistent_validator_count],
+              ["evidence lineage", stressSummary.audit_evidence_lineage_passed ? "passed" : "attention"],
+              ["lineage sections", stressSummary.audit_evidence_lineage_section_row_count],
+              ["lineage missing", stressSummary.audit_evidence_lineage_missing_lineage_count],
+              ["validator closure", stressSummary.audit_validator_closure_passed ? "passed" : "attention"],
+              ["closure validators", stressSummary.audit_validator_closure_validator_count],
+              ["closure sources", stressSummary.audit_validator_closure_source_check_count],
+              ["public contract", stressSummary.audit_public_contract_passed ? "passed" : "attention"],
+              ["contract fields", stressSummary.audit_public_contract_required_summary_field_count],
+              ["contract failures", stressSummary.audit_public_contract_failed_count],
+              ["validation chain", stressSummary.audit_validation_chain_passed ? "passed" : "attention"],
+              ["validator mirrors", `${formatCompact(stressSummary.audit_validation_chain_validator_pass_count)}/${formatCompact(stressSummary.audit_validation_chain_validator_count)}`],
+              ["chain failures", stressSummary.audit_validation_chain_failed_count],
+              ["runtime alignment", stressSummary.runtime_alignment ? "aligned" : "attention"],
+              ["runtime reload", stressSummary.runtime_reload_required ? "required" : "not required"],
+              ["code wired", stressSummary.runtime_code_wired ? "yes" : "attention"],
+              ["terminal unity", stressSummary.runtime_embeds_parallel_unity ? "embedded" : "missing"],
+              ["terminal intents", stressSummary.runtime_embeds_parallel_intents ? "embedded" : "missing"],
+              ["UMT processes", stressSummary.unified_market_trader_process_count],
+              ["supervisor process", stressSummary.parallel_strategy_supervisor_process_count],
+              ["wrong python", stressSummary.wrong_python_process_count],
+              ["repair ready", stressSummary.single_owner_repair_ready ? "yes" : "attention"],
+              ["guarded command", stressSummary.guarded_repair_command_ready ? "ready" : "attention"],
+              ["stop targets", stressSummary.restart_stop_target_count],
+              ["start targets", stressSummary.restart_start_target_count],
+              ["post checks", stressSummary.post_restart_check_count],
+              ["fabric visibility", stressSummary.fabric_visible ? "visible" : "attention"],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                <div className="uppercase text-muted-foreground">{String(label)}</div>
+                <div className="mt-1 truncate font-mono text-sky-100">{typeof value === "number" ? formatCompact(value) : String(value ?? "0")}</div>
+              </div>
+            ))}
+          </div>
+          {ghostPhaseRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-violet-500/20 bg-violet-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Ghost Dance API phase protocol</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={summary.ghost_dance_enabled || stressSummary.ghost_dance_enabled ? "phase active" : "phase attention"} tone={summary.ghost_dance_enabled || stressSummary.ghost_dance_enabled ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.ghost_phase_collision_count ?? summary.ghost_phase_collision_count)} collision(s)`} tone={asNumber(stressSummary.ghost_phase_collision_count ?? summary.ghost_phase_collision_count) ? statusTone.security_blocker : statusTone.wired} />
+                  <Pill label={`${formatCompact(stressSummary.ghost_api_key_lock_family_count ?? summary.api_key_lock_family_count)} API locks`} tone="border-violet-500/30 bg-violet-500/10 text-violet-200" />
+                  <Pill label={`${formatCompact(stressSummary.ghost_stale_historical_intent_phase_count)} old rows`} tone="border-slate-500/30 bg-slate-500/10 text-slate-200" />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {ghostPhaseRows.slice(0, 8).map((row, index) => (
+                  <div key={`ghost-phase-${String(row.worker_id || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.worker_id || "worker").replace(/_/g, " ")}</span>
+                      <Pill label={`phase ${String(row.ghost_phase_index ?? "?")}/${String(row.ghost_phase_count ?? "?")}`} tone="border-violet-500/30 bg-violet-500/10 text-violet-200" />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.api_key_lock_family || "api lock pending")}</div>
+                    <div className="mt-1 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>offset {String(row.ghost_phase_offset_sec ?? "0")}s</span>
+                      <span>wait {String(row.scheduled_after_ms ?? "0")}ms</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {[...ghostCollisionRows, ...ghostMissingRows, ...ghostHistoricalRows].length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {ghostCollisionRows.slice(0, 2).map((row, index) => (
+                    <div key={`ghost-collision-${String(row.api_key_lock_family || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Ghost phase collision</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.api_key_lock_family || "api lock")} phase {String(row.ghost_phase_index ?? "?")}</div>
+                    </div>
+                  ))}
+                  {ghostMissingRows.slice(0, 2).map((row, index) => (
+                    <div key={`ghost-missing-${String(row.worker_id || row.lease_id || index)}`} className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Ghost phase proof missing</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || row.lease_id || "row")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "phase proof")}</div>
+                    </div>
+                  ))}
+                  {ghostHistoricalRows.slice(0, 2).map((row, index) => (
+                    <div key={`ghost-historical-${String(row.intent_id || index)}`} className="rounded-md border border-slate-500/30 bg-slate-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Historical intent before Ghost Dance</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "phase proof")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {pianoKeyRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Harmonic API Piano</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={summary.harmonic_api_piano_enabled || stressSummary.harmonic_api_piano_enabled ? "tempo active" : "tempo attention"} tone={summary.harmonic_api_piano_enabled || stressSummary.harmonic_api_piano_enabled ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`tempo ${String(summary.harmonic_tempo_multiplier ?? stressSummary.harmonic_tempo_multiplier ?? "0")}`} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+                  <Pill label={`${formatCompact(stressSummary.song_stop_risk_count)} song-stop risk`} tone={asNumber(stressSummary.song_stop_risk_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {pianoKeyRows.slice(0, 8).map((row, index) => (
+                  <div key={`piano-key-${String(row.piano_key_id || row.worker_id || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.worker_id || "worker").replace(/_/g, " ")}</span>
+                      <Pill label={`key ${String(row.piano_key_rank ?? "?")}`} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.piano_key_id || row.api_key_lock_family || "api key lock")}</div>
+                    <div className="mt-1 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>velocity {String(row.piano_velocity_score ?? "0")}</span>
+                      <span>wait {String(row.scheduled_after_ms ?? "0")}ms</span>
+                      <span>window {String(row.api_play_window_ms ?? "0")}ms</span>
+                      <span>{String(row.song_stop_guard || "cooldown")}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {[...pianoMissingRows, ...pianoHistoricalRows, ...pianoSongStopRows].length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {pianoSongStopRows.slice(0, 2).map((row, index) => (
+                    <div key={`piano-risk-${String(row.piano_key_id || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Song-stop risk</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} {String(row.song_stop_guard || "risk")}</div>
+                    </div>
+                  ))}
+                  {pianoMissingRows.slice(0, 2).map((row, index) => (
+                    <div key={`piano-missing-${String(row.worker_id || row.lease_id || index)}`} className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Piano tempo proof missing</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || row.lease_id || "row")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "tempo proof")}</div>
+                    </div>
+                  ))}
+                  {pianoHistoricalRows.slice(0, 2).map((row, index) => (
+                    <div key={`piano-historical-${String(row.intent_id || index)}`} className="rounded-md border border-slate-500/30 bg-slate-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Historical intent before Piano tempo</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "tempo proof")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {rainbowRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Rainbow Harmonic Frequency Ladder</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={summary.rainbow_harmonic_ladder_enabled || stressSummary.rainbow_harmonic_ladder_enabled ? "ladder active" : "ladder attention"} tone={summary.rainbow_harmonic_ladder_enabled || stressSummary.rainbow_harmonic_ladder_enabled ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(summary.rainbow_ladder_step_count ?? stressSummary.rainbow_ladder_step_count)} steps`} tone="border-emerald-500/30 bg-emerald-500/10 text-emerald-200" />
+                  <Pill label={`${String(summary.rainbow_base_frequency_hz ?? stressSummary.rainbow_base_frequency_hz ?? "0")} Hz base`} tone="border-emerald-500/30 bg-emerald-500/10 text-emerald-200" />
+                  <Pill label={`${formatCompact(stressSummary.rainbow_song_continuity_risk_count)} continuity risk`} tone={asNumber(stressSummary.rainbow_song_continuity_risk_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {rainbowRows.slice(0, 8).map((row, index) => (
+                  <div key={`rainbow-row-${String(row.harmony_lane_id || row.worker_id || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.worker_id || "worker").replace(/_/g, " ")}</span>
+                      <Pill label={String(row.rainbow_step_name || "step").replace(/_/g, " ")} tone="border-emerald-500/30 bg-emerald-500/10 text-emerald-200" />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.harmony_lane_id || "harmony lane")}</div>
+                    <div className="mt-1 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>{String(row.rainbow_frequency_hz ?? "0")} Hz</span>
+                      <span>{String(row.request_tempo_band || "tempo")}</span>
+                      <span>{String(row.request_phase_role || "phase")}</span>
+                      <span>{String(row.song_continuity_guard || "guard")}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {[...rainbowMissingRows, ...rainbowHistoricalRows, ...rainbowRiskRows].length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {rainbowRiskRows.slice(0, 2).map((row, index) => (
+                    <div key={`rainbow-risk-${String(row.harmony_lane_id || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Rainbow continuity risk</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} {String(row.song_continuity_guard || "risk")}</div>
+                    </div>
+                  ))}
+                  {rainbowMissingRows.slice(0, 2).map((row, index) => (
+                    <div key={`rainbow-missing-${String(row.worker_id || row.lease_id || index)}`} className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Rainbow ladder proof missing</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || row.lease_id || "row")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "ladder proof")}</div>
+                    </div>
+                  ))}
+                  {rainbowHistoricalRows.slice(0, 2).map((row, index) => (
+                    <div key={`rainbow-historical-${String(row.intent_id || index)}`} className="rounded-md border border-slate-500/30 bg-slate-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Historical intent before Rainbow Ladder</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "ladder proof")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {powerRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-fuchsia-500/20 bg-fuchsia-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Power Station Request Governor</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={summary.power_station_request_governor_enabled || stressSummary.power_station_request_governor_enabled ? "metadata governing" : "metadata attention"} tone={summary.power_station_request_governor_enabled || stressSummary.power_station_request_governor_enabled ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.power_station_outbound_request_count ?? summary.power_station_outbound_request_count)} outbound`} tone="border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200" />
+                  <Pill label={`${formatCompact(stressSummary.power_station_internal_request_count ?? summary.power_station_internal_request_count)} internal`} tone="border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200" />
+                  <Pill label={`${formatCompact(stressSummary.power_station_authority_violation_count)} authority gaps`} tone={asNumber(stressSummary.power_station_authority_violation_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {powerRows.slice(0, 8).map((row, index) => (
+                  <div key={`power-row-${String(row.lease_id || row.request_id || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.worker_id || "worker").replace(/_/g, " ")}</span>
+                      <Pill label={String(row.request_class || "request").replace(/_/g, " ")} tone={row.request_owner_authority === "denied_non_executor_mutation" ? statusTone.security_blocker : "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200"} />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.request_direction || "direction")} / {String(row.request_governor_decision || "decision")}</div>
+                    <div className="mt-1 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>{String(row.power_station_budget_tier || "budget")}</span>
+                      <span>min {String(row.power_station_min_notional ?? "0")}</span>
+                      <span>{String(row.request_owner_authority || "authority")}</span>
+                      <span>{String(row.mutation_scope || "none")}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {[...powerAuthorityRows, ...powerMissingRows, ...powerHistoricalRows].length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {powerAuthorityRows.slice(0, 2).map((row, index) => (
+                    <div key={`power-auth-${String(row.lease_id || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Power Station authority gap</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} {String(row.operation_type || "mutation")}</div>
+                    </div>
+                  ))}
+                  {powerMissingRows.slice(0, 2).map((row, index) => (
+                    <div key={`power-missing-${String(row.worker_id || row.lease_id || index)}`} className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Power Station metadata missing</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || row.lease_id || "row")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "metadata")}</div>
+                    </div>
+                  ))}
+                  {powerHistoricalRows.slice(0, 2).map((row, index) => (
+                    <div key={`power-historical-${String(row.intent_id || index)}`} className="rounded-md border border-slate-500/30 bg-slate-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">Historical intent before Power Station governor</div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "metadata")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditSelfValidationRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-lime-500/20 bg-lime-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Self-Validation</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_self_validation_passed ? "self checked" : "self attention"} tone={stressSummary.audit_self_validation_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_self_validation_check_count)} checks`} tone="border-lime-500/30 bg-lime-500/10 text-lime-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_self_validation_failed_count)} failed`} tone={asNumber(stressSummary.audit_self_validation_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                  <Pill label={String(stressSummary.audit_self_validation_proof_basis || "proof basis pending").replace(/_/g, " ")} tone="border-lime-500/30 bg-lime-500/10 text-lime-200" />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditSelfValidationRows.slice(0, 8).map((row, index) => (
+                  <div key={`self-validation-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "self check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditSelfValidationFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditSelfValidationFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`self-validation-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed self check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "self-validation mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditReplayValidationRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-teal-500/20 bg-teal-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Replay Validation</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_replay_validation_passed ? "replay checked" : "replay attention"} tone={stressSummary.audit_replay_validation_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_replay_validation_check_count)} checks`} tone="border-teal-500/30 bg-teal-500/10 text-teal-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_replay_validation_failed_count)} failed`} tone={asNumber(stressSummary.audit_replay_validation_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditReplayValidationRows.slice(0, 8).map((row, index) => (
+                  <div key={`replay-validation-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "replay check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                    <div className="mt-1 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>expected {String(row.expected ?? "n/a")}</span>
+                      <span>actual {String(row.actual ?? "n/a")}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {auditReplayValidationFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditReplayValidationFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`replay-validation-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed replay check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "audit replay mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditIntegrityValidationRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-blue-500/20 bg-blue-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Integrity Triangulation</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_integrity_validation_passed ? "integrity checked" : "integrity attention"} tone={stressSummary.audit_integrity_validation_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_integrity_validation_check_count)} checks`} tone="border-blue-500/30 bg-blue-500/10 text-blue-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_integrity_validation_failed_count)} failed`} tone={asNumber(stressSummary.audit_integrity_validation_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditIntegrityValidationRows.slice(0, 8).map((row, index) => (
+                  <div key={`integrity-validation-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "integrity check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditIntegrityValidationFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditIntegrityValidationFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`integrity-validation-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed integrity check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "audit integrity mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditValidationQuorumRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-indigo-500/20 bg-indigo-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Validation Quorum</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_validation_quorum_passed ? "quorum trusted" : "quorum attention"} tone={stressSummary.audit_validation_quorum_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_validation_quorum_pass_count)}/${formatCompact(stressSummary.audit_validation_quorum_required_count)} mirrors`} tone="border-indigo-500/30 bg-indigo-500/10 text-indigo-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_validation_quorum_failed_count)} failed`} tone={asNumber(stressSummary.audit_validation_quorum_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditValidationQuorumRows.slice(0, 8).map((row, index) => (
+                  <div key={`validation-quorum-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "quorum check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditValidationQuorumFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditValidationQuorumFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`validation-quorum-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed quorum check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "validation quorum mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditArtifactProvenanceRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Artifact Provenance</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_artifact_provenance_passed ? "artifacts matched" : "artifact attention"} tone={stressSummary.audit_artifact_provenance_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_artifact_provenance_json_match_count)}/${formatCompact(stressSummary.audit_artifact_provenance_json_artifact_count)} hashes`} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_artifact_provenance_failed_count)} failed`} tone={asNumber(stressSummary.audit_artifact_provenance_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditArtifactProvenanceRows.slice(0, 8).map((row, index) => (
+                  <div key={`artifact-provenance-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "artifact check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditArtifactProvenanceFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditArtifactProvenanceFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`artifact-provenance-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed artifact check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "artifact provenance mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditServedArtifactRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-slate-500/20 bg-slate-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Served Artifact</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_served_artifact_passed ? "served matched" : "served attention"} tone={stressSummary.audit_served_artifact_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={stressSummary.audit_served_artifact_checked ? "localhost checked" : "fixture skip"} tone="border-slate-500/30 bg-slate-500/10 text-slate-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_served_artifact_failed_count)} failed`} tone={asNumber(stressSummary.audit_served_artifact_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditServedArtifactRows.slice(0, 8).map((row, index) => (
+                  <div key={`served-artifact-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "served check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditServedArtifactFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditServedArtifactFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`served-artifact-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed served check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "served artifact mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditFreshnessSlaRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Freshness SLA</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_freshness_sla_passed ? "fresh" : "stale attention"} tone={stressSummary.audit_freshness_sla_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_freshness_sla_age_sec)}s age`} tone="border-emerald-500/30 bg-emerald-500/10 text-emerald-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_freshness_sla_failed_count)} failed`} tone={asNumber(stressSummary.audit_freshness_sla_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditFreshnessSlaRows.slice(0, 8).map((row, index) => (
+                  <div key={`freshness-sla-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "freshness check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditFreshnessSlaFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditFreshnessSlaFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`freshness-sla-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed freshness check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "freshness SLA mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditOperatorSurfaceRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Operator Surface</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_operator_surface_passed ? "surface stable" : "surface attention"} tone={stressSummary.audit_operator_surface_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_operator_surface_required_panel_count)} panels`} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_operator_surface_mutation_control_count)} controls`} tone={asNumber(stressSummary.audit_operator_surface_mutation_control_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditOperatorSurfaceRows.slice(0, 8).map((row, index) => (
+                  <div key={`operator-surface-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "surface check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditOperatorSurfaceFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditOperatorSurfaceFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`operator-surface-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed surface check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "operator surface mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditTestCoverageRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-lime-500/20 bg-lime-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Test Coverage</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_test_coverage_passed ? "tests mapped" : "test attention"} tone={stressSummary.audit_test_coverage_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_test_coverage_validator_test_count)}/${formatCompact(stressSummary.audit_test_coverage_validator_expected_count)} validators`} tone="border-lime-500/30 bg-lime-500/10 text-lime-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_test_coverage_failed_count)} failed`} tone={asNumber(stressSummary.audit_test_coverage_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              {auditTestCoverageValidatorRows.length ? (
+                <div className="flex flex-wrap gap-1">
+                  {auditTestCoverageValidatorRows.slice(0, 12).map((row) => (
+                    <Pill
+                      key={String(row.validator_id)}
+                      label={`${String(row.validator_id || "validator").replace(/_/g, " ")} ${row.covered ? "covered" : "attention"}`}
+                      tone={row.covered ? statusTone.wired : statusTone.orphaned}
+                    />
+                  ))}
+                </div>
+              ) : null}
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditTestCoverageRows.slice(0, 8).map((row, index) => (
+                  <div key={`test-coverage-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "coverage check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditTestCoverageFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditTestCoverageFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`test-coverage-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed coverage check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "test coverage mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditRepairCoverageRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-amber-500/20 bg-amber-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Repair Coverage</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_repair_coverage_passed ? "repairs actionable" : "repair attention"} tone={stressSummary.audit_repair_coverage_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_repair_coverage_repair_action_count)} repair rows`} tone="border-amber-500/30 bg-amber-500/10 text-amber-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_repair_coverage_generic_repair_count)} generic`} tone={asNumber(stressSummary.audit_repair_coverage_generic_repair_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditRepairCoverageRows.slice(0, 8).map((row, index) => (
+                  <div key={`repair-coverage-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "repair check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditRepairCoverageFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditRepairCoverageFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`repair-coverage-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed repair check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "repair coverage mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditRuntimeRepairReadinessRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-orange-500/20 bg-orange-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Runtime Repair Readiness</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_runtime_repair_readiness_passed ? "guarded ready" : "guard attention"} tone={stressSummary.audit_runtime_repair_readiness_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_runtime_repair_readiness_guarded_command_line_count)} lines`} tone="border-orange-500/30 bg-orange-500/10 text-orange-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_runtime_repair_readiness_unsafe_command_count)} unsafe`} tone={asNumber(stressSummary.audit_runtime_repair_readiness_unsafe_command_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditRuntimeRepairReadinessRows.slice(0, 8).map((row, index) => (
+                  <div key={`runtime-repair-readiness-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "runtime repair check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditRuntimeRepairReadinessFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditRuntimeRepairReadinessFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`runtime-repair-readiness-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed runtime repair check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "runtime repair readiness mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditRepairAcceptanceRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-yellow-500/20 bg-yellow-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Repair Acceptance</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_repair_acceptance_passed ? "acceptance mapped" : "acceptance attention"} tone={stressSummary.audit_repair_acceptance_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_repair_acceptance_acceptance_row_count)} blockers`} tone="border-yellow-500/30 bg-yellow-500/10 text-yellow-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_repair_acceptance_missing_acceptance_count)} missing`} tone={asNumber(stressSummary.audit_repair_acceptance_missing_acceptance_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              {auditRepairAcceptanceBlockerRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                  {auditRepairAcceptanceBlockerRows.slice(0, 8).map((row, index) => (
+                    <div key={`repair-acceptance-blocker-${String(row.blocker || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-medium">{String(row.blocker || "blocker").replace(/_/g, " ")}</span>
+                        <Pill label={row.acceptance_ready ? "ready" : "attention"} tone={row.acceptance_ready ? statusTone.wired : statusTone.orphaned} />
+                      </div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">
+                        {String(Array.isArray(row.acceptance_requirements) ? row.acceptance_requirements.join(", ") : "acceptance proof")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditRepairAcceptanceRows.slice(0, 8).map((row, index) => (
+                  <div key={`repair-acceptance-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "acceptance check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditRepairAcceptanceFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditRepairAcceptanceFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`repair-acceptance-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed acceptance check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "repair acceptance mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditConsistencyMatrixRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-teal-500/20 bg-teal-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Consistency Matrix</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_consistency_matrix_passed ? "matrix stable" : "matrix attention"} tone={stressSummary.audit_consistency_matrix_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_consistency_matrix_validator_pass_count)}/${formatCompact(stressSummary.audit_consistency_matrix_validator_count)} validators`} tone="border-teal-500/30 bg-teal-500/10 text-teal-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_consistency_matrix_inconsistent_validator_count)} drift`} tone={asNumber(stressSummary.audit_consistency_matrix_inconsistent_validator_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              {auditConsistencyMatrixValidatorRows.length ? (
+                <div className="flex flex-wrap gap-1">
+                  {auditConsistencyMatrixValidatorRows.slice(0, 14).map((row) => (
+                    <Pill
+                      key={String(row.validator_id)}
+                      label={`${String(row.validator_id || "validator").replace(/_/g, " ")} ${row.matrix_consistent ? "consistent" : "drift"}`}
+                      tone={row.matrix_consistent ? statusTone.wired : statusTone.orphaned}
+                    />
+                  ))}
+                </div>
+              ) : null}
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditConsistencyMatrixRows.slice(0, 8).map((row, index) => (
+                  <div key={`consistency-matrix-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "matrix check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditConsistencyMatrixFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditConsistencyMatrixFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`consistency-matrix-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed matrix check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "audit consistency drift")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditEvidenceLineageRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Evidence Lineage</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_evidence_lineage_passed ? "lineage stable" : "lineage attention"} tone={stressSummary.audit_evidence_lineage_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_evidence_lineage_section_row_count)} sections`} tone="border-emerald-500/30 bg-emerald-500/10 text-emerald-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_evidence_lineage_missing_lineage_count)} missing`} tone={asNumber(stressSummary.audit_evidence_lineage_missing_lineage_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              {auditEvidenceLineageSectionRows.length ? (
+                <div className="flex flex-wrap gap-1">
+                  {auditEvidenceLineageSectionRows.slice(0, 16).map((row, index) => (
+                    <Pill
+                      key={`lineage-section-${String(row.section_id || index)}`}
+                      label={`${String(row.section_id || "section").replace(/_/g, " ")} ${row.lineage_present ? "traced" : "attention"}`}
+                      tone={row.lineage_present ? statusTone.wired : statusTone.orphaned}
+                    />
+                  ))}
+                </div>
+              ) : null}
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditEvidenceLineageRows.slice(0, 8).map((row, index) => (
+                  <div key={`evidence-lineage-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "lineage check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditEvidenceLineageFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditEvidenceLineageFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`evidence-lineage-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed lineage check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "evidence lineage mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditValidatorClosureRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Validator Closure</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_validator_closure_passed ? "closure stable" : "closure attention"} tone={stressSummary.audit_validator_closure_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_validator_closure_validator_count)} validators`} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_validator_closure_failed_source_count)} source gaps`} tone={asNumber(stressSummary.audit_validator_closure_failed_source_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              {auditValidatorClosureSourceRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {auditValidatorClosureSourceRows.slice(0, 6).map((row, index) => (
+                    <div key={`validator-closure-source-${String(row.source || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-medium">{String(row.source || "source").replace(/_/g, " ")}</span>
+                        <Pill label={row.passing ? "closed" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                      </div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditValidatorClosureRows.slice(0, 8).map((row, index) => (
+                  <div key={`validator-closure-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "closure check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditValidatorClosureFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditValidatorClosureFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`validator-closure-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed closure check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "validator closure mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditPublicContractRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-sky-500/20 bg-sky-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Public Contract</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_public_contract_passed ? "contract stable" : "contract attention"} tone={stressSummary.audit_public_contract_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_public_contract_required_summary_field_count)} fields`} tone="border-sky-500/30 bg-sky-500/10 text-sky-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_public_contract_failed_count)} failed`} tone={asNumber(stressSummary.audit_public_contract_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditPublicContractRows.slice(0, 8).map((row, index) => (
+                  <div key={`public-contract-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "contract check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditPublicContractFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditPublicContractFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`public-contract-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed contract check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "public contract mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {auditValidationChainRows.length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-violet-500/20 bg-violet-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Audit Validation Chain</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.audit_validation_chain_passed ? "chain trusted" : "chain attention"} tone={stressSummary.audit_validation_chain_passed ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={`${formatCompact(stressSummary.audit_validation_chain_validator_pass_count)}/${formatCompact(stressSummary.audit_validation_chain_validator_count)} validators`} tone="border-violet-500/30 bg-violet-500/10 text-violet-200" />
+                  <Pill label={`${formatCompact(stressSummary.audit_validation_chain_failed_count)} failed`} tone={asNumber(stressSummary.audit_validation_chain_failed_count) ? statusTone.security_blocker : statusTone.wired} />
+                </div>
+              </div>
+              {auditValidationChainValidatorRows.length ? (
+                <div className="flex flex-wrap gap-1">
+                  {auditValidationChainValidatorRows.slice(0, 8).map((row) => (
+                    <Pill
+                      key={String(row.validator_id)}
+                      label={`${String(row.validator_id || "validator").replace(/_/g, " ")} ${row.passed ? "pass" : "attention"}`}
+                      tone={row.passed ? statusTone.wired : statusTone.orphaned}
+                    />
+                  ))}
+                </div>
+              ) : null}
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                {auditValidationChainRows.slice(0, 8).map((row, index) => (
+                  <div key={`validation-chain-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "chain check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {auditValidationChainFailedRows.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {auditValidationChainFailedRows.slice(0, 4).map((row, index) => (
+                    <div key={`validation-chain-failed-${String(row.check || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                      <div className="font-medium">{String(row.check || "failed chain check").replace(/_/g, " ")}</div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || "validation chain mismatch")}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {runtimeBurnDownRows.length ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {runtimeBurnDownRows.slice(0, 6).map((row, index) => (
+                <div key={`runtime-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.check || "runtime check").replace(/_/g, " ")}</span>
+                    <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || row.source || "")}</div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {runtimeProcessBurnDownRows.length ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+              {runtimeProcessBurnDownRows.slice(0, 4).map((row, index) => (
+                <div key={`process-check-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.check || "process check").replace(/_/g, " ")}</span>
+                    <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.detail || row.source || "")}</div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {runtimeProcessRows.length ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {runtimeProcessRows.slice(0, 4).map((row, index) => (
+                <div key={`process-${String(row.pid || index)}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.target || "runtime process").replace(/_/g, " ")}</span>
+                    <Pill label={`PID ${String(row.pid || "n/a")}`} tone="border-sky-500/30 bg-sky-500/10 text-sky-200" />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.exe || row.name || "")}</div>
+                  <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{String(row.command_line || "")}</div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {[...stopTargetRows, ...startTargetRows, ...postRestartRows].length ? (
+            <div className="mt-3 space-y-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs uppercase text-muted-foreground">Single-owner restart plan</div>
+                <div className="flex flex-wrap gap-1">
+                  <Pill label={stressSummary.single_owner_repair_ready ? "launcher ready" : "launcher attention"} tone={stressSummary.single_owner_repair_ready ? statusTone.wired : statusTone.orphaned} />
+                  <Pill label={stressSummary.guarded_repair_command_ready ? "guarded command ready" : "guard attention"} tone={stressSummary.guarded_repair_command_ready ? statusTone.wired : statusTone.orphaned} />
+                </div>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {guardValidationRows.slice(0, 3).map((row, index) => (
+                  <div key={`guard-row-${String(row.check || index)}`} className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(row.check || "guard check").replace(/_/g, " ")}</span>
+                      <Pill label={row.passing ? "pass" : "attention"} tone={row.passing ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.detail || "")}</div>
+                  </div>
+                ))}
+                {stopTargetRows.slice(0, 4).map((row, index) => (
+                  <div key={`stop-target-${String(row.pid || index)}`} className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                    <div className="font-medium">Stop target PID {String(row.pid || "n/a")}</div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.reason || row.target || "")}</div>
+                    <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{String(row.command_preview || "")}</div>
+                  </div>
+                ))}
+                {startTargetRows.slice(0, 3).map((row, index) => (
+                  <div key={`start-target-${String(row.target || index)}`} className="rounded-md border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-xs">
+                    <div className="font-medium">{String(row.target || "start target").replace(/_/g, " ")}</div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.recommended_action || "")}</div>
+                    <div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{String(row.command_preview || "")}</div>
+                  </div>
+                ))}
+                {postRestartRows.slice(0, 3).map((row, index) => (
+                  <div key={`post-check-${String(row.check || index)}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                    <div className="font-medium">{String(row.check || "post check").replace(/_/g, " ")}</div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(row.expected || "")}</div>
+                  </div>
+                ))}
+              </div>
+              {guardedCommandLines.length ? (
+                <div className="rounded-md border border-border/40 bg-black/30 p-3">
+                  <div className="mb-2 text-xs uppercase text-muted-foreground">Guarded command preview</div>
+                  <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] text-cyan-100">
+                    {guardedCommandLines.slice(0, 12).join("\n")}
+                  </pre>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {[...mutationRows, ...budgetRows, ...intentContractRows, ...repairRows].length ? (
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {mutationRows.slice(0, 2).map((row, index) => (
+                <div key={`mutation-${String(row.lease_id || row.intent_id || index)}`} className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs">
+                  <div className="font-medium">Mutation authority gap</div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} / {String(row.operation_type || row.route_key || "mutation")}</div>
+                </div>
+              ))}
+              {budgetRows.slice(0, 2).map((row, index) => (
+                <div key={`budget-${String(row.lease_id || row.venue || index)}`} className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                  <div className="font-medium">API budget gap</div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.venue || "venue")} / {String(row.reason || row.state || "budget pressure")}</div>
+                </div>
+              ))}
+              {intentContractRows.slice(0, 2).map((row, index) => (
+                <div key={`intent-${String(row.intent_id || row.route_key || index)}`} className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs">
+                  <div className="font-medium">Intent contract gap</div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.worker_id || "worker")} missing {String((row.missing_fields as string[] | undefined)?.join(", ") || "fields")}</div>
+                </div>
+              ))}
+              {repairRows.slice(0, 3).map((row, index) => (
+                <div key={`repair-${String(row.blocker || index)}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="font-medium">{String(row.owner || "parallel strategy unity")}</div>
+                  <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.action || "inspect artifact rows")}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+              Stress audit has no burn-down rows for the current parallel strategy artifact.
+            </div>
+          )}
+          {stressWorkers.length ? (
+            <div className="mt-3 flex flex-wrap gap-1">
+              {stressWorkers.slice(0, 8).map((row) => (
+                <Pill
+                  key={String(row.worker_id)}
+                  label={`${String(row.worker_id || "worker")} ${String(row.state || "pending").replace(/_/g, " ")}`}
+                  tone={row.state === "worker_healthy" ? statusTone.wired : statusTone.orphaned}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Worker heartbeats</div>
+              <Pill label={allHealthy ? "all workers heartbeating" : "worker attention"} tone={allHealthy ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {workers.length ? workers.slice(0, 8).map((worker) => {
+                const api = asRecord(worker.api_budget_usage);
+                return (
+                  <div key={String(worker.worker_id || worker.label)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(worker.label || worker.worker_id || "worker")}</span>
+                      <Pill label={String(worker.strategy_status || "pending").replace(/_/g, " ")} tone={worker.strategy_status === "worker_healthy" ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(worker.worker_id || "")} / PID {String(worker.pid || "n/a")}</div>
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>venue {String(worker.venue || "internal")}</span>
+                      <span>signals {formatCompact(worker.latest_signal_count)}</span>
+                      <span>intents {formatCompact(worker.latest_intent_count)}</span>
+                      <span>lease {String(api.lease_status || "pending")}</span>
+                      <span className="col-span-2 truncate">route {String(worker.route_key || "waiting for candidate")}</span>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  Parallel strategy supervisor has not published worker heartbeats yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">API request broker</div>
+              <Pill label={asNumber(summary.request_denied_count) ? "budget attention" : "leases clean"} tone={asNumber(summary.request_denied_count) ? statusTone.orphaned : statusTone.wired} />
+            </div>
+            <div className="grid gap-2">
+              {venues.length ? venues.slice(0, 6).map((venue) => (
+                <div key={String(venue.venue)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="uppercase text-muted-foreground">{String(venue.venue || "venue")}</span>
+                    <span className="font-mono text-sky-100">{formatCompact(venue.rate_remaining)} left/min</span>
+                  </div>
+                  <div className="mt-1 text-muted-foreground">
+                    used {formatCompact(venue.rate_used)} / limit {formatCompact(venue.rate_limit_per_min)} / leases {formatCompact(venue.lease_count)}
+                  </div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No API lease budget rows are visible yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1fr_1fr]">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Unified strategy intent queue</div>
+              <Pill label={`${formatCompact(intents.length)} rows`} tone={intents.length ? statusTone.wired : "border-border bg-muted/20 text-muted-foreground"} />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {intents.length ? intents.slice(0, 6).map((intent) => {
+                const blockers = Array.isArray(intent.blockers) ? intent.blockers.map(String).filter(Boolean) : [];
+                return (
+                  <div key={String(intent.intent_id || intent.route_key)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate font-medium">{String(intent.symbol || intent.route_key || "intent")}</span>
+                      <Pill label={String(intent.side || "HOLD")} tone={intent.three_p_floor_passed && !blockers.length ? statusTone.wired : statusTone.orphaned} />
+                    </div>
+                    <div className="mt-1 truncate text-muted-foreground">{String(intent.worker_id || "worker")} / {String(intent.route_key || "")}</div>
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                      <span>net {Number(intent.expected_net_revenue ?? 0).toFixed(5)}</span>
+                      <span>confidence {Math.round(asNumber(intent.confidence) * 100)}%</span>
+                      <span>3p {intent.three_p_floor_passed ? "pass" : "held"}</span>
+                      <span>{intent.requires_unified_executor ? "unified executor" : "attention"}</span>
+                    </div>
+                    {blockers.length ? (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {blockers.slice(0, 3).map((blocker) => (
+                          <Pill key={blocker} label={blocker.replace(/_/g, " ")} tone={statusTone.security_blocker} />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No strategy intents have reached the shared queue in the current artifact.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Recent API leases</div>
+            <div className="grid gap-2">
+              {leases.length ? leases.slice(0, 6).map((lease) => (
+                <div key={String(lease.lease_id || lease.request_id)} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(lease.worker_id || "worker")}</span>
+                    <Pill label={String(lease.status || "pending")} tone={lease.status === "granted" ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">
+                    {String(lease.venue || "venue")} / {String(lease.operation_type || "operation")} / {String(lease.reason || "lease")}
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">remaining {formatCompact(lease.rate_remaining)} / idempotency {String(lease.idempotency_key || "")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No request leases have been recorded yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {unity?.manual_boundaries?.length ? (
+          <div className="flex flex-wrap gap-1">
+            {unity.manual_boundaries.slice(0, 5).map((boundary) => (
+              <Pill key={boundary} label={boundary} tone="border-border bg-muted/20 text-muted-foreground" />
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function LiveSignalFabricPanel({
   fabric,
   stress,
@@ -2951,6 +4784,12 @@ function LiveSignalFabricPanel({
   const publisherGapRows = asRecordArray(stressSource?.publisher_gap_rows);
   const apiBudgetGapRows = asRecordArray(stressSource?.api_budget_gap_rows);
   const brokerGapRows = asRecordArray(stressSource?.broker_requirement_gap_rows);
+  const sessionScope = asRecord(stressSummary.session_scope || stressSource?.session_scope);
+  const speedProof = asRecord(stressSource?.a_to_b_gain_speed_proof);
+  const speedRows = asRecordArray(stressSource?.speed_trace_rows);
+  const speedLatencyRows = asRecordArray(stressSource?.speed_latency_rows);
+  const speedMissingRows = asRecordArray(stressSource?.speed_missing_phase_rows);
+  const speedRepeatRows = asRecordArray(stressSource?.speed_repeat_cycle_rows);
   const repairRows = asRecordArray(stressSource?.next_repair_actions);
   const broken = asRecordArray(source?.broken_chains);
   const ratePressure = asRecordArray(source?.rate_pressure);
@@ -3005,11 +4844,23 @@ function LiveSignalFabricPanel({
             ["rate certified", `${formatCompact(stressSummary.rate_budget_certified_count)}/${formatCompact(asNumber(stressSummary.rate_budget_certified_count) + asNumber(stressSummary.rate_budget_uncertified_count))}`],
             ["external leaks", stressSummary.external_live_route_leak_count],
             ["Capital chains", stressSummary.complete_capital_chain_count],
-            ["producer state", stressSummary.producer_burndown_state || stressSource?.producer_burndown_state || "pending"],
-            ["wired producers", stressSummary.producer_wired_count],
-            ["silent producers", stressSummary.producer_silent_count],
-            ["rate-missing producers", stressSummary.producer_rate_missing_count],
-          ].map(([label, value]) => (
+              ["producer state", stressSummary.producer_burndown_state || stressSource?.producer_burndown_state || "pending"],
+              ["wired producers", stressSummary.producer_wired_count],
+              ["silent producers", stressSummary.producer_silent_count],
+              ["rate-missing producers", stressSummary.producer_rate_missing_count],
+              ["publisher owner", stressSummary.publisher_owner || "pending"],
+              ["dedupe applied", stressSummary.dedupe_applied ? "yes" : "no"],
+              ["dedupe count", stressSummary.dedupe_applied_count],
+              ["session traces", asNumber(sessionScope.trace_count)],
+              ["session broken", stressSummary.session_broken_trace_count || asNumber(stressSource?.session_broken_trace_count)],
+              ["session rate gaps", stressSummary.session_api_budget_gap_count || asNumber(stressSource?.session_api_budget_gap_count)],
+              ["speed scope", stressSummary.speed_scope || speedProof.scope || "pending"],
+              ["A-to-open p50", stressSummary.speed_a_to_b_p50_ms != null ? `${formatCompact(stressSummary.speed_a_to_b_p50_ms)} ms` : "waiting"],
+              ["A-to-open p95", stressSummary.speed_a_to_b_p95_ms != null ? `${formatCompact(stressSummary.speed_a_to_b_p95_ms)} ms` : "waiting"],
+              ["A-to-gain p50", stressSummary.speed_a_to_gain_p50_ms != null ? `${formatCompact(stressSummary.speed_a_to_gain_p50_ms)} ms` : "waiting"],
+              ["gain traces", stressSummary.speed_positive_gain_count],
+              ["repeat p50", stressSummary.speed_repeat_cycle_p50_ms != null ? `${formatCompact(stressSummary.speed_repeat_cycle_p50_ms)} ms` : "waiting"],
+            ].map(([label, value]) => (
             <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
               <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
               <div className="mt-1 font-mono text-sm font-semibold text-emerald-100">
@@ -3017,6 +4868,95 @@ function LiveSignalFabricPanel({
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="rounded-md border border-cyan-500/20 bg-black/20 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-xs uppercase text-muted-foreground">A-to-B Gain Speed</div>
+              <div className="mt-1 text-sm text-cyan-50">
+                {String(stressSummary.speed_current_answer || speedProof.answer || "Waiting for signal-to-gain timing evidence.")}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              <Pill label={String(stressSummary.speed_latest_state || speedProof.latest_state || "speed pending").replace(/_/g, " ")} tone={asNumber(stressSummary.speed_positive_gain_count) ? statusTone.wired : statusTone.orphaned} />
+              <Pill label={stressSummary.speed_real_data_only_mode || speedProof.real_data_only ? "real data only" : "fabric evidence"} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+              <Pill label="no direct mutation" tone={statusTone.wired} />
+            </div>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-6">
+            {[
+              ["A-to-open fastest", stressSummary.speed_a_to_b_fastest_ms != null ? `${formatCompact(stressSummary.speed_a_to_b_fastest_ms)} ms` : "waiting"],
+              ["A-to-open p50", stressSummary.speed_a_to_b_p50_ms != null ? `${formatCompact(stressSummary.speed_a_to_b_p50_ms)} ms` : "waiting"],
+              ["A-to-open p95", stressSummary.speed_a_to_b_p95_ms != null ? `${formatCompact(stressSummary.speed_a_to_b_p95_ms)} ms` : "waiting"],
+              ["A-to-gain fastest", stressSummary.speed_a_to_gain_fastest_ms != null ? `${formatCompact(stressSummary.speed_a_to_gain_fastest_ms)} ms` : "waiting"],
+              ["A-to-gain p50", stressSummary.speed_a_to_gain_p50_ms != null ? `${formatCompact(stressSummary.speed_a_to_gain_p50_ms)} ms` : "waiting"],
+              ["repeat p50", stressSummary.speed_repeat_cycle_p50_ms != null ? `${formatCompact(stressSummary.speed_repeat_cycle_p50_ms)} ms` : "waiting"],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                <div className="uppercase text-muted-foreground">{String(label)}</div>
+                <div className="mt-1 font-mono text-cyan-100">{String(value ?? "waiting")}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 grid gap-2 xl:grid-cols-3">
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3 text-xs">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="uppercase text-muted-foreground">Fastest traces</span>
+                <Pill label={`${formatCompact(speedRows.length)} traces`} tone={speedRows.length ? statusTone.wired : statusTone.orphaned} />
+              </div>
+              {speedRows.length ? speedRows.slice(0, 4).map((row, index) => (
+                <div key={`${String(row.trace_id || "speed")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.symbol || row.route_key || "trace")}</span>
+                    <span className={row.positive_gain_recorded ? "font-mono text-emerald-100" : "font-mono text-amber-100"}>{String(row.speed_state || "waiting").replace(/_/g, " ")}</span>
+                  </div>
+                  <div className="mt-1 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                    <span>A-open {row.a_to_b_ms != null ? `${formatCompact(row.a_to_b_ms)}ms` : "waiting"}</span>
+                    <span>A-gain {row.a_to_gain_ms != null ? `${formatCompact(row.a_to_gain_ms)}ms` : "waiting"}</span>
+                    <span>latest {String(row.latest_phase || "pending").replace(/_/g, " ")}</span>
+                    <span>P/L {String(row.net_pnl ?? "pending")}</span>
+                  </div>
+                </div>
+              )) : <div className="text-muted-foreground">No speed trace rows are published yet.</div>}
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3 text-xs">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="uppercase text-muted-foreground">Slowest phase pairs</span>
+                <Pill label={`${formatCompact(speedLatencyRows.length)} pairs`} tone={speedLatencyRows.length ? statusTone.wired : statusTone.orphaned} />
+              </div>
+              {speedLatencyRows.length ? speedLatencyRows.slice(0, 4).map((row, index) => (
+                <div key={`${String(row.phase_pair || "pair")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                  <div className="truncate font-medium">{String(row.phase_pair || "phase pair").replace(/_/g, " ")}</div>
+                  <div className="mt-1 grid grid-cols-3 gap-1 text-[11px] text-muted-foreground">
+                    <span>p50 {formatCompact(row.p50_ms)}ms</span>
+                    <span>p95 {formatCompact(row.p95_ms)}ms</span>
+                    <span>n {formatCompact(row.sample_count)}</span>
+                  </div>
+                </div>
+              )) : <div className="text-muted-foreground">No phase-pair timing is complete yet.</div>}
+            </div>
+            <div className="rounded-md border border-border/40 bg-muted/10 p-3 text-xs">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="uppercase text-muted-foreground">Waiting for speed proof</span>
+                <Pill label={`${formatCompact(speedMissingRows.length)} rows`} tone={speedMissingRows.length ? statusTone.orphaned : statusTone.wired} />
+              </div>
+              {speedMissingRows.length ? speedMissingRows.slice(0, 4).map((row, index) => {
+                const missing = Array.isArray(row.missing_speed_phases) ? row.missing_speed_phases.map(String).filter(Boolean) : [];
+                return (
+                  <div key={`${String(row.trace_id || "missing")}-${index}`} className="mt-2 border-t border-border/30 pt-2">
+                    <div className="truncate font-medium">{String(row.symbol || row.route_key || "trace")}</div>
+                    <div className="mt-1 truncate text-muted-foreground">{missing.map((item) => item.replace(/_/g, " ")).join(", ") || "speed proof pending"}</div>
+                  </div>
+                );
+              }) : <div className="text-muted-foreground">Current speed scope has no missing speed rows.</div>}
+              {speedRepeatRows.length ? (
+                <div className="mt-3 border-t border-border/30 pt-2 text-[11px] text-muted-foreground">
+                  repeat-cycle rows {formatCompact(speedRepeatRows.length)}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
 
         <div className="rounded-md border border-emerald-500/20 bg-black/20 p-3">
@@ -3956,6 +5896,8 @@ function AppShell() {
   const [aureonMurgeRuntimeActivation, setAureonMurgeRuntimeActivation] = useState<AureonMurgeRuntimeActivationStressAudit | null>(null);
   const [liveTradeSignalFabric, setLiveTradeSignalFabric] = useState<LiveTradeSignalFabric | null>(null);
   const [liveTradeSignalFabricStressAudit, setLiveTradeSignalFabricStressAudit] = useState<LiveTradeSignalFabricStressAudit | null>(null);
+  const [parallelStrategyUnity, setParallelStrategyUnity] = useState<ParallelStrategyUnity | null>(null);
+  const [parallelStrategyUnityStressAudit, setParallelStrategyUnityStressAudit] = useState<ParallelStrategyUnityStressAudit | null>(null);
   const [capitalLiveDryStressAudit, setCapitalLiveDryStressAudit] = useState<CapitalEcosystemLiveDryStressAudit | null>(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
@@ -4126,6 +6068,20 @@ function AppShell() {
   }, []);
 
   useEffect(() => {
+    const refreshParallelStrategyUnity = async () => setParallelStrategyUnity(await loadParallelStrategyUnity());
+    refreshParallelStrategyUnity();
+    const timer = window.setInterval(refreshParallelStrategyUnity, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refreshParallelStrategyUnityStress = async () => setParallelStrategyUnityStressAudit(await loadParallelStrategyUnityStressAudit());
+    refreshParallelStrategyUnityStress();
+    const timer = window.setInterval(refreshParallelStrategyUnityStress, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     const refreshCapitalLiveDryStress = async () => setCapitalLiveDryStressAudit(await loadCapitalLiveDryStressAudit());
     refreshCapitalLiveDryStress();
     const timer = window.setInterval(refreshCapitalLiveDryStress, FAST_PANEL_REFRESH_MS);
@@ -4186,9 +6142,11 @@ function AppShell() {
         aureonMurgeRuntimeActivation,
         liveTradeSignalFabric,
         liveTradeSignalFabricStressAudit,
+        parallelStrategyUnity,
+        parallelStrategyUnityStressAudit,
         now,
       }),
-    [state, runtime, tradingChecklist, exchangeChecklist, exchangeDataMatrix, globalCoverageMap, hncSecurityComparison, liveGoalTradeAudit, orderLifecycleStressAudit, capitalRevenueLogicStressAudit, capitalRevenueLiveGateReadinessAudit, capitalThreePLiveExecutionCertificationAudit, capitalThreePBlockerBurndownAudit, performanceReadinessAudit, aureonMurgeUnityBridge, aureonMurgeRuntimeActivation, liveTradeSignalFabric, liveTradeSignalFabricStressAudit, now],
+    [state, runtime, tradingChecklist, exchangeChecklist, exchangeDataMatrix, globalCoverageMap, hncSecurityComparison, liveGoalTradeAudit, orderLifecycleStressAudit, capitalRevenueLogicStressAudit, capitalRevenueLiveGateReadinessAudit, capitalThreePLiveExecutionCertificationAudit, capitalThreePBlockerBurndownAudit, performanceReadinessAudit, aureonMurgeUnityBridge, aureonMurgeRuntimeActivation, liveTradeSignalFabric, liveTradeSignalFabricStressAudit, parallelStrategyUnity, parallelStrategyUnityStressAudit, now],
   );
 
   const domainCounts = useMemo(() => inventory.counts?.by_domain || {}, [inventory.counts]);
@@ -4357,6 +6315,7 @@ function AppShell() {
             <PerformanceReadinessPanel audit={performanceReadinessAudit} />
             <AureonMurgeUnityPanel bridge={aureonMurgeUnityBridge} />
             <AureonMurgeRuntimeActivationPanel audit={aureonMurgeRuntimeActivation} />
+            <ParallelTradingSystemsPanel unity={parallelStrategyUnity} stress={parallelStrategyUnityStressAudit} />
             <LiveSignalFabricPanel fabric={liveTradeSignalFabric} stress={liveTradeSignalFabricStressAudit} audit={liveGoalTradeAudit} />
             <CapitalEcosystemIntelligencePanel ecosystem={capitalEcosystemIntelligence} />
             <CapitalRevenueLogicStressPanel audit={capitalRevenueLogicStressAudit} />
@@ -4582,6 +6541,8 @@ function buildFreshnessItems({
   aureonMurgeRuntimeActivation,
   liveTradeSignalFabric,
   liveTradeSignalFabricStressAudit,
+  parallelStrategyUnity,
+  parallelStrategyUnityStressAudit,
   now,
 }: {
   state: UnifiedFrontendState | null;
@@ -4602,6 +6563,8 @@ function buildFreshnessItems({
   aureonMurgeRuntimeActivation: AureonMurgeRuntimeActivationStressAudit | null;
   liveTradeSignalFabric: LiveTradeSignalFabric | null;
   liveTradeSignalFabricStressAudit: LiveTradeSignalFabricStressAudit | null;
+  parallelStrategyUnity: ParallelStrategyUnity | null;
+  parallelStrategyUnityStressAudit: ParallelStrategyUnityStressAudit | null;
   now: number;
 }): FreshnessItem[] {
   const items: FreshnessItem[] = [];
@@ -4666,6 +6629,8 @@ function buildFreshnessItems({
   addManifest("aureon-murge-runtime-activation", "MURGE runtime activation", aureonMurgeRuntimeActivation?.generated_at, aureonMurgeRuntimeActivation?.status, "/aureon_murge_runtime_activation_stress_audit.json", FAST_PANEL_REFRESH_MS, 20, 180);
   addManifest("live-signal-fabric", "Live signal fabric", liveTradeSignalFabric?.generated_at, liveTradeSignalFabric?.status, "/aureon_live_trade_signal_fabric.json", FAST_PANEL_REFRESH_MS, 10, 120);
   addManifest("live-signal-fabric-stress", "Live signal fabric stress", liveTradeSignalFabricStressAudit?.generated_at, liveTradeSignalFabricStressAudit?.status, "/aureon_live_trade_signal_fabric_stress_audit.json", FAST_PANEL_REFRESH_MS, 10, 120);
+  addManifest("parallel-strategy-unity", "Parallel strategy unity", parallelStrategyUnity?.generated_at, parallelStrategyUnity?.status, "/aureon_parallel_strategy_unity.json", FAST_PANEL_REFRESH_MS, 10, 120);
+  addManifest("parallel-strategy-unity-stress", "Parallel strategy stress", parallelStrategyUnityStressAudit?.generated_at, parallelStrategyUnityStressAudit?.status, "/aureon_parallel_strategy_unity_stress_audit.json", FAST_PANEL_REFRESH_MS, 10, 120);
   addManifest("hnc-security", "HNC security", hncSecurityComparison?.generated_at, hncSecurityComparison?.status, "/hnc_packet_security_comparison.json", MANIFEST_REFRESH_MS, 3600, 86400);
 
   (state?.organism.domains || []).slice(0, 16).forEach((domain) => {
