@@ -1009,6 +1009,69 @@ interface LiveTradeSignalFabricStressAudit {
   source_paths?: Record<string, unknown>;
 }
 
+interface SwarmSearchMappingStressAudit {
+  status?: string;
+  generated_at?: string;
+  mode?: string;
+  summary?: {
+    source_system_count?: number;
+    wired_source_system_count?: number;
+    browser_mapping_count?: number;
+    browser_mapping_present_count?: number;
+    data_capture_artifact_count?: number;
+    data_capture_artifact_present_count?: number;
+    fabric_event_count?: number;
+    keyword_search_active?: boolean;
+    latest_keyword_query?: string | null;
+    keyword_scanned_file_count?: number;
+    keyword_match_file_count?: number;
+    keyword_match_count?: number;
+    online_research_cinema_active?: boolean;
+    online_research_topic?: string | null;
+    online_research_source_count?: number;
+    online_research_frame_count?: number;
+    online_research_motion_ready?: boolean;
+    online_research_paper_created?: boolean;
+    research_coding_artifacts_created?: boolean;
+    research_generated_file_count?: number;
+    research_metacognition_active?: boolean;
+    metacognitive_concept_count?: number;
+    metacognitive_understood_concept_count?: number;
+    metacognitive_route_count?: number;
+    metacognitive_ready_route_count?: number;
+    metacognitive_unknown_count?: number;
+    metacognitive_test_action_count?: number;
+    metacognitive_understanding_published?: boolean;
+    phase_seen_count?: number;
+    phase_expected_count?: number;
+    thoughtbus_receiving?: boolean;
+    mycelium_receiving?: boolean;
+    live_search_capture_active?: boolean;
+    no_synthetic_capture?: boolean;
+    no_new_trading_gate?: boolean;
+    no_external_mutation?: boolean;
+  };
+  source_system_rows?: Array<Record<string, unknown>>;
+  browser_mapping_rows?: Array<Record<string, unknown>>;
+  data_capture_rows?: Array<Record<string, unknown>>;
+  keyword_search_rows?: Array<Record<string, unknown>>;
+  online_research_rows?: Array<Record<string, unknown>>;
+  online_research_motion_picture?: Record<string, unknown>;
+  online_research_paper?: Record<string, unknown>;
+  research_coding_handoff?: Record<string, unknown>;
+  research_generated_file_rows?: Array<Record<string, unknown>>;
+  research_metacognition?: Record<string, unknown>;
+  research_metacognition_concept_rows?: Array<Record<string, unknown>>;
+  research_metacognition_route_rows?: Array<Record<string, unknown>>;
+  research_metacognition_unknown_rows?: Array<Record<string, unknown>>;
+  research_metacognition_test_action_rows?: Array<Record<string, unknown>>;
+  phase_rows?: Array<Record<string, unknown>>;
+  recent_search_events?: Array<Record<string, unknown>>;
+  next_actions?: Array<Record<string, unknown>>;
+  manual_boundaries?: string[];
+  source_paths?: Record<string, unknown>;
+}
+
 interface ParallelStrategyUnity {
   status?: string;
   generated_at?: string;
@@ -1832,6 +1895,10 @@ async function loadLiveTradeSignalFabric(signal?: AbortSignal): Promise<LiveTrad
 
 async function loadLiveTradeSignalFabricStressAudit(signal?: AbortSignal): Promise<LiveTradeSignalFabricStressAudit | null> {
   return fetchJsonOrNull<LiveTradeSignalFabricStressAudit>("/aureon_live_trade_signal_fabric_stress_audit.json", signal);
+}
+
+async function loadSwarmSearchMappingStressAudit(signal?: AbortSignal): Promise<SwarmSearchMappingStressAudit | null> {
+  return fetchJsonOrNull<SwarmSearchMappingStressAudit>("/aureon_swarm_search_mapping_stress_audit.json", signal);
 }
 
 async function loadParallelStrategyUnity(signal?: AbortSignal): Promise<ParallelStrategyUnity | null> {
@@ -5279,6 +5346,331 @@ function LiveSignalFabricPanel({
   );
 }
 
+function SwarmSearchMappingPanel({ audit }: { audit: SwarmSearchMappingStressAudit | null }) {
+  const summary = audit?.summary || {};
+  const sourceRows = asRecordArray(audit?.source_system_rows);
+  const phaseRows = asRecordArray(audit?.phase_rows);
+  const captureRows = asRecordArray(audit?.data_capture_rows);
+  const keywordRows = asRecordArray(audit?.keyword_search_rows);
+  const onlineRows = asRecordArray(audit?.online_research_rows);
+  const onlineMotion = asRecord(audit?.online_research_motion_picture);
+  const onlinePaper = asRecord(audit?.online_research_paper);
+  const codingHandoff = asRecord(audit?.research_coding_handoff);
+  const generatedFileRows = asRecordArray(audit?.research_generated_file_rows);
+  const metacognition = asRecord(audit?.research_metacognition);
+  const metacognitionConceptRows = asRecordArray(audit?.research_metacognition_concept_rows);
+  const metacognitionRouteRows = asRecordArray(audit?.research_metacognition_route_rows);
+  const metacognitionUnknownRows = asRecordArray(audit?.research_metacognition_unknown_rows);
+  const metacognitionActionRows = asRecordArray(audit?.research_metacognition_test_action_rows);
+  const browserRows = asRecordArray(audit?.browser_mapping_rows);
+  const recentEvents = asRecordArray(audit?.recent_search_events);
+  const nextActions = asRecordArray(audit?.next_actions);
+  const active = audit?.status === "swarm_search_fabric_active";
+  const statusLabel = String(audit?.status || "swarm search pending").replace(/_/g, " ");
+
+  return (
+    <Card className="border-cyan-500/30 bg-cyan-500/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+          <span className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-cyan-300" />
+            Swarm Search Fabric
+          </span>
+          <div className="flex flex-wrap gap-1">
+            <Pill label={statusLabel} tone={active ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={summary.thoughtbus_receiving ? "ThoughtBus receiving" : "ThoughtBus waiting"} tone={summary.thoughtbus_receiving ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={summary.mycelium_receiving ? "Mycelium receiving" : "Mycelium waiting"} tone={summary.mycelium_receiving ? statusTone.wired : statusTone.orphaned} />
+            <Pill label={summary.no_synthetic_capture ? "real capture only" : "capture attention"} tone={summary.no_synthetic_capture ? statusTone.wired : statusTone.security_blocker} />
+            <Pill label="/aureon_swarm_search_mapping_stress_audit.json" tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          {[
+            ["source systems", `${formatCompact(summary.wired_source_system_count)}/${formatCompact(summary.source_system_count)}`],
+            ["browser map", `${formatCompact(summary.browser_mapping_present_count)}/${formatCompact(summary.browser_mapping_count)}`],
+            ["capture artifacts", `${formatCompact(summary.data_capture_artifact_present_count)}/${formatCompact(summary.data_capture_artifact_count)}`],
+            ["fabric events", summary.fabric_event_count],
+            ["keyword scans", summary.keyword_search_active ? "active" : "waiting"],
+            ["keyword matches", summary.keyword_match_count],
+            ["keyword files", summary.keyword_match_file_count],
+            ["research cinema", summary.online_research_cinema_active ? "active" : "waiting"],
+            ["online sources", summary.online_research_source_count],
+            ["motion frames", summary.online_research_frame_count],
+            ["coding files", summary.research_generated_file_count],
+            ["metacognition", summary.research_metacognition_active ? "active" : "waiting"],
+            ["concepts", `${formatCompact(summary.metacognitive_understood_concept_count)}/${formatCompact(summary.metacognitive_concept_count)}`],
+            ["routes", `${formatCompact(summary.metacognitive_ready_route_count)}/${formatCompact(summary.metacognitive_route_count)}`],
+            ["phases", `${formatCompact(summary.phase_seen_count)}/${formatCompact(summary.phase_expected_count)}`],
+            ["live capture", summary.live_search_capture_active ? "active" : "waiting"],
+            ["new trading gate", summary.no_new_trading_gate ? "no" : "attention"],
+            ["external mutation", summary.no_external_mutation ? "none" : "attention"],
+            ["mode", audit?.mode || "pending"],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-md border border-border/40 bg-black/20 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">{String(label)}</div>
+              <div className="mt-1 truncate font-mono text-sm font-semibold text-cyan-100">
+                {typeof value === "number" ? formatCompact(value) : String(value ?? "0")}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="rounded-md border border-cyan-500/20 bg-black/20 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Search producers</div>
+              <Pill label={`${formatCompact(sourceRows.filter((row) => row.wired).length)} wired`} tone={summary.wired_source_system_count === summary.source_system_count ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {sourceRows.slice(0, 8).map((row) => (
+                <div key={String(row.id || row.path)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.label || row.id || "producer")}</span>
+                    <Pill label={row.wired ? "wired" : "attention"} tone={row.wired ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.role || row.path || "")}</div>
+                  <div className="mt-1 font-mono text-[11px] text-muted-foreground">{formatCompact(row.present_symbol_count)}/{formatCompact(row.required_symbol_count)} symbols</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-md border border-cyan-500/20 bg-black/20 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">A-to-B search phases</div>
+              <Pill label={`${formatCompact(summary.phase_seen_count)}/${formatCompact(summary.phase_expected_count)} seen`} tone={summary.phase_seen_count === summary.phase_expected_count ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {phaseRows.map((row) => (
+                <div key={String(row.phase)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.phase || "phase").replace(/_/g, " ")}</span>
+                    <Pill label={row.seen ? "seen" : "waiting"} tone={row.seen ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.next_producer || "producer pending")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-2">
+          <div className="rounded-md border border-cyan-500/20 bg-black/20 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Online research cinema</div>
+              <Pill label={summary.online_research_cinema_active ? "active" : "waiting"} tone={summary.online_research_cinema_active ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="mb-2 grid gap-2 sm:grid-cols-2">
+              <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs">
+                <div className="truncate text-muted-foreground">topic</div>
+                <div className="mt-1 truncate font-mono text-cyan-100">{String(summary.online_research_topic || "none")}</div>
+              </div>
+              <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs">
+                <div className="truncate text-muted-foreground">paper / motion</div>
+                <div className="mt-1 truncate font-mono text-cyan-100">
+                  {summary.online_research_paper_created ? "paper" : "no paper"} / {summary.online_research_motion_ready ? "motion" : "no motion"}
+                </div>
+              </div>
+              <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs">
+                <div className="truncate text-muted-foreground">coding handoff</div>
+                <div className="mt-1 truncate font-mono text-cyan-100">
+                  {summary.research_coding_artifacts_created ? "files ready" : "waiting"}
+                </div>
+              </div>
+              <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs">
+                <div className="truncate text-muted-foreground">test command</div>
+                <div className="mt-1 truncate font-mono text-cyan-100">{String(codingHandoff.test_command || "pending")}</div>
+              </div>
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {onlineRows.length ? onlineRows.slice(0, 6).map((row, index) => (
+                <div key={`${String(row.url || "online")}-${index}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.title || row.url || "source")}</span>
+                    <Pill label={row.success ? "fetched" : "attention"} tone={row.success ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.url || "")}</div>
+                  <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.summary || row.excerpt || "")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No online research cinema packet has been captured yet.
+                </div>
+              )}
+            </div>
+            {generatedFileRows.length ? (
+              <div className="mt-3 rounded-md border border-cyan-500/20 bg-black/20 p-3">
+                <div className="mb-2 text-xs uppercase text-muted-foreground">Generated coding files</div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {generatedFileRows.slice(0, 8).map((row, index) => (
+                    <div key={`${String(row.path || "file")}-${index}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-medium">{String(row.path || "generated file")}</span>
+                        <Pill label={row.ok ? "written" : "attention"} tone={row.ok ? statusTone.wired : statusTone.orphaned} />
+                      </div>
+                      <div className="mt-1 truncate text-muted-foreground">{String(row.authoring_path || "writer")}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="mt-2 flex flex-wrap gap-1">
+              <Pill label={String(onlinePaper.path || "paper pending")} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+              <Pill label={String(onlineMotion.public_html || "motion pending")} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+            </div>
+          </div>
+
+          <div className="rounded-md border border-cyan-500/20 bg-black/20 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Metacognitive understanding</div>
+              <Pill label={summary.research_metacognition_active ? "active" : "waiting"} tone={summary.research_metacognition_active ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="mb-2 grid gap-2 sm:grid-cols-2">
+              <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs">
+                <div className="truncate text-muted-foreground">understanding</div>
+                <div className="mt-1 truncate font-mono text-cyan-100">
+                  {summary.metacognitive_understanding_published ? "published" : "waiting"}
+                </div>
+              </div>
+              <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs">
+                <div className="truncate text-muted-foreground">unknowns / actions</div>
+                <div className="mt-1 truncate font-mono text-cyan-100">
+                  {formatCompact(summary.metacognitive_unknown_count)} / {formatCompact(summary.metacognitive_test_action_count)}
+                </div>
+              </div>
+            </div>
+            <div className="mb-3 line-clamp-3 rounded-md border border-border/40 bg-muted/10 p-3 text-xs text-muted-foreground">
+              {String(metacognition.understanding_summary || "No metacognitive research packet has been published yet.")}
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {metacognitionConceptRows.slice(0, 8).map((row, index) => (
+                <div key={`${String(row.concept_id || "concept")}-${index}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.label || row.concept_id || "concept")}</span>
+                    <Pill label={String(row.status || "waiting").replace(/_/g, " ")} tone={row.status === "understood" ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.meaning || row.route || "")}</div>
+                </div>
+              ))}
+            </div>
+            {metacognitionRouteRows.length ? (
+              <div className="mt-3 rounded-md border border-border/40 bg-muted/10 p-3">
+                <div className="mb-2 text-xs uppercase text-muted-foreground">Organism routes</div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {metacognitionRouteRows.slice(0, 8).map((row, index) => (
+                    <div key={`${String(row.route_id || "route")}-${index}`} className="rounded-md border border-border/40 bg-black/20 px-3 py-2 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate font-medium">{String(row.system || row.route_id || "route")}</span>
+                        <Pill label={row.ready ? "ready" : "context"} tone={row.ready ? statusTone.wired : statusTone.orphaned} />
+                      </div>
+                      <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.relation || row.authority || "")}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="mt-3 flex flex-wrap gap-1">
+              {metacognitionUnknownRows.slice(0, 4).map((row, index) => (
+                <Pill key={`${String(row.unknown_id || "unknown")}-${index}`} label={String(row.state || row.area || "unknown").replace(/_/g, " ")} tone={statusTone.orphaned} />
+              ))}
+              {metacognitionActionRows.slice(0, 3).map((row, index) => (
+                <Pill key={`${String(row.action_id || "action")}-${index}`} label={String(row.action_id || "test action").replace(/_/g, " ")} tone="border-cyan-500/30 bg-cyan-500/10 text-cyan-200" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-4">
+          <div className="rounded-md border border-border/40 bg-black/20 p-3">
+            <div className="mb-2 text-xs uppercase text-muted-foreground">Data capture artifacts</div>
+            <div className="space-y-2">
+              {captureRows.slice(0, 8).map((row) => (
+                <div key={String(row.path)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.path || "artifact")}</span>
+                    <Pill label={row.present ? "present" : "missing"} tone={row.present ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.purpose || "")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-black/20 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-xs uppercase text-muted-foreground">Keyword read proof</div>
+              <Pill label={summary.keyword_search_active ? "active" : "waiting"} tone={summary.keyword_search_active ? statusTone.wired : statusTone.orphaned} />
+            </div>
+            <div className="mb-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs">
+              <div className="truncate text-muted-foreground">latest query</div>
+              <div className="mt-1 truncate font-mono text-cyan-100">{String(summary.latest_keyword_query || "none")}</div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                scanned {formatCompact(summary.keyword_scanned_file_count)} / matches {formatCompact(summary.keyword_match_count)}
+              </div>
+            </div>
+            <div className="space-y-2">
+              {keywordRows.length ? keywordRows.slice(0, 6).map((row, index) => (
+                <div key={`${String(row.path || "keyword")}-${String(row.line || index)}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.path || "local file")}</span>
+                    <span className="font-mono text-cyan-100">L{formatCompact(row.line)}</span>
+                  </div>
+                  <div className="mt-1 line-clamp-2 text-muted-foreground">{String(row.snippet || "")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No local keyword scan has been captured yet.
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-black/20 p-3">
+            <div className="mb-2 text-xs uppercase text-muted-foreground">Browser mapping</div>
+            <div className="space-y-2">
+              {browserRows.map((row) => (
+                <div key={String(row.surface)} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.surface || "browser surface")}</span>
+                    <Pill label={row.present ? "present" : "missing"} tone={row.present ? statusTone.wired : statusTone.orphaned} />
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.evidence || "")}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-md border border-border/40 bg-black/20 p-3">
+            <div className="mb-2 text-xs uppercase text-muted-foreground">Recent live search events</div>
+            <div className="space-y-2">
+              {recentEvents.length ? recentEvents.slice(-6).reverse().map((row, index) => (
+                <div key={`${String(row.event_id || row.phase)}-${index}`} className="rounded-md border border-border/40 bg-muted/10 px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-medium">{String(row.phase || "event").replace(/_/g, " ")}</span>
+                    <span className="font-mono text-cyan-100">{formatCompact(row.result_count)}</span>
+                  </div>
+                  <div className="mt-1 truncate text-muted-foreground">{String(row.source || row.source_system || "source")}</div>
+                </div>
+              )) : (
+                <div className="rounded-md border border-border/40 bg-muted/10 p-4 text-sm text-muted-foreground">
+                  No live search event has reached the fabric yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {nextActions.length ? (
+          <div className="flex flex-wrap gap-1">
+            {nextActions.slice(0, 10).map((row, index) => (
+              <Pill key={`${String(row.area || "action")}-${index}`} label={`${String(row.area || "search").replace(/_/g, " ")}: ${String(row.state || "attention").replace(/_/g, " ")}`} tone={statusTone.orphaned} />
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function CapitalRevenueLogicStressPanel({ audit }: { audit: CapitalRevenueLogicStressAudit | null }) {
   const summary = audit?.summary || {};
   const netRows = asRecordArray(audit?.net_positive_candidates);
@@ -5896,6 +6288,7 @@ function AppShell() {
   const [aureonMurgeRuntimeActivation, setAureonMurgeRuntimeActivation] = useState<AureonMurgeRuntimeActivationStressAudit | null>(null);
   const [liveTradeSignalFabric, setLiveTradeSignalFabric] = useState<LiveTradeSignalFabric | null>(null);
   const [liveTradeSignalFabricStressAudit, setLiveTradeSignalFabricStressAudit] = useState<LiveTradeSignalFabricStressAudit | null>(null);
+  const [swarmSearchMappingStressAudit, setSwarmSearchMappingStressAudit] = useState<SwarmSearchMappingStressAudit | null>(null);
   const [parallelStrategyUnity, setParallelStrategyUnity] = useState<ParallelStrategyUnity | null>(null);
   const [parallelStrategyUnityStressAudit, setParallelStrategyUnityStressAudit] = useState<ParallelStrategyUnityStressAudit | null>(null);
   const [capitalLiveDryStressAudit, setCapitalLiveDryStressAudit] = useState<CapitalEcosystemLiveDryStressAudit | null>(null);
@@ -6068,6 +6461,13 @@ function AppShell() {
   }, []);
 
   useEffect(() => {
+    const refreshSwarmSearchMapping = async () => setSwarmSearchMappingStressAudit(await loadSwarmSearchMappingStressAudit());
+    refreshSwarmSearchMapping();
+    const timer = window.setInterval(refreshSwarmSearchMapping, FAST_PANEL_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     const refreshParallelStrategyUnity = async () => setParallelStrategyUnity(await loadParallelStrategyUnity());
     refreshParallelStrategyUnity();
     const timer = window.setInterval(refreshParallelStrategyUnity, FAST_PANEL_REFRESH_MS);
@@ -6142,11 +6542,12 @@ function AppShell() {
         aureonMurgeRuntimeActivation,
         liveTradeSignalFabric,
         liveTradeSignalFabricStressAudit,
+        swarmSearchMappingStressAudit,
         parallelStrategyUnity,
         parallelStrategyUnityStressAudit,
         now,
       }),
-    [state, runtime, tradingChecklist, exchangeChecklist, exchangeDataMatrix, globalCoverageMap, hncSecurityComparison, liveGoalTradeAudit, orderLifecycleStressAudit, capitalRevenueLogicStressAudit, capitalRevenueLiveGateReadinessAudit, capitalThreePLiveExecutionCertificationAudit, capitalThreePBlockerBurndownAudit, performanceReadinessAudit, aureonMurgeUnityBridge, aureonMurgeRuntimeActivation, liveTradeSignalFabric, liveTradeSignalFabricStressAudit, parallelStrategyUnity, parallelStrategyUnityStressAudit, now],
+    [state, runtime, tradingChecklist, exchangeChecklist, exchangeDataMatrix, globalCoverageMap, hncSecurityComparison, liveGoalTradeAudit, orderLifecycleStressAudit, capitalRevenueLogicStressAudit, capitalRevenueLiveGateReadinessAudit, capitalThreePLiveExecutionCertificationAudit, capitalThreePBlockerBurndownAudit, performanceReadinessAudit, aureonMurgeUnityBridge, aureonMurgeRuntimeActivation, liveTradeSignalFabric, liveTradeSignalFabricStressAudit, swarmSearchMappingStressAudit, parallelStrategyUnity, parallelStrategyUnityStressAudit, now],
   );
 
   const domainCounts = useMemo(() => inventory.counts?.by_domain || {}, [inventory.counts]);
@@ -6316,6 +6717,7 @@ function AppShell() {
             <AureonMurgeUnityPanel bridge={aureonMurgeUnityBridge} />
             <AureonMurgeRuntimeActivationPanel audit={aureonMurgeRuntimeActivation} />
             <ParallelTradingSystemsPanel unity={parallelStrategyUnity} stress={parallelStrategyUnityStressAudit} />
+            <SwarmSearchMappingPanel audit={swarmSearchMappingStressAudit} />
             <LiveSignalFabricPanel fabric={liveTradeSignalFabric} stress={liveTradeSignalFabricStressAudit} audit={liveGoalTradeAudit} />
             <CapitalEcosystemIntelligencePanel ecosystem={capitalEcosystemIntelligence} />
             <CapitalRevenueLogicStressPanel audit={capitalRevenueLogicStressAudit} />
@@ -6541,6 +6943,7 @@ function buildFreshnessItems({
   aureonMurgeRuntimeActivation,
   liveTradeSignalFabric,
   liveTradeSignalFabricStressAudit,
+  swarmSearchMappingStressAudit,
   parallelStrategyUnity,
   parallelStrategyUnityStressAudit,
   now,
@@ -6563,6 +6966,7 @@ function buildFreshnessItems({
   aureonMurgeRuntimeActivation: AureonMurgeRuntimeActivationStressAudit | null;
   liveTradeSignalFabric: LiveTradeSignalFabric | null;
   liveTradeSignalFabricStressAudit: LiveTradeSignalFabricStressAudit | null;
+  swarmSearchMappingStressAudit: SwarmSearchMappingStressAudit | null;
   parallelStrategyUnity: ParallelStrategyUnity | null;
   parallelStrategyUnityStressAudit: ParallelStrategyUnityStressAudit | null;
   now: number;
@@ -6629,6 +7033,7 @@ function buildFreshnessItems({
   addManifest("aureon-murge-runtime-activation", "MURGE runtime activation", aureonMurgeRuntimeActivation?.generated_at, aureonMurgeRuntimeActivation?.status, "/aureon_murge_runtime_activation_stress_audit.json", FAST_PANEL_REFRESH_MS, 20, 180);
   addManifest("live-signal-fabric", "Live signal fabric", liveTradeSignalFabric?.generated_at, liveTradeSignalFabric?.status, "/aureon_live_trade_signal_fabric.json", FAST_PANEL_REFRESH_MS, 10, 120);
   addManifest("live-signal-fabric-stress", "Live signal fabric stress", liveTradeSignalFabricStressAudit?.generated_at, liveTradeSignalFabricStressAudit?.status, "/aureon_live_trade_signal_fabric_stress_audit.json", FAST_PANEL_REFRESH_MS, 10, 120);
+  addManifest("swarm-search-mapping", "Swarm search mapping", swarmSearchMappingStressAudit?.generated_at, swarmSearchMappingStressAudit?.status, "/aureon_swarm_search_mapping_stress_audit.json", FAST_PANEL_REFRESH_MS, 30, 300);
   addManifest("parallel-strategy-unity", "Parallel strategy unity", parallelStrategyUnity?.generated_at, parallelStrategyUnity?.status, "/aureon_parallel_strategy_unity.json", FAST_PANEL_REFRESH_MS, 10, 120);
   addManifest("parallel-strategy-unity-stress", "Parallel strategy stress", parallelStrategyUnityStressAudit?.generated_at, parallelStrategyUnityStressAudit?.status, "/aureon_parallel_strategy_unity_stress_audit.json", FAST_PANEL_REFRESH_MS, 10, 120);
   addManifest("hnc-security", "HNC security", hncSecurityComparison?.generated_at, hncSecurityComparison?.status, "/hnc_packet_security_comparison.json", MANIFEST_REFRESH_MS, 3600, 86400);

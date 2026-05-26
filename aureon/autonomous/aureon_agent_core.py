@@ -179,6 +179,16 @@ INTENT_MAP: Dict[str, str] = {
     "write_file": "write_file",
     "find_files": "find_files",
     "search_files": "find_files",
+    "keyword_search": "keyword_search_files",
+    "keyword_search_files": "keyword_search_files",
+    "search_text": "keyword_search_files",
+    "search_tests": "keyword_search_files",
+    "online_research_cinema": "online_research_cinema",
+    "research_cinema": "online_research_cinema",
+    "make_research_paper": "online_research_cinema",
+    "research_metacognition": "research_metacognition",
+    "metacognitive_research": "research_metacognition",
+    "understand_research": "research_metacognition",
     "copy_file": "copy_file",
     "move_file": "move_file",
     "delete_file": "delete_file",
@@ -320,6 +330,19 @@ class AureonAgentCore:
             "summary": str(result.get("result", ""))[:300],
         }
         self._append_jsonl(ACTION_LOG_PATH, entry)
+
+    def _publish_search_capture(self, phase: str, **payload: Any) -> dict:
+        """Best-effort search/browser/data-capture fabric publish."""
+        try:
+            from aureon.search.swarm_search_fabric import publish_search_event
+
+            return publish_search_event(
+                phase=phase,
+                source_system="aureon_agent_core",
+                **payload,
+            )
+        except Exception:
+            return {}
 
     # ===================================================================
     #  1. SHELL EXECUTION
@@ -493,9 +516,34 @@ class AureonAgentCore:
     # ===================================================================
     def web_search(self, query: str, num_results: int = 5) -> list:
         """Search the web via DuckDuckGo HTML and return results."""
+        start_event = self._publish_search_capture(
+            "query_received",
+            query=query,
+            source="duckduckgo_html",
+            metadata={"num_results": num_results},
+        )
+        trace_id = start_event.get("trace_id")
+        query_id = start_event.get("query_id")
         if not HAS_REQUESTS or not HAS_BS4:
+            self._publish_search_capture(
+                "search_failed",
+                query=query,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="duckduckgo_html",
+                status="missing_dependency",
+                error="requests or beautifulsoup4 not installed",
+            )
             return [{"error": "requests or beautifulsoup4 not installed"}]
         try:
+            self._publish_search_capture(
+                "source_selected",
+                query=query,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="duckduckgo_html",
+                metadata={"endpoint": "https://html.duckduckgo.com/html/"},
+            )
             resp = requests.get(
                 "https://html.duckduckgo.com/html/",
                 params={"q": query},
@@ -513,11 +561,53 @@ class AureonAgentCore:
                     "snippet": snippet_el.get_text(strip=True) if snippet_el else "",
                     "url": link_el.get_text(strip=True) if link_el else "",
                 })
-            return results or self._official_learning_search_fallback(query, num_results)
+            if results:
+                self._publish_search_capture(
+                    "result_captured",
+                    query=query,
+                    trace_id=trace_id,
+                    query_id=query_id,
+                    source="duckduckgo_html",
+                    result_count=len(results),
+                    status="success",
+                    metadata={"http_status": resp.status_code},
+                )
+                return results
+            fallback = self._official_learning_search_fallback(query, num_results)
+            self._publish_search_capture(
+                "result_captured",
+                query=query,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="official_learning_fallback",
+                result_count=len(fallback),
+                status="fallback",
+                metadata={"http_status": resp.status_code},
+            )
+            return fallback
         except Exception as exc:
             fallback = self._official_learning_search_fallback(query, num_results)
             if fallback:
+                self._publish_search_capture(
+                    "result_captured",
+                    query=query,
+                    trace_id=trace_id,
+                    query_id=query_id,
+                    source="official_learning_fallback",
+                    result_count=len(fallback),
+                    status="fallback_after_error",
+                    error=str(exc),
+                )
                 return fallback
+            self._publish_search_capture(
+                "search_failed",
+                query=query,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="duckduckgo_html",
+                status="error",
+                error=str(exc),
+            )
             return [{"error": str(exc)}]
 
     def _official_learning_search_fallback(self, query: str, num_results: int = 5) -> list:
@@ -554,7 +644,21 @@ class AureonAgentCore:
 
     def web_fetch(self, url: str) -> dict:
         """Fetch a web page and return its text content."""
+        start_event = self._publish_search_capture(
+            "page_fetch_requested",
+            url=url,
+            source="requests",
+        )
+        trace_id = start_event.get("trace_id")
         if not HAS_REQUESTS:
+            self._publish_search_capture(
+                "page_fetch_failed",
+                url=url,
+                trace_id=trace_id,
+                source="requests",
+                status="missing_dependency",
+                error="requests not installed",
+            )
             return {"success": False, "error": "requests not installed"}
         try:
             resp = requests.get(url, timeout=20, headers={
@@ -567,6 +671,19 @@ class AureonAgentCore:
                 text = soup.get_text(separator="\n", strip=True)
             else:
                 text = resp.text
+            self._publish_search_capture(
+                "page_fetched",
+                url=url,
+                trace_id=trace_id,
+                source="requests",
+                result_count=1,
+                status="success",
+                metadata={
+                    "http_status": resp.status_code,
+                    "captured_text_chars": len(text or ""),
+                    "stored_text_chars": min(len(text or ""), 10000),
+                },
+            )
             return {
                 "success": True,
                 "url": url,
@@ -574,14 +691,35 @@ class AureonAgentCore:
                 "text": text[:10000],
             }
         except Exception as exc:
+            self._publish_search_capture(
+                "page_fetch_failed",
+                url=url,
+                trace_id=trace_id,
+                source="requests",
+                status="error",
+                error=str(exc),
+            )
             return {"success": False, "error": str(exc)}
 
     def open_url(self, url: str) -> dict:
         """Open a URL in the default browser."""
         try:
             webbrowser.open(url)
+            self._publish_search_capture(
+                "browser_opened",
+                url=url,
+                source="default_browser",
+                status="success",
+            )
             return {"success": True, "url": url}
         except Exception as exc:
+            self._publish_search_capture(
+                "browser_open_failed",
+                url=url,
+                source="default_browser",
+                status="error",
+                error=str(exc),
+            )
             return {"success": False, "error": str(exc)}
 
     # ===================================================================
@@ -654,6 +792,152 @@ class AureonAgentCore:
             return [str(f) for f in base.rglob(pattern)][:500]
         except Exception as exc:
             return [f"ERROR: {exc}"]
+
+    def keyword_search_files(
+        self,
+        keyword: str,
+        scope: str = "tests",
+        max_results: int = 40,
+        require_all_terms: bool = False,
+    ) -> dict:
+        """Read local text/test files and return keyword match snippets."""
+        start_event = self._publish_search_capture(
+            "keyword_scan_requested",
+            query=keyword,
+            source="local_keyword_search",
+            metadata={
+                "scope": scope,
+                "max_results": max_results,
+                "require_all_terms": require_all_terms,
+            },
+        )
+        trace_id = start_event.get("trace_id")
+        query_id = start_event.get("query_id")
+        try:
+            from aureon.search.local_keyword_search import run_keyword_search
+
+            result = run_keyword_search(
+                keyword=keyword,
+                scope=scope,
+                max_results=max_results,
+                require_all_terms=require_all_terms,
+                repo_root=self.repo_root,
+            )
+            summary = result.get("summary", {}) if isinstance(result, dict) else {}
+            scanned = int(summary.get("scanned_file_count") or 0)
+            matches = int(summary.get("match_count") or 0)
+            matched_files = int(summary.get("matched_file_count") or 0)
+            self._publish_search_capture(
+                "keyword_file_read",
+                query=keyword,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="local_keyword_search",
+                result_count=scanned,
+                status="success",
+                metadata={"scope": scope, "scanned_file_count": scanned},
+            )
+            self._publish_search_capture(
+                "keyword_match_captured",
+                query=keyword,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="local_keyword_search",
+                result_count=matches,
+                status="success" if matches else "no_matches",
+                metadata={
+                    "scope": scope,
+                    "matched_file_count": matched_files,
+                    "sample_paths": result.get("matched_paths", [])[:12] if isinstance(result, dict) else [],
+                },
+            )
+            self._publish_search_capture(
+                "keyword_scan_completed",
+                query=keyword,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="local_keyword_search",
+                result_count=matches,
+                status=str(result.get("status") or "success") if isinstance(result, dict) else "success",
+                metadata={"scope": scope, "matched_file_count": matched_files},
+            )
+            return result
+        except Exception as exc:
+            self._publish_search_capture(
+                "keyword_scan_failed",
+                query=keyword,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="local_keyword_search",
+                status="error",
+                error=str(exc),
+                metadata={"scope": scope},
+            )
+            return {"success": False, "error": str(exc), "keyword": keyword, "scope": scope}
+
+    def online_research_cinema(
+        self,
+        topic: str,
+        query: str = "",
+        urls: Optional[List[str]] = None,
+        max_sources: int = 5,
+    ) -> dict:
+        """Fetch online sources, render a motion replay, and draft a paper."""
+        try:
+            from aureon.search.online_research_cinema import build_online_research_cinema
+
+            return build_online_research_cinema(
+                topic=topic,
+                query=query or topic,
+                urls=urls or None,
+                max_sources=max_sources,
+                root=self.repo_root,
+            )
+        except Exception as exc:
+            self._publish_search_capture(
+                "online_research_cinema_failed",
+                query=query or topic,
+                source="online_research_cinema",
+                status="error",
+                error=str(exc),
+                metadata={"topic": topic},
+            )
+            return {"success": False, "error": str(exc), "topic": topic}
+
+    def research_metacognition(
+        self,
+        topic: str = "",
+        manifest_path: str = "frontend/public/aureon_online_research_cinema.json",
+    ) -> dict:
+        """Turn the latest research cinema packet into structured understanding."""
+        try:
+            manifest_file = (self.repo_root / manifest_path).resolve()
+            manifest = json.loads(manifest_file.read_text(encoding="utf-8")) if manifest_file.exists() else {}
+            if not isinstance(manifest, dict):
+                manifest = {}
+            from aureon.search.research_metacognition import build_research_metacognition
+
+            packet_topic = topic or str(manifest.get("topic") or "Research Packet")
+            paper = manifest.get("paper", {}) if isinstance(manifest.get("paper"), dict) else {}
+            return build_research_metacognition(
+                topic=packet_topic,
+                query=str(manifest.get("query") or packet_topic),
+                source_rows=manifest.get("source_rows", []) if isinstance(manifest.get("source_rows"), list) else [],
+                paper_path=str(paper.get("path") or ""),
+                motion_picture=manifest.get("motion_picture", {}) if isinstance(manifest.get("motion_picture"), dict) else {},
+                coding_manifest=manifest.get("coding_handoff", {}) if isinstance(manifest.get("coding_handoff"), dict) else {},
+                root=self.repo_root,
+            )
+        except Exception as exc:
+            self._publish_search_capture(
+                "metacognition_failed",
+                query=topic or "research metacognition",
+                source="research_metacognition",
+                status="error",
+                error=str(exc),
+                metadata={"manifest_path": manifest_path},
+            )
+            return {"success": False, "error": str(exc), "topic": topic}
 
     def file_info(self, path: str) -> dict:
         """Get metadata for a file or directory."""
@@ -837,13 +1121,32 @@ class AureonAgentCore:
     def screenshot(self) -> dict:
         """Take a screenshot and save to a temp file."""
         if not HAS_PYAUTOGUI:
+            self._publish_search_capture(
+                "screen_capture_failed",
+                source="pyautogui",
+                status="missing_dependency",
+                error="pyautogui not installed",
+            )
             return {"success": False, "error": "pyautogui not installed"}
         try:
             img = pyautogui.screenshot()
             tmp = Path(tempfile.gettempdir()) / f"aureon_screenshot_{int(time.time())}.png"
             img.save(str(tmp))
+            self._publish_search_capture(
+                "screen_captured",
+                source="pyautogui",
+                status="success",
+                result_count=1,
+                metadata={"path": str(tmp), "data_capture_mode": "local_image_file"},
+            )
             return {"success": True, "path": str(tmp)}
         except Exception as exc:
+            self._publish_search_capture(
+                "screen_capture_failed",
+                source="pyautogui",
+                status="error",
+                error=str(exc),
+            )
             return {"success": False, "error": str(exc)}
 
     def desktop_status(self) -> dict:
@@ -1005,8 +1308,24 @@ class AureonAgentCore:
 
     def search_knowledge(self, keyword: str) -> dict:
         """Search across all knowledge tables for a keyword."""
+        start_event = self._publish_search_capture(
+            "knowledge_search_requested",
+            query=keyword,
+            source="global_history_db",
+        )
+        trace_id = start_event.get("trace_id")
+        query_id = start_event.get("query_id")
         conn = self._get_db()
         if conn is None:
+            self._publish_search_capture(
+                "knowledge_search_failed",
+                query=keyword,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="global_history_db",
+                status="db_unavailable",
+                error="Knowledge DB not available",
+            )
             return {"error": "Knowledge DB not available"}
         results: dict = {}
         try:
@@ -1032,7 +1351,26 @@ class AureonAgentCore:
                     except Exception:
                         pass
         except Exception as exc:
+            self._publish_search_capture(
+                "knowledge_search_failed",
+                query=keyword,
+                trace_id=trace_id,
+                query_id=query_id,
+                source="global_history_db",
+                status="error",
+                error=str(exc),
+            )
             return {"error": str(exc)}
+        self._publish_search_capture(
+            "knowledge_search_completed",
+            query=keyword,
+            trace_id=trace_id,
+            query_id=query_id,
+            source="global_history_db",
+            result_count=sum(len(v) for v in results.values() if isinstance(v, list)),
+            status="success",
+            metadata={"matched_tables": len(results)},
+        )
         return results
 
     def get_market_summary(self) -> dict:
@@ -1334,6 +1672,9 @@ class AureonAgentCore:
             "open_file": "Open a file with default app",
             "write_file": "Write content to a file",
             "find_files": "Find files by glob pattern",
+            "keyword_search": "Read local text/test files and find keyword snippets",
+            "online_research_cinema": "Fetch online sources, render research motion replay, and draft a cited paper",
+            "research_metacognition": "Convert the latest research cinema packet into structured organism understanding",
             "file_info": "Get file metadata",
             "copy_file": "Copy a file",
             "move_file": "Move a file",
@@ -1412,13 +1753,18 @@ class AureonAgentCore:
             steps.append({"intent": "close_app", "params": {"app_name": app},
                           "description": f"Close {app}"})
 
+        local_keyword_pattern = re.search(
+            r"(?:keyword\s+search|search\s+(?:tests?|text|files?)\s+for|scan\s+(?:tests?|text|files?)\s+for)\s+[\"']?(.+?)[\"']?\s*$",
+            text,
+        )
+
         # --- Web search ---
         m = re.search(r"(?:search\s+(?:for|the\s+web\s+for)?|google)\s+[\"']?(.+?)[\"']?\s*$", text)
-        if m and not steps:
+        if m and not steps and not local_keyword_pattern:
             query = m.group(1).strip().rstrip(".")
             steps.append({"intent": "web_search", "params": {"query": query},
                           "description": f"Web search: {query}"})
-        elif re.search(r"search.*for\s+(.+)", text):
+        elif re.search(r"search.*for\s+(.+)", text) and not local_keyword_pattern:
             m2 = re.search(r"search.*for\s+(.+)", text)
             if m2:
                 query = m2.group(1).strip().rstrip(".")
@@ -1438,6 +1784,27 @@ class AureonAgentCore:
         if m:
             steps.append({"intent": "web_fetch", "params": {"url": m.group(1)},
                           "description": f"Fetch URL: {m.group(1)}"})
+
+        # --- Local keyword scan ---
+        if local_keyword_pattern:
+            keyword = local_keyword_pattern.group(1).strip().rstrip(".")
+            scope = "tests" if re.search(r"tests?", text) else "."
+            steps.append({"intent": "keyword_search", "params": {"keyword": keyword, "scope": scope},
+                          "description": f"Local keyword search in {scope}: {keyword}"})
+
+        # --- Online research cinema / paper ---
+        m = re.search(r"(?:research\s+cinema|motion\s+paper|online\s+research\s+paper|full\s+paper)\s+(?:on|about|for)?\s*[\"']?(.+?)[\"']?\s*$", text)
+        if m:
+            topic = m.group(1).strip().rstrip(".")
+            steps.append({"intent": "online_research_cinema", "params": {"topic": topic, "max_sources": 5},
+                          "description": f"Build online research cinema and paper: {topic}"})
+
+        # --- Research metacognition ---
+        m = re.search(r"(?:understand\s+research|research\s+metacognition|metacognitive\s+research)\s+(?:on|about|for)?\s*[\"']?(.+?)[\"']?\s*$", text)
+        if m:
+            topic = m.group(1).strip().rstrip(".")
+            steps.append({"intent": "research_metacognition", "params": {"topic": topic},
+                          "description": f"Build metacognitive understanding packet: {topic}"})
 
         # --- Portfolio / balances ---
         if re.search(r"portfolio|holdings|my\s+positions?|what.*(?:own|hold)", text):
@@ -1630,6 +1997,12 @@ def main():
                 elif method_name in ("find_files",):
                     p = param_str.split(None, 1)
                     params = {"directory": p[0], "pattern": p[1] if len(p) > 1 else "*"}
+                elif method_name in ("keyword_search_files",):
+                    params = {"keyword": param_str, "scope": "tests"}
+                elif method_name in ("online_research_cinema",):
+                    params = {"topic": param_str, "max_sources": 5}
+                elif method_name in ("research_metacognition",):
+                    params = {"topic": param_str}
                 elif method_name in ("query_knowledge",):
                     params = {"sql": param_str.strip("\"'")}
                 elif method_name in ("search_knowledge",):

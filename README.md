@@ -1,9 +1,9 @@
 <div align="center">
 
 # AUREON TRADING SYSTEM
-### Powered by Harmonic Nexus Core
+### Local trading, research, and organism-control runtime
 
-*Where ancient wisdom meets algorithmic precision - and the markets have nowhere to hide.*
+Run the production supervisor, Flameborn UI, market data, parallel strategy workers, search/research agents, ThoughtBus/Mycelium, HNC/Seer/Lyra cognition, and audit evidence from one local repo.
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ueu7gBz7g)
 [![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
@@ -18,19 +18,59 @@
 
 ---
 
-## Run Aureon Now
+## Start Here
 
-For the full operator runbook, see [RUNNING.md](RUNNING.md). For the end-to-end map of every major subsystem, see [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md). The current full-organism entrypoint is the Windows production wake-up launcher. Individual bots and older ignition commands are development or audit paths.
+Aureon is a local-first operating system for trading, research, and automation. The important idea is simple: many systems can scan, reason, and publish evidence at the same time, but live broker orders flow through one reviewed executor path.
+
+Use this README as the quick operator guide. For deeper maps, see [RUNNING.md](RUNNING.md), [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md), and [CAPABILITIES.md](CAPABILITIES.md).
+
+### What Runs Today
+
+| Area | What it does | Main evidence |
+|---|---|---|
+| Trading supervisor | Starts the unified market runtime, live status server, strategy workers, lifecycle tracking, and order executor visibility. | `http://127.0.0.1:8791/api/terminal-state` |
+| Unified console | Main Aureon dashboard for trading, audits, runtime status, lifecycle, search, and metacognition. | `http://127.0.0.1:8081/` |
+| Flameborn UI | Chat, classroom, guarded terminal, sandbox, supervisor bridge, and full launch proof. | `http://127.0.0.1:4173/` |
+| Parallel strategy unity | Runs production-capable strategy workers separately while sharing goals, metrics, API budgets, and one executor. | `frontend/public/aureon_parallel_strategy_unity_stress_audit.json` |
+| Capital 3p mission | Ranks Capital candidates by expected net profit and keeps close-first/lifecycle proof visible before live intent. | Trading screen, Capital 3p panels |
+| Live Signal Fabric | Publishes signal-to-outcome events to ThoughtBus/Mycelium and measures A-to-B speed from real current-session events. | `frontend/public/aureon_live_trade_signal_fabric_stress_audit.json` |
+| Search and research fabric | Performs local keyword search, online research packets, screenshot/motion evidence, generated code handoff, and audit proof. | `frontend/public/aureon_swarm_search_mapping_stress_audit.json` |
+| HNC essay benchmark | Produces and verifies a 1000-word Harmonic Nexus Core essay from real local research artifacts. | `frontend/public/aureon_hnc_essay_benchmark.json` |
+| Metacognitive expansion | Routes HNC research through 18 repo metacognitive systems, including Queen, Auris, ThoughtBus, Mycelium, self-introspection, and refinement. | `frontend/public/aureon_metacognitive_systems_expansion.json` |
+
+### Fastest Safe Startup
+
+```powershell
+cd C:\Users\user\aureon-trading
+.\start_everything_production.ps1
+```
+
+That opens the production supervisor and Flameborn services in the expected local terminals. If you want to run them manually, use the two-terminal instructions in [Full System Startup](#full-system-startup).
+
+### Live Trading Reality Check
+
+Before you expect live orders, check the runtime gates:
+
+```powershell
+$r = Invoke-RestMethod http://127.0.0.1:8791/api/terminal-state
+$r.exchange_action_plan | Select order_intent_publish_enabled,executor_enabled,live_enabled,real_orders_disabled,exchange_mutations_disabled,trade_path_state,global_blockers
+```
+
+Live order flow requires the existing runtime gates to be armed and the broker state to be reconciled. The research, audit, search, metacognition, and UI systems do not bypass those gates.
+
+### Refresh The Newest Proof
+
+```powershell
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_swarm_search_mapping_stress_audit
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_hnc_essay_benchmark
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_metacognitive_systems_expansion
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_parallel_strategy_unity_stress_audit
+.\.venv\Scripts\python.exe -m aureon.autonomous.aureon_live_trade_signal_fabric_stress_audit --real-only --json
+```
 
 ### Current Canonical Version
 
-The current public version is the unified live organism runtime, not a single bot or a legacy dashboard. Start it with `AUREON_PRODUCTION_LIVE.cmd`, watch it from the unified console at `http://127.0.0.1:8081/`, and read the live runtime feed from `http://127.0.0.1:8791/api/terminal-state`.
-
-This version brings Kraken, Binance, Alpaca, and Capital into one market state; exposes connected, guarded, and live-action modes; keeps reboot advice visible; and includes the OS/task, LLM, self-coding, desktop/run handoff, frontend work-order, accounting, HNC/Auris, and whole-knowledge voice layers.
-
-The current organism ethos is a mycelium network organisation. Aureon treats prompts as client jobs, grows temporary agent crews for the work, moves context through evidence-bearing handoffs, keeps reusable skills in a SHA-256/zlib memory phonebook, and retires temporary workers after proof and handover. The agent-company report exposes this doctrine in `docs/audits/aureon_agent_company_bill_list.json`, `docs/audits/aureon_agent_company_bill_list.md`, and `frontend/public/aureon_agent_company_bill_list.json`.
-
-Aureon also carries a cells-to-stars living-system doctrine. Cells define local role autonomy and repair, tissues become departments, organs become specialist subsystems, the nervous system is ThoughtBus and runtime feedback, the immune system is proof/snag/security rejection, ant colonies model temporary worker swarms, mycelium models memory and handoff flow, forest ecosystems model cleanup/recycling/balance, and stars/constellations model long-range navigation from historical waveforms, goals, and research.
+The current public version is the unified local runtime: production supervisor, unified console, Flameborn, parallel strategy workers, Capital-focused 3p revenue logic, lifecycle continuity, Live Signal Fabric, search/research fabric, HNC essay benchmark, and metacognitive routing. Older standalone bots remain in the repo for development, reference, or audit, but the operator path starts from the supervisor and shared evidence surfaces above.
 
 ### Live Trade-Flow Speed Proof
 
@@ -50,21 +90,23 @@ Refresh the proof with:
 
 The proof reports the fastest, p50, and p95 timings for the chain segments it can actually see. If the current runtime has signals but no `position_open` or positive `outcome_recorded`, the dashboard shows that as waiting for proof instead of inventing trade speed. This keeps the organism honest while still exposing the slowest phase pairs, missing timing links, ThoughtBus/Mycelium receipt, and zero direct broker mutation from the audit layer.
 
-### Biological And Cosmic Operating Ethos
+### System Map In Plain English
 
-| Living pattern | Aureon translation |
+| Name in the UI/code | Plain meaning |
 |---|---|
-| Cell | Each agent has local state, role boundaries, health checks, repair routes, and evidence duties. |
-| Tissue | Departments group similar workers so handoffs and shared standards stay predictable. |
-| Organ | Trading, research, accounting, engineering, security, memory, and UI subsystems do specialist work for the whole organism. |
-| Nervous system | ThoughtBus, GoalExecutionEngine, runtime observer, and the console move fast signals through the organism. |
-| Immune system | HNC/Auris drift checks, tests, redaction, runtime gates, and snagging reject unsafe or weak work. |
-| Ant colony | Temporary crews split broad jobs into simple worker tasks, then converge through proof and handoff trails. |
-| Mycelium | Repo search, vault memory, data ocean evidence, and compressed memory packs move knowledge where it is needed. |
-| Forest ecosystem | Cleanup, archive, stale-state, and risk-survival loops keep growth, decay, recycling, and balance visible. |
-| Stars and constellations | Long-range goals, historical waveform memory, research, and strategic maps guide short-cycle decisions. |
+| ThoughtBus | Internal message bus. Systems publish signals, findings, vetoes, and outcomes here. |
+| Mycelium | Shared learning/memory network. It receives evidence and confidence changes from workers. |
+| HNC / Auris | Harmonic and coherence checks. They help grade evidence quality and consistency. |
+| Seer | Forecast and vision layer. It reads market/context signals and contributes directional pressure. |
+| Lyra | Emotion/risk resonance layer. It can lower or raise confidence based on stress and exit pressure. |
+| Live Signal Fabric | Trade-flow event spine from signal to candidate, intent, executor, broker proof, position, close, and outcome. |
+| Order Lifecycle | Append-only evidence trail for each trade route and broker correlation. |
+| Parallel Strategy Unity | Separate strategy workers running together, sharing goals and API budgets, without separate order buttons. |
+| Unified Exchange Request Broker | Local request lease/budget layer so workers do not fight over API limits. |
+| Flameborn | Human-facing UI for chat, classroom, guarded terminal, sandbox, and supervisor status. |
+| Search Fabric | Browser/local research, keyword search, screenshots/motion packets, paper generation, and code handoff. |
 
-This is the operating ethos behind the agent-company system: scope the client signal, grow the right temporary crew, feed it with internal and online evidence, prove the work through immune checks, hand over only complete output, then compress the reusable memory back into the organism.
+The practical rule: many systems can observe, reason, and recommend, but only the authorized runtime executor can place live broker orders.
 
 ### Read This First
 
@@ -137,14 +179,14 @@ To run **everything** with all capabilities switched on, open **two PowerShell t
 
 ```powershell
 cd C:\Users\user\aureon-trading
-.\AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1 -FullCognitiveOrderCapability -AccountsAutonomous -Restart -WaitForRefresh
+.\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
 **What starts:**
 - Market data stream cache (Binance, Kraken, Alpaca, Capital)
 - Ignition organism core
 - Unified market trader (dry-run / safe observation)
-- Market status server (`http://127.0.0.1:8790`)
+- Market status server (`http://127.0.0.1:8791`)
 - Mind thought/action hub (`http://127.0.0.1:13002`)
 - Self-questioning AI loop
 - Autonomous self-run coding loop
@@ -173,21 +215,26 @@ cd C:\Users\user\aureon-trading
 |---|---|
 | Unified console (main organism UI) | `http://127.0.0.1:8081/` |
 | Flameborn chat / classroom / terminal | `http://127.0.0.1:4173/` |
-| Market runtime feed | `http://127.0.0.1:8790/api/terminal-state` |
-| Market flight-test / health | `http://127.0.0.1:8790/api/flight-test` |
+| Market runtime feed | `http://127.0.0.1:8791/api/terminal-state` |
+| Market flight-test / health | `http://127.0.0.1:8791/api/flight-test` |
 | Mind hub (thoughts API) | `http://127.0.0.1:13002/api/thoughts` |
 | Aureon Vault (Flameborn bridge) | `http://127.0.0.1:5566/api/status` |
 
-### ⚠️ Live Trading Warning
+### Live Trading Warning
 
-**Do NOT add `-Production` unless you want real exchange mutations.**
-- `-Production` arms **actual buy/sell orders** on configured exchanges
-- It requires `-LiveTrading -ConfirmLiveTrading` for safety
-- For observation / dry-run mode, **omit `-Production`**
-- Only use live trading when you have:
-  1. Exchange API keys configured
-  2. All open positions closed/reconciled
-  3. Read the flight-test output confirming safe state
+`AUREON_PRODUCTION_LIVE.cmd` starts the production-capable path. Use it only when you intend to run the live-capable runtime with configured exchange credentials. The runtime still reports whether executor, live trading, real orders, and exchange mutations are actually armed.
+
+Before live order flow, confirm:
+1. Exchange API keys are configured.
+2. Open Capital positions are closed or reconciled.
+3. `http://127.0.0.1:8791/api/flight-test` reports the state you expect.
+4. `http://127.0.0.1:8791/api/terminal-state` shows the live gates you expect.
+
+For validation only, use:
+
+```powershell
+.\AUREON_PRODUCTION_LIVE.cmd -ValidateOnly -NoOpen -MarketStatusPort 8791
+```
 
 ### Prerequisites
 

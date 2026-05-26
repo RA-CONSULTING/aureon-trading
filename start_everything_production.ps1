@@ -52,7 +52,7 @@ if ($WhatIf) {
     Write-Banner "WhatIf mode -- showing commands without executing." "WARN"
     Write-Banner ""
     Write-Banner "Terminal 1 would run:"
-    Write-Banner "  .\AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1 -Production"
+    Write-Banner "  .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791"
     Write-Banner ""
     Write-Banner "Terminal 2 would run:"
     $fbFlags = @()
@@ -63,7 +63,7 @@ if ($WhatIf) {
 }
 
 # -- Terminal 1: Aureon Organism (Production) --
-$orgCmd = "cd `"$repo`"; .\AUREON_WAKE_UP_FULL_AUTONOMOUS.ps1 -Production"
+$orgCmd = "cd `"$repo`"; .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791"
 Write-Banner "Launching Terminal 1: Aureon Organism (Production) ..."
 Start-Process powershell -ArgumentList "-NoExit","-Command",$orgCmd
 
@@ -86,8 +86,8 @@ Write-Banner "===============================================================" "
 Write-Banner ""
 Write-Banner "Unified console:     http://127.0.0.1:8081/"
 Write-Banner "Flameborn chat:      http://127.0.0.1:4173/"
-Write-Banner "Market feed:         http://127.0.0.1:8790/api/terminal-state"
-Write-Banner "Market flight-test:  http://127.0.0.1:8790/api/flight-test"
+Write-Banner "Market feed:         http://127.0.0.1:8791/api/terminal-state"
+Write-Banner "Market flight-test:  http://127.0.0.1:8791/api/flight-test"
 Write-Banner "Mind hub:            http://127.0.0.1:13002/"
 Write-Banner "Vault UI:            http://127.0.0.1:5566/"
 Write-Banner ""
