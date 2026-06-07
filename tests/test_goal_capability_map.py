@@ -21,12 +21,16 @@ def test_goal_capability_map_declares_whole_organism_goal_loop(tmp_path):
     assert "self_enhancement" in data["route_surfaces"]
     assert "saas_security" in data["route_surfaces"]
     assert "saas_product_inventory" in data["route_surfaces"]
+    assert "office_admin" in data["route_surfaces"]
+    assert "azyra_operator" in data["route_surfaces"]
     assert "create_goal_contract" in data["goal_loop"]
     assert "queue_work_orders" in data["goal_loop"]
     assert data["contract_capabilities"]["contract_schema_version"] == "aureon-organism-contract-v1"
     assert "work_order" in data["contract_capabilities"]["contract_types"]
     assert "accounting_capabilities" in data
     assert data["tool_registry"]["count"] >= 5
+    assert "azyra_operator_click" in data["tool_registry"]["azyra_operator_tools"]
+    assert "logistics_admin_capability_matrix" in data["tool_registry"]["office_logistics_tools"]
     assert data["real_orders_allowed"] is False
 
 
@@ -127,3 +131,30 @@ def test_goal_route_recommendations_include_saas_product_inventory():
     assert route["requires_validation"] is True
     assert "AureonSaaSSystemInventory" in route["systems"]
     assert "AureonFrontendUnificationPlan" in route["systems"]
+
+
+def test_goal_route_recommendations_include_azyra_human_operator_tools():
+    routes = recommend_goal_routes("give aureon capabilities to use azrra as a human operator")
+    names = {route["route"] for route in routes}
+
+    assert "azyra_human_operator" in names
+    route = [item for item in routes if item["route"] == "azyra_human_operator"][0]
+    assert route["requires_human"] is True
+    assert route["requires_validation"] is True
+    assert "AzyraOperatorBridge" in route["systems"]
+    assert "register_azyra_operator_tools" in route["systems"]
+
+
+def test_goal_route_recommendations_include_office_admin_workweek():
+    routes = recommend_goal_routes(
+        "run the warehouse administration workweek: triage email, review Excel stock balances, create reports, and control record updates"
+    )
+    names = {route["route"] for route in routes}
+
+    assert "office_admin_workweek" in names
+    route = [item for item in routes if item["route"] == "office_admin_workweek"][0]
+    assert route["requires_validation"] is True
+    assert "build_logistics_admin_capability_matrix" in route["systems"]
+    assert "run_logistics_admin_cognitive_cycle" in route["systems"]
+    assert "register_office_logistics_tools" in route["systems"]
+    assert "AUREON_ADMIN_LIVE_MODE=true" in route["live_mutation_gates"]
