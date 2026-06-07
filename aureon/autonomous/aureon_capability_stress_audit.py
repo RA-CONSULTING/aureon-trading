@@ -53,6 +53,23 @@ DEFAULT_STRESS_CASES: List[Dict[str, Any]] = [
         "why": "proves media handover requires playable browser preview, not only a file path",
     },
     {
+        "id": "human_admin_workflow_matrix",
+        "family": "admin_workflow",
+        "prompt": "Stress test Aureon against a high-level logistics administrator's workweek: inbox triage, spreadsheet review, evidence packs, controlled record updates, email jobs, reporting, and live Azyra gate control.",
+        "expected_handover": True,
+        "required_kind": "admin_capability_matrix",
+        "required_checks": [
+            "generic_admin_baseline_present",
+            "sfg_admin_overlay_present",
+            "admin_jobs_have_routes",
+            "controlled_record_update_gated",
+            "live_mutation_gates_present",
+            "work_orders_present",
+            "output_artifacts_exist",
+        ],
+        "why": "proves broad human admin work is mapped to real Aureon tools, evidence, work orders, and live-action gates",
+    },
+    {
         "id": "generic_unknown_tool_gate",
         "family": "adaptive_skill",
         "prompt": "Build a local quantum spline inventory generator tool with run instructions and proof.",
@@ -106,7 +123,169 @@ def _required_kind_ok(manifest: Dict[str, Any], case: Dict[str, Any]) -> bool:
     return bool(kind)
 
 
+def _case_paths(value: Any, root: Path) -> Optional[List[Path]]:
+    if value in (None, ""):
+        return None
+    items = value if isinstance(value, list) else [value]
+    paths: List[Path] = []
+    for item in items:
+        path = Path(str(item))
+        paths.append(path if path.is_absolute() else root / path)
+    return paths
+
+
+def _admin_matrix_quality(matrix: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
+    summary = matrix.get("summary") if isinstance(matrix.get("summary"), dict) else {}
+    generic_rows = [row for row in list(matrix.get("generic_admin_baseline") or []) if isinstance(row, dict)]
+    overlay = matrix.get("sfg_admin_overlay") if isinstance(matrix.get("sfg_admin_overlay"), dict) else {}
+    sfg_rows = [row for row in list(overlay.get("rows") or []) if isinstance(row, dict)]
+    all_rows = generic_rows + sfg_rows
+    row_ids = {str(row.get("id") or "") for row in all_rows}
+    required_row_ids = set(
+        case.get(
+            "required_row_ids",
+            [
+                "generic:inbox_triage",
+                "generic:record_update_control",
+                "generic:customer_supplier_comms",
+                "generic:admin_self_audit",
+                "sfg_task:update_stock",
+            ],
+        )
+    )
+    paths = matrix.get("paths") if isinstance(matrix.get("paths"), dict) else {}
+    record_update = next((row for row in generic_rows if row.get("id") == "generic:record_update_control"), {})
+    live_execution = matrix.get("live_execution") if isinstance(matrix.get("live_execution"), dict) else {}
+    checks: List[Dict[str, Any]] = [
+        {
+            "id": "generic_admin_baseline_present",
+            "ok": int(summary.get("generic_admin_row_count") or 0) >= int(case.get("min_generic_admin_rows", 8))
+            and {"generic:inbox_triage", "generic:admin_self_audit"}.issubset(row_ids),
+            "label": "Generic admin jobs are mapped",
+        },
+        {
+            "id": "sfg_admin_overlay_present",
+            "ok": int(summary.get("sfg_admin_row_count") or 0) >= int(case.get("min_sfg_admin_rows", 28))
+            and "sfg_task:update_stock" in row_ids,
+            "label": "SFG logistics/WMS jobs are mapped",
+        },
+        {
+            "id": "admin_jobs_have_routes",
+            "ok": bool(all_rows)
+            and required_row_ids.issubset(row_ids)
+            and all(row.get("aureon_route") and row.get("safe_gate_path") for row in all_rows),
+            "label": "Admin jobs have named tool routes and safe gate paths",
+        },
+        {
+            "id": "controlled_record_update_gated",
+            "ok": "azyra_operator_run_workflow" in set(record_update.get("required_tools") or [])
+            and "gate" in str(record_update.get("safe_gate_path") or "").lower(),
+            "label": "Live record updates route through Azyra gates",
+        },
+        {
+            "id": "live_mutation_gates_present",
+            "ok": live_execution.get("allowed_now") is False and bool(live_execution.get("reason")),
+            "label": "Stress matrix itself cannot type, submit, send, or mutate live systems",
+        },
+        {
+            "id": "work_orders_present",
+            "ok": bool(matrix.get("work_orders")) and int(summary.get("work_order_count") or 0) > 0,
+            "label": "Capability gaps become work orders",
+        },
+        {
+            "id": "output_artifacts_exist",
+            "ok": bool(paths)
+            and all(Path(str(path)).exists() for path in paths.values() if path)
+            and {"json", "markdown", "csv", "docs_json", "public_json"}.issubset(set(paths)),
+            "label": "Admin matrix JSON, Markdown, CSV, docs, and public artifacts exist",
+        },
+    ]
+    score = round(sum(1 for item in checks if item.get("ok")) / max(1, len(checks)), 4)
+    return {
+        "score": score,
+        "status": "admin_capability_matrix_ready" if score == 1 else "admin_capability_matrix_needs_attention",
+        "checks": checks,
+        "snags": [
+            {"id": item.get("id"), "label": item.get("label")}
+            for item in checks
+            if item.get("ok") is not True
+        ],
+    }
+
+
+def _run_admin_workflow_case(case: Dict[str, Any], root: Path) -> Dict[str, Any]:
+    from aureon.integrations.office import build_logistics_admin_capability_matrix
+
+    output_dir = root / "state" / "capability_stress" / "admin_capability_matrix"
+    matrix = build_logistics_admin_capability_matrix(
+        output_dir=output_dir,
+        proof_dirs=_case_paths(case.get("proof_dirs"), root),
+        persist=True,
+        root=root,
+    )
+    quality = _admin_matrix_quality(matrix, case)
+    manifest: Dict[str, Any] = {
+        "kind": "admin_capability_matrix",
+        "asset_path": (matrix.get("paths") or {}).get("json"),
+        "preview_path": (matrix.get("paths") or {}).get("markdown"),
+        "csv_path": (matrix.get("paths") or {}).get("csv"),
+    }
+    checks = _check_lookup(quality)
+    required_checks = [str(item) for item in case.get("required_checks", [])]
+    required_checks_ok = all(checks.get(check_id, {}).get("ok") is True for check_id in required_checks)
+    kind_ok = _required_kind_ok(manifest, case)
+    asset_exists = _artifact_exists(manifest.get("asset_path")) if manifest.get("asset_path") else False
+    preview_exists = _artifact_exists(manifest.get("preview_path")) if manifest.get("preview_path") else False
+    actual_handover = bool(matrix.get("ok")) and kind_ok and required_checks_ok and asset_exists and preview_exists
+    expected_handover = bool(case.get("expected_handover"))
+    ok = actual_handover == expected_handover and kind_ok and required_checks_ok and asset_exists and preview_exists
+    summary = matrix.get("summary") if isinstance(matrix.get("summary"), dict) else {}
+    return {
+        "id": case.get("id"),
+        "family": case.get("family"),
+        "prompt": case.get("prompt"),
+        "why": case.get("why"),
+        "ok": ok,
+        "expected_handover": expected_handover,
+        "actual_handover": actual_handover,
+        "status": quality.get("status"),
+        "task_family": "human_admin_workflow",
+        "artifact_kind": manifest.get("kind"),
+        "artifact_url": manifest.get("preview_path") or manifest.get("asset_path"),
+        "quality_score": quality.get("score"),
+        "quality_status": quality.get("status"),
+        "blocking_snag_count": len(quality.get("snags") or []),
+        "required_kind_ok": kind_ok,
+        "required_checks_ok": required_checks_ok,
+        "asset_exists": asset_exists,
+        "preview_exists": preview_exists,
+        "fake_pass_detected": False,
+        "checks": [
+            {
+                "id": check_id,
+                "ok": bool(checks.get(check_id, {}).get("ok")),
+                "label": checks.get(check_id, {}).get("label"),
+            }
+            for check_id in required_checks
+        ],
+        "handover_gate": {
+            "state": "visible" if actual_handover else "held",
+            "reason": "admin capability matrix proved mapped tools, artifacts, work orders, and live gates"
+            if actual_handover
+            else "admin capability matrix failed one or more required stress checks",
+        },
+        "admin_matrix_summary": summary,
+        "admin_readiness_counts": summary.get("readiness_counts", {}),
+        "admin_work_order_count": summary.get("work_order_count", 0),
+        "live_execution": matrix.get("live_execution", {}),
+        "report_job_id": None,
+    }
+
+
 def _run_case(case: Dict[str, Any], root: Path) -> Dict[str, Any]:
+    if str(case.get("family") or "") == "admin_workflow":
+        return _run_admin_workflow_case(case, root)
+
     report = build_and_write_capability_forge(str(case.get("prompt") or ""), root=root)
     quality = report.get("artifact_quality_report") if isinstance(report.get("artifact_quality_report"), dict) else {}
     manifest = report.get("artifact_manifest") if isinstance(report.get("artifact_manifest"), dict) else {}
