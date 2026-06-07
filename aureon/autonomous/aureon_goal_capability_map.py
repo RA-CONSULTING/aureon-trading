@@ -51,6 +51,7 @@ SAFETY_RULES = (
     "Prefer audit, simulation, read-only inspection, Obsidian memory, and ThoughtBus publication for autonomous reasoning.",
     "Direct code changes must go through the repo/code-control path, not spontaneous model output.",
     "Accounting goals may generate final-ready manual filing packs on demand, but Companies House, HMRC, tax, and penalty filing/payment remain manual.",
+    "Azyra desktop operation must use the AzyraOperatorBridge and SafeDesktopControl gates; live clicks, typing, submit keys, and window-close hotkeys require explicit local enablement.",
     "SaaS security goals must pursue unhackable as an internal benchmark loop through authorized self-attack, stress tests, repair, retest, and release gates.",
 )
 
@@ -104,7 +105,36 @@ ROUTE_SURFACES = {
     "tools": [
         "ToolRegistry built-ins",
         "VM control tool definitions",
+        "Azyra operator tool definitions",
+        "Office logistics/admin tool definitions",
         "voice intent routes",
+    ],
+    "office_admin": [
+        "logistics_admin_capability_matrix",
+        "logistics_admin_cognitive_cycle",
+        "logistics_admin_autonomous_job_tick",
+        "logistics_office_solo_cycle",
+        "logistics_office_workweek_monitor_tick",
+        "logistics_office_workweek_dispatch_tick",
+        "logistics_office_self_audit",
+        "logistics_operations_readiness_audit",
+        "desktop_email_create_job/validate/run queue",
+        "spreadsheet summariser and office queue builder",
+        "Azyra operator bridge for gated WMS/ERP live record updates",
+    ],
+    "azyra_operator": [
+        "AzyraClient configurable API bridge",
+        "AzyraOperatorBridge local desktop bridge",
+        "azyra_operator_* ToolRegistry bindings",
+        "AzyraOperationsKnowledgeBase module map and task planner",
+        "Azyra procedure catalog and validator",
+        "Azyra calibration session recorder",
+        "Azyra email/message intake planner",
+        "Azyra Companion process/window probe",
+        "SafeDesktopControl dry-run/live gates",
+        "operator screenshot/focus/mouse/keyboard actions",
+        "submit-key and window-close env guards",
+        "task specs across CRM, Customs, Forwarding, Freight, Transport, Financials, and WMS",
     ],
     "trading": [
         "dynamic margin sizer",
@@ -390,6 +420,45 @@ SAAS_PRODUCT_GOAL_WORDS = (
     "canonical screen",
 )
 
+AZYRA_OPERATOR_GOAL_WORDS = (
+    "azyra",
+    "azera",
+    "azra",
+    "azrra",
+    "aureon use azyra",
+    "human operator",
+    "operator bridge",
+    "companion",
+    "warehouse erp",
+    "erp operator",
+)
+
+OFFICE_ADMIN_GOAL_WORDS = (
+    "admin",
+    "administration",
+    "administrator",
+    "office",
+    "workweek",
+    "inbox",
+    "email",
+    "outlook",
+    "spreadsheet",
+    "excel",
+    "data entry",
+    "record update",
+    "report",
+    "reports",
+    "reporting",
+    "evidence pack",
+    "customer service",
+    "supplier",
+    "warehouse administration",
+    "high level admin",
+    "fix the warehouse",
+    "stock balance",
+    "stock balances",
+)
+
 
 @dataclass
 class GoalCapabilityMap:
@@ -424,6 +493,7 @@ class GoalCapabilityMap:
                 "count": self.tool_registry.get("count"),
                 "builtin_tools": self.tool_registry.get("builtin_tools", [])[:10],
                 "vm_tools": self.tool_registry.get("vm_tools", [])[:10],
+                "office_logistics_tools": self.tool_registry.get("office_logistics_tools", [])[:10],
                 "external_skill_routes": self.tool_registry.get("external_skill_routes", []),
             },
             "organism": {
@@ -664,6 +734,57 @@ def recommend_goal_routes(goal: str) -> List[Dict[str, Any]]:
                 "requires_validation": True,
             }
         )
+    if any(word in text for word in OFFICE_ADMIN_GOAL_WORDS):
+        routes.append(
+            {
+                "route": "office_admin_workweek",
+                "systems": [
+                    "build_logistics_admin_capability_matrix",
+                    "run_logistics_admin_cognitive_cycle",
+                    "run_logistics_admin_autonomous_job_tick",
+                    "run_logistics_office_solo_cycle",
+                    "run_workweek_monitor_tick",
+                    "run_workweek_dispatch_tick",
+                    "logistics_office_self_audit",
+                    "logistics_operations_readiness_audit",
+                    "desktop_email_create_job/validate/run queue",
+                    "register_office_logistics_tools",
+                ],
+                "reason": "Administration goals need workweek observation, inbox/file intake, spreadsheet review, queue dispatch, email job control, self-audit, evidence packs, and controlled live-system updates through explicit gates.",
+                "risk": "medium",
+                "requires_validation": True,
+                "live_mutation_gates": [
+                    "AUREON_ADMIN_LIVE_MODE=true",
+                    "AZYRA_OPERATOR_ALLOW_INPUT=true for Azyra typing",
+                    "AZYRA_OPERATOR_ALLOW_SUBMIT=true for submit keys",
+                    "AUREON_DESKTOP_EMAIL_ALLOW_SEND=true for Outlook sends",
+                    "AUREON_EXCEL_WRITE_ALLOW=true for workbook writes",
+                ],
+            }
+        )
+    if any(word in text for word in AZYRA_OPERATOR_GOAL_WORDS):
+        routes.append(
+            {
+                "route": "azyra_human_operator",
+                "systems": [
+                    "AzyraClient",
+                    "AzyraOperatorBridge",
+                    "AzyraOperationsKnowledgeBase",
+                    "Azyra procedure catalog",
+                    "Azyra calibration recorder",
+                    "Azyra email/message intake planner",
+                    "register_azyra_operator_tools",
+                    "SafeDesktopControl",
+                    "ToolRegistry",
+                ],
+                "reason": "Azyra goals need module/task requirements, calibrated screen procedures, observation, and logged-in desktop operation through named tools with dry-run and live-input gates.",
+                "risk": "high",
+                "requires_human": True,
+                "requires_validation": True,
+                "live_input_env_required": "AZYRA_OPERATOR_ALLOW_INPUT=true",
+                "submit_env_required": "AZYRA_OPERATOR_ALLOW_SUBMIT=true",
+            }
+        )
     if any(word in text for word in CODE_GOAL_WORDS):
         routes.append(
             {
@@ -688,6 +809,8 @@ def recommend_goal_routes(goal: str) -> List[Dict[str, Any]]:
 def _tool_registry_snapshot(errors: List[str]) -> Dict[str, Any]:
     builtin_tools: List[str] = []
     vm_tools: List[str] = []
+    azyra_operator_tools: List[str] = []
+    office_logistics_tools: List[str] = []
     try:
         from aureon.inhouse_ai.tool_registry import ToolRegistry
 
@@ -702,10 +825,30 @@ def _tool_registry_snapshot(errors: List[str]) -> Dict[str, Any]:
     except Exception as exc:
         errors.append(f"vm tool snapshot failed: {exc}")
 
+    try:
+        from aureon.integrations.azyra.tools import AZYRA_OPERATOR_TOOL_NAMES
+
+        azyra_operator_tools = list(AZYRA_OPERATOR_TOOL_NAMES)
+    except Exception as exc:
+        errors.append(f"azyra operator tool snapshot failed: {exc}")
+
+    try:
+        from aureon.integrations.office.tools import OFFICE_LOGISTICS_TOOL_NAMES
+
+        office_logistics_tools = list(OFFICE_LOGISTICS_TOOL_NAMES)
+    except Exception as exc:
+        errors.append(f"office logistics tool snapshot failed: {exc}")
+
     return {
-        "count": len(builtin_tools) + len(vm_tools) + len(EXTERNAL_SKILL_ROUTES),
+        "count": len(builtin_tools)
+        + len(vm_tools)
+        + len(azyra_operator_tools)
+        + len(office_logistics_tools)
+        + len(EXTERNAL_SKILL_ROUTES),
         "builtin_tools": builtin_tools,
         "vm_tools": vm_tools,
+        "azyra_operator_tools": azyra_operator_tools,
+        "office_logistics_tools": office_logistics_tools,
         "external_skill_routes": list(EXTERNAL_SKILL_ROUTES),
     }
 
