@@ -48,6 +48,8 @@ Status: `prepared_not_posted`
 
 The live Azyra stock-count upload has not been submitted. Aureon restored Azyra to the WMS menu and captured evidence, but RemoteApp menu activation did not open `Stock Checks Monitor` or known WMS menu items from the automation route. The batch upload route/schema must still be confirmed inside Azyra before any live stock mutation is made.
 
+Follow-up status for the fresh 2026-06-20 Azyra export and master reconciliation is recorded in `docs/warehouse/azyra_master_reconciliation_20260620.md`.
+
 ## Guardrail
 
 Do not repurpose the current-balance adjustment runner for this batch. This audit is a stock-count upload package, not a decrease/increase adjustment batch.
