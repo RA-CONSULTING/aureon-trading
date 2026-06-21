@@ -1,6 +1,6 @@
 # Azyra Master Audit Reconciliation - 2026-06-20
 
-This note records the current master audit reconciliation package built from the validated human audit rows and a fresh live Azyra warehouse balance export.
+This note records the current master audit reconciliation package built from the validated human audit rows and the latest live Azyra warehouse balance export. It was refreshed on 2026-06-21 after the live historical-quantity posting transaction `A1014965`.
 
 ## Local Outputs
 
@@ -11,7 +11,9 @@ Master reconciliation folder:
 Key files:
 
 - Human-readable master workbook: `Azyra_Master_Audit_Reconciliation_20260620.xlsx`
-- Fresh Azyra export: `current_azyra_exports\Warehouse Balances Spreadsheet 89QU7U006.xlsx`
+- Live-status workbook copy: `..\historical_quantity_live_fix_20260620\Azyra_Master_Audit_Reconciliation_20260621_LIVE_STATUS.xlsx`
+- Human-readable live-status copy: `..\historical_quantity_live_fix_20260620\Azyra_Master_Audit_Human_Readable_20260621_LIVE_STATUS.xlsx`
+- Fresh Azyra export: `current_azyra_exports\Warehouse Balances Spreadsheet 89QU7W00J_20260621_163056.xlsx`
 - Stock/UOM delta CSV: `human_vs_azyra_delta_candidates.csv`
 - Location-level delta CSV: `human_vs_azyra_location_delta_candidates.csv`
 - Validated human count batch CSV: `azyra_count_batch_file_validated_human_rows.csv`
@@ -23,7 +25,7 @@ Exported through Aureon/Azyra, not manual user-self entry.
 
 - Azyra environment: `SFG Live`
 - Route: `WMS > Reports > Warehouse > Warehouse Balances Spreadsheet`
-- Owner: `All Third Parties`
+- Owner: `Decora Antrim`
 - Warehouse: `Antrim`
 - Condition: `All Conditions`
 - Location filter: blank, all locations
@@ -31,15 +33,15 @@ Exported through Aureon/Azyra, not manual user-self entry.
 - Detail by tracking number: checked
 - Include stock codes with zero balance: checked
 - Format: Excel `.xlsx`
-- Report as at: `20/06/2026 09:37`
+- Report as at: `21/06/2026 16:30`
 
 Export counts:
 
-- Detail rows: `13,473`
-- Free quantity total: `18,997`
-- Balance quantity total: `20,815`
-- Picking quantity total: `1,818`
-- Stock codes: `7,875`
+- Detail rows: `2,672`
+- Free quantity total: `11,147`
+- Balance quantity total: `12,231`
+- Picking quantity total: `1,084`
+- Stock codes: `1,750`
 - Locations: `779`
 
 ## Human Audit Input
@@ -50,28 +52,30 @@ Input from the first audit-scan batch:
 
 Counts currently carried into the master reconciliation:
 
-- Validated human batch rows: `284`
-- Human stock/UOM aggregates: `207`
-- Validated human quantity total: `737`
-- Original OCR held rows: `132`
+- Validated human batch rows: `708`
+- Human stock/UOM aggregates: `392`
+- Validated human quantity total: `2,075`
+- Original OCR held rows: `140`
 - Excluded rows: `5`
 - Download audit photos indexed: `60`
-- Download stock photos still pending transcription: `59`
+- Download photo rows promoted: `424`
+- Download photo held rows: `21`
+- Download stock photos still pending transcription: `0`
 
 ## Reconciliation Result
 
 The master workbook marries the validated human count to the live Azyra export at both stock/UOM level and location level.
 
-- Stock/UOM delta rows: `207`
-- Stock/UOM absolute variance total: `1,086`
-- Stock/UOM positive variance rows: `35`
-- Stock/UOM negative variance rows: `93`
-- Stock/UOM zero variance rows: `79`
-- Location delta rows: `284`
-- Location absolute variance total: `358`
-- Location positive variance rows: `114`
-- Location negative variance rows: `39`
-- Location zero variance rows: `131`
+- Stock/UOM delta rows: `392`
+- Stock/UOM absolute variance total: `2,312`
+- Stock/UOM positive variance rows: `246`
+- Stock/UOM negative variance rows: `115`
+- Stock/UOM zero variance rows: `31`
+- Location delta rows: `626`
+- Location absolute variance total: `2,137`
+- Location positive variance rows: `534`
+- Location negative variance rows: `62`
+- Location zero variance rows: `30`
 
 The workbook contains these sheets:
 
@@ -85,26 +89,33 @@ The workbook contains these sheets:
 - `Azyra_Current_Detail`
 - `Azyra_Count_Batch_File`
 - `Download_Photo_Status`
+- `Review_Holds`
+- `Aureon_Route_Status`
 - `Live_Batch_Gates`
+- `Live Status 20260621`
+- `Live Qty Sweep`
 
 ## Live Status
 
-Status: `prepared_not_live_posted`
+Status: `partial_live_a1014965_completed`
 
-Current live gate: `held_requires_import_route_photo_transcription_and_review_clearance`
+Current live gate: `held_live_azyra_opening_balances_import_blocked_tracked_stock_validation`
 
 Cleared:
 
-- Fresh live Azyra warehouse balance export downloaded on `2026-06-20`.
+- Fresh live Azyra warehouse balance export downloaded on `2026-06-21`.
 - Master reconciliation workbook rebuilt from that export.
 - Validated human rows are isolated in the count batch CSV.
+- Historical quantity sweep has 35 rows classified: 2 completed live, 28 already correct, 5 held, 0 pending.
+- Azyra stock-check overage transaction `A1014965` completed: `WL50-PS75PR` +4 at `C26B`; `WL50-PS165UR` +4 at `E19A`.
+- Warehouse-floor location move batch has 13 rows classified: 2 posted live (`T101950`, `T101951`), 1 already correct, 10 held, 0 pending.
 
 Still held:
 
-- `59` download stock photos still need OCR/transcription before they can be added.
-- `132` original OCR held rows remain outside the live batch.
-- Azyra native batch stock-count import route/schema is not yet proven.
-- No live stock-count mutation or adjustment batch has been posted from this package.
+- `161` total review/hold rows remain outside the validated batch.
+- Azyra Opening Balances import route accepted the base file but rejected tracked stock without real tracking/rotation metadata.
+- Historical held SKUs `WL50-PS180CP`, `WL50-PS105TO`, `LP6052`, `WL50-PS75CP`, and `WL50-PS60MO` need transaction/outwards/picking history before any decrease or storage-piece repair.
+- Do not force tracked-stock metadata or blind decrease lines.
 
 ## Operator Guardrail
 
