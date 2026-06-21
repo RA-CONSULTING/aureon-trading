@@ -1,6 +1,6 @@
 # Azyra Master Audit Reconciliation - 2026-06-20
 
-This note records the current master audit reconciliation package built from the validated human audit rows and the latest live Azyra warehouse balance export. It was refreshed on 2026-06-21 after the live historical-quantity posting transaction `A1014965`.
+This note records the current master audit reconciliation package built from the validated human audit rows and the latest live Azyra warehouse balance export. It was refreshed on 2026-06-21 after the live historical-quantity posting transactions `A1014965` and `A1014966`.
 
 ## Local Outputs
 
@@ -97,7 +97,7 @@ The workbook contains these sheets:
 
 ## Live Status
 
-Status: `partial_live_a1014965_completed`
+Status: `partial_live_a1014965_a1014966_completed`
 
 Current live gate: `held_live_azyra_opening_balances_import_blocked_tracked_stock_validation`
 
@@ -106,15 +106,18 @@ Cleared:
 - Fresh live Azyra warehouse balance export downloaded on `2026-06-21`.
 - Master reconciliation workbook rebuilt from that export.
 - Validated human rows are isolated in the count batch CSV.
-- Historical quantity sweep has 35 rows classified: 2 completed live, 28 already correct, 5 held, 0 pending.
+- Historical quantity sweep has 35 rows classified: 5 completed live, 28 already correct, 2 held, 0 pending.
 - Azyra stock-check overage transaction `A1014965` completed: `WL50-PS75PR` +4 at `C26B`; `WL50-PS165UR` +4 at `E19A`.
+- Azyra stock-check decrease transaction `A1014966` completed: `WL50-PS105TO` -5 at `B16B`; `WL50-PS180CP` -8 split across `C17A`/`C17B`; `LP6052` -4 at `D24A`.
+- After Stock Enquiry proves `WL50-PS105TO` 8 total/free 8/picking 0, `WL50-PS180CP` 10 total/free 10/picking 0, and `LP6052` 6 total/free 6/picking 0.
 - Warehouse-floor location move batch has 13 rows classified: 2 posted live (`T101950`, `T101951`), 1 already correct, 10 held, 0 pending.
 
 Still held:
 
 - `161` total review/hold rows remain outside the validated batch.
 - Azyra Opening Balances import route accepted the base file but rejected tracked stock without real tracking/rotation metadata.
-- Historical held SKUs `WL50-PS180CP`, `WL50-PS105TO`, `LP6052`, `WL50-PS75CP`, and `WL50-PS60MO` need transaction/outwards/picking history before any decrease or storage-piece repair.
+- Historical held SKU `WL50-PS75CP` is not reposted because later outwards explain the current zero unit balance; the remaining issue is a storage-piece/unit review at `D8B`.
+- Historical held SKU `WL50-PS60MO` is not decreased because the extra `D24B` two-unit row is from a separate Inwards transaction, not proved duplicate historical stock.
 - Do not force tracked-stock metadata or blind decrease lines.
 
 ## Operator Guardrail

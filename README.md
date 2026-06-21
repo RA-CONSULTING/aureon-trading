@@ -46,13 +46,17 @@ Live Azyra work was carried out through Aureon against `SFG Live`, owner `Decora
 - Completed Azyra stock-check overage transaction `A1014965`, owner ref `HISTQTY-20260621`, status `Completed - 21/06/26`.
 - Posted `WL50-PS75PR` +4 units at `C26B`; after Stock Enquiry proves 8 total, 8 free, 0 picking.
 - Posted `WL50-PS165UR` +4 units at `E19A`; after Stock Enquiry proves 7 total, 7 free, 0 picking.
-- Current historical quantity ledger counts: 35 items, 2 `completed_live`, 28 `already_correct`, 5 `held_requires_review`, 0 pending, 0 remaining short post candidates.
+- Completed Azyra stock-check decrease transaction `A1014966`, owner ref `HISTQTY-20260621-DEC`, status `Completed - 21/06/26`.
+- Posted `WL50-PS105TO` -5 units at `B16B`; after Stock Enquiry proves 8 total, 8 free, 0 picking.
+- Posted `WL50-PS180CP` -8 units split as -2 at `C17A` and -6 at `C17B`; after Stock Enquiry proves 10 total, 10 free, 0 picking.
+- Posted `LP6052` -4 units at `D24A`; after Stock Enquiry proves 6 total, 6 free, 0 picking. The `WHBFLOOR` zero-unit storage-piece row remains a separate review item.
+- Current historical quantity ledger counts: 35 items, 5 `completed_live`, 28 `already_correct`, 2 `held_requires_review`, 0 pending, 0 remaining short post candidates.
 - Fresh current Azyra balance export was pulled through Aureon on 2026-06-21 at 16:30: `Warehouse Balances Spreadsheet 89QU7W00J_20260621_163056.xlsx`.
 - Fresh export totals: 2,672 balance rows, 1,750 stock codes, 779 locations, 12,231 balance units, 11,147 free units, 1,084 picking units.
 - Held historical quantity review file: `../outputs/aureon_goal_contract_dispatcher/historical_quantity_live_fix_20260620/held_historical_quantity_review_20260621.json`.
-- Held SKUs needing transaction/outwards history before any decrease: `WL50-PS180CP`, `WL50-PS105TO`, `LP6052`, `WL50-PS75CP`, `WL50-PS60MO`.
+- Held SKUs: `WL50-PS75CP` because later outwards explain the current zero unit balance and only a storage-piece anomaly remains; `WL50-PS60MO` because the extra `D24B` quantity is from a separate Inwards transaction, not proved duplicate historical stock.
 - Warehouse-floor location move batch status: 13 rows, 2 posted live (`T101950`, `T101951`), 1 already correct, 10 held, 0 pending, no balance adjustment pairs used.
-- Local operator evidence/workbooks are in `../outputs/aureon_goal_contract_dispatcher/historical_quantity_live_fix_20260620/`, including `live_post_ledger_20260621.json` and `Azyra_Master_Audit_Reconciliation_20260621_LIVE_STATUS.xlsx`.
+- Local operator evidence/workbooks are in `../outputs/aureon_goal_contract_dispatcher/historical_quantity_live_fix_20260620/`, including `live_post_ledger_20260621.json`, `live_decrease_batch_20260621.csv`, `held_historical_quantity_review_20260621.csv`, and `Azyra_Master_Audit_Reconciliation_20260621_LIVE_STATUS.xlsx`.
 - The one-batch Opening Balances route remains held because Azyra rejected tracked stock without real tracking/rotation metadata. Do not force invented tracked-stock values.
 
 ### Fastest Safe Startup
