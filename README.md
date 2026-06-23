@@ -9,8 +9,8 @@ Run the production supervisor, Flameborn UI, market data, parallel strategy work
 [![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
 [![GitHub Stars](https://img.shields.io/github/stars/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=FFD700)](https://github.com/ra-consulting/aureon-trading)
 [![GitHub Forks](https://img.shields.io/github/forks/ra-consulting/aureon-trading?style=for-the-badge&logo=github&color=silver)](https://github.com/ra-consulting/aureon-trading/fork)
-[![Python](https://img.shields.io/badge/Python-715%20modules%20-%2024%20domains-3776AB?style=for-the-badge&logo=python&logoColor=white)](#project-structure--715-modules-across-24-domains)
-[![TypeScript](https://img.shields.io/badge/TypeScript-780%20files-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#architecture-overview)
+[![Python](https://img.shields.io/badge/Python-994%20Aureon%20files%20-%2035%20domains-3776AB?style=for-the-badge&logo=python&logoColor=white)](#project-structure-current-scan)
+[![TypeScript](https://img.shields.io/badge/TypeScript-808%20tracked%20files-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#repo-wide-scan-snapshot)
 
 [![Support the Project](https://img.shields.io/badge/Support%20the%20Project-Donate%20via%20SumUp-FFD700?style=for-the-badge&logoColor=black)](https://pay.sumup.com/b2c/QFTPOX6U)
 
@@ -53,8 +53,34 @@ This README now has a front-door structure while preserving the older proof, res
 | [Full System Startup](#full-system-startup) | Two-terminal production runtime, validation, live trading warnings, and runtime endpoints. |
 | [Current Capability Map](#current-capability-map) | Current active systems grouped by function. |
 | [Architecture Overview](#architecture-overview) | Core module layout, execution flow, configuration, and component-level detail. |
-| [Project Structure](#project-structure--715-modules-across-24-domains) | Repo scale and domain map. |
+| [Project Structure](#project-structure-current-scan) | Repo scale and domain map from the current tracked scan. |
 | Historical archive sections | Preserved long-form research, legacy startup notes, and older project material. They remain for audit/history, but the current operator path is above. |
+
+### Repo-Wide Scan Snapshot
+
+Current scan source: tracked Git files in `main`, checked locally on 2026-06-23 before this README update.
+
+| Area | Tracked files | What it represents |
+|---|---:|---|
+| Whole repository | 8,401 | GitHub-visible files, excluding local evidence/output folders that are not tracked. |
+| `frontend/` | 4,286 | Flameborn/unified console app, generated public proof files, Vite/React/TypeScript surfaces. |
+| `imports/` | 1,240 | Imported research/runtime material retained for migration and reference. |
+| `aureon/` | 994 | Main Python organism package across 35 domain directories. |
+| `docs/` | 369 | Architecture, research, runbooks, audits, deployment, warehouse reconciliation, and guides. |
+| `tests/` | 330 | Python tests for runtime, exchange, cognition, vault, frontend bridge, and generated systems. |
+| `scripts/` | 302 | Launchers, diagnostics, validation, reports, runners, and helper automation. |
+| `Kings_Accounting_Suite/` | 227 | Accounting, statutory pack, HMRC support, and related evidence tooling. |
+| `supabase/` | 160 | Supabase functions/configuration and support surfaces. |
+
+Tracked implementation mix:
+
+| Type | Count |
+|---|---:|
+| Python | 3,234 |
+| JSON | 1,240 |
+| Markdown | 1,234 |
+| TypeScript/TSX | 808 |
+| Container/config files | 18 |
 
 ### Repo Map For Operators
 
@@ -64,12 +90,15 @@ This README now has a front-door structure while preserving the older proof, res
 | `RUNNING.md` | Deeper runtime instructions. |
 | `SYSTEM_OVERVIEW.md` | Whole-system architecture overview. |
 | `CAPABILITIES.md` | Capability inventory and operator-facing proof. |
-| `frontend/` | Flameborn and unified console UI. |
-| `aureon/` | Main Python organism modules for trading, cognition, research, and automation. |
+| `frontend/` | Flameborn and unified console UI; 4,286 tracked files including public proof mirrors. |
+| `aureon/` | Main Python organism package; 994 tracked files across 35 active domain directories. |
 | `aureon_current_balance_*.py`, `current_balance_*.py` | Azyra Stock Enquiry/current-balance operators and evidence capture. |
 | `aureon_location_transfer_*.py` | Azyra location transfer manifest, OCR audit, native movement, and batch control. |
 | `aureon_wms_location_proof_operator.py` | WMS location proof/creation support before live batch mutation. |
 | `docs/`, `state/`, `frontend/public/` | Audit reports, current state files, and UI-visible proof artifacts. |
+| `tests/` | 330 tracked tests covering runtime, cognition, exchange, vault, frontend bridge, and generated-system paths. |
+| `scripts/` | 302 tracked launch, runner, validation, diagnostic, reporting, and migration scripts. |
+| `Kings_Accounting_Suite/` | 227 tracked accounting/HMRC support files and statutory-pack tooling. |
 | `../outputs/aureon_goal_contract_dispatcher/` | Local live-work outputs, evidence screenshots, ledgers, and generated workbooks. This sits beside the repo and is intentionally not all committed. |
 
 ### Current Operator Rule
@@ -881,7 +910,7 @@ This README is a complete tour of Aureon - the trading system, the research, the
 | Part | Section | Why You'd Read It |
 |------|---------|-------------------|
 | **1. INTRO** | [What is this?](#what-is-this) · [Growth Stats](#-growth-stats--december-2025--march-2026) · [Live Trading](#-live-now--watch-the-wizard-trade-in-real-time) · [Discord](#-join-the-community--discord) · [Support](#-support-the-project) · [Navigate by Role](#-navigate-by-role) · [Beta Testers](#-beta-testers-wanted) | First impressions · what this is · how to join |
-| **2. RUN THE SYSTEM** | [`RUNNING.md`](RUNNING.md) (canonical) · [Architecture Overview](#architecture-overview) · [Project Structure (715 modules)](#project-structure--715-modules-across-24-domains) · [Core Components](#core-components) · [Execution Flow](#execution-flow) · [Configuration](#configuration) · [Quick Start (War Room)](#quick-start-war-room-dashboard) · [Queen's 4-Phase Plan](#-queens-4-phase-master-plan) · [Unity Integration](#-new-unity-integration-v20261) · [Windows Plug & Play](#-windows-plug--play-legacy) · [Docker Deployment](#-docker-deployment-advanced) | Get hands on the code · understand how it runs |
+| **2. RUN THE SYSTEM** | [`RUNNING.md`](RUNNING.md) (canonical) · [Architecture Overview](#architecture-overview) · [Project Structure](#project-structure-current-scan) · [Core Components](#core-components) · [Execution Flow](#execution-flow) · [Configuration](#configuration) · [Quick Start (War Room)](#quick-start-war-room-dashboard) · [Queen's 4-Phase Plan](#-queens-4-phase-master-plan) · [Unity Integration](#-new-unity-integration-v20261) · [Windows Plug & Play](#-windows-plug--play-legacy) · [Docker Deployment](#-docker-deployment-advanced) | Get hands on the code · understand how it runs |
 | **3. DEPLOYMENT & SAFETY** | [Key Files](#key-files) · [Production Deployment (DigitalOcean)](#-production-deployment-digitalocean) · [Safety](#safety) | Take it live · risk controls |
 | **4. RESEARCH & EVIDENCE** | [Latest Research](#-latest-research--fresh-off-the-press) · [System at a Glance](#️-system-at-a-glance) · [The Ancient Convergence (4,100-year chain)](#-the-ancient-convergence-they-were-never-separated) · [The $33.5T Exposure](#-the-complete-exposure-335-trillion-extracted-from-humanity) · [Extraction Timeline](#️-extraction-timeline-event-by-event) · [The Perpetrator Network](#-the-perpetrator-network-who-knows-who) · [The Bot Army (23 algorithms)](#-the-bot-army-23-algorithms-exposed) · [37 Global Predators](#-the-37-global-predators-who-owns-the-bots) · [The Extraction Playbook](#-the-extraction-playbook-how-they-do-it) · [Planetary Damage Assessment](#-planetary-damage-assessment) · [Name & Shame · Rogues' Gallery](#-name-and-shame-the-individuals-who-rigged-the-global-economy) · [Bot Ownership Registry](#-bot-ownership-registry-who-controls-the-algorithms) · [Coordination Network (Jan 2026)](#-current-coordination-network-january-2026) · [Findings Summary](#-findings-summary) · [Counter-Measures](#integrated-counter-measures) · [Methodology & Reproducibility](#methodology--reproducibility) · [Implications](#implications) · [Evidence File Reference](#evidence-file-reference) · [Citations](#citations--further-reading) · [Cognitive Framework & Moral Alignment](#cognitive-framework--moral-alignment) · [The Unified Field](#-the-unified-field-connecting-all-the-dots) | The core research · forensic evidence · methodology |
 | **5. TOOLS & ACTION** | [Market Intelligence Tools](#-market-intelligence--manipulation-detection-tools) · [Understanding the Implications](#-understanding-the-implications) · [Counter-Strategies — How to Fight Back](#️-counter-strategies-how-to-fight-back) · [Complete Evidence File Index](#-complete-evidence-file-index) · [Reproduction Commands](#-reproduction-commands) · [The Bottom Line](#-the-bottom-line) · [Global Predator Map](#️-global-predator-map-see-who-owns-what) · [On the Right Side of History](#🔥-we-are-on-the-right-side-of-history) | What to do with the findings · reproduce the work |
@@ -1162,6 +1191,51 @@ Then open an issue titled **`BETA TESTER - [your GitHub username]`** or join the
 
 ## Architecture Overview
 
+Current production Aureon is best understood as a set of controlled operator paths sharing local evidence:
+
+```text
+Operator
+  -> launcher / Flameborn / CLI / Azyra manifest
+  -> Aureon supervisor and specialist operators
+  -> evidence, ledgers, public proof mirrors, and local state
+  -> guarded live mutation path when the relevant gate is clear
+```
+
+| Layer | Main paths | Current role |
+|---|---|---|
+| Entrypoints | `AUREON_PRODUCTION_LIVE.cmd`, `start_everything_production.ps1`, `scripts/start_aureon_with_flameborn.ps1` | Start or validate the local organism. |
+| Runtime/status | `aureon/exchanges/unified_market_trader.py`, `aureon/exchanges/unified_market_status_server.py` | Publish exchange state, account readiness, stale-data reasons, live gates, and reboot advice. |
+| Trading and risk | `aureon/trading/`, `aureon/strategies/`, `aureon/portfolio/`, `aureon/exchanges/` | Turn market state into guarded intent, lifecycle proof, and executor-visible action. |
+| Cognition and agents | `aureon/autonomous/`, `aureon/core/`, `aureon/queen/`, `aureon/harmonic/`, `aureon/vault/` | Route goals, HNC/Auris evidence, ThoughtBus/Mycelium events, local LLM fallback, and self-repair. |
+| Frontend | `frontend/src/App.tsx`, `frontend/src/components/generated/`, `frontend/public/` | Show runtime, blockers, capability modes, generated consoles, and public audit mirrors. |
+| Warehouse/Azyra | `aureon_current_balance_*.py`, `current_balance_*.py`, `aureon_location_transfer_*.py`, `aureon_wms_location_proof_operator.py` | Prove live stock state, build manifests, run native Azyra transfer/current-balance routes, and hold uncertain lines. |
+| Accounting/support | `Kings_Accounting_Suite/`, `aureon/queen/accounting_context_bridge.py` | Generate support packs and accounting evidence while keeping official filing/manual authority outside automation. |
+| Evidence and audits | `docs/audits/`, `state/`, `frontend/public/`, `../outputs/aureon_goal_contract_dispatcher/` | Keep JSON proof, screenshots, ledgers, workbooks, and operator review artifacts visible. |
+
+The current public path is not an individual bot. It is the launcher, runtime status server, unified console, and evidence-backed operator routes described above. Older bot names and diagrams below are retained for history and subsystem discovery.
+
+```mermaid
+flowchart TD
+    OP["Operator"] --> LAUNCH["Production launcher / Flameborn / CLI"]
+    OP --> AZYRA["Azyra manifest or stock enquiry job"]
+    LAUNCH --> RUNTIME["Unified market runtime"]
+    LAUNCH --> MIND["Mind hub and cognitive agents"]
+    RUNTIME --> STATUS["Runtime status server :8791"]
+    STATUS --> UI["Unified console / Flameborn"]
+    MIND --> EVIDENCE["Evidence: docs, state, frontend/public"]
+    AZYRA --> WMS["Azyra stock and location operators"]
+    WMS --> ALEDGER["Azyra evidence ledgers and workbooks"]
+    RUNTIME --> EXECUTOR["Guarded live executor"]
+    EXECUTOR --> BROKER["Exchange broker action when gates clear"]
+    EVIDENCE --> UI
+    ALEDGER --> UI
+```
+
+## Legacy Architecture Diagram Archive
+
+<details>
+<summary>Preserved older architecture diagram and narrative</summary>
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          QUEEN HIVE MIND (Tina B)                           │
@@ -1236,9 +1310,44 @@ graph TD
     style PROFITGATE fill:#4a3d00,color:#FFD700
 ```
 
-## Project Structure — 715 Modules Across 24 Domains
+</details>
 
-The codebase is organized into domain-specific subdirectories under `aureon/`:
+## Project Structure Current Scan
+
+The current GitHub-tracked repo scan shows 8,401 files. The active operator map is:
+
+| Area | Tracked files | Role |
+|---|---:|---|
+| `frontend/` | 4,286 | Flameborn/unified console, generated panels, public proof mirrors, Vite/React/TypeScript app. |
+| `imports/` | 1,240 | Imported material retained for migration/reference. |
+| `aureon/` | 994 | Main Python organism package across trading, exchange, cognition, HNC/Auris, automation, code, and evidence systems. |
+| `docs/` | 369 | Architecture, runbooks, audits, research, warehouse reconciliation, deployment, and component guides. |
+| `tests/` | 330 | Runtime, exchange, cognition, vault, frontend bridge, generated-system, and integration tests. |
+| `scripts/` | 302 | Launchers, diagnostics, runners, report generation, validation, and migration scripts. |
+| `Kings_Accounting_Suite/` | 227 | Statutory support, HMRC evidence, accounting context, and support-pack tooling. |
+| `supabase/` | 160 | Supabase functions/configuration and support surfaces. |
+
+### Aureon Package Domains
+
+The `aureon/` package currently contains 994 tracked files across 35 domain directories:
+
+| Domain | Files | Primary role |
+|---|---:|---|
+| `autonomous` | 115 | Agents, audits, launch observers, coding organism, data ocean, prompt filters, and local automation. |
+| `trading` | 94 | Trading engines, execution logic, risk/profit routes, and lifecycle support. |
+| `queen` | 80 | Queen cognition, account context, self-enhancement, and decision support. |
+| `core` | 63 | ThoughtBus, Mycelium, API governance, config, and central runtime primitives. |
+| `vault` | 47 | Memory, voice, knowledge, HNC packets, and protected state. |
+| `analytics` / `utils` | 42 each | Measurement, waveform models, diagnostics, adapters, and helper systems. |
+| `exchanges` | 41 | Kraken, Binance, Alpaca, Capital, unified market runtime, diagnostics, and exchange registries. |
+| `wisdom` / `strategies` / `simulation` / `intelligence` / `harmonic` | 34-37 each | HNC/Auris, strategy, simulation, symbolic/research, intelligence, and harmonic systems. |
+| `bots`, `portfolio`, `monitors`, `data_feeds`, `scanners`, `bridges`, `command_centers` | 17-33 each | Legacy/specialist bots, portfolio state, market feeds, scanner layers, bridges, and operator hubs. |
+| Smaller domains | 2-14 each | `observer`, `decoders`, `integrations`, `conversion`, `code_architect`, `inhouse_ai`, `s51`, `search`, `swarm_motion`, `atn`, `cognition`, `alignment`, `generated`, `miner`. |
+
+<details>
+<summary>Archived 715-module tree from the older README</summary>
+
+The older README described the codebase like this; keep it as historical context, not the current count:
 
 ```
 aureon/
@@ -1267,6 +1376,8 @@ aureon/
 ├── s51/            (5)   Section 51 — Experimental compound strategies
 └── atn/            (3)   Astronomical Temporal Nexus — Earth hazard monitoring
 ```
+
+</details>
 
 > **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | [Repo Mindmap](docs/architecture/REPO_MINDMAP.md)
 
@@ -1609,7 +1720,7 @@ See [production/README.md](production/README.md) for full deployment documentati
 | Geopolitical Forensics | `aureon/harmonic/geopolitical_forensics.py` | Geopolitical event signal integration |
 | System Hub Dashboard | `aureon/command_centers/` | Terminal dashboard for system orchestration |
 
-> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) — all 715 modules across 24 domains
+> **Full reference:** [Module Reference](docs/MODULES_AT_A_GLANCE.md) plus the current [Project Structure](#project-structure-current-scan) scan.
 
 ---
 
@@ -1774,7 +1885,7 @@ pie title Research Scope — Wisdom Entries by Civilisation
 | [I](#-the-ancient-convergence-they-were-never-separated) | **Ancient Convergence** | 12 civilisations, 1,190 wisdom entries — [Full Research](docs/research/ANCIENT_CONVERGENCE.md) |
 | [II](#-the-complete-exposure-335-trillion-extracted-from-humanity) | **Financial Exposure** | $33.5T extraction timeline — [Full Research](docs/research/FINANCIAL_EXPOSURE.md) |
 | [III](#-the-bot-army-23-algorithms-exposed) | **Bot Intelligence** | 23 algorithms, 37 firms — [Full Research](docs/research/BOT_INTELLIGENCE.md) |
-| [IV](#architecture-overview) | **Architecture** | 24 domains, 715 modules — [Module Reference](docs/MODULES_AT_A_GLANCE.md) |
+| [IV](#architecture-overview) | **Architecture** | Current architecture, repo scan, and [Module Reference](docs/MODULES_AT_A_GLANCE.md) |
 | [V](#quick-start-war-room-dashboard) | **Quick Start** | Setup for Linux, macOS, Windows, Docker |
 | [VI](#-production-deployment-digitalocean) | **Production Deployment** | Live cloud deployment, port architecture |
 | [VII](#-market-intelligence--manipulation-detection-tools) | **Market Intelligence** | Bot detection, coordination analysis tools |
@@ -4535,7 +4646,7 @@ The Aureon system includes **180+ documentation files** organized by topic. Star
 ### For Developers
 | Document | Description |
 |----------|-------------|
-| [Module Reference](docs/MODULES_AT_A_GLANCE.md) | All 715 modules across 24 domains |
+| [Module Reference](docs/MODULES_AT_A_GLANCE.md) | Historical module reference; use [Project Structure](#project-structure-current-scan) for the current tracked scan |
 | [System Architecture Map](docs/architecture/SYSTEM_ARCHITECTURE_MAP.md) | 5-phase startup hierarchy |
 | [Intelligence Wiring Matrix](docs/architecture/INTELLIGENCE_WIRING_MATRIX.md) | What intelligence feeds which trader |
 | [Theory to Code](docs/architecture/THEORY_TO_CODE.md) | Research concepts → implementations |
