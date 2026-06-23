@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Create or prove Azyra WMS locations through the live Aureon UI route.
 
-This operator assumes Azyra is already on Warehouse Antrim > WMS Locations.
+This operator assumes Azyra is already on the configured warehouse's WMS Locations screen.
 It only touches the warehouse-location table: for each supplied code it clicks
 New, enters the code, selects Usage=Bulk, then either records Azyra's duplicate
 "Location Already Exists" proof or saves the new WMS location.
@@ -132,8 +132,8 @@ def prove_one(
 ) -> dict[str, Any]:
     row: dict[str, Any] = {
         "location": location,
-        "warehouse": "Antrim",
-        "owner_or_company": "SFG Forwarding Ltd / Warehousing-Antrim",
+        "warehouse": os.getenv("AUREON_AZYRA_WAREHOUSE_TEXT", "<warehouse-not-committed>"),
+        "owner_or_company": os.getenv("AUREON_AZYRA_OWNER_TEXT", "<owner-not-committed>"),
         "usage": "Bulk",
         "status": "started",
         "proved_at_utc": now_iso(),
@@ -148,7 +148,7 @@ def prove_one(
     if duplicate_present(b):
         row["status"] = "already_exists"
         row["evidence"] = dismiss_duplicate(b, actions, out_dir, location)
-        row["note"] = "Azyra duplicate popup proves the WMS location already exists for Warehouse Antrim."
+        row["note"] = "Azyra duplicate popup proves the WMS location already exists for the configured warehouse."
         return row
 
     record(actions, f"{location}:usage_dropdown", b.click_window(700, 460, submit_like=False), 0.25)
@@ -157,7 +157,7 @@ def prove_one(
     if duplicate_present(b):
         row["status"] = "already_exists"
         row["evidence"] = dismiss_duplicate(b, actions, out_dir, location)
-        row["note"] = "Azyra duplicate popup proves the WMS location already exists for Warehouse Antrim."
+        row["note"] = "Azyra duplicate popup proves the WMS location already exists for the configured warehouse."
         return row
 
     row["evidence"] = capture(b, actions, out_dir, location, "before_save")
@@ -226,7 +226,7 @@ def main() -> int:
     payload = {
         "ok": action_ok and status_ok,
         "created_at_utc": now_iso(),
-        "source": "Aureon live Azyra Warehouse Antrim WMS Locations table",
+        "source": "Aureon live Azyra configured-warehouse WMS Locations table",
         "locations": rows,
         "counts": {
             "location_count": len(rows),

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -15,7 +16,12 @@ REPO = Path(__file__).resolve().parent
 WORKSPACE = REPO.parent
 FIX_DIR = WORKSPACE / "outputs" / "aureon_goal_contract_dispatcher" / "azyra_current_balance_fix"
 RUNNER_MANIFEST = FIX_DIR / "aureon_current_balance_runner_manifest.json"
-PDF_EXTRACTION = WORKSPACE / "boxtop_azyra_outputs" / "sfg0_current_balances_from_pdf.json"
+PDF_EXTRACTION = Path(
+    os.getenv(
+        "AUREON_LEGACY_BALANCE_PDF_EXTRACTION",
+        str(WORKSPACE / "legacy_source_outputs" / "current_balances_from_pdf.json"),
+    )
+)
 EVIDENCE_ROOT = FIX_DIR / "evidence"
 
 
@@ -110,9 +116,9 @@ def build_evidence(item: dict, pdf_data: dict, out_dir: Path) -> tuple[Path, Pat
         f"{item.get('sku')} Before-Balance Evidence",
         f"Description: {item.get('description')}",
         f"Current balance PDF as-at: {summary.get('as_at')} ({summary.get('pdf_name')})",
-        f"Matching {item.get('sku')} rows in parsed SFG0 PDF: {len(rows)}",
+        f"Matching {item.get('sku')} rows in parsed legacy balance PDF: {len(rows)}",
         f"Runner current balance summary: {item.get('current_balance_summary')}",
-        f"Boxtop conversion: {item.get('unit_conversion_summary')}",
+        f"Legacy-source conversion: {item.get('unit_conversion_summary')}",
         f"Planned correction: +{item.get('quantity')} units at {item.get('target_location')}",
         f"Source PDF parsed rows/pages: {summary.get('parsed_rows')} rows / {summary.get('pdf_pages')} pages",
         "Movement clearance: NOT cleared by this artifact; check picks, dispatches, or movements separately.",
@@ -154,10 +160,10 @@ def attach_before_balance(item: dict, evidence_dir_path: Path, png_path: Path, e
         "ok": True,
         "reason": "source_pdf_current_balance_evidence",
         "window_found": False,
-        "description": "Current SFG0 balance evidence from parsed warehouse balances PDF.",
+        "description": "Current legacy-source balance evidence from parsed warehouse balances PDF.",
         "operator_observation": (
             f"{item.get('sku')} has {evidence.get('matching_pdf_rows')} matching row(s) in the "
-            f"current SFG0 PDF as-at {evidence.get('pdf_as_at')}; {item.get('current_balance_summary')}."
+            f"current legacy-source PDF as-at {evidence.get('pdf_as_at')}; {item.get('current_balance_summary')}."
         ),
         "ocr": {"engine": "not_run", "reason": "generated source evidence card"},
         "screen_classification": {
@@ -184,7 +190,7 @@ def attach_before_balance(item: dict, evidence_dir_path: Path, png_path: Path, e
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build current-balance source evidence card for one SKU.")
-    parser.add_argument("--sku", default="LP4073")
+    parser.add_argument("--sku", default=os.getenv("AUREON_CURRENT_BALANCE_PILOT_SKU", "SKU-EXAMPLE-001"))
     parser.add_argument("--attach-before-balance", action="store_true")
     args = parser.parse_args()
 

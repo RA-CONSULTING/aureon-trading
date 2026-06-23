@@ -32,11 +32,9 @@ DEFAULT_OUTPUT = (
 )
 
 HELD_SKUS = [
-    "WL50-PS180CP",
-    "WL50-PS105TO",
-    "LP6052",
-    "WL50-PS75CP",
-    "WL50-PS60MO",
+    sku.strip().upper()
+    for sku in os.getenv("AUREON_HELD_TRANSACTION_SKUS", "SKU-EXAMPLE-001,SKU-EXAMPLE-002").split(",")
+    if sku.strip()
 ]
 
 MODES = {

@@ -286,8 +286,10 @@ def query_stock_enquiry(
     sku: str,
     label: str,
 ) -> Path:
-    click_text(b, actions, f"{label}:owner", 425, 166, "Decora Antrim")
-    record(actions, f"{label}:commit_owner", b.press_key("tab", submit_like=False), 0.25)
+    owner_text = os.getenv("AUREON_AZYRA_OWNER_TEXT", "").strip()
+    if owner_text:
+        click_text(b, actions, f"{label}:owner", 425, 166, owner_text)
+        record(actions, f"{label}:commit_owner", b.press_key("tab", submit_like=False), 0.25)
     click_text(b, actions, f"{label}:stock_code", 425, 237, sku)
     clear_field(b, actions, f"{label}:tracking", 400, 307)
     clear_field(b, actions, f"{label}:storage_piece", 400, 342)
@@ -457,7 +459,7 @@ def main() -> int:
     direction = args.direction.strip().lower()
     direction_word = "posted" if direction == "increase" else "decreased"
     direction_symbol = "+" if direction == "increase" else "-"
-    tracking = args.tracking.strip() or f"BOXTOP{safe_name(sku)}"
+    tracking = args.tracking.strip() or f"SOURCE{safe_name(sku)}"
     po = args.po.strip() or tracking
 
     if direction == "decrease" and not env_true("AUREON_DECREASE_STORAGE_PIECE_ROUTE_PROVEN"):

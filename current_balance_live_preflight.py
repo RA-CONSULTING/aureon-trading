@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Non-mutating preflight for the Boxtop/SFG0 current-balance live fix."""
+"""Non-mutating preflight for legacy-source current-balance live fixes."""
 
 from __future__ import annotations
 

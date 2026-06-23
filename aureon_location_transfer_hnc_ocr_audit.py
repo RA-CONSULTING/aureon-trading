@@ -31,150 +31,58 @@ def selector_image(*parts: str) -> str:
     return str(OPERATOR_ROOT.joinpath(*parts))
 
 
-# OCR/visual reads from the Azyra native selector screenshots captured during the
-# controlled Aureon run. Values are kept explicit so the live decision ledger is
-# auditable without re-opening Azyra.
+# OCR/visual reads from Azyra native selector screenshots. Public repo values
+# are neutral examples only; real stock codes, tracking numbers, screenshots,
+# and locations stay in private operator evidence.
 SELECTOR_OCR_ROWS: dict[int, list[dict[str, Any]]] = {
-    3: [
+    1: [
         {
-            "quantity": 18,
+            "quantity": 1,
             "split": 0,
-            "rotation_date": "11/06/26",
-            "location": "B17A",
+            "rotation_date": "<rotation-date>",
+            "location": "B1A",
             "usage": "Bulk",
-            "tracking_number": "260188D",
-            "stock_code": "WL35-VAD245CA",
+            "tracking_number": "<tracking-number>",
+            "stock_code": "SKU-EXAMPLE-001",
             "evidence_image": selector_image(
                 "native_selector_scan",
-                "20260618T162105Z",
-                "03_WL35-VAD245CA",
-                "after_line_ok_attempt_20260618T162613Z.png",
+                "<run-id>",
+                "01_SKU-EXAMPLE-001",
+                "after_line_ok_attempt.png",
             ),
         }
     ],
-    4: [
+    2: [
         {
             "quantity": 2,
             "split": 0,
-            "rotation_date": "11/08/25",
-            "location": "C22B",
+            "rotation_date": "<rotation-date>",
+            "location": "A2A",
             "usage": "Bulk",
-            "tracking_number": "C&A-150",
-            "stock_code": "WL50-PS120JA",
+            "tracking_number": "<tracking-number>",
+            "stock_code": "SKU-EXAMPLE-002",
             "evidence_image": selector_image(
                 "native_selector_scan",
-                "20260618T162105Z",
-                "04_WL50-PS120JA",
-                "after_line_ok_attempt_20260618T162758Z.png",
-            ),
-        },
-        {
-            "quantity": 1,
-            "split": 0,
-            "rotation_date": "11/06/26",
-            "location": "A7B",
-            "usage": "Bulk",
-            "tracking_number": "260050D",
-            "stock_code": "WL50-PS120JA",
-            "evidence_image": selector_image(
-                "native_selector_scan",
-                "20260618T162105Z",
-                "04_WL50-PS120JA",
-                "after_line_ok_attempt_20260618T162758Z.png",
+                "<run-id>",
+                "02_SKU-EXAMPLE-002",
+                "after_line_ok_attempt.png",
             ),
         },
     ],
-    5: [
+    3: [
         {
-            "quantity": 2,
+            "quantity": 5,
             "split": 0,
-            "rotation_date": "25/10/24",
-            "location": "A12B",
+            "rotation_date": "<rotation-date>",
+            "location": "C3A",
             "usage": "Bulk",
-            "tracking_number": "C&A-150",
-            "stock_code": "SRL50-PS150GL",
+            "tracking_number": "<tracking-number>",
+            "stock_code": "SKU-EXAMPLE-003",
             "evidence_image": selector_image(
                 "native_selector_scan",
-                "20260618T162105Z",
-                "05_SRL50-PS150GL",
-                "after_line_ok_attempt_20260618T162941Z.png",
-            ),
-        },
-        {
-            "quantity": 1,
-            "split": 0,
-            "rotation_date": "11/06/26",
-            "location": "C3B",
-            "usage": "Bulk",
-            "tracking_number": "003006600100130977",
-            "stock_code": "SRL50-PS150GL",
-            "evidence_image": selector_image(
-                "native_selector_scan",
-                "20260618T162105Z",
-                "05_SRL50-PS150GL",
-                "after_line_ok_attempt_20260618T162941Z.png",
-            ),
-        },
-    ],
-    7: [
-        {
-            "quantity": 3,
-            "split": 0,
-            "rotation_date": "06/06/25",
-            "location": "A7B",
-            "usage": "Bulk",
-            "tracking_number": "C&A-150",
-            "stock_code": "SRL50-PS150MR",
-            "evidence_image": selector_image(
-                "native_selector_scan",
-                "20260618T174314Z_rows07_13",
-                "07_SRL50-PS150MR",
-                "after_line_ok_attempt_20260618T174438Z.png",
-            ),
-        },
-        {
-            "quantity": 1,
-            "split": 0,
-            "rotation_date": "23/06/25",
-            "location": "B19B",
-            "usage": "Bulk",
-            "tracking_number": "C&A-150",
-            "stock_code": "SRL50-PS150MR",
-            "evidence_image": selector_image(
-                "native_selector_scan",
-                "20260618T174314Z_rows07_13",
-                "07_SRL50-PS150MR",
-                "after_line_ok_attempt_20260618T174438Z.png",
-            ),
-        },
-        {
-            "quantity": 2,
-            "split": 0,
-            "rotation_date": "11/06/26",
-            "location": "B7A",
-            "usage": "Bulk",
-            "tracking_number": "003006600100130978",
-            "stock_code": "SRL50-PS150MR",
-            "evidence_image": selector_image(
-                "native_selector_scan",
-                "20260618T174314Z_rows07_13",
-                "07_SRL50-PS150MR",
-                "after_line_ok_attempt_20260618T174438Z.png",
-            ),
-        },
-        {
-            "quantity": 1,
-            "split": 0,
-            "rotation_date": "11/06/26",
-            "location": "C3B",
-            "usage": "Bulk",
-            "tracking_number": "003006600100130978",
-            "stock_code": "SRL50-PS150MR",
-            "evidence_image": selector_image(
-                "native_selector_scan",
-                "20260618T174314Z_rows07_13",
-                "07_SRL50-PS150MR",
-                "after_line_ok_attempt_20260618T174438Z.png",
+                "<run-id>",
+                "03_SKU-EXAMPLE-003",
+                "after_line_ok_attempt.png",
             ),
         },
     ],
@@ -182,17 +90,16 @@ SELECTOR_OCR_ROWS: dict[int, list[dict[str, Any]]] = {
 
 
 ROW_ISSUES: dict[int, str] = {
-    6: "Azyra reported out of stock; no live source stock to move.",
-    8: "Azyra offered only free stock 2 against requested movement 42.",
-    10: "Azyra reported no matching stock code for WL50-PS90PC.",
-    11: "Azyra accepted stock code but did not expose a pick/source location.",
-    13: "Azyra reported out of stock; no live source stock to move.",
+    4: "Azyra reported out of stock; no live source stock to move.",
+    5: "Azyra offered insufficient free stock against the requested movement.",
+    6: "Azyra reported no matching stock code for the supplied sample row.",
+    7: "Azyra accepted stock code but did not expose a pick/source location.",
 }
 
 
 def row_selector_rows(row_id: int) -> list[dict[str, Any]]:
-    if row_id in {9, 12}:
-        return [dict(item) for item in SELECTOR_OCR_ROWS[7]]
+    if row_id in {9, 12} and 3 in SELECTOR_OCR_ROWS:
+        return [dict(item) for item in SELECTOR_OCR_ROWS[3]]
     return [dict(item) for item in SELECTOR_OCR_ROWS.get(row_id, [])]
 
 

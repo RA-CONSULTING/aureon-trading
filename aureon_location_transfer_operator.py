@@ -250,8 +250,8 @@ def append_transfer_ledger(path: Path, entry: Mapping[str, Any]) -> None:
             "ok": True,
             "schema_version": "azyra-location-transfer-live-completion-ledger-v1",
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "owner": "Decora Antrim",
-            "warehouse": "Antrim",
+            "owner": os.getenv("AUREON_AZYRA_OWNER_TEXT", "<owner-not-committed>"),
+            "warehouse": os.getenv("AUREON_AZYRA_WAREHOUSE_TEXT", "<warehouse-not-committed>"),
             "items": [],
         }
     items = payload.setdefault("items", [])
@@ -299,11 +299,11 @@ def fill_piece_transfer(
     click_text = tools["click_text"]
     capture = tools["capture"]
     record(actions, "from_warehouse_dropdown", b.click_window(900, 370, submit_like=False), 0.55)
-    record(actions, "from_warehouse_select_antrim", b.click_window(710, 398, submit_like=False), 0.7)
+    record(actions, "from_warehouse_select_configured", b.click_window(710, 398, submit_like=False), 0.7)
     click_text(b, actions, "piece_id", 815, 460, freight_unit_id)
     record(actions, "piece_id_tab", b.press_key("tab", submit_like=False), 0.65)
     record(actions, "to_warehouse_dropdown", b.click_window(900, 515, submit_like=False), 0.55)
-    record(actions, "to_warehouse_select_antrim", b.click_window(710, 542, submit_like=False), 0.7)
+    record(actions, "to_warehouse_select_configured", b.click_window(710, 542, submit_like=False), 0.7)
     click_text(b, actions, "to_location", 790, 550, to_location)
     record(actions, "to_location_tab", b.press_key("tab", submit_like=False), 0.65)
     return capture(b, actions, out_dir, "piece_transfer_filled_before_submit")

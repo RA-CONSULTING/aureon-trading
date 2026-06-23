@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import time
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -35,19 +36,9 @@ class LocationMoveRow:
 
 
 PHOTO_ROWS: tuple[LocationMoveRow, ...] = (
-    LocationMoveRow(1, "WL50-PS105PR", 1, "A2A", "B16D", "medium", "WL50-PS105PR x1 > A2A > B16D"),
-    LocationMoveRow(2, "WL50-PS105AH", 1, "A2A", "B16D", "low", "WL50-PS105AH x1 > A2A > B16D"),
-    LocationMoveRow(3, "WL35-VAD245CA", 18, "A2D", "B17A", "medium", "WL35-VAD245CA x18 > A2D > B17A"),
-    LocationMoveRow(4, "WL50-PS120JA", 1, "A12B", "A7B", "high", "WL50-PS120JA x1 > A12B > A7B"),
-    LocationMoveRow(5, "SRL50-PS150GL", 1, "A12A", "C3B", "high", "SRL50-PS150GL x1 > A12A > C3B"),
-    LocationMoveRow(6, "WL50-PS180MO", 1, "B10A", "C7B", "high", "WL50-PS180MO x1 > B10A > C7B"),
-    LocationMoveRow(7, "SRL50-PS150MR", 1, "A12A", "C3B", "high", "SRL50-PS150MR x1 > A12A > C3B"),
-    LocationMoveRow(8, "EUW2-135180AH", 42, "B2A", "B2E", "low", "EUW2-135180AH - 76559 + 42 > B2A > B2E"),
-    LocationMoveRow(9, "SRL50-PS150MR", 1, "A12B", "A7B", "low", "SRL50-PS150MR x1 > A12B > A7B?"),
-    LocationMoveRow(10, "WL50-PS90PC", 2, "live-derived", "B9B", "medium", "WL50-PS90PC +2 > B9B"),
-    LocationMoveRow(11, "WL50-PS105OS", 1, "live-derived", "B9B", "medium", "WL50-PS105OS x1 > B9B"),
-    LocationMoveRow(12, "SRL50-PS150MR", 2, "live-derived", "B7A", "low", "SRL50-PS150MR x2 > B7A"),
-    LocationMoveRow(13, "WL50-PS60PR", 7, "live-derived", "B6B", "medium", "WL50-PS60PR +7 > B6B"),
+    LocationMoveRow(1, "SKU-EXAMPLE-001", 1, "A1A", "B1A", "high", "SKU-EXAMPLE-001 x1 > A1A > B1A"),
+    LocationMoveRow(2, "SKU-EXAMPLE-002", 2, "live-derived", "B2A", "medium", "SKU-EXAMPLE-002 x2 > B2A"),
+    LocationMoveRow(3, "SKU-EXAMPLE-003", 5, "A3A", "C3A", "low", "SKU-EXAMPLE-003 x5 > A3A > C3A"),
 )
 
 
@@ -113,8 +104,8 @@ def write_manifest(output_dir: Path = TRANSFER_ROOT) -> dict[str, Any]:
     manifest = {
         "schema_version": "aureon-azyra-location-transfer-v1",
         "created_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "owner": "Decora Antrim",
-        "warehouse": "Antrim",
+        "owner": os.getenv("AUREON_AZYRA_OWNER_TEXT", "<owner-not-committed>"),
+        "warehouse": os.getenv("AUREON_AZYRA_WAREHOUSE_TEXT", "<warehouse-not-committed>"),
         "source_image": str(PHOTO_PATH),
         "item_count": len(rows),
         "pending_count": len(rows),

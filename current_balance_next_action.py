@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -14,6 +15,8 @@ PREFLIGHT = REPO / "outputs" / "aureon_current_balance_live_preflight" / "curren
 OUTPUT_JSON = FIX_DIR / "current_balance_next_action.json"
 OUTPUT_MD = FIX_DIR / "current_balance_next_action.md"
 DEFAULT_MAX_EVIDENCE_AGE_MINUTES = 60.0
+PILOT_SKU = os.getenv("AUREON_CURRENT_BALANCE_PILOT_SKU", "SKU-EXAMPLE-001").strip().upper()
+PILOT_EVIDENCE_DIR_NAME = os.getenv("AUREON_CURRENT_BALANCE_PILOT_EVIDENCE_DIR", f"001_{PILOT_SKU}")
 PRE_ENTRY_STAGES = {
     "stock-adjustments-screen": "Azyra Stock > Adjustments screen",
     "before-balance": "current balance evidence",
@@ -154,13 +157,13 @@ def main() -> int:
     readiness = load_json(FIX_DIR / "current_balance_execution_readiness.json")
     completion = load_json(FIX_DIR / "current_balance_completion_audit.json")
     preflight = load_json(PREFLIGHT)
-    evidence = load_json(FIX_DIR / "evidence" / "001_LP4073" / "line_evidence.json")
+    evidence = load_json(FIX_DIR / "evidence" / PILOT_EVIDENCE_DIR_NAME / "line_evidence.json")
 
-    lp4073 = next((entry for entry in ledger.get("items", []) if entry.get("manifest_index") == 1), {})
+    pilot_line = next((entry for entry in ledger.get("items", []) if entry.get("manifest_index") == 1), {})
     blockers = preflight.get("blockers", [])
     complete = bool(completion.get("complete"))
-    approved = line_approved(lp4073)
-    completed = line_completed(lp4073)
+    approved = line_approved(pilot_line)
+    completed = line_completed(pilot_line)
     missing_stages = missing_pre_entry_stages(evidence)
 
     if complete:
@@ -171,57 +174,57 @@ def main() -> int:
         status = "pilot_pre_entry_evidence_required"
         if missing_stages == ["movement-check"]:
             next_action = (
-                "Capture or supply explicit LP4073 movement/pick/dispatch clearance. The current PDF balance and "
+                f"Capture or supply explicit {PILOT_SKU} movement/pick/dispatch clearance. The current PDF balance and "
                 "Stock > Adjustments screen evidence are present; do not approve live entry until the movement check is real."
             )
         else:
             friendly_missing = ", ".join(PRE_ENTRY_STAGES[stage] for stage in missing_stages) or "ledger approval"
             next_action = (
-                f"Finish LP4073 pre-entry evidence: {friendly_missing}. Do not run live entry while the current screen "
+                f"Finish {PILOT_SKU} pre-entry evidence: {friendly_missing}. Do not run live entry while the current screen "
                 "is wrong or unclassified, including Outwards, WMS menu, File Explorer/foreground overlap, or any pick/dispatch screen."
             )
         commands = [
-            'cd "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\aureon-trading"',
+            'cd "<repo-root>"',
         ]
         if "stock-adjustments-screen" in missing_stages:
             commands.extend(
                 [
-                    '.\\.venv\\Scripts\\python.exe .\\current_balance_wait_for_safe_screen.py --sku LP4073',
+                    f'.\\.venv\\Scripts\\python.exe .\\current_balance_wait_for_safe_screen.py --sku {PILOT_SKU}',
                     '.\\.venv\\Scripts\\python.exe .\\current_balance_open_adjustments_screen.py --dry-run',
-                    '.\\.venv\\Scripts\\python.exe .\\current_balance_evidence_capture.py --sku LP4073 --stage stock-adjustments-screen --confirm-stock-adjustments-screen --observation "Azyra is on Stock Transaction Adjustment - Increase before LP4073 entry; no stock code, location, or quantity has been entered."',
+                    f'.\\.venv\\Scripts\\python.exe .\\current_balance_evidence_capture.py --sku {PILOT_SKU} --stage stock-adjustments-screen --confirm-stock-adjustments-screen --observation "Azyra is on Stock Transaction Adjustment - Increase before the pilot entry; no stock code, location, or quantity has been entered."',
                 ]
             )
         if "before-balance" in missing_stages:
-            commands.append('.\\.venv\\Scripts\\python.exe .\\current_balance_build_source_evidence.py --sku LP4073 --attach-before-balance')
+            commands.append(f'.\\.venv\\Scripts\\python.exe .\\current_balance_build_source_evidence.py --sku {PILOT_SKU} --attach-before-balance')
         if "movement-check" in missing_stages:
             commands.append(
-                '.\\.venv\\Scripts\\python.exe .\\current_balance_evidence_capture.py --sku LP4073 --stage movement-check --confirm-movement-check-screen --observation "After Azyra movement/pick/dispatch review, no LP4073 pick, dispatch, or stock movement explains the current zero/null balance since the 15/06/26 09:35 PDF."'
+                f'.\\.venv\\Scripts\\python.exe .\\current_balance_evidence_capture.py --sku {PILOT_SKU} --stage movement-check --confirm-movement-check-screen --observation "After Azyra movement/pick/dispatch review, no pick, dispatch, or stock movement explains the current zero/null balance for the pilot line."'
             )
-        commands.append('.\\.venv\\Scripts\\python.exe .\\current_balance_evidence_to_ledger.py --sku LP4073 --approve-pre-entry --operator "Gary Leckey" --confirm-evidence-reviewed')
+        commands.append(f'.\\.venv\\Scripts\\python.exe .\\current_balance_evidence_to_ledger.py --sku {PILOT_SKU} --approve-pre-entry --operator "<operator-name>" --confirm-evidence-reviewed')
     elif not completed:
         status = "pilot_approved_waiting_live_run_or_closeout"
         next_action = (
-            "Run the first-item manifest only, then import entered/posted evidence, capture after-balance evidence, and close out LP4073."
+            f"Run the first-item manifest only, then import entered/posted evidence, capture after-balance evidence, and close out {PILOT_SKU}."
         )
         commands = [
-            'cd "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\aureon-trading"',
+            'cd "<repo-root>"',
             '$env:AZYRA_OPERATOR_ALLOW_INPUT = "true"',
             '$env:AZYRA_OPERATOR_ALLOW_SUBMIT = "true"',
             '$env:AZYRA_OPERATOR_REMOTEAPP_KEYBOARD_ROUTE_PROVEN = "true"',
             '$env:AZYRA_CURRENT_BALANCE_LIVE_APPROVED = "true"',
-            '.\\.venv\\Scripts\\python.exe .\\execute_live_stock_adjustments_robust.py --confirm-current-balance-submit "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\outputs\\aureon_goal_contract_dispatcher\\azyra_current_balance_fix\\aureon_current_balance_runner_manifest_first_item.json"',
+            '.\\.venv\\Scripts\\python.exe .\\execute_live_stock_adjustments_robust.py --confirm-current-balance-submit "<path-to-first-item-manifest.json>"',
         ]
     else:
         status = "pilot_complete_batches_waiting"
-        next_action = "LP4073 is closed out. Prepare/approve post-pilot batch evidence and run batch manifests in order."
+        next_action = f"{PILOT_SKU} is closed out. Prepare/approve post-pilot batch evidence and run batch manifests in order."
         commands = [
-            'cd "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\aureon-trading"',
+            'cd "<repo-root>"',
             '$env:AZYRA_OPERATOR_ALLOW_INPUT = "true"',
             '$env:AZYRA_OPERATOR_ALLOW_SUBMIT = "true"',
             '$env:AZYRA_OPERATOR_REMOTEAPP_KEYBOARD_ROUTE_PROVEN = "true"',
             '$env:AZYRA_CURRENT_BALANCE_LIVE_APPROVED = "true"',
             '$env:AZYRA_CURRENT_BALANCE_BATCH_APPROVED = "true"',
-            '.\\.venv\\Scripts\\python.exe .\\execute_live_stock_adjustments_robust.py --confirm-current-balance-submit "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\outputs\\aureon_goal_contract_dispatcher\\azyra_current_balance_fix\\runner_batches\\aureon_current_balance_runner_manifest_batch_01.json"',
+            '.\\.venv\\Scripts\\python.exe .\\execute_live_stock_adjustments_robust.py --confirm-current-balance-submit "<path-to-batch-manifest.json>"',
         ]
 
     payload = {
@@ -233,7 +236,7 @@ def main() -> int:
         "commands": commands,
         "preflight_blockers": blockers,
         "preflight_screenshot": preflight.get("screenshot", {}).get("path", ""),
-        "latest_lp4073_capture_note": latest_capture_note(evidence),
+        "latest_pilot_capture_note": latest_capture_note(evidence),
         "missing_pre_entry_stages": missing_stages,
         "ledger_summary": ledger.get("summary", {}),
         "readiness_summary": readiness.get("summary", {}),
@@ -243,7 +246,7 @@ def main() -> int:
             "summary": completion.get("summary", {}),
         },
         "links": {
-            "lp4073_evidence_status": str((FIX_DIR / "evidence" / "001_LP4073" / "line_evidence_status.md").resolve()),
+            "pilot_evidence_status": str((FIX_DIR / "evidence" / PILOT_EVIDENCE_DIR_NAME / "line_evidence_status.md").resolve()),
             "execution_readiness": str((FIX_DIR / "current_balance_execution_readiness.md").resolve()),
             "completion_audit": str((FIX_DIR / "current_balance_completion_audit.md").resolve()),
         },
@@ -255,7 +258,7 @@ def main() -> int:
         "",
         f"- Status: `{status}`",
         f"- Next action: {next_action}",
-        f"- Latest LP4073 capture: `{payload['latest_lp4073_capture_note'] or 'none'}`",
+        f"- Latest pilot capture: `{payload['latest_pilot_capture_note'] or 'none'}`",
         f"- Preflight blockers: `{', '.join(blockers) if blockers else 'none'}`",
         "",
         "## Commands",
@@ -266,7 +269,7 @@ def main() -> int:
         "",
         "## Links",
         "",
-        f"- LP4073 evidence: `{payload['links']['lp4073_evidence_status']}`",
+        f"- Pilot evidence: `{payload['links']['pilot_evidence_status']}`",
         f"- Readiness: `{payload['links']['execution_readiness']}`",
         f"- Completion audit: `{payload['links']['completion_audit']}`",
     ]

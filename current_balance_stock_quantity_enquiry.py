@@ -110,7 +110,7 @@ def capture(bridge: AzyraOperatorBridge, path: Path) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run an Aureon Stock Enquiry quantity check for one SKU.")
-    parser.add_argument("--sku", default="LP4073")
+    parser.add_argument("--sku", default=os.getenv("AUREON_CURRENT_BALANCE_PILOT_SKU", "SKU-EXAMPLE-001"))
     parser.add_argument(
         "--manifest",
         type=Path,
@@ -126,7 +126,11 @@ def main() -> int:
     parser.add_argument("--attach-before-balance", action="store_true")
     parser.add_argument("--attach-movement-check", action="store_true")
     parser.add_argument("--use-current-owner", action="store_true", help="Do not change the currently selected Owner.")
-    parser.add_argument("--owner-text", default="Decora Antrim", help="Owner text to type when --use-current-owner is not set.")
+    parser.add_argument(
+        "--owner-text",
+        default=os.getenv("AUREON_AZYRA_OWNER_TEXT", ""),
+        help="Owner text to type when --use-current-owner is not set. Defaults to AUREON_AZYRA_OWNER_TEXT.",
+    )
     parser.add_argument("--skip-zero-toggle", action="store_true", help="Do not click the include-zero-balances checkbox.")
     parser.add_argument(
         "--confirm-readonly-query",
@@ -170,21 +174,14 @@ def main() -> int:
 
     # Coordinates are window-relative for the Stock Enquiry screen opened from
     # WMS > Stock Enquiry > Stock Code on the current Azyra RemoteApp size.
-    if not args.use_current_owner:
+    if not args.use_current_owner and args.owner_text.strip():
         rec("click_owner", bridge.click_window(425, 168, submit_like=False))
         time.sleep(0.25)
         rec("owner_ctrl_a", bridge.hotkey(["ctrl", "a"]))
         time.sleep(0.15)
         rec("type_owner", bridge.type_text(args.owner_text, method="clipboard"))
         time.sleep(0.35)
-        if args.owner_text.strip().lower() == "decora antrim":
-            rec("owner_select_previous_1", bridge.press_key("up", submit_like=False))
-            time.sleep(0.1)
-            rec("owner_select_previous_2", bridge.press_key("up", submit_like=False))
-            time.sleep(0.1)
-            rec("owner_select_enter", bridge.press_key("enter", submit_like=False))
-        else:
-            rec("owner_commit_tab", bridge.press_key("tab", submit_like=False))
+        rec("owner_commit_tab", bridge.press_key("tab", submit_like=False))
         time.sleep(0.5)
 
     rec("click_stock_code", bridge.click_window(425, 237, submit_like=False))

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -86,7 +87,7 @@ def write_outputs(result: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Passively classify the current Azyra screen for current-balance work.")
-    parser.add_argument("--sku", default="LP4073")
+    parser.add_argument("--sku", default=os.getenv("AUREON_CURRENT_BALANCE_PILOT_SKU", "SKU-EXAMPLE-001"))
     parser.add_argument("--watch", action="store_true", help="Poll until the screen is no longer auto-blocked or timeout expires.")
     parser.add_argument("--timeout-seconds", type=float, default=0.0)
     parser.add_argument("--interval-seconds", type=float, default=10.0)

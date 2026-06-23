@@ -138,7 +138,7 @@ def main() -> int:
             next_action = "Navigation activation failed; inspect before/after screenshots and do not run live entry."
         elif after_class == "stock_adjustments":
             status = "stock_adjustments_visible"
-            next_action = "Capture fresh LP4073 pre-entry evidence; do not type or submit until evidence is approved."
+            next_action = "Capture fresh pilot-line pre-entry evidence; do not type or submit until evidence is approved."
         else:
             status = "navigation_not_verified"
             next_action = f"After-click screen classified as {after_class}; do not capture approval evidence yet."

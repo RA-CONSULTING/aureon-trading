@@ -126,29 +126,20 @@ Use this README as the quick operator guide. For deeper maps, see [RUNNING.md](R
 | Metacognitive expansion | Routes HNC research through 18 repo metacognitive systems, including Queen, Auris, ThoughtBus, Mycelium, self-introspection, and refinement. | `frontend/public/aureon_metacognitive_systems_expansion.json` |
 | Azyra warehouse audit batch | Tracks the 2026-06-20 master stock-count reconciliation, fresh Azyra export, local control workbook, held-review rows, live location moves, and live-posting guardrails. | `docs/warehouse/azyra_master_reconciliation_20260620.md` |
 
-### Azyra Warehouse Audit Live Status - 2026-06-21
+### Azyra Warehouse Automation Status - Public Summary
 
-Live Azyra work was carried out through Aureon against `SFG Live`, owner `Decora Antrim`, warehouse `Antrim`.
+The public repo documents capability only. Customer names, owner names, warehouse names, stock codes, transaction references, file names, screenshots, and local live ledgers stay in the operator's private evidence folder and are not published in this README.
 
-- Completed Azyra stock-check overage transaction `A1014965`, owner ref `HISTQTY-20260621`, status `Completed - 21/06/26`.
-- Posted `WL50-PS75PR` +4 units at `C26B`; after Stock Enquiry proves 8 total, 8 free, 0 picking.
-- Posted `WL50-PS165UR` +4 units at `E19A`; after Stock Enquiry proves 7 total, 7 free, 0 picking.
-- Completed Azyra stock-check decrease transaction `A1014966`, owner ref `HISTQTY-20260621-DEC`, status `Completed - 21/06/26`.
-- Posted `WL50-PS105TO` -5 units at `B16B`; after Stock Enquiry proves 8 total, 8 free, 0 picking.
-- Posted `WL50-PS180CP` -8 units split as -2 at `C17A` and -6 at `C17B`; after Stock Enquiry proves 10 total, 10 free, 0 picking.
-- Posted `LP6052` -4 units at `D24A`; after Stock Enquiry proves 6 total, 6 free, 0 picking. The `WHBFLOOR` zero-unit storage-piece row remains a separate review item.
-- Current historical quantity ledger counts: 35 items, 5 `completed_live`, 28 `already_correct`, 2 `held_requires_review`, 0 pending, 0 remaining short post candidates.
-- Fresh current Azyra balance export was pulled through Aureon on 2026-06-21 at 16:30: `Warehouse Balances Spreadsheet 89QU7W00J_20260621_163056.xlsx`.
-- Fresh export totals: 2,672 balance rows, 1,750 stock codes, 779 locations, 12,231 balance units, 11,147 free units, 1,084 picking units.
-- Held historical quantity review file: `../outputs/aureon_goal_contract_dispatcher/historical_quantity_live_fix_20260620/held_historical_quantity_review_20260621.json`.
-- Held SKUs: `WL50-PS75CP` because later outwards explain the current zero unit balance and only a storage-piece anomaly remains; `WL50-PS60MO` because the extra `D24B` quantity is from a separate Inwards transaction, not proved duplicate historical stock.
-- Warehouse-floor location move batch status: 13 rows, 2 posted live (`T101950`, `T101951`), 1 already correct, 10 held, 0 pending, no balance adjustment pairs used.
-- Local operator evidence/workbooks are in `../outputs/aureon_goal_contract_dispatcher/historical_quantity_live_fix_20260620/`, including `live_post_ledger_20260621.json`, `live_decrease_batch_20260621.csv`, `held_historical_quantity_review_20260621.csv`, and `Azyra_Master_Audit_Reconciliation_20260621_LIVE_STATUS.xlsx`.
-- The one-batch Opening Balances route remains held because Azyra rejected tracked stock without real tracking/rotation metadata. Do not force invented tracked-stock values.
+- Aureon can run read-only Stock Enquiry probes before mutation.
+- Aureon can prepare current-balance correction evidence and hold any line that lacks proof.
+- Aureon can process location-transfer manifests through native Azyra warehouse screens.
+- Aureon records every line as `completed_live`, `already_correct`, or `held_requires_review`; no row is silently skipped.
+- Aureon keeps operational evidence locally: screenshots, ledgers, control workbooks, and after-state verification.
+- Public documentation intentionally redacts live customer identifiers and transaction references.
 
 ### Azyra Warehouse Live Automation - 2026-06-23
 
-Aureon now has a reusable live warehouse operator suite for Azyra `SFG Live`, owner `Decora Antrim`, warehouse `Antrim`. The route is designed for controlled production mutation: prove the live Stock Enquiry state, post only through native Azyra screens, capture evidence, then verify the result before the next row.
+Aureon now has a reusable live warehouse operator suite for an operator-supplied Azyra environment, owner, and warehouse. The route is designed for controlled production mutation: prove the live Stock Enquiry state, post only through native Azyra screens, capture evidence, then verify the result before the next row.
 
 - `aureon_current_balance_fast_operator.py` performs fast read-only Stock Enquiry probes and now refills the owner field after RemoteApp relogin before querying stock codes.
 - `current_balance_evidence_capture.py`, `current_balance_stock_quantity_enquiry.py`, and `aureon_current_balance_batch_operator.py` collect source, destination, free, picking, storage-piece, and tracking evidence for batch workbooks.
@@ -168,14 +159,16 @@ Production guardrails:
 Common run shape:
 
 ```powershell
-.\.venv\Scripts\python.exe .\aureon_current_balance_fast_operator.py --sku WL50-PS120JA --owner "Decora Antrim"
-.\.venv\Scripts\python.exe .\aureon_location_transfer_batch_operator.py --manifest ..\outputs\aureon_goal_contract_dispatcher\live_production_20260622\live_location_transfer_manifest.json --confirm-live
+$env:AUREON_AZYRA_OWNER_TEXT = "<owner name>"
+$env:AUREON_AZYRA_WAREHOUSE_TEXT = "<warehouse name>"
+.\.venv\Scripts\python.exe .\aureon_current_balance_fast_operator.py --sku <stock-code> --qty <qty> --location <location> --tracking <tracking> --po <po> --confirm-live
+.\.venv\Scripts\python.exe .\aureon_location_transfer_batch_operator.py --manifest <path-to-location-transfer-manifest.json> --confirm-live
 ```
 
 ### Fastest Safe Startup
 
 ```powershell
-cd C:\Users\user\aureon-trading
+cd <repo-root>
 .\start_everything_production.ps1
 ```
 
@@ -312,7 +305,7 @@ To run **everything** with all capabilities switched on, open **two PowerShell t
 ### Terminal 1 — Aureon Organism (Brain)
 
 ```powershell
-cd C:\Users\user\aureon-trading
+cd <repo-root>
 .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
@@ -332,7 +325,7 @@ cd C:\Users\user\aureon-trading
 ### Terminal 2 — Flameborn Frontend (Face)
 
 ```powershell
-cd C:\Users\user\aureon-trading
+cd <repo-root>
 .\scripts\start_aureon_with_flameborn.ps1 -StartRuntime -EnableHostTerminal -EnableSandbox
 ```
 
@@ -395,7 +388,7 @@ This starts the production supervisor, market runtime, telemetry/status server, 
 Use this only when the operator accepts live trading risk, exchange credentials are configured, and open Capital positions have been closed or reconciled. The command refuses to arm live order mutation when `/api/flight-test` reports open positions, because the runtime must not hot-swap from dry-run to live execution while exposure is active.
 
 ```powershell
-cd C:\Users\user\aureon-trading-integrated-main-20260508; $ft=Invoke-RestMethod http://127.0.0.1:8791/api/flight-test; if ($ft.checks.open_positions) { throw "LIVE START BLOCKED: open_positions_reported. Close/reconcile Capital positions first, then rerun." }; Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and (($_.Name -match 'python' -and $_.CommandLine -match 'aureon\.exchanges\.unified_market_trader') -or ($_.Name -eq 'cmd.exe' -and $_.CommandLine -match 'AUREON_PRODUCTION_LIVE\.cmd')) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }; .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
+cd <repo-root>; $ft=Invoke-RestMethod http://127.0.0.1:8791/api/flight-test; if ($ft.checks.open_positions) { throw "LIVE START BLOCKED: open_positions_reported. Close/reconcile Capital positions first, then rerun." }; Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and (($_.Name -match 'python' -and $_.CommandLine -match 'aureon\.exchanges\.unified_market_trader') -or ($_.Name -eq 'cmd.exe' -and $_.CommandLine -match 'AUREON_PRODUCTION_LIVE\.cmd')) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }; .\AUREON_PRODUCTION_LIVE.cmd -WaitForRefresh -MarketStatusPort 8791
 ```
 
 Verify the runtime is actually live and not dry-run:

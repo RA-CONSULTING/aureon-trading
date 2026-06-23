@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture non-mutating evidence for Boxtop/SFG0 current-balance corrections."""
+"""Capture non-mutating evidence for legacy-source current-balance corrections."""
 
 from __future__ import annotations
 
@@ -306,7 +306,7 @@ def build_approval_command(item: dict, paths: dict[str, str], approved_by: str) 
     )
     return "\n".join(
         [
-            'cd "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\aureon-trading"',
+            'cd "<repo-root>"',
             ".\\.venv\\Scripts\\python.exe .\\approve_current_balance_line.py `",
             f"  --sku {item.get('sku')} `",
             f"  --approved-by {ps_quote(approved_by)} `",
@@ -322,7 +322,7 @@ def build_approval_command(item: dict, paths: dict[str, str], approved_by: str) 
 def build_evidence_approval_command(item: dict, approved_by: str) -> str:
     return "\n".join(
         [
-            'cd "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\aureon-trading"',
+            'cd "<repo-root>"',
             ".\\.venv\\Scripts\\python.exe .\\current_balance_evidence_to_ledger.py `",
             f"  --sku {item.get('sku')} `",
             "  --approve-pre-entry `",
@@ -336,7 +336,7 @@ def build_closeout_command(item: dict, paths: dict[str, str], closed_by: str) ->
     notes = f"{item.get('sku')} +{item.get('quantity')} posted and after-balance verified."
     return "\n".join(
         [
-            'cd "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\aureon-trading"',
+            'cd "<repo-root>"',
             ".\\.venv\\Scripts\\python.exe .\\close_current_balance_line.py `",
             f"  --sku {item.get('sku')} `",
             f"  --closed-by {ps_quote(closed_by)} `",
@@ -352,7 +352,7 @@ def build_closeout_command(item: dict, paths: dict[str, str], closed_by: str) ->
 def build_evidence_closeout_command(item: dict, closed_by: str) -> str:
     return "\n".join(
         [
-            'cd "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\aureon-trading"',
+            'cd "<repo-root>"',
             ".\\.venv\\Scripts\\python.exe .\\current_balance_evidence_to_ledger.py `",
             f"  --sku {item.get('sku')} `",
             "  --closeout-post-entry `",
@@ -366,7 +366,7 @@ def build_evidence_closeout_command(item: dict, closed_by: str) -> str:
 def build_live_run_import_command(item: dict, operator: str) -> str:
     return "\n".join(
         [
-            'cd "C:\\Users\\Gary.Leckey\\OneDrive - SFG Forwarding Ltd\\Documents\\sfg azrya intergrations\\aureon-trading"',
+            'cd "<repo-root>"',
             ".\\.venv\\Scripts\\python.exe .\\current_balance_import_live_run_evidence.py `",
             f"  --sku {item.get('sku')} `",
             '  --summary "C:\\path\\to\\live_execution_summary.json" `',
@@ -461,11 +461,11 @@ def write_status_markdown(out_dir: Path, item: dict, ledger_entry: dict, state: 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Capture non-mutating Azyra evidence for one current-balance line.")
-    parser.add_argument("--sku", default="LP4073")
+    parser.add_argument("--sku", default=os.getenv("AUREON_CURRENT_BALANCE_PILOT_SKU", "SKU-EXAMPLE-001"))
     parser.add_argument("--stage", choices=sorted(STAGES), help="Evidence stage to capture.")
     parser.add_argument("--status", action="store_true", help="Write/read status without capturing a new screenshot.")
-    parser.add_argument("--approved-by", default="Gary Leckey")
-    parser.add_argument("--closed-by", default="Gary Leckey")
+    parser.add_argument("--approved-by", default=os.getenv("AUREON_OPERATOR_NAME", "Aureon Operator"))
+    parser.add_argument("--closed-by", default=os.getenv("AUREON_OPERATOR_NAME", "Aureon Operator"))
     parser.add_argument("--observation", default="", help="Short operator note to attach to a captured screenshot.")
     parser.add_argument("--confirm-stock-adjustments-screen", action="store_true")
     parser.add_argument("--confirm-current-balance-screen", action="store_true")
