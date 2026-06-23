@@ -1,9 +1,9 @@
 <div align="center">
 
 # AUREON TRADING SYSTEM
-### Local trading, research, and organism-control runtime
+### Local-first trading, automation, evidence, and warehouse-operations runtime
 
-Run the production supervisor, Flameborn UI, market data, parallel strategy workers, search/research agents, ThoughtBus/Mycelium, HNC/Seer/Lyra cognition, and audit evidence from one local repo.
+Run the production supervisor, Flameborn UI, market data, parallel strategy workers, Azyra warehouse operators, search/research agents, ThoughtBus/Mycelium, HNC/Seer/Lyra cognition, and audit evidence from one local repo.
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ueu7gBz7g)
 [![Twitch](https://img.shields.io/badge/Twitch-Watch%20Live-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://www.twitch.tv/the_crypto_wizard_ire)
@@ -17,6 +17,64 @@ Run the production supervisor, Flameborn UI, market data, parallel strategy work
 </div>
 
 ---
+
+## Aureon In One Page
+
+Aureon is a local-first operating system for high-risk, evidence-heavy work. It is not just a trading bot and it is not just a dashboard. It is an operator layer that lets specialist systems observe, reason, prepare work, publish proof, and then route live mutation through controlled paths.
+
+The current repo has three live-capable centres:
+
+| Centre | What Aureon does | Live authority |
+|---|---|---|
+| Trading runtime | Runs market feeds, strategy workers, lifecycle state, order intent, broker proof, and live status. | One reviewed executor path controls broker mutation. |
+| Warehouse/Azyra automation | Builds audit manifests, proves live stock state, runs native Azyra stock/location workflows, and writes evidence ledgers. | Aureon operates Azyra screens; no silent stock or location mutation. |
+| Research and coding organism | Searches, audits, generates artifacts, tests, repairs, and publishes evidence into local proof files. | Local tools and guarded terminals; no bypass of trading, payment, filing, or destructive gates. |
+
+### What Aureon Does Better
+
+| Better at | Why it matters | Aureon approach |
+|---|---|---|
+| Live safety | Live trading and warehouse stock changes cannot be casual clicks. | Many agents can analyse, but only the approved executor/operator route can mutate live systems. |
+| Evidence | Operators need proof, not vibes. | Every serious route writes JSON, screenshots, ledgers, workbooks, or public audit files. |
+| Parallel work | One worker is too slow for markets, audits, and warehouse reconciliation. | Strategy workers, research agents, OCR review, HNC checks, and batch operators run as separate specialists with shared state. |
+| Human review | Some rows should go live, some should be held, and the reason must be visible. | Batch outputs classify each line as clean, completed, already correct, held, blocked, or pending. |
+| Local control | Sensitive work should not depend on hidden cloud state. | Aureon runs from the local repo with visible services, local evidence files, and explicit operator commands. |
+| Recovery | Real systems relogin, freeze, reject fields, or expose bad OCR. | Operators refill required fields, normalize known warehouse aliases, hold uncertain rows, and resume from ledgers. |
+
+### README Structure
+
+This README now has a front-door structure while preserving the older proof, research, and historical sections below.
+
+| Section | Use it for |
+|---|---|
+| [Start Here](#start-here) | Current production entrypoints, live status, Azyra status, and the fastest safe startup. |
+| [Azyra Warehouse Live Automation](#azyra-warehouse-live-automation---2026-06-23) | Stock Enquiry, live warehouse movement, current-balance fixes, OCR review, and batch guardrails. |
+| [Flameborn Frontend Integration](#flameborn-frontend-integration) | Human-facing UI, chat, guarded terminal, and local frontend startup. |
+| [Full System Startup](#full-system-startup) | Two-terminal production runtime, validation, live trading warnings, and runtime endpoints. |
+| [Current Capability Map](#current-capability-map) | Current active systems grouped by function. |
+| [Architecture Overview](#architecture-overview) | Core module layout, execution flow, configuration, and component-level detail. |
+| [Project Structure](#project-structure--715-modules-across-24-domains) | Repo scale and domain map. |
+| Historical archive sections | Preserved long-form research, legacy startup notes, and older project material. They remain for audit/history, but the current operator path is above. |
+
+### Repo Map For Operators
+
+| Path or surface | Role |
+|---|---|
+| `README.md` | Current front door, operator map, and preserved long-form archive. |
+| `RUNNING.md` | Deeper runtime instructions. |
+| `SYSTEM_OVERVIEW.md` | Whole-system architecture overview. |
+| `CAPABILITIES.md` | Capability inventory and operator-facing proof. |
+| `frontend/` | Flameborn and unified console UI. |
+| `aureon/` | Main Python organism modules for trading, cognition, research, and automation. |
+| `aureon_current_balance_*.py`, `current_balance_*.py` | Azyra Stock Enquiry/current-balance operators and evidence capture. |
+| `aureon_location_transfer_*.py` | Azyra location transfer manifest, OCR audit, native movement, and batch control. |
+| `aureon_wms_location_proof_operator.py` | WMS location proof/creation support before live batch mutation. |
+| `docs/`, `state/`, `frontend/public/` | Audit reports, current state files, and UI-visible proof artifacts. |
+| `../outputs/aureon_goal_contract_dispatcher/` | Local live-work outputs, evidence screenshots, ledgers, and generated workbooks. This sits beside the repo and is intentionally not all committed. |
+
+### Current Operator Rule
+
+Use the current sections at the top for real work. The older material is still valuable, but the production rule is simple: validate current state, run through Aureon, capture evidence, and only allow live mutation through the controlled executor or Azyra operator path.
 
 ## Start Here
 
