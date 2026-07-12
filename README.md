@@ -19,6 +19,7 @@ preserved unchanged at
 |---|---|---|
 | Investor diligence | [`docs/investor/README.md`](docs/investor/README.md) | Business-readable map of the platform, capability categories, evidence posture, and review sequence. |
 | Public GitHub review | [`docs/INDEX.md`](docs/INDEX.md) | Guided navigation for setup, architecture, operations, research, and contribution paths. |
+| Repo-wide sitemap | [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces. |
 | Grant or funder review | [`data/research/grants/applications/GARY_AUREON_METADATA_RESEARCH_INVENTORY_20260712_20260712_203741.md`](data/research/grants/applications/GARY_AUREON_METADATA_RESEARCH_INVENTORY_20260712_20260712_203741.md) | Catalogued Gary/Aureon metadata and research evidence gathered for funder-safe review. |
 | Technical review | [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md), [`DATA_FLOW.md`](DATA_FLOW.md), [`CAPABILITIES.md`](CAPABILITIES.md) | System architecture, data flow, and capability inventory. |
 | Operator review | [`RUNNING.md`](RUNNING.md), [`QUICK_START.md`](QUICK_START.md), [`LIVE_PROOF.md`](LIVE_PROOF.md) | Runtime entry points, operating notes, and proof artifacts. |
@@ -92,15 +93,17 @@ this front-door README.
    [`docs/investor/README.md`](docs/investor/README.md).
 2. Use the documentation index:
    [`docs/INDEX.md`](docs/INDEX.md).
-3. Review architecture and capability evidence:
+3. Use the repo-wide sitemap:
+   [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md).
+4. Review architecture and capability evidence:
    [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md),
    [`CAPABILITIES.md`](CAPABILITIES.md), and
    [`DATA_FLOW.md`](DATA_FLOW.md).
-4. Review claims and validation:
+5. Review claims and validation:
    [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md),
    [`AUDIT_SUMMARY.md`](AUDIT_SUMMARY.md), and
    [`LIVE_PROOF.md`](LIVE_PROOF.md).
-5. Inspect preserved historical context:
+6. Inspect preserved historical context:
    [`docs/archive/README_legacy_20260712.md`](docs/archive/README_legacy_20260712.md).
 
 ## Preservation Note

@@ -1,0 +1,102 @@
+{
+  "name": "Aureon Repo-Wide Sitemap",
+  "snapshot_date": "2026-07-12",
+  "source": "git ls-files",
+  "tracked_file_count": 11910,
+  "primary_documents": [
+    "README.md",
+    "docs/REPO_SITEMAP.md",
+    "docs/INDEX.md",
+    "RUNNING.md",
+    "CAPABILITIES.md",
+    "SYSTEM_OVERVIEW.md",
+    "DATA_FLOW.md",
+    "docs/investor/README.md",
+    "docs/investor/TERMINOLOGY.md"
+  ],
+  "top_level_systems": [
+    {"path": ".github/", "files": 4, "category": "repo automation", "role": "GitHub workflow and repository metadata"},
+    {"path": "api/", "files": 1, "category": "integration", "role": "API route surface"},
+    {"path": "archive/", "files": 23, "category": "archive", "role": "Historical bundles and backups"},
+    {"path": "aureon/", "files": 994, "category": "runtime", "role": "Main Python runtime and subsystem package"},
+    {"path": "aureon_launcher/", "files": 7, "category": "runtime", "role": "Launcher support"},
+    {"path": "cli/", "files": 6, "category": "operator tooling", "role": "Command-line helpers"},
+    {"path": "daemon_codes/", "files": 36, "category": "runtime", "role": "Background automation code"},
+    {"path": "data/", "files": 3526, "category": "evidence", "role": "Research, grants, datasets, and copied evidence"},
+    {"path": "deploy/", "files": 14, "category": "deployment", "role": "Deployment scripts and service configs"},
+    {"path": "docs/", "files": 372, "category": "documentation", "role": "Documentation, runbooks, research, architecture, and sitemap"},
+    {"path": "flameborn/", "files": 59, "category": "product surface", "role": "Companion UI/runtime material"},
+    {"path": "frontend/", "files": 4286, "category": "product surface", "role": "React/Vite console and public artifacts"},
+    {"path": "functions/", "files": 1, "category": "integration", "role": "Serverless function surface"},
+    {"path": "imports/", "files": 1240, "category": "provenance", "role": "Imported historical/source bundles"},
+    {"path": "integrations/", "files": 21, "category": "integration", "role": "External integration support"},
+    {"path": "Kings_Accounting_Suite/", "files": 227, "category": "back office", "role": "Accounting, filing-support, and statutory-pack tooling"},
+    {"path": "netlify/", "files": 1, "category": "deployment", "role": "Netlify deploy/function surface"},
+    {"path": "packaging/", "files": 2, "category": "release", "role": "Package and build helpers"},
+    {"path": "production/", "files": 15, "category": "deployment", "role": "Production install and runtime assets"},
+    {"path": "public/", "files": 58, "category": "product surface", "role": "Public static assets"},
+    {"path": "scripts/", "files": 302, "category": "operator tooling", "role": "Diagnostics, runners, reports, validation scripts"},
+    {"path": "server/", "files": 7, "category": "integration", "role": "Node/server bridge surface"},
+    {"path": "skills/", "files": 12, "category": "extensions", "role": "Local skill registries and interactions"},
+    {"path": "supabase/", "files": 160, "category": "saas backend", "role": "Supabase config, migrations, and functions"},
+    {"path": "templates/", "files": 6, "category": "product surface", "role": "UI and report templates"},
+    {"path": "tests/", "files": 330, "category": "validation", "role": "Regression and validation tests"},
+    {"path": "tools/", "files": 5, "category": "maintenance", "role": "Focused utility scripts"},
+    {"path": "VERIFICATION AND VALIDATION/", "files": 13, "category": "validation", "role": "Formal validation documents"},
+    {"path": "wisdom_data/", "files": 12, "category": "research", "role": "Specialist research/context data"}
+  ],
+  "capability_groups": [
+    {
+      "id": "evidence_automation",
+      "label": "Evidence automation",
+      "systems": ["docs/", "data/", "frontend/public/", "generated state/"],
+      "documents": ["LIVE_PROOF.md", "docs/CLAIMS_AND_EVIDENCE.md"],
+      "integration_surfaces": ["audit files", "JSON mirrors", "evidence ledgers"]
+    },
+    {
+      "id": "operator_runtime",
+      "label": "Operator runtime",
+      "systems": ["aureon/autonomous/", "aureon/exchanges/", "AUREON_PRODUCTION_LIVE.cmd"],
+      "documents": ["RUNNING.md", "SYSTEM_OVERVIEW.md"],
+      "integration_surfaces": ["local HTTP endpoints", "runtime manifests", "status JSON"]
+    },
+    {
+      "id": "product_surface",
+      "label": "Product and SaaS surface",
+      "systems": ["frontend/", "public/", "api/", "server/", "functions/", "netlify/", "supabase/"],
+      "documents": ["docs/REPO_SITEMAP.md", "docs/deployment/"],
+      "integration_surfaces": ["React/Vite app", "serverless functions", "Supabase migrations/functions"]
+    },
+    {
+      "id": "controlled_domain_workflows",
+      "label": "Controlled domain workflows",
+      "systems": ["aureon/", "Kings_Accounting_Suite/", "data/research/grants/"],
+      "documents": ["CAPABILITIES.md", "SYSTEM_OVERVIEW.md", "docs/investor/README.md"],
+      "integration_surfaces": ["operator runbooks", "evidence packs", "manual review gates"]
+    },
+    {
+      "id": "validation",
+      "label": "Testing and validation",
+      "systems": ["tests/", "scripts/validation/", "VERIFICATION AND VALIDATION/"],
+      "documents": ["docs/INTEGRATION_TEST_STATUS.md", "docs/STATE_FILES.md"],
+      "integration_surfaces": ["pytest suites", "validation scripts", "formal evidence artifacts"]
+    }
+  ],
+  "runtime_endpoints": [
+    {"name": "Unified autonomous console", "url": "http://127.0.0.1:8081/"},
+    {"name": "Runtime terminal state", "url": "http://127.0.0.1:8791/api/terminal-state"},
+    {"name": "Flight test", "url": "http://127.0.0.1:8791/api/flight-test"},
+    {"name": "Reboot advice", "url": "http://127.0.0.1:8791/api/reboot-advice"},
+    {"name": "Mind thoughts", "url": "http://127.0.0.1:13002/api/thoughts"},
+    {"name": "Coding status", "url": "http://127.0.0.1:13002/api/coding/status"}
+  ],
+  "organizational_rules": [
+    "Keep README.md concise and investor-readable.",
+    "Keep whole-repo navigation in docs/REPO_SITEMAP.md and docs/INDEX.md.",
+    "Keep run commands in RUNNING.md.",
+    "Keep capability claims in CAPABILITIES.md or link them to evidence.",
+    "Keep formal terminology in docs/investor/TERMINOLOGY.md.",
+    "Treat state/, docs/audits/, and named runtime JSON files as generated outputs unless present in git ls-files.",
+    "Do not publish secrets, live credentials, customer identifiers, or private transaction evidence in public docs."
+  ]
+}

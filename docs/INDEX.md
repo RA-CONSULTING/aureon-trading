@@ -9,6 +9,7 @@ Master table of contents for all project documentation.
 |----------|----------|-------------|
 | Investors | [Investor, Public, And Funder Guide](investor/README.md) | Formal diligence path, capability categories, claim discipline, and review sequence |
 | Public GitHub readers | [Repository README](../README.md) | Current front door with concise repo map and evidence posture |
+| End users and integrators | [Repo-Wide Sitemap](REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces |
 | Grant and funder reviewers | [Gary/Aureon Metadata Research Inventory](../data/research/grants/applications/GARY_AUREON_METADATA_RESEARCH_INVENTORY_20260712_20260712_203741.md) | Categorized Gary/Aureon evidence inventory and copied research set |
 | Terminology reviewers | [Formal Terminology](investor/TERMINOLOGY.md) | Translation from older internal language to investor-safe terminology |
 | Historical review | [Legacy README Archive](archive/README_legacy_20260712.md) | Verbatim preserved README content from before the formal front-door update |
@@ -16,6 +17,7 @@ Master table of contents for all project documentation.
 ## Getting Started
 | Document | Description |
 |----------|-------------|
+| [Repo-Wide Sitemap](REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces |
 | [Navigation Guide](NAVIGATION_GUIDE.md) | Learning paths for traders, developers, researchers |
 | [Quick Start](QUICK_START.md) | Get running in 10 minutes |
 | [Windows Setup](windows/WINDOWS_SETUP_GUIDE.md) | Windows-specific installation |
