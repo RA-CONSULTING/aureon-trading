@@ -1,0 +1,215 @@
+"""
+📡 Aureon Operator server — SSE stream + phone proof-of-concept.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A tiny Flask app so the switchboard can be *seen*, live, from a phone — the
+"operator will be like streaming YouTube… you talk and it's a live stream"
+part of the vision.
+
+Routes:
+  GET  /                       mobile-responsive chat page (self-contained HTML)
+  GET  /api/operator/stream    Server-Sent Events: phases, then the answer token-by-token
+  POST /api/operator/respond   one-shot JSON (OperatorResponse.to_dict())
+  GET  /healthz                liveness + active provider line-up
+
+Run:
+  python -m aureon.operator.operator_server          # binds 0.0.0.0:8080
+  AUREON_OPERATOR_PORT=8899 python -m aureon.operator.operator_server
+
+Reaching it from a phone: this repo usually runs in a remote container, so open
+the deployed/tunnelled URL on the phone (see the deployment section of
+docs/architecture/AUREON_OPERATOR_SWITCHBOARD.md), not localhost.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+from typing import Any, Dict
+
+logger = logging.getLogger("aureon.operator.server")
+
+try:
+    from flask import Flask, Response, jsonify, request
+except Exception as exc:  # noqa: BLE001
+    raise SystemExit(
+        "Flask is required for the operator server (it is in requirements.txt): "
+        f"{exc}"
+    )
+
+from aureon.operator.aureon_operator import AureonOperator
+from aureon.operator.providers import build_provider_set, describe_provider_set
+
+
+PAGE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aureon Operator</title>
+<style>
+  :root { color-scheme: light dark; --bg:#0b1020; --panel:#141c33; --ink:#e7ecff;
+          --muted:#8b95bb; --accent:#7c5cff; --ok:#39d98a; --warn:#ffcc4d; --veto:#ff6b6b; }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f4f6ff; --panel:#ffffff; --ink:#141c33; --muted:#5a6488; --accent:#5b3df5; }
+  }
+  * { box-sizing: border-box; }
+  html,body { margin:0; height:100%; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system,BlinkMacSystemFont,
+         "Segoe UI",Roboto,Helvetica,Arial,sans-serif; display:flex; flex-direction:column; }
+  header { padding:14px 16px; background:var(--panel); border-bottom:1px solid rgba(124,92,255,.25);
+           display:flex; align-items:center; gap:10px; position:sticky; top:0; }
+  header .dot { width:10px; height:10px; border-radius:50%; background:var(--ok);
+                box-shadow:0 0 10px var(--ok); }
+  header h1 { font-size:16px; margin:0; font-weight:700; letter-spacing:.02em; }
+  header small { color:var(--muted); margin-left:auto; font-size:12px; }
+  #log { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+  .msg { max-width:88%; padding:10px 13px; border-radius:14px; white-space:pre-wrap; word-wrap:break-word; }
+  .me { align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:4px; }
+  .ai { align-self:flex-start; background:var(--panel); border:1px solid rgba(124,92,255,.2);
+        border-bottom-left-radius:4px; }
+  .phases { align-self:flex-start; display:flex; flex-wrap:wrap; gap:6px; max-width:88%; }
+  .chip { font-size:11px; padding:3px 9px; border-radius:999px; background:var(--panel);
+          border:1px solid rgba(124,92,255,.3); color:var(--muted); }
+  .chip.on { color:var(--ink); border-color:var(--accent); }
+  .verdict { font-size:12px; margin-top:6px; color:var(--muted); }
+  .verdict.veto { color:var(--veto); font-weight:700; }
+  footer { padding:10px; background:var(--panel); border-top:1px solid rgba(124,92,255,.25);
+           display:flex; gap:8px; padding-bottom:calc(10px + env(safe-area-inset-bottom)); }
+  #prompt { flex:1; padding:12px 14px; border-radius:12px; border:1px solid rgba(124,92,255,.3);
+            background:var(--bg); color:var(--ink); font-size:16px; }
+  #send { padding:12px 18px; border:0; border-radius:12px; background:var(--accent); color:#fff;
+          font-weight:700; font-size:16px; }
+  #send:disabled { opacity:.5; }
+</style>
+</head>
+<body>
+  <header>
+    <span class="dot"></span>
+    <h1>Aureon Operator</h1>
+    <small id="lineup">switchboard…</small>
+  </header>
+  <div id="log">
+    <div class="ai msg">Ask me anything about Aureon. I fan your question across every AI line,
+ground it in the repo, collapse the answers to one, and run it past the Queen's conscience before I speak.</div>
+  </div>
+  <footer>
+    <input id="prompt" placeholder="How does Aureon integrate data across systems?"
+           autocomplete="off" enterkeyhint="send">
+    <button id="send">Send</button>
+  </footer>
+<script>
+const log = document.getElementById('log');
+const input = document.getElementById('prompt');
+const send = document.getElementById('send');
+const PHASES = ['ground','fan_out','consensus','veto'];
+
+fetch('/healthz').then(r=>r.json()).then(d=>{
+  document.getElementById('lineup').textContent =
+    (d.providers||[]).map(p=>p.name).join(' · ') || 'offline';
+}).catch(()=>{});
+
+function el(cls, text){ const d=document.createElement('div'); d.className=cls; if(text)d.textContent=text; log.appendChild(d); log.scrollTop=log.scrollHeight; return d; }
+
+function ask(){
+  const q = input.value.trim();
+  if(!q) return;
+  el('me msg', q);
+  input.value=''; send.disabled=true; input.disabled=true;
+
+  const chips = el('phases');
+  const chipEls = {};
+  PHASES.forEach(p=>{ const c=document.createElement('span'); c.className='chip'; c.textContent=p; chips.appendChild(c); chipEls[p]=c; });
+  const bubble = el('ai msg', '');
+  let answer = '';
+
+  const es = new EventSource('/api/operator/stream?prompt='+encodeURIComponent(q));
+  es.addEventListener('phase', e=>{
+    const d = JSON.parse(e.data);
+    if(chipEls[d.phase]){ chipEls[d.phase].classList.add('on');
+      if(d.phase==='fan_out'&&d.detail) chipEls[d.phase].textContent='fan_out '+d.detail.n_ok+'/'+d.detail.n_total;
+      if(d.phase==='consensus'&&d.detail) chipEls[d.phase].textContent='consensus '+Math.round((d.detail.agreement||0)*100)+'%';
+    }
+    log.scrollTop=log.scrollHeight;
+  });
+  es.addEventListener('token', e=>{ answer += JSON.parse(e.data).text; bubble.textContent = answer; log.scrollTop=log.scrollHeight; });
+  es.addEventListener('complete', e=>{
+    const d = JSON.parse(e.data).response||{};
+    const v = document.createElement('div');
+    v.className = 'verdict' + (d.blocked ? ' veto':'');
+    v.textContent = '🦗 conscience: '+(d.conscience_verdict||'—') +
+      (d.consensus? '  ·  agreement '+Math.round((d.consensus.agreement||0)*100)+'%':'') +
+      (d.grounding? '  ·  '+(d.grounding.source_count||0)+' sources':'');
+    bubble.appendChild(v);
+    es.close(); send.disabled=false; input.disabled=false; input.focus();
+  });
+  es.onerror = ()=>{ es.close(); if(!answer) bubble.textContent='[stream error]'; send.disabled=false; input.disabled=false; };
+}
+send.onclick = ask;
+input.addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
+</script>
+</body>
+</html>
+"""
+
+
+def create_app(operator: AureonOperator = None) -> "Flask":
+    app = Flask("aureon-operator")
+    _operator = operator or AureonOperator()
+
+    @app.get("/")
+    def index():
+        return Response(PAGE, mimetype="text/html")
+
+    @app.get("/healthz")
+    def healthz():
+        return jsonify(
+            {
+                "ok": True,
+                "service": "aureon-operator",
+                "providers": describe_provider_set(_operator.providers),
+            }
+        )
+
+    @app.get("/api/operator/stream")
+    def stream():
+        prompt = request.args.get("prompt", "").strip()
+        session_id = request.args.get("session_id")
+        if not prompt:
+            return jsonify({"error": "missing prompt"}), 400
+
+        def gen():
+            for event in _operator.stream_events(prompt, session_id=session_id):
+                etype = event.get("type", "message")
+                yield f"event: {etype}\ndata: {json.dumps(event, default=str)}\n\n"
+
+        return Response(
+            gen(),
+            mimetype="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
+    @app.post("/api/operator/respond")
+    def respond():
+        body: Dict[str, Any] = request.get_json(silent=True) or {}
+        prompt = str(body.get("prompt", "")).strip()
+        if not prompt:
+            return jsonify({"error": "missing prompt"}), 400
+        resp = _operator.respond(prompt, session_id=body.get("session_id"))
+        return jsonify(resp.to_dict())
+
+    return app
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO)
+    port = int(os.environ.get("AUREON_OPERATOR_PORT", "8080"))
+    host = os.environ.get("AUREON_OPERATOR_HOST", "0.0.0.0")
+    providers = describe_provider_set(build_provider_set())
+    logger.info("Aureon Operator server on %s:%s — lines: %s", host, port, providers)
+    create_app().run(host=host, port=port, threaded=True)
+
+
+if __name__ == "__main__":
+    main()

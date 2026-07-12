@@ -36,6 +36,10 @@ SECRET_KEYS = {
     "COINAPI_API_KEY",
     "COINAPI_KEY",
     "SUPABASE_ANON_KEY",
+    "OPENAI_API_KEY",
+    "XAI_API_KEY",
+    "GEMINI_API_KEY",
+    "ANTHROPIC_API_KEY",
     MASTER_KEY_ENV,
     LEGACY_MASTER_KEY_ENV,
 }
@@ -72,6 +76,17 @@ EXCHANGE_ENABLE_FLAGS: dict[str, tuple[str, ...]] = {
     "binance": ("ENABLE_BINANCE", "BINANCE_LIVE"),
     "alpaca": ("ENABLE_ALPACA", "ALPACA_LIVE"),
     "capital": ("ENABLE_CAPITAL", "CAPITAL_LIVE"),
+}
+
+# ── AI provider credentials for the Aureon Operator switchboard ───────────────
+# Mirrors EXCHANGE_REQUIRED_ENV: each provider is only fanned out to when its
+# key is present. Absent keys degrade gracefully to stub/local adapters so the
+# operator always runs offline (see aureon/operator/providers.py).
+AI_PROVIDER_REQUIRED_ENV: dict[str, tuple[str, ...]] = {
+    "openai": ("OPENAI_API_KEY",),
+    "grok": ("XAI_API_KEY",),
+    "gemini": ("GEMINI_API_KEY",),
+    "anthropic": ("ANTHROPIC_API_KEY",),
 }
 
 TRUTHY = {"1", "true", "yes", "y", "on"}
@@ -309,6 +324,7 @@ def env_status_summary(keys: Iterable[str]) -> str:
 
 
 __all__ = [
+    "AI_PROVIDER_REQUIRED_ENV",
     "CREDENTIAL_ALIASES",
     "EnvLoadReport",
     "EXCHANGE_REQUIRED_ENV",
