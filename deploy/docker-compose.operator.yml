@@ -1,0 +1,32 @@
+# Standalone Aureon Operator / Cognition service.
+#   docker compose -f deploy/docker-compose.operator.yml up --build
+#
+# Provide model keys via a .env file or the shell environment; with none set the
+# service runs fully offline on stub/local adapters.
+services:
+  aureon-operator:
+    build:
+      context: ..
+      dockerfile: deploy/operator.Dockerfile
+    image: aureon-operator:latest
+    ports:
+      - "8790:8790"
+    environment:
+      AUREON_OPERATOR_PORT: "8790"
+      AUREON_OPERATOR_THREADS: "8"
+      # Uncomment to require inbound auth / rate-limit:
+      # AUREON_OPERATOR_API_KEY: "change-me"
+      # AUREON_OPERATOR_RATE_RPS: "10"
+      # Model keys (optional — omit for offline):
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      XAI_API_KEY: "${XAI_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      # Fully offline (no outbound calls):
+      # AUREON_LLM_OFFLINE: "1"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8790/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
