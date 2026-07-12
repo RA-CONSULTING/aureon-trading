@@ -1,6 +1,6 @@
 {
   "name": "Aureon Repo-Wide Sitemap",
-  "snapshot_date": "2026-07-12",
+  "snapshot_date": "2026-07-13",
   "source": "git ls-files",
   "tracked_file_count": 11937,
   "primary_documents": [
@@ -130,17 +130,15 @@
       "Optional data providers"
     ],
     "supabase_auth_counts": {
-      "verify_jwt_true": 66,
-      "verify_jwt_false": 21
+      "verify_jwt_true": 73,
+      "verify_jwt_false": 14
     },
     "public_endpoint_review_required": [
-      "force-validated-trade",
-      "confirm-trade",
-      "poll-trade-confirmations",
-      "test-exchange-connection",
-      "ingest-trades",
-      "ingest-terminal-state",
-      "ingest-brain-state"
+      "ingest-telescope-state",
+      "verify-exchange-connectivity",
+      "ingest-10-9-1-packet",
+      "ingest-auris-state",
+      "ingest-kelly-computation"
     ],
     "production_gates": [
       "choose one canonical hosted target",

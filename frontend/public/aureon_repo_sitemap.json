@@ -1,6 +1,6 @@
 {
   "name": "Aureon Public Repo Sitemap",
-  "snapshot_date": "2026-07-12",
+  "snapshot_date": "2026-07-13",
   "source_document": "docs/REPO_SITEMAP.md",
   "machine_readable_source": "docs/repo_sitemap.json",
   "end_user_access_map": "frontend/public/aureon_end_user_access_map.json",

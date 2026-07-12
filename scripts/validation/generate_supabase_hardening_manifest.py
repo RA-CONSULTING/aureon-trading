@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SNAPSHOT_DATE = "2026-07-12"
+SNAPSHOT_DATE = "2026-07-13"
 SUPABASE_CONFIG = REPO_ROOT / "supabase" / "config.toml"
 DOCS_MANIFEST = REPO_ROOT / "docs" / "supabase_hardening_manifest.json"
 PUBLIC_MANIFEST = REPO_ROOT / "frontend" / "public" / "aureon_supabase_hardening_manifest.json"
@@ -112,7 +112,7 @@ def build_manifest() -> dict:
         "public_medium_risk_routes": [item["name"] for item in medium_risk_public],
         "jwt_review_required_routes": [item["name"] for item in jwt_review],
         "production_gates": [
-            "gate every high-risk public route with JWT or service-role validation",
+            "keep high-risk mutation and sensitive-state routes JWT gated",
             "prove remaining public routes are anonymous-safe",
             "add role checks for JWT-gated mutation routes",
             "add payload schema validation for all hosted functions",

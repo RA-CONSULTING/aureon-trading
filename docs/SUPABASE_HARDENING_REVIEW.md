@@ -1,6 +1,6 @@
 # Aureon Supabase Hardening Review
 
-Current tracked snapshot: 2026-07-12.
+Current tracked snapshot: 2026-07-13.
 
 This review makes the hosted Supabase function boundary explicit for SaaS
 integration. The machine-readable manifest is
@@ -18,21 +18,30 @@ python scripts/validation/validate_repo_navigation_contract.py
 ## Production Position
 
 The repo is suitable for local-first SaaS integration and public navigation.
-Hosted production remains blocked until high-risk public Supabase routes are
-gated or proven safe by route-level controls.
+As of the 2026-07-13 snapshot, the previously identified high-risk public
+Supabase routes are JWT gated in `supabase/config.toml`, so the generated
+hardening manifest reports zero public high-risk production blockers.
+
+Hosted production still requires route-level hardening before live use:
+JWT-gated mutation and ingestion routes need role checks, payload validation,
+rate limits, replay protection where relevant, and redacted logging.
 
 ## Current Boundary
 
 - Supabase functions are defined in `supabase/config.toml`.
 - JWT-gated functions still need role checks, payload validation, rate limits,
   and redacted logging before production use.
-- Public functions must be anonymous-safe. Mutation, ingestion, credential,
-  terminal-state, brain-state, balance, position, and trade-related routes are
-  not treated as production-safe merely because they are listed in config.
+- Public functions must be anonymous-safe. Mutation, credential, terminal-state,
+  brain-state, balance, position, and trade-related routes are not treated as
+  production-safe merely because they are listed in config.
+- The high-risk route set `confirm-trade`, `poll-trade-confirmations`,
+  `force-validated-trade`, `test-exchange-connection`, `ingest-trades`,
+  `ingest-terminal-state`, and `ingest-brain-state` now requires a valid JWT at
+  the Supabase edge before handler execution.
 
 ## Required Production Gates
 
-1. Gate every high-risk public route with JWT or service-role validation.
+1. Keep high-risk mutation and sensitive-state routes JWT gated.
 2. Prove remaining public routes are anonymous-safe.
 3. Add role checks for JWT-gated mutation routes.
 4. Add payload schema validation for all hosted functions.

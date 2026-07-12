@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SNAPSHOT_DATE = "2026-07-12"
+SNAPSHOT_DATE = "2026-07-13"
 DOCS_REPO_SITEMAP = REPO_ROOT / "docs" / "repo_sitemap.json"
 DOCS_ACCESS_MAP = REPO_ROOT / "docs" / "end_user_access_map.json"
 DOCS_INDEX = REPO_ROOT / "docs" / "repo_navigation_index.json"

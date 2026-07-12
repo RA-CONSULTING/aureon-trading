@@ -1,6 +1,6 @@
 # Aureon SaaS Integration Readiness
 
-Current tracked snapshot: 2026-07-12.
+Current tracked snapshot: 2026-07-13.
 
 This document turns the repo-wide sitemap into a SaaS integration checklist. It
 identifies source surfaces, end-user access paths, environment variables, auth
@@ -113,35 +113,33 @@ Current `supabase/config.toml` declares 87 functions:
 
 | Auth mode | Count | Production interpretation |
 |---|---:|---|
-| `verify_jwt = true` | 66 | Auth-gated; still needs role-level and payload validation review. |
-| `verify_jwt = false` | 21 | Public at Supabase edge; must be read-only, anonymous-safe, or separately protected in function code before production. |
+| `verify_jwt = true` | 73 | Auth-gated; still needs role-level and payload validation review. |
+| `verify_jwt = false` | 14 | Public at Supabase edge; must be read-only, anonymous-safe, or separately protected in function code before production. |
 
 The generated hardening manifest classifies those functions by public exposure,
 mutation/ingest/sensitive-state signals, and required controls. The current
-manifest identifies 7 high-risk public routes that block production until gated
-or proven safe: [`supabase_hardening_manifest.json`](supabase_hardening_manifest.json).
+manifest identifies zero high-risk public routes blocking production:
+[`supabase_hardening_manifest.json`](supabase_hardening_manifest.json).
 
 Public functions currently configured with `verify_jwt = false`:
 
-`fetch-kraken-market-data`, `sync-exchange-assets`, `confirm-trade`,
-`poll-trade-confirmations`, `aureon-chat`, `ingest-telescope-state`,
-`fetch-binance-market-data`, `fetch-schumann-data`, `fetch-all-tickers`,
-`verify-exchange-connectivity`, `interpret-frequency`, `ingest-10-9-1-packet`,
-`force-validated-trade`, `test-exchange-connection`, `backend-health-check`,
-`ingest-auris-state`, `ingest-kelly-computation`, `ai-commentary`,
-`ingest-trades`, `ingest-terminal-state`, `ingest-brain-state`.
+`fetch-kraken-market-data`, `sync-exchange-assets`, `aureon-chat`,
+`ingest-telescope-state`, `fetch-binance-market-data`, `fetch-schumann-data`,
+`fetch-all-tickers`, `verify-exchange-connectivity`, `interpret-frequency`,
+`ingest-10-9-1-packet`, `backend-health-check`, `ingest-auris-state`,
+`ingest-kelly-computation`, and `ai-commentary`.
 
 Public endpoint production gates:
 
 - Market-data fetchers and health checks can remain public only if they expose no
   user credentials, account balances, private positions, or private evidence.
-- Ingestion routes must validate source, schema, size, rate limits, and replay
-  behavior before public hosting.
+- Public ingestion routes must validate source, schema, size, rate limits, and
+  replay behavior before public hosting.
 - `force-validated-trade`, `confirm-trade`, `poll-trade-confirmations`,
   `test-exchange-connection`, `ingest-trades`, `ingest-terminal-state`, and
-  `ingest-brain-state` require explicit review before production because their
-  names or purpose imply mutation, user-sensitive validation, or operational
-  state writes.
+  `ingest-brain-state` are now JWT gated and remain subject to explicit
+  role/payload review before production because their names or purpose imply
+  mutation, user-sensitive validation, or operational state writes.
 - Auth-gated trade, balance, gas-tank, emergency-stop, credential, monitor, and
   user-market routes must remain JWT-gated and need role/payload checks inside
   each function.

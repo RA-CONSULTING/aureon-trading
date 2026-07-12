@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SNAPSHOT_DATE = "2026-07-12"
+SNAPSHOT_DATE = "2026-07-13"
 DOCS_MANIFEST = REPO_ROOT / "docs" / "saas_integration_manifest.json"
 PUBLIC_MANIFEST = REPO_ROOT / "frontend" / "public" / "aureon_saas_integration_manifest.json"
 SUPABASE_CONFIG = REPO_ROOT / "supabase" / "config.toml"
