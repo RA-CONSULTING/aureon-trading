@@ -33,6 +33,7 @@ interface RepoSitemapManifest {
   machine_readable_source?: string;
   end_user_access_map?: string;
   frontend_navigation_tab?: string;
+  autonomous_frontend_manifests?: string[];
   front_doors: RepoLink[];
   zones: RepoZone[];
   public_contract: RepoPublicContract;
@@ -183,7 +184,22 @@ interface SupabaseHardeningManifest {
   production_gates: string[];
 }
 
+interface AutonomousFrontendManifest {
+  path: string;
+  label: string;
+  status: string;
+  generated_at?: string;
+  summary: Record<string, string | number | boolean | null>;
+}
+
 const REPO_BASE_URL = "https://github.com/RA-CONSULTING/aureon-trading";
+const AUTONOMOUS_MANIFEST_LABELS: Record<string, string> = {
+  aureon_saas_system_inventory: "SaaS System Inventory",
+  aureon_frontend_unification_plan: "Frontend Unification Plan",
+  aureon_frontend_evolution_queue: "Frontend Evolution Queue",
+  aureon_organism_runtime_status: "Organism Runtime Status",
+  aureon_autonomous_capability_switchboard: "Autonomous Capability Switchboard",
+};
 
 function repoUrl(path: string): string {
   const cleaned = path.replace(/^\/+/, "");
@@ -195,6 +211,11 @@ function repoUrl(path: string): string {
 function publicUrl(path: string): string {
   const file = path.split("/").pop() || path;
   return `/${file}`;
+}
+
+function manifestLabel(path: string): string {
+  const file = (path.split("/").pop() || path).replace(/\.json$/, "");
+  return AUTONOMOUS_MANIFEST_LABELS[file] || file.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 }
 
 async function loadJson<T>(url: string, signal: AbortSignal): Promise<T> {
@@ -241,6 +262,7 @@ export function RepoNavigationPanel() {
   const [systemMap, setSystemMap] = useState<SystemIntegrationMapManifest | null>(null);
   const [saasManifest, setSaasManifest] = useState<SaaSIntegrationManifest | null>(null);
   const [hardeningManifest, setHardeningManifest] = useState<SupabaseHardeningManifest | null>(null);
+  const [autonomousManifests, setAutonomousManifests] = useState<AutonomousFrontendManifest[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
 
@@ -257,6 +279,16 @@ export function RepoNavigationPanel() {
           loadJson<SaaSIntegrationManifest>("/aureon_saas_integration_manifest.json", controller.signal),
           loadJson<SupabaseHardeningManifest>("/aureon_supabase_hardening_manifest.json", controller.signal),
         ]);
+        const mountedAutonomousManifests = await Promise.all(
+          (repoManifest.autonomous_frontend_manifests || []).map(async (manifestPath) => {
+            const manifest = await loadJson<Omit<AutonomousFrontendManifest, "path" | "label">>(publicUrl(manifestPath), controller.signal);
+            return {
+              ...manifest,
+              path: manifestPath,
+              label: manifestLabel(manifestPath),
+            };
+          }),
+        );
         setRepoMap(repoManifest);
         setAccessMap(accessManifest);
         setCapabilityRegistry(capabilityRegistryManifest);
@@ -264,6 +296,7 @@ export function RepoNavigationPanel() {
         setSystemMap(systemIntegrationManifest);
         setSaasManifest(integrationManifest);
         setHardeningManifest(supabaseHardeningManifest);
+        setAutonomousManifests(mountedAutonomousManifests);
         setError("");
       } catch (loadError) {
         if (!controller.signal.aborted) {
@@ -317,6 +350,20 @@ export function RepoNavigationPanel() {
       .sort((left, right) => right.tracked_files - left.tracked_files)
       .slice(0, 8);
   }, [systemMap]);
+
+  const filteredAutonomousManifests = useMemo(() => {
+    return autonomousManifests.filter((manifest) =>
+      matchesQuery(
+        [
+          manifest.label,
+          manifest.path,
+          manifest.status,
+          ...Object.entries(manifest.summary || {}).map(([key, value]) => `${key} ${String(value)}`),
+        ],
+        query,
+      ),
+    );
+  }, [autonomousManifests, query]);
 
   const filteredCurrentCapabilities = useMemo(() => {
     const capabilities = capabilityRegistry?.capabilities || [];
@@ -440,6 +487,18 @@ export function RepoNavigationPanel() {
                 <FileJson className="h-4 w-4" />
                 /aureon_supabase_hardening_manifest.json
               </a>
+              {filteredAutonomousManifests.map((manifest) => (
+                <a
+                  key={manifest.path}
+                  className="inline-flex min-w-0 items-center gap-2 text-cyan-100 hover:text-cyan-50"
+                  href={publicUrl(manifest.path)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <FileJson className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{publicUrl(manifest.path)}</span>
+                </a>
+              ))}
               {repoMap?.validation_command ? (
                 <div className="mt-1 rounded-md border border-border/50 bg-background/50 px-3 py-2 font-mono text-[11px] text-muted-foreground">
                   {repoMap.validation_command}
@@ -449,6 +508,46 @@ export function RepoNavigationPanel() {
           </CardContent>
         </Card>
       </div>
+
+      {autonomousManifests.length ? (
+        <Card className="border-border/60 bg-card/90">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileJson className="h-5 w-5 text-emerald-200" />
+              Operational Manifests
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 lg:grid-cols-2 xl:grid-cols-5">
+            {filteredAutonomousManifests.map((manifest) => (
+              <a
+                key={manifest.path}
+                href={publicUrl(manifest.path)}
+                target="_blank"
+                rel="noreferrer"
+                className="flex min-h-[190px] flex-col gap-3 rounded-md border border-border/50 bg-background/45 p-3 hover:border-cyan-400/60"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium leading-snug">{manifest.label}</div>
+                    <div className="mt-1 truncate font-mono text-[10px] text-muted-foreground">{manifest.path}</div>
+                  </div>
+                  <ExternalLink className="h-4 w-4 shrink-0 text-cyan-100" />
+                </div>
+                <Badge variant="outline" className="w-fit max-w-full whitespace-normal border-emerald-500/30 bg-emerald-500/10 text-left text-[10px] leading-snug text-emerald-100">
+                  {manifest.status}
+                </Badge>
+                <div className="mt-auto flex flex-wrap gap-2">
+                  {Object.entries(manifest.summary || {}).slice(0, 4).map(([key, value]) => (
+                    <Badge key={`${manifest.path}-${key}`} variant="secondary" className="max-w-full whitespace-normal text-[10px] leading-snug">
+                      {key}: {String(value)}
+                    </Badge>
+                  ))}
+                </div>
+              </a>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
         <Card className="border-border/60 bg-card/90">

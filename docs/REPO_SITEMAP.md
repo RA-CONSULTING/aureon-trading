@@ -1,6 +1,6 @@
 # Aureon Repo-Wide Sitemap
 
-Current tracked snapshot: 2026-07-12, generated from `git ls-files`.
+Current tracked snapshot: 2026-07-13, generated from `git ls-files`.
 
 This document is the end-user map for the whole repository. It explains where
 each system lives, which capability it supports, which documents to read first,
@@ -19,6 +19,12 @@ SaaS integration manifest: [`saas_integration_manifest.json`](saas_integration_m
 Supabase hardening review: [`SUPABASE_HARDENING_REVIEW.md`](SUPABASE_HARDENING_REVIEW.md)
 and [`supabase_hardening_manifest.json`](supabase_hardening_manifest.json), mirrored to
 [`../frontend/public/aureon_supabase_hardening_manifest.json`](../frontend/public/aureon_supabase_hardening_manifest.json).
+Autonomous frontend manifests: [`audits/aureon_saas_system_inventory.json`](audits/aureon_saas_system_inventory.json),
+[`audits/aureon_frontend_unification_plan.json`](audits/aureon_frontend_unification_plan.json),
+[`audits/aureon_frontend_evolution_queue.json`](audits/aureon_frontend_evolution_queue.json),
+[`audits/aureon_organism_runtime_status.json`](audits/aureon_organism_runtime_status.json), and
+[`audits/aureon_autonomous_capability_switchboard.json`](audits/aureon_autonomous_capability_switchboard.json),
+mirrored to `frontend/public/`.
 End-user task map: [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md) and
 [`end_user_access_map.json`](end_user_access_map.json).
 Frontend console surface: [`../frontend/src/components/RepoNavigationPanel.tsx`](../frontend/src/components/RepoNavigationPanel.tsx)
@@ -71,9 +77,9 @@ The repo should be read in five zones:
 | [`daemon_codes/`](../daemon_codes/) | 36 | Background automation code. | Service/background route review. |
 | [`data/`](../data/) | 3,526 | Research, grants, datasets, copied evidence. | Evidence and funder review. |
 | [`deploy/`](../deploy/) | 14 | Deployment scripts and service configs. | Infrastructure setup. |
-| [`docs/`](../docs/) | 385 | Documentation, runbooks, research, architecture. | Primary reading system. |
+| [`docs/`](../docs/) | 390 | Documentation, runbooks, research, architecture. | Primary reading system. |
 | [`flameborn/`](../flameborn/) | 59 | Companion UI/runtime material. | Product surface review. |
-| [`frontend/`](../frontend/) | 4,294 | React/Vite console and public artifacts. | End-user browser experience. |
+| [`frontend/`](../frontend/) | 4,299 | React/Vite console and public artifacts. | End-user browser experience. |
 | [`functions/`](../functions/) | 1 | Serverless function surface. | Hosted integration route. |
 | [`imports/`](../imports/) | 1,242 | Imported historical/source bundles. | Migration and provenance review. |
 | [`integrations/`](../integrations/) | 21 | External integration support. | Connector review. |
@@ -137,7 +143,7 @@ The repo should be read in five zones:
 | Database/backend-as-a-service | `supabase/config.toml`, `supabase/migrations/`, `supabase/functions/` | SaaS data plane and edge-function surface. Treat migrations as schema authority and resolve the Supabase hardening review before production. |
 | Deployment | `deploy/`, `production/`, `.do/`, `Dockerfile`, `docker-compose.yml`, `app.yaml`, `Procfile` | Multiple deployment paths exist; pick one target and document env vars before production. |
 | Generated state | `state/` paths named in docs, runtime manifests, audit JSON | Often generated locally and intentionally not tracked. Do not assume absent generated files are missing source code. |
-| Public generated mirrors | `frontend/public/` | Tracked adaptive skills, repo-navigation manifests, file-level navigation index, capability registry, system integration map, SaaS integration manifest, and Supabase hardening manifest exist here; runtime JSON mirrors may be generated here during local operation. |
+| Public generated mirrors | `frontend/public/` | Tracked adaptive skills, repo-navigation manifests, file-level navigation index, capability registry, system integration map, SaaS integration manifest, Supabase hardening manifest, and autonomous frontend manifests exist here; runtime JSON mirrors may be generated here during local operation. |
 | Security and controls | `docs/SECURITY.md`, guarded runtime routes, tests | Keep credentials out of tracked docs; live actions remain operator-controlled. |
 
 Detailed readiness checklist: [`SAAS_INTEGRATION_READINESS.md`](SAAS_INTEGRATION_READINESS.md).
@@ -194,6 +200,7 @@ target-specific decisions:
 - Confirm which generated runtime JSON files should be committed, mirrored, or
   generated at runtime.
 - Confirm authentication and authorization boundaries for any hosted endpoint.
-- Resolve high-risk public Supabase Edge Function routes before public SaaS use.
+- Keep the Supabase hardening manifest at zero high-risk public blockers, and
+  review public endpoints before hosted SaaS use.
 - Keep live trading, warehouse mutation, filing, payment, and security-testing
   routes explicitly operator-controlled.

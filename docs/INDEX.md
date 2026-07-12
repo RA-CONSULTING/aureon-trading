@@ -21,6 +21,7 @@ Master table of contents for all project documentation.
 | SaaS integration manifest | [SaaS Integration Manifest](saas_integration_manifest.json) | Generated env-name, deployment-surface, Supabase auth, and production-gate contract for SaaS shells |
 | Supabase hardening review | [Supabase Hardening Review](SUPABASE_HARDENING_REVIEW.md) | Production blocker review for public and JWT-gated Supabase Edge Functions |
 | Supabase hardening manifest | [Supabase Hardening Manifest](supabase_hardening_manifest.json) | Generated Edge Function hardening contract mirrored to the frontend public folder |
+| Operational manifests | [SaaS System Inventory](audits/aureon_saas_system_inventory.json) | Public-safe autonomous frontend manifest set for SaaS inventory, unification, evolution queue, runtime status, and capability switchboard |
 | Grant and funder reviewers | [Gary/Aureon Metadata Research Inventory](../data/research/grants/applications/GARY_AUREON_METADATA_RESEARCH_INVENTORY_20260712_20260712_203741.md) | Categorized Gary/Aureon evidence inventory and copied research set |
 | Terminology reviewers | [Formal Terminology](investor/TERMINOLOGY.md) | Translation from older internal language to investor-safe terminology |
 | Historical review | [Legacy README Archive](archive/README_legacy_20260712.md) | Verbatim preserved README content from before the formal front-door update |
@@ -40,6 +41,7 @@ Master table of contents for all project documentation.
 | [SaaS Integration Manifest](saas_integration_manifest.json) | Machine-readable SaaS integration contract generated from repo config |
 | [Supabase Hardening Review](SUPABASE_HARDENING_REVIEW.md) | Human-readable blocker review for public Edge Functions and JWT-gated mutation routes |
 | [Supabase Hardening Manifest](supabase_hardening_manifest.json) | Machine-readable Supabase hardening contract used by the frontend repo map |
+| [Operational SaaS Inventory](audits/aureon_saas_system_inventory.json) | Mounted autonomous frontend manifest set for inventory, unification, evolution queue, runtime status, and switchboard visibility |
 | [Navigation Contract Validator](../scripts/validation/validate_repo_navigation_contract.py) | Verifies public manifests, repo counts, Supabase auth counts, and key navigation links |
 | [Navigation Guide](NAVIGATION_GUIDE.md) | Learning paths for traders, developers, researchers |
 | [Quick Start](QUICK_START.md) | Get running in 10 minutes |
