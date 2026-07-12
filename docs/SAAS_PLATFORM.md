@@ -114,6 +114,7 @@ same security envelope (bearer auth / rate-limit / metrics / health from
 | `GET`  | `/api/domains` | Product domains + per-domain reachability report. |
 | `GET`  | `/api/domains/<domain>` | One domain: entry point + its systems (capped). |
 | `GET`  | `/api/status` | Live platform health (honest, often degraded). |
+| `GET`  | `/api/manifests/<name>` | A frontend manifest, rendered live (404 lists available names). |
 | `POST` | `/api/manifests/refresh` | Rebuild catalog + rewrite frontend manifests. |
 
 ---
@@ -162,13 +163,51 @@ mypy-clean + `tests/test_saas_*.py` green.
 
 ---
 
+## Production deploy (Phase 6B)
+
+One command brings up the whole platform — console + gateway on a single origin:
+
+```bash
+# Supabase project values for the console build + server-side JWT verify:
+export VITE_SUPABASE_URL=https://<project>.supabase.co
+export VITE_SUPABASE_PUBLISHABLE_KEY=<anon key>
+export AUREON_SUPABASE_JWT_SECRET=<project JWT secret>
+
+docker compose -f deploy/docker-compose.saas.yml up --build
+# → console on :8088 (auth-gated), gateway proxied at /api
+```
+
+How the pieces fit:
+
+- **`deploy/frontend.Dockerfile`** — multi-stage: node builds the Vite bundle
+  (production defaults baked in: `VITE_REQUIRE_AUTH=1`,
+  `VITE_AUREON_MANIFEST_BASE=/api/manifests`), nginx serves it.
+- **`deploy/frontend.nginx.conf`** — SPA fallback + `/api` and `/command-stream`
+  (WebSocket) proxied to `aureon-operator:8790`. **One origin for the browser**:
+  no CORS, no hardcoded backend hosts, health probes pass through.
+- **`AuthGate`** (`frontend/src/components/AuthGate.tsx`) — wraps the console.
+  A no-op unless `VITE_REQUIRE_AUTH=1`, so dev/local stays open; the production
+  build renders the existing `AuthForm` until a Supabase session exists.
+- **Live manifests** — the console fetches manifests from
+  `VITE_AUREON_MANIFEST_BASE` (`/api/manifests/...`, rendered live by the
+  gateway) and falls back to the static `frontend/public` copies automatically.
+- **End-to-end tenancy** — the browser's Supabase session token can be verified
+  server-side by the gateway (`AUREON_SUPABASE_JWT_SECRET`), closing the loop:
+  the same session that opens the console authorizes its API calls.
+
+Dev is unchanged: `npm run dev` in `frontend/` with no env vars = open console,
+static manifests, localhost bridges.
+
+---
+
 ## Staged ledger
 
-Phase 6A (this layer) is done. The remaining SaaS work is tracked, not hidden:
+Phases 6A + 6B are done. The remaining SaaS work is tracked, not hidden:
 
 | # | Phase | Item | Done? |
 |---|-------|------|-------|
-| 6B | Production frontend | Frontend Dockerfile + nginx (or DO static site); auth-gate the open console with the existing Supabase session; replace `localhost` WS/HTTP bridges + `public/` manifest fetches with hosted gateway endpoints (`VITE_*`). | ☐ |
+| 6A | Platform layer | Categorized catalog + domain adapters + honest status + gateway routes + Supabase JWT bridge. | ☑ |
+| 6B | Production frontend | Frontend Dockerfile + nginx one-origin proxy; auth-gated console (`VITE_REQUIRE_AUTH`); live manifest fetches via `/api/manifests` with static fallback; full-stack compose. | ☑ |
 | 6C | Billing | Extend the prepaid gas-tank credit model, or add Stripe subscription tiers (net-new). Largest/riskiest — deferred. | ☐ |
 
 ---
