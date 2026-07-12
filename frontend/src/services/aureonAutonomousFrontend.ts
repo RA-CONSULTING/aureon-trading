@@ -478,20 +478,37 @@ async function fetchJson<T>(url: string): Promise<T | null> {
   }
 }
 
+// Where the live-rendered manifests come from. Default "" keeps the dev
+// behaviour (static files in frontend/public). The production build sets
+// VITE_AUREON_MANIFEST_BASE=/api/manifests so the gateway renders them live
+// through the nginx /api proxy. Manifests the gateway doesn't serve fall back
+// to the static path automatically (fetchJson returns null on 404).
+const MANIFEST_BASE = ((import.meta.env.VITE_AUREON_MANIFEST_BASE as string | undefined) ?? "").replace(/\/$/, "");
+
+async function fetchManifest<T>(filename: string): Promise<{ data: T | null; source: string }> {
+  if (MANIFEST_BASE) {
+    const liveUrl = `${MANIFEST_BASE}/${filename}`;
+    const live = await fetchJson<T>(liveUrl);
+    if (live) return { data: live, source: liveUrl };
+  }
+  const staticUrl = `/${filename}`;
+  return { data: await fetchJson<T>(staticUrl), source: staticUrl };
+}
+
 export async function loadUnifiedFrontendState(): Promise<UnifiedFrontendState> {
   const errors: string[] = [];
-  const inventoryUrl = "/aureon_saas_system_inventory.json";
-  const planUrl = "/aureon_frontend_unification_plan.json";
-  const organismUrl = "/aureon_organism_runtime_status.json";
-  const evolutionUrl = "/aureon_frontend_evolution_queue.json";
-  const switchboardUrl = "/aureon_autonomous_capability_switchboard.json";
-  const [inventory, plan, organism, evolution, switchboard] = await Promise.all([
-    fetchJson<SaaSInventoryManifest>(inventoryUrl),
-    fetchJson<FrontendUnificationManifest>(planUrl),
-    fetchJson<OrganismRuntimeManifest>(organismUrl),
-    fetchJson<FrontendEvolutionQueueManifest>(evolutionUrl),
-    fetchJson<CapabilitySwitchboardManifest>(switchboardUrl),
+  const [inventoryRes, planRes, organismRes, evolutionRes, switchboardRes] = await Promise.all([
+    fetchManifest<SaaSInventoryManifest>("aureon_saas_system_inventory.json"),
+    fetchManifest<FrontendUnificationManifest>("aureon_frontend_unification_plan.json"),
+    fetchManifest<OrganismRuntimeManifest>("aureon_organism_runtime_status.json"),
+    fetchManifest<FrontendEvolutionQueueManifest>("aureon_frontend_evolution_queue.json"),
+    fetchManifest<CapabilitySwitchboardManifest>("aureon_autonomous_capability_switchboard.json"),
   ]);
+  const inventory = inventoryRes.data;
+  const plan = planRes.data;
+  const organism = organismRes.data;
+  const evolution = evolutionRes.data;
+  const switchboard = switchboardRes.data;
 
   if (!inventory) errors.push("SaaS inventory manifest is not mounted in frontend/public.");
   if (!plan) errors.push("Frontend unification manifest is not mounted in frontend/public.");
@@ -501,11 +518,11 @@ export async function loadUnifiedFrontendState(): Promise<UnifiedFrontendState> 
 
   return {
     loadedAt: new Date().toISOString(),
-    inventorySource: inventory ? inventoryUrl : "fallback",
-    planSource: plan ? planUrl : "fallback",
-    organismSource: organism ? organismUrl : "fallback",
-    evolutionSource: evolution ? evolutionUrl : "fallback",
-    switchboardSource: switchboard ? switchboardUrl : "fallback",
+    inventorySource: inventory ? inventoryRes.source : "fallback",
+    planSource: plan ? planRes.source : "fallback",
+    organismSource: organism ? organismRes.source : "fallback",
+    evolutionSource: evolution ? evolutionRes.source : "fallback",
+    switchboardSource: switchboard ? switchboardRes.source : "fallback",
     inventory: inventory || emptyInventory,
     plan: plan || fallbackPlan,
     organism: organism || emptyOrganism,

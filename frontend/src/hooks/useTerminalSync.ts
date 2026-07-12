@@ -17,6 +17,7 @@ const LIVE_FEED_USER_ID = '69e5567f-7ad1-42af-860f-3709ef1f5935';
 const ENV_LOCAL_TERMINAL_ENDPOINT = import.meta.env.VITE_LOCAL_TERMINAL_URL as string | undefined;
 const DEFAULT_LOCAL_TERMINAL_ENDPOINTS = [
   ENV_LOCAL_TERMINAL_ENDPOINT,
+  '/api/terminal-state', // production: nginx proxies /api to the gateway
   'http://127.0.0.1:8791/api/terminal-state',
   'http://127.0.0.1:8790/api/terminal-state',
 ].filter((value): value is string => Boolean(value));
