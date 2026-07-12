@@ -21,6 +21,7 @@ preserved unchanged at
 | Public GitHub review | [`docs/INDEX.md`](docs/INDEX.md) | Guided navigation for setup, architecture, operations, research, and contribution paths. |
 | Repo-wide sitemap | [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces. |
 | End-user access map | [`docs/END_USER_ACCESS_MAP.md`](docs/END_USER_ACCESS_MAP.md) | Task-based access to capabilities, docs, related systems, runtime surfaces, and safety gates. |
+| System integration map | [`docs/SYSTEM_INTEGRATION_MAP.md`](docs/SYSTEM_INTEGRATION_MAP.md) | System-by-system binding of capabilities, entrypoints, public artifacts, validation references, and safety gates. |
 | Frontend repo map | [`frontend/src/components/RepoNavigationPanel.tsx`](frontend/src/components/RepoNavigationPanel.tsx) | Console tab mounted at `#repo-map` for browsing public repo and capability manifests. |
 | File-level repo index | [`docs/repo_navigation_index.json`](docs/repo_navigation_index.json) | Generated `git ls-files` index mirrored to the frontend public folder for searchable repo navigation. |
 | SaaS integration manifest | [`docs/saas_integration_manifest.json`](docs/saas_integration_manifest.json) | Generated env-name, deployment-surface, Supabase auth, and production-gate contract for SaaS shells. |
@@ -104,31 +105,34 @@ this front-door README.
    [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md).
 4. Use the end-user access map:
    [`docs/END_USER_ACCESS_MAP.md`](docs/END_USER_ACCESS_MAP.md).
-5. Use the frontend repo map at `#repo-map`:
+5. Use the system integration map:
+   [`docs/SYSTEM_INTEGRATION_MAP.md`](docs/SYSTEM_INTEGRATION_MAP.md).
+6. Use the frontend repo map at `#repo-map`:
    [`frontend/src/components/RepoNavigationPanel.tsx`](frontend/src/components/RepoNavigationPanel.tsx).
-6. Search the file-level repo index:
+7. Search the file-level repo index:
    [`docs/repo_navigation_index.json`](docs/repo_navigation_index.json).
-7. Review the generated SaaS integration manifest:
+8. Review the generated SaaS integration manifest:
    [`docs/saas_integration_manifest.json`](docs/saas_integration_manifest.json).
-8. Review the Supabase hardening review and manifest:
+9. Review the Supabase hardening review and manifest:
    [`docs/SUPABASE_HARDENING_REVIEW.md`](docs/SUPABASE_HARDENING_REVIEW.md) and
    [`docs/supabase_hardening_manifest.json`](docs/supabase_hardening_manifest.json).
-9. Review SaaS integration readiness:
+10. Review SaaS integration readiness:
    [`docs/SAAS_INTEGRATION_READINESS.md`](docs/SAAS_INTEGRATION_READINESS.md).
-10. Review architecture and capability evidence:
+11. Review architecture and capability evidence:
    [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md),
    [`CAPABILITIES.md`](CAPABILITIES.md), and
    [`DATA_FLOW.md`](DATA_FLOW.md).
-11. Review claims and validation:
+12. Review claims and validation:
    [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md),
    [`AUDIT_SUMMARY.md`](AUDIT_SUMMARY.md), and
    [`LIVE_PROOF.md`](LIVE_PROOF.md).
-12. Regenerate and validate the navigation contract:
+13. Regenerate and validate the navigation contract:
    `python scripts/validation/generate_repo_navigation_index.py`, then
    `python scripts/validation/generate_saas_integration_manifest.py`, then
    `python scripts/validation/generate_supabase_hardening_manifest.py`, then
+   `python scripts/validation/generate_system_integration_map.py`, then
    `python scripts/validation/validate_repo_navigation_contract.py`.
-13. Inspect preserved historical context:
+14. Inspect preserved historical context:
    [`docs/archive/README_legacy_20260712.md`](docs/archive/README_legacy_20260712.md).
 
 ## Preservation Note

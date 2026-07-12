@@ -78,6 +78,36 @@ interface NavigationIndexManifest {
   entries: NavigationEntry[];
 }
 
+interface SystemIntegrationRow {
+  path: string;
+  category: string;
+  tracked_files: number;
+  integration_role: string;
+  access_mode: string;
+  readiness_status: string;
+  capability_ids: string[];
+  entrypoints: string[];
+  public_artifacts: string[];
+  validation_refs: string[];
+  safety_gate: string;
+}
+
+interface SystemIntegrationMapManifest {
+  name: string;
+  snapshot_date: string;
+  frontend_public_mirror: string;
+  summary: {
+    tracked_file_count: number;
+    system_count: number;
+    capability_count: number;
+    mapped_capability_count: number;
+    saas_deployment_surface_count: number;
+    supabase_public_blocker_count: number;
+  };
+  systems: SystemIntegrationRow[];
+  integration_sequence: string[];
+}
+
 interface SaaSIntegrationManifest {
   name: string;
   snapshot_date: string;
@@ -171,6 +201,7 @@ export function RepoNavigationPanel() {
   const [repoMap, setRepoMap] = useState<RepoSitemapManifest | null>(null);
   const [accessMap, setAccessMap] = useState<AccessMapManifest | null>(null);
   const [navigationIndex, setNavigationIndex] = useState<NavigationIndexManifest | null>(null);
+  const [systemMap, setSystemMap] = useState<SystemIntegrationMapManifest | null>(null);
   const [saasManifest, setSaasManifest] = useState<SaaSIntegrationManifest | null>(null);
   const [hardeningManifest, setHardeningManifest] = useState<SupabaseHardeningManifest | null>(null);
   const [query, setQuery] = useState("");
@@ -180,16 +211,18 @@ export function RepoNavigationPanel() {
     const controller = new AbortController();
     const refresh = async () => {
       try {
-        const [repoManifest, accessManifest, indexManifest, integrationManifest, supabaseHardeningManifest] = await Promise.all([
+        const [repoManifest, accessManifest, indexManifest, systemIntegrationManifest, integrationManifest, supabaseHardeningManifest] = await Promise.all([
           loadJson<RepoSitemapManifest>("/aureon_repo_sitemap.json", controller.signal),
           loadJson<AccessMapManifest>("/aureon_end_user_access_map.json", controller.signal),
           loadJson<NavigationIndexManifest>("/aureon_repo_navigation_index.json", controller.signal),
+          loadJson<SystemIntegrationMapManifest>("/aureon_system_integration_map.json", controller.signal),
           loadJson<SaaSIntegrationManifest>("/aureon_saas_integration_manifest.json", controller.signal),
           loadJson<SupabaseHardeningManifest>("/aureon_supabase_hardening_manifest.json", controller.signal),
         ]);
         setRepoMap(repoManifest);
         setAccessMap(accessManifest);
         setNavigationIndex(indexManifest);
+        setSystemMap(systemIntegrationManifest);
         setSaasManifest(integrationManifest);
         setHardeningManifest(supabaseHardeningManifest);
         setError("");
@@ -240,6 +273,12 @@ export function RepoNavigationPanel() {
       .slice(0, 6);
   }, [saasManifest]);
 
+  const topSystems = useMemo(() => {
+    return [...(systemMap?.systems || [])]
+      .sort((left, right) => right.tracked_files - left.tracked_files)
+      .slice(0, 8);
+  }, [systemMap]);
+
   const contract = repoMap?.public_contract;
 
   return (
@@ -267,8 +306,8 @@ export function RepoNavigationPanel() {
                 <div className="mt-1 text-2xl font-semibold">{(accessMap?.capabilities?.length || 0).toLocaleString()}</div>
               </div>
               <div className="rounded-md border border-border/50 bg-background/50 p-3">
-                <div className="text-[11px] uppercase text-muted-foreground">Repo zones</div>
-                <div className="mt-1 text-2xl font-semibold">{(repoMap?.zones?.length || 0).toLocaleString()}</div>
+                <div className="text-[11px] uppercase text-muted-foreground">Systems mapped</div>
+                <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.system_count || 0).toLocaleString()}</div>
               </div>
               <div className="rounded-md border border-border/50 bg-background/50 p-3">
                 <div className="text-[11px] uppercase text-muted-foreground">Env names</div>
@@ -321,6 +360,10 @@ export function RepoNavigationPanel() {
               <a className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-50" href={publicUrl("frontend/public/aureon_repo_navigation_index.json")} target="_blank" rel="noreferrer">
                 <FileJson className="h-4 w-4" />
                 /aureon_repo_navigation_index.json
+              </a>
+              <a className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-50" href={publicUrl("frontend/public/aureon_system_integration_map.json")} target="_blank" rel="noreferrer">
+                <FileJson className="h-4 w-4" />
+                /aureon_system_integration_map.json
               </a>
               <a className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-50" href={publicUrl("frontend/public/aureon_saas_integration_manifest.json")} target="_blank" rel="noreferrer">
                 <FileJson className="h-4 w-4" />
@@ -401,6 +444,61 @@ export function RepoNavigationPanel() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-border/60 bg-card/90">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Server className="h-5 w-5 text-sky-200" />
+            System Integration Matrix
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Mapped systems</div>
+              <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.system_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Capability bindings</div>
+              <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.mapped_capability_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">SaaS surfaces</div>
+              <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.saas_deployment_surface_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Supabase blockers</div>
+              <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.supabase_public_blocker_count || 0).toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            {topSystems.map((system) => (
+              <div key={system.path} className="rounded-md border border-border/50 bg-background/45 p-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <PathLink path={system.path} />
+                    <div className="mt-2 text-sm text-muted-foreground">{system.integration_role}</div>
+                  </div>
+                  <Badge variant="secondary">{system.tracked_files.toLocaleString()}</Badge>
+                </div>
+                <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                  <div className="rounded-md border border-border/40 bg-background/40 px-2 py-1">{system.readiness_status}</div>
+                  <div className="rounded-md border border-border/40 bg-background/40 px-2 py-1">{system.access_mode}</div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {system.capability_ids.slice(0, 4).map((capabilityId) => (
+                    <Badge key={`${system.path}-${capabilityId}`} variant="outline" className="font-mono text-[10px]">
+                      {capabilityId}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="mt-3 text-xs text-muted-foreground">{system.safety_gate}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-border/60 bg-card/90">
         <CardHeader className="pb-3">

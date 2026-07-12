@@ -15,11 +15,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_REPO_SITEMAP = REPO_ROOT / "docs" / "repo_sitemap.json"
 DOCS_ACCESS_MAP = REPO_ROOT / "docs" / "end_user_access_map.json"
 DOCS_NAVIGATION_INDEX = REPO_ROOT / "docs" / "repo_navigation_index.json"
+DOCS_SYSTEM_INTEGRATION = REPO_ROOT / "docs" / "system_integration_map.json"
 DOCS_SAAS_MANIFEST = REPO_ROOT / "docs" / "saas_integration_manifest.json"
 DOCS_SUPABASE_HARDENING = REPO_ROOT / "docs" / "supabase_hardening_manifest.json"
 PUBLIC_REPO_SITEMAP = REPO_ROOT / "frontend" / "public" / "aureon_repo_sitemap.json"
 PUBLIC_ACCESS_MAP = REPO_ROOT / "frontend" / "public" / "aureon_end_user_access_map.json"
 PUBLIC_NAVIGATION_INDEX = REPO_ROOT / "frontend" / "public" / "aureon_repo_navigation_index.json"
+PUBLIC_SYSTEM_INTEGRATION = REPO_ROOT / "frontend" / "public" / "aureon_system_integration_map.json"
 PUBLIC_SAAS_MANIFEST = REPO_ROOT / "frontend" / "public" / "aureon_saas_integration_manifest.json"
 PUBLIC_SUPABASE_HARDENING = REPO_ROOT / "frontend" / "public" / "aureon_supabase_hardening_manifest.json"
 SUPABASE_CONFIG = REPO_ROOT / "supabase" / "config.toml"
@@ -30,12 +32,14 @@ REQUIRED_PATHS = [
     "docs/REPO_SITEMAP.md",
     "docs/END_USER_ACCESS_MAP.md",
     "docs/SAAS_INTEGRATION_READINESS.md",
+    "docs/SYSTEM_INTEGRATION_MAP.md",
     "docs/INDEX.md",
     "docs/investor/README.md",
     "docs/investor/TERMINOLOGY.md",
     "docs/repo_sitemap.json",
     "docs/end_user_access_map.json",
     "docs/repo_navigation_index.json",
+    "docs/system_integration_map.json",
     "docs/saas_integration_manifest.json",
     "docs/SUPABASE_HARDENING_REVIEW.md",
     "docs/supabase_hardening_manifest.json",
@@ -43,9 +47,11 @@ REQUIRED_PATHS = [
     "frontend/public/aureon_repo_sitemap.json",
     "frontend/public/aureon_end_user_access_map.json",
     "frontend/public/aureon_repo_navigation_index.json",
+    "frontend/public/aureon_system_integration_map.json",
     "frontend/public/aureon_saas_integration_manifest.json",
     "frontend/public/aureon_supabase_hardening_manifest.json",
     "scripts/validation/generate_repo_navigation_index.py",
+    "scripts/validation/generate_system_integration_map.py",
     "scripts/validation/generate_saas_integration_manifest.py",
     "scripts/validation/generate_supabase_hardening_manifest.py",
 ]
@@ -55,6 +61,7 @@ MARKDOWN_FILES = [
     "docs/INDEX.md",
     "docs/REPO_SITEMAP.md",
     "docs/END_USER_ACCESS_MAP.md",
+    "docs/SYSTEM_INTEGRATION_MAP.md",
     "docs/SAAS_INTEGRATION_READINESS.md",
     "docs/SUPABASE_HARDENING_REVIEW.md",
     "docs/investor/README.md",
@@ -222,11 +229,13 @@ def main() -> int:
     docs_repo = load_json(DOCS_REPO_SITEMAP)
     docs_access = load_json(DOCS_ACCESS_MAP)
     docs_navigation_index = load_json(DOCS_NAVIGATION_INDEX)
+    docs_system_integration = load_json(DOCS_SYSTEM_INTEGRATION)
     docs_saas_manifest = load_json(DOCS_SAAS_MANIFEST)
     docs_supabase_hardening = load_json(DOCS_SUPABASE_HARDENING)
     public_repo = load_json(PUBLIC_REPO_SITEMAP)
     public_access = load_json(PUBLIC_ACCESS_MAP)
     public_navigation_index = load_json(PUBLIC_NAVIGATION_INDEX)
+    public_system_integration = load_json(PUBLIC_SYSTEM_INTEGRATION)
     public_saas_manifest = load_json(PUBLIC_SAAS_MANIFEST)
     public_supabase_hardening = load_json(PUBLIC_SUPABASE_HARDENING)
 
@@ -279,6 +288,22 @@ def main() -> int:
         "frontend public sitemap does not expose the repo navigation index",
     )
     expect(
+        docs_repo.get("end_user_access", {}).get("system_integration_map") == "docs/system_integration_map.json",
+        failures,
+        "repo sitemap does not expose the docs system integration map",
+    )
+    expect(
+        docs_repo.get("end_user_access", {}).get("frontend_public_system_integration_map")
+        == "frontend/public/aureon_system_integration_map.json",
+        failures,
+        "repo sitemap does not expose the public system integration map",
+    )
+    expect(
+        public_repo.get("system_integration_map") == "frontend/public/aureon_system_integration_map.json",
+        failures,
+        "frontend public sitemap does not expose the system integration map",
+    )
+    expect(
         docs_repo.get("saas_readiness", {}).get("machine_readable") == "docs/saas_integration_manifest.json",
         failures,
         "repo sitemap does not expose the docs SaaS integration manifest",
@@ -310,6 +335,7 @@ def main() -> int:
         "frontend public sitemap does not expose the Supabase hardening manifest",
     )
     expect(docs_navigation_index == public_navigation_index, failures, "repo navigation index docs/public mirrors differ")
+    expect(docs_system_integration == public_system_integration, failures, "system integration map docs/public mirrors differ")
     navigation_entries = docs_navigation_index.get("entries", [])
     expect(len(navigation_entries) == tracked_total, failures, "repo navigation index entry count differs from git ls-files")
     expect(docs_navigation_index.get("entry_count") == tracked_total, failures, "repo navigation index entry_count is stale")
@@ -319,6 +345,35 @@ def main() -> int:
         docs_navigation_index.get("public_contract", {}).get("contains_file_contents") is False,
         failures,
         "repo navigation index public contract must not contain file contents",
+    )
+    system_rows = docs_system_integration.get("systems", []) if isinstance(docs_system_integration, dict) else []
+    system_paths = {entry.get("path") for entry in system_rows if isinstance(entry, dict)}
+    sitemap_paths = {entry.get("path") for entry in docs_repo.get("top_level_systems", []) if isinstance(entry, dict)}
+    expect(
+        docs_system_integration.get("summary", {}).get("tracked_file_count") == tracked_total,
+        failures,
+        "system integration map tracked_file_count is stale",
+    )
+    expect(
+        docs_system_integration.get("summary", {}).get("system_count") == len(docs_repo.get("top_level_systems", [])),
+        failures,
+        "system integration map system_count differs from repo sitemap",
+    )
+    expect(
+        docs_system_integration.get("summary", {}).get("capability_count") == len(docs_capabilities),
+        failures,
+        "system integration map capability_count differs from access map",
+    )
+    expect(system_paths == sitemap_paths, failures, "system integration map does not cover every top-level system")
+    expect(
+        docs_system_integration.get("public_contract", {}).get("contains_file_contents") is False,
+        failures,
+        "system integration map public contract must not contain file contents",
+    )
+    expect(
+        docs_system_integration.get("public_contract", {}).get("contains_secrets") is False,
+        failures,
+        "system integration map public contract must not contain secrets",
     )
 
     supabase_counts = parse_supabase_auth_counts()
@@ -392,6 +447,7 @@ def main() -> int:
         ("frontend/public/aureon_repo_sitemap.json", public_repo),
         ("frontend/public/aureon_end_user_access_map.json", public_access),
         ("frontend/public/aureon_repo_navigation_index.json", public_navigation_index),
+        ("frontend/public/aureon_system_integration_map.json", public_system_integration),
         ("frontend/public/aureon_saas_integration_manifest.json", public_saas_manifest),
         ("frontend/public/aureon_supabase_hardening_manifest.json", public_supabase_hardening),
     ):
@@ -409,6 +465,7 @@ def main() -> int:
     print(f"OK tracked_file_count={tracked_total}")
     print(f"OK capability_count={len(docs_capabilities)}")
     print(f"OK repo_navigation_index_entries={len(navigation_entries)}")
+    print(f"OK system_integration_systems={len(system_rows)}")
     print(f"OK saas_env_variable_count={len(env_names)}")
     print(f"OK supabase_auth_counts={supabase_counts}")
     print(f"OK supabase_hardening_public_blockers={len(public_high_risk_routes)}")
