@@ -10,6 +10,8 @@ dashboard, SaaS workflow, or external diligence process.
 Machine-readable companion: [`repo_sitemap.json`](repo_sitemap.json).
 End-user task map: [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md) and
 [`end_user_access_map.json`](end_user_access_map.json).
+Navigation contract validator, from repo root:
+`python scripts/validation/validate_repo_navigation_contract.py`.
 
 ## How To Use This Sitemap
 
@@ -45,18 +47,18 @@ The repo should be read in five zones:
 | [`.github/`](../.github/) | 4 | GitHub automation and repository metadata. | CI/repo hygiene entrypoint. |
 | [`Antarctic research/`](../Antarctic%20research/) | 56 | Research evidence folder. | Specialist research review. |
 | [`api/`](../api/) | 1 | API route surface. | Product/API integration. |
-| [`archive/`](../archive/) | 23 | Historical bundles and backups. | Audit history, not current front door. |
+| [`archive/`](../archive/) | 24 | Historical bundles and backups. | Audit history, not current front door. |
 | [`aureon/`](../aureon/) | 994 | Main Python runtime and subsystem package. | Core implementation. |
 | [`aureon_launcher/`](../aureon_launcher/) | 7 | Launcher support. | Local startup support. |
 | [`cli/`](../cli/) | 6 | Command-line helpers. | Local operator tooling. |
 | [`daemon_codes/`](../daemon_codes/) | 36 | Background automation code. | Service/background route review. |
 | [`data/`](../data/) | 3,526 | Research, grants, datasets, copied evidence. | Evidence and funder review. |
 | [`deploy/`](../deploy/) | 14 | Deployment scripts and service configs. | Infrastructure setup. |
-| [`docs/`](../docs/) | 372 | Documentation, runbooks, research, architecture. | Primary reading system. |
+| [`docs/`](../docs/) | 377 | Documentation, runbooks, research, architecture. | Primary reading system. |
 | [`flameborn/`](../flameborn/) | 59 | Companion UI/runtime material. | Product surface review. |
-| [`frontend/`](../frontend/) | 4,286 | React/Vite console and public artifacts. | End-user browser experience. |
+| [`frontend/`](../frontend/) | 4,288 | React/Vite console and public artifacts. | End-user browser experience. |
 | [`functions/`](../functions/) | 1 | Serverless function surface. | Hosted integration route. |
-| [`imports/`](../imports/) | 1,240 | Imported historical/source bundles. | Migration and provenance review. |
+| [`imports/`](../imports/) | 1,242 | Imported historical/source bundles. | Migration and provenance review. |
 | [`integrations/`](../integrations/) | 21 | External integration support. | Connector review. |
 | [`Kings_Accounting_Suite/`](../Kings_Accounting_Suite/) | 227 | Accounting, filing-support, statutory-pack tooling. | Back-office workflow review. |
 | [`memory/`](../memory/) | 1 | Local memory/context artifact. | Operator context. |
@@ -64,14 +66,14 @@ The repo should be read in five zones:
 | [`packaging/`](../packaging/) | 2 | Package/build helpers. | Release packaging. |
 | [`production/`](../production/) | 15 | Production install/runtime assets. | Product deployment path. |
 | [`public/`](../public/) | 58 | Public static assets. | Browser/static publishing. |
-| [`scripts/`](../scripts/) | 302 | Diagnostics, runners, reports, validation scripts. | Operator and maintainer tasks. |
+| [`scripts/`](../scripts/) | 303 | Diagnostics, runners, reports, validation scripts. | Operator and maintainer tasks. |
 | [`server/`](../server/) | 7 | Node/server bridge surface. | Backend integration route. |
 | [`skills/`](../skills/) | 12 | Local skill registries and interactions. | Capability extension route. |
 | [`supabase/`](../supabase/) | 160 | Supabase config, migrations, functions. | SaaS data/backend integration. |
 | [`templates/`](../templates/) | 6 | UI/document templates. | Product and report generation. |
 | [`tests/`](../tests/) | 330 | Regression and validation tests. | Acceptance and safety checks. |
 | [`tools/`](../tools/) | 5 | Focused utility scripts. | Maintenance and diagnostics. |
-| [`VERIFICATION AND VALIDATION/`](../VERIFICATION%20AND%20VALIDATION/) | 13 | Formal validation documents. | Evidence and diligence. |
+| [`VERIFICATION AND VALIDATION/`](../VERIFICATION%20AND%20VALIDATION/) | 14 | Formal validation documents. | Evidence and diligence. |
 | [`wisdom_data/`](../wisdom_data/) | 12 | Research/context data. | Specialist research review. |
 
 ## Root Entry Points
@@ -143,6 +145,8 @@ Task-based access map: [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md).
 - Put run commands in `RUNNING.md`, not scattered across new docs.
 - Put capability claims in `CAPABILITIES.md` or link them to evidence.
 - Put formal terminology in `docs/investor/TERMINOLOGY.md`.
+- Run `python scripts/validation/validate_repo_navigation_contract.py` after
+  changing navigation docs, public manifests, or Supabase function auth settings.
 - Preserve historical language under `archive/`, `docs/archive/`, or `imports/`.
 - Treat `state/`, `docs/audits/`, and named runtime JSON files as generated
   outputs unless they are present in `git ls-files`.

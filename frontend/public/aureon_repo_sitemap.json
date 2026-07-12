@@ -4,7 +4,8 @@
   "source_document": "docs/REPO_SITEMAP.md",
   "machine_readable_source": "docs/repo_sitemap.json",
   "end_user_access_map": "frontend/public/aureon_end_user_access_map.json",
-  "tracked_file_count": 11910,
+  "tracked_file_count": 11918,
+  "validation_script": "scripts/validation/validate_repo_navigation_contract.py",
   "front_doors": [
     {"label": "Repository README", "path": "README.md"},
     {"label": "Repo-wide sitemap", "path": "docs/REPO_SITEMAP.md"},

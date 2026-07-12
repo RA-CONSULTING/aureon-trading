@@ -2,7 +2,7 @@
   "name": "Aureon Repo-Wide Sitemap",
   "snapshot_date": "2026-07-12",
   "source": "git ls-files",
-  "tracked_file_count": 11910,
+  "tracked_file_count": 11918,
   "primary_documents": [
     "README.md",
     "docs/REPO_SITEMAP.md",
@@ -19,32 +19,32 @@
   "top_level_systems": [
     {"path": ".github/", "files": 4, "category": "repo automation", "role": "GitHub workflow and repository metadata"},
     {"path": "api/", "files": 1, "category": "integration", "role": "API route surface"},
-    {"path": "archive/", "files": 23, "category": "archive", "role": "Historical bundles and backups"},
+    {"path": "archive/", "files": 24, "category": "archive", "role": "Historical bundles and backups"},
     {"path": "aureon/", "files": 994, "category": "runtime", "role": "Main Python runtime and subsystem package"},
     {"path": "aureon_launcher/", "files": 7, "category": "runtime", "role": "Launcher support"},
     {"path": "cli/", "files": 6, "category": "operator tooling", "role": "Command-line helpers"},
     {"path": "daemon_codes/", "files": 36, "category": "runtime", "role": "Background automation code"},
     {"path": "data/", "files": 3526, "category": "evidence", "role": "Research, grants, datasets, and copied evidence"},
     {"path": "deploy/", "files": 14, "category": "deployment", "role": "Deployment scripts and service configs"},
-    {"path": "docs/", "files": 372, "category": "documentation", "role": "Documentation, runbooks, research, architecture, and sitemap"},
+    {"path": "docs/", "files": 377, "category": "documentation", "role": "Documentation, runbooks, research, architecture, and sitemap"},
     {"path": "flameborn/", "files": 59, "category": "product surface", "role": "Companion UI/runtime material"},
-    {"path": "frontend/", "files": 4286, "category": "product surface", "role": "React/Vite console and public artifacts"},
+    {"path": "frontend/", "files": 4288, "category": "product surface", "role": "React/Vite console and public artifacts"},
     {"path": "functions/", "files": 1, "category": "integration", "role": "Serverless function surface"},
-    {"path": "imports/", "files": 1240, "category": "provenance", "role": "Imported historical/source bundles"},
+    {"path": "imports/", "files": 1242, "category": "provenance", "role": "Imported historical/source bundles"},
     {"path": "integrations/", "files": 21, "category": "integration", "role": "External integration support"},
     {"path": "Kings_Accounting_Suite/", "files": 227, "category": "back office", "role": "Accounting, filing-support, and statutory-pack tooling"},
     {"path": "netlify/", "files": 1, "category": "deployment", "role": "Netlify deploy/function surface"},
     {"path": "packaging/", "files": 2, "category": "release", "role": "Package and build helpers"},
     {"path": "production/", "files": 15, "category": "deployment", "role": "Production install and runtime assets"},
     {"path": "public/", "files": 58, "category": "product surface", "role": "Public static assets"},
-    {"path": "scripts/", "files": 302, "category": "operator tooling", "role": "Diagnostics, runners, reports, validation scripts"},
+    {"path": "scripts/", "files": 303, "category": "operator tooling", "role": "Diagnostics, runners, reports, validation scripts"},
     {"path": "server/", "files": 7, "category": "integration", "role": "Node/server bridge surface"},
     {"path": "skills/", "files": 12, "category": "extensions", "role": "Local skill registries and interactions"},
     {"path": "supabase/", "files": 160, "category": "saas backend", "role": "Supabase config, migrations, and functions"},
     {"path": "templates/", "files": 6, "category": "product surface", "role": "UI and report templates"},
     {"path": "tests/", "files": 330, "category": "validation", "role": "Regression and validation tests"},
     {"path": "tools/", "files": 5, "category": "maintenance", "role": "Focused utility scripts"},
-    {"path": "VERIFICATION AND VALIDATION/", "files": 13, "category": "validation", "role": "Formal validation documents"},
+    {"path": "VERIFICATION AND VALIDATION/", "files": 14, "category": "validation", "role": "Formal validation documents"},
     {"path": "wisdom_data/", "files": 12, "category": "research", "role": "Specialist research/context data"}
   ],
   "capability_groups": [
@@ -151,6 +151,19 @@
       "contains_private_runtime_state": false,
       "contains_customer_data": false
     }
+  },
+  "validation": {
+    "script": "scripts/validation/validate_repo_navigation_contract.py",
+    "command": "python scripts/validation/validate_repo_navigation_contract.py",
+    "checks": [
+      "required front-door docs and public manifests exist",
+      "tracked file counts match git ls-files",
+      "top-level sitemap counts match git ls-files",
+      "end-user capability counts match across docs and frontend manifests",
+      "Supabase auth counts match supabase/config.toml",
+      "frontend public manifests contain no credential-like values",
+      "key Markdown navigation links resolve"
+    ]
   },
   "organizational_rules": [
     "Keep README.md concise and investor-readable.",

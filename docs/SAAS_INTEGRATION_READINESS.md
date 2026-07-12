@@ -10,6 +10,8 @@ safe integration.
 Primary map: [`REPO_SITEMAP.md`](REPO_SITEMAP.md). Machine-readable map:
 [`repo_sitemap.json`](repo_sitemap.json).
 End-user task map: [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md).
+Navigation contract validation, from repo root:
+`python scripts/validation/validate_repo_navigation_contract.py`.
 
 ## Canonical Integration Shape
 
@@ -140,5 +142,7 @@ Before calling a hosted deployment production-ready, complete these gates:
    frontend public assets, or persisted in Supabase.
 6. Keep live trading, warehouse mutation, filing, payment, desktop control, and
    security-testing actions operator-controlled.
-7. Run the relevant local checks in `RUNNING.md` and the target deployment smoke
+7. Run `python scripts/validation/validate_repo_navigation_contract.py` after
+   navigation, public manifest, or Supabase auth-setting changes.
+8. Run the relevant local checks in `RUNNING.md` and the target deployment smoke
    checks before publishing an external URL.

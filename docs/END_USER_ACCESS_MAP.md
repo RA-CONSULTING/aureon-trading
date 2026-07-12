@@ -12,6 +12,8 @@ Frontend-public mirrors:
 [`../frontend/public/aureon_end_user_access_map.json`](../frontend/public/aureon_end_user_access_map.json)
 and
 [`../frontend/public/aureon_repo_sitemap.json`](../frontend/public/aureon_repo_sitemap.json).
+Contract validation command, from repo root:
+`python scripts/validation/validate_repo_navigation_contract.py`.
 
 ## Access Principles
 
@@ -52,3 +54,6 @@ The frontend can read these static files without needing repo traversal:
 
 These files contain paths, labels, and safety notes only. They do not contain
 credentials, private runtime state, customer data, or local evidence exports.
+Validate that contract with
+`python scripts/validation/validate_repo_navigation_contract.py` before
+publishing navigation or SaaS-shell changes.

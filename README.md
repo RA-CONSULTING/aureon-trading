@@ -22,6 +22,7 @@ preserved unchanged at
 | Repo-wide sitemap | [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces. |
 | End-user access map | [`docs/END_USER_ACCESS_MAP.md`](docs/END_USER_ACCESS_MAP.md) | Task-based access to capabilities, docs, related systems, runtime surfaces, and safety gates. |
 | SaaS integration readiness | [`docs/SAAS_INTEGRATION_READINESS.md`](docs/SAAS_INTEGRATION_READINESS.md) | End-user access matrix, env/config inventory, deploy surfaces, auth boundaries, and production gates. |
+| Navigation contract check | [`scripts/validation/validate_repo_navigation_contract.py`](scripts/validation/validate_repo_navigation_contract.py) | Checks public manifests, repo counts, Supabase auth counts, and key navigation links. |
 | Grant or funder review | [`data/research/grants/applications/GARY_AUREON_METADATA_RESEARCH_INVENTORY_20260712_20260712_203741.md`](data/research/grants/applications/GARY_AUREON_METADATA_RESEARCH_INVENTORY_20260712_20260712_203741.md) | Catalogued Gary/Aureon metadata and research evidence gathered for funder-safe review. |
 | Technical review | [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md), [`DATA_FLOW.md`](DATA_FLOW.md), [`CAPABILITIES.md`](CAPABILITIES.md) | System architecture, data flow, and capability inventory. |
 | Operator review | [`RUNNING.md`](RUNNING.md), [`QUICK_START.md`](QUICK_START.md), [`LIVE_PROOF.md`](LIVE_PROOF.md) | Runtime entry points, operating notes, and proof artifacts. |
@@ -109,7 +110,9 @@ this front-door README.
    [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md),
    [`AUDIT_SUMMARY.md`](AUDIT_SUMMARY.md), and
    [`LIVE_PROOF.md`](LIVE_PROOF.md).
-8. Inspect preserved historical context:
+8. Run the navigation contract validator:
+   `python scripts/validation/validate_repo_navigation_contract.py`.
+9. Inspect preserved historical context:
    [`docs/archive/README_legacy_20260712.md`](docs/archive/README_legacy_20260712.md).
 
 ## Preservation Note
