@@ -2,12 +2,13 @@
   "name": "Aureon Repo-Wide Sitemap",
   "snapshot_date": "2026-07-12",
   "source": "git ls-files",
-  "tracked_file_count": 11922,
+  "tracked_file_count": 11925,
   "primary_documents": [
     "README.md",
     "docs/REPO_SITEMAP.md",
     "docs/END_USER_ACCESS_MAP.md",
     "docs/SAAS_INTEGRATION_READINESS.md",
+    "docs/saas_integration_manifest.json",
     "docs/INDEX.md",
     "docs/repo_navigation_index.json",
     "RUNNING.md",
@@ -27,9 +28,9 @@
     {"path": "daemon_codes/", "files": 36, "category": "runtime", "role": "Background automation code"},
     {"path": "data/", "files": 3526, "category": "evidence", "role": "Research, grants, datasets, and copied evidence"},
     {"path": "deploy/", "files": 14, "category": "deployment", "role": "Deployment scripts and service configs"},
-    {"path": "docs/", "files": 378, "category": "documentation", "role": "Documentation, runbooks, research, architecture, and sitemap"},
+    {"path": "docs/", "files": 379, "category": "documentation", "role": "Documentation, runbooks, research, architecture, and sitemap"},
     {"path": "flameborn/", "files": 59, "category": "product surface", "role": "Companion UI/runtime material"},
-    {"path": "frontend/", "files": 4290, "category": "product surface", "role": "React/Vite console and public artifacts"},
+    {"path": "frontend/", "files": 4291, "category": "product surface", "role": "React/Vite console and public artifacts"},
     {"path": "functions/", "files": 1, "category": "integration", "role": "Serverless function surface"},
     {"path": "imports/", "files": 1242, "category": "provenance", "role": "Imported historical/source bundles"},
     {"path": "integrations/", "files": 21, "category": "integration", "role": "External integration support"},
@@ -38,7 +39,7 @@
     {"path": "packaging/", "files": 2, "category": "release", "role": "Package and build helpers"},
     {"path": "production/", "files": 15, "category": "deployment", "role": "Production install and runtime assets"},
     {"path": "public/", "files": 58, "category": "product surface", "role": "Public static assets"},
-    {"path": "scripts/", "files": 304, "category": "operator tooling", "role": "Diagnostics, runners, reports, validation scripts"},
+    {"path": "scripts/", "files": 305, "category": "operator tooling", "role": "Diagnostics, runners, reports, validation scripts"},
     {"path": "server/", "files": 7, "category": "integration", "role": "Node/server bridge surface"},
     {"path": "skills/", "files": 12, "category": "extensions", "role": "Local skill registries and interactions"},
     {"path": "supabase/", "files": 160, "category": "saas backend", "role": "Supabase config, migrations, and functions"},
@@ -95,6 +96,8 @@
   ],
   "saas_readiness": {
     "document": "docs/SAAS_INTEGRATION_READINESS.md",
+    "machine_readable": "docs/saas_integration_manifest.json",
+    "frontend_public_mirror": "frontend/public/aureon_saas_integration_manifest.json",
     "canonical_shape": "local-first SaaS integration with hosted browser/Supabase surfaces and operator-controlled sensitive mutation routes",
     "deployment_surfaces": [
       "frontend/",
@@ -167,7 +170,8 @@
       "Supabase auth counts match supabase/config.toml",
       "frontend public manifests contain no credential-like values",
       "key Markdown navigation links resolve",
-      "repo navigation index mirrors match git ls-files"
+      "repo navigation index mirrors match git ls-files",
+      "SaaS integration manifest mirrors match repo config"
     ]
   },
   "organizational_rules": [

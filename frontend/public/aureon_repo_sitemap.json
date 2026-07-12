@@ -5,7 +5,8 @@
   "machine_readable_source": "docs/repo_sitemap.json",
   "end_user_access_map": "frontend/public/aureon_end_user_access_map.json",
   "navigation_index": "frontend/public/aureon_repo_navigation_index.json",
-  "tracked_file_count": 11922,
+  "saas_integration_manifest": "frontend/public/aureon_saas_integration_manifest.json",
+  "tracked_file_count": 11925,
   "validation_script": "scripts/validation/validate_repo_navigation_contract.py",
   "validation_command": "python scripts/validation/validate_repo_navigation_contract.py",
   "frontend_navigation_tab": "#repo-map",
@@ -15,6 +16,7 @@
     {"label": "Repo navigation index", "path": "docs/repo_navigation_index.json"},
     {"label": "End-user access map", "path": "docs/END_USER_ACCESS_MAP.md"},
     {"label": "SaaS integration readiness", "path": "docs/SAAS_INTEGRATION_READINESS.md"},
+    {"label": "SaaS integration manifest", "path": "docs/saas_integration_manifest.json"},
     {"label": "Capabilities", "path": "CAPABILITIES.md"},
     {"label": "Running locally", "path": "RUNNING.md"}
   ],

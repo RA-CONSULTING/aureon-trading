@@ -15,10 +15,13 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_REPO_SITEMAP = REPO_ROOT / "docs" / "repo_sitemap.json"
 DOCS_ACCESS_MAP = REPO_ROOT / "docs" / "end_user_access_map.json"
 DOCS_NAVIGATION_INDEX = REPO_ROOT / "docs" / "repo_navigation_index.json"
+DOCS_SAAS_MANIFEST = REPO_ROOT / "docs" / "saas_integration_manifest.json"
 PUBLIC_REPO_SITEMAP = REPO_ROOT / "frontend" / "public" / "aureon_repo_sitemap.json"
 PUBLIC_ACCESS_MAP = REPO_ROOT / "frontend" / "public" / "aureon_end_user_access_map.json"
 PUBLIC_NAVIGATION_INDEX = REPO_ROOT / "frontend" / "public" / "aureon_repo_navigation_index.json"
+PUBLIC_SAAS_MANIFEST = REPO_ROOT / "frontend" / "public" / "aureon_saas_integration_manifest.json"
 SUPABASE_CONFIG = REPO_ROOT / "supabase" / "config.toml"
+ENV_SOURCES = [".env.example", "deploy/env.example", "app.yaml"]
 
 REQUIRED_PATHS = [
     "README.md",
@@ -31,11 +34,14 @@ REQUIRED_PATHS = [
     "docs/repo_sitemap.json",
     "docs/end_user_access_map.json",
     "docs/repo_navigation_index.json",
+    "docs/saas_integration_manifest.json",
     "frontend/src/components/RepoNavigationPanel.tsx",
     "frontend/public/aureon_repo_sitemap.json",
     "frontend/public/aureon_end_user_access_map.json",
     "frontend/public/aureon_repo_navigation_index.json",
+    "frontend/public/aureon_saas_integration_manifest.json",
     "scripts/validation/generate_repo_navigation_index.py",
+    "scripts/validation/generate_saas_integration_manifest.py",
 ]
 
 MARKDOWN_FILES = [
@@ -104,6 +110,27 @@ def parse_supabase_auth_counts() -> dict[str, int]:
             counts[key] += 1
 
     return counts
+
+
+def parse_env_variable_names() -> set[str]:
+    names: set[str] = set()
+    assignment_re = re.compile(r"^\s*([A-Z][A-Z0-9_]+)\s*=")
+    app_key_re = re.compile(r"^\s*-\s*key:\s*([A-Z][A-Z0-9_]+)\s*$")
+
+    for rel_path in ENV_SOURCES:
+        path = REPO_ROOT / rel_path
+        if not path.exists():
+            continue
+        for raw_line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            assignment_match = assignment_re.match(raw_line)
+            if assignment_match:
+                names.add(assignment_match.group(1))
+                continue
+            app_key_match = app_key_re.match(raw_line)
+            if app_key_match:
+                names.add(app_key_match.group(1))
+
+    return names
 
 
 def collect_json_secret_findings(value: object, path: str = "$") -> list[str]:
@@ -188,9 +215,11 @@ def main() -> int:
     docs_repo = load_json(DOCS_REPO_SITEMAP)
     docs_access = load_json(DOCS_ACCESS_MAP)
     docs_navigation_index = load_json(DOCS_NAVIGATION_INDEX)
+    docs_saas_manifest = load_json(DOCS_SAAS_MANIFEST)
     public_repo = load_json(PUBLIC_REPO_SITEMAP)
     public_access = load_json(PUBLIC_ACCESS_MAP)
     public_navigation_index = load_json(PUBLIC_NAVIGATION_INDEX)
+    public_saas_manifest = load_json(PUBLIC_SAAS_MANIFEST)
 
     for rel_path in REQUIRED_PATHS:
         expect((REPO_ROOT / rel_path).exists(), failures, f"required path missing: {rel_path}")
@@ -240,6 +269,21 @@ def main() -> int:
         failures,
         "frontend public sitemap does not expose the repo navigation index",
     )
+    expect(
+        docs_repo.get("saas_readiness", {}).get("machine_readable") == "docs/saas_integration_manifest.json",
+        failures,
+        "repo sitemap does not expose the docs SaaS integration manifest",
+    )
+    expect(
+        docs_repo.get("saas_readiness", {}).get("frontend_public_mirror") == "frontend/public/aureon_saas_integration_manifest.json",
+        failures,
+        "repo sitemap does not expose the public SaaS integration manifest",
+    )
+    expect(
+        public_repo.get("saas_integration_manifest") == "frontend/public/aureon_saas_integration_manifest.json",
+        failures,
+        "frontend public sitemap does not expose the SaaS integration manifest",
+    )
     expect(docs_navigation_index == public_navigation_index, failures, "repo navigation index docs/public mirrors differ")
     navigation_entries = docs_navigation_index.get("entries", [])
     expect(len(navigation_entries) == tracked_total, failures, "repo navigation index entry count differs from git ls-files")
@@ -258,11 +302,34 @@ def main() -> int:
         failures,
         "repo sitemap Supabase auth counts differ from supabase/config.toml",
     )
+    expect(docs_saas_manifest == public_saas_manifest, failures, "SaaS integration manifest docs/public mirrors differ")
+    env_names = parse_env_variable_names()
+    expect(
+        docs_saas_manifest.get("environment", {}).get("variable_count") == len(env_names),
+        failures,
+        "SaaS integration manifest env variable count differs from env sources",
+    )
+    expect(
+        docs_saas_manifest.get("supabase", {}).get("verify_jwt_true") == supabase_counts["verify_jwt_true"],
+        failures,
+        "SaaS integration manifest verify_jwt_true differs from supabase/config.toml",
+    )
+    expect(
+        docs_saas_manifest.get("supabase", {}).get("verify_jwt_false") == supabase_counts["verify_jwt_false"],
+        failures,
+        "SaaS integration manifest verify_jwt_false differs from supabase/config.toml",
+    )
+    expect(
+        docs_saas_manifest.get("public_contract", {}).get("contains_env_values") is False,
+        failures,
+        "SaaS integration manifest public contract must not contain env values",
+    )
 
     for label, manifest in (
         ("frontend/public/aureon_repo_sitemap.json", public_repo),
         ("frontend/public/aureon_end_user_access_map.json", public_access),
         ("frontend/public/aureon_repo_navigation_index.json", public_navigation_index),
+        ("frontend/public/aureon_saas_integration_manifest.json", public_saas_manifest),
     ):
         for finding in collect_json_secret_findings(manifest):
             failures.append(f"{label}: {finding}")
@@ -278,6 +345,7 @@ def main() -> int:
     print(f"OK tracked_file_count={tracked_total}")
     print(f"OK capability_count={len(docs_capabilities)}")
     print(f"OK repo_navigation_index_entries={len(navigation_entries)}")
+    print(f"OK saas_env_variable_count={len(env_names)}")
     print(f"OK supabase_auth_counts={supabase_counts}")
     print("OK public navigation manifests contain no credential-like values")
     print("OK key Markdown links resolve")

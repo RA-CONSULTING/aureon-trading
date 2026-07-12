@@ -78,6 +78,26 @@ interface NavigationIndexManifest {
   entries: NavigationEntry[];
 }
 
+interface SaaSIntegrationManifest {
+  name: string;
+  snapshot_date: string;
+  frontend_public_mirror: string;
+  deployment_surfaces: Array<{ id: string; label: string; paths: string[]; mode: string; tracked: boolean }>;
+  environment: {
+    variable_count: number;
+    sensitive_variable_count: number;
+    groups: Record<string, string[]>;
+  };
+  supabase: {
+    function_count: number;
+    verify_jwt_true: number;
+    verify_jwt_false: number;
+    public_endpoint_review_required_count: number;
+    public_endpoint_review_required: string[];
+  };
+  production_gates: string[];
+}
+
 const REPO_BASE_URL = "https://github.com/RA-CONSULTING/aureon-trading";
 
 function repoUrl(path: string): string {
@@ -132,6 +152,7 @@ export function RepoNavigationPanel() {
   const [repoMap, setRepoMap] = useState<RepoSitemapManifest | null>(null);
   const [accessMap, setAccessMap] = useState<AccessMapManifest | null>(null);
   const [navigationIndex, setNavigationIndex] = useState<NavigationIndexManifest | null>(null);
+  const [saasManifest, setSaasManifest] = useState<SaaSIntegrationManifest | null>(null);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
 
@@ -139,14 +160,16 @@ export function RepoNavigationPanel() {
     const controller = new AbortController();
     const refresh = async () => {
       try {
-        const [repoManifest, accessManifest, indexManifest] = await Promise.all([
+        const [repoManifest, accessManifest, indexManifest, integrationManifest] = await Promise.all([
           loadJson<RepoSitemapManifest>("/aureon_repo_sitemap.json", controller.signal),
           loadJson<AccessMapManifest>("/aureon_end_user_access_map.json", controller.signal),
           loadJson<NavigationIndexManifest>("/aureon_repo_navigation_index.json", controller.signal),
+          loadJson<SaaSIntegrationManifest>("/aureon_saas_integration_manifest.json", controller.signal),
         ]);
         setRepoMap(repoManifest);
         setAccessMap(accessManifest);
         setNavigationIndex(indexManifest);
+        setSaasManifest(integrationManifest);
         setError("");
       } catch (loadError) {
         if (!controller.signal.aborted) {
@@ -189,6 +212,12 @@ export function RepoNavigationPanel() {
       .slice(0, 8);
   }, [navigationIndex]);
 
+  const envGroups = useMemo(() => {
+    return Object.entries(saasManifest?.environment?.groups || {})
+      .sort((left, right) => right[1].length - left[1].length)
+      .slice(0, 6);
+  }, [saasManifest]);
+
   const contract = repoMap?.public_contract;
 
   return (
@@ -202,7 +231,7 @@ export function RepoNavigationPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
               <div className="rounded-md border border-border/50 bg-background/50 p-3">
                 <div className="text-[11px] uppercase text-muted-foreground">Tracked files</div>
                 <div className="mt-1 text-2xl font-semibold">{(repoMap?.tracked_file_count || 0).toLocaleString()}</div>
@@ -218,6 +247,14 @@ export function RepoNavigationPanel() {
               <div className="rounded-md border border-border/50 bg-background/50 p-3">
                 <div className="text-[11px] uppercase text-muted-foreground">Repo zones</div>
                 <div className="mt-1 text-2xl font-semibold">{(repoMap?.zones?.length || 0).toLocaleString()}</div>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/50 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Env names</div>
+                <div className="mt-1 text-2xl font-semibold">{(saasManifest?.environment?.variable_count || 0).toLocaleString()}</div>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/50 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Public review</div>
+                <div className="mt-1 text-2xl font-semibold">{(saasManifest?.supabase?.public_endpoint_review_required_count || 0).toLocaleString()}</div>
               </div>
             </div>
 
@@ -263,11 +300,77 @@ export function RepoNavigationPanel() {
                 <FileJson className="h-4 w-4" />
                 /aureon_repo_navigation_index.json
               </a>
+              <a className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-50" href={publicUrl("frontend/public/aureon_saas_integration_manifest.json")} target="_blank" rel="noreferrer">
+                <FileJson className="h-4 w-4" />
+                /aureon_saas_integration_manifest.json
+              </a>
               {repoMap?.validation_command ? (
                 <div className="mt-1 rounded-md border border-border/50 bg-background/50 px-3 py-2 font-mono text-[11px] text-muted-foreground">
                   {repoMap.validation_command}
                 </div>
               ) : null}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <Card className="border-border/60 bg-card/90">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Server className="h-5 w-5 text-emerald-200" />
+              SaaS Integration Contract
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-md border border-border/50 bg-background/45 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Supabase functions</div>
+                <div className="mt-1 text-xl font-semibold">{(saasManifest?.supabase?.function_count || 0).toLocaleString()}</div>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/45 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">JWT gated</div>
+                <div className="mt-1 text-xl font-semibold">{(saasManifest?.supabase?.verify_jwt_true || 0).toLocaleString()}</div>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/45 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Public edge</div>
+                <div className="mt-1 text-xl font-semibold">{(saasManifest?.supabase?.verify_jwt_false || 0).toLocaleString()}</div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(saasManifest?.deployment_surfaces || []).map((surface) => (
+                <Badge key={surface.id} variant="outline" className={surface.tracked ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100" : "border-yellow-500/30 bg-yellow-500/10 text-yellow-100"}>
+                  {surface.label}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-card/90">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShieldCheck className="h-5 w-5 text-yellow-200" />
+              Integration Gates
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-2">
+              <div className="text-[11px] uppercase text-muted-foreground">Environment groups</div>
+              {envGroups.map(([group, names]) => (
+                <div key={group} className="flex items-center justify-between rounded-md border border-border/50 bg-background/45 px-3 py-2 text-sm">
+                  <span>{group}</span>
+                  <Badge variant="secondary">{names.length}</Badge>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <div className="text-[11px] uppercase text-muted-foreground">Public endpoint review</div>
+              {(saasManifest?.supabase?.public_endpoint_review_required || []).slice(0, 8).map((endpoint) => (
+                <div key={endpoint} className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 font-mono text-xs text-yellow-100">
+                  {endpoint}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
