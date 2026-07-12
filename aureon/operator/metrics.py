@@ -17,9 +17,10 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Dict
 
 logger = logging.getLogger("aureon.operator.metrics")
 
@@ -75,6 +76,36 @@ CONSENSUS_AGREEMENT = _histogram(
     "aureon_operator_consensus_agreement", "Cross-line agreement at collapse"
 )
 CACHE_EVENTS = _counter("aureon_operator_cache_total", "Cache hits/misses", ("event",))
+TOKENS = _counter("aureon_llm_tokens_total", "LLM tokens by provider", ("provider", "direction"))
+
+# Process-wide token tally (the billing sweep diffs snapshots of this).
+# Fan-out runs in worker threads, so guard with a lock.
+_TOKEN_TOTALS: Dict[str, Dict[str, int]] = {}
+_TOKEN_LOCK = threading.Lock()
+
+
+def record_token_usage(provider: str, input_tokens: int, output_tokens: int) -> None:
+    """Accumulate per-provider token usage. Never raises."""
+    try:
+        inp, out = max(0, int(input_tokens)), max(0, int(output_tokens))
+        if not (inp or out):
+            return
+        with _TOKEN_LOCK:
+            slot = _TOKEN_TOTALS.setdefault(provider, {"input_tokens": 0, "output_tokens": 0})
+            slot["input_tokens"] += inp
+            slot["output_tokens"] += out
+        if inp:
+            TOKENS.labels(provider=provider, direction="input").inc(inp)
+        if out:
+            TOKENS.labels(provider=provider, direction="output").inc(out)
+    except Exception:  # noqa: BLE001 — metering must never fail a provider call
+        pass
+
+
+def token_usage_totals() -> Dict[str, Dict[str, int]]:
+    """Snapshot of per-provider token totals since process start."""
+    with _TOKEN_LOCK:
+        return {p: dict(v) for p, v in _TOKEN_TOTALS.items()}
 
 
 class OperatorMetrics:
@@ -132,4 +163,4 @@ def metrics_available() -> bool:
     return _HAS_PROM
 
 
-__all__ = ["OperatorMetrics", "metrics_available"]
+__all__ = ["OperatorMetrics", "metrics_available", "record_token_usage", "token_usage_totals"]

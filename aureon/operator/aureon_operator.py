@@ -42,7 +42,7 @@ except Exception:  # noqa: BLE001 — never fail import over a tracing hook
 from aureon.inhouse_ai.llm_adapter import LLMAdapter, StreamChunk
 from aureon.operator.cache import ResponseCache, cache_key
 from aureon.operator.config import OperatorConfig
-from aureon.operator.metrics import OperatorMetrics
+from aureon.operator.metrics import OperatorMetrics, record_token_usage
 from aureon.operator.providers import build_provider_set, describe_provider_set
 from aureon.operator.schemas import (
     ConsensusReading,
@@ -461,6 +461,12 @@ class AureonOperator:
                 ok = out.stop_reason != "error" and bool(text)
                 if ok:
                     self._breaker.record(name, True)
+                    usage = getattr(out, "usage", None) or {}
+                    record_token_usage(
+                        name,
+                        int(usage.get("input_tokens", 0) or 0),
+                        int(usage.get("output_tokens", 0) or 0),
+                    )
                     return ProviderAnswer(
                         provider=name,
                         model=str(out.model or getattr(adapter, "model", "") or ""),
