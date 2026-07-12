@@ -15197,7 +15197,24 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
     except ImportError as e:
         logger.warning(f"Could not wire Timeline Anchor Validator: {e}")
         results['timeline_anchor_validator'] = False
-    
+
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🧠 AUREON COGNITION - the grounded agentic mind (tools + repo-wide grounding + veto)
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+    # Register the operator's cognition so it boots with the organism and its
+    # cognitive paths join the mycelium mesh + Queen hive. Construction is light
+    # (the repo-wide index builds lazily on first use, not at boot).
+    try:
+        from aureon.operator.aureon_operator import join_organism
+        from aureon.operator.cognition import AureonCognition
+        cognition = AureonCognition(join_mesh=False)
+        joined = join_organism(cognition, "aureon_cognition")
+        results['aureon_cognition'] = bool(joined.get("queen") or joined.get("mycelium"))
+    except Exception as e:
+        logger.warning(f"Could not wire Aureon Cognition: {e}")
+        results['aureon_cognition'] = False
+
     return results
 
 

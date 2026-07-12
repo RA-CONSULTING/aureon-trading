@@ -163,7 +163,7 @@ input.addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
 """
 
 
-def create_app(operator: AureonOperator = None) -> "Flask":
+def create_app(operator: AureonOperator = None, cognition=None) -> "Flask":
     app = Flask("aureon-operator")
     _operator = operator or AureonOperator()
 
@@ -209,7 +209,7 @@ def create_app(operator: AureonOperator = None) -> "Flask":
         return jsonify(resp.to_dict())
 
     # ── Agentic cognition mode (tools + repo-wide grounding + veto) ────────────
-    _cognition = {"engine": None}
+    _cognition = {"engine": cognition}
 
     def _get_cognition():
         if _cognition["engine"] is None:
@@ -248,7 +248,17 @@ def main() -> None:
     host = os.environ.get("AUREON_OPERATOR_HOST", "0.0.0.0")
     providers = describe_provider_set(build_provider_set())
     logger.info("Aureon Operator server on %s:%s — lines: %s", host, port, providers)
-    create_app().run(host=host, port=port, threaded=True)
+    # Eagerly build the cognition so the running service joins the mycelium mesh
+    # + Queen hive at boot (not lazily on first request).
+    boot_cognition = None
+    try:
+        from aureon.operator.cognition import AureonCognition
+
+        boot_cognition = AureonCognition(join_mesh=True)
+        logger.info("Aureon Cognition wired onto the mesh at startup")
+    except Exception as exc:  # noqa: BLE001 — server must still serve if cognition boot fails
+        logger.warning("cognition eager-boot skipped: %s", exc)
+    create_app(cognition=boot_cognition).run(host=host, port=port, threaded=True)
 
 
 if __name__ == "__main__":
