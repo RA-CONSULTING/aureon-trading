@@ -18,7 +18,7 @@ Machine-readable companion: [`repo_sitemap.json`](repo_sitemap.json).
 | Run or validate locally | [`../RUNNING.md`](../RUNNING.md) | [`../QUICK_START.md`](../QUICK_START.md) |
 | Review investor/funder posture | [`investor/README.md`](investor/README.md) | [`investor/TERMINOLOGY.md`](investor/TERMINOLOGY.md) |
 | Inspect all docs | [`INDEX.md`](INDEX.md) | Existing deep-dive docs by audience |
-| Integrate as a product surface | SaaS integration map below | `frontend/`, `api/`, `server/`, `functions/`, `supabase/`, `netlify/`, `deploy/`, `production/` |
+| Integrate as a product surface | [`SAAS_INTEGRATION_READINESS.md`](SAAS_INTEGRATION_READINESS.md) | `frontend/`, `api/`, `server/`, `functions/`, `supabase/`, `netlify/`, `deploy/`, `production/` |
 
 ## Repository Zones
 
@@ -117,6 +117,8 @@ The repo should be read in five zones:
 | Generated state | `state/` paths named in docs, runtime manifests, audit JSON | Often generated locally and intentionally not tracked. Do not assume absent generated files are missing source code. |
 | Public generated mirrors | `frontend/public/` | Tracked adaptive skills exist here; runtime JSON mirrors may be generated here during local operation. |
 | Security and controls | `docs/SECURITY.md`, guarded runtime routes, tests | Keep credentials out of tracked docs; live actions remain operator-controlled. |
+
+Detailed readiness checklist: [`SAAS_INTEGRATION_READINESS.md`](SAAS_INTEGRATION_READINESS.md).
 
 ## End-User Navigation Paths
 

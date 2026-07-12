@@ -6,6 +6,7 @@
   "primary_documents": [
     "README.md",
     "docs/REPO_SITEMAP.md",
+    "docs/SAAS_INTEGRATION_READINESS.md",
     "docs/INDEX.md",
     "RUNNING.md",
     "CAPABILITIES.md",
@@ -90,6 +91,53 @@
     {"name": "Mind thoughts", "url": "http://127.0.0.1:13002/api/thoughts"},
     {"name": "Coding status", "url": "http://127.0.0.1:13002/api/coding/status"}
   ],
+  "saas_readiness": {
+    "document": "docs/SAAS_INTEGRATION_READINESS.md",
+    "canonical_shape": "local-first SaaS integration with hosted browser/Supabase surfaces and operator-controlled sensitive mutation routes",
+    "deployment_surfaces": [
+      "frontend/",
+      "supabase/",
+      "api/",
+      "server/",
+      "functions/",
+      "netlify/",
+      "deploy/",
+      "production/",
+      "app.yaml"
+    ],
+    "environment_groups": [
+      "Supabase frontend",
+      "Supabase runtime",
+      "Exchange credentials",
+      "Exchange mode flags",
+      "Runtime/platform",
+      "Safety and product switches",
+      "Feature enablement",
+      "Optional data providers"
+    ],
+    "supabase_auth_counts": {
+      "verify_jwt_true": 66,
+      "verify_jwt_false": 21
+    },
+    "public_endpoint_review_required": [
+      "force-validated-trade",
+      "confirm-trade",
+      "poll-trade-confirmations",
+      "test-exchange-connection",
+      "ingest-trades",
+      "ingest-terminal-state",
+      "ingest-brain-state"
+    ],
+    "production_gates": [
+      "choose one canonical hosted target",
+      "store secrets in target secret store",
+      "review public Supabase functions",
+      "define CORS, rate limits, payload limits, logging, and redaction",
+      "decide generated artifact persistence policy",
+      "keep sensitive mutation routes operator-controlled",
+      "run local and deployment smoke checks"
+    ]
+  },
   "organizational_rules": [
     "Keep README.md concise and investor-readable.",
     "Keep whole-repo navigation in docs/REPO_SITEMAP.md and docs/INDEX.md.",
