@@ -29,6 +29,13 @@ SaaS integration manifest:
 Supabase hardening manifest:
 [`supabase_hardening_manifest.json`](supabase_hardening_manifest.json) and
 [`../frontend/public/aureon_supabase_hardening_manifest.json`](../frontend/public/aureon_supabase_hardening_manifest.json).
+Autonomous frontend manifests:
+[`audits/aureon_saas_system_inventory.json`](audits/aureon_saas_system_inventory.json),
+[`audits/aureon_frontend_unification_plan.json`](audits/aureon_frontend_unification_plan.json),
+[`audits/aureon_frontend_evolution_queue.json`](audits/aureon_frontend_evolution_queue.json),
+[`audits/aureon_organism_runtime_status.json`](audits/aureon_organism_runtime_status.json),
+[`audits/aureon_autonomous_capability_switchboard.json`](audits/aureon_autonomous_capability_switchboard.json),
+and their `frontend/public/` mirrors.
 Contract validation command, from repo root:
 `python scripts/validation/validate_repo_navigation_contract.py`.
 
@@ -73,6 +80,11 @@ The frontend can read these static files without needing repo traversal:
 | `frontend/public/aureon_system_integration_map.json` | System-to-capability integration map with entrypoints, public artifacts, validation references, readiness status, and safety gates. |
 | `frontend/public/aureon_saas_integration_manifest.json` | SaaS integration contract generated from env examples, deployment config, and Supabase auth settings. |
 | `frontend/public/aureon_supabase_hardening_manifest.json` | Supabase Edge Function hardening contract generated from `supabase/config.toml` and function source presence. |
+| `frontend/public/aureon_saas_system_inventory.json` | SaaS surface inventory for frontend, Supabase, dashboard, and blocker visibility. |
+| `frontend/public/aureon_frontend_unification_plan.json` | Canonical screen plan and migration queue for reducing dashboard drift. |
+| `frontend/public/aureon_frontend_evolution_queue.json` | Ordered frontend work queue for adapting discovered surfaces into the product shell. |
+| `frontend/public/aureon_organism_runtime_status.json` | Safe-observation runtime status, blind spots, feed freshness, and action gating. |
+| `frontend/public/aureon_autonomous_capability_switchboard.json` | Capability-mode switchboard for autonomous routes, blockers, and frontend work orders. |
 | `frontend/src/components/RepoNavigationPanel.tsx` | End-user console surface that renders the public manifests at `#repo-map`. |
 
 These files contain paths, labels, and safety notes only. They do not contain

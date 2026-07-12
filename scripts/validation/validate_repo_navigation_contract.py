@@ -29,6 +29,14 @@ PUBLIC_SUPABASE_HARDENING = REPO_ROOT / "frontend" / "public" / "aureon_supabase
 SUPABASE_CONFIG = REPO_ROOT / "supabase" / "config.toml"
 ENV_SOURCES = [".env.example", "deploy/env.example", "app.yaml"]
 
+AUTONOMOUS_FRONTEND_MANIFESTS = [
+    "aureon_saas_system_inventory.json",
+    "aureon_frontend_unification_plan.json",
+    "aureon_frontend_evolution_queue.json",
+    "aureon_organism_runtime_status.json",
+    "aureon_autonomous_capability_switchboard.json",
+]
+
 REQUIRED_PATHS = [
     "README.md",
     "docs/REPO_SITEMAP.md",
@@ -47,6 +55,11 @@ REQUIRED_PATHS = [
     "docs/saas_integration_manifest.json",
     "docs/SUPABASE_HARDENING_REVIEW.md",
     "docs/supabase_hardening_manifest.json",
+    "docs/audits/aureon_saas_system_inventory.json",
+    "docs/audits/aureon_frontend_unification_plan.json",
+    "docs/audits/aureon_frontend_evolution_queue.json",
+    "docs/audits/aureon_organism_runtime_status.json",
+    "docs/audits/aureon_autonomous_capability_switchboard.json",
     "frontend/src/components/RepoNavigationPanel.tsx",
     "frontend/public/aureon_repo_sitemap.json",
     "frontend/public/aureon_end_user_access_map.json",
@@ -55,6 +68,11 @@ REQUIRED_PATHS = [
     "frontend/public/aureon_system_integration_map.json",
     "frontend/public/aureon_saas_integration_manifest.json",
     "frontend/public/aureon_supabase_hardening_manifest.json",
+    "frontend/public/aureon_saas_system_inventory.json",
+    "frontend/public/aureon_frontend_unification_plan.json",
+    "frontend/public/aureon_frontend_evolution_queue.json",
+    "frontend/public/aureon_organism_runtime_status.json",
+    "frontend/public/aureon_autonomous_capability_switchboard.json",
     "scripts/validation/generate_repo_navigation_index.py",
     "scripts/validation/generate_capability_registry.py",
     "scripts/validation/generate_system_integration_map.py",
@@ -82,6 +100,18 @@ SECRET_VALUE_PATTERNS = [
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
 ]
+
+SAFE_CREDENTIAL_METADATA_VALUES = {
+    "",
+    "false",
+    "none",
+    "null",
+    "redacted",
+    "[redacted]",
+    "hidden",
+    "metadata_only_hide_values",
+    "metadata_status_only_never_reveal_values",
+}
 
 
 def run_git(*args: str) -> list[str]:
@@ -178,7 +208,15 @@ def collect_json_secret_findings(value: object, path: str = "$") -> list[str]:
             child_path = f"{path}.{key}"
             lower_key = key.lower()
             if any(marker in lower_key for marker in ("password", "secret", "token", "api_key", "apikey", "private_key")):
-                if isinstance(child, str) and child.strip().lower() not in {"", "false", "none", "null", "redacted", "[redacted]"}:
+                normalized_child = child.strip().lower() if isinstance(child, str) else ""
+                is_metadata_policy = (
+                    lower_key.endswith("_policy")
+                    or lower_key.endswith("_values_hidden")
+                    or lower_key in {"secrets", "secret_values_hidden", "contains_secrets"}
+                )
+                if is_metadata_policy and (isinstance(child, bool) or normalized_child in SAFE_CREDENTIAL_METADATA_VALUES):
+                    pass
+                elif isinstance(child, str) and normalized_child not in SAFE_CREDENTIAL_METADATA_VALUES:
                     findings.append(f"{child_path} contains a credential-like key with a string value")
                 elif child not in (False, None) and not isinstance(child, (dict, list)):
                     findings.append(f"{child_path} contains a credential-like key with a non-empty value")
@@ -375,6 +413,24 @@ def main() -> int:
         failures,
         "frontend public sitemap does not expose the Supabase hardening manifest",
     )
+    expected_autonomous_frontend_paths = [
+        f"frontend/public/{manifest_name}" for manifest_name in AUTONOMOUS_FRONTEND_MANIFESTS
+    ]
+    docs_autonomous_frontend_paths = [
+        entry.get("frontend_public")
+        for entry in docs_repo.get("saas_readiness", {}).get("autonomous_frontend_manifests", [])
+        if isinstance(entry, dict)
+    ]
+    expect(
+        docs_autonomous_frontend_paths == expected_autonomous_frontend_paths,
+        failures,
+        "repo sitemap does not expose the autonomous frontend manifests",
+    )
+    expect(
+        public_repo.get("autonomous_frontend_manifests") == expected_autonomous_frontend_paths,
+        failures,
+        "frontend public sitemap does not expose the autonomous frontend manifests",
+    )
     expect(docs_capability_registry == public_capability_registry, failures, "capability registry docs/public mirrors differ")
     expect(docs_navigation_index == public_navigation_index, failures, "repo navigation index docs/public mirrors differ")
     expect(docs_system_integration == public_system_integration, failures, "system integration map docs/public mirrors differ")
@@ -549,6 +605,25 @@ def main() -> int:
         "Supabase hardening manifest public contract must not contain secrets",
     )
 
+    autonomous_public_manifests: list[tuple[str, object]] = []
+    for manifest_name in AUTONOMOUS_FRONTEND_MANIFESTS:
+        docs_label = f"docs/audits/{manifest_name}"
+        public_label = f"frontend/public/{manifest_name}"
+        docs_manifest = load_json(REPO_ROOT / docs_label)
+        public_manifest = load_json(REPO_ROOT / public_label)
+        autonomous_public_manifests.append((public_label, public_manifest))
+        expect(docs_manifest == public_manifest, failures, f"{manifest_name} docs/public mirrors differ")
+        expect(
+            isinstance(public_manifest, dict) and isinstance(public_manifest.get("status"), str),
+            failures,
+            f"{public_label} must expose a status string",
+        )
+        expect(
+            isinstance(public_manifest, dict) and isinstance(public_manifest.get("summary"), dict),
+            failures,
+            f"{public_label} must expose a summary object",
+        )
+
     for label, manifest in (
         ("frontend/public/aureon_repo_sitemap.json", public_repo),
         ("frontend/public/aureon_end_user_access_map.json", public_access),
@@ -557,6 +632,7 @@ def main() -> int:
         ("frontend/public/aureon_system_integration_map.json", public_system_integration),
         ("frontend/public/aureon_saas_integration_manifest.json", public_saas_manifest),
         ("frontend/public/aureon_supabase_hardening_manifest.json", public_supabase_hardening),
+        *autonomous_public_manifests,
     ):
         for finding in collect_json_secret_findings(manifest):
             failures.append(f"{label}: {finding}")
@@ -577,6 +653,7 @@ def main() -> int:
     print(f"OK saas_env_variable_count={len(env_names)}")
     print(f"OK supabase_auth_counts={supabase_counts}")
     print(f"OK supabase_hardening_public_blockers={len(public_high_risk_routes)}")
+    print(f"OK autonomous_frontend_manifests={len(AUTONOMOUS_FRONTEND_MANIFESTS)}")
     print("OK public navigation manifests contain no credential-like values")
     print("OK key Markdown links resolve")
     return 0

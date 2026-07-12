@@ -2,7 +2,7 @@
   "name": "Aureon Repo-Wide Sitemap",
   "snapshot_date": "2026-07-13",
   "source": "git ls-files",
-  "tracked_file_count": 11937,
+  "tracked_file_count": 11947,
   "primary_documents": [
     "README.md",
     "docs/REPO_SITEMAP.md",
@@ -34,9 +34,9 @@
     {"path": "daemon_codes/", "files": 36, "category": "runtime", "role": "Background automation code"},
     {"path": "data/", "files": 3526, "category": "evidence", "role": "Research, grants, datasets, and copied evidence"},
     {"path": "deploy/", "files": 14, "category": "deployment", "role": "Deployment scripts and service configs"},
-    {"path": "docs/", "files": 385, "category": "documentation", "role": "Documentation, runbooks, research, architecture, and sitemap"},
+    {"path": "docs/", "files": 390, "category": "documentation", "role": "Documentation, runbooks, research, architecture, and sitemap"},
     {"path": "flameborn/", "files": 59, "category": "product surface", "role": "Companion UI/runtime material"},
-    {"path": "frontend/", "files": 4294, "category": "product surface", "role": "React/Vite console and public artifacts"},
+    {"path": "frontend/", "files": 4299, "category": "product surface", "role": "React/Vite console and public artifacts"},
     {"path": "functions/", "files": 1, "category": "integration", "role": "Serverless function surface"},
     {"path": "imports/", "files": 1242, "category": "provenance", "role": "Imported historical/source bundles"},
     {"path": "integrations/", "files": 21, "category": "integration", "role": "External integration support"},
@@ -107,6 +107,13 @@
     "supabase_hardening_document": "docs/SUPABASE_HARDENING_REVIEW.md",
     "supabase_hardening_manifest": "docs/supabase_hardening_manifest.json",
     "frontend_public_supabase_hardening_manifest": "frontend/public/aureon_supabase_hardening_manifest.json",
+    "autonomous_frontend_manifests": [
+      {"name": "SaaS system inventory", "audit": "docs/audits/aureon_saas_system_inventory.json", "frontend_public": "frontend/public/aureon_saas_system_inventory.json"},
+      {"name": "Frontend unification plan", "audit": "docs/audits/aureon_frontend_unification_plan.json", "frontend_public": "frontend/public/aureon_frontend_unification_plan.json"},
+      {"name": "Frontend evolution queue", "audit": "docs/audits/aureon_frontend_evolution_queue.json", "frontend_public": "frontend/public/aureon_frontend_evolution_queue.json"},
+      {"name": "Organism runtime status", "audit": "docs/audits/aureon_organism_runtime_status.json", "frontend_public": "frontend/public/aureon_organism_runtime_status.json"},
+      {"name": "Autonomous capability switchboard", "audit": "docs/audits/aureon_autonomous_capability_switchboard.json", "frontend_public": "frontend/public/aureon_autonomous_capability_switchboard.json"}
+    ],
     "canonical_shape": "local-first SaaS integration with hosted browser/Supabase surfaces and operator-controlled sensitive mutation routes",
     "deployment_surfaces": [
       "frontend/",

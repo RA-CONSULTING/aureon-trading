@@ -9,7 +9,14 @@
   "system_integration_map": "frontend/public/aureon_system_integration_map.json",
   "saas_integration_manifest": "frontend/public/aureon_saas_integration_manifest.json",
   "supabase_hardening_manifest": "frontend/public/aureon_supabase_hardening_manifest.json",
-  "tracked_file_count": 11937,
+  "autonomous_frontend_manifests": [
+    "frontend/public/aureon_saas_system_inventory.json",
+    "frontend/public/aureon_frontend_unification_plan.json",
+    "frontend/public/aureon_frontend_evolution_queue.json",
+    "frontend/public/aureon_organism_runtime_status.json",
+    "frontend/public/aureon_autonomous_capability_switchboard.json"
+  ],
+  "tracked_file_count": 11947,
   "validation_script": "scripts/validation/validate_repo_navigation_contract.py",
   "validation_command": "python scripts/validation/validate_repo_navigation_contract.py",
   "frontend_navigation_tab": "#repo-map",
