@@ -14,12 +14,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 DOCS_REPO_SITEMAP = REPO_ROOT / "docs" / "repo_sitemap.json"
 DOCS_ACCESS_MAP = REPO_ROOT / "docs" / "end_user_access_map.json"
+DOCS_CAPABILITY_REGISTRY = REPO_ROOT / "docs" / "capability_registry.json"
 DOCS_NAVIGATION_INDEX = REPO_ROOT / "docs" / "repo_navigation_index.json"
 DOCS_SYSTEM_INTEGRATION = REPO_ROOT / "docs" / "system_integration_map.json"
 DOCS_SAAS_MANIFEST = REPO_ROOT / "docs" / "saas_integration_manifest.json"
 DOCS_SUPABASE_HARDENING = REPO_ROOT / "docs" / "supabase_hardening_manifest.json"
 PUBLIC_REPO_SITEMAP = REPO_ROOT / "frontend" / "public" / "aureon_repo_sitemap.json"
 PUBLIC_ACCESS_MAP = REPO_ROOT / "frontend" / "public" / "aureon_end_user_access_map.json"
+PUBLIC_CAPABILITY_REGISTRY = REPO_ROOT / "frontend" / "public" / "aureon_capability_registry.json"
 PUBLIC_NAVIGATION_INDEX = REPO_ROOT / "frontend" / "public" / "aureon_repo_navigation_index.json"
 PUBLIC_SYSTEM_INTEGRATION = REPO_ROOT / "frontend" / "public" / "aureon_system_integration_map.json"
 PUBLIC_SAAS_MANIFEST = REPO_ROOT / "frontend" / "public" / "aureon_saas_integration_manifest.json"
@@ -31,6 +33,7 @@ REQUIRED_PATHS = [
     "README.md",
     "docs/REPO_SITEMAP.md",
     "docs/END_USER_ACCESS_MAP.md",
+    "docs/CAPABILITY_REGISTRY.md",
     "docs/SAAS_INTEGRATION_READINESS.md",
     "docs/SYSTEM_INTEGRATION_MAP.md",
     "docs/INDEX.md",
@@ -38,6 +41,7 @@ REQUIRED_PATHS = [
     "docs/investor/TERMINOLOGY.md",
     "docs/repo_sitemap.json",
     "docs/end_user_access_map.json",
+    "docs/capability_registry.json",
     "docs/repo_navigation_index.json",
     "docs/system_integration_map.json",
     "docs/saas_integration_manifest.json",
@@ -46,11 +50,13 @@ REQUIRED_PATHS = [
     "frontend/src/components/RepoNavigationPanel.tsx",
     "frontend/public/aureon_repo_sitemap.json",
     "frontend/public/aureon_end_user_access_map.json",
+    "frontend/public/aureon_capability_registry.json",
     "frontend/public/aureon_repo_navigation_index.json",
     "frontend/public/aureon_system_integration_map.json",
     "frontend/public/aureon_saas_integration_manifest.json",
     "frontend/public/aureon_supabase_hardening_manifest.json",
     "scripts/validation/generate_repo_navigation_index.py",
+    "scripts/validation/generate_capability_registry.py",
     "scripts/validation/generate_system_integration_map.py",
     "scripts/validation/generate_saas_integration_manifest.py",
     "scripts/validation/generate_supabase_hardening_manifest.py",
@@ -61,6 +67,7 @@ MARKDOWN_FILES = [
     "docs/INDEX.md",
     "docs/REPO_SITEMAP.md",
     "docs/END_USER_ACCESS_MAP.md",
+    "docs/CAPABILITY_REGISTRY.md",
     "docs/SYSTEM_INTEGRATION_MAP.md",
     "docs/SAAS_INTEGRATION_READINESS.md",
     "docs/SUPABASE_HARDENING_REVIEW.md",
@@ -147,6 +154,22 @@ def parse_env_variable_names() -> set[str]:
     return names
 
 
+def parse_capabilities_table_count() -> int:
+    source = REPO_ROOT / "CAPABILITIES.md"
+    markdown = source.read_text(encoding="utf-8")
+    start = markdown.find("## Capability Table")
+    if start == -1:
+        return 0
+    end = markdown.find("\n## ", start + len("## Capability Table"))
+    section = markdown[start:] if end == -1 else markdown[start:end]
+    count = 0
+    for raw_line in section.splitlines():
+        line = raw_line.strip()
+        if line.startswith("|") and not line.startswith("|---") and not line.startswith("| Capability "):
+            count += 1
+    return count
+
+
 def collect_json_secret_findings(value: object, path: str = "$") -> list[str]:
     findings: list[str] = []
 
@@ -228,12 +251,14 @@ def main() -> int:
 
     docs_repo = load_json(DOCS_REPO_SITEMAP)
     docs_access = load_json(DOCS_ACCESS_MAP)
+    docs_capability_registry = load_json(DOCS_CAPABILITY_REGISTRY)
     docs_navigation_index = load_json(DOCS_NAVIGATION_INDEX)
     docs_system_integration = load_json(DOCS_SYSTEM_INTEGRATION)
     docs_saas_manifest = load_json(DOCS_SAAS_MANIFEST)
     docs_supabase_hardening = load_json(DOCS_SUPABASE_HARDENING)
     public_repo = load_json(PUBLIC_REPO_SITEMAP)
     public_access = load_json(PUBLIC_ACCESS_MAP)
+    public_capability_registry = load_json(PUBLIC_CAPABILITY_REGISTRY)
     public_navigation_index = load_json(PUBLIC_NAVIGATION_INDEX)
     public_system_integration = load_json(PUBLIC_SYSTEM_INTEGRATION)
     public_saas_manifest = load_json(PUBLIC_SAAS_MANIFEST)
@@ -271,6 +296,22 @@ def main() -> int:
         public_repo.get("frontend_navigation_tab") == "#repo-map",
         failures,
         "frontend public sitemap does not expose #repo-map",
+    )
+    expect(
+        docs_repo.get("end_user_access", {}).get("capability_registry") == "docs/capability_registry.json",
+        failures,
+        "repo sitemap does not expose the docs capability registry",
+    )
+    expect(
+        docs_repo.get("end_user_access", {}).get("frontend_public_capability_registry")
+        == "frontend/public/aureon_capability_registry.json",
+        failures,
+        "repo sitemap does not expose the public capability registry",
+    )
+    expect(
+        public_repo.get("capability_registry") == "frontend/public/aureon_capability_registry.json",
+        failures,
+        "frontend public sitemap does not expose the capability registry",
     )
     expect(
         docs_repo.get("end_user_access", {}).get("repo_navigation_index") == "docs/repo_navigation_index.json",
@@ -334,8 +375,36 @@ def main() -> int:
         failures,
         "frontend public sitemap does not expose the Supabase hardening manifest",
     )
+    expect(docs_capability_registry == public_capability_registry, failures, "capability registry docs/public mirrors differ")
     expect(docs_navigation_index == public_navigation_index, failures, "repo navigation index docs/public mirrors differ")
     expect(docs_system_integration == public_system_integration, failures, "system integration map docs/public mirrors differ")
+    capability_registry_rows = docs_capability_registry.get("capabilities", []) if isinstance(docs_capability_registry, dict) else []
+    expected_capability_rows = parse_capabilities_table_count()
+    expect(
+        docs_capability_registry.get("summary", {}).get("tracked_file_count") == tracked_total,
+        failures,
+        "capability registry tracked_file_count is stale",
+    )
+    expect(
+        docs_capability_registry.get("summary", {}).get("capability_count") == expected_capability_rows,
+        failures,
+        "capability registry capability_count differs from CAPABILITIES.md",
+    )
+    expect(
+        len(capability_registry_rows) == expected_capability_rows,
+        failures,
+        "capability registry row count differs from CAPABILITIES.md",
+    )
+    expect(
+        docs_capability_registry.get("public_contract", {}).get("contains_file_contents") is False,
+        failures,
+        "capability registry public contract must not contain file contents",
+    )
+    expect(
+        docs_capability_registry.get("public_contract", {}).get("contains_secrets") is False,
+        failures,
+        "capability registry public contract must not contain secrets",
+    )
     navigation_entries = docs_navigation_index.get("entries", [])
     expect(len(navigation_entries) == tracked_total, failures, "repo navigation index entry count differs from git ls-files")
     expect(docs_navigation_index.get("entry_count") == tracked_total, failures, "repo navigation index entry_count is stale")
@@ -446,6 +515,7 @@ def main() -> int:
     for label, manifest in (
         ("frontend/public/aureon_repo_sitemap.json", public_repo),
         ("frontend/public/aureon_end_user_access_map.json", public_access),
+        ("frontend/public/aureon_capability_registry.json", public_capability_registry),
         ("frontend/public/aureon_repo_navigation_index.json", public_navigation_index),
         ("frontend/public/aureon_system_integration_map.json", public_system_integration),
         ("frontend/public/aureon_saas_integration_manifest.json", public_saas_manifest),
@@ -464,6 +534,7 @@ def main() -> int:
 
     print(f"OK tracked_file_count={tracked_total}")
     print(f"OK capability_count={len(docs_capabilities)}")
+    print(f"OK current_capability_registry_count={len(capability_registry_rows)}")
     print(f"OK repo_navigation_index_entries={len(navigation_entries)}")
     print(f"OK system_integration_systems={len(system_rows)}")
     print(f"OK saas_env_variable_count={len(env_names)}")
