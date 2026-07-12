@@ -1,0 +1,194 @@
+# Aureon SaaS Platform — connected · working · categorized
+
+> The platform layer that turns the 715-module organism into a coherent
+> product surface. It **surfaces** the repo — it does not rewrite it. Every
+> system is categorized, every domain has a canonical entry point, and health
+> is reported **honestly** (degraded where deps are missing, not everything-green).
+
+This is **Phase 6A** of the production program. It builds on the
+[Production-Grade Program](runbooks/PRODUCTION_GRADE.md) (the two-tier gate and
+serving surface) and the [Aureon Operator Switchboard](architecture/AUREON_OPERATOR_SWITCHBOARD.md)
+(the grounded cognition front door), reusing both rather than duplicating them.
+
+---
+
+## The shape of the problem
+
+Three things already existed and only needed connecting:
+
+| Layer | Already present | Role |
+|-------|-----------------|------|
+| **Tenant / auth / billing** | Supabase backend (`supabase/`) — auth, RBAC, per-user encrypted exchange keys, prepaid "gas-tank" credits, ~101 edge functions, 58 migrations | The multi-tenant foundation. Reused, not rebuilt. |
+| **Catalog UI** | React console (`frontend/`, Vite + TS + shadcn) grouped by the 6 product domains | Already a systems console — but **starved of data** (the manifest JSONs it fetches didn't exist). |
+| **Categorizer** | `SystemRegistry` (`aureon/command_centers/aureon_system_hub.py`) → 12 capability categories × per-module metadata | The classification engine. |
+| **Health surfaces** | `SystemCoordinator.get_coordination_state()`, `get_operational_core().get_health()` | Live status inputs. |
+
+**The gap:** there was no unified Python HTTP gateway producing a categorized
+catalog + live status to feed the frontend, and nothing bridging the
+single-tenant Python engine to the Supabase tenant layer. `aureon/saas/` is
+exactly that bridge.
+
+---
+
+## Three taxonomies, reconciled
+
+The repo describes itself three ways. The catalog maps all three onto each other:
+
+```
+6 product domains          24 filesystem domains          12 capability categories
+(what the console groups)  (folders under aureon/)        (SystemRegistry semantics)
+─────────────────────────  ─────────────────────────      ──────────────────────────
+trading            ◄──────  trading, exchanges,      ┐     Exchange Clients
+accounting                  scanners, strategies …   │     Market Scanners
+research                                              ├──►  Execution Engines
+cognition          ◄──────  operator, cognition,     │     Neural Networks
+security                    queen, bots_intelligence │     Stargate & Quantum
+self-improvement            …                        ┘     Codebreaking & Harmonics · …
+```
+
+- **Product domain ← filesystem domain**: `domains._FS_TO_PRODUCT` (unmapped → `self-improvement`).
+- **Capability category ← module**: `SystemRegistry` classification, or the
+  stdlib keyword classifier (`catalog._CATEGORY_RULES`) when the registry can't load.
+
+---
+
+## Package layout — `aureon/saas/`
+
+| Module | Responsibility | Key entry points |
+|--------|----------------|------------------|
+| `catalog.py` | **Categorized.** Build the normalized catalog; emit frontend manifests. | `build_catalog()`, `write_frontend_manifests()` |
+| `domains.py` | **Connected.** Canonical entry point per domain + cheap reachability probe. | `domain_report()`, `probe_domain()`, `product_domain_for()` |
+| `status.py` | **Working.** Honest health rollup, no heavy boot. | `get_platform_status()` |
+| `gateway.py` | HTTP surface + optional Supabase tenancy bridge. | `register_saas_routes(app)`, `verify_supabase_jwt()` |
+
+### `catalog.py` — categorized
+
+`build_catalog(workspace=REPO_ROOT)` prefers the repo's `SystemRegistry` (richer
+metadata: LOC, dashboard/thought-bus/Queen flags). If the registry can't import
+— e.g. `psutil` absent in a lean environment — it falls back to a **self-contained
+stdlib scanner** (`_scan_builtin`) that walks `aureon/` and classifies by keyword
+rules. **The catalog never collapses to zero categories**; production always
+categorizes. Result is cached to `state/aureon_saas_catalog.json` (gitignored).
+
+`write_frontend_manifests()` emits the two JSONs the React console already fetches,
+shaped to the frontend's TypeScript interfaces:
+
+- **`aureon_saas_system_inventory.json`** — every system as a *surface* with
+  `id · path · name · kind · domain · purpose · owner_subsystem · wiring_status ·
+  safety_class · auth_requirement · called_apis`, grouped by product domain.
+- **`aureon_organism_runtime_status.json`** — one pulse per product domain
+  (status + system_count + categories), live when a status snapshot is passed in.
+
+These live in `frontend/public/` (gitignored — they're generated artifacts) and
+are rewritten at operator boot and on `POST /api/manifests/refresh`.
+
+### `domains.py` — connected
+
+Each of the 24 filesystem domains gets a canonical entry point in `_ADAPTERS`
+(`get_operational_core`, `get_queen`, `run_operator`, `AureonCognition`,
+`get_feed_hub`, …). `probe_domain()` checks reachability with
+`importlib.util.find_spec` — **an import-spec check, no construction** — so the
+report is cheap and side-effect-free. Domains without a clean singleton fall back
+to "is the package importable".
+
+### `status.py` — working (honestly)
+
+`get_platform_status()` composes per-domain reachability + the operational core's
+own health snapshot + (if present) coordinator state, and rolls reachability up
+into per-product-domain status (`ready` / `degraded` / `down`). It carries an
+explicit **`note`**: reachability is import-level — a domain can be reachable yet
+run degraded (e.g. optional `numpy` missing). Nothing is masked green.
+
+---
+
+## HTTP API
+
+Mounted onto the operator's Flask app by `register_saas_routes(app)`, so **one
+service on port 8790** serves operator + cognition + the SaaS catalog behind the
+same security envelope (bearer auth / rate-limit / metrics / health from
+[PRODUCTION_GRADE.md](runbooks/PRODUCTION_GRADE.md)).
+
+| Method | Route | Returns |
+|--------|-------|---------|
+| `GET`  | `/api/catalog` | Categorized catalog (12 categories × domains × systems). |
+| `GET`  | `/api/domains` | Product domains + per-domain reachability report. |
+| `GET`  | `/api/domains/<domain>` | One domain: entry point + its systems (capped). |
+| `GET`  | `/api/status` | Live platform health (honest, often degraded). |
+| `POST` | `/api/manifests/refresh` | Rebuild catalog + rewrite frontend manifests. |
+
+---
+
+## Tenancy bridge (optional, off by default)
+
+The Supabase backend already owns auth/RBAC/billing. The gateway bridges to it
+**without a new dependency**: when `AUREON_SUPABASE_JWT_SECRET` is set, the
+`/api/*` routes additionally require a valid Supabase JWT, verified with a
+stdlib HS256 check (`verify_supabase_jwt` — signature + `exp`). The verified
+`sub` (user id) is stashed on `flask.g.tenant` for downstream scoping.
+
+When the secret is **unset the bridge is disabled** (dev/offline unchanged),
+layered *on top of* the operator's own bearer/rate-limit envelope — the two are
+independent gates.
+
+```
+                         ┌─────────────────────────────────────────┐
+  React console  ──JWT──►│ operator service :8790                   │
+  (Supabase session)     │  ├ security envelope (bearer/rate-limit) │
+                         │  ├ [optional] Supabase JWT bridge        │
+                         │  ├ operator + cognition routes           │
+                         │  └ SaaS routes → catalog/domains/status  │──► the 715-module
+                         └─────────────────────────────────────────┘     Python organism
+                                                                          (surfaced, not rewritten)
+```
+
+---
+
+## Verify
+
+```bash
+pip install -e '.[operator,dev]'
+ruff check aureon/saas/ && mypy aureon/saas/
+AUREON_LLM_OFFLINE=1 pytest tests/test_saas_catalog.py tests/test_saas_gateway.py -q
+
+# catalog + manifests
+AUREON_LLM_OFFLINE=1 python -c "from aureon.saas.catalog import build_catalog, write_frontend_manifests; c=build_catalog(); print('categories', c['category_count'], 'systems', c['total_systems']); print('manifests', [p.split('/')[-1] for p in write_frontend_manifests()])"
+
+# gateway routes (offline)
+AUREON_LLM_OFFLINE=1 python -c "from aureon.operator.operator_server import create_app; c=create_app().test_client(); print('catalog', c.get('/api/catalog').status_code, 'status', c.get('/api/status').status_code, 'domains', len(c.get('/api/domains').get_json()['domains']))"
+```
+
+CI gates on `aureon/saas` in the strict tier (`operator-ci.yml`): ruff-clean +
+mypy-clean + `tests/test_saas_*.py` green.
+
+---
+
+## Staged ledger
+
+Phase 6A (this layer) is done. The remaining SaaS work is tracked, not hidden:
+
+| # | Phase | Item | Done? |
+|---|-------|------|-------|
+| 6B | Production frontend | Frontend Dockerfile + nginx (or DO static site); auth-gate the open console with the existing Supabase session; replace `localhost` WS/HTTP bridges + `public/` manifest fetches with hosted gateway endpoints (`VITE_*`). | ☐ |
+| 6C | Billing | Extend the prepaid gas-tank credit model, or add Stripe subscription tiers (net-new). Largest/riskiest — deferred. | ☐ |
+
+---
+
+## Guardrails
+
+The operator security envelope is reused; the Supabase JWT bridge is **off by
+default**; hard authority boundaries (live-trade / payment / credential / filing)
+and the `AUREON_LLM_OFFLINE` / `AUREON_AUDIT_MODE` guards stay in force. The 715
+modules are surfaced and health-checked, **not** rewritten. Status is honest.
+`state/` caches and `frontend/public/` manifests are generated and gitignored.
+The Supabase project and its secrets are untouched (read-only bridge).
+
+---
+
+## 📚 Related
+- [`runbooks/PRODUCTION_GRADE.md`](runbooks/PRODUCTION_GRADE.md) · [`architecture/AUREON_OPERATOR_SWITCHBOARD.md`](architecture/AUREON_OPERATOR_SWITCHBOARD.md) · [`deployment/OPERATOR_DEPLOY.md`](deployment/OPERATOR_DEPLOY.md)
+- [`MODULES_AT_A_GLANCE.md`](MODULES_AT_A_GLANCE.md) — the 24 filesystem domains
+- `aureon/saas/` · `.github/workflows/operator-ci.yml`
+
+---
+
+***🌐 The organism, made legible: every system categorized, every domain connected, every status honest.***

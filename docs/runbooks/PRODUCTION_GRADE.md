@@ -94,6 +94,7 @@ ruff-clean, mypy-clean under the strict override, and covered by tests.
 ---
 
 ## 📚 Related
+- [`../SAAS_PLATFORM.md`](../SAAS_PLATFORM.md) — the platform layer (catalog · domains · status) built on this gate
 - [`../deployment/OPERATOR_DEPLOY.md`](../deployment/OPERATOR_DEPLOY.md) · [`../architecture/AUREON_OPERATOR_SWITCHBOARD.md`](../architecture/AUREON_OPERATOR_SWITCHBOARD.md)
 - `pyproject.toml` · `.github/workflows/operator-ci.yml` · `.pre-commit-config.yaml` · `deploy/operator.Dockerfile`
 
