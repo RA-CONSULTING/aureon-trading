@@ -92,6 +92,29 @@ def test_registry_includes_keyed_flagship_models(monkeypatch):
     assert "openai" in providers and "grok" in providers
 
 
+def test_flagship_adapter_key_paths(monkeypatch):
+    """With keys present, each flagship adapter carries the right endpoint + auth."""
+    from aureon.operator.providers import AureonOpenAIAdapter, AureonGrokAdapter, AureonGeminiAdapter
+
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-demo")
+    monkeypatch.setenv("XAI_API_KEY", "xai-demo")
+    monkeypatch.setenv("GEMINI_API_KEY", "g-demo")
+
+    o = AureonOpenAIAdapter()
+    assert o.base_url == "https://api.openai.com/v1"
+    assert o._headers()["Authorization"] == "Bearer sk-demo"
+    assert o._prefer_native is False                      # uses OpenAI /v1, not Ollama native
+
+    g = AureonGrokAdapter()
+    assert g.base_url == "https://api.x.ai/v1"
+    assert g._headers()["Authorization"] == "Bearer xai-demo"
+    assert g._prefer_native is False
+
+    m = AureonGeminiAdapter()
+    assert "generativelanguage.googleapis.com" in m.base_url
+    assert m.api_key == "g-demo"
+
+
 # ── caching ─────────────────────────────────────────────────────────────────
 
 def test_cache_key_is_sensitive_to_all_determinants():
