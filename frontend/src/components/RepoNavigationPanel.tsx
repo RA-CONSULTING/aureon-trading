@@ -1,0 +1,317 @@
+import { useEffect, useMemo, useState } from "react";
+import { BookOpen, CheckCircle2, ExternalLink, FileJson, GitBranch, Search, Server, ShieldCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface RepoLink {
+  label: string;
+  path: string;
+}
+
+interface RepoZone {
+  id: string;
+  label: string;
+  paths: string[];
+}
+
+interface RepoPublicContract {
+  contains_secrets: boolean;
+  contains_private_runtime_state: boolean;
+  contains_customer_data: boolean;
+  purpose: string;
+}
+
+interface RepoSitemapManifest {
+  name: string;
+  snapshot_date: string;
+  tracked_file_count: number;
+  validation_script?: string;
+  validation_command?: string;
+  machine_readable_source?: string;
+  end_user_access_map?: string;
+  frontend_navigation_tab?: string;
+  front_doors: RepoLink[];
+  zones: RepoZone[];
+  public_contract: RepoPublicContract;
+}
+
+interface CapabilityRoute {
+  id: string;
+  label: string;
+  primary_docs: string[];
+  related_systems: string[];
+  safety_gate: string;
+}
+
+interface AccessMapManifest {
+  name: string;
+  snapshot_date: string;
+  source_document: string;
+  capabilities: CapabilityRoute[];
+}
+
+const REPO_BASE_URL = "https://github.com/RA-CONSULTING/aureon-trading";
+
+function repoUrl(path: string): string {
+  const cleaned = path.replace(/^\/+/, "");
+  if (!cleaned) return REPO_BASE_URL;
+  const mode = cleaned.endsWith("/") || !cleaned.includes(".") ? "tree" : "blob";
+  return `${REPO_BASE_URL}/${mode}/main/${encodeURI(cleaned)}`;
+}
+
+function publicUrl(path: string): string {
+  const file = path.split("/").pop() || path;
+  return `/${file}`;
+}
+
+async function loadJson<T>(url: string, signal: AbortSignal): Promise<T> {
+  const response = await fetch(url, { cache: "no-store", signal });
+  if (!response.ok) {
+    throw new Error(`${url} returned ${response.status}`);
+  }
+  return (await response.json()) as T;
+}
+
+function matchesQuery(values: string[], query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return values.join(" ").toLowerCase().includes(needle);
+}
+
+function PathLink({ path }: { path: string }) {
+  return (
+    <a
+      href={repoUrl(path)}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex max-w-full items-center gap-1 truncate rounded-md border border-border/60 bg-background/50 px-2 py-1 font-mono text-[11px] text-cyan-100 hover:border-cyan-400/60"
+    >
+      <span className="truncate">{path}</span>
+      <ExternalLink className="h-3 w-3 shrink-0" />
+    </a>
+  );
+}
+
+function ContractPill({ label, clear }: { label: string; clear: boolean }) {
+  return (
+    <Badge variant="outline" className={clear ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-100" : "border-red-500/40 bg-red-500/10 text-red-100"}>
+      {label}: {clear ? "clear" : "review"}
+    </Badge>
+  );
+}
+
+export function RepoNavigationPanel() {
+  const [repoMap, setRepoMap] = useState<RepoSitemapManifest | null>(null);
+  const [accessMap, setAccessMap] = useState<AccessMapManifest | null>(null);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const refresh = async () => {
+      try {
+        const [repoManifest, accessManifest] = await Promise.all([
+          loadJson<RepoSitemapManifest>("/aureon_repo_sitemap.json", controller.signal),
+          loadJson<AccessMapManifest>("/aureon_end_user_access_map.json", controller.signal),
+        ]);
+        setRepoMap(repoManifest);
+        setAccessMap(accessManifest);
+        setError("");
+      } catch (loadError) {
+        if (!controller.signal.aborted) {
+          setError(loadError instanceof Error ? loadError.message : "Navigation manifests unavailable");
+        }
+      }
+    };
+
+    refresh();
+    return () => controller.abort();
+  }, []);
+
+  const filteredZones = useMemo(() => {
+    const zones = repoMap?.zones || [];
+    return zones.filter((zone) => matchesQuery([zone.label, zone.id, ...zone.paths], query));
+  }, [query, repoMap]);
+
+  const filteredCapabilities = useMemo(() => {
+    const capabilities = accessMap?.capabilities || [];
+    return capabilities.filter((capability) =>
+      matchesQuery([capability.label, capability.id, capability.safety_gate, ...capability.primary_docs, ...capability.related_systems], query),
+    );
+  }, [accessMap, query]);
+
+  const contract = repoMap?.public_contract;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 lg:grid-cols-[1fr_0.75fr]">
+        <Card className="border-border/60 bg-card/90">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <GitBranch className="h-5 w-5 text-cyan-200" />
+              Repository Map
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-md border border-border/50 bg-background/50 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Tracked files</div>
+                <div className="mt-1 text-2xl font-semibold">{(repoMap?.tracked_file_count || 0).toLocaleString()}</div>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/50 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Capability routes</div>
+                <div className="mt-1 text-2xl font-semibold">{(accessMap?.capabilities?.length || 0).toLocaleString()}</div>
+              </div>
+              <div className="rounded-md border border-border/50 bg-background/50 p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Repo zones</div>
+                <div className="mt-1 text-2xl font-semibold">{(repoMap?.zones?.length || 0).toLocaleString()}</div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Filter capabilities, docs, systems, or gates"
+                className="pl-9"
+              />
+            </div>
+
+            {error ? (
+              <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-100">{error}</div>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-card/90">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShieldCheck className="h-5 w-5 text-emerald-200" />
+              Public Contract
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <ContractPill label="secrets" clear={!contract?.contains_secrets} />
+              <ContractPill label="runtime state" clear={!contract?.contains_private_runtime_state} />
+              <ContractPill label="customer data" clear={!contract?.contains_customer_data} />
+            </div>
+            <div className="grid gap-2 text-xs">
+              <a className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-50" href="/aureon_repo_sitemap.json" target="_blank" rel="noreferrer">
+                <FileJson className="h-4 w-4" />
+                /aureon_repo_sitemap.json
+              </a>
+              <a className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-50" href="/aureon_end_user_access_map.json" target="_blank" rel="noreferrer">
+                <FileJson className="h-4 w-4" />
+                /aureon_end_user_access_map.json
+              </a>
+              {repoMap?.validation_command ? (
+                <div className="mt-1 rounded-md border border-border/50 bg-background/50 px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                  {repoMap.validation_command}
+                </div>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <Card className="border-border/60 bg-card/90">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Server className="h-5 w-5 text-sky-200" />
+              System Zones
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {filteredZones.map((zone) => (
+                <div key={zone.id} className="rounded-md border border-border/50 bg-background/45 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="font-medium">{zone.label}</div>
+                    <Badge variant="secondary">{zone.paths.length} paths</Badge>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {zone.paths.map((path) => (
+                      <PathLink key={`${zone.id}-${path}`} path={path} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-card/90">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BookOpen className="h-5 w-5 text-violet-200" />
+              Capability Access
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[560px] pr-3">
+              <div className="space-y-3">
+                {filteredCapabilities.map((capability) => (
+                  <div key={capability.id} className="rounded-md border border-border/50 bg-background/45 p-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="font-medium">{capability.label}</div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+                          {capability.safety_gate}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="w-fit font-mono text-[10px]">
+                        {capability.id}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                      <div>
+                        <div className="mb-2 text-[11px] uppercase text-muted-foreground">Primary docs</div>
+                        <div className="flex flex-wrap gap-2">
+                          {capability.primary_docs.map((path) => (
+                            <PathLink key={`${capability.id}-doc-${path}`} path={path} />
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mb-2 text-[11px] uppercase text-muted-foreground">Related systems</div>
+                        <div className="flex flex-wrap gap-2">
+                          {capability.related_systems.map((path) => (
+                            <PathLink key={`${capability.id}-system-${path}`} path={path} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-border/60 bg-card/90">
+        <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            {(repoMap?.front_doors || []).slice(0, 6).map((link) => (
+              <Button key={link.path} asChild variant="outline" size="sm">
+                <a href={repoUrl(link.path)} target="_blank" rel="noreferrer">
+                  {link.label}
+                </a>
+              </Button>
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Snapshot {repoMap?.snapshot_date || "pending"} / Access map {accessMap?.snapshot_date || "pending"}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

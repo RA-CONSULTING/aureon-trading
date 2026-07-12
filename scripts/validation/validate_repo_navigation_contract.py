@@ -28,6 +28,7 @@ REQUIRED_PATHS = [
     "docs/investor/TERMINOLOGY.md",
     "docs/repo_sitemap.json",
     "docs/end_user_access_map.json",
+    "frontend/src/components/RepoNavigationPanel.tsx",
     "frontend/public/aureon_repo_sitemap.json",
     "frontend/public/aureon_end_user_access_map.json",
 ]
@@ -204,6 +205,16 @@ def main() -> int:
         docs_repo.get("end_user_access", {}).get("capability_count") == len(docs_capabilities),
         failures,
         "repo sitemap end_user_access.capability_count is stale",
+    )
+    expect(
+        docs_repo.get("end_user_access", {}).get("frontend_navigation_tab") == "#repo-map",
+        failures,
+        "repo sitemap does not expose the frontend navigation tab",
+    )
+    expect(
+        public_repo.get("frontend_navigation_tab") == "#repo-map",
+        failures,
+        "frontend public sitemap does not expose #repo-map",
     )
 
     supabase_counts = parse_supabase_auth_counts()

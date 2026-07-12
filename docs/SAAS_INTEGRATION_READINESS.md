@@ -10,6 +10,8 @@ safe integration.
 Primary map: [`REPO_SITEMAP.md`](REPO_SITEMAP.md). Machine-readable map:
 [`repo_sitemap.json`](repo_sitemap.json).
 End-user task map: [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md).
+Frontend console route: `#repo-map`, implemented by
+[`../frontend/src/components/RepoNavigationPanel.tsx`](../frontend/src/components/RepoNavigationPanel.tsx).
 Navigation contract validation, from repo root:
 `python scripts/validation/validate_repo_navigation_contract.py`.
 
@@ -40,7 +42,7 @@ gated.
 | Browse all capabilities | [`../CAPABILITIES.md`](../CAPABILITIES.md), [`REPO_SITEMAP.md`](REPO_SITEMAP.md) | `aureon/`, `frontend/`, `data/`, `Kings_Accounting_Suite/` | Public docs | Keep capability status current. |
 | Run locally | [`../RUNNING.md`](../RUNNING.md) | Root launchers, `aureon/`, `frontend/` | Local operator | Validate `.env` and dry-run/live flags. |
 | Use the web console | `frontend/` | `frontend/src/`, `frontend/public/`, `public/` | Browser app | Confirm build env and runtime data source. |
-| Navigate capabilities in a SaaS shell | [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md) | `docs/`, `frontend/public/` | Static JSON manifests | Keep public manifests secret-free. |
+| Navigate capabilities in a SaaS shell | [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md), frontend `#repo-map` | `docs/`, `frontend/public/`, `frontend/src/components/RepoNavigationPanel.tsx` | Static JSON manifests and console tab | Keep public manifests secret-free. |
 | Read runtime state | `http://127.0.0.1:8791/api/terminal-state` | `aureon/exchanges/`, status server | Local HTTP | Do not expose publicly without auth and redaction. |
 | Read thought/action state | `http://127.0.0.1:13002/api/thoughts` | Mind hub, self-questioning loop | Local HTTP | Do not expose publicly without auth and redaction. |
 | Trigger coding workflow | `/api/coding/prompt` and `/api/coding/status` | `aureon/autonomous/`, `aureon/code_architect/`, `skills/` | Local operator/API | Keep code proposals review-gated. |

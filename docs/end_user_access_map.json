@@ -3,6 +3,7 @@
   "snapshot_date": "2026-07-12",
   "source_document": "docs/END_USER_ACCESS_MAP.md",
   "frontend_public_mirror": "frontend/public/aureon_end_user_access_map.json",
+  "frontend_navigation_tab": "#repo-map",
   "capabilities": [
     {
       "id": "product_overview",
@@ -18,8 +19,8 @@
       "label": "Repo navigation",
       "user_action": "Browse all systems and how they relate.",
       "primary_docs": ["docs/REPO_SITEMAP.md", "docs/INDEX.md"],
-      "related_systems": ["docs/", "frontend/public/"],
-      "runtime_or_api_surface": ["frontend/public/aureon_repo_sitemap.json"],
+      "related_systems": ["docs/", "frontend/public/", "frontend/src/components/RepoNavigationPanel.tsx"],
+      "runtime_or_api_surface": ["#repo-map", "frontend/public/aureon_repo_sitemap.json"],
       "safety_gate": "Keep generated counts current after major moves."
     },
     {

@@ -10,6 +10,8 @@ dashboard, SaaS workflow, or external diligence process.
 Machine-readable companion: [`repo_sitemap.json`](repo_sitemap.json).
 End-user task map: [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md) and
 [`end_user_access_map.json`](end_user_access_map.json).
+Frontend console surface: [`../frontend/src/components/RepoNavigationPanel.tsx`](../frontend/src/components/RepoNavigationPanel.tsx)
+mounted at `#repo-map`.
 Navigation contract validator, from repo root:
 `python scripts/validation/validate_repo_navigation_contract.py`.
 
@@ -56,7 +58,7 @@ The repo should be read in five zones:
 | [`deploy/`](../deploy/) | 14 | Deployment scripts and service configs. | Infrastructure setup. |
 | [`docs/`](../docs/) | 377 | Documentation, runbooks, research, architecture. | Primary reading system. |
 | [`flameborn/`](../flameborn/) | 59 | Companion UI/runtime material. | Product surface review. |
-| [`frontend/`](../frontend/) | 4,288 | React/Vite console and public artifacts. | End-user browser experience. |
+| [`frontend/`](../frontend/) | 4,289 | React/Vite console and public artifacts. | End-user browser experience. |
 | [`functions/`](../functions/) | 1 | Serverless function surface. | Hosted integration route. |
 | [`imports/`](../imports/) | 1,242 | Imported historical/source bundles. | Migration and provenance review. |
 | [`integrations/`](../integrations/) | 21 | External integration support. | Connector review. |
@@ -120,7 +122,7 @@ The repo should be read in five zones:
 | Database/backend-as-a-service | `supabase/config.toml`, `supabase/migrations/`, `supabase/functions/` | SaaS data plane and edge-function surface. Treat migrations as schema authority. |
 | Deployment | `deploy/`, `production/`, `.do/`, `Dockerfile`, `docker-compose.yml`, `app.yaml`, `Procfile` | Multiple deployment paths exist; pick one target and document env vars before production. |
 | Generated state | `state/` paths named in docs, runtime manifests, audit JSON | Often generated locally and intentionally not tracked. Do not assume absent generated files are missing source code. |
-| Public generated mirrors | `frontend/public/` | Tracked adaptive skills exist here; runtime JSON mirrors may be generated here during local operation. |
+| Public generated mirrors | `frontend/public/` | Tracked adaptive skills and the repo-navigation manifests exist here; runtime JSON mirrors may be generated here during local operation. |
 | Security and controls | `docs/SECURITY.md`, guarded runtime routes, tests | Keep credentials out of tracked docs; live actions remain operator-controlled. |
 
 Detailed readiness checklist: [`SAAS_INTEGRATION_READINESS.md`](SAAS_INTEGRATION_READINESS.md).
@@ -134,7 +136,7 @@ Task-based access map: [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md).
 | Investor | `README.md` -> `docs/investor/README.md` -> this sitemap -> `AUDIT_SUMMARY.md`. |
 | Grant or funder reviewer | `README.md` -> `docs/investor/README.md` -> `data/research/grants/` inventory. |
 | Operator | `RUNNING.md` -> `QUICK_START.md` -> `CAPABILITIES.md` -> runtime endpoints. |
-| Frontend/SaaS integrator | this sitemap -> `END_USER_ACCESS_MAP.md` -> `frontend/` -> `api/`/`server/`/`functions/` -> `supabase/` -> `deploy/`. |
+| Frontend/SaaS integrator | this sitemap -> `END_USER_ACCESS_MAP.md` -> frontend `#repo-map` -> `api/`/`server/`/`functions/` -> `supabase/` -> `deploy/`. |
 | Backend/data integrator | this sitemap -> `aureon/` -> `data/` -> `supabase/` -> tests. |
 | Maintainer | this sitemap -> `docs/INDEX.md` -> `tests/` -> `scripts/validation/`. |
 

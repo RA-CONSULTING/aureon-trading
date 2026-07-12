@@ -2,7 +2,7 @@
   "name": "Aureon Repo-Wide Sitemap",
   "snapshot_date": "2026-07-12",
   "source": "git ls-files",
-  "tracked_file_count": 11918,
+  "tracked_file_count": 11919,
   "primary_documents": [
     "README.md",
     "docs/REPO_SITEMAP.md",
@@ -28,7 +28,7 @@
     {"path": "deploy/", "files": 14, "category": "deployment", "role": "Deployment scripts and service configs"},
     {"path": "docs/", "files": 377, "category": "documentation", "role": "Documentation, runbooks, research, architecture, and sitemap"},
     {"path": "flameborn/", "files": 59, "category": "product surface", "role": "Companion UI/runtime material"},
-    {"path": "frontend/", "files": 4288, "category": "product surface", "role": "React/Vite console and public artifacts"},
+    {"path": "frontend/", "files": 4289, "category": "product surface", "role": "React/Vite console and public artifacts"},
     {"path": "functions/", "files": 1, "category": "integration", "role": "Serverless function surface"},
     {"path": "imports/", "files": 1242, "category": "provenance", "role": "Imported historical/source bundles"},
     {"path": "integrations/", "files": 21, "category": "integration", "role": "External integration support"},
@@ -144,6 +144,7 @@
     "machine_readable": "docs/end_user_access_map.json",
     "frontend_public_mirror": "frontend/public/aureon_end_user_access_map.json",
     "frontend_public_sitemap": "frontend/public/aureon_repo_sitemap.json",
+    "frontend_navigation_tab": "#repo-map",
     "capability_count": 13,
     "purpose": "Task-based access contract that connects each end-user capability to docs, related systems, runtime or API surfaces, and safety gates.",
     "public_contract": {
