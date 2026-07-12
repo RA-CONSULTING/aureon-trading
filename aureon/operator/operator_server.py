@@ -320,6 +320,14 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     except Exception as exc:  # noqa: BLE001 — the operator must serve even if SaaS routes fail
         logger.warning("SaaS gateway routes not registered: %s", exc)
 
+    # ── billing surface (metering + /api/billing) ───────────────────────────────
+    try:
+        from aureon.saas.billing import register_billing
+
+        register_billing(app)
+    except Exception as exc:  # noqa: BLE001 — billing is optional; the operator must serve
+        logger.warning("billing routes not registered: %s", exc)
+
     return app
 
 

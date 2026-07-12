@@ -16,6 +16,11 @@ services:
       AUREON_OPERATOR_THREADS: "8"
       # Server-side tenancy bridge (recommended in production):
       AUREON_SUPABASE_JWT_SECRET: "${AUREON_SUPABASE_JWT_SECRET:-}"
+      # Billing / metering (record-only unless CHARGE explicitly enabled):
+      SUPABASE_URL: "${SUPABASE_URL:-}"
+      SUPABASE_SERVICE_ROLE_KEY: "${SUPABASE_SERVICE_ROLE_KEY:-}"
+      AUREON_BILLING_METERING: "${AUREON_BILLING_METERING:-}"
+      AUREON_BILLING_CHARGE_ENABLED: "${AUREON_BILLING_CHARGE_ENABLED:-}"
       # Inbound service auth / rate-limit (optional, layered):
       AUREON_OPERATOR_API_KEY: "${AUREON_OPERATOR_API_KEY:-}"
       AUREON_OPERATOR_RATE_RPS: "${AUREON_OPERATOR_RATE_RPS:-}"
