@@ -43,8 +43,10 @@ interface RepoSitemapManifest {
 interface CapabilityRoute {
   id: string;
   label: string;
+  user_action: string;
   primary_docs: string[];
   related_systems: string[];
+  runtime_or_api_surface: string[];
   safety_gate: string;
 }
 
@@ -365,7 +367,18 @@ export function RepoNavigationPanel() {
   const filteredCapabilities = useMemo(() => {
     const capabilities = accessMap?.capabilities || [];
     return capabilities.filter((capability) =>
-      matchesQuery([capability.label, capability.id, capability.safety_gate, ...capability.primary_docs, ...capability.related_systems], query),
+      matchesQuery(
+        [
+          capability.label,
+          capability.id,
+          capability.user_action,
+          capability.safety_gate,
+          ...capability.primary_docs,
+          ...capability.related_systems,
+          ...capability.runtime_or_api_surface,
+        ],
+        query,
+      ),
     );
   }, [accessMap, query]);
 
@@ -1049,6 +1062,7 @@ export function RepoNavigationPanel() {
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="font-medium">{capability.label}</div>
+                        <div className="mt-1 text-sm text-muted-foreground">{capability.user_action}</div>
                         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
                           {capability.safety_gate}
@@ -1058,7 +1072,7 @@ export function RepoNavigationPanel() {
                         {capability.id}
                       </Badge>
                     </div>
-                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                    <div className="mt-3 grid gap-3 xl:grid-cols-3">
                       <div>
                         <div className="mb-2 text-[11px] uppercase text-muted-foreground">Primary docs</div>
                         <div className="flex flex-wrap gap-2">
@@ -1073,6 +1087,20 @@ export function RepoNavigationPanel() {
                           {capability.related_systems.map((path) => (
                             <PathLink key={`${capability.id}-system-${path}`} path={path} />
                           ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mb-2 text-[11px] uppercase text-muted-foreground">Runtime/API surfaces</div>
+                        <div className="flex flex-wrap gap-2">
+                          {capability.runtime_or_api_surface.map((surface) =>
+                            surface.startsWith("frontend/") || surface.startsWith("docs/") ? (
+                              <PathLink key={`${capability.id}-runtime-${surface}`} path={surface} />
+                            ) : (
+                              <Badge key={`${capability.id}-runtime-${surface}`} variant="secondary" className="max-w-full whitespace-normal font-mono text-[10px] leading-snug">
+                                {surface}
+                              </Badge>
+                            ),
+                          )}
                         </div>
                       </div>
                     </div>
