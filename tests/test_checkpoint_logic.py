@@ -4,7 +4,8 @@
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
 import os
-os.chdir('/workspaces/aureon-trading')
+from pathlib import Path
+os.chdir(Path(__file__).resolve().parents[1])
 
 # Simple test of the target assets construction
 checkpoint_stablecoins = {'USD': 1.0, 'USDT': 1.0, 'USDC': 1.0, 'ZUSD': 1.0}

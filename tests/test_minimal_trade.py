@@ -6,7 +6,13 @@ from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import os
 import sys
 import time
-sys.path.insert(0, '/workspaces/aureon-trading')
+
+if "pytest" in sys.modules:
+    import pytest
+    pytest.skip("diagnostic script — forces LIVE Kraken mode; API drifted — needs rewrite against current AureonKrakenEcosystem (no .CONFIG); run directly", allow_module_level=True)
+
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 os.environ['LIVE'] = '1'  # Force LIVE mode
 

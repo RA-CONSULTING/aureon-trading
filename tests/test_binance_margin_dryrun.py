@@ -14,7 +14,12 @@ Tests the Binance margin trading API methods end-to-end in three modes:
 Run:  python test_binance_margin_dryrun.py
 """
 
-import os, sys, json, time
+import sys
+if "pytest" in sys.modules:
+    import pytest
+    pytest.skip("diagnostic script — requires live Binance API keys; run directly", allow_module_level=True)
+
+import os, json, time
 
 # ── Load .env manually (dotenv may not be installed) ─────────────────────────
 def _load_env(path=".env"):

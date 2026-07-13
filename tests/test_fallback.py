@@ -3,10 +3,17 @@
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
-import os
 
-sys.path.insert(0, '/workspaces/aureon-trading')
-os.chdir('/workspaces/aureon-trading')
+if "pytest" in sys.modules:
+    import pytest
+    pytest.skip("diagnostic script — requires live Kraken connection (dry_run=False); run directly", allow_module_level=True)
+
+import os
+from pathlib import Path
+
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+sys.path.insert(0, _REPO_ROOT)
+os.chdir(_REPO_ROOT)
 
 from aureon_unified_ecosystem import AureonKrakenEcosystem
 

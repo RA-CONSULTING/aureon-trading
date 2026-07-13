@@ -15,6 +15,10 @@ import time
 import json
 from pathlib import Path
 
+if "pytest" in sys.modules:
+    import pytest
+    pytest.skip("diagnostic script — requires .env and live connections to every exchange; run directly", allow_module_level=True)
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 for d in _REPO_ROOT.glob("aureon/*/"):

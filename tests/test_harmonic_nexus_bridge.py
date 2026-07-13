@@ -20,7 +20,7 @@ def load_module(module_name: str, relative_path: str):
     return module
 
 
-bridge_module = load_module('test_harmonic_nexus_bridge_module', 'aureon/harmonic_nexus_bridge.py')
+bridge_module = load_module('test_harmonic_nexus_bridge_module', 'aureon/harmonic/harmonic_nexus_bridge.py')
 
 
 class TestHarmonicNexusBridge(unittest.TestCase):

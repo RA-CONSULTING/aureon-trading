@@ -5,7 +5,8 @@ from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import asyncio
 import os
 import sys
-os.chdir('/workspaces/aureon-trading')
+from pathlib import Path
+os.chdir(Path(__file__).resolve().parents[1])
 
 from micro_profit_labyrinth import MicroProfitLabyrinth
 

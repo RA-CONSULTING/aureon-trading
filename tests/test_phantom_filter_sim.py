@@ -54,7 +54,9 @@ def load_module_from_file(name, path):
     return mod
 
 # Load Phantom Filter
-pf_mod = load_module_from_file('aureon_phantom_signal_filter', '/workspaces/aureon-trading/aureon_phantom_signal_filter.py')
+from pathlib import Path
+_PHANTOM_FILTER_PATH = str(Path(__file__).resolve().parents[1] / 'aureon' / 'scanners' / 'aureon_phantom_signal_filter.py')
+pf_mod = load_module_from_file('aureon_phantom_signal_filter', _PHANTOM_FILTER_PATH)
 
 class TestPhantomFilter(unittest.TestCase):
     def setUp(self):

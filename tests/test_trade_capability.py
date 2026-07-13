@@ -2,6 +2,11 @@
 """Test if we can actually place a trade"""
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+import sys
+if "pytest" in sys.modules:
+    import pytest
+    pytest.skip("diagnostic script — requires live Binance API keys; run directly", allow_module_level=True)
+
 import os
 from dotenv import load_dotenv
 from binance.client import Client

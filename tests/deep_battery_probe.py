@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deep battery probe — direct IOCTL for mWh, mV, mW at 50Hz."""
 import sys, io, ctypes, ctypes.wintypes, time, struct, json
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stdout = sys.stdout if 'pytest' in sys.modules else io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 print("DEEP BATTERY PROBE — IOCTL direct hardware access")
 print("=" * 60)

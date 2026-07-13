@@ -22,7 +22,7 @@ def load_module(module_name: str, relative_path: str):
     return module
 
 
-geo = load_module('test_geopolitical_forensics_module', 'aureon/geopolitical_forensics.py')
+geo = load_module('test_geopolitical_forensics_module', 'aureon/analytics/geopolitical_forensics.py')
 
 
 class TestGeopoliticalForensics(unittest.TestCase):

@@ -34,7 +34,7 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stdout = sys.stdout if 'pytest' in sys.modules else io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from aureon.core.aureon_thought_bus import Thought, ThoughtBus  # noqa: E402
 from aureon.vault.aureon_vault import AureonVault  # noqa: E402
