@@ -331,6 +331,7 @@ Phases 6A–6C and 7 are done. The remaining SaaS work is tracked, not hidden:
 | 6B | Production frontend | Frontend Dockerfile + nginx one-origin proxy; auth-gated console (`VITE_REQUIRE_AUTH`); live manifest fetches via `/api/manifests` with static fallback; full-stack compose. | ☑ |
 | 6C | Billing | Support-the-project flow (SumUp, self-confirm → gas tank) + record-only usage metering + billing read API + env-gated charge-fee proxy. Staged: per-unit debits, per-tenant token attribution, automated payment capture (SumUp API/Stripe), trade-loop fee hookup, usage panel UI. | ☑ |
 | 7 | Unified UI shell | Router + grouped sidebar + command palette over every surface; new Overview/Operator-Chat/Billing pages; legacy console preserved; per-route error boundaries; code-split bundle. Staged: extracting the legacy console's five entangled tabs into shell routes. | ☑ |
+| 9 | Organism connectome | The metacognitive layer touches every module (sense/touch/weave/pulse); cognition gains sense/list/touch tools; dormant organs (ConsciousnessModule, HNC live daemon) woken via supervisord; honest wiring instruments; `/api/organism` + Overview card. See [`architecture/ORGANISM_CONNECTOME.md`](architecture/ORGANISM_CONNECTOME.md). Staged: arbitrary-invoke behind the boundary, per-tenant weave policy. | ☑ |
 
 ---
 
