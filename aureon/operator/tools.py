@@ -109,6 +109,47 @@ class GuardedToolRegistry(ToolRegistry):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _h_sense_organism(args: Dict[str, Any]) -> str:
+    from aureon.core.aureon_connectome import get_connectome
+
+    status = get_connectome().status()
+    mesh: Dict[str, Any] = {}
+    try:
+        from aureon.core.aureon_mycelium import get_mycelium
+
+        raw = get_mycelium().get_mesh_status()
+        mesh = {"connected_systems": raw.get("connected_systems", []),
+                "hives": raw.get("hive_count", raw.get("hives"))}
+    except Exception as exc:  # noqa: BLE001 — mesh is optional
+        mesh = {"unavailable": str(exc)[:120]}
+    return json.dumps({"connectome": status, "mycelium": mesh}, default=str)
+
+
+def _h_list_organism(args: Dict[str, Any]) -> str:
+    from aureon.core.aureon_connectome import get_connectome
+
+    limit = max(1, min(200, int(args.get("limit", 40) or 40)))
+    nodes = get_connectome().nodes(
+        domain=str(args["domain"]) if args.get("domain") else None,
+        status=str(args["status"]) if args.get("status") else None,
+    )
+    return json.dumps({
+        "count": len(nodes),
+        "nodes": [{"module": n["module"], "domain": n["domain"],
+                   "status": n["status"], "topic": n["organism_topic"]} for n in nodes[:limit]],
+        "truncated": len(nodes) > limit,
+    }, default=str)
+
+
+def _h_touch_module(args: Dict[str, Any]) -> str:
+    from aureon.core.aureon_connectome import get_connectome
+
+    module = str(args.get("module", "")).strip()
+    if not module:
+        return json.dumps({"error": "module required"})
+    return json.dumps(get_connectome().touch(module), default=str)
+
+
 def _h_repo_search(args: Dict[str, Any]) -> str:
     query = str(args.get("query", "")).strip()
     top_k = int(args.get("top_k", 4) or 4)
@@ -259,6 +300,35 @@ def build_operator_tools(
         {"type": "object", "properties": {"path": {"type": "string", "description": "repo-relative dir (default repo root)"}},
          "required": [], "additionalProperties": False},
         _h_list_repo,
+    )
+    reg.define_tool(
+        "sense_organism",
+        "Sense the whole Aureon organism: connectome coverage (nodes/linked/touched/woven), "
+        "mycelium mesh membership, and honest wiring depth across all ~1,200 modules.",
+        {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+        _h_sense_organism,
+    )
+    reg.define_tool(
+        "list_organism",
+        "List the organism's modules from the connectome manifest, optionally filtered by "
+        "domain (e.g. queen, trading_decision, cognition) and/or wiring status "
+        "(unfelt|linked|touched|woven|failed|denied).",
+        {"type": "object",
+         "properties": {"domain": {"type": "string", "description": "filter by organism domain"},
+                        "status": {"type": "string", "description": "filter by wiring status"},
+                        "limit": {"type": "integer", "description": "max nodes returned (default 40)"}},
+         "required": [], "additionalProperties": False},
+        _h_list_organism,
+    )
+    reg.define_tool(
+        "touch_module",
+        "Touch a module of the organism: import it safely (side-effect suppression enforced, "
+        "loop-at-import modules denied) and feel its shape — docstring, classes, functions, "
+        "get_* singleton doors. This is how the cognition reaches legacy code as a live part of itself.",
+        {"type": "object",
+         "properties": {"module": {"type": "string", "description": "dotted module, e.g. aureon.harmonic.aureon_harmonic_seed"}},
+         "required": ["module"], "additionalProperties": False},
+        _h_touch_module,
     )
     reg.define_tool(
         "code_validate",
