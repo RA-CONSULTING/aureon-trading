@@ -35,6 +35,9 @@ _EXCLUDE = (
     "frontend", "state", "imports", "archive", "queen_backups",
     "VERIFICATION AND VALIDATION", "data/ephemeral", ".venv", "venv",
     "dist", "build", "site-packages",
+    # Raw evidence dumps and crash logs are provenance artifacts, not grounding
+    # material — indexing them pollutes retrieval for general prompts.
+    "data/research/grants", "crash_log",
 )
 
 _INGEST = (".md", ".py", ".txt", ".pdf")

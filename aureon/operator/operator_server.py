@@ -350,13 +350,17 @@ def build_boot_app():
         logger.info("Aureon Cognition wired onto the mesh at startup")
     except Exception as exc:  # noqa: BLE001 — server must still serve if cognition boot fails
         logger.warning("cognition eager-boot skipped: %s", exc)
-    # Write the frontend catalog manifests at boot so the console has data.
-    try:
-        from aureon.saas.catalog import write_frontend_manifests
+    # The static manifests in frontend/public are owned by the repo's manifest
+    # pipeline (scripts/validation/generate_*) and checked in with a richer
+    # schema; the gateway serves its own live manifests at /api/manifests/<name>.
+    # Overwriting the static files at boot is therefore opt-in only.
+    if str(os.environ.get("AUREON_WRITE_STATIC_MANIFESTS", "") or "") == "1":
+        try:
+            from aureon.saas.catalog import write_frontend_manifests
 
-        write_frontend_manifests()
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("frontend manifest write skipped: %s", exc)
+            write_frontend_manifests()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("frontend manifest write skipped: %s", exc)
     return create_app(cognition=boot_cognition)
 
 

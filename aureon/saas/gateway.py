@@ -126,9 +126,15 @@ def register_saas_routes(app: Any) -> Any:
     @app.post("/api/manifests/refresh")
     @_guarded
     def saas_refresh():
-        catalog = build_catalog()  # force rebuild
-        written = write_frontend_manifests(catalog=catalog, status=get_platform_status())
-        return jsonify({"refreshed": True, "manifests": [p.split("/")[-1] for p in written],
+        catalog = build_catalog()  # force rebuild; /api/manifests/<name> now serves fresh data
+        manifests = render_manifests(catalog=catalog, status=get_platform_status())
+        # The static frontend/public copies are owned by the repo's manifest
+        # pipeline; overwrite them only when explicitly opted in.
+        written: list[str] = []
+        if str(os.environ.get("AUREON_WRITE_STATIC_MANIFESTS", "") or "") == "1":
+            written = write_frontend_manifests(catalog=catalog, status=get_platform_status())
+        return jsonify({"refreshed": True, "manifests": sorted(manifests),
+                        "static_files_written": [p.split("/")[-1] for p in written],
                         "total_systems": catalog.get("total_systems", 0)})
 
     logger.info("SaaS gateway routes registered (tenancy bridge: %s)",

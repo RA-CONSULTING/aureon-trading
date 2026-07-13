@@ -79,8 +79,15 @@ shaped to the frontend's TypeScript interfaces:
 - **`aureon_organism_runtime_status.json`** — one pulse per product domain
   (status + system_count + categories), live when a status snapshot is passed in.
 
-These live in `frontend/public/` (gitignored — they're generated artifacts) and
-are rewritten at operator boot and on `POST /api/manifests/refresh`.
+**Manifest ownership (post-unification):** the checked-in static copies in
+`frontend/public/` are owned by the repo's manifest pipeline
+(`scripts/validation/generate_*`), which emits a richer schema
+(`schema_version`, `entrypoint_status`, `imports/exports`, `runtime_route`, …).
+The gateway serves its own live-rendered manifests at `GET /api/manifests/<name>`
+and does **not** overwrite the static files unless
+`AUREON_WRITE_STATIC_MANIFESTS=1` is set (boot write and
+`POST /api/manifests/refresh` both honour this). The console fetches live first
+and falls back to the static copies.
 
 ### `domains.py` — connected
 
@@ -115,7 +122,7 @@ same security envelope (bearer auth / rate-limit / metrics / health from
 | `GET`  | `/api/domains/<domain>` | One domain: entry point + its systems (capped). |
 | `GET`  | `/api/status` | Live platform health (honest, often degraded). |
 | `GET`  | `/api/manifests/<name>` | A frontend manifest, rendered live (404 lists available names). |
-| `POST` | `/api/manifests/refresh` | Rebuild catalog + rewrite frontend manifests. |
+| `POST` | `/api/manifests/refresh` | Rebuild the catalog; static files rewritten only with `AUREON_WRITE_STATIC_MANIFESTS=1`. |
 
 ---
 
