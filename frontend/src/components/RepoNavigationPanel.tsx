@@ -290,6 +290,42 @@ interface SaaSIntegrationManifest {
   production_gates: string[];
 }
 
+interface SaaSIntegrationHandoffManifest {
+  name: string;
+  snapshot_date: string;
+  frontend_public_mirror: string;
+  summary: {
+    handoff_status: string;
+    readiness_status: string;
+    tracked_file_count: number;
+    public_manifest_count: number;
+    integration_step_count: number;
+    deployment_surface_count: number;
+    environment_variable_name_count: number;
+    environment_sensitive_name_count: number;
+    current_capability_count: number;
+    routed_capability_count: number;
+    system_mapped_capability_count: number;
+    unmapped_capability_count: number;
+    supabase_function_count: number;
+    supabase_verify_jwt_true: number;
+    supabase_verify_jwt_false: number;
+    supabase_production_blocker_count: number;
+    supabase_public_medium_risk_count: number;
+    supabase_jwt_review_required_count: number;
+    advisory_review_item_count: number;
+  };
+  canonical_shape: string;
+  public_assets: Array<{ id: string; path: string; purpose: string }>;
+  integration_steps: Array<{ id: string; label: string; action: string; evidence: string[]; gate: string }>;
+  auth_and_hardening: {
+    production_status: string;
+    public_medium_risk_routes: string[];
+    jwt_review_required_routes: string[];
+    production_gates: string[];
+  };
+}
+
 interface SupabaseHardeningManifest {
   name: string;
   snapshot_date: string;
@@ -388,6 +424,7 @@ export function RepoNavigationPanel() {
   const [organizationTree, setOrganizationTree] = useState<OrganizationTreeManifest | null>(null);
   const [navigationReadiness, setNavigationReadiness] = useState<NavigationReadinessManifest | null>(null);
   const [systemMap, setSystemMap] = useState<SystemIntegrationMapManifest | null>(null);
+  const [saasHandoff, setSaasHandoff] = useState<SaaSIntegrationHandoffManifest | null>(null);
   const [saasManifest, setSaasManifest] = useState<SaaSIntegrationManifest | null>(null);
   const [hardeningManifest, setHardeningManifest] = useState<SupabaseHardeningManifest | null>(null);
   const [autonomousManifests, setAutonomousManifests] = useState<AutonomousFrontendManifest[]>([]);
@@ -407,6 +444,7 @@ export function RepoNavigationPanel() {
           organizationTreeManifest,
           navigationReadinessManifest,
           systemIntegrationManifest,
+          integrationHandoffManifest,
           integrationManifest,
           supabaseHardeningManifest,
         ] = await Promise.all([
@@ -418,6 +456,7 @@ export function RepoNavigationPanel() {
           loadJson<OrganizationTreeManifest>("/aureon_repo_organization_tree.json", controller.signal),
           loadJson<NavigationReadinessManifest>("/aureon_repo_navigation_readiness.json", controller.signal),
           loadJson<SystemIntegrationMapManifest>("/aureon_system_integration_map.json", controller.signal),
+          loadJson<SaaSIntegrationHandoffManifest>("/aureon_saas_integration_handoff.json", controller.signal),
           loadJson<SaaSIntegrationManifest>("/aureon_saas_integration_manifest.json", controller.signal),
           loadJson<SupabaseHardeningManifest>("/aureon_supabase_hardening_manifest.json", controller.signal),
         ]);
@@ -439,6 +478,7 @@ export function RepoNavigationPanel() {
         setOrganizationTree(organizationTreeManifest);
         setNavigationReadiness(navigationReadinessManifest);
         setSystemMap(systemIntegrationManifest);
+        setSaasHandoff(integrationHandoffManifest);
         setSaasManifest(integrationManifest);
         setHardeningManifest(supabaseHardeningManifest);
         setAutonomousManifests(mountedAutonomousManifests);
@@ -743,6 +783,10 @@ export function RepoNavigationPanel() {
                 <FileJson className="h-4 w-4" />
                 /aureon_saas_integration_manifest.json
               </a>
+              <a className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-50" href={publicUrl("frontend/public/aureon_saas_integration_handoff.json")} target="_blank" rel="noreferrer">
+                <FileJson className="h-4 w-4" />
+                /aureon_saas_integration_handoff.json
+              </a>
               <a className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-50" href={publicUrl("frontend/public/aureon_supabase_hardening_manifest.json")} target="_blank" rel="noreferrer">
                 <FileJson className="h-4 w-4" />
                 /aureon_supabase_hardening_manifest.json
@@ -1023,6 +1067,70 @@ export function RepoNavigationPanel() {
           <div className="text-xs text-muted-foreground">
             Showing {filteredDirectories.length.toLocaleString()} of {(organizationTree?.directory_count || 0).toLocaleString()} directory nodes. Use search to narrow by path, zone, category, capability, or sample file.
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60 bg-card/90">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <CheckCircle2 className="h-5 w-5 text-emerald-200" />
+            SaaS Integration Handoff
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Status</div>
+              <div className="mt-1 text-xl font-semibold uppercase">{saasHandoff?.summary?.handoff_status || "pending"}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Public manifests</div>
+              <div className="mt-1 text-xl font-semibold">{(saasHandoff?.summary?.public_manifest_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Steps</div>
+              <div className="mt-1 text-xl font-semibold">{(saasHandoff?.summary?.integration_step_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Env names</div>
+              <div className="mt-1 text-xl font-semibold">{(saasHandoff?.summary?.environment_variable_name_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Supabase blockers</div>
+              <div className="mt-1 text-xl font-semibold">{(saasHandoff?.summary?.supabase_production_blocker_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Advisory items</div>
+              <div className="mt-1 text-xl font-semibold">{(saasHandoff?.summary?.advisory_review_item_count || 0).toLocaleString()}</div>
+            </div>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+            {(saasHandoff?.integration_steps || []).map((step) => (
+              <div key={step.id} className="rounded-md border border-border/50 bg-background/45 p-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="font-medium">{step.label}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{step.action}</div>
+                  </div>
+                  <Badge variant="outline" className="w-fit max-w-full whitespace-normal border-emerald-500/30 bg-emerald-500/10 text-[10px] leading-snug text-emerald-100">
+                    {step.id}
+                  </Badge>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {step.evidence.slice(0, 4).map((path) => (
+                    <PathLink key={`${step.id}-${path}`} path={path} />
+                  ))}
+                </div>
+                <div className="mt-3 rounded-md border border-border/40 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+                  {step.gate}
+                </div>
+              </div>
+            ))}
+          </div>
+          <a className="inline-flex max-w-full items-center gap-2 text-cyan-100 hover:text-cyan-50" href={publicUrl("frontend/public/aureon_saas_integration_handoff.json")} target="_blank" rel="noreferrer">
+            <FileJson className="h-4 w-4 shrink-0" />
+            <span className="truncate">/aureon_saas_integration_handoff.json</span>
+          </a>
         </CardContent>
       </Card>
 

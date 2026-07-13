@@ -11,6 +11,7 @@
   "repo_navigation_readiness": "frontend/public/aureon_repo_navigation_readiness.json",
   "system_integration_map": "frontend/public/aureon_system_integration_map.json",
   "saas_integration_manifest": "frontend/public/aureon_saas_integration_manifest.json",
+  "saas_integration_handoff": "frontend/public/aureon_saas_integration_handoff.json",
   "supabase_hardening_manifest": "frontend/public/aureon_supabase_hardening_manifest.json",
   "autonomous_frontend_manifests": [
     "frontend/public/aureon_saas_system_inventory.json",
@@ -19,7 +20,7 @@
     "frontend/public/aureon_organism_runtime_status.json",
     "frontend/public/aureon_autonomous_capability_switchboard.json"
   ],
-  "tracked_file_count": 11956,
+  "tracked_file_count": 11959,
   "validation_script": "scripts/validation/validate_repo_navigation_contract.py",
   "validation_command": "python scripts/validation/validate_repo_navigation_contract.py",
   "frontend_navigation_tab": "#repo-map",
@@ -35,6 +36,7 @@
     {"label": "System integration map", "path": "docs/SYSTEM_INTEGRATION_MAP.md"},
     {"label": "SaaS integration readiness", "path": "docs/SAAS_INTEGRATION_READINESS.md"},
     {"label": "SaaS integration manifest", "path": "docs/saas_integration_manifest.json"},
+    {"label": "SaaS integration handoff", "path": "docs/saas_integration_handoff.json"},
     {"label": "Supabase hardening review", "path": "docs/SUPABASE_HARDENING_REVIEW.md"},
     {"label": "Capabilities", "path": "CAPABILITIES.md"},
     {"label": "Running locally", "path": "RUNNING.md"}

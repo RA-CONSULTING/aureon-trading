@@ -22,6 +22,7 @@ Master table of contents for all project documentation.
 | System integration manifest | [System Integration Manifest](system_integration_map.json) | Generated system-to-capability integration contract mirrored to the frontend public folder |
 | SaaS integrators | [SaaS Integration Readiness](SAAS_INTEGRATION_READINESS.md) | End-user access matrix, env/config inventory, deploy surfaces, auth boundaries, and production gates |
 | SaaS integration manifest | [SaaS Integration Manifest](saas_integration_manifest.json) | Generated env-name, deployment-surface, Supabase auth, and production-gate contract for SaaS shells |
+| SaaS integration handoff | [SaaS Integration Handoff](saas_integration_handoff.json) | Generated implementer handoff for public manifests, deployment surfaces, env names, Supabase hardening, readiness gates, and release steps |
 | Supabase hardening review | [Supabase Hardening Review](SUPABASE_HARDENING_REVIEW.md) | Production blocker review for public and JWT-gated Supabase Edge Functions |
 | Supabase hardening manifest | [Supabase Hardening Manifest](supabase_hardening_manifest.json) | Generated Edge Function hardening contract mirrored to the frontend public folder |
 | Operational manifests | [SaaS System Inventory](audits/aureon_saas_system_inventory.json) | Public-safe autonomous frontend manifest set for SaaS inventory, unification, evolution queue, runtime status, and capability switchboard |
@@ -45,6 +46,7 @@ Master table of contents for all project documentation.
 | [System Integration Manifest](system_integration_map.json) | Machine-readable system integration contract generated from repo maps |
 | [SaaS Integration Readiness](SAAS_INTEGRATION_READINESS.md) | End-user access matrix, env/config inventory, deploy surfaces, auth boundaries, and production gates |
 | [SaaS Integration Manifest](saas_integration_manifest.json) | Machine-readable SaaS integration contract generated from repo config |
+| [SaaS Integration Handoff](saas_integration_handoff.json) | Machine-readable integration handoff used by the frontend repo map and implementer review |
 | [Supabase Hardening Review](SUPABASE_HARDENING_REVIEW.md) | Human-readable blocker review for public Edge Functions and JWT-gated mutation routes |
 | [Supabase Hardening Manifest](supabase_hardening_manifest.json) | Machine-readable Supabase hardening contract used by the frontend repo map |
 | [Operational SaaS Inventory](audits/aureon_saas_system_inventory.json) | Mounted autonomous frontend manifest set for inventory, unification, evolution queue, runtime status, and switchboard visibility |

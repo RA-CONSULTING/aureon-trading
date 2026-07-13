@@ -20,6 +20,7 @@ DOCS_NAVIGATION_INDEX = REPO_ROOT / "docs" / "repo_navigation_index.json"
 DOCS_ORGANIZATION_TREE = REPO_ROOT / "docs" / "repo_organization_tree.json"
 DOCS_NAVIGATION_READINESS = REPO_ROOT / "docs" / "repo_navigation_readiness.json"
 DOCS_SYSTEM_INTEGRATION = REPO_ROOT / "docs" / "system_integration_map.json"
+DOCS_SAAS_HANDOFF = REPO_ROOT / "docs" / "saas_integration_handoff.json"
 DOCS_SAAS_MANIFEST = REPO_ROOT / "docs" / "saas_integration_manifest.json"
 DOCS_SUPABASE_HARDENING = REPO_ROOT / "docs" / "supabase_hardening_manifest.json"
 PUBLIC_REPO_SITEMAP = REPO_ROOT / "frontend" / "public" / "aureon_repo_sitemap.json"
@@ -30,6 +31,7 @@ PUBLIC_NAVIGATION_INDEX = REPO_ROOT / "frontend" / "public" / "aureon_repo_navig
 PUBLIC_ORGANIZATION_TREE = REPO_ROOT / "frontend" / "public" / "aureon_repo_organization_tree.json"
 PUBLIC_NAVIGATION_READINESS = REPO_ROOT / "frontend" / "public" / "aureon_repo_navigation_readiness.json"
 PUBLIC_SYSTEM_INTEGRATION = REPO_ROOT / "frontend" / "public" / "aureon_system_integration_map.json"
+PUBLIC_SAAS_HANDOFF = REPO_ROOT / "frontend" / "public" / "aureon_saas_integration_handoff.json"
 PUBLIC_SAAS_MANIFEST = REPO_ROOT / "frontend" / "public" / "aureon_saas_integration_manifest.json"
 PUBLIC_SUPABASE_HARDENING = REPO_ROOT / "frontend" / "public" / "aureon_supabase_hardening_manifest.json"
 SUPABASE_CONFIG = REPO_ROOT / "supabase" / "config.toml"
@@ -61,6 +63,7 @@ REQUIRED_PATHS = [
     "docs/repo_organization_tree.json",
     "docs/repo_navigation_readiness.json",
     "docs/system_integration_map.json",
+    "docs/saas_integration_handoff.json",
     "docs/saas_integration_manifest.json",
     "docs/SUPABASE_HARDENING_REVIEW.md",
     "docs/supabase_hardening_manifest.json",
@@ -78,6 +81,7 @@ REQUIRED_PATHS = [
     "frontend/public/aureon_repo_organization_tree.json",
     "frontend/public/aureon_repo_navigation_readiness.json",
     "frontend/public/aureon_system_integration_map.json",
+    "frontend/public/aureon_saas_integration_handoff.json",
     "frontend/public/aureon_saas_integration_manifest.json",
     "frontend/public/aureon_supabase_hardening_manifest.json",
     "frontend/public/aureon_saas_system_inventory.json",
@@ -91,6 +95,7 @@ REQUIRED_PATHS = [
     "scripts/validation/generate_repo_navigation_readiness.py",
     "scripts/validation/generate_capability_registry.py",
     "scripts/validation/generate_system_integration_map.py",
+    "scripts/validation/generate_saas_integration_handoff.py",
     "scripts/validation/generate_saas_integration_manifest.py",
     "scripts/validation/generate_supabase_hardening_manifest.py",
 ]
@@ -328,6 +333,7 @@ def main() -> int:
     docs_organization_tree = load_json(DOCS_ORGANIZATION_TREE)
     docs_navigation_readiness = load_json(DOCS_NAVIGATION_READINESS)
     docs_system_integration = load_json(DOCS_SYSTEM_INTEGRATION)
+    docs_saas_handoff = load_json(DOCS_SAAS_HANDOFF)
     docs_saas_manifest = load_json(DOCS_SAAS_MANIFEST)
     docs_supabase_hardening = load_json(DOCS_SUPABASE_HARDENING)
     public_repo = load_json(PUBLIC_REPO_SITEMAP)
@@ -338,6 +344,7 @@ def main() -> int:
     public_organization_tree = load_json(PUBLIC_ORGANIZATION_TREE)
     public_navigation_readiness = load_json(PUBLIC_NAVIGATION_READINESS)
     public_system_integration = load_json(PUBLIC_SYSTEM_INTEGRATION)
+    public_saas_handoff = load_json(PUBLIC_SAAS_HANDOFF)
     public_saas_manifest = load_json(PUBLIC_SAAS_MANIFEST)
     public_supabase_hardening = load_json(PUBLIC_SUPABASE_HARDENING)
 
@@ -493,6 +500,22 @@ def main() -> int:
         "frontend public sitemap does not expose the system integration map",
     )
     expect(
+        docs_repo.get("saas_readiness", {}).get("handoff_manifest") == "docs/saas_integration_handoff.json",
+        failures,
+        "repo sitemap does not expose the docs SaaS integration handoff",
+    )
+    expect(
+        docs_repo.get("saas_readiness", {}).get("frontend_public_handoff_manifest")
+        == "frontend/public/aureon_saas_integration_handoff.json",
+        failures,
+        "repo sitemap does not expose the public SaaS integration handoff",
+    )
+    expect(
+        public_repo.get("saas_integration_handoff") == "frontend/public/aureon_saas_integration_handoff.json",
+        failures,
+        "frontend public sitemap does not expose the SaaS integration handoff",
+    )
+    expect(
         docs_repo.get("saas_readiness", {}).get("machine_readable") == "docs/saas_integration_manifest.json",
         failures,
         "repo sitemap does not expose the docs SaaS integration manifest",
@@ -547,6 +570,7 @@ def main() -> int:
     expect(docs_organization_tree == public_organization_tree, failures, "repo organization tree docs/public mirrors differ")
     expect(docs_navigation_readiness == public_navigation_readiness, failures, "repo navigation readiness docs/public mirrors differ")
     expect(docs_system_integration == public_system_integration, failures, "system integration map docs/public mirrors differ")
+    expect(docs_saas_handoff == public_saas_handoff, failures, "SaaS integration handoff docs/public mirrors differ")
     capability_registry_rows = docs_capability_registry.get("capabilities", []) if isinstance(docs_capability_registry, dict) else []
     expected_capability_rows = parse_capabilities_table_count()
     registry_summary = docs_capability_registry.get("summary", {}) if isinstance(docs_capability_registry, dict) else {}
@@ -804,6 +828,63 @@ def main() -> int:
         failures,
         "SaaS integration manifest public contract must not contain env values",
     )
+    readiness_summary = docs_navigation_readiness.get("summary", {}) if isinstance(docs_navigation_readiness, dict) else {}
+    handoff_summary = docs_saas_handoff.get("summary", {}) if isinstance(docs_saas_handoff, dict) else {}
+    expect(
+        handoff_summary.get("tracked_file_count") == tracked_total,
+        failures,
+        "SaaS integration handoff tracked_file_count is stale",
+    )
+    expect(
+        handoff_summary.get("readiness_status") == readiness_summary.get("readiness_status"),
+        failures,
+        "SaaS integration handoff readiness_status differs from readiness audit",
+    )
+    expect(
+        handoff_summary.get("current_capability_count") == len(capability_registry_rows),
+        failures,
+        "SaaS integration handoff current_capability_count differs from capability registry",
+    )
+    expect(
+        handoff_summary.get("system_mapped_capability_count") == len(capability_registry_rows),
+        failures,
+        "SaaS integration handoff system_mapped_capability_count differs from capability registry",
+    )
+    expect(
+        handoff_summary.get("unmapped_capability_count") == 0,
+        failures,
+        "SaaS integration handoff reports unmapped capabilities",
+    )
+    expect(
+        handoff_summary.get("deployment_surface_count") == len(docs_saas_manifest.get("deployment_surfaces", [])),
+        failures,
+        "SaaS integration handoff deployment_surface_count differs from SaaS manifest",
+    )
+    expect(
+        handoff_summary.get("environment_variable_name_count") == len(env_names),
+        failures,
+        "SaaS integration handoff environment_variable_name_count differs from env sources",
+    )
+    expect(
+        handoff_summary.get("supabase_production_blocker_count") == 0,
+        failures,
+        "SaaS integration handoff reports Supabase production blockers",
+    )
+    expect(
+        handoff_summary.get("handoff_status") in {"ready", "ready_with_advisory_review"},
+        failures,
+        "SaaS integration handoff status is not ready",
+    )
+    expect(
+        docs_saas_handoff.get("public_contract", {}).get("contains_env_values") is False,
+        failures,
+        "SaaS integration handoff public contract must not contain env values",
+    )
+    expect(
+        docs_saas_handoff.get("public_contract", {}).get("contains_secrets") is False,
+        failures,
+        "SaaS integration handoff public contract must not contain secrets",
+    )
     hardening_summary = docs_supabase_hardening.get("summary", {}) if isinstance(docs_supabase_hardening, dict) else {}
     public_high_risk_routes = docs_supabase_hardening.get("public_high_risk_routes", []) if isinstance(docs_supabase_hardening, dict) else []
     expect(
@@ -842,7 +923,6 @@ def main() -> int:
         "Supabase hardening manifest public contract must not contain secrets",
     )
 
-    readiness_summary = docs_navigation_readiness.get("summary", {}) if isinstance(docs_navigation_readiness, dict) else {}
     readiness_gates = docs_navigation_readiness.get("gates", []) if isinstance(docs_navigation_readiness, dict) else []
     expect(
         readiness_summary.get("readiness_status") == "pass",
@@ -933,6 +1013,7 @@ def main() -> int:
         ("frontend/public/aureon_repo_organization_tree.json", public_organization_tree),
         ("frontend/public/aureon_repo_navigation_readiness.json", public_navigation_readiness),
         ("frontend/public/aureon_system_integration_map.json", public_system_integration),
+        ("frontend/public/aureon_saas_integration_handoff.json", public_saas_handoff),
         ("frontend/public/aureon_saas_integration_manifest.json", public_saas_manifest),
         ("frontend/public/aureon_supabase_hardening_manifest.json", public_supabase_hardening),
         *autonomous_public_manifests,
@@ -956,6 +1037,7 @@ def main() -> int:
     print(f"OK repo_organization_directories={len(organization_directories)}")
     print(f"OK repo_navigation_readiness={readiness_summary.get('readiness_status')}")
     print(f"OK system_integration_systems={len(system_rows)}")
+    print(f"OK saas_integration_handoff={handoff_summary.get('handoff_status')}")
     print(f"OK saas_env_variable_count={len(env_names)}")
     print(f"OK supabase_auth_counts={supabase_counts}")
     print(f"OK supabase_hardening_public_blockers={len(public_high_risk_routes)}")
