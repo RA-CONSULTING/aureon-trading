@@ -32,18 +32,26 @@ MISSING = [
     "unified_exchange_client", "unified_sniper_brain", "war_strategy",
 ]
 
-for name in MISSING:
-    if name not in sys.modules:
-        sys.modules[name] = ModuleType(name)
+# NOTE: this test is fully self-contained (the cognitive logic is copied into
+# MockEcosystem below and nothing from MISSING is ever imported here).  Under
+# pytest the stubs must NOT be installed: they persist in sys.modules for the
+# whole session and shadow the real modules for every test module collected
+# after this one (empty ModuleType has no attributes → "cannot import name X
+# from Y (unknown location)").  conftest.py already puts the real module paths
+# on sys.path for pytest runs.  Direct runs keep the original stubbing.
+if "pytest" not in sys.modules:
+    for name in MISSING:
+        if name not in sys.modules:
+            sys.modules[name] = ModuleType(name)
 
-# Aureon namespace stubs
-for name in ["aureon_lambda_engine", "aureon_baton_link"]:
-    if name not in sys.modules:
-        mod = ModuleType(name)
-        if name == "aureon_baton_link":
-            mod.link_system = lambda *a, **k: None
-        sys.modules[name] = sys.modules.setdefault("aureon", ModuleType("aureon"))
-        setattr(sys.modules["aureon"], name.split("_", 1)[1] if "_" in name else name, mod)
+    # Aureon namespace stubs
+    for name in ["aureon_lambda_engine", "aureon_baton_link"]:
+        if name not in sys.modules:
+            mod = ModuleType(name)
+            if name == "aureon_baton_link":
+                mod.link_system = lambda *a, **k: None
+            sys.modules[name] = sys.modules.setdefault("aureon", ModuleType("aureon"))
+            setattr(sys.modules["aureon"], name.split("_", 1)[1] if "_" in name else name, mod)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Minimal stub implementations of cognitive subsystems

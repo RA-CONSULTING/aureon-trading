@@ -3,12 +3,18 @@
 Force Trade Test - Find out WHY no trades are executing
 """
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+import sys
+
+if "pytest" in sys.modules:
+    import pytest
+    pytest.skip("diagnostic script — requires live Binance/exchange connections and funds; run directly", allow_module_level=True)
+
 from dotenv import load_dotenv
 load_dotenv()
 
 import os
-import sys
-sys.path.insert(0, '/workspaces/aureon-trading')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 print("=" * 60)
 print("🔥 FORCE TRADE TEST - Finding the blocker")
@@ -17,7 +23,7 @@ print("=" * 60)
 # 1. Test Binance balance
 print("\n1️⃣ Checking Binance Balance...")
 try:
-    from binance_client import BinanceClient
+    from binance_client import get_binance_client
     client = get_binance_client()
     
     print("   Checking liquid stablecoins:")

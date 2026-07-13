@@ -29,6 +29,8 @@ def test(name, condition, detail=""):
         failed += 1
         print(f"  [FAIL] {name} — {detail}")
 
+test.__test__ = False  # helper, not a pytest test
+
 
 print("=" * 70)
 print("AUREON OPERATIONAL CORE — 9 SURGICAL FIX TESTS")
@@ -306,17 +308,18 @@ class MockBalanceClient:
 class MockBalanceWrapper:
     clients = {'kraken': MockBalanceClient()}
 
-# Simulate internal state: $95 cash, no positions = $95 total
-# Exchange says $100 → 5% drift
+# Simulate internal state: $94 cash, no positions = $94 total
+# Exchange says $100 → 6% drift (strictly above the 5% threshold;
+# 95 vs 100 is exactly 5.00% under the max-denominator rule and does NOT trip a strict '>')
 class EmptyPos:
     entry_value = 0
 
-result = recon.reconcile(MockBalanceWrapper(), {}, 95.0)
+result = recon.reconcile(MockBalanceWrapper(), {}, 94.0)
 test("Reconciliation executed", result['reconciled'])
 test("Exchange total detected", result['exchange_total'] == 100.0)
 test("Exchanges checked", 'kraken' in result['exchanges_checked'])
-test("Discrepancy detected (5.3%)", len(result['discrepancies']) > 0)
-test("No halt at 5% (threshold)", not result['should_halt'])
+test("Discrepancy detected (6%)", len(result['discrepancies']) > 0)
+test("No halt at 6% (halt needs >10%)", not result['should_halt'])
 
 # After reconcile, shouldn't immediately reconcile again
 test("Not due for reconcile yet", not recon.should_reconcile())

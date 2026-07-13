@@ -39,6 +39,9 @@ import unittest
 from unittest.mock import MagicMock
 
 # Create a dummy aureon_thought_bus module for the import to work if it fails
+# (saved/restored below so the mock does not leak into other test modules
+# imported later in the same pytest session)
+_ORIG_THOUGHT_BUS = sys.modules.get('aureon_thought_bus')
 sys.modules['aureon_thought_bus'] = MagicMock()
 sys.modules['aureon_thought_bus'].ThoughtBus = MockThoughtBus
 sys.modules['aureon_thought_bus'].Thought = MockThought
@@ -57,6 +60,12 @@ def load_module_from_file(name, path):
 from pathlib import Path
 _PHANTOM_FILTER_PATH = str(Path(__file__).resolve().parents[1] / 'aureon' / 'scanners' / 'aureon_phantom_signal_filter.py')
 pf_mod = load_module_from_file('aureon_phantom_signal_filter', _PHANTOM_FILTER_PATH)
+
+# Restore sys.modules — pf_mod keeps its own references to the mocks it needs.
+if _ORIG_THOUGHT_BUS is not None:
+    sys.modules['aureon_thought_bus'] = _ORIG_THOUGHT_BUS
+else:
+    del sys.modules['aureon_thought_bus']
 
 class TestPhantomFilter(unittest.TestCase):
     def setUp(self):

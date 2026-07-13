@@ -198,8 +198,9 @@ json_files = [
     ('auris_runtime.json', 'Auris Runtime'),
 ]
 
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 for filename, description in json_files:
-    filepath = f'/workspaces/aureon-trading/{filename}'
+    filepath = os.path.join(_REPO_ROOT, filename)
     if os.path.exists(filepath):
         try:
             with open(filepath, 'r') as f:

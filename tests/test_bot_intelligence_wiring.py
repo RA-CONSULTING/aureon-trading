@@ -82,7 +82,8 @@ except Exception as e:
 
 print(f"\n4️⃣  Checking Integration Points in Queen Eternal Machine Code...")
 try:
-    with open('/workspaces/aureon-trading/queen_eternal_machine.py', 'r') as f:
+    from pathlib import Path as _Path
+    with open(_Path(__file__).resolve().parents[1] / 'aureon' / 'queen' / 'queen_eternal_machine.py', 'r') as f:
         content = f.read()
     
     checks = [

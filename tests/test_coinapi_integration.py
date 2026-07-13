@@ -18,7 +18,8 @@ import sys
 import time
 from datetime import datetime
 
-sys.path.insert(0, '/workspaces/aureon-trading')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from aureon_unified_ecosystem import AureonKrakenEcosystem, CONFIG
 from coinapi_anomaly_detector import MarketAnomaly, AnomalyType

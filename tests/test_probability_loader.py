@@ -2,18 +2,21 @@
 """Test probability loader and position hygiene"""
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
+from pathlib import Path
 from probability_loader import ProbabilityLoader, PositionHygieneChecker
+
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
 
 # Test probability loader
 print("🎯 Testing Probability Loader...")
-p = ProbabilityLoader('/workspaces/aureon-trading')
+p = ProbabilityLoader(_REPO_ROOT)
 freshness = p.load_all_reports()
 
 print(f"✅ Loaded {len(p.reports)} reports")
 print(f"📅 Freshness: {'FRESH' if p.is_fresh() else 'STALE'}")
 if freshness:
-    print(f"   Newest: {freshness.get('newest_minutes', 0):.1f}m ago")
-    print(f"   Oldest: {freshness.get('oldest_minutes', 0):.1f}m ago")
+    print(f"   Newest: {(freshness.get('newest_minutes') or 0):.1f}m ago")
+    print(f"   Oldest: {(freshness.get('oldest_minutes') or 0):.1f}m ago")
     print(f"   Threshold: {freshness.get('threshold_minutes')}m")
 
 # High conviction signals
@@ -32,7 +35,7 @@ for i, s in enumerate(cons[:5], 1):
 # Test position hygiene
 print("\n\n🧹 Testing Position Hygiene...")
 h = PositionHygieneChecker()
-state_path = '/workspaces/aureon-trading/aureon_kraken_state.json'
+state_path = str(Path(_REPO_ROOT) / 'aureon_kraken_state.json')
 result = h.check_positions(state_path)
 
 print(f"✅ Checked positions: {result['count']} flagged")

@@ -48,6 +48,8 @@ def test(name):
         return runner
     return wrapper
 
+test.__test__ = False  # decorator helper, not a pytest test
+
 
 # ===========================================================================
 # TEST 1: Phase Transition Detector

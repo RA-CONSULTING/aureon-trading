@@ -13,6 +13,11 @@
 
 from aureon_baton_link import link_system as _baton_link; _baton_link(__name__)
 import sys
+
+if "pytest" in sys.modules:
+    import pytest
+    pytest.skip("diagnostic script — API drifted — needs rewrite against current aureon_probability_nexus (ProfitFilter/CompoundingEngine removed); also fetches live Coinbase data; run directly", allow_module_level=True)
+
 import os
 import json
 import time
