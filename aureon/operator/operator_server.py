@@ -8,8 +8,11 @@ part of the vision.
 
 Routes:
   GET  /                       mobile-responsive chat page (self-contained HTML)
+  GET  /watch                  Aureon Watch — voice-first wearable PWA (Pixel Watch / Ray-Ban)
+  GET  /watch/<asset>          watch app static assets (css/js/manifest/sw/icons)
   GET  /api/operator/stream    Server-Sent Events: phases, then the answer token-by-token
   POST /api/operator/respond   one-shot JSON (OperatorResponse.to_dict())
+  GET  /api/pulse              composed read-only vitals (line-up + status + organism)
   GET  /healthz                liveness + active provider line-up
 
 Run:
@@ -31,7 +34,7 @@ from typing import Any, Dict
 logger = logging.getLogger("aureon.operator.server")
 
 try:
-    from flask import Flask, Response, jsonify, request
+    from flask import Flask, Response, jsonify, request, send_from_directory
 except Exception as exc:  # noqa: BLE001
     raise SystemExit(
         "Flask is required for the operator server (it is in requirements.txt): "
@@ -40,6 +43,28 @@ except Exception as exc:  # noqa: BLE001
 
 from aureon.operator.aureon_operator import AureonOperator  # noqa: E402  (after guarded flask import)
 from aureon.operator.providers import build_provider_set, describe_provider_set  # noqa: E402
+
+# The voice-first wearable (Pixel Watch / Ray-Ban) app — self-contained static PWA.
+WEARABLE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wearable")
+
+
+def _json_safe(obj: Any) -> Any:
+    """Recursively replace non-finite floats (Infinity/NaN) with None.
+
+    Python's json emits bare ``Infinity``/``NaN`` tokens, which are valid for
+    Python's parser and curl but are **rejected** by browser ``Response.json()``
+    (strict JSON). The watch calls ``/api/pulse`` from the browser, so its body
+    must be spec-clean or the fetch throws.
+    """
+    import math
+
+    if isinstance(obj, float):
+        return None if (math.isinf(obj) or math.isnan(obj)) else obj
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    return obj
 
 PAGE = """<!doctype html>
 <html lang="en">
@@ -214,6 +239,45 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     def index():
         return Response(PAGE, mimetype="text/html")
 
+    # ── Aureon Watch — voice-first wearable PWA (the Ray-Ban path on the wrist) ──
+    @app.get("/watch")
+    @app.get("/watch/")
+    def watch_index():
+        return send_from_directory(WEARABLE_DIR, "index.html")
+
+    @app.get("/watch/<path:asset>")
+    def watch_asset(asset: str):
+        resp = send_from_directory(WEARABLE_DIR, asset)
+        if asset == "sw.js":
+            # let the service worker claim the whole origin, and never stale-cache it
+            resp.headers["Service-Worker-Allowed"] = "/"
+            resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+    @app.get("/api/pulse")
+    def pulse():
+        # One composed, read-only vitals call for the watch: line-up + platform
+        # status + organism, so the wrist polls once instead of three times.
+        out: Dict[str, Any] = {
+            "ok": True,
+            "service": "aureon-operator",
+            "providers": describe_provider_set(_operator.providers),
+        }
+        try:
+            from aureon.saas.status import get_platform_status
+
+            out["status"] = get_platform_status()
+        except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
+            out["status"] = {"status": "unknown", "error": str(exc)[:200]}
+        try:
+            from aureon.saas.gateway import build_organism_payload
+
+            out["organism"] = build_organism_payload()
+        except Exception as exc:  # noqa: BLE001
+            out["organism"] = {"available": False, "error": str(exc)[:200]}
+        # Browser Response.json() rejects bare Infinity/NaN — keep the body spec-clean.
+        return jsonify(_json_safe(out))
+
     @app.get("/healthz")
     def healthz():
         # Liveness: the process is up and can describe its line-up.
@@ -294,11 +358,12 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
     @app.get("/api/cognition/stream")
     def cognition_stream():
         prompt = request.args.get("prompt", "").strip()
+        session_id = request.args.get("session_id")  # capture before the generator (no request ctx inside gen)
         if not prompt:
             return jsonify({"error": "missing prompt"}), 400
 
         def gen():
-            for event in _get_cognition().stream_events(prompt, session_id=request.args.get("session_id")):
+            for event in _get_cognition().stream_events(prompt, session_id=session_id):
                 yield f"event: {event.get('type','message')}\ndata: {json.dumps(event, default=str)}\n\n"
 
         return Response(gen(), mimetype="text/event-stream",

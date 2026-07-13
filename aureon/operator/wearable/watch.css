@@ -1,0 +1,100 @@
+/* Aureon Watch — round-display, OLED-black, voice-first.
+   Targets Wear OS (Pixel Watch, round ~400px) and squares/phones alike. */
+:root{
+  --bg:#000000; --panel:#0e1430; --ink:#e7ecff; --muted:#8b95bb;
+  --accent:#7c5cff; --ok:#39d98a; --warn:#ffcc4d; --veto:#ff6b6b;
+  --edge:rgba(124,92,255,.28);
+  --tap:48px;                 /* min touch target */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overscroll-behavior:none;overflow:hidden}
+body{user-select:none}
+
+/* vertical scroll-snap deck (crown/swipe friendly) */
+#deck{height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
+#deck::-webkit-scrollbar{display:none}
+.screen{height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;align-items:center;justify-content:center;position:relative}
+
+/* circular safe area — keep content off the round bezel */
+.safe{width:100%;height:100%;padding:max(18px,11%);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;text-align:center;overflow-y:auto;
+  scrollbar-width:none}
+.safe::-webkit-scrollbar{display:none}
+
+h2{margin:0;font-size:20px;letter-spacing:.02em}
+.eyebrow{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.muted{color:var(--muted)} .small{font-size:12px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.dot.warn{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.dot.veto{background:var(--veto);box-shadow:0 0 8px var(--veto)}
+
+/* the mic orb — the "brain chip" pulse */
+.orb{width:104px;height:104px;border-radius:50%;border:2px solid var(--edge);
+  background:radial-gradient(circle at 50% 35%,rgba(124,92,255,.35),rgba(14,20,48,.9));
+  color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;font-size:30px;cursor:pointer}
+.orb-label{font-size:10px;color:var(--muted)}
+.orb.listening{animation:pulse 1.1s ease-in-out infinite;border-color:var(--accent)}
+.orb.busy{opacity:.6}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(124,92,255,.45)}50%{box-shadow:0 0 0 14px rgba(124,92,255,0)}}
+
+.chips{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;min-height:0}
+.chip{font-size:10px;padding:3px 8px;border-radius:999px;background:var(--panel);
+  border:1px solid var(--edge);color:var(--muted)}
+.chip.on{color:var(--ink);border-color:var(--accent)}
+
+.answer{width:100%;max-height:38dvh;overflow-y:auto;font-size:15px;white-space:pre-wrap;
+  word-wrap:break-word;background:var(--panel);border:1px solid var(--edge);border-radius:14px;
+  padding:10px 12px;scrollbar-width:none;text-align:left}
+.answer:empty{display:none}
+.answer::-webkit-scrollbar{display:none}
+.verdict{font-size:11px;color:var(--muted)} .verdict.veto{color:var(--veto);font-weight:700}
+
+.askform{display:flex;gap:6px;width:100%}
+#prompt{flex:1;min-width:0;padding:9px 11px;border-radius:11px;border:1px solid var(--edge);
+  background:#05070f;color:var(--ink);font-size:15px}
+#send{min-width:var(--tap);min-height:var(--tap);border:0;border-radius:11px;
+  background:var(--accent);color:#fff;font-size:17px;font-weight:700}
+
+.toggles{display:flex;flex-wrap:wrap;gap:8px 12px;justify-content:center;font-size:11px;color:var(--muted)}
+.toggles label{display:flex;align-items:center;gap:4px}
+.toggles input{width:16px;height:16px;accent-color:var(--accent)}
+
+.big-stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.stat-val{font-size:30px;font-weight:800}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+.kv{width:100%;display:flex;flex-direction:column;gap:6px;text-align:left;font-size:13px}
+.kv .row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(124,92,255,.12);padding-bottom:4px}
+.kv .row b{color:var(--ink);font-weight:600} .kv .row span{color:var(--muted);text-align:right}
+
+.list{width:100%;display:flex;flex-direction:column;gap:6px;text-align:left;overflow-y:auto;
+  max-height:52dvh;scrollbar-width:none}
+.list::-webkit-scrollbar{display:none}
+.item{background:var(--panel);border:1px solid var(--edge);border-radius:11px;padding:9px 11px;
+  font-size:13px;min-height:var(--tap);cursor:pointer}
+.item .t{font-weight:600} .item .s{font-size:11px;color:var(--muted)}
+
+.banner{font-size:11px;color:var(--warn);border:1px solid rgba(255,204,77,.4);
+  border-radius:999px;padding:3px 10px}
+
+.quick{display:flex;flex-direction:column;gap:8px;width:100%}
+.q{min-height:var(--tap);border-radius:12px;border:1px solid var(--edge);background:var(--panel);
+  color:var(--ink);font-size:14px;padding:10px 12px;cursor:pointer;text-align:left}
+
+.ghost{background:transparent;border:1px solid var(--edge);color:var(--muted);
+  border-radius:999px;padding:6px 14px;font-size:12px;min-height:36px;cursor:pointer}
+
+/* screen dots */
+.dots{position:fixed;right:6px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;
+  gap:6px;z-index:5}
+.dots b{width:6px;height:6px;border-radius:50%;background:rgba(139,149,187,.4);transition:all .2s}
+.dots b.on{background:var(--accent);height:14px;border-radius:3px}
+
+.offline{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:6;
+  background:var(--veto);color:#fff;font-size:10px;padding:2px 10px;border-radius:999px}
+
+@media (prefers-reduced-motion:reduce){.orb.listening{animation:none}}

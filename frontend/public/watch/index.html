@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Aureon Watch</title>
+<link rel="manifest" href="/watch/manifest.webmanifest">
+<link rel="icon" href="/watch/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/watch/icon-192.png">
+<link rel="stylesheet" href="/watch/watch.css">
+</head>
+<body>
+  <!-- vertical scroll-snap deck: one screen per surface -->
+  <main id="deck" aria-label="Aureon Watch">
+
+    <!-- 1 · ASK ------------------------------------------------------------ -->
+    <section class="screen" id="s-ask" data-screen="ask" aria-label="Ask">
+      <div class="safe">
+        <div class="eyebrow"><span class="dot" id="live-dot"></span> Aureon <span id="lineup" class="muted">…</span></div>
+        <button id="mic" class="orb" aria-label="Tap to speak">
+          <span class="orb-glyph">🎙️</span>
+          <span class="orb-label" id="orb-label">Tap to speak</span>
+        </button>
+        <div class="chips" id="chips" aria-live="polite"></div>
+        <div class="answer" id="answer" aria-live="polite" tabindex="0"></div>
+        <div class="verdict" id="verdict"></div>
+        <form id="askform" class="askform" autocomplete="off">
+          <input id="prompt" placeholder="or type…" enterkeyhint="send" aria-label="Type a question">
+          <button id="send" type="submit" aria-label="Send">➤</button>
+        </form>
+        <div class="toggles">
+          <label><input type="checkbox" id="t-cog" checked> cognition</label>
+          <label><input type="checkbox" id="t-tts" checked> speak</label>
+          <label><input type="checkbox" id="t-wake"> hands-free</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 · PULSE ---------------------------------------------------------- -->
+    <section class="screen" id="s-pulse" data-screen="pulse" aria-label="Pulse">
+      <div class="safe">
+        <h2>Pulse</h2>
+        <div class="big-stat"><span id="p-status" class="stat-val">…</span><span class="stat-lbl">system</span></div>
+        <div class="kv" id="p-body"><div class="muted">loading…</div></div>
+        <button class="ghost" data-refresh="pulse">↻ refresh</button>
+      </div>
+    </section>
+
+    <!-- 3 · ORGANISM ------------------------------------------------------- -->
+    <section class="screen" id="s-organism" data-screen="organism" aria-label="Organism">
+      <div class="safe">
+        <h2>Organism</h2>
+        <div class="big-stat"><span id="o-cov" class="stat-val">…</span><span class="stat-lbl">wired</span></div>
+        <div class="kv" id="o-body"><div class="muted">loading…</div></div>
+        <button class="ghost" data-refresh="organism">↻ refresh</button>
+      </div>
+    </section>
+
+    <!-- 4 · SYSTEMS -------------------------------------------------------- -->
+    <section class="screen" id="s-systems" data-screen="systems" aria-label="Systems">
+      <div class="safe">
+        <h2>Systems</h2>
+        <div class="muted small" id="sys-sub">what Aureon can do</div>
+        <div class="list" id="sys-list"><div class="muted">loading…</div></div>
+        <button class="ghost" data-refresh="systems">↻ refresh</button>
+      </div>
+    </section>
+
+    <!-- 5 · TRADING (read-only) ------------------------------------------- -->
+    <section class="screen" id="s-trading" data-screen="trading" aria-label="Trading">
+      <div class="safe">
+        <h2>Trading</h2>
+        <div class="banner">read-only · no actions from the watch</div>
+        <div class="answer" id="tr-body"><div class="muted">Tap to read current state.</div></div>
+        <button class="ghost" data-refresh="trading">↻ read state</button>
+      </div>
+    </section>
+
+    <!-- 6 · QUICK ---------------------------------------------------------- -->
+    <section class="screen" id="s-quick" data-screen="quick" aria-label="Quick">
+      <div class="safe">
+        <h2>Quick</h2>
+        <div class="quick" id="quick"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- screen indicator dots -->
+  <nav id="dots" class="dots" aria-label="Screens"></nav>
+  <div id="offline" class="offline" hidden>offline</div>
+
+  <script src="/watch/watch.js"></script>
+</body>
+</html>

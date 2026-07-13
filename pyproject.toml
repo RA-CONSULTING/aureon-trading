@@ -60,6 +60,10 @@ aureon-operator = "aureon.operator.operator_server:main"
 include = ["aureon*"]
 namespaces = false
 
+[tool.setuptools.package-data]
+# Ship the voice-first wearable PWA (served by the operator at /watch).
+"aureon.operator" = ["wearable/*"]
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Ruff — repo-wide config. CI gates ONLY on aureon/operator (strict tier); the
 # rest is an informational ratchet (`ruff check aureon/ --statistics`).

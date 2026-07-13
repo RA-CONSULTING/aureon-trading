@@ -57,6 +57,37 @@ def verify_supabase_jwt(token: str, secret: str) -> Dict[str, Any] | None:
         return None
 
 
+def build_organism_payload() -> Dict[str, Any]:
+    """The connectome's honest coverage of the body + recent breaths + mesh.
+
+    Shared by ``GET /api/organism`` and the operator's composed ``GET /api/pulse``.
+    Never raises — degrades to ``{"available": False, "error": ...}``.
+    """
+    payload: Dict[str, Any] = {"available": False}
+    try:
+        from aureon.core.aureon_connectome import get_connectome
+
+        connectome = get_connectome()
+        payload = {"available": True, "connectome": connectome.status()}
+        try:
+            from aureon.core.aureon_thought_bus import get_thought_bus
+
+            pulses = get_thought_bus().recall("organism.connectome.pulse") or []
+            payload["recent_pulses"] = pulses[-5:]
+        except Exception:  # noqa: BLE001 — pulses are optional
+            payload["recent_pulses"] = []
+        try:
+            from aureon.core.aureon_mycelium import get_mycelium
+
+            mesh = get_mycelium().get_mesh_status()
+            payload["mycelium"] = {"connected_systems": mesh.get("connected_systems", [])}
+        except Exception:  # noqa: BLE001
+            payload["mycelium"] = {}
+    except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
+        payload = {"available": False, "error": str(exc)[:200]}
+    return payload
+
+
 def register_saas_routes(app: Any) -> Any:
     """Mount the SaaS catalog/status routes onto an existing Flask app."""
     from flask import g, jsonify, request
@@ -117,29 +148,7 @@ def register_saas_routes(app: Any) -> Any:
     @_guarded
     def saas_organism():
         # The connectome's honest coverage of the body + recent breaths + mesh.
-        payload: Dict[str, Any] = {"available": False}
-        try:
-            from aureon.core.aureon_connectome import get_connectome
-
-            connectome = get_connectome()
-            payload = {"available": True, "connectome": connectome.status()}
-            try:
-                from aureon.core.aureon_thought_bus import get_thought_bus
-
-                pulses = get_thought_bus().recall("organism.connectome.pulse") or []
-                payload["recent_pulses"] = pulses[-5:]
-            except Exception:  # noqa: BLE001 — pulses are optional
-                payload["recent_pulses"] = []
-            try:
-                from aureon.core.aureon_mycelium import get_mycelium
-
-                mesh = get_mycelium().get_mesh_status()
-                payload["mycelium"] = {"connected_systems": mesh.get("connected_systems", [])}
-            except Exception:  # noqa: BLE001
-                payload["mycelium"] = {}
-        except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
-            payload = {"available": False, "error": str(exc)[:200]}
-        return jsonify(payload)
+        return jsonify(build_organism_payload())
 
     @app.get("/api/manifests/<name>")
     @_guarded
