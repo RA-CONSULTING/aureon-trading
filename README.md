@@ -39,6 +39,39 @@ It is delivered in three honest layers — each real, each independently reviewa
 > This is the formal front door. The original long-form README is preserved unchanged at
 > [`docs/archive/README_legacy_20260712.md`](docs/archive/README_legacy_20260712.md) — nothing was removed, only formalized.
 
+### How it fits together
+
+```mermaid
+flowchart TB
+    user["👤 Operator / Investor / End user"]
+    console["Unified console<br/>(React · sidebar · every dashboard as a route)"]
+    gateway["Operator gateway · :8790<br/>WSGI · auth · rate-limit · /healthz /readyz /metrics"]
+
+    subgraph brain["Grounded AI core"]
+        operator["Aureon Operator<br/>switchboard: ground → consensus → veto"]
+        cognition["Agentic cognition<br/>tools · repo-wide grounding · hard boundaries"]
+    end
+
+    subgraph organism["The organism (~1,200 modules)"]
+        connectome["Connectome<br/>sense · touch · weave"]
+        bus["Thought bus · mycelium · Queen"]
+        hnc["HNC live daemon → Λ(t) field → harmonic observer"]
+    end
+
+    saas["SaaS platform<br/>catalog · status · billing/metering"]
+    supabase[("Supabase<br/>auth · tenancy · gas-tank billing")]
+
+    user --> console --> gateway
+    gateway --> operator --> cognition
+    gateway --> saas
+    cognition --> connectome --> bus
+    hnc --> bus
+    saas --> supabase
+    console -. "Supabase session (JWT)" .-> supabase
+```
+
+<sub>Every consequential action passes a hard authority boundary + conscience veto before it runs; the platform never trades, pays, or files autonomously.</sub>
+
 ---
 
 ## 1 · The production platform (what runs today)
@@ -155,8 +188,8 @@ that verified state.
 The hosted GitHub Actions status badges below turn green once Actions is enabled on the
 organization (they reflect hosted runs, not the local gate):
 
-[![Operator CI](https://github.com/RA-CONSULTING/aureon-os/actions/workflows/operator-ci.yml/badge.svg)](https://github.com/RA-CONSULTING/aureon-os/actions/workflows/operator-ci.yml)
-[![Aureon CI](https://github.com/RA-CONSULTING/aureon-os/actions/workflows/main_ci.yml/badge.svg)](https://github.com/RA-CONSULTING/aureon-os/actions/workflows/main_ci.yml)
+[![Operator CI](https://github.com/RA-CONSULTING/aureon-trading/actions/workflows/operator-ci.yml/badge.svg)](https://github.com/RA-CONSULTING/aureon-trading/actions/workflows/operator-ci.yml)
+[![Aureon CI](https://github.com/RA-CONSULTING/aureon-trading/actions/workflows/main_ci.yml/badge.svg)](https://github.com/RA-CONSULTING/aureon-trading/actions/workflows/main_ci.yml)
 
 ```bash
 # reproduce the gate locally
