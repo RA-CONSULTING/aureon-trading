@@ -212,18 +212,40 @@ def test_token_delta_sweep():
 pytest.importorskip("flask", reason="billing gateway requires the `.[operator]` extra")
 
 
+class _StubOperator:
+    providers = {}
+
+    def respond(self, *args, **kwargs):
+        raise AssertionError("billing tests should not invoke operator respond")
+
+    def stream_events(self, *args, **kwargs):
+        raise AssertionError("billing tests should not invoke operator stream")
+
+
 def _app(**env):
     reset_buffer_for_tests()
+    managed_env = {
+        "SUPABASE_URL",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "AUREON_SUPABASE_JWT_SECRET",
+        "AUREON_LLM_OFFLINE",
+    } | set(env)
+    previous = {k: os.environ.get(k) for k in managed_env}
+    for k in managed_env:
+        os.environ[k] = ""
     for k, v in env.items():
         os.environ[k] = v
     try:
         import aureon.operator.operator_server as srv
 
         importlib.reload(srv)
-        return srv.create_app().test_client()
+        return srv.create_app(operator=_StubOperator()).test_client()
     finally:
-        for k in env:
-            os.environ.pop(k, None)
+        for k, v in previous.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
 
 
 def _mk_jwt(claims, secret):

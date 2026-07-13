@@ -5,6 +5,7 @@ Aureon SaaS — catalog, domains, status tests (no HTTP; offline).
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from aureon.saas.catalog import build_catalog, write_frontend_manifests
 from aureon.saas.domains import (
@@ -32,7 +33,7 @@ def test_build_catalog_is_categorized():
 
 def test_write_frontend_manifests_matches_ui_contract(tmp_path):
     written = write_frontend_manifests(out_dir=str(tmp_path))
-    names = {p.split("/")[-1] for p in written}
+    names = {Path(p).name for p in written}
     assert names == {"aureon_saas_system_inventory.json", "aureon_organism_runtime_status.json"}
 
     inv = json.loads((tmp_path / "aureon_saas_system_inventory.json").read_text())

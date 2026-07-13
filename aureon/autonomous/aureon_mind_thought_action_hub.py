@@ -798,15 +798,34 @@ class MindThoughtActionHub:
 
         combined = payload.get('combined') if isinstance(payload.get('combined'), dict) else {}
         exchanges = payload.get('exchanges') if isinstance(payload.get('exchanges'), dict) else {}
+        runtime_watchdog = payload.get('runtime_watchdog') if isinstance(payload.get('runtime_watchdog'), dict) else {}
         age_sec = max(0.0, time.time() - status_path.stat().st_mtime)
         ready_values = [bool(value) for key, value in exchanges.items() if str(key).endswith('_ready')]
+        tick_phase_running_sec = float(runtime_watchdog.get('tick_phase_running_sec') or 0.0)
+        tick_stale_after_sec = float(runtime_watchdog.get('tick_stale_after_sec') or 45.0)
+        tick_stale = bool(runtime_watchdog.get('tick_stale'))
+        if bool(runtime_watchdog.get('tick_active')) and tick_phase_running_sec <= tick_stale_after_sec:
+            tick_stale = False
+        watchdog_stale = tick_stale or str(runtime_watchdog.get('severity', '')).lower() in {
+            'stale',
+            'critical',
+            'error',
+        }
+        payload_stale = bool(payload.get('stale', False))
+        if runtime_watchdog and not watchdog_stale:
+            payload_stale = False
 
         return {
             'available': True,
-            'ok': bool(payload.get('ok', True)),
+            'ok': bool(payload.get('ok', True)) or (
+                bool(runtime_watchdog)
+                and not watchdog_stale
+                and bool(payload.get('trading_ready', False))
+                and bool(payload.get('data_ready', False))
+            ),
             'trading_ready': bool(payload.get('trading_ready', False)),
             'data_ready': bool(payload.get('data_ready', False)),
-            'stale': bool(payload.get('stale', False)) or age_sec > 60,
+            'stale': payload_stale or watchdog_stale,
             'status_file_age_sec': round(age_sec, 3),
             'open_positions': number_from('open_positions', 'positions', source=combined),
             'pending_orders': number_from(
@@ -1139,14 +1158,23 @@ class MindThoughtActionHub:
             'thought_bus': self.thought_bus is not None,
             'mind_initialized': self.initialized,
             'mind_initializing': self.initializing,
-            'mind_init_error': self.init_error is None,
+            'mind_init_error': self.init_error is not None,
             'market_runtime_available': bool(market.get('available')),
             'market_trading_ready': bool(market.get('trading_ready')),
             'market_data_ready': bool(market.get('data_ready')),
         }
-        ok = all(flight_checks.values()) if self.initialized else all(
-            value for key, value in flight_checks.items()
-            if key not in {'mind_initialized', 'market_runtime_available', 'market_trading_ready', 'market_data_ready'}
+        required_checks = {
+            'http_surface',
+            'thought_bus',
+            'mind_initialized',
+            'market_runtime_available',
+            'market_trading_ready',
+            'market_data_ready',
+        }
+        ok = (
+            all(bool(flight_checks[key]) for key in required_checks)
+            and not flight_checks['mind_initializing']
+            and not flight_checks['mind_init_error']
         )
 
         should_reboot = bool(reboot_intent.get('pending')) or bool(self.init_error)

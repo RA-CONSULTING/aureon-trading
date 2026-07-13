@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Dict, Generator, List
+from typing import Any, Dict, Generator, List
 
 from aureon.inhouse_ai.llm_adapter import (
     AureonLocalAdapter,
@@ -111,6 +111,7 @@ class AureonGeminiAdapter(LLMAdapter):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
         self.model = model or os.environ.get("GEMINI_MODEL", self.DEFAULT_MODEL)
         self.base_url = (base_url or os.environ.get("GEMINI_BASE_URL", self.DEFAULT_BASE_URL)).rstrip("/")
+        self._session: Any | None = None
         try:
             import requests
 

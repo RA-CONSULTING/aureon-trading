@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 import uuid
 from typing import Any, Dict, Generator, List
@@ -64,8 +65,7 @@ except Exception:  # noqa: BLE001
 # non-trivial TF-IDF sum (common English vocabulary is everywhere), so a single
 # absolute floor can't separate "Aureon operator correlation" (155) from "healthy
 # ways to deal with stress" (87). We use a hybrid gate instead:
-#   ground  IF  top_score >= _HIGH_FLOOR                 (unmistakably Aureon-specific)
-#           OR  (top_score >= _MID_FLOOR AND the prompt names an Aureon-domain term)
+#   ground  IF  top_score >= _MID_FLOOR AND the prompt names an Aureon-domain term
 # Otherwise the prompt is treated as general-domain: answer from general knowledge,
 # no repo citation. (A semantic/embedding index would sharpen this; documented as
 # a keyword-index heuristic.)
@@ -82,8 +82,11 @@ _DOMAIN_TERMS = frozenset((
 
 
 def _has_domain_term(prompt: str) -> bool:
-    low = f" {prompt.lower()} "
-    return any(term in low for term in _DOMAIN_TERMS)
+    low = prompt.lower()
+    return any(
+        re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", low)
+        for term in _DOMAIN_TERMS
+    )
 
 
 _QA_PATH = REPO_ROOT / "data" / "datasets" / "aureon_qa_dataset.json"
@@ -188,7 +191,7 @@ class AureonCognition:
         try:
             hits = repo_search(prompt, top_k=4)
             top = hits[0].score if hits else 0.0
-            is_grounded = top >= _HIGH_FLOOR or (top >= _MID_FLOOR and _has_domain_term(prompt))
+            is_grounded = top >= _MID_FLOOR and _has_domain_term(prompt)
             if is_grounded:
                 for s in hits:
                     if s.score < _SNIPPET_FLOOR:
