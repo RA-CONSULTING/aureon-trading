@@ -75,6 +75,15 @@ def _persist(data: Dict[str, Dict[str, Any]]) -> None:
         pass
 
 
+def _known(provider_id: str) -> bool:
+    """A stored id is valid if it's an LLM provider OR a catalog connection."""
+    if get_provider(provider_id) is not None:
+        return True
+    from aureon.operator.connections_catalog import get_connection
+
+    return get_connection(provider_id) is not None
+
+
 def save_provider(
     provider_id: str,
     *,
@@ -82,10 +91,12 @@ def save_provider(
     base_url: str | None = None,
     model: str | None = None,
     enabled: bool | None = None,
+    extra: Dict[str, str] | None = None,
 ) -> Dict[str, Any]:
     """Merge the given fields into a provider's entry and persist. Only provided
-    (non-None) fields change. Returns the stored entry (unmasked, in-process)."""
-    if get_provider(provider_id) is None:
+    (non-None) fields change. ``extra`` holds secondary credential envs (e.g. a
+    Telegram chat id) as ``{ENV_VAR: value}``. Returns the stored entry."""
+    if not _known(provider_id):
         raise KeyError(f"unknown provider: {provider_id}")
     data = load()
     entry = data.get(provider_id, {"enabled": True})
@@ -97,6 +108,10 @@ def save_provider(
         entry["model"] = model.strip()
     if enabled is not None:
         entry["enabled"] = bool(enabled)
+    if extra:
+        merged = dict(entry.get("extra", {}))
+        merged.update({k: str(v).strip() for k, v in extra.items() if v is not None})
+        entry["extra"] = merged
     data[provider_id] = entry
     _persist(data)
     return entry
@@ -105,14 +120,24 @@ def save_provider(
 def delete_provider(provider_id: str) -> None:
     """Forget a provider's stored config and unset its env vars."""
     data = load()
+    entry = data.get(provider_id, {})
     if provider_id in data:
         del data[provider_id]
         _persist(data)
     info = get_provider(provider_id)
-    if info:
+    if info:  # LLM provider
         for var in (info.key_env, info.base_url_env, model_env(info.registry_name)):
             if var:
                 os.environ.pop(var, None)
+        return
+    from aureon.operator.connections_catalog import get_connection
+
+    conn = get_connection(provider_id)
+    if conn:  # data-source connection
+        for var in conn.credential_env:
+            os.environ.pop(var, None)
+        for var in (entry.get("extra") or {}):
+            os.environ.pop(var, None)
 
 
 def apply_to_env() -> None:
@@ -122,36 +147,58 @@ def apply_to_env() -> None:
     their key env removed (dropping the line). Providers with no keystore entry
     are left untouched, so keys supplied via a real ``.env`` still work.
     """
+    from aureon.operator.connections_catalog import get_connection
+
     data = load()
     for provider_id, entry in data.items():
-        info = get_provider(provider_id)
-        if info is None:
-            continue
         enabled = bool(entry.get("enabled", True))
         key = str(entry.get("api_key", "") or "")
-        base_url = str(entry.get("base_url", "") or "")
-        model = str(entry.get("model", "") or "")
+        info = get_provider(provider_id)
+        if info is not None:
+            # ── LLM provider (base_url + model semantics) ──
+            base_url = str(entry.get("base_url", "") or "")
+            model = str(entry.get("model", "") or "")
+            if enabled:
+                if key and info.key_env:
+                    os.environ[info.key_env] = key
+                if base_url and info.base_url_env:
+                    os.environ[info.base_url_env] = base_url
+                if model:
+                    os.environ[model_env(info.registry_name)] = model
+            else:
+                if info.key_env:
+                    os.environ.pop(info.key_env, None)
+                if info.key_optional and info.base_url_env:
+                    os.environ.pop(info.base_url_env, None)
+            continue
+        conn = get_connection(provider_id)
+        if conn is None:
+            continue
+        # ── data-source connection (primary key + extra envs) ──
+        extra = entry.get("extra") or {}
         if enabled:
-            if key and info.key_env:
-                os.environ[info.key_env] = key
-            if base_url and info.base_url_env:
-                os.environ[info.base_url_env] = base_url
-            if model:
-                os.environ[model_env(info.registry_name)] = model
+            if key and conn.key_env:
+                os.environ[conn.key_env] = key
+            for var, val in extra.items():
+                if val:
+                    os.environ[var] = str(val)
         else:
-            # Turn the line off without forgetting the key.
-            if info.key_env:
-                os.environ.pop(info.key_env, None)
-            if info.key_optional and info.base_url_env:
-                # keyless (Ollama) lines are enabled by base-URL presence
-                os.environ.pop(info.base_url_env, None)
+            for var in conn.credential_env:
+                os.environ.pop(var, None)
+            for var in extra:
+                os.environ.pop(var, None)
 
 
-def _mask(key: str) -> str:
+def mask(key: str) -> str:
+    """Public last-4 mask for safe display (e.g. ••••1234)."""
     key = str(key or "")
     if not key:
         return ""
     return ("•" * 4) + key[-4:] if len(key) > 4 else "•" * len(key)
+
+
+# Back-compat internal alias.
+_mask = mask
 
 
 def masked_view() -> Dict[str, Dict[str, Any]]:
@@ -176,6 +223,7 @@ __all__ = [
     "delete_provider",
     "apply_to_env",
     "masked_view",
+    "mask",
     "model_env",
     "managed_env_vars",
     "STORE_PATH",

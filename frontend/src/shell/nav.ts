@@ -25,6 +25,7 @@ import {
   ListChecks,
   Map,
   MessageSquare,
+  Radar,
   Radio,
   Satellite,
   Ship,
@@ -233,6 +234,14 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Operations",
     items: [
+      {
+        path: "/ops/connections",
+        label: "Connections",
+        description: "Every external source — trading to NASA — keys, status & readiness",
+        icon: Radar,
+        Component: lazy(() => import("./pages/ConnectionsPage")),
+        live: true,
+      },
       {
         path: "/ops/gold-capital",
         label: "Gold & Capital",

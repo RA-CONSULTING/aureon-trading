@@ -533,6 +533,64 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         result = _test_provider_adapter(info, api_key, base_url, model)
         return jsonify(result)
 
+    # ── Unified Connections (all external sources: trading → NASA) ──────────────
+    from aureon.operator import connections_api as _conn_api
+    from aureon.operator.connections_catalog import get_connection as _get_conn
+
+    @app.get("/api/connections")
+    def connections_list():
+        return jsonify(_json_safe(_conn_api.build_view(_provider_view())))
+
+    @app.get("/api/connections/readiness")
+    def connections_readiness():
+        return jsonify(_json_safe(_conn_api.readiness(_provider_view())))
+
+    @app.post("/api/connections/<conn_id>")
+    def connections_set(conn_id: str):
+        body: Dict[str, Any] = request.get_json(silent=True) or {}
+        api_key = body.get("api_key")
+        extra = body.get("extra") or {}
+        # LLM provider → keystore + switchboard rebuild (same as /api/providers)
+        if get_provider(conn_id) is not None:
+            _keystore.save_provider(
+                conn_id, api_key=api_key, base_url=body.get("base_url"),
+                model=body.get("model"), enabled=body.get("enabled"),
+            )
+            _rebuild_switchboard()
+            view = next((p for p in _provider_view() if p["id"] == conn_id), None)
+            return jsonify({"ok": True, "connection": view})
+        conn = _get_conn(conn_id)
+        if conn is None:
+            return _err(404, f"unknown connection: {conn_id}")
+        if conn.category == "exchange":
+            result = _conn_api.set_exchange_credential(conn, api_key or "", extra)
+            code = 200 if result.get("ok") else 502
+            return jsonify(result), code
+        # operator-consumed data source → keystore + env
+        _keystore.save_provider(conn_id, api_key=api_key, enabled=body.get("enabled"), extra=extra)
+        _keystore.apply_to_env()
+        return jsonify({"ok": True, "connection": _conn_api.connection_public(
+            conn, _keystore.load(), {})})
+
+    @app.post("/api/connections/<conn_id>/test")
+    def connections_test(conn_id: str):
+        body: Dict[str, Any] = request.get_json(silent=True) or {}
+        # LLM → real prompt round-trip; data source → connectivity probe
+        info = get_provider(conn_id)
+        if info is not None:
+            stored = _keystore.load().get(conn_id, {})
+            api_key = body.get("api_key") or stored.get("api_key") or os.environ.get(info.key_env, "")
+            base_url = body.get("base_url") or stored.get("base_url") or info.default_base_url or None
+            model = body.get("model") or stored.get("model") or info.default_model
+            return jsonify(_test_provider_adapter(info, api_key, base_url, model))
+        conn = _get_conn(conn_id)
+        if conn is None:
+            return _err(404, f"unknown connection: {conn_id}")
+        stored = _keystore.load().get(conn_id, {})
+        api_key = body.get("api_key") or stored.get("api_key") or (
+            os.environ.get(conn.key_env, "") if conn.key_env else "")
+        return jsonify(_conn_api.probe(conn, api_key))
+
     # ── SaaS platform surface (catalog / domains / status) ─────────────────────
     try:
         from aureon.saas.gateway import register_saas_routes
