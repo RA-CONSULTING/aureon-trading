@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/images/aureon_zorza_logo.png" alt="Aureon Zorza Technologies" width="640" />
+<img src="docs/images/aureon_zorza_logo.jpg" alt="Aureon Zorza Technologies" width="720" />
 
 # Aureon
 
@@ -87,6 +87,11 @@ Every claim links to the file that establishes it and a command you can run. If 
 backed by a source, it is a bug — the repository is the authority. See the full spine in
 [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md).
 
+<div align="center">
+<img src="docs/images/forensics_feb2026_convergence.jpg" alt="From theory to forensics — Feb 5–6 geomagnetic convergence event, predictions vs verified public data" width="70%" />
+<br/><sub>A worked example: the Feb 5–6 geomagnetic-convergence event, predictions checked against verified public data (NASA/NOAA, Reuters). Research/education only — not financial advice.</sub>
+</div>
+
 ---
 
 ## 3 · The vision
@@ -107,9 +112,21 @@ distributed response — is told in the creator's own voice in
 **company no. NI696693** — trading as **Aureon Zorza Technologies**.
 
 - 🏅 **Silver-level innovator** on the Innovate NI Innovation Framework (Department for the Economy / Tourism NI), awarded 21 July 2025 by the Minister for the Economy. → [certificate](docs/images/innovate_ni_silver_2025.png)
+- 🤝 **Community**: a supporter of Street Soccer NI / Homeless World Cup (Norway 2025). → [`COMPANY.md`](COMPANY.md)
 - 🌐 Website: [aureonzorzatechnologies.pl](https://aureonzorzatechnologies.pl)
 - 📄 License: [MIT](LICENSE) · © 2025 R&A Consulting and Brokerage Services Ltd
 - Full company details: [`COMPANY.md`](COMPANY.md)
+
+### Early interest
+
+Open-source repository traffic to date (verifiable in the repo's GitHub **Insights → Traffic**):
+
+<div align="center">
+<img src="docs/images/github_traffic_infographic.jpg" alt="GitHub clone traffic: 4,559 unique cloners, 51,287 clone operations, Dec 2025–Mar 2026" width="46%" />
+<img src="docs/images/github_clone_traffic_insights.jpg" alt="GitHub Insights traffic — clones over 14 days" width="46%" />
+</div>
+
+<sub>These are **repository clone-traffic** figures (developer/researcher interest in the code), not user, customer, or revenue numbers. Source: GitHub Insights.</sub>
 
 ---
 

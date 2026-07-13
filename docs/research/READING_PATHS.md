@@ -1,6 +1,11 @@
 # Reading Paths — The Canon
 *Curated routes through the 54 whitepapers so you don't have to guess where to start.*
 
+<div align="center">
+<img src="../images/qgita_research.jpg" alt="Dive into the Aureon / HNC research" width="60%" />
+</div>
+
+
 > **The problem:** [docs/research/whitepapers/](whitepapers/) holds 54 papers. Many have `_v1` / `_v2` / `_rev2` variants. A new reader cannot tell which 5 matter first.
 >
 > **The solution:** Three short reading paths, **3–5 papers each**, curated from the 54. Each path is a self-contained route through one slice of the work. After any single path you will understand one complete thread. After all three, you will have the whole synthesis.
