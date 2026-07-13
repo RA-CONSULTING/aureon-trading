@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 360" role="img" aria-labelledby="title desc">
+  <title id="title">AUREON LUX knowledge-ant memory tag icon</title>
+  <desc id="desc">A lightweight robotic ant carrying source tags across the review map.</desc>
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="50%" r="65%">
+      <stop offset="0" stop-color="#5be0d6" stop-opacity=".30"/>
+      <stop offset=".55" stop-color="#5be0d6" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#050812" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="trail" x1="0" x2="1">
+      <stop offset="0" stop-color="#ffb25f"/>
+      <stop offset=".55" stop-color="#5be0d6"/>
+      <stop offset="1" stop-color="#a991ff"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="560" height="360" fill="none"/>
+  <ellipse cx="280" cy="184" rx="238" ry="120" fill="url(#halo)"/>
+  <g opacity=".24" stroke="#5be0d6" stroke-width="1">
+    <path d="M62 78H498M62 282H498"/>
+    <path d="M118 36V324M280 36V324M442 36V324"/>
+  </g>
+  <g fill="none" stroke="url(#trail)" stroke-linecap="round" filter="url(#glow)">
+    <path d="M68 182C116 118 172 116 230 150" stroke-width="3" stroke-dasharray="6 11"/>
+    <path d="M72 226C134 276 198 250 244 206" stroke-width="3" stroke-dasharray="6 11"/>
+    <path d="M316 150C384 96 442 116 494 168" stroke-width="3" stroke-dasharray="6 11"/>
+    <path d="M326 208C392 272 454 260 506 214" stroke-width="3" stroke-dasharray="6 11"/>
+  </g>
+  <g transform="translate(130 104)" filter="url(#glow)">
+    <g fill="#08111f" stroke-width="5">
+      <ellipse cx="58" cy="76" rx="48" ry="34" stroke="#5be0d6"/>
+      <ellipse cx="150" cy="76" rx="64" ry="42" stroke="#a991ff"/>
+      <ellipse cx="270" cy="76" rx="78" ry="50" stroke="#ffb25f"/>
+    </g>
+    <g stroke="#d8e7ff" stroke-width="8" stroke-linecap="round" fill="none">
+      <path d="M40 44L8 0"/>
+      <path d="M42 108L0 154"/>
+      <path d="M132 30L104 -22"/>
+      <path d="M136 122L108 174"/>
+      <path d="M268 26L302 -28"/>
+      <path d="M270 126L318 172"/>
+    </g>
+    <g fill="#5be0d6">
+      <circle cx="32" cy="70" r="7"/>
+      <circle cx="86" cy="70" r="7"/>
+    </g>
+    <circle cx="150" cy="76" r="9" fill="#a991ff"/>
+    <circle cx="270" cy="76" r="10" fill="#ffb25f"/>
+    <path d="M102 76H92M218 76H206" stroke="#d8e7ff" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <g font-family="Inter, Arial, sans-serif" font-weight="800" font-size="13">
+    <rect x="56" y="54" width="104" height="32" rx="8" fill="#101b2f" stroke="#5be0d6"/>
+    <text x="108" y="75" text-anchor="middle" fill="#5be0d6">source tag</text>
+    <rect x="398" y="274" width="112" height="32" rx="8" fill="#101b2f" stroke="#ffb25f"/>
+    <text x="454" y="295" text-anchor="middle" fill="#ffb25f">review trail</text>
+  </g>
+</svg>

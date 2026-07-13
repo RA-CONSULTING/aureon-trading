@@ -1,0 +1,74 @@
+[
+  {
+    "id": "public-visual-deployment",
+    "date": "2026-07-12",
+    "title": "Public visual deployment",
+    "summary": "Published through PR #4 and visually verified on GitHub Pages for the guardian ant, ocean and mechanical fish, Trading cyber-bees, and EPAS / Shield guardian imagery on desktop and mobile.",
+    "status": "deployed",
+    "completed": true
+  },
+  {
+    "id": "dated-implementation-ledger",
+    "date": "2026-07-12",
+    "title": "Dated implementation ledger",
+    "summary": "Published the Updates table with ISO dates, explicit text states, and green completion points; future public website changes must add a verified record.",
+    "status": "implementation",
+    "completed": true
+  },
+  {
+    "id": "visual-deployment-audit",
+    "date": "2026-07-12",
+    "title": "Visual deployment failure audit",
+    "summary": "Compared the local visual branch, a clean main snapshot, and GitHub Pages with asset decoding, computed-style evidence, and screenshots; the unpublished branch was confirmed as the root cause.",
+    "status": "validation",
+    "completed": true
+  },
+  {
+    "id": "public-contact-channels",
+    "date": "2026-07-12",
+    "title": "Public contact and GitHub routes",
+    "summary": "Added the public business email routes for Łukasz and Gary plus the approved organization, profile, and website repository links.",
+    "status": "implementation",
+    "completed": true
+  },
+  {
+    "id": "gary-bee-visual-layer",
+    "date": "2026-07-12",
+    "title": "Cyber-bee identity for Gary project family",
+    "summary": "AUREON Trading received crypto-hive imagery and EPAS / Shield received guardian-bee imagery without changing project facts or claims.",
+    "status": "implementation",
+    "completed": true
+  },
+  {
+    "id": "ant-ocean-visual-layer",
+    "date": "2026-07-12",
+    "title": "Ant and ocean visual layer",
+    "summary": "Integrated the guardian-ant homepage hero, ocean migration and mechanical-fish atmospheres, and route-specific project backgrounds with readable overlays.",
+    "status": "implementation",
+    "completed": true
+  },
+  {
+    "id": "project-envision-direction",
+    "date": "2026-07-11",
+    "title": "Project Envision direction",
+    "summary": "Homepage direction changed from AIOA-favored to equal project registry under Aureon Zorza Technologies & Partners.",
+    "status": "decision",
+    "completed": true
+  },
+  {
+    "id": "projects-registry-table",
+    "date": "2026-07-11",
+    "title": "Projects table as main interaction",
+    "summary": "Projects page becomes a clean searchable/sortable registry where every project gets equal visual treatment.",
+    "status": "implementation",
+    "completed": true
+  },
+  {
+    "id": "cautious-partner-claims",
+    "date": "2026-07-11",
+    "title": "Partner claims stay cautious",
+    "summary": "Gary/R&A concepts are included as partner/lab items with TO VERIFY status where source validation is incomplete.",
+    "status": "governance",
+    "completed": true
+  }
+]

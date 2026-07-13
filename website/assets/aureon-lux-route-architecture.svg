@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="t d"><title id="t">AUREON LUX route architecture</title><desc id="d">Page architecture diagram showing homepage, projects, research, source registry and archive layers.</desc>
+<defs>
+  <radialGradient id="bg" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="#131b2d"/><stop offset="1" stop-color="#05060A"/></radialGradient>
+  <linearGradient id="amber" x1="0" x2="1"><stop offset="0" stop-color="#FFB800"/><stop offset="1" stop-color="#14D9C0"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1200" height="700" fill="url(#bg)"/>
+<g font-family="Inter,Arial" font-size="18" fill="#E8ECF1" text-anchor="middle" filter="url(#glow)">
+<rect x="480" y="60" width="240" height="70" rx="16" fill="#0F131C" stroke="#FFB800"/><text x="600" y="103">Home</text>
+<rect x="120" y="230" width="220" height="70" rx="16" fill="#0F131C" stroke="#14D9C0"/><text x="230" y="273">Projects</text>
+<rect x="390" y="230" width="220" height="70" rx="16" fill="#0F131C" stroke="#14D9C0"/><text x="500" y="273">Research</text>
+<rect x="660" y="230" width="220" height="70" rx="16" fill="#0F131C" stroke="#8844FF"/><text x="770" y="273">Source Registry</text>
+<rect x="930" y="230" width="220" height="70" rx="16" fill="#0F131C" stroke="#8844FF"/><text x="1040" y="273">Archive</text>
+<rect x="120" y="430" width="220" height="70" rx="16" fill="#0F131C" stroke="#14D9C0"/><text x="230" y="473">AOIA / EC</text>
+<rect x="390" y="430" width="220" height="70" rx="16" fill="#0F131C" stroke="#FFB800"/><text x="500" y="473">LSC / Theory</text>
+<rect x="660" y="430" width="220" height="70" rx="16" fill="#0F131C" stroke="#9BA3B0"/><text x="770" y="473">Verified Links</text>
+<rect x="930" y="430" width="220" height="70" rx="16" fill="#0F131C" stroke="#9BA3B0"/><text x="1040" y="473">Under Review</text>
+</g>
+<g stroke="#5C6370" stroke-width="3" fill="none" marker-end="url(#arrow)">
+<path d="M600 130 L230 230"/><path d="M600 130 L500 230"/><path d="M600 130 L770 230"/><path d="M600 130 L1040 230"/><path d="M230 300 L230 430"/><path d="M500 300 L500 430"/><path d="M770 300 L770 430"/><path d="M1040 300 L1040 430"/>
+</g></svg>

@@ -1,0 +1,607 @@
+[
+  {
+    "registry_id": "P-01",
+    "name": "AIOA / AOIA-Core",
+    "slug": "aioa-core",
+    "type": "Engineering prototype",
+    "category": "AI engineering",
+    "status": "Early prototype",
+    "source_status": "Verified public link",
+    "summary": "AIOA / AOIA-Core is an early working prototype for local-first, human-gated AI-assisted engineering workflows.",
+    "technical_summary": "The public prototype explores deterministic routing, provenance-aware context, contradiction tracking, runtime state, and explicit execution gates for local engineering work.",
+    "github_url": "https://github.com/luciferprosun/AOIA-Core",
+    "zenodo_url": "https://zenodo.org/records/21233163",
+    "secondary_zenodo_url": "",
+    "doi_url": "https://doi.org/10.5281/zenodo.21233163",
+    "page_url": "projects/aioa-core/",
+    "related_projects": [
+      "mhlm-mdlh",
+      "lsc-research",
+      "hnc-framework"
+    ],
+    "is_public": true,
+    "verification_status": "Public code and archived record; prototype claims only",
+    "last_updated": "2026-07-11",
+    "next_step": "Prepare a reviewer quickstart and a bounded public demonstration.",
+    "public_safe": true,
+    "caution": "Do not describe the prototype as production-ready, autonomous, or independently validated.",
+    "exists_now": [
+      "Public source repository",
+      "Public Zenodo record and DOI",
+      "Early human-gated engineering prototype"
+    ],
+    "to_verify": [
+      "Independent security review",
+      "Reproducible public demonstration",
+      "Operational boundaries under wider use"
+    ],
+    "visual_mode": "runtime",
+    "visual_label": "Human gate / runtime state / evidence boundary",
+    "visual_asset": "assets/images/projects/aioa-core.webp",
+    "thumbnail_asset": "assets/images/projects/aioa-core.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux-aoia-runtime.svg",
+        "alt": "Abstract AOIA runtime map with policy, evidence, and approval gates"
+      },
+      {
+        "src": "assets/aureon-lux/ants/knowledge-ant-v1.webp",
+        "alt": "Robotic knowledge ant moving through a linked technical network"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-02",
+    "name": "LSC Research",
+    "slug": "lsc-research",
+    "type": "Exploratory research",
+    "category": "Research",
+    "status": "Research track",
+    "source_status": "Verified public link",
+    "summary": "Exploratory research track. Not confirmed physics. TO VERIFY until reproducibility audit is complete.",
+    "technical_summary": "A neutrino-related research case study used to structure questions about data provenance, units, covariance, scripts, figures, and reproducibility.",
+    "github_url": "https://github.com/luciferprosun/LSC-Research",
+    "zenodo_url": "https://zenodo.org/records/19843361",
+    "secondary_zenodo_url": "https://zenodo.org/records/20377427",
+    "doi_url": "",
+    "page_url": "projects/lsc-research/",
+    "related_projects": [
+      "aioa-core",
+      "mhlm-mdlh",
+      "akasha-chronicles"
+    ],
+    "is_public": true,
+    "verification_status": "TO VERIFY",
+    "last_updated": "2026-07-11",
+    "next_step": "Run a reproducibility audit covering data, covariance, units, scripts, figures, and the claim matrix.",
+    "public_safe": true,
+    "caution": "Do not present the work as confirmed physics or treat model agreement as scientific validation.",
+    "exists_now": [
+      "Public research repository",
+      "Two candidate public records",
+      "Exploratory research narrative"
+    ],
+    "to_verify": [
+      "Record-to-claim mapping",
+      "Reproducible calculations and figures",
+      "Independent scientific review"
+    ],
+    "visual_mode": "research",
+    "visual_label": "Notebook / waveform / reproducibility trail",
+    "visual_asset": "assets/images/projects/lsc-research.webp",
+    "thumbnail_asset": "assets/images/projects/lsc-research.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux/lsc-cosmic/lsc-solar-neutrino-cutaway.webp",
+        "alt": "Scientific cutaway visual connecting the solar core and neutrino research track"
+      },
+      {
+        "src": "assets/aureon-lux-lsc-waveform.svg",
+        "alt": "Abstract LSC waveform and reproducibility trail"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-03",
+    "name": "MHLM / MDLH",
+    "slug": "mhlm-mdlh",
+    "type": "AI-safety research",
+    "category": "AI safety",
+    "status": "Research track",
+    "source_status": "Verified public link",
+    "summary": "AI-safety research background focused on multi-model hallucination, provenance drift, recursive consensus risk, and model-lineage integrity.",
+    "technical_summary": "The track frames how agreement between generated outputs can amplify shared errors and why source lineage must remain distinct from model consensus.",
+    "github_url": "https://github.com/luciferprosun/MHLM_MDLH",
+    "zenodo_url": "https://zenodo.org/records/20388541",
+    "secondary_zenodo_url": "",
+    "doi_url": "https://doi.org/10.5281/zenodo.20388541",
+    "page_url": "projects/mhlm-mdlh/",
+    "related_projects": [
+      "aioa-core",
+      "lsc-research",
+      "ptms-memory"
+    ],
+    "is_public": true,
+    "verification_status": "Public research record",
+    "last_updated": "2026-07-11",
+    "next_step": "Map research findings to explicit provenance and source-grounding controls.",
+    "public_safe": true,
+    "caution": "AI-safety research background. Model agreement is not validation.",
+    "exists_now": [
+      "Public source repository",
+      "Public Zenodo record and DOI",
+      "Research vocabulary for provenance drift"
+    ],
+    "to_verify": [
+      "External review of definitions",
+      "Reproducible evaluation examples",
+      "Boundaries between hypotheses and findings"
+    ],
+    "visual_mode": "provenance",
+    "visual_label": "Lineage / agreement / evidence separation",
+    "visual_asset": "assets/images/projects/mhlm-mdlh.webp",
+    "thumbnail_asset": "assets/images/projects/mhlm-mdlh.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux-epistemic-control-flow.svg",
+        "alt": "Abstract provenance and model-lineage control flow"
+      },
+      {
+        "src": "assets/aureon-lux/modules/module-epistemic-control.webp",
+        "alt": "Epistemic control module showing lineage, provenance drift, and human checkpoints"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-04",
+    "name": "Aureon OS — Harmonic Nexus Core",
+    "slug": "aureon-trading-system",
+    "type": "Partner project brief",
+    "category": "Partner systems",
+    "status": "Draft / private review",
+    "source_status": "Draft / private review",
+    "summary": "Draft / private review. Not investment advice. Formerly presented as the Aureon Trading System; the platform is now Aureon OS (Harmonic Nexus Core). Requires technical validation and security review.",
+    "technical_summary": "A grounded AI operating layer for evidence-heavy, high-control work: a switchboard operator and agentic cognition with hard authority boundaries, an organism connectome over the wider codebase, research workflows, generated interfaces, and controlled live-action gates. Presented as a concept pending independent validation.",
+    "github_url": "https://github.com/RA-CONSULTING/Aureon-OS",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/aureon-trading-system/",
+    "related_projects": [
+      "aqts",
+      "nexus-live-feed"
+    ],
+    "is_public": false,
+    "verification_status": "Draft / private review",
+    "last_updated": "2026-07-13",
+    "next_step": "Inventory technical documents, proof files, tests, and security boundaries before broader publication.",
+    "public_safe": false,
+    "caution": "Do not claim profit, trading performance, investment suitability, or live operational safety.",
+    "exists_now": [
+      "Public repository — Aureon OS (Harmonic Nexus Core)",
+      "Candidate public repository link",
+      "Draft workflow architecture"
+    ],
+    "to_verify": [
+      "Repository ownership and current state",
+      "Security and compliance review",
+      "Redaction and public-release approval"
+    ],
+    "visual_mode": "operator",
+    "visual_label": "Operator queue / evidence gate / review state",
+    "visual_asset": "assets/images/bees/aureon-trading-crypto-hive-wide.webp",
+    "thumbnail_asset": "assets/images/bees/aureon-trading-crypto-hive-wide.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux-risk-matrix.svg",
+        "alt": "Abstract review matrix separating evidence, risk, and human approval"
+      },
+      {
+        "src": "assets/images/bees/aureon-trading-cyber-bee-carrying-value.webp",
+        "alt": "Concept artwork of a mechanical cyber-bee carrying a luminous value cell toward a coordinated hive"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-05",
+    "name": "NEXUS-LIVE-FEED / Nexus System",
+    "slug": "nexus-live-feed",
+    "type": "Partner concept",
+    "category": "Partner systems",
+    "status": "TO VERIFY",
+    "source_status": "TO VERIFY",
+    "summary": "Concept / TO VERIFY. Needs source verification before strong public claims.",
+    "technical_summary": "A proposed live-feed and data-stream workspace represented as a partner concept until its repository, data sources, and operating boundaries are audited.",
+    "github_url": "https://github.com/RA-CONSULTING/NEXUS-LIVE-FEED-",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/nexus-live-feed/",
+    "related_projects": [
+      "aureon-trading-system",
+      "aeds-environmental"
+    ],
+    "is_public": false,
+    "verification_status": "TO VERIFY",
+    "last_updated": "2026-07-11",
+    "next_step": "Audit the supplied pack and candidate repository, then produce a source-bounded public brief.",
+    "public_safe": false,
+    "caution": "Do not imply a verified live operational feed or validated production data pipeline.",
+    "exists_now": [
+      "Partner project pack",
+      "Candidate repository link",
+      "Conceptual live-feed interface direction"
+    ],
+    "to_verify": [
+      "Source and repository mapping",
+      "Data provenance and update cadence",
+      "Operational and privacy boundaries"
+    ],
+    "visual_mode": "feed",
+    "visual_label": "Stream / source / freshness monitor",
+    "visual_asset": "assets/aureon-lux/backgrounds/machines-in-data-light.webp",
+    "thumbnail_asset": "assets/aureon-lux/backgrounds/machines-in-data-light.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux-source-registry.svg",
+        "alt": "Abstract source registry for data provenance and review"
+      },
+      {
+        "src": "assets/aureon-lux/backgrounds/underwater-future-map.webp",
+        "alt": "Robotic ants following a mapped data route through an underwater system"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-06",
+    "name": "AUREON Quantum Trading System (AQTS)",
+    "slug": "aqts",
+    "type": "Partner concept",
+    "category": "Partner systems",
+    "status": "TO VERIFY",
+    "source_status": "Partner concept",
+    "summary": "Partner concept / TO VERIFY. No trading performance claims without independent validation. Not investment advice.",
+    "technical_summary": "A candidate market-system and simulation-lab concept that remains separated from validated performance, investment, or production claims.",
+    "github_url": "https://github.com/RA-CONSULTING/AUREON-QUANTUM-TRADING-SYSTEM-AQTS-",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/aqts/",
+    "related_projects": [
+      "aureon-trading-system",
+      "hnc-framework"
+    ],
+    "is_public": false,
+    "verification_status": "TO VERIFY",
+    "last_updated": "2026-07-11",
+    "next_step": "Create a source-derived technical brief and define an independent validation protocol.",
+    "public_safe": false,
+    "caution": "No profit, win-rate, market-integrity, or investment claims without independent evidence.",
+    "exists_now": [
+      "Candidate repository link",
+      "Partner concept description",
+      "Simulation-lab visual direction"
+    ],
+    "to_verify": [
+      "Repository and code state",
+      "Simulation methodology",
+      "Compliance and independent performance review"
+    ],
+    "visual_mode": "market",
+    "visual_label": "Simulation / integrity / evidence ledger",
+    "visual_asset": "assets/images/projects/aqts.webp",
+    "thumbnail_asset": "assets/images/projects/aqts.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux-route-architecture.svg",
+        "alt": "Abstract route architecture with review and evidence checkpoints"
+      },
+      {
+        "src": "assets/aureon-lux-risk-matrix.svg",
+        "alt": "Conceptual risk matrix for a market-system review workflow"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-07",
+    "name": "AEDS / Environmental Monitoring Concept",
+    "slug": "aeds-environmental",
+    "type": "Partner concept",
+    "category": "Environment",
+    "status": "TO VERIFY",
+    "source_status": "Partner concept",
+    "summary": "Partner concept / TO VERIFY. Public data-source validation required.",
+    "technical_summary": "A proposed environmental monitoring and anomaly-observation workspace that requires public datasets, measurement protocols, and reproducible methods.",
+    "github_url": "",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/aeds-environmental/",
+    "related_projects": [
+      "nexus-live-feed",
+      "ble-battery-optimization"
+    ],
+    "is_public": false,
+    "verification_status": "TO VERIFY",
+    "last_updated": "2026-07-11",
+    "next_step": "Build a public-source map and define a reproducible monitoring protocol.",
+    "public_safe": false,
+    "caution": "Do not publish environmental statistics, anomaly claims, or operational capability without validated sources.",
+    "exists_now": [
+      "Partner concept outline",
+      "Environmental dashboard direction",
+      "Candidate anomaly-monitoring use case"
+    ],
+    "to_verify": [
+      "Public datasets and licenses",
+      "Sensor or observation protocol",
+      "Reproducible baselines and error bounds"
+    ],
+    "visual_mode": "environment",
+    "visual_label": "Signal / baseline / anomaly window",
+    "visual_asset": "assets/images/projects/aeds-environmental.webp",
+    "thumbnail_asset": "assets/images/projects/aeds-environmental.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux/backgrounds/underwater-research-ants.webp",
+        "alt": "Robotic research ants observing an underwater environment"
+      },
+      {
+        "src": "assets/aureon-lux-project-constellation.svg",
+        "alt": "Abstract environmental observation and project constellation"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-08",
+    "name": "EPAS / Shield Concept",
+    "slug": "epas-shield",
+    "type": "Partner concept",
+    "category": "Infrastructure",
+    "status": "TO VERIFY",
+    "source_status": "Partner concept",
+    "summary": "Concept / TO VERIFY. Do not claim operational defence capability without validation.",
+    "technical_summary": "A layered infrastructure-shield concept retained as a research direction pending source documents, engineering analysis, and compliance review.",
+    "github_url": "",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/epas-shield/",
+    "related_projects": [
+      "hnc-framework",
+      "aeds-environmental"
+    ],
+    "is_public": false,
+    "verification_status": "TO VERIFY",
+    "last_updated": "2026-07-11",
+    "next_step": "Require source documentation, engineering validation, and a public-claims compliance review.",
+    "public_safe": false,
+    "caution": "Do not claim operational defence, EMP protection, healthcare, or safety capability.",
+    "exists_now": [
+      "Partner concept reference",
+      "Layered-protection visual model",
+      "Public-safety wording boundary"
+    ],
+    "to_verify": [
+      "Source documentation",
+      "Physics and engineering assumptions",
+      "Compliance and use-case boundaries"
+    ],
+    "visual_mode": "shield",
+    "visual_label": "Layer / boundary / verification gate",
+    "visual_asset": "assets/images/bees/aureon-defender-bee-guardian-hero.webp",
+    "thumbnail_asset": "assets/images/bees/aureon-defender-bee-guardian-hero.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux-project-orbit.svg",
+        "alt": "Abstract layered boundary and infrastructure review model"
+      },
+      {
+        "src": "assets/images/bees/aureon-defender-bee-guardian-rear.webp",
+        "alt": "Concept artwork of a mechanical cyber-bee guardian inside a monitoring environment"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-09",
+    "name": "HNC Framework",
+    "slug": "hnc-framework",
+    "type": "Governance concept",
+    "category": "Governance",
+    "status": "TO VERIFY",
+    "source_status": "Partner concept",
+    "summary": "Governance framework concept / TO VERIFY. Do not claim impossible-to-bypass ethics unless independently validated.",
+    "technical_summary": "A proposed governance and invariant framework — published under the Aureon Institute research identity — intended to make constraints, review gates, and falsifiable claims explicit.",
+    "github_url": "",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/hnc-framework/",
+    "related_projects": [
+      "aioa-core",
+      "mhlm-mdlh",
+      "epas-shield"
+    ],
+    "is_public": false,
+    "verification_status": "TO VERIFY",
+    "last_updated": "2026-07-13",
+    "next_step": "Verify equations, invariants, certificate references, benchmarks, and falsifiable boundaries.",
+    "public_safe": false,
+    "caution": "Do not claim impossible-to-override ethics, perfect veto accuracy, or unique global capability.",
+    "exists_now": [
+      "Partner governance concept",
+      "Invariant-oriented framework direction",
+      "Public caution and review requirements"
+    ],
+    "to_verify": [
+      "Equations and invariant definitions",
+      "Certificate and benchmark references",
+      "Independent governance review"
+    ],
+    "visual_mode": "governance",
+    "visual_label": "Invariant / review / decision boundary",
+    "visual_asset": "assets/aureon-lux/ants/knowledge-ant-v1.webp",
+    "thumbnail_asset": "assets/aureon-lux/ants/knowledge-ant-v1.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux/modules/module-epistemic-control.webp",
+        "alt": "Review framework with model lineage and human checkpoints"
+      },
+      {
+        "src": "assets/aureon-lux-knowledge-ant-icon.svg",
+        "alt": "Abstract knowledge ant governance mark"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-10",
+    "name": "PTMS / Memory Concept",
+    "slug": "ptms-memory",
+    "type": "Partner concept",
+    "category": "AI memory",
+    "status": "TO VERIFY",
+    "source_status": "Partner concept",
+    "summary": "Partner concept / TO VERIFY. Architecture idea, not production system.",
+    "technical_summary": "A proposed tagged-memory and knowledge-graph direction for retaining source context, review state, and relationship trails.",
+    "github_url": "",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/ptms-memory/",
+    "related_projects": [
+      "mhlm-mdlh",
+      "aioa-core",
+      "akasha-chronicles"
+    ],
+    "is_public": false,
+    "verification_status": "TO VERIFY",
+    "last_updated": "2026-07-11",
+    "next_step": "Collect a technical specification, source repository, and test evidence for the memory model.",
+    "public_safe": false,
+    "caution": "Do not describe the concept as deployed, persistent distributed AI memory.",
+    "exists_now": [
+      "Partner architecture concept",
+      "Tagged-memory visual direction",
+      "Relationship to provenance research"
+    ],
+    "to_verify": [
+      "Technical specification",
+      "Source repository and data model",
+      "Retention, privacy, and evaluation tests"
+    ],
+    "visual_mode": "memory",
+    "visual_label": "Node / trace / retention boundary",
+    "visual_asset": "assets/images/projects/ptms-memory.webp",
+    "thumbnail_asset": "assets/images/projects/ptms-memory.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux-zenodo-source-map.svg",
+        "alt": "Abstract source and memory relationship map"
+      },
+      {
+        "src": "assets/aureon-lux/backgrounds/robots-on-beach-future-city.webp",
+        "alt": "Robotic ants carrying memory tags toward a future archive"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-11",
+    "name": "BLE Battery Optimization",
+    "slug": "ble-battery-optimization",
+    "type": "Partner concept",
+    "category": "Energy",
+    "status": "TO VERIFY",
+    "source_status": "Partner concept",
+    "summary": "Concept / TO VERIFY. Needs protocol, test data, and reproducibility package.",
+    "technical_summary": "A battery and BLE optimization concept that requires measurable conditions, baseline hardware, test data, and reproducible analysis.",
+    "github_url": "",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/ble-battery-optimization/",
+    "related_projects": [
+      "aeds-environmental",
+      "nexus-live-feed"
+    ],
+    "is_public": false,
+    "verification_status": "TO VERIFY",
+    "last_updated": "2026-07-11",
+    "next_step": "Define hardware, workload, baseline, measurement protocol, and a reproducibility package.",
+    "public_safe": false,
+    "caution": "Do not publish battery-life or performance improvement claims without test data.",
+    "exists_now": [
+      "Partner optimization concept",
+      "Battery-lab visual direction",
+      "Initial measurable-question outline"
+    ],
+    "to_verify": [
+      "Hardware and firmware baseline",
+      "Measurement protocol and raw data",
+      "Independent reproduction"
+    ],
+    "visual_mode": "energy",
+    "visual_label": "Baseline / load / energy window",
+    "visual_asset": "assets/images/projects/ble-battery-primary.webp",
+    "thumbnail_asset": "assets/images/projects/ble-battery-primary.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/images/projects/ble-battery-field.webp",
+        "alt": "BLE battery field concept with devices, vehicles, and measurement systems"
+      },
+      {
+        "src": "assets/images/projects/ble-ant-battery-lab.webp",
+        "alt": "Mechanical ant inspecting battery cells in a controlled BLE energy laboratory"
+      }
+    ]
+  },
+  {
+    "registry_id": "P-12",
+    "name": "Akasha Chronicles",
+    "slug": "akasha-chronicles",
+    "type": "Historical archive",
+    "category": "Archive",
+    "status": "Archive",
+    "source_status": "Archive",
+    "summary": "Archive / historical reference. Not the current main portal.",
+    "technical_summary": "An earlier visual and research portal retained for historical context, design reference, and traceable project evolution.",
+    "github_url": "https://github.com/luciferprosun/akasha-chronicles",
+    "zenodo_url": "",
+    "secondary_zenodo_url": "",
+    "doi_url": "",
+    "page_url": "projects/akasha-chronicles/",
+    "related_projects": [
+      "lsc-research",
+      "ptms-memory"
+    ],
+    "is_public": true,
+    "verification_status": "Archive",
+    "last_updated": "2026-07-11",
+    "next_step": "Preserve as a clearly labeled archive and historical reference.",
+    "public_safe": true,
+    "caution": "Do not present the archive as the current company portal or an active production system.",
+    "exists_now": [
+      "Public archive repository",
+      "Historical visual material",
+      "Project evolution reference"
+    ],
+    "to_verify": [
+      "Archive completeness",
+      "Historical source annotations",
+      "Long-term preservation format"
+    ],
+    "visual_mode": "archive",
+    "visual_label": "Record / era / preservation trail",
+    "visual_asset": "assets/aureon-lux/backgrounds/ocean-migration-knowledge-path.webp",
+    "thumbnail_asset": "assets/aureon-lux/backgrounds/ocean-migration-knowledge-path.webp",
+    "supporting_visuals": [
+      {
+        "src": "assets/aureon-lux-archive-vault.svg",
+        "alt": "Abstract archive vault and historical record trail"
+      },
+      {
+        "src": "assets/aureon-lux/backgrounds/robots-on-beach-future-city.webp",
+        "alt": "Robotic ants carrying memory tags toward an archive city"
+      }
+    ]
+  }
+]

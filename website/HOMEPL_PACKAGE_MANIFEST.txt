@@ -1,0 +1,48 @@
+PACKAGE_NAME: paczka Home.pl website Gary Luciferson
+ARCHIVE_NAME: paczka Home.pl website Gary Luciferson.zip
+CREATED_AT: 2026-07-12T17:48:21+02:00
+SOURCE_REPOSITORY: luciferprosun/RA-Consulting
+SOURCE_COMMIT: f21fbdbca1d2eb26f2080f3c2f26733ac9d93794
+HOSTING_MODEL: static files served directly from document root
+TOTAL_FILE_COUNT: 000108
+TOTAL_UNCOMPRESSED_BYTES: 000006818177
+ZIP_SIZE_BYTES: SEE_DESKTOP_COMPANION_MANIFEST
+ZIP_SHA256: SEE_DESKTOP_COMPANION_MANIFEST
+INDEX_HTML_AT_PACKAGE_ROOT: YES
+ZIP_ROOT_WRAPPER_DIRECTORY: NO
+HTACCESS_REQUIRED: NO
+
+MAIN_ROOT_ENTRIES:
+- index.html
+- styles.css
+- script.js
+- robots.txt
+- sitemap.xml
+- assets/
+- data/
+- projects/
+- updates/
+- contact/
+- about/
+- vision/
+- publications/
+- archive/
+- research/
+- downloads/
+- HOMEPL_UPLOAD_README.md
+- CHANGES.md
+- HOMEPL_PACKAGE_MANIFEST.txt
+
+EXCLUDED_DEVELOPMENT_OR_SOURCE_MATERIAL:
+- .git, .github, node_modules, caches, environment files and credentials
+- scripts/, tools/, docs/ and repository audit/change documents
+- Playwright output, screenshots and local QA artifacts
+- unused internal JSON registries
+- raw bee source JPEG masters
+- unused superseded WebP/SVG visual variants
+- source ZIP archives and temporary files
+
+NOTE:
+The final ZIP checksum cannot be embedded inside the ZIP without changing the
+archive being checksummed. The authoritative ZIP size and SHA-256 are recorded
+in HOMEPL_PACKAGE_MANIFEST.txt placed beside the ZIP on the Desktop.

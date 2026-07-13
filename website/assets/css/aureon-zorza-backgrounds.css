@@ -1,0 +1,427 @@
+/* Aureon Zorza ant-ocean visual layer.
+   Loaded after the base stylesheet so layout and behavior remain unchanged. */
+
+:root {
+  --zorza-overlay-hero: linear-gradient(
+    180deg,
+    rgba(3, 8, 14, 0.04) 0%,
+    rgba(3, 8, 14, 0.08) 50%,
+    rgba(3, 8, 14, 0.86) 76%,
+    rgba(3, 8, 14, 0.98) 100%
+  );
+  --zorza-overlay-section: linear-gradient(
+    110deg,
+    rgba(4, 9, 15, 0.94),
+    rgba(4, 9, 15, 0.82) 52%,
+    rgba(4, 9, 15, 0.91)
+  );
+  --zorza-overlay-project: linear-gradient(
+    90deg,
+    rgba(3, 8, 14, 0.97),
+    rgba(3, 8, 14, 0.79) 50%,
+    rgba(3, 8, 14, 0.42)
+  );
+}
+
+/* Homepage guardian banner */
+
+body[data-page="home"] .home-hero {
+  min-height: clamp(520px, 44vw, 680px);
+  max-height: 720px;
+  background-color: #04101a;
+  background-image:
+    var(--zorza-overlay-hero),
+    url("../images/backgrounds/aureon-zorza-header-guardian-ant.webp"),
+    url("../images/backgrounds/ant-fish-migration-deep-ocean.webp");
+  background-position: center, center, center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+body[data-page="home"] .home-hero .wrap {
+  padding-top: 60px;
+  padding-bottom: 38px;
+}
+
+body[data-page="home"] .home-hero .hero-kicker,
+body[data-page="home"] .home-hero .lead,
+body[data-page="home"] .home-hero .actions {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.96);
+}
+
+body[data-page="home"] .home-hero .hero-kicker {
+  padding: 7px 10px;
+  border: 1px solid rgba(101, 204, 232, 0.38);
+  border-radius: 999px;
+  background: rgba(3, 8, 14, 0.72);
+  width: fit-content;
+}
+
+/* The banner already carries the full brand title at desktop size. Keep the
+   semantic h1 available to assistive technology and show it again on mobile. */
+@media (min-width: 821px) {
+  body[data-page="home"] .home-hero h1 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Continuous homepage atmosphere */
+
+section.band[data-zorza-bg] {
+  background-color: #061019;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+section.band[data-zorza-bg="deep-ocean"] {
+  background-image:
+    var(--zorza-overlay-section),
+    url("../images/backgrounds/ant-fish-migration-deep-ocean.webp");
+}
+
+section.band[data-zorza-bg="migration"] {
+  background-image:
+    linear-gradient(110deg, rgba(4, 9, 15, 0.96), rgba(4, 9, 15, 0.83), rgba(4, 9, 15, 0.93)),
+    url("../images/backgrounds/ant-ocean-migration.webp");
+}
+
+section.band[data-zorza-bg="orbital"] {
+  background-image:
+    var(--zorza-overlay-section),
+    url("../images/projects/orbital-ocean-ant-migration.webp");
+}
+
+section.band[data-zorza-bg="research-ants"] {
+  background-image:
+    var(--zorza-overlay-section),
+    url("../aureon-lux/backgrounds/underwater-research-ants.webp");
+}
+
+section.band[data-zorza-bg="knowledge-path"] {
+  background-image:
+    var(--zorza-overlay-section),
+    url("../aureon-lux/backgrounds/ocean-migration-knowledge-path.webp");
+}
+
+section.band[data-zorza-bg="command-centre"] {
+  background-image:
+    var(--zorza-overlay-section),
+    url("../images/backgrounds/ant-network-command-centre.webp");
+}
+
+body[data-page="home"] .stats-strip,
+body[data-page="projects"] .toolbar-shell,
+body[data-page="projects"] .table-card,
+section.band[data-zorza-bg] .table-card,
+section.band[data-zorza-bg] .card,
+section.band[data-zorza-bg] .panel,
+section.band[data-zorza-bg] .record-item,
+section.band[data-zorza-bg] .timeline-item,
+section.band[data-zorza-bg] .ecosystem-node {
+  background: rgba(12, 18, 22, 0.91);
+  backdrop-filter: blur(10px);
+}
+
+/* General page heroes and high-value calls to action */
+
+body[data-page] .page-hero {
+  background-color: #061019;
+  background-image:
+    linear-gradient(90deg, rgba(3, 8, 14, 0.97), rgba(3, 8, 14, 0.78) 60%, rgba(3, 8, 14, 0.54)),
+    url("../images/backgrounds/ant-fish-migration-deep-ocean.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+body[data-page="projects"] .page-hero {
+  background-image:
+    var(--zorza-overlay-project),
+    url("../images/backgrounds/ant-ocean-migration.webp");
+}
+
+body[data-page="projects"] main > [data-registry] {
+  background-color: #061019;
+  background-image:
+    linear-gradient(110deg, rgba(3, 8, 14, 0.97), rgba(3, 8, 14, 0.87), rgba(3, 8, 14, 0.95)),
+    url("../images/backgrounds/ant-ocean-migration.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+body[data-page="vision"] .page-hero {
+  background-image:
+    var(--zorza-overlay-project),
+    url("../images/projects/orbital-ocean-ant-migration.webp");
+}
+
+body[data-page="publications"] .page-hero {
+  background-image:
+    var(--zorza-overlay-project),
+    url("../aureon-lux/backgrounds/underwater-research-ants.webp");
+}
+
+body[data-page="updates"] .page-hero {
+  background-image:
+    var(--zorza-overlay-project),
+    url("../aureon-lux/backgrounds/ocean-migration-knowledge-path.webp");
+}
+
+body[data-page="about"] .page-hero {
+  background-image:
+    var(--zorza-overlay-project),
+    url("../images/backgrounds/ant-energy-core-network.webp");
+}
+
+body[data-page="contact"] .page-hero {
+  background-image:
+    var(--zorza-overlay-project),
+    url("../images/projects/orbital-ocean-ant-migration.webp");
+}
+
+.github-promotion {
+  background-color: #061019;
+  background-image:
+    linear-gradient(110deg, rgba(3, 8, 14, 0.96), rgba(3, 8, 14, 0.82), rgba(3, 8, 14, 0.92)),
+    url("../images/backgrounds/ant-network-command-centre.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.band.warm {
+  background-color: #071019;
+  background-image:
+    linear-gradient(110deg, rgba(4, 9, 15, 0.96), rgba(4, 9, 15, 0.82), rgba(4, 9, 15, 0.94)),
+    url("../images/projects/orbital-ocean-ant-migration.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.footer {
+  background-color: #04080d;
+  background-image:
+    linear-gradient(100deg, rgba(2, 6, 10, 0.98), rgba(2, 6, 10, 0.88), rgba(2, 6, 10, 0.96)),
+    url("../aureon-lux/backgrounds/underwater-research-ants.webp");
+  background-position: center 62%;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Project-specific hero and first content atmosphere. The existing renderer,
+   status badges, source links, and project data remain authoritative. */
+
+body[data-project-slug="aioa-core"] {
+  --zorza-project-bg: url("../images/backgrounds/ant-network-command-centre.webp");
+}
+
+body[data-project-slug="lsc-research"] {
+  --zorza-project-bg: url("../images/projects/particle-collision-ocean-system.webp");
+}
+
+body[data-project-slug="mhlm-mdlh"] {
+  --zorza-project-bg: url("../images/backgrounds/ant-energy-core-network.webp");
+}
+
+body[data-project-slug="aureon-trading-system"] {
+  --zorza-project-bg: url("../images/bees/aureon-trading-crypto-hive-wide.webp");
+  --zorza-project-section-bg: url("../images/bees/aureon-trading-cyber-bee-carrying-value.webp");
+  --zorza-project-position: 58% 52%;
+  --zorza-project-mobile-position: 58% center;
+  --zorza-project-section-position: 40% center;
+  --project-accent: #e2b45d;
+}
+
+body[data-project-slug="nexus-live-feed"] {
+  --zorza-project-bg: url("../images/backgrounds/ant-network-command-centre.webp");
+}
+
+body[data-project-slug="aqts"] {
+  --zorza-project-bg: url("../images/projects/trading-ai-ocean-map.webp");
+}
+
+body[data-project-slug="aeds-environmental"] {
+  --zorza-project-bg: url("../images/backgrounds/ant-fish-migration-deep-ocean.webp");
+}
+
+body[data-project-slug="epas-shield"] {
+  --zorza-project-bg: url("../images/bees/aureon-defender-bee-guardian-hero.webp");
+  --zorza-project-section-bg: url("../images/bees/aureon-defender-bee-command-center.webp");
+  --zorza-project-boundary-bg: url("../images/bees/aureon-defender-bee-guardian-action.webp");
+  --zorza-project-position: right center;
+  --zorza-project-size: auto 100%;
+  --zorza-project-mobile-position: 56% center;
+  --zorza-project-mobile-size: auto 100%;
+  --zorza-project-section-position: 58% center;
+  --project-accent: #e2b45d;
+}
+
+body[data-project-slug="hnc-framework"] {
+  --zorza-project-bg: url("../images/projects/particle-collision-ocean-system.webp");
+}
+
+body[data-project-slug="ptms-memory"] {
+  --zorza-project-bg: url("../images/backgrounds/ant-ocean-migration.webp");
+}
+
+body[data-project-slug="ble-battery-optimization"] {
+  --zorza-project-bg: url("../images/projects/ble-battery-ocean-lab.webp");
+  --zorza-project-section-bg: url("../images/projects/ble-ant-battery-lab.webp");
+}
+
+body[data-project-slug="akasha-chronicles"] {
+  --zorza-project-bg: url("../images/projects/orbital-ocean-ant-migration.webp");
+}
+
+body[data-project-slug] .project-detail-hero {
+  background-color: #061019;
+  background-image:
+    var(--zorza-overlay-project),
+    linear-gradient(0deg, rgba(3, 8, 14, 0.97), rgba(3, 8, 14, 0.04) 72%),
+    var(--zorza-project-bg, var(--project-image));
+  background-position: center, center, var(--zorza-project-position, center);
+  background-repeat: no-repeat;
+  background-size: cover, cover, var(--zorza-project-size, cover);
+}
+
+body[data-project-slug] [data-project-detail] > .project-meta-strip + .band.alt {
+  background-color: #061019;
+  background-image:
+    linear-gradient(110deg, rgba(3, 8, 14, 0.97), rgba(3, 8, 14, 0.87), rgba(3, 8, 14, 0.96)),
+    var(--zorza-project-section-bg, var(--zorza-project-bg));
+  background-position: center, var(--zorza-project-section-position, center);
+  background-repeat: no-repeat;
+  background-size: cover, var(--zorza-project-section-size, cover);
+}
+
+body[data-project-slug] .project-system-map,
+body[data-project-slug] .project-visual,
+body[data-project-slug] .evidence-panel,
+body[data-project-slug] .related-card,
+body[data-project-slug] .panel {
+  background-color: rgba(12, 18, 22, 0.93);
+  backdrop-filter: blur(10px);
+}
+
+/* Gary / RA visual family. These selectors refine only the two routes named by
+   the supplied bee pack; project titles, facts, badges, and interactions stay
+   under the existing registry renderer. */
+
+body[data-project-slug="aureon-trading-system"] .project-detail-hero,
+body[data-project-slug="epas-shield"] .project-detail-hero {
+  background-image:
+    linear-gradient(90deg, rgba(3, 7, 12, 0.98), rgba(3, 7, 12, 0.88) 48%, rgba(3, 7, 12, 0.34)),
+    linear-gradient(0deg, rgba(3, 7, 12, 0.98), rgba(3, 7, 12, 0.03) 72%),
+    var(--zorza-project-bg, var(--project-image));
+}
+
+body[data-project-slug="aureon-trading-system"] [data-project-detail] > .project-meta-strip + .band.alt,
+body[data-project-slug="epas-shield"] [data-project-detail] > .project-meta-strip + .band.alt {
+  background-image:
+    linear-gradient(110deg, rgba(3, 7, 12, 0.98), rgba(3, 7, 12, 0.91) 54%, rgba(3, 7, 12, 0.78)),
+    var(--zorza-project-section-bg, var(--zorza-project-bg));
+}
+
+body[data-project-slug="epas-shield"] .boundary-band {
+  background-color: #071019;
+  background-image:
+    linear-gradient(100deg, rgba(3, 7, 12, 0.98), rgba(3, 7, 12, 0.92) 58%, rgba(3, 7, 12, 0.76)),
+    var(--zorza-project-boundary-bg);
+  background-position: 58% center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+body[data-project-slug="aureon-trading-system"] .project-detail-hero .eyebrow,
+body[data-project-slug="epas-shield"] .project-detail-hero .eyebrow {
+  color: #f0ca7a;
+}
+
+body[data-project-slug="aureon-trading-system"] :is(.project-system-map, .project-visual, .evidence-panel, .related-card, .panel),
+body[data-project-slug="epas-shield"] :is(.project-system-map, .project-visual, .evidence-panel, .related-card, .panel) {
+  border-color: rgba(226, 180, 93, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 224, 158, 0.05), 0 18px 46px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 820px) {
+  body[data-page="home"] .home-hero {
+    min-height: 720px;
+    max-height: none;
+    align-items: flex-end;
+    background-image:
+      linear-gradient(180deg, rgba(3, 8, 14, 0.04) 0%, rgba(3, 8, 14, 0.14) 28%, rgba(3, 8, 14, 0.94) 52%, rgba(3, 8, 14, 0.99) 100%),
+      url("../images/backgrounds/aureon-zorza-header-guardian-ant.webp"),
+      url("../images/backgrounds/ant-fish-migration-deep-ocean.webp");
+    background-position: center, center top, center;
+    background-size: cover, 100% auto, cover;
+  }
+
+  body[data-page="home"] .home-hero .wrap {
+    padding-top: clamp(210px, 43vw, 300px);
+    padding-bottom: 46px;
+  }
+
+  body[data-page="home"] .home-hero h1 {
+    max-width: 680px;
+    margin-bottom: 16px;
+    font-size: 2.7rem;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.98);
+  }
+
+  section.band[data-zorza-bg],
+  body[data-project-slug] .project-detail-hero,
+  body[data-project-slug] [data-project-detail] > .project-meta-strip + .band.alt,
+  .github-promotion,
+  .band.warm,
+  body[data-project-slug="epas-shield"] .boundary-band,
+  .footer {
+    background-attachment: scroll;
+  }
+}
+
+@media (max-width: 620px) {
+  body[data-page="home"] .home-hero {
+    min-height: 760px;
+  }
+
+  body[data-page="home"] .home-hero .wrap {
+    padding-top: 190px;
+  }
+
+  body[data-page="home"] .home-hero h1 {
+    font-size: 2.15rem;
+  }
+
+  body[data-project-slug] .project-detail-hero {
+    min-height: 520px;
+    background-position: center, center, var(--zorza-project-mobile-position, 58% center);
+    background-size: cover, cover, var(--zorza-project-mobile-size, var(--zorza-project-size, cover));
+  }
+
+  body[data-project-slug="epas-shield"] .boundary-band {
+    background-position: 55% center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  section.band[data-zorza-bg],
+  body[data-project-slug] .project-detail-hero,
+  .github-promotion,
+  .band.warm,
+  .footer {
+    background-attachment: scroll;
+  }
+}

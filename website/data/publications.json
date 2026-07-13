@@ -1,0 +1,52 @@
+[
+  {
+    "project": "AIOA / AOIA-Core",
+    "artifact": "AOIA-Core public record",
+    "type": "software / prototype archive",
+    "github": "https://github.com/luciferprosun/AOIA-Core",
+    "zenodo": "https://zenodo.org/records/21233163",
+    "doi": "https://doi.org/10.5281/zenodo.21233163",
+    "status": "public / verified link",
+    "notes": "Early engineering prototype; keep prototype wording."
+  },
+  {
+    "project": "MHLM / MDLH",
+    "artifact": "MHLM / MDLH public record",
+    "type": "AI-safety research archive",
+    "github": "https://github.com/luciferprosun/MHLM_MDLH",
+    "zenodo": "https://zenodo.org/records/20388541",
+    "doi": "https://doi.org/10.5281/zenodo.20388541",
+    "status": "public link",
+    "notes": "Research background; model agreement is not validation."
+  },
+  {
+    "project": "LSC Research",
+    "artifact": "LSC candidate record 19843361",
+    "type": "research material",
+    "github": "https://github.com/luciferprosun/LSC-Research",
+    "zenodo": "https://zenodo.org/records/19843361",
+    "doi": "",
+    "status": "TO VERIFY",
+    "notes": "Do not present as confirmed physics."
+  },
+  {
+    "project": "LSC Research",
+    "artifact": "LSC candidate record 20377427",
+    "type": "research material",
+    "github": "https://github.com/luciferprosun/LSC-Research",
+    "zenodo": "https://zenodo.org/records/20377427",
+    "doi": "",
+    "status": "TO VERIFY",
+    "notes": "Audit record mapping before public claim."
+  },
+  {
+    "project": "Aureon OS — Harmonic Nexus Core",
+    "artifact": "Project Brief 001",
+    "type": "partner brief / draft",
+    "github": "https://github.com/RA-CONSULTING/Aureon-OS",
+    "zenodo": "",
+    "doi": "",
+    "status": "draft / private review",
+    "notes": "Formerly the Aureon Trading System brief; platform now Aureon OS (HNC). Requires validation/security/redaction before public release."
+  }
+]

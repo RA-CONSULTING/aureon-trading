@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 520" role="img" aria-labelledby="title desc">
+  <title id="title">AUREON LUX project orbit matrix</title>
+  <desc id="desc">P0, P1, P2, and P3 project layers separated by publication status.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0" stop-color="#14213a"/>
+      <stop offset="1" stop-color="#050812"/>
+    </radialGradient>
+    <linearGradient id="line" x1="0" x2="1">
+      <stop offset="0" stop-color="#5be0d6"/>
+      <stop offset=".5" stop-color="#ffb25f"/>
+      <stop offset="1" stop-color="#a991ff"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="980" height="520" rx="18" fill="url(#bg)"/>
+  <g opacity=".18" stroke="#5be0d6">
+    <path d="M70 118H910M70 260H910M70 402H910"/>
+    <path d="M150 70V450M330 70V450M510 70V450M690 70V450M870 70V450"/>
+  </g>
+  <g transform="translate(490 260)" fill="none" filter="url(#glow)">
+    <ellipse rx="90" ry="54" stroke="#ffb25f" stroke-width="4"/>
+    <ellipse rx="196" ry="114" stroke="#5be0d6" stroke-width="3" stroke-dasharray="10 12"/>
+    <ellipse rx="314" ry="180" stroke="#a991ff" stroke-width="3" stroke-dasharray="8 14"/>
+    <ellipse rx="416" ry="238" stroke="#6e7890" stroke-width="2" stroke-dasharray="4 18"/>
+    <circle r="28" fill="#ffb25f"/>
+    <text y="7" text-anchor="middle" fill="#050812" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="900">P0</text>
+  </g>
+  <g font-family="Inter,Arial,sans-serif" font-weight="850">
+    <g transform="translate(590 238)">
+      <rect width="112" height="34" rx="8" fill="#101b2f" stroke="#ffb25f"/>
+      <text x="56" y="22" text-anchor="middle" fill="#ffb25f" font-size="14">P0 Core</text>
+    </g>
+    <g transform="translate(626 118)">
+      <rect width="146" height="34" rx="8" fill="#101b2f" stroke="#5be0d6"/>
+      <text x="73" y="22" text-anchor="middle" fill="#5be0d6" font-size="14">P1 Supporting</text>
+    </g>
+    <g transform="translate(206 94)">
+      <rect width="118" height="34" rx="8" fill="#101b2f" stroke="#a991ff"/>
+      <text x="59" y="22" text-anchor="middle" fill="#a991ff" font-size="14">P2 Archive</text>
+    </g>
+    <g transform="translate(174 380)">
+      <rect width="156" height="34" rx="8" fill="#101b2f" stroke="#ff7892"/>
+      <text x="78" y="22" text-anchor="middle" fill="#ff7892" font-size="14">P3 Under Review</text>
+    </g>
+  </g>
+  <g fill="none" stroke="url(#line)" stroke-width="3" stroke-linecap="round" filter="url(#glow)">
+    <path d="M548 248C588 174 682 150 742 136"/>
+    <path d="M452 246C358 170 286 138 260 112"/>
+    <path d="M426 300C314 334 248 368 206 396"/>
+    <path d="M522 296C608 340 716 376 820 392"/>
+  </g>
+</svg>

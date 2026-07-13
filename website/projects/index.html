@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projects Registry | Project Envision</title>
+  <meta name="description" content="Search, filter, sort, and open every Aureon Zorza Project Envision portfolio entry.">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../assets/css/aureon-zorza-backgrounds.css">
+  <link rel="canonical" href="https://aureonzorzatechnologies.pl/projects/">
+  <meta name="author" content="R&amp;A Consulting and Brokerage Services Ltd (Aureon Zorza Technologies)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Aureon Zorza Technologies">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:title" content="Projects Registry | Project Envision">
+  <meta property="og:description" content="Search, filter, sort, and open every Aureon Zorza Project Envision portfolio entry.">
+  <meta property="og:url" content="https://aureonzorzatechnologies.pl/projects/">
+  <meta property="og:image" content="https://aureonzorzatechnologies.pl/assets/images/brand/aureon-zorza-logo.jpg">
+  <meta property="og:image:width" content="1248">
+  <meta property="og:image:height" content="832">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Projects Registry | Project Envision">
+  <meta name="twitter:description" content="Search, filter, sort, and open every Aureon Zorza Project Envision portfolio entry.">
+  <meta name="twitter:image" content="https://aureonzorzatechnologies.pl/assets/images/brand/aureon-zorza-logo.jpg">
+</head>
+<body data-page="projects">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="header"><nav class="nav" aria-label="Primary navigation"><a class="brand" href="../">AUREON ZORZA<small>Technologies &amp; Partners</small></a><div class="links"><a data-nav="home" href="../">Home</a><a data-nav="projects" href="../projects/">Projects</a><a data-nav="vision" href="../vision/">Vision</a><a data-nav="publications" href="../publications/">Records</a><a data-nav="updates" href="../updates/">Updates</a><a data-nav="about" href="../about/">About</a><a data-nav="contact" href="../contact/">Contact</a></div></nav></header>
+  <main id="main-content">
+    <section class="page-hero"><div class="wrap"><div class="eyebrow">Project registry</div><h1>Projects, sources, and status in one working view.</h1><p class="lead">Search and compare all portfolio entries. Every row receives the same visual weight; evidence status determines the labels, not promotional priority.</p></div></section>
+    <section class="band" data-registry>
+      <div class="wrap">
+        <div class="toolbar-shell">
+          <div class="toolbar">
+            <div class="field"><label for="project-search">Search</label><input id="project-search" data-search type="search" placeholder="Project, category, source, summary"></div>
+            <div class="field"><label for="category-filter">Category</label><select id="category-filter" data-category-filter><option value="all">All categories</option></select></div>
+            <div class="field"><label for="status-filter">Status</label><select id="status-filter" data-status-filter><option value="all">All statuses</option></select></div>
+            <div class="field"><label for="source-filter">Source state</label><select id="source-filter" data-source-filter><option value="all">All source states</option><option value="verified">Verified public</option><option value="to-verify">TO VERIFY / concept</option><option value="draft">Draft / private</option><option value="archive">Archive</option></select></div>
+            <div class="field"><label for="sort-select">Sort</label><select id="sort-select" data-sort-select><option value="name:asc">Project A-Z</option><option value="name:desc">Project Z-A</option><option value="category:asc">Category A-Z</option><option value="category:desc">Category Z-A</option><option value="status:asc">Status A-Z</option><option value="status:desc">Status Z-A</option></select></div>
+            <button class="btn" type="button" data-clear-filters>Clear filters</button>
+          </div>
+          <div class="table-meta"><span data-result-count aria-live="polite">Loading project registry...</span><span>Registry updated 2026-07-11</span></div>
+        </div>
+        <div class="table-card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th data-sort="name" aria-sort="ascending"><button type="button">Project</button></th><th data-sort="category" aria-sort="none"><button type="button">Category</button></th><th data-sort="status" aria-sort="none"><button type="button">Status</button></th><th>Source status</th><th>Public summary</th><th>Updated</th><th>Open and sources</th></tr></thead>
+              <tbody data-project-table></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="notice">TO VERIFY, partner concept, and draft labels are explicit review boundaries. They are not evidence of operational capability.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="footer"><div class="wrap footer-grid"><div><strong>Aureon Zorza Technologies &amp; Partners</strong><p>Equal project rows, visible evidence states, and direct source paths.</p></div><div class="footer-links"><a href="../vision/">Vision</a><a href="../publications/">Records</a><a href="../contact/">Contact</a></div></div><div class="wrap footer-legal"><p>&copy; 2025 R&amp;A Consulting and Brokerage Services Ltd &mdash; trading as Aureon Zorza Technologies &middot; Company no. NI696693 (Northern Ireland, UK). Aureon Institute is the research identity for the HNC framework.</p></div></footer>
+  <script src="../script.js"></script>
+</body>
+</html>

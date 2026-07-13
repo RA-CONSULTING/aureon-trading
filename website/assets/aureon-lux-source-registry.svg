@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" role="img" aria-labelledby="t d"><title id="t">AUREON LUX source registry</title><desc id="d">Abstract registry table showing verified, candidate, contaminated, and conflict source classes.</desc>
+<defs>
+  <radialGradient id="bg" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="#131b2d"/><stop offset="1" stop-color="#05060A"/></radialGradient>
+  <linearGradient id="amber" x1="0" x2="1"><stop offset="0" stop-color="#FFB800"/><stop offset="1" stop-color="#14D9C0"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1000" height="600" fill="url(#bg)"/>
+<g transform="translate(80 90)" font-family="Inter,Arial">
+<text x="0" y="0" fill="#E8ECF1" font-size="36" font-weight="700">Source Registry</text>
+<text x="0" y="36" fill="#9BA3B0" font-size="17">Verified links, candidate sources, conflicts, and no-public-CTA sources.</text>
+<g transform="translate(0 90)">
+<rect x="0" y="0" width="840" height="48" rx="12" fill="#0F131C" stroke="#14D9C0" stroke-opacity=".8"/><circle cx="28" cy="24" r="8" fill="#14D9C0"/><text x="52" y="31" fill="#E8ECF1" font-size="18">AOIA-Core GitHub</text><text x="620" y="31" fill="#9BA3B0" font-size="15">Verified</text><rect x="0" y="68" width="840" height="48" rx="12" fill="#0F131C" stroke="#FFB800" stroke-opacity=".8"/><circle cx="28" cy="92" r="8" fill="#FFB800"/><text x="52" y="99" fill="#E8ECF1" font-size="18">Gary ResearchGate</text><text x="620" y="99" fill="#9BA3B0" font-size="15">Candidate source</text><rect x="0" y="136" width="840" height="48" rx="12" fill="#0F131C" stroke="#E05A5A" stroke-opacity=".8"/><circle cx="28" cy="160" r="8" fill="#E05A5A"/><text x="52" y="167" fill="#E8ECF1" font-size="18">aureon-trading repo</text><text x="620" y="167" fill="#9BA3B0" font-size="15">Contaminated / no CTA</text><rect x="0" y="204" width="840" height="48" rx="12" fill="#0F131C" stroke="#8844FF" stroke-opacity=".8"/><circle cx="28" cy="228" r="8" fill="#8844FF"/><text x="52" y="235" fill="#E8ECF1" font-size="18">LSC/QGITA Zenodo</text><text x="620" y="235" fill="#9BA3B0" font-size="15">Conflict</text><rect x="0" y="272" width="840" height="48" rx="12" fill="#0F131C" stroke="#14D9C0" stroke-opacity=".8"/><circle cx="28" cy="296" r="8" fill="#14D9C0"/><text x="52" y="303" fill="#E8ECF1" font-size="18">NOAA SWPC endpoints</text><text x="620" y="303" fill="#9BA3B0" font-size="15">Public data source</text>
+</g></g></svg>
