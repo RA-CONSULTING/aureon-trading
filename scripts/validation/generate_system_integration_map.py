@@ -12,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOT_DATE = "2026-07-13"
 DOCS_REPO_SITEMAP = REPO_ROOT / "docs" / "repo_sitemap.json"
 DOCS_ACCESS_MAP = REPO_ROOT / "docs" / "end_user_access_map.json"
+DOCS_CAPABILITY_REGISTRY = REPO_ROOT / "docs" / "capability_registry.json"
 DOCS_NAVIGATION_INDEX = REPO_ROOT / "docs" / "repo_navigation_index.json"
 DOCS_SAAS_MANIFEST = REPO_ROOT / "docs" / "saas_integration_manifest.json"
 DOCS_HARDENING_MANIFEST = REPO_ROOT / "docs" / "supabase_hardening_manifest.json"
@@ -126,7 +127,53 @@ def capability_lookup(access_map: dict) -> dict[str, set[str]]:
     return lookup
 
 
-def capabilities_for_system(system_path: str, lookup: dict[str, set[str]], entries: list[dict]) -> list[str]:
+def top_level_system_for_path(path: str, system_paths: set[str]) -> str | None:
+    normalized = path.strip().lstrip("/")
+    if not normalized or normalized.startswith(("http://", "https://", "#")):
+        return None
+    if normalized.endswith("/") and normalized in system_paths:
+        return normalized
+    if "/" not in normalized:
+        return None
+    top_level = normalized.split("/", 1)[0] + "/"
+    return top_level if top_level in system_paths else None
+
+
+def capability_system_lookup(capability_registry: dict, access_map: dict, system_paths: set[str]) -> dict[str, set[str]]:
+    lookup: dict[str, set[str]] = defaultdict(set)
+    routes_by_id = {
+        route["id"]: route
+        for route in access_map.get("capabilities", [])
+        if isinstance(route, dict) and route.get("id")
+    }
+
+    for capability in capability_registry.get("capabilities", []):
+        if not isinstance(capability, dict) or not capability.get("id"):
+            continue
+        capability_id = str(capability["id"])
+        candidate_paths: list[str] = []
+        candidate_paths.extend(capability.get("system_paths", []))
+        candidate_paths.extend(capability.get("resolved_paths", []))
+        candidate_paths.extend(capability.get("generated_refs", []))
+        candidate_paths.extend(capability.get("public_artifacts", []))
+        for route_id in capability.get("access_route_ids", []):
+            route = routes_by_id.get(route_id)
+            if not route:
+                continue
+            candidate_paths.extend(route.get("primary_docs", []))
+            candidate_paths.extend(route.get("related_systems", []))
+
+        for candidate in candidate_paths:
+            if not isinstance(candidate, str):
+                continue
+            system_path = top_level_system_for_path(candidate, system_paths)
+            if system_path:
+                lookup[system_path].add(capability_id)
+
+    return lookup
+
+
+def access_routes_for_system(system_path: str, lookup: dict[str, set[str]], entries: list[dict]) -> list[str]:
     ids: set[str] = set()
     for prefix, capability_ids in lookup.items():
         if path_matches(prefix, system_path) or path_matches(system_path, prefix):
@@ -188,22 +235,29 @@ def readiness_for(system_path: str, category: str) -> str:
 def build_manifest() -> dict:
     repo_sitemap = load_json(DOCS_REPO_SITEMAP)
     access_map = load_json(DOCS_ACCESS_MAP)
+    capability_registry = load_json(DOCS_CAPABILITY_REGISTRY)
     navigation_index = load_json(DOCS_NAVIGATION_INDEX)
     saas_manifest = load_json(DOCS_SAAS_MANIFEST)
     hardening_manifest = load_json(DOCS_HARDENING_MANIFEST)
     tracked_paths = git_ls_files()
     entries = navigation_index.get("entries", [])
-    lookup = capability_lookup(access_map)
+    access_lookup = capability_lookup(access_map)
+    system_paths = {normalize_path(system["path"]) for system in repo_sitemap.get("top_level_systems", [])}
+    implementation_lookup = capability_system_lookup(capability_registry, access_map, system_paths)
 
     capability_counts = Counter()
+    access_route_counts = Counter()
     systems = []
     for system in repo_sitemap.get("top_level_systems", []):
         system_path = normalize_path(system["path"])
         category = system.get("category", "uncategorized")
         override = SYSTEM_OVERRIDES.get(system_path, {})
-        capability_ids = capabilities_for_system(system_path, lookup, entries)
+        access_route_ids = access_routes_for_system(system_path, access_lookup, entries)
+        capability_ids = sorted(implementation_lookup.get(system_path, set()))
         for capability_id in capability_ids:
             capability_counts[capability_id] += 1
+        for route_id in access_route_ids:
+            access_route_counts[route_id] += 1
 
         systems.append(
             {
@@ -215,12 +269,20 @@ def build_manifest() -> dict:
                 "access_mode": override.get("access_mode", "repo path and generated navigation"),
                 "readiness_status": readiness_for(system_path, category),
                 "capability_ids": capability_ids,
+                "access_route_ids": access_route_ids,
                 "entrypoints": pick_entrypoints(system_path, entries),
                 "public_artifacts": pick_public_artifacts(system_path, entries),
-                "validation_refs": pick_validation_refs(system_path, entries, capability_ids),
+                "validation_refs": pick_validation_refs(system_path, entries, [*capability_ids, *access_route_ids]),
                 "safety_gate": override.get("safety_gate", "review before exposing as a hosted or mutable surface"),
             }
         )
+
+    registry_capability_ids = sorted(
+        str(capability.get("id", ""))
+        for capability in capability_registry.get("capabilities", [])
+        if isinstance(capability, dict) and capability.get("id")
+    )
+    unmapped_capability_ids = sorted(set(registry_capability_ids) - set(capability_counts))
 
     return {
         "name": "Aureon System Integration Map",
@@ -232,6 +294,7 @@ def build_manifest() -> dict:
         "source_documents": [
             "docs/repo_sitemap.json",
             "docs/end_user_access_map.json",
+            "docs/capability_registry.json",
             "docs/repo_navigation_index.json",
             "docs/saas_integration_manifest.json",
             "docs/supabase_hardening_manifest.json",
@@ -245,13 +308,20 @@ def build_manifest() -> dict:
         "summary": {
             "tracked_file_count": len(tracked_paths),
             "system_count": len(systems),
-            "capability_count": len(access_map.get("capabilities", [])),
+            "capability_count": len(registry_capability_ids),
             "mapped_capability_count": len(capability_counts),
+            "unmapped_capability_count": len(unmapped_capability_ids),
+            "capability_system_binding_count": sum(capability_counts.values()),
+            "access_route_count": len(access_map.get("capabilities", [])),
+            "mapped_access_route_count": len(access_route_counts),
+            "access_route_system_binding_count": sum(access_route_counts.values()),
             "saas_deployment_surface_count": len(saas_manifest.get("deployment_surfaces", [])),
             "supabase_public_blocker_count": hardening_manifest.get("summary", {}).get("production_blocker_count", 0),
         },
         "systems": systems,
         "capability_system_counts": dict(sorted(capability_counts.items())),
+        "access_route_system_counts": dict(sorted(access_route_counts.items())),
+        "unmapped_capability_ids": unmapped_capability_ids,
         "integration_sequence": [
             "start with README.md, docs/REPO_SITEMAP.md, and docs/END_USER_ACCESS_MAP.md",
             "use docs/system_integration_map.json to bind systems to capabilities and gates",

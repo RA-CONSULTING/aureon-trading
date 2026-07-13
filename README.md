@@ -21,7 +21,7 @@ preserved unchanged at
 | Public GitHub review | [`docs/INDEX.md`](docs/INDEX.md) | Guided navigation for setup, architecture, operations, research, and contribution paths. |
 | Repo-wide sitemap | [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces. |
 | End-user access map | [`docs/END_USER_ACCESS_MAP.md`](docs/END_USER_ACCESS_MAP.md) | Task-based access to capabilities, docs, related systems, runtime surfaces, and safety gates. |
-| System integration map | [`docs/SYSTEM_INTEGRATION_MAP.md`](docs/SYSTEM_INTEGRATION_MAP.md) | System-by-system binding of capabilities, entrypoints, public artifacts, validation references, and safety gates. |
+| System integration map | [`docs/SYSTEM_INTEGRATION_MAP.md`](docs/SYSTEM_INTEGRATION_MAP.md) | System-by-system binding of all 29 current implementation capabilities, access routes, entrypoints, public artifacts, validation references, and safety gates. |
 | Capability access matrix | [`docs/capability_access_matrix.json`](docs/capability_access_matrix.json) | Generated end-user route matrix for every current capability, including start points, systems, runtime/API surfaces, and safety gates. |
 | Capability registry | [`docs/CAPABILITY_REGISTRY.md`](docs/CAPABILITY_REGISTRY.md) | Generated registry of current capabilities from `CAPABILITIES.md`, resolved surfaces, runtime refs, systems, and access routes. |
 | Frontend repo map | [`frontend/src/components/RepoNavigationPanel.tsx`](frontend/src/components/RepoNavigationPanel.tsx) | Console tab mounted at `#repo-map` for browsing public repo and capability manifests. |

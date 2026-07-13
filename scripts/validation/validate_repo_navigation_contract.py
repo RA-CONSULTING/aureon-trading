@@ -658,6 +658,21 @@ def main() -> int:
     system_rows = docs_system_integration.get("systems", []) if isinstance(docs_system_integration, dict) else []
     system_paths = {entry.get("path") for entry in system_rows if isinstance(entry, dict)}
     sitemap_paths = {entry.get("path") for entry in docs_repo.get("top_level_systems", []) if isinstance(entry, dict)}
+    system_capability_ids = {
+        capability_id
+        for entry in system_rows
+        if isinstance(entry, dict)
+        for capability_id in entry.get("capability_ids", [])
+    }
+    system_access_route_ids = {
+        route_id
+        for entry in system_rows
+        if isinstance(entry, dict)
+        for route_id in entry.get("access_route_ids", [])
+    }
+    access_route_ids = {route.get("id") for route in docs_capabilities if isinstance(route, dict)}
+    capability_system_counts = docs_system_integration.get("capability_system_counts", {})
+    access_route_system_counts = docs_system_integration.get("access_route_system_counts", {})
     expect(
         docs_system_integration.get("summary", {}).get("tracked_file_count") == tracked_total,
         failures,
@@ -669,9 +684,54 @@ def main() -> int:
         "system integration map system_count differs from repo sitemap",
     )
     expect(
-        docs_system_integration.get("summary", {}).get("capability_count") == len(docs_capabilities),
+        docs_system_integration.get("summary", {}).get("capability_count") == len(registry_ids),
         failures,
-        "system integration map capability_count differs from access map",
+        "system integration map capability_count differs from capability registry",
+    )
+    expect(
+        docs_system_integration.get("summary", {}).get("mapped_capability_count") == len(system_capability_ids),
+        failures,
+        "system integration map mapped_capability_count differs from system rows",
+    )
+    expect(
+        system_capability_ids == registry_ids,
+        failures,
+        "system integration map does not cover every current capability registry ID",
+    )
+    expect(
+        set(capability_system_counts) == registry_ids,
+        failures,
+        "system integration map capability_system_counts does not cover every current capability",
+    )
+    expect(
+        docs_system_integration.get("summary", {}).get("unmapped_capability_count") == 0,
+        failures,
+        "system integration map reports unmapped current capabilities",
+    )
+    expect(
+        not docs_system_integration.get("unmapped_capability_ids"),
+        failures,
+        "system integration map lists unmapped current capabilities",
+    )
+    expect(
+        docs_system_integration.get("summary", {}).get("access_route_count") == len(docs_capabilities),
+        failures,
+        "system integration map access_route_count differs from access map",
+    )
+    expect(
+        docs_system_integration.get("summary", {}).get("mapped_access_route_count") == len(system_access_route_ids),
+        failures,
+        "system integration map mapped_access_route_count differs from system rows",
+    )
+    expect(
+        system_access_route_ids.issubset(access_route_ids),
+        failures,
+        "system integration map has access route IDs not present in the access map",
+    )
+    expect(
+        set(access_route_system_counts).issubset(access_route_ids),
+        failures,
+        "system integration map access_route_system_counts has IDs not present in the access map",
     )
     expect(system_paths == sitemap_paths, failures, "system integration map does not cover every top-level system")
     expect(

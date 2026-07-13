@@ -45,7 +45,7 @@ Navigation contract validator, from repo root:
 | Run or validate locally | [`../RUNNING.md`](../RUNNING.md) | [`../QUICK_START.md`](../QUICK_START.md) |
 | Review investor/funder posture | [`investor/README.md`](investor/README.md) | [`investor/TERMINOLOGY.md`](investor/TERMINOLOGY.md) |
 | Navigate by end-user task | [`END_USER_ACCESS_MAP.md`](END_USER_ACCESS_MAP.md) | Capability-to-docs, systems, runtime/API surfaces, and safety gates |
-| Bind systems to capabilities | [`SYSTEM_INTEGRATION_MAP.md`](SYSTEM_INTEGRATION_MAP.md), [`system_integration_map.json`](system_integration_map.json) | System entrypoints, public artifacts, validation refs, capability IDs, and safety gates |
+| Bind systems to capabilities | [`SYSTEM_INTEGRATION_MAP.md`](SYSTEM_INTEGRATION_MAP.md), [`system_integration_map.json`](system_integration_map.json) | System entrypoints, public artifacts, validation refs, all 29 current implementation capability IDs, access-route IDs, and safety gates |
 | Browse current capabilities | [`../CAPABILITIES.md`](../CAPABILITIES.md), [`CAPABILITY_REGISTRY.md`](CAPABILITY_REGISTRY.md), [`capability_registry.json`](capability_registry.json) | Current capability table, resolved surfaces, runtime references, systems, public artifacts, and access routes |
 | Route every capability | [`capability_access_matrix.json`](capability_access_matrix.json), frontend `#repo-map` | End-user start points, runtime/API surfaces, related systems, and safety gates for every current capability |
 | Search the tracked repo index | [`repo_navigation_index.json`](repo_navigation_index.json) | File-level categories, zones, capability IDs, and public frontend mirror |

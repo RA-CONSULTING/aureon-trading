@@ -208,6 +208,7 @@ interface SystemIntegrationRow {
   access_mode: string;
   readiness_status: string;
   capability_ids: string[];
+  access_route_ids: string[];
   entrypoints: string[];
   public_artifacts: string[];
   validation_refs: string[];
@@ -223,6 +224,11 @@ interface SystemIntegrationMapManifest {
     system_count: number;
     capability_count: number;
     mapped_capability_count: number;
+    unmapped_capability_count: number;
+    capability_system_binding_count: number;
+    access_route_count: number;
+    mapped_access_route_count: number;
+    access_route_system_binding_count: number;
     saas_deployment_surface_count: number;
     supabase_public_blocker_count: number;
   };
@@ -1031,14 +1037,22 @@ export function RepoNavigationPanel() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
             <div className="rounded-md border border-border/50 bg-background/45 p-3">
               <div className="text-[11px] uppercase text-muted-foreground">Mapped systems</div>
               <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.system_count || 0).toLocaleString()}</div>
             </div>
             <div className="rounded-md border border-border/50 bg-background/45 p-3">
-              <div className="text-[11px] uppercase text-muted-foreground">Capability bindings</div>
+              <div className="text-[11px] uppercase text-muted-foreground">Current capabilities</div>
               <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.mapped_capability_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">System links</div>
+              <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.capability_system_binding_count || 0).toLocaleString()}</div>
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/45 p-3">
+              <div className="text-[11px] uppercase text-muted-foreground">Access routes</div>
+              <div className="mt-1 text-2xl font-semibold">{(systemMap?.summary?.mapped_access_route_count || 0).toLocaleString()}</div>
             </div>
             <div className="rounded-md border border-border/50 bg-background/45 p-3">
               <div className="text-[11px] uppercase text-muted-foreground">SaaS surfaces</div>
@@ -1068,6 +1082,11 @@ export function RepoNavigationPanel() {
                   {system.capability_ids.slice(0, 4).map((capabilityId) => (
                     <Badge key={`${system.path}-${capabilityId}`} variant="outline" className="font-mono text-[10px]">
                       {capabilityId}
+                    </Badge>
+                  ))}
+                  {system.access_route_ids.slice(0, 3).map((routeId) => (
+                    <Badge key={`${system.path}-route-${routeId}`} variant="secondary" className="font-mono text-[10px]">
+                      {routeId}
                     </Badge>
                   ))}
                 </div>

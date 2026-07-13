@@ -11,7 +11,7 @@ Master table of contents for all project documentation.
 | Public GitHub readers | [Repository README](../README.md) | Current front door with concise repo map and evidence posture |
 | End users and integrators | [Repo-Wide Sitemap](REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces |
 | End-user task navigation | [End-User Access Map](END_USER_ACCESS_MAP.md) | Task-based access to capabilities, docs, related systems, runtime surfaces, and safety gates |
-| System integration map | [System Integration Map](SYSTEM_INTEGRATION_MAP.md) | System-by-system capability bindings, entrypoints, public artifacts, validation references, and safety gates |
+| System integration map | [System Integration Map](SYSTEM_INTEGRATION_MAP.md) | System-by-system bindings for all 29 current implementation capabilities, access routes, entrypoints, public artifacts, validation references, and safety gates |
 | Capability registry | [Capability Registry](CAPABILITY_REGISTRY.md) | Current capability table converted into resolved surfaces, runtime refs, systems, and access routes |
 | Frontend repository map | [Repo Navigation Panel](../frontend/src/components/RepoNavigationPanel.tsx) | Console tab mounted at `#repo-map` for the public repo sitemap and end-user access map |
 | File-level repo index | [Repo Navigation Index](repo_navigation_index.json) | Generated `git ls-files` index with categories, zones, capability IDs, and frontend public mirror |
@@ -33,7 +33,7 @@ Master table of contents for all project documentation.
 |----------|-------------|
 | [Repo-Wide Sitemap](REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces |
 | [End-User Access Map](END_USER_ACCESS_MAP.md) | Task-based access to capabilities, docs, related systems, runtime surfaces, and safety gates |
-| [System Integration Map](SYSTEM_INTEGRATION_MAP.md) | System-by-system integration view for entrypoints, public artifacts, validation refs, and gates |
+| [System Integration Map](SYSTEM_INTEGRATION_MAP.md) | System-by-system integration view for current capability IDs, access routes, entrypoints, public artifacts, validation refs, and gates |
 | [Capability Registry](CAPABILITY_REGISTRY.md) | Current capability registry generated from `CAPABILITIES.md` |
 | [Repo Navigation Panel](../frontend/src/components/RepoNavigationPanel.tsx) | End-user console surface for the public repo map, capability routes, and navigation contract |
 | [Repo Navigation Index](repo_navigation_index.json) | File-level repo index generated from `git ls-files` for searchable navigation |
