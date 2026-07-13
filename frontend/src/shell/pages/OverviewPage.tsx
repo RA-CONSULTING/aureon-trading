@@ -32,6 +32,17 @@ interface BillingStatus {
   charge_endpoint?: { enabled?: boolean };
 }
 
+interface OrganismStatus {
+  available?: boolean;
+  connectome?: {
+    nodes?: number;
+    baton_linked?: number;
+    touched?: number;
+    woven?: number;
+    coverage_pct?: number;
+  };
+}
+
 async function fetchJson<T>(url: string): Promise<T | null> {
   try {
     const r = await fetch(url, { cache: "no-store" });
@@ -56,11 +67,13 @@ function healthBadgeClass(status: string | undefined): string {
 export default function OverviewPage() {
   const [status, setStatus] = useState<PlatformStatus | null | undefined>(undefined);
   const [billing, setBilling] = useState<BillingStatus | null | undefined>(undefined);
+  const [organism, setOrganism] = useState<OrganismStatus | null | undefined>(undefined);
   const [unified, setUnified] = useState<UnifiedFrontendState | null>(null);
 
   useEffect(() => {
     fetchJson<PlatformStatus>("/api/status").then(setStatus);
     fetchJson<BillingStatus>("/api/billing/status").then(setBilling);
+    fetchJson<OrganismStatus>("/api/organism").then(setOrganism);
     loadUnifiedFrontendState().then(setUnified).catch(() => setUnified(null));
   }, []);
 
@@ -136,6 +149,35 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Organism connectome */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Sparkles className="h-4 w-4 text-primary" /> Organism connectome
+          </CardTitle>
+          <CardDescription>
+            How much of the body the metacognitive layer has sensed and woven — honest depths.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {organism === undefined ? (
+            <Skeleton className="h-10 w-full" />
+          ) : !organism?.available || !organism.connectome ? (
+            <p className="text-xs text-muted-foreground">
+              Connectome offline — start the organism daemon (or the operator gateway) for live coverage.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-4 text-sm">
+              <span><b>{organism.connectome.nodes ?? "?"}</b> <span className="text-muted-foreground">modules</span></span>
+              <span><b>{organism.connectome.baton_linked ?? 0}</b> <span className="text-muted-foreground">linked</span></span>
+              <span><b>{organism.connectome.touched ?? 0}</b> <span className="text-muted-foreground">touched</span></span>
+              <span><b>{organism.connectome.woven ?? 0}</b> <span className="text-muted-foreground">woven</span></span>
+              <span className="text-primary"><b>{organism.connectome.coverage_pct ?? 0}%</b> <span className="text-muted-foreground">felt</span></span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Domain health */}
       {Object.keys(domains).length > 0 && (

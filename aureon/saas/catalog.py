@@ -145,7 +145,11 @@ def _peek(abs_path: str):
         if len(s) > 12 and not s.startswith(("from ", "import ", "#!")):
             desc = s[:160]
             break
-    return (desc, loc, "thought_bus" in low or "thoughtbus" in low,
+    # A module is wired to the nervous system if it touches the bus directly OR
+    # fires the baton link on import (the dominant mechanism — 56% of the tree —
+    # which the old substring test missed entirely, undercounting wiring ~4x).
+    has_bus = "thought_bus" in low or "thoughtbus" in low or "baton_link" in low
+    return (desc, loc, has_bus,
             "queen" in low, "dashboard" in low or "app.run" in low)
 
 

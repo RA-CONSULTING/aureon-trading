@@ -256,8 +256,11 @@ class SystemRegistry:
             # Extract imports
             imports = self._extract_imports(content, filepath)
             
-            # Check for integrations
-            has_thought_bus = 'thought_bus' in content.lower() or 'ThoughtBus' in content
+            # Check for integrations. The baton link (aureon_baton_link) is the
+            # dominant nervous-system hook — 56% of the tree fires it on import —
+            # so count it as thought-bus wiring; the old test missed it entirely.
+            has_thought_bus = ('thought_bus' in content.lower() or 'ThoughtBus' in content
+                               or 'baton_link' in content.lower())
             has_queen = 'queen' in content.lower() and ('hive' in content.lower() or 'sero' in content.lower())
             
             # Check if dashboard
