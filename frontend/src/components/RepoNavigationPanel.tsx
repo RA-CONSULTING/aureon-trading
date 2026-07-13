@@ -552,8 +552,7 @@ export function RepoNavigationPanel() {
           ],
           query,
         ),
-      )
-      .slice(0, 12);
+      );
   }, [capabilityAccessMatrix, query]);
 
   const indexedEntries = navigationIndex?.entries || [];
@@ -611,8 +610,7 @@ export function RepoNavigationPanel() {
       .sort((left, right) => {
         const priority = { fail: 0, warn: 1, pass: 2 };
         return priority[left.status] - priority[right.status] || left.id.localeCompare(right.id);
-      })
-      .slice(0, 10);
+      });
   }, [navigationReadiness, query]);
 
   const topCategories = useMemo(() => {
@@ -627,11 +625,28 @@ export function RepoNavigationPanel() {
       .slice(0, 6);
   }, [saasManifest]);
 
-  const topSystems = useMemo(() => {
+  const filteredSystemRows = useMemo(() => {
     return [...(systemMap?.systems || [])]
-      .sort((left, right) => right.tracked_files - left.tracked_files)
-      .slice(0, 8);
-  }, [systemMap]);
+      .filter((system) =>
+        matchesQuery(
+          [
+            system.path,
+            system.category,
+            system.integration_role,
+            system.readiness_status,
+            system.access_mode,
+            system.safety_gate,
+            ...system.capability_ids,
+            ...system.access_route_ids,
+            ...system.entrypoints,
+            ...system.public_artifacts,
+            ...system.validation_refs,
+          ],
+          query,
+        ),
+      )
+      .sort((left, right) => right.tracked_files - left.tracked_files);
+  }, [systemMap, query]);
 
   const filteredAutonomousManifests = useMemo(() => {
     return autonomousManifests.filter((manifest) =>
@@ -667,8 +682,7 @@ export function RepoNavigationPanel() {
           ],
           query,
         ),
-      )
-      .slice(0, 10);
+      );
   }, [capabilityRegistry, query]);
 
   const contract = repoMap?.public_contract;
@@ -870,12 +884,15 @@ export function RepoNavigationPanel() {
                   </Badge>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {gate.evidence.slice(0, 4).map((path) => (
+                  {gate.evidence.map((path) => (
                     <PathLink key={`${gate.id}-${path}`} path={path} />
                   ))}
                 </div>
               </div>
             ))}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Showing {filteredReadinessGates.length.toLocaleString()} of {(navigationReadiness?.summary?.gate_count || 0).toLocaleString()} readiness gates, with all matching evidence links.
           </div>
         </CardContent>
       </Card>
@@ -911,55 +928,60 @@ export function RepoNavigationPanel() {
             </div>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-2">
-            {filteredCapabilityAccessRows.map((capability) => (
-              <div key={capability.id} className="rounded-md border border-border/50 bg-background/45 p-3">
-                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <div className="font-medium">{capability.label}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{capability.description}</div>
-                  </div>
-                  <Badge variant="outline" className="w-fit max-w-full whitespace-normal border-emerald-500/30 bg-emerald-500/10 text-[10px] leading-snug text-emerald-100">
-                    {capability.readiness_status}
-                  </Badge>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {capability.access_routes.slice(0, 3).map((route) => (
-                    <div key={`${capability.id}-route-${route.id}`} className="rounded-md border border-border/40 bg-background/40 p-2">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="text-sm font-medium">{route.label}</div>
-                        <Badge variant="secondary" className="w-fit font-mono text-[10px]">
-                          {route.id}
-                        </Badge>
-                      </div>
-                      <div className="mt-2 text-xs text-muted-foreground">{route.user_action}</div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {route.runtime_or_api_surface.slice(0, 3).map((surface) => (
-                          <Badge key={`${capability.id}-${route.id}-${surface}`} variant="outline" className="max-w-full whitespace-normal font-mono text-[10px] leading-snug">
-                            {surface}
-                          </Badge>
-                        ))}
-                      </div>
+          <ScrollArea className="h-[640px] pr-3">
+            <div className="grid gap-3 lg:grid-cols-2">
+              {filteredCapabilityAccessRows.map((capability) => (
+                <div key={capability.id} className="rounded-md border border-border/50 bg-background/45 p-3">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <div className="font-medium">{capability.label}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{capability.description}</div>
                     </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {capability.end_user_start_points.slice(0, 4).map((path) => (
-                    <PathLink key={`${capability.id}-start-${path}`} path={path} />
-                  ))}
-                  {capability.related_systems.slice(0, 3).map((system) => (
-                    <Badge key={`${capability.id}-system-${system.path}`} variant="secondary" className="max-w-full whitespace-normal font-mono text-[10px] leading-snug">
-                      {system.path}
+                    <Badge variant="outline" className="w-fit max-w-full whitespace-normal border-emerald-500/30 bg-emerald-500/10 text-[10px] leading-snug text-emerald-100">
+                      {capability.readiness_status}
                     </Badge>
-                  ))}
-                </div>
-                {capability.safety_gates.length ? (
-                  <div className="mt-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-100">
-                    {capability.safety_gates.slice(0, 2).join(" / ")}
                   </div>
-                ) : null}
-              </div>
-            ))}
+                  <div className="mt-3 space-y-2">
+                    {capability.access_routes.map((route) => (
+                      <div key={`${capability.id}-route-${route.id}`} className="rounded-md border border-border/40 bg-background/40 p-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="text-sm font-medium">{route.label}</div>
+                          <Badge variant="secondary" className="w-fit font-mono text-[10px]">
+                            {route.id}
+                          </Badge>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">{route.user_action}</div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {route.runtime_or_api_surface.map((surface) => (
+                            <Badge key={`${capability.id}-${route.id}-${surface}`} variant="outline" className="max-w-full whitespace-normal font-mono text-[10px] leading-snug">
+                              {surface}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {capability.end_user_start_points.map((path) => (
+                      <PathLink key={`${capability.id}-start-${path}`} path={path} />
+                    ))}
+                    {capability.related_systems.map((system) => (
+                      <Badge key={`${capability.id}-system-${system.path}`} variant="secondary" className="max-w-full whitespace-normal font-mono text-[10px] leading-snug">
+                        {system.path}
+                      </Badge>
+                    ))}
+                  </div>
+                  {capability.safety_gates.length ? (
+                    <div className="mt-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-100">
+                      {capability.safety_gates.join(" / ")}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          <div className="text-xs text-muted-foreground">
+            Showing {filteredCapabilityAccessRows.length.toLocaleString()} of {(capabilityAccessMatrix?.summary?.capability_count || 0).toLocaleString()} routed capabilities, with all matching access routes, start points, systems, and gates.
           </div>
         </CardContent>
       </Card>
@@ -1227,45 +1249,50 @@ export function RepoNavigationPanel() {
             </div>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-2">
-            {filteredCurrentCapabilities.map((capability) => (
-              <div key={capability.id} className="rounded-md border border-border/50 bg-background/45 p-3">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="font-medium">{capability.label}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{capability.description}</div>
+          <ScrollArea className="h-[620px] pr-3">
+            <div className="grid gap-3 lg:grid-cols-2">
+              {filteredCurrentCapabilities.map((capability) => (
+                <div key={capability.id} className="rounded-md border border-border/50 bg-background/45 p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="font-medium">{capability.label}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{capability.description}</div>
+                    </div>
+                    <Badge variant="outline" className="w-fit max-w-full whitespace-normal font-mono text-[10px] leading-snug">
+                      {capability.access_route_ids.join(", ")}
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="w-fit font-mono text-[10px]">
-                    {capability.access_route_ids.slice(0, 2).join(", ")}
-                  </Badge>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {capability.resolved_paths.slice(0, 4).map((path) => (
-                    <PathLink key={`${capability.id}-path-${path}`} path={path} />
-                  ))}
-                  {capability.runtime_refs.slice(0, 2).map((ref) => (
-                    <Badge key={`${capability.id}-runtime-${ref}`} variant="secondary" className="font-mono text-[10px]">
-                      {ref}
-                    </Badge>
-                  ))}
-                  {capability.generated_refs.slice(0, 2).map((ref) => (
-                    <Badge key={`${capability.id}-generated-${ref}`} variant="outline" className="border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] text-emerald-100">
-                      {ref}
-                    </Badge>
-                  ))}
-                  {capability.code_symbol_refs.slice(0, 2).map((symbol) => (
-                    <Badge key={`${capability.id}-symbol-${symbol.ref}`} variant="outline" className="border-sky-500/30 bg-sky-500/10 font-mono text-[10px] text-sky-100">
-                      {symbol.ref}
-                    </Badge>
-                  ))}
-                </div>
-                {capability.unresolved_refs.length ? (
-                  <div className="mt-3 text-xs text-yellow-100">
-                    Review refs: {capability.unresolved_refs.slice(0, 3).join(", ")}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {capability.resolved_paths.map((path) => (
+                      <PathLink key={`${capability.id}-path-${path}`} path={path} />
+                    ))}
+                    {capability.runtime_refs.map((ref) => (
+                      <Badge key={`${capability.id}-runtime-${ref}`} variant="secondary" className="max-w-full whitespace-normal font-mono text-[10px] leading-snug">
+                        {ref}
+                      </Badge>
+                    ))}
+                    {capability.generated_refs.map((ref) => (
+                      <Badge key={`${capability.id}-generated-${ref}`} variant="outline" className="max-w-full whitespace-normal border-emerald-500/30 bg-emerald-500/10 font-mono text-[10px] leading-snug text-emerald-100">
+                        {ref}
+                      </Badge>
+                    ))}
+                    {capability.code_symbol_refs.map((symbol) => (
+                      <Badge key={`${capability.id}-symbol-${symbol.ref}`} variant="outline" className="max-w-full whitespace-normal border-sky-500/30 bg-sky-500/10 font-mono text-[10px] leading-snug text-sky-100">
+                        {symbol.ref}
+                      </Badge>
+                    ))}
                   </div>
-                ) : null}
-              </div>
-            ))}
+                  {capability.unresolved_refs.length ? (
+                    <div className="mt-3 text-xs text-yellow-100">
+                      Review refs: {capability.unresolved_refs.join(", ")}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          <div className="text-xs text-muted-foreground">
+            Showing {filteredCurrentCapabilities.length.toLocaleString()} of {(capabilityRegistry?.summary?.capability_count || 0).toLocaleString()} current capabilities, with all matching access-route IDs and resolved surface references.
           </div>
         </CardContent>
       </Card>
@@ -1305,35 +1332,40 @@ export function RepoNavigationPanel() {
             </div>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-2">
-            {topSystems.map((system) => (
-              <div key={system.path} className="rounded-md border border-border/50 bg-background/45 p-3">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <PathLink path={system.path} />
-                    <div className="mt-2 text-sm text-muted-foreground">{system.integration_role}</div>
+          <ScrollArea className="h-[620px] pr-3">
+            <div className="grid gap-3 lg:grid-cols-2">
+              {filteredSystemRows.map((system) => (
+                <div key={system.path} className="rounded-md border border-border/50 bg-background/45 p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <PathLink path={system.path} />
+                      <div className="mt-2 text-sm text-muted-foreground">{system.integration_role}</div>
+                    </div>
+                    <Badge variant="secondary">{system.tracked_files.toLocaleString()}</Badge>
                   </div>
-                  <Badge variant="secondary">{system.tracked_files.toLocaleString()}</Badge>
+                  <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                    <div className="rounded-md border border-border/40 bg-background/40 px-2 py-1">{system.readiness_status}</div>
+                    <div className="rounded-md border border-border/40 bg-background/40 px-2 py-1">{system.access_mode}</div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {system.capability_ids.map((capabilityId) => (
+                      <Badge key={`${system.path}-${capabilityId}`} variant="outline" className="font-mono text-[10px]">
+                        {capabilityId}
+                      </Badge>
+                    ))}
+                    {system.access_route_ids.map((routeId) => (
+                      <Badge key={`${system.path}-route-${routeId}`} variant="secondary" className="font-mono text-[10px]">
+                        {routeId}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="mt-3 text-xs text-muted-foreground">{system.safety_gate}</div>
                 </div>
-                <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                  <div className="rounded-md border border-border/40 bg-background/40 px-2 py-1">{system.readiness_status}</div>
-                  <div className="rounded-md border border-border/40 bg-background/40 px-2 py-1">{system.access_mode}</div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {system.capability_ids.slice(0, 4).map((capabilityId) => (
-                    <Badge key={`${system.path}-${capabilityId}`} variant="outline" className="font-mono text-[10px]">
-                      {capabilityId}
-                    </Badge>
-                  ))}
-                  {system.access_route_ids.slice(0, 3).map((routeId) => (
-                    <Badge key={`${system.path}-route-${routeId}`} variant="secondary" className="font-mono text-[10px]">
-                      {routeId}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-3 text-xs text-muted-foreground">{system.safety_gate}</div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </ScrollArea>
+          <div className="text-xs text-muted-foreground">
+            Showing {filteredSystemRows.length.toLocaleString()} of {(systemMap?.summary?.system_count || 0).toLocaleString()} mapped systems, with all matching capability IDs and access-route IDs.
           </div>
         </CardContent>
       </Card>
