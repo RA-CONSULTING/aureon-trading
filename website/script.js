@@ -280,6 +280,35 @@
     });
   }
 
+  function renderResearch(data) {
+    const profiles = data.profiles || [];
+    const nameById = {};
+    profiles.forEach((profile) => { nameById[profile.id] = profile.name; });
+
+    document.querySelectorAll("[data-research-profiles]").forEach((container) => {
+      container.innerHTML = profiles.map((profile) => `
+        <article class="card">
+          <div class="card-accent"></div>
+          <div class="eyebrow">${escapeHtml(profile.role)}</div>
+          <h3>${escapeHtml(profile.name)}</h3>
+          <p>${escapeHtml(profile.summary)}</p>
+          <div class="github-channel-actions">${(profile.links || []).map((link) => externalLink(link.url, link.label)).join("")}</div>
+          ${(profile.collections || []).map((collection) => `<p class="mini">${externalLink(collection.url, collection.label)} &mdash; ${escapeHtml(collection.note)}</p>`).join("")}
+        </article>`).join("");
+    });
+
+    document.querySelectorAll("[data-research]").forEach((tableBody) => {
+      tableBody.innerHTML = (data.papers || []).map((paper) => `
+        <tr>
+          <td><strong>${escapeHtml(nameById[paper.author] || paper.author)}</strong></td>
+          <td>${escapeHtml(paper.title)}</td>
+          <td>${escapeHtml(paper.type)}</td>
+          <td>${escapeHtml(paper.platform)}</td>
+          <td>${externalLink(paper.url, "View")}${externalLink(paper.doi, "DOI")}${(!paper.url && !paper.doi) ? '<span class="source-empty">Not listed</span>' : ""}</td>
+        </tr>`).join("");
+    });
+  }
+
   function renderUpdates(updates) {
     document.querySelectorAll("[data-updates]").forEach((container) => {
       const limit = Number(container.dataset.limit || updates.length);
@@ -455,6 +484,14 @@
         renderPublications(await loadJson("data/publications.json"));
       } catch (_error) {
         document.querySelectorAll("[data-publications], [data-publications-preview]").forEach((container) => showInlineError(container, "Public records are temporarily unavailable."));
+      }
+    }
+
+    if (document.querySelector("[data-research], [data-research-profiles]")) {
+      try {
+        renderResearch(await loadJson("data/research.json"));
+      } catch (_error) {
+        document.querySelectorAll("[data-research], [data-research-profiles]").forEach((container) => showInlineError(container, "The research index is temporarily unavailable."));
       }
     }
 

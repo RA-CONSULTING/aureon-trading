@@ -59,6 +59,21 @@ and every "TO VERIFY / Draft / not investment advice" evidence label are preserv
   `https://aureonzorzatechnologies.pl/…` URLs (was an empty skeleton).
 - `robots.txt` gained a `Sitemap:` line.
 
+### 7. Research tab (new)
+- New **Research** section (`research/index.html`, formerly a redirect stub) in the site's ledger
+  format, plus a **Research** link added to the primary nav on every page.
+- Driven by a new `data/research.json` (rendered by `script.js`), grouped by researcher:
+  - **Gary Leckey** (Aureon Institute / HNC) — 14 public papers, with profile links to ORCID
+    (`0009-0004-2792-4649`), Zenodo, ResearchGate, Academia (`gleckey.academia.edu`), GitHub, and
+    the Aureon Institute site, plus the whitepaper library on GitHub. Papers verified via the
+    ORCID public API and Zenodo DOIs (HNC, HNC+Auris Conjecture, HNC+Aureon Trading Framework,
+    Tandem in Unity, QGITA ×2, EPAS, LuminaCell v2, Math Angel Protocol, Harmonic Reality
+    Framework ×2, Dynamic Systems Model, Modeling Light Dynamics, The Barons' Banner).
+  - **Łukasz (LuciferSun)** (Project Envision) — 4 archived Zenodo records (AOIA-Core, MHLM/MDLH,
+    LSC ×2) + GitHub. LSC records kept labelled "TO VERIFY".
+- Every link points to a real, verified public record; no profile URL or paper was invented.
+  `research/` is now indexable and included in the sitemap.
+
 ## What was **not** changed
 Design, CSS layout, colours, and imagery (except the three added brand assets and one small
 `.footer-legal` rule); Łukasz's authorship, credits, GitHub links, and contact; the portfolio

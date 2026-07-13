@@ -1,0 +1,56 @@
+{
+  "profiles": [
+    {
+      "id": "gary",
+      "name": "Gary Leckey",
+      "role": "Director & Owner · Aureon Institute (HNC research identity)",
+      "summary": "Founder of the Harmonic Nexus Core (HNC) research programme. Public preprints, whitepapers, and archived records across Zenodo, ResearchGate, and Academia.",
+      "links": [
+        { "label": "ORCID", "url": "https://orcid.org/0009-0004-2792-4649" },
+        { "label": "Zenodo", "url": "https://zenodo.org/search?q=metadata.creators.person_or_org.name%3A%22Leckey%2C%20Gary%22" },
+        { "label": "ResearchGate", "url": "https://www.researchgate.net/profile/Gary-Leckey" },
+        { "label": "Academia.edu", "url": "https://gleckey.academia.edu" },
+        { "label": "GitHub", "url": "https://github.com/RA-CONSULTING" },
+        { "label": "Aureon Institute", "url": "https://trading.aureoninstitute.co.uk/" }
+      ],
+      "collections": [
+        {
+          "label": "Whitepaper library (GitHub)",
+          "url": "https://github.com/RA-CONSULTING/Aureon-OS/tree/main/docs/research/whitepapers",
+          "note": "The full HNC / EPAS / QGITA / Tandem-in-Unity whitepaper corpus (source PDFs/DOCX)."
+        }
+      ]
+    },
+    {
+      "id": "lukasz",
+      "name": "Łukasz (LuciferSun)",
+      "role": "Chief Researcher & site creator · Project Envision",
+      "summary": "Independent research and engineering — AOIA-Core (human-gated AI workflows), MHLM/MDLH (AI-safety), and LSC research — with archived Zenodo records.",
+      "links": [
+        { "label": "GitHub", "url": "https://github.com/luciferprosun" },
+        { "label": "Zenodo", "url": "https://zenodo.org/search?q=LuciferSun" }
+      ],
+      "collections": []
+    }
+  ],
+  "papers": [
+    { "author": "gary", "title": "The Harmonic Nexus Core (HNC): A Unified Framework for Emergent Spacetime and Coherent Information Dynamics", "type": "Framework preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17546501", "url": "https://zenodo.org/records/17546501" },
+    { "author": "gary", "title": "The Harmonic Nexus Core and Auris Conjecture: A Unified Framework for Emergent Spacetime, Symbolic Cognition, and Field-Consciousness Interaction", "type": "Framework preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17546413", "url": "https://zenodo.org/records/17546413" },
+    { "author": "gary", "title": "The Harmonic Nexus Core and the Aureon Trading Framework: Substrate Coherence, Asymmetric Market Resistance, and the Restoration of Planetary Harmonics", "type": "Application whitepaper", "platform": "ResearchGate", "doi": "", "url": "https://www.researchgate.net/publication/400536498" },
+    { "author": "gary", "title": "Tandem in Unity: Unifying Resonant Fields in Physics, AI, and Consciousness", "type": "Framework preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17546276", "url": "https://zenodo.org/records/17546276" },
+    { "author": "gary", "title": "Quantum Gravity in the Act (QGITA): A Two-Stage Consensus Framework for Detecting Structural Events in Complex Signals", "type": "Methods preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17531249", "url": "https://zenodo.org/records/17531249" },
+    { "author": "gary", "title": "Quantum Gravity in the Act (QGITA): A Two-Stage Framework for High-Fidelity Event Detection in Complex Signals", "type": "Methods preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17531133", "url": "https://zenodo.org/records/17531133" },
+    { "author": "gary", "title": "Electro-Plasma-Acoustic Shield (EPAS): A Multi-Layer Active Defense System for Spacecraft Protection Against Hypervelocity Micrometeoroids and Orbital Debris", "type": "Engineering preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17548802", "url": "https://zenodo.org/records/17548802" },
+    { "author": "gary", "title": "The LuminaCell v2 Architecture: A High-Power Coherent Light Source Based on a Contactless Quantum Interference Core", "type": "Engineering preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17573586", "url": "https://zenodo.org/records/17573586" },
+    { "author": "gary", "title": "The Math Angel Protocol: A Mathematical Framework for Quantifying and Visualizing Consciousness as the Fundamental Substrate of Reality", "type": "Framework preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17531331", "url": "https://zenodo.org/records/17531331" },
+    { "author": "gary", "title": "Harmonic Reality Framework and the Master Equations Tree (preprint)", "type": "Framework preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17527831", "url": "https://zenodo.org/records/17527831" },
+    { "author": "gary", "title": "Harmonic Reality Framework and the Master Equations Tree (dataset)", "type": "Dataset", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17527830", "url": "https://zenodo.org/records/17527830" },
+    { "author": "gary", "title": "A Dynamic Systems Model of Coherence Grounded in Astronomical Phenomena", "type": "Research preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17529554", "url": "https://zenodo.org/records/17529554" },
+    { "author": "gary", "title": "Modeling Light Dynamics Through Astronomical Phenomena", "type": "Research preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17529232", "url": "https://zenodo.org/records/17529232" },
+    { "author": "gary", "title": "The Barons' Banner: The Hidden Architecture of Mathematical Deception", "type": "Essay / preprint", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.17529246", "url": "https://zenodo.org/records/17529246" },
+    { "author": "lukasz", "title": "AOIA-Core / AIOA Whitehat — Controlled Agent MVP Prototype", "type": "Software / prototype archive", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.21233163", "url": "https://zenodo.org/records/21233163" },
+    { "author": "lukasz", "title": "MHLM / MDLH — AI-safety research archive", "type": "Research archive", "platform": "Zenodo", "doi": "https://doi.org/10.5281/zenodo.20388541", "url": "https://zenodo.org/records/20388541" },
+    { "author": "lukasz", "title": "LSC Research — candidate record 19843361", "type": "Research material (TO VERIFY)", "platform": "Zenodo", "doi": "", "url": "https://zenodo.org/records/19843361" },
+    { "author": "lukasz", "title": "LSC Research — candidate record 20377427", "type": "Research material (TO VERIFY)", "platform": "Zenodo", "doi": "", "url": "https://zenodo.org/records/20377427" }
+  ]
+}
