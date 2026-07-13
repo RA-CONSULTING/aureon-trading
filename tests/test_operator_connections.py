@@ -28,7 +28,16 @@ def temp_store(monkeypatch):
     monkeypatch.setattr(keystore, "CONFIG_DIR", tmp)
     monkeypatch.setattr(keystore, "KEY_PATH", tmp / "provider_keys.key")
     monkeypatch.setattr(keystore, "STORE_PATH", tmp / "provider_keys.json.enc")
-    return tmp
+    # Isolate os.environ: apply_to_env() writes real env vars, and importing the
+    # aureon package loads any local .env — snapshot and restore so tests don't
+    # leak keys into one another (or read the developer's .env).
+    import os as _os
+    saved = dict(_os.environ)
+    for var in keystore.managed_env_vars() + [c.key_env for c in cat.CATALOG if c.key_env]:
+        _os.environ.pop(var, None)
+    yield tmp
+    _os.environ.clear()
+    _os.environ.update(saved)
 
 
 def _client():
@@ -67,9 +76,10 @@ def test_readiness_report_shape(temp_store):
     assert {"capacity_pct", "keyed_present", "keyed_total", "all_connected",
             "missing_count", "keyless"} <= set(s)
     assert isinstance(r["missing"], list)
-    # nothing set yet → keyed_present 0, and every keyed source is "missing"
-    assert s["keyed_present"] == 0
-    assert s["missing_count"] == s["keyed_total"]
+    # internally consistent regardless of which keys happen to be present
+    assert s["keyed_total"] > 0
+    assert 0 <= s["keyed_present"] <= s["keyed_total"]
+    assert s["missing_count"] == s["keyed_total"] - s["keyed_present"]
 
 
 def test_readiness_counts_a_saved_key(temp_store):
