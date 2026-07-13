@@ -280,15 +280,57 @@ yet — that hookup is a deliberate, separate decision.
 
 ---
 
+## Unified UI Shell (Phase 7)
+
+One professional interface for the entire repo — every capability behind one
+sidebar, one router, one design language (the Aureon prism identity, kept by
+the creator's choice).
+
+**Architecture: the shell wraps the monolith, it does not rewrite it.**
+
+- **`frontend/src/shell/nav.ts`** — the single source of truth: sections →
+  routes → icons → lazy page loaders. The sidebar, router, breadcrumbs, and
+  command palette all derive from this table; adding a surface is one entry.
+- **`ShellLayout.tsx`** — collapsible grouped sidebar (built on the previously
+  unused shadcn `ui/sidebar.tsx` + existing `--sidebar-*` tokens), top bar with
+  breadcrumb, live platform-status dot (polls `GET /api/status`), and a
+  **⌘K command palette** that jumps to any surface.
+- **Routes** (all `React.lazy` — every surface is its own chunk):
+  *Trading* war-room · live bridge · Orca · analytics · backtesting —
+  *Research & Planetary* Harmonic Nexus · Earth resonance · solar · NOAA space
+  weather — *Cognition & LLM* **Operator Chat** (new: talks to
+  `/api/cognition/reason`, renders grounding sources, tool calls, and the
+  conscience verdict honestly) · agent company — *Coding System* organism ·
+  skills · work orders · director bridge — *Operations* gold & capital ·
+  systems integration · operational console — *Platform* overview (new) ·
+  repo map · billing & support (new) · **legacy console**.
+- **The legacy nine-tab console is preserved intact** at `/platform/console`
+  (exported as `LegacyConsole` from `App.tsx`); its five entangled tabs
+  (live-ops, trading audits, security, inventory, evidence) still work, and old
+  `#tab` deep links redirect into the right shell route.
+- **Resilience**: every route renders inside a per-route error boundary (a
+  crashing dashboard never takes down the shell) with a retry, and live-data
+  surfaces carry an honest notice when no backend is connected.
+- **Performance**: `vite` manualChunks + route-level lazy loading split the
+  former 1,566 kB single bundle into a 227 kB entry + per-surface chunks; the
+  oversize-chunk warning is gone.
+
+Verified: production build clean, eslint clean, and an 11-point headless
+browser smoke suite (every route renders in the shell, hash redirects work,
+palette opens) passes against the built bundle.
+
+---
+
 ## Staged ledger
 
-Phases 6A–6C are done. The remaining SaaS work is tracked, not hidden:
+Phases 6A–6C and 7 are done. The remaining SaaS work is tracked, not hidden:
 
 | # | Phase | Item | Done? |
 |---|-------|------|-------|
 | 6A | Platform layer | Categorized catalog + domain adapters + honest status + gateway routes + Supabase JWT bridge. | ☑ |
 | 6B | Production frontend | Frontend Dockerfile + nginx one-origin proxy; auth-gated console (`VITE_REQUIRE_AUTH`); live manifest fetches via `/api/manifests` with static fallback; full-stack compose. | ☑ |
 | 6C | Billing | Support-the-project flow (SumUp, self-confirm → gas tank) + record-only usage metering + billing read API + env-gated charge-fee proxy. Staged: per-unit debits, per-tenant token attribution, automated payment capture (SumUp API/Stripe), trade-loop fee hookup, usage panel UI. | ☑ |
+| 7 | Unified UI shell | Router + grouped sidebar + command palette over every surface; new Overview/Operator-Chat/Billing pages; legacy console preserved; per-route error boundaries; code-split bundle. Staged: extracting the legacy console's five entangled tabs into shell routes. | ☑ |
 
 ---
 
