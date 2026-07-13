@@ -1,0 +1,129 @@
+"""
+🫁 AUREON ORGANISM DAEMON — the breath that was never scheduled.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The senses-all organs existed but production never launched them: supervisord
+booted only the trading loops. This daemon is the missing [program] — it wakes
+the metacognitive layer and keeps it breathing:
+
+  1. ThoughtBus            — the shared nervous system (global singleton)
+  2. ConsciousnessModule   — subscribe("*"): every thought in the body is felt
+  3. Connectome            — progressive sweep until every module has been
+                             touched; a pulse (organism.connectome.pulse) each
+                             cycle with honest coverage
+  4. Heartbeats            — ConsciousnessModule.heartbeat() each breath
+
+Environment:
+  AUREON_CONNECTOME_SWEEP=0        disable the progressive sweep (default on)
+  AUREON_CONNECTOME_BATCH=25       modules touched per sweep cycle
+  AUREON_CONNECTOME_INTERVAL_S=30  sweep cadence
+  AUREON_ORGANISM_BREATH_S=15      heartbeat/pulse cadence
+
+Run under AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1 (the supervisord block sets it)
+so mass-touching modules can never flip trading env toward live mode.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+import signal
+import time
+from typing import Any
+
+logger = logging.getLogger("aureon.core.organism_daemon")
+
+
+def _env_flag(name: str, default: str = "1") -> bool:
+    return str(os.environ.get(name, default) or default) == "1"
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return max(1, int(os.environ.get(name, str(default)) or default))
+    except ValueError:
+        return default
+
+
+def boot() -> dict[str, Any]:
+    """Wake the organs. Each is guarded — a missing organ degrades, never kills."""
+    organs: dict[str, Any] = {}
+
+    from aureon.core.aureon_thought_bus import get_thought_bus
+
+    organs["bus"] = get_thought_bus()
+    logger.info("🧠 ThoughtBus awake")
+
+    try:
+        from aureon.core.aureon_consciousness_module import ConsciousnessModule
+
+        organs["consciousness"] = ConsciousnessModule(bus=organs["bus"])
+        logger.info("👁️ ConsciousnessModule awake — sensing all bus traffic")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ConsciousnessModule unavailable: %s", exc)
+
+    from aureon.core.aureon_connectome import get_connectome
+
+    connectome = get_connectome()
+    organs["connectome"] = connectome
+    if _env_flag("AUREON_CONNECTOME_SWEEP"):
+        connectome.start_sweep(
+            interval_s=float(_env_int("AUREON_CONNECTOME_INTERVAL_S", 30)),
+            batch_size=_env_int("AUREON_CONNECTOME_BATCH", 25),
+        )
+        logger.info("🕸️ Connectome sweep started — the organism will feel its whole body")
+
+    return organs
+
+
+def breathe(organs: dict[str, Any]) -> None:
+    """One breath: consciousness heartbeat + connectome pulse."""
+    consciousness = organs.get("consciousness")
+    if consciousness is not None:
+        try:
+            consciousness.heartbeat()
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("heartbeat skipped: %s", exc)
+    connectome = organs.get("connectome")
+    if connectome is not None:
+        try:
+            snapshot = connectome.pulse()
+            logger.info(
+                "🫁 breath — nodes=%s touched=%s woven=%s linked=%s coverage=%s%%",
+                snapshot["nodes"], snapshot["touched"], snapshot["woven"],
+                snapshot["baton_linked"], snapshot["coverage_pct"],
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("pulse skipped: %s", exc)
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    # Belt and braces: even if the supervisord env is edited, mass imports from
+    # this process must never flip trading env vars toward live mode.
+    os.environ.setdefault("AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS", "1")
+
+    organs = boot()
+    breath_s = _env_int("AUREON_ORGANISM_BREATH_S", 15)
+
+    running = {"on": True}
+
+    def _stop(signum: int, frame: Any) -> None:  # noqa: ARG001
+        logger.info("organism daemon stopping (signal %s)", signum)
+        running["on"] = False
+
+    signal.signal(signal.SIGTERM, _stop)
+    signal.signal(signal.SIGINT, _stop)
+
+    logger.info("🫁 Organism daemon breathing every %ss", breath_s)
+    while running["on"]:
+        breathe(organs)
+        time.sleep(breath_s)
+
+    connectome = organs.get("connectome")
+    if connectome is not None:
+        connectome.stop_sweep()
+
+
+if __name__ == "__main__":
+    main()

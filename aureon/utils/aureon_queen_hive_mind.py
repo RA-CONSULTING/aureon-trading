@@ -15216,6 +15216,22 @@ def wire_all_systems(queen: QueenHiveMind) -> Dict[str, bool]:
         logger.warning(f"Could not wire Aureon Cognition: {e}")
         results['aureon_cognition'] = False
 
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # 🕸️ CONNECTOME - the organism's map of itself (sense/touch/weave every module)
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+    # Register the connectome so the Queen can feel how much of the body is wired.
+    # Construction is light (the manifest builds lazily; no module is imported here).
+    try:
+        from aureon.core.aureon_connectome import get_connectome
+        from aureon.operator.aureon_operator import join_organism
+        connectome = get_connectome()
+        joined = join_organism(connectome, "aureon_connectome")
+        results['connectome'] = bool(joined.get("queen") or joined.get("mycelium"))
+    except Exception as e:
+        logger.warning(f"Could not wire the Connectome: {e}")
+        results['connectome'] = False
+
     return results
 
 
