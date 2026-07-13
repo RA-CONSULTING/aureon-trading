@@ -1,168 +1,143 @@
+<div align="center">
+
+<img src="docs/images/aureon_zorza_logo.png" alt="Aureon Zorza Technologies" width="640" />
+
 # Aureon
 
-Local-first evidence automation and operator runtime.
+**A grounded AI operating layer for evidence-heavy, high-control workflows.**
+Trading research · autonomous operator · planetary/HNC research · a coding organism — one auditable system.
 
-Aureon is a working repository for auditable automation across trading research,
-operator consoles, warehouse and accounting support, research indexing, and
-controlled live-action workflows. The repository is best read as an evidence
-system: code, ledgers, audits, generated interfaces, and research artifacts are
-kept together so reviewers can understand what exists, what is experimental, and
-what is ready for controlled use.
+[![Operator CI](https://github.com/RA-CONSULTING/aureon-trading/actions/workflows/operator-ci.yml/badge.svg)](https://github.com/RA-CONSULTING/aureon-trading/actions/workflows/operator-ci.yml)
+[![Aureon CI](https://github.com/RA-CONSULTING/aureon-trading/actions/workflows/main_ci.yml/badge.svg)](https://github.com/RA-CONSULTING/aureon-trading/actions/workflows/main_ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
+![Type-checked](https://img.shields.io/badge/typed-mypy-informational.svg)
+![Lint](https://img.shields.io/badge/lint-ruff-46a2f1.svg)
 
-This README is the formal front door. The previous long-form README has been
-preserved unchanged at
-[`docs/archive/README_legacy_20260712.md`](docs/archive/README_legacy_20260712.md).
+*A product of [R&A Consulting and Brokerage Services Ltd](COMPANY.md) — trading as **Aureon Zorza Technologies** · Belfast, Northern Ireland · Silver-level Innovate NI innovator.*
 
-## Reader Routes
+</div>
 
-| Reader | Start here | Purpose |
+---
+
+## What Aureon is
+
+Aureon is a **local-first operating layer** that lets a human operator run, inspect, and
+ground evidence-heavy automation across several domains from one place. It is built to be
+*auditable first*: code, ledgers, audits, generated interfaces, and research artifacts are
+kept together so a reviewer can always see what exists, what is experimental, and what is
+ready for controlled use.
+
+It is delivered in three honest layers — each real, each independently reviewable:
+
+1. **The production platform** — the engineering you can run today.
+2. **The research framework (HNC)** — pre-registered, falsifiable hypotheses with evidence.
+3. **The vision** — the thread that ties the ancient, the mathematical, and the market together.
+
+> This is the formal front door. The original long-form README is preserved unchanged at
+> [`docs/archive/README_legacy_20260712.md`](docs/archive/README_legacy_20260712.md) — nothing was removed, only formalized.
+
+---
+
+## 1 · The production platform (what runs today)
+
+| Capability | What it is | Entry point |
 |---|---|---|
-| Investor diligence | [`docs/investor/README.md`](docs/investor/README.md) | Business-readable map of the platform, capability categories, evidence posture, and review sequence. |
-| Public GitHub review | [`docs/INDEX.md`](docs/INDEX.md) | Guided navigation for setup, architecture, operations, research, and contribution paths. |
-| Repo-wide sitemap | [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md) | Whole-repo organization, capability groups, related systems, and SaaS integration surfaces. |
-| End-user access map | [`docs/END_USER_ACCESS_MAP.md`](docs/END_USER_ACCESS_MAP.md) | Task-based access to capabilities, docs, related systems, runtime surfaces, and safety gates. |
-| System integration map | [`docs/SYSTEM_INTEGRATION_MAP.md`](docs/SYSTEM_INTEGRATION_MAP.md) | System-by-system binding of all 29 current implementation capabilities, access routes, entrypoints, public artifacts, validation references, and safety gates. |
-| Capability access matrix | [`docs/capability_access_matrix.json`](docs/capability_access_matrix.json) | Generated end-user route matrix for every current capability, including start points, systems, runtime/API surfaces, and safety gates. |
-| Capability registry | [`docs/CAPABILITY_REGISTRY.md`](docs/CAPABILITY_REGISTRY.md) | Generated registry of current capabilities from `CAPABILITIES.md`, resolved surfaces, runtime refs, systems, and access routes. |
-| Frontend repo map | [`frontend/src/components/RepoNavigationPanel.tsx`](frontend/src/components/RepoNavigationPanel.tsx) | Console tab mounted at `#repo-map` for browsing public repo and capability manifests. |
-| File-level repo index | [`docs/repo_navigation_index.json`](docs/repo_navigation_index.json) | Generated `git ls-files` index mirrored to the frontend public folder for searchable repo navigation. |
-| Directory organization tree | [`docs/repo_organization_tree.json`](docs/repo_organization_tree.json) | Generated hierarchy of tracked directories, parent paths, categories, zones, and capability IDs. |
-| Navigation readiness audit | [`docs/repo_navigation_readiness.json`](docs/repo_navigation_readiness.json) | Generated pass/fail audit for sitemap freshness, capability routing, system mapping, public mirrors, and SaaS blockers. |
-| Navigation completion audit | [`docs/repo_navigation_completion_audit.json`](docs/repo_navigation_completion_audit.json) | Generated requirement-by-requirement proof that the repo map, organizational tree, capabilities, systems, and SaaS handoff satisfy the navigation objective. |
-| SaaS integration manifest | [`docs/saas_integration_manifest.json`](docs/saas_integration_manifest.json) | Generated env-name, deployment-surface, Supabase auth, and production-gate contract for SaaS shells. |
-| SaaS integration handoff | [`docs/saas_integration_handoff.json`](docs/saas_integration_handoff.json) | Generated implementer handoff that binds public manifests, deployment surfaces, env names, Supabase hardening, readiness gates, and release steps. |
-| SaaS integration readiness | [`docs/SAAS_INTEGRATION_READINESS.md`](docs/SAAS_INTEGRATION_READINESS.md) | End-user access matrix, env/config inventory, deploy surfaces, auth boundaries, and production gates. |
-| Supabase hardening review | [`docs/SUPABASE_HARDENING_REVIEW.md`](docs/SUPABASE_HARDENING_REVIEW.md) | Generated public/JWT Edge Function classification, blocker counts, and hardening gates. |
-| Navigation contract check | [`scripts/validation/validate_repo_navigation_contract.py`](scripts/validation/validate_repo_navigation_contract.py) | Checks public manifests, repo counts, Supabase auth counts, and key navigation links. |
-| Grant or funder review | [`data/research/grants/applications/GARY_AUREON_METADATA_RESEARCH_INVENTORY_20260712_20260712_203741.md`](data/research/grants/applications/GARY_AUREON_METADATA_RESEARCH_INVENTORY_20260712_20260712_203741.md) | Catalogued Gary/Aureon metadata and research evidence gathered for funder-safe review. |
-| Technical review | [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md), [`DATA_FLOW.md`](DATA_FLOW.md), [`CAPABILITIES.md`](CAPABILITIES.md) | System architecture, data flow, and capability inventory. |
-| Operator review | [`RUNNING.md`](RUNNING.md), [`QUICK_START.md`](QUICK_START.md), [`LIVE_PROOF.md`](LIVE_PROOF.md) | Runtime entry points, operating notes, and proof artifacts. |
+| **Aureon Operator** | A grounded AI switchboard — routes a prompt through many models, grounds it in the repo, reaches consensus, and applies a conscience veto before answering. | [`aureon/operator/`](aureon/operator/) · [switchboard doc](docs/architecture/AUREON_OPERATOR_SWITCHBOARD.md) |
+| **Agentic cognition** | The operator as an agent: repo-wide grounding, tool use (search / read / code / state), hard authority boundaries enforced before any action. | [`aureon/operator/cognition.py`](aureon/operator/cognition.py) |
+| **The organism connectome** | The metacognitive layer that senses, touches, and weaves every module of the body — legacy code included — into one living system. | [`aureon/core/aureon_connectome.py`](aureon/core/aureon_connectome.py) · [doc](docs/architecture/ORGANISM_CONNECTOME.md) |
+| **SaaS platform** | A categorized catalog of ~1,200 modules, honest health status, a tenancy bridge, and a billing/metering layer, served behind one gateway. | [`aureon/saas/`](aureon/saas/) · [SAAS_PLATFORM.md](docs/SAAS_PLATFORM.md) |
+| **Unified console** | One professional React interface — sidebar, command palette, every dashboard as a route — over the whole repo. | [`frontend/`](frontend/) |
+| **Production hardening** | WSGI serving, `/healthz` `/readyz` `/metrics`, bearer auth + rate limiting, Docker, a two-tier lint/type gate, CI. | [PRODUCTION_GRADE.md](docs/runbooks/PRODUCTION_GRADE.md) |
 
-## What Aureon Is
+<div align="center">
+<img src="public/hnc_dashboard.png" alt="Aureon HNC dashboard" width="48%" />
+<img src="public/harmonic_wave_analysis.png" alt="Harmonic wave analysis" width="48%" />
+</div>
 
-Aureon is a local-first operating layer for evidence-heavy automation. It brings
-together scripts, services, dashboards, ledgers, research packets, and validation
-outputs so that a human operator can inspect the state of a workflow before any
-serious action is taken.
+### Quickstart
 
-The repository is organized around five current capability pillars:
+```bash
+# 1 · the grounded operator (offline-safe; add model keys to go live)
+pip install -e '.[operator]'
+python -m aureon.operator.operator_server        # serves :8790 — /healthz, /api/cognition/reason
 
-| Pillar | What it covers | Representative evidence |
+# 2 · the full platform (console + gateway) via Docker
+docker compose -f deploy/docker-compose.saas.yml up --build
+
+# 3 · run the strict-tier test suite (offline, no keys/network)
+AUREON_LLM_OFFLINE=1 pytest tests/test_operator_*.py tests/test_saas_*.py tests/test_connectome.py -q
+```
+
+---
+
+## 2 · The research framework — HNC (pre-registered & falsifiable)
+
+Aureon is built on the **Harmonic Nexus Core (HNC)** — a research framework proposing that a
+φ² (golden-ratio-squared) mathematical coherence links ancient knowledge systems, geopolitical
+stress in open data, and market dynamics. These are **research hypotheses**, stated as
+falsifiable claims with reproduction commands — never as financial promises.
+
+| Claim | Value | Evidence & how to reproduce |
 |---|---|---|
-| Evidence automation | Local files, ledgers, screenshots, reports, and audit artifacts that document work before and after action. | [`AUDIT_SUMMARY.md`](AUDIT_SUMMARY.md), [`LIVE_PROOF.md`](LIVE_PROOF.md), [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md) |
-| Operator console and runtime | Frontend surfaces, local services, status endpoints, guarded command paths, and production startup notes. | [`frontend/`](frontend/), [`RUNNING.md`](RUNNING.md), [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md) |
-| Data and research fabric | Metadata, research files, generated indexes, and route evidence that make large local knowledge sets reviewable. | [`docs/`](docs/), [`data/research/grants/`](data/research/grants/), [`INDEX.md`](INDEX.md) |
-| Controlled domain automation | Trading research, warehouse support, accounting support, filing-support preparation, and related operator workflows. | [`aureon/`](aureon/), [`Kings_Accounting_Suite/`](Kings_Accounting_Suite/), [`tests/`](tests/) |
-| Evidence coherence research | HNC/Auris research, prompt routing, validation concepts, and experimental reasoning frameworks. | [`docs/components/README_HARMONIC_NEXUS.md`](docs/components/README_HARMONIC_NEXUS.md), [`docs/HNC_UNIFIED_WHITE_PAPER.md`](docs/HNC_UNIFIED_WHITE_PAPER.md) |
+| Oil volatility → open-data node activation | r = 0.85, p < 0.001, 24–48h lag | [`CLAIMS_AND_EVIDENCE.md §C1`](docs/CLAIMS_AND_EVIDENCE.md) |
+| φ² hydrogen-line reproduction | 1,420.405754 MHz vs NIST 1,420.405752 MHz (ppb) | [`CLAIMS_AND_EVIDENCE.md §C6`](docs/CLAIMS_AND_EVIDENCE.md) |
+| Pre-registered predictions (P1–P5) | falsifiable, tracked | [`CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md) · [falsification protocol](docs/HNC_FALSIFICATION_PROTOCOL.md) |
 
-## Repository Map
-
-| Path | Role |
-|---|---|
-| [`aureon/`](aureon/) | Main Python package and domain modules. |
-| [`frontend/`](frontend/) | Operator console, generated public proof surfaces, and TypeScript UI work. |
-| [`docs/`](docs/) | Architecture, runbooks, audits, research notes, security guidance, and navigation. |
-| [`data/research/grants/`](data/research/grants/) | Grant, funder, and Gary/Aureon evidence ledgers and copied research material. |
-| [`Kings_Accounting_Suite/`](Kings_Accounting_Suite/) | Accounting, statutory-pack, and filing-support tooling. |
-| [`scripts/`](scripts/) | Launch, diagnostic, migration, reporting, and helper scripts. |
-| [`tests/`](tests/) | Regression tests and focused validation coverage. |
-| [`archive/`](archive/) | Historical bundles and retained project material. |
-| [`docs/archive/`](docs/archive/) | Documentation snapshots preserved for audit history. |
-
-## Evidence And Claim Discipline
-
-Aureon documentation should separate current capability, validated evidence,
-experimental research, and historical archive material.
-
-- Current capability means the repository contains code, runbooks, tests, or
-  reproducible artifacts that support the statement.
-- Evidence-backed claims should link to the file, ledger, report, or command
-  that establishes them.
-- Research hypotheses should be described as research, not production facts.
-- Archived language remains available for audit history, but it should not be
-  treated as the current investor-facing description of the project.
-- The repository does not add unsupported revenue, customer, partner,
-  performance, regulatory, or eligibility claims.
-
-For formal wording, see
-[`docs/investor/TERMINOLOGY.md`](docs/investor/TERMINOLOGY.md). For the current
-claim table, see
+Every claim links to the file that establishes it and a command you can run. If a claim is not
+backed by a source, it is a bug — the repository is the authority. See the full spine in
 [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md).
 
-## Operating Boundaries
+---
 
-Aureon is designed for controlled local operation. Live trading, warehouse
-mutation, filing support, payment activity, and other sensitive workflows require
-explicit operator review, valid credentials, and route-specific evidence. Public
-documentation describes capability and repository state; it is not financial,
-legal, tax, or regulatory advice.
+## 3 · The vision
 
-Sensitive customer names, private credentials, owner names, transaction
-references, and local evidence that should remain private are not published in
-this front-door README.
+> *The same coherence that organized the Ziggurats of Ur, the Great Pyramid, and the Roman road
+> network expresses itself now — measurably — in the rhythms of open data and markets. Aureon is
+> the instrument built to listen for it, and to act only with a conscience in the loop.*
 
-## Getting Oriented
+The full thread — the ancient substrate, the mathematics, the extraction machine, and the
+distributed response — is told in the creator's own voice in
+[`docs/THE_SYNTHESIS.md`](docs/THE_SYNTHESIS.md).
 
-1. Read the investor and funder guide:
-   [`docs/investor/README.md`](docs/investor/README.md).
-2. Use the documentation index:
-   [`docs/INDEX.md`](docs/INDEX.md).
-3. Use the repo-wide sitemap:
-   [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md).
-4. Use the end-user access map:
-   [`docs/END_USER_ACCESS_MAP.md`](docs/END_USER_ACCESS_MAP.md).
-5. Use the system integration map:
-   [`docs/SYSTEM_INTEGRATION_MAP.md`](docs/SYSTEM_INTEGRATION_MAP.md).
-6. Use the capability registry:
-   [`docs/CAPABILITY_REGISTRY.md`](docs/CAPABILITY_REGISTRY.md).
-7. Use the capability access matrix:
-   [`docs/capability_access_matrix.json`](docs/capability_access_matrix.json).
-8. Use the frontend repo map at `#repo-map`:
-   [`frontend/src/components/RepoNavigationPanel.tsx`](frontend/src/components/RepoNavigationPanel.tsx).
-9. Search the file-level repo index:
-   [`docs/repo_navigation_index.json`](docs/repo_navigation_index.json).
-10. Browse the generated directory organization tree:
-   [`docs/repo_organization_tree.json`](docs/repo_organization_tree.json).
-11. Review the generated navigation readiness audit:
-   [`docs/repo_navigation_readiness.json`](docs/repo_navigation_readiness.json).
-12. Review the generated navigation completion audit:
-   [`docs/repo_navigation_completion_audit.json`](docs/repo_navigation_completion_audit.json).
-13. Review the generated SaaS integration manifest:
-   [`docs/saas_integration_manifest.json`](docs/saas_integration_manifest.json).
-14. Review the generated SaaS integration handoff:
-   [`docs/saas_integration_handoff.json`](docs/saas_integration_handoff.json).
-15. Review the Supabase hardening review and manifest:
-   [`docs/SUPABASE_HARDENING_REVIEW.md`](docs/SUPABASE_HARDENING_REVIEW.md) and
-   [`docs/supabase_hardening_manifest.json`](docs/supabase_hardening_manifest.json).
-16. Review SaaS integration readiness:
-   [`docs/SAAS_INTEGRATION_READINESS.md`](docs/SAAS_INTEGRATION_READINESS.md).
-17. Review architecture and capability evidence:
-   [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md),
-   [`CAPABILITIES.md`](CAPABILITIES.md), and
-   [`DATA_FLOW.md`](DATA_FLOW.md).
-18. Review claims and validation:
-   [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md),
-   [`AUDIT_SUMMARY.md`](AUDIT_SUMMARY.md), and
-   [`LIVE_PROOF.md`](LIVE_PROOF.md).
-19. Regenerate and validate the navigation contract:
-   `python scripts/validation/generate_repo_navigation_index.py`, then
-   `python scripts/validation/generate_repo_organization_tree.py`, then
-   `python scripts/validation/generate_capability_registry.py`, then
-   `python scripts/validation/generate_system_integration_map.py`, then
-   `python scripts/validation/generate_capability_registry.py`, then
-   `python scripts/validation/generate_capability_access_matrix.py`, then
-   `python scripts/validation/generate_saas_integration_manifest.py`, then
-   `python scripts/validation/generate_supabase_hardening_manifest.py`, then
-   `python scripts/validation/generate_repo_navigation_readiness.py`, then
-   `python scripts/validation/generate_saas_integration_handoff.py`, then
-   `python scripts/validation/generate_repo_navigation_completion_audit.py`, then
-   `python scripts/validation/validate_repo_navigation_contract.py`.
-20. Inspect preserved historical context:
-   [`docs/archive/README_legacy_20260712.md`](docs/archive/README_legacy_20260712.md).
+---
 
-## Preservation Note
+## Company & credentials
 
-This front door is a presentation and categorization update. It does not remove
-the prior README content from the repository. The archived README remains
-available so that investors, reviewers, operators, and maintainers can trace the
-project history while relying on the current formal terminology above.
+**[R&A Consulting and Brokerage Services Ltd](COMPANY.md)** — registered in Northern Ireland,
+**company no. NI696693** — trading as **Aureon Zorza Technologies**.
+
+- 🏅 **Silver-level innovator** on the Innovate NI Innovation Framework (Department for the Economy / Tourism NI), awarded 21 July 2025 by the Minister for the Economy. → [certificate](docs/images/innovate_ni_silver_2025.png)
+- 🌐 Website: [aureonzorzatechnologies.pl](https://aureonzorzatechnologies.pl)
+- 📄 License: [MIT](LICENSE) · © 2025 R&A Consulting and Brokerage Services Ltd
+- Full company details: [`COMPANY.md`](COMPANY.md)
+
+---
+
+## Where to go next
+
+| You are… | Start here |
+|---|---|
+| **An investor or funder** | [`docs/investor/README.md`](docs/investor/README.md) — diligence path, capability categories, and claim discipline |
+| **A developer** | [`docs/INDEX.md`](docs/INDEX.md) · [`CAPABILITIES.md`](CAPABILITIES.md) · [`docs/SAAS_PLATFORM.md`](docs/SAAS_PLATFORM.md) |
+| **A researcher** | [`docs/THE_SYNTHESIS.md`](docs/THE_SYNTHESIS.md) · [`docs/CLAIMS_AND_EVIDENCE.md`](docs/CLAIMS_AND_EVIDENCE.md) · [`docs/research/READING_PATHS.md`](docs/research/READING_PATHS.md) |
+| **Browsing the whole repo** | [`docs/REPO_SITEMAP.md`](docs/REPO_SITEMAP.md) · the console's `#repo-map` tab |
+| **Contributing** | [`CONTRIBUTING.md`](CONTRIBUTING.md) · [`SECURITY.md`](SECURITY.md) · [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) |
+
+---
+
+## Operating boundaries
+
+Aureon is designed for **controlled local operation with a human in the loop**. Live trading,
+warehouse mutation, filing support, payment activity, and other sensitive workflows require
+explicit operator review, valid credentials, and route-specific evidence — the platform never
+initiates them autonomously. Public documentation describes capability and repository state; it
+is **not financial, legal, tax, or regulatory advice**, and nothing here is an offer of
+securities or a promise of returns. Private credentials, customer data, and sensitive local
+evidence are not published in this repository.
+
+---
+
+<div align="center">
+<sub>Aureon · Harmonic Nexus Core — a product of R&A Consulting and Brokerage Services Ltd, trading as Aureon Zorza Technologies.</sub>
+</div>

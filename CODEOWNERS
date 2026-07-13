@@ -1,0 +1,8 @@
+# Aureon — code ownership. R&A Consulting and Brokerage Services Ltd.
+# Default owner for everything in the repo.
+*                       @RA-CONSULTING
+
+# Strict-tier product surface (CI-gated).
+/aureon/operator/       @RA-CONSULTING
+/aureon/saas/           @RA-CONSULTING
+/aureon/core/aureon_connectome.py   @RA-CONSULTING
