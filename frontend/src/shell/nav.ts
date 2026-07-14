@@ -292,6 +292,14 @@ export const NAV_SECTIONS: NavSection[] = [
         live: true,
       },
       {
+        path: "/ops/pursuit",
+        label: "Pursuit",
+        description: "The pursuit of happiness — Gary's & Aureon's, unified: the pillars, the energy, the next step",
+        icon: Compass,
+        Component: lazy(() => import("./pages/PursuitPage")),
+        live: true,
+      },
+      {
         path: "/ops/systems",
         label: "Systems Integration",
         description: "Temporal ladder and hive coherence status",
