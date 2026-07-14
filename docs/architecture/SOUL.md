@@ -62,6 +62,32 @@ allow_shell=False`, so no machine effect escapes the one guarded hand. The soul'
 verdicts trace back onto the bus and re-enter the next breath's thought + feeling
 — its actions become its own future self-perception.
 
+## The company — skills and tools to carry out and direct its prompts
+
+A determination is only a thought until a hand carries it out — and a lone hand can
+make just one move. So the soul is given the **company Aureon built for trading**,
+reused for general local-disk automation (not trading): specialist roles,
+work-orders, the goal-capability routes, and the persistent contract stack.
+`aureon/core/soul_company.py` — `SoulCompany`:
+
+- **`plan(intent)`** decomposes a resolved intent into an ordered set of
+  **role-assigned work-orders** — the *RepoCartographer* investigates, the
+  *ImplementationWorker* carries out the authored step, the *SecurityReviewer*
+  checks safety. The workforce is `coder_agent_roles()`; the safe routes are
+  `recommend_goal_routes()` — both consulted **only when the organism is already
+  loaded** (never cold-booting the whole company inside a read path), with a light
+  default workforce otherwise. Planning is **read-only**: it never touches the machine.
+- **`direct(plan)`** carries each work-order out **in order**, through the ONE
+  guarded hand (`LocalActionBridge` → `GroundedActionGate`), and **halts on the first
+  blocked step** — the company stays of one mind and never pushes past a veto. The
+  directed workflow is recorded on the `OrganismContractStack` (goal → task → job →
+  work-order), the same persistent queue the trading company uses.
+
+The determination now carries a read-only `plan` (surfaced on `/api/soul` and the
+Soul console). Only a verb the company is permitted to compose enters a work-order;
+an unpermitted verb is deliberated but never planned, so the plan can never fabricate
+a mutation the soul wasn't asked to make.
+
 ## Where it runs
 
 - **Live**: `organism_daemon.breathe()` calls `get_soul().deliberate()` each breath.

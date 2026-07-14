@@ -20,6 +20,21 @@ type TruthStatus = "live" | "real_derived" | "cached_real" | "no_data" | "test_f
 
 interface Voice { stance?: string; verdict?: string; truth_status?: TruthStatus; [k: string]: unknown }
 
+interface WorkOrder {
+  seq: number; role: string; department: string; description: string;
+  action: string; risk?: string; requires_human?: boolean;
+  outcome?: { dry_run?: boolean; blocked?: boolean; executed?: boolean } | null;
+}
+
+interface DirectedPlan {
+  intent: string;
+  work_orders: WorkOrder[];
+  workforce?: { role: string }[];
+  risk?: string;
+  directed?: boolean;
+  truth_status?: TruthStatus;
+}
+
 interface Soul {
   available: boolean;
   stance: "act" | "wait" | "refuse";
@@ -28,6 +43,7 @@ interface Soul {
   determination: string;
   what_gary_would_say: string | null;
   proposed_action: { action: string; params?: Record<string, unknown> } | null;
+  plan: DirectedPlan | null;
   mood: string | null;
   voices: Record<string, Voice>;
   dissent: string[];
@@ -138,6 +154,43 @@ export default function SoulPage() {
                 )}
               </CardContent>
             </Card>
+
+            {data.plan && data.plan.work_orders.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CardTitle className="text-sm">The company's directed plan</CardTitle>
+                    <div className="flex items-center gap-2">
+                      {data.plan.risk && <Badge variant="outline" className="text-[10px]">risk {data.plan.risk}</Badge>}
+                      <Badge variant="outline" className="text-[10px]">
+                        {data.plan.directed ? "directed" : "proposed — dry-run"}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {data.plan.work_orders.map((wo) => (
+                    <div key={wo.seq} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+                      <div className="min-w-0">
+                        <span className="font-medium">{wo.role}</span>
+                        <span className="text-muted-foreground"> — {wo.description}</span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="font-mono text-[10px] text-muted-foreground">{wo.action}</span>
+                        {wo.outcome && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {wo.outcome.blocked ? "blocked" : wo.outcome.dry_run ? "dry-run" : wo.outcome.executed ? "executed" : "—"}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-muted-foreground">
+                    Each step is carried out through the one guarded hand — dry-run unless armed.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">The chorus of voices</CardTitle></CardHeader>
