@@ -193,6 +193,41 @@ def test_consciousness_trade_gate_optin_veto_and_failopen(monkeypatch):
     assert ok3 is True
 
 
+def test_breathe_field_publishes_whole_body_consensus():
+    from aureon.core import organism_daemon as od
+    from aureon.core.aureon_thought_bus import ThoughtBus, payload_of
+    from aureon.core.hnc_field import publish_subfield
+
+    b = ThoughtBus(persist_path=None)
+    b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
+                      payload={"symbolic_life_score": 0.7, "coherence_gamma": 0.6}))
+
+    class _S:
+        symbolic_life_score = 0.5
+        coherence_gamma = 0.5
+
+    publish_subfield("queen_cortex", _S(), bus=b)
+
+    class _Connectome:
+        def status(self):
+            return {"coverage_pct": 4.7, "woven": 25, "failed": 3, "baton_linked": 101}
+
+    out = od.breathe_field({"bus": b, "connectome": _Connectome()})
+    assert out is not None
+    events = b.recall("organism.field.consensus", limit=1) or []
+    assert events, "consensus event not published"
+    p = payload_of(events[-1])
+    assert p["blended"]["contributors"] == 2                # canonical + queen_cortex
+    assert p["body_map"]["woven"] == 25 and p["body_map"]["failed"] == 3
+
+
+def test_breathe_field_is_guarded_without_bus():
+    from aureon.core import organism_daemon as od
+
+    assert od.breathe_field({}) is None            # no bus → silent breath
+    assert od.breathe_field({"bus": None}) is None
+
+
 # ── keystone: publish → read the live field, flood-proof ─────────────────────
 
 def test_grounded_gate_reads_live_field_under_flood():

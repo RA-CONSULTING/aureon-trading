@@ -96,8 +96,36 @@ def boot() -> dict[str, Any]:
     return organs
 
 
+def breathe_field(organs: dict[str, Any]) -> dict[str, Any] | None:
+    """Breathe the whole-body field: fuse every producer's sub-field (via
+    ``blend_field``) with the connectome's body-map health and publish it as one
+    first-class event, ``organism.field.consensus``. Until now the blended field
+    was pull-only (each reader recomputed it) and the body-map was display-only —
+    this makes the organism's coherence a subscribable heartbeat signal. Guarded:
+    returns None (a silent breath) when the bus or organs are missing."""
+    bus = organs.get("bus")
+    if bus is None:
+        return None
+    try:
+        from aureon.core.aureon_thought_bus import Thought
+        from aureon.core.hnc_field import blend_field
+
+        blended = blend_field(bus).to_dict()
+        body_map: dict[str, Any] = {}
+        connectome = organs.get("connectome")
+        if connectome is not None:
+            snap = connectome.status()
+            body_map = {k: snap.get(k) for k in ("coverage_pct", "woven", "failed", "baton_linked")}
+        payload = {"blended": blended, "body_map": body_map}
+        bus.publish(Thought(source="organism_daemon", topic="organism.field.consensus", payload=payload))
+        return payload
+    except Exception as exc:  # noqa: BLE001 — a silent breath is still a breath
+        logger.debug("field breath skipped: %s", exc)
+        return None
+
+
 def breathe(organs: dict[str, Any]) -> None:
-    """One breath: consciousness heartbeat + connectome pulse."""
+    """One breath: consciousness heartbeat + connectome pulse + whole-body field."""
     consciousness = organs.get("consciousness")
     if consciousness is not None:
         try:
@@ -115,6 +143,7 @@ def breathe(organs: dict[str, Any]) -> None:
             )
         except Exception as exc:  # noqa: BLE001
             logger.debug("pulse skipped: %s", exc)
+    breathe_field(organs)
 
 
 def main() -> None:

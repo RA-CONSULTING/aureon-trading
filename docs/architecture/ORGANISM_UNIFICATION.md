@@ -145,6 +145,20 @@ so a module that calls `sys.exit()` / raises `SystemExit` at import time is reco
 as `failed` instead of taking the whole sweep — and the organism daemon — down. A
 plain `except Exception` let `SystemExit` through; this closed that hole.
 
+## The organism breathes its field
+
+`blend_field` was pull-only — the gate, cognition, and the conscience-fallback each
+recomputed the consensus independently, and the connectome body-map stayed
+display-only. Now `organism_daemon.breathe_field()` (called every breath after the
+heartbeat + connectome pulse) publishes the fused whole-body field as one
+first-class event, **`organism.field.consensus`**, carrying `{blended:
+BlendedField, body_map: {coverage_pct, woven, failed, baton_linked}}`. The
+organism's coherence is a subscribable heartbeat signal, and the connectome's
+body-map health rides with it — closing the original audit's last open edge (#8:
+connectome sensing was display-only). Surfaced on `/api/organism`
+(`unification.consensus_event` with its age). Guarded: a missing organ/bus degrades
+to a silent breath.
+
 ## Continuous audit
 
 `scripts/validation/audit_organism_unification.py` exercises every revived edge

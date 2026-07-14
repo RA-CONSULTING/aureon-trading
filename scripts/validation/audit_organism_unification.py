@@ -157,6 +157,18 @@ def run_audit() -> list[dict]:
     results.append(_check("consciousness_trade_gate", cm_ok is False,
                           f"paused_on_veto={cm_ok is False}", critical=False))
 
+    # Edge 4g — the organism breathes its whole-body field as one event
+    from aureon.core import organism_daemon as od
+
+    class _CStub:
+        def status(self):
+            return {"coverage_pct": 5.0, "woven": 30, "failed": 2, "baton_linked": 101}
+
+    od.breathe_field({"bus": bus, "connectome": _CStub()})
+    breath = bus.recall("organism.field.consensus", limit=1) or []
+    results.append(_check("organism_field_breath", bool(breath),
+                          f"consensus events={len(breath)}", critical=False))
+
     # Edge 5 — connectome telemetry: baton ear + pulse + auto-weave
     from aureon.core.aureon_connectome import get_connectome
 

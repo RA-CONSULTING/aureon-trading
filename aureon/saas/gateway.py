@@ -114,6 +114,24 @@ def build_organism_payload() -> Dict[str, Any]:
                 uni["blended"] = blend_field(bus).to_dict()
             except Exception:  # noqa: BLE001
                 uni["subfields"] = {"count": 0, "sources": []}
+            # The daemon breathes the fused consensus as a first-class event —
+            # show its age so the API proves the field is *breathing*, not just
+            # computable on demand.
+            try:
+                import time as _t
+
+                events = bus.recall("organism.field.consensus", limit=1) or []
+                if events:
+                    ev = events[-1]
+                    ts = getattr(ev, "ts", None) if not isinstance(ev, dict) else ev.get("ts")
+                    uni["consensus_event"] = {
+                        "age_s": round(_t.time() - float(ts), 1) if ts else None,
+                        "payload": payload_of(ev),
+                    }
+                else:
+                    uni["consensus_event"] = None
+            except Exception:  # noqa: BLE001
+                uni["consensus_event"] = None
             payload["unification"] = uni
         except Exception:  # noqa: BLE001
             payload["unification"] = {}
