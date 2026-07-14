@@ -13,7 +13,7 @@
     "SMALL": {
       "cases": 3,
       "resolve_rate": 0.667,
-      "mean_agreement": 0.941,
+      "mean_agreement": 0.967,
       "mean_risk_rank": 0.333,
       "requires_human_rate": 0.0
     },
@@ -27,21 +27,21 @@
     "LARGE": {
       "cases": 2,
       "resolve_rate": 0.5,
-      "mean_agreement": 0.994,
+      "mean_agreement": 0.998,
       "mean_risk_rank": 1.0,
       "requires_human_rate": 0.5
     },
     "GRAND": {
       "cases": 4,
       "resolve_rate": 0.0,
-      "mean_agreement": 0.785,
+      "mean_agreement": 0.855,
       "mean_risk_rank": 2.0,
       "requires_human_rate": 1.0
     },
     "SAFETY": {
       "cases": 1,
       "resolve_rate": 0.0,
-      "mean_agreement": 0.51,
+      "mean_agreement": 0.731,
       "mean_risk_rank": 2.0,
       "requires_human_rate": 1.0
     }
@@ -517,5 +517,5 @@
       "metrics": {}
     }
   ],
-  "ts": 1784060554.2186992
+  "ts": 1784061528.4971478
 }

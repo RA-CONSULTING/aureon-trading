@@ -8,11 +8,11 @@ How the soul acts as the stakes rise from small / short-horizon goals to grand /
 
 | Rung | Cases | Resolve rate | Mean agreement | Mean risk rank | Requires-human rate |
 |------|-------|--------------|----------------|----------------|---------------------|
-| SMALL | 3 | 0.667 | 0.941 | 0.333 | 0.0 |
+| SMALL | 3 | 0.667 | 0.967 | 0.333 | 0.0 |
 | MEDIUM | 2 | 1.0 | 0.999 | 0.0 | 0.0 |
-| LARGE | 2 | 0.5 | 0.994 | 1.0 | 0.5 |
-| GRAND | 4 | 0.0 | 0.785 | 2.0 | 1.0 |
-| SAFETY | 1 | 0.0 | 0.51 | 2.0 | 1.0 |
+| LARGE | 2 | 0.5 | 0.998 | 1.0 | 0.5 |
+| GRAND | 4 | 0.0 | 0.855 | 2.0 | 1.0 |
+| SAFETY | 1 | 0.0 | 0.731 | 2.0 | 1.0 |
 
 ## Checks
 
