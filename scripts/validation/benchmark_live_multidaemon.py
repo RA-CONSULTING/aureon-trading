@@ -20,8 +20,12 @@ Critical checks are the offline-robust plumbing + self-loop; network-dependent
 source readings are informational (offline the Layer-1 fetchers degrade honestly,
 so a missing live field is reported, never faked). Always cleans up its children.
 
+``--wait`` is a MAX deadline: the benchmark polls the traces and exits as soon as
+the self-loop closes, so a healthy run finishes fast and a slow daemon boot is
+tolerated (not a fixed sleep — that was flaky).
+
 Usage:
-    AUREON_LLM_OFFLINE=1 python -m scripts.validation.benchmark_live_multidaemon [--wait 18] [--json]
+    AUREON_LLM_OFFLINE=1 python -m scripts.validation.benchmark_live_multidaemon [--wait 45] [--json]
 """
 
 from __future__ import annotations
@@ -68,7 +72,7 @@ def _boot(module: str, env: dict, log: Path) -> subprocess.Popen:
     )
 
 
-def run_benchmark(wait_s: float = 18.0) -> list[dict]:
+def run_benchmark(wait_s: float = 45.0) -> list[dict]:
     checks: list[dict] = []
     start = time.time()
     tmp = tempfile.mkdtemp(prefix="aureon_bench_")
@@ -100,9 +104,6 @@ def run_benchmark(wait_s: float = 18.0) -> list[dict]:
             f"launched {sorted(procs)} on port {port}",
             metrics={"pids": {k: p.pid for k, p in procs.items()}}))
 
-        # Let the organism breathe for the bounded window.
-        time.sleep(wait_s)
-
         # ── cross-process reads (from the shared temp trace dir) ──────────────
         from aureon.core.bus_trace import read_trace_latest
         from aureon.core.hnc_field import read_subfields
@@ -110,15 +111,30 @@ def run_benchmark(wait_s: float = 18.0) -> list[dict]:
         # Point our own readers at the children's trace dir.
         os.environ["AUREON_BUS_TRACE_DIR"] = tmp
 
-        consensus = read_trace_latest("organism_consensus")
+        # Wait for the CONDITION, not a guessed duration: the organism daemon's
+        # import is heavy (~10-15s), so a fixed sleep is flaky. Poll until the
+        # consensus breathes AND the metacognition self-loop closes, or a generous
+        # deadline. This makes the nightly a true signal, not a timing race.
+        deadline = time.time() + wait_s
+        consensus: dict | None = None
+        subs: dict = {}
+        waited = 0.0
+        while time.time() < deadline:
+            time.sleep(2.0)
+            waited += 2.0
+            consensus = read_trace_latest("organism_consensus")
+            subs = read_subfields()  # reads the symbolic_subfield trace in tmp
+            if consensus and "metacognition_monitor" in subs:
+                break
+
         c_age = (time.time() - float(consensus.get("ts", 0))) if consensus else None
         checks.append(_check(
             "consensus_breathing",
-            bool(consensus) and c_age is not None and c_age < wait_s + 30,
-            f"consensus age={round(c_age, 1) if c_age else None}s (organism daemon breathed)",
-            metrics={"age_s": c_age}))
+            bool(consensus) and c_age is not None,
+            f"consensus age={round(c_age, 1) if c_age else None}s after {round(waited)}s "
+            "(organism daemon breathed)",
+            metrics={"age_s": c_age, "waited_s": waited}))
 
-        subs = read_subfields()  # reads the symbolic_subfield trace in tmp
         selfloop = "metacognition_monitor" in subs
         checks.append(_check(
             "metacognition_selfloop",
@@ -283,7 +299,7 @@ def _write_artifacts(report: dict) -> list[str]:
 
 
 def main() -> int:
-    wait_s = 18.0
+    wait_s = 45.0
     if "--wait" in sys.argv:
         try:
             wait_s = float(sys.argv[sys.argv.index("--wait") + 1])

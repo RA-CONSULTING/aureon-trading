@@ -1,0 +1,49 @@
+# Nightly live self-verification — boot the three daemons as separate OS
+# processes and re-prove the organism senses itself across the boundary (the
+# metacognition self-loop). The push/PR CI gates the in-process audit + strict
+# tier; only a real multi-process boot can prove the live loop, so it runs on a
+# schedule. Red nightly = the standing guarantee broke.
+name: nightly-benchmark
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # 06:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      wait_s:
+        description: "Max seconds to wait for the self-loop to close (polls; early-exits when ready)"
+        required: false
+        default: "60"
+
+concurrency:
+  group: nightly-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    env:
+      AUREON_LLM_OFFLINE: "1"
+      AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (operator + dev extras)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[operator,dev]'
+      - name: Live multi-daemon benchmark (self-loop must close across processes)
+        run: python -m scripts.validation.benchmark_live_multidaemon --wait ${{ github.event.inputs.wait_s || '60' }}
+      - name: Upload benchmark report
+        if: always()   # keep the report inspectable even when the nightly fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-multidaemon-benchmark
+          path: docs/research/benchmarks/
