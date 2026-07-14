@@ -87,13 +87,16 @@ one canonical value instead of spinning a private `LambdaEngine`.
 
 ## Sub-field visibility
 
-The six `queen_*` producers (cortex, source-law, metacognition, sentient loop,
-mycelium mind, human loop) each compute a real local `LambdaState` — reconciling
-them into one field would destroy that. Instead each publishes its field via
+Eight live producers each compute a real local `LambdaState` — the six `queen_*`
+engines (cortex, source-law, metacognition, sentient loop, mycelium mind, human
+loop) plus the `consciousness_module` (the organism's metacognitive field) and
+`dr_auris_throne` (the cosmic/planetary field). Reconciling them into one would
+destroy that local computation. Instead each publishes its field via
 `publish_subfield(...)` as `symbolic.life.subfield`, so the organism can **sense
 every field** (`read_subfields()` / the `/api/organism` `unification.subfields`
-block) without losing local computation. The fields are connected — visible on the
-shared bus — and a future cycle can blend them.
+block, and the blended consensus below) without losing local computation. The
+fields are connected — visible on the shared bus and fused into the whole-body
+consensus — not thirteen private opinions.
 
 ## The blended field — one whole-body consensus
 

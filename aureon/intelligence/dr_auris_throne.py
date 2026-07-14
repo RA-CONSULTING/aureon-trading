@@ -311,6 +311,13 @@ class DrAurisThrone:
                 state.consciousness_psi = ls.consciousness_psi
                 state.coherence_gamma = ls.coherence_gamma
                 state.consciousness_level = ls.consciousness_level
+                # Publish the cosmic/planetary field as a sub-field so the
+                # whole-body consensus sees Dr Auris's Λ(t), not just the queens'.
+                try:
+                    from aureon.core.hnc_field import publish_subfield
+                    publish_subfield("dr_auris_throne", ls)
+                except Exception:  # noqa: BLE001
+                    pass
             except Exception:
                 pass
 

@@ -551,6 +551,13 @@ class ConsciousnessModule:
             readings = self._build_readings()
             vol = self._understanding.get("fear_level", 0.5) * 0.2
             self.lambda_state = self.lambda_engine.step(readings, volatility=vol)
+            # Publish this metacognitive field as a sub-field so the whole-body
+            # consensus (blend_field) sees it, not just the six queen_* producers.
+            try:
+                from aureon.core.hnc_field import publish_subfield
+                publish_subfield("consciousness_module", self.lambda_state, bus=self.bus)
+            except Exception:  # noqa: BLE001
+                pass
 
         # ── Step 2: Run the REAL cognitive engine ──
         # MinerBrain's run_cycle is the Casimir cognitive function
