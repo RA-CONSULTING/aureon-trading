@@ -194,6 +194,7 @@ dead. It runs in `operator-ci.yml` as a gate, so the wiring can't silently rot a
   embedded trading engines through the grounded gate (safety-sensitive).
 
 ## 📚 Related
+- [`COGNITIVE_SAAS.md`](COGNITIVE_SAAS.md) — the connected substrate as verified read APIs (`/api/cognition`)
 - [`ORGANISM_CONNECTOME.md`](ORGANISM_CONNECTOME.md) — the connectome organ + coverage semantics
 - [`GROUNDED_LOCAL_BODY.md`](GROUNDED_LOCAL_BODY.md) — the sense-before-act pattern this generalizes
 - `aureon/core/aureon_thought_bus.py` (`topic_of`/`payload_of`) · `aureon/core/hnc_live_daemon.py` · `aureon/core/aureon_connectome.py` · `aureon/operator/cognition.py` · `aureon/analytics/aureon_lighthouse.py`

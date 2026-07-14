@@ -121,6 +121,9 @@ same security envelope (bearer auth / rate-limit / metrics / health from
 | `GET`  | `/api/domains` | Product domains + per-domain reachability report. |
 | `GET`  | `/api/domains/<domain>` | One domain: entry point + its systems (capped). |
 | `GET`  | `/api/status` | Live platform health (honest, often degraded). |
+| `GET`  | `/api/organism` | Connectome coverage + recent breaths + mesh membership + unification telemetry. |
+| `GET`  | `/api/cognition` | The whole cognitive substrate + data provenance + truth roll-up. See [`architecture/COGNITIVE_SAAS.md`](architecture/COGNITIVE_SAAS.md). |
+| `GET`  | `/api/cognition/<part>` | One cognitive surface: `field` · `bus` · `mycelium` · `connectome` · `brain`, each provenance-stamped. |
 | `GET`  | `/api/manifests/<name>` | A frontend manifest, rendered live (404 lists available names). |
 | `POST` | `/api/manifests/refresh` | Rebuild the catalog; static files rewritten only with `AUREON_WRITE_STATIC_MANIFESTS=1`. |
 
@@ -333,6 +336,7 @@ Phases 6A–6C and 7 are done. The remaining SaaS work is tracked, not hidden:
 | 7 | Unified UI shell | Router + grouped sidebar + command palette over every surface; new Overview/Operator-Chat/Billing pages; legacy console preserved; per-route error boundaries; code-split bundle. Staged: extracting the legacy console's five entangled tabs into shell routes. | ☑ |
 | 9 | Organism connectome | The metacognitive layer touches every module (sense/touch/weave/pulse); cognition gains sense/list/touch tools; dormant organs (ConsciousnessModule, HNC live daemon) woken via supervisord; honest wiring instruments; `/api/organism` + Overview card. See [`architecture/ORGANISM_CONNECTOME.md`](architecture/ORGANISM_CONNECTOME.md). Staged: arbitrary-invoke behind the boundary, per-tenant weave policy. | ☑ |
 | 10 | Investor-ready repo | Professional README (hero + badges + staged registers), [`COMPANY.md`](../COMPANY.md) with real credentials (Companies House NI696693, Silver Innovate NI cert), root health files + templates, de-cluttered root (binaries/junk/launchers/standalone scripts relocated with history preserved). Secret hygiene: removed a tracked `.env1.txt`. | ☑ |
+| 22 | Cognitive Systems SaaS | The cognitive + meta-cognitive substrate (field · bus · mycelium · connectome · brain) as verified read APIs at `/api/cognition*`, each response provenance-stamped (`live`/`real_derived`/`cached_real`/`no_data`, never fabricated); auto-metered + auth-gated; console page at `/cognition/systems`. No cold-boot of heavy organs from a GET. See [`architecture/COGNITIVE_SAAS.md`](architecture/COGNITIVE_SAAS.md). | ☑ |
 
 ---
 

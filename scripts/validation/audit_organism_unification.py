@@ -178,11 +178,11 @@ def run_audit() -> list[dict]:
     from aureon.core.aureon_thought_bus import ThoughtBus as _TB
     from aureon.core.hnc_field import read_canonical_field as _rcf
 
-    _tmp = _tf.NamedTemporaryFile("w", suffix=".jsonl", delete=False)
-    _tmp.write(_json.dumps({"symbolic_life_score": 0.63, "coherence_gamma": 0.7}) + "\n")
-    _tmp.close()
+    with _tf.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as _tmp:
+        _tmp.write(_json.dumps({"symbolic_life_score": 0.63, "coherence_gamma": 0.7}) + "\n")
+        _tmp_name = _tmp.name
     _prev = _os2.environ.get("AUREON_HNC_TRACE_PATH")
-    _os2.environ["AUREON_HNC_TRACE_PATH"] = _tmp.name
+    _os2.environ["AUREON_HNC_TRACE_PATH"] = _tmp_name
     try:
         xf = _rcf(_TB(persist_path=None))   # empty bus → must fall back to trace
     finally:
@@ -190,7 +190,7 @@ def run_audit() -> list[dict]:
             _os2.environ.pop("AUREON_HNC_TRACE_PATH", None)
         else:
             _os2.environ["AUREON_HNC_TRACE_PATH"] = _prev
-        _os2.unlink(_tmp.name)
+        _os2.unlink(_tmp_name)
     results.append(_check("field_crosses_process",
                           xf.available and xf.symbolic_life_score == 0.63,
                           f"sls={xf.symbolic_life_score} source={xf.source}", critical=False))
@@ -211,6 +211,23 @@ def run_audit() -> list[dict]:
     wr = c.sweep_once(batch_size=1, weave_batch=5)
     results.append(_check("connectome_autoweave", wr["woven"] >= 1,
                           f"woven_this_cycle={wr['woven']} total={c.status()['woven']}", critical=False))
+
+    # Edge 6 — the cognitive substrate is a verified SaaS surface: the whole
+    # substrate builds one payload with all five surfaces, a provenance header,
+    # and a truth-status roll-up — and every surface carries a valid truth_status.
+    from aureon.observer.real_data_contract import TRUTH_STATUSES
+    from aureon.saas.cognitive import build_cognitive_payload
+
+    cog = build_cognitive_payload()
+    surfaces = cog.get("surfaces", {})
+    valid_stamps = all(s.get("truth_status") in TRUTH_STATUSES for s in surfaces.values())
+    has_prov = "simulation_fallback_allowed" in cog.get("provenance", {})
+    results.append(_check(
+        "cognitive_saas",
+        cog.get("available") and set(surfaces) == {"field", "bus", "mycelium", "connectome", "brain"}
+        and valid_stamps and has_prov,
+        f"surfaces={sorted(surfaces)} operational_ready={cog.get('operational_ready')} "
+        f"blocked={cog.get('blocked')} provenance={has_prov}", critical=False))
 
     return results
 
