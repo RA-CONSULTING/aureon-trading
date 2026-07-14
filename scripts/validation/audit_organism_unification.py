@@ -477,6 +477,34 @@ def run_audit() -> list[dict]:
             results.append(_check(
                 "pursuit_proposes_by_default", len(_lines) == 0,
                 f"pursuit={'pursuit' in _rsf(bus)} inbox_lines={len(_lines)} (opt-in)", critical=False))
+
+            # Edge 14 — ascent-gated autonomy: the safe-verb set WIDENS monotonically
+            # with the chakra ascent and never contains a live/irreversible verb.
+            from aureon.core.soul_company import _ascent_allowed_verbs, _COMPANY_VERBS
+
+            _live = {"place_live_order", "execute_trade", "make_payment", "submit_hmrc",
+                     "send_email", "execute_shell"}
+            _mono = all(_ascent_allowed_verbs(s) <= _ascent_allowed_verbs(s + 1) for s in range(7))
+            _safe = all(_ascent_allowed_verbs(s) <= _COMPANY_VERBS and not (_ascent_allowed_verbs(s) & _live)
+                        for s in range(8))
+            results.append(_check(
+                "ascent_gates_widen", _mono and _safe,
+                f"monotone={_mono} safe_only={_safe} verbs@0={sorted(_ascent_allowed_verbs(0))}",
+                critical=False))
+
+            # Edge 15 — the director's desk: proposing enqueues a pending item and
+            # deciding RECORDS the decision; it never executes the irreversible move.
+            import aureon.core.approval_queue as _aqmod
+
+            _aqmod._queue = None
+            _q = _aqmod.ApprovalQueue()
+            _iid = _q.propose("trade", "audit — buy a token", {}, "audit")
+            _pend_ok = _iid is not None and len(_q.pending()) == 1
+            _dec = _q.decide(_iid, "approve", "audit")
+            _rec_ok = _dec is not None and _dec.get("status") == "approved" and not _q.pending()
+            results.append(_check(
+                "approval_queue_records_not_executes", _pend_ok and _rec_ok,
+                f"proposed={_pend_ok} recorded_approved={_rec_ok} (never executes)", critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:

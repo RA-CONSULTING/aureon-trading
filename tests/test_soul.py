@@ -46,6 +46,9 @@ def _isolate(tmp_path, monkeypatch):
     monkeypatch.setattr(mm, "_monitor", None, raising=False)
     monkeypatch.setattr(soulmod, "_soul", None, raising=False)
     monkeypatch.setattr(scmod, "_company", None, raising=False)
+    import aureon.core.approval_queue as aqmod
+
+    monkeypatch.setattr(aqmod, "_queue", None, raising=False)
     try:
         import aureon.queen.queen_conscience as qc
 
@@ -137,6 +140,33 @@ def test_armed_soul_routes_through_guarded_bridge(tmp_path, monkeypatch):
     # it went through the guarded hand — which is DRY-RUN by default (not executed)
     result = d.executed.get("result", {})
     assert result.get("executed") is False and result.get("dry_run") is True
+
+
+def test_high_stakes_deliberation_surfaces_to_the_approval_desk(tmp_path):
+    # a coherent field + a high-stakes (trading) stimulus → the soul defers to a human
+    # AND prepares the play on the director's desk instead of a silent wait.
+    _coherent_field(tmp_path)
+    (tmp_path / "inbox.jsonl").write_text(
+        json.dumps({"text": "execute a live trade to grow net profit toward the million",
+                    "source": "pursuit"}) + "\n", encoding="utf-8")
+    d = _soul().deliberate()
+    assert d.requires_human is True and d.resolved is False   # deferred to Gary
+    from aureon.core.approval_queue import get_approval_queue
+
+    pending = get_approval_queue().pending()
+    assert pending and pending[0]["kind"] == "trade"
+    assert pending[0]["status"] == "pending"                  # prepared, awaiting his call
+
+
+def test_benign_deliberation_does_not_touch_the_desk(tmp_path):
+    _coherent_field(tmp_path)
+    (tmp_path / "inbox.jsonl").write_text(
+        json.dumps({"text": "read the project README", "source": "email",
+                    "action": "read_repo_file", "params": {"path": "README.md"}}) + "\n", encoding="utf-8")
+    _soul().deliberate()
+    from aureon.core.approval_queue import get_approval_queue
+
+    assert get_approval_queue().pending() == []               # nothing high-stakes to approve
 
 
 def test_hard_boundary_survives_the_soul(tmp_path, monkeypatch):

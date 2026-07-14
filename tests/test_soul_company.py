@@ -117,6 +117,22 @@ def test_direct_persists_the_workflow(tmp_path):
     assert (tmp_path / "contracts.json").exists()  # recorded on the contract stack
 
 
+def test_ascent_gate_widens_monotonically_and_never_reaches_a_live_verb():
+    from aureon.core.soul_company import _COMPANY_VERBS, _ascent_allowed_verbs
+
+    live = {"place_live_order", "execute_trade", "make_payment", "submit_hmrc", "send_email", "execute_shell"}
+    prev: set[str] = set()
+    for stage in range(8):
+        allowed = _ascent_allowed_verbs(stage)
+        assert allowed <= _COMPANY_VERBS            # never beyond the safe set
+        assert allowed & live == set()              # never a live/irreversible verb
+        assert prev <= allowed                       # monotone — awakening only widens
+        prev = allowed
+    # read-only at rest; the repo-authoring verbs only unlock higher up
+    assert "write_repo_file" not in _ascent_allowed_verbs(0)
+    assert "write_repo_file" in _ascent_allowed_verbs(6)
+
+
 def test_missing_hand_never_crashes():
     # a company with no reachable hand degrades to "not directed", never raises
     class _NoHand:
