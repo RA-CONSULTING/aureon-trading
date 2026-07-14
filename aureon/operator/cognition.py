@@ -253,6 +253,20 @@ class AureonCognition:
                 bits.append(f"cosmic_gate={'open' if org['gate_open'] else 'closed'}")
             if org.get("lighthouse_event"):
                 bits.append(f"lighthouse={org['lighthouse_event']}")
+            # Whole-body consensus: the blend of every producer's field, plus how
+            # much they disagree (high divergence → the organism is of two minds).
+            try:
+                from aureon.core.hnc_field import blend_field
+
+                blended = blend_field(self.bus)
+                if (blended.available and blended.contributors > 1
+                        and blended.symbolic_life_score is not None):
+                    bits.append(f"blended_sls={blended.symbolic_life_score:.3f}"
+                                f"(n={blended.contributors})")
+                    if blended.divergence is not None:
+                        bits.append(f"field_divergence={blended.divergence:.3f}")
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("blend read skipped: %s", exc)
             if bits:
                 system += ("\n\nOrganism state (the shared HNC field you are part of): "
                            + ", ".join(bits))

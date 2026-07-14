@@ -71,6 +71,26 @@ def test_subfields_publish_and_read_by_source():
     assert subs["queen_cortex"]["symbolic_life_score"] == 0.44
 
 
+def test_blended_field_is_consensus_with_divergence():
+    from aureon.core.aureon_thought_bus import ThoughtBus
+    from aureon.core.hnc_field import blend_field, publish_subfield
+
+    b = ThoughtBus(persist_path=None)   # isolated bus for a clean consensus
+    b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
+                      payload={"symbolic_life_score": 0.60, "coherence_gamma": 0.5}))
+
+    class _A:
+        symbolic_life_score = 0.40
+        coherence_gamma = 0.5
+
+    publish_subfield("queen_cortex", _A(), bus=b)
+    blended = blend_field(b)
+    assert blended.available and blended.contributors == 2
+    assert abs(blended.symbolic_life_score - 0.50) < 1e-9   # mean of 0.60, 0.40
+    assert abs(blended.divergence - 0.20) < 1e-9            # spread
+    assert "canonical" in blended.sources and "queen_cortex" in blended.sources
+
+
 # ── keystone: publish → read the live field, flood-proof ─────────────────────
 
 def test_grounded_gate_reads_live_field_under_flood():

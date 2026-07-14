@@ -105,12 +105,13 @@ def build_organism_payload() -> Dict[str, Any]:
                               "auris.throne.cosmic_state", "lighthouse.event",
                               "operator.action.verdict", "cognition.complete", "baton.link")
             }
-            # Local sub-fields the organism can now sense (each producer's field).
+            # Local sub-fields + the blended whole-body consensus.
             try:
-                from aureon.core.hnc_field import read_subfields
+                from aureon.core.hnc_field import blend_field, read_subfields
 
                 sub = read_subfields(bus)
                 uni["subfields"] = {"count": len(sub), "sources": sorted(sub.keys())}
+                uni["blended"] = blend_field(bus).to_dict()
             except Exception:  # noqa: BLE001
                 uni["subfields"] = {"count": 0, "sources": []}
             payload["unification"] = uni

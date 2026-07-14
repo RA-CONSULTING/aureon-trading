@@ -136,4 +136,73 @@ def read_subfields(bus: Any = None) -> dict[str, dict[str, Any]]:
     return out
 
 
-__all__ = ["CanonicalField", "read_canonical_field", "publish_subfield", "read_subfields"]
+@dataclass(frozen=True)
+class BlendedField:
+    """A consensus across the canonical field and every local sub-field —
+    the organism's whole-body view of its own coherence."""
+
+    available: bool = False
+    symbolic_life_score: float | None = None   # mean across all contributors
+    coherence_gamma: float | None = None
+    contributors: int = 0                       # how many fields agreed to blend
+    divergence: float | None = None             # max-min spread of sub-scores
+    sources: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "available": self.available,
+            "symbolic_life_score": self.symbolic_life_score,
+            "coherence_gamma": self.coherence_gamma,
+            "contributors": self.contributors,
+            "divergence": self.divergence,
+            "sources": list(self.sources),
+        }
+
+
+def blend_field(bus: Any = None) -> BlendedField:
+    """Blend the canonical field with every published sub-field into one
+    consensus. The mean is the whole-body coherence; ``divergence`` (max-min
+    spread) says how much the body's fields disagree — a high spread means the
+    organism is of two minds and consumers should be cautious. Degrades to the
+    canonical value alone when no sub-fields are present; unavailable when
+    nothing is flowing. Never raises.
+    """
+    canonical = read_canonical_field(bus)
+    subs = read_subfields(bus)
+
+    scores: list[float] = []
+    gammas: list[float] = []
+    sources: list[str] = []
+    if canonical.available and canonical.symbolic_life_score is not None:
+        scores.append(canonical.symbolic_life_score)
+        sources.append("canonical")
+        if canonical.coherence_gamma is not None:
+            gammas.append(canonical.coherence_gamma)
+    for name, sub in sorted(subs.items()):
+        sls = sub.get("symbolic_life_score")
+        if sls is not None:
+            try:
+                scores.append(float(sls))
+                sources.append(name)
+                g = sub.get("coherence_gamma")
+                if g is not None:
+                    gammas.append(float(g))
+            except (TypeError, ValueError):
+                continue
+
+    if not scores:
+        return BlendedField()
+    return BlendedField(
+        available=True,
+        symbolic_life_score=sum(scores) / len(scores),
+        coherence_gamma=(sum(gammas) / len(gammas)) if gammas else None,
+        contributors=len(scores),
+        divergence=(max(scores) - min(scores)) if len(scores) > 1 else 0.0,
+        sources=tuple(sources),
+    )
+
+
+__all__ = [
+    "CanonicalField", "read_canonical_field", "publish_subfield",
+    "read_subfields", "BlendedField", "blend_field",
+]

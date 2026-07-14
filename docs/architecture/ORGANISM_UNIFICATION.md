@@ -95,6 +95,17 @@ every field** (`read_subfields()` / the `/api/organism` `unification.subfields`
 block) without losing local computation. The fields are connected — visible on the
 shared bus — and a future cycle can blend them.
 
+## The blended field — one whole-body consensus
+
+`blend_field()` combines the canonical field with every published sub-field into a
+single consensus: the mean is the organism's whole-body coherence, and `divergence`
+(max−min spread) says how much the body's fields disagree — a high spread means the
+organism is of two minds and consumers should be cautious. It degrades to the
+canonical value alone when no sub-fields are present. Surfaced in `/api/organism`
+(`unification.blended`) and folded into cognition's grounding prompt (`blended_sls`,
+`field_divergence`), so the reasoning model sees not just one field but the
+whole-body consensus and its internal disagreement.
+
 ## Robustness: the sweep survives rogue modules
 
 `Connectome.touch()` catches `BaseException` (re-raising only `KeyboardInterrupt`),

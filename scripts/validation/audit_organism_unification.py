@@ -100,6 +100,14 @@ def run_audit() -> list[dict]:
     results.append(_check("subfield_visibility", "queen_cortex" in subs,
                           f"sources={sorted(subs.keys())}", critical=False))
 
+    # Edge 4c — blended whole-body consensus (canonical + sub-fields)
+    from aureon.core.hnc_field import blend_field
+
+    blended = blend_field(bus)
+    results.append(_check("blended_consensus", blended.available and blended.contributors >= 2,
+                          f"sls={blended.symbolic_life_score} n={blended.contributors} "
+                          f"divergence={blended.divergence}", critical=False))
+
     # Edge 5 — connectome telemetry: baton ear + pulse + auto-weave
     from aureon.core.aureon_connectome import get_connectome
 
