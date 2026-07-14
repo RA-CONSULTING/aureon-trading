@@ -94,6 +94,7 @@ ruff-clean, mypy-clean under the strict override, and covered by tests.
 ---
 
 ## 📚 Related
+- [`../research/audits/UI_AUDIT_2026-07-14.md`](../research/audits/UI_AUDIT_2026-07-14.md) — the **frontend** two-tier gate (build · shell lint · smoke E2E block; whole-tree typecheck/eslint informational) + the UI honesty pass
 - [`../research/audits/SYSTEM_VERIFICATION_2026-07-13.md`](../research/audits/SYSTEM_VERIFICATION_2026-07-13.md) — whole-repo verification sweep (compile · F821 · configs · strict tier · CI honesty)
 - [`../SAAS_PLATFORM.md`](../SAAS_PLATFORM.md) — the platform layer (catalog · domains · status) built on this gate
 - [`../deployment/OPERATOR_DEPLOY.md`](../deployment/OPERATOR_DEPLOY.md) · [`../architecture/AUREON_OPERATOR_SWITCHBOARD.md`](../architecture/AUREON_OPERATOR_SWITCHBOARD.md)
