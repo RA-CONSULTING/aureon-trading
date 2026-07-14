@@ -83,6 +83,40 @@ def build_organism_payload() -> Dict[str, Any]:
             payload["mycelium"] = {"connected_systems": mesh.get("connected_systems", [])}
         except Exception:  # noqa: BLE001
             payload["mycelium"] = {}
+        # Phase 19 — unification telemetry: is the shared HNC field flowing, and
+        # which producer edges are alive? (recall filters by topic so this is a
+        # true 'edge live?' signal, not a recency artefact.)
+        try:
+            from aureon.core.aureon_thought_bus import get_thought_bus, payload_of
+
+            bus = get_thought_bus()
+            uni: Dict[str, Any] = {}
+            pulses = bus.recall("symbolic.life.pulse", limit=1) or []
+            if pulses:
+                p = payload_of(pulses[-1])
+                uni["field_flowing"] = True
+                uni["symbolic_life_score"] = p.get("symbolic_life_score")
+                uni["coherence_gamma"] = p.get("coherence_gamma")
+            else:
+                uni["field_flowing"] = False
+            uni["edges"] = {
+                topic: len(bus.recall(topic, limit=50) or [])
+                for topic in ("symbolic.life.pulse", "auris.throne.cosmic_state",
+                              "lighthouse.event", "operator.action.verdict",
+                              "cognition.complete", "baton.link")
+            }
+            payload["unification"] = uni
+        except Exception:  # noqa: BLE001
+            payload["unification"] = {}
+        # Queen children — only if the Queen singleton already exists; never boot
+        # the (heavy) Queen from a status read.
+        try:
+            import aureon.utils.aureon_queen_hive_mind as _qhm
+
+            _q = getattr(_qhm, "_QUEEN", None)
+            payload["queen_children"] = len(getattr(_q, "children", {})) if _q is not None else None
+        except Exception:  # noqa: BLE001
+            payload["queen_children"] = None
     except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
         payload = {"available": False, "error": str(exc)[:200]}
     return payload
