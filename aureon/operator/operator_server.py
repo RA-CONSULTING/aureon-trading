@@ -375,6 +375,12 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             checks["repo_index"] = False
             checks["repo_index_error"] = str(exc)
         checks["cognition"] = _cognition["engine"] is not None
+        try:
+            from aureon.operator.connections_api import _real_data_policy_summary
+
+            checks["real_data_policy"] = _real_data_policy_summary()
+        except Exception as exc:  # noqa: BLE001
+            checks["real_data_policy"] = {"probe_report_status": "unavailable", "error": str(exc)[:160]}
         ready = bool(checks["providers"] and checks["repo_index"])
         return jsonify({"ready": ready, "checks": checks}), (200 if ready else 503)
 

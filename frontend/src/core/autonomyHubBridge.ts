@@ -80,8 +80,9 @@ export function updateHubState(state: HubStateFile): void {
  * feedback data for the Python hub's feedback loop.
  */
 export function initFeedbackBridge(): void {
-  unifiedBus.subscribe((state) => {
-    if (state.systemName === 'PredictionAccuracy' && state.data) {
+  unifiedBus.subscribe((snapshot) => {
+    const state = snapshot.states.PredictionAccuracy;
+    if (state?.data) {
       // Store accuracy data for Python hub to read
       if (typeof globalThis !== 'undefined') {
         (globalThis as any).__predictionAccuracyFeedback = {

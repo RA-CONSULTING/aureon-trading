@@ -5,7 +5,8 @@
 
 Connects to LIVE Schumann resonance data from:
 - Barcelona Electromagnetic Monitoring Station (Primary)
-- Fallback simulation if stations unavailable
+- NOAA Kp-derived proxy when direct station data is unavailable
+- No-data signal when real/derived sources are unavailable
 - Real-time Earth heartbeat at 7.83 Hz ± variations
 
 Schumann resonance = Earth's natural EM cavity frequency
@@ -23,7 +24,6 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, Optional, Any, Tuple
 from dataclasses import dataclass
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +32,17 @@ SCHUMANN_DATA_SOURCES = {
     'barcelona': {
         'name': 'Barcelona EM Station',
         'url': 'http://www.vlf.it/realtime/realtime.html',  # Real-time VLF data
-        'fallback': 'simulation'
+        'fallback': 'no_data'
     },
     'rsync': {
         'name': 'RSYNC Global Network',
         'url': 'https://www.esowatch.com/',
-        'fallback': 'simulation'
+        'fallback': 'no_data'
     },
     'usgs': {
         'name': 'USGS Magnetometer Network',
         'url': 'https://geomag.usgs.gov/products/data/',
-        'fallback': 'simulation'
+        'fallback': 'no_data'
     }
 }
 
@@ -144,6 +144,21 @@ class SchumannResonanceBridge:
         # quietly receive a diurnal-pattern fake. AUREON_ALLOW_SIM_FALLBACK=1
         # restores the old behaviour for dev / test / backtest.
         if not fundamental:
+            noaa_data = self._fetch_noaa_kp_derived_schumann()
+            if noaa_data:
+                fundamental = noaa_data['fundamental']
+                harmonics = noaa_data['harmonics']
+                amplitude = noaa_data['amplitude']
+                quality = noaa_data['quality']
+                coherence_boost = noaa_data['coherence_boost']
+                earth_disturbance = noaa_data['disturbance']
+                active_sources.append('NOAA-Kp-Derived')
+                logger.debug(
+                    "NOAA Kp derived Schumann: %.3fHz, Disturbance=%.0f%%",
+                    fundamental, earth_disturbance,
+                )
+
+        if not fundamental:
             from aureon.observer.live_data_policy import (
                 simulation_fallback_allowed, log_blocked_fallback,
             )
@@ -200,21 +215,7 @@ class SchumannResonanceBridge:
             
             # Parse HTML for frequency data (simplified - real parsing would be more complex)
             if 'Hz' in resp.text:
-                # Extract fundamental frequency around 7.83 Hz
-                # Real implementation would parse actual station data
-                return {
-                    'fundamental': 7.83 + (np.random.random() - 0.5) * 0.1,
-                    'harmonics': {
-                        'mode2': 14.3 + (np.random.random() - 0.5) * 0.2,
-                        'mode3': 20.8 + (np.random.random() - 0.5) * 0.3,
-                        'mode4': 27.3 + (np.random.random() - 0.5) * 0.4,
-                    },
-                    'amplitude': 0.6 + np.random.random() * 0.3,
-                    'quality': 0.65 + np.random.random() * 0.3,
-                    'coherence_boost': 0.05,
-                    'disturbance': 0.2 + np.random.random() * 0.3,
-                    'phase': 'stable'
-                }
+                logger.debug("Barcelona page reachable but parser has no verified numeric station fields")
         except Exception as e:
             logger.debug(f"Barcelona fetch error: {e}")
         return None
@@ -247,11 +248,49 @@ class SchumannResonanceBridge:
         except Exception as e:
             logger.debug(f"USGS fetch error: {e}")
         return None
+
+    def _fetch_noaa_kp_derived_schumann(self) -> Optional[Dict]:
+        """Derive Schumann-mode estimates from live NOAA Kp data.
+
+        This is not a direct station measurement. It is a degraded-but-real
+        proxy: the upstream input is NOAA's live geomagnetic Kp index, and the
+        output is labelled as NOAA-Kp-Derived by ``get_live_data``.
+        """
+        try:
+            from aureon.data_feeds.aureon_space_weather_bridge import SpaceWeatherBridge
+
+            kp_data = SpaceWeatherBridge()._fetch_kp_index()
+            if not kp_data:
+                return None
+            kp = float(kp_data.get('current_kp'))
+            if not 0.0 <= kp <= 9.0:
+                return None
+
+            disturbance = max(0.0, min(1.0, kp / 9.0))
+            coherence = max(0.35, 1.0 - disturbance * 0.65)
+            fundamental = 7.83 + (kp - 3.0) * 0.015
+            return {
+                'fundamental': fundamental,
+                'harmonics': {
+                    'mode2': 14.3 * (0.92 + disturbance * 0.08),
+                    'mode3': 20.8 * (0.88 + disturbance * 0.12),
+                    'mode4': 27.3 * (0.84 + disturbance * 0.16),
+                },
+                'amplitude': min(1.0, 0.60 + 0.05 * kp),
+                'quality': coherence,
+                'coherence_boost': max(0.0, (coherence - 0.5) * 0.1),
+                'disturbance': disturbance,
+            }
+        except Exception as e:
+            logger.debug(f"NOAA Kp derived Schumann fetch error: {e}")
+        return None
     
     def _simulate_schumann(self) -> Dict:
         """
-        Simulate Schumann data with natural diurnal variation
-        Uses time-of-day patterns to create realistic variations
+        Deterministic development fallback with natural diurnal variation.
+
+        This is never treated as operational telemetry; production returns
+        no-data when real station/proxy sources are unavailable.
         """
         now = time.time()
         hour_utc = (now % 86400) / 3600
@@ -259,19 +298,16 @@ class SchumannResonanceBridge:
         # Natural diurnal variation peaks at noon UTC
         diurnal = math.sin((hour_utc - 6) * math.pi / 12) * 0.08
         
-        # Slight random jitter
-        jitter = (np.random.random() - 0.5) * 0.05
-        
-        fundamental = 7.83 + diurnal + jitter
+        fundamental = 7.83 + diurnal
         
         # Build harmonics based on fundamental
         harmonics = {
-            'mode2': 14.3 + diurnal * 2 + (np.random.random() - 0.5) * 0.1,
-            'mode3': 20.8 + diurnal * 3 + (np.random.random() - 0.5) * 0.15,
-            'mode4': 27.3 + diurnal * 4 + (np.random.random() - 0.5) * 0.2,
-            'mode5': 33.8 + diurnal * 5 + (np.random.random() - 0.5) * 0.25,
-            'mode6': 39.0 + diurnal * 6 + (np.random.random() - 0.5) * 0.3,
-            'mode7': 45.0 + diurnal * 7 + (np.random.random() - 0.5) * 0.35,
+            'mode2': 14.3 + diurnal * 2,
+            'mode3': 20.8 + diurnal * 3,
+            'mode4': 27.3 + diurnal * 4,
+            'mode5': 33.8 + diurnal * 5,
+            'mode6': 39.0 + diurnal * 6,
+            'mode7': 45.0 + diurnal * 7,
         }
         
         # Amplitude follows diurnal pattern
@@ -282,7 +318,7 @@ class SchumannResonanceBridge:
         quality = 0.70 + diurnal * 0.15
         
         # Earth disturbance is lower when noon (more stable)
-        earth_disturbance = 0.4 - diurnal * 0.2 + np.random.random() * 0.1
+        earth_disturbance = 0.4 - diurnal * 0.2
         earth_disturbance = max(0.0, min(1.0, earth_disturbance))
         
         # Coherence boost when aligned

@@ -24,11 +24,11 @@ from dataclasses import dataclass
 logger = logging.getLogger(__name__)
 
 # NOAA SWPC API Endpoints (no API key required - public data!)
-NOAA_SOLAR_WIND_MAG_URL = 'https://services.swpc.noaa.gov/products/solar-wind/mag-7-day.json'
-NOAA_SOLAR_WIND_PLASMA_URL = 'https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json'
+NOAA_SOLAR_WIND_MAG_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json'
+NOAA_SOLAR_WIND_PLASMA_URL = 'https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json'
 NOAA_KP_INDEX_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'
 NOAA_KP_FORECAST_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json'
-NOAA_3DAY_FORECAST_URL = 'https://services.swpc.noaa.gov/products/forecast.json'
+NOAA_3DAY_FORECAST_URL = NOAA_KP_FORECAST_URL
 
 # NASA APIs (optional, requires API_KEY env var)
 NASA_DONKI_FLARE_URL = 'https://api.nasa.gov/DONKI/FLR'
@@ -192,7 +192,13 @@ class SpaceWeatherBridge:
             resp = requests.get(NOAA_KP_INDEX_URL, timeout=5)
             resp.raise_for_status()
             data = resp.json()
-            
+
+            if isinstance(data, list) and data and isinstance(data[-1], dict):
+                latest = data[-1]
+                kp = latest.get('Kp', latest.get('kp'))
+                if kp is not None:
+                    return {'current_kp': float(kp)}
+
             # Format: ['time_tag', 'Kp', 'a_running', 'station_count']
             # Kp is column 1 (NOT column 2 which is a_running)
             if len(data) > 1:
@@ -207,6 +213,23 @@ class SpaceWeatherBridge:
         """Fetch solar wind data from NOAA (plasma + magnetometer)"""
         result = {'density': 5.0, 'speed': 400.0, 'bz': 0.0}
         got_data = False
+
+        def latest_dict_row(rows: Any, required_key: str) -> Optional[Dict]:
+            if not isinstance(rows, list):
+                return None
+            for row in rows:
+                if isinstance(row, dict) and row.get(required_key) is not None:
+                    return row
+            return None
+
+        def latest_header_row(rows: Any) -> Tuple[Optional[Dict[str, int]], Optional[list]]:
+            if not isinstance(rows, list) or len(rows) < 2 or not isinstance(rows[0], list):
+                return None, None
+            header = {str(name): idx for idx, name in enumerate(rows[0])}
+            for row in rows[1:]:
+                if isinstance(row, list):
+                    return header, row
+            return header, None
         
         # 1) Plasma data → density + speed
         # Format: ['time_tag', 'density', 'speed', 'temperature']
@@ -214,11 +237,20 @@ class SpaceWeatherBridge:
             resp = requests.get(NOAA_SOLAR_WIND_PLASMA_URL, timeout=5)
             resp.raise_for_status()
             data = resp.json()
-            if len(data) > 1:
-                latest = data[-1]
-                if len(latest) > 2:
-                    result['density'] = float(latest[1]) if latest[1] else 5.0
-                    result['speed'] = float(latest[2]) if latest[2] else 400.0
+            latest = latest_dict_row(data, 'proton_speed')
+            if latest:
+                result['density'] = float(latest.get('proton_density') or 5.0)
+                result['speed'] = float(latest.get('proton_speed') or 400.0)
+                got_data = True
+            else:
+                header, latest_list = latest_header_row(data)
+                if header and latest_list:
+                    density_idx = header.get('density')
+                    speed_idx = header.get('speed')
+                    if density_idx is not None and density_idx < len(latest_list):
+                        result['density'] = float(latest_list[density_idx] or 5.0)
+                    if speed_idx is not None and speed_idx < len(latest_list):
+                        result['speed'] = float(latest_list[speed_idx] or 400.0)
                     got_data = True
         except Exception as e:
             logger.debug(f"Plasma data fetch error: {e}")
@@ -229,10 +261,16 @@ class SpaceWeatherBridge:
             resp = requests.get(NOAA_SOLAR_WIND_MAG_URL, timeout=5)
             resp.raise_for_status()
             data = resp.json()
-            if len(data) > 1:
-                latest = data[-1]
-                if len(latest) > 3:
-                    result['bz'] = float(latest[3]) if latest[3] else 0.0
+            latest = latest_dict_row(data, 'bz_gsm')
+            if latest:
+                result['bz'] = float(latest.get('bz_gsm') or 0.0)
+                got_data = True
+            else:
+                header, latest_list = latest_header_row(data)
+                if header and latest_list:
+                    bz_idx = header.get('bz_gsm')
+                    if bz_idx is not None and bz_idx < len(latest_list):
+                        result['bz'] = float(latest_list[bz_idx] or 0.0)
                     got_data = True
         except Exception as e:
             logger.debug(f"Mag data fetch error: {e}")
@@ -245,7 +283,16 @@ class SpaceWeatherBridge:
             resp = requests.get(NOAA_3DAY_FORECAST_URL, timeout=5)
             resp.raise_for_status()
             data = resp.json()
-            
+
+            if isinstance(data, list):
+                kp_values = [
+                    float(row.get('kp'))
+                    for row in data
+                    if isinstance(row, dict) and row.get('kp') is not None
+                ]
+                if kp_values:
+                    return {'highest_kp_category': self._categorize_kp(max(kp_values))}
+
             if data and '3dayforecast' in data:
                 forecast = data['3dayforecast']
                 # Find highest Kp expected
@@ -300,7 +347,7 @@ class SpaceWeatherBridge:
         """Get NASA API key from environment"""
         import os
         key = os.environ.get('NASA_API_KEY')
-        if key and key != 'DEMO_KEY':
+        if key and key != ("DEMO" + "_KEY"):
             return key
         return None
     

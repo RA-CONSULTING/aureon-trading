@@ -209,6 +209,14 @@ def _get(url: str, params: Dict = None, timeout: int = 20,
     return r.json()
 
 
+def _nasa_api_key_or_skip(label: str) -> Optional[str]:
+    key = os.getenv("NASA_API_KEY", "").strip()
+    if not key:
+        print(_c(f"SKIPPED: missing NASA_API_KEY for {label}; no demo-key fallback", YEL))
+        return None
+    return key
+
+
 def fetch_earthquakes(start: datetime, end: datetime,
                       min_mag: float = 6.0) -> List[PlanetaryEvent]:
     """USGS FDSN — full historical earthquake catalogue."""
@@ -243,7 +251,9 @@ def fetch_earthquakes(start: datetime, end: datetime,
 
 def fetch_solar_flares(start: datetime, end: datetime) -> List[PlanetaryEvent]:
     """NASA DONKI — M and X class solar flares."""
-    key = os.getenv("NASA_API_KEY", "DEMO_KEY")
+    key = _nasa_api_key_or_skip("DONKI flares")
+    if not key:
+        return []
     print(f"  ☀️  Fetching NASA DONKI flares "
           f"{start.strftime('%Y-%m-%d')} → {end.strftime('%Y-%m-%d')} …", end=" ", flush=True)
     events: List[PlanetaryEvent] = []
@@ -300,7 +310,9 @@ def fetch_solar_flares(start: datetime, end: datetime) -> List[PlanetaryEvent]:
 
 def fetch_geomagnetic_storms(start: datetime, end: datetime) -> List[PlanetaryEvent]:
     """NASA DONKI — geomagnetic storms (GST) with Kp index."""
-    key = os.getenv("NASA_API_KEY", "DEMO_KEY")
+    key = _nasa_api_key_or_skip("DONKI geomagnetic storms")
+    if not key:
+        return []
     print(f"  ⚡ Fetching NASA DONKI geo-storms "
           f"{start.strftime('%Y-%m-%d')} → {end.strftime('%Y-%m-%d')} …", end=" ", flush=True)
     events: List[PlanetaryEvent] = []
@@ -349,7 +361,9 @@ def fetch_geomagnetic_storms(start: datetime, end: datetime) -> List[PlanetaryEv
 
 def fetch_cme(start: datetime, end: datetime) -> List[PlanetaryEvent]:
     """NASA DONKI — Coronal Mass Ejections (Earth-directed)."""
-    key = os.getenv("NASA_API_KEY", "DEMO_KEY")
+    key = _nasa_api_key_or_skip("DONKI CME")
+    if not key:
+        return []
     print(f"  🌀 Fetching NASA DONKI CME "
           f"{start.strftime('%Y-%m-%d')} → {end.strftime('%Y-%m-%d')} …", end=" ", flush=True)
     events: List[PlanetaryEvent] = []

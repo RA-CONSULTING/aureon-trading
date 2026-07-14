@@ -1,0 +1,163 @@
+{
+  "schema_version": "aureon-real-data-sources-v1",
+  "policy": {
+    "operational_statuses": ["live", "real_derived", "cached_real", "no_data"],
+    "fixture_status": "test_fixture",
+    "demo_key_allowed": false,
+    "simulation_fallback_default": false
+  },
+  "sources": {
+    "binance_public": {
+      "name": "Binance Public Market Data",
+      "category": "market",
+      "auth_env": null,
+      "endpoint": "https://api.binance.com/api/v3/ticker/24hr",
+      "freshness_ttl_sec": 30,
+      "derived_metrics_allowed": true
+    },
+    "biometric_sensor": {
+      "name": "Local Biometric Sensor",
+      "category": "biometric",
+      "auth_env": null,
+      "endpoint": "local:biometric-sensor",
+      "freshness_ttl_sec": 60,
+      "derived_metrics_allowed": true
+    },
+    "capital_com": {
+      "name": "Capital.com API",
+      "category": "exchange",
+      "auth_env": "CAPITAL_API_KEY",
+      "endpoint": "https://api-capital.backend-capital.com",
+      "freshness_ttl_sec": 60,
+      "derived_metrics_allowed": true
+    },
+    "coingecko": {
+      "name": "CoinGecko Free API",
+      "category": "market",
+      "auth_env": null,
+      "endpoint": "https://api.coingecko.com/api/v3/simple/price",
+      "freshness_ttl_sec": 300,
+      "derived_metrics_allowed": true
+    },
+    "fred": {
+      "name": "Federal Reserve Economic Data",
+      "category": "macro",
+      "auth_env": "FRED_API_KEY",
+      "endpoint": "https://api.stlouisfed.org/fred",
+      "freshness_ttl_sec": 86400,
+      "derived_metrics_allowed": true
+    },
+    "gdelt": {
+      "name": "GDELT Project",
+      "category": "news",
+      "auth_env": null,
+      "endpoint": "https://api.gdeltproject.org/api/v2/doc/doc",
+      "freshness_ttl_sec": 900,
+      "derived_metrics_allowed": true
+    },
+    "kraken_public": {
+      "name": "Kraken Public Market Data",
+      "category": "market",
+      "auth_env": null,
+      "endpoint": "https://api.kraken.com/0/public/Ticker",
+      "freshness_ttl_sec": 30,
+      "derived_metrics_allowed": true
+    },
+    "kraken_private": {
+      "name": "Kraken Private Account API",
+      "category": "exchange",
+      "auth_env": "KRAKEN_API_KEY",
+      "endpoint": "https://api.kraken.com/0/private",
+      "freshness_ttl_sec": 60,
+      "derived_metrics_allowed": true
+    },
+    "nasa_donki": {
+      "name": "NASA DONKI Space Weather Database",
+      "category": "space_weather",
+      "auth_env": "NASA_API_KEY",
+      "endpoint": "https://api.nasa.gov/DONKI",
+      "freshness_ttl_sec": 3600,
+      "derived_metrics_allowed": true
+    },
+    "nasa_firms": {
+      "name": "NASA FIRMS Active Fire Data",
+      "category": "earth_hazard",
+      "auth_env": "FIRMS_MAP_KEY",
+      "endpoint": "https://firms.modaps.eosdis.nasa.gov/api/area/csv",
+      "freshness_ttl_sec": 600,
+      "derived_metrics_allowed": true
+    },
+    "nasa_neo": {
+      "name": "NASA Near Earth Object Web Service",
+      "category": "earth_hazard",
+      "auth_env": "NASA_API_KEY",
+      "endpoint": "https://api.nasa.gov/neo/rest/v1/feed",
+      "freshness_ttl_sec": 3600,
+      "derived_metrics_allowed": true
+    },
+    "noaa_cdo": {
+      "name": "NOAA Climate Data Online",
+      "category": "climate",
+      "auth_env": "NOAA_API_KEY",
+      "endpoint": "https://www.ncei.noaa.gov/cdo-web/api/v2",
+      "freshness_ttl_sec": 86400,
+      "derived_metrics_allowed": true
+    },
+    "noaa_swpc": {
+      "name": "NOAA Space Weather Prediction Center",
+      "category": "space_weather",
+      "auth_env": null,
+      "endpoint": "https://services.swpc.noaa.gov",
+      "freshness_ttl_sec": 300,
+      "derived_metrics_allowed": true
+    },
+    "ollama_local": {
+      "name": "Ollama Local Runtime",
+      "category": "ai_llm",
+      "auth_env": null,
+      "endpoint": "http://localhost:11434",
+      "freshness_ttl_sec": 60,
+      "derived_metrics_allowed": false
+    },
+    "open_meteo": {
+      "name": "Open-Meteo Public Forecast API",
+      "category": "weather",
+      "auth_env": null,
+      "endpoint": "https://api.open-meteo.com",
+      "freshness_ttl_sec": 900,
+      "derived_metrics_allowed": true
+    },
+    "test_fixture": {
+      "name": "Test Fixture",
+      "category": "fixture",
+      "auth_env": null,
+      "endpoint": "local:test-fixture",
+      "freshness_ttl_sec": 0,
+      "derived_metrics_allowed": false
+    },
+    "usgs_earthquake": {
+      "name": "USGS Earthquake Hazards Program",
+      "category": "earth_hazard",
+      "auth_env": null,
+      "endpoint": "https://earthquake.usgs.gov",
+      "freshness_ttl_sec": 300,
+      "derived_metrics_allowed": true
+    },
+    "usgs_water": {
+      "name": "USGS Water Services",
+      "category": "water",
+      "auth_env": "USGS_API_KEY",
+      "endpoint": "https://waterservices.usgs.gov",
+      "freshness_ttl_sec": 900,
+      "derived_metrics_allowed": true
+    },
+    "yahoo_finance": {
+      "name": "Yahoo Finance Public Quote Data",
+      "category": "market",
+      "auth_env": null,
+      "endpoint": "https://query1.finance.yahoo.com",
+      "freshness_ttl_sec": 300,
+      "derived_metrics_allowed": true
+    }
+  }
+}

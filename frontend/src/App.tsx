@@ -47,6 +47,7 @@ import {
   loadUnifiedFrontendState,
   OrganismDomainPulse,
   SaaSInventoryManifest,
+  SaaSInventorySummary,
   surfacesForScreen,
   UnifiedFrontendState,
 } from "@/services/aureonAutonomousFrontend";
@@ -2911,7 +2912,7 @@ function CapitalThreePBlockerBurndownPanel({ audit }: { audit: CapitalThreePBloc
 function PerformanceReadinessPanel({ audit }: { audit: PerformanceReadinessAudit | null }) {
   const summary = audit?.summary || {};
   const scriptRows = asRecordArray(audit?.script_wiring);
-  const artifactRows = Object.entries(audit?.artifact_wiring || {}).map(([key, value]) => ({
+  const artifactRows: Array<Record<string, unknown> & { key: string; present?: unknown; path?: unknown }> = Object.entries(audit?.artifact_wiring || {}).map(([key, value]) => ({
     key,
     ...asRecord(value),
   }));
@@ -6499,7 +6500,7 @@ function AppShell() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const inventory = state?.inventory || {};
+  const inventory = (state?.inventory || {}) as SaaSInventoryManifest;
   const plan = state?.plan || {};
   const organism = state?.organism || {};
   const evolution = state?.evolution || {};
@@ -6773,7 +6774,7 @@ function AppShell() {
               title="Work Order Filters"
               description="Keep the migration queue scannable by status or by the selected screen."
             >
-              <FilterButtons options={workOrderFilterOptions} value={workOrderFilter} onChange={setWorkOrderFilter} />
+              <FilterButtons options={workOrderFilterOptions} value={workOrderFilter} onChange={(value) => setWorkOrderFilter(value)} />
             </FilterHeader>
             <FrontendEvolutionPanel evolution={evolution} filter={workOrderFilter} activeScreenId={active} />
             <AureonWorkOrderExecutionConsole />
@@ -7384,7 +7385,7 @@ function SafetyBoundariesPanel({
 }: {
   manualActions: Array<[string, unknown]>;
   percent: number;
-  summary: Record<string, unknown>;
+  summary: SaaSInventorySummary;
 }) {
   return (
     <Card className="bg-card/80">

@@ -1,4 +1,4 @@
-import os, time, json, hmac, hashlib, base64, threading, random, logging
+import os, time, json, hmac, hashlib, base64, threading, logging
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 from decimal import Decimal
@@ -69,6 +69,14 @@ _DEFAULT_NONCE_FILE = os.path.join(os.path.dirname(__file__) or '.', '.kraken_no
 # Prefer a stable per-instance state path when provided (Docker/Windows-friendly).
 NONCE_FILE = os.getenv("KRAKEN_NONCE_PATH") or _DEFAULT_NONCE_FILE
 _nonce_lock = threading.Lock()
+_nonce_offset_counter = 0
+
+
+def _next_nonce_offset() -> int:
+    """Small deterministic offset used only to separate same-microsecond nonces."""
+    global _nonce_offset_counter
+    _nonce_offset_counter = (_nonce_offset_counter % 999) + 1
+    return _nonce_offset_counter
 
 def _lock_file(handle) -> None:
     if fcntl is not None:
@@ -139,10 +147,9 @@ def _get_next_nonce() -> int:
                     except Exception:
                         last_nonce = 0
                     
-                    # New nonce = max(current_time, last_nonce + 1) + random offset
-                    # Random offset (0-999) prevents collisions if multiple processes
-                    # read the same last_nonce before any can write
-                    new_nonce = max(current_us, last_nonce + 1) + random.randint(1, 999)
+                    # New nonce = max(current_time, last_nonce + 1) plus a
+                    # deterministic offset for same-microsecond calls.
+                    new_nonce = max(current_us, last_nonce + 1) + _next_nonce_offset()
                     
                     # Write back atomically
                     f.seek(0)
@@ -157,7 +164,7 @@ def _get_next_nonce() -> int:
                     return new_nonce
             else:
                 # Create new nonce file
-                new_nonce = current_us + random.randint(1, 999)
+                new_nonce = current_us + _next_nonce_offset()
                 with open(NONCE_FILE, 'w+') as f:
                     _lock_file(f)
                     f.write(str(new_nonce))
@@ -170,8 +177,8 @@ def _get_next_nonce() -> int:
                 return new_nonce
                 
         except Exception:
-            # Fallback: use time + PID + random (less safe but works)
-            return current_us + (os.getpid() % 10000) * 1000 + random.randint(1, 999)
+            # Fallback: use time + PID + deterministic offset.
+            return current_us + (os.getpid() % 10000) * 1000 + _next_nonce_offset()
 
 class KrakenClient:
     """

@@ -148,7 +148,7 @@ CATALOG: List[Connection] = [
                probe_auth="query",
                get_keys_url="https://api.nasa.gov/",
                docs_url="https://ccmc.gsfc.nasa.gov/tools/DONKI/",
-               unlocks="Solar flares, geomagnetic storms, CMEs, near-Earth objects (DEMO_KEY works, rate-limited)"),
+               unlocks="Solar flares, geomagnetic storms, CMEs, near-Earth objects (NASA_API_KEY required for operational truth)"),
     Connection("firms", "NASA FIRMS (wildfires)", "space_science", "optional", "operator",
                ("FIRMS_MAP_KEY",),
                probe_url="https://firms.modaps.eosdis.nasa.gov/api/data_availability/csv/-/VIIRS_SNPP_NRT",

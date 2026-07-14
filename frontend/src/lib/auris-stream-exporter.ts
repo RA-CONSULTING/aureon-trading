@@ -55,9 +55,6 @@ export class AurisStreamExporter {
       amplitude += 0.2 * Math.sin(2 * Math.PI * 26.7 * t);
       amplitude *= (1 + 0.15 * Math.sin(2 * Math.PI * 0.3 * t));
       
-      // Add realistic noise
-      amplitude += 0.05 * (Math.random() - 0.5);
-      
       samples.push(Math.max(-1, Math.min(1, amplitude * 0.6)));
     }
     

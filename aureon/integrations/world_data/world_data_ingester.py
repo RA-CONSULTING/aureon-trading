@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import socket
 import threading
 import time
 import urllib.error
@@ -37,6 +38,42 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("aureon.integrations.world_data")
+
+_DNS_LOCK = threading.RLock()
+_IPV4_PREFERRED_HOSTS = {
+    # NOAA CDO advertises IPv6 first in some Windows environments. Python's
+    # stdlib client can stall there even when IPv4 succeeds immediately.
+    "www.ncei.noaa.gov",
+    "www.ncdc.noaa.gov",
+}
+
+
+class _PreferIPv4ForHosts:
+    """Temporarily prefer IPv4 DNS answers for selected hosts."""
+
+    def __init__(self, hosts: set[str]):
+        self._hosts = {host.lower() for host in hosts}
+        self._original_getaddrinfo = None
+
+    def __enter__(self):
+        self._original_getaddrinfo = socket.getaddrinfo
+        hosts = self._hosts
+        original = self._original_getaddrinfo
+
+        def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+            if str(host).lower() in hosts:
+                return original(host, port, socket.AF_INET, type, proto, flags)
+            return original(host, port, family, type, proto, flags)
+
+        _DNS_LOCK.acquire()
+        socket.getaddrinfo = getaddrinfo
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if self._original_getaddrinfo is not None:
+            socket.getaddrinfo = self._original_getaddrinfo
+        _DNS_LOCK.release()
+        return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -136,8 +173,18 @@ class WorldDataIngester:
             merged = {"User-Agent": self.USER_AGENT, "Accept": "application/json"}
             merged.update(headers)
             req = urllib.request.Request(url, headers=merged)
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+            host = (urllib.parse.urlparse(url).hostname or "").lower()
+            dns_scope = (
+                _PreferIPv4ForHosts({host})
+                if host in _IPV4_PREFERRED_HOSTS
+                else None
+            )
+            if dns_scope is None:
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                    return json.loads(resp.read().decode("utf-8"))
+            with dns_scope:
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                    return json.loads(resp.read().decode("utf-8"))
         except Exception as exc:
             logger.debug("HTTP GET (headers) failed (%s): %s", url, exc)
             with self._lock:

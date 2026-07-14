@@ -56,6 +56,7 @@ export const defaultAQTSConfig: AQTSConfig = {
       sentiment: 0.15,
       qgita: 0.20,
       harmonic6D: 0.15,
+      autonomyHub: 0.25,
     },
   },
   risk: {

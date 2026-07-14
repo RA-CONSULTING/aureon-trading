@@ -149,16 +149,14 @@ export class AurisEngine {
       geomagneticInfluence += earthMetrics.geomagnetic.dstIndex / 1000;
     }
     
-    const ionosphericNoise = (Math.random() - 0.5) * 0.1;
-    
     this.liveSchumannData = {
-      fundamental: baseFreq + solarInfluence + geomagneticInfluence + ionosphericNoise,
+      fundamental: baseFreq + solarInfluence + geomagneticInfluence,
       mode2: (baseFreq * 1.83) + solarInfluence * 1.5,
       mode3: (baseFreq * 2.66) + geomagneticInfluence * 2,
       mode4: (baseFreq * 3.48) + solarInfluence * 0.5,
       mode5: (baseFreq * 4.32) + geomagneticInfluence * 0.3,
-      amplitude: 0.5 + Math.sin(time / 8000) * 0.3 + Math.random() * 0.2,
-      coherence: earthMetrics?.coherenceIndex || (0.7 + Math.cos(time / 12000) * 0.2 + Math.random() * 0.1),
+      amplitude: earthMetrics ? 0.5 + Math.sin(time / 8000) * 0.3 : 0,
+      coherence: earthMetrics?.coherenceIndex || 0,
       timestamp: time,
       source: 'realtime'
     };
@@ -307,7 +305,7 @@ export class AurisEngine {
   }
 
   private calculatePhase(): number {
-    if (!this.observerLock) return Math.random() * Math.PI * 2;
+    if (!this.observerLock) return 0;
     
     if (this.liveSchumannData) {
       const schumannPhase = (this.liveSchumannData.timestamp / 1000) * 

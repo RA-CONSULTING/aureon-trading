@@ -39,10 +39,10 @@ export function useHistoricalData() {
           balance: 15, // Starting balance
         }));
 
-        // Calculate cumulative PnL from executions
+        // Do not infer P&L from execution size. Until a realized P&L field is
+        // wired from the broker/database, keep the displayed value neutral.
         let cumulativePnL = 0;
         executionsData?.forEach((exec) => {
-          cumulativePnL += Math.random() * 2 - 1; // Simulated profit/loss
           const nearestPoint = merged.find(p => 
             new Date(p.timestamp).getTime() >= new Date(exec.executed_at!).getTime()
           );

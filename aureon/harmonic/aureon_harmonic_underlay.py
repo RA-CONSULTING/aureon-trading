@@ -55,34 +55,15 @@ class HarmonicUnderlay:
         except AttributeError:
             logger.warning("Could not fetch capital state.")
 
-        # SIMULATION MODE if no opportunities found (for visualization)
+        # No real opportunities means no operational waveform update.
         if not opportunities:
-            logger.info("⚠️ No active opportunities found. Activating HARMONIC SIMULATION MODE.")
-            import random
-            symbols = ["BTC/USD", "ETH/USD", "SOL/USD", "XRP/USD", "ADA/USD", "DOT/USD", "LINK/USD"]
-            for sym in symbols:
-                # Generate synthetic harmonic data
-                price = 100.0 + random.random() * 1000
-                momentum = (random.random() - 0.5) * 2.0
-                coherence = 0.4 + random.random() * 0.55 # 0.4 to 0.95
-                
-                self.engine.update_asset(
-                    symbol=sym,
-                    price=price,
-                    volume=1000 + random.random() * 5000,
-                    change_pct=momentum,
-                    high=price * 1.01,
-                    low=price * 0.99,
-                    coherence=coherence
-                )
+            logger.info("No active real opportunities found. Harmonic underlay remains in no-data state.")
             return
 
         # 3. Feed Data into 6D Engine
         for opp in opportunities:
-            # We need to simulate some data points if they aren't in the opportunity object
-            # The Opportunity object has: symbol, price, coherence, momentum, volume
-            
-            # Mocking high/low for the engine based on current price and momentum
+            # Derive high/low bounds from the real opportunity's price and
+            # momentum; no placeholder market ticks are injected.
             price = opp.price
             high = price * (1 + abs(opp.momentum)/100)
             low = price * (1 - abs(opp.momentum)/100)

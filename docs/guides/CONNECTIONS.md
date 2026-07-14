@@ -28,7 +28,7 @@ ephemeris, Binance public klines, Reddit, CoinGecko (works keyless).
 
 | Source | Env var | Unlocks |
 |---|---|---|
-| NASA (DONKI/NEO) | `NASA_API_KEY` | Solar flares, storms, CMEs, near-Earth objects (falls back to rate-limited `DEMO_KEY`) |
+| NASA (DONKI/NEO) | `NASA_API_KEY` | Solar flares, storms, CMEs, near-Earth objects; missing keys are reported as no-data |
 | NASA FIRMS | `FIRMS_MAP_KEY` | Global active-wildfire detections |
 | CoinAPI | `COINAPI_KEY` | Cross-exchange market history + anomaly detection |
 | FRED | `FRED_API_KEY` | Macro series (rates, CPI, GDP) |

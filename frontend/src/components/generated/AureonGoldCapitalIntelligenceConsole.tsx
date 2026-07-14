@@ -274,6 +274,7 @@ export function AureonGoldCapitalIntelligenceConsole({
     snapshot_age_seconds: liveGoldSource.age_sec ?? liveCapitalProfile.snapshot_age_seconds,
     snapshot_fresh: Boolean(liveGoldSource.ready || liveCapitalProfile.snapshot_fresh),
     market_status: liveCapitalProfile.market_status || (liveGoldSource.ready ? "TRADEABLE" : undefined),
+    minimum_deal_size: liveCapitalProfile.minimum_deal_size ?? summary.minimum_deal_size ?? 0,
   };
   const effectiveFloorEntry = liveGoldSource.reference_price ?? threePFloorGate.entry_level;
   const effectiveMarginEntry = liveGoldSource.reference_price ?? marginSignalIntent.entry_level;

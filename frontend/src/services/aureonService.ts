@@ -62,7 +62,7 @@ interface AureonInput {
 // Generates a sophisticated, "live-like" input feed based on the specified data sources.
 const generateAureonInputFeed = (length: number): AureonInput[] => {
     const data: AureonInput[] = [];
-    let close = 160 + Math.random() * 20;
+    let close = 170;
     let sentiment = 0;
     let policyRate = 0.025;
 
@@ -71,35 +71,25 @@ const generateAureonInputFeed = (length: number): AureonInput[] => {
         const policyCycle = Math.sin(i * Math.PI / 360);
         policyRate = 0.025 + policyCycle * 0.02;
 
-        sentiment += (Math.random() - 0.5) * 0.1 - sentiment * 0.05 + economicCycle * 0.05;
+        sentiment += Math.sin(i / 30) * 0.02 - sentiment * 0.05 + economicCycle * 0.05;
         sentiment = Math.max(-1, Math.min(1, sentiment));
 
-        const volatility = 1 + Math.abs(sentiment) * 1.5 + Math.random() * 0.5;
+        const volatility = 1 + Math.abs(sentiment) * 1.5;
 
         const open = close;
-        let move = (Math.random() - 0.5 + sentiment * 0.2 - (policyRate - 0.025) * 10) * volatility;
+        const move = (Math.sin(i / 11) * 0.5 + sentiment * 0.2 - (policyRate - 0.025) * 10) * volatility;
         
         let dataQuality = 1.0;
-        if (Math.random() < 0.02) { // 2% chance of a major shock event
-            move += (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 20);
-            sentiment = Math.sign(move) * Math.random() * 0.8;
-            dataQuality -= 0.5; // Shock event impacts data integrity
-        }
-        
-        if (Math.random() < 0.05) {
-            dataQuality -= Math.random() * 0.2; // Minor data anomalies
-        }
-
 
         close = Math.max(10, open + move);
-        const high = Math.max(open, close) + Math.random() * volatility * 2;
-        const low = Math.min(open, close) - Math.random() * volatility * 2;
+        const high = Math.max(open, close) + volatility;
+        const low = Math.min(open, close) - volatility;
         
         const baseVolume = 1000000;
         const activityVolume = Math.abs(move) * 200000 + (high - low) * 100000;
-        const volume = baseVolume + activityVolume + Math.random() * 500000;
+        const volume = baseVolume + activityVolume;
         
-        const schumann = 7.83 + Math.sin(i / 10) * 0.5 + (Math.random() - 0.5) * 0.2;
+        const schumann = 7.83 + Math.sin(i / 10) * 0.5;
 
         data.push({ time: i, market: { open, high, low, close, volume }, sentiment, policyRate, schumann, dataQuality });
     }

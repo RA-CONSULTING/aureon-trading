@@ -315,8 +315,9 @@ export function useAureonSession(userId: string | null) {
           reason: result.finalDecision.reason
         });
         
-        // Simulate trade execution for paper trading
-        const pnl = (Math.random() - 0.3) * 50;
+        // No synthetic PnL: keep the trade record neutral until broker/paper
+        // execution returns a real fill and realized/unrealized result.
+        const pnl = 0;
         const newTrade = {
           time: new Date().toLocaleTimeString(),
           side: result.finalDecision.action,

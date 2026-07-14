@@ -17,8 +17,15 @@ from typing import Any, Dict, List
 
 from aureon.operator import keystore
 from aureon.operator.connections_catalog import CATEGORIES, Connection
+from aureon.observer.live_data_policy import simulation_fallback_allowed
+from aureon.observer.real_data_contract import TRUTH_STATUSES, load_source_registry
 
 _RUNTIME_STATUS = Path(__file__).resolve().parents[2] / "state" / "unified_runtime_status.json"
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REAL_SOURCE_PROBE_REPORTS = (
+    _REPO_ROOT / "state" / "real_source_probe.json",
+    _REPO_ROOT / "docs" / "audits" / "aureon_real_source_probe.json",
+)
 
 
 # ── credential presence (keystore first, then env / aliases) ──────────────────
@@ -53,6 +60,50 @@ def _exchange_ready() -> Dict[str, bool]:
         return {k.replace("_ready", ""): bool(v) for k, v in ex.items() if k.endswith("_ready")}
     except Exception:  # noqa: BLE001 — status file optional
         return {}
+
+
+def _real_data_policy_summary() -> Dict[str, Any]:
+    summary: Dict[str, Any] = {
+        "simulation_fallback_allowed": simulation_fallback_allowed(),
+        "truth_statuses": sorted(TRUTH_STATUSES),
+        "source_registry_count": 0,
+        "probe_summary": {
+            "live": 0,
+            "real_derived": 0,
+            "cached_real": 0,
+            "no_data": 0,
+            "test_fixture": 0,
+            "operational_ready": 0,
+            "blocked": 0,
+        },
+        "probe_report_path": "",
+        "probe_report_status": "missing",
+    }
+    try:
+        registry = load_source_registry(_REPO_ROOT)
+        sources = registry.get("sources", {})
+        summary["source_registry_count"] = len(sources) if isinstance(sources, dict) else 0
+    except Exception as exc:  # noqa: BLE001
+        summary["source_registry_error"] = str(exc)[:160]
+
+    for path in _REAL_SOURCE_PROBE_REPORTS:
+        if not path.exists():
+            continue
+        try:
+            report = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+            probe_summary = report.get("summary") if isinstance(report, dict) else {}
+            if isinstance(probe_summary, dict):
+                summary["probe_summary"].update(
+                    {key: int(probe_summary.get(key, 0) or 0) for key in summary["probe_summary"]}
+                )
+            summary["probe_report_path"] = str(path)
+            summary["probe_report_status"] = "loaded"
+            break
+        except Exception as exc:  # noqa: BLE001
+            summary["probe_report_path"] = str(path)
+            summary["probe_report_status"] = f"unreadable:{type(exc).__name__}"
+            break
+    return summary
 
 
 def connection_public(conn: Connection, store: Dict[str, Any], ready: Dict[str, bool]) -> Dict[str, Any]:
@@ -146,6 +197,7 @@ def readiness(llm_providers: List[Dict[str, Any]]) -> Dict[str, Any]:
             "core_ready": req_present == req_total,   # no required gap
             "all_connected": len(missing) == 0,        # true full operational capacity
             "missing_count": len(missing),
+            "real_data_policy": _real_data_policy_summary(),
         },
         "missing": missing,
         "items": items,

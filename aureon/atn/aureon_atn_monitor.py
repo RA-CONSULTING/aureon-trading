@@ -41,6 +41,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
+from aureon.observer.real_data_contract import make_live_metric, make_no_data_metric
+
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -154,6 +156,9 @@ class EarthHazardState:
                 "veto":  v.veto,
                 "alerts":v.alerts[:3],
                 "error": v.error,
+                "truth_status": v.raw.get("real_data", {}).get("truth_status") if isinstance(v.raw, dict) else None,
+                "source_id": v.raw.get("real_data", {}).get("source_id") if isinstance(v.raw, dict) else None,
+                "blocker": v.raw.get("real_data", {}).get("blocker") if isinstance(v.raw, dict) else None,
             } for k, v in self.streams.items()},
         }
 
@@ -172,6 +177,33 @@ def _get(url: str, params: Optional[Dict] = None, timeout: int = 10) -> Any:
                         headers={"User-Agent": "AureonATNMonitor/1.0"})
     resp.raise_for_status()
     return resp.json()
+
+
+def _no_data_stream(
+    name: str,
+    *,
+    source_id: str,
+    source_name: str,
+    source_url: str,
+    blocker: str,
+    score: float = 0.9,
+) -> StreamResult:
+    metric = make_no_data_metric(
+        f"atn.{name}",
+        source_id=source_id,
+        source_name=source_name,
+        source_url=source_url,
+        blocker=blocker,
+        freshness_ttl_sec=_TTL.get(name, 300),
+    )
+    return StreamResult(
+        name=name,
+        score=score,
+        veto=False,
+        alerts=[f"{name} unavailable: {blocker}"],
+        raw={"real_data": metric},
+        error=blocker,
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -431,11 +463,19 @@ def _fetch_space_weather() -> StreamResult:
 def _fetch_wildfires() -> StreamResult:
     """
     NASA FIRMS global active fire count.
-    Uses FIRMS_MAP_KEY env var; falls back to DEMO_KEY.
+    Uses FIRMS_MAP_KEY env var. Missing keys produce a no_data sentinel.
     High count in a trading session = supply chain / energy risk.
     """
     name = "fire"
-    key  = os.getenv("FIRMS_MAP_KEY", "DEMO_KEY")
+    key = os.getenv("FIRMS_MAP_KEY", "").strip()
+    if not key:
+        return _no_data_stream(
+            name,
+            source_id="nasa_firms",
+            source_name="NASA FIRMS Active Fire Data",
+            source_url=_FIRMS_COUNT_URL.format(key="{FIRMS_MAP_KEY}"),
+            blocker="missing_env:FIRMS_MAP_KEY",
+        )
     url  = _FIRMS_COUNT_URL.format(key=key)
     alerts: List[str] = []
     try:
@@ -459,11 +499,27 @@ def _fetch_wildfires() -> StreamResult:
 
         return StreamResult(
             name=name, score=score, veto=False, alerts=alerts,
-            raw={"detection_count": count},
+            raw={
+                "detection_count": count,
+                "real_data": make_live_metric(
+                    "atn.fire.detection_count",
+                    source_id="nasa_firms",
+                    source_name="NASA FIRMS Active Fire Data",
+                    source_url=_FIRMS_COUNT_URL.format(key="{FIRMS_MAP_KEY}"),
+                    value=count,
+                    unit="detections",
+                    freshness_ttl_sec=_TTL[name],
+                ),
+            },
         )
     except Exception as e:
-        return StreamResult(name=name, score=0.9, veto=False, alerts=[],
-                            raw={}, error=str(e))
+        return _no_data_stream(
+            name,
+            source_id="nasa_firms",
+            source_name="NASA FIRMS Active Fire Data",
+            source_url=_FIRMS_COUNT_URL.format(key="{FIRMS_MAP_KEY}"),
+            blocker=f"{type(e).__name__}:{str(e)[:120]}",
+        )
 
 
 def _fetch_neo() -> StreamResult:
@@ -474,7 +530,16 @@ def _fetch_neo() -> StreamResult:
     """
     name = "neo"
     alerts: List[str] = []
-    nasa_key = os.getenv("NASA_API_KEY", "DEMO_KEY")
+    nasa_key = os.getenv("NASA_API_KEY", "").strip()
+    if not nasa_key:
+        return _no_data_stream(
+            name,
+            source_id="nasa_neo",
+            source_name="NASA Near Earth Object Web Service",
+            source_url=_NEO_URL,
+            blocker="missing_env:NASA_API_KEY",
+            score=0.95,
+        )
     today  = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     tmrw   = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
     try:
@@ -512,12 +577,29 @@ def _fetch_neo() -> StreamResult:
 
         return StreamResult(
             name=name, score=score, veto=False, alerts=alerts,
-            raw={"closest_au": round(closest, 6), "neo_count": len(near_earth),
-                 "potentially_hazardous": len(hazardous)},
+            raw={
+                "closest_au": round(closest, 6),
+                "neo_count": len(near_earth),
+                "potentially_hazardous": len(hazardous),
+                "real_data": make_live_metric(
+                    "atn.neo.close_approach",
+                    source_id="nasa_neo",
+                    source_name="NASA Near Earth Object Web Service",
+                    source_url=_NEO_URL,
+                    value={"closest_au": round(closest, 6), "neo_count": len(near_earth)},
+                    freshness_ttl_sec=_TTL[name],
+                ),
+            },
         )
     except Exception as e:
-        return StreamResult(name=name, score=0.95, veto=False, alerts=[],
-                            raw={}, error=str(e))
+        return _no_data_stream(
+            name,
+            source_id="nasa_neo",
+            source_name="NASA Near Earth Object Web Service",
+            source_url=_NEO_URL,
+            blocker=f"{type(e).__name__}:{str(e)[:120]}",
+            score=0.95,
+        )
 
 
 def _fetch_schumann() -> StreamResult:

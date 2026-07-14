@@ -75,5 +75,8 @@ def fallback_marker(source: str, when: Optional[float] = None) -> dict:
     return {
         "source": source,
         "is_live": False,
+        "truth_status": "test_fixture",
+        "is_operational_metric": False,
+        "blocker": "simulation_fallback_enabled",
         "fallback_used_at": float(when) if when is not None else time.time(),
     }
