@@ -64,7 +64,7 @@
     {
       "check": "plan:small-read-readme",
       "ok": true,
-      "detail": "work_orders=['RepoCartographer', 'ImplementationWorker', 'SecurityReviewer']",
+      "detail": "work_orders=['RepoCartographer', 'Research Scout', 'Security Auditor']",
       "critical": true,
       "metrics": {}
     },
@@ -134,7 +134,7 @@
     {
       "check": "plan:small-search-gate",
       "ok": true,
-      "detail": "work_orders=['RepoCartographer', 'SecurityReviewer']",
+      "detail": "work_orders=['RepoCartographer', 'Security Auditor']",
       "critical": true,
       "metrics": {}
     },
@@ -183,7 +183,7 @@
     {
       "check": "plan:medium-study-hnc",
       "ok": true,
-      "detail": "work_orders=['RepoCartographer', 'SecurityReviewer']",
+      "detail": "work_orders=['RepoCartographer', 'Security Auditor']",
       "critical": true,
       "metrics": {}
     },
@@ -225,7 +225,7 @@
     {
       "check": "plan:medium-remember-vault",
       "ok": true,
-      "detail": "work_orders=['RepoCartographer', 'SecurityReviewer']",
+      "detail": "work_orders=['RepoCartographer', 'Security Auditor']",
       "critical": true,
       "metrics": {}
     },
@@ -267,7 +267,7 @@
     {
       "check": "plan:large-fix-test",
       "ok": true,
-      "detail": "work_orders=['RepoCartographer', 'ImplementationWorker', 'SecurityReviewer']",
+      "detail": "work_orders=['RepoCartographer', 'Repo Cartographer', 'Security Auditor']",
       "critical": true,
       "metrics": {}
     },
@@ -517,5 +517,5 @@
       "metrics": {}
     }
   ],
-  "ts": 1784069395.150532
+  "ts": 1784070731.881771
 }
