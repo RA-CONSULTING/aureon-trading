@@ -13,7 +13,17 @@ from __future__ import annotations
 import os
 import tempfile
 
+import pytest
+
 from aureon.core.aureon_thought_bus import Thought, get_thought_bus, payload_of, topic_of
+
+
+@pytest.fixture(autouse=True)
+def _isolate_bus_trace(tmp_path, monkeypatch):
+    # The cross-process bridges (sub-fields, consensus, verdicts) persist to
+    # state/*.jsonl. Give each test its own trace dir so those persistent traces
+    # don't leak between tests — in production this dir is the live shared state.
+    monkeypatch.setenv("AUREON_BUS_TRACE_DIR", str(tmp_path))
 
 
 def _bus():

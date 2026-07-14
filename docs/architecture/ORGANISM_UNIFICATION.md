@@ -158,6 +158,29 @@ pulse — so the live field reaches every process via an artifact that already
 exists. Path overridable with `AUREON_HNC_TRACE_PATH`; guarded and offline-safe.
 This is the bridge that makes the field genuinely whole-organism, not per-process.
 
+### The whole field crosses — one helper, every recall-based signal
+
+The field was the first signal to cross; it was not the only one that needed to.
+Every cross-process signal whose consumer reads via `recall` was silently broken
+at the boundary. `aureon/core/bus_trace.py` generalizes the field's proven,
+**flood-proof** pattern — a *dedicated* per-signal `state/<name>.jsonl` (so a
+high-volume topic elsewhere can never bury it), tail-bounded reads, atomic
+multi-writer appends, `flock`-guarded compaction, guarded/never-raises. Producers
+call `append_trace(name, payload)`; consumers read recall-first and fall back to
+`read_trace`/`read_trace_latest` only when their local bus is empty — so
+in-process behaviour is byte-for-byte unchanged and there is no double-counting.
+
+Three signals now bridge through it:
+
+| Signal | Producer → consumer (process → process) | Effect |
+|--------|------------------------------------------|--------|
+| `local_action_verdict` | grounded gate (OPERATOR) → `hnc_live_daemon._read_action_stats` (HNC) | revives the Λ(t) `local_action` source, which was silently zero-confidence across the boundary |
+| `symbolic_subfield` | Queen engines / consciousness / auris → `read_subfields`→`blend_field` (ORGANISM + operator SaaS) | the whole-body blend now sees cross-process sub-fields, not just same-process ones (newest-per-source; same-process wins on collision) |
+| `organism_consensus` | `organism_daemon.breathe_field` (ORGANISM) → `/api/organism`, `/api/cognition` (OPERATOR) | the consensus heartbeat's age shows in the operator SaaS |
+
+Trace dir overridable with `AUREON_BUS_TRACE_DIR` (isolates tests; the live shared
+`state/` in production).
+
 ## The organism breathes its field
 
 `blend_field` was pull-only — the gate, cognition, and the conscience-fallback each
@@ -181,6 +204,12 @@ dead. It runs in `operator-ci.yml` as a gate, so the wiring can't silently rot a
 
 ## Staged (audited, not this pass)
 
+- **Cross-process bridge for the two `subscribe`-based signals** — `auris.throne.cosmic_state`
+  (dr-auris in ORGANISM → cognition in OPERATOR) and `lighthouse.event` (analytics in a
+  trading/harmonic process → cognition in OPERATOR). Unlike the three now bridged, these
+  consumers use live `subscribe` handlers, not `recall`, so `bus_trace` alone doesn't reach
+  them — they need a small polling reader that tails the trace and re-fires the handler. Not
+  faked this pass (writing a trace no one polls would look connected without being so).
 - **Migrate the remaining private `LambdaEngine` reads onto `read_canonical_field`.**
   The accessor + the daemon's canonical bus field are in place; the six `queen_*`
   modules that spin a private engine purely to read a coherence number can now adopt

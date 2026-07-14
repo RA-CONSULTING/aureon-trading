@@ -195,6 +195,57 @@ def run_audit() -> list[dict]:
                           xf.available and xf.symbolic_life_score == 0.63,
                           f"sls={xf.symbolic_life_score} source={xf.source}", critical=False))
 
+    # Edge 4i–4k — the OTHER cross-process signals bridge via dedicated traces
+    # (generalizing the field bridge): local-action verdicts → Λ source,
+    # sub-fields → whole-body blend, consensus heartbeat → SaaS reader. Each
+    # writes via one path and reads via a FRESH empty bus, proving it crosses a
+    # process boundary. Isolated to a temp trace dir so state/ isn't touched.
+    import os as _osx
+    import tempfile as _tf3
+
+    from aureon.core import bus_trace as _bt
+    from aureon.core.aureon_thought_bus import ThoughtBus as _TB2
+    from aureon.core.hnc_field import publish_subfield as _psf
+    from aureon.core.hnc_field import read_subfields as _rsf
+
+    with _tf3.TemporaryDirectory() as _td:
+        _prevd = _osx.environ.get("AUREON_BUS_TRACE_DIR")
+        _osx.environ["AUREON_BUS_TRACE_DIR"] = _td
+        try:
+            _bt.append_trace("local_action_verdict", {"approved": True, "verdict": "APPROVED"})
+            _bt.append_trace("local_action_verdict", {"approved": False, "verdict": "VETOED"})
+            _la = _bt.read_trace("local_action_verdict", limit=200)
+            results.append(_check("local_action_crosses_process",
+                                  len(_la) == 2 and sum(1 for v in _la if v.get("approved")) == 1,
+                                  f"verdicts={len(_la)} (feeds Λ local_action source)", critical=False))
+
+            class _SF:
+                symbolic_life_score = 0.66
+                coherence_gamma = 1.1
+                consciousness_level = "aware"
+
+            _psf("xproc_producer", _SF(), bus=_TB2(persist_path=None))
+            _subs = _rsf(_TB2(persist_path=None))   # fresh empty bus → reads via trace
+            results.append(_check("subfields_cross_process", "xproc_producer" in _subs,
+                                  f"sources={sorted(_subs.keys())}", critical=False))
+
+            from aureon.saas.cognitive import _consensus_event
+
+            class _CC:
+                def status(self):
+                    return {"coverage_pct": 5.0, "woven": 30, "failed": 2, "baton_linked": 101}
+
+            od.breathe_field({"bus": _TB2(persist_path=None), "connectome": _CC()})
+            _ev = _consensus_event(_TB2(persist_path=None))
+            results.append(_check("consensus_crosses_process",
+                                  _ev is not None and _ev.get("source") == "consensus_trace_file",
+                                  f"source={_ev and _ev.get('source')}", critical=False))
+        finally:
+            if _prevd is None:
+                _osx.environ.pop("AUREON_BUS_TRACE_DIR", None)
+            else:
+                _osx.environ["AUREON_BUS_TRACE_DIR"] = _prevd
+
     # Edge 5 — connectome telemetry: baton ear + pulse + auto-weave
     from aureon.core.aureon_connectome import get_connectome
 
