@@ -1,0 +1,103 @@
+{
+  "name": "aureon-live-multidaemon-benchmark",
+  "schema_version": 1,
+  "wait_s": 18.0,
+  "summary": {
+    "status": "pass",
+    "critical_passed": 5,
+    "critical_total": 5,
+    "informational_passed": 3,
+    "informational_total": 4,
+    "check_count": 9
+  },
+  "checks": [
+    {
+      "check": "daemon_boot",
+      "ok": true,
+      "detail": "launched ['hnc', 'operator', 'organism'] on port 45203",
+      "critical": true,
+      "metrics": {
+        "pids": {
+          "hnc": 14489,
+          "organism": 14490,
+          "operator": 14491
+        }
+      }
+    },
+    {
+      "check": "consensus_breathing",
+      "ok": true,
+      "detail": "consensus age=1.3s (organism daemon breathed)",
+      "critical": true,
+      "metrics": {
+        "age_s": 1.328887939453125
+      }
+    },
+    {
+      "check": "metacognition_selfloop",
+      "ok": true,
+      "detail": "metacognition_monitor sub-field present=True (the daemon read its own signals and looped back); sources=['consciousness_module', 'dr_auris_throne', 'metacognition_monitor']",
+      "critical": true,
+      "metrics": {
+        "subfield_sources": [
+          "consciousness_module",
+          "dr_auris_throne",
+          "metacognition_monitor"
+        ]
+      }
+    },
+    {
+      "check": "operator_pulse",
+      "ok": true,
+      "detail": "/api/pulse served=True",
+      "critical": true,
+      "metrics": {
+        "service": "aureon-operator"
+      }
+    },
+    {
+      "check": "api_metacognition",
+      "ok": true,
+      "detail": "/api/metacognition self_coherence=0.7809 truth=real_derived",
+      "critical": false,
+      "metrics": {
+        "self_coherence": 0.7809,
+        "psi": 0.1
+      }
+    },
+    {
+      "check": "cross_process_field",
+      "ok": false,
+      "detail": "/api/pulse organism.unification.field_flowing=False (informational \u2014 HNC Layer-1 sources degrade offline)",
+      "critical": false,
+      "metrics": {}
+    },
+    {
+      "check": "hnc_field_flowing",
+      "ok": true,
+      "detail": "trace grew 6491\u21929812 bytes; last sls=0.5769037212128891",
+      "critical": false,
+      "metrics": {
+        "sls": 0.5769037212128891
+      }
+    },
+    {
+      "check": "flight_check",
+      "ok": true,
+      "detail": "standing-wave health=0.1094",
+      "critical": false,
+      "metrics": {
+        "health": 0.1094
+      }
+    },
+    {
+      "check": "saas_compliance",
+      "ok": true,
+      "detail": "15/15 checks; 0 required failures",
+      "critical": true,
+      "metrics": {
+        "checks": 15
+      }
+    }
+  ]
+}

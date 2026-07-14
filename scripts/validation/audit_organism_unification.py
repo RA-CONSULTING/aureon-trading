@@ -305,6 +305,34 @@ def run_audit() -> list[dict]:
         f"surfaces={sorted(surfaces)} operational_ready={cog.get('operational_ready')} "
         f"blocked={cog.get('blocked')} provenance={has_prov}", critical=False))
 
+    # Edge 7 — the organism senses itself and loops back: the metacognition
+    # monitor reads its own signals, scores self-coherence with the Λ(t−τ)
+    # machinery, and republishes it as a sub-field (the self-term at the organism
+    # layer), exactly like the HNC research's delayed feedback.
+    import os as _osm
+    import tempfile as _tf5
+    from pathlib import Path as _Path
+
+    from aureon.core.hnc_field import read_subfields as _rsf_m
+    from aureon.core.metacognition_monitor import MetacognitionMonitor as _MM
+
+    with _tf5.TemporaryDirectory() as _tdm:
+        _pv, _lv = _osm.environ.get("AUREON_BUS_TRACE_DIR"), _osm.environ.get("AUREON_METACOG_LAMBDA_PATH")
+        _osm.environ["AUREON_BUS_TRACE_DIR"] = _tdm
+        _osm.environ["AUREON_METACOG_LAMBDA_PATH"] = str(_Path(_tdm) / "l.json")
+        try:
+            _sa = _MM().reflect()
+            _looped = "metacognition_monitor" in _rsf_m(bus)
+            results.append(_check("metacognition_selfloop", _looped,
+                                  f"looped_back={_looped} self_coherence={_sa.self_coherence} "
+                                  f"available={_sa.available}", critical=False))
+        finally:
+            for _k, _val in (("AUREON_BUS_TRACE_DIR", _pv), ("AUREON_METACOG_LAMBDA_PATH", _lv)):
+                if _val is None:
+                    _osm.environ.pop(_k, None)
+                else:
+                    _osm.environ[_k] = _val
+
     return results
 
 

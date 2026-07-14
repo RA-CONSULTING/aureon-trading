@@ -1,0 +1,17 @@
+# Live Multi-Daemon Benchmark
+
+**Status:** pass · 5/5 critical · 3/4 informational
+
+Boots the three supervisord daemons as separate processes and verifies the organism senses itself across the process boundary — including the metacognition self-loop.
+
+| Check | Tier | Result | Detail |
+|-------|------|--------|--------|
+| daemon_boot | critical | ✅ | launched ['hnc', 'operator', 'organism'] on port 45203 |
+| consensus_breathing | critical | ✅ | consensus age=1.3s (organism daemon breathed) |
+| metacognition_selfloop | critical | ✅ | metacognition_monitor sub-field present=True (the daemon read its own signals and looped back); sources=['consciousness_module', 'dr_auris_throne', 'metacognition_monitor'] |
+| operator_pulse | critical | ✅ | /api/pulse served=True |
+| api_metacognition | info | ✅ | /api/metacognition self_coherence=0.7809 truth=real_derived |
+| cross_process_field | info | ⚠️ | /api/pulse organism.unification.field_flowing=False (informational — HNC Layer-1 sources degrade offline) |
+| hnc_field_flowing | info | ✅ | trace grew 6491→9812 bytes; last sls=0.5769037212128891 |
+| flight_check | info | ✅ | standing-wave health=0.1094 |
+| saas_compliance | critical | ✅ | 15/15 checks; 0 required failures |

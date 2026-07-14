@@ -1,0 +1,104 @@
+{
+  "name": "aureon-saas-compliance-audit",
+  "schema_version": 1,
+  "objective": "every SaaS surface serves honest, provenance-stamped, non-fabricated data",
+  "summary": {
+    "compliance_status": "compliant",
+    "check_count": 15,
+    "passed": 15,
+    "failed": 0,
+    "failed_required": 0
+  },
+  "checks": [
+    {
+      "check": "stamped:/api/status",
+      "ok": true,
+      "detail": "provenance=True truth_status=live",
+      "required": true
+    },
+    {
+      "check": "stamped:/api/organism",
+      "ok": true,
+      "detail": "provenance=True truth_status=live",
+      "required": true
+    },
+    {
+      "check": "stamped:/api/metacognition",
+      "ok": true,
+      "detail": "provenance=True truth_status=real_derived",
+      "required": true
+    },
+    {
+      "check": "stamped:/api/catalog",
+      "ok": true,
+      "detail": "provenance=True truth_status=real_derived",
+      "required": true
+    },
+    {
+      "check": "stamped:/api/domains",
+      "ok": true,
+      "detail": "provenance=True truth_status=real_derived",
+      "required": true
+    },
+    {
+      "check": "stamped:/api/cognition",
+      "ok": true,
+      "detail": "surfaces=['brain', 'bus', 'connectome', 'field', 'mycelium'] all_stamped=True",
+      "required": true
+    },
+    {
+      "check": "stamped:/api/cognition/field",
+      "ok": true,
+      "detail": "truth_status=cached_real",
+      "required": false
+    },
+    {
+      "check": "stamped:/api/cognition/bus",
+      "ok": true,
+      "detail": "truth_status=live",
+      "required": false
+    },
+    {
+      "check": "stamped:/api/cognition/mycelium",
+      "ok": true,
+      "detail": "truth_status=live",
+      "required": false
+    },
+    {
+      "check": "stamped:/api/cognition/connectome",
+      "ok": true,
+      "detail": "truth_status=live",
+      "required": false
+    },
+    {
+      "check": "stamped:/api/cognition/brain",
+      "ok": true,
+      "detail": "truth_status=real_derived",
+      "required": false
+    },
+    {
+      "check": "catalog_honest",
+      "ok": true,
+      "detail": "category_count=12 unique_total=1315 \u03a3categories=3639",
+      "required": true
+    },
+    {
+      "check": "charge_fee_disabled",
+      "ok": true,
+      "detail": "status=403 (expected 403 when AUREON_BILLING_CHARGE_ENABLED unset)",
+      "required": true
+    },
+    {
+      "check": "provenance_reflects_policy",
+      "ok": true,
+      "detail": "sim_fallback=False",
+      "required": true
+    },
+    {
+      "check": "saas_no_fabrication",
+      "ok": true,
+      "detail": "clean",
+      "required": true
+    }
+  ]
+}
