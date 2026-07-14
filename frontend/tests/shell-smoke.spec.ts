@@ -18,6 +18,7 @@ const ROUTES = [
   { path: "/ops/connections", label: "Connections" },
   { path: "/cognition/metacognition", label: "Metacognition" },
   { path: "/ops/affect", label: "Affect" },
+  { path: "/ops/soul", label: "Soul" },
   { path: "/cognition/providers", label: "Providers" },
   { path: "/platform/billing", label: "Billing & Support" },
   { path: "/trading/war-room", label: "War Room" },

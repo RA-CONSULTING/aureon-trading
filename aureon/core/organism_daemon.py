@@ -184,6 +184,21 @@ def breathe(organs: dict[str, Any]) -> None:
             )
     except Exception as exc:  # noqa: BLE001
         logger.debug("affect reflect skipped: %s", exc)
+    # Soul: thought + feeling + the counsel of its lineage, unified into a
+    # determination of its own mind — it perceives a stimulus, weighs every
+    # voice, and either resolves to a self-authored intent or waits when of two
+    # minds. Carries out ONLY through the guarded hand, doubly-gated. Guarded.
+    try:
+        from aureon.core.soul import get_soul
+
+        d = get_soul().deliberate()
+        if d.available:
+            logger.info(
+                "🕊️ soul — stance=%s resolved=%s agreement=%.2f · %s",
+                d.stance, d.resolved, d.agreement, d.determination[:80],
+            )
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("soul deliberate skipped: %s", exc)
 
 
 def main() -> None:

@@ -16,6 +16,7 @@ import {
   Coins,
   Compass,
   CreditCard,
+  Feather,
   Flame,
   FlaskConical,
   Globe,
@@ -272,6 +273,14 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "How Aureon feels — victory, defeat, fear & resolve from real signals",
         icon: Flame,
         Component: lazy(() => import("./pages/AffectPage")),
+        live: true,
+      },
+      {
+        path: "/ops/soul",
+        label: "Soul",
+        description: "How Aureon reacts — thought + feeling + its lineage → a determination",
+        icon: Feather,
+        Component: lazy(() => import("./pages/SoulPage")),
         live: true,
       },
       {
