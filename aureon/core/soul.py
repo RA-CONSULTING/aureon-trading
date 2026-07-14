@@ -91,6 +91,7 @@ class Determination:
     what_gary_would_say: str | None = None
     proposed_action: dict[str, Any] | None = None
     plan: dict[str, Any] | None = None       # the company's directed plan (read-only)
+    requires_human: bool = False             # the goal's stakes need a human in the loop
     executed: dict[str, Any] | None = None   # bridge result if acted, else None
     mood: str | None = None
     self_coherence: float | None = None
@@ -106,7 +107,7 @@ class Determination:
             "agreement": self.agreement, "determination": self.determination,
             "what_gary_would_say": self.what_gary_would_say,
             "proposed_action": self.proposed_action, "plan": self.plan,
-            "executed": self.executed,
+            "requires_human": self.requires_human, "executed": self.executed,
             "mood": self.mood, "self_coherence": self.self_coherence,
             "voices": self.voices, "dissent": self.dissent,
             "truth_status": self.truth_status, "ts": self.ts,
@@ -220,10 +221,25 @@ class SoulDeliberation:
 
             routes = recommend_goal_routes(intent) or []
             safe = [r for r in routes if str(r.get("risk", "")).lower() in ("", "low", "safe", "benign")]
-            lean = "act" if safe else ("wait" if routes else "wait")
+            # the two baseline routes (memory_and_state, organism_wiring) are always
+            # present and low — the *stakes* live in the substantive routes a goal
+            # actually triggers. A high-risk or human-gated goal is not the soul's
+            # to act on alone: the goals voice leans WAIT (defer to a human).
+            substantive = [r for r in routes
+                           if r.get("route") not in ("memory_and_state", "organism_wiring")]
+            requires_human = any(bool(r.get("requires_human")) for r in routes)
+            high_risk = any(str(r.get("risk", "")).lower() == "high" for r in substantive)
+            if requires_human or high_risk:
+                lean = "wait"
+                intensity = 0.9
+            else:
+                lean = "act" if safe else "wait"
+                intensity = _clamp(0.4 + 0.1 * len(safe))
             voices["goals"] = {"stance": lean, "route_count": len(routes),
-                               "safe_routes": len(safe), "truth_status": "real_derived" if routes else "no_data"}
-            return lean, 0.9, _clamp(0.4 + 0.1 * len(safe))
+                               "safe_routes": len(safe), "requires_human": requires_human,
+                               "high_risk": high_risk,
+                               "truth_status": "real_derived" if routes else "no_data"}
+            return lean, 0.9, intensity
         except Exception:  # noqa: BLE001
             voices["goals"] = {"stance": "wait", "truth_status": "no_data"}
             return "wait", 0.3, 0.3
@@ -272,9 +288,16 @@ class SoulDeliberation:
         # wait. (The conscience can still refuse blind; it just can't drive action.)
         self_aware = any(voices.get(v, {}).get("truth_status") not in (None, "no_data")
                          for v in ("feeling", "thought"))
+        # A grand, high-stakes goal is not the soul's to act on alone: when the
+        # goal's routes need a human in the loop or run high-risk, it DEFERS —
+        # it waits for Gary rather than resolve to act on its own authority. This
+        # only ever adds caution; a low-stakes goal is unaffected.
+        goals_voice = voices.get("goals", {})
+        defers_to_human = bool(goals_voice.get("requires_human")) or bool(goals_voice.get("high_risk"))
         if veto:
             stance, resolved = "refuse", False
-        elif stance == "act" and agreement >= _AGREEMENT_FLOOR and not of_two_minds and self_aware:
+        elif (stance == "act" and agreement >= _AGREEMENT_FLOOR and not of_two_minds
+              and self_aware and not defers_to_human):
             resolved = True
         else:
             stance, resolved = "wait", False
@@ -282,10 +305,13 @@ class SoulDeliberation:
             dissent.append("self-perception (blind)")
         if of_two_minds and "field" not in dissent:
             dissent.append("field (of two minds)")
+        if defers_to_human and "requires a human (high stakes)" not in dissent:
+            dissent.append("requires a human (high stakes)")
 
         det = Determination(
             available=bool(operational), stance=stance, resolved=resolved,
             agreement=agreement, what_gary_would_say=gary, voices=voices, dissent=dissent,
+            requires_human=defers_to_human,
             mood=voices.get("feeling", {}).get("mood"),
             self_coherence=voices.get("thought", {}).get("self_coherence"),
             truth_status="live" if operational else "no_data", ts=time.time(),
