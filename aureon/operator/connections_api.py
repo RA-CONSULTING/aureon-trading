@@ -15,10 +15,10 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List
 
-from aureon.operator import keystore
-from aureon.operator.connections_catalog import CATEGORIES, Connection
 from aureon.observer.live_data_policy import simulation_fallback_allowed
 from aureon.observer.real_data_contract import TRUTH_STATUSES, load_source_registry
+from aureon.operator import keystore
+from aureon.operator.connections_catalog import CATEGORIES, Connection
 
 _RUNTIME_STATUS = Path(__file__).resolve().parents[2] / "state" / "unified_runtime_status.json"
 _REPO_ROOT = Path(__file__).resolve().parents[2]
