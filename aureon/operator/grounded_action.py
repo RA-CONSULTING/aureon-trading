@@ -124,22 +124,16 @@ class GroundedActionGate:
             "symbolic_life_score": None, "coherence_gamma": None,
             "cosmic_score": None, "gate_open": None, "available": False,
         }
-        # symbolic_life_score / Γ from the latest symbolic.life.pulse on the bus.
-        # Use recall(topic_prefix) — it filters by topic first, so high-volume
-        # traffic (baton.link floods, etc.) can never evict the pulse from a
-        # fixed recency window. payload_of reads the to_json DICT recall returns.
+        # symbolic_life_score / Γ from the one canonical field (read via the
+        # shared accessor — single source of truth, flood-proof).
         try:
-            if self._bus is not None and hasattr(self._bus, "recall"):
-                from aureon.core.aureon_thought_bus import payload_of
+            from aureon.core.hnc_field import read_canonical_field
 
-                pulses = self._bus.recall("symbolic.life.pulse", limit=1) or []
-                if pulses:
-                    payload = payload_of(pulses[-1])
-                    sls = payload.get("symbolic_life_score")
-                    if sls is not None:
-                        out["symbolic_life_score"] = float(sls)
-                        out["coherence_gamma"] = payload.get("coherence_gamma")
-                        out["available"] = True
+            field = read_canonical_field(self._bus)
+            if field.available:
+                out["symbolic_life_score"] = field.symbolic_life_score
+                out["coherence_gamma"] = field.coherence_gamma
+                out["available"] = True
         except Exception as exc:  # noqa: BLE001
             logger.debug("HNC pulse read skipped: %s", exc)
         # Dr Auris advisory gate

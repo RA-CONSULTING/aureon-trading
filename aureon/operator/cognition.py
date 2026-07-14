@@ -403,18 +403,17 @@ class AureonCognition:
         """The live cache, backfilled from the bus ring buffer so a fresh
         cognition (no subscription history yet) still senses the current field."""
         state = dict(self._organism)
-        # recall(topic_prefix) filters by topic, so a flood of other traffic
-        # (baton.link heartbeats, etc.) can't evict the pulse from a recency
-        # window — a plain get_recent scan silently misses it under load.
-        if "symbolic_life_score" not in state and self.bus is not None and payload_of is not None:
+        # Backfill the field from the one canonical accessor (shared source of
+        # truth, flood-proof) so a fresh cognition still senses it before any
+        # subscription has fired.
+        if "symbolic_life_score" not in state:
             try:
-                if hasattr(self.bus, "recall"):
-                    pulses = self.bus.recall("symbolic.life.pulse", limit=1) or []
-                    if pulses:
-                        p = payload_of(pulses[-1])
-                        if p.get("symbolic_life_score") is not None:
-                            state["symbolic_life_score"] = p["symbolic_life_score"]
-                            state.setdefault("coherence_gamma", p.get("coherence_gamma"))
+                from aureon.core.hnc_field import read_canonical_field
+
+                field = read_canonical_field(self.bus)
+                if field.available:
+                    state["symbolic_life_score"] = field.symbolic_life_score
+                    state.setdefault("coherence_gamma", field.coherence_gamma)
             except Exception as exc:  # noqa: BLE001
                 logger.debug("organism backfill skipped: %s", exc)
         return state

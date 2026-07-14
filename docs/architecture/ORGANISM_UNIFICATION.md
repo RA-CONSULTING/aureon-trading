@@ -77,11 +77,27 @@ status read never boots it).
 | `AUREON_CONNECTOME_WEAVE_BATCH` | 10 | modules woven per sweep cycle |
 | `AUREON_CONNECTOME_SWEEP` | on | the progressive body sweep |
 
+## The canonical field accessor
+
+`aureon/core/hnc_field.py` — `read_canonical_field(bus=None) -> CanonicalField` — is
+the single place to READ the shared field. The gate, cognition, and the conscience's
+`_current_sls` all funnel through it (one flood-proof `recall`-based read instead of
+three copies), so a system that only wants "the current shared coherence" reads the
+one canonical value instead of spinning a private `LambdaEngine`.
+
+## Continuous audit
+
+`scripts/validation/audit_organism_unification.py` exercises every revived edge
+(canonical field, flood-proofing, gate sensing, mesh delivery, lighthouse→bus,
+connectome baton-ear/pulse/auto-weave) and exits non-zero if a critical edge is
+dead. It runs in `operator-ci.yml` as a gate, so the wiring can't silently rot again.
+
 ## Staged (audited, not this pass)
 
-- **Reconcile the 13 disjoint `LambdaEngine` instances** into one shared field
-  object. This pass makes the daemon's field canonical on the bus and has the key
-  consumers read it; the rest keep private engines until migrated.
+- **Migrate the remaining private `LambdaEngine` reads onto `read_canonical_field`.**
+  The accessor + the daemon's canonical bus field are in place; the six `queen_*`
+  modules that spin a private engine purely to read a coherence number can now adopt
+  the shared read incrementally (kept private for now to avoid a large touch).
 - **`auris.consensus` on the bus** — needs a running voter with a populated vault
   (no live caller today; publishing from an empty vault would fabricate a signal).
 - **Dormant `wire_*` hand-additions** — superseded by connectome auto-weave.

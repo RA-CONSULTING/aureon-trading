@@ -248,7 +248,7 @@ class QueenConscience:
                     return float(sls)
                 except (TypeError, ValueError):
                     pass
-        # 3. Latest bus pulse
+        # 3. Latest bus pulse (this conscience's own subscription cache)
         if self._latest_sls_pulse:
             sls = self._latest_sls_pulse.get("symbolic_life_score")
             if sls is not None:
@@ -256,6 +256,17 @@ class QueenConscience:
                     return float(sls)
                 except (TypeError, ValueError):
                     pass
+        # 4. The one canonical field — a flood-proof bus read, so a conscience
+        # constructed after the pulse (or whose subscription missed it) still
+        # sees the live field instead of degrading to "unknown".
+        try:
+            from aureon.core.hnc_field import read_canonical_field
+
+            field = read_canonical_field()
+            if field.available and field.symbolic_life_score is not None:
+                return float(field.symbolic_life_score)
+        except Exception:  # noqa: BLE001
+            pass
         return None
 
     # HNC stability-island thresholds. The white paper's Tree of Light

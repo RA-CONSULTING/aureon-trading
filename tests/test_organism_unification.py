@@ -31,6 +31,29 @@ def test_topic_and_payload_accessors_handle_both_shapes():
     assert payload_of(obj)["k"] == 1 and payload_of(dct)["k"] == 1
 
 
+# ── the canonical field accessor (single source of truth) ───────────────────
+
+def test_canonical_field_reads_the_shared_pulse():
+    from aureon.core.hnc_field import read_canonical_field
+
+    b = _bus()
+    b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
+                      payload={"symbolic_life_score": 0.33, "coherence_gamma": 0.7,
+                               "source": "unit"}))
+    field = read_canonical_field(b)
+    assert field.available and field.symbolic_life_score == 0.33
+    assert field.coherence_gamma == 0.7 and field.source == "unit"
+
+
+def test_canonical_field_unavailable_without_pulse():
+    from aureon.core.aureon_thought_bus import ThoughtBus
+    from aureon.core.hnc_field import read_canonical_field
+
+    empty = ThoughtBus(persist_path=None)
+    field = read_canonical_field(empty)
+    assert field.available is False and field.symbolic_life_score is None
+
+
 # ── keystone: publish → read the live field, flood-proof ─────────────────────
 
 def test_grounded_gate_reads_live_field_under_flood():
