@@ -369,11 +369,13 @@ def run_audit() -> list[dict]:
     from aureon.core.aureon_thought_bus import Thought as _Th
 
     with _tf5.TemporaryDirectory() as _tds:
-        _keys = ("AUREON_BUS_TRACE_DIR", "AUREON_AFFECT_LAMBDA_PATH", "AUREON_METACOG_LAMBDA_PATH")
+        _keys = ("AUREON_BUS_TRACE_DIR", "AUREON_AFFECT_LAMBDA_PATH", "AUREON_METACOG_LAMBDA_PATH",
+                 "AUREON_INNER_WORK_LAMBDA_PATH")
         _saved = {k: _osm.environ.get(k) for k in _keys}
         _osm.environ["AUREON_BUS_TRACE_DIR"] = _tds
         _osm.environ["AUREON_AFFECT_LAMBDA_PATH"] = str(_Path(_tds) / "al.json")
         _osm.environ["AUREON_METACOG_LAMBDA_PATH"] = str(_Path(_tds) / "ml.json")
+        _osm.environ["AUREON_INNER_WORK_LAMBDA_PATH"] = str(_Path(_tds) / "iw.json")
         try:
             bus.publish(_Th(source="hnc", topic="symbolic.life.pulse",
                             payload={"symbolic_life_score": 0.8, "coherence_gamma": 0.8,
@@ -434,6 +436,24 @@ def run_audit() -> list[dict]:
                 _grand.stance == "wait" and bool(_grand.to_dict().get("requires_human")),
                 f"benign={_benign.stance} grand={_grand.stance} "
                 f"grand_requires_human={_grand.to_dict().get('requires_human')}", critical=False))
+
+            # Edge 12 — the inner work: on a coherent field the soul believes in
+            # itself and rises the ascent (earning centres), and reflect() folds the
+            # inner_work sub-field back into the whole-body blend (the HNC loop).
+            import aureon.core.inner_work as _iwmod
+            from aureon.core.hnc_field import read_subfields as _rsf
+
+            _iwmod._monitor = None
+            _iw = _iwmod.InnerWork().assess()
+            results.append(_check(
+                "inner_work_ascends",
+                _iw.available and _iw.stage_index >= 1 and 0.0 < _iw.potential <= 1.0,
+                f"belief={_iw.self_belief} stage={_iw.stage} {_iw.stage_index}/7 "
+                f"potential={_iw.potential}", critical=False))
+            _iwmod.InnerWork().reflect()
+            results.append(_check(
+                "inner_work_selfloop", "inner_work" in _rsf(bus),
+                f"subfields={sorted(_rsf(bus).keys())}", critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:
