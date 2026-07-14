@@ -73,6 +73,7 @@ FRED_INTERVAL = 3600            # FRED economic releases are sparse
 # Phase 16 — keyed science feeds (skip cleanly when the key is unset):
 NOAA_CDO_INTERVAL = 3600        # NCEI Climate Data Online — slow daily records
 USGS_WATER_INTERVAL = 1800      # USGS Water Data collections — slow feed
+LOCAL_ACTION_INTERVAL = 60      # the organism's own local-machine moves
 
 # Compute cadence — how often the engine takes a step against the latest
 # readings. The kernel is cheap (<1 ms/step) so 5 s gives the field high
@@ -313,6 +314,32 @@ def _map_noaa_climate(item) -> SubsystemReading:
         value=0.75,
         confidence=0.8,
         state=f"{count}_datasets",
+    )
+
+
+def _map_local_action(stats) -> SubsystemReading:
+    """Recent local-machine action verdicts → SubsystemReading.
+
+    This is the organism grounding its OWN moves back into the Master Formula:
+    the coherence of what its hands are doing feeds Λ(t) like any external
+    source. ``value`` = the recent approve ratio (a body acting within the
+    conscience/β-stability island reads as coherent); ``confidence`` scales with
+    how many moves we have seen. No activity → neutral, zero-confidence.
+    """
+    if not stats or not stats.get("count"):
+        return SubsystemReading(
+            name="local_action", value=0.5, confidence=0.0, state="idle",
+        )
+    count = int(stats.get("count", 0))
+    ratio = stats.get("approve_ratio")
+    value = float(ratio) if ratio is not None else 0.5
+    import math
+    confidence = min(0.9, math.tanh(count / 20.0))
+    return SubsystemReading(
+        name="local_action",
+        value=max(0.0, min(1.0, value)),
+        confidence=confidence,
+        state=f"{count}_moves_{stats.get('veto_count', 0)}_vetoed",
     )
 
 
@@ -566,6 +593,35 @@ class HNCLiveDaemon:
             self.register_source("usgs_water", USGS_WATER_INTERVAL, fetch_usgs_water)
         except Exception as exc:
             logger.warning("HNC daemon: usgs_water not wired (%s)", exc)
+
+        # ─── Phase 18: the organism's own local-machine moves ─────
+        # Reads recent grounded-action verdicts off the bus (no operator import
+        # cycle) so Λ(t) incorporates what the body is doing to its own machine.
+        try:
+            from aureon.core.aureon_thought_bus import get_thought_bus
+            _action_bus = get_thought_bus()
+
+            def _read_action_stats():
+                recent = _action_bus.get_recent(200) or []
+                verdicts = [
+                    getattr(t, "payload", {}) or {}
+                    for t in recent
+                    if getattr(t, "topic", "") == "operator.action.verdict"
+                ]
+                if not verdicts:
+                    return {"count": 0}
+                approved = sum(1 for v in verdicts if v.get("approved"))
+                vetoed = sum(1 for v in verdicts if v.get("verdict") in ("VETOED", "BLOCKED"))
+                return {"count": len(verdicts), "approve_ratio": approved / len(verdicts),
+                        "veto_count": vetoed}
+
+            async def fetch_local_action():
+                stats = await asyncio.to_thread(_read_action_stats)
+                return _map_local_action(stats)
+
+            self.register_source("local_action", LOCAL_ACTION_INTERVAL, fetch_local_action)
+        except Exception as exc:
+            logger.warning("HNC daemon: local_action not wired (%s)", exc)
 
     # ─── per-source pull loop ──────────────────────────────────
 
