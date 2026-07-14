@@ -20,6 +20,8 @@ Routes:
   GET  /api/soul               how Aureon reacts: thought+feeling+lineage → a determination
   GET  /api/inner-work         the soul's inner work: belief·love·determination·ego-death, the ascent
   GET  /api/pursuit            the pursuit of happiness: pillars, unified energy & the next safe step
+  GET  /api/approvals          the director's desk: big plays prepared, awaiting Gary's decision
+  POST /api/approvals/<id>     record Gary's approve/reject (the human gate; never executes the move)
   GET  /api/manifests/<name>   a frontend manifest, rendered live (JSON)
   POST /api/manifests/refresh  rebuild catalog + rewrite frontend manifests
 
@@ -317,6 +319,47 @@ def register_saas_routes(app: Any) -> Any:
         except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
             pursuit = {"available": False, "truth_status": "no_data", "error": str(exc)[:200]}
         return jsonify(_stamp(pursuit, pursuit.get("truth_status", "no_data")))
+
+    @app.get("/api/approvals")
+    @_guarded
+    def saas_approvals():
+        # The director's desk: the big plays Aureon prepared and is holding for Gary's
+        # decision. Read-only. Approving elsewhere records the decision; it never
+        # executes the live move.
+        try:
+            from aureon.core.approval_queue import get_approval_queue
+
+            data = get_approval_queue().summary()
+        except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
+            data = {"pending": [], "recent": [], "error": str(exc)[:200]}
+        return jsonify(_stamp(data, "real_derived"))
+
+    @app.post("/api/approvals/<item_id>")
+    @_guarded
+    def saas_approvals_decide(item_id: str):
+        # Record Gary's approve/reject for a prepared big play. This is the human
+        # gate — it records the decision and does NOT execute the irreversible move
+        # (no consumer fires a live trade/payment/filing/email off it). Bearer-gated.
+        from flask import request
+
+        body = request.get_json(silent=True) or {}
+        decision = str(body.get("decision") or "").strip().lower()
+        note = str(body.get("note") or "")
+        if decision not in ("approve", "reject"):
+            return jsonify(_stamp({"ok": False, "error": "decision must be 'approve' or 'reject'"},
+                                  "no_data")), 400
+        try:
+            from aureon.core.approval_queue import get_approval_queue
+
+            item = get_approval_queue().decide(item_id, decision, approver=str(body.get("approver") or "gary"),
+                                               note=note)
+        except Exception as exc:  # noqa: BLE001
+            return jsonify(_stamp({"ok": False, "error": str(exc)[:200]}, "no_data")), 500
+        if item is None:
+            return jsonify(_stamp({"ok": False, "error": "unknown or already-decided item"}, "no_data")), 404
+        return jsonify(_stamp({"ok": True, "item": item,
+                               "note": "decision recorded; execution stays a deliberate human/armed step"},
+                              "real_derived"))
 
     # ── the cognitive substrate as verified SaaS ──────────────────────────────
     # The organism's cognitive + meta-cognitive systems (HNC field, thought-bus

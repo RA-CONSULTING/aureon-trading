@@ -60,6 +60,25 @@ def _truthy(name: str) -> bool:
     return str(os.environ.get(name, "") or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+# classify a high-stakes intent for the director's desk (best-effort labelling only)
+_APPROVAL_KINDS: list[tuple[str, tuple[str, ...]]] = [
+    ("trade", ("trade", "buy", "sell", "position", "margin", "order", "exchange", "kraken")),
+    ("payment", ("pay", "payment", "transfer", "withdraw", "send money", "wire", "invoice")),
+    ("grant", ("grant", "application", "apply for")),
+    ("filing", ("hmrc", "companies house", "vat", "tax", "file ", "filing", "submit")),
+    ("email", ("email", "reply to", "send an email", "message")),
+    ("deal", ("deal", "contract", "sign", "accept the")),
+]
+
+
+def _approval_kind(text: str) -> str:
+    low = str(text or "").lower()
+    for kind, words in _APPROVAL_KINDS:
+        if any(w in low for w in words):
+            return kind
+    return "other"
+
+
 def _clamp(x: float, lo: float = 0.0, hi: float = 1.0) -> float:
     try:
         return max(lo, min(hi, float(x)))
@@ -429,12 +448,34 @@ class SoulDeliberation:
             stimulus = self._perceive()
             det = self.assess(stimulus)
             det.executed = self._carry_out(det)
+            self._surface_for_approval(det, stimulus)
             self._record(det)
             self._publish(det)
             return det
         except Exception as exc:  # noqa: BLE001
             logger.debug("deliberate failed: %s", exc)
             return Determination(available=False, truth_status="no_data", ts=time.time())
+
+    def _surface_for_approval(self, det: Determination, stimulus: dict[str, Any] | None) -> None:
+        """A high-stakes move the soul defers to a human is no longer a silent wait —
+        it is PREPARED and placed on the director's desk for Gary to approve. Recording
+        the proposal never executes it; the irreversible step stays Gary's hand.
+        Only from the breath, only for a concrete actionable stimulus."""
+        if not (det.requires_human and stimulus is not None):
+            return
+        text = str(stimulus.get("text") or stimulus.get("intent") or "").strip()
+        if not text:
+            return
+        try:
+            from aureon.core.approval_queue import get_approval_queue
+
+            get_approval_queue().propose(
+                kind=_approval_kind(text), summary=det.determination or text,
+                params={"stimulus": stimulus, "proposed_action": det.proposed_action,
+                        "plan": det.plan, "dissent": det.dissent},
+                prepared_by="soul", risk="high")
+        except Exception as exc:  # noqa: BLE001 — the desk never crashes the soul
+            logger.debug("surface_for_approval skipped: %s", exc)
 
     def _carry_out(self, det: Determination) -> dict[str, Any] | None:
         """Carry the determination out — the company DIRECTS its plan of role-assigned
