@@ -232,6 +232,21 @@ def breathe(organs: dict[str, Any]) -> None:
             )
     except Exception as exc:  # noqa: BLE001
         logger.debug("soul deliberate skipped: %s", exc)
+    # The director's email loop (opt-in, owner-scoped): mail Gary any big plays the
+    # soul has prepared and is holding, and read his replies as approve/reject —
+    # recording the decision only, never executing. No-op unless AUREON_APPROVAL_EMAIL
+    # + owner creds are set. Guarded.
+    try:
+        from aureon.operator.approval_email import get_approval_email
+
+        ae = get_approval_email()
+        if ae.enabled:
+            sent = ae.notify_pending()
+            applied = ae.ingest_replies()
+            if sent or applied:
+                logger.info("📬 approvals — notified=%d decisions=%d", sent, len(applied))
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("approval email loop skipped: %s", exc)
 
 
 def main() -> None:
