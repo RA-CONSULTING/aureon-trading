@@ -53,8 +53,37 @@ _ADAPTERS: Dict[str, Tuple[str, str, str]] = {
 }
 
 
+# The cognitive substrate's read accessors — the systems the Cognitive SaaS
+# surface (``/api/cognition``) exposes. Unlike ``_ADAPTERS`` (one entry point per
+# filesystem domain), these are the individual read accessors that span core/utils,
+# so they live in their own registry: surface → (module, accessor, backing_note).
+COGNITIVE_SURFACES: Dict[str, Tuple[str, str, str]] = {
+    "field": ("aureon.core.hnc_field", "read_canonical_field", "canonical HNC field + sub-fields + blend"),
+    "bus": ("aureon.core.aureon_thought_bus", "get_thought_bus", "thought-bus topic links + subscribers"),
+    "mycelium": ("aureon.core.aureon_mycelium", "get_mycelium", "mesh coherence + hives + connected systems"),
+    "connectome": ("aureon.core.aureon_connectome", "get_connectome", "body-map coverage + node roll-up"),
+    "brain": ("aureon.saas.cognitive", "brain_surface", "miner-brain accuracy + knowledge (file-read shim)"),
+}
+
+
 def product_domain_for(fs_domain: str) -> str:
     return _FS_TO_PRODUCT.get(fs_domain, "self-improvement")
+
+
+def cognitive_surface_report() -> List[Dict[str, object]]:
+    """Import-reachability of each cognitive surface's backing accessor — the
+    catalog view of the Cognitive SaaS surface (cheap ``find_spec``, no
+    construction)."""
+    report: List[Dict[str, object]] = []
+    for surface, (module, accessor, note) in COGNITIVE_SURFACES.items():
+        report.append({
+            "surface": surface,
+            "product_domain": "cognition",
+            "accessor": f"{module}:{accessor}",
+            "note": note,
+            "available": _module_importable(module),
+        })
+    return report
 
 
 def fs_domain_from_path(filepath: str) -> str:
