@@ -1,0 +1,67 @@
+name: Frontend CI
+
+# Gate for the unified UI (frontend/). Two-tier, mirroring Operator CI: the
+# strict tier blocks (production build green, the shell lint-clean under real
+# rules, shell smoke E2E passing) while the wider legacy tree is tracked
+# informationally (the ratchet — whole-repo tsc + eslint counts). See
+# docs/audits/UI_AUDIT_2026-07-14.md and docs/runbooks/PRODUCTION_GRADE.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  strict-tier:
+    name: strict tier (build · shell lint · smoke E2E)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Build (production bundle must compile)
+        run: npm run build
+      - name: Lint — strict tier (src/shell, zero warnings)
+        run: npm run lint:shell
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+      - name: Shell smoke E2E (backend-independent)
+        run: npx playwright test tests/shell-smoke.spec.ts --project=chromium --reporter=line
+
+  ratchet:
+    name: whole-frontend lint + typecheck (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Typecheck (whole repo — baseline, non-blocking)
+        run: npm run typecheck || true
+      - name: ESLint stats (whole repo — the ratchet)
+        run: npm run lint || true

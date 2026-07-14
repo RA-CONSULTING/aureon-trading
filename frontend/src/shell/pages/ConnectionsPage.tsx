@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LiveDataNotice } from "@/shell/Page";
 
@@ -210,6 +209,7 @@ export default function ConnectionsPage() {
                       <div className="flex gap-2">
                         <Input
                           type={d.show ? "text" : "password"}
+                          aria-label={`${c.label} API key`}
                           placeholder={c.has_key ? "•••• (leave blank to keep)" : "paste key"}
                           value={d.apiKey} autoComplete="off"
                           onChange={(e) => patch(c.id, { apiKey: e.target.value })}
@@ -222,6 +222,7 @@ export default function ConnectionsPage() {
                     )}
                     {keyed && (c.extra_envs ?? []).map((env, i) => (
                       <Input key={env} placeholder={c.secondary_labels?.[i] ?? env}
+                        aria-label={c.secondary_labels?.[i] ?? env}
                         value={d.extra[env] ?? ""} autoComplete="off"
                         onChange={(e) => patch(c.id, { extra: { ...d.extra, [env]: e.target.value } })} />
                     ))}

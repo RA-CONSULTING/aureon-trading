@@ -23,6 +23,10 @@ export default defineConfig(({ mode }) => ({
     ],
   },
   build: {
+    // The big trading/console route chunks (WarRoom, LegacyConsole) and recharts
+    // legitimately exceed 500 kB; raise the warning bar so real regressions stand
+    // out instead of drowning in expected noise. Splitting them further is staged.
+    chunkSizeWarningLimit: 800,
     // Route-level chunks come from React.lazy in src/shell/nav.ts; these split
     // the big vendor groups so no chunk carries the whole platform.
     rollupOptions: {

@@ -23,13 +23,29 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
-      "@typescript-eslint/no-unused-vars": "off",
-      "@typescript-eslint/no-explicit-any": "off",
+      // Foundation tier (whole repo): informative, non-blocking. `eslint .` reports
+      // these as warnings across the ~269 legacy components so the tree can only
+      // improve (the ratchet), without gating CI on a mass one-pass cleanup.
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-require-imports": "off",
-      "no-empty": "off",
-      "no-shadow-restricted-names": "off",
-      "no-useless-escape": "off",
-      "prefer-const": "off",
+      "no-empty": "warn",
+      "no-shadow-restricted-names": "warn",
+      "no-useless-escape": "warn",
+      "prefer-const": "warn",
+    },
+  },
+  {
+    // Strict tier — the unified shell (src/shell). This is the product surface
+    // held to a real bar: the same rules as errors, so `lint:shell` blocks CI.
+    // ESLint only reports on the files it lints (no transitive type-graph blow-up),
+    // so this stays scoped even though the shell lazy-imports the legacy tree.
+    files: ["src/shell/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/no-explicit-any": "error",
+      "no-empty": "error",
+      "prefer-const": "error",
     },
   }
 );
