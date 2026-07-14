@@ -33,8 +33,12 @@ def test_nodes_filter_by_domain_and_status(tmp_path):
     c = _fresh(tmp_path)
     queen = c.nodes(domain="queen")
     assert queen and all(n["domain"] == "queen" for n in queen)
-    unfelt = c.nodes(status="unfelt")
-    assert len(unfelt) == len(c.nodes())   # nothing touched yet
+    # Nothing has been touched or woven yet. (baton-linked nodes may already be
+    # heard from the shared bus now that the baton ear reads payload correctly,
+    # so a node is either "unfelt" or "linked" — never touched/woven on a fresh
+    # connectome.)
+    assert c.status()["touched"] == 0 and c.status()["woven"] == 0
+    assert all(n["status"] in ("unfelt", "linked") for n in c.nodes())
 
 
 # ── touch ──────────────────────────────────────────────────────────────────

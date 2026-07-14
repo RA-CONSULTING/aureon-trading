@@ -54,12 +54,19 @@ from aureon.operator.tools import build_operator_tools
 logger = logging.getLogger("aureon.operator.cognition")
 
 try:
-    from aureon.core.aureon_thought_bus import Thought, get_thought_bus
+    from aureon.core.aureon_thought_bus import (
+        Thought,
+        get_thought_bus,
+        payload_of,
+        topic_of,
+    )
 
     _HAS_BUS = True
 except Exception:  # noqa: BLE001
     get_thought_bus = None  # type: ignore
     Thought = None  # type: ignore
+    payload_of = None  # type: ignore
+    topic_of = None  # type: ignore
     _HAS_BUS = False
 
 # Grounding gate. A keyword index over 2000+ files gives even off-repo prompts a
@@ -127,12 +134,23 @@ class AureonCognition:
         self._conscience = conscience
         self._conscience_loaded = conscience is not None
         self.last_mesh_message: Dict[str, Any] = {}
+        # Live cache of the organism's shared state — the field, the cosmic gate,
+        # lighthouse clearance, body coverage — so cognition reasons organism-aware
+        # (mirrors what GroundedActionGate does for actions).
+        self._organism: Dict[str, Any] = {}
         if bus is not None:
             self.bus = bus
         elif _HAS_BUS and get_thought_bus is not None:
             self.bus = get_thought_bus()
         else:
             self.bus = None
+        if self.bus is not None:
+            for _topic in ("symbolic.life.pulse", "auris.throne.cosmic_state",
+                           "lighthouse.event", "organism.connectome.pulse"):
+                try:
+                    self.bus.subscribe(_topic, self._on_organism)
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug("organism subscribe skipped (%s): %s", _topic, exc)
         if join_mesh:
             join_organism(self, "aureon_cognition")
 
@@ -219,6 +237,25 @@ class AureonCognition:
         system = _OPERATOR_PERSONA
         if blocks:
             system += "\n\nGrounded Aureon context (cite when relevant):\n" + "\n\n".join(blocks)[:4000]
+
+        # Organism awareness — the shared field the whole body senses. Let the
+        # model reason with the current coherence / cosmic gate / lighthouse.
+        org = self._read_organism_state()
+        if org:
+            bits = []
+            if org.get("symbolic_life_score") is not None:
+                bits.append(f"symbolic_life_score={float(org['symbolic_life_score']):.3f}")
+            if org.get("coherence_gamma") is not None:
+                bits.append(f"coherence_gamma={float(org['coherence_gamma']):.3f}")
+            if org.get("advisory"):
+                bits.append(f"cosmic_advisory={org['advisory']}")
+            if org.get("gate_open") is not None:
+                bits.append(f"cosmic_gate={'open' if org['gate_open'] else 'closed'}")
+            if org.get("lighthouse_event"):
+                bits.append(f"lighthouse={org['lighthouse_event']}")
+            if bits:
+                system += ("\n\nOrganism state (the shared HNC field you are part of): "
+                           + ", ".join(bits))
         system += _TOOL_HINT
 
         res.grounded = bool(sources)
@@ -287,10 +324,17 @@ class AureonCognition:
             self._publish(res, "veto", {"verdict": "APPROVED", "available": False})
             return
         try:
+            org = self._read_organism_state()
+            ctx = {"answer_preview": res.text[:400], "grounded": res.grounded,
+                   "tools_used": [t.tool for t in res.tool_calls]}
+            # Fold the shared field into the veto so the conscience's substrate-
+            # coherence check sees the organism's real coherence, not "unknown".
+            if org.get("symbolic_life_score") is not None:
+                ctx["symbolic_life_score"] = org["symbolic_life_score"]
+            if org.get("cosmic_score") is not None:
+                ctx["cosmic_score"] = org["cosmic_score"]
             whisper = conscience.ask_why(
-                f"answer cognition prompt: {prompt[:160]}",
-                {"answer_preview": res.text[:400], "grounded": res.grounded,
-                 "tools_used": [t.tool for t in res.tool_calls]},
+                f"answer cognition prompt: {prompt[:160]}", ctx,
             )
             verdict = getattr(whisper.verdict, "name", str(whisper.verdict))
             res.conscience_verdict = verdict
@@ -323,6 +367,57 @@ class AureonCognition:
 
     def receive_mycelium_message(self, message_type: str, payload: Dict[str, Any]) -> None:
         self.last_mesh_message = {"type": message_type, "payload": payload}
+        # A mesh push is also organism sensing — fold it into the shared state so
+        # cognition acts on what the mesh tells it, not just stores it.
+        if isinstance(payload, dict):
+            self._organism.update({k: v for k, v in payload.items() if v is not None})
+
+    # ------------------------------------------------------------------
+    # Organism sensing
+    # ------------------------------------------------------------------
+
+    def _on_organism(self, thought: Any) -> None:
+        """Cache the latest organism signal (subscribed to the shared bus)."""
+        if topic_of is None:
+            return
+        try:
+            topic = topic_of(thought)
+            payload = payload_of(thought)
+            if topic == "symbolic.life.pulse":
+                for k in ("symbolic_life_score", "coherence_gamma", "consciousness_level"):
+                    if payload.get(k) is not None:
+                        self._organism[k] = payload[k]
+            elif topic == "auris.throne.cosmic_state":
+                for k in ("cosmic_score", "gate_open", "advisory"):
+                    if payload.get(k) is not None:
+                        self._organism[k] = payload[k]
+            elif topic == "lighthouse.event":
+                self._organism["lighthouse_event"] = payload.get("type")
+                self._organism["lighthouse_severity"] = payload.get("severity")
+            elif topic == "organism.connectome.pulse":
+                self._organism["connectome_coverage_pct"] = payload.get("coverage_pct")
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("organism sense skipped: %s", exc)
+
+    def _read_organism_state(self) -> Dict[str, Any]:
+        """The live cache, backfilled from the bus ring buffer so a fresh
+        cognition (no subscription history yet) still senses the current field."""
+        state = dict(self._organism)
+        # recall(topic_prefix) filters by topic, so a flood of other traffic
+        # (baton.link heartbeats, etc.) can't evict the pulse from a recency
+        # window — a plain get_recent scan silently misses it under load.
+        if "symbolic_life_score" not in state and self.bus is not None and payload_of is not None:
+            try:
+                if hasattr(self.bus, "recall"):
+                    pulses = self.bus.recall("symbolic.life.pulse", limit=1) or []
+                    if pulses:
+                        p = payload_of(pulses[-1])
+                        if p.get("symbolic_life_score") is not None:
+                            state["symbolic_life_score"] = p["symbolic_life_score"]
+                            state.setdefault("coherence_gamma", p.get("coherence_gamma"))
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("organism backfill skipped: %s", exc)
+        return state
 
     def _publish(self, res: CognitionResult, phase: str, payload: Dict[str, Any]) -> None:
         topic = "cognition.complete" if phase == "complete" else f"operator.cognition.{phase}"

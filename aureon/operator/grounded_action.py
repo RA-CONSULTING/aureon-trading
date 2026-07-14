@@ -125,22 +125,21 @@ class GroundedActionGate:
             "cosmic_score": None, "gate_open": None, "available": False,
         }
         # symbolic_life_score / Γ from the latest symbolic.life.pulse on the bus.
-        # get_recent() returns to_json DICTS (not Thought objects), so read via
-        # the shape-agnostic accessors — a getattr on a dict silently matches
-        # nothing.
+        # Use recall(topic_prefix) — it filters by topic first, so high-volume
+        # traffic (baton.link floods, etc.) can never evict the pulse from a
+        # fixed recency window. payload_of reads the to_json DICT recall returns.
         try:
-            if self._bus is not None and hasattr(self._bus, "get_recent"):
-                from aureon.core.aureon_thought_bus import payload_of, topic_of
+            if self._bus is not None and hasattr(self._bus, "recall"):
+                from aureon.core.aureon_thought_bus import payload_of
 
-                for th in reversed(self._bus.get_recent(200) or []):
-                    if topic_of(th) == "symbolic.life.pulse":
-                        payload = payload_of(th)
-                        sls = payload.get("symbolic_life_score")
-                        if sls is not None:
-                            out["symbolic_life_score"] = float(sls)
-                            out["coherence_gamma"] = payload.get("coherence_gamma")
-                            out["available"] = True
-                        break
+                pulses = self._bus.recall("symbolic.life.pulse", limit=1) or []
+                if pulses:
+                    payload = payload_of(pulses[-1])
+                    sls = payload.get("symbolic_life_score")
+                    if sls is not None:
+                        out["symbolic_life_score"] = float(sls)
+                        out["coherence_gamma"] = payload.get("coherence_gamma")
+                        out["available"] = True
         except Exception as exc:  # noqa: BLE001
             logger.debug("HNC pulse read skipped: %s", exc)
         # Dr Auris advisory gate

@@ -601,15 +601,13 @@ class HNCLiveDaemon:
             from aureon.core.aureon_thought_bus import get_thought_bus
             _action_bus = get_thought_bus()
 
-            from aureon.core.aureon_thought_bus import payload_of, topic_of
+            from aureon.core.aureon_thought_bus import payload_of
 
             def _read_action_stats():
-                recent = _action_bus.get_recent(200) or []
-                verdicts = [
-                    payload_of(t)
-                    for t in recent
-                    if topic_of(t) == "operator.action.verdict"
-                ]
+                # recall filters by topic, so verdicts aren't evicted by other
+                # bus traffic before the source reads them.
+                recent = _action_bus.recall("operator.action.verdict", limit=200) or []
+                verdicts = [payload_of(t) for t in recent]
                 if not verdicts:
                     return {"count": 0}
                 approved = sum(1 for v in verdicts if v.get("approved"))
