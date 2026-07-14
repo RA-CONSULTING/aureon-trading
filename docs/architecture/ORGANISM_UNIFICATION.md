@@ -181,6 +181,24 @@ Three signals now bridge through it:
 Trace dir overridable with `AUREON_BUS_TRACE_DIR` (isolates tests; the live shared
 `state/` in production).
 
+### The two subscribe-based signals — the trace pump
+
+`bus_trace` reaches every consumer that reads via `recall`. But `auris.throne.cosmic_state`
+and `lighthouse.event` have consumers that `subscribe` (cognition registers a live
+handler and expects it to fire) — tailing a file never fires those handlers. So the
+producer runs in one process (dr-auris in the organism daemon; lighthouse in a
+trading/harmonic process) and cognition's handler in the operator process never fired.
+
+`aureon/core/trace_pump.py` closes that gap **without touching a single consumer**: a
+guarded daemon thread in the *consuming* process (started at `build_boot_app`, opt-out
+`AUREON_TRACE_PUMP=0`) tails each signal's dedicated trace and **re-publishes new rows
+onto the local bus** as the original topic — so every existing subscriber fires exactly
+as if the producer had published in-process. Dedup is by a producer-stamped `_ts`; the
+start-time backlog is not replayed (only the single latest row for *state* topics like
+auris is seeded, so a fresh cognition senses present cosmic state without an event storm;
+lighthouse *events* are never replayed). This is the last cross-process signal class —
+recall-based and subscribe-based signals now both cross the daemon boundary.
+
 ## The organism breathes its field
 
 `blend_field` was pull-only — the gate, cognition, and the conscience-fallback each
@@ -204,12 +222,6 @@ dead. It runs in `operator-ci.yml` as a gate, so the wiring can't silently rot a
 
 ## Staged (audited, not this pass)
 
-- **Cross-process bridge for the two `subscribe`-based signals** — `auris.throne.cosmic_state`
-  (dr-auris in ORGANISM → cognition in OPERATOR) and `lighthouse.event` (analytics in a
-  trading/harmonic process → cognition in OPERATOR). Unlike the three now bridged, these
-  consumers use live `subscribe` handlers, not `recall`, so `bus_trace` alone doesn't reach
-  them — they need a small polling reader that tails the trace and re-fires the handler. Not
-  faked this pass (writing a trace no one polls would look connected without being so).
 - **Migrate the remaining private `LambdaEngine` reads onto `read_canonical_field`.**
   The accessor + the daemon's canonical bus field are in place; the six `queen_*`
   modules that spin a private engine purely to read a coherence number can now adopt

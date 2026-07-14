@@ -240,6 +240,31 @@ def run_audit() -> list[dict]:
             results.append(_check("consensus_crosses_process",
                                   _ev is not None and _ev.get("source") == "consensus_trace_file",
                                   f"source={_ev and _ev.get('source')}", critical=False))
+
+            # Edge 4l–4m — the two SUBSCRIBE-based signals (auris cosmic state,
+            # lighthouse events) cross via the trace pump: a producer writes the
+            # trace, the pump re-fires it onto a fresh consumer bus, and that
+            # bus's live subscriber receives it — proving the boundary is closed
+            # for subscribe consumers, not just recall ones.
+            import time as _time2
+
+            from aureon.core.bus_trace import append_trace as _at
+            from aureon.core.trace_pump import DEFAULT_ROUTES as _ROUTES
+            from aureon.core.trace_pump import TracePump as _TP
+
+            _busC = _TB2(persist_path=None)
+            _sink: list[str] = []
+            _busC.subscribe("auris.throne.cosmic_state", lambda t: _sink.append("auris"))
+            _busC.subscribe("lighthouse.event", lambda t: _sink.append("lh"))
+            _pump = _TP(bus=_busC, routes=_ROUTES, interval_s=0.5)
+            _at("auris_cosmic_state", {"cosmic_score": 0.5, "_ts": _time2.time()})
+            _pump.prime()   # seeds current auris state onto the consumer bus
+            results.append(_check("auris_crosses_process", "auris" in _sink,
+                                  f"subscriber_fired={'auris' in _sink}", critical=False))
+            _at("lighthouse_event", {"type": "COHERENCE_COLLAPSE", "_ts": _time2.time()})
+            _pump.tick()
+            results.append(_check("lighthouse_crosses_process", "lh" in _sink,
+                                  f"subscriber_fired={'lh' in _sink}", critical=False))
         finally:
             if _prevd is None:
                 _osx.environ.pop("AUREON_BUS_TRACE_DIR", None)
