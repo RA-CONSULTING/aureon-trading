@@ -15,6 +15,7 @@ Routes:
   GET  /api/organism           connectome coverage + recent pulses + mesh membership
   GET  /api/cognition          the whole cognitive substrate + provenance + truth roll-up
   GET  /api/cognition/<part>   one cognitive surface: field·bus·mycelium·connectome·brain
+  GET  /api/metacognition      the organism's self-assessment (reads its own signals)
   GET  /api/manifests/<name>   a frontend manifest, rendered live (JSON)
   POST /api/manifests/refresh  rebuild catalog + rewrite frontend manifests
 
@@ -168,8 +169,14 @@ def register_saas_routes(app: Any) -> Any:
     from flask import g, jsonify, request
 
     from aureon.saas.catalog import build_catalog, render_manifests, write_frontend_manifests
+    from aureon.saas.cognitive import provenance_block
     from aureon.saas.domains import PRODUCT_DOMAINS, domain_report, probe_domain
     from aureon.saas.status import get_platform_status
+
+    def _stamp(payload: Dict[str, Any], truth_status: str) -> Dict[str, Any]:
+        """Attach the shared provenance header + an honest top-level truth_status
+        so every SaaS surface carries data provenance (compliance)."""
+        return {**payload, "provenance": provenance_block(), "truth_status": truth_status}
 
     jwt_secret = str(os.environ.get("AUREON_SUPABASE_JWT_SECRET", "") or "")
 
@@ -197,12 +204,14 @@ def register_saas_routes(app: Any) -> Any:
     @app.get("/api/catalog")
     @_guarded
     def saas_catalog():
-        return jsonify(build_catalog(use_cache=True))
+        # Counts are derived from a real filesystem scan of aureon/.
+        return jsonify(_stamp(build_catalog(use_cache=True), "real_derived"))
 
     @app.get("/api/domains")
     @_guarded
     def saas_domains():
-        return jsonify({"product_domains": PRODUCT_DOMAINS, "domains": domain_report()})
+        return jsonify(_stamp(
+            {"product_domains": PRODUCT_DOMAINS, "domains": domain_report()}, "real_derived"))
 
     @app.get("/api/domains/<domain>")
     @_guarded
@@ -212,18 +221,38 @@ def register_saas_routes(app: Any) -> Any:
             s for cat in catalog.get("categories", {}).values() for s in cat["systems"]
             if s.get("fs_domain") == domain or s.get("product_domain") == domain
         ]
-        return jsonify({"domain": domain, "entry": probe_domain(domain), "system_count": len(systems), "systems": systems[:200]})
+        return jsonify(_stamp(
+            {"domain": domain, "entry": probe_domain(domain),
+             "system_count": len(systems), "systems": systems[:200]}, "real_derived"))
 
     @app.get("/api/status")
     @_guarded
     def saas_status():
-        return jsonify(get_platform_status())
+        # Live health reads (import reachability + runtime probes).
+        return jsonify(_stamp(get_platform_status(), "live"))
 
     @app.get("/api/organism")
     @_guarded
     def saas_organism():
         # The connectome's honest coverage of the body + recent breaths + mesh.
-        return jsonify(build_organism_payload())
+        # Stamped at the route (not in build_organism_payload, which /api/pulse composes).
+        return jsonify(_stamp(build_organism_payload(), "live"))
+
+    @app.get("/api/metacognition")
+    @_guarded
+    def saas_metacognition():
+        # The organism's self-assessment: it reads its OWN signals and scores its
+        # self-coherence with the Master-Formula machinery. Read-only (assess,
+        # never reflect — no publish from a GET); the live loop-back runs in the
+        # organism daemon's breath.
+        try:
+            from aureon.core.metacognition_monitor import get_metacognition_monitor
+
+            assessment = get_metacognition_monitor().assess().to_dict()
+        except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
+            assessment = {"available": False, "truth_status": "no_data",
+                          "error": str(exc)[:200]}
+        return jsonify(_stamp(assessment, assessment.get("truth_status", "no_data")))
 
     # ── the cognitive substrate as verified SaaS ──────────────────────────────
     # The organism's cognitive + meta-cognitive systems (HNC field, thought-bus

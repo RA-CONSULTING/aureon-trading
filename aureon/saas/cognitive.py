@@ -54,10 +54,11 @@ _COGNITIVE_TOPIC_FAMILIES = (
 
 # ── provenance — reuse the repo's real-data contract vocabulary ───────────────
 
-def _provenance() -> Dict[str, Any]:
+def provenance_block() -> Dict[str, Any]:
     """A response-level provenance header, mirroring the connections layer's
     ``_real_data_policy_summary`` shape but self-contained (reuses the same
     ``real_data_contract`` / ``live_data_policy`` primitives, no private import).
+    Shared by every SaaS surface so each response carries honest provenance.
     Never raises."""
     block: Dict[str, Any] = {
         "simulation_fallback_allowed": False,
@@ -363,7 +364,7 @@ def build_cognitive_payload() -> Dict[str, Any]:
         "product_domain": "cognition",
         "surfaces": surfaces,
         "registry": registry,
-        "provenance": _provenance(),
+        "provenance": provenance_block(),
         "truth_summary": roll,
         "operational_ready": roll.get("operational_ready", 0),
         "blocked": roll.get("blocked", 0),
@@ -372,6 +373,7 @@ def build_cognitive_payload() -> Dict[str, Any]:
 
 __all__ = [
     "build_cognitive_payload",
+    "provenance_block",
     "field_surface",
     "bus_surface",
     "mycelium_surface",
