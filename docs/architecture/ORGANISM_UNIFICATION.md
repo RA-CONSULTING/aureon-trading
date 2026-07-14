@@ -106,6 +106,15 @@ canonical value alone when no sub-fields are present. Surfaced in `/api/organism
 `field_divergence`), so the reasoning model sees not just one field but the
 whole-body consensus and its internal disagreement.
 
+**The consensus acts.** Divergence is no longer only sensed — it restrains. The
+grounded-action gate reads `blend_field().divergence`; when the body is "of two
+minds" (`divergence ≥ 0.35`) on a consequential move, the move is flagged
+**CONCERNED**, and the Queen's conscience (`_evaluate_substrate_coherence`,
+`FIELD_DIVERGENCE_CAUTION`) **VETOes** it when the field is also off the SLS
+stability island. A divided field is not a mandate. Backward-compatible: unchanged
+when divergence is unknown or below the threshold — divergence only ever tightens
+the veto, never loosens it.
+
 ## Robustness: the sweep survives rogue modules
 
 `Connectome.touch()` catches `BaseException` (re-raising only `KeyboardInterrupt`),

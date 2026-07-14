@@ -274,6 +274,10 @@ class QueenConscience:
     # "stability cliff." These SLS thresholds are the cognitive analogue.
     SLS_DANGER: float = 0.20
     SLS_DRIFT: float = 0.40
+    # Blend divergence (max−min spread across the organism's sub-fields) above
+    # which the body is "of two minds" — a risky move is cautioned, and vetoed
+    # if also off the SLS island.
+    FIELD_DIVERGENCE_CAUTION: float = 0.35
 
     def _is_risky_action(self, action_lower: str, context: Dict[str, Any]) -> bool:
         """Categories of action where the substrate-coherence veto applies.
@@ -337,6 +341,46 @@ class QueenConscience:
         action_lower = action.lower()
         if not self._is_risky_action(action_lower, context):
             return None
+        # A divided field: when the organism's sub-fields disagree strongly (blend
+        # divergence), a risky move is cautioned — and vetoed if we are also off the
+        # SLS island. A body of two minds should not act boldly. Checked before the
+        # SLS thresholds so it can caution even when SLS itself looks healthy.
+        divergence = context.get("field_divergence")
+        try:
+            divergence = float(divergence) if divergence is not None else None
+        except (TypeError, ValueError):
+            divergence = None
+        if divergence is not None and divergence >= self.FIELD_DIVERGENCE_CAUTION:
+            if sls < self.SLS_DRIFT:
+                return ConscienceWhisper(
+                    verdict=ConscienceVerdict.VETO,
+                    message=(
+                        f"The field is divided — divergence {divergence:.3f} — and "
+                        f"symbolic_life_score is {sls:.3f}, off the stability island. "
+                        f"I refuse {action!r} while the organism is of two minds."
+                    ),
+                    why_it_matters=(
+                        "High blend divergence means the sub-fields disagree; acting "
+                        "boldly off the island amplifies the split rather than resolving it."
+                    ),
+                    what_gary_would_say="When you're of two minds, wait for one.",
+                    teaching="Coherence before action — a divided field is not a mandate.",
+                    confidence=0.9,
+                )
+            return ConscienceWhisper(
+                verdict=ConscienceVerdict.CONCERNED,
+                message=(
+                    f"The field is divided — divergence {divergence:.3f}. {action!r} is "
+                    f"a risky move while the organism's sub-fields disagree."
+                ),
+                why_it_matters=(
+                    "Divergence says the body is not unified. Lower the size, slow the "
+                    "cadence, or wait for the fields to come back into phase."
+                ),
+                what_gary_would_say="Patience. Let the fields return to phase.",
+                teaching="A unified field acts as one; a divided one waits.",
+                confidence=0.8,
+            )
         danger = self.SLS_DANGER
         drift = self.SLS_DRIFT
         if sls >= drift:

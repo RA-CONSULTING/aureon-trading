@@ -91,6 +91,53 @@ def test_blended_field_is_consensus_with_divergence():
     assert "canonical" in blended.sources and "queen_cortex" in blended.sources
 
 
+def _divided_bus(canonical_sls: float, sub_sls: float):
+    """An isolated bus with a canonical field + one disagreeing sub-field."""
+    from aureon.core.aureon_thought_bus import ThoughtBus
+    from aureon.core.hnc_field import publish_subfield
+
+    b = ThoughtBus(persist_path=None)
+    b.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
+                      payload={"symbolic_life_score": canonical_sls}))
+
+    class _Sub:
+        symbolic_life_score = sub_sls
+        coherence_gamma = 0.5
+
+    publish_subfield("queen_cortex", _Sub(), bus=b)
+    return b
+
+
+def test_divergence_cautions_a_risky_move_when_sls_healthy():
+    from aureon.operator.grounded_action import GroundedActionGate
+
+    # canonical 0.9, sub 0.4 → divergence 0.5 (>0.35); mean SLS 0.65 (healthy island)
+    b = _divided_bus(0.9, 0.4)
+    v = GroundedActionGate(bus=b, enable_llm=False).ground("delete_file", {"path": "x"})
+    assert v.verdict == "CONCERNED" and v.approved is True
+    assert v.field_divergence is not None and v.field_divergence >= 0.35
+
+
+def test_divergence_vetoes_when_also_off_the_island():
+    from aureon.operator.grounded_action import GroundedActionGate
+
+    # canonical 0.5, sub 0.05 → divergence 0.45; but conscience reads the LOW
+    # sub via _current_sls? gate passes mean-agnostic sls; force drift via context.
+    b = _divided_bus(0.5, 0.05)
+    v = GroundedActionGate(bus=b, enable_llm=False).ground(
+        "delete_file", {"path": "x"}, {"symbolic_life_score": 0.3})  # off-island SLS
+    assert v.verdict == "VETOED" and v.approved is False
+
+
+def test_low_divergence_leaves_a_healthy_move_approved():
+    from aureon.operator.grounded_action import GroundedActionGate
+
+    # canonical 0.8, sub 0.75 → divergence 0.05 (<0.35); healthy → approve
+    b = _divided_bus(0.8, 0.75)
+    v = GroundedActionGate(bus=b, enable_llm=False).ground("delete_file", {"path": "x"})
+    assert v.verdict == "APPROVED" and v.approved is True
+
+
 # ── keystone: publish → read the live field, flood-proof ─────────────────────
 
 def test_grounded_gate_reads_live_field_under_flood():

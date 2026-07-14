@@ -108,6 +108,22 @@ def run_audit() -> list[dict]:
                           f"sls={blended.symbolic_life_score} n={blended.contributors} "
                           f"divergence={blended.divergence}", critical=False))
 
+    # Edge 4d — the consensus ACTS: a divided field restrains a risky move
+    from aureon.core.aureon_thought_bus import ThoughtBus
+
+    div_bus = ThoughtBus(persist_path=None)
+    div_bus.publish(Thought(source="hnc_live_daemon", topic="symbolic.life.pulse",
+                            payload={"symbolic_life_score": 0.9}))
+
+    class _Low:
+        symbolic_life_score = 0.2
+        coherence_gamma = 0.5
+
+    publish_subfield("queen_cortex", _Low(), bus=div_bus)  # divergence 0.7
+    dv = GroundedActionGate(bus=div_bus, enable_llm=False).ground("delete_file", {"path": "x"})
+    results.append(_check("divergence_acts", dv.verdict in ("CONCERNED", "VETOED"),
+                          f"verdict={dv.verdict} divergence={dv.field_divergence}", critical=False))
+
     # Edge 5 — connectome telemetry: baton ear + pulse + auto-weave
     from aureon.core.aureon_connectome import get_connectome
 

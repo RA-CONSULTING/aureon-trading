@@ -64,6 +64,12 @@ _DESTRUCTIVE_HINTS = (
     "uninstall", "wifi", "lock", "sleep",
 )
 
+# When the organism's fields disagree by more than this (blend_field.divergence),
+# the body is "of two minds" — a consequential move is escalated to the conscience
+# as a caution. Mirrors the SLS stability-island framing: a divided field is off
+# the coherence island.
+_DIVERGENCE_CAUTION = 0.35
+
 
 def _truthy(name: str, default: str = "0") -> bool:
     return str(os.environ.get(name, default) or default).strip().lower() in {"1", "true", "yes", "on"}
@@ -83,6 +89,7 @@ class ActionVerdict:
     coherence_gamma: float | None = None
     cosmic_score: float | None = None
     gate_open: bool | None = None
+    field_divergence: float | None = None
     llm_rationale: str | None = None
     concerned: bool = False
     hnc_available: bool = False
@@ -122,7 +129,8 @@ class GroundedActionGate:
     def _read_hnc(self) -> Dict[str, Any]:
         out: Dict[str, Any] = {
             "symbolic_life_score": None, "coherence_gamma": None,
-            "cosmic_score": None, "gate_open": None, "available": False,
+            "cosmic_score": None, "gate_open": None,
+            "field_divergence": None, "contributors": 0, "available": False,
         }
         # symbolic_life_score / Γ from the one canonical field (read via the
         # shared accessor — single source of truth, flood-proof).
@@ -136,6 +144,16 @@ class GroundedActionGate:
                 out["available"] = True
         except Exception as exc:  # noqa: BLE001
             logger.debug("HNC pulse read skipped: %s", exc)
+        # whole-body consensus divergence — how much the organism's fields disagree
+        try:
+            from aureon.core.hnc_field import blend_field
+
+            blended = blend_field(self._bus)
+            if blended.available:
+                out["field_divergence"] = blended.divergence
+                out["contributors"] = blended.contributors
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("blend read skipped: %s", exc)
         # Dr Auris advisory gate
         try:
             from aureon.intelligence.dr_auris_throne import get_dr_auris_throne
@@ -236,6 +254,14 @@ class GroundedActionGate:
         cosmic = context.get("cosmic_score")
         if cosmic is None:
             cosmic = hnc.get("cosmic_score")
+        divergence = context.get("field_divergence")
+        if divergence is None:
+            divergence = hnc.get("field_divergence")
+        # A divided field (high divergence) escalates a consequential move: bump
+        # the risk so the conscience's substrate-coherence check engages, and pass
+        # the divergence through so it can caution/veto on it.
+        if divergence is not None and divergence >= _DIVERGENCE_CAUTION and risk > 0.0:
+            risk = max(risk, 0.06)
         # 3. optional local-LLM rationale
         rationale = self._llm_reason(action, params)
 
@@ -243,6 +269,7 @@ class GroundedActionGate:
         ctx = {
             **context, "risk": risk, "action_kind": action,
             "symbolic_life_score": sls, "cosmic_score": cosmic,
+            "field_divergence": divergence,
         }
         verdict_name = "APPROVED"
         reason = "grounded: within the stability island"
@@ -258,6 +285,16 @@ class GroundedActionGate:
 
         concerned = verdict_name == "CONCERNED"
         approved = verdict_name != "VETO"
+        # A divided field cautions even when it doesn't veto. The conscience's
+        # ask_why only surfaces hard VETOes (it lets domain routers overwrite a
+        # soft substrate whisper), so the gate applies the CONCERNED caution here:
+        # a consequential move made while the organism is of two minds is flagged.
+        if (approved and risk > 0.0 and divergence is not None
+                and divergence >= _DIVERGENCE_CAUTION):
+            concerned = True
+            if verdict_name not in ("CONCERNED", "VETO"):
+                reason = (f"grounded but cautioned: the field is divided "
+                          f"(divergence {divergence:.3f})")
         v = ActionVerdict(
             action=action, approved=approved,
             verdict="VETOED" if not approved else ("CONCERNED" if concerned else "APPROVED"),
@@ -266,6 +303,7 @@ class GroundedActionGate:
             coherence_gamma=hnc.get("coherence_gamma"),
             cosmic_score=cosmic,
             gate_open=hnc.get("gate_open"),
+            field_divergence=divergence,
             llm_rationale=rationale, concerned=concerned,
             hnc_available=bool(hnc.get("available")),
         )
