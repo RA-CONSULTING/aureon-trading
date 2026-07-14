@@ -51,14 +51,16 @@ def _company(**kw):
 def test_plan_decomposes_into_role_assigned_work_orders():
     plan = _company().plan("open the project README and summarise it",
                            {"action": "read_repo_file", "params": {"path": "README.md"}})
-    roles = [wo.role for wo in plan.work_orders]
-    # a cartographer investigates, an implementation worker carries the authored
-    # step, a reviewer checks safety — every work-order names a role and a verb.
-    assert "RepoCartographer" in roles and "SecurityReviewer" in roles
-    assert "ImplementationWorker" in roles  # the authored safe verb enters the plan
-    assert all(wo.role and wo.action for wo in plan.work_orders)
-    assert plan.directed is False           # planning never touches the machine
-    assert plan.workforce                    # the company structure is present
+    actions = [wo.action for wo in plan.work_orders]
+    # a crew is fitted from the full company: an investigator, a fitting specialist
+    # who carries the authored safe verb, and a reviewer — each work-order names a
+    # role AND a department, and every verb is composed.
+    assert "read_repo_file" in actions       # the authored safe verb enters the plan
+    assert all(wo.role and wo.department and wo.action for wo in plan.work_orders)
+    assert plan.directed is False            # planning never touches the machine
+    assert len(plan.workforce) >= 8          # the WHOLE company is available to staff from
+    assert len(plan.crew) >= 2               # a fitted crew was assembled
+    assert all(m.get("role") and m.get("department") for m in plan.crew)
 
 
 def test_plan_omits_unpermitted_verb_but_still_investigates():
@@ -131,6 +133,23 @@ def test_ascent_gate_widens_monotonically_and_never_reaches_a_live_verb():
     # read-only at rest; the repo-authoring verbs only unlock higher up
     assert "write_repo_file" not in _ascent_allowed_verbs(0)
     assert "write_repo_file" in _ascent_allowed_verbs(6)
+
+
+def test_full_workforce_and_fitted_crew():
+    c = _company()
+    roster = c.workforce()
+    # the whole company — every department represented, from executive to a cleaner
+    depts = {r.get("department") for r in roster}
+    assert len(roster) >= 20 and {"executive", "engineering", "security_ops"} <= depts
+    # the crew is FITTED to the brief: a trading brief pulls a trading specialist,
+    # a code brief pulls an engineer — the department shifts with the intent.
+    trade_crew = c.plan("take a margin position on the exchange for profit").crew
+    code_crew = c.plan("fix the failing module and run the tests").crew
+    assert any(m["department"] == "trading_data" for m in trade_crew)
+    assert any(m["department"] == "engineering" for m in code_crew)
+    # a lead owns it and a reviewer guards it, on every crew
+    assert trade_crew[0]["department"] == "executive"
+    assert trade_crew[-1]["department"] == "security_ops"
 
 
 def test_missing_hand_never_crashes():

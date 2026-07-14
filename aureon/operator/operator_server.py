@@ -683,6 +683,16 @@ def build_boot_app():
             write_frontend_manifests()
         except Exception as exc:  # noqa: BLE001
             logger.warning("frontend manifest write skipped: %s", exc)
+        # publish the full agent-company roster so the (already-mounted) company
+        # console lights up with every role from the CEO Goal Steward to the cleaner.
+        try:
+            from aureon.autonomous.aureon_agent_company_builder import (
+                build_and_write_agent_company_bill_list,
+            )
+
+            build_and_write_agent_company_bill_list(online=False)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("agent-company roster publish skipped: %s", exc)
     return create_app(cognition=boot_cognition)
 
 

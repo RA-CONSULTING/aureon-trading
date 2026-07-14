@@ -22,6 +22,7 @@ Routes:
   GET  /api/pursuit            the pursuit of happiness: pillars, unified energy & the next safe step
   GET  /api/approvals          the director's desk: big plays prepared, awaiting Gary's decision
   POST /api/approvals/<id>     record Gary's approve/reject (the human gate; never executes the move)
+  GET  /api/company            the full workforce: every role across 8 departments, crew-staffable
   GET  /api/manifests/<name>   a frontend manifest, rendered live (JSON)
   POST /api/manifests/refresh  rebuild catalog + rewrite frontend manifests
 
@@ -360,6 +361,33 @@ def register_saas_routes(app: Any) -> Any:
         return jsonify(_stamp({"ok": True, "item": item,
                                "note": "decision recorded; execution stays a deliberate human/armed step"},
                               "real_derived"))
+
+    @app.get("/api/company")
+    @_guarded
+    def saas_company():
+        # Aureon's full workforce — every role from the CEO Goal Steward to the Log
+        # Janitor, across all eight departments — the company it can staff a fitted
+        # crew from. Read-only, offline (the roster is pure data, no cold boot).
+        try:
+            from aureon.autonomous.aureon_agent_company_builder import DEPARTMENTS, _role_specs
+
+            roles = [{"role_id": r.role_id, "title": r.title, "department": r.department,
+                      "seniority": r.seniority, "mission": r.mission,
+                      "authority_level": r.authority_level, "tools_allowed": list(r.tools_allowed)}
+                     for r in _role_specs()]
+            by_dept: dict[str, int] = {}
+            for r in roles:
+                by_dept[r["department"]] = by_dept.get(r["department"], 0) + 1
+            data = {"departments": DEPARTMENTS, "roles": roles,
+                    "summary": {"role_count": len(roles), "department_count": len(DEPARTMENTS),
+                                "roles_by_department": by_dept},
+                    "note": "the workforce Aureon staffs a fitted crew from; roles prepare, the "
+                            "hard boundary + approval desk gate every irreversible move"}
+            ts = "real_derived"
+        except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
+            data = {"departments": [], "roles": [], "error": str(exc)[:200]}
+            ts = "no_data"
+        return jsonify(_stamp(data, ts))
 
     # ── the cognitive substrate as verified SaaS ──────────────────────────────
     # The organism's cognitive + meta-cognitive systems (HNC field, thought-bus

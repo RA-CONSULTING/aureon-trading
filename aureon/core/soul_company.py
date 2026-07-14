@@ -104,6 +104,17 @@ def _current_ascent_verbs() -> set[str]:
 # Highest-wins risk ordering across the recommended routes.
 _RISK_ORDER = {"": 0, "low": 0, "safe": 0, "benign": 0, "medium": 1, "high": 2}
 
+# Fit a brief to the department whose specialist should staff the crew — the agency
+# model: every prompt is a client brief, each brief gets a fitted temporary crew.
+_DEPARTMENT_WORDS: list[tuple[str, tuple[str, ...]]] = [
+    ("trading_data", ("trade", "margin", "position", "profit", "exchange", "kraken", "market")),
+    ("accounting_admin", ("account", "invoice", "tax", "vat", "hmrc", "filing", "grant", "ledger", "payment")),
+    ("engineering", ("code", "repo", "fix", "test", "implement", "build", "module", "patch", "deploy")),
+    ("product_ui", ("ui", "page", "design", "frontend", "dashboard", "console", "component")),
+    ("intelligence", ("research", "study", "learn", "news", "pr", "press", "announce", "comms", "email", "market intel")),
+    ("security_ops", ("clean", "log", "stale", "tidy", "secret", "secure", "audit", "risk")),
+]
+
 # Used only when the coder-role registry cannot be imported — an honest minimal
 # workforce so the soul is never left without a company.
 _DEFAULT_WORKFORCE: list[dict[str, Any]] = [
@@ -157,6 +168,7 @@ class DirectedPlan:
     routes: list[dict[str, Any]] = field(default_factory=list)
     work_orders: list[WorkOrder] = field(default_factory=list)
     workforce: list[dict[str, Any]] = field(default_factory=list)
+    crew: list[dict[str, Any]] = field(default_factory=list)     # the fitted crew for this brief
     risk: str = "low"
     requires_human: bool = False
     directed: bool = False
@@ -168,7 +180,7 @@ class DirectedPlan:
         return {
             "intent": self.intent, "routes": self.routes,
             "work_orders": [wo.to_dict() for wo in self.work_orders],
-            "workforce": self.workforce, "risk": self.risk,
+            "workforce": self.workforce, "crew": self.crew, "risk": self.risk,
             "requires_human": self.requires_human, "directed": self.directed,
             "persisted": self.persisted, "truth_status": self.truth_status, "ts": self.ts,
         }
@@ -181,19 +193,62 @@ class SoulCompany:
         self._bridge = bridge
         self._contract_path = contract_path
 
-    # ── the workforce (the company structure, reused) ───────────────────────
+    # ── the workforce (the whole company, reused) ───────────────────────────
     def workforce(self) -> list[dict[str, Any]]:
-        # Only reach for the rich roster if the organism is already loaded — never
-        # cold-boot it from here (guardrail: no heavy import inside a read path).
+        """The full roster Aureon can staff a crew from — every role from the CEO
+        Goal Steward to the Log Janitor, across all eight departments. Reuses the
+        agent-company builder's roster (offline/pure); falls back to the coder roles,
+        then a light default, so the soul is never left without a company."""
+        try:
+            from aureon.autonomous.aureon_agent_company_builder import _role_specs
+
+            return [{"role": r.title, "department": r.department, "seniority": r.seniority,
+                     "purpose": r.mission, "tools": list(r.tools_allowed),
+                     "safety_boundary": r.authority_level} for r in _role_specs()]
+        except Exception:  # noqa: BLE001
+            pass
         if _ROLES_MOD in sys.modules:
             try:
                 from aureon.autonomous.aureon_coding_agent_skill_base import coder_agent_roles
 
-                return [{"role": r.name, "purpose": r.purpose, "tools": list(r.tools),
-                         "safety_boundary": r.safety_boundary} for r in coder_agent_roles()]
+                return [{"role": r.name, "department": "engineering", "purpose": r.purpose,
+                         "tools": list(r.tools), "safety_boundary": r.safety_boundary}
+                        for r in coder_agent_roles()]
             except Exception:  # noqa: BLE001 — never leave the soul without a company
                 pass
         return [dict(w) for w in _DEFAULT_WORKFORCE]
+
+    def _assemble_crew(self, text: str, roster: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Fit a temporary crew to the brief (the agency model: hire only the roles the
+        job needs). A lead who owns the goal, a specialist from the fitting department,
+        and a reviewer who checks safety — drawn from the full company when present."""
+        low = text.lower()
+        dept = "executive"
+        for d, words in _DEPARTMENT_WORDS:
+            if any(w in low for w in words):
+                dept = d
+                break
+
+        def _pick(dept_id: str, fallback_role: str, brief: str) -> dict[str, Any]:
+            for r in roster:
+                if r.get("department") == dept_id:
+                    return {"role": r.get("role", fallback_role), "department": dept_id, "brief": brief}
+            return {"role": fallback_role, "department": dept_id, "brief": brief}
+
+        crew = [
+            _pick("executive", "CEO Goal Steward", "own the goal, priority, and success criteria"),
+            _pick(dept, "Implementation Worker", f"prepare the {dept.replace('_', ' ')} work"),
+            _pick("security_ops", "Security Auditor", "review the crew's work for safety and evidence"),
+        ]
+        # dedupe by (role, department), preserve order
+        seen: set[tuple[str, str]] = set()
+        fitted: list[dict[str, Any]] = []
+        for m in crew:
+            key = (m["role"], m["department"])
+            if key not in seen:
+                seen.add(key)
+                fitted.append(m)
+        return fitted
 
     def _routes(self, intent: str) -> list[dict[str, Any]]:
         if _ROUTES_MOD in sys.modules:
@@ -217,33 +272,40 @@ class SoulCompany:
         routes = self._routes(text)
         risk = _plan_risk(routes)
         requires_human = any(bool(r.get("requires_human")) for r in routes)
+        roster = self.workforce()
+        crew = self._assemble_crew(text, roster)
+        # the crew: [0]=lead/steward, [1]=fitting specialist, [-1]=reviewer
+        specialist = crew[1] if len(crew) > 1 else {"role": "ImplementationWorker", "department": "engineering"}
+        reviewer = crew[-1] if crew else {"role": "SecurityReviewer", "department": "security_ops"}
         work_orders: list[WorkOrder] = []
 
-        # 1. the cartographer investigates before any move (always read-only)
+        # 1. investigate before any move (always read-only)
         work_orders.append(WorkOrder(
             seq=0, role="RepoCartographer", department="intelligence",
             description="understand the intent — map the relevant code and state",
             action="repo_search", params={"query": text[:120]}, risk="low"))
 
-        # 2. the implementation worker carries out the authored step — but only if
-        #    the stimulus named a verb the company is permitted to compose.
+        # 2. the fitting specialist carries out the authored step — but only if the
+        #    stimulus named a verb the company is permitted to compose (safe/ascent-gated).
         authored = ctx.get("action")
         params = ctx.get("params") or {}
         if isinstance(authored, str) and authored in allowed:
             work_orders.append(WorkOrder(
-                seq=len(work_orders), role="ImplementationWorker", department="engineering",
-                description=f"carry out the authored step: {authored}",
+                seq=len(work_orders), role=str(specialist.get("role")),
+                department=str(specialist.get("department")),
+                description=f"{specialist.get('brief', 'carry out the step')}: {authored}",
                 action=authored, params=dict(params) if isinstance(params, dict) else {},
                 risk=risk, requires_human=requires_human))
 
-        # 3. the security reviewer checks the plan for safety (read-only)
+        # 3. the reviewer checks the crew's work for safety (read-only)
         work_orders.append(WorkOrder(
-            seq=len(work_orders), role="SecurityReviewer", department="security_ops",
-            description="review the plan for safety and evidence", action="list_repo",
+            seq=len(work_orders), role=str(reviewer.get("role")),
+            department=str(reviewer.get("department")),
+            description="review the crew's work for safety and evidence", action="list_repo",
             params={}, risk="low"))
 
         return DirectedPlan(
-            intent=text, routes=routes, work_orders=work_orders, workforce=self.workforce(),
+            intent=text, routes=routes, work_orders=work_orders, workforce=roster, crew=crew,
             risk=risk, requires_human=requires_human,
             truth_status="real_derived" if routes else "live", ts=time.time())
 

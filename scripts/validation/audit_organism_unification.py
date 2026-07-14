@@ -505,6 +505,24 @@ def run_audit() -> list[dict]:
             results.append(_check(
                 "approval_queue_records_not_executes", _pend_ok and _rec_ok,
                 f"proposed={_pend_ok} recorded_approved={_rec_ok} (never executes)", critical=False))
+
+            # Edge 16 — the full workforce: the soul's company staffs a FITTED crew
+            # from the whole 41-role roster (a trading brief pulls a trading
+            # specialist; a code brief an engineer), and every composed verb stays
+            # inside the safe set — the crew prepares, it never gets a live verb.
+            from aureon.core.soul_company import _COMPANY_VERBS as _CV
+            from aureon.core.soul_company import get_soul_company as _gsc2
+
+            _sc = _gsc2()
+            _roster = _sc.workforce()
+            _trade = _sc.plan("take a margin position on the exchange for profit")
+            _code = _sc.plan("fix the failing module and run the tests")
+            _fits = (any(m["department"] == "trading_data" for m in _trade.crew)
+                     and any(m["department"] == "engineering" for m in _code.crew))
+            _safe = all(w.action in _CV for w in _trade.work_orders + _code.work_orders)
+            results.append(_check(
+                "company_crew_fits", len(_roster) >= 20 and _fits and _safe,
+                f"roster={len(_roster)} trade_fit={_fits} verbs_safe={_safe}", critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:
