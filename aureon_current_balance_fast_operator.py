@@ -27,7 +27,13 @@ REPO = Path(__file__).resolve().parent
 WORKSPACE = REPO.parent
 sys.path.insert(0, str(REPO))
 
-from aureon.integrations.azyra.operator_bridge import AzyraOperatorBridge
+# The Azyra desktop input bridge is an optional external package. Guard the
+# import so this module loads (compile/import smoke) even where it is absent;
+# bridge() raises a clear, honest error rather than crashing at import time.
+try:
+    from aureon.integrations.azyra.operator_bridge import AzyraOperatorBridge
+except Exception:  # noqa: BLE001
+    AzyraOperatorBridge = None  # type: ignore[assignment,misc]
 from current_balance_evidence_capture import (
     EVIDENCE_ROOT,
     STAGES,

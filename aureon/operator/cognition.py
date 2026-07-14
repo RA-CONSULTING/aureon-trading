@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import time
 import uuid
@@ -114,9 +115,12 @@ class AureonCognition:
         max_turns: int = 6,
         join_mesh: bool = True,
         source: str = "aureon.cognition",
+        prefer_local: bool | None = None,
     ) -> None:
         self.config = config or OperatorConfig.from_env()
-        self.adapter = adapter or self._default_adapter()
+        if prefer_local is None:
+            prefer_local = str(os.environ.get("AUREON_COGNITION_PREFER_LOCAL", "") or "").strip().lower() in {"1", "true", "yes", "on"}
+        self.adapter = adapter or self._default_adapter(prefer_local=prefer_local)
         self.tools = tools or build_operator_tools(allow_writes=allow_writes, allow_shell=allow_shell)
         self.max_turns = max_turns
         self.source = source
@@ -133,9 +137,15 @@ class AureonCognition:
             join_organism(self, "aureon_cognition")
 
     @staticmethod
-    def _default_adapter() -> LLMAdapter:
+    def _default_adapter(prefer_local: bool = False) -> LLMAdapter:
         providers = build_provider_set()
-        # Single primary line for the agentic loop (first available).
+        # Ollama-first: when prefer_local is set (the local-machine reasoning
+        # path), the local/ollama line reasons even if cloud keys are present.
+        if prefer_local:
+            for key, val in providers.items():
+                if "local" in key.lower() or "ollama" in key.lower():
+                    return val
+        # Otherwise a single primary line for the agentic loop (first available).
         return next(iter(providers.values()))
 
     # ------------------------------------------------------------------

@@ -1586,6 +1586,21 @@ class AureonAgentCore:
         Returns: {"success": bool, "result": any, "tool_used": str, "error": str}
         """
         params = params or {}
+        # Optional HNC grounding of this (otherwise ungated) sovereign path: when
+        # AUREON_GROUND_LOCAL_ACTIONS=1, every intent is first grounded through the
+        # Master-Formula / Auris / conscience gate and a veto refuses the move
+        # before any tool runs. Off by default (behaviour unchanged); fully guarded
+        # so a missing gate never breaks execution.
+        if str(os.environ.get("AUREON_GROUND_LOCAL_ACTIONS", "") or "").strip().lower() in {"1", "true", "yes", "on"}:
+            try:
+                from aureon.operator.grounded_action import get_action_gate
+
+                _verdict = get_action_gate().ground(intent, params if isinstance(params, dict) else {})
+                if not _verdict.approved:
+                    return {"success": False, "result": None, "tool_used": None,
+                            "error": f"grounded-action gate {_verdict.verdict}: {_verdict.reason}"}
+            except Exception:  # noqa: BLE001 - gate unavailable → unchanged behaviour
+                pass
         method_name = INTENT_MAP.get(intent)
 
         # If not in agent's intent map, try LaptopControl direct method call

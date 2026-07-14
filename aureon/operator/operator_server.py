@@ -594,6 +594,34 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             os.environ.get(conn.key_env, "") if conn.key_env else "")
         return jsonify(_conn_api.probe(conn, api_key))
 
+    # ── Grounded local-machine actions (the organism's hands) ──────────────────
+    # Every move is grounded through HNC (Master Formula / Auris) + the Queen's
+    # conscience before it can touch the machine, and is DRY-RUN unless armed via
+    # AUREON_LOCAL_ACTIONS_ARMED. Under /api/* so the bearer gate protects it.
+    try:
+        from aureon.operator.local_action_bridge import get_local_action_bridge
+
+        @app.post("/api/action")
+        def local_action():
+            body: Dict[str, Any] = request.get_json(silent=True) or {}
+            action = str(body.get("action") or "").strip()
+            if not action:
+                return _err(400, "missing 'action'")
+            bridge = get_local_action_bridge()
+            result = bridge.perform(action, body.get("params") or {}, body.get("context") or {})
+            return jsonify(_json_safe(result))
+
+        @app.get("/api/action/status")
+        def local_action_status():
+            bridge = get_local_action_bridge()
+            return jsonify(_json_safe({
+                "armed": bridge.armed,
+                "recent": bridge.recent_stats(),
+                "note": "dry-run unless armed; every move grounded through HNC + conscience",
+            }))
+    except Exception as exc:  # noqa: BLE001 - never sink the app on a wiring error
+        logger.warning("local-action routes not registered: %s", exc)
+
     # ── SaaS platform surface (catalog / domains / status) ─────────────────────
     try:
         from aureon.saas.gateway import register_saas_routes
