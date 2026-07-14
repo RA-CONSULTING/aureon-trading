@@ -131,7 +131,19 @@ def build_organism_payload() -> Dict[str, Any]:
                         "payload": payload_of(ev),
                     }
                 else:
-                    uni["consensus_event"] = None
+                    # Cross-process fallback: the organism daemon breathes the
+                    # consensus in a separate process; read its dedicated trace.
+                    from aureon.core.bus_trace import read_trace_latest
+
+                    row = read_trace_latest("organism_consensus")
+                    if row:
+                        ts = row.get("ts")
+                        uni["consensus_event"] = {
+                            "age_s": round(_t.time() - float(ts), 1) if ts else None,
+                            "payload": {k: v for k, v in row.items() if k != "ts"},
+                        }
+                    else:
+                        uni["consensus_event"] = None
             except Exception:  # noqa: BLE001
                 uni["consensus_event"] = None
             payload["unification"] = uni

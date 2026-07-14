@@ -609,6 +609,16 @@ class HNCLiveDaemon:
                 recent = _action_bus.recall("operator.action.verdict", limit=200) or []
                 verdicts = [payload_of(t) for t in recent]
                 if not verdicts:
+                    # Cross-process fallback: verdicts are produced in the OPERATOR
+                    # process, so this daemon's in-memory bus is empty. Read the
+                    # dedicated trace the gate writes so Λ(t) senses real moves.
+                    try:
+                        from aureon.core.bus_trace import read_trace
+
+                        verdicts = read_trace("local_action_verdict", limit=200)
+                    except Exception:  # noqa: BLE001
+                        verdicts = []
+                if not verdicts:
                     return {"count": 0}
                 approved = sum(1 for v in verdicts if v.get("approved"))
                 vetoed = sum(1 for v in verdicts if v.get("verdict") in ("VETOED", "BLOCKED"))

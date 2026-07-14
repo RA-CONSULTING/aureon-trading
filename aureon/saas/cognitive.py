@@ -136,13 +136,29 @@ def _consensus_event(bus: Any = None) -> Dict[str, Any] | None:
 
         b = bus if bus is not None else get_thought_bus()
         events = b.recall("organism.field.consensus", limit=1) or []
-        if not events:
+        if events:
+            ev = events[-1]
+            ts = ev.get("ts") if isinstance(ev, dict) else getattr(ev, "ts", None)
+            return {
+                "age_s": round(time.time() - float(ts), 1) if ts else None,
+                "payload": payload_of(ev),
+                "source": "bus",
+            }
+    except Exception:  # noqa: BLE001
+        pass
+    # Cross-process fallback: the organism daemon breathes consensus in another
+    # process; read the dedicated trace it writes so the heartbeat still shows.
+    try:
+        from aureon.core.bus_trace import read_trace_latest
+
+        row = read_trace_latest("organism_consensus")
+        if not row:
             return None
-        ev = events[-1]
-        ts = ev.get("ts") if isinstance(ev, dict) else getattr(ev, "ts", None)
+        ts = row.get("ts")
         return {
             "age_s": round(time.time() - float(ts), 1) if ts else None,
-            "payload": payload_of(ev),
+            "payload": {k: v for k, v in row.items() if k != "ts"},
+            "source": "consensus_trace_file",
         }
     except Exception:  # noqa: BLE001
         return None

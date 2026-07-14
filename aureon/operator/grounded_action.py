@@ -214,6 +214,16 @@ class GroundedActionGate:
         return self._conscience
 
     def _publish(self, topic: str, trace_id: str, payload: Dict[str, Any]) -> None:
+        # Verdicts feed the HNC daemon's Λ(t) local_action source — but that daemon
+        # runs in a SEPARATE process, so its in-memory recall never sees these.
+        # Mirror every verdict to a dedicated trace so the field crosses the boundary.
+        if topic == "operator.action.verdict":
+            try:
+                from aureon.core.bus_trace import append_trace
+
+                append_trace("local_action_verdict", dict(payload))
+            except Exception as exc:  # noqa: BLE001 — trace is best-effort
+                logger.debug("verdict trace skipped: %s", exc)
         if self._bus is None or Thought is None:
             return
         try:

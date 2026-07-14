@@ -138,22 +138,29 @@ def publish_subfield(source: str, state: Any, bus: Any = None) -> None:
     fields become connected (visible on the shared bus) without losing their
     local computation. Guarded / no-op on any error.
     """
+    payload = {
+        "source": source,
+        "symbolic_life_score": getattr(state, "symbolic_life_score", None),
+        "coherence_gamma": getattr(state, "coherence_gamma", None),
+        "consciousness_level": getattr(state, "consciousness_level", None),
+    }
     try:
         from aureon.core.aureon_thought_bus import Thought, get_thought_bus
 
         b = bus if bus is not None else get_thought_bus()
-        if b is None:
-            return
-        b.publish(Thought(
-            source=source, topic="symbolic.life.subfield",
-            payload={
-                "source": source,
-                "symbolic_life_score": getattr(state, "symbolic_life_score", None),
-                "coherence_gamma": getattr(state, "coherence_gamma", None),
-                "consciousness_level": getattr(state, "consciousness_level", None),
-            },
-        ))
+        if b is not None:
+            b.publish(Thought(source=source, topic="symbolic.life.subfield", payload=dict(payload)))
     except Exception:  # noqa: BLE001 — visibility is best-effort, never fatal
+        pass
+    # Cross-process bridge: sub-field producers (Queen engines, consciousness,
+    # auris) live in other processes than the blend readers (organism daemon,
+    # operator SaaS). Mirror to a dedicated trace so every sub-field reaches the
+    # whole-body consensus, not just same-process ones.
+    try:
+        from aureon.core.bus_trace import append_trace
+
+        append_trace("symbolic_subfield", dict(payload))
+    except Exception:  # noqa: BLE001
         pass
 
 
@@ -161,21 +168,32 @@ def read_subfields(bus: Any = None) -> dict[str, dict[str, Any]]:
     """All recently-published local sub-fields, keyed by source — the organism's
     view of every field its producers are computing."""
     out: dict[str, dict[str, Any]] = {}
+
+    def _absorb(src: Any, p: dict[str, Any]) -> None:
+        if src:
+            out[str(src)] = {
+                "symbolic_life_score": p.get("symbolic_life_score"),
+                "coherence_gamma": p.get("coherence_gamma"),
+                "consciousness_level": p.get("consciousness_level"),
+            }
+
+    # Cross-process sub-fields first (oldest), so same-process (freshest) wins on
+    # collision — a producer in another process still reaches the blend.
+    try:
+        from aureon.core.bus_trace import read_trace
+
+        for row in read_trace("symbolic_subfield", limit=200):
+            _absorb(row.get("source"), row)
+    except Exception:  # noqa: BLE001
+        pass
     try:
         from aureon.core.aureon_thought_bus import get_thought_bus, payload_of
 
         b = bus if bus is not None else get_thought_bus()
-        if b is None or not hasattr(b, "recall"):
-            return out
-        for t in b.recall("symbolic.life.subfield", limit=200) or []:
-            p = payload_of(t)
-            src = p.get("source")
-            if src:
-                out[src] = {
-                    "symbolic_life_score": p.get("symbolic_life_score"),
-                    "coherence_gamma": p.get("coherence_gamma"),
-                    "consciousness_level": p.get("consciousness_level"),
-                }
+        if b is not None and hasattr(b, "recall"):
+            for t in b.recall("symbolic.life.subfield", limit=200) or []:
+                p = payload_of(t)
+                _absorb(p.get("source"), p)
     except Exception:  # noqa: BLE001
         pass
     return out

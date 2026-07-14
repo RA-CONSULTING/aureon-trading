@@ -118,6 +118,17 @@ def breathe_field(organs: dict[str, Any]) -> dict[str, Any] | None:
             body_map = {k: snap.get(k) for k in ("coverage_pct", "woven", "failed", "baton_linked")}
         payload = {"blended": blended, "body_map": body_map}
         bus.publish(Thought(source="organism_daemon", topic="organism.field.consensus", payload=payload))
+        # Cross-process bridge: the organism daemon breathes here, but the SaaS
+        # consumers (/api/organism, /api/cognition) run in the operator process.
+        # Mirror the consensus to a dedicated trace so its heartbeat crosses.
+        try:
+            import time as _t
+
+            from aureon.core.bus_trace import append_trace
+
+            append_trace("organism_consensus", {**payload, "ts": _t.time()}, cap=200)
+        except Exception:  # noqa: BLE001
+            pass
         return payload
     except Exception as exc:  # noqa: BLE001 — a silent breath is still a breath
         logger.debug("field breath skipped: %s", exc)
