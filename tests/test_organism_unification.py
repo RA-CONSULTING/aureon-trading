@@ -159,6 +159,40 @@ def test_divided_field_gates_a_trade_via_the_fallback(monkeypatch):
     assert whisper.verdict == ConscienceVerdict.VETO
 
 
+# ── ConsciousnessModule trading gated by the field (opt-in, fail-open) ────────
+
+def test_consciousness_trade_gate_optin_veto_and_failopen(monkeypatch):
+    """The ConsciousnessModule's autonomous trading is gateable by the shared
+    field via the conscience — opt-in (default no-op), pausing on VETO,
+    fail-open on error. Tested on the unbound method with a stub (no heavy boot)."""
+    from types import SimpleNamespace
+
+    from aureon.core.aureon_consciousness_module import ConsciousnessModule
+
+    gate = ConsciousnessModule._coherence_permits_trading
+
+    # default: env unset → gate disabled → trading permitted (behaviour unchanged)
+    monkeypatch.delenv("AUREON_CONSCIOUSNESS_FIELD_GATE", raising=False)
+    ok, reason = gate(SimpleNamespace(bus=None, _trade_conscience=None))
+    assert ok is True and "disabled" in reason
+
+    # enabled + conscience VETO → trading paused
+    monkeypatch.setenv("AUREON_CONSCIOUSNESS_FIELD_GATE", "1")
+    veto = SimpleNamespace(verdict=SimpleNamespace(name="VETO"), message="divided field")
+    stub_veto = SimpleNamespace(bus=None,
+                                _trade_conscience=SimpleNamespace(ask_why=lambda *a, **k: veto))
+    ok2, _ = gate(stub_veto)
+    assert ok2 is False
+
+    # enabled + conscience raises → fail-open (never wedge trading shut)
+    def _boom(*a, **k):
+        raise RuntimeError("conscience down")
+
+    stub_err = SimpleNamespace(bus=None, _trade_conscience=SimpleNamespace(ask_why=_boom))
+    ok3, _ = gate(stub_err)
+    assert ok3 is True
+
+
 # ── keystone: publish → read the live field, flood-proof ─────────────────────
 
 def test_grounded_gate_reads_live_field_under_flood():

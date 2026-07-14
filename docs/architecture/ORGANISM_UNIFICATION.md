@@ -122,6 +122,19 @@ the canonical-SLS fallback in `_current_sls`). So **every** risky `ask_why` — 
 whole-body field, not just the local-action gate that explicitly feeds it. The
 organism's coherence is one shared authority over all its decisions.
 
+## The last island: ConsciousnessModule trading is gateable by the field
+
+`ConsciousnessModule` senses all bus traffic but *acted* through direct embedded
+trade calls (`_unified_trader.tick`, `_penny_hunter.tick`, `_capital_trader.tick`,
+`_autonomous_action`) that the shared field couldn't see. `_coherence_permits_trading()`
+now gates every trade phase of the heartbeat through the Queen's conscience (which
+reads the whole-body field via its blend/canonical fallbacks). **Opt-in** via
+`AUREON_CONSCIOUSNESS_FIELD_GATE` (default no-op, so live trading is unchanged);
+when enabled, a conscience VETO — collapsed SLS or a divided field — pauses that
+beat's trading and publishes `consciousness.trade.gated`. **Fail-open**: any error
+permits trading, so the gate can never wedge it shut. The one system that acted
+without being seen is now connected.
+
 ## Robustness: the sweep survives rogue modules
 
 `Connectome.touch()` catches `BaseException` (re-raising only `KeyboardInterrupt`),

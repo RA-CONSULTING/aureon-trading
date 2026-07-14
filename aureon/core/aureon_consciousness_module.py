@@ -460,6 +460,44 @@ class ConsciousnessModule:
         if result.get("ok"):
             self._understanding["last_action"] = f"{result.get('side', '?')} {result.get('symbol', '?')}"
 
+    def _coherence_permits_trading(self) -> tuple:
+        """Gate the heartbeat's autonomous trading on the organism's whole-body
+        field, via the Queen's conscience — so the ConsciousnessModule, which
+        senses everything, no longer *acts* through channels the shared field
+        can't see.
+
+        OPT-IN: only active when ``AUREON_CONSCIOUSNESS_FIELD_GATE`` is truthy, so
+        live trading behaviour is unchanged by default. When enabled, a conscience
+        VETO (collapsed SLS or a divided field — the conscience now reads both via
+        its blend_field / canonical fallbacks) pauses this beat's trading and
+        publishes a ``consciousness.trade.gated`` trace. Fail-open: any error →
+        permitted, so the gate can never wedge trading shut."""
+        import os
+
+        if str(os.environ.get("AUREON_CONSCIOUSNESS_FIELD_GATE", "") or "").strip().lower() \
+                not in {"1", "true", "yes", "on"}:
+            return True, "gate disabled"
+        try:
+            if getattr(self, "_trade_conscience", None) is None:
+                from aureon.queen.queen_conscience import QueenConscience
+                self._trade_conscience = QueenConscience()
+            whisper = self._trade_conscience.ask_why(
+                "execute trade (autonomous heartbeat)", {"risk": 0.1})
+            if getattr(whisper.verdict, "name", "") == "VETO":
+                reason = str(getattr(whisper, "message", "") or "conscience veto")
+                if self.bus is not None and Thought is not None:
+                    try:
+                        self.bus.publish(Thought(
+                            source="consciousness_module", topic="consciousness.trade.gated",
+                            payload={"reason": reason[:200]}))
+                    except Exception:  # noqa: BLE001
+                        pass
+                return False, reason
+            return True, "permitted"
+        except Exception as exc:  # noqa: BLE001 — fail-open, never wedge trading
+            log.debug(f"coherence trade gate unavailable (fail-open): {exc}")
+            return True, "gate unavailable"
+
     # ──────────────────────────────────────────────────────────
     #  HEARTBEAT — called by the sentient loop or a timer
     # ──────────────────────────────────────────────────────────
@@ -610,8 +648,14 @@ class ConsciousnessModule:
                 except Exception as e:
                     log.debug(f"Energy field: {e}")
 
+        # Whole-body coherence gate for this beat's autonomous trading (opt-in;
+        # default no-op → trade_ok True → the phases below are unchanged).
+        trade_ok, _trade_gate_reason = self._coherence_permits_trading()
+        if not trade_ok:
+            self._understanding["trade_gate"] = f"paused: {_trade_gate_reason[:80]}"
+
         # ── Step 4b2: UNIFIED TRADER — ALL exchanges in one tick ──
-        if self._unified_trader and self.lambda_state:
+        if trade_ok and self._unified_trader and self.lambda_state:
             step = self.lambda_state.step if self.lambda_state else 0
             if step > 3 and step % 3 == 0:  # Every 3rd heartbeat (~9s)
                 try:
@@ -634,7 +678,7 @@ class ConsciousnessModule:
                     log.debug(f"Unified trader tick: {e}")
 
         # ── Step 4c: PENNY HUNTER — fast autonomous trading ──
-        if self._penny_hunter:
+        if trade_ok and self._penny_hunter:
             try:
                 hunt_result = self._penny_hunter.tick()
                 for c in hunt_result.get("closed", []):
@@ -661,7 +705,7 @@ class ConsciousnessModule:
 
         # ── Step 4d: FULL CAPITAL CFD TRADER — the real trading system ──
         # This is the 3800-line beast: shadow trades, quadrumvirate, harmonic analysis
-        if self._capital_trader and self.lambda_state:
+        if trade_ok and self._capital_trader and self.lambda_state:
             step = self.lambda_state.step if self.lambda_state else 0
             if step > 3:  # After minimal warmup, TRADE EVERY CYCLE
                 try:
@@ -725,7 +769,7 @@ class ConsciousnessModule:
                     log.debug(f"Opportunity scan: {e}")
 
         # ── Step 5: ACT — pursue goals autonomously ──
-        if self.lambda_state and self.lambda_state.consciousness_psi > 0.5:
+        if trade_ok and self.lambda_state and self.lambda_state.consciousness_psi > 0.5:
             self._autonomous_action(understanding)
 
         # ── Step 5b: SELF-IMPROVE — use Code Architect to fix own UI/code ──

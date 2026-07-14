@@ -141,6 +141,22 @@ def run_audit() -> list[dict]:
     results.append(_check("field_gates_trades", w.verdict == ConscienceVerdict.VETO,
                           f"verdict={getattr(w.verdict, 'name', w.verdict)}", critical=False))
 
+    # Edge 4f — the ConsciousnessModule's autonomous trading is gateable by the
+    # field (opt-in, fail-open). Exercise the unbound method on a stub — the last
+    # island that acted without being seen is now connected.
+    import os as _os
+    from types import SimpleNamespace
+
+    from aureon.core.aureon_consciousness_module import ConsciousnessModule
+
+    _os.environ["AUREON_CONSCIOUSNESS_FIELD_GATE"] = "1"
+    _veto = SimpleNamespace(verdict=SimpleNamespace(name="VETO"), message="divided field")
+    cm_ok, _ = ConsciousnessModule._coherence_permits_trading(
+        SimpleNamespace(bus=None, _trade_conscience=SimpleNamespace(ask_why=lambda *a, **k: _veto)))
+    _os.environ.pop("AUREON_CONSCIOUSNESS_FIELD_GATE", None)
+    results.append(_check("consciousness_trade_gate", cm_ok is False,
+                          f"paused_on_veto={cm_ok is False}", critical=False))
+
     # Edge 5 — connectome telemetry: baton ear + pulse + auto-weave
     from aureon.core.aureon_connectome import get_connectome
 
