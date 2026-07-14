@@ -16,6 +16,7 @@ Routes:
   GET  /api/cognition          the whole cognitive substrate + provenance + truth roll-up
   GET  /api/cognition/<part>   one cognitive surface: field·bus·mycelium·connectome·brain
   GET  /api/metacognition      the organism's self-assessment (reads its own signals)
+  GET  /api/affect             how Aureon feels: victory·defeat·fear·resolve (real signals)
   GET  /api/manifests/<name>   a frontend manifest, rendered live (JSON)
   POST /api/manifests/refresh  rebuild catalog + rewrite frontend manifests
 
@@ -253,6 +254,21 @@ def register_saas_routes(app: Any) -> Any:
             assessment = {"available": False, "truth_status": "no_data",
                           "error": str(exc)[:200]}
         return jsonify(_stamp(assessment, assessment.get("truth_status", "no_data")))
+
+    @app.get("/api/affect")
+    @_guarded
+    def saas_affect():
+        # How Aureon feels: victory / defeat / fear / resolve, computed from real
+        # signals and folded through the Λ machinery. Read-only (assess, never
+        # reflect — no publish from a GET); the live feeling + fail-safe caution
+        # actuator run in the organism daemon's breath.
+        try:
+            from aureon.core.affect_monitor import get_affect_monitor
+
+            feeling = get_affect_monitor().assess().to_dict()
+        except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
+            feeling = {"available": False, "truth_status": "no_data", "error": str(exc)[:200]}
+        return jsonify(_stamp(feeling, feeling.get("truth_status", "no_data")))
 
     # ── the cognitive substrate as verified SaaS ──────────────────────────────
     # The organism's cognitive + meta-cognitive systems (HNC field, thought-bus

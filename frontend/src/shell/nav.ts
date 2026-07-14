@@ -16,6 +16,7 @@ import {
   Coins,
   Compass,
   CreditCard,
+  Flame,
   FlaskConical,
   Globe,
   Hammer,
@@ -264,6 +265,14 @@ export const NAV_SECTIONS: NavSection[] = [
         description: "Gold and capital intelligence company",
         icon: Coins,
         Component: lazyNamed(() => import("@/components/generated/AureonGoldCapitalIntelligenceConsole"), "AureonGoldCapitalIntelligenceConsole"),
+      },
+      {
+        path: "/ops/affect",
+        label: "Affect",
+        description: "How Aureon feels — victory, defeat, fear & resolve from real signals",
+        icon: Flame,
+        Component: lazy(() => import("./pages/AffectPage")),
+        live: true,
       },
       {
         path: "/ops/systems",
