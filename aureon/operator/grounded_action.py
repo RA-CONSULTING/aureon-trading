@@ -272,6 +272,22 @@ class GroundedActionGate:
         # the divergence through so it can caution/veto on it.
         if divergence is not None and divergence >= _DIVERGENCE_CAUTION and risk > 0.0:
             risk = max(risk, 0.06)
+        # 2b. Affect (opt-in via AUREON_AFFECT_MODULATION): a fearful / defeated
+        #     organism grounds its own moves MORE cautiously. The affect caution
+        #     bias is clamped ≥ 0 (victory contributes nothing, it is never
+        #     negative), so this can only ever RAISE risk toward the
+        #     conscience-engaging floor — fear tightens, triumph never loosens.
+        #     Off by default; fail-open (a bad read leaves risk untouched); capped
+        #     at the destructive tier so it can never exceed the hard ceiling.
+        if _truthy("AUREON_AFFECT_MODULATION"):
+            try:
+                from aureon.core.affect_monitor import get_affect_monitor
+
+                bias = max(0.0, float(get_affect_monitor().caution_bias()))
+                if bias > 0.0:
+                    risk = min(0.12, max(risk, risk + bias))
+            except Exception as exc:  # noqa: BLE001 — affect never blocks the gate
+                logger.debug("affect modulation skipped: %s", exc)
         # 3. optional local-LLM rationale
         rationale = self._llm_reason(action, params)
 

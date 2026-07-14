@@ -170,6 +170,20 @@ def breathe(organs: dict[str, Any]) -> None:
             )
     except Exception as exc:  # noqa: BLE001
         logger.debug("metacognition reflect skipped: %s", exc)
+    # Affect: the organism reads its OWN victory/defeat/fear/resolve from real
+    # signals and loops the feeling back into the field (guarded). The felt state
+    # is observable; the fail-safe caution actuator (opt-in) reads it separately.
+    try:
+        from aureon.core.affect_monitor import get_affect_monitor
+
+        af = get_affect_monitor().reflect()
+        if af.available:
+            logger.info(
+                "❤️ affect — mood=%s victory=%.2f defeat=%.2f fear=%.2f resolve=%.2f caution=%.3f",
+                af.mood, af.victory, af.defeat, af.fear, af.resolve, af.caution_bias,
+            )
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("affect reflect skipped: %s", exc)
 
 
 def main() -> None:
