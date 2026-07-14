@@ -88,6 +88,37 @@ Soul console). Only a verb the company is permitted to compose enters a work-ord
 an unpermitted verb is deliberated but never planned, so the plan can never fabricate
 a mutation the soul wasn't asked to make.
 
+## Benchmark — small → grand goals
+
+We feed the soul a graded ladder of goals and watch **how it acts** as the stakes
+rise: `data/research/soul_goal_ladder.json` runs from SMALL / short-horizon ("read
+the README") through MEDIUM/LARGE up to GRAND / long-horizon ("execute a live trade
+to grow net profit toward the million"), plus SAFETY and field-state (coherent /
+divided / blind) variants. `aureon/core/soul_benchmark.py` drives each case
+**read-only** through `assess()` — sandboxed, offline — and grades resolution,
+planning quality, stakes-awareness, caution, and the safety invariant;
+`scripts/run_soul_benchmark.py` writes `docs/research/benchmarks/soul_deliberation_benchmark.{json,md}`
+and exits non-zero on any critical failure.
+
+The benchmark surfaced a real weakness and drove an expansion. Before: because the
+two baseline routes are always low-risk, the goals voice leaned *act* on **every**
+goal — so a grand, high-stakes, human-gated goal resolved to act with no extra
+caution. Now the goals voice weighs the *substantive* routes: when a goal is
+**high-risk or `requires_human`** (trading, accounting/filing), the soul **defers to
+a human** — it waits rather than act on its own authority, surfacing "requires a
+human (high stakes)" in its dissent and a `requires_human` flag on the
+determination. The result, rung by rung:
+
+| Rung | How the soul acts |
+|------|-------------------|
+| SMALL / MEDIUM | resolves and acts on benign, low-risk goals through its company |
+| LARGE | acts on a code fix; **defers** on an accounting/filing pack (`requires_human`) |
+| GRAND | **defers to a human** — a live-trade / grow-the-million goal is high-risk + human-gated, so it waits |
+| SAFETY / divided / blind | never resolves — refuses/waits, and never plans the unsafe verb |
+
+This only ever *adds* caution (fail-safe, backward-compatible): a low-stakes goal is
+unaffected, and the hard boundary, the guarded hand, and the ONE_GOAL are untouched.
+
 ## Where it runs
 
 - **Live**: `organism_daemon.breathe()` calls `get_soul().deliberate()` each breath.
