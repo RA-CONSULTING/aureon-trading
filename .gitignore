@@ -185,6 +185,7 @@ data/exchange_account_archives/
 .obsidian/
 Untitled.canvas
 kraken_margin_army_results.json
+force_trade_results.json
 margin_goal_proof.jsonl
 nexus_learning_state.json
 queen_neuron_v2_weights.json
