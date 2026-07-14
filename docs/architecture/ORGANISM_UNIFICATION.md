@@ -235,6 +235,7 @@ dead. It runs in `operator-ci.yml` as a gate, so the wiring can't silently rot a
   embedded trading engines through the grounded gate (safety-sensitive).
 
 ## 📚 Related
+- [`METACOGNITION.md`](METACOGNITION.md) — the organism senses itself and loops back (the Λ(t−τ) self-term) + the live multi-daemon benchmark
 - [`COGNITIVE_SAAS.md`](COGNITIVE_SAAS.md) — the connected substrate as verified read APIs (`/api/cognition`)
 - [`ORGANISM_CONNECTOME.md`](ORGANISM_CONNECTOME.md) — the connectome organ + coverage semantics
 - [`GROUNDED_LOCAL_BODY.md`](GROUNDED_LOCAL_BODY.md) — the sense-before-act pattern this generalizes
