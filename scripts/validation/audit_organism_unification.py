@@ -395,6 +395,25 @@ def run_audit() -> list[dict]:
             results.append(_check("soul_abstains_when_divided", _rw.resolved is False,
                                   f"stance={_rw.stance} resolved={_rw.resolved} "
                                   f"dissent={_rw.dissent}", critical=False))
+
+            # Edge 10 — the soul's company: a resolved determination is decomposed
+            # into a plan of role-assigned work-orders (the trading company's own
+            # organisation, reused), and directing it stays DRY-RUN unless armed.
+            from aureon.core.soul_company import get_soul_company as _gsc
+
+            _plan = _gsc().plan("read the project readme",
+                                {"action": "read_repo_file", "params": {"path": "README.md"}})
+            _wo = _plan.work_orders
+            results.append(_check(
+                "soul_company_plans",
+                len(_wo) >= 2 and all(w.role for w in _wo) and _plan.directed is False,
+                f"work_orders={[w.role for w in _wo]} directed={_plan.directed}", critical=False))
+            _gsc().direct(_plan)   # AUREON_LOCAL_ACTIONS_ARMED unset → dry-run
+            _dry = all((w.outcome or {}).get("dry_run") or (w.outcome or {}).get("blocked")
+                       for w in _plan.work_orders)
+            results.append(_check(
+                "soul_company_dry_run_by_default", _plan.directed is True and _dry,
+                f"directed={_plan.directed} all_dry_run={_dry}", critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:
