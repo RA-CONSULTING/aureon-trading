@@ -49,10 +49,13 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _STATE_PATH = _REPO_ROOT / "state" / "organism_connectome.json"
 _SUPPRESS_ENV = "AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS"
 
-# Parts the sweep never wakes: they run loops, open sockets, spawn processes,
-# or block at import. The organism knows OF them (sense) without touching.
+# Parts the sweep never wakes: they run loops, open sockets, spawn processes, or
+# block at import. Denial is a fast-path for KNOWN loopers/hangers — the real
+# protection is the timeout-guarded touch (behaviour decides, not a name). The broad
+# name suffixes (_live/_runner/_app) were dropped: probing showed ~26 of them import
+# fine and were denied purely for their name — costing honest reachable coverage.
 _DENY_PATTERNS = (
-    r"_daemon$", r"_launcher$", r"_server$", r"_app$", r"_live$", r"_runner$",
+    r"_daemon$", r"_launcher$", r"_server$",
     r"^aureon\.autonomous\.aureon_master_launcher",
     r"^aureon\.core\.hnc_live_daemon",
     r"^aureon\.core\.integrated_cognitive_system",
@@ -60,9 +63,17 @@ _DENY_PATTERNS = (
 )
 _DENY_RE = [re.compile(p) for p in _DENY_PATTERNS]
 
+# Known modules that do a blocking/network import at MODULE TOP LEVEL (not under a
+# __main__ guard), so they hang the import itself. Fast-path-denied so the sweep
+# doesn't pay the touch timeout for them; the timeout guard backstops any missed.
+_DENY_EXPLICIT = frozenset({
+    "aureon.trading.aureon_unified_live",
+    "aureon.simulation.aureon_multiverse_live",
+})
+
 
 def _denied(module: str) -> bool:
-    return any(rx.search(module) for rx in _DENY_RE)
+    return module in _DENY_EXPLICIT or any(rx.search(module) for rx in _DENY_RE)
 
 
 _PATHS_READY = False
@@ -100,6 +111,17 @@ def _retry_batch() -> int:
         return max(0, int(os.environ.get("AUREON_CONNECTOME_RETRY_BATCH", "") or 5))
     except (TypeError, ValueError):
         return 5
+
+
+def _touch_timeout() -> float:
+    """Seconds a single import may take before touch treats it as a hanger and moves
+    on — so no misbehaving module can freeze the sweep, and behaviour (not a name)
+    decides what is un-touchable. Env ``AUREON_CONNECTOME_TOUCH_TIMEOUT``; 0 = off
+    (synchronous import, old behaviour)."""
+    try:
+        return max(0.0, float(os.environ.get("AUREON_CONNECTOME_TOUCH_TIMEOUT", "") or 10.0))
+    except (TypeError, ValueError):
+        return 10.0
 
 
 class Connectome:
@@ -221,25 +243,52 @@ class Connectome:
         prior = os.environ.get(_SUPPRESS_ENV)
         os.environ[_SUPPRESS_ENV] = "1"   # the baton's live-mode env flips must never fire from here
         try:
-            mod = importlib.import_module(module)
-        except KeyboardInterrupt:
-            raise  # operator Ctrl-C still works
-        except BaseException as exc:  # noqa: BLE001 — a rogue module's sys.exit()/
-            # SystemExit at import must not kill the sweep, the daemon, or the
-            # audit. A failed touch is data, not death — catch even BaseException
-            # (except KeyboardInterrupt) so one misbehaving module can't take the
-            # whole organism sweep down.
-            self._record(module, "failed", error=f"{type(exc).__name__}: {exc}"[:300])
-            return {"module": module, "status": "failed", "error": f"{type(exc).__name__}: {exc}"[:300]}
+            mod, err = self._import_guarded(module, _touch_timeout())
         finally:
             if prior is None:
                 os.environ.pop(_SUPPRESS_ENV, None)
             else:
                 os.environ[_SUPPRESS_ENV] = prior
 
+        if err is not None:
+            # A failed touch is data, not death — a rogue module's sys.exit(), a
+            # missing dep, or a hang (timed out) is recorded and the sweep moves on.
+            self._record(module, "failed", error=err)
+            return {"module": module, "status": "failed", "error": err}
+
         shape = self._feel(mod)
         self._record(module, "touched", **{k: shape[k] for k in ("classes", "functions", "singletons")})
         return {"module": module, "status": "touched", **shape}
+
+    def _import_guarded(self, module: str, timeout: float) -> tuple[Any, str | None]:
+        """Import ``module`` behaviourally hang-safe: if the import takes longer than
+        ``timeout`` seconds it is treated as a hanger (recorded ``failed``, the sweep
+        moves on — never blocked). Returns ``(mod_or_None, error_or_None)``. A rogue
+        ``sys.exit()`` / missing dep is captured as an error (never raised). ``timeout
+        <= 0`` → synchronous import (old behaviour). Operator Ctrl-C still interrupts."""
+        if timeout <= 0:
+            try:
+                return importlib.import_module(module), None
+            except KeyboardInterrupt:
+                raise
+            except BaseException as exc:  # noqa: BLE001
+                return None, f"{type(exc).__name__}: {exc}"[:300]
+        box: Dict[str, Any] = {}
+
+        def _work() -> None:
+            try:
+                box["mod"] = importlib.import_module(module)
+            except BaseException as exc:  # noqa: BLE001 — capture, never crash the worker
+                box["err"] = f"{type(exc).__name__}: {exc}"[:300]
+
+        t = threading.Thread(target=_work, name=f"connectome-touch-{module}"[:60], daemon=True)
+        t.start()
+        t.join(timeout)   # Ctrl-C on the main thread interrupts the join and propagates
+        if t.is_alive():
+            return None, f"import exceeded {timeout:g}s — treated as a hanger"
+        if "mod" in box:
+            return box["mod"], None
+        return None, box.get("err", "import failed")
 
     def _feel(self, mod: Any) -> Dict[str, Any]:
         classes: List[str] = []

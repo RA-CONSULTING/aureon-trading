@@ -78,6 +78,48 @@ def test_touch_records_failure_without_raising(tmp_path):
     assert r["status"] == "unknown"
 
 
+# ── deny only what truly hangs: behaviour-honest deny-list + timeout guard ────
+
+def test_deny_list_is_behaviour_honest():
+    from aureon.core.aureon_connectome import _denied
+
+    # genuine loopers/hangers stay denied…
+    assert _denied("aureon.core.hnc_live_daemon") is True          # anchored daemon
+    assert _denied("aureon.x.foo_daemon") is True                  # _daemon suffix kept
+    assert _denied("aureon.trading.aureon_unified_live") is True   # explicit top-level-blocking hanger
+    # …but a module denied purely for a name suffix is freed (behaviour, not name)
+    assert _denied("aureon.x.foo_live") is False
+    assert _denied("aureon.x.bar_runner") is False
+    assert _denied("aureon.x.baz_app") is False
+
+
+def test_touch_times_out_a_hanger_without_blocking(tmp_path, monkeypatch):
+    import importlib
+    import time as _t
+
+    c = _fresh(tmp_path)
+    c.manifest()   # build BEFORE monkeypatching import_module (manifest uses a plain import)
+    monkeypatch.setenv("AUREON_CONNECTOME_TOUCH_TIMEOUT", "0.3")
+
+    def _slow(name):
+        _t.sleep(3.0)
+        return object()
+
+    monkeypatch.setattr(importlib, "import_module", _slow)
+    t0 = _t.monotonic()
+    r = c.touch("aureon.core.hnc_params")
+    elapsed = _t.monotonic() - t0
+    assert r["status"] == "failed" and "exceeded" in r["error"]     # treated as a hanger
+    assert elapsed < 2.0                                            # the sweep was NOT blocked
+
+
+def test_touch_timeout_off_is_synchronous(tmp_path, monkeypatch):
+    monkeypatch.setenv("AUREON_CONNECTOME_TOUCH_TIMEOUT", "0")
+    c = _fresh(tmp_path)
+    r = c.touch("aureon.core.aureon_organism_spine")
+    assert r["status"] == "touched"                                # old synchronous path intact
+
+
 # ── failures aren't forever: import-context heal + bounded retry ──────────────
 
 def test_ensure_import_paths_is_idempotent():

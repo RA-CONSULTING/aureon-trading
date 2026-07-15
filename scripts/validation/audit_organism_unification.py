@@ -875,6 +875,44 @@ def run_audit() -> list[dict]:
             results.append(_check(
                 "failures_are_not_forever", _recovered_ok and _settled_ok,
                 f"recovered={_rr['recovered']} settled_at_cap={_settled_ok}", critical=False))
+
+            # Edge 32 — deny only what truly hangs: behaviour (a timeout-guarded touch)
+            # decides, not a name. A hanging import is timed-out to `failed` (the sweep
+            # is never blocked), a genuine daemon stays denied, and a module denied
+            # purely for a name suffix is freed into the reachable body.
+            import importlib as _il
+            import time as _time2
+            from aureon.core.aureon_connectome import Connectome as _Conn2
+            from aureon.core.aureon_connectome import _denied as _dny
+            from aureon.core.aureon_connectome import reset_connectome_for_tests as _rc2
+
+            _deny_ok = (_dny("aureon.core.hnc_live_daemon") is True
+                        and _dny("aureon.trading.aureon_unified_live") is True
+                        and _dny("aureon.x.foo_live") is False
+                        and _dny("aureon.x.bar_runner") is False)
+            _rc2()
+            _cy = _Conn2(state_path=_Path(_tds) / "hang_connectome.json")
+            _cy.manifest()                                   # build before patching import_module
+            _prev_im = _il.import_module
+            _hprev = _osm.environ.get("AUREON_CONNECTOME_TOUCH_TIMEOUT")
+            _osm.environ["AUREON_CONNECTOME_TOUCH_TIMEOUT"] = "0.3"
+            try:
+                _il.import_module = lambda name: (_time2.sleep(3.0), object())[1]  # type: ignore[assignment]
+                _t0 = _time2.monotonic()
+                _hr = _cy.touch("aureon.core.hnc_params")
+                _elapsed = _time2.monotonic() - _t0
+            finally:
+                _il.import_module = _prev_im
+                if _hprev is None:
+                    _osm.environ.pop("AUREON_CONNECTOME_TOUCH_TIMEOUT", None)
+                else:
+                    _osm.environ["AUREON_CONNECTOME_TOUCH_TIMEOUT"] = _hprev
+            _rc2()
+            _hang_ok = _hr["status"] == "failed" and "exceeded" in _hr.get("error", "") and _elapsed < 2.0
+            results.append(_check(
+                "deny_only_what_hangs", _deny_ok and _hang_ok,
+                f"deny_honest={_deny_ok} hang_timed_out={_hang_ok} elapsed={_elapsed:.2f}s",
+                critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:

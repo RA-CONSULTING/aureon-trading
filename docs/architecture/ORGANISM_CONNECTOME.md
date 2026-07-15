@@ -50,9 +50,18 @@ enumerate  →  sense  →  touch  →  weave  →  pulse
 | `pulse()` | One breath: publishes `organism.connectome.pulse` with honest coverage. |
 | `status()` | The honest picture (see below). |
 
-**Deny-list**: parts that run loops, open sockets, or block at import
-(`*_daemon`, `*_server`, `*_launcher`, the live daemons themselves) are **sensed but
-never woken** — status `denied`, so the sweep is safe and non-fatal.
+**Deny by behaviour, not by name.** The real protection is a **timeout-guarded touch**:
+the import runs in a worker thread with a join timeout (`AUREON_CONNECTOME_TOUCH_TIMEOUT`,
+default 10s; `0` = synchronous). If an import exceeds the timeout it is recorded `failed`
+("treated as a hanger") and the sweep moves on — **no misbehaving module can ever block the
+sweep** (worst case: one leaked daemon thread + a settled `failed`). Because behaviour now
+decides, the deny-list is only a **fast-path** for *known* loopers: the anchored daemons/
+servers/launchers (`*_daemon`, `*_server`, `*_launcher`, `hnc_live_daemon`, `operator_server`,
+`integrated_cognitive_system`, the master launcher) plus a small explicit set of modules that
+do a blocking/network import at module top level (`aureon_unified_live`, `aureon_multiverse_live`).
+The old broad name suffixes (`_live`/`_runner`/`_app`) were **dropped** — probing showed ~26 of
+those import fine and were denied purely for their name, needlessly shrinking `reachable`; now
+they join the connectable body (denied 34 → 13, reachable ~1225 → ~1246).
 
 **Persistence**: `state/organism_connectome.json` (gitignored) so the body-map
 survives restarts.
