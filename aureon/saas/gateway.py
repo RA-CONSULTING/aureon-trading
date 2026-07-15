@@ -389,6 +389,23 @@ def register_saas_routes(app: Any) -> Any:
             ts = "no_data"
         return jsonify(_stamp(data, ts))
 
+    @app.get("/api/consciousness")
+    @_guarded
+    def saas_consciousness():
+        # The organism's inner capabilities, categorized — self-perception, selfhood,
+        # purpose, governance, the workforce and the body — each with its purpose,
+        # route, safety posture and honest live truth_status. Read-only to inspect;
+        # every irreversible move still routes to the director's desk.
+        try:
+            from aureon.saas.consciousness_catalog import build_consciousness_catalog
+
+            cat = build_consciousness_catalog()
+            return jsonify(_stamp(cat, cat.get("truth_status", "no_data")))
+        except Exception as exc:  # noqa: BLE001 — degrade honestly, never 500
+            return jsonify(_stamp(
+                {"available": False, "categories": {}, "surfaces": [], "error": str(exc)[:200]},
+                "no_data"))
+
     # ── the cognitive substrate as verified SaaS ──────────────────────────────
     # The organism's cognitive + meta-cognitive systems (HNC field, thought-bus
     # links, mycelium mesh, connectome body-map, miner brain) surfaced as

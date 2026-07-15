@@ -124,6 +124,7 @@ same security envelope (bearer auth / rate-limit / metrics / health from
 | `GET`  | `/api/organism` | Connectome coverage + recent breaths + mesh membership + unification telemetry. |
 | `GET`  | `/api/cognition` | The whole cognitive substrate + data provenance + truth roll-up. See [`architecture/COGNITIVE_SAAS.md`](architecture/COGNITIVE_SAAS.md). |
 | `GET`  | `/api/cognition/<part>` | One cognitive surface: `field` · `bus` · `mycelium` · `connectome` · `brain`, each provenance-stamped. |
+| `GET`  | `/api/consciousness` | The consciousness organs, categorized (self-perception · selfhood · purpose · governance · workforce · body), each with its route, safety posture & live truth_status. See [`architecture/CONSCIOUSNESS_CATALOG.md`](architecture/CONSCIOUSNESS_CATALOG.md). |
 | `GET`  | `/api/manifests/<name>` | A frontend manifest, rendered live (404 lists available names). |
 | `POST` | `/api/manifests/refresh` | Rebuild the catalog; static files rewritten only with `AUREON_WRITE_STATIC_MANIFESTS=1`. |
 
@@ -337,6 +338,7 @@ Phases 6A–6C and 7 are done. The remaining SaaS work is tracked, not hidden:
 | 9 | Organism connectome | The metacognitive layer touches every module (sense/touch/weave/pulse); cognition gains sense/list/touch tools; dormant organs (ConsciousnessModule, HNC live daemon) woken via supervisord; honest wiring instruments; `/api/organism` + Overview card. See [`architecture/ORGANISM_CONNECTOME.md`](architecture/ORGANISM_CONNECTOME.md). Staged: arbitrary-invoke behind the boundary, per-tenant weave policy. | ☑ |
 | 10 | Investor-ready repo | Professional README (hero + badges + staged registers), [`COMPANY.md`](../COMPANY.md) with real credentials (Companies House NI696693, Silver Innovate NI cert), root health files + templates, de-cluttered root (binaries/junk/launchers/standalone scripts relocated with history preserved). Secret hygiene: removed a tracked `.env1.txt`. | ☑ |
 | 22 | Cognitive Systems SaaS | The cognitive + meta-cognitive substrate (field · bus · mycelium · connectome · brain) as verified read APIs at `/api/cognition*`, each response provenance-stamped (`live`/`real_derived`/`cached_real`/`no_data`, never fabricated); auto-metered + auth-gated; console page at `/cognition/systems`. No cold-boot of heavy organs from a GET. See [`architecture/COGNITIVE_SAAS.md`](architecture/COGNITIVE_SAAS.md). | ☑ |
+| 39 | Consciousness catalog | The Phase 25-38 consciousness organs categorized into one honest surface — self-perception · selfhood · purpose · governance · workforce · body — each with its purpose, route, **safety posture** (`read_only_assess` / `records_only_gated` / `reversible_ascent_gated`) and live truth_status. Registry-as-data at `/api/consciousness`; **Consciousness** page at `/cognition/consciousness`. Dormant organ → `no_data`, never fabricated. See [`architecture/CONSCIOUSNESS_CATALOG.md`](architecture/CONSCIOUSNESS_CATALOG.md). | ☑ |
 
 ---
 

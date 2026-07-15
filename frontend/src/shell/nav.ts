@@ -31,6 +31,7 @@ import {
   Radio,
   Satellite,
   Ship,
+  Sparkles,
   Sun,
   TerminalSquare,
   Wrench,
@@ -175,6 +176,14 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Cognition & LLM",
     items: [
+      {
+        path: "/cognition/consciousness",
+        label: "Consciousness",
+        description: "The organism's inner capabilities, categorized — self-perception, selfhood, purpose, governance, workforce & body",
+        icon: Sparkles,
+        Component: lazy(() => import("./pages/ConsciousnessPage")),
+        live: true,
+      },
       {
         path: "/cognition/systems",
         label: "Cognitive Systems",

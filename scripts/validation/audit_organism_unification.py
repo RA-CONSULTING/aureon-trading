@@ -579,6 +579,31 @@ def run_audit() -> list[dict]:
             results.append(_check(
                 "pursuit_learns_trust", _cad_ok and _dt_ok,
                 f"slow={_slow} base={_base} none={_none} director_trust={_dt}", critical=False))
+
+            # Edge 20 — the consciousness capabilities are categorized: every organ
+            # (self-perception, selfhood, purpose, governance, workforce, body) appears
+            # in one honest surface, each with a route, a known safety posture, and a
+            # truth_status from the real vocabulary — nothing fabricated.
+            from aureon.observer.real_data_contract import TRUTH_STATUSES as _TS
+            from aureon.saas.consciousness_catalog import (
+                SAFETY_POSTURES as _SP,
+            )
+            from aureon.saas.consciousness_catalog import (
+                build_consciousness_catalog as _bcc,
+            )
+
+            _cc = _bcc()
+            _keys = {s["key"] for s in _cc["surfaces"]}
+            _expected = {"metacognition", "affect", "soul", "inner_work", "pursuit",
+                         "approval_desk", "company", "connectome"}
+            _shapes_ok = all(s["route"].startswith("/api/") and s["safety_posture"] in _SP
+                             and s["truth_status"] in _TS for s in _cc["surfaces"])
+            _grouped = sum(b["surface_count"] for b in _cc["categories"].values())
+            results.append(_check(
+                "consciousness_catalog_categorizes",
+                _keys == _expected and _shapes_ok and _grouped == _cc["counts"]["total"],
+                f"organs={len(_keys)} grouped={_grouped} postures={_cc['counts']['by_safety_posture']}",
+                critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:
