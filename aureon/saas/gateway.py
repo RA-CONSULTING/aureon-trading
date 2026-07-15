@@ -93,6 +93,14 @@ def build_organism_payload() -> Dict[str, Any]:
             payload["mycelium"] = {"connected_systems": mesh.get("connected_systems", [])}
         except Exception:  # noqa: BLE001
             payload["mycelium"] = {}
+        # The waking — the organism's generation lineage + the DNA it carries across
+        # cycles (read-only; only the daemon's boot increments it).
+        try:
+            from aureon.core.awakening import read_genome
+
+            payload["awakening"] = read_genome()
+        except Exception:  # noqa: BLE001
+            payload["awakening"] = {}
         # Phase 19 — unification telemetry: is the shared HNC field flowing, and
         # which producer edges are alive? (recall filters by topic so this is a
         # true 'edge live?' signal, not a recency artefact.)

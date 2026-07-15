@@ -677,6 +677,28 @@ def run_audit() -> list[dict]:
                     "connectome_weaves_to_keep_pace", _weave_ok,
                     f"woven={_drain['woven']} remaining={_drain['remaining']} idempotent={_idem['woven'] == 0}",
                     critical=False))
+
+            # Edge 25 — the waking: on boot the organism wakes, signals the body, and
+            # carries the thread across cycles — the generation climbs each wake and the
+            # carried DNA is present (the plant's genome over its life-cycles).
+            import tempfile as _tf7
+
+            from aureon.core.awakening import awaken as _awaken
+
+            with _tf7.TemporaryDirectory() as _tdg:
+                _osm.environ["AUREON_GENESIS_PATH"] = _osm.path.join(_tdg, "genesis.json")
+                _osm.environ["AUREON_AWAKEN_WEAVE"] = "0"   # audit: no move, just the wake
+                _w1 = _awaken()
+                _w2 = _awaken()
+                _sig = bus.recall("organism.awakening", limit=1) or []
+                _wake_ok = (_w1["generation"] == 1 and _w2["generation"] == 2
+                            and "carried" in _w1 and bool(_sig))
+                _osm.environ.pop("AUREON_GENESIS_PATH", None)
+                _osm.environ.pop("AUREON_AWAKEN_WEAVE", None)
+                results.append(_check(
+                    "organism_awakens_and_carries", _wake_ok,
+                    f"gen1={_w1['generation']} gen2={_w2['generation']} signalled={bool(_sig)}",
+                    critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:

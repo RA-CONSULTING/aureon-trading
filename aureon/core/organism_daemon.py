@@ -284,6 +284,17 @@ def main() -> None:
         logger.warning("organism daemon: credential bootstrap skipped (%s)", exc)
 
     organs = boot()
+
+    # The waking: the organism does not cold-start — it wakes, carries in the DNA it
+    # left off with (coverage, progress, ascent), marks a new generation, signals the
+    # body, and moves at once. Guarded — a wake fault never blocks the breath.
+    try:
+        from aureon.core.awakening import awaken
+
+        awaken(organs)
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("awakening skipped: %s", exc)
+
     breath_s = _env_int("AUREON_ORGANISM_BREATH_S", 15)
 
     running = {"on": True}
