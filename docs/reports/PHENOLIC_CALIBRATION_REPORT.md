@@ -18,8 +18,9 @@ the *validation of the controls* were calibrated.
 |--------|-----|-------------|
 | Codex spectral map (original) | primary-literature DOIs | 413 (baseline) |
 | **NIST WebBook IR** (Coblentz Society) | `fetcher.py` — JCAMP-DX download + peak-pick | +110 (caffeic 30, ferulic 48, rutin 32) |
-| **Curated open-access** | `data/spectra/curated_open_access_peaks.csv` | +9 (quercetin 8 · DOI 10.5812/ijpr-130626; apigenin 1 · DOI 10.1016/j.lwt.2021.112751) |
-| **Total (enriched)** | merged via `connector.run_analysis([...])` | **532** |
+| **Curated open-access** | `data/spectra/curated_open_access_peaks.csv` | +20 (quercetin 8 · DOI 10.5812/ijpr-130626; apigenin 1 · DOI 10.1016/j.lwt.2021.112751; **luteolin 11 · DOI 10.3390/chemosensors11020104**) |
+| **Total experimental (enriched)** | merged via `connector.run_analysis([...])` | **543** |
+| **Computed (GFN2-xTB)** | `data/spectra/computed_xtb_peaks.csv` — theoretical, separate lane | 448 across 6 aglycones (apigenin, luteolin, kaempferol, quercetin, caffeic, ferulic) |
 
 NIST has no IR for the flavonoids/iridoids (apigenin, aucubin, luteolin,
 kaempferol, chlorogenic, quercetin all 404), so those remain the peak-limited
@@ -39,7 +40,34 @@ compounds; the fetcher is architected to add further open sources later.
 | quercetin | 16 → 24 | 0.6184 → 0.2857 | improved, not significant |
 | others | unchanged | not significant | — |
 
-**Clustering-significant: baseline 5/14 → enriched 5/14.**
+**Clustering-significant: baseline 5/14 → enriched 6/14** (luteolin joined after the
+curated +11 Raman bands flipped it from A_p 0.838 → 0.005; ferulic gained via NIST,
+rutin lost — see below).
+
+## Round 2 — more experimental data + a computed (theoretical) channel
+
+**Experimental (unchanged engine).** Adding the verified luteolin Raman table
+(DOI 10.3390/chemosensors11020104, 11 bands) took luteolin from *not separable* to
+**clustering-significant** (A_p 0.838 → 0.0050, now 21 peaks from 2 independent
+sources). This is again an honest, one-directional-per-compound effect from *real*
+data, not threshold tuning. Clustering-significant compounds: caffeic, chicoric,
+chlorogenic, ferulic, **luteolin**, rosmarinic (6/14). Separability (A ∧ B) stays
+0/14 — the golden-ratio test is still unmet.
+
+**Computed channel (GFN2-xTB, `fetcher.py --source computed`).** Where open
+experimental cm⁻¹ data is scarce (apigenin, luteolin, kaempferol…), we generate the
+full theoretical vibrational spectrum from SMILES: RDKit 3D embed → GFN2-xTB geometry
+optimize → finite-difference Hessian → real modes > 100 cm⁻¹. This yields dense
+fingerprints (80–86 modes per aglycone, 448 total). **Integrity guardrail:** computed
+peaks live in a *separate file* with the provenance string
+`COMPUTED GFN2-xTB (theoretical, non-experimental)` and never enter an experimental
+run — `run_analysis` only sees them if their file is explicitly listed, and the result
+then self-labels the compound's provenance. They are excluded from the experimental
+falsifiable claim; they exist to explore coverage and as a scaffold for future
+experimental confirmation. (Frequencies are unscaled GFN2-xTB harmonics.)
+
+**Calibration unchanged:** on the experimental set, empirical separable-FPR = 0.0000,
+positive control detects (p≈0.003), controls valid → CALIBRATED. No threshold moved.
 
 ## Honest findings
 

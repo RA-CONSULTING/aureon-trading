@@ -44,10 +44,18 @@ __all__ = [
     "FetchError",
     "SpectrumPeak",
     "NIST_CAS",
+    "SMILES",
+    "COMPUTED_SOURCE",
     "nist_ir_url",
     "fetch_nist_ir_jcamp",
     "parse_jcamp_xydata",
     "pick_peaks",
+    "computed_toolchain_available",
+    "compute_xtb_frequencies",
+    "SourceAdapter",
+    "NISTWebBookAdapter",
+    "JcampUrlAdapter",
+    "ComputedXtbAdapter",
     "fetch_compound_peaks",
     "write_native_csv",
     "main",
@@ -283,37 +291,125 @@ def pick_peaks(
 
 
 # ============================================================================
-# ORCHESTRATION
+# COMPUTED (THEORETICAL) VIBRATIONAL SPECTRA — GFN2-xTB
+# ============================================================================
+
+# Canonical SMILES for the computed channel (public, well-known structures).
+# Glycosides / large esters (rutin, chlorogenic, chicoric, rosmarinic, silybin,
+# aucubin) are intentionally omitted: their finite-difference Hessians are too
+# large to compute cheaply, and they are handled by the experimental channels.
+SMILES: Final[dict[str, str]] = {
+    "caffeic acid": r"OC(=O)/C=C/c1ccc(O)c(O)c1",
+    "ferulic acid": r"COc1cc(/C=C/C(=O)O)ccc1O",
+    "apigenin": r"O=c1cc(-c2ccc(O)cc2)oc2cc(O)cc(O)c12",
+    "luteolin": r"O=c1cc(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12",
+    "kaempferol": r"O=c1c(O)c(-c2ccc(O)cc2)oc2cc(O)cc(O)c12",
+    "quercetin": r"O=c1c(O)c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12",
+}
+
+_EV_TO_CM1: Final[float] = 8065.544  # 1 eV in cm^-1
+COMPUTED_SOURCE: Final[str] = "COMPUTED GFN2-xTB (theoretical, non-experimental)"
+
+
+def computed_toolchain_available() -> bool:
+    """True when rdkit + ase + tblite (GFN2-xTB) can all be imported."""
+    try:
+        import ase  # noqa: F401
+        import tblite.ase  # noqa: F401
+        from rdkit import Chem  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def compute_xtb_frequencies(
+    smiles: str,
+    *,
+    seed: int = 42,
+    fmax: float = 0.05,
+    max_opt_steps: int = 300,
+    min_wavenumber: float = 100.0,
+) -> list[float]:
+    """Compute GFN2-xTB vibrational frequencies (cm^-1) for a SMILES string.
+
+    RDKit embeds a 3D conformer (deterministic via ``seed``), tblite/ASE
+    optimizes the geometry and builds a finite-difference Hessian. Only real
+    modes above ``min_wavenumber`` are returned (imaginary/low modes dropped).
+    Raises :class:`FetchError` if the toolchain is unavailable.
+    """
+    if not computed_toolchain_available():
+        raise FetchError("computed toolchain (rdkit+ase+tblite) not available")
+    import tempfile
+
+    from ase import Atoms
+    from ase.optimize import BFGS
+    from ase.vibrations import Vibrations
+    from rdkit import Chem
+    from rdkit.Chem import AllChem
+    from tblite.ase import TBLite
+
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise FetchError(f"RDKit could not parse SMILES {smiles!r}")
+    mol = Chem.AddHs(mol)
+    if AllChem.EmbedMolecule(mol, randomSeed=seed) != 0:
+        raise FetchError(f"RDKit could not embed a 3D conformer for {smiles!r}")
+    AllChem.MMFFOptimizeMolecule(mol)
+    conf = mol.GetConformer()
+    symbols = [a.GetSymbol() for a in mol.GetAtoms()]
+    positions = [list(conf.GetAtomPosition(i)) for i in range(mol.GetNumAtoms())]
+
+    atoms = Atoms(symbols=symbols, positions=positions)
+    atoms.calc = TBLite(method="GFN2-xTB", verbosity=0)
+    BFGS(atoms, logfile=None).run(fmax=fmax, steps=max_opt_steps)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        vib = Vibrations(atoms, name=str(Path(tmp) / "vib"))
+        vib.run()
+        energies = vib.get_energies()  # eV, complex for imaginary modes
+    freqs = []
+    for e in energies:
+        real = float(e.real) if hasattr(e, "real") else float(e)
+        imag = abs(float(e.imag)) if hasattr(e, "imag") else 0.0
+        cm = real * _EV_TO_CM1
+        if imag < 1e-9 and cm > min_wavenumber:
+            freqs.append(round(cm, 1))
+    return sorted(freqs)
+
+
+# ============================================================================
+# SOURCE ADAPTERS
 # ============================================================================
 
 
-def fetch_compound_peaks(
-    molecule: str,
-    *,
-    min_prominence: float = 0.05,
-    timeout: float = 30.0,
-    _opener: urllib.request.OpenerDirector | None = None,
-) -> list[dict[str, str | float]]:
-    """Fetch and peak-pick a compound's NIST IR spectrum into native-schema rows.
+class SourceAdapter:
+    """Base class for a spectral data source. Subclasses set name/kind."""
 
-    Returns an empty list if the compound is unknown to NIST or has no IR
-    spectrum there. Each row is ``{molecule, peak_value, unit, rel_intensity,
-    source}`` ready for ``connector.ingest``.
-    """
-    key = molecule.strip().lower()
-    nist_id = NIST_CAS.get(key)
-    if nist_id is None:
-        return []
-    text = fetch_nist_ir_jcamp(nist_id, timeout=timeout, _opener=_opener)
-    if text is None:
-        return []
+    name: str = "base"
+    kind: str = "experimental"  # or "computed"
+
+    def available(self) -> bool:
+        """Whether this adapter can be used at all (toolchain/config present)."""
+        return True
+
+    def fetch(
+        self,
+        molecule: str,
+        *,
+        min_prominence: float = 0.12,
+        timeout: float = 30.0,
+        _opener: urllib.request.OpenerDirector | None = None,
+    ) -> list[dict[str, str | float]]:
+        """Return native-schema rows for ``molecule`` (empty if unavailable)."""
+        raise NotImplementedError
+
+
+def _rows_from_jcamp(text: str, molecule: str, source: str, min_prominence: float) -> list[dict[str, str | float]]:
     x, y, headers = parse_jcamp_xydata(text)
     peaks = pick_peaks(x, y, yunits=headers.get("YUNITS", ""), min_prominence=min_prominence)
-    coblentz = headers.get("SOURCE REFERENCE", "").strip()
-    source = f"NIST WebBook IR ({coblentz}); {NIST_BASE}?ID={nist_id}#IR-Spec"
     return [
         {
-            "molecule": key,
+            "molecule": molecule,
             "peak_value": peak.wavenumber_cm1,
             "unit": "cm^-1",
             "rel_intensity": peak.qualitative_intensity(),
@@ -321,6 +417,116 @@ def fetch_compound_peaks(
         }
         for peak in peaks
     ]
+
+
+class NISTWebBookAdapter(SourceAdapter):
+    """NIST Chemistry WebBook IR (Coblentz Society) — experimental."""
+
+    name = "nist"
+    kind = "experimental"
+
+    def fetch(self, molecule, *, min_prominence=0.12, timeout=30.0, _opener=None):
+        key = molecule.strip().lower()
+        nist_id = NIST_CAS.get(key)
+        if nist_id is None:
+            return []
+        text = fetch_nist_ir_jcamp(nist_id, timeout=timeout, _opener=_opener)
+        if text is None:
+            return []
+        coblentz = _parse_headers(text).get("SOURCE REFERENCE", "").strip()
+        source = f"NIST WebBook IR ({coblentz}); {NIST_BASE}?ID={nist_id}#IR-Spec"
+        return _rows_from_jcamp(text, key, source, min_prominence)
+
+
+class JcampUrlAdapter(SourceAdapter):
+    """Generic JCAMP-DX-over-HTTP adapter (e.g. OSDB/ROD) — experimental.
+
+    Configured with a ``{molecule: url}`` map so any open JCAMP source can plug
+    in. ``available()`` is True only when a URL map is configured.
+    """
+
+    name = "jcamp"
+    kind = "experimental"
+
+    def __init__(self, url_map: dict[str, str] | None = None, label: str = "JCAMP source"):
+        self.url_map = {k.lower(): v for k, v in (url_map or {}).items()}
+        self.label = label
+
+    def available(self) -> bool:
+        return bool(self.url_map)
+
+    def fetch(self, molecule, *, min_prominence=0.12, timeout=30.0, _opener=None):
+        url = self.url_map.get(molecule.strip().lower())
+        if not url:
+            return []
+        opener = _opener or _build_opener()
+        request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+        with opener.open(request, timeout=timeout) as response:
+            text = response.read().decode("utf-8", errors="replace")
+        return _rows_from_jcamp(text, molecule.strip().lower(), f"{self.label}; {url}", min_prominence)
+
+
+class ComputedXtbAdapter(SourceAdapter):
+    """GFN2-xTB computed vibrational spectra — THEORETICAL (separate lane)."""
+
+    name = "computed"
+    kind = "computed"
+
+    def __init__(self, seed: int = 42):
+        self.seed = seed
+
+    def available(self) -> bool:
+        return computed_toolchain_available()
+
+    def fetch(self, molecule, *, min_prominence=0.12, timeout=30.0, _opener=None):
+        key = molecule.strip().lower()
+        smiles = SMILES.get(key)
+        if smiles is None or not self.available():
+            return []
+        freqs = compute_xtb_frequencies(smiles, seed=self.seed)
+        return [
+            {"molecule": key, "peak_value": f, "unit": "cm^-1", "rel_intensity": "", "source": COMPUTED_SOURCE}
+            for f in freqs
+        ]
+
+
+_ADAPTERS: Final[dict[str, SourceAdapter]] = {
+    "nist": NISTWebBookAdapter(),
+    "jcamp": JcampUrlAdapter(),
+    "computed": ComputedXtbAdapter(),
+}
+
+
+# ============================================================================
+# ORCHESTRATION
+# ============================================================================
+
+
+def fetch_compound_peaks(
+    molecule: str,
+    *,
+    sources: tuple[str, ...] = ("nist",),
+    min_prominence: float = 0.12,
+    timeout: float = 30.0,
+    _opener: urllib.request.OpenerDirector | None = None,
+) -> list[dict[str, str | float]]:
+    """Fetch native-schema peak rows for ``molecule`` across selected sources.
+
+    ``sources`` names adapters in :data:`_ADAPTERS` (``"nist"``, ``"jcamp"``,
+    ``"computed"``, or ``"all"``). Unavailable adapters are skipped. Each row is
+    ``{molecule, peak_value, unit, rel_intensity, source}`` ready for
+    ``connector.ingest``; computed rows carry the theoretical source marker.
+    """
+    names = tuple(_ADAPTERS) if "all" in sources else sources
+    rows: list[dict[str, str | float]] = []
+    for name in names:
+        adapter = _ADAPTERS.get(name)
+        if adapter is None:
+            raise FetchError(f"unknown source {name!r}; known: {sorted(_ADAPTERS)}")
+        if not adapter.available():
+            continue
+        rows.extend(adapter.fetch(molecule, min_prominence=min_prominence, timeout=timeout, _opener=_opener))
+    return rows
 
 
 def write_native_csv(rows: list[dict[str, str | float]], path: str | Path) -> None:
@@ -333,29 +539,34 @@ def write_native_csv(rows: list[dict[str, str | float]], path: str | Path) -> No
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI: ``fetcher.py <compound...> [--out file.csv] [--min-prominence P]``."""
+    """CLI: ``fetcher.py <compound...> [--source nist|jcamp|computed|all] [--out f.csv]``."""
     parser = argparse.ArgumentParser(
-        description="Fetch open-source IR spectra (NIST WebBook) into the "
-        "connector's native schema."
+        description="Fetch open-source vibrational spectra into the connector's "
+        "native schema (experimental: NIST/JCAMP; computed: GFN2-xTB)."
     )
     parser.add_argument("compounds", nargs="*", default=[],
-                        help="Compound names (default: all known NIST entries)")
+                        help="Compound names (default: all known)")
+    parser.add_argument("--source", default="nist",
+                        help="Comma-separated adapters: nist,jcamp,computed,all (default nist)")
     parser.add_argument("--out", default=None, help="Output native-schema CSV path")
-    parser.add_argument("--min-prominence", type=float, default=0.05,
+    parser.add_argument("--min-prominence", type=float, default=0.12,
                         help="Minimum normalized band depth to count as a peak")
     parser.add_argument("--list", action="store_true", help="List known compounds and exit")
     args = parser.parse_args(argv)
 
+    sources = tuple(s.strip() for s in args.source.split(",") if s.strip())
     if args.list:
-        for name in sorted(NIST_CAS):
-            print(name)
+        print("NIST IR:", ", ".join(sorted(NIST_CAS)))
+        print("computed (xTB):", ", ".join(sorted(SMILES)))
+        print("computed toolchain available:", computed_toolchain_available())
         return 0
 
-    targets = args.compounds or sorted(NIST_CAS)
+    known = sorted(set(NIST_CAS) | set(SMILES))
+    targets = args.compounds or known
     all_rows: list[dict[str, str | float]] = []
     for molecule in targets:
         try:
-            rows = fetch_compound_peaks(molecule, min_prominence=args.min_prominence)
+            rows = fetch_compound_peaks(molecule, sources=sources, min_prominence=args.min_prominence)
         except FetchError as exc:
             print(f"warning: {molecule}: {exc}", file=sys.stderr)
             continue

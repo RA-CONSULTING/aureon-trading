@@ -89,6 +89,21 @@ def test_ingest_many_merges_sources(tmp_path):
     assert len(rows) == 7  # 6 + 1
 
 
+def test_computed_provenance_stays_separable(tmp_path):
+    """Computed (theoretical) data must only appear when its file is included."""
+    exp = _write(tmp_path, "exp.csv", _NATIVE_CSV)
+    computed = _write(
+        tmp_path, "computed.csv",
+        "molecule,peak_value,unit,rel_intensity,source\n"
+        + "".join(f"luteolin,{v},cm^-1,,COMPUTED GFN2-xTB (theoretical, non-experimental)\n"
+                 for v in (1620, 1640, 1660, 1680, 1700, 1720))
+    )
+    exp_only = connector.run_analysis([exp], nulls=50, seed=0)
+    assert not any("COMPUTED" in s for c in exp_only.compounds.values() for s in c.sources)
+    with_computed = connector.run_analysis([exp, computed], nulls=50, seed=0)
+    assert any("COMPUTED" in s for s in with_computed.compounds["luteolin"].sources)
+
+
 def test_run_analysis_multi_source_merges_provenance(tmp_path):
     a = _write(tmp_path, "a.csv", _NATIVE_CSV)
     b = _write(tmp_path, "b.csv",

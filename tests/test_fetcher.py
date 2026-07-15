@@ -138,3 +138,46 @@ def test_fetched_peaks_ingest_through_connector(tmp_path):
     assert formats == ["native"]
     accepted, report = connector.validate(raw)
     assert report.accepted == len(rows)
+
+
+# --------------------------------------------------------------------------
+# Pluggable source adapters
+# --------------------------------------------------------------------------
+
+
+def test_unknown_source_raises():
+    with pytest.raises(fetcher.FetchError):
+        fetcher.fetch_compound_peaks("caffeic acid", sources=("bogus",))
+
+
+def test_jcamp_url_adapter_via_fixture():
+    adapter = fetcher.JcampUrlAdapter({"widget": "https://example.test/widget.jdx"}, label="Test JCAMP")
+    assert adapter.available() is True
+    rows = adapter.fetch("widget", _opener=_FakeOpener(body=SAMPLE_JDX))
+    assert rows
+    assert all(r["unit"] == "cm^-1" for r in rows)
+    assert all("Test JCAMP" in r["source"] for r in rows)
+
+
+def test_jcamp_adapter_unconfigured_is_unavailable():
+    assert fetcher.JcampUrlAdapter().available() is False
+
+
+def test_computed_adapter_availability_flag():
+    # Availability must match the actual import state, not raise.
+    assert fetcher.ComputedXtbAdapter().available() == fetcher.computed_toolchain_available()
+
+
+def test_computed_adapter_unknown_smiles_returns_empty():
+    assert fetcher.ComputedXtbAdapter().fetch("not-a-real-molecule") == []
+
+
+def test_computed_rows_carry_theoretical_marker():
+    """Computed provenance must be clearly labeled and kept separable."""
+    pytest.importorskip("rdkit")
+    pytest.importorskip("tblite")
+    freqs = fetcher.compute_xtb_frequencies("O", seed=1)  # water: fast
+    assert len(freqs) >= 3
+    assert all(f > 100 for f in freqs)
+    # provenance marker is the theoretical lane, not an experimental source
+    assert "COMPUTED" in fetcher.COMPUTED_SOURCE and "theoretical" in fetcher.COMPUTED_SOURCE
