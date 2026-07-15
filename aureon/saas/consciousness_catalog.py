@@ -252,6 +252,27 @@ def state_of_being() -> Dict[str, Any]:
     except Exception:  # noqa: BLE001
         _axis("desk", None, "no_data")
 
+    # continuity — the organism's own lineage (categorical; reported, NOT folded into
+    # wholeness). The genome is a diary written at each waking; here the organism reads
+    # it back, so its generational continuity is part of "how it is" — real generation
+    # or no_data before the first wake, never a fabricated number.
+    try:
+        from aureon.core.awakening import read_genome
+
+        g = read_genome()
+        gen = int(g.get("generation") or 0)
+        if g.get("first_awakened_at") is not None:
+            c = g.get("carried") or {}
+            cov, idx, asc = c.get("coverage_pct"), c.get("automation_index"), c.get("ascent_stage")
+            _axis("lineage", gen, "real_derived",
+                  f"generation {gen} · carrying coverage {cov if cov is not None else '—'}% · "
+                  f"index {idx if idx is not None else '—'}% · ascent {asc if asc is not None else '—'}/7")
+            headline_parts.append(f"generation {gen}")
+        else:
+            _axis("lineage", None, "no_data", "not yet woken")
+    except Exception:  # noqa: BLE001
+        _axis("lineage", None, "no_data")
+
     wholeness = round(sum(terms) / len(terms), 4) if terms else None
     awake = any(v.get("truth_status") not in (None, "no_data") for v in axes.values())
     return {

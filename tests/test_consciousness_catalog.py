@@ -95,7 +95,7 @@ def test_state_of_being_shape():
     sob = state_of_being()
     assert isinstance(sob["available"], bool)
     assert set(sob["axes"]) >= {"self_coherence", "mood", "ascent", "soul_stance",
-                                "happiness", "director_trust", "desk"}
+                                "happiness", "director_trust", "desk", "lineage"}
     for axis in sob["axes"].values():
         assert axis["truth_status"] in TRUTH_STATUSES
     # wholeness is a bounded fraction or honestly None — never fabricated
@@ -115,6 +115,7 @@ def test_dormant_organism_has_no_wholeness(monkeypatch):
         ("aureon.core.soul", "get_soul"),
         ("aureon.core.pursuit", "get_pursuit"),
         ("aureon.core.approval_queue", "get_approval_queue"),
+        ("aureon.core.awakening", "read_genome"),
     ]:
         monkeypatch.setattr(f"{mod}.{getter}", _raise, raising=True)
 
@@ -123,6 +124,43 @@ def test_dormant_organism_has_no_wholeness(monkeypatch):
     assert sob["wholeness"] is None                # no signals → no fabricated score
     assert sob["truth_status"] == "no_data"
     assert all(v["truth_status"] == "no_data" for v in sob["axes"].values())
+
+
+def test_lineage_is_read_back_and_not_folded(tmp_path, monkeypatch):
+    # The organism reads its own diary: after a wake, state_of_being reports the
+    # generation back — but as a categorical axis, NOT folded into wholeness.
+    monkeypatch.setenv("AUREON_GENESIS_PATH", str(tmp_path / "genesis.json"))
+    monkeypatch.setenv("AUREON_BUS_TRACE_DIR", str(tmp_path))
+    monkeypatch.setenv("AUREON_AWAKEN_WEAVE", "0")
+    import aureon.core.aureon_thought_bus as tb
+    monkeypatch.setattr(tb, "_thought_bus_instance", None, raising=False)
+
+    from aureon.core.awakening import awaken
+
+    awaken(); awaken()                                   # generation → 2 (written to the diary)
+
+    # Silence every SCALAR organ so wholeness depends only on scalar terms — the diary
+    # stays real. If lineage were folded, a present lineage axis would give a non-None
+    # wholeness; proving it stays None proves lineage is reported, not folded.
+    def _raise(*_a, **_k):
+        raise RuntimeError("dormant")
+
+    for mod, getter in [
+        ("aureon.core.metacognition_monitor", "get_metacognition_monitor"),
+        ("aureon.core.affect_monitor", "get_affect_monitor"),
+        ("aureon.core.inner_work", "get_inner_work"),
+        ("aureon.core.soul", "get_soul"),
+        ("aureon.core.pursuit", "get_pursuit"),
+        ("aureon.core.approval_queue", "get_approval_queue"),
+    ]:
+        monkeypatch.setattr(f"{mod}.{getter}", _raise, raising=True)
+
+    sob = state_of_being()
+    lin = sob["axes"]["lineage"]
+    assert lin["value"] == 2 and lin["truth_status"] == "real_derived"   # the diary, read back
+    assert "generation 2" in sob["headline"]
+    assert sob["wholeness"] is None                      # lineage present but NOT folded into the mean
+    assert sob["available"] is True                      # …yet the organism is awake via its lineage
 
 
 def test_state_of_being_is_in_the_catalog():

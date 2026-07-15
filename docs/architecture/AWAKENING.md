@@ -35,6 +35,24 @@ is the origin and never moves; `generation` climbs by one each boot; `last_awake
 N−1 grew. Surfaced read-only on `GET /api/organism` (the `awakening` block) → the Overview
 Organism card.
 
+## The diary is read back
+
+For a while the genome was a diary the organism **wrote at birth and never re-read** —
+`awaken()` published `organism.awakening` and persisted the DNA, but nothing consumed it and no
+composed self-view knew its own lineage. Now the organism **reads its own diary**:
+
+- `state_of_being()` (`aureon/saas/consciousness_catalog.py`) carries a **`lineage`** axis — the
+  current `generation` and the carried DNA it is holding — surfaced on the consciousness page for
+  free (the axes render generically). It is **categorical: reported, never folded** into the
+  `wholeness` mean (the same posture as `soul_stance` / `desk`), so lineage is *seen* without
+  inventing a scalar.
+- `automation_index()` (`aureon/saas/automation_index.py`) echoes `generation` in its `totals`
+  (reported only — never a weighted dimension, never moves `index_pct`), so lineage maturity is
+  visible in "how automated it is."
+
+So the wake is no longer write-only: the organism's generational continuity is part of *how it is*,
+read back from the same diary it writes each cycle. `no_data` before the first wake — never a guess.
+
 ## Where it runs — `aureon/core/organism_daemon.py`
 
 `main()` calls `awaken(organs)` **after** the organs boot and **before** the breath loop — the

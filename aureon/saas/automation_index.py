@@ -182,6 +182,14 @@ def automation_index() -> Dict[str, Any]:
     totals.update(cst)
     totals.update(cons_t)
     totals.update(surf_t)
+    # lineage maturity — reported only, never a weighted dimension (does not touch
+    # index_pct). The organism reads its own diary: how many cycles it has carried.
+    try:
+        from aureon.core.awakening import read_genome
+
+        totals["generation"] = int(read_genome().get("generation") or 0)
+    except Exception:  # noqa: BLE001 — lineage echo is best-effort
+        totals["generation"] = None
 
     awake = bool(included)
     return {

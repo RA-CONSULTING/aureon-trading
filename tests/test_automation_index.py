@@ -63,6 +63,25 @@ def test_index_shape_and_bounds():
     assert isinstance(r["wired_by_category"], dict)
 
 
+def test_totals_echo_lineage_generation(tmp_path, monkeypatch):
+    # the automation totals echo the genome generation — reported only, never a
+    # weighted dimension (index_pct must be unaffected by lineage).
+    monkeypatch.setenv("AUREON_GENESIS_PATH", str(tmp_path / "genesis.json"))
+    monkeypatch.setenv("AUREON_BUS_TRACE_DIR", str(tmp_path))
+    monkeypatch.setenv("AUREON_AWAKEN_WEAVE", "0")
+    import aureon.core.aureon_thought_bus as tb
+    monkeypatch.setattr(tb, "_thought_bus_instance", None, raising=False)
+
+    from aureon.core.awakening import awaken, read_genome
+
+    before = automation_index()["index_pct"]
+    awaken()                                             # generation → 1
+    r = automation_index()
+    assert r["totals"]["generation"] == read_genome()["generation"] == 1
+    assert "generation" not in _DIMS                     # never a weighted dimension
+    assert r["index_pct"] == before                      # lineage does not move the index
+
+
 def test_label_band_matches_index():
     r = automation_index()
     pct = r["index_pct"]

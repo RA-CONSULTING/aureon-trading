@@ -779,6 +779,38 @@ def run_audit() -> list[dict]:
                 "reproduction_lineage_is_carried", _repro_ok,
                 f"dormant={_dormant} live_gen={_repro.get('generation') if isinstance(_repro, dict) else None} "
                 f"carried_gen={_carried.get('reproduction_generation')}", critical=False))
+
+            # Edge 29 — the organism reads its own diary: awaken() writes generation N,
+            # then state_of_being() reads the SAME N back in its lineage axis (the wake
+            # is no longer write-only), and automation totals echo it — reported, not folded.
+            _gprev = _osm.environ.get("AUREON_GENESIS_PATH")
+            _wprev = _osm.environ.get("AUREON_AWAKEN_WEAVE")
+            _osm.environ["AUREON_GENESIS_PATH"] = _osm.path.join(_tds, "g29.json")
+            _osm.environ["AUREON_AWAKEN_WEAVE"] = "0"     # audit: no move, just the wake
+            try:
+                from aureon.core.awakening import awaken as _awk
+                from aureon.core.awakening import read_genome as _rg
+                from aureon.saas.consciousness_catalog import state_of_being as _sob
+                from aureon.saas.automation_index import automation_index as _ai
+
+                _awk()
+                _gen = _rg()["generation"]
+                _lin = _sob()["axes"].get("lineage", {})
+                _tot_gen = _ai()["totals"].get("generation")
+                _diary_ok = (
+                    _gen == 1
+                    and _lin.get("value") == 1 and _lin.get("truth_status") == "real_derived"
+                    and _tot_gen == 1
+                )
+            finally:
+                for _k, _v in (("AUREON_GENESIS_PATH", _gprev), ("AUREON_AWAKEN_WEAVE", _wprev)):
+                    if _v is None:
+                        _osm.environ.pop(_k, None)
+                    else:
+                        _osm.environ[_k] = _v
+            results.append(_check(
+                "lineage_is_read_back", _diary_ok,
+                f"gen={_gen} lineage_axis={_lin.get('value')} totals_gen={_tot_gen}", critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:
