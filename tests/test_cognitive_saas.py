@@ -21,6 +21,7 @@ from aureon.saas.cognitive import (
     build_cognitive_payload,
     bus_surface,
     connectome_surface,
+    field_producers,
     field_surface,
     mycelium_surface,
 )
@@ -56,6 +57,48 @@ def test_field_surface_no_data_on_empty_bus(monkeypatch):
     s = field_surface(ThoughtBus())
     assert s["truth_status"] == "no_data"
     assert "blocker" in s
+
+
+# ── the field's producers — honest live-vs-intended map ─────────────────────────
+
+def test_field_producers_marks_seeded_source_live(tmp_path, monkeypatch):
+    # Isolate the cross-process trace so read_subfields can't see stale rows.
+    monkeypatch.setenv("AUREON_BUS_TRACE_DIR", str(tmp_path))
+    from aureon.core.hnc_field import publish_subfield, read_subfields
+
+    class _S:
+        symbolic_life_score = 0.6
+        coherence_gamma = 0.6
+        consciousness_level = "AWARE"
+
+    b = ThoughtBus(persist_path=None)
+    publish_subfield("metacognition_monitor", _S(), bus=b)
+    pm = field_producers(read_subfields(b))
+    by_source = {p["source"]: p for p in pm["producers"]}
+    # the seeded live-in-daemon producer is live…
+    assert by_source["metacognition_monitor"]["live"] is True
+    # …and an unseeded ICS producer is dark, with an honest note.
+    assert by_source["queen_cortex"]["live"] is False
+    assert by_source["queen_cortex"]["note"]
+    assert pm["live_count"] >= 1
+    assert pm["live_count"] <= pm["intended_count"]
+
+
+def test_field_producers_intended_set_is_complete_and_honest():
+    # No live source outside the intended set; every entry fully described.
+    pm = field_producers({})
+    assert pm["live_count"] == 0                      # nothing seeded → nothing live
+    assert pm["intended_count"] == len(pm["producers"]) >= 13
+    for p in pm["producers"]:
+        assert p["source"] and p["host"] and p["note"]
+        assert p["live"] is False
+
+
+def test_field_surface_includes_producers():
+    s = field_surface(_bus_with_pulse())
+    assert "producers" in s
+    assert s["producers"]["intended_count"] >= 13
+    assert s["producers"]["live_count"] <= s["producers"]["intended_count"]
 
 
 def test_bus_surface_live_topology():

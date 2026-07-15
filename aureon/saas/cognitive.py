@@ -94,6 +94,70 @@ def _summarize(surfaces: Dict[str, Dict[str, Any]]) -> Dict[str, int]:
         return {}
 
 
+# ── the field's producers — an honest live-vs-intended map ────────────────────
+
+# The whole-body HNC field (``blend_field``) fuses whatever ``symbolic.life.subfield``
+# producers are *present*. This is the documented set of every producer *intended* to
+# feed it, each marked ``live`` iff its ``source`` string is currently in
+# ``read_subfields()`` — so the map shows exactly who is feeding the field right now
+# and names the dark ones truthfully, rather than papering over the gap. The exact
+# ``source`` strings match each ``publish_subfield(...)`` caller in the repo.
+_INTENDED_PRODUCERS: tuple[Dict[str, str], ...] = (
+    # live-in-daemon — booted by organism_daemon.breathe() / boot(), publishing each breath
+    {"source": "metacognition_monitor", "host": "organism_daemon",
+     "note": "the organism reads its own signals and loops self-coherence back each breath"},
+    {"source": "affect_monitor", "host": "organism_daemon",
+     "note": "victory/defeat/fear/resolve, felt from real signals and folded in each breath"},
+    {"source": "inner_work", "host": "organism_daemon",
+     "note": "the seven-chakra ascent state, folded in each breath"},
+    {"source": "pursuit", "host": "organism_daemon",
+     "note": "the pursuit-of-happiness compass, folded in each breath"},
+    {"source": "consciousness_module", "host": "organism_daemon",
+     "note": "the metacognitive Λ field, published on each heartbeat when the engine is live"},
+    {"source": "dr_auris_throne", "host": "organism_daemon",
+     "note": "the cosmic/harmonic throne loop, autostarted in boot()"},
+    {"source": "mycelium_mesh", "host": "organism_daemon",
+     "note": "the mesh's network coherence — live once the connectome sweep first weaves the mesh singleton"},
+    # ICS-hosted (dark) — publish only inside integrated_cognitive_system, which the
+    # minimal daemon does not boot. Booting ICS is a deployment decision, not a
+    # fabricated bridge, so these are named honestly rather than overclaimed as live.
+    {"source": "queen_cortex", "host": "integrated_cognitive_system",
+     "note": "Queen Λ engine; host not booted in the minimal daemon"},
+    {"source": "queen_source_law", "host": "integrated_cognitive_system",
+     "note": "Queen Λ engine; host not booted, and event-driven (publishes per decision)"},
+    {"source": "queen_metacognition", "host": "integrated_cognitive_system",
+     "note": "Queen Λ engine; host not booted in the minimal daemon"},
+    {"source": "queen_sentient_loop", "host": "integrated_cognitive_system",
+     "note": "Queen Λ engine; host not booted in the minimal daemon"},
+    {"source": "queen_mycelium_mind", "host": "integrated_cognitive_system",
+     "note": "thought-propagation spore engine; host not booted in the minimal daemon"},
+    {"source": "hnc_human_loop", "host": "integrated_cognitive_system",
+     "note": "human-in-the-loop Λ producer; host not booted, and event-driven (publishes per message)"},
+)
+
+
+def field_producers(subs: Dict[str, Any]) -> Dict[str, Any]:
+    """An honest live-vs-intended map of who feeds the whole-body field.
+
+    ``subs`` is the live ``read_subfields()`` mapping (source → field). Each intended
+    producer is marked ``live`` iff its ``source`` is a present key — a real signal,
+    nothing fabricated. Dark producers are named truthfully (host not booted /
+    event-driven), so the map never overclaims a dark producer as connected.
+    Never raises.
+    """
+    try:
+        present = set(subs.keys()) if isinstance(subs, dict) else set()
+        producers = [{**p, "live": p["source"] in present} for p in _INTENDED_PRODUCERS]
+        return {
+            "producers": producers,
+            "live_count": sum(1 for p in producers if p["live"]),
+            "intended_count": len(producers),
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {"producers": [], "live_count": 0, "intended_count": 0,
+                "blocker": f"producer map failed: {str(exc)[:120]}"}
+
+
 # ── the five cognitive surfaces ───────────────────────────────────────────────
 
 def field_surface(bus: Any = None) -> Dict[str, Any]:
@@ -117,6 +181,7 @@ def field_surface(bus: Any = None) -> Dict[str, Any]:
             "subfields": {"count": len(subs), "sources": sorted(subs.keys()), "fields": subs},
             "blended": blended.to_dict(),
             "consensus_event": _consensus_event(bus),
+            "producers": field_producers(subs),
         }
         if canonical.available and canonical.source and canonical.source != "hnc_trace_file":
             surface["truth_status"] = "live"

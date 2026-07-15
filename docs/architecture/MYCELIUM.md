@@ -80,5 +80,6 @@ invented. No trading, no execution, no env flip.
 ## 📚 Related
 
 - [`ORGANISM_CONNECTOME.md`](ORGANISM_CONNECTOME.md) — the weave that populates the mesh.
+- [`HNC_FIELD_PRODUCERS.md`](HNC_FIELD_PRODUCERS.md) — the whole live-vs-intended field producer map (the mesh is one live-once-woven producer among them).
 - [`AWAKENING.md`](AWAKENING.md) · [`AUTOMATION_INDEX.md`](AUTOMATION_INDEX.md) — the cycles + the coverage the mesh carries.
 - [`COGNITIVE_SAAS.md`](COGNITIVE_SAAS.md) — the read surfaces.

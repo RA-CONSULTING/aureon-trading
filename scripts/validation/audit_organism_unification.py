@@ -713,6 +713,38 @@ def run_audit() -> list[dict]:
             results.append(_check(
                 "mesh_coherence_joins_field", _mesh_pub and _mesh_seen,
                 f"published={_mesh_pub} in_field={_mesh_seen}", critical=False))
+
+            # Edge 27 — the field's producers map is honest: publish two sub-fields on
+            # a temp bus and assert field_producers marks exactly those live, the rest
+            # dark, and every live source is inside the intended set (no overclaim).
+            from aureon.core.hnc_field import publish_subfield as _psub
+            from aureon.core.hnc_field import read_subfields as _rsub2
+            from aureon.core.aureon_thought_bus import ThoughtBus as _TB
+            from aureon.saas.cognitive import field_producers as _fp
+
+            class _PS:
+                symbolic_life_score = 0.6
+                coherence_gamma = 0.6
+                consciousness_level = "AWARE"
+
+            _pb = _TB(persist_path=None)
+            _psub("metacognition_monitor", _PS(), bus=_pb)
+            _psub("affect_monitor", _PS(), bus=_pb)
+            _pm = _fp(_rsub2(_pb))
+            _by = {p["source"]: p for p in _pm["producers"]}
+            _live = {s for s, p in _by.items() if p["live"]}
+            _intended = set(_by.keys())
+            _honest = (
+                _by.get("metacognition_monitor", {}).get("live") is True
+                and _by.get("affect_monitor", {}).get("live") is True
+                and _by.get("queen_cortex", {}).get("live") is False
+                and _live <= _intended
+                and _pm["live_count"] <= _pm["intended_count"]
+            )
+            results.append(_check(
+                "field_producers_map_is_honest", _honest,
+                f"live={_pm['live_count']}/{_pm['intended_count']} live⊆intended={_live <= _intended}",
+                critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:
