@@ -65,6 +65,43 @@ def _denied(module: str) -> bool:
     return any(rx.search(module) for rx in _DENY_RE)
 
 
+_PATHS_READY = False
+
+
+def _ensure_import_paths() -> None:
+    """Activate the repo's own ``sys.path`` shim ONCE so intra-repo bare-name imports
+    (``import binance_client``) resolve during touch — exactly as they do when an app
+    entry point runs. Only mutates ``sys.path``; imports nothing heavy. Guarded — a
+    missing shim is never fatal. Without it, ~half the touch failures are spurious
+    ``ModuleNotFoundError``s for modules that live in the repo."""
+    global _PATHS_READY
+    if _PATHS_READY:
+        return
+    _PATHS_READY = True
+    try:
+        import aureon._path_setup  # noqa: F401 — side effect: sys.path population
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("import-path shim unavailable: %s", exc)
+
+
+def _max_retry() -> int:
+    """How many times a failed module is re-attempted before it settles (so a
+    genuinely-broken module never churns every cycle). Env ``AUREON_CONNECTOME_MAX_RETRY``."""
+    try:
+        return max(0, int(os.environ.get("AUREON_CONNECTOME_MAX_RETRY", "") or 3))
+    except (TypeError, ValueError):
+        return 3
+
+
+def _retry_batch() -> int:
+    """How many failed modules the sweep re-attempts per cycle (bounded self-heal).
+    Env ``AUREON_CONNECTOME_RETRY_BATCH``; 0 = off (sweep byte-identical to before)."""
+    try:
+        return max(0, int(os.environ.get("AUREON_CONNECTOME_RETRY_BATCH", "") or 5))
+    except (TypeError, ValueError):
+        return 5
+
+
 class Connectome:
     """The registry of every part of the organism and how far each is wired."""
 
@@ -172,6 +209,7 @@ class Connectome:
     # ── touch: wake a part and feel its shape ────────────────────────────────
 
     def touch(self, module: str) -> Dict[str, Any]:
+        _ensure_import_paths()   # heal the import context so intra-repo imports resolve
         node = self.manifest().by_module().get(module)
         if node is None:
             return {"module": module, "status": "unknown", "error": "not in the organism manifest"}
@@ -266,6 +304,39 @@ class Connectome:
             self._save_state()
         return {"woven": woven, "remaining": remaining}
 
+    def retry_failed(self, limit: int | None = None) -> Dict[str, Any]:
+        """A failure is not forever. Re-attempt latched ``failed`` modules — the import
+        context is healed first (``touch`` activates the shim), so intra-repo imports
+        that were spurious ``ModuleNotFoundError``s now resolve. A recovered module
+        becomes ``touched`` (and weaves onward next drain); a still-broken one keeps an
+        ``attempts`` counter and **settles** after ``AUREON_CONNECTOME_MAX_RETRY`` so it
+        never churns every cycle. Bounded by ``limit`` (``None`` = all eligible),
+        guarded, saves once. Returns ``{retried, recovered, still_failed}``."""
+        cap = _max_retry()
+        eligible = [m for m, rec in list(self._records.items())
+                    if rec.get("status") == "failed" and int(rec.get("attempts", 0) or 0) < cap]
+        retried = recovered = 0
+        for module in eligible:
+            if limit is not None and retried >= limit:
+                break
+            prev = int(self._records.get(module, {}).get("attempts", 0) or 0)
+            try:
+                res = self.touch(module)          # re-imports; overwrites the record
+            except Exception as exc:  # noqa: BLE001 — one module never stops the retry
+                logger.debug("retry_failed skipped %s: %s", module, exc)
+                continue
+            retried += 1
+            if res.get("status") == "touched":
+                recovered += 1
+            else:
+                rec = self._records.get(module)   # re-failed → preserve the attempt count
+                if rec is not None:
+                    rec["attempts"] = prev + 1
+        if retried:
+            self._save_state()
+        still = sum(1 for rec in self._records.values() if rec.get("status") == "failed")
+        return {"retried": retried, "recovered": recovered, "still_failed": still}
+
     # ── sweep: feel the whole body, batch by batch ───────────────────────────
 
     def sweep_once(
@@ -273,7 +344,13 @@ class Connectome:
         batch_size: int = 25,
         domains: List[str] | None = None,
         weave_batch: int = 0,
+        retry_batch: int | None = None,
     ) -> Dict[str, Any]:
+        # A bounded, attempt-capped self-heal: re-attempt a few latched failures each
+        # cycle so recoverable ones (e.g. a dep that has since arrived) rejoin the body.
+        # retry_batch None → env default; 0 → off (sweep byte-identical to before).
+        rb = _retry_batch() if retry_batch is None else max(0, retry_batch)
+        recovered = self.retry_failed(limit=rb).get("recovered", 0) if rb else 0
         touched = failed = denied = 0
         for node in self.manifest().nodes:
             if touched + failed + denied >= batch_size:
@@ -306,7 +383,8 @@ class Connectome:
                 if rec.get("status") == "touched" and self.weave(module).get("status") == "woven":
                     woven += 1
         self._save_state()
-        return {"touched": touched, "failed": failed, "denied": denied, "woven": woven}
+        return {"touched": touched, "failed": failed, "denied": denied,
+                "woven": woven, "recovered": recovered}
 
     def start_sweep(self, interval_s: float = 30.0, batch_size: int = 25, weave_batch: int = 0) -> None:
         if self._sweep_thread is not None and self._sweep_thread.is_alive():
@@ -335,9 +413,14 @@ class Connectome:
     def status(self) -> Dict[str, Any]:
         with self._lock:
             total = len(self.manifest().nodes)
+            cap = _max_retry()
             by_status: Dict[str, int] = {}
+            retryable = 0
             for rec in self._records.values():
-                by_status[rec.get("status", "unknown")] = by_status.get(rec.get("status", "unknown"), 0) + 1
+                st = rec.get("status", "unknown")
+                by_status[st] = by_status.get(st, 0) + 1
+                if st == "failed" and int(rec.get("attempts", 0) or 0) < cap:
+                    retryable += 1
             touched = by_status.get("touched", 0) + by_status.get("woven", 0)
             return {
                 "nodes": total,
@@ -345,6 +428,7 @@ class Connectome:
                 "touched": touched,
                 "woven": by_status.get("woven", 0),
                 "failed": by_status.get("failed", 0),
+                "retryable": retryable,      # failed but not yet settled — still self-healing
                 "denied": by_status.get("denied", 0),
                 "unfelt": max(0, total - len(self._records)),
                 "coverage_pct": round(100.0 * touched / total, 2) if total else 0.0,

@@ -78,6 +78,64 @@ def test_touch_records_failure_without_raising(tmp_path):
     assert r["status"] == "unknown"
 
 
+# ── failures aren't forever: import-context heal + bounded retry ──────────────
+
+def test_ensure_import_paths_is_idempotent():
+    import sys
+    import aureon.core.aureon_connectome as cm
+
+    cm._PATHS_READY = False
+    cm._ensure_import_paths()
+    assert cm._PATHS_READY is True
+    assert any("aureon" in p for p in sys.path)   # the shim put aureon subdirs on the path
+    cm._ensure_import_paths()                      # second call is a no-op, never raises
+
+
+def test_retry_failed_recovers_an_importable_module(tmp_path):
+    c = _fresh(tmp_path)
+    m = "aureon.core.hnc_params"
+    # a latched failure (e.g. a transient ModuleNotFoundError before the shim healed)
+    c._records[m] = {"status": "failed", "ts": 0.0, "error": "ModuleNotFoundError: transient"}
+    assert c.status()["failed"] == 1 and c.status()["retryable"] == 1
+    r = c.retry_failed(limit=10)
+    assert r["recovered"] == 1 and r["still_failed"] == 0
+    assert c._records[m]["status"] == "touched"    # a failure is not forever
+
+
+def test_retry_failed_settles_after_cap(tmp_path, monkeypatch):
+    c = _fresh(tmp_path)
+    m = "aureon.core.aureon_organism_spine"
+    c._records[m] = {"status": "failed", "ts": 0.0, "error": "x"}
+
+    def _always_fail(mod):
+        c._record(mod, "failed", error="still broken")
+        return {"module": mod, "status": "failed", "error": "still broken"}
+
+    monkeypatch.setattr(c, "touch", _always_fail)
+    for _ in range(3):                              # default cap = 3
+        c.retry_failed(limit=10)
+    assert c._records[m].get("attempts") == 3
+    # capped → no longer eligible, so a further pass retries nothing (no churn)
+    assert c.retry_failed(limit=10)["retried"] == 0
+
+
+def test_retry_failed_respects_limit(tmp_path):
+    c = _fresh(tmp_path)
+    for m in ("aureon.core.hnc_params", "aureon.core.aureon_organism_spine"):
+        c._records[m] = {"status": "failed", "ts": 0.0, "error": "e"}
+    assert c.retry_failed(limit=1)["retried"] == 1   # bounded
+
+
+def test_sweep_retry_batch_off_leaves_failed(tmp_path):
+    c = _fresh(tmp_path)
+    m = "aureon.core.hnc_params"
+    c._records[m] = {"status": "failed", "ts": 0.0, "error": "e"}
+    c.sweep_once(batch_size=1, retry_batch=0)        # retry off → failure untouched
+    assert c._records[m]["status"] == "failed"
+    c.sweep_once(batch_size=1, retry_batch=5)        # retry on → recovers
+    assert c._records[m]["status"] in ("touched", "woven")
+
+
 # ── coverage + persistence + pulse ───────────────────────────────────────────
 
 def test_status_coverage_and_persistence(tmp_path):

@@ -45,7 +45,8 @@ enumerate  →  sense  →  touch  →  weave  →  pulse
 | `touch(module)` | **Wakes** the part: dynamic `importlib` import — **always under `AUREON_SUPPRESS_IMPORT_SIDE_EFFECTS=1`** (saved/restored) so the baton's live-mode env flips can never fire from here — then feels its shape: docstring, classes, functions, `get_*` singleton doors. Failures are recorded and counted, never raised. |
 | `weave(module)` | `touch` + join into the living mesh via the operator's `join_organism()` (mycelium `connect_subsystem` + Queen `_register_child`). Registration only — no module code runs; idempotent. |
 | `weave_touched(limit=None)` | Drain the currently-*touched* backlog onto the mesh+Queen in one bounded pass, so `woven` keeps pace with what the body has felt. Idempotent (a second pass is a no-op), guarded, reversible (state only). |
-| `sweep_once()` / `start_sweep()` | Progressively touch the untouched, batch by batch, and weave them. A daemon thread with a pulse each cycle. `weave_batch` per cycle: `>0` caps at N, `-1` weaves **all** touched (keep-pace), `0` weaves none. It **defaults to the touch batch** so `woven` tracks `touched` — no growing backlog. |
+| `retry_failed(limit=None)` | **A failure is not forever.** Re-attempt latched `failed` modules (the import context is healed first — see below); recovered → `touched`, still-broken → keeps an `attempts` counter and **settles** after `AUREON_CONNECTOME_MAX_RETRY` (default 3) so it never churns. Bounded, guarded. Returns `{retried, recovered, still_failed}`. |
+| `sweep_once()` / `start_sweep()` | Progressively touch the untouched, batch by batch, and weave them. A daemon thread with a pulse each cycle. `weave_batch` per cycle: `>0` caps at N, `-1` weaves **all** touched (keep-pace), `0` weaves none. It **defaults to the touch batch** so `woven` tracks `touched` — no growing backlog. Also self-heals a bounded `retry_batch` of failures each cycle (`AUREON_CONNECTOME_RETRY_BATCH`, default 5; `0` = off). |
 | `pulse()` | One breath: publishes `organism.connectome.pulse` with honest coverage. |
 | `status()` | The honest picture (see below). |
 
@@ -55,6 +56,28 @@ never woken** — status `denied`, so the sweep is safe and non-fatal.
 
 **Persistence**: `state/organism_connectome.json` (gitignored) so the body-map
 survives restarts.
+
+### Failures aren't forever — heal the context, then retry
+
+Once a module was recorded `failed` it used to be skipped on every future sweep — a
+transient error (a dep momentarily absent, the `sys.path` shim not active, a missing file)
+latched it against 100% forever. Two composing fixes make `failed` **retryable, self-healing
+debt**:
+
+- **Heal the import context.** `touch()` now activates the repo's own `sys.path` shim
+  (`aureon/_path_setup.py`, one-time, guarded — it only populates `sys.path`) before importing,
+  so intra-repo bare-name imports (`import binance_client`) resolve exactly as they do when an
+  app entry point runs. Roughly **half of the failures were spurious `ModuleNotFoundError`s** for
+  modules that live in the repo — measured live, **32 of 60 recover** the moment the shim is active.
+- **Re-attempt, but settle.** `retry_failed()` (on demand, once per wake via `AUREON_AWAKEN_RETRY`,
+  and a small batch per sweep cycle) re-touches latched failures. A genuinely-broken module keeps an
+  `attempts` counter and stops being retried after the cap, so there is no perpetual churn; the
+  remaining ~28 are environmental (missing pip deps, absent files, platform) and recover on their own
+  the moment the environment provides them. `status()` reports `retryable` (failed, not yet settled)
+  alongside `failed` so the healing debt is legible.
+
+The net effect: `failed` falls and `touched`/`woven` climb toward 100% as the environment heals —
+real recovery (the module actually imported), never a fabricated success.
 
 ### Honest depths — the three meanings of "wired"
 

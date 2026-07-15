@@ -133,6 +133,43 @@ def test_awaken_kicks_a_bounded_move(tmp_path, monkeypatch):
     assert calls.get("limit") == 6 and moved["woven"] == 6
 
 
+def test_awaken_heals_failures(tmp_path, monkeypatch):
+    # the wake re-attempts a bounded batch of latched failures (failures aren't forever)
+    monkeypatch.setenv("AUREON_AWAKEN_RETRY", "7")
+    monkeypatch.setenv("AUREON_AWAKEN_WEAVE", "0")
+    calls = {}
+
+    import aureon.core.awakening as aw
+
+    class _Stub:
+        def retry_failed(self, limit=None):
+            calls["limit"] = limit
+            return {"retried": 7, "recovered": 4, "still_failed": 2}
+
+    monkeypatch.setattr(aw, "_carried_dna", lambda: {"coverage_pct": 1.0})
+    monkeypatch.setattr("aureon.core.aureon_connectome.get_connectome", lambda: _Stub())
+    moved = aw.awaken()["moved"]
+    assert calls.get("limit") == 7 and moved["recovered"] == 4
+
+
+def test_awaken_retry_off_does_not_heal(tmp_path, monkeypatch):
+    monkeypatch.setenv("AUREON_AWAKEN_RETRY", "0")
+    monkeypatch.setenv("AUREON_AWAKEN_WEAVE", "0")
+    import aureon.core.awakening as aw
+
+    hit = {"called": False}
+
+    class _Stub:
+        def retry_failed(self, limit=None):
+            hit["called"] = True
+            return {"recovered": 0}
+
+    monkeypatch.setattr(aw, "_carried_dna", lambda: {"coverage_pct": 1.0})
+    monkeypatch.setattr("aureon.core.aureon_connectome.get_connectome", lambda: _Stub())
+    moved = aw.awaken()["moved"]
+    assert hit["called"] is False and moved["recovered"] == 0
+
+
 def test_awaken_never_raises_when_dormant(tmp_path, monkeypatch):
     import aureon.core.awakening as aw
 

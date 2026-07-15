@@ -63,7 +63,10 @@ The `totals` block surfaces the whole road so the climb is watchable, nothing hi
 - **`denied`** — the deliberate ceiling: modules the deny-list will never import (unsafe). Excluded from
   the target by design (connecting them would hang the boot); surfaced so the exclusion is explicit.
 - **`failed`** — retryable debt: modules that errored on import. **Still counted** against 100% — an
-  honest incentive to fix them, not swept under the rug.
+  honest incentive to fix them, not swept under the rug. And now **self-healing**: the connectome
+  re-attempts latched failures (after healing the import context) and settles genuinely-broken ones at
+  a cap — see "Failures aren't forever" in [`ORGANISM_CONNECTOME.md`](ORGANISM_CONNECTOME.md). ~half
+  recover once the import shim is active; `status().retryable` shows the debt still healing.
 - **`unfelt`** — the remaining backlog: modules the connectome hasn't reached yet. These are what the
   sweep touches next.
 - **`touched` → `woven`** — the two depths the two connectome dims measure.

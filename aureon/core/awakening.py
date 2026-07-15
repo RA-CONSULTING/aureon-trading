@@ -46,6 +46,13 @@ def _awaken_weave() -> int:
         return 25
 
 
+def _awaken_retry() -> int:
+    try:
+        return max(0, int(os.environ.get("AUREON_AWAKEN_RETRY", "") or 25))
+    except (TypeError, ValueError):
+        return 25
+
+
 def read_genome() -> Dict[str, Any]:
     """The DNA the organism carries across cycles — read-only, never increments.
     Returns a sane default (``generation: 0``) when no genome has been written yet."""
@@ -123,7 +130,18 @@ def _signal_the_body(generation: int, carried: Dict[str, Any]) -> None:
 def _move(limit: int) -> Dict[str, Any]:
     """The first movement of the cycle — a bounded weave nudge + a journey point, so
     the climb resumes at once rather than after a full breath. Registration only."""
-    moved: Dict[str, Any] = {"woven": 0, "journey_recorded": False}
+    moved: Dict[str, Any] = {"woven": 0, "recovered": 0, "journey_recorded": False}
+    # First heal: a failure is not forever — re-attempt a bounded batch of latched
+    # failures (the import context is healed on touch), so recoverable modules rejoin
+    # the body before the weave, and the coverage climbs toward 100% each waking.
+    retry = _awaken_retry()
+    if retry > 0:
+        try:
+            from aureon.core.aureon_connectome import get_connectome
+
+            moved["recovered"] = int(get_connectome().retry_failed(limit=retry).get("recovered", 0))
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("awakening move (retry) skipped: %s", exc)
     if limit > 0:
         try:
             from aureon.core.aureon_connectome import get_connectome
@@ -169,9 +187,9 @@ def awaken(organs: Dict[str, Any] | None = None) -> Dict[str, Any]:  # noqa: ARG
         asc = carried.get("ascent_stage")
         logger.info(
             "🌱 Awakening — generation %d · carrying coverage %s%% · index %s%% · ascent %s/7 · "
-            "the body wakes and moves (wove %d)",
+            "the body wakes and moves (recovered %d · wove %d)",
             generation, cov if cov is not None else "—", idx if idx is not None else "—",
-            asc if asc is not None else "—", moved["woven"])
+            asc if asc is not None else "—", moved.get("recovered", 0), moved["woven"])
         return {"generation": generation, "carried": carried, "moved": moved,
                 "ts": now, "truth_status": "real_derived"}
     except Exception as exc:  # noqa: BLE001 — never let a wake fault stop the daemon

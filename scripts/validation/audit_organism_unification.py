@@ -845,6 +845,36 @@ def run_audit() -> list[dict]:
                 "automation_target_is_reachable", _partial_ok and _reachable_ok,
                 f"touched_not_baton={_partial_ok} full_reachable_is_100={_reachable_ok}",
                 critical=False))
+
+            # Edge 31 — failures aren't forever: a latched `failed` module is re-attempted
+            # by retry_failed and recovers when importable; a permanently-broken one keeps
+            # an attempts counter and settles at the cap (no infinite churn).
+            from aureon.core.aureon_connectome import Connectome as _Conn
+            from aureon.core.aureon_connectome import reset_connectome_for_tests as _rc
+
+            _rc()
+            _cx = _Conn(state_path=_Path(_tds) / "retry_connectome.json")
+            # a latched failure for a module that actually imports → recovers
+            _cx._records["aureon.core.hnc_params"] = {"status": "failed", "ts": 0.0, "error": "transient"}
+            _rr = _cx.retry_failed(limit=10)
+            _recovered_ok = (_rr["recovered"] == 1
+                             and _cx._records["aureon.core.hnc_params"]["status"] == "touched")
+            # a permanently-broken module settles at the cap (retry stops churning)
+            _cx._records["aureon.core.aureon_organism_spine"] = {"status": "failed", "ts": 0.0, "error": "x"}
+
+            def _always_fail(mod: str) -> dict:
+                _cx._record(mod, "failed", error="still")
+                return {"module": mod, "status": "failed", "error": "still"}
+
+            _cx.touch = _always_fail  # type: ignore[method-assign]
+            for _ in range(4):
+                _cx.retry_failed(limit=10)
+            _settled_ok = (_cx._records["aureon.core.aureon_organism_spine"].get("attempts") == 3
+                           and _cx.retry_failed(limit=10)["retried"] == 0)
+            _rc()
+            results.append(_check(
+                "failures_are_not_forever", _recovered_ok and _settled_ok,
+                f"recovered={_rr['recovered']} settled_at_cap={_settled_ok}", critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:
