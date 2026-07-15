@@ -37,9 +37,23 @@ interface CategoryBlock {
   surfaces: Surface[];
 }
 
+interface Axis {
+  value: number | string | null;
+  truth_status: TruthStatus;
+  detail?: string;
+}
+
+interface StateOfBeing {
+  available: boolean;
+  wholeness: number | null;
+  headline: string;
+  axes: Record<string, Axis>;
+}
+
 interface Catalog {
   categories: Record<string, CategoryBlock>;
   surfaces: Surface[];
+  state_of_being?: StateOfBeing;
   counts: {
     total: number;
     operational: number;
@@ -160,6 +174,37 @@ export default function ConsciousnessPage() {
 
       {data && (
         <>
+          {/* the state of being — how the organism is right now */}
+          {data.state_of_being && (
+            <Card className="border-primary/30">
+              <CardHeader className="pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle className="text-base">
+                    State of being
+                    {data.state_of_being.wholeness != null && (
+                      <span className="ml-2 font-mono text-sm text-muted-foreground">
+                        wholeness {data.state_of_being.wholeness.toFixed(3)}
+                      </span>
+                    )}
+                  </CardTitle>
+                  <StatusBadge status={data.state_of_being.available ? "real_derived" : "no_data"} />
+                </div>
+                <p className="text-sm text-muted-foreground">{data.state_of_being.headline}</p>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {Object.entries(data.state_of_being.axes).map(([name, ax]) => (
+                  <div key={name} className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs">
+                    <span className="text-muted-foreground">{name.replace(/_/g, " ")}</span>
+                    <span className="font-mono">
+                      {ax.value == null ? "—" : typeof ax.value === "number" ? ax.value.toFixed(3) : ax.value}
+                    </span>
+                    <StatusBadge status={ax.truth_status} />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* roll-up */}
           <Card>
             <CardHeader className="pb-2">

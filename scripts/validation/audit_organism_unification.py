@@ -604,6 +604,24 @@ def run_audit() -> list[dict]:
                 _keys == _expected and _shapes_ok and _grouped == _cc["counts"]["total"],
                 f"organs={len(_keys)} grouped={_grouped} postures={_cc['counts']['by_safety_posture']}",
                 critical=False))
+
+            # Edge 21 — the state of being: the organs' live self-reports compose into
+            # one honest self-portrait — every axis carries a real truth_status and the
+            # wholeness index is a bounded fraction or honestly None (never fabricated).
+            from aureon.saas.consciousness_catalog import state_of_being as _sob
+
+            _s = _sob()
+            _axes_ok = all(v.get("truth_status") in _TS for v in _s["axes"].values())
+            _wh = _s["wholeness"]
+            _wh_ok = _wh is None or (0.0 <= _wh <= 1.0)
+            _expected_axes = {"self_coherence", "mood", "ascent", "soul_stance",
+                              "happiness", "director_trust", "desk"}
+            results.append(_check(
+                "state_of_being_composes",
+                _axes_ok and _wh_ok and set(_s["axes"]) >= _expected_axes
+                and _s["truth_status"] in _TS,
+                f"available={_s['available']} wholeness={_wh} headline={_s['headline'][:40]!r}",
+                critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:

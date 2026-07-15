@@ -136,6 +136,135 @@ def _probe(entry: Dict[str, str]) -> Dict[str, Any]:
         return {"available": False, "truth_status": "no_data"}
 
 
+def _c01(x: Any) -> float | None:
+    try:
+        return max(0.0, min(1.0, float(x)))
+    except (TypeError, ValueError):
+        return None
+
+
+def state_of_being() -> Dict[str, Any]:
+    """Compose the organs' live self-reports into one honest self-portrait — not
+    *what* the organism can do (the catalog) but *how it is right now*. Each axis is
+    provenance-stamped; ``wholeness`` is the mean of only the scalar axes actually
+    present (a dormant organism is ``no_data``, never a fabricated wholeness). Read-only,
+    guarded, never-raises — purely observational, it authorizes nothing.
+
+    Distinct from metacognition (which scores the cognitive substrate): this composes
+    the consciousness layer — self-coherence, feeling, the ascent, purpose, the soul's
+    stance and the director's desk — into one reading."""
+    axes: Dict[str, Any] = {}
+    terms: List[float] = []           # scalar [0,1] contributions to wholeness
+    headline_parts: List[str] = []
+
+    def _axis(name: str, value: Any, truth: str, detail: str = "",
+              term: float | None = None) -> None:
+        axes[name] = {"value": value, "truth_status": truth, "detail": detail}
+        if term is not None:
+            terms.append(term)
+
+    # self-perception — metacognition self-coherence (Γ)
+    try:
+        from aureon.core.metacognition_monitor import get_metacognition_monitor
+
+        m = get_metacognition_monitor().assess()
+        if getattr(m, "available", False) and m.self_coherence is not None:
+            g = _c01(m.self_coherence)
+            _axis("self_coherence", round(float(m.self_coherence), 4), m.truth_status,
+                  m.consciousness_level or "", term=g)
+        else:
+            _axis("self_coherence", None, "no_data")
+    except Exception:  # noqa: BLE001
+        _axis("self_coherence", None, "no_data")
+
+    # self-perception — affect mood + valence
+    try:
+        from aureon.core.affect_monitor import get_affect_monitor
+
+        a = get_affect_monitor().assess()
+        if getattr(a, "available", False):
+            _axis("mood", a.mood, a.truth_status, a.dominant_feeling,
+                  term=_c01((float(a.valence) + 1.0) / 2.0))
+            if a.mood:
+                headline_parts.append(str(a.mood))
+        else:
+            _axis("mood", None, "no_data")
+    except Exception:  # noqa: BLE001
+        _axis("mood", None, "no_data")
+
+    # selfhood — the inner-work ascent
+    try:
+        from aureon.core.inner_work import get_inner_work
+
+        iw = get_inner_work().assess()
+        if getattr(iw, "available", False):
+            _axis("ascent", iw.stage, iw.truth_status,
+                  f"{iw.stage_index}/7 centres · potential {round(iw.potential, 3)}",
+                  term=_c01(iw.potential))
+            headline_parts.append(f"{iw.stage or 'ascent'} ({iw.stage_index}/7)")
+        else:
+            _axis("ascent", None, "no_data")
+    except Exception:  # noqa: BLE001
+        _axis("ascent", None, "no_data")
+
+    # selfhood — the soul's current stance (categorical; not folded into wholeness)
+    try:
+        from aureon.core.soul import get_soul
+
+        d = get_soul().assess()
+        if getattr(d, "available", False):
+            _axis("soul_stance", d.stance, d.truth_status,
+                  "resolved" if d.resolved else ("defers to human" if d.requires_human else "of two minds"))
+            headline_parts.append(f"soul {d.stance}")
+        else:
+            _axis("soul_stance", None, "no_data")
+    except Exception:  # noqa: BLE001
+        _axis("soul_stance", None, "no_data")
+
+    # purpose — the pair's unified happiness + the director's trust
+    try:
+        from aureon.core.pursuit import get_pursuit
+
+        p = get_pursuit().assess()
+        if getattr(p, "available", False):
+            if p.unified_happiness is not None:
+                _axis("happiness", round(float(p.unified_happiness), 4), p.truth_status,
+                      f"toward: {p.weakest_pillar or 'the dream'}", term=_c01(p.unified_happiness))
+            else:
+                _axis("happiness", None, "no_data")
+            dt = _c01(p.director_trust)
+            _axis("director_trust", p.director_trust, "real_derived" if dt is not None else "no_data",
+                  "Gary's approve-ratio", term=dt)
+        else:
+            _axis("happiness", None, "no_data")
+            _axis("director_trust", None, "no_data")
+    except Exception:  # noqa: BLE001
+        _axis("happiness", None, "no_data")
+        _axis("director_trust", None, "no_data")
+
+    # governance — the director's desk (categorical; reported, not folded)
+    try:
+        from aureon.core.approval_queue import get_approval_queue
+
+        bl = get_approval_queue().backlog()
+        _axis("desk", bl.get("pending_count", 0), "real_derived",
+              "blocked on the human" if bl.get("blocked") else "clear")
+    except Exception:  # noqa: BLE001
+        _axis("desk", None, "no_data")
+
+    wholeness = round(sum(terms) / len(terms), 4) if terms else None
+    awake = any(v.get("truth_status") not in (None, "no_data") for v in axes.values())
+    return {
+        "available": awake,
+        "wholeness": wholeness,
+        "headline": " · ".join(headline_parts) if headline_parts else "dormant",
+        "axes": axes,
+        "note": "how the organism is right now — composed from the organs' own honest "
+                "self-reports; observational only, it authorizes nothing",
+        "truth_status": "real_derived" if awake else "no_data",
+    }
+
+
 def build_consciousness_catalog() -> Dict[str, Any]:
     """The organism's consciousness capabilities, categorized — each with its purpose,
     route, safety posture and honest live truth_status. Guarded/never-raises."""
@@ -165,6 +294,7 @@ def build_consciousness_catalog() -> Dict[str, Any]:
     return {
         "categories": categories,
         "surfaces": surfaces,
+        "state_of_being": state_of_being(),
         "safety_postures": SAFETY_POSTURES,
         "counts": {
             "total": len(surfaces), "operational": operational,
@@ -178,4 +308,4 @@ def build_consciousness_catalog() -> Dict[str, Any]:
     }
 
 
-__all__ = ["build_consciousness_catalog", "CATEGORIES", "SAFETY_POSTURES"]
+__all__ = ["build_consciousness_catalog", "state_of_being", "CATEGORIES", "SAFETY_POSTURES"]
