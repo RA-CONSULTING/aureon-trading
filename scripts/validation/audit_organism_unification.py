@@ -989,6 +989,22 @@ def run_audit() -> list[dict]:
                 "switchboard_pending_is_honest", _pending_ok,
                 f"unknown={_p_unknown} before={_p_before} after={_p_after} live={_p_live}",
                 critical=False))
+
+            # Edge 36 — the switchboard's safety posture summary is honest: armed counts
+            # only hard-boundary flags currently ON; totals are consistent.
+            _sm = _fs34.summary()
+            _armed_expected = sum(1 for f in _fs34.FLAGS if f.kind == "hard_boundary"
+                                  and _fs34.flag_view(f)["enabled"])
+            _summary_ok = (_sm["total"] == len(_fs34.FLAGS)
+                           and _sm["hard_boundary_total"] == sum(1 for f in _fs34.FLAGS
+                                                                 if f.kind == "hard_boundary")
+                           and _sm["armed"] == _armed_expected
+                           and 0 <= _sm["armed"] <= _sm["enabled"] <= _sm["total"])
+            results.append(_check(
+                "switchboard_summary_is_honest", _summary_ok,
+                f"total={_sm['total']} enabled={_sm['enabled']} armed={_sm['armed']} "
+                f"pending={_sm['pending_restart']}",
+                critical=False))
         finally:
             for _k, _val in _saved.items():
                 if _val is None:

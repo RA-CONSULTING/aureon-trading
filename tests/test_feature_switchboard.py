@@ -168,6 +168,41 @@ def test_last_awakened_at_guarded(monkeypatch):
     assert fs._last_awakened_at() is None
 
 
+def test_summary_counts_are_honest(temp_store, monkeypatch):
+    for f in fs.FLAGS:  # neutralize env so the store is the only source
+        monkeypatch.delenv(f.id, raising=False)
+    base = fs.summary()
+    assert base["total"] == len(fs.FLAGS)
+    assert base["hard_boundary_total"] == sum(1 for f in fs.FLAGS if f.kind == "hard_boundary")
+    assert base["armed"] == 0
+    # arming a hard-boundary flag bumps enabled + armed by one
+    fs.save_flag("AUREON_LIVE_TRADING", True)
+    s = fs.summary()
+    assert s["armed"] == 1
+    assert s["enabled"] == base["enabled"] + 1
+    # a safe flag on adds to enabled but not armed
+    fs.save_flag("AUREON_LLM_OFFLINE", True)
+    assert fs.summary()["armed"] == 1
+
+
+def test_summary_pending_restart_count(temp_store, monkeypatch):
+    for f in fs.FLAGS:
+        monkeypatch.delenv(f.id, raising=False)
+    fs.save_flag("AUREON_LIVE_TRADING", True)
+    decided = fs.load()["AUREON_LIVE_TRADING"]["decided_at"]
+    monkeypatch.setattr(fs, "_last_awakened_at", lambda: decided - 100)  # booted before → pending
+    assert fs.summary()["pending_restart"] == 1
+    monkeypatch.setattr(fs, "_last_awakened_at", lambda: decided + 100)  # booted after → applied
+    assert fs.summary()["pending_restart"] == 0
+
+
+def test_pulse_includes_switchboard(temp_store):
+    c = _client()
+    body = c.get("/api/pulse").get_json()
+    assert "switchboard" in body
+    assert set(body["switchboard"]) >= {"total", "enabled", "armed", "pending_restart"}
+
+
 def test_switchboard_in_governance_catalog():
     from aureon.saas.consciousness_catalog import build_consciousness_catalog
 

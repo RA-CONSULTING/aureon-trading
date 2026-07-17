@@ -65,6 +65,16 @@ trading/runtime layer. The Switchboard page shows a **"pending restart"** badge 
 Audit edge `switchboard_pending_is_honest` proves the truth table (before-boot → pending, unknown →
 `null`, live → `False`).
 
+## Safety posture at a glance
+
+`feature_switchboard.summary()` gives honest aggregate counts — `total`, `enabled`, `armed`
+(hard-boundary flags currently ON), `pending_restart`, `hard_boundary_total`. It's surfaced two ways:
+in the `GET /api/switchboard` response (the page header shows "N armed / M hard-boundary" and any
+pending count) and in the composed `GET /api/pulse` vitals — so the armed hard-boundary posture is
+visible at a glance (including on the watch, which polls `/api/pulse`), not only on the standalone
+switchboard page. Read-only aggregate over `flag_view`; audit edge `switchboard_summary_is_honest`
+proves `armed` counts only hard-boundary flags that are on.
+
 ## Seen in governance
 
 The switchboard is registered as a surface in the **`governance`** category of the consciousness
