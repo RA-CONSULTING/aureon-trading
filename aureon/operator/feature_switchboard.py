@@ -328,6 +328,23 @@ def grouped_view() -> List[Dict[str, Any]]:
     return groups
 
 
+def summary() -> Dict[str, Any]:
+    """The switchboard's safety posture at a glance — honest counts only.
+
+    ``armed`` counts hard-boundary flags currently ON; ``pending_restart`` counts
+    decisions not yet picked up by their consuming process (the real signal, not
+    the static label). Cheap and read-only — suitable for the composed vitals.
+    """
+    views = [flag_view(f) for f in FLAGS]
+    return {
+        "total": len(views),
+        "enabled": sum(1 for v in views if v["enabled"]),
+        "armed": sum(1 for v in views if v["armed"]),
+        "pending_restart": sum(1 for v in views if v["pending_restart"] is True),
+        "hard_boundary_total": sum(1 for f in FLAGS if f.kind == "hard_boundary"),
+    }
+
+
 __all__ = [
     "FeatureFlag",
     "FLAGS",
@@ -339,6 +356,7 @@ __all__ = [
     "apply_to_env",
     "flag_view",
     "grouped_view",
+    "summary",
     "STORE_PATH",
     "KEY_PATH",
 ]

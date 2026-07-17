@@ -345,6 +345,12 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
             out["organism"] = build_organism_payload()
         except Exception as exc:  # noqa: BLE001
             out["organism"] = {"available": False, "error": str(exc)[:200]}
+        try:  # the human control plane's safety posture, at a glance
+            from aureon.operator import feature_switchboard as _sb
+
+            out["switchboard"] = _sb.summary()
+        except Exception as exc:  # noqa: BLE001
+            out["switchboard"] = {"error": str(exc)[:200]}
         # Browser Response.json() rejects bare Infinity/NaN — keep the body spec-clean.
         return jsonify(_json_safe(out))
 
@@ -544,7 +550,7 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
 
     @app.get("/api/switchboard")
     def switchboard_list():
-        return jsonify({"groups": _switchboard.grouped_view()})
+        return jsonify({"groups": _switchboard.grouped_view(), "summary": _switchboard.summary()})
 
     @app.post("/api/switchboard/<flag_id>")
     def switchboard_set(flag_id: str):
