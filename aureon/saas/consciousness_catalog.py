@@ -89,6 +89,11 @@ _SURFACES: List[Dict[str, str]] = [
                 "human decision (console / watch / email reply) and never executes it",
      "module": "aureon.core.approval_queue", "accessor": "get_approval_queue",
      "live": "summary", "route": "/api/approvals", "safety_posture": "records_only_gated"},
+    {"key": "switchboard", "label": "The Switchboard", "category": "governance",
+     "purpose": "the human control plane — turn every system feature on/off at discretion; "
+                "flipping records the decision and sets an env flag, removing no downstream gate",
+     "module": "aureon.operator.feature_switchboard", "accessor": "grouped_view",
+     "live": "reachable", "route": "/api/switchboard", "safety_posture": "records_only_gated"},
     {"key": "company", "label": "The Workforce", "category": "workforce",
      "purpose": "the full company — every role from the CEO Goal Steward to the Log Janitor "
                 "across eight departments — that a fitted crew is staffed from",
