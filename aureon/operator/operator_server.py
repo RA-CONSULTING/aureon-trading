@@ -536,6 +536,35 @@ def create_app(operator: AureonOperator | None = None, cognition: Any = None) ->
         result = _test_provider_adapter(info, api_key, base_url, model)
         return jsonify(result)
 
+    # ── Feature switchboard (turn every system feature on/off at human discretion) ─
+    # Instance-owned, encrypted flag store. Flipping a flag only sets its env var;
+    # hard-boundary flags require a typed confirm and NEVER remove a downstream gate
+    # (conscience veto / approval queue / runtime dry-run stay in force).
+    from aureon.operator import feature_switchboard as _switchboard
+
+    @app.get("/api/switchboard")
+    def switchboard_list():
+        return jsonify({"groups": _switchboard.grouped_view()})
+
+    @app.post("/api/switchboard/<flag_id>")
+    def switchboard_set(flag_id: str):
+        flag = _switchboard.get_flag(flag_id)
+        if flag is None:
+            return _err(404, f"unknown feature flag: {flag_id}")
+        body: Dict[str, Any] = request.get_json(silent=True) or {}
+        if "enabled" not in body:
+            return _err(400, "missing 'enabled'")
+        enabled = bool(body.get("enabled"))
+        # Hard-boundary flags need an explicit typed-confirm arming gesture.
+        if flag.kind == "hard_boundary" and enabled and body.get("confirm") != flag_id:
+            return _err(400, "hard-boundary flag requires confirm == flag id", confirm_required=flag_id)
+        _switchboard.save_flag(flag_id, enabled)  # persists + applies to os.environ
+        # Cognition-routing flags are consumed by the operator's own engine → hot-rebuild.
+        if flag_id in _switchboard.LIVE_FLAG_IDS:
+            _rebuild_switchboard()
+        applied = "applied to the operator now" if flag.effect == "live" else flag.effect_note
+        return jsonify({"ok": True, "flag": _switchboard.flag_view(flag), "applied": applied})
+
     # ── Unified Connections (all external sources: trading → NASA) ──────────────
     from aureon.operator import connections_api as _conn_api
     from aureon.operator.connections_catalog import get_connection as _get_conn
