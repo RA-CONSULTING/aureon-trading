@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
@@ -229,11 +230,45 @@ def save_flag(flag_id: str, enabled: bool) -> Dict[str, Any]:
     if flag_id not in _BY_ID:
         raise KeyError(f"unknown feature flag: {flag_id}")
     data = load()
-    entry = {"enabled": bool(enabled)}
+    entry = {"enabled": bool(enabled), "decided_at": time.time()}
     data[flag_id] = entry
     _persist(data)
     apply_to_env()
     return entry
+
+
+def _last_awakened_at() -> float | None:
+    """The organism's last boot time (epoch), guarded — the anchor for pending-restart.
+
+    The organism daemon applies the flags (``bootstrap_credentials`` →
+    ``apply_to_env``) and then ``awaken()`` stamps ``last_awakened_at``. So a
+    decision made after this timestamp has not yet been picked up. Never raises;
+    ``None`` when the genome is absent/unreadable (honest no_data).
+    """
+    try:
+        from aureon.core.awakening import read_genome
+
+        ts = read_genome().get("last_awakened_at")
+        return float(ts) if isinstance(ts, (int, float)) else None
+    except Exception:  # noqa: BLE001 — an unreadable genome is unknown, never a crash
+        return None
+
+
+def _pending_restart(flag: FeatureFlag, source: str, decided_at: float | None) -> bool | None:
+    """Has a human decision NOT yet reached the consuming process?
+
+    ``None`` (no_data) when it cannot be known honestly; never a fabricated
+    "applied". ``live`` flags are applied in-process immediately, and a flag with
+    no stored human decision is nothing the human is waiting on → ``False``.
+    """
+    if flag.effect == "live" or source != "store":
+        return False
+    if decided_at is None:  # legacy entry with no recorded decision time
+        return None
+    booted = _last_awakened_at()
+    if booted is None:  # the organism has never awoken / genome unknown
+        return None
+    return decided_at > booted
 
 
 def apply_to_env() -> None:
@@ -269,12 +304,17 @@ def flag_view(flag: FeatureFlag) -> Dict[str, Any]:
     else:
         enabled = flag.default
         source = "default"
+    decided_at = stored.get("decided_at") if isinstance(stored, dict) else None
+    if not isinstance(decided_at, (int, float)):
+        decided_at = None
     return {
         **flag.to_public_dict(),
         "enabled": enabled,
         "stored": (bool(stored.get("enabled")) if stored is not None else None),
         "source": source,
         "armed": bool(flag.kind == "hard_boundary" and enabled),
+        "decided_at": decided_at,
+        "pending_restart": _pending_restart(flag, source, decided_at),
     }
 
 
