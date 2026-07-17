@@ -48,6 +48,23 @@ def test_every_module_path_resolves():
     assert missing == [], f"stale process paths in supervisord.linux.conf: {missing}"
 
 
+def test_every_process_module_is_runnable():
+    """Stronger than import: `python -m <mod>` only *starts a process* if the module
+    has a `__main__` guard. A module that resolves but lacks one would import-and-exit,
+    flapping under supervisord's autorestart. Assert every `-m` target is runnable."""
+    cp, progs = _programs()
+    not_runnable = []
+    for s in progs:
+        m = re.search(r"-m (aureon\.[\w.]+)", cp[s].get("command", ""))
+        if not m:
+            continue
+        spec = _u.find_spec(m.group(1))
+        src = open(spec.origin, encoding="utf-8").read() if spec and spec.origin else ""
+        if 'if __name__ == "__main__"' not in src and "if __name__ == '__main__'" not in src:
+            not_runnable.append(m.group(1))
+    assert not_runnable == [], f"process modules with no __main__ guard (would flap): {not_runnable}"
+
+
 def test_config_is_dry_paper_by_default():
     """The config never arms live trading or local actions itself (comments aside)."""
     active = "\n".join(ln for ln in open(_CONF, encoding="utf-8").read().splitlines()
