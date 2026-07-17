@@ -1,0 +1,23 @@
+# Aureon Operator (grounded cognition gateway) — standalone unit.
+# Part of an organism-only deploy (operator + organism + hnc via aureon.target).
+# Adjust WorkingDirectory / ExecStart / User to your install prefix.
+[Unit]
+Description=Aureon Operator — grounded cognition gateway (:8790)
+After=network-online.target
+Wants=network-online.target
+PartOf=aureon.target
+
+[Service]
+Type=simple
+User=aureon
+WorkingDirectory=/opt/aureon
+Environment=PATH=/opt/aureon/.venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=AUREON_OPERATOR_PORT=8790
+Environment=AUREON_OPERATOR_HOST=0.0.0.0
+EnvironmentFile=-/opt/aureon/.env
+ExecStart=/opt/aureon/.venv/bin/python -u -m aureon.operator.operator_server
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=aureon.target

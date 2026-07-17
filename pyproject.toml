@@ -53,6 +53,8 @@ dev = [
 
 [project.scripts]
 aureon-operator = "aureon.operator.operator_server:main"
+aureon-organism = "aureon.core.organism_daemon:main"
+aureon-hnc = "aureon.core.hnc_live_daemon:main"
 
 # Discover the `aureon` package only. Top-level bare modules stay importable via
 # the existing sys.path shims — packaging is additive, not a rewrite.

@@ -825,9 +825,11 @@ class HNCLiveDaemon:
         self._stop.set()
 
 
-# ─── module main — quick smoke test ──────────────────────────────
+# ─── module main — the console entry point (aureon-hnc / python -m) ──────────
 
-if __name__ == "__main__":
+def main() -> None:
+    """Run the HNC live daemon. The ``aureon-hnc`` console-script + ``python -m
+    aureon.core.hnc_live_daemon`` entry — mirrors ``organism_daemon.main()``."""
     logging.basicConfig(
         level=os.environ.get("AUREON_LOG_LEVEL", "INFO"),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -845,3 +847,7 @@ if __name__ == "__main__":
         logger.warning("HNC daemon: credential bootstrap skipped (%s)", exc)
     duration = float(os.environ.get("AUREON_HNC_DAEMON_DURATION", "0")) or None
     asyncio.run(HNCLiveDaemon().run(duration_s=duration))
+
+
+if __name__ == "__main__":
+    main()

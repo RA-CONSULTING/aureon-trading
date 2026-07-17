@@ -57,6 +57,7 @@ Master table of contents for all project documentation.
 | [Navigation Guide](NAVIGATION_GUIDE.md) | Learning paths for traders, developers, researchers |
 | [Quick Start](QUICK_START.md) | Get running in 10 minutes |
 | [Windows Setup](windows/WINDOWS_SETUP_GUIDE.md) | Windows-specific installation |
+| [Linux Setup](linux/LINUX_SETUP_GUIDE.md) | Native full Linux version — install + one-command launcher + systemd |
 | [Scripts Index](SCRIPTS_INDEX.md) | Find the right startup script |
 
 ## Architecture & System Design

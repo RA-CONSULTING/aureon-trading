@@ -1,0 +1,12 @@
+# Aureon organism-only target — brings up operator + organism + hnc together.
+# Use this instead of aureon.service when you want just the organism core (no
+# trading swarm), managed as three separate systemd units.
+#   sudo cp deploy/systemd/aureon-*.service deploy/systemd/aureon.target /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now aureon.target
+[Unit]
+Description=Aureon organism core (operator + organism + hnc)
+Wants=aureon-operator.service aureon-organism.service aureon-hnc.service
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
